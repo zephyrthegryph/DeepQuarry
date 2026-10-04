@@ -891,6 +891,13 @@
 	into += entry_line(40)
 	into += list(global.op("close", global.ui_act("close"), global.then(PROC_REF(ui_act_close))))
 
+/// CAPABILITIES(/datum/admin_trader_dispatch_review) at code/modules/admin/verbs/trader.dm:21
+/datum/admin_trader_dispatch_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/trader.dm", 21, /datum/admin_trader_dispatch_review)
+	into += entry_line(22)
+	into += list(global.ref_one(nameof(actor), /mob))
+
 /// CAPABILITIES(/datum/admins) at code/modules/admin/holder2.dm:55
 /datum/admins/declared_entries(list/into)
 	..(into)
@@ -2894,6 +2901,15 @@
 	into += entry_line(162)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/choice/artifact_blade_action) at code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm:211
+/datum/prompt/choice/artifact_blade_action/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm", 211, /datum/prompt/choice/artifact_blade_action)
+	into += entry_line(212)
+	into += list(global.ref_one(nameof(held_item), /obj/item))
+	into += entry_line(213)
+	into += list(global.ref_one(nameof(interaction_context), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/choice/augment_location) at code/game/objects/items/weapons/implants/implantaugment.dm:74
 /datum/prompt/choice/augment_location/declared_entries(list/into)
 	..(into)
@@ -2966,6 +2982,17 @@
 	into += entry_line(176)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/choice/service_checkout_tip) at code/modules/economy/service_invoices.dm:623
+/datum/prompt/choice/service_checkout_tip/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/service_invoices.dm", 623, /datum/prompt/choice/service_checkout_tip)
+	into += entry_line(624)
+	into += list(global.ref_one(nameof(payer_card), /obj/item/card/id))
+	into += entry_line(625)
+	into += list(global.ref_one(nameof(card_holder), /obj/item))
+	into += entry_line(626)
+	into += list(global.ref_one(nameof(operator), /mob))
+
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
 	..(into)
@@ -2986,6 +3013,28 @@
 	into += entry_block("code/game/machinery/CableLayer.dm", 76, /datum/prompt/number/cablelayer_cut)
 	into += entry_line(77)
 	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/number/eftpos_pin) at code/modules/economy/EFTPOS.dm:338
+/datum/prompt/number/eftpos_pin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/EFTPOS.dm", 338, /datum/prompt/number/eftpos_pin)
+	into += entry_line(339)
+	into += list(global.ref_one(nameof(payer_card), /obj/item/card))
+	into += entry_line(340)
+	into += list(global.ref_one(nameof(card_holder), /obj/item))
+	into += entry_line(341)
+	into += list(global.ref_one(nameof(operator), /mob))
+
+/// CAPABILITIES(/datum/prompt/number/service_checkout_pin) at code/modules/economy/service_invoices.dm:584
+/datum/prompt/number/service_checkout_pin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/service_invoices.dm", 584, /datum/prompt/number/service_checkout_pin)
+	into += entry_line(585)
+	into += list(global.ref_one(nameof(payer_card), /obj/item/card/id))
+	into += entry_line(586)
+	into += list(global.ref_one(nameof(card_holder), /obj/item))
+	into += entry_line(587)
+	into += list(global.ref_one(nameof(operator), /mob))
 
 /// CAPABILITIES(/datum/prompt/text/air_control_sensor_name) at code/game/machinery/atmo_control.dm:308
 /datum/prompt/text/air_control_sensor_name/declared_entries(list/into)
@@ -3035,6 +3084,15 @@
 	into += entry_block("code/game/machinery/pandemic.dm", 104, /datum/prompt/text/pandemic_release_reason)
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/text/skeleton_plaque) at code/modules/xenoarcheaology/finds/fossils.dm:116
+/datum/prompt/text/skeleton_plaque/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/finds/fossils.dm", 116, /datum/prompt/text/skeleton_plaque)
+	into += entry_line(117)
+	into += list(global.ref_one(nameof(pen), /obj/item))
+	into += entry_line(118)
+	into += list(global.ref_one(nameof(interaction_context), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
@@ -3243,6 +3301,15 @@
 	into += list(global.owns_many(nameof(autopaths)))
 	into += entry_line(172)
 	into += list(global.owns_many(nameof(destinations)))
+
+/// CAPABILITIES(/datum/slime_cube_invitation_review) at code/modules/xenobio/items/slime_objects.dm:52
+/datum/slime_cube_invitation_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenobio/items/slime_objects.dm", 52, /datum/slime_cube_invitation_review)
+	into += entry_line(53)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(54)
+	into += list(global.ref_one(nameof(cube), /obj/item/slime_cube))
 
 /// CAPABILITIES(/datum/species) at code/engine/parts/hands.dm:58
 /datum/species/declared_entries(list/into)
@@ -10046,11 +10113,11 @@
 	into += entry_line(24)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/slime_crystal) at code/modules/xenobio/items/slime_objects.dm:103
+/// CAPABILITIES(/obj/item/slime_crystal) at code/modules/xenobio/items/slime_objects.dm:176
 /obj/item/slime_crystal/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/xenobio/items/slime_objects.dm", 103, /obj/item/slime_crystal)
-	into += entry_line(104)
+	into += entry_block("code/modules/xenobio/items/slime_objects.dm", 176, /obj/item/slime_crystal)
+	into += entry_line(177)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/slime_cube) at code/modules/xenobio/items/slime_objects.dm:12
