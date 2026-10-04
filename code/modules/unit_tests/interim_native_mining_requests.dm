@@ -25,11 +25,11 @@
 	test_time(0.1 SECONDS)
 	label_request = SSrequests.open_for(user)
 	TEST_ASSERT(istype(label_request), "the late-active case begins with a real inactive machine request")
-	drill.active = TRUE
+	drill.set_active(TRUE)
 	test_answer(user, "99")
 	TEST_ASSERT_EQUAL(label_request.outcome, REQ_CANCELLED, "becoming active rejects the pending label answer")
 	TEST_ASSERT_EQUAL(drill.name, initial(drill.name), "the rejected answer leaves the actual label unchanged")
-	drill.active = FALSE
+	drill.set_active(FALSE)
 	TEST_ASSERT(user.drop_from_inventory(tool), "the multitool is released through the real inventory path")
 	var/obj/item/pickaxe/excavationdrill/excavator = allocate(/obj/item/pickaxe/excavationdrill, T)
 	TEST_ASSERT(user.put_in_active_hand(excavator), "the actual excavation drill is held for self-use")
