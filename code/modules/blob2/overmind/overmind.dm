@@ -177,7 +177,4 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 /mob/observer/blob/proc/default_language() as /datum/language
 	return default_language_static
 
-// blob_type is owned (implicit OWN, rel_set in Initialize); blob_mobs names spawned mobs.
-/mob/observer/blob/relations()
-	. = ..()
-	. += rel_many(nameof(blob_mobs))
+// blob_type is owned (implicit OWN, rel_set in Initialize); blob_mobs is paired in simple_mob/blob.dm.
