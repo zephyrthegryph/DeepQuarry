@@ -350,9 +350,8 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 /datum/om/stage/life/trait/shadekin/perform(mob/living/self, datum/om/frame/life/ctx)
 	self.shadekin?.handle_comp()
 
-/datum/shadekin/relations()
-	. = ..()
-	. += rel_many(nameof(active_dark_maws))
+CAPABILITIES(/datum/shadekin)
+	ref_many(nameof(active_dark_maws))
 
 /// Constant ability ids shared by every instance of the same concrete type.
 TYPE_TABLE_DECLARE(/datum/shadekin, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE))

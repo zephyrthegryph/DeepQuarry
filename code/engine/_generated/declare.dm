@@ -880,14 +880,16 @@
 	..(into)
 	into += entry_block("code/datums/ai_laws.dm", 37, /datum/ai_laws)
 	into += entry_line(38)
-	into += list(global.owns_one(nameof(zeroth_law), /datum/ai_law/zero))
+	into += list(global.ref_many(nameof(sorted_laws)))
 	into += entry_line(39)
-	into += list(global.owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero))
+	into += list(global.owns_one(nameof(zeroth_law), /datum/ai_law/zero))
 	into += entry_line(40)
-	into += list(global.owns_many(nameof(inherent_laws), /datum/ai_law))
+	into += list(global.owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero))
 	into += entry_line(41)
-	into += list(global.owns_many(nameof(ion_laws), /datum/ai_law/ion))
+	into += list(global.owns_many(nameof(inherent_laws), /datum/ai_law))
 	into += entry_line(42)
+	into += list(global.owns_many(nameof(ion_laws), /datum/ai_law/ion))
+	into += entry_line(43)
 	into += list(global.owns_many(nameof(supplied_laws)))
 
 /// CAPABILITIES(/datum/alarm) at code/modules/alarm/alarm.dm:26
@@ -3517,6 +3519,13 @@
 	into += list(global.owns_many(nameof(functions)))
 	into += entry_line(13)
 	into += list(global.owns_many(nameof(variables)))
+
+/// CAPABILITIES(/datum/shadekin) at code/datums/entity_state/species/shadekin/shadekin.dm:353
+/datum/shadekin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/species/shadekin/shadekin.dm", 353, /datum/shadekin)
+	into += entry_line(354)
+	into += list(global.ref_many(nameof(active_dark_maws)))
 
 /// CAPABILITIES(/datum/shred_limb_review) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:561
 /datum/shred_limb_review/declared_entries(list/into)
