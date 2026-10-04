@@ -156,8 +156,6 @@ CAPABILITIES(/mob/living/silicon/ai)
 
 	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 
-	proc_holder_list = new()
-
 	if(L)
 		if (istype(L, /datum/ai_laws))
 			rel_set(src, nameof(laws), L)
