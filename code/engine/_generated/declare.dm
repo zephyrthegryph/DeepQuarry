@@ -2333,6 +2333,13 @@
 	into += entry_line(198)
 	into += list(global.ref_one(nameof(area), /area))
 
+/// CAPABILITIES(/datum/prompt/choice/crystal_capture) at code/game/objects/items/weapons/capture_crystal.dm:404
+/datum/prompt/choice/crystal_capture/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/capture_crystal.dm", 404, /datum/prompt/choice/crystal_capture)
+	into += entry_line(405)
+	into += list(global.ref_one(nameof(capturer), /mob/living))
+
 /// CAPABILITIES(/datum/prompt/choice/fruit_gland) at code/modules/mob/living/carbon/human/species/station/alraune.dm:211
 /datum/prompt/choice/fruit_gland/declared_entries(list/into)
 	..(into)

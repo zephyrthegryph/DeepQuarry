@@ -383,7 +383,9 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else
-		om_ask(M, /datum/om/prompt/confirm/crystal_capture, PROC_REF(ask_capture_sure), message = "Would you like to be caught by in [src] by [U]? You will be bound to their will.", capturer = U)
+		if(!isnull(U) && QDELETED(U))
+			return
+		open_request(src, /datum/prompt/choice/crystal_capture, PROC_REF(ask_capture_sure), answerer = M, question = "Would you like to be caught by in [src] by [U]? You will be bound to their will.", capturer = U)
 		return
 	to_chat(U, span_warning("This creature is too strong willed to be captured."))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
@@ -391,45 +393,58 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /// Consent to being caught, asked twice. Re-checked on each answer: still conscious, the crystal
 /// still empty, still catchable, the capturer within 7 tiles. A no, a cancel or a failed check
 /// tells the capturer they were refused.
-/datum/om/prompt/confirm/crystal_capture
+/datum/prompt/choice/crystal_capture
 	title = "Become Caught"
-	no_first = TRUE
-	requires = list(/datum/om/check/conscious)
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
 	var/mob/living/capturer
+	var/capturer_required = FALSE
 
-/datum/om/prompt/confirm/crystal_capture/valid()
-	var/obj/item/capture_crystal/crystal = subject
+CAPABILITIES(/datum/prompt/choice/crystal_capture)
+	ref_one(nameof(capturer), /mob/living)
+
+/datum/prompt/choice/crystal_capture/prepare(datum/act/A)
+	..()
+	var/mob/living/captured_capturer = capturer
+	capturer_required = !isnull(captured_capturer)
+	rel_clear(src, nameof(capturer))
+	rel_set(src, nameof(capturer), captured_capturer)
+
+/datum/prompt/choice/crystal_capture/recheck_extra()
+	if(capturer_required && QDELETED(capturer))
+		return "gone"
 	var/mob/living/M = answerer
+	if(!istype(M) || M.stat != CONSCIOUS)
+		return "not conscious"
+	var/obj/item/capture_crystal/crystal = owner
 	if(crystal.bound_mob || !M.capture_crystal || M.capture_caught || get_dist(capturer, M) > 7)
 		return "not catchable"
 	return null
 
-/datum/om/prompt/confirm/crystal_capture/declined()
-	unpark()
-	tell_refused()
-	return ..()
-
-/datum/om/prompt/confirm/crystal_capture/cancelled()
-	tell_refused()
-	return ..()
-
-/datum/om/prompt/confirm/crystal_capture/refused(reason)
-	tell_refused()
-	return ..()
-
-/datum/om/prompt/confirm/crystal_capture/proc/tell_refused()
-	var/obj/item/capture_crystal/crystal = subject
-	crystal?.capture_refused(capturer)
-
-/obj/item/capture_crystal/proc/ask_capture_sure(datum/om/prompt/confirm/crystal_capture/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/crystal_capture, PROC_REF(capture_answered), message = "Are you really sure? The only way to undo this is to OOC escape while you're in the crystal.", capturer = ask.capturer)
+/obj/item/capture_crystal/proc/ask_capture_sure(datum/act/request/A)
+	var/datum/prompt/choice/crystal_capture/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	if(!A.answer || ask.answer_value != "Yes")
+		if(ask.outcome == REQ_CANCELLED || A.answer)
+			capture_refused(ask.capturer)
+		return
+	open_request(src, /datum/prompt/choice/crystal_capture, PROC_REF(capture_answered), answerer = ask.answerer, question = "Are you really sure? The only way to undo this is to OOC escape while you're in the crystal.", capturer = ask.capturer)
 
 /obj/item/capture_crystal/proc/capture_refused(mob/living/U)
 	if(U)
 		to_chat(U, span_warning("This creature is too strong willed to be captured."))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
-/obj/item/capture_crystal/proc/capture_answered(datum/om/prompt/confirm/crystal_capture/ask)
+/obj/item/capture_crystal/proc/capture_answered(datum/act/request/A)
+	var/datum/prompt/choice/crystal_capture/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	if(!A.answer || ask.answer_value != "Yes")
+		if(ask.outcome == REQ_CANCELLED || A.answer)
+			capture_refused(ask.capturer)
+		return
 	var/mob/living/M = ask.answerer
 	var/mob/living/U = ask.capturer
 	log_admin("[key_name(M)] has agreed to become caught by [key_name(U)].")
