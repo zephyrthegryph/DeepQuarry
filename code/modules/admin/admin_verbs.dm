@@ -603,15 +603,29 @@ ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man
 	log_and_message_admins("told everyone to man up and deal with it.", user)
 
 ADMIN_VERB(give_spell, R_FUN, "Give Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/spell_recipient)
-	var/datum/spell/S = verb_ask(user, "a20", args, /datum/om/prompt/choice, message = "Choose the spell to give to that guy", title = "ABRAKADABRA", choices = typesof(/datum/spell))
-	if(isnull(S))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_spell, PROC_REF(spell_given), answerer = answerer, question = "Choose the spell to give to that guy", title = "ABRAKADABRA", choices = typesof(/datum/spell), target_mob = spell_recipient)
+
+/datum/admin_verb/give_spell/proc/spell_given(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(give_spell_answered), A)
+	if(!result.ok)
+		stack_trace("om flow give_spell answer give_spell_answered: [result.error]")
+
+/datum/admin_verb/give_spell/proc/give_spell_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_spell/ask = A.request
+	var/mob/spell_recipient = ask.target_mob
+	var/mob/actor = ask.answerer
+	var/datum/spell/S = ask.answer_value
 	if(!S)
 		return
 	spell_recipient.spell_list += new S
 	feedback_add_details("admin_verb","GS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-	log_admin("[key_name(usr)] gave [key_name(spell_recipient)] the spell [S].")
-	message_admins(span_blue("[key_name_admin(usr)] gave [key_name(spell_recipient)] the spell [S]."), 1)
+	log_admin("[key_name(actor)] gave [key_name(spell_recipient)] the spell [S].")
+	message_admins(span_blue("[key_name_admin(actor)] gave [key_name(spell_recipient)] the spell [S]."), 1)
 
 ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/removal_target)
 	var/list/target_spell_list = list()
@@ -621,11 +635,30 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 	if(!length(target_spell_list))
 		return
 
-	var/chosen_spell = verb_ask(user, "a21", args, /datum/om/prompt/choice, message = "Choose the spell to remove from [removal_target]", title = "ABRAKADABRA", choices = sortList(target_spell_list))
-	if(isnull(chosen_spell))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(isnull(chosen_spell))
+	open_request(src, /datum/prompt/choice/admin_spell, PROC_REF(spell_removed), answerer = answerer, question = "Choose the spell to remove from [removal_target]", title = "ABRAKADABRA", choices = sortList(target_spell_list), target_mob = removal_target)
+
+/datum/admin_verb/remove_spell/proc/spell_removed(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(remove_spell_answered), A)
+	if(!result.ok)
+		stack_trace("om flow remove_spell answer remove_spell_answered: [result.error]")
+
+/datum/admin_verb/remove_spell/proc/remove_spell_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/prompt/choice/admin_spell/ask = A.request
+	var/client/user = ask.answerer?.client
+	if(!user)
+		return
+	var/mob/removal_target = ask.target_mob
+	var/list/target_spell_list = list()
+	for(var/datum/spell/spell in removal_target.spell_list)
+		target_spell_list[spell.name] = spell
+	if(!length(target_spell_list))
+		return
+	var/chosen_spell = ask.answer_value
 	var/datum/spell/to_remove = target_spell_list[chosen_spell]
 	if(!istype(to_remove))
 		return
@@ -634,6 +667,34 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 	log_admin("[key_name(user)] removed the spell [chosen_spell] from [key_name(removal_target)].")
 	message_admins("[key_name_admin(user)] removed the spell [chosen_spell] from [key_name_admin(removal_target)].")
 	feedback_add_details("admin_verb","RS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_spell
+	rights = R_FUN
+	timeout = 0
+	var/mob/target_mob
+	var/target_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/admin_spell)
+	ref_one(nameof(target_mob), /mob)
+
+/datum/prompt/choice/admin_spell/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured = target_mob
+	target_expected = !isnull(captured)
+	rel_clear(src, nameof(target_mob))
+	rel_set(src, nameof(target_mob), captured)
+
+/datum/prompt/choice/admin_spell/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return target_expected && QDELETED(target_mob) ? "target is gone" : null
+
+/datum/prompt/choice/admin_spell/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 ADMIN_VERB(debug_statpanel, R_DEBUG, "Debug Stat Panel", "Toggles local debug of the stat panel.", ADMIN_CATEGORY_DEBUG_MISC)
 	user.stat_panel.send_message("create_debug")
