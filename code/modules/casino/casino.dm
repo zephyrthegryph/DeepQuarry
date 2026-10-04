@@ -613,6 +613,9 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	var/sentientprizes_ckeys_list = list() //Same trick as lottery, to keep life simple
 	var/obj/item/clothing/accessory/collar/casinosentientprize/selected_collar = null
 
+CAPABILITIES(/obj/machinery/casinosentientprize_handler)
+	ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize)
+
 /obj/machinery/casinosentientprize_handler/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/casinosentientprize_use,
@@ -650,7 +653,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 			if("Show selected Prize")
 				if(QDELETED(selected_collar))
 					if(selected_collar)
-						LAZYREMOVE(collar_list, selected_collar)
+						rel_remove(src, nameof(collar_list), selected_collar)
 						sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
 						rel_clear(src, nameof(selected_collar))
 					to_chat(user, span_warning("No collar is currently selected or the currently selected one has been destroyed or disabled."))
@@ -669,7 +672,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 					return
 				rel_set(src, nameof(selected_collar), _answer_k624)
 				if(QDELETED(selected_collar))
-					LAZYREMOVE(collar_list, selected_collar)
+					rel_remove(src, nameof(collar_list), selected_collar)
 					sentientprizes_ckeys_list -= selected_collar?.sentientprizeckey
 					to_chat(user, span_warning("No collars to chose, or selected collar has been destroyed or deactived, selection has been removed from list."))
 					rel_clear(src, nameof(selected_collar))
@@ -711,7 +714,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 				C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!"
 				C.icon_state = "casinoslave_available"
 				C.update_icon()
-				LAZYADD(collar_list, C)
+				rel_add(src, nameof(collar_list), C)
 
 				spawn_casinochips(casinosentientprize_price, src.loc)
 	return TRUE
@@ -782,7 +785,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 			C.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [C.sentientprizename], but harsh red text informs you its been disabled."
 			sentientprizes_ckeys_list -= C.sentientprizeckey
 			C.sentientprizeckey = null
-			LAZYREMOVE(collar_list, C)
+			rel_remove(src, nameof(collar_list), C)
 	return TRUE
 
 /datum/interaction/machine_item/casinosentientprize_id
@@ -826,7 +829,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 					to_chat(user, span_warning("No collar selected!"))
 					return TRUE
 				if(QDELETED(selected_collar))
-					LAZYREMOVE(collar_list, selected_collar)
+					rel_remove(src, nameof(collar_list), selected_collar)
 					sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
 					to_chat(user, span_warning("Collar has been destroyed!"))
 					rel_clear(src, nameof(selected_collar))
@@ -844,7 +847,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 						selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled."
 						sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
 						selected_collar.sentientprizeckey = null
-						LAZYREMOVE(collar_list, selected_collar)
+						rel_remove(src, nameof(collar_list), selected_collar)
 						rel_clear(src, nameof(selected_collar))
 						return TRUE
 					to_chat(user, span_warning("Registry deletion aborted! Changed collar selection!"))
@@ -972,7 +975,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename], but harsh red text informs you its been disabled."
 		sentientprizes_ckeys_list -= collar.sentientprizeckey
 		collar.sentientprizeckey = null
-		LAZYREMOVE(collar_list, collar)
+		rel_remove(src, nameof(collar_list), collar)
 		if(selected_collar == collar)
 			rel_clear(src, nameof(selected_collar))
 

@@ -25,7 +25,7 @@ CAPABILITIES(/datum/ttv_bomb_review)
 	max_value = INFINITY
 
 /datum/ttv_bomb_review/proc/start()
-	if(QDELETED(actor) || !actor.client?.holder || !check_rights_for(actor.client, R_SPAWN))
+	if(QDELETED(actor) || !admin_can(actor.client, R_SPAWN))
 		consume(src)
 		return
 	var/datum/result/result = safe_call(PROC_REF(start_step))

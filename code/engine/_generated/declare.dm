@@ -12289,6 +12289,13 @@
 	into += entry_line(47)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(camera_emp)))))
 
+/// CAPABILITIES(/obj/machinery/casinosentientprize_handler) at code/modules/casino/casino.dm:616
+/obj/machinery/casinosentientprize_handler/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/casino.dm", 616, /obj/machinery/casinosentientprize_handler)
+	into += entry_line(617)
+	into += list(global.ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize))
+
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
 	..(into)
