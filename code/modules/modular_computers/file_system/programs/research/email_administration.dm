@@ -17,6 +17,7 @@
 
 CAPABILITIES(/datum/computer_file/program/email_administration)
 	ref_one(nameof(current_account), /datum/computer_file/data/email_account)
+	extend(TAG_UI, needs(req(PROC_REF(ui_network_access), silent = TRUE)))
 	interface("NtosEmailAdministration")
 	op("back", ui_act("back"), then(PROC_REF(ui_act_back)))
 	op("ban", ui_act("ban"), then(PROC_REF(ui_act_ban)))
@@ -69,13 +70,11 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 
 	return data
 
-/datum/computer_file/program/email_administration/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/obj/item/card/id/I = ui.user.GetIdCard()
-	if(!istype(I) || !(ACCESS_NETWORK in I.GetAccess()))
-		return FALSE
-	return TRUE
+/// Only somebody with an ID that has network access works the program (silently: anyone else is not answered).
+/datum/computer_file/program/email_administration/proc/ui_network_access(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = user.GetIdCard()
+	return istype(I) && (ACCESS_NETWORK in I.GetAccess())
 
 /datum/computer_file/program/email_administration/proc/ui_act_back(datum/act/op/A)
 	if(error)
