@@ -33,7 +33,7 @@ export function verdigrisCacheDir(): string | null {
   const env = process.env.DQ_VERDIGRIS_CACHE;
   if (env === 'off' || env === '0') return null;
   if (env) return path.resolve(env);
-  if (process.platform === 'win32' && fs.existsSync('D:/')) return 'D:/dq-cache/verdigris';
+  if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/verdigris';
   return path.join(os.homedir(), '.cache', 'dq', 'verdigris');
 }
 

@@ -997,6 +997,8 @@
 
 #include "round2_rms_material_choice_native.dm"
 
+#include "round2_crayon_native_drawing.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

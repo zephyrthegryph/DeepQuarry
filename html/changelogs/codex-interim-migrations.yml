@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Moved crayon drawing choices to native requests with checks when opening and answering."

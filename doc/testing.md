@@ -32,7 +32,7 @@ shuts down. It also repacks icons and builds Verdigris first if they are stale.
 Verdigris comes from a shared cache when it can: the build keys the DLL on the
 git ids of its inputs at `HEAD` (the `verdigris/` tree, the generated bindings,
 target, profile, `RUSTFLAGS`) and copies a cached build from
-`DQ_VERDIGRIS_CACHE` (default `D:/dq-cache/verdigris`) instead of running cargo,
+`DQ_VERDIGRIS_CACHE` (default `E:/dq-cache/verdigris`) instead of running cargo,
 so a new worktree needs no `verdigris/target`. A miss builds and stores the DLL
 (atomic temp-dir rename; the newest 10 entries and anything used in 14 days are
 kept). Uncommitted edits to those inputs skip the cache. `DQ_VERDIGRIS_CACHE=off`
