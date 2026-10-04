@@ -108,7 +108,7 @@
 	subject.assignment = "Assistant"
 	press(H, C, "assign", list("assign_target" = "No Such Job"))
 	TEST_ASSERT_EQUAL(subject.assignment, "Assistant", "a job nobody has a log for changes nothing")
-	press(H, C, "assign", list("assign_target" = "Custom"))
+	press(H, C, "assign_custom")
 	TEST_ASSERT(p2cl_has_question(H), "a custom assignment asks for the text")
 
 /datum/unit_test/dq_hc_computers/card_print
@@ -192,3 +192,55 @@
 	for(var/obj/item/paper/P in C.loc)
 		after++
 	TEST_ASSERT_EQUAL(after, before + 1, "the log is printed")
+
+// ---- added with the conversion: what the answers do (a test mob has no client, so a legacy prompt could not be answered) ----
+
+/datum/unit_test/dq_hc_computers/card_custom_assignment_answer
+/datum/unit_test/dq_hc_computers/card_custom_assignment_answer/run_gate()
+	var/list/R = hc_card_ready()
+	var/obj/machinery/computer/card/C = R[1]
+	var/mob/living/carbon/human/H = R[2]
+	var/obj/item/card/id/subject = R[4]
+	press(H, C, "assign_custom")
+	p2cl_answer(H, "Space Janitor")
+	test_time(1 SECONDS)
+	TEST_ASSERT_EQUAL(subject.assignment, "Space Janitor", "the answer is the assignment")
+
+/datum/unit_test/dq_hc_computers/guestpass_answers
+/datum/unit_test/dq_hc_computers/guestpass_answers/run_gate()
+	var/obj/machinery/computer/guestpass/C = hc_console(/obj/machinery/computer/guestpass)
+	var/mob/living/carbon/human/H = hc_actor()
+	press(H, C, "giv_name")
+	p2cl_answer(H, "Visitor Vee")
+	test_time(1 SECONDS)
+	TEST_ASSERT_EQUAL(C.giv_name, "Visitor Vee", "the name is set")
+	press(H, C, "reason")
+	p2cl_answer(H, "Touring the lab")
+	test_time(1 SECONDS)
+	TEST_ASSERT_EQUAL(C.reason, "Touring the lab", "the reason is set")
+	press(H, C, "duration")
+	p2cl_answer(H, 30)
+	test_time(1 SECONDS)
+	TEST_ASSERT_EQUAL(C.duration, 30, "the duration is set")
+	press(H, C, "duration")
+	p2cl_answer(H, 0)
+	test_time(1 SECONDS)
+	TEST_ASSERT_EQUAL(C.duration, 30, "a duration of nothing is ignored")
+
+/datum/unit_test/dq_hc_computers/guest_pass_deactivation
+/datum/unit_test/dq_hc_computers/guest_pass_deactivation/run_gate()
+	var/mob/living/carbon/human/H = hc_actor()
+	var/obj/item/card/id/guest/G = allocate(/obj/item/card/id/guest, hc_side())
+	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
+	G.expired = 0
+	G.icon_state = "guest"
+	hc_hold(H, G)
+	G.interaction_guest_pass_deactivate(H, G, null)
+	TEST_ASSERT(p2cl_has_question(H), "deactivating asks first")
+	p2cl_answer(H, FALSE)
+	test_time(1 SECONDS)
+	TEST_ASSERT(!G.expired, "a no leaves the pass alone")
+	G.interaction_guest_pass_deactivate(H, G, null)
+	p2cl_answer(H, TRUE)
+	test_time(1 SECONDS)
+	TEST_ASSERT(G.expired, "a yes deactivates it")
