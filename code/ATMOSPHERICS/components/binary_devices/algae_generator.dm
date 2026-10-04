@@ -35,6 +35,9 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	owns_one(nameof(internal), /datum/gas_mixture)
+	interface("AlgaeFarm")
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("ejectMaterial", ui_act("ejectMaterial", arg("mat", schema_text(4096))), then(PROC_REF(ui_act_ejectmaterial)))
 
 /// Switched to active (grow lights on) and operable: it converts while this holds.
 OM_DERIVE_FIELD(/obj/machinery/atmospherics/binary/algae_farm, farming, list("operable", "use_power"))
@@ -197,9 +200,18 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/algae_farm, "algae-{appea
 
 	moles_per_tick = initial(moles_per_tick) + (manip_rating**2 - 1)
 
-DECLARE_UI(/obj/machinery/atmospherics/binary/algae_farm, "AlgaeFarm")
-
-UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/algae_farm, "panelOpen=panel_open:num", "last_flow_rate:num", "last_power_draw:num", "usePower=use_power", "errorText=ui_error", "merge:ui_data_obj_machinery_atmospherics_binary_algae_farm{materials:list,inputDir:text,outputDir:text,input:list,output:list}")
+/obj/machinery/atmospherics/binary/algae_farm/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["panelOpen"] = panel_open
+	data["last_flow_rate"] = last_flow_rate
+	data["last_power_draw"] = last_power_draw
+	data["usePower"] = use_power
+	data["errorText"] = ui_error
+	var/list/merged_1 = ui_data_obj_machinery_atmospherics_binary_algae_farm(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/atmospherics/binary/algae_farm's window data (declared on its UI_DATA row).
 /obj/machinery/atmospherics/binary/algae_farm/proc/ui_data_obj_machinery_atmospherics_binary_algae_farm(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -232,14 +244,8 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/algae_farm, "panelOpen=panel_
 
 	return data
 
-/obj/machinery/atmospherics/binary/algae_farm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/atmospherics/binary/algae_farm, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_toggle)
+/obj/machinery/atmospherics/binary/algae_farm/proc/ui_act_toggle(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(use_power == USE_POWER_IDLE)
 		set_use_power(USE_POWER_ACTIVE)
 	else
@@ -247,9 +253,9 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_toggle)
 		show_idle_readout()
 	. = TRUE
 
-UI_ACT(/obj/machinery/atmospherics/binary/algae_farm, "ejectMaterial", ui_act_ejectmaterial, UI_ARG_TEXT("mat"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_ejectmaterial)
-	var/matName = params["mat"]
+/obj/machinery/atmospherics/binary/algae_farm/proc/ui_act_ejectmaterial(datum/act/op/A, mat)
+	add_fingerprint(A.actor)
+	var/matName = mat
 	if(!(matName in stored_material))
 		return
 	eject_materials(matName, 0)

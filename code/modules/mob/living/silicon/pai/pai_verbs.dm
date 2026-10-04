@@ -179,11 +179,13 @@
 		to_chat(src, span_warning("Your selected chassis eye color can not be modified. The color you pick will only apply to supporting chassis and your card screen."))
 		return
 
-	om_ask(src, /datum/om/prompt/color, PROC_REF(pai_eye_color_chosen), title = "Eye Color", message = "Choose your character's eye color:")
+	open_request(src, /datum/prompt/color, PROC_REF(pai_eye_color_chosen), answerer = src, title = "Eye Color", question = "Choose your character's eye color:", timeout = 0)
 
-/mob/living/silicon/pai/proc/pai_eye_color_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		eye_color = ask.picked_color
+/mob/living/silicon/pai/proc/pai_eye_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		eye_color = A.answer.answer_value
 		update_icon()
 		card.setEmotion(card.current_emotion)
 

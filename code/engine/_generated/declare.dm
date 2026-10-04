@@ -3767,32 +3767,32 @@
 	into += entry_line(102)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(hit_breaks_cloak))))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1131
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1133
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1131, /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
-	into += entry_line(1132)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1133, /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
+	into += entry_line(1134)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1134
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1136
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1134, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
-	into += entry_line(1135)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1136, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
+	into += entry_line(1137)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1140
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1142
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1140, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
-	into += entry_line(1141)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1142, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
+	into += entry_line(1143)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1137
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1139
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1137, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
-	into += entry_line(1138)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1139, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
+	into += entry_line(1140)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/bigdragon) at code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm:972
@@ -4305,6 +4305,12 @@
 	into += entry_block("code/modules/xenoarcheaology/tools/tools.dm", 291, /obj/item/beacon_locator)
 	into += entry_line(292)
 	into += list(global.op("interaction_open", global.in_hand(), global.label("Open"), global.then(PROC_REF(interaction_open))))
+	into += entry_line(293)
+	into += list(global.interface("BeaconLocator"))
+	into += entry_line(294)
+	into += list(global.op("reset_tracking", global.ui_act("reset_tracking"), global.then(PROC_REF(ui_act_reset_tracking))))
+	into += entry_line(295)
+	into += list(global.op("setFrequency", global.ui_act("setFrequency", global.arg("freq", global.num())), global.then(PROC_REF(ui_act_setfrequency))))
 
 /// CAPABILITIES(/obj/item/beehive_assembly) at code/modules/hydroponics/beekeeping/beehive.dm:370
 /obj/item/beehive_assembly/declared_entries(list/into)
@@ -5046,12 +5052,18 @@
 	into += entry_line(119)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/destTagger) at code/modules/recycling/destination_tagger.dm:32
+/// CAPABILITIES(/obj/item/destTagger) at code/modules/recycling/destination_tagger.dm:37
 /obj/item/destTagger/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/recycling/destination_tagger.dm", 32, /obj/item/destTagger)
-	into += entry_line(33)
+	into += entry_block("code/modules/recycling/destination_tagger.dm", 37, /obj/item/destTagger)
+	into += entry_line(38)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+	into += entry_line(39)
+	into += list(global.interface("DestinationTagger"))
+	into += entry_line(40)
+	into += list(global.op("set_tag", global.ui_act("set_tag", global.arg("tag", global.schema_text(4096))), global.then(PROC_REF(ui_act_set_tag))))
+	into += entry_line(41)
+	into += list(global.op("new_tag", global.ui_act("new_tag", global.arg("tag", global.schema_text(4096))), global.then(PROC_REF(ui_act_new_tag))))
 
 /// CAPABILITIES(/obj/item/detective_scanner) at code/modules/detectivework/tools/scanner.dm:20
 /obj/item/detective_scanner/declared_entries(list/into)
@@ -8606,13 +8618,13 @@
 	into += entry_line(149)
 	into += list(global.op("read_wires", global.in_hand(), global.label("Read"), global.then(PROC_REF(interaction_read_wires))))
 
-/// CAPABILITIES(/obj/item/xenoarch_multi_tool) at code/modules/xenoarcheaology/tools/tools.dm:345
+/// CAPABILITIES(/obj/item/xenoarch_multi_tool) at code/modules/xenoarcheaology/tools/tools.dm:352
 /obj/item/xenoarch_multi_tool/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/xenoarcheaology/tools/tools.dm", 345, /obj/item/xenoarch_multi_tool)
-	into += entry_line(346)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools.dm", 352, /obj/item/xenoarch_multi_tool)
+	into += entry_line(353)
 	into += list(global.owns_one(nameof(anomaly_scanner), starts = /obj/item/ano_scanner))
-	into += entry_line(347)
+	into += entry_line(354)
 	into += list(global.owns_one(nameof(depth_scanner), starts = /obj/item/depth_scanner))
 
 /// CAPABILITIES(/obj/machinery) at code/game/machinery/machinery.dm:144
@@ -8729,6 +8741,12 @@
 	into += entry_block("code/ATMOSPHERICS/components/binary_devices/algae_generator.dm", 36, /obj/machinery/atmospherics/binary/algae_farm)
 	into += entry_line(37)
 	into += list(global.owns_one(nameof(internal), /datum/gas_mixture))
+	into += entry_line(38)
+	into += list(global.interface("AlgaeFarm"))
+	into += entry_line(39)
+	into += list(global.op("toggle", global.ui_act("toggle"), global.then(PROC_REF(ui_act_toggle))))
+	into += entry_line(40)
+	into += list(global.op("ejectMaterial", global.ui_act("ejectMaterial", global.arg("mat", global.schema_text(4096))), global.then(PROC_REF(ui_act_ejectmaterial))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni) at code/ATMOSPHERICS/components/omni_devices/omni_base.dm:28
 /obj/machinery/atmospherics/omni/declared_entries(list/into)

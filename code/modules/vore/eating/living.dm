@@ -934,11 +934,13 @@
 
 	//Again, no real need for a check on this. I'm unsure how it could be somehow abused.
 	//Even if they open the box 900 times, who cares, they get the wrong color and do it again.
-	om_ask(src, /datum/om/prompt/color, PROC_REF(glow_color_picked), default = glow_color, title = "Body Glow", message = "Select a new color")
+	open_request(src, /datum/prompt/color, PROC_REF(glow_color_picked), answerer = src, title = "Body Glow", question = "Select a new color", default = glow_color, timeout = 0)
 
-/mob/living/proc/glow_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		set_glow_color(ask.picked_color)
+/mob/living/proc/glow_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		set_glow_color(A.answer.answer_value)
 
 /mob/living/proc/get_digestion_nutrition_modifier()
 	return 1

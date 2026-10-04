@@ -91,11 +91,13 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sect_drone, /mob/living/simple_mo
 	set desc = "Customize your eyes and abdomen glow color."
 	set category = VERB_CAT_ABILITIES_SECT_DRONE
 
-	om_ask(src, /datum/om/prompt/color, PROC_REF(abdomen_color_picked), title = "Glow Color", message = "Please select color.", default = custom_eye_color)
+	open_request(src, /datum/prompt/color, PROC_REF(abdomen_color_picked), answerer = src, title = "Glow Color", question = "Please select color.", default = custom_eye_color, timeout = 0)
 
-/mob/living/simple_mob/vore/sect_drone/proc/abdomen_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		custom_eye_color = ask.picked_color
+/mob/living/simple_mob/vore/sect_drone/proc/abdomen_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		custom_eye_color = A.answer.answer_value
 		remove_eyes()
 		add_eyes()
 

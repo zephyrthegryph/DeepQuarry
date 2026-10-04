@@ -109,12 +109,15 @@ enters, leaves or is created on reads its own bucket (`RANGE_WATCH()`, behind on
 | `.../text` (`default`, `max_length`, `multiline`, `encode`, `name_text`) | `/datum/prompt/text` (`default`, `max_len`, `multiline`, `encode`, `name_text`) |
 | `.../number` (`default`, `min`, `max`) | `/datum/prompt/number` (`default`, `min_value`, `max_value`) |
 | `.../choice` (`choices`, `default`, `buttons`) | `/datum/prompt/choice` (same names) |
+| `.../color` (`default`) | `/datum/prompt/color` (`default`); the answer `picked_color` becomes `A.answer.answer_value` (a "#rrggbb" text, as before) |
 | `title`, `timeout` | `title`, `timeout` (the old default is 0, so it is written whenever absent) |
 | `message` | `question` (required: with none the old window showed nothing) |
 | `max_length = MAX_NAME_LEN` with no `name_text` | adds `name_text = TRUE` (the old rule: a name-length limit strips name tokens); any other `max_length` without `name_text` is residue |
 | handler `h(datum/om/prompt/text/ask)` | `h(datum/act/request/A)` starting with the guard of the old trigger: `if(!A.answer) return`, and for a confirm without `answer_on_no` also `|| !A.answer.answer_value`; `ask.<answer>` -> `A.answer.answer_value`, `ask.answerer` -> `A.request.answerer` |
 
 `/datum/prompt/text` gained `encode` (default TRUE, what its window always did); the old kind's `encode = FALSE` is passed through.
+A subtype of a kind with its own state (`/choice/radial`, `/color/<subtype>`, `/text/<subtype>`) is residue: the radial kind has `autopick_single_option`, `require_near`, `click_on_hover`, `user_space` and `uniqueid` and the new choice prompt's radial ring has none of them. `ask_flags` and `requires` re-check the roles when the answer arrives (code/datums/om/ask.dm, `ASK_*`); the request's equivalent is `valid = PROC_REF(x)`, which has no flag helper yet, so those sites wait for one. The same for the 130 sites in a `/datum/om/flow`.
+
 Residue: `argc`, `kind_unsupported` (a subtype of a kind carries its own state and checks), `roles_or_checks` (`asker`, `subject`, `receiver`, `requires`, `ask_flags`,
 `optional`, any `cancel_*`, `yes_text`, `no_text`, `ui_refresh`, `key`), `unsupported_param`, `no_message`, `name_text_unknown`, `handler_expr`, `comment_in_call`, `value_used`,
 `flow_receiver` (in a `/datum/om/flow`: the flow parks with its question and stops on a cancel), `handler_blocked` (the handler reads more of the prompt than the answer and answerer).
@@ -151,6 +154,8 @@ A type converts only when:
 - every `UI_ACT` has a literal action name matching `^[a-z0-9_]+$`, a proc with a `UI_ACT_PROC` under it, and argument kinds in {`NUM`, `INT`, `VALUE`} with literal or define bounds;
 - every proc is referenced only by its row and its definition, and its body uses none of `ui`, `state`, `action`, `params` other than `params["declared"]`, and `return` or `.` only as null, `TRUE`, `FALSE`, 0 or 1;
 - `A` is not a name in the body, and the declared argument names are plain identifiers that are not names used in the body.
+
+`DECLARE_UI_STATE(T, state)` is not a row of the window: it stays where it is and `ui_open()` keeps reading it (`ui_decl_of` finds the marker the row defines whether or not a `DECLARE_UI` stands beside it), so it no longer blocks a type.  A `ui_act_allowed` override is not run by the op path (`present_ui_act` runs a window button as an op before the legacy dispatch), so a type that overrides it is residue (`ui_override`) except for the one shape that is exactly `if(!..()) return FALSE`, `add_fingerprint(ui.user)` (or `user`), `return TRUE` with no related type defining one: that guard is always TRUE, the override is deleted and `add_fingerprint(A.actor)` becomes the first statement of every converted handler (the same effect, once per press, before anything else). Only a type under `/atom` converts: `ui_data` and `present_interface` are on `/atom`, so a `/datum` window (the tgui_* prompt windows, tgui modules, panels) is residue `ui_not_atom` until the new output procs reach `/datum`.
 
 Residue codes: `ui_options`, `ui_state`, `ui_forms` (a form outside the list), `ui_related` (a related type declares UI), `ui_override`, `act_name`, `arg_kind`, `proc_missing`, `proc_shared`, `body_uses` (`ui`, `state`, `action`, other `params`, an odd return), `name_clash`, `data_rows`.
 
