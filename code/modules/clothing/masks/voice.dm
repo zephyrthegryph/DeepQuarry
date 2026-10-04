@@ -22,7 +22,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/voice, \
 
 /// Old verb "Set Voice".
 /obj/item/clothing/mask/gas/voice/proc/voice_set_voice_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/new_name = rerun_ask(user, "a1", PROC_REF(voice_set_voice_verb), list(user), /datum/om/prompt/text, message = "Whose voice should it mimic?", title = "Set Voice", max_length = MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text, PROC_REF(voice_name_entered), answerer = user, question = "Whose voice should it mimic?", title = "Set Voice", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
+
+/obj/item/clothing/mask/gas/voice/proc/voice_name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/new_name = A.answer.answer_value
 	if(isnull(new_name) || get(src, /mob) != user)
 		return
 	var/voice = sanitize(new_name, MAX_NAME_LEN)
