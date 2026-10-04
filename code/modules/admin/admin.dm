@@ -797,7 +797,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyz
 /datum/admin_verb/paralyze_mob/proc/toggle_paralyze(client/user, mob/living/living_target, _answer_a15 = null, answered = FALSE)
 	var/msg
 	if (!living_target.has_status(EFFECT_PARALYZED))
-		living_target.status_set(EFFECT_PARALYZED, 8000)
+		living_target.status_set(EFFECT_PARALYZED, 800 SECONDS)
 		msg = "has paralyzed [key_name(living_target)]."
 		log_and_message_admins(msg, user)
 		return
