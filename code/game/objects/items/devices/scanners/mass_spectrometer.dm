@@ -30,26 +30,29 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	else
 		icon_state = initial(icon_state)
 
-DECLARE_INTERACTIONS(/obj/item/mass_spectrometer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/mass_spectrometer/proc/can_analyze)))
+CAPABILITIES(/obj/item/mass_spectrometer)
+	op("analyze", in_hand(), needs(req(PROC_REF(can_analyze), because = MSG(spectrometer/clumsy))), then(PROC_REF(analyzed)))
 
-/// Requirement: only a dexterous user can work the spectrometer.
-/obj/item/mass_spectrometer/proc/can_analyze(mob/user, atom/target, obj/item/held)
+MSG_DEF_SELF(spectrometer/clumsy, "you don't have the dexterity to do this")
+
+/// Requirement: only a dexterous user can work the spectrometer (one who is out cold is let through: the effect declines silently).
+/obj/item/mass_spectrometer/proc/can_analyze(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat)
-		return TRUE // the effect declines silently
-	if(!user.IsAdvancedToolUser())
-		return "you don't have the dexterity to do this"
-	return TRUE
+		return TRUE
+	return user.IsAdvancedToolUser()
 
-/obj/item/mass_spectrometer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mass_spectrometer/proc/analyzed(datum/act/op/A)
+	var/mob/user = A.actor
 	if (user.stat)
-		return
+		return OP_OK
 	if(reagents.total_volume)
 		var/list/blood_traces = list()
 		for(var/datum/reagent/R in reagents.reagent_list)
 			if(R.id != REAGENT_ID_BLOOD)
 				reagents.clear_reagents()
 				to_chat(user, span_warning("The sample was contaminated! Please insert another sample"))
-				return
+				return OP_OK
 			else
 				blood_traces = params2list(R.data["trace_chem"])
 				break
@@ -61,7 +64,7 @@ DECLARE_INTERACTIONS(/obj/item/mass_spectrometer, INTERACT_USE(null, PROC_REF(in
 				dat += "[R] "
 		to_chat(user, "[dat]")
 		reagents.clear_reagents()
-	return
+	return OP_OK
 
 /obj/item/mass_spectrometer/adv
 	name = "advanced mass spectrometer"

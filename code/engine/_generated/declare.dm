@@ -6667,6 +6667,13 @@
 	into += entry_line(173)
 	into += list(global.owns_many(nameof(stored_ammo)))
 
+/// CAPABILITIES(/obj/item/analyzer) at code/game/objects/items/devices/scanners/gas.dm:29
+/obj/item/analyzer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/gas.dm", 29, /obj/item/analyzer)
+	into += entry_line(30)
+	into += list(global.op("analyze", global.in_hand(), global.needs(global.req(PROC_REF(can_analyze), because = MSG(analyzer/clumsy))), global.then(PROC_REF(analyzed))))
+
 /// CAPABILITIES(/obj/item/ano_scanner) at code/modules/xenoarcheaology/tools/tools.dm:49
 /obj/item/ano_scanner/declared_entries(list/into)
 	..(into)
@@ -6851,6 +6858,13 @@
 	into += entry_block("code/datums/topturfcrossed.dm", 69, /obj/item/bikehorn/topturf_testing)
 	into += entry_line(70)
 	into += list(global.owns_one(nameof(topturfcrossed), starts = /datum/topturfcrossed))
+
+/// CAPABILITIES(/obj/item/binoculars) at code/game/objects/items/devices/binoculars.dm:15
+/obj/item/binoculars/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/binoculars.dm", 15, /obj/item/binoculars)
+	into += entry_line(16)
+	into += list(global.op("zoom", global.in_hand(), global.then(PROC_REF(zoomed))))
 
 /// CAPABILITIES(/obj/item/blobcore_chunk) at code/modules/blob2/core_chunk.dm:22
 /obj/item/blobcore_chunk/declared_entries(list/into)
@@ -8319,6 +8333,21 @@
 	into += entry_line(12)
 	into += list(global.op("open", global.in_hand(), global.label("Open"), global.wait(0), global.asks(/datum/prompt/choice, fields = list("question" = global.computed(PROC_REF(kit_question)), "title" = global.computed(PROC_REF(kit_title)), "choices" = global.computed(PROC_REF(kit_names)))), global.then(PROC_REF(kit_chosen))))
 
+/// CAPABILITIES(/obj/item/hailer) at code/game/objects/items/devices/whistle.dm:19
+/obj/item/hailer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/whistle.dm", 19, /obj/item/hailer)
+	into += entry_line(20)
+	into += list(global.op("use", global.in_hand(), global.then(PROC_REF(used))))
+	into += entry_line(21)
+	into += list(global.op("set_message_effect", global.menu(), global.label("Set Hailer Message"), global.needs(global.carried(), global.req(PROC_REF(not_fried), because = MSG(hailer/fried_screen))), global.then(PROC_REF(set_message_effect))))
+	into += entry_line(22)
+	into += list(global.emag(global.then(PROC_REF(on_emag)), say = MSG(hailer/overloaded), repeatable = TRUE))
+	into += entry_line(23)
+	into += list(global.extend("emag.use", global.needs(global.req(PROC_REF(not_fried), because = MSG(hailer/fried)))))
+	into += entry_line(24)
+	into += list(global.extend("emag.subvert", global.needs(global.req(PROC_REF(not_fried), because = MSG(hailer/fried)))))
+
 /// CAPABILITIES(/obj/item/haircomb) at code/game/objects/items/weapons/cosmetics.dm:89
 /obj/item/haircomb/declared_entries(list/into)
 	..(into)
@@ -8658,6 +8687,13 @@
 	into += list(global.owns_many(nameof(icon_image_cache)))
 	into += entry_line(51)
 	into += list(global.owns_many(nameof(map_image_cache)))
+
+/// CAPABILITIES(/obj/item/mass_spectrometer) at code/game/objects/items/devices/scanners/mass_spectrometer.dm:33
+/obj/item/mass_spectrometer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/mass_spectrometer.dm", 33, /obj/item/mass_spectrometer)
+	into += entry_line(34)
+	into += list(global.op("analyze", global.in_hand(), global.needs(global.req(PROC_REF(can_analyze), because = MSG(spectrometer/clumsy))), global.then(PROC_REF(analyzed))))
 
 /// CAPABILITIES(/obj/item/material) at code/game/objects/items/weapons/material/material_weapons.dm:94
 /obj/item/material/declared_entries(list/into)
@@ -11557,6 +11593,22 @@
 	into += list(global.owns_many(nameof(summoned_mobs)))
 	into += entry_line(38)
 	into += list(global.op("technomancer_core_toggle_lock_effect", global.menu(), global.label("Toggle Core Lock"), global.needs(global.carried()), global.then(PROC_REF(technomancer_core_toggle_lock_effect))))
+
+/// CAPABILITIES(/obj/item/teleportation_scroll) at code/game/objects/items/weapons/scrolls.dm:19
+/obj/item/teleportation_scroll/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/scrolls.dm", 19, /obj/item/teleportation_scroll)
+	into += entry_line(20)
+	into += list(global.op("self", global.in_hand(), global.needs(global.req(PROC_REF(can_read), because = MSG(scroll/unreadable))), global.then(PROC_REF(interaction_self))))
+
+/// CAPABILITIES(/obj/item/text_to_speech) at code/game/objects/items/devices/text_to_speech.dm:9
+/obj/item/text_to_speech/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/text_to_speech.dm", 9, /obj/item/text_to_speech)
+	into += entry_line(10)
+	into += list(global.op("use", global.in_hand(), global.needs(global.req(PROC_REF(can_activate), because = MSG(tts/disabled))), global.then(PROC_REF(used))))
+	into += entry_line(11)
+	into += list(global.op("alt", global.hand(), global.gesture(GESTURE_ALT), global.then(PROC_REF(used))))
 
 /// CAPABILITIES(/obj/item/ticket_printer) at code/game/objects/items/devices/ticket_printer.dm:13
 /obj/item/ticket_printer/declared_entries(list/into)

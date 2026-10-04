@@ -6,18 +6,19 @@
 	w_class = ITEMSIZE_SMALL
 	var/named
 
-DECLARE_INTERACTIONS(/obj/item/text_to_speech, \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/text_to_speech/proc/can_activate)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
+CAPABILITIES(/obj/item/text_to_speech)
+	op("use", in_hand(), needs(req(PROC_REF(can_activate), because = MSG(tts/disabled))), then(PROC_REF(used)))
+	op("alt", hand(), gesture(GESTURE_ALT), then(PROC_REF(used)))
+
+MSG_DEF_SELF(tts/disabled, "you cannot activate the device in your state")
 
 /// Requirement: the user has to be able to work the device.
-/obj/item/text_to_speech/proc/can_activate(mob/user, atom/target, obj/item/held)
-	if(user.incapacitated(INCAPACITATION_DISABLED))
-		return "you cannot activate the device in your state"
-	return TRUE
+/obj/item/text_to_speech/proc/can_activate(datum/act/op/A)
+	return !A.actor.incapacitated(INCAPACITATION_DISABLED)
 
-/obj/item/text_to_speech/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The use and the alt-click do the same: name the device for its first user, then ask what it should say.
+/obj/item/text_to_speech/proc/used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!named)
 		to_chat(user, "You input your name into the device.")
 		name = "[initial(name)] ([user.real_name])"
@@ -26,29 +27,18 @@ DECLARE_INTERACTIONS(/obj/item/text_to_speech, \
 
 	user.client?.start_thinking()
 	user.client?.start_typing()
-	om_ask(user, /datum/om/prompt/text/tts_message, PROC_REF(message_entered))
+	open_request(src, /datum/prompt/text, PROC_REF(message_entered), answerer = user, question = "Choose a message to relay to those around you.", default = "", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+	return OP_OK
 
-/// The message to speak. Re-checked on the answer: the device is still carried. A cancel stops the typing indicator.
-/datum/om/prompt/text/tts_message
-	message = "Choose a message to relay to those around you."
-	default = ""
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/datum/om/prompt/text/tts_message/cancelled()
-	answerer?.client?.stop_thinking()
-	return ..()
-
-/obj/item/text_to_speech/proc/message_entered(datum/om/prompt/text/tts_message/ask)
-	var/mob/user = ask.answerer
-	var/message = ask.text
-	user.client?.stop_thinking()
+/// The message to speak. Any end of the question, an answer or a cancel, stops the typing indicator; the re-check that the device is still carried ran before.
+/obj/item/text_to_speech/proc/message_entered(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	user?.client?.stop_thinking()
+	if(!A.answer)
+		return
+	var/message = A.answer.answer_value
 
 	if(message)
 		audible_message("[icon2html(src, user.client)] \The [src.name] states, \"[message]\"", runemessage = "synthesized speech")
 		if(ismob(loc))
 			loc.runechat_message("\[TTS Voice\] [message]")
-
-/// QOL change: alt-click does the same thing as self-use.
-/obj/item/text_to_speech/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_self(user, held, interaction)
-	return TRUE

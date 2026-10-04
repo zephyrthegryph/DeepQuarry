@@ -12,11 +12,18 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
-DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(interaction_zoom), REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/binoculars)
+	op("zoom", in_hand(), then(PROC_REF(zoomed)))
 
-/// Interaction payload arguments do not occupy zoom offset and view-size parameters.
-/obj/item/binoculars/proc/interaction_zoom(mob/user, obj/item/held, datum/interaction/interaction)
+/// Op payload arguments do not occupy zoom offset and view-size parameters. Someone looking through a remote view is too distracted to look through binoculars.
+/obj/item/binoculars/proc/zoomed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/refusal = zoom_view_allowed(user, src, null)
+	if(refusal != TRUE)
+		to_chat(user, span_warning(refusal))
+		return OP_REFUSED
 	zoom(user)
+	return OP_OK
 
 /obj/item/binoculars/spyglass
 	name = "spyglass"

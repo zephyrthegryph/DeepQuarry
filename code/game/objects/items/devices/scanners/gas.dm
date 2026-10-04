@@ -26,24 +26,27 @@ MATERIAL_MIX(/obj/item/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 
 	return atmosanalyzer_scan(src, air, user)
 
-DECLARE_INTERACTIONS(/obj/item/analyzer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/analyzer/proc/can_analyze)))
+CAPABILITIES(/obj/item/analyzer)
+	op("analyze", in_hand(), needs(req(PROC_REF(can_analyze), because = MSG(analyzer/clumsy))), then(PROC_REF(analyzed)))
 
-/// Requirement: only a dexterous user can work the analyzer.
-/obj/item/analyzer/proc/can_analyze(mob/user, atom/target, obj/item/held)
-	if(special_handling || user.stat)
-		return TRUE // the effect declines silently
-	if(!user.IsAdvancedToolUser())
-		return "you don't have the dexterity to do this"
-	return TRUE
+MSG_DEF_SELF(analyzer/clumsy, "you don't have the dexterity to do this")
 
-/obj/item/analyzer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: only a dexterous user can work the analyzer (one who is out cold, or an analyzer that is handled elsewhere, is let through: the effect declines silently).
+/obj/item/analyzer/proc/can_analyze(datum/act/op/A)
+	var/mob/user = A.actor
+	if(special_handling || user.stat) // ALLOW(reads): whether the analyzer is handled elsewhere is read when it is used, never from a cached menu
+		return TRUE
+	return user.IsAdvancedToolUser()
+
+/obj/item/analyzer/proc/analyzed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if (user.stat)
-		return
+		return OP_OK
 
 	analyze_gases_by(src, src, user)
-	return
+	return OP_OK
 
 /obj/item/analyzer/afterattack(obj/O, mob/user, proximity)
 	if(proximity)

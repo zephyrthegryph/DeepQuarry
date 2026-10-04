@@ -13,24 +13,32 @@
 	throw_speed = 4
 	throw_range = 20
 
-DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/teleportation_scroll/proc/can_read)))
+#define SCROLL_TELEPORT "Teleport"
+#define SCROLL_CANCEL "Cancel"
+
+CAPABILITIES(/obj/item/teleportation_scroll)
+	op("self", in_hand(), needs(req(PROC_REF(can_read), because = MSG(scroll/unreadable))), then(PROC_REF(interaction_self)))
+
+MSG_DEF_SELF(scroll/unreadable, "you stare at the scroll but cannot make sense of the markings")
 
 /// Requirement: only a wizard can make sense of the markings.
-/obj/item/teleportation_scroll/proc/can_read(mob/user, atom/target, obj/item/held)
-	if(user.mind && !GLOB.wizards.is_antagonist(user.mind))
-		return "you stare at the scroll but cannot make sense of the markings"
-	return TRUE
+/obj/item/teleportation_scroll/proc/can_read(datum/act/op/A)
+	var/mob/user = A.actor
+	return !user.mind || GLOB.wizards.is_antagonist(user.mind) // ALLOW(reads): the reader's mind is read when the scroll is used, never from a cached menu
 
 /// Old attack_self.
-/obj/item/teleportation_scroll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	// single-action panel; tgui_alert with the existing
+/obj/item/teleportation_scroll/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	// single-action panel; a two-button question with the existing
 	// uses count is the right primitive.
 	user.set_machine(src)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(scroll_answered), title = "Teleportation Scroll", yes_text = "Teleport", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS, message = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.")
-	return TRUE
+	open_request(src, /datum/prompt/choice, PROC_REF(scroll_answered), answerer = user, title = "Teleportation Scroll", question = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.", choices = list(SCROLL_TELEPORT, SCROLL_CANCEL), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS, timeout = 0)
+	return OP_OK
 
-/obj/item/teleportation_scroll/proc/scroll_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/user = ask.answerer
+/obj/item/teleportation_scroll/proc/scroll_answered(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != SCROLL_TELEPORT)
+		return
+	var/mob/living/carbon/human/user = A.request.answerer
 	if(ishuman(user) && !user.restrained() && uses >= 1)
 		teleportscroll(user)
 
@@ -91,3 +99,6 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 
 	smoke.start()
 	src.uses -= 1
+
+#undef SCROLL_TELEPORT
+#undef SCROLL_CANCEL

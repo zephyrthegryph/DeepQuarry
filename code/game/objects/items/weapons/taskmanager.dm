@@ -323,13 +323,16 @@ CAPABILITIES(/obj/item/taskmanager)
 		TM_MODE_SECURITY = radial_image_security
 	)
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(mode_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(mode_chosen), answerer = user, choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 	return TRUE
 
-/obj/item/taskmanager/proc/mode_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
-	if(!(choice in ask.choices) || !check_menu(user))
+/obj/item/taskmanager/proc/mode_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	var/datum/prompt/choice/ring = A.answer
+	var/choice = ring.answer_value
+	if(!(choice in ring.choices) || !check_menu(user))
 		return
 
 	mode = choice
