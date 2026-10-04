@@ -483,3 +483,36 @@
 	open_request(I, /datum/prompt/choice, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, choices = list("a", "b"), radial = TRUE, anchor = far)
 	test_answer(H, "a")
 	TEST_ASSERT_EQUAL(I.seen_answer, "a", "without require_near the distance does not matter")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The hand gate: a hand() op on a machine is refused for an actor who is down and for a machine that does not work, unless it says ungated().
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_machines_hand_op_keeps_the_hand_gate
+
+/datum/unit_test/dq_p2_engine/a_machines_hand_op_keeps_the_hand_gate/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/machinery/p2_hand_machine/M = allocate(/obj/machinery/p2_hand_machine)
+	test_click(H, M)
+	TEST_ASSERT_EQUAL(M.touched + M.touched_ungated, 1, "an awake actor's touch of a working machine runs one op")
+	M.touched = 0
+	M.touched_ungated = 0
+	H.set_stat(UNCONSCIOUS)
+	test_click(H, M)
+	TEST_ASSERT_EQUAL(M.touched + M.touched_ungated, 0, "an unconscious actor's touch runs nothing")
+	H.set_stat(CONSCIOUS)
+	H.status_set(EFFECT_STUNNED, 5)
+	test_click(H, M)
+	TEST_ASSERT_EQUAL(M.touched + M.touched_ungated, 0, "a stunned actor's touch runs nothing")
+	H.status_set(EFFECT_STUNNED, 0)
+	H.set_stat(CONSCIOUS)
+	M.set_stat(NOPOWER)
+	test_click(H, M)
+	TEST_ASSERT_EQUAL(M.touched, 0, "an unpowered machine refuses its hand op")
+	var/obj/machinery/p2_hand_machine/ungated/U = allocate(/obj/machinery/p2_hand_machine/ungated)
+	U.set_stat(NOPOWER)
+	test_click(H, U)
+	TEST_ASSERT_EQUAL(U.touched_ungated, 1, "but an op that says ungated() still runs on an unpowered machine")
+	H.status_set(EFFECT_STUNNED, 5)
+	test_click(H, U)
+	TEST_ASSERT_EQUAL(U.touched_ungated, 1, "though not for a stunned actor")

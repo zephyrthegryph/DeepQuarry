@@ -9,7 +9,7 @@
 	add_trait(assembly, TRAIT_NODROP, "interim_beehive_assembly")
 	TEST_ASSERT(user.release_refusal(assembly, user), "actual inventory refuses sticky assembly consumption")
 	TEST_ASSERT(!user.incapacitated(INCAPACITATION_STUNNED | INCAPACITATION_KNOCKOUT), "actual construction actor starts capable")
-	assembly.interaction_self(user, assembly, null)
+	test_op_handler(assembly, "interaction_self", user, assembly)
 	TEST_ASSERT(LAZYLEN(user.do_afters), "public construction entry starts actual timed work")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/machinery/beehive)), 0, "starting construction creates no early hive")
 	scheduler_advance((2 SECONDS) / (1 SECOND))

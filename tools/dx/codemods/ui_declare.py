@@ -460,13 +460,18 @@ def main():
                 if not rename_a:
                     bad = "name_clash"
                     break
+            local_names = {}
             for d in declared:
-                # a declared name must not already be a word of the body outside params["d"]
+                # a declared name that is already a word of the body outside params["d"] (a host var, a local) is not the parameter's name: the handler
+                # takes its arguments in order, so the parameter is called `<d>_arg` (the op's arg key stays `d`)
                 stripped = re.sub(r"\bparams\s*\[\s*\"" + d + r"\"\s*\]", "", body_c)
                 stripped = "\n".join(strip_code(x) for x in stripped.split("\n"))
+                local_names[d] = d
                 if words_in(stripped, d):
-                    bad = "name_clash"
-                    break
+                    local_names[d] = d + "_arg"
+                    if words_in(stripped, local_names[d]) or any(local_names[d] == o for o in declared):
+                        bad = "name_clash"
+                        break
             if bad:
                 break
             for bl in body.split("\n"):
@@ -480,7 +485,7 @@ def main():
                     break
             if bad:
                 break
-            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a})
+            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a, "local_names": local_names})
         if bad:
             residue[t] = bad
             continue
@@ -553,13 +558,13 @@ def main():
             for k in range(h["first"], h["last"] + 1):
                 l = f.lines[k]
                 for d in declared:
-                    l = re.sub(r"\bparams\s*\[\s*\"" + d + r"\"\s*\]", d, l)
+                    l = re.sub(r"\bparams\s*\[\s*\"" + d + r"\"\s*\]", h["local_names"][d], l)
                 l = re.sub(r"(?<![\w.])ui\.user\b", "user", l)
                 if h.get("rename_a"):
                     l = rename_local_a(l, h["rename_a"])
                 f.lines[k] = l
             body = "\n".join(strip_code(l) for l in f.lines[h["first"] : h["last"] + 1])
-            sig = t + "/proc/" + a["proc"] + "(datum/act/op/A" + "".join(", " + d for d in declared) + ")"
+            sig = t + "/proc/" + a["proc"] + "(datum/act/op/A" + "".join(", " + h["local_names"][d] for d in declared) + ")"
             # insert `user` after the leading settings
             extra = ""
             heads = (["var/mob/user = A.actor"] if words_in(body, "user") else []) + (["add_fingerprint(A.actor)"] if plan["fp"] else [])

@@ -474,6 +474,9 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 /obj/machinery/proc/hand_ok(datum/act/op/A)
 	return isnull(hand_refusal(A))
 
+/obj/machinery/op_hand_refusal(datum/act/op/A)
+	return hand_refusal(A)
+
 /obj/machinery/proc/hand_refusal(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!operable(MAINT))

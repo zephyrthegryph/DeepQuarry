@@ -24,11 +24,10 @@
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed storage clears the source hand")
 	TEST_ASSERT_NULL(owner_of(food), "the cart preserves its existing unowned contents policy")
 	cart.interaction_hand(user, null, null)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "actual retrieval opens one real choice prompt")
-	var/datum/om/prompt/choice/ask = sched.test_prompts[1]
-	made += ask
-	TEST_ASSERT_EQUAL(ask.peek("answerer"), user, "the actual choice belongs to the retrieving actor")
-	TEST_ASSERT_NULL(om_prompt_answer(ask, food), "the actual prompt accepts the original contained food")
+	var/datum/request/ask = SSrequests.open_for(user)
+	TEST_ASSERT_NOTNULL(ask, "actual retrieval opens one real choice prompt")
+	TEST_ASSERT_EQUAL(ask?.answerer, user, "the actual choice belongs to the retrieving actor")
+	test_answer(user, food)
 	TEST_ASSERT_EQUAL(user.get_active_hand(), food, "the actual selected food returns as the exact original hand item")
 	TEST_ASSERT_EQUAL(food.loc, user, "retrieval restores the original food to actual inventory")
 	TEST_ASSERT_EQUAL(contents_count(cart), 0, "retrieval empties the actual cart contents")

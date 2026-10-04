@@ -88,7 +88,7 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 		if(at == BAY_HATCH)
 			visible = cond_all(slot_var, COVER_OPEN, cond_not(COVER_REMOVED))
 	entries += op("insert", item(accepts), put_in(slot_var), at_bay)
-	entries += op("take", hand(), when(slot_var), take_out(slot_var), at_bay)
+	entries += op("take", hand(), ungated(), when(slot_var), take_out(slot_var), at_bay)
 	entries += look_layer(LOOK_CELL, when = visible)
 	entries += examine_line(CAP_PROC(examine_cell), reads = list(slot_var))
 	return entries

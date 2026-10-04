@@ -243,7 +243,7 @@
 /datum/entry/part/select
 	part_name = "select"
 	stages = PART_STAGE_MATCH
-	/// Which column: "origin", "reach", "by", "authority", "gesture", "stance", "answers", "presents".
+	/// Which column: "origin", "reach", "by", "authority", "gesture", "stance", "answers", "presents", "ungated".
 	var/column
 
 /datum/entry/part/select/origin
@@ -277,6 +277,16 @@
 /datum/entry/part/select/presents
 	part_name = "presents"
 	column = "presents"
+
+/datum/entry/part/select/ungated
+	part_name = "ungated"
+	column = "ungated"
+
+/// ungated(): the op's hand binding skips the machine half of the hand gate (power, posture, dexterity: what the old attack_hand did before `..()`;
+/// INTERACT_HAND_UNGATED). Every hand() op is refused for an actor who is unconscious or stunned; without ungated() one on a machine is also refused for
+/// a machine that does not work and an actor who is down or cannot use their hands.
+/proc/ungated()
+	return part_make(/datum/entry/part/select/ungated, list("value" = TRUE))
 
 /// answers(INTENT_X...): the intents the op answers (replaces what the binding implies).
 /proc/answers(...)

@@ -557,6 +557,7 @@
 	settle()
 	TEST_ASSERT_NOTEQUAL(analyzer.mode, mode, "an alt-click with an empty hand flips the mode")
 	mode = analyzer.mode
+	H.set_stat(CONSCIOUS) // the test floor has no air: settle() let the actor fall unconscious, and an unconscious hand does nothing
 	hci_click(H, analyzer, analyzer, I_HELP, "alt=1")
 	settle()
 	TEST_ASSERT_NOTEQUAL(analyzer.mode, mode, "an alt-click with the analyzer in hand flips the mode")

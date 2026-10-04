@@ -6,10 +6,7 @@
 	for(var/choice in options)
 		var/obj/item/sleevemate/scanner = allocate(/obj/item/sleevemate, T)
 		TEST_ASSERT(user.put_in_active_hand(scanner), "the original scanner can be held")
-		var/datum/om/prompt/choice/ask = allocate(/datum/om/prompt/choice)
-		set_var(ask, "answerer", user)
-		ask.choice = choice
-		var/completed = scanner.hack_chosen(ask)
+		var/completed = test_request_handler(scanner, "hack_chosen", user, choice)
 		own_turf_contents(T)
 		TEST_ASSERT_EQUAL(completed, 1, "a supported hack completes")
 		TEST_ASSERT(QDELETED(scanner), "hacking consumes the original scanner")
@@ -20,9 +17,6 @@
 		TEST_ASSERT(!user.is_in_hands(successor), "hacking does not silently equip the replacement")
 		qdel(successor)
 	var/obj/item/sleevemate/unchanged = allocate(/obj/item/sleevemate, T)
-	var/datum/om/prompt/choice/invalid = allocate(/datum/om/prompt/choice)
-	set_var(invalid, "answerer", user)
-	invalid.choice = "Invalid hack"
-	unchanged.hack_chosen(invalid)
+	test_request_handler(unchanged, "hack_chosen", user, "Invalid hack")
 	TEST_ASSERT(!QDELETED(unchanged), "an unsupported choice cannot consume the scanner")
 	TEST_ASSERT_EQUAL(unchanged.loc, T, "an unsupported choice preserves its location")

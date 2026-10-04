@@ -52,10 +52,10 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/item/pen/pen = allocate(/obj/item/pen, safe)
 	safe.open = FALSE
-	TEST_ASSERT(safe.ui_act_retrieve(actor, list("ref" = pen), null, null, "retrieve"), "a closed-safe action is handled")
+	TEST_ASSERT(test_op_handler(safe, "ui_act_retrieve", actor, null, REF(pen)), "a closed-safe action is handled")
 	TEST_ASSERT_EQUAL(pen.loc, safe, "a closed safe retains its item")
 	safe.open = TRUE
-	TEST_ASSERT(safe.ui_act_retrieve(actor, list("ref" = pen), null, null, "retrieve"), "an open-safe action is handled")
+	TEST_ASSERT(test_op_handler(safe, "ui_act_retrieve", actor, null, REF(pen)), "an open-safe action is handled")
 	TEST_ASSERT_EQUAL(pen.loc, actor, "the open safe gives its item to the explicit actor")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), pen, "the retrieved item occupies the actor's hand")
 

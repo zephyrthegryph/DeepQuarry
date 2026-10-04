@@ -30,7 +30,7 @@ use crate::{pat, pat_match};
 const LINT: &str = "derived_reads";
 const SKIP_SITE_DIRS: &[&str] = &["code/modules/unit_tests/"];
 const GENERATED_SKIP_DIRS: &[&str] = &["code/modules/unit_tests/", "code/modules/benchmarks/"];
-const GENERATED_REL: &str = "code/_generated/reads.dm";
+pub(crate) const GENERATED_REL: &str = "code/_generated/reads.dm";
 const EXEMPT_VARS: &[&str] = &["cap_state", "cap_data"];
 const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
 const OBJECT_ROOTS: &[&str] = &["datum", "obj", "mob", "atom", "turf", "area", "client", "image", "list"];
@@ -1044,6 +1044,11 @@ fn boot_text(model: &Model) -> Vec<String> {
     out
 }
 
+/// The text of `code/_generated/reads.dm` for these files (the `derived_reads` generator, `analyze gen derived_reads`, writes it).
+pub(crate) fn generated_for(tree: &Tree, files: &[&SourceFile]) -> String {
+    generated_text(&Model::get(tree, files))
+}
+
 fn generated_text(model: &Model) -> String {
     // owner -> (kind, derive name or "") -> vars
     let mut per_owner: BTreeMap<String, BTreeMap<(String, String), Vec<String>>> = BTreeMap::new();
@@ -1271,16 +1276,11 @@ impl Lint for DerivedReads {
         let files = cx.files();
         let model = Model::get(cx.tree, &files);
         let want = generated_text(&model);
-        // The Python writer was deleted with the port: DQ_WRITE_GENERATED=1 rewrites the committed file from the model (the stale check then passes).
-        if std::env::var("DQ_WRITE_GENERATED").is_ok() {
-            let _ = std::fs::write(cx.tree.root.join(GENERATED_REL), want.as_bytes());
-            return false;
-        }
         let current = cx.tree.read_extra(GENERATED_REL);
         if current.as_deref().map(|s| s.as_str()) != Some(want.as_str()) {
             let _ = writeln!(
                 text,
-                "derived_reads: {} is stale; run `python tools/ci/derived_reads_lint.py --fix-generated` and commit it",
+                "derived_reads: {} is stale; run `analyze gen derived_reads` and commit it",
                 GENERATED_REL
             );
             return true;

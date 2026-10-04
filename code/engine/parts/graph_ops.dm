@@ -98,6 +98,7 @@
 			parts += part
 	if(!isnull(G.bay))
 		parts += at(G.bay)
+	parts += ungated() // building and taking apart a machine is not using it: no power or posture gate of the hand
 	parts += part_make(/datum/entry/part/effect/graph_advance, list("into" = edge.into, "key" = edge.key, "cap" = cap_id))
 	return entry_make(ENTRY_OP, graph_edge_base_key(edge, "build"), null, parts)
 
@@ -128,6 +129,7 @@
 			parts += part
 	if(!isnull(G.bay))
 		parts += at(G.bay)
+	parts += ungated()
 	parts += part_make(/datum/entry/part/effect/graph_undo, list("cap" = cap_id))
 	return entry_make(ENTRY_OP, graph_edge_base_key(edge, "undo"), null, parts)
 
