@@ -881,37 +881,56 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 	if ((!( SSticker ) || !SSemergency_shuttle.location()))
 		return
 
-	om_flow_start(/datum/om/flow/admin_call_shuttle, user.mob, null, requires = PROMPT_ADMIN(permissions))
+	user.mob?.ask_admin_shuttle_call(permissions)
 
-/// Admin shuttle call: confirm, confirm again when it would auto-recall, then evac or transfer.
-/datum/om/flow/admin_call_shuttle
-	name = "admin call shuttle"
+/// Each admin shuttle question checks the original actor's rights and the public shuttle location.
+/datum/prompt/choice/admin_call_shuttle
+	timeout = 0
 	var/recall = FALSE
 
-/datum/om/flow/admin_call_shuttle/valid()
+/datum/prompt/choice/admin_call_shuttle/recheck_extra()
 	return (SSticker && SSemergency_shuttle.location()) ? null : "no shuttle"
 
-/datum/om/flow/admin_call_shuttle/start()
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(confirmed), title = "Confirm", message = "You sure?")
-
-/datum/om/flow/admin_call_shuttle/proc/confirmed()
-	if(SSticker.mode.auto_recall_shuttle)
-		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(recall_confirmed), title = "Shuttle Call", message = "The shuttle will just return if you call it. Call anyway?", yes_text = "Confirm", no_text = "Cancel")
+/datum/prompt/choice/admin_call_shuttle/begin()
+	var/reason = request_recheck(src)
+	if(reason)
+		request_end(src, REQ_CANCELLED, null)
 		return
-	ask_kind()
+	return ..()
 
-/datum/om/flow/admin_call_shuttle/proc/recall_confirmed()
-	recall = TRUE
-	ask_kind()
+/mob/proc/ask_admin_shuttle_call(rights)
+	open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_call_confirmed), answerer = src, rights = rights, buttons = TRUE, choices = list("Yes", "No"), title = "Confirm", question = "You sure?")
 
-/datum/om/flow/admin_call_shuttle/proc/ask_kind()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(call_answered), title = "Shuttle Call", message = "Is this an emergency evacuation or a crew transfer?", choices = list("Emergency", "Crew Transfer"))
+/mob/proc/admin_shuttle_call_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
+	if(ask.answer_value != "Yes")
+		return
+	if(SSticker.mode.auto_recall_shuttle)
+		open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_recall_confirmed), answerer = src, rights = ask.rights, buttons = TRUE, choices = list("Confirm", "Cancel"), title = "Shuttle Call", question = "The shuttle will just return if you call it. Call anyway?")
+		return
+	ask_admin_shuttle_kind(ask.rights, FALSE)
 
-/datum/om/flow/admin_call_shuttle/proc/call_answered(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	if(recall)
+/mob/proc/admin_shuttle_recall_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
+	if(ask.answer_value != "Confirm")
+		return
+	ask_admin_shuttle_kind(ask.rights, TRUE)
+
+/mob/proc/ask_admin_shuttle_kind(rights, recall)
+	open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_call_answered), answerer = src, rights = rights, recall = recall, title = "Shuttle Call", question = "Is this an emergency evacuation or a crew transfer?", choices = list("Emergency", "Crew Transfer"))
+
+/mob/proc/admin_shuttle_call_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
+	var/mob/user = src
+	if(ask.recall)
 		SSemergency_shuttle.auto_recall = TRUE	//enable auto-recall
-	if (ask.choice == "Emergency")
+	if (ask.answer_value == "Emergency")
 		SSemergency_shuttle.call_evac()
 	else
 		SSemergency_shuttle.call_transfer()
