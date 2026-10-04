@@ -264,6 +264,7 @@ def main():
     residue = {}  # type -> reason
     plans = {}
     vars_by_type = collect_vars(files) if asks_on else None
+    vars_all = collect_vars(files)
     all_code = "\n".join(code_text.values())
     # Mentions that are neither a UI row nor a definition: calls, PROC_REFs, whatever could depend on a handler's signature.
     other_mentions = "\n".join(
@@ -321,6 +322,8 @@ def main():
     for t, rs in sorted(rows.items()):
         if only and t != only:
             continue
+        if all(r[0] == "UI_ACT_OVERRIDE" for r in rs):
+            continue  # a descendant's override of a button handler: it converts with the window that declares the button, and is nothing by itself
         if t in skip:
             residue[t] = "ui_gate_reads"  # --skip: the reads lint rejects the guard's untracked reads (see codemod_rules.md)
             continue
@@ -334,10 +337,13 @@ def main():
             residue[t] = "ui_options"
             continue
         window, title = m.group(2), m.group(3)
-        if any(k not in ("DECLARE_UI", "DECLARE_UI_STATE", "UI_ACT", "UI_ACT_PROC", "UI_DATA", "UI_DATA_REPLACE") for k in kinds):
+        if any(k not in ("DECLARE_UI", "DECLARE_UI_STATE", "UI_ACT", "UI_ACT_PROC", "UI_DATA", "UI_DATA_REPLACE", "UI_ACT_FALLBACK", "UI_ACT_FORWARD") for k in kinds):
             residue[t] = "ui_forms"
             continue
-        if any(related(t, u) for u in types if u != t and u != "/datum"):  # the root /datum row (change_ui_state) is every window's: it stays legacy and conflicts with nothing
+        def override_only(u):
+            return u.startswith(t + "/") and all(r[0] == "UI_ACT_OVERRIDE" for r in rows[u])
+
+        if any(related(t, u) and not override_only(u) for u in types if u != t and u != "/datum"):  # the root /datum row (change_ui_state) is every window's: it stays legacy and conflicts with nothing
             residue[t] = "ui_related"
             continue
         tre = re.escape(t)
@@ -388,10 +394,54 @@ def main():
         if bad:
             residue[t] = bad
             continue
+        fb_rows = [r for r in rs if r[0] == "UI_ACT_FALLBACK"]
+        fwd_rows = [r for r in rs if r[0] == "UI_ACT_FORWARD"]
+        if len(fb_rows) > 1 or len(fwd_rows) > 1:
+            residue[t] = "ui_forms"
+            continue
+        for k, rel, idx, text in fb_rows:
+            # UI_ACT_FALLBACK(T, proc): every window action no row names. It is the op ui_act("*"); the handler reads which action with A.window_action().
+            fparts = split_args(inner_of_call(text, "UI_ACT_FALLBACK") or "")
+            if len(fparts) != 2 or fparts[0] != t or not re.match(r"^[A-Za-z_]\w*$", fparts[1]):
+                bad = "ui_forms"
+                break
+            acts.append({"rel": rel, "idx": idx, "action": "*", "key": re.sub(r"^ui_act_", "", fparts[1]) or fparts[1], "proc": fparts[1], "specs": [], "fallback": True})
+        if bad:
+            residue[t] = bad
+            continue
+        acts.sort(key=lambda x: (x["rel"], x["idx"]))
+        forward = None
+        for k, rel, idx, text in fwd_rows:
+            # UI_ACT_FORWARD(T, proc) with `proc(mob/user, action)` returning one var of the holder: interface(forwards = nameof(var))
+            fparts = split_args(inner_of_call(text, "UI_ACT_FORWARD") or "")
+            if len(fparts) != 2 or fparts[0] != t or not re.match(r"^[A-Za-z_]\w*$", fparts[1]):
+                bad = "ui_forms"
+                break
+            fdef = None
+            for frel, ff in files.items():
+                for fi, fl in enumerate(ff.lines):
+                    if fl and re.match(r"^" + re.escape(t) + r"/(?:proc/)?" + re.escape(fparts[1]) + r"\(\s*mob/user\s*,\s*action\s*\)\s*(//.*)?$", fl):
+                        fdef = (frel, fi)
+                        break
+                if fdef:
+                    break
+            if not fdef or len(words_in(other_mentions, fparts[1])) != 0:
+                bad = "ui_forward_expr"
+                break
+            ffirst, flast = body_range(files[fdef[0]].lines, fdef[1])
+            fbody = [strip_code(l).strip() for l in files[fdef[0]].lines[ffirst : flast + 1] if strip_code(l).strip()]
+            fm = re.match(r"^return\s+([a-z_]\w*)$", fbody[0]) if len(fbody) == 1 else None
+            if not fm or fm.group(1) not in holder_vars_of(vars_all, t):
+                bad = "ui_forward_expr"
+                break
+            forward = {"var": fm.group(1), "def": fdef, "first": ffirst, "last": flast, "row": (rel, idx)}
+        if bad:
+            residue[t] = bad
+            continue
         if len({a["action"] for a in acts}) != len(acts) or len({a["proc"] for a in acts}) != len(acts):
             residue[t] = "proc_shared"
             continue
-        if not acts:
+        if not acts and not forward:
             residue[t] = "no_ops"  # a window with no buttons has nothing to type (ui_types) and nothing to gain
             continue
         data_rows = [r for r in rs if r[0] in ("UI_DATA", "UI_DATA_REPLACE")]
@@ -438,7 +488,7 @@ def main():
                 residue[t] = "data_rows"
                 continue
             data = {"row": data_rows[0], "fields": fields}
-        plan = {"type": t, "window": window, "title": title, "acts": acts, "data": data, "rows": rs, "handlers": [], "fp": fp if guard == "fp" else None, "pred": fp if guard == "pred" else None, "state": None}
+        plan = {"type": t, "window": window, "title": title, "acts": acts, "data": data, "rows": rs, "handlers": [], "fp": fp if guard == "fp" else None, "pred": fp if guard == "pred" else None, "state": None, "forward": forward}
         # DECLARE_UI_STATE(T, GLOB.tgui_x_state) -> interface(.., state = nameof(GLOB.tgui_x_state)); (T, ADMIN_STATE(rights)) -> interface(.., rights = rights):
         # the row goes. Any other expression (an instance's own state) keeps its row, which ui_open() still reads.
         state_rows = [r for r in rs if r[0] == "DECLARE_UI_STATE"]
@@ -453,17 +503,38 @@ def main():
                 elif am:
                     plan["state"] = ("rights = %s" % am.group(1), state_rows[0])
         # ---- handlers
+        handler_jobs = []
         for a in acts:
-            pat = re.compile(r"^UI_ACT_PROC\(" + tre + r",\s*" + re.escape(a["proc"]) + r"\)\s*(//.*)?$")
-            hit = None
-            for rel in {r[1] for r in rs} | set(files):
-                f = files[rel]
-                for i, l in enumerate(f.lines):
-                    if pat.match(l):
-                        hit = (rel, i)
+            handler_jobs.append({"act": a, "owner": t, "row": None})
+            for u in sorted(types):
+                if u != t and override_only(u):
+                    for k, rel, idx, text in rows[u]:
+                        om = re.match(r"^UI_ACT_OVERRIDE\((/[\w/]+),\s*(\w+)\)\s*(//.*)?$", text)
+                        if om and om.group(2) == a["proc"] and om.group(1) == u:
+                            handler_jobs.append({"act": a, "owner": u, "row": (rel, idx)})
+        known_procs = {a["proc"] for a in acts}
+        for u in sorted(types):
+            if u != t and override_only(u):
+                for k, rel, idx, text in rows[u]:
+                    om = re.match(r"^UI_ACT_OVERRIDE\((/[\w/]+),\s*(\w+)\)", text)
+                    if not om or om.group(2) not in known_procs:
+                        bad = "ui_override_other"
+        if bad:
+            residue[t] = bad
+            continue
+        for job in handler_jobs:
+            a = job["act"]
+            hit = job["row"]
+            if not hit:
+                pat = re.compile(r"^UI_ACT_PROC\(" + tre + r",\s*" + re.escape(a["proc"]) + r"\)\s*(//.*)?$")
+                for rel in {r[1] for r in rs} | set(files):
+                    f = files[rel]
+                    for i, l in enumerate(f.lines):
+                        if pat.match(l):
+                            hit = (rel, i)
+                            break
+                    if hit:
                         break
-                if hit:
-                    break
             if not hit:
                 bad = "proc_missing"
                 break
@@ -492,7 +563,7 @@ def main():
                 bad = "proc_shared"
                 break
             body_no_user = re.sub(r"(?<![\w.])ui\.user\b", "user", body)  # ui.user is the viewer: the handler's `user`
-            for w in ("ui", "state", "action", "update_icon", "visible_message"):
+            for w in ("ui", "state") + (() if a.get("fallback") else ("action",)) + ("update_icon", "visible_message"):
                 if words_in(body_no_user, w):
                     bad = "body_uses"
                     break
@@ -541,7 +612,7 @@ def main():
                     break
             if bad:
                 break
-            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a, "local_names": local_names, "asks": asks, "body": body})
+            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a, "local_names": local_names, "asks": asks, "body": body, "owner": job["owner"], "override": job["row"] is not None})
         if bad:
             residue[t] = bad
             continue
@@ -621,7 +692,7 @@ def main():
             continue
         tre = re.escape(t)
         entries = []
-        entries.append('interface("%s"%s%s)' % (plan["window"], (', title = "%s"' % plan["title"]) if plan["title"] is not None else "", (", " + plan["state"][0]) if plan["state"] else ""))
+        entries.append('interface("%s"%s%s%s)' % (plan["window"], (', title = "%s"' % plan["title"]) if plan["title"] is not None else "", (", " + plan["state"][0]) if plan["state"] else "", (", forwards = nameof(%s)" % plan["forward"]["var"]) if plan["forward"] else ""))
         for a in plan["acts"]:
             parts = ['"%s"' % a["action"]]
             for kind, name, bounds in a["specs"]:
@@ -636,7 +707,7 @@ def main():
             need = ", needs(req(PROC_REF(ui_gate), silent = TRUE))" if plan["pred"] else ""
             hh = next(h for h in plan["handlers"] if h["act"] is a)
             asks_text = "".join(", " + x for x in hh["ask_parts"])
-            entries.append('op("%s", %s%s%s, then(PROC_REF(%s)))' % (a["action"], ui, need, asks_text, a["proc"]))
+            entries.append('op("%s", %s%s%s, then(PROC_REF(%s)))' % (a.get("key", a["action"]), ui, need, asks_text, a["proc"]))
         # handlers
         for h in plan["handlers"]:
             a = h["act"]
@@ -659,12 +730,12 @@ def main():
                     l = rename_local_a(l, h["rename_a"])
                 f.lines[k] = l
             body = "\n".join(strip_code(l or "") for l in f.lines[h["first"] : h["last"] + 1])
-            sig = t + "/proc/" + a["proc"] + "(datum/act/op/A" + "".join(", " + h["local_names"][d] for d in declared) + ")"
+            sig = (h["owner"] + "/" if h["override"] else t + "/proc/") + a["proc"] + "(datum/act/op/A" + "".join(", " + h["local_names"][d] for d in declared) + ")"
             if h["helpers"]:
                 sig = "\n\n".join(h["helpers"]) + "\n\n" + sig
             # insert `user` after the leading settings
             extra = ""
-            heads = (["var/mob/user = A.actor"] if words_in(body, "user") else []) + (["add_fingerprint(A.actor)"] if plan["fp"] else []) + [LA.answer_local(ask) for ask in h["asks"] if words_in(body, ask["name"])]
+            heads = (["var/mob/user = A.actor"] if words_in(body, "user") else []) + (["var/action = A.window_action()"] if a.get("fallback") and words_in(body, "action") else []) + (["add_fingerprint(A.actor)"] if plan["fp"] else []) + [LA.answer_local(ask) for ask in h["asks"] if words_in(body, ask["name"])]
             if heads:
                 after = h["idx"]
                 k = h["first"]
@@ -755,6 +826,18 @@ def main():
                 ff.lines[k] = None
             ff.lines[ffirst] = text
             ff.dirty = True
+        if plan["forward"]:
+            frel, fi = plan["forward"]["def"]
+            for k in range(fi, plan["forward"]["last"] + 1):
+                files[frel].lines[k] = None
+            files[frel].dirty = True
+            # the doc comment of the row goes with it
+            rrel, ridx = plan["forward"]["row"]
+            k = ridx - 1
+            while k >= 0 and files[rrel].lines[k] is not None and files[rrel].lines[k].startswith("///"):
+                files[rrel].lines[k] = None
+                k -= 1
+            files[rrel].dirty = True
         # delete the legacy rows; the declaration line becomes the block (or goes, when the type already has one)
         block_file = None
         for rel, f in files.items():

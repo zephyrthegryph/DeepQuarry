@@ -153,15 +153,53 @@ The window itself is opened through the `tgui_interact(user)` bridge (`ui_open()
 
 A type converts only when:
 - it has exactly one `DECLARE_UI` and no `UI_WATCH`, `UI_PINNED`, `UI_AUTOUPDATE`, `UI_PREINITIALIZED`, `UI_STATE`, `UI_FROM_VAR` or any other option;
-- no other form is used for it: `UI_SUBACT*`, `UI_ACT_NESTED`, `UI_ACT_FORWARD`, `UI_ACT_FALLBACK`, `UI_ACT_OVERRIDE`, `UI_ACT_PREF_PROC`, a second `UI_DATA`;
-- no type related to it by path (an ancestor or a descendant) declares any UI row, and it has no `ui_act_allowed`, `tgui_data`, `tgui_act`, `ui_status` or `tgui_interact` override of its own;
+- no other form is used for it: `UI_SUBACT*`, `UI_ACT_NESTED`, `UI_ACT_PREF_PROC`, a second `UI_DATA` (`UI_ACT_FORWARD`, `UI_ACT_FALLBACK` and a descendant's `UI_ACT_OVERRIDE` convert with the window: "Window routing" below);
+- no type related to it by path (an ancestor or a descendant) declares any UI row (a descendant that only has `UI_ACT_OVERRIDE` rows of this window's handlers is part of the unit), and it has no `ui_act_allowed`, `tgui_data`, `tgui_act`, `ui_status` or `tgui_interact` override of its own;
 - every `UI_ACT` has a literal action name matching `^[a-z0-9_]+$`, a proc with a `UI_ACT_PROC` under it, and argument kinds in {`NUM`, `INT`, `VALUE`} with literal or define bounds;
 - every proc is referenced only by its row and its definition, and its body uses none of `ui`, `state`, `action`, `params` other than `params["declared"]`, and `return` or `.` only as null, `TRUE`, `FALSE`, 0 or 1;
 - `A` is not a name in the body, and the declared argument names are plain identifiers that are not names used in the body.
 
 `DECLARE_UI_STATE(T, state)` is carried by `interface()`: `DECLARE_UI_STATE(T, GLOB.tgui_physical_state)` becomes `interface("Window", state = nameof(GLOB.tgui_physical_state))` (the name of the state global, read when the window opens, so the declaration never depends on the global init order) and `DECLARE_UI_STATE(T, ADMIN_STATE(R_ADMIN | R_EVENT))` becomes `interface("Window", rights = R_ADMIN | R_EVENT)` (`rights` with no `state` is `ADMIN_STATE(rights)`); the row is deleted. `ui_open()` reads it through `interface_state()` (code/datums/sys/ui.dm), before the host's own `tgui_window_state` var and `ui_rights`, which still apply to a type that sets them (a state that depends on the instance stays a `tgui_state()` override, and a `DECLARE_UI_STATE` of any other expression keeps its row, which `ui_open()` still reads through the legacy marker). Test: `dq_gap/interface_carries_its_state`.  A `ui_act_allowed` override is not run by the op path (`present_ui_act` runs a window button as an op before the legacy dispatch), so a type that overrides it is residue (`ui_override`) except for the one shape that is exactly `if(!..()) return FALSE`, `add_fingerprint(ui.user)` (or `user`), `return TRUE` with no related type defining one: that guard is always TRUE, the override is deleted and `add_fingerprint(A.actor)` becomes the first statement of every converted handler (the same effect, once per press, before anything else). A `ui_act_allowed` that is `if(!..()) return FALSE`, then a pure test of the viewer and host (no `action`, `state`, other `ui`, no effects, no assignments but locals), then `return TRUE`, becomes one silent requirement: `/T/proc/ui_gate(datum/act/op/A)` (the same body, `ui.user` read as `user` from `A.actor`) and `needs(req(PROC_REF(ui_gate), silent = TRUE))` on every op of the type (`silent` is the empty refusal reason, so the viewer is told nothing, as the old bare `return FALSE` did). The `reads` lint judges the body like any requirement: a guard reading an untracked var is residue (`--skip TYPE`, counted as `ui_gate_reads`; run the codemod with `MSYS_NO_PATHCONV=1` on Windows). A `/datum` window converts like an atom (`ui_data` is on `/datum`; a window's buttons have no reach to check); `ui.user` in a handler is `user`; a local named `A` in a handler is renamed `A2` (the act is `A`).
 
-Residue codes: `ui_options`, `ui_state`, `ui_forms` (a form outside the list), `ui_related` (a related type declares UI), `ui_override`, `act_name`, `arg_kind`, `proc_missing`, `proc_shared`, `body_uses` (`ui`, `state`, `action`, other `params`, an odd return), `name_clash`, `data_rows`.
+Residue codes: `ui_options`, `ui_state`, `ui_forms` (a form outside the list), `ui_related` (a related type declares UI), `ui_override`, `ui_override_other` (a descendant overrides a proc that is not one of the window's handlers), `ui_forward_expr` (the forwarding proc is not `return <var of the holder>`), `act_name`, `arg_kind`, `proc_missing`, `proc_shared`, `body_uses` (`ui`, `state`, `action`, other `params`, an odd return), `name_clash`, `data_rows`.
+
+## Window routing: UI_ACT_FALLBACK, UI_ACT_FORWARD, UI_ACT_OVERRIDE
+
+The three forms that decided which handler a window action reaches, as op forms (tests `dq_gap/ui_fallback_answers_the_actions_nothing_names`, `ui_forward_and_override_route_the_button`; `ui_declare.py`, fixture `routing`).
+
+| Old | New |
+|---|---|
+| `UI_ACT_FALLBACK(T, proc)` (every window action no `UI_ACT` row names: an embedded controller's program commands) | `op("key", ui_act("*"), then(PROC_REF(proc)))`: `ui_act("*")` answers every window action no op of the holder names (the named op always wins); the handler is `proc(datum/act/op/A)` and reads which action reached it with `A.window_action()` (`var/action = A.window_action()`). A fallback that must take only some of the actions says so with a requirement, `needs(req(PROC_REF(known), silent = TRUE))`, which also reads `A.window_action()` |
+| `UI_ACT_FORWARD(T, proc)` with `proc(mob/user, action)` returning the datum (the sleeper console's window is its sleeper's panel) | `interface("Window", forwards = nameof(var))`: a window action the holder has no op for goes to the datum(s) in `var` (a var of the holder holding one datum or a list); the first target with an op for it answers, as if its own window had sent the button. At most `OP_UI_FORWARD_DEPTH` windows deep. A proc that is not `return <var>` is residue `ui_forward_expr` |
+| `UI_ACT_OVERRIDE(U, proc)` (a descendant replaces the handler of a parent's button) | nothing to declare: `then(PROC_REF(proc))` is looked up on the holder, so `/U/proc(datum/act/op/A, args...)` (an override, no `proc/`) is the handler of the parent's op. A descendant that re-declares the button (`UI_ACT` of the same action) re-declares the op: a later declaration of a key replaces the earlier |
+
+A window with a forward and no button is typed from its `ui_shape()` (the typed window needs one: `interface("Window", forwards = ...)` with neither `ui_shape()` nor a `ui_act()` op has nothing to type, an `analyze gen` diagnostic). The tgui `modal_open` / `modal_answer` / `modal_close` actions
+have their own rule, "Modals" below.
+
+## Modals: ui_modal_* -> asks(..., inline)
+
+A tgui modal (code/modules/tgui/modal.dm: `ui_modal_opened()` builds it by id, `ui_modal_answered()` uses the answer) is a question shown inside the window. The new form is the question itself: `asks()` with the field `inline = TRUE` shows the prompt as a modal of the asking
+holder's window (code/engine/present/prompt_modals.dm) instead of a window of its own, and the op that opens it is bound to the window action `"modal:<id>"` (the engine maps the client's `modal_open` of id `<id>` to it). The client needs no change: it reads `data["modal"]` (added by
+`present_tgui_data()`), answers with `modal_answer` and closes with `modal_close`. Test: `dq_gap/modal_is_a_question_in_the_window`.
+
+| Old | New |
+|---|---|
+| `ui_modal_opened(user, "id", arguments, ...)` case that calls `tgui_modal_input(src, "id", text, delegate, arguments, value, max_length)` | `op("id", ui_act("modal:id", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = text, "default" = value, "max_len" = n, "inline" = TRUE), step = "id"), then(PROC_REF(x)))` |
+| `tgui_modal_choice(src, "id", text, delegate, arguments, value, choices)` | `asks(/datum/prompt/choice, fields = list("question" = text, "choices" = ..., "default" = value, "inline" = TRUE))` (a list shown as a dropdown; a radial choice has no inline form) |
+| `tgui_modal_boolean(src, "id", text, delegate, delegate_no, arguments, yes_text, no_text)` | `asks(/datum/prompt/yes_no, fields = list("question" = text, "yes_text" = ..., "no_text" = ..., "inline" = TRUE))`; "no" answers FALSE (use `confirms()` semantics with `confirms("text")` when a no should end the op) |
+| `tgui_modal_bento(src, "id", text, delegate, arguments, value, choices)`, `tgui_modal_bento_spritesheet` | `asks(/datum/prompt/choice, fields = list("question" = text, "choices" = ..., "default" = value, "bento" = "spritesheet", "inline" = TRUE))` (`"bento" = TRUE` for the image grid): the window answers with an index and the answer is the choice at it |
+| `tgui_modal_message(src, "id", text, delegate, arguments)` (a message whose body the client draws from `arguments`) | no question to ask: the `modal:` op's `then()` calls `tgui_modal_message(src, "id", text, null, A.args["arguments"])` (the op replaces the `ui_modal_opened()` case; `modal_close` clears it) |
+| `ui_modal_answered(user, "id", answer, arguments, ...)` case | the `then()` handler of the op: `A.answer.answer_value` is the answer (number for a number kind), `A.args["arguments"]` what the client passed |
+| chained modals (an answer opens the next one, passing `arguments` on) | one op with several `asks()` steps, each `inline`; the steps replace each other as the window's modal |
+
+One modal per window at a time, as before: opening another ends the first question cancelled, and closing the modal cancels the op (nothing was spent). Kinds with an inline form: text, number, choice (a dropdown or a bento grid; a radial ring has none), yes_no. `"modal_id" = "x"` names the modal of a step when it is not the op's (several steps of one op each their own modal).
+
+## Yes/no labels
+
+`/datum/prompt/yes_no` has `yes_text` and `no_text` ("Yes" / "No"): `asks(/datum/prompt/yes_no, fields = list("question" = ..., "yes_text" = "Confirm", "no_text" = "Cancel"))`, `open_request(src, /datum/prompt/yes_no, PROC_REF(h), yes_text = "Launch", no_text = "Cancel", ...)`, or a kind
+with the labels as its defaults (`/datum/prompt/yes_no/x` with `yes_text = "Launch"`). A label that depends on the asker is `computed(PROC_REF(x))`. The labels are the alert window's buttons, the inline modal's `yes_text` / `no_text`, and what `answer_of_button()` calls a yes. The old
+`om_ask(..., yes_text = ..., no_text = ...)` is residue `roles_or_checks` of the om_ask codemod (analyze); the labels the hand conversions dropped were restored: the newscaster ("Confirm" / "Cancel"), the records "Delete", the shuttle "Launch", the toilet crystal, the trash pile, the canvas.
+Test: `dq_gap/yes_no_carries_its_labels`.
 
 ## DECLARE_INTERACTIONS -> op()
 

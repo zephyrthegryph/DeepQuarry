@@ -722,9 +722,11 @@
 /// and use it): `nameof(GLOB.tgui_physical_state)`, the name of a state global (read when the window opens, so the declaration never depends on the global init
 /// order), or a /datum/tgui_state; `rights` (an R_* mask, at least one of them) with no state is ADMIN_STATE(rights). Neither: the default state, or the
 /// host's own `tgui_window_state` var / `ui_rights` (interface_state() in code/datums/sys/ui.dm). A state that depends on the instance stays a
-/// tgui_state() override.
-/proc/interface(window, title = null, rights = null, host = null, input = null, state = null)
-	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
+/// tgui_state() override. `forwards` (nameof(var): a var of the holder that holds the datum, or a list of them) is where a window action the holder has no
+/// op for goes: the sleeper console's window is its sleeper's panel, so every button of it is an op of the sleeper (the old UI_ACT_FORWARD). The target's
+/// op answers as if its own window sent the button; the actor's reach to the target is not asked (a window's ops have none).
+/proc/interface(window, title = null, rights = null, host = null, input = null, state = null, forwards = null)
+	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state, "forwards" = forwards)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
 
 /// ui_shape(operating, channels = list_of(row(...))): the declared shape of the window's data. `analyze gen ui_types` reads the declaration from source and
 /// writes the TypeScript type of the window (each field's schema range as the doc comment of its field); at runtime the entry carries no data. It is a

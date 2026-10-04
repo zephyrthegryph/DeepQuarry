@@ -20,6 +20,9 @@
 	var/default
 	/// A few choices as buttons instead of a list.
 	var/buttons = FALSE
+	/// Inline only (asks(..., "inline" = TRUE)): the choices are shown as a grid of images ("bento"), or of spritesheet classes ("spritesheet"), and the
+	/// window answers with the index of one: the old bento modals. Null: a dropdown.
+	var/bento
 	/// A radial ring around `anchor` (default: the answerer) instead of a window.
 	var/radial = FALSE
 	/// Where the radial ring is drawn.
@@ -42,6 +45,33 @@
 	var/require_near = FALSE
 	/// The key GLOB.radial_menus holds the ring under (default: the answerer and the anchor); asking again with the same key closes the open ring.
 	var/uniqueid
+
+/datum/prompt/choice/inline_type()
+	if(radial)
+		return null
+	if(bento)
+		return bento == "spritesheet" ? "bentospritesheet" : "bento"
+	return "choice"
+
+/datum/prompt/choice/inline_preprocess(answer)
+	return bento ? (text2num(answer) || 0) : answer
+
+/// A dropdown answers with one of the choices; a bento grid answers with the index of one (its value is the choice).
+/datum/prompt/choice/inline_answer(answer)
+	if(bento)
+		return (isnum(answer) && answer >= 1 && answer <= length(choices)) ? choices[answer] : null
+	return (answer in choices) ? answer : null
+
+/datum/prompt/choice/inline_data(list/data)
+	if(bento)
+		data["choices"] = choices.Copy()
+		data["value"] = default ? choices.Find(default) : 0
+		return
+	var/list/names = list()
+	for(var/name in choices)
+		names += "[name]"
+	data["choices"] = names
+	data["value"] = default
 
 /datum/prompt/choice/refusal(given)
 	if(isnull(given) || !(given in choices))

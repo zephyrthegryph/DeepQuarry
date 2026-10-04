@@ -181,6 +181,10 @@
 	if(islist(own))
 		for(var/key in own)
 			data[key] = own[key]
+	// A question shown in this window (asks(..., inline = TRUE)) is its modal: the client's ComplexModal reads data["modal"].
+	var/list/modal = tgui_modal_data(holder)
+	if(modal)
+		data["modal"] = modal
 	present_ui_data(holder, data)
 
 /// A window button the holder answers with an op that has a ui_act() binding: runs it as the player (origin ORIGIN_UI), its arguments through the

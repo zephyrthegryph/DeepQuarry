@@ -43,6 +43,15 @@
 #define CAND_HELD 2
 #define CAND_ACTOR 3
 
+/// The window action names the engine gives a meaning: ui_act("*") answers every window action no op names, `modal_open` is how a client opens a modal of its
+/// window (the op's ui_act is "modal:<id>"), and the action that reached an op is A.args["window_action"] (A.window_action()).
+#define OP_UI_ANY "*"
+#define OP_UI_MODAL_OPEN "modal_open"
+#define OP_UI_MODAL_PREFIX "modal:"
+#define OP_UI_WINDOW_ACTION "window_action"
+/// How many windows deep a window action is forwarded (interface(forwards = ...)).
+#define OP_UI_FORWARD_DEPTH 3
+
 /// The refusal reason an engine gate reports when no binding of an op accepts the origin it was given.
 #define GATE_ORIGIN "origin"
 #define GATE_PROVIDER "provider"

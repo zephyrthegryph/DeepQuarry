@@ -163,9 +163,17 @@
 	return op_ui_act(E.actor, window, E.action, E.payload)
 
 /// The plan of `holder` whose ui_act() binding answers window action `action`: the binding's own name, else the op's key, else the key without
-/// its capability's prefix.
-/proc/op_plan_by_ui_action(datum/holder, action, list/activation_out)
+/// its capability's prefix. Two names are the engine's: `modal_open` (the client opens a modal of its window by id) is the action "modal:<id>", and an
+/// op that says ui_act("*") answers every window action no op of the holder names (the old UI_ACT_FALLBACK). The named one always wins; `exact`
+/// leaves the fallback out.
+/proc/op_plan_by_ui_action(datum/holder, action, list/activation_out, list/payload = null, exact = FALSE)
 	RETURN_TYPE(/datum/op_plan)
+	if(action == OP_UI_MODAL_OPEN && istext(payload?["id"]))
+		var/datum/op_plan/modal_plan = op_plan_by_ui_action(holder, "[OP_UI_MODAL_PREFIX][payload["id"]]", activation_out, null, TRUE)
+		if(modal_plan)
+			return modal_plan
+	var/datum/op_plan/fallback = null
+	var/datum/activation/fallback_activation = null
 	for(var/datum/op_src/S as anything in op_sources_of(holder))
 		var/datum/op_plan/P = S.oplan
 		for(var/datum/entry/part/bind/B as anything in P.bindings)
@@ -176,20 +184,22 @@
 				if(S.activation)
 					activation_out += S.activation
 				return P
-	return null
+			if(named == OP_UI_ANY && !fallback)
+				fallback = P
+				fallback_activation = S.activation
+	if(exact || !fallback)
+		return null
+	if(fallback_activation)
+		activation_out += fallback_activation
+	return fallback
 
 /// A window button: the op with that ui_act() binding runs with origin ORIGIN_UI, its arguments validated by their schemas first.
-/proc/op_ui_act(mob/actor, datum/holder, action, list/payload)
+/proc/op_ui_act(mob/actor, datum/holder, action, list/payload, forward_depth = 0)
 	RETURN_TYPE(/datum/op_result)
 	var/list/found = list()
-	var/datum/op_plan/P = op_plan_by_ui_action(holder, action, found)
+	var/datum/op_plan/P = op_plan_by_ui_action(holder, action, found, payload)
 	if(!P)
-		return null
-	var/datum/entry/part/bind/ui_binding = null
-	for(var/datum/entry/part/bind/B as anything in P.bindings)
-		if(B.bind_kind == BIND_UI)
-			ui_binding = B
-			break
+		return op_ui_forward(actor, holder, action, payload, forward_depth)
 	var/list/values = list()
 	var/why = op_validate_args(P.ui_args, holder, payload, values)
 	if(why)
@@ -201,7 +211,29 @@
 		op_tell(actor, why)
 		TEST_REC_OUTCOME(P.key, ACT_REFUSED, why, actor)
 		return refused
+	values[OP_UI_WINDOW_ACTION] = action // the op reads which action reached it with A.window_action() (a ui_act("*") op answers many)
 	return op_perform_by_key(actor, holder, null, P.key, ORIGIN_UI, actor_authority(actor), FALSE, values)
+
+/// A window action the holder has no op for goes to the datums its interface(forwards = nameof(var)) names (a var holding one datum or a list): the first with
+/// an op for it answers, as if its own window had sent the button (the old UI_ACT_FORWARD). A forward goes at most OP_UI_FORWARD_DEPTH windows deep.
+/proc/op_ui_forward(mob/actor, datum/holder, action, list/payload, forward_depth = 0)
+	RETURN_TYPE(/datum/op_result)
+	if(forward_depth >= OP_UI_FORWARD_DEPTH)
+		return null
+	var/datum/entry/declared = present_interface(holder)
+	var/where = declared?.args["forwards"]
+	if(!istext(where) || !(where in holder.vars))
+		return null
+	var/targets = holder.vars[where]
+	if(!islist(targets))
+		targets = targets ? list(targets) : null
+	for(var/datum/target as anything in targets)
+		if(QDELETED(target) || target == holder)
+			continue
+		var/datum/op_result/answered = op_ui_act(actor, target, action, payload, forward_depth + 1)
+		if(answered)
+			return answered
+	return null
 
 /// Runs a payload through the declared arg() schemas: fills `values` (name -> value) and returns a reason when one is refused. A number outside
 /// its range is clamped and logged; any other failure refuses the press.

@@ -65,9 +65,9 @@ CAPABILITIES(/obj/structure/trash_pile)
 		var/mob/living/L = user
 		//They're in it, and want to get out.
 		if(L.loc == src)
-			open_request(src, /datum/prompt/yes_no, PROC_REF(exit_answered), answerer = user, title = "Un-Hide?", question = "Do you want to exit \the [src]?", ask_flags = ASK_INSIDE, timeout = 0)
+			open_request(src, /datum/prompt/yes_no, PROC_REF(exit_answered), answerer = user, title = "Un-Hide?", question = "Do you want to exit \the [src]?", yes_text = "Exit", no_text = "Stay", ask_flags = ASK_INSIDE, timeout = 0)
 		else if(!hider())
-			open_request(src, /datum/prompt/yes_no, PROC_REF(hide_answered), valid = PROC_REF(hide_valid), answerer = user, title = "Un-Hide?", question = "Do you want to hide in \the [src]?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+			open_request(src, /datum/prompt/yes_no, PROC_REF(hide_answered), valid = PROC_REF(hide_valid), answerer = user, title = "Un-Hide?", question = "Do you want to hide in \the [src]?", yes_text = "Hide", no_text = "Stay", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	else
 		return ..()
 

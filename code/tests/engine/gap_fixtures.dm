@@ -216,4 +216,95 @@ CAPABILITIES(/obj/gap_pass)
 	second++
 	return OP_OK
 
+/// A window with a named button, a fallback for the actions its list names, and two modals (a text question and a labelled yes/no).
+/obj/gap_window
+	name = "gap window"
+	var/static/list/valid_actions = list("alpha", "beta")
+	var/list/log
+
+CAPABILITIES(/obj/gap_window)
+	interface("GapPanel")
+	op("named", ui_act("named"), then(PROC_REF(named_pressed)))
+	op("program", ui_act("*"), needs(req(PROC_REF(known_action), silent = TRUE)), then(PROC_REF(program_pressed)))
+	op("note", ui_act("modal:note", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Note?", "default" = "none", "inline" = TRUE), step = "note"), then(PROC_REF(note_entered)))
+	op("style", ui_act("modal:style"), asks(/datum/prompt/choice, fields = list("question" = "Style?", "choices" = list("a", "b", "c"), "bento" = "spritesheet", "inline" = TRUE), step = "style"), then(PROC_REF(styled)))
+	op("confirm", ui_act("modal:confirm"), asks(/datum/prompt/yes_no, fields = list("question" = "Sure?", "yes_text" = "Do it", "no_text" = "Leave it", "inline" = TRUE), step = "sure"), then(PROC_REF(confirmed)))
+
+/obj/gap_window/proc/styled(datum/act/op/A)
+	LAZYADD(log, "style:[A.answer.answer_value]")
+	return OP_OK
+
+/obj/gap_window/proc/log_text()
+	return jointext(log, ",")
+
+/obj/gap_window/proc/known_action(datum/act/op/A)
+	return (A.window_action() in valid_actions)
+
+/obj/gap_window/proc/named_pressed(datum/act/op/A)
+	LAZYADD(log, "named")
+	return OP_OK
+
+/obj/gap_window/proc/program_pressed(datum/act/op/A)
+	LAZYADD(log, "program:[A.window_action()]")
+	return OP_OK
+
+/obj/gap_window/proc/note_entered(datum/act/op/A)
+	LAZYADD(log, "note:[A.answer.answer_value]")
+	return OP_OK
+
+/obj/gap_window/proc/confirmed(datum/act/op/A)
+	LAZYADD(log, "confirmed:[A.answer.answer_value]")
+	return OP_OK
+
+/// A subtype that overrides what the button does: then(PROC_REF(named_pressed)) is looked up on the holder, so the override is the handler.
+/obj/gap_window/locked
+	name = "gap window locked"
+
+/obj/gap_window/locked/named_pressed(datum/act/op/A)
+	LAZYADD(log, "locked")
+	return OP_OK
+
+/// A console whose window is the window of the unit it points at: every button is the unit's.
+/obj/gap_console
+	name = "gap console"
+	var/obj/gap_window/unit
+
+CAPABILITIES(/obj/gap_console)
+	interface("GapPanel", forwards = nameof(unit))
+	ui_shape(unit_name = schema_text())
+	ref_one(nameof(unit), /obj/gap_window)
+
+/// A yes/no with its own labels.
+/datum/prompt/yes_no/gap_labelled
+	yes_text = "Launch"
+	no_text = "Cancel"
+
+/// What a converted re-run handler looks like: its questions are steps of the op, with literal, var and computed fields.
+/obj/gap_asker
+	name = "gap asker"
+	var/ask_default = "Bae"
+	var/list/log
+
+CAPABILITIES(/obj/gap_asker)
+	op("pick", in_hand(), asks(/datum/prompt/choice, fields = list("question" = "Colour?", "choices" = computed(PROC_REF(colour_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(picked)))
+	op("name", menu(), asks(/datum/prompt/text, fields = list("question" = "Name?", "default" = nameof(ask_default), "title" = computed(PROC_REF(name_title)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "k"), then(PROC_REF(named)))
+
+/obj/gap_asker/proc/log_text()
+	return jointext(log, ",")
+
+/obj/gap_asker/proc/colour_choices(datum/act/op/A)
+	return list("red", "blue")
+
+/obj/gap_asker/proc/name_title(datum/act/op/A)
+	return "Name [src]"
+
+/obj/gap_asker/proc/picked(datum/act/op/A)
+	var/colour = A.step_answer("a1").answer_value
+	LAZYADD(log, "picked:[colour]")
+	return OP_OK
+
+/obj/gap_asker/proc/named(datum/act/op/A)
+	LAZYADD(log, "named:[A.step_answer("k").answer_value]")
+	return OP_OK
+
 #endif

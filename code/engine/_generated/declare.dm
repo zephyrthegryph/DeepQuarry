@@ -3019,21 +3019,21 @@
 	into += entry_line(175)
 	into += list(global.owns_many(nameof(gridSets)))
 
-/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:342
+/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:346
 /datum/pending_op/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/run.dm", 342, /datum/pending_op)
-	into += entry_line(343)
-	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(344)
-	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(345)
-	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(346)
-	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_block("code/engine/parts/run.dm", 346, /datum/pending_op)
 	into += entry_line(347)
-	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
+	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
 	into += entry_line(348)
+	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(349)
+	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(350)
+	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(351)
+	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
+	into += entry_line(352)
 	into += list(global.owns_one(nameof(cog), /datum/cogbar))
 
 /// CAPABILITIES(/datum/perk_tree) at code/modules/mind_body/_perk_tree.dm:35
@@ -3095,11 +3095,11 @@
 	into += entry_line(128)
 	into += list(global.owns_many(nameof(middleware), /datum/preference_middleware))
 
-/// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:25
+/// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:32
 /datum/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/prompts.dm", 25, /datum/prompt)
-	into += entry_line(26)
+	into += entry_block("code/engine/parts/prompts.dm", 32, /datum/prompt)
+	into += entry_line(33)
 	into += list(global.ref_one(nameof(window), /datum))
 
 /// CAPABILITIES(/datum/prompt/choice/air_control_menu) at code/game/machinery/atmo_control.dm:285
@@ -3309,18 +3309,18 @@
 	into += entry_line(108)
 	into += list(global.ref_one(nameof(disease), /datum/affliction/contagion/engineered))
 
-/// CAPABILITIES(/datum/prompt/yes_no/record_notes_delete) at code/game/machinery/computer/medical.dm:430
+/// CAPABILITIES(/datum/prompt/yes_no/record_notes_delete) at code/game/machinery/computer/medical.dm:431
 /datum/prompt/yes_no/record_notes_delete/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/medical.dm", 430, /datum/prompt/yes_no/record_notes_delete)
-	into += entry_line(431)
+	into += entry_block("code/game/machinery/computer/medical.dm", 431, /datum/prompt/yes_no/record_notes_delete)
+	into += entry_line(432)
 	into += list(global.ref_one(nameof(record), /datum/data/record))
 
-/// CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch) at code/game/machinery/computer/shuttle.dm:104
+/// CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch) at code/game/machinery/computer/shuttle.dm:106
 /datum/prompt/yes_no/shuttle_emag_launch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/shuttle.dm", 104, /datum/prompt/yes_no/shuttle_emag_launch)
-	into += entry_line(105)
+	into += entry_block("code/game/machinery/computer/shuttle.dm", 106, /datum/prompt/yes_no/shuttle_emag_launch)
+	into += entry_line(107)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
 /// CAPABILITIES(/datum/protean_blob_style/layered) at code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm:328
@@ -3919,6 +3919,13 @@
 	..(into)
 	into += entry_block("code/engine/present/prompt_windows.dm", 49, /datum/tgui_list_input/prompt)
 	into += entry_line(50)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_modal/prompt) at code/engine/present/prompt_modals.dm:16
+/datum/tgui_modal/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_modals.dm", 16, /datum/tgui_modal/prompt)
+	into += entry_line(17)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
 /// CAPABILITIES(/datum/tgui_module) at code/modules/tgui/modules/_base.dm:71
@@ -13674,9 +13681,9 @@
 	into += entry_line(153)
 	into += list(global.op("busy", global.inputs(global.hand(), global.item(/obj/item)), global.priority(OP_PRIORITY_CLAW + 8), global.when(nameof(operating)), global.wait(0), global.then(PROC_REF(nothing_done))))
 	into += entry_line(154)
-	into += list(global.op("use", global.hand(), global.label("Use"), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), global.req_capable(), global.req(PROC_REF(can_work), because = MSG(firedoor/dead)), global.req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))), global.asks(/datum/prompt/yes_no, fields = list("question" = global.computed(PROC_REF(use_question)))), global.then(PROC_REF(used))))
+	into += list(global.op("use", global.hand(), global.label("Use"), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), global.req_capable(), global.req(PROC_REF(can_work), because = MSG(firedoor/dead)), global.req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))), global.asks(/datum/prompt/yes_no, fields = list("question" = global.computed(PROC_REF(use_question)), "yes_text" = global.computed(PROC_REF(use_yes)))), global.then(PROC_REF(used))))
 	into += entry_line(158)
-	into += list(global.op("remote_use", global.ai(), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), global.req_capable(), global.req(PROC_REF(can_work), because = MSG(firedoor/dead)), global.req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))), global.asks(/datum/prompt/yes_no, fields = list("question" = global.computed(PROC_REF(use_question)))), global.then(PROC_REF(used))))
+	into += list(global.op("remote_use", global.ai(), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), global.req_capable(), global.req(PROC_REF(can_work), because = MSG(firedoor/dead)), global.req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))), global.asks(/datum/prompt/yes_no, fields = list("question" = global.computed(PROC_REF(use_question)), "yes_text" = global.computed(PROC_REF(use_yes)))), global.then(PROC_REF(used))))
 	into += entry_line(162)
 	into += list(global.op("force_claws", global.hand(), global.label("Force"), global.when(global.req(PROC_REF(claws_force))), global.priority(OP_PRIORITY_TAKE_OUT), global.wait(PROC_REF(claws_wait)), global.then(PROC_REF(claws_forced))))
 	into += entry_line(163)
@@ -17564,6 +17571,26 @@
 	into += entry_line(13)
 	into += list(global.op("careful", global.menu(), global.wait(3 SECONDS), global.on_interrupt(PROC_REF(broken)), global.then(PROC_REF(finished))))
 
+/// CAPABILITIES(/obj/gap_asker) at code/tests/engine/gap_fixtures.dm:288
+/obj/gap_asker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/gap_fixtures.dm", 288, /obj/gap_asker)
+	into += entry_line(289)
+	into += list(global.op("pick", global.in_hand(), global.asks(/datum/prompt/choice, fields = list("question" = "Colour?", "choices" = global.computed(PROC_REF(colour_choices)), "timeout" = 0), step = "a1"), global.then(PROC_REF(picked))))
+	into += entry_line(290)
+	into += list(global.op("name", global.menu(), global.asks(/datum/prompt/text, fields = list("question" = "Name?", "default" = nameof(ask_default), "title" = global.computed(PROC_REF(name_title)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "k"), global.then(PROC_REF(named))))
+
+/// CAPABILITIES(/obj/gap_console) at code/tests/engine/gap_fixtures.dm:272
+/obj/gap_console/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/gap_fixtures.dm", 272, /obj/gap_console)
+	into += entry_line(273)
+	into += list(global.interface("GapPanel", forwards = nameof(unit)))
+	into += entry_line(274)
+	into += list(ui_shape(unit_name = global.schema_text()))
+	into += entry_line(275)
+	into += list(global.ref_one(nameof(unit), /obj/gap_window))
+
 /// CAPABILITIES(/obj/gap_decline) at code/tests/engine/gap_fixtures.dm:12
 /obj/gap_decline/declared_entries(list/into)
 	..(into)
@@ -17624,6 +17651,23 @@
 	into += entry_block("code/tests/engine/gap_fixtures.dm", 190, /obj/gap_touch)
 	into += entry_line(191)
 	into += list(global.op("touch", global.hand(), global.label("Touch"), global.then(PROC_REF(touched))))
+
+/// CAPABILITIES(/obj/gap_window) at code/tests/engine/gap_fixtures.dm:225
+/obj/gap_window/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/gap_fixtures.dm", 225, /obj/gap_window)
+	into += entry_line(226)
+	into += list(global.interface("GapPanel"))
+	into += entry_line(227)
+	into += list(global.op("named", global.ui_act("named"), global.then(PROC_REF(named_pressed))))
+	into += entry_line(228)
+	into += list(global.op("program", global.ui_act("*"), global.needs(global.req(PROC_REF(known_action), silent = TRUE)), global.then(PROC_REF(program_pressed))))
+	into += entry_line(229)
+	into += list(global.op("note", global.ui_act("modal:note", global.arg("arguments")), global.asks(/datum/prompt/text, fields = list("question" = "Note?", "default" = "none", "inline" = TRUE), step = "note"), global.then(PROC_REF(note_entered))))
+	into += entry_line(230)
+	into += list(global.op("style", global.ui_act("modal:style"), global.asks(/datum/prompt/choice, fields = list("question" = "Style?", "choices" = list("a", "b", "c"), "bento" = "spritesheet", "inline" = TRUE), step = "style"), global.then(PROC_REF(styled))))
+	into += entry_line(231)
+	into += list(global.op("confirm", global.ui_act("modal:confirm"), global.asks(/datum/prompt/yes_no, fields = list("question" = "Sure?", "yes_text" = "Do it", "no_text" = "Leave it", "inline" = TRUE), step = "sure"), global.then(PROC_REF(confirmed))))
 
 /// CAPABILITIES(/obj/gap_window_base/plain) at code/tests/engine/gap_fixtures.dm:136
 /obj/gap_window_base/plain/declared_entries(list/into)

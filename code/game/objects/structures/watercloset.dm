@@ -126,7 +126,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 		if(!length(cistern_loot))
 			//You can take the bluespace crystal out if there's nothing else in the cistern.
 			if(teleplumb_crystal && ishuman(user)) //Only humans can grief the toilets
-				open_request(src, /datum/prompt/yes_no, PROC_REF(crystal_answered), answerer = user, title = "Toilet Crystal", question = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+				open_request(src, /datum/prompt/yes_no, PROC_REF(crystal_answered), answerer = user, title = "Toilet Crystal", question = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", yes_text = "Take it!", no_text = "Leave it.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 			to_chat(user, span_notice("The cistern is empty."))
 			return TRUE
 		var/obj/item/I = pick(cistern_loot)
