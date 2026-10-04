@@ -208,9 +208,8 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 	timeout = 0
 	var/obj/item/organ/internal/fruitgland/gland
 
-CAPABILITIES(/datum/prompt/choice/fruit_gland,
-	ref_one(nameof(gland), /obj/item/organ/internal/fruitgland),
-)
+CAPABILITIES(/datum/prompt/choice/fruit_gland)
+	ref_one(nameof(gland), /obj/item/organ/internal/fruitgland)
 
 /datum/prompt/choice/fruit_gland/prepare(datum/act/context)
 	. = ..()
@@ -323,4 +322,3 @@ CAPABILITIES(/datum/prompt/choice/fruit_gland,
 // MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
 /obj/item/organ/internal/fruitgland/life_step_idle()
 	return FALSE
-

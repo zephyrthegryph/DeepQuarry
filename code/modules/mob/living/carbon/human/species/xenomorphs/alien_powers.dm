@@ -80,9 +80,8 @@
 	default = 0
 	var/mob/living/carbon/human/recipient
 
-CAPABILITIES(/datum/prompt/number/plasma_transfer,
-	ref_one(nameof(recipient), /mob/living/carbon/human),
-)
+CAPABILITIES(/datum/prompt/number/plasma_transfer)
+	ref_one(nameof(recipient), /mob/living/carbon/human)
 
 /datum/prompt/number/plasma_transfer/prepare(datum/act/context)
 	. = ..()
