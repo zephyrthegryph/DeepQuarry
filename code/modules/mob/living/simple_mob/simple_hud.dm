@@ -80,7 +80,7 @@
 	rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
-	rel_set(src, nameof(pullin), new /atom/movable/screen())
+	rel_set(src, nameof(pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
 	pullin.icon = ui_style
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
@@ -95,7 +95,7 @@
 	healths.screen_loc = ui_health
 	hud_elements |= healths
 
-	rel_set(src, nameof(autowhisper_display), new /atom/movable/screen())
+	rel_set(src, nameof(autowhisper_display), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"
@@ -222,7 +222,7 @@
 		rel_add(HUD, nameof(HUD.adding), using)
 
 		//Throw button
-		rel_set(src, nameof(throw_icon), new /atom/movable/screen())
+		rel_set(src, nameof(throw_icon), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
 		throw_icon.icon = ui_style
 		throw_icon.icon_state = "act_throw_off"
 		throw_icon.name = "throw"
