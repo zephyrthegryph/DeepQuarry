@@ -18,7 +18,7 @@
 	if(is_valid(new_entry))
 		Add(new_entry)
 
-/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/om/flow/ask_sequence/pin_value/seq)
+/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/pin_value_review/seq)
 	if(is_valid(new_entry))
 		Add(new_entry)
 
@@ -63,29 +63,59 @@
 			return
 		target_entry = _answer_k58
 	if(target_entry)
-		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), sequence = new /datum/om/flow/ask_sequence/pin_value/list_edit(target_entry))
+		var/datum/pin_value_review/list_edit/review = new
+		review.capture_entry(target_entry)
+		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), sequence = review)
 
 /// A list entry being edited: the entry, and its position when edited by position.
-/datum/om/flow/ask_sequence/pin_value/list_edit
-	var/entry
+/datum/pin_value_review/list_edit
+	var/entry_scalar
+	var/datum/entry_entity
+	var/entry_entity_selected = FALSE
+	var/entry_client_ckey
+	var/entry_client_selected = FALSE
 	var/position
 
-/datum/om/flow/ask_sequence/pin_value/list_edit/New(entry, position)
-	..()
-	src.entry = entry
+CAPABILITIES(/datum/pin_value_review/list_edit)
+	ref_one(nameof(entry_entity), /datum)
+
+/datum/pin_value_review/list_edit/proc/capture_entry(entry, position)
 	src.position = position
+	if(istype(entry, /client))
+		var/client/C = entry
+		entry_client_selected = TRUE
+		entry_client_ckey = C.ckey
+	else if(isdatum(entry))
+		entry_entity_selected = TRUE
+		rel_set(src, nameof(entry_entity), entry)
+	else
+		entry_scalar = entry
+
+/datum/pin_value_review/list_edit/proc/entry_value()
+	if(entry_client_selected)
+		return GLOB.directory[entry_client_ckey]
+	return entry_entity_selected ? entry_entity : entry_scalar
+
+/datum/pin_value_review/list_edit/why_not()
+	. = ..()
+	if(.)
+		return
+	if(entry_entity_selected && QDELETED(entry_entity))
+		return "gone"
+	if(entry_client_selected && !entry_value())
+		return "gone"
 
 /// The entry is found again by value: it may have moved while they typed.
-/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/om/flow/ask_sequence/pin_value/list_edit/seq)
+/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/pin_value_review/list_edit/seq)
 	var/list/my_list = data
 	if(!edited_entry)
 		return
 	var/position = seq.position
 	if(position)
-		if(position <= my_list.len && my_list[position] == seq.entry)
+		if(position <= my_list.len && my_list[position] == seq.entry_value())
 			my_list[position] = edited_entry
 		return
-	var/idx = my_list.Find(seq.entry)
+	var/idx = my_list.Find(seq.entry_value())
 	if(idx)
 		my_list[idx] = edited_entry
 
@@ -98,7 +128,9 @@
 		return
 	var/target_entry = my_list[position]
 	if(target_entry)
-		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), sequence = new /datum/om/flow/ask_sequence/pin_value/list_edit(target_entry, position))
+		var/datum/pin_value_review/list_edit/review = new
+		review.capture_entry(target_entry, position)
+		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), sequence = review)
 
 /datum/integrated_io/list/proc/swap_inside_list(mob/user, first_target, second_target)
 	var/list/my_list = data

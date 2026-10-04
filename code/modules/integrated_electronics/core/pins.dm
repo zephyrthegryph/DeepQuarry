@@ -139,61 +139,145 @@ list[](
 		//Now that we're removed from them, we gotta remove them from us.
 		rel_remove(src, nameof(linked), their_io)
 
-/// A pin value being asked: the type picked, then the value. Subtype it to carry more state
-/// to the on_value callback (see /datum/om/flow/ask_sequence/pin_value/list_edit).
-/datum/om/flow/ask_sequence/pin_value
-	name = "pin_value"
-	/// "string", "number" or "null": the answer of the prompt keyed "type_name".
+/// A pin's type/value questions keep the pin and actor weak while preserving arbitrary defaults.
+/datum/pin_value_review
+	var/mob/actor
+	var/datum/integrated_io/pin
 	var/type_name
-	/// The answer of the prompt keyed "value".
 	var/value
-	var/default
-	/// Called on the pin as (user, new_value, sequence).
+	var/default_scalar
+	var/datum/default_entity
+	var/default_entity_selected = FALSE
+	var/default_client_ckey
+	var/default_client_selected = FALSE
 	var/on_value
 
-/datum/om/prompt/choice/pin_type
-	key = "type_name"
-	message = "Please choose a type to use."
+CAPABILITIES(/datum/pin_value_review)
+	ref_one(nameof(actor), /mob)
+	ref_one(nameof(pin), /datum/integrated_io)
+	ref_one(nameof(default_entity), /datum)
 
-/datum/om/prompt/text/pin_value
-	key = "value"
-	message = "Now type in a string."
-	max_length = MAX_NAME_LEN
+/datum/prompt/choice/pin_type
+	timeout = 0
+	question = "Please choose a type to use."
+
+/datum/prompt/choice/pin_type/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/pin_value_review/review = owner
+	return review.why_not()
+
+/datum/prompt/text/pin_value
+	timeout = 0
+	question = "Now type in a string."
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
 	encode = FALSE
 
-/datum/om/prompt/number/pin_value
-	key = "value"
-	message = "Now type in a number."
-	max = INFINITY
-	min = -INFINITY
-	round_entry = FALSE
+/datum/prompt/text/pin_value/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/pin_value_review/review = owner
+	return review.why_not()
 
-/// Asks `user` for a value (a type, then the value). When they finish, `on_value` is called on this
-/// pin as (user, value, sequence); "null" gives a null value. `sequence` is an optional
-/// /datum/om/flow/ask_sequence/pin_value subtype instance carrying the caller's own state.
-/datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"), on_value, datum/om/flow/ask_sequence/pin_value/sequence)
-	var/datum/om/prompt/choice/pin_type/type_ask = new
-	type_ask.title = "[src] type setting"
-	type_ask.choices = allowed_data_types
-	om_ask_sequence(sequence || /datum/om/flow/ask_sequence/pin_value, user, null, 		steps = list(type_ask, PROC_REF(ask_for_typed_value)), on_done = PROC_REF(typed_value_entered), 		default = default, on_value = on_value)
+/datum/prompt/number/pin_value
+	timeout = 0
+	question = "Now type in a number."
+	max_value = INFINITY
+	min_value = -INFINITY
 
-/// Step proc: the value prompt for the chosen type (none for "null").
-/datum/integrated_io/proc/ask_for_typed_value(datum/om/flow/ask_sequence/pin_value/seq)
-	var/default = seq.default
-	switch(seq.type_name)
+/datum/prompt/number/pin_value/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/pin_value_review/review = owner
+	return review.why_not()
+
+/datum/pin_value_review/proc/capture_default(default)
+	if(istype(default, /client))
+		var/client/C = default
+		default_client_ckey = C.ckey
+		default_client_selected = TRUE
+	else if(isdatum(default))
+		default_entity_selected = TRUE
+		rel_set(src, nameof(default_entity), default)
+	else
+		default_scalar = default
+
+/datum/pin_value_review/proc/default_value()
+	if(default_client_selected)
+		return GLOB.directory[default_client_ckey]
+	return default_entity_selected ? default_entity : default_scalar
+
+/datum/pin_value_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial pin edit state has no inventory release contract.
+
+/datum/pin_value_review/proc/why_not()
+	if(QDELETED(actor) || QDELETED(pin) || (default_entity_selected && QDELETED(default_entity)))
+		return "gone"
+	if(default_client_selected && !default_value())
+		return "gone"
+
+/datum/pin_value_review/proc/start(list/allowed_data_types)
+	if(why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step), allowed_data_types)
+	if(!result.ok)
+		stack_trace("Pin value start: [result.error]")
+		retire()
+
+/datum/pin_value_review/proc/start_step(list/allowed_data_types)
+	open_request(src, /datum/prompt/choice/pin_type, PROC_REF(type_entered), answerer = actor, asker = actor, title = "[pin] type setting", choices = allowed_data_types)
+
+/datum/pin_value_review/proc/run_step(step, datum/act/request/A)
+	if(!A.answer || why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("Pin value step [step]: [result.error]")
+		retire()
+
+/datum/pin_value_review/proc/type_entered(datum/act/request/A)
+	run_step(PROC_REF(type_step), A)
+
+/datum/pin_value_review/proc/type_step(datum/act/request/A)
+	type_name = A.answer.answer_value
+	var/default = default_value()
+	switch(type_name)
 		if("string")
-			var/datum/om/prompt/text/pin_value/text_ask = new
-			text_ask.title = "[src] string writing"
-			text_ask.default = istext(default) ? default : null
-			return text_ask
+			open_request(src, /datum/prompt/text/pin_value, PROC_REF(value_entered), answerer = actor, asker = actor, title = "[pin] string writing", default = istext(default) ? default : null)
+			return
 		if("number")
-			var/datum/om/prompt/number/pin_value/number_ask = new
-			number_ask.title = "[src] number writing"
-			number_ask.default = isnum(default) ? default : 0
-			return number_ask
-	return null
+			open_request(src, /datum/prompt/number/pin_value, PROC_REF(value_entered), answerer = actor, asker = actor, title = "[pin] number writing", default = isnum(default) ? default : 0)
+			return
+	pin.typed_value_entered(src)
+	retire()
 
-/datum/integrated_io/proc/typed_value_entered(datum/om/flow/ask_sequence/pin_value/seq)
+/datum/pin_value_review/proc/value_entered(datum/act/request/A)
+	run_step(PROC_REF(value_step), A)
+
+/datum/pin_value_review/proc/value_step(datum/act/request/A)
+	value = A.answer.answer_value
+	pin.typed_value_entered(src)
+	retire()
+
+/// Asks for a type and value; a caller may supply a specialized native review carrying its state.
+/datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"), on_value, datum/pin_value_review/sequence)
+	if(istype(user, /client))
+		var/client/C = user
+		user = C.mob
+	var/datum/pin_value_review/review = sequence || new /datum/pin_value_review
+	rel_set(review, nameof(review.actor), user)
+	rel_set(review, nameof(review.pin), src)
+	review.on_value = on_value
+	review.capture_default(default)
+	review.start(allowed_data_types)
+
+/datum/integrated_io/proc/typed_value_entered(datum/pin_value_review/seq)
 	var/mob/user = seq.actor
 	if(!holder()?.check_interactivity(user))
 		return
@@ -223,7 +307,7 @@ list[](
 /datum/integrated_io/proc/ask_for_pin_data(mob/user, obj/item/I)
 	ask_for_data_type(user, on_value = PROC_REF(pin_data_chosen))
 
-/datum/integrated_io/proc/pin_data_chosen(mob/user, new_data, datum/om/flow/ask_sequence/pin_value/seq)
+/datum/integrated_io/proc/pin_data_chosen(mob/user, new_data, datum/pin_value_review/seq)
 	write_data_to_pin(new_data)
 
 /datum/integrated_io/activate/ask_for_pin_data(mob/user) // This just pulses the pin.

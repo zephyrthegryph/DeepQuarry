@@ -3043,6 +3043,24 @@
 	into += entry_line(36)
 	into += list(global.owns_many(nameof(perks)))
 
+/// CAPABILITIES(/datum/pin_value_review) at code/modules/integrated_electronics/core/pins.dm:155
+/datum/pin_value_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/integrated_electronics/core/pins.dm", 155, /datum/pin_value_review)
+	into += entry_line(156)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(157)
+	into += list(global.ref_one(nameof(pin), /datum/integrated_io))
+	into += entry_line(158)
+	into += list(global.ref_one(nameof(default_entity), /datum))
+
+/// CAPABILITIES(/datum/pin_value_review/list_edit) at code/modules/integrated_electronics/core/special_pins/list_pin.dm:79
+/datum/pin_value_review/list_edit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/integrated_electronics/core/special_pins/list_pin.dm", 79, /datum/pin_value_review/list_edit)
+	into += entry_line(80)
+	into += list(global.ref_one(nameof(entry_entity), /datum))
+
 /// CAPABILITIES(/datum/pipe_network) at code/ATMOSPHERICS/datum_pipe_network.dm:22
 /datum/pipe_network/declared_entries(list/into)
 	..(into)
