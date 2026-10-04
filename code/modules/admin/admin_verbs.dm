@@ -720,7 +720,26 @@ ADMIN_VERB(add_hidden_area, R_ADMIN|R_FUN, "Add Ghostsight Block Area", "Blocks 
 		if(!current_area.flag_check(AREA_BLOCK_GHOST_SIGHT))
 			blocked_areas[current_area.name] = current_area
 	blocked_areas = sortTim(blocked_areas, GLOBAL_PROC_REF(cmp_text_asc))
-	var/selected_area = verb_ask(user, "a23", args, /datum/om/prompt/choice, message = "Pick an area to hide from ghost", title = "Select Area to hide", choices = blocked_areas)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/admin_ghostsight_area, PROC_REF(area_hidden), answerer = answerer, question = "Pick an area to hide from ghost", title = "Select Area to hide", choices = blocked_areas)
+
+/datum/admin_verb/add_hidden_area/proc/area_hidden(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(area_answered), A)
+	if(!result.ok)
+		stack_trace("om flow add_hidden_area answer area_answered: [result.error]")
+
+/datum/admin_verb/add_hidden_area/proc/area_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/selected_area = A.request.answer_value
+	var/list/blocked_areas = list()
+	for(var/type, value in GLOB.areas_by_type)
+		var/area/current_area = value
+		if(!current_area.flag_check(AREA_BLOCK_GHOST_SIGHT))
+			blocked_areas[current_area.name] = current_area
+	blocked_areas = sortTim(blocked_areas, GLOBAL_PROC_REF(cmp_text_asc))
 	if(isnull(selected_area))
 		return
 	var/area/target_area = blocked_areas[selected_area]
@@ -736,7 +755,26 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 		if(current_area.flag_check(AREA_BLOCK_GHOST_SIGHT))
 			blocked_areas[current_area.name] = current_area
 	blocked_areas = sortTim(blocked_areas, GLOBAL_PROC_REF(cmp_text_asc))
-	var/selected_area = verb_ask(user, "a24", args, /datum/om/prompt/choice, message = "Pick a from ghost hidden area to let them see it again", title = "Select Hidden Area", choices = blocked_areas)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/admin_ghostsight_area, PROC_REF(area_revealed), answerer = answerer, question = "Pick a from ghost hidden area to let them see it again", title = "Select Hidden Area", choices = blocked_areas)
+
+/datum/admin_verb/remove_hidden_area/proc/area_revealed(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(area_answered), A)
+	if(!result.ok)
+		stack_trace("om flow remove_hidden_area answer area_answered: [result.error]")
+
+/datum/admin_verb/remove_hidden_area/proc/area_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/selected_area = A.request.answer_value
+	var/list/blocked_areas = list()
+	for(var/type, value in GLOB.areas_by_type)
+		var/area/current_area = value
+		if(current_area.flag_check(AREA_BLOCK_GHOST_SIGHT))
+			blocked_areas[current_area.name] = current_area
+	blocked_areas = sortTim(blocked_areas, GLOBAL_PROC_REF(cmp_text_asc))
 	if(isnull(selected_area))
 		return
 	var/area/target_area = blocked_areas[selected_area]
@@ -882,3 +920,13 @@ ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/
 
 ADMIN_VERB(modify_shift_end, (R_ADMIN|R_EVENT|R_SERVER), "Modify Shift End", "Modifies the hard shift end time.", ADMIN_CATEGORY_SERVER_GAME)
 	SStransfer.modify_hard_end(user)
+
+/datum/prompt/choice/admin_ghostsight_area
+	rights = R_ADMIN|R_FUN
+	timeout = 0
+
+/datum/prompt/choice/admin_ghostsight_area/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
