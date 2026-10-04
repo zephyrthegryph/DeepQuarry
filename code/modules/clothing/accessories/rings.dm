@@ -122,13 +122,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/seal/signet, INTERACT_USE(
 	var/partnername = ""
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Engrave", PROC_REF(wedding_ring_engrave_self)))
+CAPABILITIES(/obj/item/clothing/accessory/ring/wedding)
+	op("wedding_ring_engrave_self", in_hand(), label("Engrave"), asks(/datum/prompt/text, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your spouse", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "a1"), then(PROC_REF(wedding_ring_engrave_self)))
 
 /// Old attack_self.
-/obj/item/clothing/accessory/ring/wedding/proc/wedding_ring_engrave_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/input = rerun_ask(user, "a1", PROC_REF(wedding_ring_engrave_self), args, /datum/om/prompt/text, message = "Would you like to change the holoengraving on the ring?", title = "Name your spouse", default = "Bae", max_length = MAX_NAME_LEN)
-	if(isnull(input))
-		return TRUE
+/obj/item/clothing/accessory/ring/wedding/proc/wedding_ring_engrave_self(datum/act/op/A)
+	var/input = A.step_answer("a1").answer_value
 	if(!input)
 		return
 	partnername = input

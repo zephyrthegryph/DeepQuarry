@@ -248,7 +248,7 @@ CAPABILITIES(/obj/gap_window)
 	LAZYADD(log, "program:[A.window_action()]")
 	return OP_OK
 
-/obj/gap_window/proc/note_entered(datum/act/op/A)
+/obj/gap_window/proc/note_entered(datum/act/op/A, arguments)
 	LAZYADD(log, "note:[A.answer.answer_value]")
 	return OP_OK
 
@@ -283,6 +283,7 @@ CAPABILITIES(/obj/gap_console)
 /obj/gap_asker
 	name = "gap asker"
 	var/ask_default = "Bae"
+	var/static/list/colours = list("red", "blue")
 	var/list/log
 
 CAPABILITIES(/obj/gap_asker)
@@ -293,7 +294,7 @@ CAPABILITIES(/obj/gap_asker)
 	return jointext(log, ",")
 
 /obj/gap_asker/proc/colour_choices(datum/act/op/A)
-	return list("red", "blue")
+	return colours
 
 /obj/gap_asker/proc/name_title(datum/act/op/A)
 	return "Name [src]"

@@ -17571,13 +17571,13 @@
 	into += entry_line(13)
 	into += list(global.op("careful", global.menu(), global.wait(3 SECONDS), global.on_interrupt(PROC_REF(broken)), global.then(PROC_REF(finished))))
 
-/// CAPABILITIES(/obj/gap_asker) at code/tests/engine/gap_fixtures.dm:288
+/// CAPABILITIES(/obj/gap_asker) at code/tests/engine/gap_fixtures.dm:289
 /obj/gap_asker/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/gap_fixtures.dm", 288, /obj/gap_asker)
-	into += entry_line(289)
-	into += list(global.op("pick", global.in_hand(), global.asks(/datum/prompt/choice, fields = list("question" = "Colour?", "choices" = global.computed(PROC_REF(colour_choices)), "timeout" = 0), step = "a1"), global.then(PROC_REF(picked))))
+	into += entry_block("code/tests/engine/gap_fixtures.dm", 289, /obj/gap_asker)
 	into += entry_line(290)
+	into += list(global.op("pick", global.in_hand(), global.asks(/datum/prompt/choice, fields = list("question" = "Colour?", "choices" = global.computed(PROC_REF(colour_choices)), "timeout" = 0), step = "a1"), global.then(PROC_REF(picked))))
+	into += entry_line(291)
 	into += list(global.op("name", global.menu(), global.asks(/datum/prompt/text, fields = list("question" = "Name?", "default" = nameof(ask_default), "title" = global.computed(PROC_REF(name_title)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "k"), global.then(PROC_REF(named))))
 
 /// CAPABILITIES(/obj/gap_console) at code/tests/engine/gap_fixtures.dm:272

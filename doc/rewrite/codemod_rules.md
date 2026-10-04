@@ -163,6 +163,27 @@ A type converts only when:
 
 Residue codes: `ui_options`, `ui_state`, `ui_forms` (a form outside the list), `ui_related` (a related type declares UI), `ui_override`, `ui_override_other` (a descendant overrides a proc that is not one of the window's handlers), `ui_forward_expr` (the forwarding proc is not `return <var of the holder>`), `act_name`, `arg_kind`, `proc_missing`, `proc_shared`, `body_uses` (`ui`, `state`, `action`, other `params`, an odd return), `name_clash`, `data_rows`.
 
+## rerun_ask and act_ask -> asks()
+
+A handler that asked its question by re-running itself (`rerun_ask`, and `act_ask` in a window button's handler: the re-run keeps the answers, runs the handler again and the same call then returns the answer) is an op whose question is a workflow step. The step is `asks(/datum/prompt/<kind>, fields = list(...), step = "<key>")` in the op's Wait,
+the code after the question is the effect, and the re-run is built in: the op's `when` and `needs` are asked again when the answer arrives, and an answer the kind refuses (`refusal()`: a number the kind will not take, a choice that is not on the list) leaves the question open, so the player is asked again without any handler loop.
+Tests: `dq_gap/ask_a_refused_answer_asks_again`, `ask_fields_are_literal_var_or_computed` and the codemod fixtures `interact_declare/asks`, `ui_declare/asks`.
+
+| Old (first statements of the handler) | New |
+|---|---|
+| `var/x = rerun_ask(user, "k", PROC_REF(self), args, /datum/om/prompt/K, message = m, title = t, ...)` (also `list(user)` as the arguments) then `if(isnull(x))` / `return [value]` | `asks(/datum/prompt/K, fields = list("question" = m, "title" = t, ..., "timeout" = 0), step = "k")` before `then(PROC_REF(self))`; the guard goes; the handler starts `var/x = A.step_answer("k").answer_value` (when `x` is used) |
+| `act_ask(ui.user, action, params, ui, "k", /datum/om/prompt/K, ...)` in a `UI_ACT_PROC` | the same step on the button's op |
+| `if(isnull(x) \|\| rest)` | the guard becomes `if(rest)` (the answer is never null now) |
+| kinds `text`, `number`, `choice`, `choice/alert` (`buttons = TRUE`), `color`, `confirm` (`yes_text`/`no_text`: "Yes/no labels") | `/datum/prompt/text`, `number`, `choice`, `color`, `yes_no`; the fields are renamed as in the om_ask table (`message` to `question`, `max_length` to `max_len` (with `name_text = TRUE` for `MAX_NAME_LEN`), `min`/`max` to `min_value`/`max_value`) |
+| a field that is a literal | written as it is |
+| a field that is a var of the holder (`choices = possible_transfer_amounts`) | `nameof(var)`: read from the capture when the question opens |
+| a field that is any other expression (`choices = GLOB.x`, `title = "[src]"`) | `computed(PROC_REF(<handler>_<key>_<field>))`, a generated proc `x(datum/act/op/A)` returning the expression (`var/mob/user = A.actor` and the held item are declared when it reads them) |
+
+A handler's own falsy returns stay as they are in an op with a question (`OP_DECLINE` is for an op that has not waited), and its `PROC_REF(self)` mentions in the questions no longer make the handler `handler_shared`.
+The question has to be first: the requirements run before it, whatever stood before it would run after. Residue codes: `ask_not_first` (a statement stands before the first question), `ask_later` (another question after the first effect), `ask_guard` (the question is not followed by `if(isnull(x))` and a return), `ask_kind`
+(a prompt kind or subtype this table does not name), `ask_key`, `ask_actor` (the asker is not the actor), `ask_rerun` (the re-run names another proc or other arguments), `ask_fields`, `ask_field_<name>` (a field the new kind has no name for), `name_text_unknown`, `name_clash` (a generated proc's name is taken), `ask_expr`.
+Not converted: `verb_ask` and `client_ask` (an admin verb or a client proc is not an op: its code after the question moves into a `request()` callback by hand), `topic_ask`, `flow_ask`/`prompt_flow`, and a handler whose later question depends on an earlier answer (a hand conversion: `asks(..., when = PROC_REF(x))` skips a step by the earlier answer).
+
 ## Window routing: UI_ACT_FALLBACK, UI_ACT_FORWARD, UI_ACT_OVERRIDE
 
 The three forms that decided which handler a window action reaches, as op forms (tests `dq_gap/ui_fallback_answers_the_actions_nothing_names`, `ui_forward_and_override_route_the_button`; `ui_declare.py`, fixture `routing`).

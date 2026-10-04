@@ -16,7 +16,7 @@ ROW = re.compile(r"^(DECLARE_UI|DECLARE_UI_STATE|UI_[A-Z_]+)\((/[\w/]+)(.*)$")
 OVERRIDES = ("ui_act_allowed", "tgui_data", "tgui_act", "ui_status", "tgui_interact", "ui_data", "ui_interact")
 RESERVED = {"in", "as", "to", "step", "if", "else", "for", "while", "do", "set", "var", "new", "del", "null", "return", "src", "usr", "args", "list", "text", "num", "user", "A", "ui", "state", "action", "params"}
 # Questions at the head of a button's handler (act_ask) become asks() steps of its op (leading_asks.py). --asks / --no-asks override the default.
-ASKS_DEFAULT = False
+ASKS_DEFAULT = True
 LA = None
 SETTINGS = ("EVENT_HANDLER", "SHOULD_", "PRIVATE_PROC", "PROTECTED_PROC", "RETURN_TYPE", "CAN_BE_REDEFINED")
 
@@ -440,6 +440,10 @@ def main():
             continue
         if len({a["action"] for a in acts}) != len(acts) or len({a["proc"] for a in acts}) != len(acts):
             residue[t] = "proc_shared"
+            continue
+        if not acts and forward:
+            # a window that only forwards has nothing to type: analyze gen ui_types needs a ui_shape() or a ui_act() op of the window (analyze need, see codemod_rules.md)
+            residue[t] = "ui_forward_untyped"
             continue
         if not acts and not forward:
             residue[t] = "no_ops"  # a window with no buttons has nothing to type (ui_types) and nothing to gain

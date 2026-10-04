@@ -97,13 +97,16 @@
 		return
 	..()
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", PROC_REF(floragun_verb_select_gene)))
+CAPABILITIES(/obj/item/gun/energy/floragun)
+	op("floragun_verb_select_gene", menu(), label("Select Gene"), asks(/datum/prompt/choice, fields = list("question" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = computed(PROC_REF(floragun_verb_select_gene_k108_choices)), "timeout" = 0), step = "k108"), then(PROC_REF(floragun_verb_select_gene)))
 
 /// Old Select Gene verb.
-/obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(mob/user, obj/item/held, datum/interaction/interaction)
-	var/genemask = rerun_ask(user, "k108", PROC_REF(floragun_verb_select_gene), args, /datum/om/prompt/choice, message = "Choose a gene to modify.", title = "Gene Choice", choices = SSplants.plant_gene_datums)
-	if(isnull(genemask))
-		return
+/obj/item/gun/energy/floragun/proc/floragun_verb_select_gene_k108_choices(datum/act/op/A)
+	return SSplants.plant_gene_datums
+
+/obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(datum/act/op/A)
+	var/mob/user = A.actor
+	var/genemask = A.step_answer("k108").answer_value
 
 	if(!genemask)
 		return

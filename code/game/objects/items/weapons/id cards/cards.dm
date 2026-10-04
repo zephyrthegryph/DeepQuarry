@@ -63,11 +63,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 	drop_sound = SFX_ITEMS_DROP_DISK
 	pickup_sound = SFX_ITEMS_PICKUP_DISK
 
-/obj/item/card/data/proc/data_label_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/data/proc/data_label_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/t = A.step_answer("data_card_label").answer_value
 	// The old verb took the text as its argument; ask for it instead.
-	var/t = rerun_ask(user, "data_card_label", PROC_REF(data_label_effect), args, /datum/om/prompt/text, message = "Enter a label for the card.", title = "Label Card", max_length = MAX_NAME_LEN)
-	if(isnull(t))
-		return
 	if(get(src, /mob) != user)
 		return
 	if (t)
@@ -327,6 +326,5 @@ CAPABILITIES(/obj/item/card_fluff)
 	return robot_owner
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/card/data, \
-	INTERACT_VERB("Label Card", PROC_REF(data_label_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/card/data)
+	op("data_label_effect", menu(), label("Label Card"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Enter a label for the card.", "title" = "Label Card", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "data_card_label"), then(PROC_REF(data_label_effect)))

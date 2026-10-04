@@ -15,11 +15,10 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	return null
 
 
-/obj/item/radio/beacon/proc/alter_signal_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/beacon/proc/alter_signal_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/t = A.step_answer("beacon_signal").answer_value
 	// The old verb took the text as its argument; ask for it instead.
-	var/t = rerun_ask(user, "beacon_signal", PROC_REF(alter_signal_effect), args, /datum/om/prompt/text, message = "Enter the beacon's new signal code.", title = "Alter Beacon's Signal", default = code, max_length = MAX_NAME_LEN)
-	if(isnull(t))
-		return
 	if(loc != user)
 		return
 	if ((user.canmove && !( user.restrained() )))
@@ -49,6 +48,5 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	return
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/radio/beacon, \
-	INTERACT_VERB("Alter Beacon's Signal", PROC_REF(alter_signal_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/radio/beacon)
+	op("alter_signal_effect", menu(), label("Alter Beacon's Signal"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Enter the beacon's new signal code.", "title" = "Alter Beacon's Signal", "default" = nameof(code), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "beacon_signal"), then(PROC_REF(alter_signal_effect)))

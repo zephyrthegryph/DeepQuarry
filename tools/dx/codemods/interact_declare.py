@@ -17,7 +17,7 @@ from ui_declare import File, SETTINGS, body_range, collect_vars, holder_vars_of,
 
 # Questions at the head of a handler (rerun_ask) become asks() steps of the op (leading_asks.py, codemod_rules.md "rerun_ask and act_ask -> asks()").
 # --asks / --no-asks override the default.
-ASKS_DEFAULT = False
+ASKS_DEFAULT = True
 LA = None
 
 TEST_DIRS = ("code/modules/unit_tests/", "code/tests/")

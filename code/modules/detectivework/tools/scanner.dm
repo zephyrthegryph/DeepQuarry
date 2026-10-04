@@ -19,6 +19,8 @@
 
 CAPABILITIES(/obj/item/detective_scanner)
 	owns_many(nameof(stored))
+	op("examine_data_effect", menu(), label("Examine Forensic Data"), then(PROC_REF(examine_data_effect)))
+	op("detective_scanner_wipe_effect", menu(), label("Wipe Forensic Data"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(detective_scanner_wipe_effect_k217_question)), "title" = "Wipe Data", "choices" = list("Yes","No"), "buttons" = TRUE, "timeout" = 0), step = "k217"), then(PROC_REF(detective_scanner_wipe_effect)))
 
 /obj/item/detective_scanner/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!ishuman(M))
@@ -181,7 +183,8 @@ CAPABILITIES(/obj/item/detective_scanner)
 		. = 1
 	rel_add(src, nameof(stored), fresh, "\ref [A]")
 
-/obj/item/detective_scanner/proc/examine_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/detective_scanner/proc/examine_data_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	//to_world("user is [user]") //why was this a thing? -KK.
 	display_data(user)
@@ -233,11 +236,13 @@ CAPABILITIES(/obj/item/detective_scanner)
 			for(var/bloodsample in bloods)
 				to_chat(user, " - " + span_warning("[bloodsample]") + " Type: [bloods[bloodsample]]")
 
-/obj/item/detective_scanner/proc/detective_scanner_wipe_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/detective_scanner/proc/detective_scanner_wipe_effect_k217_question(datum/act/op/A)
+	return "Are you sure you want to wipe all data from [src]?"
 
-	var/_answer_k217 = rerun_ask(user, "k217", PROC_REF(detective_scanner_wipe_effect), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe all data from [src]?", title = "Wipe Data", choices = list("Yes","No"))
-	if(isnull(_answer_k217))
-		return
+/obj/item/detective_scanner/proc/detective_scanner_wipe_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/_answer_k217 = A.step_answer("k217").answer_value
+
 	if (_answer_k217 == "Yes")
 		own_clear(src, nameof(stored), OWN_DELETE)
 		to_chat(user, span_notice("Forensic data erase complete."))
@@ -255,7 +260,3 @@ CAPABILITIES(/obj/item/detective_scanner)
 
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/detective_scanner, \
-	INTERACT_VERB("Examine Forensic Data", PROC_REF(examine_data_effect)), \
-	INTERACT_VERB("Wipe Forensic Data", PROC_REF(detective_scanner_wipe_effect)), \
-)
