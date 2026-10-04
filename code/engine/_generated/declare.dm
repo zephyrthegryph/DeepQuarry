@@ -5301,11 +5301,11 @@
 	into += entry_line(281)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/aiModule/freeformcore) at code/game/objects/items/weapons/AI_modules.dm:403
+/// CAPABILITIES(/obj/item/aiModule/freeformcore) at code/game/objects/items/weapons/AI_modules.dm:412
 /obj/item/aiModule/freeformcore/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 403, /obj/item/aiModule/freeformcore)
-	into += entry_line(404)
+	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 412, /obj/item/aiModule/freeformcore)
+	into += entry_line(413)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/aiModule/oneHuman) at code/game/objects/items/weapons/AI_modules.dm:198
@@ -5322,11 +5322,11 @@
 	into += entry_line(161)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/aiModule/syndicate) at code/game/objects/items/weapons/AI_modules.dm:432
+/// CAPABILITIES(/obj/item/aiModule/syndicate) at code/game/objects/items/weapons/AI_modules.dm:441
 /obj/item/aiModule/syndicate/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 432, /obj/item/aiModule/syndicate)
-	into += entry_line(433)
+	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 441, /obj/item/aiModule/syndicate)
+	into += entry_line(442)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/aicard) at code/game/objects/items/devices/aicard.dm:25
@@ -12631,11 +12631,13 @@
 	into += entry_line(55)
 	into += list(global.op("purge", global.ui_act("purge", global.arg("id", global.num())), global.then(PROC_REF(ui_act_purge))))
 
-/// CAPABILITIES(/obj/machinery/shield_capacitor) at code/modules/shieldgen/shield_capacitor.dm:26
+/// CAPABILITIES(/obj/machinery/shield_capacitor) at code/modules/shieldgen/shield_capacitor.dm:27
 /obj/machinery/shield_capacitor/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/shieldgen/shield_capacitor.dm", 26, /obj/machinery/shield_capacitor)
-	into += entry_line(27)
+	into += entry_block("code/modules/shieldgen/shield_capacitor.dm", 27, /obj/machinery/shield_capacitor)
+	into += entry_line(28)
+	into += list(global.entry_link("/obj/machinery/shield_capacitor::owned_gen", "/obj/machinery/shield_gen::capacitors", b_many = TRUE))
+	into += entry_line(29)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/shield_gen) at code/modules/shieldgen/shield_gen.dm:30

@@ -60,8 +60,6 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 		to_chat(user, span_red("Access denied."))
 	return TRUE
 
-// The generator this capacitor feeds (two-sided with its capacitors list).
-
 /obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
