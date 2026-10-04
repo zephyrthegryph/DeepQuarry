@@ -891,6 +891,20 @@
 	into += entry_line(40)
 	into += list(global.op("close", global.ui_act("close"), global.then(PROC_REF(ui_act_close))))
 
+/// CAPABILITIES(/datum/admin_save_conversion_review) at code/modules/admin/savefile_convert.dm:35
+/datum/admin_save_conversion_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/savefile_convert.dm", 35, /datum/admin_save_conversion_review)
+	into += entry_line(36)
+	into += list(global.ref_one(nameof(actor), /mob))
+
+/// CAPABILITIES(/datum/admin_server_news_review) at code/modules/admin/news.dm:26
+/datum/admin_server_news_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/news.dm", 26, /datum/admin_server_news_review)
+	into += entry_line(27)
+	into += list(global.ref_one(nameof(actor), /mob))
+
 /// CAPABILITIES(/datum/admins) at code/modules/admin/holder2.dm:55
 /datum/admins/declared_entries(list/into)
 	..(into)
@@ -2901,6 +2915,20 @@
 	into += entry_line(75)
 	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
 
+/// CAPABILITIES(/datum/prompt/choice/blueprint_expand) at code/game/objects/items/blueprints.dm:995
+/datum/prompt/choice/blueprint_expand/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/blueprints.dm", 995, /datum/prompt/choice/blueprint_expand)
+	into += entry_line(996)
+	into += list(global.ref_one(nameof(editor), /obj/item/areaeditor))
+
+/// CAPABILITIES(/datum/prompt/choice/blueprint_whole_confirm) at code/game/objects/items/blueprints.dm:1101
+/datum/prompt/choice/blueprint_whole_confirm/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1101, /datum/prompt/choice/blueprint_whole_confirm)
+	into += entry_line(1102)
+	into += list(global.ref_one(nameof(chosen_area), /area))
+
 /// CAPABILITIES(/datum/prompt/choice/camera_direction) at code/game/machinery/camera/camera_assembly.dm:157
 /datum/prompt/choice/camera_direction/declared_entries(list/into)
 	..(into)
@@ -2935,6 +2963,13 @@
 	into += entry_block("code/game/objects/structures/medical_stand.dm", 123, /datum/prompt/choice/medical_stand_attach)
 	into += entry_line(124)
 	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
+
+/// CAPABILITIES(/datum/prompt/choice/monitor_state) at code/modules/mob/living/carbon/human/human_powers.dm:394
+/datum/prompt/choice/monitor_state/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 394, /datum/prompt/choice/monitor_state)
+	into += entry_line(395)
+	into += list(global.ref_one(nameof(head), /obj/item/organ/external/head))
 
 /// CAPABILITIES(/datum/prompt/choice/pai_access) at code/modules/mob/living/silicon/pai/pai.dm:340
 /datum/prompt/choice/pai_access/declared_entries(list/into)
@@ -3001,6 +3036,13 @@
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
 
+/// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1035
+/datum/prompt/text/blueprint_area_name/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1035, /datum/prompt/text/blueprint_area_name)
+	into += entry_line(1036)
+	into += list(global.ref_one(nameof(editor), /obj/item/areaeditor))
+
 /// CAPABILITIES(/datum/prompt/text/compliance_laws) at code/game/objects/items/weapons/implants/implant.dm:842
 /datum/prompt/text/compliance_laws/declared_entries(list/into)
 	..(into)
@@ -3029,12 +3071,26 @@
 	into += entry_line(189)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/text/mob_type) at code/modules/mob/mob_transformation_simple.dm:16
+/datum/prompt/text/mob_type/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/mob_transformation_simple.dm", 16, /datum/prompt/text/mob_type)
+	into += entry_line(17)
+	into += list(global.ref_one(nameof(location), /turf))
+
 /// CAPABILITIES(/datum/prompt/text/pandemic_release_reason) at code/game/machinery/pandemic.dm:104
 /datum/prompt/text/pandemic_release_reason/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/pandemic.dm", 104, /datum/prompt/text/pandemic_release_reason)
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/text/spectral_whisper) at code/modules/mob/dead/observer/observer.dm:966
+/datum/prompt/text/spectral_whisper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/dead/observer/observer.dm", 966, /datum/prompt/text/spectral_whisper)
+	into += entry_line(967)
+	into += list(global.ref_one(nameof(recipient), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
@@ -6489,11 +6545,18 @@
 	into += entry_line(50)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/anodevice) at code/modules/xenoarcheaology/tools/ano_device_battery.dm:69
+/// CAPABILITIES(/obj/item/anobattery) at code/modules/xenoarcheaology/tools/ano_device_battery.dm:14
+/obj/item/anobattery/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/ano_device_battery.dm", 14, /obj/item/anobattery)
+	into += entry_line(15)
+	into += list(global.owns_one(nameof(battery_effect), /datum/artifact_effect))
+
+/// CAPABILITIES(/obj/item/anodevice) at code/modules/xenoarcheaology/tools/ano_device_battery.dm:72
 /obj/item/anodevice/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/xenoarcheaology/tools/ano_device_battery.dm", 69, /obj/item/anodevice)
-	into += entry_line(71)
+	into += entry_block("code/modules/xenoarcheaology/tools/ano_device_battery.dm", 72, /obj/item/anodevice)
+	into += entry_line(74)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(anodevice_step)), when = nameof(activated)))
 
 /// CAPABILITIES(/obj/item/anomaly_neutralizer) at code/modules/anomalies/anomaly.dm:13
