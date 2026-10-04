@@ -77,7 +77,8 @@
 /obj/machinery/atmospherics/unary/engine/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 	return 0
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /datum/ship_engine/gas_thruster)
+CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
+	owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster)
 
 /obj/machinery/atmospherics/unary/engine/Initialize(mapload)
 	. = ..()

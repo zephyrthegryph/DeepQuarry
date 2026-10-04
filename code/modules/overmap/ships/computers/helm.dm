@@ -338,7 +338,8 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_manual)
 	circuit = /obj/item/circuitboard/nav
 	var/datum/tgui_module/ship/nav/nav_tgui
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/ship/navigation, "nav_tgui", /datum/tgui_module/ship/nav)
+CAPABILITIES(/obj/machinery/computer/ship/navigation)
+	owns_one(nameof(nav_tgui), starts = /datum/tgui_module/ship/nav)
 
 /obj/machinery/computer/ship/navigation/Initialize(mapload)
 	. = ..()

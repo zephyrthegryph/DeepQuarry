@@ -33,7 +33,8 @@
 	var/bogus = TRUE		// set to 0 when you initialize the station map on a zLevel that has its own icon formatted for use by station holomaps.
 	var/datum/station_holomap/holomap_datum
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/station_holomap)
+CAPABILITIES(/obj/machinery/station_map)
+	owns_one(nameof(holomap_datum), starts = /datum/station_holomap)
 
 /// The mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
 OM_FIELD_VIEW(/obj/machinery/station_map, mob, watching_mob, CHANGE_MACHINE_SETTINGS)
