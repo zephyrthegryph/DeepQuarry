@@ -2283,6 +2283,15 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:962
+/datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/ai/ai.dm", 962, /datum/prompt/yes_no/ai_door_request)
+	into += entry_line(963)
+	into += list(global.ref_one(nameof(door), /obj/machinery/door/airlock))
+	into += entry_line(964)
+	into += list(global.ref_one(nameof(requester), /mob/living))
+
 /// CAPABILITIES(/datum/protean_blob_style/layered) at code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm:328
 /datum/protean_blob_style/layered/declared_entries(list/into)
 	..(into)
