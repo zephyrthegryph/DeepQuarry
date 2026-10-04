@@ -91,7 +91,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	after(src, 1, PROC_REF(update_sun_deferred), with = list(new_brightness, new_color))
+	after(src, 0.1 SECONDS, PROC_REF(update_sun_deferred), with = list(new_brightness, new_color))
 
 //todo, remove snow and other weathers, this is copypastad from v4
 /datum/weather_holder/thor
