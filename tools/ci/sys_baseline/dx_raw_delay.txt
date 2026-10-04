@@ -133,7 +133,6 @@ dx_raw_delay	code/modules/admin/verbs/secrets.dm	after(AffectedArea, rand(25,50)
 dx_raw_delay	code/modules/admin/verbs/smite.dm	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))
 dx_raw_delay	code/modules/blob2/overmind/types/blazing_oil.dm	after(B, 1, TYPE_PROC_REF(/obj/structure/blob, adjust_integrity), with = list(-(amount * 5)))
 dx_raw_delay	code/modules/blob2/overmind/types/volatile_alluvium.dm	after(B, 1, TYPE_PROC_REF(/obj/structure/blob, alluvium_crumble), with = list(amount * 4, name))
-dx_raw_delay	code/modules/busy_space/organizations.dm	after(src, 1, PROC_REF(forget_current_map_destination)) // BYOND shenanigans means using_map is not initialized yet. Wait a tick.
 dx_raw_delay	code/modules/casino/casino_prize_vendor.dm	after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
 dx_raw_delay	code/modules/casino/slots.dm	after(src, rand(0, 15), PROC_REF(lose_power))
 dx_raw_delay	code/modules/casino/slots.dm	after(src, rand(0, 15), PROC_REF(lose_power))
