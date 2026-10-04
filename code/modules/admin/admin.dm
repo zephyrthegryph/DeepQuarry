@@ -940,12 +940,21 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	return
 
 ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up an uplink on a character. This will be required for a character to use telecrystals.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/mob/living/carbon/human/traitor_human = verb_ask(user, "a18", args, /datum/om/prompt/choice, message = "Select whom to give an uplink.", title = "Set uplink", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
-	if(isnull(traitor_human))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!traitor_human)
-		return
+	open_request(src, /datum/prompt/choice/admin_uplink_target, PROC_REF(uplink_target_chosen), answerer = answerer, choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
+/datum/admin_verb/set_uplink/proc/uplink_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(give_selected_uplink), A)
+	if(!result.ok)
+		stack_trace("om flow set_uplink answer uplink_target_chosen: [result.error]")
+
+/datum/admin_verb/set_uplink/proc/give_selected_uplink(datum/act/request/A)
+	var/mob/living/carbon/human/traitor_human = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	GLOB.traitors.spawn_uplink(traitor_human)
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	traitor_human.mind.accept_tcrystals = 1
@@ -960,6 +969,26 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	max_len = MAX_TGUI_INPUT
 
 /datum/prompt/text/admin_announcement/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_uplink_target
+	rights = R_ADMIN|R_DEBUG
+	timeout = 0
+	question = "Select whom to give an uplink."
+	title = "Set uplink"
+
+/datum/prompt/choice/admin_uplink_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/living/carbon/human/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_uplink_target/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return
