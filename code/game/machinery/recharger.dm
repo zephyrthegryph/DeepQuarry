@@ -159,7 +159,7 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 			return /datum/msg/recharger/no_port
 	if(istype(G, /obj/item/modular_computer))
 		var/obj/item/modular_computer/C = G
-		if(!C.battery_module) // ALLOW(reads): a computer's battery is legacy item state, read when the computer is offered
+		if(!C.battery_module)
 			return /datum/msg/recharger/no_battery_installed
 	if(istype(G, /obj/item/flash))
 		var/obj/item/flash/F = G
