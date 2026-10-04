@@ -19,19 +19,23 @@
 	return
 
 /// Labelling a case with a pen. Re-checked on the answer: the pen is still in hand, the case still in reach.
-/datum/om/prompt/text/implantcase_label
-	message = "What would you like the label to be?"
-	max_length = MAX_NAME_LEN
+/datum/prompt/text/implantcase_label
+	question = "What would you like the label to be?"
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
 	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/item/implantcase/case
+	timeout = 0
 
-/datum/om/prompt/text/implantcase_label/valid()
+/datum/prompt/text/implantcase_label/recheck_extra()
+	var/obj/item/implantcase/case = owner
 	if(!in_range(case, answerer) && case.loc != answerer)
 		return "too far away"
 	return null
 
-/obj/item/implantcase/proc/label_entered(datum/om/prompt/text/implantcase_label/ask)
-	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/obj/item/implantcase/proc/label_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/t = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
 	if(t)
 		name = text("Glass Case - '[]'", t)
 	else
@@ -42,7 +46,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 /// Old attackby.
 /obj/item/implantcase/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if (istype(I, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/text/implantcase_label, PROC_REF(label_entered), title = "[name]", subject = I, case = src)
+		open_request(src, /datum/prompt/text/implantcase_label, PROC_REF(label_entered), answerer = user, title = "[name]", subject = I)
 	else if(istype(I, /obj/item/reagent_containers/syringe))
 		if(!imp)	return INTERACTION_HANDLED_PASS
 		if(!imp.allow_reagents)	return INTERACTION_HANDLED_PASS
