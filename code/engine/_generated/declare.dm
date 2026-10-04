@@ -3263,6 +3263,15 @@
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
 
+/// CAPABILITIES(/datum/prompt/text/collar_tag) at code/modules/clothing/accessories/accessory.dm:1011
+/datum/prompt/text/collar_tag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1011, /datum/prompt/text/collar_tag)
+	into += entry_line(1012)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(1013)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
 	..(into)
@@ -3284,13 +3293,13 @@
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
 
-/// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
+/// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:961
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/ai/ai.dm", 963, /datum/prompt/yes_no/ai_door_request)
-	into += entry_line(964)
+	into += entry_block("code/modules/mob/living/silicon/ai/ai.dm", 961, /datum/prompt/yes_no/ai_door_request)
+	into += entry_line(962)
 	into += list(global.ref_one(nameof(door), /obj/machinery/door/airlock))
-	into += entry_line(965)
+	into += entry_line(963)
 	into += list(global.ref_one(nameof(requester), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok) at code/game/machinery/camera/camera_assembly.dm:174
@@ -4813,71 +4822,71 @@
 	into += entry_line(15)
 	into += list(global.owns_one(nameof(revival_record), /datum/transhuman/body_record))
 
-/// CAPABILITIES(/mob) at code/modules/mob/mob_defines.dm:289
+/// CAPABILITIES(/mob) at code/modules/mob/mob_defines.dm:276
 /mob/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/mob_defines.dm", 289, /mob)
-	into += entry_line(290)
+	into += entry_block("code/modules/mob/mob_defines.dm", 276, /mob)
+	into += entry_line(277)
 	into += list(global.owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master))
-	into += entry_line(291)
+	into += entry_line(278)
 	into += list(global.owns_one(nameof(autowhisper_display), /atom/movable/screen))
-	into += entry_line(292)
+	into += entry_line(279)
 	into += list(global.owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui))
-	into += entry_line(293)
+	into += entry_line(280)
 	into += list(global.owns_one(nameof(borer_chem_display), /atom/movable/screen/borer/chems))
-	into += entry_line(294)
+	into += entry_line(281)
 	into += list(global.owns_one(nameof(dna), /datum/dna))
-	into += entry_line(295)
+	into += entry_line(282)
 	into += list(global.owns_one(nameof(gun_move_icon), /atom/movable/screen/gun/move))
-	into += entry_line(296)
+	into += entry_line(283)
 	into += list(global.owns_one(nameof(gun_setting_icon), /atom/movable/screen/gun/mode))
-	into += entry_line(297)
+	into += entry_line(284)
 	into += list(global.owns_one(nameof(hands), /atom/movable/screen))
-	into += entry_line(298)
+	into += entry_line(285)
 	into += list(global.owns_one(nameof(healths), /atom/movable/screen))
-	into += entry_line(299)
+	into += entry_line(286)
 	into += list(global.owns_one(nameof(hud_used), /datum/hud))
-	into += entry_line(300)
+	into += entry_line(287)
 	into += list(global.owns_one(nameof(internals), /atom/movable/screen))
-	into += entry_line(301)
+	into += entry_line(288)
 	into += list(global.owns_one(nameof(item_use_icon), /atom/movable/screen/gun/item))
-	into += entry_line(302)
+	into += entry_line(289)
 	into += list(global.owns_one(nameof(ling_chem_display), /atom/movable/screen/ling/chems))
-	into += entry_line(303)
+	into += entry_line(290)
 	into += list(global.owns_one(nameof(lleill_display), /atom/movable/screen/lleill))
-	into += entry_line(304)
+	into += entry_line(291)
 	into += list(global.owns_one(nameof(machine_shim), /datum/using_machine_shim))
-	into += entry_line(305)
+	into += entry_line(292)
 	into += list(global.owns_one(nameof(pain), /atom/movable/screen))
-	into += entry_line(306)
+	into += entry_line(293)
 	into += list(global.owns_one(nameof(plane_holder), /datum/plane_holder))
-	into += entry_line(307)
+	into += entry_line(294)
 	into += list(global.owns_one(nameof(pullin), /atom/movable/screen))
-	into += entry_line(308)
+	into += entry_line(295)
 	into += list(global.owns_one(nameof(radio_use_icon), /atom/movable/screen/gun/radio))
-	into += entry_line(309)
+	into += entry_line(296)
 	into += list(global.owns_one(nameof(remote_view), /datum/remote_view))
-	into += entry_line(310)
+	into += entry_line(297)
 	into += list(global.owns_one(nameof(shadekin_display), /atom/movable/screen/shadekin))
-	into += entry_line(311)
+	into += entry_line(298)
 	into += list(global.owns_one(nameof(throw_icon), /atom/movable/screen))
-	into += entry_line(312)
+	into += entry_line(299)
 	into += list(global.owns_one(nameof(vorePanel), /datum/vore_look))
-	into += entry_line(313)
+	into += entry_line(300)
 	into += list(global.owns_one(nameof(wiz_energy_display), /atom/movable/screen/wizard/energy))
-	into += entry_line(314)
+	into += entry_line(301)
 	into += list(global.owns_one(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability))
-	into += entry_line(315)
+	into += entry_line(302)
 	into += list(global.owns_one(nameof(xenochimera_danger_display), /atom/movable/screen/xenochimera/danger_level))
-	into += entry_line(316)
+	into += entry_line(303)
 	into += list(global.owns_one(nameof(zone_sel), /atom/movable/screen/zone_sel))
-	into += entry_line(317)
+	into += entry_line(304)
 	into += list(global.owns_many(nameof(spell_masters), /atom/movable/screen/movable/spell_master))
-	into += entry_line(318)
+	into += entry_line(305)
 	into += list(global.owns_many(nameof(vore_organs)))
-	into += entry_line(319)
+	into += entry_line(306)
 	into += list(global.owns_many(nameof(alerts)))
-	into += entry_line(320)
+	into += entry_line(307)
 	into += list(global.owns_many(nameof(screens)))
 
 /// CAPABILITIES(/mob/living) at code/modules/combat_ai/integration/mob_living.dm:21
@@ -7224,18 +7233,18 @@
 	into += entry_line(14)
 	into += list(global.op("permit_register_self", global.in_hand(), global.label("Register"), global.then(PROC_REF(permit_register_self))))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half) at code/modules/clothing/accessories/accessory.dm:1318
+/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half) at code/modules/clothing/accessories/accessory.dm:1417
 /obj/item/clothing/accessory/poncho/roles/cloak/half/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1318, /obj/item/clothing/accessory/poncho/roles/cloak/half)
-	into += entry_line(1319)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1417, /obj/item/clothing/accessory/poncho/roles/cloak/half)
+	into += entry_line(1418)
 	into += list(global.op("half_cloak_flip_self", global.in_hand(), global.label("Flip cloak"), global.then(PROC_REF(half_cloak_flip_self))))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger) at code/modules/clothing/accessories/accessory.dm:1405
+/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger) at code/modules/clothing/accessories/accessory.dm:1504
 /obj/item/clothing/accessory/poncho/roles/neo_ranger/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1405, /obj/item/clothing/accessory/poncho/roles/neo_ranger)
-	into += entry_line(1406)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1504, /obj/item/clothing/accessory/poncho/roles/neo_ranger)
+	into += entry_line(1505)
 	into += list(global.op("neo_ranger_adjust_self", global.in_hand(), global.label("Adjust"), global.then(PROC_REF(neo_ranger_adjust_self))))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/ring/engagement) at code/modules/clothing/accessories/rings.dm:32
@@ -7509,11 +7518,11 @@
 	into += entry_line(131)
 	into += list(global.op("vox_mask_port_self", global.in_hand(), global.label("Feeding port"), global.then(PROC_REF(vox_mask_port_self))))
 
-/// CAPABILITIES(/obj/item/clothing/mask/gas/voice) at code/modules/clothing/masks/voice.dm:44
+/// CAPABILITIES(/obj/item/clothing/mask/gas/voice) at code/modules/clothing/masks/voice.dm:50
 /obj/item/clothing/mask/gas/voice/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/masks/voice.dm", 44, /obj/item/clothing/mask/gas/voice)
-	into += entry_line(45)
+	into += entry_block("code/modules/clothing/masks/voice.dm", 50, /obj/item/clothing/mask/gas/voice)
+	into += entry_line(51)
 	into += list(global.owns_one(nameof(changer), starts = /obj/item/voice_changer))
 
 /// CAPABILITIES(/obj/item/clothing/mask/muzzle) at code/modules/clothing/masks/miscellaneous.dm:21
@@ -8499,11 +8508,11 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(exonet), starts = /datum/exonet_protocol))
 
-/// CAPABILITIES(/obj/item/integrated_circuit/input/EPv2) at code/modules/integrated_electronics/subtypes/input.dm:553
+/// CAPABILITIES(/obj/item/integrated_circuit/input/EPv2) at code/modules/integrated_electronics/subtypes/input.dm:565
 /obj/item/integrated_circuit/input/EPv2/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/integrated_electronics/subtypes/input.dm", 553, /obj/item/integrated_circuit/input/EPv2)
-	into += entry_line(554)
+	into += entry_block("code/modules/integrated_electronics/subtypes/input.dm", 565, /obj/item/integrated_circuit/input/EPv2)
+	into += entry_line(566)
 	into += list(global.owns_one(nameof(exonet), starts = /datum/exonet_protocol))
 
 /// CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input) at code/modules/integrated_electronics/subtypes/camera.dm:167
