@@ -1,3 +1,6 @@
+CAPABILITIES(/obj/machinery/computer/arcade/battle)
+	op("newgame", ui_act(), then(PROC_REF(native_ui_act_newgame)))
+
 /obj/machinery/computer/arcade
 	name = "random arcade"
 	desc = "random arcade machine"
@@ -181,8 +184,7 @@ UI_DATA(/obj/machinery/computer/arcade/battle, "name:text", "temp:text", "enemyA
 				after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(ui.user, 0, 0, 0))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/arcade/battle, "newgame", ui_act_newgame)
-UI_ACT_PROC(/obj/machinery/computer/arcade/battle, ui_act_newgame)
+/obj/machinery/computer/arcade/battle/proc/native_ui_act_newgame(datum/act/op/A)
 	temp = "New Round"
 	player_hp = 30
 	player_mp = 10
@@ -194,8 +196,8 @@ UI_ACT_PROC(/obj/machinery/computer/arcade/battle, ui_act_newgame)
 	if(emagged)
 		randomize_characters()
 		set_emagged(0)
-	add_fingerprint(ui.user)
-	return TRUE
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /// The player's move lands a second after it was chosen, then the enemy acts.
 /obj/machinery/computer/arcade/battle/proc/battle_resolve(mob/user, enemy_damage, mp_cost, heal)

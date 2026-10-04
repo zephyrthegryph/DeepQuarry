@@ -1,3 +1,6 @@
+CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	op("toggleStatus", ui_act(), then(PROC_REF(native_ui_act_togglestatus)))
+
 //TODO: Put this under a common parent type with freezers to cut down on the copypasta
 #define HEATER_PERF_MULT 2.5
 #define REAGENT_COOLING_CONSUMED 0.1
@@ -144,13 +147,11 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/heater, "powerSetting=power_se
 
 	return data
 
-UI_ACT(/obj/machinery/atmospherics/unary/heater, "toggleStatus", ui_act_togglestatus)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/heater, ui_act_togglestatus)
-	. = TRUE
+/obj/machinery/atmospherics/unary/heater/proc/native_ui_act_togglestatus(datum/act/op/A)
 	set_use_power(!use_power)
-	add_fingerprint(ui.user)
-	if(.)
-		invalidate_gas_dependencies()
+	add_fingerprint(A.actor)
+	invalidate_gas_dependencies()
+	return OP_OK
 
 UI_ACT(/obj/machinery/atmospherics/unary/heater, "setGasTemperature", ui_act_setgastemperature, UI_ARG_NUM("temp"))
 UI_ACT_PROC(/obj/machinery/atmospherics/unary/heater, ui_act_setgastemperature)

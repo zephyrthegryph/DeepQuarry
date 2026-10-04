@@ -148,6 +148,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/bodycam, PERIODIC_SLOW, "sho
 CAPABILITIES(/obj/item/clothing/accessory/bodycam)
 	owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera)
 	owns_one(nameof(bradio), starts = /obj/item/radio)
+	op("toggle_video", ui_act(), then(PROC_REF(native_ui_act_toggle_video)))
+	op("toggle_audio", ui_act(), then(PROC_REF(native_ui_act_toggle_audio)))
 
 DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)
 

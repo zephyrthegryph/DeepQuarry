@@ -344,6 +344,7 @@ UI_ACT_PROC(/datum/data/pda/app/news, ui_act_newsfeed)
 	var/obj/item/radio/intercom/announce
 
 CAPABILITIES(/datum/data/pda/app/timeclock)
+	op("switch-to-offduty", ui_act(), then(PROC_REF(native_ui_act_switch_to_offduty)))
 	owns_one(nameof(announce), /obj/item/radio/intercom)
 
 /datum/data/pda/app/timeclock/start()
@@ -392,12 +393,11 @@ UI_ACT_PROC(/datum/data/pda/app/timeclock, ui_act_switch_to_onduty_rank)
 			makeOnDuty(ui.user, params["switch-to-onduty-rank"], params["switch-to-onduty-assignment"])
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/timeclock, "switch-to-offduty", ui_act_switch_to_offduty)
-UI_ACT_PROC(/datum/data/pda/app/timeclock, ui_act_switch_to_offduty)
-	if(checkFace(ui.user))
-		if(checkCardCooldown(ui.user))
-			makeOffDuty(ui.user)
-	return TRUE
+/datum/data/pda/app/timeclock/proc/native_ui_act_switch_to_offduty(datum/act/op/A)
+	if(checkFace(A.actor))
+		if(checkCardCooldown(A.actor))
+			makeOffDuty(A.actor)
+	return OP_OK
 
 /datum/data/pda/app/timeclock/proc/getOpenOnDutyJobs(mob/user, department)
 	var/list/available_jobs = list()

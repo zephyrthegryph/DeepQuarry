@@ -1,3 +1,6 @@
+CAPABILITIES(/obj/machinery/anomaly_harvester)
+	op("release_all", ui_act(), then(PROC_REF(native_ui_act_release_all)))
+
 /obj/machinery/anomaly_harvester
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	maintenance_wrench_time = 2 SECONDS
@@ -195,12 +198,11 @@ UI_ACT_PROC(/obj/machinery/anomaly_harvester, ui_act_release_sample)
 	sample.forceMove(get_turf(src))
 	return TRUE
 
-UI_ACT(/obj/machinery/anomaly_harvester, "release_all", ui_act_release_all)
-UI_ACT_PROC(/obj/machinery/anomaly_harvester, ui_act_release_all)
+/obj/machinery/anomaly_harvester/proc/native_ui_act_release_all(datum/act/op/A)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/research_sample/sample in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		sample.forceMove(get_turf(src))
-	return TRUE
+	return OP_OK
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/anomaly_harvester/step_start_condition()

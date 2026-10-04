@@ -36,15 +36,17 @@
 	if(computer().tesla_link && prob(50))
 		qdel(computer().tesla_link)
 
-UI_ACT(/datum/computer_file/program/revelation, "PRG_arm", ui_act_prg_arm)
-UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_arm)
-	armed = !armed
-	return TRUE
+CAPABILITIES(/datum/computer_file/program/revelation)
+	op("PRG_arm", ui_act(), then(PROC_REF(native_ui_act_prg_arm)))
+	op("PRG_activate", ui_act(), then(PROC_REF(native_ui_act_prg_activate)))
 
-UI_ACT(/datum/computer_file/program/revelation, "PRG_activate", ui_act_prg_activate)
-UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_activate)
+/datum/computer_file/program/revelation/proc/native_ui_act_prg_arm(datum/act/op/A)
+	armed = !armed
+	return OP_OK
+
+/datum/computer_file/program/revelation/proc/native_ui_act_prg_activate(datum/act/op/A)
 	activate()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/revelation, "PRG_obfuscate", ui_act_prg_obfuscate, UI_ARG_TEXT("new_name"))
 UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_obfuscate)

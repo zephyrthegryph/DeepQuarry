@@ -50,10 +50,12 @@
 		message = "Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]"
 		target_access_static = null
 
-UI_ACT(/datum/computer_file/program/access_decrypter, "PRG_reset", ui_act_prg_reset)
-UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_reset)
+CAPABILITIES(/datum/computer_file/program/access_decrypter)
+	op("PRG_reset", ui_act(), then(PROC_REF(native_ui_act_prg_reset)))
+
+/datum/computer_file/program/access_decrypter/proc/native_ui_act_prg_reset(datum/act/op/A)
 	reset()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/access_decrypter, "PRG_execute", ui_act_prg_execute, UI_ARG_TEXT("access_target"), UI_ARG_NUM("allowed"))
 UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_execute)

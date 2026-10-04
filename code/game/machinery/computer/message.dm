@@ -1,3 +1,7 @@
+CAPABILITIES(/obj/machinery/computer/message_monitor)
+	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
+	op("deauth", ui_act(), then(PROC_REF(native_ui_act_deauth)))
+
 // Allows you to monitor messages that passes the server.
 
 /obj/machinery/computer/message_monitor
@@ -181,10 +185,9 @@ UI_DATA_REPLACE(/obj/machinery/computer/message_monitor, "customsender:text", "c
 	custommessage 	= "This is a test, please ignore."
 	customjob 		= "Admin"
 
-UI_ACT(/obj/machinery/computer/message_monitor, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_cleartemp)
+/obj/machinery/computer/message_monitor/proc/native_ui_act_cleartemp(datum/act/op/A)
 	temp = null
-	. = TRUE
+	return OP_OK
 //Authenticate
 
 UI_ACT(/obj/machinery/computer/message_monitor, "auth", ui_act_auth, UI_ARG_TEXT("key"))
@@ -197,10 +200,9 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_auth)
 			temp = incorrectkey
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/message_monitor, "deauth", ui_act_deauth)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deauth)
+/obj/machinery/computer/message_monitor/proc/native_ui_act_deauth(datum/act/op/A)
 	auth = FALSE
-	. = TRUE
+	return OP_OK
 //Find a server
 
 UI_ACT(/obj/machinery/computer/message_monitor, "find", ui_act_find)

@@ -119,12 +119,11 @@ UI_ACT_PROC(/datum/song, ui_act_import_song)
 	ParseSong(user, song_text)
 	return TRUE
 
-UI_ACT(/datum/song, "start_new_song", ui_act_start_new_song)
-UI_ACT_PROC(/datum/song, ui_act_start_new_song)
+/datum/song/proc/native_ui_act_start_new_song(datum/act/op/A)
 	name = ""
 	lines = new()
 	tempo = sanitize_tempo(5) // default 120 BPM
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/song, "add_new_line", ui_act_add_new_line)
 UI_ACT_PROC(/datum/song, ui_act_add_new_line)
@@ -194,10 +193,9 @@ UI_ACT_PROC(/datum/song, ui_act_set_dropoff_volume)
 	set_dropoff_volume(dropoff_threshold)
 	return TRUE
 
-UI_ACT(/datum/song, "toggle_sustain_hold_indefinitely", ui_act_toggle_sustain_hold_indefinitely)
-UI_ACT_PROC(/datum/song, ui_act_toggle_sustain_hold_indefinitely)
+/datum/song/proc/native_ui_act_toggle_sustain_hold_indefinitely(datum/act/op/A)
 	full_sustain_held_note = !full_sustain_held_note
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/song, "set_repeat_amount", ui_act_set_repeat_amount, UI_ARG_NUM("amount"))
 UI_ACT_PROC(/datum/song, ui_act_set_repeat_amount)

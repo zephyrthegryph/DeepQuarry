@@ -61,10 +61,6 @@ UI_ACT_PROC(/obj/item/clothing/accessory/bodycam, ui_act_set_channel)
 	SStgui.update_uis(src)
 	return TRUE
 
-CAPABILITIES(/obj/item/clothing/accessory/bodycam)
-	op("toggle_video", ui_act(), then(PROC_REF(native_ui_act_toggle_video)))
-	op("toggle_audio", ui_act(), then(PROC_REF(native_ui_act_toggle_audio)))
-
 /obj/item/clothing/accessory/bodycam/proc/native_ui_act_toggle_video(datum/act/op/A)
 	camera_toggle_video(A.actor)
 	SStgui.update_uis(src)

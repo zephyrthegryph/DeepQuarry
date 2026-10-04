@@ -20,6 +20,9 @@ UI_DATA(/datum/tgui_module/teleport_control, "merge:ui_data_datum_tgui_module_te
 
 	return data
 
+CAPABILITIES(/datum/tgui_module/teleport_control)
+	op("test_fire", ui_act(), then(PROC_REF(native_ui_act_test_fire)))
+
 UI_ACT(/datum/tgui_module/teleport_control, "select_target", ui_act_select_target)
 UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_select_target)
 	var/list/L = list()
@@ -70,10 +73,9 @@ UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_select_target)
 	locked_name = desc
 	return TRUE
 
-UI_ACT(/datum/tgui_module/teleport_control, "test_fire", ui_act_test_fire)
-UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_test_fire)
+/datum/tgui_module/teleport_control/proc/native_ui_act_test_fire(datum/act/op/A)
 	station()?.testfire()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/teleport_control, "toggle_on", ui_act_toggle_on)
 UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_toggle_on)

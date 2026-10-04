@@ -1,3 +1,7 @@
+CAPABILITIES(/obj/machinery/telecomms/relay)
+	op("receive", ui_act(), then(PROC_REF(native_ui_act_receive)))
+	op("broadcast", ui_act(), then(PROC_REF(native_ui_act_broadcast)))
+
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
 /*
@@ -160,17 +164,17 @@ DECLARE_UI(/obj/machinery/telecomms, "TelecommsMultitoolMenu")
 	data["receiving"] = receiving
 	return data
 
-UI_ACT(/obj/machinery/telecomms/relay, "receive", ui_act_receive)
-UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_receive)
-	. = TRUE
+/obj/machinery/telecomms/relay/proc/native_ui_act_receive(datum/act/op/A)
+	add_fingerprint(A.actor)
 	receiving = !receiving
 	set_temp("-% Receiving mode changed. %-", "average")
+	return OP_OK
 
-UI_ACT(/obj/machinery/telecomms/relay, "broadcast", ui_act_broadcast)
-UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_broadcast)
-	. = TRUE
+/obj/machinery/telecomms/relay/proc/native_ui_act_broadcast(datum/act/op/A)
+	add_fingerprint(A.actor)
 	broadcasting = !broadcasting
 	set_temp("-% Broadcasting mode changed. %-", "average")
+	return OP_OK
 
 UI_ACT(/obj/machinery/telecomms/relay, "change_listening", ui_act_change_listening)
 UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_change_listening)

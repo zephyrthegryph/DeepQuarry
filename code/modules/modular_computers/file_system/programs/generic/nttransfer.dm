@@ -126,6 +126,10 @@ UI_DATA_REPLACE(/datum/computer_file/program/nttransfer, "error:text", "merge:ui
 
 	return data
 
+CAPABILITIES(/datum/computer_file/program/nttransfer)
+	op("PRG_reset", ui_act(), then(PROC_REF(native_ui_act_prg_reset)))
+	op("PRG_uploadmenu", ui_act(), then(PROC_REF(native_ui_act_prg_uploadmenu)))
+
 UI_ACT(/datum/computer_file/program/nttransfer, "PRG_downloadfile", ui_act_prg_downloadfile, UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_downloadfile)
 	for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
@@ -145,8 +149,7 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_downloadfile)
 	rel_add(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/nttransfer, "PRG_reset", ui_act_prg_reset)
-UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_reset)
+/datum/computer_file/program/nttransfer/proc/native_ui_act_prg_reset(datum/act/op/A)
 	error = ""
 	upload_menu = 0
 	finalize_download()
@@ -155,7 +158,7 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_reset)
 	for(var/datum/computer_file/program/nttransfer/T in connected_clients)
 		T.crash_download("Remote server has forcibly closed the connection")
 	rel_clear(src, nameof(/datum/computer_file/program/nttransfer::provided_file))
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/nttransfer, "PRG_setpassword", ui_act_prg_setpassword)
 UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_setpassword)
@@ -183,10 +186,9 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadfile)
 	error = "I/O Error: Unable to locate file on hard drive."
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/nttransfer, "PRG_uploadmenu", ui_act_prg_uploadmenu)
-UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadmenu)
+/datum/computer_file/program/nttransfer/proc/native_ui_act_prg_uploadmenu(datum/act/op/A)
 	upload_menu = 1
-	return TRUE
+	return OP_OK
 
 
 /// File which is provided to clients. (a relation view: null once that is deleted).

@@ -39,6 +39,7 @@
 	var/_revision = 0
 
 CAPABILITIES(/datum/tooltip)
+	op("dismiss", ui_act(), then(PROC_REF(native_ui_act_dismiss)))
 	owns_one(nameof(tooltip_window), /datum/tgui_window)
 
 /datum/tooltip/New(client/C)
@@ -178,10 +179,9 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 	if(owner())
 		winset(owner(), control, "is-visible=false")
 
-UI_ACT(/datum/tooltip, "dismiss", ui_act_dismiss)
-UI_ACT_PROC(/datum/tooltip, ui_act_dismiss)
+/datum/tooltip/proc/native_ui_act_dismiss(datum/act/op/A)
 	hide()
-	return TRUE
+	return OP_OK
 
 //Open a tooltip for user, at a location based on params
 //Theme is a CSS class in Tooltip.tsx, by default this wrapper chooses a CSS class based on the user's UI_style (Midnight, Plasmafire, Retro, etc)

@@ -65,15 +65,20 @@
 	unnotify()
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/messenger, "Toggle Messenger", ui_act_toggle_messenger)
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_toggle_messenger)
-	. = TRUE
-	toff = !toff
+CAPABILITIES(/datum/data/pda/app/messenger)
+	op("Toggle Messenger", ui_act(), then(PROC_REF(native_ui_act_toggle_messenger)))
+	op("Toggle Ringer", ui_act(), then(PROC_REF(native_ui_act_toggle_ringer)))
+	op("Back", ui_act(), then(PROC_REF(native_ui_act_back)))
 
-UI_ACT(/datum/data/pda/app/messenger, "Toggle Ringer", ui_act_toggle_ringer)
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_toggle_ringer)
-	. = TRUE
+/datum/data/pda/app/messenger/proc/native_ui_act_toggle_messenger(datum/act/op/A)
+	unnotify()
+	toff = !toff
+	return OP_OK
+
+/datum/data/pda/app/messenger/proc/native_ui_act_toggle_ringer(datum/act/op/A)
+	unnotify()
 	notify_silent = !notify_silent
+	return OP_OK
 
 UI_ACT(/datum/data/pda/app/messenger, "Clear", ui_act_clear, UI_ARG_TEXT("option"))
 UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_clear)
@@ -122,10 +127,10 @@ UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_messenger_plugin)
 		rel_set(plugin, nameof(/datum/data/pda/messenger_plugin::messenger), src)
 		plugin.user_act(ui.user, P)
 
-UI_ACT(/datum/data/pda/app/messenger, "Back", ui_act_back)
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_back)
-	. = TRUE
+/datum/data/pda/app/messenger/proc/native_ui_act_back(datum/act/op/A)
+	unnotify()
 	active_conversation = null
+	return OP_OK
 
 // Specifically here for the chat message.
 TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_message), TOPIC_REF("target", /obj/item/pda))

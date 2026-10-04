@@ -227,41 +227,49 @@ UI_DATA(/mob/living/bot/cleanbot, "on:num", "open:num", "locked:num", "blood:num
 	add_fingerprint(ui.user)
 	return TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "start", ui_act_start)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_start)
+CAPABILITIES(/mob/living/bot/cleanbot)
+	op("start", ui_act(), then(PROC_REF(native_ui_act_start)))
+	op("blood", ui_act(), then(PROC_REF(native_ui_act_blood)))
+	op("patrol", ui_act(), then(PROC_REF(native_ui_act_patrol)))
+	op("vocal", ui_act(), then(PROC_REF(native_ui_act_vocal)))
+	op("wet_floors", ui_act(), then(PROC_REF(native_ui_act_wet_floors)))
+	op("spray_blood", ui_act(), then(PROC_REF(native_ui_act_spray_blood)))
+
+/mob/living/bot/cleanbot/proc/native_ui_act_start(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(on)
 		turn_off()
 	else
 		turn_on()
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot, "blood", ui_act_blood)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_blood)
+/mob/living/bot/cleanbot/proc/native_ui_act_blood(datum/act/op/A)
+	add_fingerprint(A.actor)
 	blood = !blood
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot, "patrol", ui_act_patrol)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_patrol)
+/mob/living/bot/cleanbot/proc/native_ui_act_patrol(datum/act/op/A)
+	add_fingerprint(A.actor)
 	will_patrol = !will_patrol
 	patrol_path = null
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot, "vocal", ui_act_vocal)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_vocal)
+/mob/living/bot/cleanbot/proc/native_ui_act_vocal(datum/act/op/A)
+	add_fingerprint(A.actor)
 	vocal = !vocal
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot, "wet_floors", ui_act_wet_floors)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_wet_floors)
+/mob/living/bot/cleanbot/proc/native_ui_act_wet_floors(datum/act/op/A)
+	add_fingerprint(A.actor)
 	wet_floors = !wet_floors
-	to_chat(ui.user, span_notice("You twiddle the screw."))
-	. = TRUE
+	to_chat(A.actor, span_notice("You twiddle the screw."))
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot, "spray_blood", ui_act_spray_blood)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_spray_blood)
+/mob/living/bot/cleanbot/proc/native_ui_act_spray_blood(datum/act/op/A)
+	add_fingerprint(A.actor)
 	spray_blood = !spray_blood
-	to_chat(ui.user, span_notice("You press the weird button."))
-	. = TRUE
+	to_chat(A.actor, span_notice("You press the weird button."))
+	return OP_OK
 
 /mob/living/bot/cleanbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()

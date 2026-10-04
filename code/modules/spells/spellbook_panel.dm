@@ -1,3 +1,6 @@
+CAPABILITIES(/obj/item/spellbook)
+	op("clear_temp", ui_act(), then(PROC_REF(native_ui_act_clear_temp)))
+
 // Wizard spellbook — structured TGUI panel that replaces the legacy attack_self HTML.
 
 /obj/item/spellbook/proc/dq_open_spellbook(mob/user)
@@ -61,11 +64,10 @@ UI_DATA_REPLACE(/obj/item/spellbook, "merge:ui_data_obj_item_spellbook{}")
 	data["noclothes"] = catalog["noclothes"]
 	return data
 
-UI_ACT(/obj/item/spellbook, "clear_temp", ui_act_clear_temp)
-UI_ACT_PROC(/obj/item/spellbook, ui_act_clear_temp)
+/obj/item/spellbook/proc/native_ui_act_clear_temp(datum/act/op/A)
 	temp = null
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/spellbook, "choose", ui_act_choose, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/item/spellbook, ui_act_choose)

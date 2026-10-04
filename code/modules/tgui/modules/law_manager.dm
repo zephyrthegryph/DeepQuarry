@@ -1,3 +1,7 @@
+CAPABILITIES(/datum/tgui_module/law_manager)
+	op("state_laws", ui_act(), then(PROC_REF(native_ui_act_state_laws)))
+	op("notify_laws", ui_act(), then(PROC_REF(native_ui_act_notify_laws)))
+
 /datum/tgui_module/law_manager
 	name = "Law manager"
 	tgui_id = "LawManager"
@@ -113,10 +117,9 @@ UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_delete_law)
 			owner().delete_law(AL)
 	return TRUE
 
-UI_ACT(/datum/tgui_module/law_manager, "state_laws", ui_act_state_laws)
-UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_state_laws)
+/datum/tgui_module/law_manager/proc/native_ui_act_state_laws(datum/act/op/A)
 	owner().statelaws(owner().laws)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/law_manager, "state_law_set", ui_act_state_law_set, UI_ARG_REF("state_law_set", "proc:law_sets", /datum/ai_laws))
 UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_state_law_set)
@@ -134,16 +137,15 @@ UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_transfer_laws)
 			ALs.sync(owner(), 0)
 	return TRUE
 
-UI_ACT(/datum/tgui_module/law_manager, "notify_laws", ui_act_notify_laws)
-UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_notify_laws)
+/datum/tgui_module/law_manager/proc/native_ui_act_notify_laws(datum/act/op/A)
 	to_chat(owner(), span_danger("Law Notice\n") + owner().laws.get_formatted_laws())
 	if(isAI(owner()))
 		var/mob/living/silicon/ai/AI = owner()
 		for(var/mob/living/silicon/robot/R in AI.connected_robots)
 			to_chat(R, span_danger("Law Notice\n") + R.laws.get_formatted_laws())
-	if(ui.user != owner())
-		to_chat(ui.user, span_notice("Laws displayed."))
-	return TRUE
+	if(A.actor != owner())
+		to_chat(A.actor, span_notice("Laws displayed."))
+	return OP_OK
 
 /// The list the UI_ARG_REF rows resolve refs in.
 /datum/tgui_module/law_manager/proc/ui_source_owner_laws_all_laws()

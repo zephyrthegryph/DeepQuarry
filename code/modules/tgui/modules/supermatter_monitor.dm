@@ -86,15 +86,17 @@ UI_DATA(/datum/tgui_module/supermatter_monitor, "merge:ui_data_datum_tgui_module
 
 	return data
 
-UI_ACT(/datum/tgui_module/supermatter_monitor, "clear", ui_act_clear)
-UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_clear)
-	rel_clear(src, nameof(/area/looking_glass::active))
-	. = TRUE
+CAPABILITIES(/datum/tgui_module/supermatter_monitor)
+	op("clear", ui_act(), then(PROC_REF(native_ui_act_clear)))
+	op("refresh", ui_act(), then(PROC_REF(native_ui_act_refresh)))
 
-UI_ACT(/datum/tgui_module/supermatter_monitor, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_refresh)
+/datum/tgui_module/supermatter_monitor/proc/native_ui_act_clear(datum/act/op/A)
+	rel_clear(src, nameof(/area/looking_glass::active))
+	return OP_OK
+
+/datum/tgui_module/supermatter_monitor/proc/native_ui_act_refresh(datum/act/op/A)
 	refresh()
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/supermatter_monitor, "set", ui_act_set, UI_ARG_NUM("set"))
 UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_set)

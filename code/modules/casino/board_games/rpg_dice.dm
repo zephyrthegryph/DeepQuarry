@@ -1,3 +1,6 @@
+CAPABILITIES(/datum/board_game/rpg_dice)
+	op("clear_history", ui_act(), then(PROC_REF(native_ui_act_clear_history)))
+
 /obj/structure/casino_table/board_game/rpg_dice
 	name = GAME_RGP_DICE
 	desc = "A set of dice to roll with your friends."
@@ -41,10 +44,9 @@ UI_ACT_PROC(/datum/board_game/rpg_dice, ui_act_roll_dice)
 	UNTYPED_LIST_ADD(last_rolls, list("player" = ui.user, "count" = dice_count, "size" = dice_size, "results" = results, "mod" = modifier, "apply_to_all" = apply_to_all, "sum" = sum))
 	return TRUE
 
-UI_ACT(/datum/board_game/rpg_dice, "clear_history", ui_act_clear_history)
-UI_ACT_PROC(/datum/board_game/rpg_dice, ui_act_clear_history)
+/datum/board_game/rpg_dice/proc/native_ui_act_clear_history(datum/act/op/A)
 	LAZYCLEARLIST(last_rolls)
-	return TRUE
+	return OP_OK
 
 /datum/board_game/rpg_dice/proc/check_crit(low, max, result)
 	if(result == low)

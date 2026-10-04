@@ -64,6 +64,10 @@ UI_DATA_REPLACE(/datum/computer_file/program/ntnet_dos, "error:text", "merge:ui_
 
 	return data
 
+CAPABILITIES(/datum/computer_file/program/ntnet_dos)
+	op("PRG_reset", ui_act(), then(PROC_REF(native_ui_act_prg_reset)))
+	op("PRG_execute", ui_act(), then(PROC_REF(native_ui_act_prg_execute)))
+
 UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_target_relay", ui_act_prg_target_relay, UI_ARG_NUM("targid"))
 UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_target_relay)
 	for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
@@ -72,17 +76,15 @@ UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_target_relay)
 			break
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_reset", ui_act_prg_reset)
-UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_reset)
+/datum/computer_file/program/ntnet_dos/proc/native_ui_act_prg_reset(datum/act/op/A)
 	if(target())
 		rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
 		rel_clear(src, nameof(/datum/accessory_stat_modifier::target))
 	executed = FALSE
 	error = ""
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_execute", ui_act_prg_execute)
-UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_execute)
+/datum/computer_file/program/ntnet_dos/proc/native_ui_act_prg_execute(datum/act/op/A)
 	if(target())
 		executed = TRUE
 		rel_add(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
@@ -90,7 +92,7 @@ UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_execute)
 			var/obj/item/computer_hardware/network_card/network_card = computer().network_card
 			GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target().uid] detected from device: [network_card.get_network_tag()]")
 			GLOB.ntnet_global.intrusion_detection_alarm = TRUE
-	return TRUE
+	return OP_OK
 
 /// The target this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/ntnet_dos/proc/target() as /obj/machinery/ntnet_relay
