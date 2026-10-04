@@ -3109,18 +3109,18 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_body_effect) at code/modules/admin/admin_verbs.dm:384
+/// CAPABILITIES(/datum/prompt/choice/admin_body_effect) at code/modules/admin/admin_verbs.dm:399
 /datum/prompt/choice/admin_body_effect/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin_verbs.dm", 384, /datum/prompt/choice/admin_body_effect)
-	into += entry_line(385)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 399, /datum/prompt/choice/admin_body_effect)
+	into += entry_line(400)
 	into += list(global.ref_one(nameof(living_target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation) at code/modules/admin/admin_verbs.dm:991
+/// CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation) at code/modules/admin/admin_verbs.dm:1006
 /datum/prompt/choice/admin_man_up/confirmation/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin_verbs.dm", 991, /datum/prompt/choice/admin_man_up/confirmation)
-	into += entry_line(992)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 1006, /datum/prompt/choice/admin_man_up/confirmation)
+	into += entry_line(1007)
 	into += list(global.ref_one(nameof(target), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm) at code/modules/admin/admin.dm:1029
@@ -3130,11 +3130,11 @@
 	into += entry_line(1030)
 	into += list(global.ref_one(nameof(target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_spell) at code/modules/admin/admin_verbs.dm:701
+/// CAPABILITIES(/datum/prompt/choice/admin_spell) at code/modules/admin/admin_verbs.dm:716
 /datum/prompt/choice/admin_spell/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin_verbs.dm", 701, /datum/prompt/choice/admin_spell)
-	into += entry_line(702)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 716, /datum/prompt/choice/admin_spell)
+	into += entry_line(717)
 	into += list(global.ref_one(nameof(target_mob), /mob))
 
 /// CAPABILITIES(/datum/prompt/choice/air_control_menu) at code/game/machinery/atmo_control.dm:285
@@ -3266,6 +3266,13 @@
 	into += entry_line(284)
 	into += list(global.ref_one(nameof(captured_callback), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/rig_maintenance) at code/modules/clothing/spacesuits/rig/rig_attackby.dm:245
+/datum/prompt/choice/rig_maintenance/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/spacesuits/rig/rig_attackby.dm", 245, /datum/prompt/choice/rig_maintenance)
+	into += entry_line(246)
+	into += list(global.ref_one(nameof(captured_tool), /obj/item))
+
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
 	..(into)
@@ -3280,11 +3287,11 @@
 	into += entry_line(352)
 	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
 
-/// CAPABILITIES(/datum/prompt/number/admin_body_effect) at code/modules/admin/admin_verbs.dm:416
+/// CAPABILITIES(/datum/prompt/number/admin_body_effect) at code/modules/admin/admin_verbs.dm:431
 /datum/prompt/number/admin_body_effect/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin_verbs.dm", 416, /datum/prompt/number/admin_body_effect)
-	into += entry_line(417)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 431, /datum/prompt/number/admin_body_effect)
+	into += entry_line(432)
 	into += list(global.ref_one(nameof(living_target), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:994
