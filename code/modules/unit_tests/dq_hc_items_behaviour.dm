@@ -33,6 +33,7 @@
 	return
 
 /datum/unit_test/dq_hc_items/proc/tile(dx, dy)
+	RETURN_TYPE(/turf)
 	return locate(run_loc_floor_bottom_left.x + dx, run_loc_floor_bottom_left.y + dy, run_loc_floor_bottom_left.z)
 
 /datum/unit_test/dq_hc_items/proc/settle()
