@@ -16,7 +16,8 @@
 	EXPIRY_STAMP(src, init_time, CLOCK_WORLD)
 
 DECLARE_REPEAT(/obj/effect/bspawner, "time_between_spawn", spawn_due, null)
-DECLARE_START_TIMER(/obj/effect/bspawner, "time_to_end", /datum/proc/qdel_self)
+CAPABILITIES(/obj/effect/bspawner)
+	after_init(nameof(time_to_end), then(TYPE_PROC_REF(/datum, qdel_self)))
 
 /// One item every time_between_spawn (declared repeat) until time_to_end deletes it.
 /obj/effect/bspawner/proc/spawn_due()

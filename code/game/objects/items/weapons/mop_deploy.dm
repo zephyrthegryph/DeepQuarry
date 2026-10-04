@@ -16,7 +16,6 @@
 	var/mopcount = 0
 
 DECLARE_REAGENTS(/obj/item/mop_deploy, 5, null)
-DECLARE_START_TIMER(/obj/item/mop_deploy, 0, PROC_REF(check_held))
 
 /turf/proc/clean_deploy(atom/source)
 	if(source.reagents.has_reagent(REAGENT_ID_WATER, 1))
@@ -52,6 +51,7 @@ EXTEND_INTERACTIONS(/obj/effect, \
 )
 
 CAPABILITIES(/obj/item/mop_deploy)
+	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/item/mop_deploy)
 
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.
-/obj/item/mop_deploy/proc/check_held()
+/obj/item/mop_deploy/proc/check_held(datum/act/A)
 	if(!creator() || loc != creator() || !creator().item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))

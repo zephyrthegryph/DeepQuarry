@@ -33,7 +33,7 @@
  * messages come from a per-tool verb table unless a step says its own. A stage's `icon` is drawn
  * through draw(look) (look.state()), never written to icon_state.
  *
- * The holder's stage lives in the capability's data (cap_data(), made by on_holder_init()), or in a
+ * The holder's stage lives in the capability's data (cap_data(), made by legacy_holder_init()), or in a
  * holder var named by ladder_options(state_var = nameof(src.x)), or behind holder procs
  * (ladder_options(state =, store =)).
  *
@@ -93,13 +93,13 @@ CAPABILITIES(/datum/capability/construction)
 	return ladder_examine_lines(user, holder)
 
 /// A new holder starts on the ladder's start stage (kept in the capability's data).
-/datum/capability/construction/on_holder_init(atom/holder, mapload)
+/datum/capability/construction/legacy_holder_init(atom/holder, mapload)
 	var/datum/construction_ladder/built = ladder_for(holder)
 	if(built.keeps_stage())
 		var/datum/ladder_progress/progress = cap_data(holder, src)
 		progress.stage = built.start || built.states[1]
 
-/datum/capability/construction/on_holder_destroy(atom/holder)
+/datum/capability/construction/legacy_holder_destroy(atom/holder)
 	var/datum/ladder_progress/progress = holder.cap_data?[key]
 	if(progress)
 		LAZYREMOVE(holder.cap_data, key)

@@ -308,7 +308,6 @@
 			/datum/system/vis_overlays = RXB_EVERY,
 			/datum/system/vote = RXB_EVERY,
 			/obj/effect/hotspot = RXB_EVERY,
-			/obj/item/broken_gun = RXB_INIT,
 		)
 	return table
 

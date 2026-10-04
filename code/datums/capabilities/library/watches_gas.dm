@@ -107,11 +107,11 @@
 		return
 	rel_set(src, nameof(watch), om_watch_gas(holder, mixture, C.channel, C.cmp, C.level, C.callback, C.hysteresis, C.lane))
 
-/datum/capability/watches_gas/on_holder_init(atom/holder, mapload)
+/datum/capability/watches_gas/legacy_holder_init(atom/holder, mapload)
 	var/datum/gas_watch_state/state = cap_data(holder, src)
 	state.rearm(holder, src)
 
-/datum/capability/watches_gas/on_holder_destroy(atom/holder)
+/datum/capability/watches_gas/legacy_holder_destroy(atom/holder)
 	var/datum/gas_watch_state/state = holder.cap_data?[key]
 	if(state)
 		own_clear(state, nameof(/datum/gas_watch_state::watch), OWN_DELETE)

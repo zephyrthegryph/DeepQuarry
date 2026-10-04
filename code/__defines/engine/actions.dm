@@ -66,6 +66,8 @@
 #define ENTRY_CHANCE "chance"
 /// every(): a capability's periodic work (every.dm), or a type's own.
 #define ENTRY_EVERY "every"
+/// after_init(delay, parts...): an after() armed when the instance initializes (after_init.dm).
+#define ENTRY_AFTER_INIT "after_init"
 
 /// Rule names a report carries (tests assert on them).
 #define RULE_ACT_DEPTH "act_depth"

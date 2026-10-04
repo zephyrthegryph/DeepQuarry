@@ -24,11 +24,11 @@
 	C.key = "powered_by:[system]"
 	return list(C)
 
-/datum/capability/powered_by/on_holder_init(atom/holder, mapload)
+/datum/capability/powered_by/legacy_holder_init(atom/holder, mapload)
 	if(of_area)
 		join(get_area(holder), holder, src, role)
 
-/datum/capability/powered_by/on_holder_destroy(atom/holder)
+/datum/capability/powered_by/legacy_holder_destroy(atom/holder)
 	if(of_area)
 		leave(get_area(holder), holder, src, all = TRUE)
 

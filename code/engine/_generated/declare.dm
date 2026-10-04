@@ -7283,12 +7283,75 @@
 	into += entry_line(8)
 	into += list(global.verb_entry(/mob/living/proc/hide))
 
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/electric/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:176
+/mob/living/simple_mob/animal/giant_spider/electric/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 176, /mob/living/simple_mob/animal/giant_spider/electric/broodling)
+	into += entry_line(177)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/frost/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:174
+/mob/living/simple_mob/animal/giant_spider/frost/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 174, /mob/living/simple_mob/animal/giant_spider/frost/broodling)
+	into += entry_line(175)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/hunter/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:178
+/mob/living/simple_mob/animal/giant_spider/hunter/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 178, /mob/living/simple_mob/animal/giant_spider/hunter/broodling)
+	into += entry_line(179)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
 /// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lurker) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/lurker.dm:113
 /mob/living/simple_mob/animal/giant_spider/lurker/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/lurker.dm", 113, /mob/living/simple_mob/animal/giant_spider/lurker)
 	into += entry_line(114)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(hit_breaks_cloak))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lurker/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:180
+/mob/living/simple_mob/animal/giant_spider/lurker/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 180, /mob/living/simple_mob/animal/giant_spider/lurker/broodling)
+	into += entry_line(181)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:182
+/mob/living/simple_mob/animal/giant_spider/nurse/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 182, /mob/living/simple_mob/animal/giant_spider/nurse/broodling)
+	into += entry_line(183)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/pepper/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:184
+/mob/living/simple_mob/animal/giant_spider/pepper/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 184, /mob/living/simple_mob/animal/giant_spider/pepper/broodling)
+	into += entry_line(185)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/thermic/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:186
+/mob/living/simple_mob/animal/giant_spider/thermic/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 186, /mob/living/simple_mob/animal/giant_spider/thermic/broodling)
+	into += entry_line(187)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/tunneler/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:188
+/mob/living/simple_mob/animal/giant_spider/tunneler/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 188, /mob/living/simple_mob/animal/giant_spider/tunneler/broodling)
+	into += entry_line(189)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/webslinger/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:190
+/mob/living/simple_mob/animal/giant_spider/webslinger/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 190, /mob/living/simple_mob/animal/giant_spider/webslinger/broodling)
+	into += entry_line(191)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/goat) at code/modules/mob/living/simple_mob/subtypes/animal/farm animals/goat.dm:28
 /mob/living/simple_mob/animal/goat/declared_entries(list/into)
@@ -7906,6 +7969,13 @@
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1139, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
 	into += entry_line(1140)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm:180
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm", 180, /mob/living/simple_mob/vore/alienanimals/spooky_ghost)
+	into += entry_line(181)
+	into += list(global.after_init(35 SECONDS, global.then(PROC_REF(fade_out))))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/bigdragon) at code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm:977
 /mob/living/simple_mob/vore/bigdragon/declared_entries(list/into)
@@ -8528,6 +8598,13 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(selected_weather), /datum/anomalous_weather))
 
+/// CAPABILITIES(/obj/effect/bhole) at code/game/gamemodes/events/black_hole.dm:12
+/obj/effect/bhole/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/gamemodes/events/black_hole.dm", 12, /obj/effect/bhole)
+	into += entry_line(13)
+	into += list(global.after_init(0.4 SECONDS, global.then(PROC_REF(controller))))
+
 /// CAPABILITIES(/obj/effect/blob) at code/modules/blob/blob.dm:141
 /obj/effect/blob/declared_entries(list/into)
 	..(into)
@@ -8547,6 +8624,13 @@
 	into += list(global.owns_one(nameof(buildmode), /obj/effect/bmode/buildmode))
 	into += entry_line(216)
 	into += list(global.owns_one(nameof(buildquit), /obj/effect/bmode/buildquit))
+
+/// CAPABILITIES(/obj/effect/bspawner) at code/game/objects/effects/bluespace_spawner.dm:19
+/obj/effect/bspawner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/bluespace_spawner.dm", 19, /obj/effect/bspawner)
+	into += entry_line(20)
+	into += list(global.after_init(nameof(time_to_end), global.then(TYPE_PROC_REF(/datum, qdel_self))))
 
 /// CAPABILITIES(/obj/effect/countdown) at code/game/objects/effects/countdown.dm:19
 /obj/effect/countdown/declared_entries(list/into)
@@ -8626,6 +8710,13 @@
 	into += list(global.op("hit_energy_field", global.item(/obj/item), global.then(PROC_REF(interaction_hit_energy_field))))
 	into += entry_line(68)
 	into += list(global.op("touch_energy_field", global.hand(), global.then(PROC_REF(interaction_touch_energy_field))))
+
+/// CAPABILITIES(/obj/effect/energy_net) at code/game/objects/items/weapons/weaponry.dm:119
+/obj/effect/energy_net/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/weaponry.dm", 119, /obj/effect/energy_net)
+	into += entry_line(120)
+	into += list(global.after_init(2 SECONDS, global.then(PROC_REF(check_empty))))
 
 /// CAPABILITIES(/obj/effect/fake_attacker) at code/modules/flufftext/fake_attacker.dm:217
 /obj/effect/fake_attacker/declared_entries(list/into)
@@ -9342,6 +9433,13 @@
 	into += entry_block("code/game/objects/items/weapons/medigun/linked_medigun.dm", 31, /obj/item/bork_medigun/linked)
 	into += entry_line(32)
 	into += list(global.op("cancel_healing", global.in_hand(), global.then(PROC_REF(healing_cancelled))))
+
+/// CAPABILITIES(/obj/item/broken_gun) at code/modules/projectiles/broken.dm:13
+/obj/item/broken_gun/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/broken.dm", 13, /obj/item/broken_gun)
+	into += entry_line(14)
+	into += list(global.after_init(30 SECONDS, global.then(PROC_REF(validate_gun_type))))
 
 /// CAPABILITIES(/obj/item/bug_monitor) at code/game/objects/items/devices/spy_bug.dm:172
 /obj/item/bug_monitor/declared_entries(list/into)
@@ -10362,20 +10460,22 @@
 	..(into)
 	into += entry_block("code/game/objects/items/devices/communicator/UI_tgui.dm", 12, /obj/item/communicator)
 	into += entry_line(13)
-	into += list(global.owns_one(nameof(id), on_destroy = ON_DESTROY_SPILL))
+	into += list(global.after_init(5 SECONDS, global.then(PROC_REF(register_to_holder))))
 	into += entry_line(14)
-	into += list(global.owns_one(nameof(cam_background), /atom/movable/screen/background))
+	into += list(global.owns_one(nameof(id), on_destroy = ON_DESTROY_SPILL))
 	into += entry_line(15)
-	into += list(global.owns_one(nameof(cam_screen), /atom/movable/screen/map_view))
+	into += list(global.owns_one(nameof(cam_background), /atom/movable/screen/background))
 	into += entry_line(16)
-	into += list(global.owns_one(nameof(exonet), /datum/exonet_protocol))
+	into += list(global.owns_one(nameof(cam_screen), /atom/movable/screen/map_view))
 	into += entry_line(17)
-	into += list(global.owns_one(nameof(local_skybox), /atom/movable/screen/skybox))
+	into += list(global.owns_one(nameof(exonet), /datum/exonet_protocol))
 	into += entry_line(18)
-	into += list(global.owns_many(nameof(cam_plane_masters)))
+	into += list(global.owns_one(nameof(local_skybox), /atom/movable/screen/skybox))
 	into += entry_line(19)
-	into += list(global.owns_many(nameof(voice_mobs)))
+	into += list(global.owns_many(nameof(cam_plane_masters)))
 	into += entry_line(20)
+	into += list(global.owns_many(nameof(voice_mobs)))
+	into += entry_line(21)
 	into += list(global.owns_one(nameof(camera), starts = /obj/machinery/camera/communicator))
 
 /// CAPABILITIES(/obj/item/computer_hardware/battery_module) at code/modules/modular_computers/hardware/battery_module.dm:12
@@ -10892,6 +10992,13 @@
 	into += entry_block("code/game/objects/items/weapons/grenades/confetti.dm", 16, /obj/item/grenade/confetti)
 	into += entry_line(17)
 	into += list(global.owns_one(nameof(confetti_spread), /datum/effect/effect/system/confetti_spread, starts = /datum/effect/effect/system/confetti_spread))
+
+/// CAPABILITIES(/obj/item/grenade/shooter/auto_explode) at code/modules/mob/living/simple_mob/subtypes/bullet_heck/puddle_mechanic.dm:43
+/obj/item/grenade/shooter/auto_explode/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/bullet_heck/puddle_mechanic.dm", 43, /obj/item/grenade/shooter/auto_explode)
+	into += entry_line(44)
+	into += list(global.after_init(nameof(fuse_time), global.then(PROC_REF(fuse_out))))
 
 /// CAPABILITIES(/obj/item/grenade/smokebomb) at code/game/objects/items/weapons/grenades/smokebomb.dm:18
 /obj/item/grenade/smokebomb/declared_entries(list/into)
@@ -11731,6 +11838,8 @@
 	into += entry_line(467)
 	into += list(global.without("power"))
 	into += entry_line(468)
+	into += list(global.after_init(1, global.then(PROC_REF(check_held))))
+	into += entry_line(469)
 	into += list(global.op("dismiss", global.in_hand(), global.label("Dismiss energy blade"), global.then(PROC_REF(blade_dismiss_requested))))
 
 /// CAPABILITIES(/obj/item/melee/fluffstuff) at code/modules/vore/fluffstuff/custom_items.dm:1102
@@ -11862,10 +11971,12 @@
 	into += entry_line(89)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(modular_computer_step)), when = nameof(enabled)))
 
-/// CAPABILITIES(/obj/item/mop_deploy) at code/game/objects/items/weapons/mop_deploy.dm:54
+/// CAPABILITIES(/obj/item/mop_deploy) at code/game/objects/items/weapons/mop_deploy.dm:53
 /obj/item/mop_deploy/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/mop_deploy.dm", 54, /obj/item/mop_deploy)
+	into += entry_block("code/game/objects/items/weapons/mop_deploy.dm", 53, /obj/item/mop_deploy)
+	into += entry_line(54)
+	into += list(global.after_init(1, global.then(PROC_REF(check_held))))
 	into += entry_line(55)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
@@ -15467,10 +15578,12 @@
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(Beacon), /obj/item/radio/beacon))
 
-/// CAPABILITIES(/obj/machinery/bluespace_denier) at code/game/machinery/bluespace_denier.dm:59
+/// CAPABILITIES(/obj/machinery/bluespace_denier) at code/game/machinery/bluespace_denier.dm:58
 /obj/machinery/bluespace_denier/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/bluespace_denier.dm", 59, /obj/machinery/bluespace_denier)
+	into += entry_block("code/game/machinery/bluespace_denier.dm", 58, /obj/machinery/bluespace_denier)
+	into += entry_line(59)
+	into += list(global.after_init(10 SECONDS, global.then(PROC_REF(start_up))))
 	into += entry_line(60)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(denier_emp)))))
 
@@ -16263,6 +16376,8 @@
 	..(into)
 	into += entry_block("code/game/dna/dna_modifier.dm", 352, /obj/machinery/computer/scan_consolenew)
 	into += entry_line(353)
+	into += list(global.after_init(25 SECONDS, global.then(PROC_REF(injector_cooldown_finish))))
+	into += entry_line(354)
 	into += list(global.owns_many(nameof(buffers), /datum/transhuman/body_record))
 
 /// CAPABILITIES(/obj/machinery/computer/secure_data) at code/game/machinery/computer/security.dm:104
@@ -20018,6 +20133,13 @@
 	into += entry_line(107)
 	into += list(global.on_op("construction.undo:table_reinforced", global.then(PROC_REF(layers_changed))))
 
+/// CAPABILITIES(/obj/structure/timer_door) at code/game/objects/micro_event.dm:115
+/obj/structure/timer_door/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/micro_event.dm", 115, /obj/structure/timer_door)
+	into += entry_line(116)
+	into += list(global.after_init(nameof(time_til_open), global.then(TYPE_PROC_REF(/datum, qdel_self))))
+
 /// CAPABILITIES(/obj/structure/toilet) at code/game/objects/structures/watercloset.dm:36
 /obj/structure/toilet/declared_entries(list/into)
 	..(into)
@@ -20958,6 +21080,15 @@
 	into += entry_line(38)
 	into += list(global.on_notice(/datum/notice/e4_struck, global.then(PROC_REF(heard_whatever)), outcome = ACT_ANY))
 
+/// CAPABILITIES(/obj/effect/dq_after_init_probe) at code/modules/unit_tests/dq_after_init_tests.dm:14
+/obj/effect/dq_after_init_probe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_after_init_tests.dm", 14, /obj/effect/dq_after_init_probe)
+	into += entry_line(15)
+	into += list(global.after_init(0, global.then(PROC_REF(after_init_ran))))
+	into += entry_line(16)
+	into += list(global.when(nameof(armed), global.after_init(0, global.then(PROC_REF(gated_ran)))))
+
 /// CAPABILITIES(/obj/eg2_asker) at code/tests/engine/eg2_fixtures.dm:17
 /obj/eg2_asker/declared_entries(list/into)
 	..(into)
@@ -21134,6 +21265,8 @@
 	into += list(global.owns_one(nameof(helper), starts = /datum/dq_decl_owned_child))
 	into += entry_line(68)
 	into += list(global.owns_many(nameof(spares), starts = list(/obj/item/dq_decl_part = 2)))
+	into += entry_line(69)
+	into += list(global.after_init(2 SECONDS, global.then(PROC_REF(timer_done))))
 
 /// CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:31
 /obj/item/dq_destroy_transaction_phase_probe/declared_entries(list/into)
@@ -21141,6 +21274,13 @@
 	into += entry_block("code/modules/unit_tests/dq_destroy_transaction_tests.dm", 31, /obj/item/dq_destroy_transaction_phase_probe)
 	into += entry_line(32)
 	into += list(global.owns_one(nameof(child), /datum/dq_destroy_transaction_owned_child))
+
+/// CAPABILITIES(/obj/item/dq_forms_timer) at code/modules/unit_tests/dq_lifecycle_forms_tests.dm:119
+/obj/item/dq_forms_timer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_lifecycle_forms_tests.dm", 119, /obj/item/dq_forms_timer)
+	into += entry_line(120)
+	into += list(global.after_init(nameof(fuse), global.then(PROC_REF(go_off))))
 
 /// CAPABILITIES(/obj/item/e2_cloth) at code/tests/engine/e2_fixtures.dm:28
 /obj/item/e2_cloth/declared_entries(list/into)

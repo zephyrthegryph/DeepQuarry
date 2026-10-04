@@ -430,7 +430,7 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 	return "The charge meter reads [round(C.percent())]%."
 
 /// The bay starts with a thing when its holder initializes: `starts` is a type, or nameof(var) of a holder var holding one.
-/datum/capability/lib/cell_bay/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/cell_bay/on_holder_init(datum/act/eval/A)
 	var/atom/holder = A.holder
 	if(isnull(starts) || !istype(holder) || !isnull(holder.vars[slot_var]))
 		return

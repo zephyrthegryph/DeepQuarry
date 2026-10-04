@@ -200,7 +200,7 @@
 	TEST_ASSERT_EQUAL(drawn_state(probe), "probe_boarded", "the next stage's icon is drawn")
 	TEST_ASSERT_EQUAL(probe.icon_state, initial(probe.icon_state), "no step or set writes icon_state; the look applies it")
 
-	C.on_holder_destroy(probe)
+	C.legacy_holder_destroy(probe)
 	TEST_ASSERT(!probe.cap_data?[C.key], "on_holder_destroy dropped the stage data")
 	TEST_ASSERT(QDELETED(progress), "and deleted it")
 	TEST_ASSERT_EQUAL(drawn_state(probe), "probe_base", "with no data the holder reads as the start stage")

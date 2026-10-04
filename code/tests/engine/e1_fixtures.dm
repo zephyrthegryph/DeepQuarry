@@ -32,10 +32,10 @@ CAPABILITY_TYPE(e1_solo, CAP_E1_SOLO, /datum/capability/e1_solo, key = NONE, not
 /datum/capability/e1_solo/on_holder_preinit(datum/act/eval/A)
 	GLOB.e1_log += "holder_preinit:[A.holder.type]"
 
-/datum/capability/e1_solo/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/e1_solo/on_holder_init(datum/act/eval/A)
 	GLOB.e1_log += "holder_init:[A.holder.type]:[A.mapload ? "map" : "runtime"]"
 
-/datum/capability/e1_solo/on_holder_destroy_ctx(datum/act/eval/A)
+/datum/capability/e1_solo/on_holder_destroy(datum/act/eval/A)
 	GLOB.e1_log += "holder_destroy:[A.holder.type]"
 
 cap_keys(CAP_E1_SOLO, ARMED = null, LIT = null)

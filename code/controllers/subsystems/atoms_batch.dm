@@ -32,6 +32,8 @@
 	var/list/work
 	/// Atoms whose Initialize() returned INITIALIZE_HINT_LATELOAD during a mapload.
 	var/list/late_loaders
+	/// Map-loaded instances of this frame with after_init() entries: armed when the frame closes, after every atom of the load exists.
+	var/list/after_inits
 	/// Movables this frame created from templates, when the caller asked for them.
 	var/list/created_atoms
 	/// Chunks initialized and yields taken (tests and the boot log read them).

@@ -24,11 +24,11 @@ CAPABILITY_TYPE(trait, CAP_TRAIT, /datum/capability/lib/trait, key = trait, trai
 /datum/capability/lib/trait/proc/trait_source_key(datum/activation/A)
 	return A ? "capability_trait:[A.serial]" : "capability_trait"
 
-/datum/capability/lib/trait/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/trait/on_holder_init(datum/act/eval/A)
 	if(!isnull(trait))
 		add_trait(A.holder, trait, trait_source_key(null))
 
-/datum/capability/lib/trait/on_holder_destroy_ctx(datum/act/eval/A)
+/datum/capability/lib/trait/on_holder_destroy(datum/act/eval/A)
 	if(!isnull(trait))
 		remove_trait(A.holder, trait, trait_source_key(null))
 

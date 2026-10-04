@@ -48,7 +48,7 @@
 /datum/capability/wires/draw(atom/holder, datum/look/look)
 	draw_layer(look, when = wires_exposed(holder))
 
-/datum/capability/wires/on_holder_destroy(atom/holder)
+/datum/capability/wires/legacy_holder_destroy(atom/holder)
 	var/datum/wires/W = holder.cap_data?[key]
 	if(W)
 		LAZYREMOVE(holder.cap_data, key)

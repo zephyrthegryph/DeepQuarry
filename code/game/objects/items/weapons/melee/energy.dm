@@ -465,6 +465,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 
 CAPABILITIES(/obj/item/melee/energy/blade)
 	without("power") // special_handling: a summoned blade is never toggled, only dismissed
+	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
 	op("dismiss", in_hand(), label("Dismiss energy blade"), then(PROC_REF(blade_dismiss_requested)))
 
 /obj/item/melee/energy/blade/proc/blade_dismiss_requested(datum/act/op/A)
@@ -474,7 +475,7 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.
-/obj/item/melee/energy/blade/proc/check_held()
+/obj/item/melee/energy/blade/proc/check_held(datum/act/A)
 	if(!creator() || loc != creator() || !creator().item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))
@@ -600,7 +601,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/at
 /obj/item/melee/energy/ownership()
 	. = ..()
 	. += owns(nameof(bcell), policy = OWN_CONTAINED)
-DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
 /// Relation view: creator (reads null once it is gone).
 /obj/item/melee/energy/blade/proc/creator() as /mob/living

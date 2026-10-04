@@ -27,7 +27,7 @@ cap_keys(CAP_BOLTS, BOLTED = MSG(bolts/not_bolted))
 /datum/capability/lib/bolts/entries()
 	return list(look_layer(LOOK_BOLTS, when = BOLTS_BOLTED))
 
-/datum/capability/lib/bolts/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/bolts/on_holder_init(datum/act/eval/A)
 	var/wanted = starts
 	if(istext(wanted))
 		wanted = A.holder.vars[wanted]
@@ -74,7 +74,7 @@ cap_keys(CAP_WELD_SHUT, WELDED = MSG(weld/not_welded))
 		look_layer(LOOK_WELDED, when = WELD_SHUT_WELDED),
 		examine_line(MSG(weld/examine), when = WELD_SHUT_WELDED))
 
-/datum/capability/lib/weld_shut/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/weld_shut/on_holder_init(datum/act/eval/A)
 	var/wanted = starts
 	if(istext(wanted))
 		wanted = A.holder.vars[wanted]

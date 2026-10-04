@@ -47,7 +47,7 @@
 	var/datum/capability/entry/wrapper = cap_use_self("Wield", GLOBAL_PROC_REF(cap_two_handed_toggle), works_broken = TRUE, works_unpowered = TRUE, needs = GLOBAL_PROC_REF(cap_two_handed_can_wield), name_proc = GLOBAL_PROC_REF(cap_two_handed_name), key = "wield")
 	return list(adopt_entry(wrapper))
 
-/datum/capability/two_handed/on_holder_init(atom/holder, mapload)
+/datum/capability/two_handed/legacy_holder_init(atom/holder, mapload)
 	if(!isitem(holder))
 		return
 	observe(holder, /datum/notice/item_dropped, holder, then(TYPE_PROC_REF(/obj/item, cap_two_handed_dropped)))

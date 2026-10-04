@@ -50,7 +50,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 	return lock_locked(A.holder) ? /datum/msg/lock/locked : /datum/msg/lock/unlocked
 
 /// A lock that starts locked is locked from the moment its holder initializes (`starts_locked` is TRUE, or the name of a holder var that says).
-/datum/capability/lib/lock/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/lock/on_holder_init(datum/act/eval/A)
 	var/wanted = starts_locked
 	if(istext(wanted))
 		wanted = A.holder.vars[wanted]

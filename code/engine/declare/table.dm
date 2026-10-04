@@ -185,6 +185,8 @@ GLOBAL_VAR(declare_report_capture)
 				. |= ENGINE_HOOK_INIT // a type's verb entries are put on the instance when it initializes
 			else if(istype(E) && E.kind == ENTRY_EVERY && isnull(C.owner))
 				. |= ENGINE_HOOK_INIT // a type-level every() is armed when the holder initializes
+			else if(istype(E) && E.kind == ENTRY_AFTER_INIT)
+				. |= ENGINE_HOOK_INIT | ENGINE_HOOK_AFTER_INIT // armed when the instance's init is complete
 	if(stat_table_needs_init(T))
 		. |= ENGINE_HOOK_INIT | ENGINE_HOOK_STATS
 

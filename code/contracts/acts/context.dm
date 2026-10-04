@@ -95,10 +95,12 @@
 	/// ACT_*: the outcome the notice carries.
 	var/outcome
 
-/// after(), delayed(), every() and sequence work. Fields set: holder, dt, args; for a system's per-member work target is
+/// after(), delayed(), every(), after_init() and sequence work. Fields set: holder, dt, args (after_init(): mapload); for a system's per-member work target is
 /// the member; for a delayed() part, holder and the three snapshot names and nothing else.
 /datum/act/timer
 	var/dt
+	/// after_init(): TRUE when it runs for an instance the map loaded (code/engine/actions/after_init.dm).
+	var/mapload = FALSE
 	var/list/args
 	var/datum/target
 	var/held_name

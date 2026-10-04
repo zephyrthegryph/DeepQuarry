@@ -43,6 +43,10 @@
 
 	var/qdeleted = FALSE
 
+	// after_init() entries (code/engine/actions/after_init.dm): armed now that Initialize() has returned, or when the map-load frame closes.
+	if(after_init_pending?[A])
+		after_init_initialized(A, arguments[1])
+
 	switch(result)
 		if (INITIALIZE_HINT_NORMAL)
 			EMPTY_BLOCK_GUARD // Pass
@@ -175,7 +179,7 @@
 
 	// Declared instance state (code/datums/lifecycle/declarations.dm): children, gas, reagents,
 	// appearance. Here, at the root of the chain, so a subtype's code after `. = ..()` sees it.
-	lifecycle_decls_init(src)
+	lifecycle_decls_init(src, mapload)
 	// Capabilities' per-instance state, then the first look (code/datums/capabilities/).
 	caps_init(src, mapload)
 

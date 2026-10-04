@@ -150,6 +150,7 @@ SYSTEM_DEF(atoms)
 			benchmark_late_frame_end(bench_depth, A.type)
 			#endif
 		testing("Late initialized [length(loaders)] atoms")
+	after_init_flush(batch)
 
 	if(created)
 		atoms_to_return += created
@@ -293,3 +294,45 @@ SYSTEM_DEF(atoms)
 
 /// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
 /datum/system/atoms/var/list/atom/queued_deletions
+
+// ---- after_init() (code/engine/actions/after_init.dm): armed when an instance's init is complete ----
+
+/datum/system/atoms
+	/// Instances whose init has run their engine init but not yet finished Initialize(): instance -> TRUE. InitAtom() takes each out when its
+	/// Initialize() returns and arms its after_init() entries (now, or at the close of the map-load frame).
+	var/list/after_init_pending
+	/// Map-loaded instances with after_init() entries, made outside any frame: the next frame to close arms them (as late_loaders).
+	var/list/after_init_loose
+
+/// after_init_note(): `A` has after_init() entries and its Initialize() is running.
+/datum/system/atoms/proc/after_init_wait(atom/A)
+	if(!after_init_pending)
+		after_init_pending = list()
+	after_init_pending[A] = TRUE
+
+/// InitAtom(): `A`'s Initialize() returned. A map-loaded instance waits for its frame to close; any other is armed now.
+/datum/system/atoms/proc/after_init_initialized(atom/A, mapload)
+	after_init_pending -= A
+	if(!length(after_init_pending))
+		after_init_pending = null
+	if(QDELETED(A))
+		return
+	if(mapload)
+		var/datum/materialize_batch/batch = active_batch
+		if(batch)
+			LAZYADD(batch.after_inits, A)
+		else
+			LAZYADD(after_init_loose, A)
+		return
+	after_init_arm(A, FALSE)
+
+/// A frame closed (initialize_atoms_finish(), after its late loaders): every map-loaded instance it holds is armed.
+/datum/system/atoms/proc/after_init_flush(datum/materialize_batch/batch)
+	var/list/armed = batch.after_inits
+	batch.after_inits = null
+	if(length(after_init_loose))
+		armed = (armed || list()) + after_init_loose
+		after_init_loose = null
+	for(var/atom/A as anything in armed)
+		if(!QDELETED(A))
+			after_init_arm(A, TRUE)

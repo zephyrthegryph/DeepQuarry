@@ -18,6 +18,8 @@
 		stat_holder_init(holder, mapload)
 	hooks_change_baseline(holder)
 	type_every_arm(holder, T)
+	if(T.hook_flags & ENGINE_HOOK_AFTER_INIT)
+		after_init_note(holder, mapload)
 	if(isatom(holder))
 		verb_entries_init(holder)
 
@@ -51,9 +53,9 @@
 		if(HOLDER_HOOK_PREINIT)
 			on_holder_preinit(A)
 		if(HOLDER_HOOK_INIT)
-			on_holder_init_ctx(A)
+			on_holder_init(A)
 		if(HOLDER_HOOK_DESTROY)
-			on_holder_destroy_ctx(A)
+			on_holder_destroy(A)
 	A.release()
 
 /datum/act/eval
@@ -65,15 +67,16 @@
 	var/holder_hooks = 0
 
 /// The hooks of a capability with code of its own, all x(datum/act/A) with A.holder and A.cap set: `on_holder_preinit` runs before the
-/// parent type's init code reads the holder, `on_holder_init_ctx` after the capability is initialized, `on_holder_destroy_ctx` first in the
-/// destroy transaction. (The legacy on_holder_init(holder, mapload) of the datum form is a different proc and stays.)
+/// parent type's init code reads the holder, `on_holder_init` after the capability is initialized, `on_holder_destroy` first in the
+/// destroy transaction. The order inside Initialize: on_holder_preinit, the base body (starting contents), on_holder_init, then the type's own
+/// code after its ..() (doc section 6, "Order for one instance"). The datum form's legacy_holder_init(holder, mapload) is the legacy capability list's hook.
 /datum/capability/proc/on_holder_preinit(datum/act/eval/A)
 	return
 
-/datum/capability/proc/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/proc/on_holder_init(datum/act/eval/A)
 	return
 
-/datum/capability/proc/on_holder_destroy_ctx(datum/act/eval/A)
+/datum/capability/proc/on_holder_destroy(datum/act/eval/A)
 	return
 
 // ---- relation scope: species_capabilities() ----

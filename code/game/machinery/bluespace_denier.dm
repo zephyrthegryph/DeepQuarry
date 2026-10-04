@@ -15,9 +15,8 @@
 	idle_power_usage = 2
 
 // if already anchored, setup the proximity check
-DECLARE_START_TIMER(/obj/machinery/bluespace_denier, 10 SECONDS, PROC_REF(start_up))
 
-/obj/machinery/bluespace_denier/proc/start_up()
+/obj/machinery/bluespace_denier/proc/start_up(datum/act/A)
 	if(anchored)
 		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
@@ -57,6 +56,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 		SK.attack_dephase(null, src) //Won't dephase them if they're not in phase. It has built in checks.
 
 CAPABILITIES(/obj/machinery/bluespace_denier)
+	after_init(10 SECONDS, then(PROC_REF(start_up)))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(denier_emp))))
 
 /// An EMP may set off a pulse.

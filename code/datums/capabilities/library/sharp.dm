@@ -20,7 +20,7 @@
 	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
-/datum/capability/sharp/on_holder_init(atom/holder, mapload)
+/datum/capability/sharp/legacy_holder_init(atom/holder, mapload)
 	if(!isitem(holder))
 		return
 	var/obj/item/I = holder

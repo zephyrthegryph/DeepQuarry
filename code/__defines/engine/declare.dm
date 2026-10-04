@@ -88,7 +88,7 @@
 #define RULE_GRAPH "state_graph"
 
 // The lifecycle hooks a capability definition can have (its `holder_hooks` bits, which is also what ENGINE_HOOK_* asks of the lifecycle):
-// on_holder_preinit before the parent's init code reads the holder, on_holder_init_ctx after, on_holder_destroy_ctx in the destroy transaction.
+// on_holder_preinit before the parent's init code reads the holder, on_holder_init after, on_holder_destroy in the destroy transaction.
 #define HOLDER_HOOK_PREINIT (1<<0)
 #define HOLDER_HOOK_INIT (1<<1)
 #define HOLDER_HOOK_DESTROY (1<<2)
@@ -97,6 +97,8 @@
 #define ENGINE_HOOK_DESTROY HOLDER_HOOK_DESTROY
 /// The type has contributions, contributes_to entries or a formula stat: its stats compute at init (stat_holder_init).
 #define ENGINE_HOOK_STATS (1<<3)
+/// The type has after_init() entries: they are armed when the instance's init is complete (after_init.dm).
+#define ENGINE_HOOK_AFTER_INIT (1<<4)
 
 
 #define ALLOC_LAZY 1

@@ -116,11 +116,10 @@ CAPABILITY(/obj/item/dq_forms_flask/replaced/topped, refine(CAP_REAGENTS, add = 
 	var/fuse = 2 SECONDS
 	var/fired = 0
 
-/obj/item/dq_forms_timer/reactions()
-	. = ..()
-	. += after_init(nameof(fuse), PROC_REF(go_off))
+CAPABILITIES(/obj/item/dq_forms_timer)
+	after_init(nameof(fuse), then(PROC_REF(go_off)))
 
-/obj/item/dq_forms_timer/proc/go_off()
+/obj/item/dq_forms_timer/proc/go_off(datum/act/A)
 	fired++
 
 /// type_verb(..., login = TRUE).
@@ -273,7 +272,6 @@ CAPABILITY(/obj/item/dq_forms_flask/replaced/topped, refine(CAP_REAGENTS, add = 
 
 /// after_init(): the timer is armed when the holder initializes and fires once, after its delay.
 /datum/unit_test/dq_forms_after_init/Run()
-	rx_boot_register(/obj/item/dq_forms_timer, RXB_INIT) // the generator skips test fixtures
 	om_test_begin()
 	var/obj/item/dq_forms_timer/timer = new(dq_containment_floor())
 	TEST_ASSERT_EQUAL(timer.fired, 0, "the timer waits")
@@ -286,7 +284,7 @@ CAPABILITY(/obj/item/dq_forms_flask/replaced/topped, refine(CAP_REAGENTS, add = 
 	qdel(timer)
 	om_test_end()
 	var/obj/item/broken_gun/wreck = allocate(/obj/item/broken_gun, dq_containment_floor())
-	TEST_ASSERT_EQUAL(length(rx_after_inits_of(wreck)), 1, "the worked conversion: a broken gun arms its self-check")
+	TEST_ASSERT(after_pending(wreck, "after_init:1"), "the worked conversion: a broken gun arms its self-check")
 
 /// Native traits preserve radiation protection and its examine output.
 /datum/unit_test/dq_forms_type_trait/Run()

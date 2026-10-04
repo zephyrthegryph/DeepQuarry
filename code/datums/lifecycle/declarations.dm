@@ -11,7 +11,7 @@
 // Order (also in the define file's header and the doc, keep all three in step):
 //   init:          starting occupants (owns_one / owns_many with starts =),
 //                  gas, reagents, appearance
-//   materialize:   registries, service members, binds, behaviours, periodic, timers, declared periodic work (sys_periodic)
+//   materialize:   registries, service members, binds, behaviours, periodic, declared periodic work (sys_periodic)
 //   dematerialize: periodic stop, declared periodic stop, service leave, bind release
 //   destroy:       phase 1 bind release; phase 4 children (their DECLARE_REF kind);
 //                  phase 6 destroy effects
@@ -71,8 +71,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/behaviours
 	/// A periodic pipeline type, or null.
 	var/periodic
-	/// list of list(delay, proc ref).
-	var/list/timers
 	/// EXPIRY_ON_LAPSE: var name -> list(clock, proc_ref) (code/datums/sys/expiry.dm).
 	var/list/expiry_hooks
 	/// DECLARE_VERB: verb paths every instance has from init.
@@ -100,7 +98,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	binders = null
 	behaviours = null
 	periodic = null
-	timers = null
 	verbs_always = null
 	verbs_login = null
 	verbs_if = null
@@ -155,9 +152,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 /datum/lifecycle_decls/proc/set_periodic(pipeline)
 	periodic = pipeline
-
-/datum/lifecycle_decls/proc/add_timer(delay, proc_ref)
-	LAZYADD(timers, list(list(delay, proc_ref)))
 
 /// DECLARE_VERB family: `how` is VERB_DECL_ALWAYS/LOGIN/HIDE or a var name (DECLARE_VERB_IF).
 /// A later declaration of the same verb replaces the parent's.
@@ -243,7 +237,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			periodic = null
 		if(sys_periodic && !isatom(D))
 			work |= DECL_WORK_INIT // a non-atom starts it from New() (lifecycle_decls_init())
-	if(registries || services || binders || behaviours || periodic || timers || expiry_hooks || (sys_periodic && isatom(D)))
+	if(registries || services || binders || behaviours || periodic || expiry_hooks || (sys_periodic && isatom(D)))
 		work |= DECL_WORK_MATERIALIZE
 	if(binders)
 		work |= DECL_WORK_UNBIND
@@ -258,13 +252,13 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 /// Runs the init declarations on A. Called at the end of /atom/Initialize() and from
 /// table_initialize(); a non-atom datum with declarations calls it from its own New().
-/proc/lifecycle_decls_init(datum/D)
+/proc/lifecycle_decls_init(datum/D, mapload = FALSE)
 	// Starting occupants first (the old step 1, default children): gas, reagents and a subtype's
 	// Initialize() after `. = ..()` may read them. Every atom passes here (~500k at boot): the table read is the
 	// shared cache's fast path, inlined, and the proc runs only for a type that declares one.
 	var/datum/own_table/start_table = _CACHED_KEY_FAST(own_table, D.type, D)
 	if(start_table.engine_hooks & ENGINE_HOOK_PREINIT)
-		engine_holder_preinit(D, FALSE)
+		engine_holder_preinit(D, mapload)
 	if(start_table.start_vars)
 		own_init_starts(D, start_table)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(D)
@@ -432,8 +426,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		om_attach(A, behaviour)
 	if(decls.periodic)
 		om_task_periodic(A, decls.periodic)
-	for(var/list/timer in decls.timers)
-		after(A, lifecycle_decl_value(A, timer[1]), timer[2])
 	for(var/hook_var in decls.expiry_hooks)
 		expiry_arm(A, hook_var, A.vars[hook_var], TRUE)
 	if(decls.sys_periodic)
