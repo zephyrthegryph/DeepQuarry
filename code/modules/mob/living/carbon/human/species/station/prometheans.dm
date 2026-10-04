@@ -254,7 +254,7 @@
 	unobserve(owner, /datum/notice/mob_equipped_item, src)
 	..()
 	if(after_pending(src, "still_timer"))
-		om_cancel_timer_slot(src, "still_timer")
+		cancel_after(src, "still_timer")
 
 /datum/trait_state/promethean_biology/proc/restart_stillness()
 	still = FALSE

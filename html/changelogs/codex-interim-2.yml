@@ -26,3 +26,4 @@ changes:
   - code_imp: "Migrated handheld research, medical, security and weapon controls to native inputs."
   - bugfix: "Empty magazines no longer cause weapon appearance updates to fail."
   - code_imp: "Migrated additional equipment controls and expressed ability delays with time defines."
+  - code_imp: "Migrated research, dice, stationery and GPS controls and native keyed timer accessors."

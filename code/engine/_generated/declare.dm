@@ -3367,6 +3367,13 @@
 	into += entry_line(213)
 	into += list(global.op("customize", global.in_hand(), global.label("Customize card"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice, keeps = 0, step = "element", fields = list("title" = "Customize Card", "question" = "What element would you like to customize?", "choices" = list("Band", "Stamp", "Reset"), "timeout" = 0)), global.asks(/datum/prompt/choice, keeps = 0, step = "band", when = PROC_REF(customizing_band), fields = list("title" = "Band colour", "question" = "Select colour", "choices" = list("red", "orange", "green", "dark green", "medical blue", "dark blue", "purple", "tan", "pink", "gold", "white", "black"), "timeout" = 0)), global.asks(/datum/prompt/choice, keeps = 0, step = "stamp", when = PROC_REF(customizing_stamp), fields = list("title" = "Stamp image", "question" = "Select image", "choices" = list("ship", "cross", "big ears", "shield", "circle-cross", "target", "smile", "frown", "peace", "exclamation"), "timeout" = 0)), global.then(PROC_REF(customize_chosen))))
 
+/// CAPABILITIES(/obj/item/cataloguer) at code/modules/catalogue/cataloguer.dm:264
+/obj/item/cataloguer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/catalogue/cataloguer.dm", 264, /obj/item/cataloguer)
+	into += entry_line(265)
+	into += list(global.op("controls", global.in_hand(), global.label("Open cataloguer"), global.then(PROC_REF(cataloguer_controls_opened))))
+
 /// CAPABILITIES(/obj/item/chameleon) at code/game/objects/items/devices/chameleonproj.dm:21
 /obj/item/chameleon/declared_entries(list/into)
 	..(into)
@@ -3629,6 +3636,13 @@
 	into += entry_line(117)
 	into += list(global.op("view_depth_scans", global.in_hand(), global.opens_ui()))
 
+/// CAPABILITIES(/obj/item/dice) at code/modules/games/dice.dm:113
+/obj/item/dice/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/games/dice.dm", 113, /obj/item/dice)
+	into += entry_line(114)
+	into += list(global.op("roll", global.in_hand(), global.label("Roll die"), global.then(PROC_REF(dice_roll_requested))))
+
 /// CAPABILITIES(/obj/item/disk/body_record) at code/modules/resleeving/designer.dm:83
 /obj/item/disk/body_record/declared_entries(list/into)
 	..(into)
@@ -3751,6 +3765,13 @@
 	into += entry_block("code/game/objects/items/devices/gold_star_printer.dm", 13, /obj/item/gold_star_printer)
 	into += entry_line(14)
 	into += list(global.op("print", global.in_hand(), global.label("Print gold star"), global.cooldown(print_cooldown), global.needs(global.carried()), global.asks(/datum/prompt/text, keeps = 0, step = "title", fields = list("timeout" = 0, "title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32, "name_text" = TRUE)), global.asks(/datum/prompt/text/gold_star_description, fields = list("timeout" = 0), keeps = 0, step = "description", when = PROC_REF(has_title)), global.then(PROC_REF(star_printed))))
+
+/// CAPABILITIES(/obj/item/gps) at code/game/objects/items/devices/gps.dm:182
+/obj/item/gps/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/gps.dm", 182, /obj/item/gps)
+	into += entry_line(183)
+	into += list(global.op("toggle_tracking", global.hand(), global.gesture(GESTURE_ALT), global.needs(global.req_adjacent()), global.then(PROC_REF(tracking_toggled))))
 
 /// CAPABILITIES(/obj/item/grenade) at code/game/objects/items/weapons/grenades/grenade.dm:46
 /obj/item/grenade/declared_entries(list/into)
@@ -3992,6 +4013,13 @@
 	into += entry_block("code/game/objects/items/latexballoon.dm", 19, /obj/item/latexballon)
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(air_contents), /datum/gas_mixture))
+
+/// CAPABILITIES(/obj/item/leash) at code/game/objects/items/leash.dm:186
+/obj/item/leash/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/leash.dm", 186, /obj/item/leash)
+	into += entry_line(187)
+	into += list(global.op("tug", global.in_hand(), global.label("Tug leash"), global.then(PROC_REF(leash_tug_requested))))
 
 /// CAPABILITIES(/obj/item/light) at code/modules/power/lighting.dm:1012
 /obj/item/light/declared_entries(list/into)
@@ -4350,6 +4378,20 @@
 	into += entry_block("code/modules/paperwork/paperplane.dm", 14, /obj/item/paperplane)
 	into += entry_line(15)
 	into += list(global.owns_one(nameof(internalPaper), /obj/item/paper))
+
+/// CAPABILITIES(/obj/item/pen/crayon/marker/mime) at code/game/objects/items/crayons.dm:185
+/obj/item/pen/crayon/marker/mime/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/crayons.dm", 185, /obj/item/pen/crayon/marker/mime)
+	into += entry_line(186)
+	into += list(global.op("invert", global.in_hand(), global.label("Invert colours"), global.then(PROC_REF(mime_marker_inverted))))
+
+/// CAPABILITIES(/obj/item/pen/crayon/mime) at code/game/objects/items/crayons.dm:9
+/obj/item/pen/crayon/mime/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/crayons.dm", 9, /obj/item/pen/crayon/mime)
+	into += entry_line(10)
+	into += list(global.op("invert", global.in_hand(), global.label("Invert colours"), global.then(PROC_REF(mime_crayon_inverted))))
 
 /// CAPABILITIES(/obj/item/perfect_tele) at code/game/objects/items/devices/translocator.dm:39
 /obj/item/perfect_tele/declared_entries(list/into)
@@ -5015,6 +5057,13 @@
 	into += list(global.op("settings", global.in_hand(), global.label("Settings"), global.asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))), global.then(PROC_REF(settings_picked))))
 	into += entry_line(93)
 	into += list(global.op("resonate", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Create resonance field"), global.needs(global.req_adjacent(), global.req(PROC_REF(resonance_allowed), because = PROC_REF(resonance_refusal))), global.then(PROC_REF(resonated))))
+
+/// CAPABILITIES(/obj/item/retail_scanner) at code/modules/economy/retail_scanner.dm:68
+/obj/item/retail_scanner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/retail_scanner.dm", 68, /obj/item/retail_scanner)
+	into += entry_line(69)
+	into += list(global.op("controls", global.in_hand(), global.label("Open retail scanner"), global.then(PROC_REF(retail_scanner_controls_opened))))
 
 /// CAPABILITIES(/obj/item/rig) at code/modules/clothing/spacesuits/rig/rig.dm:111
 /obj/item/rig/declared_entries(list/into)
@@ -5848,11 +5897,11 @@
 	into += entry_line(293)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/inflatable))))
 
-/// CAPABILITIES(/obj/item/storage/dicecup) at code/modules/games/dice.dm:218
+/// CAPABILITIES(/obj/item/storage/dicecup) at code/modules/games/dice.dm:219
 /obj/item/storage/dicecup/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/games/dice.dm", 218, /obj/item/storage/dicecup)
-	into += entry_line(219)
+	into += entry_block("code/modules/games/dice.dm", 219, /obj/item/storage/dicecup)
+	into += entry_line(220)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/dice))))
 
 /// CAPABILITIES(/obj/item/storage/excavation) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:122
@@ -6348,6 +6397,13 @@
 	into += entry_block("code/game/objects/items/devices/t_scanner.dm", 27, /obj/item/t_scanner)
 	into += entry_line(28)
 	into += list(global.op("power", global.in_hand(), global.label("Toggle T-ray scanner"), global.then(PROC_REF(scanner_power_requested))))
+
+/// CAPABILITIES(/obj/item/tabloid) at code/game/objects/items/magazine.dm:87
+/obj/item/tabloid/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/magazine.dm", 87, /obj/item/tabloid)
+	into += entry_line(88)
+	into += list(global.op("read", global.in_hand(), global.label("Read tabloid"), global.then(PROC_REF(tabloid_read_requested))))
 
 /// CAPABILITIES(/obj/item/tank) at code/game/objects/items/weapons/tanks/tanks.dm:53
 /obj/item/tank/declared_entries(list/into)

@@ -84,10 +84,11 @@
 	if(headline)
 		to_chat(user, "The headline screams, \"[headline]\"")
 
-DECLARE_INTERACTIONS(/obj/item/tabloid, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/tabloid)
+	op("read", in_hand(), label("Read tabloid"), then(PROC_REF(tabloid_read_requested)))
 
-/// Old attack_self.
-/obj/item/tabloid/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tabloid/proc/tabloid_read_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_notice("%U% leafs idly through %T%."))
 	if(headline)
 		to_chat(user, "Most of it is the usual tabloid garbage, but the headline story, \"[headline]\", holds your attention for awhile.")
@@ -95,4 +96,4 @@ DECLARE_INTERACTIONS(/obj/item/tabloid, INTERACT_USE(null, PROC_REF(interaction_
 			to_chat(user, tabloid_headlines[headline])
 	else
 		to_chat(user, "Most of it is the usual tabloid garbage. You find nothing of interest.")
-	return TRUE
+	return OP_OK

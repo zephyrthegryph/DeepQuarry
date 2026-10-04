@@ -257,15 +257,17 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	points_stored = max(0, points_stored += amount)
 
 DECLARE_INTERACTIONS(/obj/item/cataloguer, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 )
 
-/// Old attack_self.
-/obj/item/cataloguer/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/cataloguer)
+	op("controls", in_hand(), label("Open cataloguer"), then(PROC_REF(cataloguer_controls_opened)))
+
+/obj/item/cataloguer/proc/cataloguer_controls_opened(datum/act/op/A)
+	var/mob/living/user = A.actor
 	interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/cataloguer/interact(mob/user)
 	// structured TGUI Cataloguer panel (see

@@ -898,9 +898,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 /mob/living/simple_mob/vore/bigdragon/proc/canceltimers()
 	//Cancel any charges or firebreaths winding up
 	if(after_pending(src, "firebreathtimer"))
-		om_cancel_timer_slot(src, "firebreathtimer")
+		cancel_after(src, "firebreathtimer")
 	if(after_pending(src, "chargetimer"))
-		om_cancel_timer_slot(src, "chargetimer")
+		cancel_after(src, "chargetimer")
 	//re-enable the AI
 	ai_busy_end()
 //Smack people it warns

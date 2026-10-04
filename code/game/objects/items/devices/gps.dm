@@ -133,9 +133,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 			compass.show_waypoint("\ref[gps]")
 	compass.rebuild_overlay_lists(update_compass_icon)
 
-/obj/item/gps/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	toggletracking(user)
-	return TRUE
+/obj/item/gps/proc/tracking_toggled(datum/act/op/A)
+	toggletracking(A.actor)
+	return OP_OK
 
 /obj/item/gps/proc/toggletracking(mob/living/user)
 	if(!istype(user))
@@ -146,9 +146,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 
 	toggle_tracking()
 	if(tracking)
-		to_chat(user, "[src] is now tracking, and visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
-	else // purdev Fixed an issue where the if/else argument was written backwards
-		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
+		to_chat(user, "[src] is now tracking, and visible to other GPS devices.")
+	else
+		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.")
 
 /obj/item/gps/proc/toggle_tracking()
 	set_tracking(!tracking)
@@ -179,9 +179,11 @@ DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
 	"working" = list(APPEARANCE_OVERLAYS = list("working")) \
 ))
 
+CAPABILITIES(/obj/item/gps)
+	op("toggle_tracking", hand(), gesture(GESTURE_ALT), needs(req_adjacent()), then(PROC_REF(tracking_toggled)))
+
 DECLARE_INTERACTIONS(/obj/item/gps, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 )
 
 /obj/item/gps/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

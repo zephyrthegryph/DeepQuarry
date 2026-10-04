@@ -105,16 +105,17 @@
 	result = 10
 
 DECLARE_INTERACTIONS(/obj/item/dice, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 	INTERACT_VERB("Set Face", PROC_REF(dice_verb_set_face)), \
 )
 
-/// Old attack_self.
-/obj/item/dice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	rollDice(user, 0)
-	return TRUE
+CAPABILITIES(/obj/item/dice)
+	op("roll", in_hand(), label("Roll die"), then(PROC_REF(dice_roll_requested)))
+
+/obj/item/dice/proc/dice_roll_requested(datum/act/op/A)
+	rollDice(A.actor, 0)
+	return OP_OK
 
 /obj/item/dice/proc/rollDice(mob/user, silent = FALSE)
 	result = rand(1, sides)

@@ -183,20 +183,20 @@
 
 //Called when the leash is used in hand
 //Tugs the pet closer
-DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/leash)
+	op("tug", in_hand(), label("Tug leash"), then(PROC_REF(leash_tug_requested)))
 
-/// Old attack_self.
-/obj/item/leash/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/leash/proc/leash_tug_requested(datum/act/op/A)
 	var/mob/living/leash_pet = src?.leash_pet()
 	var/mob/living/leash_master = src?.leash_master()
 	if(!leash_pet || !leash_master) //No pet, no tug.
-		return TRUE
+		return OP_OK
 	if(leash_pet.absorbed) //Glrk'd.
 		clear_leash()
-		return TRUE
+		return OP_OK
 	//Yank the pet. Yank em in close.
 	apply_tug_mob_to_mob(leash_pet, leash_master, 1)
-	return TRUE
+	return OP_OK
 
 /obj/item/leash/proc/on_master_move(datum/act/notice/A)
 	EVENT_HANDLER

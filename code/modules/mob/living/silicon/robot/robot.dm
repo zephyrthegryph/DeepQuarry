@@ -547,7 +547,7 @@
 /mob/living/silicon/robot/proc/cancel_killswitch()
 	if(!after_pending(src, "killswitch"))
 		return FALSE
-	om_cancel_timer_slot(src, "killswitch")
+	cancel_after(src, "killswitch")
 	return TRUE
 
 /mob/living/silicon/robot/proc/fire_killswitch()
@@ -560,7 +560,7 @@
 /// Lock the modules. Equipment drops once; activation is refused until the lock times out.
 /mob/living/silicon/robot/proc/start_weapon_lock(duration = ROBOT_WEAPON_LOCK_DELAY)
 	if(after_pending(src, "weapon_lock"))
-		om_cancel_timer_slot(src, "weapon_lock")
+		cancel_after(src, "weapon_lock")
 	after(src, duration, PROC_REF(end_weapon_lock), key = "weapon_lock")
 	uneq_all()
 	to_chat(src, span_danger("Weapon lock engaged."))

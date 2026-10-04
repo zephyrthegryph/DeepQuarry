@@ -110,10 +110,10 @@ CAPABILITIES(/obj/machinery/camera)
 
 /obj/machinery/camera/proc/schedule_camera_timer()
 	var/deadline = next_camera_deadline()
-	if(deadline == camera_timer_at && (om_timer_slot_pending(src, "camera_timer_token") || !deadline))
+	if(deadline == camera_timer_at && (after_pending(src, "camera_timer_token") || !deadline))
 		return
-	if(om_timer_slot_pending(src, "camera_timer_token"))
-		om_cancel_timer_slot(src, "camera_timer_token")
+	if(after_pending(src, "camera_timer_token"))
+		cancel_after(src, "camera_timer_token")
 	camera_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/machinery/camera)
 
 /obj/machinery/camera/om_sleep_violation()
 	var/deadline = next_camera_deadline()
-	if(deadline && (!om_timer_slot_pending(src, "camera_timer_token") || camera_timer_at > deadline))
+	if(deadline && (!after_pending(src, "camera_timer_token") || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	return null
 
