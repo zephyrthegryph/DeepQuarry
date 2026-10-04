@@ -18,7 +18,7 @@
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
 	var/datum/tgui_module/appearance_changer/vore/interim_actor_probe/changer = allocate(/datum/tgui_module/appearance_changer/vore/interim_actor_probe, operator, target)
 	var/datum/prompt/color/appearance/ask = allocate(/datum/prompt/color/appearance)
-	rel_set(ask, nameof(ask.answerer), operator)
+	ask.answerer = operator
 	ask.field = "hair_color"
 	ask.answer_value = "#040506"
 	target.change_hair_color(1, 2, 3)
