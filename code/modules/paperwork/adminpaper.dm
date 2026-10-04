@@ -80,11 +80,22 @@
 	generateFooter()
 	tgui_view = "write"
 	// Closing the logo question opens the fax without a header.
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(header_logo_chosen), title = "Fax Logo", message = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), cancel_answer = "", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT))
+	open_request(src, /datum/prompt/choice, PROC_REF(header_logo_chosen), answerer = user, timeout = 0, title = "Fax Logo", question = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), rights = R_ADMIN|R_EVENT)
 
-/obj/item/paper/admin/proc/header_logo_chosen(datum/om/prompt/choice/ask)
-	generateHeader(ask.choice)
+/obj/item/paper/admin/proc/header_logo_chosen(datum/act/request/A)
+	var/datum/request/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		return
+	generateHeader(A.answer ? ask.answer_value : "")
 	tgui_interact(ask.answerer)
+
+CAPABILITIES(/obj/item/paper/admin)
+	op("penmode", ui_act("penmode"), then(PROC_REF(admin_paper_penmode)))
+	op("clear", ui_act("clear"), then(PROC_REF(admin_paper_clear)))
+	op("toggleheader", ui_act("toggleheader"), then(PROC_REF(admin_paper_toggleheader)))
+	op("togglefooter", ui_act("togglefooter"), then(PROC_REF(admin_paper_togglefooter)))
 
 DECLARE_UI(/obj/item/paper/admin, "AdminPaper")
 
@@ -125,10 +136,9 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_confirm)
 			admindatum().faxCallback(src, destination())
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "penmode", ui_act_penmode)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_penmode)
+/obj/item/paper/admin/proc/admin_paper_penmode(datum/act/op/A)
 	isCrayon = !isCrayon
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/paper/admin, "cancel", ui_act_cancel)
 UI_ACT_PROC(/obj/item/paper/admin, ui_act_cancel)
@@ -136,20 +146,17 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_cancel)
 	qdel(src)
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_clear)
+/obj/item/paper/admin/proc/admin_paper_clear(datum/act/op/A)
 	clearpaper()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paper/admin, "toggleheader", ui_act_toggleheader)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_toggleheader)
+/obj/item/paper/admin/proc/admin_paper_toggleheader(datum/act/op/A)
 	headerOn = !headerOn
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paper/admin, "togglefooter", ui_act_togglefooter)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_togglefooter)
+/obj/item/paper/admin/proc/admin_paper_togglefooter(datum/act/op/A)
 	footerOn = !footerOn
-	return TRUE
+	return OP_OK
 
 // Admin variant uses no pen/range checks (admins fax from anywhere) and
 // always pencode-parses with the chosen crayon flag.

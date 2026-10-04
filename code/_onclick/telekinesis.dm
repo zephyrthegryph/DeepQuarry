@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/tk_grab)
 	else
 		apply_focus_overlay()
 		focus().throw_at(target, 10, 1, user)
-		COOLDOWN_START(src, throw_cooldown, 3)
+		COOLDOWN_START(src, throw_cooldown, 0.3 SECONDS)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H_user = user
 			if(istype(H_user.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/telekinetic))

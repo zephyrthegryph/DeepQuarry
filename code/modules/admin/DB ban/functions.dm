@@ -2,7 +2,7 @@
 //Either pass the mob you wish to ban in the 'banned_mob' attribute, or the banckey, banip and bancid variables. If both are passed, the mob takes priority! If a mob is not passed, banckey is the minimum that needs to be passed! banip and bancid are optional.
 /// `unseen_ok`: the admin already confirmed banning a ckey the server hasn't seen.
 /// Runs as a prompt flow (flow_io.dm): its reads re-run it when they arrive, re-checking the rights.
-/datum/admins/proc/DB_ban_record(bantype, mob/banned_mob, duration = -1, reason, job = "", rounds = 0, banckey = null, banip = null, bancid = null, unseen_ok = FALSE)
+/datum/admins/proc/DB_ban_record(bantype, mob/banned_mob, duration = -1, reason, job = "", rounds = 0, banckey = null, banip = null, bancid = null, unseen_ok = FALSE, mob/actor)
 	if(!GLOB.prompt_flow)
 		// Take the target's identifiers now: the flow re-runs later, after the caller may have
 		// kicked them (and a deleted mob would drop the re-run).
@@ -14,9 +14,9 @@
 			if(IsGuestKey(banned_mob.key))
 				unseen_ok = TRUE
 			banned_mob = null
-		return prompt_flow(src, PROC_REF(DB_ban_record), list(bantype, null, duration, reason, job, rounds, banckey, banip, bancid, unseen_ok))
+		return prompt_flow(src, PROC_REF(DB_ban_record), list(bantype, null, duration, reason, job, rounds, banckey, banip, bancid, unseen_ok, actor))
 
-	if(!check_rights(R_MOD,0) && !check_rights(R_BAN))	return
+	if(!admin_require(actor?.client, R_MOD, "check_rights in [callee?.proc]", FALSE) && !admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))	return
 
 	if(!SSdbcore.IsConnected())
 		return
@@ -64,7 +64,7 @@
 	if(!validckey && !unseen_ok)
 		if(!banned_mob || (banned_mob && !IsGuestKey(banned_mob.key))) // .
 			// The answer records the ban again from the start, re-reading the target's identifiers.
-			var/datum/om/prompt/confirm/unseen_ban/ask = om_ask(usr, /datum/om/prompt/confirm/unseen_ban, PROC_REF(unseen_ban_confirmed), ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid))
+			var/datum/om/prompt/confirm/unseen_ban/ask = om_ask(actor, /datum/om/prompt/confirm/unseen_ban, PROC_REF(unseen_ban_confirmed), ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid))
 			if(ask && banned_mob)
 				rel_set(ask, nameof(ask.banned_mob), banned_mob)
 			return
@@ -99,15 +99,15 @@
 	var/ban_interval = (duration > 0) ? duration : 0
 	var/sql = "INSERT INTO erro_ban (`id`,`bantime`,`serverip`,`bantype`,`reason`,`job`,`duration`,`rounds`,`expiration_time`,`ckey`,`computerid`,`ip`,`a_ckey`,`a_computerid`,`a_ip`,`who`,`adminwho`,`edits`,`unbanned`,`unbanned_datetime`,`unbanned_ckey`,`unbanned_computerid`,`unbanned_ip`) VALUES (null, Now(), :serverip, :bantype_str, :reason, :job, :ban_duration_val, :ban_rounds_val, Now() + INTERVAL :ban_interval MINUTE, :ckey, :computerid, :ip, :a_ckey, :a_computerid, :a_ip, :who, :adminwho, '', null, null, null, null, null)"
 	sql_write(sql, list("serverip" = serverip, "bantype_str" = bantype_str, "reason" = reason, "job" = job, "ban_duration_val" = ban_duration_val, "ban_rounds_val" = ban_rounds_val, "ban_interval" = ban_interval, "ckey" = ckey, "computerid" = computerid, "ip" = ip, "a_ckey" = a_ckey, "a_computerid" = a_computerid, "a_ip" = a_ip, "who" = who, "adminwho" = adminwho))
-	to_chat(usr, span_filter_adminlog("[span_blue("Ban saved to database.")]"))
-	message_admins("[key_name_admin(usr)] has added a [bantype_str] for [ckey] [(job)?"([job])":""] [(duration > 0)?"([duration] minutes)":""] with the reason: \"[reason]\" to the ban database.")
+	to_chat(actor, span_filter_adminlog("[span_blue("Ban saved to database.")]"))
+	message_admins("[key_name_admin(actor)] has added a [bantype_str] for [ckey] [(job)?"([job])":""] [(duration > 0)?"([duration] minutes)":""] with the reason: \"[reason]\" to the ban database.")
 
 
-/datum/admins/proc/DB_ban_unban(ckey, bantype, job = "")
+/datum/admins/proc/DB_ban_unban(ckey, bantype, job = "", mob/actor)
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(DB_ban_unban), args)
 
-	if(!check_rights(R_BAN))
+	if(!admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))
 		return
 
 	var/bantype_str
@@ -155,20 +155,20 @@
 		ban_id = ban_row[1]
 		ban_number++;
 	if(ban_number == 0)
-		to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to no bans fitting the search criteria. If this is not a legacy ban you should contact the database admin.")]"))
+		to_chat(actor, span_filter_adminlog("[span_red("Database update failed due to no bans fitting the search criteria. If this is not a legacy ban you should contact the database admin.")]"))
 		return
 
 	if(ban_number > 1)
-		to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to multiple bans fitting the search criteria. Note down the ckey, job and current time and contact the database admin.")]"))
+		to_chat(actor, span_filter_adminlog("[span_red("Database update failed due to multiple bans fitting the search criteria. Note down the ckey, job and current time and contact the database admin.")]"))
 		return
 
 	if(istext(ban_id))
 		ban_id = text2num(ban_id)
 	if(!isnum(ban_id))
-		to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to a ban ID mismatch. Contact the database admin.")]"))
+		to_chat(actor, span_filter_adminlog("[span_red("Database update failed due to a ban ID mismatch. Contact the database admin.")]"))
 		return
 
-	DB_ban_unban_by_id(ban_id)
+	DB_ban_unban_by_id(ban_id, actor)
 
 /datum/om/prompt/confirm/unseen_ban
 	title = "Confirm Badmin"
@@ -185,8 +185,8 @@
 	var/mob/banned_mob = ask.banned_mob
 	if(banned_mob)
 		ban_args[2] = banned_mob
-	usr = admin // DB_ban_record() reads usr for the banning admin, as when it asked.
-	DB_ban_record(arglist(ban_args + TRUE))
+	usr = admin // ALLOW(sys_usr_outside_verb): legacy prompt-flow I/O captures this initiating admin for login and cancellation checks
+	DB_ban_record(arglist(ban_args + list(TRUE, admin)))
 
 /datum/admins/proc/DB_ban_edit(client/user, banid = null, param = null, value = null)
 	if(!GLOB.prompt_flow)
@@ -242,7 +242,7 @@
 			return
 		if("unban")
 			if(value == "Yes")
-				DB_ban_unban_by_id(banid)
+				DB_ban_unban_by_id(banid, user.mob)
 				return
 			if(!value)
 				om_ask(user, /datum/om/prompt/confirm/ban_edit_unban, PROC_REF(ban_edit_value_entered), message = "Unban [pckey]?", banid = banid, param = param)
@@ -293,14 +293,14 @@
 		value = unban_ask.yes ? "Yes" : "No"
 		banid = unban_ask.banid
 		param = unban_ask.param
-	usr = admin // DB_ban_edit() reads usr for the editing admin.
+	usr = admin // ALLOW(sys_usr_outside_verb): legacy prompt-flow I/O captures this initiating admin for login and cancellation checks
 	DB_ban_edit(admin.client, banid, param, value)
 
-/datum/admins/proc/DB_ban_unban_by_id(id)
+/datum/admins/proc/DB_ban_unban_by_id(id, mob/actor)
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(DB_ban_unban_by_id), args)
 
-	if(!check_rights(R_BAN))	return
+	if(!admin_require(actor?.client, R_BAN, "check_rights in [callee?.proc]"))	return
 
 	if(!SSdbcore.IsConnected())
 		return
@@ -313,11 +313,11 @@
 		pckey = unban_row[1]
 		ban_number++;
 	if(ban_number == 0)
-		to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to a ban id not being present in the database.")]"))
+		to_chat(actor, span_filter_adminlog("[span_red("Database update failed due to a ban id not being present in the database.")]"))
 		return
 
 	if(ban_number > 1)
-		to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to multiple bans having the same ID. Contact the database admin.")]"))
+		to_chat(actor, span_filter_adminlog("[span_red("Database update failed due to multiple bans having the same ID. Contact the database admin.")]"))
 		return
 
 	if(!src.owner() || !istype(src.owner(), /client))
@@ -326,7 +326,7 @@
 	var/unban_ckey = src.owner():ckey
 	var/unban_computerid = src.owner():computer_id
 	var/unban_ip = src.owner():address
-	message_admins("[key_name_admin(usr)] has lifted [pckey]'s ban.")
+	message_admins("[key_name_admin(actor)] has lifted [pckey]'s ban.")
 
 	sql_write("UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = :unban_ckey, unbanned_computerid = :unban_computerid, unbanned_ip = :unban_ip WHERE id = :id", list("unban_ckey" = unban_ckey, "unban_computerid" = unban_computerid, "unban_ip" = unban_ip, "id" = id))
 

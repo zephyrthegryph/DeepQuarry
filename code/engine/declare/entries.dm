@@ -87,19 +87,24 @@
 	return B
 
 /// In a generated declared_entries() chain, the source line of the entry that follows: the generator writes one before each entry of a
-/// CAPABILITIES list, so every compiled entry keeps its own file:line.
+/// CAPABILITIES list, so every compiled entry keeps its own file:line, and the name of the block's section(name) it sits in, if any.
 /datum/entry/line
 	kind = "line"
 	var/line
+	/// The section of the block the entry is written under, or null.
+	var/section_name
 
-/proc/entry_line(line)
+/proc/entry_line(line, section_name = null)
 	var/datum/entry/line/L = new
 	L.line = line
+	L.section_name = section_name
 	return L
 
-/// Where an entry was declared: "file:line" of its CAPABILITIES list, or "?" when unknown.
-/proc/entry_origin_text(file, line)
-	return file ? "[file]:[line]" : "?"
+/// Where an entry was declared: "file:line" of its CAPABILITIES list (with " section <name>" when it sits in a section), or "?" when unknown.
+/proc/entry_origin_text(file, line, section_name = null)
+	if(!file)
+		return "?"
+	return section_name ? "[file]:[line] section [section_name]" : "[file]:[line]"
 
 // ---- constructors of the entries E1 owns ----
 

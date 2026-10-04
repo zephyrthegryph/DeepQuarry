@@ -225,7 +225,7 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 
-	after(src, 5, PROC_REF(dash_attack_1), with = list(A)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(dash_attack_1), with = list(A)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack_1(atom/A)

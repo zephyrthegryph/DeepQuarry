@@ -11,6 +11,8 @@ export type NtosEmailClientActions = {
   new_message: Record<string, never>;
   cancel: Record<string, never>;
   addressbook: Record<string, never>;
+  canceldownload: Record<string, never>;
+  remove_attachment: Record<string, never>;
   set_recipient: {
     /** text max 4096 */
     set_recipient: string;
@@ -56,6 +58,4 @@ export type NtosEmailClientActions = {
   };
   addattachment: Record<string, never>;
   downloadattachment: Record<string, never>;
-  canceldownload: Record<string, never>;
-  remove_attachment: Record<string, never>;
 };

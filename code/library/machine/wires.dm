@@ -6,6 +6,7 @@
 //
 //   wires(/datum/wires/apc)                      the wire set, behind the panel
 //   wires(PROC_REF(wire_set))                    a proc of the holder returning the set (an airlock built with secure electronics)
+//   wires(kind, by_hand = TRUE)                  an empty hand at the open panel opens the window too (wires.open)
 //
 // What the wires drive is the holder's: contributes(STAT_BOLTED, req_wire_cut(WIRE_DOOR_BOLTS)) says a cut bolt wire bolts the door;
 // extend(CAP_LOCK, needs(req_wire(WIRE_IDSCAN))) says the ID scanner wire must be intact; a hit that tears the wires out is cuts_all_wires().
@@ -18,7 +19,7 @@ MSG_DEF_SELF(wires/intact, "That wire is not cut.")
 /// The key a holder publishes when one of its wires is cut, mended or the set is rebuilt.
 #define WIRES_KEY "wires"
 
-CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind = null)
+CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind = null, by_hand = FALSE)
 
 /// The typed data of the wires capability: the holder's wire set.
 /datum/cap_data/wires
@@ -32,10 +33,12 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 
 /datum/capability/lib/wires/entries()
 	var/list/at_the_wires = list(when(PANEL_OPEN), wait(0), then(CAP_PROC(open_window)))
-	return list(
+	. = list(
 		op("pulse", tool(TOOL_MULTITOOL), label("Pulse wires"), at_the_wires),
 		op("cut", tool(TOOL_WIRECUTTER), label("Cut wires"), at_the_wires),
 		look_layer(LOOK_WIRES, when = PANEL_OPEN))
+	if(by_hand)
+		. += op("open", hand(), when(PANEL_OPEN), then(CAP_PROC(open_window_by_hand)))
 
 /// The wires window: the wire set's own (its interactable() says whether this person can use it now).
 /datum/capability/lib/wires/proc/open_window(datum/act/op/A)
@@ -43,6 +46,13 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	if(!W)
 		return OP_FAILED
 	W.Interact(A.actor)
+	return OP_OK
+
+/// wires(by_hand = TRUE): an empty hand at the open panel opens the window too (an AI's remote hand does not).
+/datum/capability/lib/wires/proc/open_window_by_hand(datum/act/op/A)
+	if(isAI(A.actor))
+		return OP_REFUSED
+	wire_set_of(A.holder)?.Interact(A.actor)
 	return OP_OK
 
 /// The wire set `holder` was built with, made on first use.

@@ -38,6 +38,117 @@ use super::SemHandle;
 
 pub const OUT_DIR: &str = "code/engine/_generated";
 
+/// The directories whose files .dme compiles only in a test build (`#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)`
+/// in code/tests/_tests.dm and code/modules/unit_tests/_unit_tests.dm).
+pub const TEST_ONLY_DIRS: &[&str] = &["code/tests/", "code/modules/unit_tests/"];
+
+/// The guard a generator wraps test-only declarations in.
+pub const TEST_GUARD: &str = "#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)";
+
+/// Whether a source file is compiled only in a test build, so whatever a generator writes for it must sit inside [`TEST_GUARD`].
+pub fn test_only(rel: &str) -> bool {
+    TEST_ONLY_DIRS.iter().any(|d| rel.starts_with(d))
+}
+
+/// The type a top-level definition line names: `/datum/x` of `/datum/x`, `/datum/x/var/y = 1`, `/datum/x/proc/f()` or `/datum/x/f()`.
+fn defined_type(line: &str) -> Option<&str> {
+    if !line.starts_with('/') || line.starts_with("//") {
+        return None;
+    }
+    let end = line.find(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '/')).unwrap_or(line.len());
+    let mut path = line[..end].trim_end_matches('/');
+    for kw in ["/var/", "/proc/", "/verb/"] {
+        if let Some(i) = path.find(kw) {
+            path = &path[..i];
+        }
+    }
+    if line[end..].trim_start().starts_with('(') {
+        path = path.rsplit_once('/').map(|(a, _)| a).unwrap_or(path);
+    }
+    (path.len() > 1).then_some(path)
+}
+
+/// The types only test-only files ([`test_only`]) define: a generated line that names one outside [`TEST_GUARD`] breaks the production build.
+pub fn test_only_types(tree: &Tree) -> std::collections::BTreeSet<String> {
+    let mut test = std::collections::BTreeSet::new();
+    let mut prod = std::collections::HashSet::new();
+    for f in tree.files.iter().filter(|f| f.rel.ends_with(".dm")) {
+        if f.rel.starts_with(OUT_DIR) || f.rel.starts_with("code/_generated/") {
+            continue;
+        }
+        let is_test = test_only(&f.rel);
+        for line in f.text().lines() {
+            if let Some(t) = defined_type(line) {
+                if is_test {
+                    test.insert(t.to_string());
+                } else {
+                    prod.insert(t.to_string());
+                }
+            }
+        }
+    }
+    test.retain(|t| !prod.contains(t));
+    test
+}
+
+/// The lines (1-based) of generated `text` that name a test-only type outside a [`TEST_GUARD`] block, with the type.
+pub fn test_type_leaks(text: &str, test_types: &std::collections::BTreeSet<String>) -> Vec<(u32, String)> {
+    let mut leaks = Vec::new();
+    let mut guards: Vec<bool> = Vec::new();
+    for (i, line) in text.lines().enumerate() {
+        let t = line.trim();
+        if t.starts_with("#if") {
+            guards.push(t.contains("UNIT_TESTS"));
+            continue;
+        }
+        if t.starts_with("#endif") {
+            guards.pop();
+            continue;
+        }
+        if t.starts_with("//") || guards.iter().any(|g| *g) {
+            continue;
+        }
+        let b = line.as_bytes();
+        let mut j = 0;
+        let mut in_text = false;
+        while j < b.len() {
+            let word = |c: u8| c.is_ascii_alphanumeric() || c == b'_';
+            // A text ("/obj/x::f", a reads-table key) names no type the compiler resolves.
+            if b[j] == b'"' && (j == 0 || b[j - 1] != b'\\') {
+                in_text = !in_text;
+                j += 1;
+                continue;
+            }
+            if in_text {
+                j += 1;
+                continue;
+            }
+            if b[j] == b'/' && (j == 0 || !(word(b[j - 1]) || b[j - 1] == b'/' || b[j - 1] == b'.')) {
+                let mut k = j;
+                while k < b.len() && (word(b[k]) || b[k] == b'/') {
+                    k += 1;
+                }
+                let tok = &line[j..k];
+                let mut p = tok.trim_end_matches('/');
+                loop {
+                    if test_types.contains(p) {
+                        leaks.push((i as u32 + 1, p.to_string()));
+                        break;
+                    }
+                    match p.rsplit_once('/') {
+                        Some((a, _)) if !a.is_empty() => p = a,
+                        _ => break,
+                    }
+                }
+                j = k;
+            } else {
+                j += 1;
+            }
+        }
+    }
+    leaks
+}
+
 /// The placeholder path of a file-only generator that wrote nothing but has findings to report.
 const UI_NO_FILE: &str = "tgui/packages/tgui/interfaces/generated";
 
@@ -259,6 +370,7 @@ pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenRe
     let cx = GenCx::new(tree, root);
     let dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap_or_default();
     let mut out = Vec::new();
+    let test_types = test_only_types(tree);
     for g in registry() {
         if !names.is_empty() && !names.iter().any(|n| n == g.name()) {
             continue;
@@ -308,6 +420,12 @@ pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenRe
         if dme.contains("#include") && !dme.replace('/', "\\").contains(&include) && matches!(state, State::Fresh | State::Written) {
             state = State::NotIncluded;
         }
+        // A test-only type outside the guard compiles in a test build and breaks the production one (`build.sh dm`).
+        let rel = format!("{}/{}", OUT_DIR, g.output());
+        let mut diags = diags;
+        for (line, ty) in test_type_leaks(&text, &test_types) {
+            diags.push(GenDiag { rel: rel.clone(), line, msg: format!("{} is defined only in test-only files; emit it inside `{}` (see sem::gen::test_only)", ty, TEST_GUARD) });
+        }
         out.push(GenResult { name: g.name(), path, state, diags });
     }
     out
@@ -337,3 +455,27 @@ pub fn report(results: &[GenResult]) -> bool {
     ok
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unit_test_files_are_test_only() {
+        assert!(test_only("code/tests/engine/fixtures.dm"));
+        assert!(test_only("code/modules/unit_tests/clothing_tests.dm"));
+        assert!(!test_only("code/game/objects/items.dm"));
+    }
+
+    #[test]
+    fn a_test_only_type_outside_the_guard_is_a_leak() {
+        let tree = Tree::from_files(vec![
+            crate::tree::SourceFile::from_text("code/modules/unit_tests/a.dm", "/datum/probe\n\tvar/x\n/datum/probe/proc/f()\n/obj/shared\n"),
+            crate::tree::SourceFile::from_text("code/game/b.dm", "/obj/shared\n"),
+        ]);
+        let types = test_only_types(&tree);
+        assert!(types.contains("/datum/probe") && !types.contains("/obj/shared"), "{:?}", types);
+        let text = "/datum/probe/declared_entries(list/into)\n\tinto += \"/datum/probe::f\"\n/obj/shared/x()\n#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)\n/datum/probe/declared_entries()\n#endif\n";
+        assert_eq!(test_type_leaks(text, &types), vec![(1, "/datum/probe".to_string())]);
+    }
+}

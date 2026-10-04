@@ -124,6 +124,10 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/dq_last_preview_render_ms = 0
 
 CAPABILITIES(/datum/preferences)
+	op("save", ui_act(), then(PROC_REF(ui_act_save)))
+	op("reload", ui_act(), then(PROC_REF(ui_act_reload)))
+	op("game_prefs", ui_act(), then(PROC_REF(ui_act_game_prefs)))
+	op("cycle_background", ui_act(), then(PROC_REF(ui_act_cycle_background)))
 	owns_one(nameof(savefile), /datum/json_savefile)
 	owns_many(nameof(middleware), /datum/preference_middleware)
 
@@ -197,7 +201,7 @@ CAPABILITIES(/datum/preferences)
 	dq_open_requested_at = REALTIMEOFDAY
 	tgui_interact(user)
 	if(!character_preview_b64)
-		om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy))
+		after(src, 0, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy), key = "preferences_preview_lazy")
 
 // asset-based character preview. update_character_previews
 // flattens the mannequin (one frame per cardinal direction) plus the BG

@@ -140,12 +140,16 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 
 // ---- the maintenance hatch ----
 
-CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, key = NONE, cover = null, wires = null, emag = null, lock = TRUE, panel_needs_cover_closed = FALSE, starts_locked = FALSE, emag_say = null)
+CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, key = NONE, cover = null, wires = null, emag = null, lock = TRUE, panel_needs_cover_closed = FALSE, starts_locked = FALSE, emag_say = null, wires_by_hand = FALSE)
 
 /// compartment(BAY_HATCH, door = CAP_COVER), the cover you pass (a crowbar's by default), the panel, the wires when given, the ID lock and the emag
 /// when given, and the rules between them: the ID lock and the emag work only with the cover and the panel closed, and the panel opens only with
 /// the cover closed when panel_needs_cover_closed. A machine passes its wire set and its emag effect here instead of declaring wires and emag again.
-/// What sits behind the cover (a cell bay, a build ladder) works at(BAY_HATCH).
+/// What sits behind the cover (a cell bay, a build ladder) works at(BAY_HATCH). `wires_by_hand` = TRUE: an empty hand opens the wires window too.
+///
+/// The hatch is where every tool on a wall machine meets something, so it says ONCE which answers a click when several could: a construction step
+/// before the panel (screwdriver) and the wires (wirecutters), the subversion reset before the wires (multitool), and for an empty hand the
+/// construction step, then the wires, then the machine's window. A type that has these needs no priority(above(...)) of its own.
 /datum/capability/lib/maintenance_hatch
 	holder_hooks = HOLDER_HOOK_INIT
 	output_hooks = OUTPUT_HOOK_DRAW
@@ -159,7 +163,7 @@ CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/
 		cover || cover(),
 		panel())
 	if(wires)
-		entries += wires(wires)
+		entries += wires(wires, by_hand = wires_by_hand)
 	if(lock)
 		entries += lock(starts_locked = starts_locked)
 		entries += extend("lock.toggle", needs(closed_up))
@@ -169,6 +173,11 @@ CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/
 		entries += extend("emag.use", needs(closed_up))
 	if(panel_needs_cover_closed)
 		entries += extend("panel.open", needs(req_is(COVER_OPEN, FALSE, because = MSG(hatch/close_cover))))
+	// the canonical click order of the hatch's tools (click_order(), code/engine/parts/plan.dm)
+	entries += click_order(TOOL_SCREWDRIVER, list("construction.build:*", "construction.undo:*"), "panel.open")
+	entries += click_order(TOOL_WIRECUTTER, "construction.undo:*", "wires.cut")
+	entries += click_order(TOOL_MULTITOOL, "subversion_reset.use", "wires.pulse")
+	entries += click_order(BIND_HAND, "construction.undo:*", "wires.open", "ui_open")
 	return entries
 
 /// The lock shows as a lamp (locked or unlocked, glowing) and the emag as the emagged screen while the machine is lit and closed up.

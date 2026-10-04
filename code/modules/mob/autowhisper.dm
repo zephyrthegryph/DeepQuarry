@@ -26,10 +26,16 @@
 	set category = VERB_CAT_IC_SETTINGS
 
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(autowhisper_mode_chosen), title = "Custom Subtle Mode", message = "Select Custom Subtle Mode", choices = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person", "Psay/Pme"), cancel_answer = "Adjacent Turfs (Default)")
+	open_request(src, /datum/prompt/choice, PROC_REF(autowhisper_mode_chosen), answerer = src, title = "Custom Subtle Mode", question = "Select Custom Subtle Mode", choices = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person", "Psay/Pme"), timeout = 0)
 
-/mob/living/proc/autowhisper_mode_chosen(datum/om/prompt/choice/ask)
-	var/choice = ask.choice
+/mob/living/proc/autowhisper_mode_chosen(datum/act/request/A)
+	var/choice
+	if(A.answer)
+		choice = A.answer.answer_value
+	else
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value) || QDELETED(A.request.answerer))
+			return
+		choice = "Adjacent Turfs (Default)"
 	if(!choice || choice == "Adjacent Turfs (Default)")
 		autowhisper_mode = null
 		balloon_alert(src, "subtles returned to default setting")

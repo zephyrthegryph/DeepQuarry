@@ -92,6 +92,10 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 	return TRUE
 
 /datum/tgui_module/admin_shuttle_controller/proc/multi_destination_chosen(datum/act/request/A)
+	multi_destination_chosen_apply(A)
+	SStgui.update_uis(src)
+
+/datum/tgui_module/admin_shuttle_controller/proc/multi_destination_chosen_apply(datum/act/request/A)
 	var/datum/shuttle/autodock/multi/shuttle = moving()
 	if(!A.answer || !istype(shuttle))
 		return
@@ -101,9 +105,12 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 		shuttle.set_destination(dest_key, user)
 		shuttle.launch(src, user)
 	to_chat(user, span_notice("Launching shuttle [shuttle]."))
-	SStgui.update_uis(src)
 
 /datum/tgui_module/admin_shuttle_controller/proc/overmap_destination_chosen(datum/act/request/A)
+	overmap_destination_chosen_apply(A)
+	SStgui.update_uis(src)
+
+/datum/tgui_module/admin_shuttle_controller/proc/overmap_destination_chosen_apply(datum/act/request/A)
 	var/datum/shuttle/autodock/overmap/shuttle = moving()
 	if(!A.answer || !istype(shuttle))
 		return
@@ -114,9 +121,12 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 		shuttle.set_destination(possible_d[D])
 		shuttle.launch()
 	to_chat(user, span_notice("Launching shuttle [shuttle]."))
-	SStgui.update_uis(src)
 
 /datum/tgui_module/admin_shuttle_controller/proc/launch_confirmed(datum/act/request/A)
+	launch_confirmed_apply(A)
+	SStgui.update_uis(src)
+
+/datum/tgui_module/admin_shuttle_controller/proc/launch_confirmed_apply(datum/act/request/A)
 	var/datum/shuttle/autodock/shuttle = moving()
 	if(!A.answer || !istype(shuttle))
 		return
@@ -124,7 +134,6 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 	if(A.answer.answer_value)
 		shuttle.launch(src)
 	to_chat(user, span_notice("Launching shuttle [shuttle]."))
-	SStgui.update_uis(src)
 
 /// The shuttle the pending destination question is about.
 /datum/tgui_module/admin_shuttle_controller/proc/moving() as /datum/shuttle

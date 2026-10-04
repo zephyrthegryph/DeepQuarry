@@ -59,7 +59,6 @@
 	var/list/beakers //All containers inside the gun.
 	var/list/mixing //Containers being used for mixing.
 	var/max_beakers = 3
-	var/dart_reagent_amount = 15
 	var/container_type = /obj/item/reagent_containers/glass/beaker
 	var/list/starting_chems = null
 	special_weapon_handling = TRUE
@@ -69,9 +68,6 @@
 	. = ..()
 	. += owns(nameof(beakers), policy = OWN_CONTAINED, is_list = TRUE)
 
-/obj/item/gun/projectile/dartgun/relations()
-	. = ..()
-	. += rel_many(nameof(mixing))
 
 /obj/item/gun/projectile/dartgun/Initialize(mapload)
 	. = ..()

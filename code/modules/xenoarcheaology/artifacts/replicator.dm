@@ -69,7 +69,7 @@
 	var/quantity = rand(5, 15)
 	for(var/i=0, i<quantity, i++)
 		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
+		var/static/list/icons = list(
 			"round" = "circle",
 			"square" = "square",
 			"diamond" = "gem",
@@ -78,7 +78,7 @@
 			"human" = "user",
 		)
 		var/icon = pick(icons)
-		var/list/colors = list(
+		var/static/list/colors = list(
 			"toggle" = "pink",
 			"switch" = "yellow",
 			"lever" = "red",
@@ -244,7 +244,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 
 	for(var/i=0, i<quantity, i++)
 		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
+		var/static/list/icons = list(
 			"round" = "circle",
 			"square" = "square",
 			"diamond" = "gem",
@@ -253,7 +253,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 			"human" = "user",
 		)
 		var/icon = pick(icons)
-		var/list/colors = list(
+		var/static/list/colors = list(
 			"toggle" = "pink",
 			"switch" = "yellow",
 			"lever" = "red",
@@ -336,6 +336,9 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 		return "you cannot put [held] into the machine"
 
 /obj/machinery/replicator/vore/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
+	return consent_insert_stage(user, W, interaction, list())
+
+/obj/machinery/replicator/vore/proc/consent_insert_stage(mob/living/user, obj/item/W, datum/interaction/interaction, list/consent_answers)
 	if(istype(W, /obj/item/holder/micro)) //Are you putting a micro in it?
 		var/obj/item/holder/micro/micro_holder = W
 		var/mob/living/inserted_mob = micro_holder.held_mob //Get the actual mob.
@@ -350,16 +353,18 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 			return TRUE
 		if(inserted_mob.client)
 			var/response //Let's see if they are SURE they accept the fact they will be a clothing, plushie, or something else.
-			var/_answer_k351 = rerun_ask(inserted_mob, "k351", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
+			var/_answer_k351 = consent_answers["k351"]
 			if(isnull(_answer_k351))
+				open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, insertion = interaction, consent_answers = consent_answers, consent_key = "k351", question = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
 				return
 			response = _answer_k351
 			if(response != "Certain") //If they don't agree, stop.
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else //If they /do/ agree, give them one last chance.
-				var/_answer_k356 = rerun_ask(inserted_mob, "k356", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", title = "WARNING: FINAL CHANCE!", choices = list("No", "Certain"))
+				var/_answer_k356 = consent_answers["k356"]
 				if(isnull(_answer_k356))
+					open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, insertion = interaction, consent_answers = consent_answers, consent_key = "k356", question = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", title = "WARNING: FINAL CHANCE!", choices = list("No", "Certain"))
 					return
 				response = _answer_k356
 				if(response != "Certain")
@@ -385,16 +390,18 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 			return TRUE
 		if(inserted_mob.client)
 			var/response
-			var/_answer_k380 = rerun_ask(inserted_mob, "k380", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
+			var/_answer_k380 = consent_answers["k380"]
 			if(isnull(_answer_k380))
+				open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, insertion = interaction, consent_answers = consent_answers, consent_key = "k380", question = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
 				return
 			response = _answer_k380
 			if(response != "Certain")
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else
-				var/_answer_k385 = rerun_ask(inserted_mob, "k385", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", title = "WARNING: FINAL CHANCE!", choices = list("No", "Certain"))
+				var/_answer_k385 = consent_answers["k385"]
 				if(isnull(_answer_k385))
+					open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, insertion = interaction, consent_answers = consent_answers, consent_key = "k385", question = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", title = "WARNING: FINAL CHANCE!", choices = list("No", "Certain"))
 					return
 				response = _answer_k385
 				if(response != "Certain")
@@ -521,7 +528,7 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 
 	for(var/i=0, i<quantity, i++)
 		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
+		var/static/list/icons = list(
 			"round" = "circle",
 			"square" = "square",
 			"diamond" = "gem",
@@ -530,7 +537,7 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 			"human" = "user",
 		)
 		var/icon = pick(icons)
-		var/list/colors = list(
+		var/static/list/colors = list(
 			"toggle" = "pink",
 			"switch" = "yellow",
 			"lever" = "red",
@@ -606,6 +613,9 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 		return "you cannot put [held] into the machine"
 
 /obj/machinery/replicator/clothing/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
+	return consent_insert_stage(user, W, interaction, list())
+
+/obj/machinery/replicator/clothing/proc/consent_insert_stage(mob/living/user, obj/item/W, datum/interaction/interaction, list/consent_answers)
 	if(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)) //Are you putting a micro/mouse in it?
 		var/obj/item/holder/micro/micro_holder = W
 		var/mob/living/inserted_mob = micro_holder.held_mob //Get the actual mob.
@@ -620,16 +630,18 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 			return TRUE
 		if(inserted_mob.client)
 			var/response //Let's see if they are SURE they accept the fact they will be a clothing, plushie, or something else.
-			var/_answer_k604 = rerun_ask(inserted_mob, "k604", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
+			var/_answer_k604 = consent_answers["k604"]
 			if(isnull(_answer_k604))
+				open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, insertion = interaction, consent_answers = consent_answers, consent_key = "k604", question = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
 				return
 			response = _answer_k604
 			if(response != "Certain") //If they don't agree, stop.
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else //If they /do/ agree, give them one last chance.
-				var/_answer_k609 = rerun_ask(inserted_mob, "k609", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", title = "WARNING: FINAL CHANCE!", choices = list("No", "I accept the possibilities"))
+				var/_answer_k609 = consent_answers["k609"]
 				if(isnull(_answer_k609))
+					open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, insertion = interaction, consent_answers = consent_answers, consent_key = "k609", question = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", title = "WARNING: FINAL CHANCE!", choices = list("No", "I accept the possibilities"))
 					return
 				response = _answer_k609
 				if(response != "I accept the possibilities")
@@ -655,16 +667,18 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 			return TRUE
 		if(inserted_mob.client)
 			var/response
-			var/_answer_k633 = rerun_ask(inserted_mob, "k633", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
+			var/_answer_k633 = consent_answers["k633"]
 			if(isnull(_answer_k633))
+				open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, insertion = interaction, consent_answers = consent_answers, consent_key = "k633", question = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
 				return
 			response = _answer_k633
 			if(response != "Certain")
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else
-				var/_answer_k638 = rerun_ask(inserted_mob, "k638", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", title = "WARNING: FINAL CHANCE!", choices = list("No", "I accept the possibilities"))
+				var/_answer_k638 = consent_answers["k638"]
 				if(isnull(_answer_k638))
+					open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, insertion = interaction, consent_answers = consent_answers, consent_key = "k638", question = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", title = "WARNING: FINAL CHANCE!", choices = list("No", "I accept the possibilities"))
 					return
 				response = _answer_k638
 				if(response != "I accept the possibilities")
@@ -735,3 +749,74 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/clothing, ui_act_construct)
 			icon_state = "borgcharger1(old)"
 		else
 			visible_message(fail_message)
+
+/// Original insertion arguments remain weak while the prospective transformed mob answers.
+/datum/prompt/choice/replicator_consent
+	timeout = 0
+	buttons = TRUE
+	var/mob/instigator
+	var/obj/item/source_item
+	var/datum/interaction/insertion
+	var/instigator_expected = FALSE
+	var/source_item_expected = FALSE
+	var/insertion_expected = FALSE
+	var/list/consent_answers
+	var/consent_key
+
+CAPABILITIES(/datum/prompt/choice/replicator_consent)
+	ref_one(nameof(instigator), /mob)
+	ref_one(nameof(source_item), /obj/item)
+	ref_one(nameof(insertion), /datum/interaction)
+
+/datum/prompt/choice/replicator_consent/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_user = instigator
+	var/obj/item/captured_item = source_item
+	var/datum/interaction/captured_insertion = insertion
+	instigator_expected = !isnull(captured_user)
+	source_item_expected = !isnull(captured_item)
+	insertion_expected = !isnull(captured_insertion)
+	rel_clear(src, nameof(instigator))
+	rel_clear(src, nameof(source_item))
+	rel_clear(src, nameof(insertion))
+	if(captured_user && !QDELETED(captured_user))
+		rel_set(src, nameof(instigator), captured_user)
+	if(captured_item && !QDELETED(captured_item))
+		rel_set(src, nameof(source_item), captured_item)
+	if(captured_insertion && !QDELETED(captured_insertion))
+		rel_set(src, nameof(insertion), captured_insertion)
+
+/datum/prompt/choice/replicator_consent/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(instigator_expected && QDELETED(instigator))
+		return "gone"
+	if(source_item_expected && QDELETED(source_item))
+		return "gone"
+	if(insertion_expected && QDELETED(insertion))
+		return "gone"
+
+/obj/machinery/replicator/vore/proc/consent_insert_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = consent_insert_apply(A)
+	SStgui.update_uis(src)
+	return .
+
+/obj/machinery/replicator/vore/proc/consent_insert_apply(datum/act/request/A)
+	var/datum/prompt/choice/replicator_consent/ask = A.answer
+	ask.consent_answers[ask.consent_key] = ask.answer_value
+	return consent_insert_stage(ask.instigator, ask.source_item, ask.insertion, ask.consent_answers)
+
+/obj/machinery/replicator/clothing/proc/consent_insert_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = consent_insert_apply(A)
+	SStgui.update_uis(src)
+	return .
+
+/obj/machinery/replicator/clothing/proc/consent_insert_apply(datum/act/request/A)
+	var/datum/prompt/choice/replicator_consent/ask = A.answer
+	ask.consent_answers[ask.consent_key] = ask.answer_value
+	return consent_insert_stage(ask.instigator, ask.source_item, ask.insertion, ask.consent_answers)

@@ -366,10 +366,8 @@ CAPABILITIES(/datum/shuttle_web_master)
 
 // A route names both endpoints (one-sided views); each endpoint lists the route (a list view).
 // Not pairs: one routes list would need two partner vars (start and end).
-/datum/shuttle_route/relations()
-	. = ..()
-	. += rel_one(nameof(start))
-	. += rel_one(nameof(end))
-/datum/shuttle_destination/relations()
-	. = ..()
-	. += rel_many(nameof(routes))
+CAPABILITIES(/datum/shuttle_route)
+	ref_one(nameof(start))
+	ref_one(nameof(end))
+CAPABILITIES(/datum/shuttle_destination)
+	ref_many(nameof(routes))

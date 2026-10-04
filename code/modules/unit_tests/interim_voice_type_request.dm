@@ -1,0 +1,37 @@
+// Actual voice-setting verb entry; answers travel through the native request driver.
+/datum/unit_test/dq_eg2/interim_voice_type_request
+
+/datum/unit_test/dq_eg2/interim_voice_type_request/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/list/real_choices = SSsounds.ready().talk_sound_sets()
+	TEST_ASSERT("goon speak 1" in real_choices, "The real sound provider contains its declared nondefault speech set")
+	var/list/expected = SSsounds.ready().talk_sound("goon speak 1")
+	TEST_ASSERT_NOTNULL(expected, "The real selected speech set exists")
+	TEST_ASSERT(expected != DEFAULT_TALK_SOUNDS, "The accepted test choice differs from the cancellation default")
+	var/list/original = H.voice_sounds_list
+	H.set_voice_type()
+	var/datum/prompt/choice/voice_type/asked = SSrequests.open_for(H)
+	TEST_ASSERT(istype(asked), "The actual public voice-setting entry opens its native choice request")
+	TEST_ASSERT(asked.choices == real_choices, "The request uses the real provider's exact choice table")
+	TEST_ASSERT(H.voice_sounds_list == original, "Opening the request preserves the current voice")
+	test_answer(H, "goon speak 1")
+	TEST_ASSERT(H.voice_sounds_list == expected, "Accepted selection installs the real provider's exact speech set")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "The accepted selection closes the request")
+
+	H.set_voice_type()
+	test_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT(H.voice_sounds_list == DEFAULT_TALK_SOUNDS, "An explicit close resets the actual voice to its default speech set")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "The explicit close ends the request")
+
+	H.set_voice_type()
+	test_answer(H, "goon speak 1")
+	TEST_ASSERT(H.voice_sounds_list == expected, "A real accepted choice restores the nondefault voice before the stale-error case")
+	H.set_voice_type()
+	var/datum/prompt/choice/voice_type/second = SSrequests.open_for(H)
+	test_answer(H, "interim invalid voice selection")
+	TEST_ASSERT(SSrequests.open_for(H) == second, "An invalid native answer leaves the same real request open")
+	TEST_ASSERT_NOTNULL(second.last_error, "The refused submit actually leaves a recorded error")
+	TEST_ASSERT(H.voice_sounds_list == expected, "The refused submit preserves the selected nondefault voice")
+	test_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT(H.voice_sounds_list == DEFAULT_TALK_SOUNDS, "Closing after a refused submit still resets the voice despite its stale error")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "Closing after the refused submit ends the request")

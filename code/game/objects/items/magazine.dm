@@ -85,10 +85,9 @@
 		to_chat(user, "The headline screams, \"[headline]\"")
 
 CAPABILITIES(/obj/item/tabloid)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("read", in_hand(), label("Read tabloid"), then(PROC_REF(tabloid_read_requested)))
 
-/// Old attack_self.
-/obj/item/tabloid/proc/interaction_self(datum/act/op/A)
+/obj/item/tabloid/proc/tabloid_read_requested(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, others = span_notice("%U% leafs idly through %T%."))
 	if(headline)
@@ -97,4 +96,4 @@ CAPABILITIES(/obj/item/tabloid)
 			to_chat(user, tabloid_headlines[headline])
 	else
 		to_chat(user, "Most of it is the usual tabloid garbage. You find nothing of interest.")
-	return TRUE
+	return OP_OK

@@ -16,7 +16,7 @@
 	var/total_power_drained = 0
 	var/drain_loc
 
-/obj/item/rig_module/power_sink/deactivate()
+/obj/item/rig_module/power_sink/deactivate(forced = FALSE, mob/user)
 
 	if(interfaced_with())
 		if(holder && holder.wearer())
@@ -26,12 +26,12 @@
 	total_power_drained = 0
 	return ..()
 
-/obj/item/rig_module/power_sink/activate()
+/obj/item/rig_module/power_sink/activate(skip_engage = 0, mob/user)
 	rel_clear(src, nameof(interfaced_with))
 	total_power_drained = 0
 	return ..()
 
-/obj/item/rig_module/power_sink/engage(atom/target)
+/obj/item/rig_module/power_sink/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0
@@ -64,7 +64,7 @@
 /obj/item/rig_module/power_sink/accepts_item(obj/item/input_device, mob/living/user)
 	var/can_drain = input_device.drain_power(1)
 	if(can_drain > 0)
-		engage(input_device)
+		engage(input_device, FALSE, user)
 		return 1
 	return 0
 

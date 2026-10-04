@@ -120,14 +120,14 @@
 /obj/structure/transit_tube/station/proc/launch_pod()
 	for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 		if(!pod.moving && (pod.dir in directions()))
-			after(src, 5, PROC_REF(launch_close), with = list(pod))
+			after(src, 0.5 SECONDS, PROC_REF(launch_close), with = list(pod))
 			return
 
 /// Launching, step 1: close the station around the pod.
 /obj/structure/transit_tube/station/proc/launch_close(obj/structure/transit_tube_pod/pod)
 	pod_moving = 1
 	close_animation()
-	after(src, CLOSE_DURATION + 2, PROC_REF(launch_go), with = list(pod))
+	after(src, CLOSE_DURATION + 0.2 SECONDS, PROC_REF(launch_go), with = list(pod))
 
 /// Launching, step 2: send the pod on its way.
 /obj/structure/transit_tube/station/proc/launch_go(obj/structure/transit_tube_pod/pod)
@@ -159,12 +159,12 @@
 
 /obj/structure/transit_tube/station/pod_stopped(obj/structure/transit_tube_pod/pod, from_dir)
 	pod_moving = 1
-	after(src, 5, PROC_REF(arrival_open), with = list(pod))
+	after(src, 0.5 SECONDS, PROC_REF(arrival_open), with = list(pod))
 
 /// A pod arrived: open the station.
 /obj/structure/transit_tube/station/proc/arrival_open(obj/structure/transit_tube_pod/pod)
 	open_animation()
-	after(src, OPEN_DURATION + 2, PROC_REF(arrival_opened), with = list(pod))
+	after(src, OPEN_DURATION + 0.2 SECONDS, PROC_REF(arrival_opened), with = list(pod))
 
 /obj/structure/transit_tube/station/proc/arrival_opened(obj/structure/transit_tube_pod/pod)
 	pod_moving = 0
@@ -387,7 +387,7 @@
 /obj/structure/transit_tube/proc/init_dirs()
 	if(icon_state == "auto")
 		// Additional delay, for map loading.
-		after(src, 1, PROC_REF(init_dirs_automatic))
+		after(src, 0.1 SECONDS, PROC_REF(init_dirs_automatic))
 
 	else
 		tube_dirs = parse_dirs(icon_state)

@@ -38,7 +38,7 @@
 	bag.bag_with_actor(actor, other)
 	TEST_ASSERT_EQUAL(bag.stored_item(), paper, "actual occupied-bag refusal preserves its exact existing evidence")
 	TEST_ASSERT_EQUAL(other.loc, T, "occupied-bag refusal leaves unrelated floor evidence untouched")
-	TEST_ASSERT_EQUAL(bag.interaction_self(actor, bag, null), TRUE, "actual self interaction removes evidence through its existing effect")
+	TEST_ASSERT(test_op_committed(perform_op(actor, bag, "self", bag)), "actual self op removes evidence through its existing effect")
 	TEST_ASSERT_NULL(bag.stored_item(), "actual removal clears the real evidence relation")
 	TEST_ASSERT_EQUAL(contents_count(bag), 0, "actual removal empties physical bag contents")
 	TEST_ASSERT(actor.item_is_in_hands(paper), "actual removal gives exact evidence to its initiating human")

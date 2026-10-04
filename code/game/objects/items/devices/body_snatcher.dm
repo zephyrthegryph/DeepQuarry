@@ -103,9 +103,9 @@
 	return ITEM_INTERACT_BLOCKING
 
 CAPABILITIES(/obj/item/bodysnatcher)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("activate", in_hand(), then(PROC_REF(activated)))
 
-/obj/item/bodysnatcher/proc/interaction_self(datum/act/op/A)
+/obj/item/bodysnatcher/proc/activated(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user,span_warning(" A message pops up on the LED display, informing you that you that the mind transfer to yourself was successful... Wait, did that even do anything?"))
-	return TRUE
+	return OP_OK

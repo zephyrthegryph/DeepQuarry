@@ -60,9 +60,21 @@
 	. = ..()
 	. += drawn_from(nameof(anchored))
 
+/obj/item/clothing/mask/chewable/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(wrapped))
+
+/obj/item/clothing/mask/smokable/ecig/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(active), nameof(brightness_on))
+
 /obj/item/light/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(base_state), nameof(status))
+
+/obj/item/material/ashtray/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(base_overlay), nameof(butts), nameof(max_butts))
 
 /obj/item/reagent_containers/cooking_container/generated_reads()
 	. = ..()
@@ -211,7 +223,7 @@
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(cell), nameof(charging), nameof(operating))
-	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(shorted), nameof(vg_entity))
+	. += rust_push(nameof(area), nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(shorted), nameof(supplying), nameof(vg_entity))
 
 /obj/machinery/power/smes/generated_reads()
 	. = ..()
@@ -297,7 +309,6 @@
 			/datum/system/vote = RXB_EVERY,
 			/obj/effect/hotspot = RXB_EVERY,
 			/obj/item/broken_gun = RXB_INIT,
-			/obj/item/clothing/shoes/dry_galoshes = RXB_NOTICE,
 		)
 	return table
 

@@ -532,7 +532,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	if(powered())
 		set_powered(TRUE)
 	else
-		after(src, rand(0, 15), PROC_REF(power_off_delayed))
+		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(power_off_delayed))
 
 /obj/machinery/porta_turret/proc/power_off_delayed()
 	set_powered(FALSE)
@@ -713,7 +713,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 			set_emagged(TRUE)
 
 		enabled=0
-		after(src, rand(60, 600), PROC_REF(emp_reenable))
+		after(src, rand(6 SECONDS, 60 SECONDS), PROC_REF(emp_reenable))
 	return HOOK_DECLINE
 
 /obj/machinery/porta_turret/proc/emp_reenable()

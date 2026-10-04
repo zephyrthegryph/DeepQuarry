@@ -7,7 +7,7 @@
 	watch.interaction_self(actor, watch, null)
 	TEST_ASSERT(watch.activated, "The actual self interaction must arm the watch")
 	actor.injure(INJURY_BLUNT, 10, BP_TORSO, null)
-	watch.periodic_step()
+	watch.deadringer_step(null)
 	// The real injury reaction creates a decoy body; register it before any assertion stops the test.
 	own_turf_contents(T)
 	TEST_ASSERT_EQUAL(watch.watchowner(), actor, "The real injury reaction must capture the actual wearer")

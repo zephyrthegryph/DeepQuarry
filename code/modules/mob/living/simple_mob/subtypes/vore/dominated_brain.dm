@@ -69,18 +69,30 @@ CAPABILITIES(/mob/living/dominated_brain)
 		unobserve(pred_body, /datum/notice/qdeleting, src)
 		rel_clear(src, nameof(pred_body))
 
+/// A no-first confirmation; only Yes invokes the original continuation.
+/datum/prompt/choice/dominated_brain_confirm
+	buttons = TRUE
+	timeout = 0
+
+/datum/prompt/choice/dominated_brain_confirm/prepare(datum/act/A)
+	..()
+	var/static/list/confirmation_buttons = list("No", "Yes")
+	choices = confirmation_buttons
+
 /mob/living/dominated_brain/process_resist()
 	//Resisting control by an alien mind.
 	if(pred_mind && pred_body.mind == pred_mind)
 		dominate_predator()
 		return
 	if(mind == pred_mind && pred_body.prey_controlled)
-		om_ask(src, /datum/om/prompt/confirm, PROC_REF(resist_domination_confirmed), title = "Regain Control", message = "Do you want to wrest control over your body back from \the [prey_name]?", no_first = TRUE)
+		open_request(src, /datum/prompt/choice/dominated_brain_confirm, PROC_REF(resist_domination_confirmed), answerer = src, title = "Regain Control", question = "Do you want to wrest control over your body back from \the [prey_name]?")
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
 		..()
 
-/mob/living/dominated_brain/proc/resist_domination_confirmed(datum/om/prompt/confirm/ask)
+/mob/living/dominated_brain/proc/resist_domination_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
 	if(mind != pred_mind || !pred_body?.prey_controlled)
 		return
 	to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
@@ -97,11 +109,13 @@ CAPABILITIES(/mob/living/dominated_brain)
 /mob/living/dominated_brain/proc/restore_control(ask = TRUE)
 
 	if(ask && disconnect_time || client && ((client.inactivity / 10) / 60 > 10))
-		om_ask(src, /datum/om/prompt/confirm, PROC_REF(restore_control_confirmed), title = "Release Control", message = "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?", no_first = TRUE)
+		open_request(src, /datum/prompt/choice/dominated_brain_confirm, PROC_REF(restore_control_confirmed), answerer = src, title = "Release Control", question = "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?")
 		return
 	restore_control_now()
 
-/mob/living/dominated_brain/proc/restore_control_confirmed(datum/om/prompt/confirm/ask)
+/mob/living/dominated_brain/proc/restore_control_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
 	restore_control_now()
 
 /mob/living/dominated_brain/proc/restore_control_now()
@@ -213,45 +227,120 @@ CAPABILITIES(/mob/living/dominated_brain)
 		to_chat(prey, span_warning("\The [pred] is already dominated, and cannot be controlled at this time."))
 		return
 	// The predator, when it's a player, consents twice.
-	om_ask_sequence(/datum/om/flow/ask_sequence/dominate_predator, src, null, pred = pred, on_done = PROC_REF(dominate_predator_agreed), steps = list(
-		domination_confirm("sure", "Take Over Predator", "You are attempting to take over [pred], are you sure? Ensure that their preferences align with this kind of play."),
-		PROC_REF(dominate_predator_ask_pred),
-		pred.ckey ? domination_confirm("sure2", "Allow Prey Domination", "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", pred) : null,
-	))
+	var/datum/control_transfer_review/dominate_predator/review = new
+	rel_set(review, nameof(review.actor), src)
+	rel_set(review, nameof(review.pred), pred)
+	// The old last consent was included when the sequence was built, not when it resumed.
+	review.ask_final = !!pred.ckey
+	review.start()
 	return TRUE
 
-/datum/om/flow/ask_sequence/dominate_predator
-	var/mob/living/pred
+/// Native consent sequences keep their participants weak without adding gameplay gates.
+/datum/control_transfer_review
+	parent_type = /datum/prompt_workflow
+	var/mob/actor
 
-/// A No/Yes question in a domination sequence. `answerer` set: asked of the other party, and
-/// `decline_text` (if any) tells the asker when they say no.
-/datum/om/prompt/confirm/domination
-	no_first = TRUE
+CAPABILITIES(/datum/control_transfer_review)
+	ref_one(nameof(actor), /mob)
+
+/datum/prompt/choice/control_transfer_review
+	timeout = 0
+	buttons = TRUE
 	var/decline_text
 
-/datum/om/prompt/confirm/domination/declined()
-	if(decline_text)
-		to_chat(asker, span_warning("\The [answerer] [decline_text]"))
+/datum/prompt/choice/control_transfer_review/prepare(datum/act/A)
 	..()
+	var/static/list/confirmation_buttons = list("No", "Yes")
+	choices = confirmation_buttons
 
-/proc/domination_confirm(key, title, message, mob/answerer, decline_text)
-	var/datum/om/prompt/confirm/domination/ask = new
-	ask.key = key
-	ask.title = title
-	ask.message = message
-	rel_set(ask, nameof(ask.answerer), answerer)
-	ask.decline_text = decline_text
-	return ask
+/datum/prompt/choice/control_transfer_review/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/control_transfer_review/review = owner
+	// A No ended the old prompt before the flow unparked its other captured participants.
+	return answer_value == "No" ? null : review.why_not()
 
-/mob/proc/dominate_predator_ask_pred(datum/om/flow/ask_sequence/dominate_predator/seq)
-	var/mob/living/pred = seq.pred
-	to_chat(src, span_notice("You attempt to exert your control over \the [pred]..."))
-	log_admin("[key_name_admin(src)] attempted to take over [pred].")
-	if(!pred.ckey) //check if body is assigned to another player currently
-		return null
-	return domination_confirm("allow", "Allow Prey Domination", "\The [src] has elected to attempt to take control of you. Is this something you will allow to happen?", pred, "declined your request for control.")
+/datum/control_transfer_review/proc/why_not()
+	return QDELETED(actor) ? "gone" : null
 
-/mob/proc/dominate_predator_agreed(datum/om/flow/ask_sequence/dominate_predator/seq)
+/datum/control_transfer_review/proc/start()
+	if(why_not())
+		retire()
+		return
+	run_step(PROC_REF(start_step))
+
+/datum/control_transfer_review/proc/start_step(datum/act/request/A)
+	return
+
+/datum/control_transfer_review/proc/run_step(step, datum/act/request/A)
+	if(why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("Control transfer step [step]: [result.error]")
+		retire()
+
+/datum/control_transfer_review/proc/ask(step, title, question, mob/user, decline_text)
+	open_request(src, /datum/prompt/choice/control_transfer_review, step, answerer = user || actor, asker = actor, title = title, question = question, decline_text = decline_text)
+
+/datum/control_transfer_review/proc/confirmed(datum/act/request/A, step)
+	if(!A.answer || QDELETED(actor))
+		retire()
+		return
+	if(A.answer.answer_value == "No")
+		var/datum/prompt/choice/control_transfer_review/question = A.request
+		if(question.decline_text)
+			to_chat(actor, span_warning("\The [question.answerer] [question.decline_text]"))
+		retire()
+		return
+	run_step(step, A)
+
+/datum/control_transfer_review/dominate_predator
+	var/mob/living/pred
+	var/ask_final = FALSE
+
+CAPABILITIES(/datum/control_transfer_review/dominate_predator)
+	ref_one(nameof(pred), /mob/living)
+
+/datum/control_transfer_review/dominate_predator/why_not()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(pred) ? "gone" : null
+
+/datum/control_transfer_review/dominate_predator/start_step(datum/act/request/A)
+	ask(PROC_REF(sure_entered), "Take Over Predator", "You are attempting to take over [pred], are you sure? Ensure that their preferences align with this kind of play.")
+
+/datum/control_transfer_review/dominate_predator/proc/sure_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(offer_step))
+
+/datum/control_transfer_review/dominate_predator/proc/offer_step(datum/act/request/A)
+	to_chat(actor, span_notice("You attempt to exert your control over \the [pred]..."))
+	log_admin("[key_name_admin(actor)] attempted to take over [pred].")
+	if(!pred.ckey)
+		final_offer_step()
+		return
+	ask(PROC_REF(offer_entered), "Allow Prey Domination", "\The [actor] has elected to attempt to take control of you. Is this something you will allow to happen?", pred, "declined your request for control.")
+
+/datum/control_transfer_review/dominate_predator/proc/offer_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(final_offer_step))
+
+/datum/control_transfer_review/dominate_predator/proc/final_offer_step(datum/act/request/A)
+	if(!ask_final)
+		finish_step()
+		return
+	ask(PROC_REF(final_entered), "Allow Prey Domination", "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", pred)
+
+/datum/control_transfer_review/dominate_predator/proc/final_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(finish_step))
+
+/datum/control_transfer_review/dominate_predator/proc/finish_step(datum/act/request/A)
+	actor.dominate_predator_agreed(src)
+	retire()
+
+/mob/proc/dominate_predator_agreed(datum/control_transfer_review/dominate_predator/seq)
 	var/mob/living/prey = src
 	var/mob/living/pred = seq.pred
 	if(prey.stat == DEAD || prey.prey_controlled || pred.prey_controlled || !pred.allow_mind_transfer)
@@ -349,43 +438,95 @@ CAPABILITIES(/mob/living/dominated_brain)
 	if(!possible_mobs)
 		to_chat(src, span_warning("There are no valid targets inside of you."))
 		return
-	var/datum/om/prompt/choice/pick_target = new
-	pick_target.key = "prey"
-	pick_target.title = "Dominate Prey"
-	pick_target.message = "Select a mob to dominate:"
-	pick_target.choices = possible_mobs
-	om_ask_sequence(/datum/om/flow/ask_sequence/dominate_prey, src, null, grab = G, on_done = PROC_REF(dominate_prey_agreed), steps = list(
-		pick_target,
-		PROC_REF(dominate_prey_ask_sure),
-		PROC_REF(dominate_prey_ask_consent),
-		PROC_REF(dominate_prey_ask_consent_again),
-	))
+	var/datum/control_transfer_review/dominate_prey/review = new
+	rel_set(review, nameof(review.actor), src)
+	rel_set(review, nameof(review.grab), G)
+	review.grab_selected = !isnull(G)
+	review.choices = possible_mobs
+	review.start()
 
-/datum/om/flow/ask_sequence/dominate_prey
-	/// The answer of the prompt keyed "prey".
+/datum/control_transfer_review/dominate_prey
 	var/mob/living/prey
+	var/prey_selected = FALSE
 	var/obj/item/grab/grab
+	var/grab_selected = FALSE
+	var/list/choices
 
-/mob/living/proc/dominate_prey_ask_sure(datum/om/flow/ask_sequence/dominate_prey/seq)
-	var/mob/living/M = seq.prey
-	if(!istype(M))
-		to_chat(src, span_warning("You must have a tighter grip to dominate this creature."))
-		return ASK_STOP
-	if(!M.allow_mind_transfer) //check if the dominated mob pref is enabled
-		to_chat(src, span_warning("[M] is unable to be dominated."))
-		return ASK_STOP
-	return domination_confirm("sure", "Dominate Prey", "You selected [M] to attempt to dominate. Are you sure?")
+CAPABILITIES(/datum/control_transfer_review/dominate_prey)
+	ref_one(nameof(prey), /mob/living)
+	ref_one(nameof(grab), /obj/item/grab)
 
-/mob/living/proc/dominate_prey_ask_consent(datum/om/flow/ask_sequence/dominate_prey/seq)
-	var/mob/living/M = seq.prey
-	log_admin("[key_name_admin(src)] offered to use dominate prey on [M] ([M.ckey]).")
-	to_chat(src, span_warning("Attempting to dominate and gather \the [M]'s mind..."))
-	return domination_confirm("allow", "Allow Dominate Prey", "\The [src] has elected collect your mind into their own. Is this something you will allow to happen?", M, "has declined your Dominate Prey attempt.")
+/datum/prompt/choice/control_transfer_target
+	timeout = 0
+	title = "Dominate Prey"
+	question = "Select a mob to dominate:"
 
-/mob/living/proc/dominate_prey_ask_consent_again(datum/om/flow/ask_sequence/dominate_prey/seq)
-	return domination_confirm("allow2", "Allow Dominate Prey", "Are you sure? You can only undo this while your body is inside of [src]. (You can resist, or use the resist verb in the abilities tab)", seq.prey, "has declined your Dominate Prey attempt.")
+/datum/prompt/choice/control_transfer_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	var/datum/control_transfer_review/review = owner
+	return review.why_not()
 
-/mob/living/proc/dominate_prey_agreed(datum/om/flow/ask_sequence/dominate_prey/seq)
+/datum/control_transfer_review/dominate_prey/why_not()
+	. = ..()
+	if(.)
+		return
+	if((prey_selected && QDELETED(prey)) || (grab_selected && QDELETED(grab)))
+		return "gone"
+
+/datum/control_transfer_review/dominate_prey/start_step(datum/act/request/A)
+	open_request(src, /datum/prompt/choice/control_transfer_target, PROC_REF(target_entered), answerer = actor, asker = actor, choices = choices)
+
+/datum/control_transfer_review/dominate_prey/proc/target_entered(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	run_step(PROC_REF(target_step), A)
+
+/datum/control_transfer_review/dominate_prey/proc/target_step(datum/act/request/A)
+	var/mob/living/selected = A.answer.answer_value
+	if(!istype(selected))
+		to_chat(actor, span_warning("You must have a tighter grip to dominate this creature."))
+		retire()
+		return
+	rel_set(src, nameof(prey), selected)
+	prey_selected = TRUE
+	if(QDELETED(prey))
+		retire()
+		return
+	if(!prey.allow_mind_transfer)
+		to_chat(actor, span_warning("[prey] is unable to be dominated."))
+		retire()
+		return
+	ask(PROC_REF(sure_entered), "Dominate Prey", "You selected [prey] to attempt to dominate. Are you sure?")
+
+/datum/control_transfer_review/dominate_prey/proc/sure_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(offer_step))
+
+/datum/control_transfer_review/dominate_prey/proc/offer_step(datum/act/request/A)
+	log_admin("[key_name_admin(actor)] offered to use dominate prey on [prey] ([prey.ckey]).")
+	to_chat(actor, span_warning("Attempting to dominate and gather \the [prey]'s mind..."))
+	ask(PROC_REF(offer_entered), "Allow Dominate Prey", "\The [actor] has elected collect your mind into their own. Is this something you will allow to happen?", prey, "has declined your Dominate Prey attempt.")
+
+/datum/control_transfer_review/dominate_prey/proc/offer_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(final_offer_step))
+
+/datum/control_transfer_review/dominate_prey/proc/final_offer_step(datum/act/request/A)
+	ask(PROC_REF(final_entered), "Allow Dominate Prey", "Are you sure? You can only undo this while your body is inside of [actor]. (You can resist, or use the resist verb in the abilities tab)", prey, "has declined your Dominate Prey attempt.")
+
+/datum/control_transfer_review/dominate_prey/proc/final_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(finish_step))
+
+/datum/control_transfer_review/dominate_prey/proc/finish_step(datum/act/request/A)
+	var/mob/living/operator = actor
+	operator.dominate_prey_agreed(src)
+	retire()
+
+/mob/living/proc/dominate_prey_agreed(datum/control_transfer_review/dominate_prey/seq)
 	var/mob/living/M = seq.prey
 	var/obj/item/grab/G = seq.grab
 	if(!M.allow_mind_transfer)
@@ -492,22 +633,49 @@ CAPABILITIES(/mob/living/dominated_brain)
 	var/mob/living/prey = A.answer.answer_value
 	if(!can_lend_prey_control(prey))
 		return
-	om_ask_sequence(/datum/om/flow/ask_sequence/lend_prey_control, src, null, prey = prey, on_done = PROC_REF(lend_prey_control_agreed), steps = list(
-		domination_confirm("sure", "Give Prey Control", "You are attempting to give [prey] control over you, are you sure? Ensure that their preferences align with this kind of play."),
-		PROC_REF(lend_prey_control_ask_prey),
-		domination_confirm("allow2", "Allow Prey Domination", "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", prey),
-	))
+	var/datum/control_transfer_review/lend_prey_control/review = new
+	rel_set(review, nameof(review.actor), src)
+	rel_set(review, nameof(review.prey), prey)
+	review.start()
 
-/datum/om/flow/ask_sequence/lend_prey_control
+/datum/control_transfer_review/lend_prey_control
 	var/mob/living/prey
 
-/mob/living/proc/lend_prey_control_ask_prey(datum/om/flow/ask_sequence/lend_prey_control/seq)
-	var/mob/living/prey = seq.prey
-	to_chat(src, span_notice("You attempt to give your control over to \the [prey]..."))
-	log_admin("[key_name_admin(src)] attempted to give control to [prey].")
-	return domination_confirm("allow", "Allow Prey Domination", "\The [src] has elected to attempt to give you control of them. Is this something you will allow to happen?", prey, "declined your request for control.")
+CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
+	ref_one(nameof(prey), /mob/living)
 
-/mob/living/proc/lend_prey_control_agreed(datum/om/flow/ask_sequence/lend_prey_control/seq)
+/datum/control_transfer_review/lend_prey_control/why_not()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(prey) ? "gone" : null
+
+/datum/control_transfer_review/lend_prey_control/start_step(datum/act/request/A)
+	ask(PROC_REF(sure_entered), "Give Prey Control", "You are attempting to give [prey] control over you, are you sure? Ensure that their preferences align with this kind of play.")
+
+/datum/control_transfer_review/lend_prey_control/proc/sure_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(offer_step))
+
+/datum/control_transfer_review/lend_prey_control/proc/offer_step(datum/act/request/A)
+	to_chat(actor, span_notice("You attempt to give your control over to \the [prey]..."))
+	log_admin("[key_name_admin(actor)] attempted to give control to [prey].")
+	ask(PROC_REF(offer_entered), "Allow Prey Domination", "\The [actor] has elected to attempt to give you control of them. Is this something you will allow to happen?", prey, "declined your request for control.")
+
+/datum/control_transfer_review/lend_prey_control/proc/offer_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(final_offer_step))
+
+/datum/control_transfer_review/lend_prey_control/proc/final_offer_step(datum/act/request/A)
+	ask(PROC_REF(final_entered), "Allow Prey Domination", "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", prey)
+
+/datum/control_transfer_review/lend_prey_control/proc/final_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(finish_step))
+
+/datum/control_transfer_review/lend_prey_control/proc/finish_step(datum/act/request/A)
+	var/mob/living/operator = actor
+	operator.lend_prey_control_agreed(src)
+	retire()
+
+/mob/living/proc/lend_prey_control_agreed(datum/control_transfer_review/lend_prey_control/seq)
 	var/mob/living/prey = seq.prey
 	var/mob/living/pred = src
 	if(!can_lend_prey_control(prey))

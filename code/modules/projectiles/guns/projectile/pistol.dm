@@ -377,7 +377,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/p92x, "{initial(icon_state)}{ammo_m
 
 /// TRUE when a magazine with rounds in it is loaded.
 /obj/item/gun/projectile/giskard/proc/appearance_loaded()
-	return !!(ammo_magazine && ammo_magazine.stored_ammo.len)
+	return !!(ammo_magazine && length(ammo_magazine.stored_ammo))
 APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard, "giskardcivil{appearance_loaded?:_empty}")
 
 /obj/item/gun/projectile/giskard/olivaw
@@ -484,7 +484,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac2, "tac2_ecureuil{ammo_
 /obj/item/gun/projectile/lamia/proc/appearance_fill()
 	if(!ammo_magazine)
 		return null
-	return round(ammo_magazine.stored_ammo.len * 100 / ammo_magazine.max_ammo, 33)
+	return round(length(ammo_magazine.stored_ammo) * 100 / ammo_magazine.max_ammo, 33)
 DECLARE_APPEARANCE(/obj/item/gun/projectile/lamia, "appearance_fill", list("0" = list(APPEARANCE_OVERLAYS = list("lamia_0")), "33" = list(APPEARANCE_OVERLAYS = list("lamia_33")), "66" = list(APPEARANCE_OVERLAYS = list("lamia_66")), "99" = list(APPEARANCE_OVERLAYS = list("lamia_99"))))
 
 /******GLOCK******/

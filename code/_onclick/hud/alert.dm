@@ -271,8 +271,11 @@ If you're feeling frisky, right click on yourself and select \"Remove embedded o
 	icon_state = "embeddedobject"
 
 /atom/movable/screen/alert/embeddedobject/Click()
-	if(isliving(usr))
-		var/mob/living/carbon/human/M = usr
+	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native embedded-object alert captures its actor without adding parent input routing.
+
+/atom/movable/screen/alert/embeddedobject/click_with_actor(mob/user, location, control, params)
+	if(isliving(user))
+		var/mob/living/carbon/human/M = user
 		return M.help_shake_act(M)
 
 /atom/movable/screen/alert/asleep
@@ -391,8 +394,11 @@ so as to remain in compliance with the most up-to-date laws."
 	timeout = 300
 
 /atom/movable/screen/alert/notify_cloning/Click()
-	if(!usr || !usr.client) return
-	var/mob/observer/dead/G = usr
+	click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native cloning alert captures its actor without adding parent input routing.
+
+/atom/movable/screen/alert/notify_cloning/click_with_actor(mob/user, location, control, params)
+	if(!user || !user.client) return
+	var/mob/observer/dead/G = user
 	G.reenter_corpse()
 
 //OBJECT-BASED
@@ -424,12 +430,15 @@ so as to remain in compliance with the most up-to-date laws."
 	Click here to begin."
 
 /atom/movable/screen/alert/open_ticket/Click()
-	if(!usr || !usr.client) return
+	click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native ticket alert captures its actor without adding parent input routing.
+
+/atom/movable/screen/alert/open_ticket/click_with_actor(mob/user, location, control, params)
+	if(!user || !user.client) return
 
 	// Open a new chat with the user
 	var/datum/ticket_chat/TC = new()
-	rel_set(TC, nameof(TC.T), usr.client.current_ticket())
-	TC.tgui_interact(usr.client.mob)
+	rel_set(TC, nameof(TC.T), user.client.current_ticket())
+	TC.tgui_interact(user.client.mob)
 
 // PRIVATE = only edit, use, or override these if you're editing the system as a whole
 
@@ -473,15 +482,24 @@ so as to remain in compliance with the most up-to-date laws."
 	var/list/alerts = null // contains /atom/movable/screen/alert only // On /mob so clientless mobs will throw alerts properly
 
 /atom/movable/screen/alert/Click(location, control, params)
-	if(!usr || !usr.client)
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native alert click captures its actor while retaining native master forwarding and parent fallback.
+	if(!user || !user.client)
 		return
+	var/decision = prepare_alert_click(user, params)
+	if(decision == TRUE)
+		return
+	if(istype(decision, /obj))
+		var/obj/master = decision
+		return user.client.Click(master, location, control, params)
+	..() // Pass through to click_vr
+
+/atom/movable/screen/alert/proc/prepare_alert_click(mob/user, params)
 	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT)) // screen objects don't do the normal Click() stuff so we'll cheat
-		to_chat(usr,span_boldnotice(name) + " - " + span_info(desc))
-		return
+		to_chat(user,span_boldnotice(name) + " - " + span_info(desc))
+		return TRUE
 	var/obj/master = master_ref
 	if(master)
-		return usr.client.Click(master, location, control, params)
-	..() // Pass through to click_vr
+		return master
 
 /atom/movable/screen/alert/fat
 	name = "Full"

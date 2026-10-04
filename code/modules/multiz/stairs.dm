@@ -74,10 +74,9 @@
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-/obj/structure/stairs/bottom/relations()
-	. = ..()
-	. += rel_one(nameof(top), back = nameof(/obj/structure/stairs/top::bottom))
-	. += rel_one(nameof(middle), back = nameof(/obj/structure/stairs/middle::bottom))
+CAPABILITIES(/obj/structure/stairs/bottom)
+	links(/obj/structure/stairs/bottom::top, /obj/structure/stairs/top::bottom)
+	links(/obj/structure/stairs/bottom::middle, /obj/structure/stairs/middle::bottom)
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/bottom/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -241,6 +240,7 @@
 	var/obj/structure/stairs/bottom/bottom = null
 
 CAPABILITIES(/obj/structure/stairs/middle)
+	links(/obj/structure/stairs/middle::top, /obj/structure/stairs/top::middle)
 	climb()
 	op("interaction_drag", item(/mob), gesture(GESTURE_DRAG), then(PROC_REF(interaction_drag)))
 
@@ -250,10 +250,6 @@ CAPABILITIES(/obj/structure/stairs/middle)
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-/obj/structure/stairs/middle/relations()
-	. = ..()
-	. += rel_one(nameof(top), back = nameof(/obj/structure/stairs/top::middle))
-	. += rel_one(nameof(bottom), back = nameof(/obj/structure/stairs/bottom::middle))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/middle/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -331,10 +327,6 @@ CAPABILITIES(/obj/structure/stairs/middle)
 		WARNING("Stair created without level below: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-/obj/structure/stairs/top/relations()
-	. = ..()
-	. += rel_one(nameof(middle), back = nameof(/obj/structure/stairs/middle::top))
-	. += rel_one(nameof(bottom), back = nameof(/obj/structure/stairs/bottom::top))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/top/check_integrity(obj/structure/stairs/bottom/B = null,

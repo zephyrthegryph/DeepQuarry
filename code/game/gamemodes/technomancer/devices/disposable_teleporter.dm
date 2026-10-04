@@ -35,14 +35,20 @@ CAPABILITIES(/obj/item/disposable_teleporter)
 		to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
 		return TRUE
 	else
-		om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(teleport_area_chosen), title = "Teleportation", message = "Area to teleport to", choices = GLOB.teleportlocs)
+		open_request(src, /datum/prompt/choice/technomancer_carried, PROC_REF(teleport_area_chosen), answerer = user, subject = src, title = "Teleportation", question = "Area to teleport to", choices = GLOB.teleportlocs)
 	return TRUE
 
-/obj/item/disposable_teleporter/proc/teleport_area_chosen(datum/om/prompt/choice/carried_item/ask)
+/obj/item/disposable_teleporter/proc/teleport_area_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return teleport_area_chosen_apply(A)
+
+/obj/item/disposable_teleporter/proc/teleport_area_chosen_apply(datum/act/request/request_act)
+	var/datum/prompt/choice/technomancer_carried/ask = request_act.answer
 	var/mob/user = ask.answerer
 	if(!uses)
 		return
-	var/area/A = GLOB.teleportlocs[ask.choice]
+	var/area/A = GLOB.teleportlocs[ask.answer_value]
 	if(!A)
 		return
 

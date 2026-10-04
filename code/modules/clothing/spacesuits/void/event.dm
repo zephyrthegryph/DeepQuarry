@@ -437,3 +437,4 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker, suit_stor
 	icon_state = "breaker_helmet"
 
 	armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"
+

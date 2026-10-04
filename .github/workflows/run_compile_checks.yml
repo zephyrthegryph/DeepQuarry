@@ -3,6 +3,8 @@ name: Compile Checks
 # Compiles the production Southern Cross build (the unit tests use the small
 # test map, so this is the only job that compiles the live map), checks the
 # client version it requires, and compiles every map template under MAP_TEST.
+# The production step compiles without CIBUILDING/UNIT_TESTS, so a test-only type
+# referenced outside its guard (e.g. by generated code) fails here.
 on:
   workflow_call:
     inputs:

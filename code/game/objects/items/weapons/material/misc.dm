@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 				target.Move(get_step(target,get_dir(user,target)))
 		if(I_GRAB)
 			var/turf/STurf = get_turf(target)
-			after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 60, 1))
+			after(STurf, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 60, 1))
 			act_message(user, target, others = span_critical("\The [src] yanks %T% towards %U%!"))
 			target.throw_at(get_turf(get_step(user,get_dir(user,target))), 2, 1, src)
 
@@ -198,14 +198,14 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 						return
 
 CAPABILITIES(/obj/item/material/whip)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("crack", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/material/whip/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, others = span_warning("%U% cracks %T%!"))
 	play_sfx(src, SFX_EFFECTS_SNAP)
-	return TRUE
+	return OP_OK
 
 
 /obj/item/material/knife/machete/hatchet/stone

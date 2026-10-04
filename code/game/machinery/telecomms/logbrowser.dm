@@ -106,13 +106,15 @@ CAPABILITIES(/obj/machinery/computer/telecomms/server)
 	. = TRUE
 
 /obj/machinery/computer/telecomms/server/proc/ui_act_mainmenu(datum/act/op/A)
+	add_fingerprint(A.actor)
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
-	. = TRUE
+	return OP_OK
 
 /obj/machinery/computer/telecomms/server/proc/ui_act_release(datum/act/op/A)
+	add_fingerprint(A.actor)
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::servers))
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
-	. = TRUE
+	return OP_OK
 
 /obj/machinery/computer/telecomms/server/proc/ui_act_scan(datum/act/op/A)
 	if(length(servers) > 0)
@@ -151,8 +153,9 @@ CAPABILITIES(/obj/machinery/computer/telecomms/server)
 	. = TRUE
 
 /obj/machinery/computer/telecomms/server/proc/ui_act_cleartemp(datum/act/op/A)
+	add_fingerprint(A.actor)
 	temp = null
-	. = TRUE
+	return OP_OK
 
 /obj/machinery/computer/telecomms/server/proc/network_entered(datum/act/request/A)
 	if(!A.answer)

@@ -31,7 +31,7 @@
 	species_component = list(/datum/trait_state/burninlight/shadow) // Until a parent component like xenochimera have is needed, only handles burning in light.
 
 /datum/species/shadow/handle_death(mob/living/carbon/human/H)
-	after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_crumble))
+	after(H, 0.1 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, species_death_crumble))
 
 /// A species death that leaves only ash.
 /mob/living/carbon/human/proc/species_death_crumble()

@@ -14,21 +14,20 @@
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
 	activation_emote = pick(choices)
 	announce_activation(source)
-	if(!user)
-		return
-	open_request(src, /datum/prompt/choice/implant_emote, PROC_REF(emote_chosen), answerer = user, source = source, title = "Implant Activation", question = "Choose activation emote. If you cancel this, one will be picked at random.", choices = choices, timeout = 0)
+	if(user && !QDELETED(user))
+		open_request(src, /datum/prompt/choice/implant_emote, PROC_REF(emote_chosen), answerer = user, choices = choices, source = source)
 
 /obj/item/implant/uplink/proc/emote_chosen(datum/act/request/A)
-	if(!A.answer)
+	var/datum/prompt/choice/implant_emote/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.source))
 		return
-	var/datum/prompt/choice/implant_emote/R = A.request
-	activation_emote = A.answer.answer_value
-	announce_activation(R.source)
+	activation_emote = ask.value
+	announce_activation(ask.source)
 
 /obj/item/implant/uplink/proc/announce_activation(mob/source)
 	source.mind?.store_memory("Uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.", 0, 0)
 	to_chat(source, "The implanted uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.")
 
-/obj/item/implant/uplink/trigger(emote, mob/source as mob)
-	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
+/obj/item/implant/uplink/trigger(emote, mob/source as mob, mob/actor)
+	if(item_hidden_uplink(src) && actor == source) // Let's not have another people activate our uplink
 		item_hidden_uplink(src).check_trigger(source, emote, activation_emote)

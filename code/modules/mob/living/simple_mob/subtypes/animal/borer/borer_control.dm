@@ -16,7 +16,7 @@
 		return
 
 	to_chat(src, span_alien("You begin delicately adjusting your connection to the host brain..."))
-	after(src, 100 + (host.injury_load(INJURY_CATEGORY_NEURAL) * 5), PROC_REF(finish_bond_brain))
+	after(src, 10 SECONDS + (host.injury_load(INJURY_CATEGORY_NEURAL) * (0.5 SECONDS)), PROC_REF(finish_bond_brain))
 
 // This entire section is awful and a relic of ancient times. It needs to be replaced
 /mob/living/simple_mob/animal/borer/proc/finish_bond_brain()

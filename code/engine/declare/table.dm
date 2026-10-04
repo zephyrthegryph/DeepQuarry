@@ -121,6 +121,10 @@ GLOBAL_VAR(declare_report_capture)
 		T = built
 	if(!T)
 		T = table_compile(D.type, null, null, null)
+	else if(T.owner_type != D.type && stat_type_needs_own_table(D.type, T.owner_type))
+		// A type that declares nothing shares its ancestor's table, but a FORMULA stat it declares (STAT lines are not table entries) must be
+		// computed at init: it gets its own table, whose hooks say so.
+		T = table_compile(D.type, T, null, null)
 	type_table_cache()[D.type] = T
 	return T
 
@@ -149,7 +153,7 @@ GLOBAL_VAR(declare_report_capture)
 		if(istype(item, /datum/entry/line))
 			var/datum/entry/line/L = item
 			if(file)
-				origin_now = "[file]:[L.line]"
+				origin_now = entry_origin_text(file, L.line, L.section_name)
 			continue
 		table_apply(T, item, origin_now, null, null)
 	table_validate(T)
@@ -321,8 +325,13 @@ GLOBAL_VAR(declare_report_capture)
 	table_add_item(T, E, origin, owner, whens, E.key)
 
 /// Does an extend()/without() target name something the table has? Text: an entry key. A number: a capability id the table has, or a tag. A
-/// path: an action type.
+/// path: an action type. A list of keys (extend(list("a", "b"), ...)): every one of them.
 /proc/table_resolves(datum/type_table/T, target)
+	if(islist(target))
+		for(var/one in target)
+			if(!table_resolves(T, one))
+				return FALSE
+		return length(target) > 0
 	if(ispath(target))
 		return ispath(target, /datum/act) || ispath(target, /datum/notice)
 	if(isnum(target))
@@ -341,7 +350,7 @@ GLOBAL_VAR(declare_report_capture)
 /proc/table_apply_extend(datum/type_table/T, datum/entry/E, origin, owner, list/whens)
 	var/target = E.args["target"]
 	if(!table_resolves(T, target))
-		table_error(T, origin, declare_rule(RULE_UNKNOWN_KEY), "extend([target]) names a key nothing in the table has", "spell an op key as the declaration does (\"cover.open\"), or use CAP_X, TAG_X or an action type")
+		table_error(T, origin, declare_rule(RULE_UNKNOWN_KEY), "extend([islist(target) ? "list([jointext(target, ", ")])" : target]) names a key nothing in the table has", "spell an op key as the declaration does (\"cover.open\"), or use CAP_X, TAG_X or an action type")
 		return
 	table_add_item(T, E, origin, owner, whens, null)
 

@@ -61,7 +61,7 @@
 
 /datum/unit_test/interim_slime_crystal_release/proc/exercise_crystal(obj/item/slime_crystal/source, mob/living/carbon/human/actor, mob/living/carbon/human/target)
 	if(self_case)
-		source.interaction_self(actor, source, null)
+		perform_op(actor, source, "self", source)
 	else if(hit_case)
 		source.apply_hit_effect(target, actor, BP_TORSO)
 	else

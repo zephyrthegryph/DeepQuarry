@@ -34,13 +34,16 @@
 	for(var/option in posters)
 		options[posters[option].name] = posters[option]
 
-	om_ask(M, /datum/om/prompt/choice, PROC_REF(poster_chosen), choices = options, title = "Customize Poster", message = "Choose a poster!", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(poster_chosen), answerer = M, choices = options, title = "Customize Poster", question = "Choose a poster!", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/poster/custom/proc/poster_chosen(datum/om/prompt/choice/ask)
-	if(ask.choices[ask.choice])
-		poster_decl = ask.choices[ask.choice]
+/obj/item/poster/custom/proc/poster_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	if(ask.choices[ask.answer_value])
+		poster_decl = ask.choices[ask.answer_value]
 		name = "rolled-up poly-poster - [poster_decl.name]"
-		to_chat(ask.answerer, "The poster is now: [ask.choice].")
+		to_chat(ask.answerer, "The poster is now: [ask.answer_value].")
 
 // Wall object
 /obj/structure/sign/poster/custom // placed wall object

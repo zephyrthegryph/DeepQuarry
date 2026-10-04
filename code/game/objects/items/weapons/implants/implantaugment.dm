@@ -62,23 +62,32 @@ TYPE_TABLE_DECLARE(/obj/item/implant/organ/limbaugment, limbaugment_targets, lis
 
 		var/list/choices = augment_choices(H)
 		if(length(choices) > 1)
-			if(user)
-				open_request(src, /datum/prompt/choice/augment_location, PROC_REF(augment_location_chosen), answerer = user, patient = H, title = "Choose Location", question = "Choose augment location:", choices = choices, timeout = 0)
+			if(user && !QDELETED(user))
+				open_request(src, /datum/prompt/choice/augment_location, PROC_REF(augment_location_chosen), answerer = user, choices = choices, patient = H)
 			return
 		install_augment(H, length(choices) ? choices[1] : null)
 
 /// Where a limb augment goes on `patient`.
 /datum/prompt/choice/augment_location
+	timeout = 0
+	title = "Choose Location"
+	question = "Choose augment location:"
 	var/mob/living/carbon/human/patient
 
 CAPABILITIES(/datum/prompt/choice/augment_location)
 	ref_one(nameof(patient), /mob/living/carbon/human)
 
+/datum/prompt/choice/augment_location/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured_patient = patient
+	rel_clear(src, nameof(patient))
+	rel_set(src, nameof(patient), captured_patient)
+
 /obj/item/implant/organ/limbaugment/proc/augment_location_chosen(datum/act/request/A)
-	if(!A.answer)
+	var/datum/prompt/choice/augment_location/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.patient))
 		return
-	var/datum/prompt/choice/augment_location/R = A.request
-	install_augment(R.patient, A.answer.answer_value)
+	install_augment(ask.patient, ask.value)
 
 /obj/item/implant/organ/limbaugment/proc/augment_choices(mob/living/carbon/human/H)
 	. = TYPE_TABLE_COPY(src, limbaugment_targets)

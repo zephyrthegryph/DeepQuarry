@@ -19,6 +19,8 @@
 	var/datum/nif_menu/menu_ref
 
 CAPABILITIES(/obj/item/nif)
+	owns_one(nameof(comm), on_destroy = ON_DESTROY_DELETE)
+	links(/obj/item/nif::human, /mob/living/carbon/human::nif)
 	owns_many(nameof(nifsofts), /datum/nifsoft)
 	owns_one(nameof(menu_ref), /datum/nif_menu)
 
@@ -198,4 +200,3 @@ UI_ACT_PROC(/obj/item/nif, ui_act_dismissnotification)
 /// The NIF's HUD menu helper, owned by the NIF (created on implant, deleted on unimplant or with the NIF).
 /obj/item/nif/proc/menu() as /datum/nif_menu
 	return QDELETED(menu_ref) ? null : menu_ref
-

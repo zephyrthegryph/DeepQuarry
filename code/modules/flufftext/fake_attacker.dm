@@ -214,6 +214,5 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 	if(get_dist(src,M) > 10 || get_dist(src,M) < 2 || (flee && prob(10)))
 		qdel(src)
 
-/obj/effect/fake_attacker/relations()
-	. = ..()
-	. += rel_many(nameof(clients))
+CAPABILITIES(/obj/effect/fake_attacker)
+	ref_many(nameof(clients))

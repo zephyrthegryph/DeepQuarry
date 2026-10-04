@@ -9,7 +9,7 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	TEST_ASSERT(actor.put_in_active_hand(pen), "The actual actor holds its original unrelated pen")
 	var/list/before = turf_contents_of_type(T, /obj/effect/decal/cleanable/ash)
-	TEST_ASSERT_EQUAL(remains.interaction_crumble_remains(actor, pen, null), TRUE, "Actual contained crumbling preserves its original handled result")
+	TEST_ASSERT(test_op_handler(remains, "interaction_crumble_remains", actor, pen), "Actual contained crumbling preserves its original handled result") // contained: no click reaches it, so the handler runs as the engine would
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(remains), "Actual contained crumbling consumes the exact original remains")
 	var/list/products = turf_contents_of_type(T, /obj/effect/decal/cleanable/ash) - before

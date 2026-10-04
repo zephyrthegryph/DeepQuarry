@@ -40,7 +40,6 @@
 
 	meat_amount = 0
 
-	showvoreprefs = 0
 	vore_active = 1
 	vore_default_mode = DM_HOLD
 
@@ -270,74 +269,76 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 				possible_mobs += H
 			else
 				continue
-	om_ask_sequence(/datum/om/flow/ask_sequence/morph_takeover, src, null, on_done = PROC_REF(take_over_agreed), steps = list(
-		new /datum/om/prompt/choice/morph_takeover_target(possible_mobs),
-		PROC_REF(take_over_ask_sure),
-		PROC_REF(take_over_ask_consent),
-		PROC_REF(take_over_ask_consent_again),
-	))
+	var/datum/control_transfer_review/morph_takeover/review = new
+	rel_set(review, nameof(review.actor), src)
+	review.choices = possible_mobs
+	review.start()
 
-/datum/om/flow/ask_sequence/morph_takeover
-	/// The answer of the prompt keyed "prey".
+/datum/control_transfer_review/morph_takeover
 	var/mob/living/prey
+	var/prey_selected = FALSE
+	var/list/choices
 
-/datum/om/prompt/choice/morph_takeover_target
-	key = "prey"
+CAPABILITIES(/datum/control_transfer_review/morph_takeover)
+	ref_one(nameof(prey), /mob/living)
+
+/datum/prompt/choice/control_transfer_target/morph_takeover
 	title = "Take Over Prey"
-	message = "Select a mob to take over:"
+	question = "Select a mob to take over:"
 
-/datum/om/prompt/choice/morph_takeover_target/New(list/possible_mobs)
-	..()
-	choices = possible_mobs
+/datum/control_transfer_review/morph_takeover/why_not()
+	. = ..()
+	if(.)
+		return
+	return prey_selected && QDELETED(prey) ? "gone" : null
 
-/datum/om/prompt/confirm/morph_takeover_sure
-	key = "sure"
-	title = "Take Over Prey"
-	no_first = TRUE
+/datum/control_transfer_review/morph_takeover/start_step(datum/act/request/A)
+	open_request(src, /datum/prompt/choice/control_transfer_target/morph_takeover, PROC_REF(target_entered), answerer = actor, asker = actor, choices = choices)
 
-/// The prey's consent, asked of the prey; a no tells the morph (the asker).
-/datum/om/prompt/confirm/morph_takeover_consent
-	key = "allow"
-	title = "Allow Morph To Take Over"
-	no_first = TRUE
+/datum/control_transfer_review/morph_takeover/proc/target_entered(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	run_step(PROC_REF(target_step), A)
 
-/datum/om/prompt/confirm/morph_takeover_consent/prepare()
-	message = "\The [asker] has elected to attempt to take over your body and control you. Is this something you will allow to happen?"
-	return TRUE
+/datum/control_transfer_review/morph_takeover/proc/target_step(datum/act/request/A)
+	var/mob/living/selected = A.answer.answer_value
+	if(!istype(selected) || QDELETED(selected))
+		retire()
+		return
+	rel_set(src, nameof(prey), selected)
+	prey_selected = TRUE
+	if(QDELETED(prey))
+		retire()
+		return
+	if(!prey.allow_mimicry)
+		to_chat(actor, span_warning("\The [prey] cannot be impersonated!"))
+		retire()
+		return
+	ask(PROC_REF(sure_entered), "Take Over Prey", "You selected [prey] to attempt to take over. Are you sure?")
 
-/datum/om/prompt/confirm/morph_takeover_consent/declined()
-	to_chat(asker, span_warning("\The [answerer] declined your request for control."))
-	..()
+/datum/control_transfer_review/morph_takeover/proc/sure_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(offer_step))
 
-/datum/om/prompt/confirm/morph_takeover_consent/again
-	key = "allow2"
+/datum/control_transfer_review/morph_takeover/proc/offer_step(datum/act/request/A)
+	log_admin("[key_name_admin(actor)] offered [prey] to swap bodies as a morph.")
+	ask(PROC_REF(offer_entered), "Allow Morph To Take Over", "\The [actor] has elected to attempt to take over your body and control you. Is this something you will allow to happen?", prey, "declined your request for control.")
 
-/datum/om/prompt/confirm/morph_takeover_consent/again/prepare()
-	message = "Are you sure? The only way to undo this on your own is to OOC Escape."
-	return TRUE
+/datum/control_transfer_review/morph_takeover/proc/offer_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(final_offer_step))
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_sure(datum/om/flow/ask_sequence/morph_takeover/seq)
-	var/mob/living/L = seq.prey
-	if(!L.allow_mimicry)
-		to_chat(src, span_warning("\The [L] cannot be impersonated!"))
-		return ASK_STOP
-	var/datum/om/prompt/confirm/morph_takeover_sure/ask = new
-	ask.message = "You selected [L] to attempt to take over. Are you sure?"
-	return ask
+/datum/control_transfer_review/morph_takeover/proc/final_offer_step(datum/act/request/A)
+	ask(PROC_REF(final_entered), "Allow Morph To Take Over", "Are you sure? The only way to undo this on your own is to OOC Escape.", prey, "declined your request for control.")
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent(datum/om/flow/ask_sequence/morph_takeover/seq)
-	var/mob/living/L = seq.prey
-	log_admin("[key_name_admin(src)] offered [L] to swap bodies as a morph.")
-	var/datum/om/prompt/confirm/morph_takeover_consent/ask = new
-	rel_set(ask, nameof(ask.answerer), L)
-	return ask
+/datum/control_transfer_review/morph_takeover/proc/final_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(finish_step))
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(datum/om/flow/ask_sequence/morph_takeover/seq)
-	var/datum/om/prompt/confirm/morph_takeover_consent/again/ask = new
-	rel_set(ask, nameof(ask.answerer), seq.prey)
-	return ask
+/datum/control_transfer_review/morph_takeover/proc/finish_step(datum/act/request/A)
+	var/mob/living/simple_mob/vore/morph/operator = actor
+	operator.take_over_agreed(src)
+	retire()
 
-/mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/om/flow/ask_sequence/morph_takeover/seq)
+/mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/control_transfer_review/morph_takeover/seq)
 	var/mob/living/L = seq.prey
 	if(morphed || !isbelly(L.loc) || L.loc.loc != src)
 		return

@@ -15,6 +15,8 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	ref_one(nameof(target), /mob)
 	extend(TAG_UI, needs(req_rights(R_SPAWN)))
 	extend(TAG_UI, then(PROC_REF(ui_log_use), early = TRUE))
+
+	section(smites, "The pranks and smites of the Player Effects panel")
 	op("break_legs", ui_act("break_legs"), then(PROC_REF(ui_act_break_legs)))
 	op("bluespace_artillery", ui_act("bluespace_artillery"), then(PROC_REF(ui_act_bluespace_artillery)))
 	op("spont_combustion", ui_act("spont_combustion"), then(PROC_REF(ui_act_spont_combustion)))
@@ -38,6 +40,8 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("item_tf", ui_act("item_tf"), needs(req(PROC_REF(item_tf_ready), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Typepath", "question" = "Enter full or partial typepath.", "max_len" = MAX_TGUI_INPUT), step = "path"), asks(/datum/prompt/choice, fields = list("title" = "Typepath", "question" = "Which one?", "choices" = computed(PROC_REF(typepath_matches))), step = "pick", when = PROC_REF(typepath_ambiguous)), then(PROC_REF(ui_act_item_tf)))
 	op("elder_smite", ui_act("elder_smite"), then(PROC_REF(ui_act_elder_smite)))
 	op("wet_floors", ui_act("wet_floors"), asks(/datum/prompt/choice, fields = list("title" = "Reagent", "question" = "Which reagent do you want to place on the floors around them?", "choices" = list("Water", "Space Lube", "Other", "Cancel")), step = "reagent"), asks(/datum/prompt/choice, fields = list("title" = "Chemicals", "question" = "Which chemical would you like to use?", "choices" = computed(PROC_REF(reagent_types))), step = "chem", when = PROC_REF(wet_floors_other)), then(PROC_REF(ui_act_wet_floors)))
+
+	section(body, "What the Player Effects panel does to a body: scans, organs, bones, chemicals, medical issues")
 	op("health_scan", ui_act("health_scan"), then(PROC_REF(ui_act_health_scan)))
 	op("appendicitis", ui_act("appendicitis"), then(PROC_REF(ui_act_appendicitis)))
 	op("damage_organ", ui_act("damage_organ"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Organs", "question" = "Choose an organ to damage:", "choices" = computed(PROC_REF(organ_choices))), step = "organ"), asks(/datum/prompt/choice, fields = list("title" = "Effect", "question" = "What do you want to do to the Organ", "choices" = list("Damage", "Kill", "Bruise", "Cancel")), step = "effect", when = PROC_REF(organ_chosen)), asks(/datum/prompt/number, fields = list("title" = "Damage", "question" = computed(PROC_REF(organ_damage_question))), step = "amount", when = PROC_REF(effect_is_damage)), then(PROC_REF(ui_act_damage_organ)))
@@ -53,6 +57,8 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("clear_issue", ui_act("clear_issue"), then(PROC_REF(ui_act_clear_issue)))
 	op("vent_crawl", ui_act("vent_crawl"), then(PROC_REF(ui_act_vent_crawl)))
 	op("darksight", ui_act("darksight"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Darksight", "question" = computed(PROC_REF(darksight_question)))), then(PROC_REF(ui_act_darksight)))
+
+	section(traits, "The abilities and traits the Player Effects panel toggles")
 	op("cocoon", ui_act("cocoon"), then(PROC_REF(ui_act_cocoon)))
 	op("transformation", ui_act("transformation"), then(PROC_REF(ui_act_transformation)))
 	op("set_size", ui_act("set_size"), then(PROC_REF(ui_act_set_size)))
@@ -68,6 +74,8 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("colormate", ui_act("colormate"), then(PROC_REF(ui_act_colormate)))
 	op("be_event_invis", ui_act("be_event_invis"), then(PROC_REF(ui_act_be_event_invis)))
 	op("see_event_invis", ui_act("see_event_invis"), then(PROC_REF(ui_act_see_event_invis)))
+
+	section(inventory, "The Player Effects panel's inventory tools: drop, list, give and equip items, a quick NIF")
 	op("drop_all", ui_act("drop_all"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/yes_no, fields = list("title" = "Message", "question" = computed(PROC_REF(drop_all_question)))), then(PROC_REF(ui_act_drop_all)))
 	op("drop_specific", ui_act("drop_specific"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Drop Specific Item", "question" = "Choose item to force drop:", "choices" = computed(PROC_REF(equipped_choices)))), then(PROC_REF(ui_act_drop_specific)))
 	op("drop_held", ui_act("drop_held"), then(PROC_REF(ui_act_drop_held)))
@@ -75,6 +83,8 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("give_item", ui_act("give_item"), then(PROC_REF(ui_act_give_item)))
 	op("equip_item", ui_act("equip_item"), then(PROC_REF(ui_act_equip_item)))
 	op("quick_nif", ui_act("quick_nif"), needs(req(PROC_REF(nif_target_ok), because = PROC_REF(nif_target_refusal))), asks(/datum/prompt/choice, fields = list("title" = "Quick NIF", "question" = "Pick the NIF type", "choices" = computed(PROC_REF(nif_choices))), when = PROC_REF(nif_needs_pick)), then(PROC_REF(ui_act_quick_nif)))
+
+	section(admin, "The admin tools of the Player Effects panel: size, teleport, gib, narrate, AI control, quests, orbits")
 	op("resize", ui_act("resize"), then(PROC_REF(ui_act_resize)))
 	op("teleport", ui_act("teleport"), asks(/datum/prompt/choice, fields = list("title" = "Where?", "question" = "Where to teleport?", "choices" = list("To Me", "To Mob", "To Area", "Cancel")), step = "where"), asks(/datum/prompt/choice, fields = list("title" = "Jump to mob", "question" = computed(PROC_REF(teleport_mob_question)), "choices" = computed(PROC_REF(teleport_mobs))), step = "mob", when = PROC_REF(teleport_to_mob)), asks(/datum/prompt/choice, fields = list("title" = "Jump to Area", "question" = computed(PROC_REF(teleport_area_question)), "choices" = computed(PROC_REF(teleport_areas))), step = "area", when = PROC_REF(teleport_to_area)), then(PROC_REF(ui_act_teleport)))
 	op("gib", ui_act("gib"), then(PROC_REF(ui_act_gib)))
@@ -102,14 +112,19 @@ CAPABILITIES(/datum/eventkit/player_effects)
 
 	return data
 
-/datum/om/prompt/text/admin_popup
+DECLARE_UI_STATE(/datum/eventkit/player_effects, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
+
+/datum/prompt/text/admin_popup
 	title = "Reply"
+	timeout = 0
 	/// key_name() of the sending admin.
 	var/admin_name
 
-/datum/eventkit/player_effects/proc/popup_replied(datum/om/prompt/text/admin_popup/ask)
-	if(ask.text)
-		log_and_message_admins("replied to [ask.admin_name]'s message: [ask.text].", ask.answerer)
+/datum/eventkit/player_effects/proc/popup_replied(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/text/admin_popup/request = A.request
+	log_and_message_admins("replied to [request.admin_name]'s message: [A.answer.answer_value].", request.answerer)
 
 /// Only somebody with the spawn right works a button, and every effect is logged once, as it is pressed.
 /datum/eventkit/player_effects/proc/ui_log_use(datum/act/op/A)
@@ -1022,7 +1037,7 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 		return
 	log_admin("[key_name(user)] sent message to [target()]: [message]")
 	// The player answers in their own time; the reply doesn't need this panel open.
-	om_ask(target(), /datum/om/prompt/text/admin_popup, PROC_REF(popup_replied), message = "An admin has sent you a message: [message]", admin_name = key_name(user))
+	open_request(src, /datum/prompt/text/admin_popup, PROC_REF(popup_replied), answerer = target(), question = "An admin has sent you a message: [message]", admin_name = key_name(user))
 
 /datum/eventkit/player_effects/proc/ui_act_stop_orbits(datum/act/op/A)
 	target().stop_orbiters()

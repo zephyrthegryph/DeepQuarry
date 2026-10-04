@@ -173,6 +173,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 CAPABILITIES(/mob/living/simple_mob)
+	ref_many(nameof(tamers))
 	owns_one(nameof(myid), /obj/item/card/id)
 	owns_one(nameof(mob_radio), /obj/item/radio/headset)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(synthetic_emp_surge)))
@@ -362,7 +363,7 @@ CAPABILITIES(/mob/living/simple_mob)
 
 	if(ticker < 10 && (get_dist(src, movement_target) > 1)) //We only chase our target for 10 tiles or until we are next to them.
 		step_to(src,movement_target,1)
-		after(src, 3, PROC_REF(chase_target), with = list(++ticker))
+		after(src, 0.3 SECONDS, PROC_REF(chase_target), with = list(++ticker))
 		return
 
 	face_atom(movement_target)
@@ -926,7 +927,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	COOLDOWN_START(src, last_special, 10)
+	COOLDOWN_START(src, last_special, 1 SECOND)
 	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 
@@ -934,7 +935,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_EFFECTS_BODYFALL1)
 	pixel_y = default_pixel_y
-	after(src, 5, PROC_REF(leap_land), with = list(T))
+	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T))
 
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
 	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)

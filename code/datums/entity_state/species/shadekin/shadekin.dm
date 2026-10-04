@@ -246,11 +246,14 @@ UI_DATA_REPLACE(/datum/shadekin, "merge:ui_data_datum_shadekin{stun_time:unknown
 	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
-/datum/shadekin/proc/flicker_color_picked(datum/om/prompt/color/ask)
-	if(!ask.picked_color)
+/datum/shadekin/proc/flicker_color_picked(datum/act/request/A)
+	if(!A.answer)
 		return
-	flicker_color = ask.picked_color
-	ask.answerer.write_preference_directly(/datum/preference/color/living/flicker_color, ask.picked_color, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	var/datum/prompt/color/ask = A.answer
+	if(ask.value)
+		flicker_color = ask.value
+		ask.answerer.write_preference_directly(/datum/preference/color/living/flicker_color, ask.value, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	SStgui.update_uis(src)
 
 UI_ACT(/datum/shadekin, "adjust_time", ui_act_adjust_time, UI_ARG_NUM("val"))
 UI_ACT_PROC(/datum/shadekin, ui_act_adjust_time)
@@ -264,7 +267,7 @@ UI_ACT_PROC(/datum/shadekin, ui_act_adjust_time)
 
 UI_ACT(/datum/shadekin, "adjust_color", ui_act_adjust_color)
 UI_ACT_PROC(/datum/shadekin, ui_act_adjust_color)
-	om_ask(ui.user, /datum/om/prompt/color, PROC_REF(flicker_color_picked), message = "Select a color you wish the lights to flicker as (Default is #E0EFF0)", default = flicker_color, ui_refresh = src, title = "Color Selector")
+	open_request(src, /datum/prompt/color, PROC_REF(flicker_color_picked), answerer = ui.user, question = "Select a color you wish the lights to flicker as (Default is #E0EFF0)", default = flicker_color, title = "Color Selector", timeout = 0)
 	return FALSE
 
 UI_ACT(/datum/shadekin, "adjust_break", ui_act_adjust_break, UI_ARG_NUM("val"))
@@ -350,9 +353,8 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 /datum/om/stage/life/trait/shadekin/perform(mob/living/self, datum/om/frame/life/ctx)
 	self.shadekin?.handle_comp()
 
-/datum/shadekin/relations()
-	. = ..()
-	. += rel_many(nameof(active_dark_maws))
+CAPABILITIES(/datum/shadekin)
+	ref_many(nameof(active_dark_maws))
 
 /// Constant ability ids shared by every instance of the same concrete type.
 TYPE_TABLE_DECLARE(/datum/shadekin, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE))

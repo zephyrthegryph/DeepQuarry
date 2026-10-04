@@ -5,6 +5,20 @@ export type ModifyRobotData = {
 };
 
 export type ModifyRobotActions = {
+  add_zeroth_law: Record<string, never>;
+  add_ion_law: Record<string, never>;
+  add_inherent_law: Record<string, never>;
+  add_supplied_law: Record<string, never>;
+  toggle_crisis: Record<string, never>;
+  reset_module: Record<string, never>;
+  ert_toggle: Record<string, never>;
+  add_centcom: Record<string, never>;
+  rem_centcom: Record<string, never>;
+  add_station: Record<string, never>;
+  rem_station: Record<string, never>;
+  state_laws: Record<string, never>;
+  disconnect_ai: Record<string, never>;
+  toggle_emag: Record<string, never>;
   rename: {
     /** text max 4096 */
     new_name: string;
@@ -13,7 +27,6 @@ export type ModifyRobotActions = {
     /** ref */
     new_target: string;
   };
-  toggle_crisis: Record<string, never>;
   add_restriction: {
     /** text max 4096 */
     new_restriction: string;
@@ -25,7 +38,6 @@ export type ModifyRobotActions = {
   select_source: {
     new_source: unknown;
   };
-  reset_module: Record<string, never>;
   add_module: {
     /** ref */
     module: string;
@@ -35,7 +47,6 @@ export type ModifyRobotActions = {
     module: string;
   };
   swap_module: Record<string, never>;
-  ert_toggle: Record<string, never>;
   add_compatibility: {
     /** path */
     upgrade: string;
@@ -105,10 +116,6 @@ export type ModifyRobotActions = {
     /** num */
     access: number;
   };
-  add_centcom: Record<string, never>;
-  rem_centcom: Record<string, never>;
-  add_station: Record<string, never>;
-  rem_station: Record<string, never>;
   law_channel: {
     /** text max 4096 */
     law_channel: string;
@@ -118,10 +125,6 @@ export type ModifyRobotActions = {
     /** num */
     state_law: number;
   };
-  add_zeroth_law: Record<string, never>;
-  add_ion_law: Record<string, never>;
-  add_inherent_law: Record<string, never>;
-  add_supplied_law: Record<string, never>;
   change_zeroth_law: {
     /** text max 4096 */
     val: string;
@@ -145,7 +148,6 @@ export type ModifyRobotActions = {
   delete_law: {
     delete_law: unknown;
   };
-  state_laws: Record<string, never>;
   state_law_set: {
     /** ref */
     state_law_set: string;
@@ -159,6 +161,4 @@ export type ModifyRobotActions = {
     new_ai: unknown;
   };
   swap_sync: Record<string, never>;
-  disconnect_ai: Record<string, never>;
-  toggle_emag: Record<string, never>;
 };

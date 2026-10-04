@@ -18,8 +18,6 @@
 	return tgui_input_bitfield(user, title, bitfield, current_value, allowed_edit_field) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 
 /proc/tgui_input_bitfield(mob/user, title, bitfield_path, current_value, allowed_edit_field = ALL, timeout = 0)
-	if(!user)
-		user = usr
 	if(!ismob(user))
 		if(istype(user, /client))
 			var/client/c = user

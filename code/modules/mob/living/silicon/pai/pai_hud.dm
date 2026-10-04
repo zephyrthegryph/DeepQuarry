@@ -120,7 +120,7 @@
 	rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
-	rel_set(src, nameof(pullin), new /atom/movable/screen())
+	rel_set(src, nameof(pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
 	pullin.icon = ui_style
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
@@ -299,7 +299,7 @@
 	using.alpha = ui_alpha
 	rel_add(HUD, nameof(HUD.other), using)
 
-	rel_set(src, nameof(autowhisper_display), new /atom/movable/screen())
+	rel_set(src, nameof(autowhisper_display), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"

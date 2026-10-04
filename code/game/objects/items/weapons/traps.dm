@@ -57,8 +57,14 @@
 
 DECLARE_INTERACTIONS(/obj/item/beartrap, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 )
+
+CAPABILITIES(/obj/item/beartrap)
+	op("deploy", in_hand(), label("Deploy trap"), then(PROC_REF(deploy_trap_input)))
+
+/obj/item/beartrap/proc/deploy_trap_input(datum/act/op/A)
+	interaction_self(A.actor, A.held, null)
+	return OP_OK
 
 /// Old attack_hand.
 /obj/item/beartrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -204,9 +210,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/beartrap, TYPE_PROC_REF(/atom, appearance_over
 // EXTEND: /obj/item/material's repair interaction still applies, after this type's own.
 EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(barbedwire_interaction_item)), \
 )
+
+CAPABILITIES(/obj/item/material/barbedwire)
+	op("deploy", in_hand(), label("Deploy trap"), then(PROC_REF(deploy_trap_input)))
+
+/obj/item/material/barbedwire/proc/deploy_trap_input(datum/act/op/A)
+	interaction_self(A.actor, A.held, null)
+	return OP_OK
 
 /// Old attack_hand.
 /obj/item/material/barbedwire/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -242,7 +254,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 		MSG_OTHERS(span_danger("%U% has deployed %T%.")), \
 		MSG_BLIND("You hear the rustling of [material.name]."))
 	play_sfx(src, SFX_ITEMS_WIRECUTTER, 0.7)
-	after(src, 2, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/items/Wirecutter.ogg', 40, 1))
+	after(src, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/items/Wirecutter.ogg', 40, 1))
 	user.drop_from_inventory(src)
 	forceMove(get_turf(src))
 	set_anchored(TRUE)

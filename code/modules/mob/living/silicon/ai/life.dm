@@ -130,8 +130,8 @@
 	after(src, delay, PROC_REF(power_restore_step), key = "power_restore_timer", with = list(step))
 
 /mob/living/silicon/ai/proc/cancel_power_restore()
-	if(om_timer_slot_pending(src, "power_restore_timer"))
-		om_cancel_timer_slot(src, "power_restore_timer")
+	if(after_pending(src, "power_restore_timer"))
+		cancel_after(src, "power_restore_timer")
 
 /// One step of the restore routine. Each step reschedules the next.
 /mob/living/silicon/ai/proc/power_restore_step(step)
@@ -192,9 +192,8 @@
 				aiRestorePowerRoutine = AI_POWER_FAILED
 				return
 			to_chat(src, "Receiving control information from APC.")
-			theAPC.set_operating(1)
 			theAPC.set_equipment(3)
-			theAPC.update()
+			theAPC.set_breaker(TRUE)
 			aiRestorePowerRoutine = AI_POWER_RESTORED
 			log_runtime("AI_POWER: [key_name(src)] forced [theAPC] on.")
 			to_chat(src, "Here are your current laws:")

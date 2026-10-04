@@ -21,7 +21,7 @@
 	. = ..()
 	rel_set(stored_gauntlets, nameof(stored_gauntlets.storing_module), src)
 
-/obj/item/rig_module/gauntlets/activate()
+/obj/item/rig_module/gauntlets/activate(skip_engage = 0, mob/user)
 	if(!..())
 		return
 	var/mob/living/M = holder.wearer()
@@ -30,7 +30,7 @@
 
 	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
-		deactivate()
+		deactivate(FALSE, user)
 		return
 	if(M.combat_mode)
 		act_message(M, null, MSG_SELF(span_danger("You throw your arms out, extending [stored_gauntlets] from \the [holder] with a click!")), \
@@ -44,7 +44,7 @@
 	play_sfx(src, SFX_ITEMS_HELMETDEPLOY)
 	M.put_in_hands(stored_gauntlets)
 
-/obj/item/rig_module/gauntlets/deactivate()
+/obj/item/rig_module/gauntlets/deactivate(forced = FALSE, mob/user)
 	..()
 	var/mob/living/M = holder.wearer()
 	if(!M)

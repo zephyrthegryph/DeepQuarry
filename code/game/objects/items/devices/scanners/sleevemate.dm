@@ -56,23 +56,35 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 				choices += H
 	// Subtargets
 	if(choices.len > 1)
-		om_ask(user, /datum/om/prompt/choice/sleevemate_target, PROC_REF(scan_target_chosen), choices = choices, default = M, subject = M, sleevemate = src)
+		open_request(src, /datum/prompt/choice/sleevemate_target, PROC_REF(scan_target_chosen), answerer = user, choices = choices, default = M, subject = M, sleevemate = src)
 		return ITEM_INTERACT_SUCCESS
 	return scan_target(user, M)
 
 /// Picking which of the mobs (the target and the ones in its bellies) to scan. Re-checked on the
 /// answer: still next to the target and holding the scanner.
-/datum/om/prompt/choice/sleevemate_target
+/datum/prompt/choice/sleevemate_target
 	title = "Target Validation"
-	message = "Ambiguous target. Please validate target:"
+	question = "Ambiguous target. Please validate target:"
+	timeout = 0
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 	var/obj/item/sleevemate/sleevemate
 
-/datum/om/prompt/choice/sleevemate_target/valid()
+CAPABILITIES(/datum/prompt/choice/sleevemate_target)
+	ref_one(nameof(sleevemate), /obj/item/sleevemate)
+
+/datum/prompt/choice/sleevemate_target/prepare(datum/act/A)
+	..()
+	var/obj/item/sleevemate/captured = sleevemate
+	rel_clear(src, nameof(sleevemate))
+	rel_set(src, nameof(sleevemate), captured)
+
+/datum/prompt/choice/sleevemate_target/recheck_extra()
 	return answerer.get_active_hand() == sleevemate ? null : "not holding it"
 
-/obj/item/sleevemate/proc/scan_target_chosen(datum/om/prompt/choice/sleevemate_target/ask)
-	scan_target(ask.answerer, ask.choice)
+/obj/item/sleevemate/proc/scan_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	scan_target(A.request.answerer, A.answer.answer_value)
 
 /obj/item/sleevemate/proc/scan_target(mob/living/user, mob/living/M)
 	if(isrobot(M))
@@ -262,7 +274,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 		to_chat(user,span_warning("There is already someone's mind stored inside"))
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/sleevemate_mindsteal, PROC_REF(mindsteal_confirmed), victim = target)
+	open_request(src, /datum/prompt/choice/sleevemate_mindsteal, PROC_REF(mindsteal_confirmed), answerer = user, victim = target)
 
 /obj/item/sleevemate/proc/topic_mindput(mob/user, list/args)
 	var/mob/living/target = topic_target(user, args)
@@ -391,23 +403,38 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 APPEARANCE_TEMPLATE(/obj/item/sleevemate, "{initial(icon_state)}{appearance_has_mind?_on:}")
 
 /// Pulling a mind out. Re-checked on the answer: the scanner is still in hand and empty, the victim still next to the user.
-/datum/om/prompt/confirm/sleevemate_mindsteal
+/datum/prompt/choice/sleevemate_mindsteal
 	title = "Confirmation"
-	message = "This will remove the target's mind from their body (and from the game as long as they're in the sleevemate). You can put them into a (mindless) body, a NIF, or back them up for normal resleeving, but you should probably have a plan in advance so you don't leave them unable to interact for too long. Continue?"
-	yes_text = "Continue"
-	no_text = "Cancel"
+	question = "This will remove the target's mind from their body (and from the game as long as they're in the sleevemate). You can put them into a (mindless) body, a NIF, or back them up for normal resleeving, but you should probably have a plan in advance so you don't leave them unable to interact for too long. Continue?"
+	choices = list("Continue", "Cancel")
+	buttons = TRUE
+	timeout = 0
 	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/mob/living/victim
 
-/datum/om/prompt/confirm/sleevemate_mindsteal/valid()
-	var/obj/item/sleevemate/sleevemate = subject
+CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal)
+	ref_one(nameof(victim), /mob/living)
+
+/datum/prompt/choice/sleevemate_mindsteal/prepare(datum/act/A)
+	..()
+	var/mob/living/captured = victim
+	rel_clear(src, nameof(victim))
+	rel_set(src, nameof(victim), captured)
+
+/datum/prompt/choice/sleevemate_mindsteal/recheck_extra()
+	if(QDELETED(victim))
+		return "gone"
+	var/obj/item/sleevemate/sleevemate = owner
 	if(sleevemate.stored_mind())
 		return "already holding a mind"
 	if(!answerer.Adjacent(victim))
 		return "too far away"
 	return null
 
-/obj/item/sleevemate/proc/mindsteal_confirmed(datum/om/prompt/confirm/sleevemate_mindsteal/ask)
+/obj/item/sleevemate/proc/mindsteal_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Continue")
+		return
+	var/datum/prompt/choice/sleevemate_mindsteal/ask = A.answer
 	var/mob/living/user = ask.answerer
 	var/mob/living/target = ask.victim
 	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))

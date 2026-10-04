@@ -57,7 +57,7 @@
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 10)
+	COOLDOWN_START(src, last_special, 1 SECOND)
 
 	if(src.icon_state == "promethean")
 		icon_state = lowertext(src.species.get_bodytype(src))
@@ -124,7 +124,7 @@
 		V.perform_exit()
 
 	if(died_in_vr)
-		after(src, 3000, PROC_REF(cleanup_vr)) //Delete the body after 5 minutes
+		after(src, 300 SECONDS, PROC_REF(cleanup_vr)) //Delete the body after 5 minutes
 
 /mob/living/carbon/human/proc/cleanup_vr()
 	var/static/list/slots = list(SLOT_ID_BACK,SLOT_ID_HANDCUFFED,SLOT_ID_POCKET_L,SLOT_ID_POCKET_R,SLOT_ID_MASK,SLOT_ID_HAND_L,SLOT_ID_HAND_R,SLOT_ID_ID,SLOT_ID_EYES,SLOT_ID_GLOVES,SLOT_ID_HEAD,SLOT_ID_SHOES,SLOT_ID_BELT,SLOT_ID_SUIT,SLOT_ID_UNIFORM,SLOT_ID_SUIT_STORAGE,SLOT_ID_EAR_L,SLOT_ID_EAR_R)

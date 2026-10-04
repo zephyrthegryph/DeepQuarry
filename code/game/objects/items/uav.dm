@@ -44,7 +44,7 @@
 
 CAPABILITIES(/obj/item/uav)
 	owns_one(nameof(cell), /obj/item/cell)
-	owns_one(nameof(ion_trail), starts = /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/uav/loaded
 	cell_type = /obj/item/cell/high
@@ -57,6 +57,7 @@ CAPABILITIES(/obj/item/uav)
 
 	ion_trail.set_up(src)
 	ion_trail.stop()
+
 
 /obj/item/uav/examine(mob/user)
 	. = ..()

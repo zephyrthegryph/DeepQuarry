@@ -38,9 +38,8 @@
 	/// The mobs already eaten once (a relation list).
 	var/list/eaten_mobs
 
-/mob/living/simple_mob/vore/mantrap/relations()
-	. = ..()
-	. += rel_many(nameof(eaten_mobs))
+CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
+	ref_many(nameof(eaten_mobs))
 
 /mob/living/simple_mob/vore/mantrap/load_default_bellies()
 	. = ..()

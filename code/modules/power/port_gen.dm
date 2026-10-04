@@ -13,14 +13,13 @@
 	var/power_gen = 5000
 	var/recent_fault = 0
 	var/power_output = 1
-	/// Until when an EMP keeps the generator down (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 
-CAPABILITY(/obj/machinery/power/port_gen, emp_disable(10 MINUTES))
+CAPABILITIES(/obj/machinery/power/port_gen)
+	emp_disable(10 MINUTES)
 DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp_fault))
 
 /obj/machinery/power/port_gen/proc/IsBroken()
-	return (has_stat(BROKEN | EMPED))
+	return has_stat(BROKEN) || emp_disabled(src)
 
 /obj/machinery/power/port_gen/proc/HasFuel() //Placeholder for fuel check.
 	return 1
@@ -80,7 +79,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 		else
 			. += span_notice("The generator is off.")
 
-/// A pulse can break the generator outright, or blow it up (the outage itself is the EMP_DISABLE).
+/// A pulse can break the generator outright, or blow it up (the outage itself is emp_disable()).
 /obj/machinery/power/port_gen/proc/port_gen_emp_fault(datum/damage_packet/packet)
 	switch(packet.severity)
 		if(EMP_HEAVY)

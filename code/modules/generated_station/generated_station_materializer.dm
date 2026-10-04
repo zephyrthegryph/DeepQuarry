@@ -180,6 +180,7 @@ CAPABILITIES(/datum/generated_room_solution)
 	var/datum/generated_station_validation_result/service_validation
 
 CAPABILITIES(/datum/generated_station_materialization)
+	ref_many(nameof(furnishings))
 	owns_one(nameof(entry), /obj/effect/landmark/generated_station_entry)
 	owns_one(nameof(service_validation), /datum/generated_station_validation_result)
 	owns_one(nameof(tile_plan), /datum/generated_station_tile_plan)
@@ -1612,8 +1613,3 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /// Accessor for the transit_area var.
 /datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
 	return transit_area
-
-
-/datum/generated_station_materialization/relations()
-	. = ..()
-	. += rel_many(nameof(furnishings))

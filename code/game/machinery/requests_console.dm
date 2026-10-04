@@ -55,6 +55,7 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	var/datum/announcement/announcement
 
 CAPABILITIES(/obj/machinery/requests_console)
+	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
 	owns_one(nameof(announcement), /datum/announcement)
 	interface("RequestConsole")
 	op("write", ui_act("write", arg("priority", num()), arg("write", schema_text(4096))), then(PROC_REF(ui_act_write)))
@@ -63,7 +64,6 @@ CAPABILITIES(/obj/machinery/requests_console)
 	op("department", ui_act("department", arg("department", schema_text(4096))), then(PROC_REF(ui_act_department)))
 	op("print", ui_act("print", arg("print", num())), then(PROC_REF(ui_act_print)))
 	op("setScreen", ui_act("setScreen", arg("setScreen", num())), then(PROC_REF(ui_act_setscreen)))
-	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 
 /// Whoever presses a button leaves their prints on the console.
@@ -238,8 +238,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 //Handle silencing the console
 
 /obj/machinery/requests_console/proc/ui_act_togglesilent(datum/act/op/A)
+	add_fingerprint(A.actor)
 	silent = !silent
-	. = TRUE
+	return OP_OK
 
 			//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
 

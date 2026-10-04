@@ -3,17 +3,40 @@
 //Returns the new mob
 //Note that this proc does NOT do MMI related stuff!
 /// The mob type change_mob_type() was called without; the rest of its arguments ride along.
-/datum/om/prompt/text/mob_type
+/datum/prompt/text/mob_type
 	title = "Mob type"
-	message = "Mob type path:"
+	question = "Mob type path:"
+	timeout = 0
 	var/turf/location
+	var/location_expected = FALSE
 	var/new_name
 	var/delete_old_mob
 	var/subspecies
 
-/mob/proc/mob_type_entered(datum/om/prompt/text/mob_type/ask)
-	if(ask.text)
-		change_mob_type(ask.text, ask.location, ask.new_name, ask.delete_old_mob, ask.subspecies)
+CAPABILITIES(/datum/prompt/text/mob_type)
+	ref_one(nameof(location), /turf)
+
+/datum/prompt/text/mob_type/prepare(datum/act/A)
+	. = ..()
+	var/turf/captured_location = location
+	location_expected = !isnull(captured_location)
+	rel_clear(src, nameof(location))
+	if(captured_location && !QDELETED(captured_location))
+		rel_set(src, nameof(location), captured_location)
+
+/datum/prompt/text/mob_type/recheck_extra()
+	if(location_expected && QDELETED(location))
+		return "gone"
+
+/mob/proc/mob_type_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return mob_type_apply(A)
+
+/mob/proc/mob_type_apply(datum/act/request/A)
+	var/datum/prompt/text/mob_type/ask = A.answer
+	if(ask.answer_value)
+		change_mob_type(ask.answer_value, ask.location, ask.new_name, ask.delete_old_mob, ask.subspecies)
 
 /mob/proc/change_mob_type(new_type = null, turf/location = null, new_name = null as text, delete_old_mob = 0 as num, subspecies)
 
@@ -22,7 +45,7 @@
 		return
 
 	if(!new_type)
-		om_ask(src, /datum/om/prompt/text/mob_type, PROC_REF(mob_type_entered), location = location, new_name = new_name, delete_old_mob = delete_old_mob, subspecies = subspecies)
+		open_request(src, /datum/prompt/text/mob_type, PROC_REF(mob_type_entered), answerer = src, location = location, new_name = new_name, delete_old_mob = delete_old_mob, subspecies = subspecies)
 		return
 
 	if(istext(new_type))
@@ -55,7 +78,8 @@
 		M.real_name = src.real_name
 
 	if(src.dna)
-		QDEL_SWAP(M.dna, src.dna.Clone())
+		own_clear(M, nameof(M.dna), OWN_DELETE)
+		rel_set(M, nameof(M.dna), src.dna.Clone())
 
 	if(isliving(src) && isliving(M))
 		move_player(src, M, "admin changed mob type to [new_type]")

@@ -38,22 +38,16 @@
 	**/
 	VAR_FINAL/incapacitated = NONE
 
-	//Not in use yet
-	var/obj/effect/organstructure/organStructure = null
-
 	var/tmp/atom/movable/screen/hands = null
 	var/tmp/atom/movable/screen/pullin = null
 	var/tmp/atom/movable/screen/purged = null
 	var/tmp/atom/movable/screen/internals = null
-	var/tmp/atom/movable/screen/i_select = null
-	var/tmp/atom/movable/screen/m_select = null
 	var/tmp/atom/movable/screen/healths = null
 	var/tmp/atom/movable/screen/throw_icon = null
 	var/tmp/atom/movable/screen/pain = null
 	var/tmp/atom/movable/screen/gun/item/item_use_icon = null
 	var/tmp/atom/movable/screen/gun/radio/radio_use_icon = null
 	var/tmp/atom/movable/screen/gun/move/gun_move_icon = null
-	var/tmp/atom/movable/screen/gun/run/gun_run_icon = null
 	var/tmp/atom/movable/screen/gun/mode/gun_setting_icon = null
 	var/tmp/atom/movable/screen/ling/chems/ling_chem_display = null
 	var/tmp/atom/movable/screen/borer/chems/borer_chem_display = null
@@ -83,10 +77,8 @@
 	var/computer_id = null
 	var/list/logging
 
-	var/already_placed = 0.0
 	var/other_mobs = null
 	var/memory = ""
-	var/poll_answer = 0.0
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
 	var/other = 0.0
@@ -101,7 +93,6 @@
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
-	var/antitoxs = null
 	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
@@ -155,7 +146,6 @@
 
 	var/inertia_dir = 0
 
-	var/music_lastplayed = "null"
 
 	var/job = null//Living
 
@@ -185,19 +175,6 @@
 	var/away_from_keyboard = FALSE	//are we at, or away, from our keyboard?
 	var/manual_afk = FALSE			//did we set afk manually or was it automatic?
 
-//Generic list for proc holders. Only way I can see to enable certain verbs/procs. Should be modified if needed.
-	var/proc_holder_list[] = list()//Right now unused.
-	//Also unlike the spell list, this would only store the object in contents, not an object in itself.
-
-	/* Add this line to whatever stat module you need in order to use the proc holder list.
-	Unlike the object spell system, it's also possible to attach verb procs from these objects to right-click menus.
-	This requires creating a verb for the object proc holder.
-
-	if (proc_holder_list.len)//Generic list for proc_holder objects.
-		for(var/obj/effect/proc_holder/P in proc_holder_list)
-			statpanel("[P.panel]","",P)
-	*/
-
 //The last mob/living/carbon to push/drag/grab this mob (mostly used by slimes friend recognition)
 	var/tmp/mob/living/carbon/LAssailant = null
 
@@ -219,8 +196,6 @@
 
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 
-	var/tmp/list/radar_blips // list of screen objects, radar blips (currently unused; null until populated)
-	var/radar_open = 0 	// nonzero is radar is open
 
 
 	var/obj/control_object //Used by admins to possess objects. All mobs should have this var
@@ -258,7 +233,6 @@
 
 	var/registered_z
 
-	var/in_enclosed_vehicle = 0	//For mechs and fighters ambiance. Can be used in other cases.
 
 	///List of progress bars this mob is currently seeing for actions
 	var/tmp/list/progressbars = null //for stacking do_after bars
@@ -289,7 +263,6 @@
 CAPABILITIES(/mob)
 	telekinetic_reach()
 	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
-	owns_one(nameof(autowhisper_display), /atom/movable/screen)
 	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
 	owns_one(nameof(borer_chem_display), /atom/movable/screen/borer/chems)
 	owns_one(nameof(dna), /datum/dna)
@@ -305,11 +278,9 @@ CAPABILITIES(/mob)
 	owns_one(nameof(machine_shim), /datum/using_machine_shim)
 	owns_one(nameof(pain), /atom/movable/screen)
 	owns_one(nameof(plane_holder), /datum/plane_holder)
-	owns_one(nameof(pullin), /atom/movable/screen)
 	owns_one(nameof(radio_use_icon), /atom/movable/screen/gun/radio)
 	owns_one(nameof(remote_view), /datum/remote_view)
 	owns_one(nameof(shadekin_display), /atom/movable/screen/shadekin)
-	owns_one(nameof(throw_icon), /atom/movable/screen)
 	owns_one(nameof(vorePanel), /datum/vore_look)
 	owns_one(nameof(wiz_energy_display), /atom/movable/screen/wizard/energy)
 	owns_one(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability)
@@ -338,6 +309,11 @@ CAPABILITIES(/mob)
 /mob/relations()
 	. = ..()
 	. += rel_one(nameof(control_object)) // the object an admin possesses
+	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
+	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
+	. += rel_one(nameof(autowhisper_display))
+	. += rel_one(nameof(pullin))
+	. += rel_one(nameof(throw_icon))
 	. += rel_many(nameof(spell_list))
 	. += rel_many(nameof(actions))
 	. += rel_many(nameof(exploit_addons), back = nameof(/obj/item::exploit_for))

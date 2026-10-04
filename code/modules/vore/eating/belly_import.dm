@@ -12,6 +12,9 @@ UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_bellies)
 	import_belly(ui.user, params["data"])
 
 /datum/vore_look/import_panel/proc/import_belly(mob/host, list/input_data)
+	return import_belly_stage(host, input_data, null)
+
+/datum/vore_look/import_panel/proc/import_belly_stage(mob/host, list/input_data, confirmation)
 	var/list/valid_names = list()
 	var/list/valid_lists = list()
 	var/list/updated = list()
@@ -46,10 +49,12 @@ UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_bellies)
 	if(length(updated) > 0)
 		alert_msg += "update [length(updated)] existing bell[length(updated) == 1 ? "y" : "ies"]. Please make sure you have saved a copy of your existing bellies"
 
-	var/confirm = rerun_ask(host, "a1", PROC_REF(import_belly), args, /datum/om/prompt/choice/alert, message = "WARNING: This will [jointext(alert_msg," and ")]. You can revert the import by using the Reload Prefs button under Preferences as long as you don't Save Prefs. Are you sure?", title = "Import bellies?", choices = list("Yes","Cancel"))
-	if(isnull(confirm))
+	if(isnull(confirmation))
+		if(!ismob(host) || QDELETED(host))
+			return
+		open_request(src, /datum/prompt/choice/belly_import_confirmation, PROC_REF(belly_import_answered), answerer = host, question = "WARNING: This will [jointext(alert_msg," and ")]. You can revert the import by using the Reload Prefs button under Preferences as long as you don't Save Prefs. Are you sure?", input_data = input_data)
 		return
-	if(confirm != "Yes") return FALSE
+	if(confirmation != "Yes") return FALSE
 
 	for(var/list/belly_data in valid_lists)
 		var/obj/belly/new_belly
@@ -1186,3 +1191,21 @@ UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_bellies)
 	host.handle_belly_update()
 	host.updateVRPanel()
 	unsaved_changes = TRUE
+
+/datum/prompt/choice/belly_import_confirmation
+	title = "Import bellies?"
+	timeout = 0
+	choices = list("Yes", "Cancel")
+	buttons = TRUE
+	var/list/input_data
+
+/datum/vore_look/import_panel/proc/belly_import_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = belly_import_apply(A)
+	SStgui.update_uis(src)
+	return .
+
+/datum/vore_look/import_panel/proc/belly_import_apply(datum/act/request/A)
+	var/datum/prompt/choice/belly_import_confirmation/ask = A.answer
+	return import_belly_stage(ask.answerer, ask.input_data, ask.answer_value)

@@ -22,6 +22,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/space)
+	ref_many(nameof(supporting_limbs))
 	owns_many(nameof(breaches))
 	op("space_suit_patch_item", item(/obj/item), then(PROC_REF(space_suit_patch_item)))
 
@@ -62,8 +63,7 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 
 		if(B.class <= amount_left)
 			amount_left -= B.class
-			valid_breaches -= B
-			own_take_member(src, nameof(breaches), B)
+			own_remove(src, nameof(breaches), B)
 		else
 			B.class	-= amount_left
 			amount_left = 0
@@ -137,10 +137,9 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 		name = base_name
 		return 0
 
-	for(var/datum/breach/B in breaches)
+	for(var/datum/breach/B in breaches?.Copy())
 		if(!B.class)
-			own_take_member(src, nameof(breaches), B)
-			qdel(B)
+			own_remove(src, nameof(breaches), B)
 		else
 			damage += B.class
 			if(B.breach_type == BRUTE)

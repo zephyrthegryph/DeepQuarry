@@ -172,7 +172,7 @@
 		template_static = null
 
 /// Old attack_self (virtual: /obj/item/survivalcapsule/proc/survivalcapsule_self()): pick a template first.
-/obj/item/survivalcapsule/superpose/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/superpose/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction, selected_template = null)
 	if(!pod_initialized) // Populate list after round start as map templates might not exist when this item is created.
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.superpose))) // Limits map templates to those marked for the superpose capsule.
@@ -180,7 +180,10 @@
 			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
-		var/answer = rerun_ask(user, "k182", PROC_REF(survivalcapsule_self), args, /datum/om/prompt/choice, message = "Which template would you like to load?", title = "Available Templates", choices = template_ids)
+		if(isnull(selected_template))
+			open_template_request(user, held, interaction)
+			return TRUE
+		var/answer = selected_template
 		if(isnull(answer))
 			return TRUE
 		if(!answer)
@@ -190,7 +193,7 @@
 			return // Return here or the pod will activate as soon as a selection is made.
 
 	// Now we call super to run the rest of the parent proc since the choice has been handled.
-	return ..()
+	return ..(user, held, interaction)
 
 // Allows resetting the capsule if the wrong template is chosen.
 CAPABILITIES(/obj/item/survivalcapsule/superpose)
@@ -210,7 +213,7 @@ CAPABILITIES(/obj/item/survivalcapsule/superpose)
 	is_ship = TRUE //So you cant just make holes in planets
 
 /// Old attack_self (virtual: /obj/item/survivalcapsule/proc/survivalcapsule_self()): pick a shuttle template first.
-/obj/item/survivalcapsule/superpose/shuttle/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/superpose/shuttle/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction, selected_template = null)
 	if(!pod_initialized)
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter/))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.shuttle)))
@@ -218,7 +221,10 @@ CAPABILITIES(/obj/item/survivalcapsule/superpose)
 			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
-		var/answer = rerun_ask(user, "k215", PROC_REF(survivalcapsule_self), args, /datum/om/prompt/choice, message = "Which template would you like to load?", title = "Available Templates", choices = template_ids)
+		if(isnull(selected_template))
+			open_template_request(user, held, interaction)
+			return TRUE
+		var/answer = selected_template
 		if(isnull(answer))
 			return TRUE
 		if(!answer)
@@ -227,7 +233,7 @@ CAPABILITIES(/obj/item/survivalcapsule/superpose)
 			template_id = answer
 			unique_id = answer
 			return
-	return ..()
+	return ..(user, held, interaction)
 
 GLOBAL_LIST_EMPTY(unique_deployable)
 /*****************************Survival Pod********************************/
@@ -280,7 +286,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	template_static = SSmapping.shelter_templates[get_template_id()]
 	if(!template())
 		throw EXCEPTION("Shelter template ([template_id]) not found!")
-		qdel(src)
 
 /obj/item/survivalcapsule/proc/get_template_id()
 	return template_id
@@ -938,3 +943,60 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 /// Accessor for the target_light var.
 /obj/machinery/light_switch/survival_pod/proc/target_light() as /obj/machinery/light
 	return target_light
+
+/obj/item/survivalcapsule/superpose/proc/open_template_request(mob/user, obj/item/held, datum/interaction/interaction)
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		return
+	open_request(src, /datum/prompt/choice/shelter_template, PROC_REF(template_chosen), answerer = user, captured_item = held, item_expected = !isnull(held), captured_interaction = interaction, interaction_expected = !isnull(interaction), choices = template_ids, original_client_ckey = original_client_ckey)
+
+/obj/item/survivalcapsule/superpose/proc/template_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_template_answer(A)
+	SStgui.update_uis(src)
+
+/obj/item/survivalcapsule/superpose/proc/apply_template_answer(datum/act/request/A)
+	var/datum/prompt/choice/shelter_template/request = A.request
+	if(request.captures_gone())
+		return
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	return survivalcapsule_self(user, request.captured_item, request.captured_interaction, A.answer.answer_value)
+
+/datum/prompt/choice/shelter_template
+	question = "Which template would you like to load?"
+	title = "Available Templates"
+	timeout = 0
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+	var/original_client_ckey
+
+CAPABILITIES(/datum/prompt/choice/shelter_template)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/choice/shelter_template/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/choice/shelter_template/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+
+/datum/prompt/choice/shelter_template/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null

@@ -66,9 +66,6 @@
 	update_icon()
 
 // its containers drop out and the growing clone is ejected.
-/obj/machinery/clonepod/ownership()
-	. = ..()
-	. += owns(nameof(containers), policy = OWN_SPILL, is_list = TRUE)
 
 /obj/machinery/clonepod/relations()
 	. = ..()
@@ -122,6 +119,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occu
 	return occupant_mob
 
 CAPABILITIES(/obj/machinery/clonepod)
+	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(growing_record), /datum/transhuman/body_record)
 	op("clonepod_interaction_hand", hand(), then(PROC_REF(clonepod_interaction_hand)))
 	op("clonepod_interaction_item", item(/obj/item), then(PROC_REF(clonepod_interaction_item)))
 	op("clonepod_eject", menu(), label("Eject Cloner"), then(PROC_REF(clonepod_eject)))
@@ -170,7 +169,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	set_locked(1)
 
 	eject_wait = 1
-	after(src, 30, PROC_REF(clear_eject_wait), with = list(BR, clonemind))
+	after(src, 3 SECONDS, PROC_REF(clear_eject_wait), with = list(BR, clonemind))
 
 /obj/machinery/clonepod/proc/clear_eject_wait(datum/transhuman/body_record/BR, datum/mind/clonemind)
 	eject_wait = 0

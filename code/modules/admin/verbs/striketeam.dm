@@ -16,7 +16,7 @@
 		to_chat(usr, span_red("There are [(6000-world.time)/10] seconds remaining before it may be called."))
 		return
 
-	om_flow_start(/datum/om/flow/strike_team, mob, null)
+	mob?.ask_admin_strike_team()
 
 /proc/strike_team_datum(choice)
 	switch(choice)
@@ -25,33 +25,52 @@
 		if("Mercenaries")
 			return GLOB.commandos
 
-/// Spawn Strike Team: the team type, a confirmation (unless a team is already on its way), then
-/// the mission text; the team spawns if nobody beat the admin to it.
-/datum/om/flow/strike_team
-	name = "strike team"
-	requires = PROMPT_ADMIN(R_HOLDER)
+/// Strike-team questions retain the original admin mob, rights and team identity through every answer.
+/datum/prompt/choice/admin_strike_team
+	title = "Strike Team"
+	rights = R_HOLDER
+	timeout = 0
+	var/team_type
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_strike_team
+	title = "Specify Mission"
+	max_len = MAX_MESSAGE_LEN
+	rights = R_HOLDER
+	timeout = 0
 	var/team_type
 
-/datum/om/flow/strike_team/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_picked), title = "Strike Team", message = "Select type of strike team:", choices = list("Heavy Asset Protection", "Mercenaries"))
+/mob/proc/ask_admin_strike_team()
+	open_request(src, /datum/prompt/choice/admin_strike_team, PROC_REF(admin_strike_team_type_picked), answerer = src, question = "Select type of strike team:", choices = list("Heavy Asset Protection", "Mercenaries"))
 
-/datum/om/flow/strike_team/proc/type_picked(datum/om/prompt/choice/ask)
-	team_type = ask.choice
+/mob/proc/admin_strike_team_type_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_strike_team/ask = A.answer
+	var/team_type = ask.answer_value
 	var/datum/antagonist/deathsquad/team = strike_team_datum(team_type)
 	if(team.deployed)
-		to_chat(actor, span_red("Someone is already sending a team."))
+		to_chat(src, span_red("Someone is already sending a team."))
 		return
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(sure), title = "Strike Team", message = "Do you want to send in a strike team? Once enabled, this is irreversible.")
+	open_request(src, /datum/prompt/choice/admin_strike_team, PROC_REF(admin_strike_team_sure), answerer = src, team_type = team_type, buttons = TRUE, choices = list("Yes", "No"), question = "Do you want to send in a strike team? Once enabled, this is irreversible.")
 
-/datum/om/flow/strike_team/proc/sure()
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(mission_entered), title = "Specify Mission", message = "This 'mode' will go on until everyone is dead or the station is destroyed. You may also admin-call the evac shuttle when appropriate. Spawned commandos have internals cameras which are viewable through a monitor inside the Spec. Ops. Office. Assigning the team's detailed task is recommended from there. While you will be able to manually pick the candidates from active ghosts, their assignment in the squad will be random.\n\nPlease specify which mission the strike team shall undertake.", max_length = MAX_MESSAGE_LEN)
+/mob/proc/admin_strike_team_sure(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_strike_team/ask = A.answer
+	if(ask.answer_value != "Yes")
+		return
+	open_request(src, /datum/prompt/text/admin_strike_team, PROC_REF(admin_strike_team_mission_entered), answerer = src, team_type = ask.team_type, question = "This 'mode' will go on until everyone is dead or the station is destroyed. You may also admin-call the evac shuttle when appropriate. Spawned commandos have internals cameras which are viewable through a monitor inside the Spec. Ops. Office. Assigning the team's detailed task is recommended from there. While you will be able to manually pick the candidates from active ghosts, their assignment in the squad will be random.\n\nPlease specify which mission the strike team shall undertake.")
 
-/datum/om/flow/strike_team/proc/mission_entered()
-	var/datum/antagonist/deathsquad/team = strike_team_datum(team_type)
+/mob/proc/admin_strike_team_mission_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/datum/prompt/text/admin_strike_team/ask = A.answer
+	var/datum/antagonist/deathsquad/team = strike_team_datum(ask.team_type)
 	consider_ert_load()
 
 	if(team.deployed)
-		to_chat(actor, "Looks like someone beat you to it.")
+		to_chat(src, "Looks like someone beat you to it.")
 		return
 
 	team.attempt_random_spawn()

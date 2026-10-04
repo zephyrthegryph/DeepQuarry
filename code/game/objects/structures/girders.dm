@@ -96,7 +96,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 		return 0
 	user.do_attack_animation(src)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
-	after(src, 1, PROC_REF(dismantle))
+	after(src, 0.1 SECONDS, PROC_REF(dismantle))
 	return 1
 
 /obj/structure/girder/bullet_act(obj/item/projectile/Proj)

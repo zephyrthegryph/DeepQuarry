@@ -23,7 +23,9 @@
 /// Charges from the cable underneath while bolted down (it parks once full or with nothing to draw).
 DECLARE_PERIODIC_WHILE(/obj/machinery/shield_capacitor, MACHINE_PIPELINE, "anchored")
 
+// The generator this capacitor feeds (two-sided with its capacitors list).
 CAPABILITIES(/obj/machinery/shield_capacitor)
+	links(/obj/machinery/shield_capacitor::owned_gen, /obj/machinery/shield_gen::capacitors, b_many = TRUE)
 	climb()
 
 /obj/machinery/shield_capacitor/Initialize(mapload)
@@ -57,11 +59,6 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 	else
 		to_chat(user, span_red("Access denied."))
 	return TRUE
-
-// The generator this capacitor feeds (two-sided with its capacitors list).
-/obj/machinery/shield_capacitor/relations()
-	. = ..()
-	. += rel_one(nameof(owned_gen), back = nameof(/obj/machinery/shield_gen::capacitors))
 
 /obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)

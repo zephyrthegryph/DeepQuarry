@@ -1,3 +1,6 @@
+#define BIRTHDAY_AGE_YES "Level me up, baby"
+#define BIRTHDAY_AGE_NO "No way, I'mma stay young forever"
+
 /mob/living/carbon/human/proc/consider_birthday()
 	var/bday_month = read_preference(/datum/preference/numeric/human/bday_month)
 	var/bday_day = read_preference(/datum/preference/numeric/human/bday_day)
@@ -21,26 +24,33 @@
 	write_preference_directly(/datum/preference/numeric/human/last_bday_note, GLOB.world_time_year, WRITE_PREF_MANUAL)	//We only want to ask once a year per character, this persists, update early in case of shenanigans
 	if(birthday)	//woo
 		msg = "Today is your birthday! Do you want to increase your character's listed age?"
-		/* //Chomp DISABLE - Absolutely not.
+		/*
 		if(read_preference(/datum/preference/toggle/human/bday_announce))
 			var/list/sounds = list('sound/voice/birth.ogg')
 			var/oursound = pickweight(sounds)
 			GLOB.command_announcement.Announce("Confirmed presence of BIRTHDAY aboard the station! It is [src.real_name]'s birthday or similar sort of celebration, name day, hatchday, WHATEVER! We encourage you to go find [src.real_name] and show them how we celebrate around here! Have a secure day!", "BIRTHDAY!", oursound)
-		*/ //Chomp DISABLE END
+		*/
 	else
 		msg = "Your birthday has passed! Do you want to increase your character's listed age?"	//sad, but thus is the life of an adult
-	om_ask(src, /datum/om/prompt/confirm/birthday, PROC_REF(birthday_answered), message = msg, title = "BIRTHDAY! ([read_preference(/datum/preference/numeric/human/bday_month)]/[read_preference(/datum/preference/numeric/human/bday_day)])", lastyear = lastyear)
+	open_request(src, /datum/prompt/choice/birthday, PROC_REF(birthday_answered), answerer = src, question = msg, title = "BIRTHDAY! ([read_preference(/datum/preference/numeric/human/bday_month)]/[read_preference(/datum/preference/numeric/human/bday_day)])", lastyear = lastyear)
 
-/// "Increase your age?" The answer proc runs on any answer (the preferences are saved on a no too).
-/datum/om/prompt/confirm/birthday
-	yes_text = "Level me up, baby"
-	no_text = "No way, I'mma stay young forever"
-	answer_on_no = TRUE
+/// "Increase your age?" Both original buttons answer; closing the window cancels.
+/datum/prompt/choice/birthday
+	buttons = TRUE
+	timeout = 0
 	var/lastyear
 
-/mob/living/carbon/human/proc/birthday_answered(datum/om/prompt/confirm/birthday/ask)
+/datum/prompt/choice/birthday/prepare(datum/act/A)
+	. = ..()
+	var/static/list/birthday_answers = list(BIRTHDAY_AGE_YES, BIRTHDAY_AGE_NO)
+	choices = birthday_answers
+
+/mob/living/carbon/human/proc/birthday_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/birthday/ask = A.answer
 	var/lastyear = ask.lastyear
-	if(ask.yes)
+	if(ask.value == BIRTHDAY_AGE_YES)
 		if(lastyear == 0)	//We've never been asked, so let's just assume you were keeping track before now and only add 1
 			age += 1
 		else
@@ -50,3 +60,6 @@
 		write_preference_directly(/datum/preference/numeric/human/age, age, WRITE_PREF_MANUAL)	//Set the age on the character sheet
 
 	SScharacter_setup.queue_preferences_save(client?.prefs)
+
+#undef BIRTHDAY_AGE_YES
+#undef BIRTHDAY_AGE_NO

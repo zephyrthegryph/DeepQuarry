@@ -1,3 +1,10 @@
+#define FIGHTER_LOADOUT_GUNPOD 1
+#define FIGHTER_LOADOUT_RECON 2
+#define FIGHTER_LOADOUT_BARON 3
+#define FIGHTER_LOADOUT_SCORALIS 4
+#define FIGHTER_LOADOUT_ALLURE 5
+#define FIGHTER_LOADOUT_PINNACE 6
+
 #define NOGRAV_FIGHTER_DAMAGE 20
 
 /obj/mecha/combat/fighter
@@ -51,12 +58,42 @@ TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
 
 
 CAPABILITIES(/obj/mecha/combat/fighter)
-	owns_one(nameof(ion_trail), starts = /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+
+TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 
 /obj/mecha/combat/fighter/Initialize(mapload)
 	. = ..()
 	ion_trail.set_up(src)
 	ion_trail.stop()
+
+	switch(TYPE_TABLE_GET(src, fighter_init_loadout))
+		if(FIGHTER_LOADOUT_GUNPOD)
+			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
+			ME.attach(src)
+			ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive
+			ME.attach(src)
+		if(FIGHTER_LOADOUT_RECON)
+			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/teleporter(src)
+			ME.attach(src)
+			ME = new /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay(src)
+			ME.attach(src)
+		if(FIGHTER_LOADOUT_BARON)
+			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
+			ME.attach(src)
+			ME = new /obj/item/mecha_parts/mecha_equipment/omni_shield
+			ME.attach(src)
+		if(FIGHTER_LOADOUT_SCORALIS)
+			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg
+			ME.attach(src)
+			ME = new /obj/item/mecha_parts/mecha_equipment/cloak
+			ME.attach(src)
+		if(FIGHTER_LOADOUT_ALLURE)
+			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/cloak
+			ME.attach(src)
+		if(FIGHTER_LOADOUT_PINNACE)
+			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
+			ME.attach(src)
 
 /obj/mecha/combat/fighter/moved_inside(mob/living/carbon/human/H)
 	. = ..()
@@ -289,19 +326,11 @@ TOPIC_ACTION(/obj/mecha/combat/fighter, "toggle_landing_gear", PROC_REF(topic_to
 	var/image/stripe1_overlay
 	var/image/stripe2_overlay
 
-/obj/mecha/combat/fighter/gunpod/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/loaded, fighter_init_loadout, FIGHTER_LOADOUT_GUNPOD)
 
-/obj/mecha/combat/fighter/gunpod/recon/Initialize(mapload) //Blinky
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/teleporter(src)
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay(src)
-	ME.attach(src)
+//Blinky
+TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, fighter_init_loadout, FIGHTER_LOADOUT_RECON)
 
 DECLARE_APPEARANCE_PROC(/obj/mecha/combat/fighter/gunpod, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/mecha/combat/fighter/gunpod/appearance_overlays()
@@ -326,28 +355,41 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	var/obj/item/W = A.held
 	if(!istype(W,/obj/item/multitool) || state != 1)
 		return OP_DECLINE
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_stripe_color), subject = W, title = "Paint Zone", message = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(ask_stripe_color), answerer = user, subject = W, timeout = 0, title = "Paint Zone", question = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
 	return TRUE
 
-/datum/om/prompt/color/mech_paint
+/datum/prompt/color/mech_paint
 	title = "Paint Color"
-	message = "Please select a paint color."
+	question = "Please select a paint color."
+	timeout = 0
 	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/zone
 
-/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/om/prompt/choice/ask)
-	if(ask.choice != "CANCEL")
-		om_ask(ask.answerer, /datum/om/prompt/color/mech_paint, PROC_REF(stripe_painted), subject = ask.subject, zone = ask.choice)
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/act/request/context)
+	if(!context.answer)
+		return
+	return ask_stripe_color_apply(context)
 
-/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/om/prompt/color/mech_paint/ask)
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color_apply(datum/act/request/context)
+	var/datum/prompt/choice/ask = context.answer
+	if(ask.answer_value != "CANCEL")
+		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(stripe_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.answer_value)
+
+/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/act/request/context)
+	if(!context.answer)
+		return
+	return stripe_painted_apply(context)
+
+/obj/mecha/combat/fighter/gunpod/proc/stripe_painted_apply(datum/act/request/context)
+	var/datum/prompt/color/mech_paint/ask = context.answer
 	if(state != 1)
 		return
-	if(ask.picked_color)
+	if(ask.answer_value)
 		switch(ask.zone)
 			if("Fore Stripe")
-				stripe1_color = ask.picked_color
+				stripe1_color = ask.answer_value
 			if("Aft Stripe")
-				stripe2_color = ask.picked_color
+				stripe2_color = ask.answer_value
 	update_icon()
 
 /obj/effect/decal/mecha_wreckage/gunpod
@@ -380,12 +422,8 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 
 	ground_capable = FALSE
 
-/obj/mecha/combat/fighter/baron/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/omni_shield
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/baron/loaded, fighter_init_loadout, FIGHTER_LOADOUT_BARON)
 
 /obj/effect/decal/mecha_wreckage/baron
 	name = "Baron wreckage"
@@ -417,12 +455,8 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 
 	ground_capable = FALSE
 
-/obj/mecha/combat/fighter/scoralis/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/cloak
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/scoralis/loaded, fighter_init_loadout, FIGHTER_LOADOUT_SCORALIS)
 
 /obj/effect/decal/mecha_wreckage/scoralis
 	name = "scoralis wreckage"
@@ -455,10 +489,8 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 
 	max_integrity = 500
 
-/obj/mecha/combat/fighter/allure/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/cloak
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/allure/loaded, fighter_init_loadout, FIGHTER_LOADOUT_ALLURE)
 
 /obj/effect/decal/mecha_wreckage/allure
 	name = "allure wreckage"
@@ -491,10 +523,8 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 
 	max_integrity = 200
 
-/obj/mecha/combat/fighter/pinnace/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/pinnace/loaded, fighter_init_loadout, FIGHTER_LOADOUT_PINNACE)
 
 /obj/effect/decal/mecha_wreckage/pinnace
 	name = "pinnace wreckage"
@@ -515,3 +545,10 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 
 #undef NOGRAV_FIGHTER_DAMAGE
 
+
+#undef FIGHTER_LOADOUT_GUNPOD
+#undef FIGHTER_LOADOUT_RECON
+#undef FIGHTER_LOADOUT_BARON
+#undef FIGHTER_LOADOUT_SCORALIS
+#undef FIGHTER_LOADOUT_ALLURE
+#undef FIGHTER_LOADOUT_PINNACE

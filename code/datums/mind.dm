@@ -68,6 +68,7 @@
 	var/datum/religion/my_religion
 
 CAPABILITIES(/datum/mind)
+	ref_many(nameof(shared_objectives))
 	owns_one(nameof(antag_holder), /datum/antag_holder)
 	owns_one(nameof(identity), /datum/character_identity)
 	owns_one(nameof(my_religion), /datum/religion)
@@ -156,91 +157,108 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	edit_memory(user)
 	return TRUE
 
-/// Starts the admin add-objective flow for this mind (the memory panel's "add objective").
+/// Starts the admin add-objective questions for this mind.
 /datum/mind/proc/begin_objective_add(mob/user)
 	var/list/choices = list("assassinate", "debrain", "protect", "prevent", "harm", "brig", "hijack", "escape", "survive", "steal", "mercenary", "capture", "absorb", "custom")
-	om_flow_start(/datum/om/flow/mind_objective_edit, user, null, mind = src, objective = null, pos = null, choices = choices, def_value = null)
+	if(QDELETED(user))
+		return
+	open_request(src, /datum/prompt/choice/mind_objective_edit, PROC_REF(objective_type_chosen), answerer = user, title = "Objective type", question = "Select objective type:", choices = choices)
 
-/// The admin objective editor: the type, then a detail that depends on it (a target, a number,
-/// a text, an item to steal; a custom steal asks its type and name too), then the edit.
-/datum/om/flow/mind_objective_edit
-	requires = PROMPT_ADMIN(R_ADMIN)
-	var/datum/mind/mind
-	var/datum/objective/objective
-	var/pos
-	var/list/choices
-	var/def_value
+/datum/prompt/choice/mind_objective_edit
+	rights = R_ADMIN
+	timeout = 0
 	var/obj_type
-	var/detail
+	recheck_on_open = TRUE
+
+/datum/prompt/number/mind_objective_edit
+	rights = R_ADMIN
+	timeout = 0
+	var/obj_type
+	min_value = 0
+	max_value = INFINITY
+	step = 1
+	recheck_on_open = TRUE
+
+/datum/prompt/text/mind_objective_edit
+	rights = R_ADMIN
+	timeout = 0
+	var/obj_type
 	var/steal_type
-	var/steal_name
+	recheck_on_open = TRUE
 
-/datum/om/flow/mind_objective_edit/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_chosen), title = "Objective type", message = "Select objective type:", choices = choices, default = def_value)
-
-/// The second question, which depends on the objective type.
-/datum/om/flow/mind_objective_edit/proc/type_chosen(datum/om/prompt/choice/ask)
-	obj_type = ask.choice
+/// The second question depends on the chosen objective type.
+/datum/mind/proc/objective_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj_type = A.answer.answer_value
 	switch(obj_type)
 		if("assassinate","protect","debrain", "harm", "brig")
 			var/list/possible_targets = list("Free objective")
 			for(var/datum/mind/possible_target in SSticker.minds)
-				if ((possible_target != mind) && ishuman(possible_target.current))
+				if ((possible_target != src) && ishuman(possible_target.current))
 					possible_targets += possible_target.current
-			var/mob/def_target = null
-			var/objective_list[] = list(/datum/objective/assassinate, /datum/objective/protect, /datum/objective/debrain)
-			if (objective&&(objective.type in objective_list) && objective.target)
-				def_target = objective.target.current
-			om_ask(actor, /datum/om/prompt/choice, PROC_REF(detail_chosen), title = "Objective target", message = "Select target:", choices = possible_targets, default = def_target)
+			open_request(src, /datum/prompt/choice/mind_objective_edit, PROC_REF(objective_detail_chosen), answerer = user, title = "Objective target", question = "Select target:", choices = possible_targets, obj_type = obj_type)
 		if("capture","absorb", "vore")
-			var/def_num
-			if(objective&&objective.type==text2path("/datum/objective/[obj_type]"))
-				def_num = objective.target_amount
-			om_ask(actor, /datum/om/prompt/number, PROC_REF(detail_entered), title = "Objective", message = "Input target number:", default = def_num)
+			open_request(src, /datum/prompt/number/mind_objective_edit, PROC_REF(objective_detail_entered), answerer = user, title = "Objective", question = "Input target number:", obj_type = obj_type)
 		if("custom")
-			om_ask(actor, /datum/om/prompt/text, PROC_REF(detail_written), title = "Objective", message = "Custom objective:", default = objective ? objective.explanation_text : "")
+			open_request(src, /datum/prompt/text/mind_objective_edit, PROC_REF(objective_detail_written), answerer = user, title = "Objective", question = "Custom objective:", default = "", obj_type = obj_type)
 		if("steal")
 			var/datum/objective/steal/S = new
 			var/list/possible_items_all = S.possible_items + S.possible_items_special + "custom"
 			qdel(S)
-			om_ask(actor, /datum/om/prompt/choice, PROC_REF(detail_chosen), title = "Objective target", message = "Select target:", choices = possible_items_all)
+			open_request(src, /datum/prompt/choice/mind_objective_edit, PROC_REF(objective_detail_chosen), answerer = user, title = "Objective target", question = "Select target:", choices = possible_items_all, obj_type = obj_type)
 		else
-			finish()
+			objective_edit_finished(user, obj_type)
 
-/datum/om/flow/mind_objective_edit/proc/detail_chosen(datum/om/prompt/choice/ask)
-	detail = ask.choice
-	if(obj_type == "steal" && detail == "custom")
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(steal_type_chosen), title = "Type", message = "Select type:", choices = typesof(/obj/item))
+/datum/mind/proc/objective_detail_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	finish()
+	var/datum/prompt/choice/mind_objective_edit/ask = A.answer
+	var/detail = ask.answer_value
+	if(isdatum(detail))
+		var/datum/selected = detail
+		if(QDELETED(selected))
+			return
+	if(ask.obj_type == "steal" && detail == "custom")
+		open_request(src, /datum/prompt/choice/mind_objective_edit, PROC_REF(objective_steal_type_chosen), answerer = ask.answerer, title = "Type", question = "Select type:", choices = typesof(/obj/item), obj_type = ask.obj_type)
+		return
+	objective_edit_finished(ask.answerer, ask.obj_type, detail)
 
-/datum/om/flow/mind_objective_edit/proc/detail_entered(datum/om/prompt/number/ask)
-	detail = ask.number
-	finish()
+/datum/mind/proc/objective_detail_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/mind_objective_edit/ask = A.answer
+	objective_edit_finished(ask.answerer, ask.obj_type, ask.answer_value)
 
-/datum/om/flow/mind_objective_edit/proc/detail_written(datum/om/prompt/text/ask)
-	detail = ask.text
-	finish()
+/datum/mind/proc/objective_detail_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/mind_objective_edit/ask = A.answer
+	objective_edit_finished(ask.answerer, ask.obj_type, ask.answer_value)
 
-/datum/om/flow/mind_objective_edit/proc/steal_type_chosen(datum/om/prompt/choice/ask)
-	steal_type = ask.choice
+/datum/mind/proc/objective_steal_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/mind_objective_edit/ask = A.answer
+	var/steal_type = ask.answer_value
 	var/obj/item/custom_target = steal_type
 	if(!custom_target)
-		finish()
+		objective_edit_finished(ask.answerer, ask.obj_type, "custom", steal_type)
 		return
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(steal_name_entered), title = "Objective target", message = "Enter target name:", default = initial(custom_target.name))
+	open_request(src, /datum/prompt/text/mind_objective_edit, PROC_REF(objective_steal_name_entered), answerer = ask.answerer, title = "Objective target", question = "Enter target name:", default = initial(custom_target.name), obj_type = ask.obj_type, steal_type = steal_type)
 
-/datum/om/flow/mind_objective_edit/proc/steal_name_entered(datum/om/prompt/text/ask)
-	steal_name = ask.text
-	finish()
+/datum/mind/proc/objective_steal_name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/mind_objective_edit/ask = A.answer
+	objective_edit_finished(ask.answerer, ask.obj_type, "custom", ask.steal_type, ask.answer_value)
 
-/datum/om/flow/mind_objective_edit/proc/finish()
-	mind.objective_edit_apply(actor, src)
-	mind.edit_memory(actor)
+/datum/mind/proc/objective_edit_finished(mob/user, obj_type, detail = null, steal_type = null, steal_name = null)
+	objective_edit_apply(user, obj_type, detail, steal_type, steal_name)
+	edit_memory(user)
 
-/datum/mind/proc/objective_edit_apply(mob/user, datum/om/flow/mind_objective_edit/edit)
-	var/datum/objective/objective = edit.objective
-	var/new_obj_type = edit.obj_type
+/datum/mind/proc/objective_edit_apply(mob/user, new_obj_type, detail = null, steal_type = null, steal_name = null, datum/objective/objective = null)
 	var/datum/objective/new_objective = null
 
 	switch (new_obj_type)
@@ -250,7 +268,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 			var/objective_type_text = copytext(new_obj_type, 2)//Leave the rest of the text.
 			var/objective_type = "[objective_type_capital][objective_type_text]"//Add them together into a text string.
 
-			var/new_target = edit.detail
+			var/new_target = detail
 			if (!new_target) return
 
 			var/objective_path = text2path("/datum/objective/[new_obj_type]")
@@ -293,11 +311,11 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 			else
 				new_objective = objective
 			var/datum/objective/steal/steal = new_objective
-			if (!steal.apply_steal_choice(edit.detail, edit.steal_type, edit.steal_name))
+			if (!steal.apply_steal_choice(detail, steal_type, steal_name))
 				return
 
 		if("capture","absorb", "vore")
-			var/target_number = edit.detail
+			var/target_number = detail
 			if (isnull(target_number))//Ordinarily, you wouldn't need isnull. In this case, the value may already exist.
 				return
 
@@ -315,7 +333,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 			new_objective.target_amount = target_number
 
 		if ("custom")
-			var/expl = edit.detail
+			var/expl = detail
 			if (!expl) return
 			new_objective = new /datum/objective
 			rel_set(new_objective, nameof(new_objective.owner), src)
@@ -533,7 +551,3 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 		. += objectives
 	if(shared_objectives)
 		. += shared_objectives
-
-/datum/mind/relations()
-	. = ..()
-	. += rel_many(nameof(shared_objectives))

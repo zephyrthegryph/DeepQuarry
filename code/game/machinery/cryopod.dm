@@ -185,7 +185,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 	var/on_store_visible_message_2 = "into storage."
 	var/announce_channel = "Common"
 	var/allow_occupant_types = list(/mob/living/carbon/human)
-	var/disallow_occupant_types = list()
+	var/list/disallow_occupant_types
 
 	var/time_till_despawn = 60 // Down to 1 minute to reflect respawn times. //Now 6 seconds. Mind the deciseconds.
 	EXPIRY_DECLARE(time_entered) // Used to keep track of the safe period.
@@ -335,14 +335,14 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 	var/mob/living/silicon/robot/R = to_despawn
 	if(!istype(R)) return ..()
 
-	qdel(R.mmi)
+	own_clear(R, nameof(R.mmi), OWN_DELETE)
 	for(var/obj/item/I in R.module) // the tools the borg has; metal, glass, guns etc
 		for(var/mob/M in I)
 			despawn_occupant(M)
 		for(var/obj/item/O in I) // the things inside the tools, if anything; mainly for janiborg trash bags
 			O.forceMove(R)
 		qdel(I)
-	qdel(R.module)
+	own_clear(R, nameof(R.module), OWN_DELETE)
 
 	return ..()
 
@@ -464,7 +464,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 		to_despawn.mind.assigned_role = null
 
 		if(to_despawn.mind.objectives.len)
-			qdel(to_despawn.mind.objectives)
+			own_clear(to_despawn.mind, nameof(/datum/mind::objectives), OWN_DELETE)
 			to_despawn.mind.special_role = null
 
 

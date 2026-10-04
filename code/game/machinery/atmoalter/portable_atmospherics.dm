@@ -16,6 +16,7 @@
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
 
 CAPABILITIES(/obj/machinery/portable_atmospherics)
+	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(holding), /obj/item/tank)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_bursts))))
 
@@ -270,6 +271,3 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	return connected_port
 
 // air_contents is a private mixture, or a connected port network's mixture while connected (set_port_network_air()): PROTO.
-/obj/machinery/portable_atmospherics/ownership()
-	. = ..()
-	. += rel_one(nameof(air_contents), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

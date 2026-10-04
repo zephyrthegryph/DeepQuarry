@@ -7,56 +7,45 @@
 	icon_state = "gold_star_printer"
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	var/print_cooldown = 1 MINUTE
-	COOLDOWN_DECLARE(print_cooldown_until)
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/gold_star_printer)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("print", in_hand(), label("Print gold star"), cooldown(print_cooldown), needs(carried()),
+		asks(/datum/prompt/text, keeps = 0, step = "title", fields = list("timeout" = 0, "title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32, "name_text" = TRUE)),
+		asks(/datum/prompt/text/gold_star_description, fields = list("timeout" = 0), keeps = 0, step = "description", when = PROC_REF(has_title)),
+		then(PROC_REF(star_printed)))
 
-/obj/item/gold_star_printer/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	if(COOLDOWN_FINISHED(src, print_cooldown_until))
-		make_star(user)
-	else
-		to_chat(user, span_warning("\The [src] is not ready to print another star yet."))
+/obj/item/gold_star_printer/proc/has_title(datum/act/op/A)
+	var/datum/prompt/text/title_answer = A.step_answer("title")
+	return !!title_answer?.value
 
-/obj/item/gold_star_printer/proc/make_star(mob/user)
-
-	om_ask(user, /datum/om/prompt/text, PROC_REF(star_titled), title = "Title", message = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", max_length = 32, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/datum/om/prompt/text/gold_star_desc
+/datum/prompt/text/gold_star_description
 	title = "Ticket Details"
-	max_length = 200
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-	var/star_title
+	max_len = 200
 
-/datum/om/prompt/text/gold_star_desc/prepare()
-	message = "Choose the description of the 'Gold Star for [star_title]', this is what it will read on examination. (Max length: 200)"
-	return TRUE
+/datum/prompt/text/gold_star_description/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/datum/prompt/text/title_answer = asking.step_answer("title")
+		question = "Choose the description of the 'Gold Star for [title_answer.value]', this is what it will read on examination. (Max length: 200)"
 
-/obj/item/gold_star_printer/proc/star_titled(datum/om/prompt/text/ask)
-	if(!ask.text)
-		return
-	om_ask(ask.answerer, /datum/om/prompt/text/gold_star_desc, PROC_REF(star_described), star_title = ask.text)
-
-/obj/item/gold_star_printer/proc/star_described(datum/om/prompt/text/gold_star_desc/ask)
-	var/mob/user = ask.answerer
-	var/star_title = ask.star_title
-	var/star_desc = ask.text
-	if(!star_desc)
-		return
-
+/obj/item/gold_star_printer/proc/star_printed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/text/title_answer = A.step_answer("title")
+	var/datum/prompt/text/description_answer = A.step_answer("description")
+	var/star_title = title_answer?.value
+	var/star_desc = description_answer?.value
+	if(!star_title || !star_desc)
+		return OP_REFUSED
 	var/turf/our_turf = get_turf(user)
-
 	var/obj/item/clothing/accessory/gold_sticker/p = new /obj/item/clothing/accessory/gold_sticker(our_turf)
-
 	p.desc = "A gold star issued by [user] for [star_title], if you look closely, the fine print reads: [star_desc]"
 	p.name = "Gold Star for [star_title]"
 	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
-
 	log_admin("[key_name(user)] has printed a Gold Star for [star_title] with the description: \"[star_desc]\"")
-	COOLDOWN_START(src, print_cooldown_until, print_cooldown)
+	return OP_OK
 
 /obj/item/clothing/accessory/gold_sticker
 	name = "Gold Star"
@@ -66,31 +55,41 @@ CAPABILITIES(/obj/item/gold_star_printer)
 
 /// Asking a mob to be stuck with a sticker. Re-checked on the answer: face to face, and the
 /// sticker is still the asker's. No, or a cancel, tells the asker.
-/datum/om/prompt/confirm/gold_sticker
+/datum/prompt/choice/gold_sticker
 	title = "Sticker!"
-	no_first = TRUE
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
 	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-/datum/om/prompt/confirm/gold_sticker/prepare()
-	message = "[asker] is attempting to stick a [subject] on you. Will you allow this?"
-	return TRUE
+CAPABILITIES(/datum/prompt/choice/gold_sticker)
+	ref_one(nameof(asker), /mob)
 
-/datum/om/prompt/confirm/gold_sticker/valid()
-	var/obj/item/clothing/accessory/gold_sticker/S = subject
+/datum/prompt/choice/gold_sticker/prepare(datum/act/A)
+	..()
+	var/mob/captured_asker = asker
+	var/datum/request/request = src
+	rel_clear(request, nameof(request.asker))
+	rel_set(request, nameof(request.asker), captured_asker)
+	question = "[asker] is attempting to stick a [owner] on you. Will you allow this?"
+
+/datum/prompt/choice/gold_sticker/recheck_extra()
+	if(QDELETED(asker))
+		return "gone"
+	var/obj/item/clothing/accessory/gold_sticker/S = owner
 	return S.loc == asker ? null : "not holding it"
-
-/datum/om/prompt/confirm/gold_sticker/declined()
-	var/obj/item/clothing/accessory/gold_sticker/S = subject
-	S?.sticker_refused(answerer, asker)
-
-/datum/om/prompt/confirm/gold_sticker/cancelled()
-	var/obj/item/clothing/accessory/gold_sticker/S = subject
-	S?.sticker_refused(answerer, asker)
 
 /obj/item/clothing/accessory/gold_sticker/proc/sticker_refused(mob/living/M, mob/user)
 	to_chat(user, span_warning("\The [M] does not allow you to stick the [src] on them."))
 
-/obj/item/clothing/accessory/gold_sticker/proc/sticker_answered(datum/om/prompt/confirm/gold_sticker/ask)
+/obj/item/clothing/accessory/gold_sticker/proc/sticker_answered(datum/act/request/A)
+	var/datum/prompt/choice/gold_sticker/ask = A.request
+	if(QDELETED(ask.answerer) || QDELETED(ask.asker))
+		return
+	if(!A.answer || ask.answer_value != "Yes")
+		if(ask.answer_value == "No" || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+			sticker_refused(ask.answerer, ask.asker)
+		return
 	var/mob/living/M = ask.answerer
 	var/mob/user = ask.asker
 	apply_sticker(M,user)
@@ -108,7 +107,7 @@ CAPABILITIES(/obj/item/gold_star_printer)
 	if(isanimal(target) || issilicon(target))
 		var/mob/living/M = target
 		if(M.client)
-			om_ask(M, /datum/om/prompt/confirm/gold_sticker, PROC_REF(sticker_answered), asker = user)
+			open_request(src, /datum/prompt/choice/gold_sticker, PROC_REF(sticker_answered), answerer = M, asker = user)
 			return
 		else
 			apply_sticker(M,user)

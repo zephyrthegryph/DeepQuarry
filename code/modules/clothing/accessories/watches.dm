@@ -60,16 +60,16 @@
 
 CAPABILITIES(/obj/item/clothing/accessory/watch/survival)
 	owns_one(nameof(gps), starts = /obj/item/gps/watch)
-	op("survival_watch_beacon_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle beacon"), then(PROC_REF(survival_watch_beacon_alt)))
+	op("beacon", hand(), answers(INTENT_TOGGLE), label("Toggle beacon"), then(PROC_REF(survival_watch_beacon_toggled)), passes())
 
 /obj/item/gps/watch
 	gps_tag = "SRV-WTCH"
 
-/// Old click_alt: toggle the beacon. Falls through to the clothing alt-click (which ran first before).
-/obj/item/clothing/accessory/watch/survival/proc/survival_watch_beacon_alt(datum/act/op/A)
+/// Toggle the beacon, then pass to the inherited clothing alt-click.
+/obj/item/clothing/accessory/watch/survival/proc/survival_watch_beacon_toggled(datum/act/op/A)
 	var/mob/user = A.actor
 	if(Adjacent(user))
 		gps.set_tracking(!gps.tracking)
 		to_chat(user,span_notice("You turn the micro beacon [gps.tracking ? "on" : "off"]."))
-	return OP_DECLINE
+	return OP_OK
 

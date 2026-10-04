@@ -60,9 +60,7 @@
 /obj/item/organ/internal/lungs/grey
 	icon_state = "lungs_grey"
 
-/obj/item/organ/internal/lungs/grey/colormatch/Initialize(mapload, internal)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+TYPE_TABLE(/obj/item/organ/internal/lungs/grey/colormatch, internal_late_initialize, TRUE)
 
 /obj/item/organ/internal/lungs/grey/colormatch/LateInitialize()
 	if(ishuman(owner)) // placed in its limb by now

@@ -802,7 +802,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 
 /obj/machinery/computer/general_air_control/fuel_injection/proc/ui_act_toggle_automation(datum/act/op/A)
 	set_automation(!automation)
-	. = TRUE
+	return OP_OK
 
 /obj/machinery/computer/general_air_control/fuel_injection/proc/ui_act_toggle_injector(datum/act/op/A)
 	device_info = null

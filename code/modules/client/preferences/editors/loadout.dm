@@ -593,14 +593,14 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 
 /// A colour for one of an equipped gear's tweaks. Re-checked on the answer: the same prefs, the
 /// same loadout slot, and the gear still equipped in it.
-/datum/om/prompt/color/prefs/gear_tweak
+/datum/prompt/color/prefs/gear_tweak
 	var/gear_name
 	var/tweak_idx
 	var/loadout_key
 	/// Palette swatches: the source colour being remapped.
 	var/original
 
-/datum/om/prompt/color/prefs/gear_tweak/valid()
+/datum/prompt/color/prefs/gear_tweak/recheck_extra()
 	. = ..()
 	if(.)
 		return
@@ -613,7 +613,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		return "not equipped"
 
 /// Writes `value` as the tweak's metadata and refreshes the preview and the UI.
-/datum/preference_editor/loadout/proc/write_tweak_meta(datum/om/prompt/color/prefs/gear_tweak/ask, value)
+/datum/preference_editor/loadout/proc/write_tweak_meta(datum/prompt/color/prefs/gear_tweak/ask, value)
 	var/datum/preferences/preferences = ask.preferences
 	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
 	var/list/active = gear_list[ask.loadout_key] || list()
@@ -627,13 +627,22 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	preferences.update_preview_icon()
 	SStgui.update_uis(preferences)
 
-/datum/preference_editor/loadout/proc/tweak_color_picked(datum/om/prompt/color/prefs/gear_tweak/ask)
-	write_tweak_meta(ask, sanitize_hexcolor(ask.picked_color, default = ask.default))
+/datum/preference_editor/loadout/proc/tweak_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
+	write_tweak_meta(ask, sanitize_hexcolor(ask.answer_value, default = ask.default))
 
-/datum/preference_editor/loadout/proc/tint_color_picked(datum/om/prompt/color/prefs/gear_tweak/ask)
-	write_tweak_meta(ask, list("mode" = "tint", "value" = sanitize_hexcolor(ask.picked_color, default = ask.default)))
+/datum/preference_editor/loadout/proc/tint_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
+	write_tweak_meta(ask, list("mode" = "tint", "value" = sanitize_hexcolor(ask.answer_value, default = ask.default)))
 
-/datum/preference_editor/loadout/proc/swatch_color_picked(datum/om/prompt/color/prefs/gear_tweak/ask)
+/datum/preference_editor/loadout/proc/swatch_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
 	var/list/gear_list = ask.preferences.read_preference(/datum/preference/gear_list) || list()
 	var/list/active = gear_list[ask.loadout_key] || list()
 	var/list/item_meta = active[ask.gear_name]
@@ -641,7 +650,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	var/list/cur_swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"] : null
 	var/list/swaps = cur_swaps ? cur_swaps.Copy() : list()
 	var/original = ask.original
-	var/sanitized = sanitize_hexcolor(ask.picked_color, default = original)
+	var/sanitized = sanitize_hexcolor(ask.answer_value, default = original)
 	if(sanitized == original)
 		swaps -= original  // identity entry — strip rather than persist
 	else
@@ -806,7 +815,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_pick_tweak_color)
 	if(!islist(item_meta))
 		item_meta = list()
 	var/cur = item_meta["[tweak_idx]"] || "#ffffff"
-	om_ask(user, /datum/om/prompt/color/prefs/gear_tweak, PROC_REF(tweak_color_picked), title = "[G.display_name]", message = "Pick a color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
+	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(tweak_color_picked), answerer = user, title = "[G.display_name]", question = "Pick a color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
 	return PREF_UPDATE_UNCHANGED
 
 UI_ACT(/datum/preference_editor/loadout, "recolor_pick_tint", ui_act_recolor_pick_tint, UI_ARG_VALUE("gear"), UI_ARG_NUM("tweak"))
@@ -830,7 +839,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_recolor_pick_tint)
 		item_meta = list()
 	var/list/cur_meta = item_meta["[tweak_idx]"]
 	var/cur = (islist(cur_meta) && cur_meta["mode"] == "tint") ? cur_meta["value"] : "#ffffff"
-	om_ask(user, /datum/om/prompt/color/prefs/gear_tweak, PROC_REF(tint_color_picked), title = "[G.display_name]", message = "Tint color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
+	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(tint_color_picked), answerer = user, title = "[G.display_name]", question = "Tint color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
 	return PREF_UPDATE_UNCHANGED
 
 UI_ACT(/datum/preference_editor/loadout, "recolor_pick_palette_swatch", ui_act_recolor_pick_palette_swatch, UI_ARG_VALUE("gear"), UI_ARG_TEXT("original"), UI_ARG_NUM("tweak"))
@@ -860,7 +869,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_recolor_pick_palette_s
 	var/list/cur_swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"] : null
 	var/list/swaps = cur_swaps ? cur_swaps.Copy() : list()
 	var/cur_value = swaps[original] || original
-	om_ask(user, /datum/om/prompt/color/prefs/gear_tweak, PROC_REF(swatch_color_picked), title = "[G.display_name]", message = "Recolor source [original]", default = cur_value, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key, original = original)
+	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(swatch_color_picked), answerer = user, title = "[G.display_name]", question = "Recolor source [original]", default = cur_value, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key, original = original)
 	return PREF_UPDATE_UNCHANGED
 
 UI_ACT(/datum/preference_editor/loadout, "recolor_pick_matrix", ui_act_recolor_pick_matrix, UI_ARG_VALUE("gear"), UI_ARG_NUM("tweak"))

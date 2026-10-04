@@ -294,6 +294,10 @@
 /atom/proc/bay_reason(bay, authority)
 	return null
 
+/// The state reads bay `bay`'s openness depends on: list(list(entity, key), ...) for read_keys(). The compartment library answers.
+/atom/proc/bay_read_keys(bay)
+	return list()
+
 /// Part-level pre-check of an effect (the insert action's pre-check, the resource's availability): a reason, or null.
 /datum/entry/part/effect/proc/precheck(datum/act/op/A)
 	return null

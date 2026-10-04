@@ -12,8 +12,7 @@
 	var/tmp/datum/material/material_static
 	var/riding_datum_type = /datum/riding/boat/small
 
-/obj/vehicle/boat/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/vehicle/boat/sifwood, boat_forced_material, MAT_SIFWOOD)
 
 /obj/vehicle/boat/dragon
 	name = "dragon boat"
@@ -30,8 +29,7 @@
 	var/image/I = image(icon, src, "dragon_boat_underlay", BELOW_MOB_LAYER)
 	underlays += I
 
-/obj/vehicle/boat/dragon/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/vehicle/boat/dragon/sifwood, boat_forced_material, MAT_SIFWOOD)
 
 // Oars, which must be held inhand while in a boat to move it.
 /obj/item/oar
@@ -43,10 +41,14 @@
 	force = 12
 	var/tmp/datum/material/material_static
 
-/obj/item/oar/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/item/oar/sifwood, oar_forced_material, MAT_SIFWOOD)
+
+TYPE_TABLE_DECLARE(/obj/item/oar, oar_forced_material, null)
 
 /obj/item/oar/Initialize(mapload, material_name)
+	var/forced_material = TYPE_TABLE_GET(src, oar_forced_material)
+	if(forced_material)
+		material_name = forced_material
 	..(mapload)
 	if(!material_name)
 		material_name = MAT_WOOD
@@ -60,7 +62,12 @@ CAPABILITIES(/obj/vehicle/boat)
 	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
 	op("boat_board", item(/atom/movable), gesture(GESTURE_DRAG), label("Board"), then(PROC_REF(interaction_boat_board)))
 
+TYPE_TABLE_DECLARE(/obj/vehicle/boat, boat_forced_material, null)
+
 /obj/vehicle/boat/Initialize(mapload, material_name)
+	var/forced_material = TYPE_TABLE_GET(src, boat_forced_material)
+	if(forced_material)
+		material_name = forced_material
 	..(mapload)
 	if(!material_name)
 		material_name = MAT_WOOD

@@ -37,7 +37,7 @@
 	module.msg_title = "Actor fixture"
 	module.msg_body = "In-game delivery fixture"
 	module.msg_recipient = recipient.login
-	module.ui_act_send(actor, list(), null, null, "send")
+	op_ui_act(actor, module, "send")
 	TEST_ASSERT_EQUAL(recipient.deliveries, 1, "the UI sends exactly one actual email")
 	TEST_ASSERT_EQUAL(recipient.delivery_actor_ref, REF(actor), "real account delivery receives the explicit UI actor")
 	var/list/messages = recipient.all_emails()

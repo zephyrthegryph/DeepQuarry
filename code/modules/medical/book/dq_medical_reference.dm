@@ -31,12 +31,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/book/dq_medical_reference)
-	op("read_reference", in_hand(), label("Read"), then(PROC_REF(interaction_read_reference)))
-
-/// Old attack_self.
-/obj/item/book/dq_medical_reference/proc/interaction_read_reference(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
+	op("read_reference", in_hand(), label("Read"), opens_ui())
 
 DECLARE_UI_STATE(/obj/item/book/dq_medical_reference, GLOB.tgui_physical_state)
 

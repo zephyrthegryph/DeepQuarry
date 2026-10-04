@@ -26,7 +26,7 @@
 	if(sticky)
 		add_trait(stool, TRAIT_NODROP, "interim_stool_wrench_recovery")
 		TEST_ASSERT(stool.loc.release_refusal(stool, user), "the actual sticky stool refuses release")
-		TEST_ASSERT_EQUAL(stool.wrench_act(user, tool), FALSE, "actual wrench dismantling refuses a stool that cannot be released")
+		perform_op(user, stool, "dismantle", tool) // a stool that cannot be released is not taken apart: the effects below show it
 		own_turf_contents(T)
 		TEST_ASSERT(!QDELETED(stool), "refused dismantling preserves the original stool")
 		TEST_ASSERT_EQUAL(stool.loc, user, "refused dismantling preserves the original holder")
@@ -34,7 +34,7 @@
 		TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack)), 0, "refused dismantling creates no duplicate material")
 		remove_trait(stool, TRAIT_NODROP, "interim_stool_wrench_recovery")
 	else
-		TEST_ASSERT_EQUAL(stool.wrench_act(user, tool), TRUE, "actual wrench dismantling reports success")
+		TEST_ASSERT(test_op_committed(perform_op(user, stool, "dismantle", tool)), "actual wrench dismantling commits")
 		own_turf_contents(T)
 		TEST_ASSERT(QDELETED(stool), "successful dismantling consumes the original stool")
 		TEST_ASSERT_NULL(user.get_active_hand(), "successful dismantling clears the original stool hand slot")

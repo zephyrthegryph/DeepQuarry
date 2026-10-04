@@ -6,16 +6,16 @@ export type NewscasterData = {
 
 export type NewscasterActions = {
   cleartemp: Record<string, never>;
+  set_channel_lock: Record<string, never>;
+  set_attachment: Record<string, never>;
   set_channel_name: {
     /** text max 4096 */
     val: string;
   };
-  set_channel_lock: Record<string, never>;
   submit_new_channel: Record<string, never>;
   set_channel_receiving: Record<string, never>;
   set_new_message: Record<string, never>;
   set_new_title: Record<string, never>;
-  set_attachment: Record<string, never>;
   submit_new_message: Record<string, never>;
   print_paper: Record<string, never>;
   set_wanted_desc: {

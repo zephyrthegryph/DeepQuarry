@@ -206,7 +206,7 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 
 /datum/computer_file/program/filemanager/proc/ui_act_prg_clearerror(datum/act/op/A)
 	error = null
-	return TRUE
+	return OP_OK
 
 /datum/computer_file/program/filemanager/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()

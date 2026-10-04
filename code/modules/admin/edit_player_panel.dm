@@ -37,6 +37,8 @@ CAPABILITIES(/datum/edit_player_panel)
 	ref_one(nameof(target), /mob)
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("AdminEditPlayer", rights = R_HOLDER)
+
+	section(admin, "The admin actions of the Edit Player panel: rights, messages, moving, banning, muting")
 	op("editrights", ui_act("editrights", arg("mode", schema_text(4096))), then(PROC_REF(ui_act_editrights)))
 	op("revive", ui_act("revive"), then(PROC_REF(ui_act_revive)))
 	op("vv", ui_act("vv"), then(PROC_REF(ui_act_vv)))
@@ -56,6 +58,8 @@ CAPABILITIES(/datum/edit_player_panel)
 	op("sendbacktolobby", ui_act("sendbacktolobby"), then(PROC_REF(ui_act_sendbacktolobby)))
 	op("forcespeech", ui_act("forcespeech"), then(PROC_REF(ui_act_forcespeech)))
 	op("mute", ui_act("mute", arg("mute_type", schema_text(4096))), then(PROC_REF(ui_act_mute)))
+
+	section(transform, "The transformations and thunderdome sends of the Edit Player panel")
 	op("turn_monkey", ui_act("turn_monkey"), then(PROC_REF(ui_act_turn_monkey)))
 	op("corgione", ui_act("corgione"), then(PROC_REF(ui_act_corgione)))
 	op("turn_ai", ui_act("turn_ai"), then(PROC_REF(ui_act_turn_ai)))
@@ -295,6 +299,7 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 	var/tref = "[REF(target())]"
 	forward_topic("forcespeech=[tref]")
 	return TRUE
+
 // Mute toggles
 
 /datum/edit_player_panel/proc/ui_act_mute(datum/act/op/A, mute_type_arg)
@@ -347,6 +352,7 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 		forward_topic("respawn=[cref]")
 		SStgui.update_uis(src)
 	return TRUE
+
 // DNA gene toggle
 
 /datum/edit_player_panel/proc/ui_act_togmutate(datum/act/op/A, block_arg)
@@ -388,6 +394,7 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 	var/tref = "[REF(target())]"
 	forward_topic("tdomeobserve=[tref]")
 	return TRUE
+
 // Language
 
 /datum/edit_player_panel/proc/ui_act_toglang(datum/act/op/A, lang_arg)

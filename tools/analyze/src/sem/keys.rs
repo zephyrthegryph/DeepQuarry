@@ -102,7 +102,7 @@ impl KeyIndex {
                     }
                 }
                 "CAPABILITIES" => collect_ops(&m.body, None, &mut k.ops),
-                "BUNDLE" => collect_ops(&m.body, None, &mut k.ops),
+                crate::sem::decls::ENTRY_PROC => collect_ops(&m.body, None, &mut k.ops),
                 _ => {}
             }
         }

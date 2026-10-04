@@ -15,8 +15,8 @@
 
 	for(var/obj/machinery/power/apc/apc in range(severity_range,A))
 		if(is_valid_apc(apc))	//This event "****s up" the "id authenticator" on APCs, emagging and unlocking them.
-			apc.set_emagged(1) //It used to just blue screen the APC and make it so it had to be hacked to unlock,
-			apc.set_locked(0) //but most people ignored it. Now it has an actual effect on the round and opens
+			cap_key_set(apc, EMAG_EMAGGED, TRUE, null) //It used to just blue screen the APC and make it so it had to be hacked to unlock,
+			cap_key_set(apc, LOCK_LOCKED, FALSE, null) //but most people ignored it. Now it has an actual effect on the round and opens
 
 /datum/event/apc_damage/proc/acquire_random_apc()
 	var/list/possibleEpicentres = list()

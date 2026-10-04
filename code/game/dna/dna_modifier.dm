@@ -46,7 +46,8 @@ CAPABILITIES(/datum/dna2/record)
 				newrecord.id = copytext(md5(dna.real_name), 2, 6) // update this specially
 				continue
 			if("dna")
-				QDEL_SWAP(newrecord.dna, dna.Clone())
+				own_clear(newrecord, nameof(newrecord.dna), OWN_DELETE)
+				rel_set(newrecord, nameof(newrecord.dna), dna.Clone())
 				continue
 		if(islist(vars[A]))
 			var/list/L = vars[A]

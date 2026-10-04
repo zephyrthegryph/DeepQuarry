@@ -268,8 +268,13 @@ CAPABILITIES(/obj/item/card/id/syndicate/changeling)
 		qdel(src)
 
 /obj/item/card/id/syndicate/changeling/Click() //Since we can't hold it in our hands, and attack_hand() doesn't work if it in inventory...
-	if(!registered_user())
-		rel_set(src, nameof(registered_user), usr)
-		usr.set_id_info(src)
-	tgui_interact(registered_user())
+	register_and_show_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native card clicks supply the initiating mob before the unchanged parent routing.
 	..()
+
+/obj/item/card/id/syndicate/changeling/proc/register_and_show_with_actor(mob/user)
+	if(!registered_user())
+		if(!user)
+			return
+		rel_set(src, nameof(registered_user), user)
+		user.set_id_info(src)
+	tgui_interact(registered_user())

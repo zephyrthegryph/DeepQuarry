@@ -424,6 +424,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/music_player() as /atom
 	return music_player
 
-/datum/song/relations()
-	. = ..()
-	. += rel_many(nameof(hearing_mobs))
+CAPABILITIES(/datum/song)
+	op("start_new_song", ui_act(), then(PROC_REF(ui_act_start_new_song)))
+	op("toggle_sustain_hold_indefinitely", ui_act(), then(PROC_REF(ui_act_toggle_sustain_hold_indefinitely)))
+	ref_many(nameof(hearing_mobs))

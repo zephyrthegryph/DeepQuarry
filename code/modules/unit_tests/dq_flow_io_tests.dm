@@ -95,12 +95,73 @@
 
 /datum/unit_test/om/rainbow_crayon_asks_colours
 
-/datum/unit_test/om/rainbow_crayon_asks_colours/run_om(list/made)
-	sched.test_prompts = list()
-	var/datum/om_test_entity/user = entity(made)
-	var/obj/item/pen/crayon/rainbow/crayon = new
-	made += crayon
-	crayon.ask_rainbow_colour(user, "Crayon colour", "Crayon shade colour")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the colours are asked with om_prompt, not a blocking picker")
-	var/datum/om/prompt/P = sched.test_prompts[1]
-	TEST_ASSERT(istype(P, /datum/om/prompt/color/crayon_colour), "a colour prompt for the main colour first")
+/datum/unit_test/om/rainbow_crayon_asks_colours/Run()
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	user.enable_godmode()
+	var/obj/item/pen/crayon/rainbow/crayon = allocate(/obj/item/pen/crayon/rainbow, run_loc_floor_bottom_left)
+	TEST_ASSERT(user.put_in_active_hand(crayon), "the real crayon enters the actor's hand")
+	user.next_click = 0
+	test_click(user, crayon, crayon)
+	test_drain()
+	var/datum/request/request = SSrequests.open_for(user)
+	TEST_ASSERT(istype(request, /datum/prompt/color/crayon_colour), "real held use asks the main native color request")
+	var/datum/prompt/color/crayon_colour/prompt = request
+	TEST_ASSERT(!prompt.shade, "the first request selects main color")
+	TEST_ASSERT_EQUAL(prompt.default, crayon.colour, "main request starts with the actual main color")
+	test_answer(user, "#102030")
+	TEST_ASSERT_EQUAL(crayon.colour, "#102030", "the accepted main answer commits its actual color")
+	request = SSrequests.open_for(user)
+	TEST_ASSERT_NOTNULL(request, "accepted main color opens the actual shade request")
+	prompt = request
+	TEST_ASSERT(prompt.shade, "the second request selects shade")
+	TEST_ASSERT_EQUAL(prompt.default, crayon.shadeColour, "shade request starts with the current shade")
+	test_answer(user, "#405060")
+	TEST_ASSERT_EQUAL(crayon.shadeColour, "#405060", "the accepted shade answer commits its actual color")
+	TEST_ASSERT_NULL(SSrequests.open_for(user), "the two accepted answers finish the chain")
+
+	user.next_click = 0
+	test_click(user, crayon, crayon)
+	test_drain()
+	request = SSrequests.open_for(user)
+	TEST_ASSERT_NOTNULL(request, "main color opens for the invalid-answer cancellation control")
+	test_answer(user, "not-a-color")
+	TEST_ASSERT_EQUAL(SSrequests.open_for(user), request, "an invalid color leaves the same request open")
+	TEST_ASSERT(request.last_error, "the invalid answer actually records its rejection")
+	test_answer(user, null, REQ_CANCELLED)
+	prompt = SSrequests.open_for(user)
+	TEST_ASSERT_NOTNULL(prompt, "explicit cancel after an invalid answer still opens shade")
+	TEST_ASSERT(prompt.shade, "the continuation after rejected input selects shade")
+	test_answer(user, null, REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(crayon.colour, "#102030", "invalid answer and explicit cancel retain main color")
+	TEST_ASSERT_EQUAL(crayon.shadeColour, "#405060", "shade cancellation retains shade color after rejected input")
+	TEST_ASSERT_NULL(SSrequests.open_for(user), "the cancellation chain after rejected input finishes")
+
+	user.next_click = 0
+	test_click(user, crayon, crayon)
+	test_drain()
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(user), "a new held use opens main color")
+	user.drop_from_inventory(crayon, run_loc_floor_bottom_left)
+	TEST_ASSERT_EQUAL(crayon.loc, run_loc_floor_bottom_left, "the crayon really leaves the actor before cancel")
+	test_answer(user, null, REQ_CANCELLED)
+	request = SSrequests.open_for(user)
+	TEST_ASSERT_NOTNULL(request, "explicit main cancel still opens shade after dropping, as the old cancellation protocol did")
+	prompt = request
+	TEST_ASSERT(prompt.shade, "cancel continues specifically to shade")
+	TEST_ASSERT_EQUAL(crayon.colour, "#102030", "main cancellation retains main color")
+	test_answer(user, null, REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(crayon.shadeColour, "#405060", "shade cancellation retains shade color")
+	TEST_ASSERT_NULL(SSrequests.open_for(user), "shade cancellation finishes without another prompt")
+
+	TEST_ASSERT(user.put_in_active_hand(crayon), "the actor actually picks the crayon back up")
+	user.next_click = 0
+	test_click(user, crayon, crayon)
+	test_drain()
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(user), "another main request opens for the carried recheck control")
+	user.drop_from_inventory(crayon, run_loc_floor_bottom_left)
+	TEST_ASSERT_EQUAL(crayon.loc, run_loc_floor_bottom_left, "the crayon really leaves before the attempted answer")
+	test_answer(user, "#778899")
+	TEST_ASSERT_EQUAL(crayon.colour, "#102030", "failed carried answer retains main color")
+	TEST_ASSERT_EQUAL(crayon.shadeColour, "#405060", "failed carried answer retains shade color")
+	TEST_ASSERT_NULL(SSrequests.open_for(user), "failed carried answer does not masquerade as explicit cancel and open shade")

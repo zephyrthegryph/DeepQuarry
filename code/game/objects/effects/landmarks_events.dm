@@ -118,7 +118,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	COOLDOWN_START(src, trigger_cooldown, cooldown)
 
 	if(!creator_ckey)	//For some reason, the user didn't have a ckey. Let's clean up
-		qdel(src)
+		consume(src)
 		return FALSE
 	var/mob/creator_reference = GLOB.directory[creator_ckey]
 	if(!creator_reference || isTeamwork)	//If logged/crashed, we default to teamwork mode
@@ -136,7 +136,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 			COORDINATES: [coordinates]"))
 	if(!isNarrate)
 		if(!isRepeating)
-			qdel(src)
+			consume(src)
 		return FALSE
 	else
 		return L
@@ -217,4 +217,4 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 		if(2)
 			T.audible_message(message, hearing_distance = message_range, runemessage= message)
 	if(!isRepeating)
-		qdel(src)
+		consume(src)

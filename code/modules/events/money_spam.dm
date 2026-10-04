@@ -5,7 +5,7 @@
 	var/tmp/obj/machinery/exonet_node/node
 
 /datum/event/pda_spam/setup()
-	COOLDOWN_START(src, spam_cooldown, 3000)
+	COOLDOWN_START(src, spam_cooldown, 5 MINUTES)
 	pick_message_server()
 
 /datum/event/pda_spam/proc/pick_message_server()
@@ -101,7 +101,7 @@
 			if (useMS().send_pda_message("[P.owner]", sender, message))	//Message been filtered by spam filter.
 				return
 
-			COOLDOWN_START(src, spam_cooldown, 3000)
+			COOLDOWN_START(src, spam_cooldown, 5 MINUTES)
 
 			//Commented out because we don't send messages like this anymore.  Instead it will just popup in their chat window.
 			//P.tnote += "<i><b>&larr; From [sender] (Unknown / spam?):</b></i><br>[message]<br>"

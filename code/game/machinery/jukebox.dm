@@ -230,7 +230,7 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 
 /obj/machinery/media/jukebox/proc/ui_act_stop(datum/act/op/A)
 	StopPlaying()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/media/jukebox/proc/ui_act_play(datum/act/op/A)
 	var/mob/user = A.actor
@@ -249,7 +249,8 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 				M.status_at_least(EFFECT_PARALYZED, 4)
 			else
 				M.status_adjust(EFFECT_JITTERY, 500)
-		om_after_unique(src, 1.5 SECONDS, PROC_REF(explode))
+		if(!after_pending(src, "jukebox_emag_explosion"))
+			after(src, 1.5 SECONDS, PROC_REF(explode), key = "jukebox_emag_explosion")
 	else if(current_track() == null)
 		to_chat(user, "No track selected.")
 	else

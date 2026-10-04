@@ -23,7 +23,7 @@
 	interface_desc = "Provides passive protection against radiation, at the cost of power."
 	var/stored_rad_armor = 0
 
-/obj/item/rig_module/rad_shield/activate()
+/obj/item/rig_module/rad_shield/activate(skip_engage = 0, mob/user)
 
 	if(!..())
 		return FALSE
@@ -56,7 +56,7 @@
 		add_trait(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
 	H?.worn_protection_changed()
 
-/obj/item/rig_module/rad_shield/deactivate()
+/obj/item/rig_module/rad_shield/deactivate(forced = FALSE, mob/user)
 
 	if(!..())
 		return FALSE
@@ -124,7 +124,7 @@
 	var/stored_max_pressure = 0
 	var/stored_max_temp = 0
 
-/obj/item/rig_module/atmos_shield/activate()
+/obj/item/rig_module/atmos_shield/activate(skip_engage = 0, mob/user)
 
 	if(!..())
 		return FALSE
@@ -156,7 +156,7 @@
 	holder.max_heat_protection_temperature = INFINITY
 	H?.worn_protection_changed()
 
-/obj/item/rig_module/atmos_shield/deactivate()
+/obj/item/rig_module/atmos_shield/deactivate(forced = FALSE, mob/user)
 
 	if(!..())
 		return FALSE
@@ -220,7 +220,7 @@
 	var/stored_siemens_coefficient = 0
 	var/stored_gloves_siemens_coefficient = 0
 
-/obj/item/rig_module/faraday_shield/activate()
+/obj/item/rig_module/faraday_shield/activate(skip_engage = 0, mob/user)
 	if(!..())
 		return FALSE
 
@@ -245,7 +245,7 @@
 	holder.siemens_coefficient = 0
 	H?.worn_protection_changed()
 
-/obj/item/rig_module/faraday_shield/deactivate()
+/obj/item/rig_module/faraday_shield/deactivate(forced = FALSE, mob/user)
 
 	if(!..())
 		return 0

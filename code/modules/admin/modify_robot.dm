@@ -23,10 +23,26 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/tmp/datum/ai_law/editing_law
 
 CAPABILITIES(/datum/eventkit/modify_robot)
+	op("add_zeroth_law", ui_act(), then(PROC_REF(ui_act_add_zeroth_law)))
+	op("add_ion_law", ui_act(), then(PROC_REF(ui_act_add_ion_law)))
+	op("add_inherent_law", ui_act(), then(PROC_REF(ui_act_add_inherent_law)))
+	op("add_supplied_law", ui_act(), then(PROC_REF(ui_act_add_supplied_law)))
+	op("toggle_crisis", ui_act(), then(PROC_REF(ui_act_toggle_crisis)))
+	op("reset_module", ui_act(), then(PROC_REF(ui_act_reset_module)))
+	op("ert_toggle", ui_act(), then(PROC_REF(ui_act_ert_toggle)))
+	op("add_centcom", ui_act(), then(PROC_REF(ui_act_add_centcom)))
+	op("rem_centcom", ui_act(), then(PROC_REF(ui_act_rem_centcom)))
+	op("add_station", ui_act(), then(PROC_REF(ui_act_add_station)))
+	op("rem_station", ui_act(), then(PROC_REF(ui_act_rem_station)))
+	op("state_laws", ui_act(), then(PROC_REF(ui_act_state_laws)))
+	op("disconnect_ai", ui_act(), then(PROC_REF(ui_act_disconnect_ai)))
+	op("toggle_emag", ui_act(), then(PROC_REF(ui_act_toggle_emag)))
 	owns_many(nameof(law_list), /datum/ai_laws)
 	owns_one(nameof(source), /mob/living/silicon/robot)
 	ref_one(nameof(editing_law), /datum/ai_law)
 	interface("ModifyRobot", title = "Modify Robot", rights = R_ADMIN|R_EVENT|R_DEBUG)
+
+	section(modules, "The Modify Robot panel's name, target, module, upgrades, modkits and tools")
 	op("rename", ui_act("rename", arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_rename)))
 	op("select_target", ui_act("select_target", arg("new_target", schema_ref(null))), then(PROC_REF(ui_act_select_target)))
 	op("toggle_crisis", ui_act("toggle_crisis"), then(PROC_REF(ui_act_toggle_crisis)))
@@ -46,6 +62,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	op("select_multibelt", ui_act("select_multibelt", arg("multibelt", schema_ref(null))), then(PROC_REF(ui_act_select_multibelt)))
 	op("install_tool", ui_act("install_tool", arg("tool", schema_path(/datum))), then(PROC_REF(ui_act_install_tool)))
 	op("remove_tool", ui_act("remove_tool", arg("tool", schema_ref(/datum/matter_synth))), then(PROC_REF(ui_act_remove_tool)))
+
+	section(parts, "The Modify Robot panel's radio channels, components, cell, damage and access")
 	op("add_channel", ui_act("add_channel", arg("channel", schema_text(4096))), then(PROC_REF(ui_act_add_channel)))
 	op("rem_channel", ui_act("rem_channel", arg("channel")), then(PROC_REF(ui_act_rem_channel)))
 	op("add_component", ui_act("add_component", arg("component"), arg("new_part", schema_path(/datum))), then(PROC_REF(ui_act_add_component)))
@@ -59,6 +77,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	op("rem_centcom", ui_act("rem_centcom"), then(PROC_REF(ui_act_rem_centcom)))
 	op("add_station", ui_act("add_station"), then(PROC_REF(ui_act_add_station)))
 	op("rem_station", ui_act("rem_station"), then(PROC_REF(ui_act_rem_station)))
+
+	section(laws, "The Modify Robot panel's laws and AI link")
 	op("law_channel", ui_act("law_channel", arg("law_channel", schema_text(4096))), then(PROC_REF(ui_act_law_channel)))
 	op("state_law", ui_act("state_law", arg("ref"), arg("state_law", num())), then(PROC_REF(ui_act_state_law)))
 	op("add_zeroth_law", ui_act("add_zeroth_law"), then(PROC_REF(ui_act_add_zeroth_law)))
@@ -92,7 +112,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/tgui_close()
 	rel_clear(src, nameof(target))
 	if(source)
-		qdel(source)
+		own_clear(src, nameof(source), OWN_DELETE)
 
 /datum/eventkit/modify_robot/ui_assets(mob/user)
 	if(!target())
@@ -225,7 +245,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_toggle_crisis(datum/act/op/A)
 	target().crisis_override = !target().crisis_override
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_restriction(datum/act/op/A, new_restriction_arg)
 	var/new_restriction = new_restriction_arg
@@ -265,7 +285,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_reset_module(datum/act/op/A)
 	target().module_reset(FALSE)
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_module(datum/act/op/A, module)
 	var/obj/item/selected_item = module
@@ -295,7 +315,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(!source)
 		return FALSE
 	var/mod_type = source.modtype
-	qdel(source.module)
+	own_clear(source, nameof(/mob/living/silicon/robot::module), OWN_DELETE)
 	var/module_type = GLOB.robot_modules[target().modtype]
 	source.modtype = target().modtype
 	new module_type(source)
@@ -307,7 +327,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	// Target
 	target().uneq_all()
 	target().hud_used?.update_robot_modules_display(TRUE)
-	qdel(target().module)
+	own_clear(target(), nameof(/mob/living/silicon/robot::module), OWN_DELETE)
 	target().modtype = mod_type
 	module_type = GLOB.robot_modules[mod_type]
 	target().transform_with_anim()
@@ -319,7 +339,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/ui_act_ert_toggle(datum/act/op/A)
 	target().crisis_override = !target().crisis_override
 	target().module_reset(FALSE)
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_compatibility(datum/act/op/A, upgrade)
 	var/mob/living/silicon/robot/robot_target = target()
@@ -433,30 +453,31 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM)
 		target().radio.centComm = 1
 	if(selected_radio_channel == CHANNEL_RAIDER)
-		qdel(target().radio.keyslot)
+		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/raider(target())
 		target().radio.syndie = 1
 	if(selected_radio_channel == CHANNEL_MERCENARY)
-		qdel(target().radio.keyslot)
+		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/syndicate(target())
 		target().radio.syndie = 1
 	target().module.channels += list("[selected_radio_channel]" = 1)
-	target().radio.channels[selected_radio_channel] = target().module.channels[selected_radio_channel]
+	target().radio.channels[selected_radio_channel] = LAZYACCESS(target().module.channels, selected_radio_channel)
 	target().radio.secure_radio_connections[selected_radio_channel] = SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_channel(datum/act/op/A, channel)
 	var/selected_radio_channel = channel
-	if((selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM) && !(target().module.channels[CHANNEL_SPECIAL_OPS] || target().module.channels[CHANNEL_RESPONSE_TEAM]))
+	if((selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM) && !(LAZYACCESS(target().module.channels, CHANNEL_SPECIAL_OPS) || LAZYACCESS(target().module.channels, CHANNEL_RESPONSE_TEAM)))
 		target().radio.centComm = 0
-	target().module.channels -= selected_radio_channel
-	if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(target().module.channels[CHANNEL_RAIDER] || target().module.channels[CHANNEL_MERCENARY]))
-		qdel(target().radio.keyslot)
+	if(target().module.channels)
+		target().module.channels -= selected_radio_channel
+	if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(LAZYACCESS(target().module.channels, CHANNEL_RAIDER) || LAZYACCESS(target().module.channels, CHANNEL_MERCENARY)))
+		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = null
 		target().radio.syndie = 0
 	target().radio.channels = list()
 	for(var/n_chan in target().module.channels)
-		target().radio.channels[n_chan] = target().module.channels[n_chan]
+		target().radio.channels[n_chan] = LAZYACCESS(target().module.channels, n_chan)
 	SSradio.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
 	target().radio.secure_radio_connections -= selected_radio_channel
 	return TRUE
@@ -525,21 +546,21 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_add_centcom(datum/act/op/A)
 	target().idcard.access |= SSaccess.get_all_centcom_access()
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_centcom(datum/act/op/A)
 	target().idcard.access -= SSaccess.get_all_centcom_access()
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_station(datum/act/op/A)
 	target().idcard.access |= SSaccess.get_all_station_access()
 	target().idcard.access |= ACCESS_SYNTH
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_station(datum/act/op/A)
 	target().idcard.access -= SSaccess.get_all_station_access()
 	target().idcard.access -= ACCESS_SYNTH
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_law_channel(datum/act/op/A, law_channel)
 	if(law_channel in target().law_channels())
@@ -557,25 +578,25 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(zeroth_law && !target().laws.zeroth_law)
 		target().set_zeroth_law(zeroth_law)
 		target().lawsync()
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_ion_law(datum/act/op/A)
 	if(ion_law)
 		target().add_ion_law(ion_law)
 		target().lawsync()
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_inherent_law(datum/act/op/A)
 	if(inherent_law)
 		target().add_inherent_law(inherent_law)
 		target().lawsync()
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_supplied_law(datum/act/op/A)
 	if(supplied_law && supplied_law_position >= 1 && MIN_SUPPLIED_LAW_NUMBER <= MAX_SUPPLIED_LAW_NUMBER)
 		target().add_supplied_law(supplied_law_position, supplied_law)
 		target().lawsync()
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_change_zeroth_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
@@ -625,6 +646,10 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/law_edited(datum/act/request/A)
+	law_edited_apply(A)
+	SStgui.update_uis(src)
+
+/datum/eventkit/modify_robot/proc/law_edited_apply(datum/act/request/A)
 	var/datum/ai_law/AL = editing_law()
 	if(!A.answer || !AL || !(AL in ui_source_target_laws_all_laws()))
 		return
@@ -632,7 +657,6 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(new_law && new_law != AL.law)
 		AL.law = new_law
 		target().lawsync()
-	SStgui.update_uis(src)
 
 /// The law a question about editing is open for.
 /datum/eventkit/modify_robot/proc/editing_law() as /datum/ai_law
@@ -647,7 +671,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_state_laws(datum/act/op/A)
 	target().statelaws(target().laws)
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_state_law_set(datum/act/op/A, state_law_set)
 	var/datum/ai_laws/ALs = state_law_set
@@ -694,7 +718,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(target().is_slaved())
 		target().disconnect_from_ai()
 		target().lawupdate = FALSE
-	return TRUE
+	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_toggle_emag(datum/act/op/A)
 	if(target().emagged)
@@ -716,7 +740,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 				target().bolt.malfunction = MALFUNCTION_PERMANENT
 		to_chat(target(), span_danger("Laws updated!\n") + target().laws.get_formatted_laws())
 		target().hud_used?.update_robot_modules_display()
-	return TRUE
+	return OP_OK
 
 /// The list the UI_ARG_REF rows resolve refs in.
 /datum/eventkit/modify_robot/proc/ui_source_target_components()

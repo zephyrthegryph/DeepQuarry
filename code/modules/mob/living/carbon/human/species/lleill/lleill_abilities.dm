@@ -45,12 +45,14 @@
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
-	om_ask(src, /datum/om/prompt/choice/shapeshifter_form, PROC_REF(lleill_shape_chosen), choices = species.get_valid_shapeshifter_forms(src))
+	open_request(src, /datum/prompt/choice/shapeshifter_form, PROC_REF(lleill_shape_chosen), answerer = src, choices = species.get_valid_shapeshifter_forms(src))
 
-/mob/living/carbon/human/proc/lleill_shape_chosen(datum/om/prompt/choice/shapeshifter_form/ask)
-	lleill_change_shape(ask.choice)
+/mob/living/carbon/human/proc/lleill_shape_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	lleill_change_shape(A.answer.answer_value)
 
 /mob/living/carbon/human/proc/lleill_change_shape(new_species = null)
 	if(!new_species)
@@ -71,7 +73,7 @@
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	open_request(src, /datum/prompt/color, PROC_REF(lleill_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
@@ -135,42 +137,69 @@
 		to_chat(src, span_warning("You have no item in your active hand."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice/lleill_energy/lleill_transmute, PROC_REF(lleill_transmute_chosen), choices = transmute_list, energy_cost = energy_cost, item = I)
+	open_request(src, /datum/prompt/choice/lleill_transmute, PROC_REF(lleill_transmute_chosen), answerer = src, choices = transmute_list, energy_cost = energy_cost, item = I)
 
-/// A Lleill power's pick that costs energy. Re-checked on the answer: conscious, and still
-/// enough energy.
-/datum/om/prompt/choice/lleill_energy
+/// A glamour pick: conscious, still holding its item, and enough energy to transmute.
+/datum/prompt/choice/lleill_transmute
+	title = "Transmutation"
+	question = "Choose a glamour to transmute the item into:"
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	var/energy_cost
+	var/obj/item/item
+
+CAPABILITIES(/datum/prompt/choice/lleill_transmute)
+	ref_one(nameof(item), /obj/item)
+
+/datum/prompt/choice/lleill_transmute/prepare(datum/act/A)
+	..()
+	var/obj/item/captured = item
+	rel_clear(src, nameof(item))
+	rel_set(src, nameof(item), captured)
+
+/datum/prompt/choice/lleill_transmute/begin()
+	if(QDELETED(item))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/lleill_transmute/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(item))
+		return "gone"
+	var/mob/living/carbon/human/H = answerer
+	if(H.get_active_hand() != item)
+		return "not in hand"
+	return H.species.lleill_energy < energy_cost ? "no energy" : null
+
+/datum/prompt/choice/lleill_beast
+	title = "Choose Beast Form"
+	question = "Which form would you like to take?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 	var/energy_cost
 
-/datum/om/prompt/choice/lleill_energy/valid()
+/datum/prompt/choice/lleill_beast/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/carbon/human/H = answerer
-	if(H.species.lleill_energy < energy_cost)
-		to_chat(H, span_warning("You do not have enough energy to do that! You currently have [H.species.lleill_energy] energy."))
-		return "no energy"
-	return null
+	return H.species.lleill_energy < energy_cost ? "no energy" : null
 
-/// Also re-checked: the item is still in the active hand.
-/datum/om/prompt/choice/lleill_energy/lleill_transmute
-	title = "Transmutation"
-	message = "Choose a glamour to transmute the item into:"
-	var/obj/item/item
-
-/datum/om/prompt/choice/lleill_energy/lleill_transmute/valid()
-	var/mob/living/carbon/human/H = answerer
-	if(H.get_active_hand() != item)
-		to_chat(H, span_warning("The item is no longer in your hands."))
-		return "not in hand"
-	return ..()
-
-/datum/om/prompt/choice/lleill_energy/lleill_beast
-	title = "Choose Beast Form"
-	message = "Which form would you like to take?"
-
-/mob/living/carbon/human/proc/lleill_transmute_chosen(datum/om/prompt/choice/lleill_energy/lleill_transmute/ask)
+/mob/living/carbon/human/proc/lleill_transmute_chosen(datum/act/request/A)
+	var/datum/prompt/choice/lleill_transmute/ask = A.request
+	if(!A.answer)
+		if(!isnull(ask.answer_value))
+			if(ask.last_error == "not in hand")
+				to_chat(src, span_warning("The item is no longer in your hands."))
+			else if(ask.last_error == "no energy")
+				to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
+		return
 	var/obj/item/I = ask.item
 	var/energy_cost = ask.energy_cost
-	var/obj/item/transmute_product = ask.choices[ask.choice]
+	var/obj/item/transmute_product = ask.choices[A.answer.answer_value]
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
 	om_task_start(/datum/om/task/timed/human_lleill_transmute_human, src, I, energy_cost = energy_cost, transmute_product = transmute_product)
 
@@ -235,10 +264,11 @@
 	if(src?.buckled_to())
 		to_chat(src,span_warning("You can't do that when restrained."))
 
-	om_ask(src, /datum/om/prompt/choice/lleill_ring_action, PROC_REF(lleill_ring_action_chosen), message = "What would you like to do with your rings? You currently have [species.lleill_energy] energy remaining.", choices = list("Spawn New Ring ([energy_cost_spawn])", "Teleport to Ring ([energy_cost_tele])", "Cancel"), energy_cost_spawn = energy_cost_spawn, energy_cost_tele = energy_cost_tele)
+	open_request(src, /datum/prompt/choice/lleill_ring_action, PROC_REF(lleill_ring_action_chosen), answerer = src, question = "What would you like to do with your rings? You currently have [species.lleill_energy] energy remaining.", choices = list("Spawn New Ring ([energy_cost_spawn])", "Teleport to Ring ([energy_cost_tele])", "Cancel"), energy_cost_spawn = energy_cost_spawn, energy_cost_tele = energy_cost_tele)
 
 /// What to do with the rings; carries both costs.
-/datum/om/prompt/choice/lleill_ring_action
+/datum/prompt/choice/lleill_ring_action
+	timeout = 0
 	title = "Actions"
 	buttons = TRUE
 	ask_flags = ASK_CONSCIOUS
@@ -246,18 +276,31 @@
 	var/energy_cost_tele
 
 /// Also re-checked: the ring is still one of ours.
-/datum/om/prompt/choice/lleill_energy/lleill_ring_teleport
+/datum/prompt/choice/lleill_ring_teleport
 	title = "Teleport"
-	message = "Where do you wish to teleport?"
+	question = "Where do you wish to teleport?"
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	var/energy_cost
 
-/datum/om/prompt/choice/lleill_energy/lleill_ring_teleport/valid()
+/datum/prompt/choice/lleill_ring_teleport/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/carbon/human/H = answerer
-	if(!(choice in H.teleporters))
-		return "ring gone"
-	return ..()
+	if(!isnull(answer_value))
+		var/obj/structure/glamour_ring/R = answer_value
+		if(!istype(R) || QDELETED(R))
+			return "gone"
+		if(!(answer_value in H.teleporters))
+			return "ring gone"
+	return H.species.lleill_energy < energy_cost ? "no energy" : null
 
-/mob/living/carbon/human/proc/lleill_ring_action_chosen(datum/om/prompt/choice/lleill_ring_action/ask)
-	var/r_action = ask.choice
+/mob/living/carbon/human/proc/lleill_ring_action_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/lleill_ring_action/ask = A.request
+	var/r_action = ask.answer_value
 	var/energy_cost_spawn = ask.energy_cost_spawn
 	var/energy_cost_tele = ask.energy_cost_tele
 	if(r_action == "Cancel")
@@ -275,10 +318,15 @@
 		if(!src.teleporters.len)
 			to_chat(src, span_warning("You need to place rings to teleport to them."))
 			return
-		om_ask(src, /datum/om/prompt/choice/lleill_energy/lleill_ring_teleport, PROC_REF(lleill_ring_teleport_chosen), choices = src.teleporters, energy_cost = energy_cost_tele)
+		open_request(src, /datum/prompt/choice/lleill_ring_teleport, PROC_REF(lleill_ring_teleport_chosen), answerer = src, choices = src.teleporters, energy_cost = energy_cost_tele)
 
-/mob/living/carbon/human/proc/lleill_ring_teleport_chosen(datum/om/prompt/choice/lleill_energy/lleill_ring_teleport/ask)
-	var/obj/structure/glamour_ring/R = ask.choice
+/mob/living/carbon/human/proc/lleill_ring_teleport_chosen(datum/act/request/A)
+	var/datum/prompt/choice/lleill_ring_teleport/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
+		return
+	var/obj/structure/glamour_ring/R = ask.answer_value
 	var/energy_cost_tele = ask.energy_cost
 	var/T = get_turf(src)
 	play_sfx(T, SFX_SPARKS)
@@ -344,46 +392,150 @@
 	if(!targets.len)
 		to_chat(src, span_warning("There is nobody next to you."))
 		return
-	om_flow_start(/datum/om/flow/lleill_contact, src, null, targets = targets, contact_options = contact_options)
+	var/datum/lleill_contact_review/contact = new
+	rel_set(contact, nameof(contact.actor), src)
+	contact.targets = targets
+	contact.contact_options = contact_options
+	contact.start()
 
 /// Pick who, pick how (and describe it, for Custom), then they consent. The actor stays
 /// conscious throughout.
-/datum/om/flow/lleill_contact
-	requires = PROMPT_CONSCIOUS
+/datum/lleill_contact_review
+	parent_type = /datum/prompt_workflow
+	var/mob/living/carbon/human/actor
 	var/list/targets
 	var/list/contact_options
 	var/mob/living/carbon/human/chosen_target
 	var/contact_type
 	var/custom_text
 
-/datum/om/flow/lleill_contact/ended(reason)
-	if(actor && chosen_target && (reason == "declined" || reason == "cancelled"))
+CAPABILITIES(/datum/lleill_contact_review)
+	ref_one(nameof(actor), /mob/living/carbon/human)
+	ref_one(nameof(chosen_target), /mob/living/carbon/human)
+
+/datum/prompt/choice/lleill_contact
+	timeout = 0
+
+/datum/prompt/choice/lleill_contact/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	var/datum/lleill_contact_review/contact = owner
+	return contact.why_not()
+
+/datum/prompt/text/lleill_contact
+	timeout = 0
+
+/datum/prompt/text/lleill_contact/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/lleill_contact_review/contact = owner
+	return contact.why_not()
+
+/datum/prompt/yes_no/lleill_contact
+	timeout = 0
+
+/datum/prompt/yes_no/lleill_contact/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/lleill_contact_review/contact = owner
+	if(QDELETED(contact.actor) || QDELETED(contact.chosen_target))
+		return "gone"
+	// Refusing the invitation used to stop the flow before its consciousness check.
+	return answer_value == FALSE ? null : contact.why_not()
+
+/datum/lleill_contact_review/proc/why_not()
+	return QDELETED(actor) ? "gone" : actor.stat != CONSCIOUS ? "not conscious" : null
+
+/datum/lleill_contact_review/proc/start()
+	// flow_begin checked the actor before starting; it did not call ended on failure.
+	if(why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		failed_step("start", result.error)
+
+/datum/lleill_contact_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/lleill_contact, PROC_REF(target_chosen), answerer = actor, asker = actor, title = "Make contact", question = "Who do you wish to take energy from?", choices = targets)
+
+/datum/lleill_contact_review/proc/stopped(declined = FALSE)
+	if(declined && !QDELETED(actor) && !QDELETED(chosen_target))
 		to_chat(actor, span_warning("\The [chosen_target] refuses the contact."))
+	retire()
 
-/datum/om/flow/lleill_contact/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(target_chosen), message = "Who do you wish to take energy from?", title = "Make contact", choices = targets)
+/datum/lleill_contact_review/proc/failed_step(step, error)
+	stack_trace("lleill contact step [step]: [error]")
+	retire()
 
-/datum/om/flow/lleill_contact/proc/target_chosen(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(chosen_target), ask.choice)
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_chosen), message = "How do you wish to make contact with \the [chosen_target]?", title = "Contact type", choices = contact_options)
+/datum/lleill_contact_review/proc/target_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(target_chosen_step), A)
+	if(!result.ok)
+		failed_step("target", result.error)
 
-/datum/om/flow/lleill_contact/proc/type_chosen(datum/om/prompt/choice/ask)
-	contact_type = ask.choice
+/datum/lleill_contact_review/proc/target_chosen_step(datum/act/request/A)
+	if(!A.answer)
+		stopped()
+		return
+	rel_set(src, nameof(chosen_target), A.request.answer_value)
+	if(QDELETED(chosen_target))
+		stopped()
+		return
+	open_request(src, /datum/prompt/choice/lleill_contact, PROC_REF(type_chosen), answerer = actor, asker = actor, title = "Contact type", question = "How do you wish to make contact with \the [chosen_target]?", choices = contact_options)
+
+/datum/lleill_contact_review/proc/type_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(type_chosen_step), A)
+	if(!result.ok)
+		failed_step("type", result.error)
+
+/datum/lleill_contact_review/proc/type_chosen_step(datum/act/request/A)
+	if(QDELETED(chosen_target) || !A.answer)
+		stopped(isnull(A.request.answer_value))
+		return
+	contact_type = A.request.answer_value
 	if(contact_type == "Custom")
-		om_ask(actor, /datum/om/prompt/text, PROC_REF(custom_entered), message = "Write a description of how you make contact with \the [chosen_target], from a third person perspective.", title = "Custom contact", cancel_answer = "")
+		open_request(src, /datum/prompt/text/lleill_contact, PROC_REF(custom_entered), answerer = actor, asker = actor, title = "Custom contact", question = "Write a description of how you make contact with \the [chosen_target], from a third person perspective.")
 		return
 	ask_consent()
 
-/datum/om/flow/lleill_contact/proc/custom_entered(datum/om/prompt/text/ask)
-	custom_text = ask.text
+/datum/lleill_contact_review/proc/custom_entered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(custom_entered_step), A)
+	if(!result.ok)
+		failed_step("custom", result.error)
+
+/datum/lleill_contact_review/proc/custom_entered_step(datum/act/request/A)
+	// Closing the old custom prompt supplied an empty answer, then resumed the flow.
+	if(QDELETED(chosen_target) || why_not())
+		stopped()
+		return
+	if(!A.answer && !isnull(A.request.answer_value))
+		stopped()
+		return
+	custom_text = A.answer ? A.request.answer_value : ""
 	ask_consent()
 
-/datum/om/flow/lleill_contact/proc/ask_consent()
-	om_ask(chosen_target, /datum/om/prompt/confirm, PROC_REF(consented), message = "Do you accept the [contact_type] physical contact from \the [actor]?", title = "Actions")
+/datum/lleill_contact_review/proc/ask_consent()
+	open_request(src, /datum/prompt/yes_no/lleill_contact, PROC_REF(consented), answerer = chosen_target, asker = actor, title = "Actions", question = "Do you accept the [contact_type] physical contact from \the [actor]?")
 
-/datum/om/flow/lleill_contact/proc/consented(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/H = actor
-	H.lleill_contact_answered(chosen_target, contact_type, custom_text)
+/datum/lleill_contact_review/proc/consented(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(consented_step), A)
+	if(!result.ok)
+		failed_step("consent", result.error)
+
+/datum/lleill_contact_review/proc/consented_step(datum/act/request/A)
+	if(QDELETED(actor) || QDELETED(chosen_target))
+		stopped()
+		return
+	if(!A.answer || A.request.answer_value != TRUE)
+		stopped(isnull(A.request.answer_value) || A.answer)
+		return
+	actor.lleill_contact_answered(chosen_target, contact_type, custom_text)
+	retire()
 
 /mob/living/carbon/human/proc/lleill_contact_answered(mob/living/carbon/human/chosen_target, contact_type, custom_text)
 	if(get_dist(src,chosen_target) > 1)
@@ -554,12 +706,17 @@
 									"Unicorn" = /mob/living/simple_mob/vore/horse/unicorn/beastmode
 									)
 
-	om_ask(src, /datum/om/prompt/choice/lleill_energy/lleill_beast, PROC_REF(lleill_beast_chosen), choices = beast_options, energy_cost = energy_cost)
+	open_request(src, /datum/prompt/choice/lleill_beast, PROC_REF(lleill_beast_chosen), answerer = src, choices = beast_options, energy_cost = energy_cost)
 
-/mob/living/carbon/human/proc/lleill_beast_chosen(datum/om/prompt/choice/lleill_energy/lleill_beast/ask)
+/mob/living/carbon/human/proc/lleill_beast_chosen(datum/act/request/A)
+	var/datum/prompt/choice/lleill_beast/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
+		return
 	var/list/beast_options = ask.choices
 	var/energy_cost = ask.energy_cost
-	var/chosen_beast = ask.choice
+	var/chosen_beast = ask.answer_value
 
 	var/mob/living/M = src
 	if(!istype(M))
@@ -718,12 +875,17 @@
 									"Unicorn" = /mob/living/simple_mob/vore/horse/unicorn/beastmode
 									)
 
-	om_ask(src, /datum/om/prompt/choice/lleill_energy/lleill_beast, PROC_REF(hanner_beast_chosen), choices = beast_options, energy_cost = energy_cost)
+	open_request(src, /datum/prompt/choice/lleill_beast, PROC_REF(hanner_beast_chosen), answerer = src, choices = beast_options, energy_cost = energy_cost)
 
-/mob/living/carbon/human/proc/hanner_beast_chosen(datum/om/prompt/choice/lleill_energy/lleill_beast/ask)
+/mob/living/carbon/human/proc/hanner_beast_chosen(datum/act/request/A)
+	var/datum/prompt/choice/lleill_beast/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
+		return
 	var/list/beast_options = ask.choices
 	var/energy_cost = ask.energy_cost
-	var/chosen_beast = ask.choice
+	var/chosen_beast = ask.answer_value
 
 	var/mob/living/M = src
 	if(!istype(M))

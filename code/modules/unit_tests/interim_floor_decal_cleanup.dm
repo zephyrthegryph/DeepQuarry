@@ -8,7 +8,7 @@
 	var/obj/effect/decal/cleanable/ash/ash = allocate(/obj/effect/decal/cleanable/ash, T)
 	var/obj/item/pen/unrelated = allocate(/obj/item/pen, T)
 	TEST_ASSERT(!QDELETED(ash), "the actual ash decal initializes alive")
-	TEST_ASSERT_EQUAL(ash.interaction_sift_ash(user, null, null), TRUE, "actual ash sifting retains its handled return")
+	TEST_ASSERT(test_op_committed(perform_op(user, ash, "sift_ash")), "actual ash sifting commits")
 	TEST_ASSERT(QDELETED(ash), "actual ash sifting consumes the original decal")
 	TEST_ASSERT_EQUAL(T.dirt, original_dirt + 4, "actual ash sifting adds exactly four units of floor dirt")
 	T.dirt = original_dirt
@@ -28,7 +28,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/effect/decal/cleanable/confetti/confetti = allocate(/obj/effect/decal/cleanable/confetti, T)
 	TEST_ASSERT(!QDELETED(confetti), "the actual confetti decal initializes alive")
-	TEST_ASSERT_EQUAL(confetti.interaction_pick_confetti(user, null, null), TRUE, "actual confetti picking starts its real timed task")
+	TEST_ASSERT(test_op_committed(perform_op(user, confetti, "pick_confetti")), "actual confetti picking starts its real timed task")
 	TEST_ASSERT(!QDELETED(confetti), "starting actual confetti picking does not remove the decal immediately")
 	if(interrupted)
 		var/turf/away = get_step(get_step(T, EAST), EAST)

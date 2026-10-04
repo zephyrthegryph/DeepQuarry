@@ -109,7 +109,7 @@
 	if(splinted && splinted.loc == src)
 		var/atom/movable/splint = splinted
 		splint.moveToNullspace()
-		qdel(splint)
+		consume(splint)
 
 	// The detach hook (body/parts/attach.dm) keeps the owner's organ caches; the
 	// implant site slot's own teardown (destroy transaction phase 5, before
@@ -275,7 +275,7 @@
 EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(external_interaction_item)))
 
 /// Old attackby.
-/obj/item/organ/external/proc/external_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/organ/external/proc/external_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction, obj/item/extraction_answer, extraction_answered = FALSE)
 	switch(stage)
 		if(0)
 			if(istype(W,/obj/item/surgical/scalpel))
@@ -294,7 +294,10 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 		if(2)
 			if(istype(W,/obj/item/surgical/hemostat))
 				if(LAZYLEN(contents))
-					var/obj/item/removing = rerun_ask(user, "k308", PROC_REF(external_interaction_item), args, /datum/om/prompt/choice, message = "What would you like to remove?", title = "Extraction", choices = contents, timeout = 20 SECONDS)
+					if(!extraction_answered)
+						open_request(src, /datum/prompt/choice/organ_extraction, PROC_REF(extraction_selected), answerer = user, captured_item = W, captured_interaction = interaction, item_expected = !isnull(W), interaction_expected = !isnull(interaction), question = "What would you like to remove?", title = "Extraction", choices = contents, timeout = 20 SECONDS)
+						return TRUE
+					var/obj/item/removing = extraction_answer
 					if(isnull(removing))
 						return TRUE
 					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
@@ -333,8 +336,8 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	for(var/datum/affliction/tissue_necrosis/N in afflictions_here())
 		if(N.body)
 			N.body.remove_affliction(N)
-		own_take_member(src, nameof(detached_afflictions), N)
-		qdel(N)
+		if(!own_remove(src, nameof(detached_afflictions), N))
+			qdel(N)
 	integrity_dirty = TRUE
 
 /obj/item/organ/external/proc/is_dislocated()
@@ -1150,7 +1153,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			stump.update_damages()
 		victim?.body?.on_status_changed()
 
-	after(victim, 1, /proc/droplimb_refresh_icons, with = list(victim))
+	after(victim, 0.1 SECONDS, /proc/droplimb_refresh_icons, with = list(victim))
 	dir = 2
 
 	var/atom/droploc = victim.drop_location()
@@ -1528,7 +1531,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		explosion(get_turf(victim),-1,-1,2,3)
 		fx_sparks(victim, 5, FALSE)
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
-		om_qdel_after(src, 1)
+		expire(0.1 SECONDS)
 
 	victim.update_icons_body()
 	return TRUE
@@ -1709,3 +1712,42 @@ Note that amputating the affected organ does in fact remove the infection from t
 #undef LIMB_DISMEMBER_INELIGIBLE
 #undef LIMB_DISMEMBER_SPARED
 #undef LIMB_DISMEMBER_DROPPED
+
+/obj/item/organ/external/proc/extraction_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/organ_extraction/request = A.request
+	if(request.captures_gone())
+		return
+	. = external_interaction_item(request.answerer, request.captured_item, request.captured_interaction, A.answer.answer_value, TRUE)
+	SStgui.update_uis(src)
+
+/datum/prompt/choice/organ_extraction
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/organ_extraction)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/choice/organ_extraction/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/choice/organ_extraction/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/choice/organ_extraction/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null

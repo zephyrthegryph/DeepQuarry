@@ -44,16 +44,17 @@
 
 	var/datum/looping_sound/idle_carengine/soundloop // Looping engine audio.
 
-	/// Until when an EMP keeps the vehicle dead (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 	/// Whether it was running when the EMP took it down (it restarts when the outage lapses).
 	var/emp_was_on = FALSE
+
+/// A vehicle runs unless a pulse knocked its engine out (emp_disable() holds it down).
+STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/vehicle)
 	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine)
 	op("vehicle_item", item(/obj/item), then(PROC_REF(interaction_vehicle_item)))
-
-CAPABILITY(/obj/vehicle, emp_disable(30 SECONDS))
+	emp_disable(PROC_REF(emp_outage))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
 //-------------------------------------------
 // Standard procs
@@ -132,7 +133,7 @@ CAPABILITY(/obj/vehicle, emp_disable(30 SECONDS))
 /obj/vehicle/proc/interaction_vehicle_paint(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!W.has_tool_quality(TOOL_MULTITOOL) || !open)
 		return FALSE
-	om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
+	open_request(src, /datum/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), answerer = user, default = paint_color)
 	return TRUE
 
 /obj/vehicle/screwdriver_act(mob/user, obj/item/tool)
@@ -174,16 +175,13 @@ CAPABILITY(/obj/vehicle, emp_disable(30 SECONDS))
 	else
 		repair_damage(amount)
 
-/// Only mechanical vehicles care about EMPs.
-/obj/vehicle/emp_disable_react(datum/damage_packet/packet)
-	if(!mechanical)
-		return
-	return ..()
+/// emp_disable()'s outage: 30 s over the severity, for a mechanical vehicle only.
+/obj/vehicle/proc/emp_outage(severity)
+	return mechanical ? 30 SECONDS / max(severity, 1) : 0
 
 /// Down: sparks and the engine dies. Back: it restarts if it was running.
-/obj/vehicle/emp_disable_changed(disabled)
-	..()
-	if(!disabled)
+/obj/vehicle/proc/emp_state_changed(datum/act/A)
+	if(!emp_disabled(src))
 		stat_remove(EMPED)
 		if(emp_was_on)
 			turn_on()

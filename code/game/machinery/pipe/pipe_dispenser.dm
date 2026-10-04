@@ -111,7 +111,7 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 			return
 
 		created_object.add_fingerprint(user)
-		COOLDOWN_START(src, wait, 15)
+		COOLDOWN_START(src, wait, 1.5 SECONDS)
 
 
 /datum/interaction/machine_item/pipedispenser_return

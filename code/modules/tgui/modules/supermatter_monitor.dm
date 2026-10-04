@@ -90,11 +90,11 @@ CAPABILITIES(/datum/tgui_module/supermatter_monitor)
 
 /datum/tgui_module/supermatter_monitor/proc/ui_act_clear(datum/act/op/A)
 	rel_clear(src, nameof(/area/looking_glass::active))
-	. = TRUE
+	return OP_OK
 
 /datum/tgui_module/supermatter_monitor/proc/ui_act_refresh(datum/act/op/A)
 	refresh()
-	. = TRUE
+	return OP_OK
 
 /datum/tgui_module/supermatter_monitor/proc/ui_act_set(datum/act/op/A, set_uid)
 	var/newuid = set_uid

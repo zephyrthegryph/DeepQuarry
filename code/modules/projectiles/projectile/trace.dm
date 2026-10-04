@@ -30,7 +30,7 @@
 /obj/item/projectile/test/process_hitscan()
 	. = ..()
 	if(!QDELING(src))
-		qdel(src)
+		consume(src)
 	return hit || list()
 
 /obj/item/projectile/test/Bump(atom/A)

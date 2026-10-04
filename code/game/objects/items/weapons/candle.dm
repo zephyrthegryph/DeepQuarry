@@ -61,17 +61,22 @@ CAPABILITIES(/obj/item/flame/candle)
 		visible_message(flavor_text)
 		set_light(CANDLE_LUM)
 
-/obj/item/flame/candle/periodic_step()
-	set_wax(wax - 1)
-	if(!wax)
-		if(istype(src.loc, /mob))
-			src.dropped(src.loc)
-		replace_with(src, /obj/item/trash/candle)
+/obj/item/flame/candle/flame_step(datum/act/timer/A)
+	if(wax > 0)
+		set_wax(wax - 1)
+	if(wax <= 0) // never below zero: a candle set to 0 wax burns out on its next step instead of counting into negatives
+		burn_out()
 		return
 	update_icon()
 	if(istype(loc, /turf)) //start a fire if possible
 		var/turf/T = loc
 		T.hotspot_expose(700, 5)
+
+/// Out of wax: the candle is spent.
+/obj/item/flame/candle/proc/burn_out()
+	if(istype(src.loc, /mob))
+		src.dropped(src.loc)
+	replace_with(src, /obj/item/trash/candle)
 
 /// Using a lit candle in the hand snuffs it.
 /obj/item/flame/candle/proc/snuffed(datum/act/op/A)
@@ -112,8 +117,14 @@ CAPABILITIES(/obj/item/flame/candle)
 	w_class = ITEMSIZE_SMALL
 	wax = 20000
 
+/// The candelabra's cups keep it: out of wax it goes out and shows melted, it is not replaced by a spent candle.
+/obj/item/flame/candle/candelabra/burn_out()
+	set_lit(FALSE)
+	set_light(0)
+	update_icon()
+
 /obj/item/flame/candle/candelabra/proc/appearance_candelabra_suffix()
-	if(wax == 0)
+	if(wax <= 0)
 		return "_melted"
 	return lit ? "_lit" : ""
 
@@ -134,10 +145,10 @@ CAPABILITIES(/obj/item/flame/candle)
 	. = ..()
 	light(span_notice("\The [src] mysteriously lights itself!."))
 
-/obj/item/flame/candle/everburn/periodic_step()
-	// The permanent light has no fuel state to advance. Leaving it in SSobj also
+/obj/item/flame/candle/everburn/flame_step(datum/act/timer/A)
+	// The permanent light has no fuel state to advance. Burning its step as a lit candle
 	// exposed its turf as a 700 K hotspot forever, keeping whole atmos regions awake.
-	return PROCESS_KILL
+	return
 
-/obj/item/flame/candle/candelabra/everburn/periodic_step()
-	return PROCESS_KILL
+/obj/item/flame/candle/candelabra/everburn/flame_step(datum/act/timer/A)
+	return

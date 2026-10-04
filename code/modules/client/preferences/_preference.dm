@@ -295,7 +295,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		// compares two pointers to the same now-mutated list and silently no-ops.
 		// Per-read shallow Copy() is bounded by list size (gear_list / body_markings
 		// hold tens of entries) and runs only on the read path, not the hot apply path.
-		var/cached = value_cache[preference_type]
+		var/cached = LAZYACCESS(value_cache, preference_type)
 		if(islist(cached))
 			var/list/L = cached
 			return L.Copy()
@@ -307,14 +307,14 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		if(write_preference(preference_entry, value))
 			// Return the validated value write_preference() cached: pref_deserialize
 			// may have changed the raw default. Copy lists so the caller can mutate freely.
-			var/stored = value_cache[preference_type]
+			var/stored = LAZYACCESS(value_cache, preference_type)
 			if(islist(stored))
 				var/list/L = stored
 				return L.Copy()
 			return stored
 		else
 			CRASH("Couldn't write the default value for [preference_type] (received [value])")
-	value_cache[preference_type] = value
+	LAZYSET(value_cache, preference_type, value)
 	if(islist(value))
 		var/list/L = value
 		return L.Copy()
@@ -346,7 +346,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	var/new_value = preference.pref_deserialize(preference_value, src)
 	var/success = preference.write(save_data, new_value)
 	if(success)
-		value_cache[preference.type] = new_value
+		LAZYSET(value_cache, preference.type, new_value)
 	return success
 
 /// Writes a value and saves to disk immediately
@@ -410,10 +410,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		// values, so the caller's mutated list (if any) is independent of the cache — the
 		// cache still holds the pre-mutation reference here, which is exactly what we want
 		// the constraints to see as old_value. No extra copy needed on this side.
-		var/old_value = value_cache[preference.type]
+		var/old_value = LAZYACCESS(value_cache, preference.type)
 
 		LAZYOR(recently_updated_keys, preference.type)
-		value_cache[preference.type] = new_value
+		LAZYSET(value_cache, preference.type, new_value)
 		save_batch_dirty = TRUE
 
 		// invalidate ONLY the editor static_data cache entries that

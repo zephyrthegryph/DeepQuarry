@@ -28,7 +28,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		to_chat(user, span_danger("You feel pain, as rune disappears in reality shift caused by too much wear of space-time fabric."))
 		if (isliving(user))
 			user.injure(INJURY_BLUNT, 5)
-		qdel(src)
+		consume(src, user)
 	if(allrunesloc && index != 0)
 		if(istype(src,/obj/effect/rune))
 			user.say("Sas[pick("'","`")]so c'arta forbici!")//Only you can stop auto-muting
@@ -60,7 +60,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		to_chat(user, span_danger("You feel pain, as rune disappears in reality shift caused by too much wear of space-time fabric."))
 		if (isliving(user))
 			user.injure(INJURY_BLUNT, 5)
-		qdel(src)
+		consume(src, user)
 	for(var/mob/living/carbon/C in orange(1,src))
 		if(iscultist(C) && !C.stat)
 			culcount++
@@ -93,7 +93,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		new /obj/item/book/tome(src.loc)
 	else
 		new /obj/item/book/tome(user.loc)
-	qdel(src)
+	consume(src, user)
 	return
 
 
@@ -177,27 +177,33 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
 
 		else
-			om_ask(target, /datum/om/prompt/confirm/cult_convert, PROC_REF(convert_answered), waiting = waiting_for_input)
+			open_request(src, /datum/prompt/choice/cult_convert, PROC_REF(convert_answered), answerer = target, waiting_list = waiting_for_input)
 
 	if(target in converting)
 		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1)) //proc once every 10 seconds
 
-/// The convert rune's offer. Closing it is resisting; `waiting` is the rune's asked-already list.
-/datum/om/prompt/confirm/cult_convert
+/// The convert rune's offer. Closing it is resisting; `waiting_list` is the rune's asked-already list.
+/datum/prompt/choice/cult_convert
 	title = "Submit to Nar'Sie"
-	message = "Do you want to join the cult?"
-	yes_text = "Submit"
-	no_text = "Resist"
-	no_first = TRUE
-	answer_on_no = TRUE
-	cancel_answer = "Resist"
-	var/list/waiting
+	question = "Do you want to join the cult?"
+	choices = list("Resist", "Submit")
+	buttons = TRUE
+	timeout = 0
+	var/list/waiting_list
 
-/obj/effect/rune/proc/convert_answered(datum/om/prompt/confirm/cult_convert/ask)
+/obj/effect/rune/proc/convert_answered(datum/act/request/A)
+	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value)))
+		return
+	if(QDELETED(A.request.answerer))
+		return
+	return apply_convert_answered(A)
+
+/obj/effect/rune/proc/apply_convert_answered(datum/act/request/A)
+	var/datum/prompt/choice/cult_convert/ask = A.request
 	var/mob/living/carbon/target = ask.answerer
-	var/list/waiting_for_input = ask.waiting
+	var/list/waiting_for_input = ask.waiting_list
 	waiting_for_input[target] = 0
-	if(ask.yes) //choosing 'Resist' does nothing of course.
+	if(A.answer && A.answer.answer_value == "Submit") //choosing 'Resist' does nothing of course.
 		GLOB.cult.add_antagonist(target.mind)
 		rel_remove(src, nameof(converting), target)
 		target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
@@ -656,12 +662,19 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 // returns 0 if the rune is not used. returns 1 if the rune is used.
 /obj/effect/rune/proc/communicate(mob/living/user)
 	. = 1 // Default output is 1. If the rune is deleted it will return 1
-	om_ask(user, /datum/om/prompt/text, PROC_REF(communicate_entered), title = "Voice of Blood", message = "Please choose a message to tell to the other acolytes.", default = "", ask_flags = ASK_ADJACENT | ASK_CAPABLE, cancel_answer = "")
+	open_request(src, /datum/prompt/text, PROC_REF(communicate_entered), answerer = user, title = "Voice of Blood", question = "Please choose a message to tell to the other acolytes.", default = "", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return 1
 
-/obj/effect/rune/proc/communicate_entered(datum/om/prompt/text/ask)
-	var/mob/living/user = ask.answerer
-	var/input = ask.text
+/obj/effect/rune/proc/communicate_entered(datum/act/request/A)
+	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value)))
+		return
+	if(QDELETED(A.request.answerer))
+		return
+	return apply_communicate_entered(A)
+
+/obj/effect/rune/proc/apply_communicate_entered(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/input = A.answer ? A.answer.answer_value : ""
 	if(!input)
 		if (istype(src))
 			fizzle(user)
@@ -680,7 +693,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			to_chat(H.current, span_cult("[input]"))
 	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		to_chat(O, span_cult("[input]"))
-	qdel(src)
+	consume(src, user)
 	return 1
 
 /////////////////////////////////////////FIFTEENTH RUNE
@@ -875,27 +888,40 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			users+=C
 	var/dam = round(15 / users.len)
 	if(users.len>=3)
-		om_ask(user, /datum/om/prompt/choice/cult_ritual, PROC_REF(freedom_target_chosen), message = "Choose the one who you want to free", choices = (cultists - users), users = users, dam = dam)
+		open_request(src, /datum/prompt/choice/cult_ritual, PROC_REF(freedom_target_chosen), answerer = user, question = "Choose the one who you want to free", choices = (cultists - users), users = users, dam = dam)
 		return
 
 /// A group rune's pick of a cultist (freedom, summon). Re-checked: next to the rune and able. A
 /// cancel fizzles the rune.
-/datum/om/prompt/choice/cult_ritual
+/datum/prompt/choice/cult_ritual
 	title = "Followers of Geometer"
 	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+	timeout = 0
 	/// The cultists around the rune when it was invoked.
 	var/list/users
 	var/dam
 
-/datum/om/prompt/choice/cult_ritual/cancelled()
-	var/obj/effect/rune/R = subject
-	if(istype(R))
-		R.fizzle(answerer)
-	return ..()
+/datum/prompt/choice/cult_ritual/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/living/carbon/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+	return null
 
-/obj/effect/rune/proc/freedom_target_chosen(datum/om/prompt/choice/cult_ritual/ask)
+/obj/effect/rune/proc/freedom_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			return fizzle(A.request.answerer)
+		return
+	return apply_freedom_target_chosen(A)
+
+/obj/effect/rune/proc/apply_freedom_target_chosen(datum/act/request/A)
+	var/datum/prompt/choice/cult_ritual/ask = A.request
 	var/mob/living/user = ask.answerer
-	var/mob/living/carbon/cultist = ask.choice
+	var/mob/living/carbon/cultist = A.answer.answer_value
 	var/list/users = ask.users
 	var/dam = ask.dam
 	if(!cultist)
@@ -930,7 +956,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	for(var/mob/living/carbon/C in users)
 		user.injure(INJURY_BLUNT, dam)
 		C.say("Khari[pick("'","`")]d! Gual'te nikka!")
-	qdel(src)
+	consume(src, user)
 
 /////////////////////////////////////////NINETEENTH RUNE
 
@@ -944,13 +970,21 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 		if(iscultist(C) && !C.stat)
 			users += C
 	if(users.len>=3)
-		om_ask(user, /datum/om/prompt/choice/cult_ritual, PROC_REF(summon_target_chosen), message = "Choose the one who you want to summon", choices = (cultists - user), users = users)
+		open_request(src, /datum/prompt/choice/cult_ritual, PROC_REF(summon_target_chosen), answerer = user, question = "Choose the one who you want to summon", choices = (cultists - user), users = users)
 		return
 	return fizzle(user)
 
-/obj/effect/rune/proc/summon_target_chosen(datum/om/prompt/choice/cult_ritual/ask)
+/obj/effect/rune/proc/summon_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			return fizzle(A.request.answerer)
+		return
+	return apply_summon_target_chosen(A)
+
+/obj/effect/rune/proc/apply_summon_target_chosen(datum/act/request/A)
+	var/datum/prompt/choice/cult_ritual/ask = A.request
 	var/mob/living/user = ask.answerer
-	var/mob/living/carbon/cultist = ask.choice
+	var/mob/living/carbon/cultist = A.answer.answer_value
 	var/list/users = ask.users
 	if(!cultist)
 		return fizzle(user)
@@ -975,7 +1009,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	act_message(user, null, MSG_SELF(span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a body.")), \
 		MSG_OTHERS(span_warning("Rune disappears with a flash of red light, and in its place now a body lies.")), \
 		MSG_BLIND(span_warning("You hear a pop and smell ozone.")))
-	qdel(src)
+	consume(src, user)
 
 /////////////////////////////////////////TWENTIETH RUNES
 
@@ -998,7 +1032,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			user.say("Sti[pick("'","`")] kaliedir!")
 			to_chat(user,span_warning("The world becomes quiet as the deafening rune dissipates into fine dust."))
 			add_attack_logs(user,affected,"Deafen rune")
-			qdel(src)
+			consume(src, user)
 		else
 			return fizzle(user)
 	else
@@ -1044,7 +1078,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			user.say("Sti[pick("'","`")] kaliesin!")
 			to_chat(user,span_warning("The rune flashes, blinding those who not follow the Nar-Sie, and dissipates into fine dust."))
 			add_attack_logs(user, affected, "Blindness rune")
-			qdel(src)
+			consume(src, user)
 		else
 			return fizzle(user)
 	else
@@ -1091,7 +1125,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			to_chat(M, span_danger("Your blood boils!"))
 			victims += M
 			if(prob(5))
-				after(M, 5, TYPE_PROC_REF(/mob, gib))
+				after(M, 0.5 SECONDS, TYPE_PROC_REF(/mob, gib))
 		for(var/obj/effect/rune/R in view(src))
 			if(prob(10))
 				explosion(R.loc, -1, 0, 1, 5)
@@ -1100,7 +1134,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 				C.say("Dedo ol[pick("'","`")]btoh!")
 				C.injure(INJURY_BLUNT, 15)
 		add_attack_logs(user, victims, "Blood boil rune")
-		qdel(src)
+		consume(src, user)
 	else
 		return fizzle(user)
 	return
@@ -1131,7 +1165,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 					var/turf/T = get_turf(B)
 					T.hotspot_expose(700,125)
 					qdel(B)
-		qdel(src)
+		consume(src)
 
 //////////             Rune 24 (counting burningblood, which kinda doesnt work yet.)
 
@@ -1154,7 +1188,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 				S.status_at_least(EFFECT_WEAKENED, 5)
 				S.show_message(span_danger("BZZZT... The rune has exploded in a bright flash."), 3)
 				add_attack_logs(user,S,"Stun rune")
-		qdel(src)
+		consume(src, user)
 	else                        ///When invoked as talisman, stun and mute the target mob.
 		user.say("Dream sign ''Evil sealing talisman'[pick("'","`")]!")
 		var/obj/item/nullrod/N = locate_within(T, /obj/item/nullrod)
@@ -1199,5 +1233,5 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	//the below calls update_icons() at the end, which will update overlay icons by using the (now updated) cache
 	H.put_in_hands(new /obj/item/melee/cultblade(H))	//put in hands or on floor
 
-	qdel(src)
+	consume(src, user)
 	return

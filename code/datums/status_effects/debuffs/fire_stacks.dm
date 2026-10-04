@@ -260,7 +260,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 
 	if(moblight_type)
 		if(moblight)
-			qdel(moblight)
+			own_clear(src, nameof(moblight), OWN_DELETE)
 		rel_set(src, nameof(moblight), new moblight_type(owner))
 
 	cache_stacks()

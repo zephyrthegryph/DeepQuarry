@@ -367,7 +367,7 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 
 /obj/item/paper/proc/wipe_lipstick_done(mob/living/user, mob/living/carbon/human/H)
 	act_message(user, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
-	H.lip_style = null
+	H.set_lip_style(null)
 	H.update_icons_body()
 
 /obj/item/paper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -381,7 +381,7 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 			var/mob/living/carbon/human/H = M
 			if(H == user)
 				to_chat(user, span_notice("You wipe off the lipstick with [src]."))
-				H.lip_style = null
+				H.set_lip_style(null)
 				H.update_icons_body()
 			else
 				act_message(user, H, MSG_SELF(span_notice("You begin to wipe off %T%'s lipstick.")), \

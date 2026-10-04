@@ -12,7 +12,7 @@
 		if(holder) qdel(holder)
 	rel_set(player, nameof(player.original_character), player.current)
 	if(!preserve_appearance && (flags & ANTAG_SET_APPEARANCE))
-		after(src, 3, PROC_REF(deferred_set_appearance), with = list(player))
+		after(src, 0.3 SECONDS, PROC_REF(deferred_set_appearance), with = list(player))
 	return player.current
 
 /datum/antagonist/proc/deferred_set_appearance(datum/mind/player)

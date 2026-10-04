@@ -513,3 +513,47 @@ Pinned by `code/modules/unit_tests/dq_hc_items2_stacks.dm` (written on the legac
 * **An alt-click op is `hand()` + `gesture(GESTURE_ALT)` + `ungated()`**: the actor half of the hand gate (unconscious or stunned actors are refused) is new for `INTERACT_ALT`, which had `REQ_INTERACTION_REACH` only; the machine half is not applied, as before.
 * **A dragged-onto op needs the actor to have an `AFF_MANIPULATE` provider** (`item(T)` does): the old `INTERACT_DRAG` asked for reach only, so a handless mob could drag a body into a cryo cell; it cannot now (design section 8: a hand op needs a hand).
 * **`INTERACTION_HANDLED_PASS` is `OP_PASS`**, per return; behaviour is the same (the op commits, the next candidate or the mob's own click handling follows).
+* **Batch 7: the appearance changer.** The half-second "too fast" guard is a requirement (with its text) plus an early `then` that starts the cooldown; a button refused that way no longer re-arms it. The colour questions are `open_request()`s of `/datum/prompt/color/appearance` (a colour kind that carries which field, channel and marking it answers); the answer is re-checked through `request_usable()` and refreshes the window when it changed something. The questions that depend on the button's argument (the custom species name, the flavor text) are `open_request()`s too, the flavor key held in `pending_flavor_key`. The body designer's save to disk asks the permission question through a request, then writes (`write_record`); loading a save slot asks the body's owner, as before. A number question without rounding (`weight`) is `step = 0.01`.
+* **Every continuation proc that ends with a window refresh and returns early is split** (`X` applies and refreshes; `X_apply` is the old body), so the refresh no longer sits after a `return` (the codemod's template put it there in batches 3 to 7).
+* **`interim_appearance_callback_actor` now calls `apply_color()` and the `gender_id` op** (the handlers it called by their old signatures are ops).
+
+## hc-items2 group B (weapons, tools, lighters, flashlights, melee, shields, grenades, defibs, bags, small items)
+
+Pinned by `code/modules/unit_tests/dq_hc_items2_B.dm` (written on the legacy forms first; the periodic steps were called directly there, since the legacy lane is not driven by the test clock, and the converted tests add the same checks through the clock).
+
+### Batch 1: matches, lighters, smokables, e-cigs, candles, chewables, ashtrays
+
+* **One handler per use, overridden by the kind.** The self-use of a lighter (`toggled`), the item applied to a smokable (`item_applied`), the e-cig and chewable uses are one op on the base type whose handler the subtypes override (the old interaction chain kept only the most specific entry, so the ancestors' entries were reached through explicit calls). A use that fell through to the clothing's own self-use (`return FALSE`) answers `OP_DECLINE`.
+* **`hand()` ops say `when(req_empty_hand())`.** The binding itself also matches a click with something held; the old `INTERACT_HAND` fitted only an empty hand (the e-cig's "Eject cartridge").
+* **Stances.** The four `INTERACT_SELF_AS` rows of the cigarette and the pipe are two ops: the calm stances put the lit smokable out, the hurt stance (`stance(I_HURT)`, attack tier) treads it out or empties it.
+* **Flames burn through one `every(2 SECONDS, ..., when = nameof(lit))`** on `/obj/item/flame`; each kind overrides `flame_step`. The supermatter lighters' own steps were copies of the lighter's and are gone. An everburning candle no longer leaves the lane (an `every()` cannot end its own work): its step does nothing, so it costs one idle timer while lit. The detonator zippo burns only outside detonator mode, as a step that returns early.
+* **A smokable's look is a `draw()`** (`state_suffix()`: `_on` while lit, `_burnt` once partly smoked unless a pipe). `lit`, `smoketime` and `max_smoketime` are tracked; the in-hand and worn state (`item_state`, which a look cannot write) follows `lit` and `smoketime` in their setters. An emptied smokable that leaves no butt (a joint) now shows its `_burnt` state as soon as it is emptied; it kept the new-looking state until the next redraw.
+* **The e-cig's look** draws its own on, off and empty states and its light; its `item_state` follows `active` and the cartridge (`on_change`).
+* **Ashtray:** the look reads a tracked `butts` count (`sync_butts()` after anything puts butts in or takes them out, including the disposal unit that empties it) and a tracked dish overlay made once at creation; the "full" and "half-filled" descriptions are written when the count changes instead of on every redraw. The ashtray's item op answers before the material's repair op (`priority(above())`) and ends the click, as its old handler did (it never called its parent).
+* **Chewables:** `wrapped` is tracked and the wrapper overlay is a `draw()`.
+
+## APC: the last legacy forms (outages, notices, night shift, area link) and the final emp_disable()
+
+Pinned by `code/modules/unit_tests/dq_p2_apc_behaviour.dm` (the outage, overload, signaller, silicon and night-shift tests were added and run green on the
+legacy tree first) and `code/modules/unit_tests/dq_emp_disable_behaviour.dm` (three users of the legacy `emp_disable()`, also green on the legacy tree).
+
+* **An outage is a hold on operability.** A pulse (`emp_disable()`, source `SRC_EMP`) and an event's power failure (`energy_fail()`, the electrical fault
+  and the supermatter shutdown, source `SRC_POWER_FAILURE`) hold `STAT_OPERABLE` off for their time; the `power_failed` stat is gone. While it lasts the
+  ID lock, the emag and opening the window are refused like on a broken APC ("It isn't working."). On master the area went dark during an outage, which set
+  the APC's NOPOWER bit and refused the same things in any area that needs power; the difference shows only in an area that needs none.
+* **The APC's own area going dark no longer makes it inoperable.** It is the area's supply: its `stat_bits_allow()` reads only BROKEN (its unfinished
+  frame is the build graph's, its outages are holds). On master the breaker off darkened the area, set NOPOWER on the APC and refused the ID lock until
+  the breaker was on again.
+* **A broken APC keeps its area dark** even if a silicon turns its breaker back on (the area reads `supplying`, which a broken APC is not). On master the
+  breaker alone decided once the APC was broken.
+* **The night shift reaches every APC on "automatic" at once and keeps reaching it.** The system sets one tracked flag; an APC built, or switched back to
+  automatic, during the night dims its area straight away (on master it waited for the next dusk or dawn walk). The night-shift step no longer walks the
+  APCs across ticks.
+* **The station power-failure event, its restore and the supermatter cascade set the APC cells for real** (`set_cell_charge()`: the cell and Rust's charge
+  together). On master they wrote the cell and the next power poll put Rust's charge back.
+* **emp_disable() users** (PDA multicaster, exonet node, telecomms, research server, port generator, atmospheric field generator, GPS, vehicles): the outage
+  is the same length and a pulse while down still does not lengthen it; it now runs on the holder's own clock instead of the world clock, so a holder
+  whose clock is slowed recovers on its own time. The EMPED bit is no longer set by it (a vehicle still sets its own); the legacy `operable()` reader sees
+  the hold. A GPS and a vehicle declare `operable` beside their types.
+* **The fault lights of the APC's examine text** are an `examine_line()`, so they come after the capabilities' lines instead of before them.
+

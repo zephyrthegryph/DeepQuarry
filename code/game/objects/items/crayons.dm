@@ -7,10 +7,9 @@
 	uses = 0
 
 CAPABILITIES(/obj/item/pen/crayon/mime)
-	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(interaction_invert)))
+	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(mime_crayon_inverted)))
 
-/// Old attack_self.
-/obj/item/pen/crayon/mime/proc/interaction_invert(datum/act/op/A)
+/obj/item/pen/crayon/mime/proc/mime_crayon_inverted(datum/act/op/A)
 	var/mob/living/user = A.actor
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
@@ -20,7 +19,7 @@ CAPABILITIES(/obj/item/pen/crayon/mime)
 		colour = "#000000"
 		shadeColour = "#FFFFFF"
 		to_chat(user, "You will now draw in black and white with this crayon.")
-	return
+	return OP_OK
 
 /obj/item/pen/crayon/rainbow
 	icon_state = "crayonrainbow"
@@ -40,31 +39,34 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 
 /// A rainbow crayon or marker picks its main colour, then its shade (a cancel keeps that one).
 /obj/item/pen/crayon/proc/ask_rainbow_colour(mob/user, main_title, shade_title)
-	om_ask(user, /datum/om/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), title = main_title, message = "Please select the main colour.", default = colour, shade_title = shade_title)
+	open_request(src, /datum/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), answerer = user, title = main_title, question = "Please select the main colour.", default = colour, shade_title = shade_title)
 
 /obj/item/pen/crayon/proc/ask_rainbow_shade(mob/user, shade_title)
-	om_ask(user, /datum/om/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), title = shade_title, message = "Please select the shade colour.", default = shadeColour, shade = TRUE)
+	open_request(src, /datum/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), answerer = user, title = shade_title, question = "Please select the shade colour.", default = shadeColour, shade = TRUE)
 
 /// Re-checked on the answer: the crayon is still carried.
-/datum/om/prompt/color/crayon_colour
+/datum/prompt/color/crayon_colour
 	ask_flags = ASK_CARRIED
+	timeout = 0
 	/// TRUE: this is the shade pick.
 	var/shade = FALSE
 	var/shade_title
 
-/datum/om/prompt/color/crayon_colour/cancelled()
-	var/obj/item/pen/crayon/C = subject
-	if(!shade && C)
-		C.ask_rainbow_shade(answerer, shade_title)
-
-/obj/item/pen/crayon/proc/rainbow_colour_picked(datum/om/prompt/color/crayon_colour/ask)
-	if(ask.shade)
-		if(ask.picked_color)
-			shadeColour = ask.picked_color
+/obj/item/pen/crayon/proc/rainbow_colour_picked(datum/act/request/A)
+	// Explicit closing skipped old prompt rechecks; a rejected answer did not continue.
+	if(!A.answer && (A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value)))
 		return
-	if(ask.picked_color)
-		colour = ask.picked_color
-	ask_rainbow_shade(ask.answerer, ask.shade_title)
+	var/mob/user = A.request.answerer
+	if(!user || QDELETED(user))
+		return
+	var/datum/prompt/color/crayon_colour/prompt = A.request
+	if(prompt.shade)
+		if(A.answer && A.answer.answer_value)
+			shadeColour = A.answer.answer_value
+		return
+	if(A.answer && A.answer.answer_value)
+		colour = A.answer.answer_value
+	ask_rainbow_shade(user, prompt.shade_title)
 
 /obj/item/pen/crayon/afterattack(atom/target, mob/user, proximity, click_parameters)
 	if(!proximity) return
@@ -186,10 +188,9 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 	uses = 0
 
 CAPABILITIES(/obj/item/pen/crayon/marker/mime)
-	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(interaction_invert)))
+	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(mime_marker_inverted)))
 
-/// Old attack_self.
-/obj/item/pen/crayon/marker/mime/proc/interaction_invert(datum/act/op/A)
+/obj/item/pen/crayon/marker/mime/proc/mime_marker_inverted(datum/act/op/A)
 	var/mob/living/user = A.actor
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
@@ -199,7 +200,7 @@ CAPABILITIES(/obj/item/pen/crayon/marker/mime)
 		colour = "#000000"
 		shadeColour = "#FFFFFF"
 		to_chat(user, "You will now draw in black and white with this marker.")
-	return
+	return OP_OK
 
 /obj/item/pen/crayon/marker/rainbow
 	icon_state = "markerrainbow"

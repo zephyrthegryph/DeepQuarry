@@ -79,10 +79,6 @@
 			rel_set(P, nameof(P.connected), src)
 			P.name = "[initial(P.name)] #[num++]"
 
-CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
-	op("resleeving_console_interaction_item", item(/obj/item), then(PROC_REF(resleeving_console_interaction_item)))
-	op("resleeving_console_interaction_hand", hand(), ungated(), then(PROC_REF(resleeving_console_interaction_hand)))
-
 /// Old attackby.
 /obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -251,20 +247,18 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_view_b_rec)
 	view_b_rec(params["ref"])
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "clear_b_rec", ui_act_clear_b_rec)
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_clear_b_rec)
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_clear_b_rec(datum/act/op/A)
 	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "view_m_rec", ui_act_view_m_rec, UI_ARG_VALUE("ref"))
 UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_view_m_rec)
 	view_m_rec(params["ref"])
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "clear_m_rec", ui_act_clear_m_rec)
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_clear_m_rec)
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_clear_m_rec(datum/act/op/A)
 	rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "coredump", ui_act_coredump)
 UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_coredump)
@@ -273,18 +267,16 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_coredump)
 		after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
 		. = TRUE
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "ejectdisk", ui_act_ejectdisk)
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_ejectdisk)
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_ejectdisk(datum/act/op/A)
 	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
 	if(disk())
 		disk().forceMove(get_turf(src))
 		own_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "create", ui_act_create)
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_create)
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_create(datum/act/op/A)
 	resleeve_create_body()
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "selectpod", ui_act_selectpod, UI_ARG_REF("ref", "pods", /obj/machinery/clonepod))
 UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_selectpod)
@@ -312,15 +304,13 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_menu)
 	menu = params["num"]
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "genereset", ui_act_genereset)
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_genereset)
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_genereset(datum/act/op/A)
 	resleeve_gene_reset()
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_cleartemp)
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_cleartemp(datum/act/op/A)
 	temp = null
-	. = TRUE
+	return OP_OK
 
 /// "create": grow or print the selected body record on the selected pod.
 /obj/machinery/computer/transhuman/resleeving/proc/resleeve_create_body()
@@ -627,12 +617,16 @@ CAPABILITIES(/obj/item/cmo_disk_holder)
 
 // Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
 // back relation. Either end dying drops the link.
-/obj/machinery/computer/transhuman/resleeving/ownership()
-	. = ..()
-	. += owns(nameof(disk), policy = OWN_SPILL)
-
-/obj/machinery/computer/transhuman/resleeving/relations()
-	. = ..()
-	. += rel_many(nameof(pods))
-	. += rel_many(nameof(spods))
-	. += rel_many(nameof(sleevers))
+CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
+	op("resleeving_console_interaction_item", item(/obj/item), then(PROC_REF(resleeving_console_interaction_item)))
+	op("resleeving_console_interaction_hand", hand(), ungated(), then(PROC_REF(resleeving_console_interaction_hand)))
+	op("clear_b_rec", ui_act(), then(PROC_REF(ui_act_clear_b_rec)))
+	op("clear_m_rec", ui_act(), then(PROC_REF(ui_act_clear_m_rec)))
+	op("ejectdisk", ui_act(), then(PROC_REF(ui_act_ejectdisk)))
+	op("create", ui_act(), then(PROC_REF(ui_act_create)))
+	op("genereset", ui_act(), then(PROC_REF(ui_act_genereset)))
+	op("cleartemp", ui_act(), then(PROC_REF(ui_act_cleartemp)))
+	ref_many(nameof(pods))
+	ref_many(nameof(spods))
+	ref_many(nameof(sleevers))
+	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)

@@ -41,13 +41,17 @@ impl Generator for UiTypes {
                 }
             }
         }
+        // Entry procs (a global proc returning a list of entries): a CAPABILITIES entry `name()` stands for them.
+        let bundles: BTreeMap<String, Vec<String>> = cx.markers(crate::sem::decls::ENTRY_PROC).filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].to_vec()))).collect();
         let mut windows: BTreeMap<String, Window> = BTreeMap::new();
         for m in cx.markers("CAPABILITIES") {
             let Some(owner) = m.args.first() else { continue };
             let mut window_name: Option<String> = None;
             let mut fields: Vec<(String, Option<String>)> = Vec::new();
             let mut acts: Vec<Act> = Vec::new();
-            for raw in m.args.iter().skip(1) {
+            let mut list: Vec<String> = Vec::new();
+            expand_bundles(&m.args[1..], &bundles, &mut list, 0);
+            for raw in list.iter() {
                 let entry = clean(raw);
                 let Some((fname, body)) = call_of(&entry) else { continue };
                 match fname {
@@ -117,6 +121,24 @@ impl Generator for UiTypes {
             files.push((format!("{}/{}.d.ts", UI_TYPES_OUT, name), render_window(name, w)));
         }
         files
+    }
+}
+
+/// The entries with each `name()` of an entry proc replaced by the proc's entries (nested ones too).
+fn expand_bundles(entries: &[String], bundles: &BTreeMap<String, Vec<String>>, out: &mut Vec<String>, depth: usize) {
+    for raw in entries {
+        let entry = clean(raw);
+        if depth < 8 {
+            if let Some((name, body)) = call_of(&entry) {
+                if body.trim().is_empty() {
+                    if let Some(inner) = bundles.get(name) {
+                        expand_bundles(inner, bundles, out, depth + 1);
+                        continue;
+                    }
+                }
+            }
+        }
+        out.push(raw.clone());
     }
 }
 

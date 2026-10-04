@@ -690,3 +690,77 @@
 	var/uid = F.uid
 	press(H, P, "PRG_deletefile", list("uid" = uid))
 	TEST_ASSERT_NULL(P.computer().find_file_by_uid(uid), "the file is deleted")
+
+// ---- batch 7: appearance changer ----
+
+/// An appearance changer working on a human, with everything it may change allowed.
+/datum/unit_test/dq_hc_tgui/proc/hct_changer(mob/living/carbon/human/owner)
+	var/datum/tgui_module/appearance_changer/M = hct_track(new /datum/tgui_module/appearance_changer(hct_host(), owner))
+	M.flags = APPEARANCE_ALL
+	M.generate_data(owner, owner)
+	return M
+
+/// A press on the changer after its half-second cooldown (it reads world.time, which the test clock does not advance).
+/datum/unit_test/dq_hc_tgui/proc/cpress(datum/tgui_module/appearance_changer/M, mob/actor, action, list/args)
+	M.cooldown = 0
+	press(actor, M, action, args)
+
+/// Answers the question the person was asked, after the cooldown.
+/datum/unit_test/dq_hc_tgui/proc/canswer(datum/tgui_module/appearance_changer/M, mob/actor, value, cancel = FALSE)
+	M.cooldown = 0
+	p2cl_answer(actor, value, cancel)
+	test_time(10 SECONDS)
+
+/datum/unit_test/dq_hc_tgui/appearance_changer_styles
+/datum/unit_test/dq_hc_tgui/appearance_changer_styles/run_gate()
+	var/mob/living/carbon/human/H = hct_actor()
+	var/datum/tgui_module/appearance_changer/M = hct_changer(H)
+	var/style = M.valid_hairstyles[length(M.valid_hairstyles)]
+	cpress(M, H, "hair", list("name" = style))
+	TEST_ASSERT_EQUAL(H.h_style, style, "the hairstyle is changed")
+	cpress(M, H, "hair", list("name" = "no such style"))
+	TEST_ASSERT_EQUAL(H.h_style, style, "an unknown style changes nothing")
+	var/gender_id = all_genders_define_list[1]
+	cpress(M, H, "gender_id", list("gender_id" = gender_id))
+	TEST_ASSERT_EQUAL(H.identifying_gender, gender_id, "the identifying gender is changed")
+	var/list/data = data_of(M, H)
+	TEST_ASSERT(("hair_style" in data), "the window data is sent")
+
+/datum/unit_test/dq_hc_tgui/appearance_changer_cooldown
+/datum/unit_test/dq_hc_tgui/appearance_changer_cooldown/run_gate()
+	var/mob/living/carbon/human/H = hct_actor()
+	var/datum/tgui_module/appearance_changer/M = hct_changer(H)
+	var/first = M.valid_hairstyles[1]
+	var/second = M.valid_hairstyles[length(M.valid_hairstyles)]
+	hct_ui(src, H, M, "hair", list("name" = first))
+	hct_ui(src, H, M, "hair", list("name" = second))
+	TEST_ASSERT_EQUAL(H.h_style, first, "a second button inside half a second is refused")
+	M.cooldown = 0
+	hct_ui(src, H, M, "hair", list("name" = second))
+	TEST_ASSERT_EQUAL(H.h_style, second, "and works once the half second has passed")
+
+/datum/unit_test/dq_hc_tgui/appearance_changer_questions
+/datum/unit_test/dq_hc_tgui/appearance_changer_questions/run_gate()
+	var/mob/living/carbon/human/H = hct_actor()
+	var/datum/tgui_module/appearance_changer/M = hct_changer(H)
+	cpress(M, H, "eye_color")
+	TEST_ASSERT(p2cl_has_question(H), "a colour is asked for")
+	canswer(M, H, "#336699")
+	TEST_ASSERT_EQUAL(H.r_eyes, 51, "the eye colour's red is set")
+	TEST_ASSERT_EQUAL(H.b_eyes, 153, "and its blue")
+	cpress(M, H, "rename")
+	canswer(M, H, "Zed Quill")
+	TEST_ASSERT_EQUAL(H.real_name, "Zed Quill", "the name is set")
+	cpress(M, H, "rename")
+	canswer(M, H, "", TRUE)
+	TEST_ASSERT_EQUAL(H.real_name, "Zed Quill", "a cancelled question changes nothing")
+	cpress(M, H, "weight")
+	canswer(M, H, 150)
+	TEST_ASSERT(p2cl_has_question(H), "the unit of the weight is asked for")
+	canswer(M, H, "Pounds")
+	TEST_ASSERT_EQUAL(H.weight, 152, "the weight is set (rounded to four pounds)")
+	var/flavor_key = "general"
+	H.flavor_texts = list("general" = "")
+	cpress(M, H, "flavor_text", list("target" = flavor_key))
+	canswer(M, H, "A tall figure.")
+	TEST_ASSERT_EQUAL(H.flavor_texts[flavor_key], "A tall figure.", "the flavor text is set")

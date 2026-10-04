@@ -28,19 +28,19 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	activate_string = "Enable Syphon"
 	deactivate_string = "Disable Syphon"
 
-/obj/item/rig_module/protean/syphon/activate()
+/obj/item/rig_module/protean/syphon/activate(skip_engage = 0, mob/user)
 	if(!..())
 		return 0
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
-		to_chat(usr, span_boldnotice("You activate the suit's energy syphon."))
+		to_chat(user, span_boldnotice("You activate the suit's energy syphon."))
 		to_chat(H, span_warning("Your suit begins to sap at your own energy stores."))
 		active = 1
 	else
 		return 0
 
-/obj/item/rig_module/protean/syphon/deactivate(forced)
+/obj/item/rig_module/protean/syphon/deactivate(forced = FALSE, mob/user)
 	if(!..())
 		return 0
 	if(forced)
@@ -48,7 +48,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 		return
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
-		to_chat(usr, span_boldnotice("You deactivate the suit's energy syphon."))
+		to_chat(user, span_boldnotice("You deactivate the suit's energy syphon."))
 		to_chat(H, span_warning("Your suit ceases from sapping your own energy."))
 		active = 0
 	else
@@ -85,12 +85,12 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 /// The armor types the wearer can configure.
 TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee", "bullet", "laser", "energy", "bomb"))
 
-/obj/item/rig_module/protean/armor/engage()
-	var/armor_chosen = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice, message = "Which armor to adjust?", title = "Protean Armor", choices = TYPE_TABLE_GET(src, armor_types))
+/obj/item/rig_module/protean/armor/engage(atom/target, notify_ai, mob/user)
+	var/armor_chosen = rerun_ask(user, "a1", PROC_REF(engage), args, /datum/om/prompt/choice, message = "Which armor to adjust?", title = "Protean Armor", choices = TYPE_TABLE_GET(src, armor_types))
 	if(isnull(armor_chosen))
 		return
 	if(armor_chosen)
-		var/armorvalue = rerun_ask(usr, "a2", PROC_REF(engage), args, /datum/om/prompt/number, message = "Set armour reduction value (Max of 60%)", title = "Protean Armor", default = 0, max = 60)
+		var/armorvalue = rerun_ask(user, "a2", PROC_REF(engage), args, /datum/om/prompt/number, message = "Set armour reduction value (Max of 60%)", title = "Protean Armor", default = 0, max = 60)
 		if(isnull(armorvalue))
 			return
 		if(isnum(armorvalue))
@@ -103,12 +103,12 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 				slowdown += value*armor_weight_ratio
 			interface_desc += " Slowdown: [slowdown]"
 
-/obj/item/rig_module/protean/armor/activate()
+/obj/item/rig_module/protean/armor/activate(skip_engage = 0, mob/user)
 	var/obj/item/rig/protean/prig = holder
 	if(istype(prig) && prig.assimilated_rig)
-		to_chat(usr, span_bolddanger("Armor module non-functional while a RIG is assimilated."))
+		to_chat(user, span_bolddanger("Armor module non-functional while a RIG is assimilated."))
 		return
-	if(!..(1))
+	if(!..(1, user))
 		return 0
 
 	var/mob/living/carbon/human/H = holder.wearer()
@@ -118,7 +118,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 			temparmor[entry] = LAZYACCESS(armor_settings, entry) || 0
 		temparmor["bio"] = 100
 		temparmor["rad"] = 100
-		to_chat(usr, span_boldnotice("You signal the suit to harden."))
+		to_chat(user, span_boldnotice("You signal the suit to harden."))
 		to_chat(H, span_notice("Your suit hardens in response to physical trauma."))
 		holder.set_armor(dq_armor(temparmor))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
@@ -129,8 +129,8 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 	else
 		return 0
 
-/obj/item/rig_module/protean/armor/deactivate(forced)
-	if(!..(1))
+/obj/item/rig_module/protean/armor/deactivate(forced = FALSE, mob/user)
+	if(!..(1, user))
 		return 0
 	if(forced)
 		holder.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
@@ -142,7 +142,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		return
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
-		to_chat(usr, span_boldnotice("You signal the suit to relax."))
+		to_chat(user, span_boldnotice("You signal the suit to relax."))
 		to_chat(H, span_warning("Your suit softens."))
 		holder.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
@@ -176,8 +176,8 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 	activate_string = "Enable Healing"
 	deactivate_string = "Disable Healing"
 
-/obj/item/rig_module/protean/healing/activate()
-	if(!..(1))
+/obj/item/rig_module/protean/healing/activate(skip_engage = 0, mob/user)
+	if(!..(1, user))
 		return 0
 	var/mob/living/carbon/human/H = holder.wearer()
 	var/mob/living/P = get_protean()
@@ -189,18 +189,18 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 	var/obj/item/organ/internal/nano/refactory/R = P.nano_get_refactory()
 	if(!R || R.get_stored_material(MAT_STEEL) < 100)
 		return 0
-	to_chat(usr, span_boldnotice("You activate the suit's restorative nanites."))
+	to_chat(user, span_boldnotice("You activate the suit's restorative nanites."))
 	to_chat(H, span_warning("Your suit begins mending your injuries."))
 	active = 1
 	return 1
 
-/obj/item/rig_module/protean/healing/deactivate()
-	if(!..(1))
+/obj/item/rig_module/protean/healing/deactivate(forced = FALSE, mob/user)
+	if(!..(1, user))
 		return 0
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(!H)
 		return 0
-	to_chat(usr, span_boldnotice("You deactivate the suit's restorative nanites."))
+	to_chat(user, span_boldnotice("You deactivate the suit's restorative nanites."))
 	to_chat(H, span_warning("Your suit is no longer mending your injuries."))
 	active = 0
 	return 1

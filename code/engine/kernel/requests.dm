@@ -61,6 +61,9 @@
 	var/usable_state
 	/// A backend request's failure text (REQ_TRANSPORT_FAILED, REQ_FAILED), for the log.
 	var/last_error
+	/// TRUE: the re-checks (ask_flags, rights, usable_state, recheck_extra()) also run when the request opens, and one that
+	/// fails ends it REQ_CANCELLED before it is shown (an admin prompt whose asker lost the rights, a target already gone).
+	var/recheck_on_open = FALSE
 
 /// A kind's own re-check of an answer when it arrives: null, or why the answer is dropped. Reads only.
 /datum/request/proc/recheck_extra()
@@ -178,6 +181,9 @@ SYSTEM_DEF(requests)
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")
 	R.prepare(context)
+	if(R.recheck_on_open && request_recheck(R))
+		request_end(R, REQ_CANCELLED, null)
+		return R
 	R.begin()
 	return R
 
@@ -289,7 +295,12 @@ SYSTEM_DEF(requests)
 		A.holder = R.owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 		A.request = R // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 		A.answer = (outcome == REQ_ANSWERED) ? R : null // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
-		call(R.owner, R.handler)(A)
+		// The kernel isolates a faulting handler: the act is released and the request ends whatever the handler did, so a
+		// callback never wraps its own body in safe_call().
+		try
+			call(R.owner, R.handler)(A)
+		catch(var/exception/fault) // ALLOW(silent_catch): the request kernel's isolation point: one handler's runtime must not leak the act or the request
+			kernel().report_fault(fault, "request [R.type] handler [R.handler] on [R.owner.type]: [fault] ([fault.file]:[fault.line])")
 		A.release()
 	request_op_resume(R)
 	// Ended: the request and its timer are done with; what a caller kept (R.outcome, R.answer_value) stays readable.

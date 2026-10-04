@@ -56,8 +56,8 @@ CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/organ_owner)
 	organ_owner?.cut_overlay(lightning_overlay)
-	if(om_timer_slot_pending(src, "lightning_timer"))
-		om_cancel_timer_slot(src, "lightning_timer")
+	if(after_pending(src, "lightning_timer"))
+		cancel_after(src, "lightning_timer")
 	lightning_overlay = null
 
 /// Event wrapper: the owner gained a trait; only critical condition triggers survival mode.

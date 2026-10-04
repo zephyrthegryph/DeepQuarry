@@ -310,36 +310,82 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 	if(matches.len==1)
 		user.spawn_mail_type_chosen(matches[1])
 		return
-	om_ask(user.mob, /datum/om/prompt/choice/admin_mail, TYPE_PROC_REF(/client, spawn_mail_type_picked), receiver = user, title = "Spawn Atom in Mail", message = "Select an atom type", choices = matches)
+	if(!ismob(user.mob) || QDELETED(user.mob))
+		return
+	open_request(user, /datum/prompt/choice/admin_mail, TYPE_PROC_REF(/client, spawn_mail_type_picked), answerer = user.mob, title = "Spawn Atom in Mail", question = "Select an atom type", choices = matches)
 
 /// The admin "Spawn Mail" questions: the type, the recipient, then where. Re-checked on each answer: still holds R_SPAWN.
-/datum/om/prompt/choice/admin_mail
-	requires = PROMPT_ADMIN(R_SPAWN)
+/datum/prompt/choice/admin_mail
+	rights = R_SPAWN
+	timeout = 0
 	/// The atom type to put in the envelope.
 	var/chosen
 	/// The recipient picked at the second step.
 	var/mob/living/recipient
+	var/recipient_expected = FALSE
 
-/client/proc/spawn_mail_type_picked(datum/om/prompt/choice/admin_mail/ask)
-	spawn_mail_type_chosen(ask.choice)
+CAPABILITIES(/datum/prompt/choice/admin_mail)
+	ref_one(nameof(recipient), /mob/living)
+
+/datum/prompt/choice/admin_mail/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/captured = recipient
+	rel_clear(src, nameof(recipient))
+	rel_set(src, nameof(recipient), captured)
+
+/datum/prompt/choice/admin_mail/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(recipient_expected && QDELETED(recipient))
+		return "gone"
+	if(isdatum(answer_value))
+		var/datum/selected = answer_value
+		if(QDELETED(selected))
+			return "gone"
+	return null
+
+/client/proc/spawn_mail_type_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_spawn_mail_type_picked(A)
+
+/client/proc/apply_spawn_mail_type_picked(datum/act/request/A)
+	spawn_mail_type_chosen(A.answer.answer_value)
 
 /client/proc/spawn_mail_type_chosen(chosen)
 	var/list/recipients = list()
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		recipients += player
-	om_ask(mob, /datum/om/prompt/choice/admin_mail, PROC_REF(spawn_mail_recipient_picked), title = "Recipients", message = "Choose recipient", choices = recipients, chosen = chosen)
+	if(!ismob(mob) || QDELETED(mob))
+		return
+	open_request(src, /datum/prompt/choice/admin_mail, PROC_REF(spawn_mail_recipient_picked), answerer = mob, title = "Recipients", question = "Choose recipient", choices = recipients, chosen = chosen)
 
-/client/proc/spawn_mail_recipient_picked(datum/om/prompt/choice/admin_mail/ask)
-	om_ask(mob, /datum/om/prompt/choice/admin_mail, PROC_REF(spawn_mail_finish), title = "Spawn mail", message = "Spawn mail at location or in the shuttle?", choices = list("Location", "Shuttle"), buttons = TRUE, chosen = ask.chosen, recipient = ask.choice)
+/client/proc/spawn_mail_recipient_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_spawn_mail_recipient_picked(A)
 
-/client/proc/spawn_mail_finish(datum/om/prompt/choice/admin_mail/ask)
+/client/proc/apply_spawn_mail_recipient_picked(datum/act/request/A)
+	var/datum/prompt/choice/admin_mail/ask = A.request
+	if(!ismob(mob) || QDELETED(mob))
+		return
+	open_request(src, /datum/prompt/choice/admin_mail, PROC_REF(spawn_mail_finish), answerer = mob, title = "Spawn mail", question = "Spawn mail at location or in the shuttle?", choices = list("Location", "Shuttle"), buttons = TRUE, chosen = ask.chosen, recipient = A.answer.answer_value, recipient_expected = !isnull(A.answer.answer_value))
+
+/client/proc/spawn_mail_finish(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_spawn_mail_finish(A)
+
+/client/proc/apply_spawn_mail_finish(datum/act/request/A)
+	var/datum/prompt/choice/admin_mail/ask = A.request
 	var/mob/user_mob = mob
 	var/mob/living/chosen_player = ask.recipient
 	var/datum/mind/recipient_mind = chosen_player?.mind
 	var/chosen = ask.chosen
 	if(!recipient_mind || !user_mob)
 		return
-	if(ask.choice == "Shuttle")
+	if(A.answer.answer_value == "Shuttle")
 		var/obj/item/mail/new_mail = new
 		new_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(new_mail)

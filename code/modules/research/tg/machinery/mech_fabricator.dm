@@ -54,6 +54,8 @@
 	var/drop_direction = SOUTH
 
 CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
+	op("clear_queue", ui_act(), then(PROC_REF(ui_act_clear_queue)))
+	op("stop_queue", ui_act(), then(PROC_REF(ui_act_stop_queue)))
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
 	owns_one(nameof(rmat), /datum/remote_materials)
 
@@ -111,7 +113,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 
 	// We're probably going to get more than one update (design) at a time, so batch
 	// them together.
-	om_after_replace(src, 2 SECONDS, PROC_REF(update_menu_tech))
+	after(src, 2 SECONDS, PROC_REF(update_menu_tech), key = "mecha_fabricator_tech_menu")
 
 /obj/machinery/mecha_part_fabricator_tg/RefreshParts()
 	. = ..()
@@ -502,14 +504,12 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_del_queue_part)
 
 	return
 
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "clear_queue", ui_act_clear_queue)
-UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_clear_queue)
-	. = TRUE
+/obj/machinery/mecha_part_fabricator_tg/proc/ui_act_clear_queue(datum/act/op/A)
 	// Delete everything from queue
 	queue.Cut()
 	queue_producer_accounts.Cut()
 
-	return
+	return OP_OK
 
 UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "build_queue", ui_act_build_queue)
 UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build_queue)
@@ -521,12 +521,10 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build_queue)
 	set_process_queue(TRUE)
 	return
 
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "stop_queue", ui_act_stop_queue)
-UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_stop_queue)
-	. = TRUE
+/obj/machinery/mecha_part_fabricator_tg/proc/ui_act_stop_queue(datum/act/op/A)
 	// Pause queue building. Also known as stop.
 	set_process_queue(FALSE)
-	return
+	return OP_OK
 
 UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_remove_mat)

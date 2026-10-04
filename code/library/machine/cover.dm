@@ -58,6 +58,11 @@ cap_keys(CAP_COVER, OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on))
 /datum/capability/lib/cover/bay_exposed(datum/holder)
 	return cover_open(holder, null) || cover_removed(holder, null)
 
+GLOBAL_LIST_INIT(cover_door_keys, list(COVER_OPEN, COVER_REMOVED))
+
+/datum/capability/lib/cover/bay_door_keys(datum/holder)
+	return GLOB.cover_door_keys
+
 /// The reason shown while the cover keeps its bay closed.
 /datum/capability/lib/cover/bay_closed_reason()
 	return /datum/msg/cover/closed

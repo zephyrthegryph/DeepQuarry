@@ -419,11 +419,11 @@ impl Generator for Declare {
         let caps = capabilities(cx, out);
         let globals = global_constructors(cx, &caps);
         section(cx, out, &caps, &globals, false);
-        // What the test fixtures declare (files under code/tests/) is compiled in test builds only.
+        // What the test fixtures declare (files under code/tests/ and code/modules/unit_tests/, see `test_only`) is compiled in test builds only.
         let mut tests = GenOut::default();
         section(cx, &mut tests, &caps, &globals, true);
         if !tests.text().trim().is_empty() {
-            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
+            out.line(crate::sem::gen::TEST_GUARD);
             out.blank();
             out.line(tests.text().trim_end());
             out.blank();
@@ -443,7 +443,7 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
     use std::cell::RefCell;
     let rows: RefCell<BTreeMap<String, (String, bool)>> = RefCell::new(BTreeMap::new());
     for m in cx.markers("CAPABILITIES") {
-        let test_only = m.rel.starts_with("code/tests/");
+        let test_only = crate::sem::gen::test_only(&m.rel);
         for a in m.args.iter().skip(1) {
             for name in ["ref_one", "ref_many"] {
                 rewrite_calls(a, name, &|args| {
@@ -464,7 +464,7 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
     out.line("	. = list()");
     for (ty, (var, test_only)) in &rows {
         if *test_only {
-            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
+            out.line(crate::sem::gen::TEST_GUARD);
         }
         out.line(format!("	.[{}] = {}", ty, quote(var)));
         if *test_only {
@@ -476,7 +476,7 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
 
 /// The declarations of the files in one half of the tree: the engine and the game (`test_only` false), or the test fixtures.
 fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String>, test_only: bool) {
-    let in_half = |rel: &str| rel.starts_with("code/tests/") == test_only;
+    let in_half = |rel: &str| crate::sem::gen::test_only(&rel) == test_only;
         // Capabilities: the datum's param vars, the constructor, the registration row.
         for cap in caps.iter().filter(|c| in_half(&c.rel)) {
             out.doc(format!("{}({}, {}) at {}:{}", if cap.is_def { "CAPABILITY_DEF" } else { "CAPABILITY_TYPE" }, cap.name, cap.id, cap.rel, cap.line));
@@ -558,15 +558,65 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
             out.line(format!("{}/declared_entries(list/into)", ty));
             out.line("\t..(into)");
             out.line(format!("\tinto += entry_block({}, {}, {})", quote(&m.rel), m.line, ty));
+            // section(name, "doc") opens a section: the entries after it, to the next section or the block's end, are the type's own
+            // entries like any other, and each carries the section's name with its file:line (Explain Type and Interaction print both).
+            let mut current: Option<(String, u32, usize)> = None; // name, line, entries so far
+            let mut seen_sections: BTreeMap<String, u32> = BTreeMap::new();
+            let close_section = |cur: &Option<(String, u32, usize)>, out: &mut GenOut| {
+                if let Some((name, line, 0)) = cur {
+                    out.diag(&m.rel, *line, format!("section({}) of {} has no entries", name, ty));
+                }
+            };
             for (i, a) in m.args.iter().enumerate().skip(1) {
                 if a.is_empty() {
                     continue;
                 }
-                out.line(format!("\tinto += entry_line({})", m.line_at(offsets[i])));
+                let line = m.line_at(offsets[i]);
+                if let Some(parts) = section_parts(a) {
+                    close_section(&current, out);
+                    let name = parts.first().map(|p| p.trim().to_string()).unwrap_or_default();
+                    let ok_name = !name.is_empty() && name.chars().all(|c| c.is_alphanumeric() || c == '_') && !name.starts_with(|c: char| c.is_ascii_digit());
+                    let ok_doc = parts.len() <= 2 && parts.get(1).map(|d| d.trim().starts_with('"')).unwrap_or(true);
+                    if !(ok_name && ok_doc) {
+                        out.diag(&m.rel, line, format!("`{}`: a section header is section(name) or section(name, \"doc\") with name an identifier", one_line(a)));
+                        current = None;
+                        continue;
+                    }
+                    if let Some(first) = seen_sections.insert(name.clone(), line) {
+                        out.diag(&m.rel, line, format!("section({}) of {} is declared twice (first at line {})", name, ty, first));
+                    }
+                    let doc = parts.get(1).map(|d| format!(": {}", one_line(d.trim().trim_matches('"')))).unwrap_or_default();
+                    out.line(format!("\t// section {}{}", name, doc));
+                    current = Some((name, line, 0));
+                    continue;
+                }
+                match current.as_mut() {
+                    Some((name, _, n)) => {
+                        *n += 1;
+                        out.line(format!("\tinto += entry_line({}, {})", line, quote(name)));
+                    }
+                    None => out.line(format!("\tinto += entry_line({})", line)),
+                }
                 out.line(format!("\tinto += list({})", entry_text(a, caps, globals)));
             }
+            close_section(&current, out);
             out.blank();
         }
+}
+
+/// The arguments of a `section(...)` header entry, or None when the entry is not one.
+fn section_parts(entry: &str) -> Option<Vec<String>> {
+    let t = entry.trim();
+    let rest = t.strip_prefix("section")?.trim_start();
+    if !rest.starts_with('(') {
+        return None;
+    }
+    let open = t.len() - rest.len();
+    let close = matching_paren(t, open)?;
+    if !t[close + 1..].trim().is_empty() {
+        return None;
+    }
+    Some(split_args(&t[open + 1..close]))
 }
 
 pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
@@ -699,6 +749,44 @@ CAPABILITIES(/obj/thing, \
         assert!(decl.contains("adjusts(\"packet.amount\", scale = 0.5)"), "{}", decl);
         assert!(decl.contains("on_change(\"terminal.charge\", ANY"), "{}", decl);
         assert!(decl.contains("on_change(nameof(on), ENTER"), "a plain nameof stays: {}", decl);
+    }
+
+    #[test]
+    fn a_section_groups_the_entries_after_it_and_names_them() {
+        let (_, decl, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/thing)
+	wall(1, 2)
+
+	section(controls, \"The window and its buttons.\")
+	interface(\"Thing\")
+	op(\"press\", ui_act(), then(PROC_REF(pressed)))
+	section(rules)
+	extend(\"press\", needs(req_operable()))
+")]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(decl.contains("\tinto += entry_line(2)\n\tinto += list(wall(1, 2))"), "an entry before any section has none: {}", decl);
+        assert!(decl.contains("\t// section controls: The window and its buttons.\n\tinto += entry_line(5, \"controls\")\n\tinto += list(interface(\"Thing\"))"), "{}", decl);
+        assert!(decl.contains("into += entry_line(6, \"controls\")\n\tinto += list(op(\"press\", ui_act(), then(PROC_REF(pressed))))"), "PROC_REF stays: the entries are the type's own: {}", decl);
+        assert!(decl.contains("\t// section rules\n\tinto += entry_line(8, \"rules\")"), "{}", decl);
+        assert!(!decl.contains("section("), "the header is no entry: {}", decl);
+    }
+
+    #[test]
+    fn bad_sections_are_reported() {
+        let (_, _, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/thing)
+	section(a)
+	section(\"b\")
+	wall(1)
+	section(c, 12)
+	section(d)
+	wall(2)
+	section(d)
+	wall(3)
+")]);
+        let all = diags.join("\n");
+        assert!(all.contains("section(a) of /obj/thing has no entries"), "{}", all);
+        assert!(all.contains("`section(\"b\")`: a section header is"), "{}", all);
+        assert!(all.contains("`section(c, 12)`"), "{}", all);
+        assert!(all.contains("section(d) of /obj/thing is declared twice"), "{}", all);
     }
 
     #[test]

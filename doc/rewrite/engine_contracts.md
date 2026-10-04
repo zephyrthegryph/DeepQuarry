@@ -7,7 +7,7 @@ Nothing here has runtime behaviour except the test driver's own bookkeeping. Eng
 
 | Path | What |
 |---|---|
-| `code/__defines/engine/markers.dm` | Declaration markers (`CAPABILITIES`, `ACTION`, `STAT`, `SCHEMA`, `SYSTEM_ACCESSOR`, `STAGE_DEF`, `STATE_GRAPH`, `RESOURCE_DEF`, `SOURCE_DEF`, `CAPABILITY_DEF/TYPE`, `cap_keys`, `BUNDLE`). Each expands to nothing: a declaration in the final syntax compiles and is skipped until the generator reads it. |
+| `code/__defines/engine/markers.dm` | Declaration markers (`CAPABILITIES`, `ACTION`, `STAT`, `SCHEMA`, `SYSTEM_ACCESSOR`, `STAGE_DEF`, `STATE_GRAPH`, `RESOURCE_DEF`, `SOURCE_DEF`, `CAPABILITY_DEF/TYPE`, `cap_keys`, and `section(name, "doc")` inside a `CAPABILITIES` block). Each expands to nothing: a declaration in the final syntax compiles and is skipped until the generator reads it. |
 | `code/__defines/engine/vocabulary.dm` | `ACT_*` outcomes and filters, `OP_*` effect reports, `ORIGIN_*`, `REACH_*`, `AUTH_*`, `INTENT_*`, keeps, `REQ_*` outcomes, resume policies, `DRAIN_MAX_PASSES`, `KERNEL_PHASE_S`, `LANE_WORLD`. |
 | `code/__defines/engine/test_hooks.dm` | The engine-to-driver seam: `TEST_REC_*`, `TEST_ROLL`, `TEST_LANE_BUDGET`, `TEST_EVAL_COST`, `ENGINE_STUB`, `E0_GATE`. In production every one compiles out. |
 | `code/contracts/ids/` | Hand-assigned stat, source, tag, resource, capability and stage ids (the generator keeps what is there). |
@@ -64,7 +64,7 @@ returns it with a null outcome and the same pending op fills the same record lat
 | `cap_of` | legacy `cap_of(atom, key)` | not stubbed; E1 replaces it in one change |
 | `TRACKED`, `SYSTEM_DEF`, `MSG_DEF` | legacy macros | no marker; final-form lines are in comments |
 | `AFF_CONTROL` | `MANIPULATE \| INTERFACE`, with `AFF_INTERFACE`/`AFF_TELEKINESIS` | untouched; E2 redefines when it deletes the legacy bits. `AFF_ATTACK`, `AFF_OBSERVE` added |
-| `/datum/notice/hit` | live notice | E4 renamed the legacy one `/datum/notice/legacy_hit` (its callers follow) and `hit` is the action's notice (field `packet`) |
+| `/datum/notice/hit` | live notice | E4 renamed the legacy one `/datum/notice/legacy_hit`; its last listener (the APC) moved to the attackby action's `/datum/notice/attacked_by` and it is deleted. `hit` is the action's notice (field `packet`) |
 | `KERNEL_PHASE_*` | K,N,U,D,P,R,G = 1..7 | `KERNEL_PHASE_S` = 8 outside the live range; E6 renumbers |
 | `LANE_*` | five lanes | `LANE_WORLD` = 6, unknown to the scheduler until E6 |
 

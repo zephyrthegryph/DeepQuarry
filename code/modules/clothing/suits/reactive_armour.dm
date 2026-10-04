@@ -28,9 +28,11 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive_armor_shell)
 		var/armour_path = is_path_in_list(anomaly.anomaly_type, anomaly_armour_types, TRUE)
 		if(!armour_path)
 			armour_path = /obj/item/clothing/suit/armor/reactive/stealth
-		to_chat(user, span_notice("You insert [anomaly] into the chest plate, and the armour gently hums to life."))
+		var/anomaly_name = "[anomaly]"
+		if(!consume(anomaly, user))
+			return TRUE
+		to_chat(user, span_notice("You insert [anomaly_name] into the chest plate, and the armour gently hums to life."))
 		replace_with(src, armour_path)
-		consume(anomaly, user)
 		return TRUE
 	return OP_DECLINE
 
@@ -58,13 +60,14 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive_armor_shell)
 
 APPEARANCE_TEMPLATE(/obj/item/clothing/suit/armor/reactive, "reactive{active?:off}")
 
-CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
-	op("reactive_armor_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(reactive_armor_toggle_self)))
+TRACKED(/obj/item/clothing/suit/armor/reactive, active)
 
-/// Old attack_self.
-/obj/item/clothing/suit/armor/reactive/proc/reactive_armor_toggle_self(datum/act/op/A)
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
+	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(reactive_toggled)))
+
+/obj/item/clothing/suit/armor/reactive/proc/reactive_toggled(datum/act/op/A)
 	var/mob/user = A.actor
-	active = !active
+	set_active(!active)
 	to_chat(user, span_notice("[src] is now [active ? "active" : "inactive"]."))
 	update_icon()
 	add_fingerprint(user)
@@ -243,9 +246,8 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	for (var/atom/movable/target in repulse_targets(owner))
 		repulse(target, owner)
 
-	var/datum/armour_dimensional_theme/theme = new()
+	var/datum/armour_dimensional_theme/theme = dq_proto(/datum/armour_dimensional_theme)
 	theme.apply_random(get_turf(owner), dangerous = FALSE)
-	qdel(theme)
 
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
@@ -273,9 +275,8 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 
 /obj/item/clothing/suit/armor/reactive/barricade/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("The reactive armor shunts matter from an unstable dimension!"))
-	var/datum/armour_dimensional_theme/theme = new()
+	var/datum/armour_dimensional_theme/theme = dq_proto(/datum/armour_dimensional_theme)
 	theme.apply_random(get_turf(owner), dangerous = TRUE)
-	qdel(theme)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 

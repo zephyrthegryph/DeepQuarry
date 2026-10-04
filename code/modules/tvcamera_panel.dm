@@ -24,13 +24,13 @@ DECLARE_UI_STATE(/obj/item/tvcamera, GLOB.tgui_default_state)
 	var/mob/user = A.actor
 	camera_toggle_video(user)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/item/tvcamera/proc/ui_act_toggle_audio(datum/act/op/A)
 	var/mob/user = A.actor
 	camera_toggle_audio(user)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/item/tvcamera/proc/show_ui(mob/user)
 	tgui_interact(user)
@@ -59,13 +59,13 @@ DECLARE_UI_STATE(/obj/item/clothing/accessory/bodycam, GLOB.tgui_default_state)
 	var/mob/user = A.actor
 	camera_toggle_video(user)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/item/clothing/accessory/bodycam/proc/ui_act_toggle_audio(datum/act/op/A)
 	var/mob/user = A.actor
 	camera_toggle_audio(user)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/item/clothing/accessory/bodycam/proc/show_bodycam_ui(mob/user)
 	tgui_interact(user)

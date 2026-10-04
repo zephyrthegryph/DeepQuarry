@@ -65,7 +65,7 @@
 	COOLDOWN_DECLARE(search_cooldown_until)
 	var/search_cooldown = 5 SECONDS
 	var/ignoreunarmed = TRUE
-	var/allowedtools = list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul)
+TYPE_TABLE_DECLARE(/mob/living/simple_mob/mechanical/mining_drone, mining_drone_allowed_tools, list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
@@ -112,19 +112,19 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
 			else //just so they don't attack "miners" for having their mining gear in their offhand
 				var/obj/item/OH = H.get_inactive_hand()
 				if(OH)
-					for (var/path in allowedtools)
+					for (var/path in TYPE_TABLE_GET(src, mining_drone_allowed_tools))
 						if(istype(OH,path))
 							has_tool = TRUE
 							break
 		else
-			for (var/path in allowedtools)
+			for (var/path in TYPE_TABLE_GET(src, mining_drone_allowed_tools))
 				if(istype(I,path))
 					has_tool = TRUE
 					break
 			if(!has_tool) //if a valid tool not found in main hand, check offhand
 				var/obj/item/OH = H.get_inactive_hand()
 				if(OH)
-					for (var/path in allowedtools)
+					for (var/path in TYPE_TABLE_GET(src, mining_drone_allowed_tools))
 						if(istype(OH,path))
 							has_tool = TRUE
 							break
@@ -170,8 +170,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/miningdrone, mob_organ_hit_zones, list("c
 /mob/living/simple_mob/mechanical/mining_drone/scavenger //more aggro version for the debris field, with a weaker weapon
 	name = "scavenger drone"
 	ignoreunarmed = FALSE
-	allowedtools = list(/obj/item/pickaxe)
 	projectiletype = /obj/item/projectile/energy/excavate/weak
+
+TYPE_TABLE(/mob/living/simple_mob/mechanical/mining_drone/scavenger, mining_drone_allowed_tools, list(/obj/item/pickaxe))
 
 // === merged from combat_drone_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it

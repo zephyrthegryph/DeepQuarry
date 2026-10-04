@@ -29,6 +29,15 @@ registered in `_unit_tests.dm`. `dm-test` compiles the game with `UNIT_TESTS`,
 `CITESTING` and `CIBUILDING`, boots it in DreamDaemon, runs every test, and
 shuts down. It also repacks icons and builds Verdigris first if they are stale.
 
+Verdigris comes from a shared cache when it can: the build keys the DLL on the
+git ids of its inputs at `HEAD` (the `verdigris/` tree, the generated bindings,
+target, profile, `RUSTFLAGS`) and copies a cached build from
+`DQ_VERDIGRIS_CACHE` (default `D:/dq-cache/verdigris`) instead of running cargo,
+so a new worktree needs no `verdigris/target`. A miss builds and stores the DLL
+(atomic temp-dir rename; the newest 10 entries and anything used in 14 days are
+kept). Uncommitted edits to those inputs skip the cache. `DQ_VERDIGRIS_CACHE=off`
+disables it. The runner still checks `VERDIGRIS_ABI` before booting.
+
 - **Map.** Under `CITESTING` the world boots `maps/virgo_minitest/`, one small
   station level that loads in seconds. Add `-DCITESTING_FULL_MAP` to boot
   Southern Cross instead; use that for map-specific tests.
@@ -358,15 +367,18 @@ dreamdaemon window titled "Security Alert".
 DreamDaemon sometimes fails to exit after `-close` finishes (a known Windows
 zombie-process issue), so every test/bench boot runs under a watchdog: once
 the results file appears, it gets `watchdogGraceMs` (30s) to self-close, then
-is force-killed. Separately, a **hard timeout** (default 45 minutes,
+is force-killed. Separately, a **hard timeout** (default 120 minutes,
 `DQ_DD_WATCHDOG_MINUTES=<n>` overrides it, taking precedence over everything
 including a caller's own estimate) force-kills a world that's still running
 at all -- genuinely stuck, or just slower than expected under load. Only the
 hard-timeout kill is logged as an explicit error (`killedByWatchdog` in the
 run record) and called out by name in the summary; the routine post-completion
 zombie cleanup is just an info line. `dm-test --shards=N` scales each shard's
-hard timeout down from the 45-minute default by `1/sqrt(N)`, floored at 12
-minutes, since each shard does roughly `1/N` of the suite's work.
+hard timeout by `1/sqrt(N)`, floored at 12 minutes, since each shard does
+roughly `1/N` of the suite's work: from a 120-minute base for a whole-tier run
+(60 minutes per shard on the default 4 shards; the normal tier took up to 34
+minutes per shard on 2026-10-04) and a 45-minute base when `--select` or
+`--affected` narrows it.
 
 ### Test records, flakes and baselines
 

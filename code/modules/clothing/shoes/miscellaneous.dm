@@ -441,15 +441,13 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
 
 /// Dries the floor (and blood) under the wearer at every step: a notice the shoes hear (was the om behaviour dry).
-/obj/item/clothing/shoes/dry_galoshes/reactions()
-	. = ..()
-	. += on_notice(/datum/notice/shoes_step, PROC_REF(dry_step))
+CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
+	on_notice(/datum/notice/shoes_step, then(PROC_REF(dry_step)))
 
-/obj/item/clothing/shoes/dry_galoshes/proc/dry_step(datum/notice/shoes_step/N)
+/obj/item/clothing/shoes/dry_galoshes/proc/dry_step(datum/act/notice/A)
 	var/turf/simulated/T = get_turf(src)
 	var/obj/effect/decal/cleanable/blood/B = locate_within(T, /obj/effect/decal/cleanable/blood)
 	if(istype(T))
 		T.wet_floor_finish()
 	if(B)
 		B.dry()
-

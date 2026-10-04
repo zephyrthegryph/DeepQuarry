@@ -52,8 +52,17 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 	/// Send Mob: the area picked first.
 	var/area/area
 
-/client/proc/jump_mob_picked(datum/om/prompt/choice/admin_jump/ask)
-	do_jumptomob(ask.choice)
+/datum/prompt/choice/admin_jump_mob
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+
+/client/proc/jump_mob_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/selected = A.answer.answer_value
+	if(!istype(selected) || QDELETED(selected))
+		return
+	do_jumptomob(selected)
 
 /// Performs the jumps, also called from admin Topic() for JMP links
 /client/proc/do_jumptomob(mob/M)
@@ -64,7 +73,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 		return
 
 	if(!M)
-		om_ask(mob, /datum/om/prompt/choice/admin_jump, PROC_REF(jump_mob_picked), title = "Jump to Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
+		open_request(src, /datum/prompt/choice/admin_jump_mob, PROC_REF(jump_mob_picked), answerer = mob, title = "Jump to Mob", question = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 		return
 
 	var/mob/A = src.mob // Impossible to be unset, enforced by byond
@@ -185,18 +194,49 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))
-		om_ask(usr, /datum/om/prompt/choice/admin_jump, PROC_REF(sendmob_area_picked), title = "Send Mob", message = "Pick an area:", choices = return_sorted_areas())
+		var/mob/answerer = usr
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/admin_sendmob, PROC_REF(sendmob_area_picked), answerer = answerer, title = "Send Mob", question = "Pick an area:", choices = return_sorted_areas())
 	else
 		tgui_alert_async(usr, "Admin jumping disabled")
 
-/client/proc/sendmob_area_picked(datum/om/prompt/choice/admin_jump/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/admin_jump, PROC_REF(sendmob_answered), title = "Send Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), area = ask.choice)
+/datum/prompt/choice/admin_sendmob
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+	var/area/area
 
-/client/proc/sendmob_answered(datum/om/prompt/choice/admin_jump/ask)
+CAPABILITIES(/datum/prompt/choice/admin_sendmob)
+	ref_one(nameof(area), /area)
+
+/datum/prompt/choice/admin_sendmob/prepare(datum/act/A)
+	..()
+	var/area/captured_area = area
+	rel_clear(src, nameof(area))
+	rel_set(src, nameof(area), captured_area)
+
+/datum/prompt/choice/admin_sendmob/recheck_extra()
+	return isnull(area) || !QDELETED(area) ? null : "gone"
+
+/client/proc/sendmob_area_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/area/selected_area = A.answer.answer_value
+	if(!istype(selected_area) || QDELETED(selected_area))
+		return
+	open_request(src, /datum/prompt/choice/admin_sendmob, PROC_REF(sendmob_answered), answerer = A.request.answerer, title = "Send Mob", question = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), area = selected_area)
+
+/client/proc/sendmob_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/admin_sendmob/ask = context.answer
+	var/mob/selected_mob = ask.answer_value
+	if(!istype(ask.area, /area) || QDELETED(ask.area) || !istype(selected_mob) || QDELETED(selected_mob))
+		return
 	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "adminjump.sendmob_answered"))
 		return
 	var/area/A = ask.area
-	var/mob/M = ask.choice
+	var/mob/M = ask.answer_value
 	if(CONFIG_GET(flag/allow_admin_jump))
 		M.on_mob_jump()
 		M.reset_perspective(M) // Force reset to self before teleport
@@ -210,54 +250,75 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	else
 		tgui_alert_async(src, "Admin jumping disabled")
 
-/// One missing coordinate for Move Atom; the answer re-enters cmd_admin_move_atom(), which asks for the next.
-/datum/om/prompt/number/move_atom_coord
+/// One missing coordinate for Move Atom; the answer retains its initiating actor for the next coordinate.
+/datum/prompt/number/move_atom_coord
 	title = "Move Atom"
-	requires = PROMPT_ADMIN(R_ADMIN|R_DEBUG|R_EVENT)
+	rights = R_ADMIN|R_DEBUG|R_EVENT
+	timeout = 0
+	step = 1
 	var/atom/movable/moved
 	var/tx
 	var/ty
 	var/tz
+	var/denial_entry
+	var/moved_required = FALSE
 
-/datum/om/prompt/number/move_atom_coord/prepare()
+CAPABILITIES(/datum/prompt/number/move_atom_coord)
+	ref_one(nameof(moved), /atom/movable)
+
+/datum/prompt/number/move_atom_coord/prepare(datum/act/A)
+	..()
+	var/atom/movable/captured_moved = moved
+	moved_required = !isnull(captured_moved)
+	rel_clear(src, nameof(moved))
+	rel_set(src, nameof(moved), captured_moved)
 	if(isnull(tx))
-		message = "Select X coordinate"
-		max = world.maxx
+		question = "Select X coordinate"
+		max_value = world.maxx
 	else if(isnull(ty))
-		message = "Select Y coordinate"
-		max = world.maxy
+		question = "Select Y coordinate"
+		max_value = world.maxy
 	else
-		message = "Select Z coordinate"
-		max = world.maxz
-	return TRUE
+		question = "Select Z coordinate"
+		max_value = world.maxz
 
-/client/proc/move_atom_coords_chosen(datum/om/prompt/number/move_atom_coord/ask)
-	if(isnull(ask.number))
+
+/datum/prompt/number/move_atom_coord/recheck_extra()
+	return moved_required && QDELETED(moved) ? "gone" : null
+
+/client/proc/move_atom_coords_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/move_atom_coord/ask = A.answer
+	if(isnull(ask.answer_value))
 		return
 	if(isnull(ask.tx))
-		ask.tx = ask.number
+		ask.tx = ask.answer_value
 	else if(isnull(ask.ty))
-		ask.ty = ask.number
+		ask.ty = ask.answer_value
 	else
-		ask.tz = ask.number
-	cmd_admin_move_atom(ask.moved, ask.tx, ask.ty, ask.tz)
+		ask.tz = ask.answer_value
+	move_atom_with_actor(ask.answerer, ask.moved, ask.tx, ask.ty, ask.tz, ask.denial_entry)
 
 /client/proc/cmd_admin_move_atom(atom/movable/AM, tx as num, ty as num, tz as num)
 	set category = VERB_CAT_ADMIN_GAME
 	set name = "Move Atom to Coordinate"
 
-	if(!check_rights(R_ADMIN|R_DEBUG|R_EVENT))
+	move_atom_with_actor(usr, AM, tx, ty, tz, "check_rights in [callee?.proc]")
+
+/client/proc/move_atom_with_actor(mob/user, atom/movable/AM, tx, ty, tz, denial_entry)
+	if(!admin_require(user?.client, R_ADMIN|R_DEBUG|R_EVENT, denial_entry))
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))
 		if(isnull(tx) || isnull(ty) || isnull(tz))
-			om_ask(usr, /datum/om/prompt/number/move_atom_coord, PROC_REF(move_atom_coords_chosen), moved = AM, tx = tx, ty = ty, tz = tz)
+			open_request(src, /datum/prompt/number/move_atom_coord, PROC_REF(move_atom_coords_chosen), answerer = user, moved = AM, tx = tx, ty = ty, tz = tz, denial_entry = denial_entry)
 			return
 		if(!tx || !ty || !tz)
 			return
 		var/turf/T = locate(tx, ty, tz)
 		if(!T)
-			to_chat(usr, span_warning("Those coordinates are outside the boundaries of the map."))
+			to_chat(user, span_warning("Those coordinates are outside the boundaries of the map."))
 			return
 		if(ismob(AM))
 			var/mob/M = AM
@@ -265,6 +326,6 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 			M.reset_perspective(M) // Force reset to self before teleport
 		AM.forceMove(T)
 		feedback_add_details("admin_verb", "MA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-		message_admins("[key_name_admin(usr)] jumped [AM] to coordinates [tx], [ty], [tz]")
+		message_admins("[key_name_admin(user)] jumped [AM] to coordinates [tx], [ty], [tz]")
 	else
-		tgui_alert_async(usr, "Admin jumping disabled")
+		tgui_alert_async(user, "Admin jumping disabled")

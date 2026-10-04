@@ -68,7 +68,6 @@
 	if(!force_process && !length(self.bad_external_organs))
 		return
 
-	self.number_wounds = 0
 	for(var/obj/item/organ/external/E in self.bad_external_organs)
 		if(!E)
 			continue
@@ -78,7 +77,6 @@
 		else
 			E.periodic_step()
 			var/list/limb_wounds = E.get_wounds() // one walk per limb per cycle (audit D24)
-			self.number_wounds += length(limb_wounds)
 
 			if (!self.lying && !self?.buckled_to() && ELAPSED_SINCE(src, self.l_move_time, CLOCK_WORLD) < 15)
 			//Moving around with fractured ribs won't do you any good

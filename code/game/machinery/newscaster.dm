@@ -159,16 +159,16 @@ CAPABILITIES(/datum/feed_network)
 	var/list/temp = null
 
 CAPABILITIES(/obj/machinery/newscaster)
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	op("set_channel_lock", ui_act("set_channel_lock"), then(PROC_REF(ui_act_set_channel_lock)))
+	op("set_attachment", ui_act("set_attachment"), then(PROC_REF(ui_act_set_attachment)))
 	owns_one(nameof(photo_data), /datum/news_photo)
 	interface("Newscaster")
-	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("set_channel_name", ui_act("set_channel_name", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_channel_name)))
-	op("set_channel_lock", ui_act("set_channel_lock"), then(PROC_REF(ui_act_set_channel_lock)))
 	op("submit_new_channel", ui_act("submit_new_channel"), then(PROC_REF(ui_act_submit_new_channel)))
 	op("set_channel_receiving", ui_act("set_channel_receiving"), then(PROC_REF(ui_act_set_channel_receiving)))
 	op("set_new_message", ui_act("set_new_message"), then(PROC_REF(ui_act_set_new_message)))
 	op("set_new_title", ui_act("set_new_title"), then(PROC_REF(ui_act_set_new_title)))
-	op("set_attachment", ui_act("set_attachment"), then(PROC_REF(ui_act_set_attachment)))
 	op("submit_new_message", ui_act("submit_new_message"), then(PROC_REF(ui_act_submit_new_message)))
 	op("print_paper", ui_act("print_paper"), then(PROC_REF(ui_act_print_paper)))
 	op("set_wanted_desc", ui_act("set_wanted_desc", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_wanted_desc)))
@@ -236,7 +236,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
 /obj/machinery/newscaster/tgui_status(mob/user)
 	if(!ispowered || (has_stat(BROKEN)))
@@ -388,7 +388,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 
 /obj/machinery/newscaster/proc/ui_act_cleartemp(datum/act/op/A)
 	temp = null
-	return TRUE
+	return OP_OK
 
 /obj/machinery/newscaster/proc/ui_act_set_channel_name(datum/act/op/A, val)
 	channel_name = sanitizeSafe(val, MAX_LNAME_LEN)
@@ -396,7 +396,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 
 /obj/machinery/newscaster/proc/ui_act_set_channel_lock(datum/act/op/A)
 	c_locked = !c_locked
-	return TRUE
+	return OP_OK
 
 /obj/machinery/newscaster/proc/ui_act_submit_new_channel(datum/act/op/A)
 	var/mob/user = A.actor
@@ -448,9 +448,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_set_attachment(datum/act/op/A)
-	var/mob/user = A.actor
-	AttachPhoto(user)
-	return TRUE
+	AttachPhoto(A.actor)
+	return OP_OK
 
 /obj/machinery/newscaster/proc/ui_act_submit_new_message(datum/act/op/A)
 	var/mob/user = A.actor
@@ -700,7 +699,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 			photo_data.photo().forceMove(src.loc)
 			if(!issilicon(user))
 				user.put_in_inactive_hand(photo_data.photo())
-		qdel(photo_data)
+		own_clear(src, nameof(photo_data), OWN_DELETE)
 
 	if(incoming)
 		rel_set(src, nameof(photo_data), new /datum/news_photo(incoming, 0))

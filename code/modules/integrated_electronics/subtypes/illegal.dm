@@ -26,7 +26,7 @@
 	return 0
 
 CAPABILITIES(/obj/item/integrated_circuit/illegal/EPv2_Discoverer)
-	owns_one(nameof(exonet), starts = /datum/exonet_protocol)
+	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
 /obj/item/integrated_circuit/illegal/EPv2_Discoverer/Initialize(mapload)
 	. = ..()

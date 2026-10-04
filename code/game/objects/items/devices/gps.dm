@@ -9,8 +9,6 @@
 	MATERIAL_BULK(MAT_STEEL, 500)
 
 	var/gps_tag = "GEN0"
-	/// Until when an EMP keeps the unit busted (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 	var/long_range = FALSE		// If true, can see farther, depending on get_map_levels().
 	var/local_mode = FALSE		// If true, only GPS signals of the same Z level are shown.
 	var/hide_signal = FALSE		// If true, signal is not visible to other GPS devices.
@@ -86,8 +84,16 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 	if(holder_ref())
 		update_compass(src, TRUE)
 
+/// A GPS works unless a pulse knocked it out (emp_disable() holds it down).
+STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
+
 CAPABILITIES(/obj/item/gps)
+	op("power", ui_act(), then(PROC_REF(ui_act_power)))
+	op("localMode", ui_act(), then(PROC_REF(ui_act_localmode)))
 	owns_one(nameof(compass), starts = /obj/compass_holder)
+	op("toggle_tracking", hand(), gesture(GESTURE_ALT), needs(req_adjacent()), then(PROC_REF(tracking_toggled)))
+	emp_disable(5 MINUTES)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)
@@ -95,7 +101,7 @@ CAPABILITIES(/obj/item/gps)
 	..()
 
 /obj/item/gps/proc/can_track(obj/item/gps/other, reachable_z_levels)
-	if(!other.tracking || EXPIRY_ACTIVE(other, emp_until, CLOCK_WORLD) || other.hide_signal || is_vore_jammed(other))
+	if(!other.tracking || emp_disabled(other) || other.hide_signal || is_vore_jammed(other))
 		return FALSE
 	var/turf/origin = get_turf(src)
 	var/turf/target = get_turf(other)
@@ -134,22 +140,22 @@ CAPABILITIES(/obj/item/gps)
 			compass.show_waypoint("\ref[gps]")
 	compass.rebuild_overlay_lists(update_compass_icon)
 
-/obj/item/gps/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	toggletracking(user)
-	return TRUE
+/obj/item/gps/proc/tracking_toggled(datum/act/op/A)
+	toggletracking(A.actor)
+	return OP_OK
 
 /obj/item/gps/proc/toggletracking(mob/living/user)
 	if(!istype(user))
 		return
-	if(EXPIRY_ACTIVE(src, emp_until, CLOCK_WORLD))
+	if(emp_disabled(src))
 		to_chat(user, "It's busted!")
 		return
 
 	toggle_tracking()
 	if(tracking)
-		to_chat(user, "[src] is now tracking, and visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
-	else // purdev Fixed an issue where the if/else argument was written backwards
-		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
+		to_chat(user, "[src] is now tracking, and visible to other GPS devices.")
+	else
+		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.")
 
 /obj/item/gps/proc/toggle_tracking()
 	set_tracking(!tracking)
@@ -160,16 +166,14 @@ CAPABILITIES(/obj/item/gps)
 	update_holder()
 	update_icon()
 
-CAPABILITY(/obj/item/gps, emp_disable(5 MINUTES))
-
-/obj/item/gps/emp_disable_changed(disabled)
-	..()
+/// A pulse knocked it out (it shows "emp") or its outage ended (it says so).
+/obj/item/gps/proc/emp_state_changed(datum/act/A)
 	update_icon()
-	if(!disabled)
+	if(!emp_disabled(src))
 		visible_message("\The [src] appears to be functional again.")
 
 /obj/item/gps/proc/appearance_gps_state()
-	if(EXPIRY_ACTIVE(src, emp_until, CLOCK_WORLD))
+	if(emp_disabled(src))
 		return "emp"
 	if(tracking)
 		return "working"
@@ -182,7 +186,6 @@ DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
 
 DECLARE_INTERACTIONS(/obj/item/gps, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 )
 
 /obj/item/gps/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -262,10 +265,9 @@ UI_DATA_REPLACE(/obj/item/gps, "merge:ui_data_obj_item_gps{currentArea:unknown,p
 
 	return data
 
-UI_ACT(/obj/item/gps, "power", ui_act_power)
-UI_ACT_PROC(/obj/item/gps, ui_act_power)
+/obj/item/gps/proc/ui_act_power(datum/act/op/A)
 	toggle_tracking()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/gps, "rename", ui_act_rename, UI_ARG_TEXT("value"))
 UI_ACT_PROC(/obj/item/gps, ui_act_rename)
@@ -276,10 +278,9 @@ UI_ACT_PROC(/obj/item/gps, ui_act_rename)
 	name = "global positioning system ([gps_tag])"
 	return TRUE
 
-UI_ACT(/obj/item/gps, "localMode", ui_act_localmode)
-UI_ACT_PROC(/obj/item/gps, ui_act_localmode)
+/obj/item/gps/proc/ui_act_localmode(datum/act/op/A)
 	local_mode = !local_mode
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/gps, "hideSignal", ui_act_hidesignal)
 UI_ACT_PROC(/obj/item/gps, ui_act_hidesignal)

@@ -27,6 +27,8 @@
 	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/walkpod)
+	op("stop", ui_act(), then(PROC_REF(ui_act_stop)))
+	op("play", ui_act(), then(PROC_REF(ui_act_play)))
 	owns_one(nameof(deployed_headpods), /obj/item/headpods)
 
 /// Person whomst is listening to us. periodic_step() checks on them and plays music while set (DECLARE_PERIODIC_WHILE).
@@ -215,18 +217,16 @@ UI_ACT_PROC(/obj/item/walkpod, ui_act_volume)
 	update_music() // To broadcast volume change without restarting song
 	return TRUE
 
-UI_ACT(/obj/item/walkpod, "stop", ui_act_stop)
-UI_ACT_PROC(/obj/item/walkpod, ui_act_stop)
+/obj/item/walkpod/proc/ui_act_stop(datum/act/op/A)
 	StopPlaying()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/walkpod, "play", ui_act_play)
-UI_ACT_PROC(/obj/item/walkpod, ui_act_play)
+/obj/item/walkpod/proc/ui_act_play(datum/act/op/A)
 	if(current_track() == null)
-		to_chat(ui.user, "No track selected.")
+		to_chat(A.actor, "No track selected.")
 	else
 		StartPlaying()
-	return TRUE
+	return OP_OK
 
 // Silly verb
 /// Old Take HeadPods verb: Grab the pair of HeadPods.

@@ -17,12 +17,8 @@
 
 // The owner mob owns the link (owned_soul_links); soul_owner is the one-sided back view. Sharers
 // are plain relations both ways (a multi-sharer link names several), kept in step by the procs below.
-/mob/living/relations()
-	. = ..()
-	. += rel_many(nameof(shared_soul_links))
-/datum/soul_link/multi_sharer/relations()
-	. = ..()
-	. += rel_many(nameof(soul_sharers))
+CAPABILITIES(/datum/soul_link/multi_sharer)
+	ref_many(nameof(soul_sharers))
 
 /datum/soul_link/proc/remove_soul_sharer(mob/living/sharer)
 	if(soul_sharer == sharer)

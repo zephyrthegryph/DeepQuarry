@@ -2,10 +2,12 @@
 	set category = VERB_CAT_IC_GAME
 	set name = "Pray"
 
-	om_ask(src, /datum/om/prompt/text, PROC_REF(prayer_entered), title = "Pray", message = "Prayers are sent to staff but do not open tickets or go to Discord. If you have a technical difficulty or an event/spice idea/hook - please ahelp instead. Thank you!", max_length = MAX_MESSAGE_LEN)
+	open_request(src, /datum/prompt/text, PROC_REF(prayer_entered), answerer = src, title = "Pray", question = "Prayers are sent to staff but do not open tickets or go to Discord. If you have a technical difficulty or an event/spice idea/hook - please ahelp instead. Thank you!", max_len = MAX_MESSAGE_LEN, name_text = FALSE, timeout = 0)
 
-/mob/proc/prayer_entered(datum/om/prompt/text/ask)
-	var/raw_msg = ask.text
+/mob/proc/prayer_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/raw_msg = A.answer.answer_value
 	if(!raw_msg)	return
 
 	if(src.client)

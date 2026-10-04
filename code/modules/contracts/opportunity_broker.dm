@@ -109,8 +109,13 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 	EXPIRY_DECLARE(last_event_at)
 	var/latched = FALSE
 	var/list/facts_by_signal
+	/// Owns the records indexed by facts_by_signal; the nested maps retain their lookup order.
+	var/list/observations
 	/// The last event that revised this window during an open batch (a relation; damage_batch.dm).
 	var/datum/contract_event/batch_event
+
+CAPABILITIES(/datum/contract_opportunity_window)
+	owns_many(nameof(observations), /datum/contract_opportunity_observation)
 
 /datum/contract_opportunity_window/New(_key, _bucket, datum/contract_opportunity_rule/rule)
 	. = ..()
@@ -127,7 +132,7 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 	for(var/signal_id in facts_by_signal)
 		var/list/facts = facts_by_signal[signal_id]
 		for(var/fact_key in facts)
-			qdel(facts[fact_key])
+			own_remove(src, nameof(observations), facts[fact_key])
 	..()
 
 /datum/contract_opportunity_window/proc/prune(datum/contract_opportunity_rule/rule)
@@ -139,7 +144,7 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 			if(observation.occurred_at >= cutoff)
 				continue
 			facts -= fact_key
-			qdel(observation)
+			own_remove(src, nameof(observations), observation)
 
 /datum/contract_opportunity_window/proc/revise(datum/contract_opportunity_signal/signal, datum/contract_event/event)
 	var/stable_fact_id = event.fact_id || event.occurrence_id
@@ -154,11 +159,11 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 		if(event.fact_revision <= 0)
 			return FALSE
 		facts -= fact_key
-		qdel(previous)
+		own_remove(src, nameof(observations), previous)
 	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
 	if(!event.fact_active || !signal.event_matches(event))
 		return TRUE
-	facts[fact_key] = new /datum/contract_opportunity_observation(fact_key, event, signal)
+	facts[fact_key] = rel_add(src, nameof(observations), new /datum/contract_opportunity_observation(fact_key, event, signal))
 	while(length(facts) > CONTRACT_OPPORTUNITY_FACT_LIMIT)
 		var/oldest_key
 		var/oldest_time = INFINITY
@@ -169,7 +174,7 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 				oldest_time = candidate.occurred_at
 		var/datum/contract_opportunity_observation/expired = facts[oldest_key]
 		facts -= oldest_key
-		qdel(expired)
+		own_remove(src, nameof(observations), expired)
 	return TRUE
 
 /datum/contract_opportunity_window/proc/signal_snapshot(datum/contract_opportunity_signal/signal)

@@ -6,10 +6,14 @@
 
 	var/supply_conversion_value = 0
 
+TYPE_TABLE_DECLARE(/obj/item/organ/internal, internal_late_initialize, FALSE)
+
 /obj/item/organ/internal/Initialize(mapload, internal)
 	. = ..()
 	if(supply_conversion_value)
 		make_sellable(/datum/sellable/organ)
+	if(TYPE_TABLE_GET(src, internal_late_initialize))
+		. = INITIALIZE_HINT_LATELOAD
 
 /obj/item/organ/internal/die()
 	..()

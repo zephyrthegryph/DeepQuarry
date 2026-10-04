@@ -81,22 +81,31 @@
 		return
 
 	if(choices.len > 1)
-		om_ask(src, /datum/om/prompt/choice/borer_infest, PROC_REF(infest_target_chosen), choices = choices)
+		open_request(src, /datum/prompt/choice/borer_infest, PROC_REF(infest_target_chosen), answerer = src, choices = choices)
 		return
 	infest_target(choices[1])
 
 /// Re-checked on the answer: still conscious and hostless, and next to the one picked.
-/datum/om/prompt/choice/borer_infest
+/datum/prompt/choice/borer_infest
 	title = "Target Choice"
-	message = "Who do you wish to infest?"
+	question = "Who do you wish to infest?"
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 
-/datum/om/prompt/choice/borer_infest/valid()
+/datum/prompt/choice/borer_infest/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
 	var/mob/living/simple_mob/animal/borer/B = answerer
-	return (!B.borer_host() && B.Adjacent(choice)) ? null : "unable"
+	var/mob/living/carbon/human/selected = answer_value
+	if(QDELETED(selected))
+		return "gone"
+	return (!B.borer_host() && B.Adjacent(selected)) ? null : "unable"
 
-/mob/living/simple_mob/animal/borer/proc/infest_target_chosen(datum/om/prompt/choice/borer_infest/ask)
-	infest_target(ask.choice)
+/mob/living/simple_mob/animal/borer/proc/infest_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	infest_target(A.answer.answer_value)
 
 /// Infests mob with borer.
 /mob/living/simple_mob/animal/borer/proc/infest_dislodged(mob/living/carbon/human/infest_target)

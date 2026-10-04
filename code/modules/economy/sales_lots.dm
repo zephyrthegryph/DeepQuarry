@@ -76,6 +76,9 @@
 	return id_card && ((ACCESS_CAPTAIN in id_card.access) || (ACCESS_HOP in id_card.access) || (ACCESS_CENT_CAPTAIN in id_card.access))
 
 /obj/item/retail_scanner/proc/certify_freight_crate(obj/structure/closet/crate/crate, mob/living/user)
+	return certify_freight_stage(crate, user, list())
+
+/obj/item/retail_scanner/proc/certify_freight_stage(obj/structure/closet/crate/crate, mob/living/user, list/freight_answers)
 	if(!crate || !user || crate.opened)
 		to_chat(user, span_warning("The crate must be closed before certification."))
 		return FALSE
@@ -113,16 +116,25 @@
 	if(length(producer_values))
 		preview += "\nDetected contributors: [length(producer_values)]"
 	// Each answer re-runs this certification with every check above made again.
-	var/go_on = rerun_ask(user, "value", PROC_REF(certify_freight_crate), args, /datum/om/prompt/choice/alert, message = preview, title = "Freight valuation", choices = list("Continue", "Cancel"))
+	var/go_on = freight_answers["value"]
+	if(isnull(go_on))
+		open_request(src, /datum/prompt/choice/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "value", question = preview, title = "Freight valuation", choices = list("Continue", "Cancel"))
+		return FALSE
 	if(go_on != "Continue" || crate.opened || get_dist(src, crate) > 1)
 		return FALSE
-	var/destination = rerun_ask(user, "destination", PROC_REF(certify_freight_crate), args, /datum/om/prompt/text, message = "Who is this shipment consigned to?", title = "Freight ledger", default = "External buyer", max_length = 80)
+	var/destination = freight_answers["destination"]
+	if(isnull(destination))
+		open_request(src, /datum/prompt/text/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "destination", question = "Who is this shipment consigned to?", title = "Freight ledger", default = "External buyer")
+		return FALSE
 	destination = trim(destination, 80)
 	if(!destination || crate.opened || get_dist(src, crate) > 1)
 		return FALSE
 	var/list/producer_percentages = list()
 	if(length(producer_values))
-		var/allocation_choice = rerun_ask(user, "allocation", PROC_REF(certify_freight_crate), args, /datum/om/prompt/choice/alert, message = "Suggested producer pool: 5% divided by authenticated contribution value. Cargo always receives 20%.", title = "Producer allocation", choices = list("Use suggested", "Edit shares", "No producer share", "Cancel"))
+		var/allocation_choice = freight_answers["allocation"]
+		if(isnull(allocation_choice))
+			open_request(src, /datum/prompt/choice/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "allocation", question = "Suggested producer pool: 5% divided by authenticated contribution value. Cargo always receives 20%.", title = "Producer allocation", choices = list("Use suggested", "Edit shares", "No producer share", "Cancel"))
+			return FALSE
 		if(isnull(allocation_choice) || allocation_choice == "Cancel")
 			return FALSE
 		if(allocation_choice == "Use suggested")
@@ -138,7 +150,10 @@
 			var/allocated = 0
 			for(var/account_number in producer_values)
 				var/datum/money_account/producer = get_account(text2num(account_number))
-				var/share = rerun_ask(user, "share[account_number]", PROC_REF(certify_freight_crate), args, /datum/om/prompt/number, message = "Percentage for [producer?.owner_name || "account [account_number]"] (maximum remaining: [20 - allocated]%)", title = "Producer allocation", default = 0, max = 20 - allocated, round_entry = FALSE)
+				var/share = freight_answers["share[account_number]"]
+				if(isnull(share))
+					open_request(src, /datum/prompt/number/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "share[account_number]", question = "Percentage for [producer?.owner_name || "account [account_number]"] (maximum remaining: [20 - allocated]%)", title = "Producer allocation", default = 0, max_value = 20 - allocated)
+					return FALSE
 				if(isnull(share) || crate.opened || get_dist(src, crate) > 1)
 					return FALSE
 				share = round(CLAMP(share, 0, 20 - allocated), 0.1)
@@ -156,7 +171,11 @@
 	var/final_summary = "Consignee: [destination]\n[department]: [department_percent]%\nCargo: 20%"
 	if(length(producer_rows))
 		final_summary += "\n[jointext(producer_rows, "\n")]"
-	if(rerun_ask(user, "print", PROC_REF(certify_freight_crate), args, /datum/om/prompt/choice/alert, message = final_summary, title = "Print freight ledger?", choices = list("Print", "Cancel")) != "Print" || crate.opened || get_dist(src, crate) > 1)
+	var/print_answer = freight_answers["print"]
+	if(isnull(print_answer))
+		open_request(src, /datum/prompt/choice/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "print", question = final_summary, title = "Print freight ledger?", choices = list("Print", "Cancel"))
+		return FALSE
+	if(print_answer != "Print" || crate.opened || get_dist(src, crate) > 1)
 		return FALSE
 	if(!length(freight_form_paper))
 		return FALSE
@@ -426,3 +445,116 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
 /obj/machinery/department_storefront/command
 	name = "command storefront"
 	department_id = DEPARTMENT_COMMAND
+
+/datum/prompt/choice/freight_certification
+	timeout = 0
+	buttons = TRUE
+	var/obj/structure/closet/crate/shipment
+	var/list/freight_answers
+	var/answer_key
+	var/shipment_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/freight_certification)
+	ref_one(nameof(shipment), /obj/structure/closet/crate)
+
+/datum/prompt/choice/freight_certification/prepare(datum/act/A)
+	. = ..()
+	var/obj/structure/closet/crate/captured_shipment = shipment
+	shipment_expected = !isnull(captured_shipment)
+	rel_clear(src, nameof(shipment))
+	if(captured_shipment && !QDELETED(captured_shipment))
+		rel_set(src, nameof(shipment), captured_shipment)
+
+/datum/prompt/choice/freight_certification/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(shipment_expected && QDELETED(shipment))
+		return "gone"
+
+/datum/prompt/text/freight_certification
+	timeout = 0
+	max_len = 80
+	var/obj/structure/closet/crate/shipment
+	var/list/freight_answers
+	var/answer_key
+	var/shipment_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/freight_certification)
+	ref_one(nameof(shipment), /obj/structure/closet/crate)
+
+/datum/prompt/text/freight_certification/prepare(datum/act/A)
+	. = ..()
+	var/obj/structure/closet/crate/captured_shipment = shipment
+	shipment_expected = !isnull(captured_shipment)
+	rel_clear(src, nameof(shipment))
+	if(captured_shipment && !QDELETED(captured_shipment))
+		rel_set(src, nameof(shipment), captured_shipment)
+
+/datum/prompt/text/freight_certification/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(shipment_expected && QDELETED(shipment))
+		return "gone"
+
+/datum/prompt/number/freight_certification
+	timeout = 0
+	min_value = 0
+	var/obj/structure/closet/crate/shipment
+	var/list/freight_answers
+	var/answer_key
+	var/shipment_expected = FALSE
+
+CAPABILITIES(/datum/prompt/number/freight_certification)
+	ref_one(nameof(shipment), /obj/structure/closet/crate)
+
+/datum/prompt/number/freight_certification/prepare(datum/act/A)
+	. = ..()
+	var/obj/structure/closet/crate/captured_shipment = shipment
+	shipment_expected = !isnull(captured_shipment)
+	rel_clear(src, nameof(shipment))
+	if(captured_shipment && !QDELETED(captured_shipment))
+		rel_set(src, nameof(shipment), captured_shipment)
+
+/datum/prompt/number/freight_certification/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(shipment_expected && QDELETED(shipment))
+		return "gone"
+
+/datum/prompt/number/freight_certification/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, FALSE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/obj/item/retail_scanner/proc/freight_certification_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = freight_certification_apply(A)
+	SStgui.update_uis(src)
+	return .
+
+/obj/item/retail_scanner/proc/freight_certification_apply(datum/act/request/A)
+	var/obj/structure/closet/crate/shipment
+	var/list/freight_answers
+	var/answer_key
+	if(istype(A.answer, /datum/prompt/choice/freight_certification))
+		var/datum/prompt/choice/freight_certification/ask = A.answer
+		shipment = ask.shipment
+		freight_answers = ask.freight_answers
+		answer_key = ask.answer_key
+	else if(istype(A.answer, /datum/prompt/text/freight_certification))
+		var/datum/prompt/text/freight_certification/ask = A.answer
+		shipment = ask.shipment
+		freight_answers = ask.freight_answers
+		answer_key = ask.answer_key
+	else
+		var/datum/prompt/number/freight_certification/ask = A.answer
+		shipment = ask.shipment
+		freight_answers = ask.freight_answers
+		answer_key = ask.answer_key
+	freight_answers[answer_key] = A.answer.answer_value
+	return certify_freight_stage(shipment, A.request.answerer, freight_answers)

@@ -47,12 +47,16 @@
 
 /obj/item/holder/MouseDrop(mob/M)
 	..()
-	if(M != usr) return
-	if(usr == src) return
-	if(!Adjacent(usr)) return
+	// ALLOW(sys_usr_outside_verb): Native drag delivery supplies the initiating mob after the unchanged parent route.
+	holder_inventory_drop(M, usr)
+
+/obj/item/holder/proc/holder_inventory_drop(mob/M, mob/user)
+	if(M != user) return
+	if(user == src) return
+	if(!Adjacent(user)) return
 	if(isAI(M)) return
 	for(var/mob/living/carbon/human/O in contents)
-		O.show_inventory_panel(usr, state = GLOB.tgui_deep_inventory_state)
+		O.show_inventory_panel(user, state = GLOB.tgui_deep_inventory_state)
 
 EXTEND_INTERACTIONS(/obj/item/holder/micro, INTERACT_SELF("Pet", PROC_REF(micro_holder_pet_self)))
 

@@ -124,7 +124,12 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 /obj/item/radio/proc/recalculateChannels()
 	return
 
-DECLARE_INTERACTIONS(/obj/item/radio, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/radio)
+	op("controls", in_hand(), label("Open radio controls"), then(PROC_REF(radio_controls_opened)))
+
+/obj/item/radio/proc/radio_controls_opened(datum/act/op/A)
+	interaction_self(A.actor, A.held, null)
+	return OP_OK
 
 /obj/item/radio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(beacon || electric_pack || uplink)

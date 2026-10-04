@@ -144,13 +144,16 @@ MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 3000, MAT_PLASTEEL
 	var/digspeed = 40
 	var/grave_mode = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+TRACKED(/obj/item/shovel, grave_mode)
 
-/// Old click_alt.
-/obj/item/shovel/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	grave_mode = !grave_mode
-	to_chat(user, span_notice("You'll now dig [grave_mode ? "out graves" : "for loot"]."))
-	return FALSE
+CAPABILITIES(/obj/item/shovel)
+	op("toggle_grave_mode", hand(), gesture(GESTURE_ALT), label("Toggle digging mode"),
+		needs(req_adjacent()), then(PROC_REF(grave_mode_toggled)))
+
+/obj/item/shovel/proc/grave_mode_toggled(datum/act/op/A)
+	set_grave_mode(!grave_mode)
+	to_chat(A.actor, span_notice("You'll now dig [grave_mode ? "out graves" : "for loot"]."))
+	return OP_OK
 
 /obj/item/shovel/wood
 	icon_state = "whiteshovel"
@@ -160,7 +163,8 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 
 /obj/item/shovel/wood/Initialize(mapload, _mat)
 	. = ..()
-	material_static = get_material_by_name(_mat)
+	// A shovel spawned bare (the survival recipe, a map, a test) is plain wood, not material-less.
+	material_static = get_material_by_name(_mat || MAT_WOOD)
 	if(!istype(material(), /datum/material))
 		material_static = null
 	else
@@ -171,7 +175,8 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 /obj/item/shovel/wood/draw(datum/look/look)
 	..()
 	look.color = material() ? material().icon_colour : initial(color)
-	look.alpha = min(max(255 * material().opacity, 80), 255)
+	if(material())
+		look.alpha = min(max(255 * material().opacity, 80), 255)
 
 /obj/item/shovel/spade
 	name = "spade"

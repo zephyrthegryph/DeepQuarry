@@ -337,7 +337,7 @@ UI_ACT_PROC(/datum/secrets_menu, ui_act_ghost_mode)
 	for(var/area/AffectedArea in affected_areas)
 		AffectedArea.power_light = 0
 		AffectedArea.power_change()
-		after(AffectedArea, rand(25,50), GLOBAL_PROC_REF(chilling_wind_relight), with = list(AffectedArea))
+		after(AffectedArea, rand(2.5 SECONDS, 5 SECONDS), GLOBAL_PROC_REF(chilling_wind_relight), with = list(AffectedArea))
 
 	after(null, 10 SECONDS, GLOBAL_PROC_REF(chilling_wind_stops), with = list(affected_mobs.Copy()))
 	affected_mobs.Cut()

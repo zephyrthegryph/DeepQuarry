@@ -137,7 +137,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/supply_beacon, MACHINE_PIPELINE,
 	var/drop_y = src.y - 2
 	var/drop_z = src.z
 	GLOB.command_announcement.Announce("[using_map.starsys_name] Rapid Fabrication priority supply request #[rand(1000,9999)]-[rand(100,999)] received. Shipment dispatched via ballistic supply pod for immediate delivery. Have a nice day.", "Thank You For Your Patronage")
-	after(src, rand(100, 300), PROC_REF(drop_supply), with = list(drop_x, drop_y, drop_z))
+	after(src, rand(10 SECONDS, 30 SECONDS), PROC_REF(drop_supply), with = list(drop_x, drop_y, drop_z))
 
 /obj/machinery/power/supply_beacon/proc/drop_supply(drop_x, drop_y, drop_z)
 	new /datum/random_map/droppod/supply(null, drop_x, drop_y, drop_z, supplied_drop = drop_type) // Splat.

@@ -15,12 +15,13 @@ OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
 /// BROKEN, MAINT and EMPED raise CHANGE_MACHINE_BROKEN, NOPOWER and POWEROFF CHANGE_MACHINE_POWER.
 OM_FLAG_FIELD_BITS(/obj/machinery, stat, 0, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER, list("[BROKEN]" = CHANGE_MACHINE_BROKEN, "[NOPOWER]" = CHANGE_MACHINE_POWER, "[POWEROFF]" = CHANGE_MACHINE_POWER, "[MAINT]" = CHANGE_MACHINE_BROKEN, "[EMPED]" = CHANGE_MACHINE_BROKEN))
 
-/// Powered and working: none of NOPOWER, BROKEN, MAINT, EMPED (plus `additional_flags`).
+/// Powered and working: none of NOPOWER, BROKEN, MAINT, EMPED (plus `additional_flags`), and no pulse holding it down (emp_disable()'s timed
+/// hold on STAT_OPERABLE, which this legacy reader shares with the converted machines' stat).
 /// interact_offline is deliberately not folded in: it is a UI-reach rule (tgui_status,
 /// CanUseTopic), not "the machine works".
 OM_DERIVE_FIELD(/obj/machinery, operable, list("stat"))
 /obj/machinery/proc/operable(additional_flags = 0)
-	return !(stat & (MACHINE_INOPERABLE_FLAGS | additional_flags))
+	return !(stat & (MACHINE_INOPERABLE_FLAGS | additional_flags)) && !emp_disabled(src)
 
 /// Anchoring: set_anchored() (atoms_movable.dm) is the setter and raises the family channel.
 OM_FIELD_SETTER(/atom/movable, anchored, 0)

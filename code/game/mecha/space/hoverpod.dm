@@ -26,7 +26,7 @@
 	max_special_equip = 1
 
 CAPABILITIES(/obj/mecha/working/hoverpod)
-	owns_one(nameof(ion_trail), starts = /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 
 /obj/mecha/working/hoverpod/Initialize(mapload)
 	. = ..()

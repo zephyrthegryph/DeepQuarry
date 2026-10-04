@@ -1,3 +1,7 @@
+CAPABILITIES(/datum/error_viewer)
+	op("refresh", ui_act(), then(PROC_REF(ui_act_refresh)))
+	op("back", ui_act(), then(PROC_REF(ui_act_back)))
+
 // Error viewer — structured TGUI replacement for the legacy browse_to HTML chain.
 
 /datum/error_viewer
@@ -103,10 +107,9 @@ UI_DATA(/datum/error_viewer/error_entry, "desc:text", "merge:ui_data_datum_error
 		data["usr_loc_z"] = usr_loc().z
 	return data
 
-UI_ACT(/datum/error_viewer, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/error_viewer, ui_act_refresh)
+/datum/error_viewer/proc/ui_act_refresh(datum/act/op/A)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/error_viewer, "set_mode", ui_act_set_mode, UI_ARG_TEXT("mode"))
 UI_ACT_PROC(/datum/error_viewer, ui_act_set_mode)
@@ -124,11 +127,10 @@ UI_ACT_PROC(/datum/error_viewer, ui_act_navigate)
 		EV.tgui_interact(ui.user)
 	return TRUE
 
-UI_ACT(/datum/error_viewer, "back", ui_act_back)
-UI_ACT_PROC(/datum/error_viewer, ui_act_back)
+/datum/error_viewer/proc/ui_act_back(datum/act/op/A)
 	if(dq_back_to())
-		dq_back_to().tgui_interact(ui.user)
-	return TRUE
+		dq_back_to().tgui_interact(A.actor)
+	return OP_OK
 
 UI_ACT(/datum/error_viewer, "vv_usr", ui_act_vv_usr)
 UI_ACT_PROC(/datum/error_viewer, ui_act_vv_usr)

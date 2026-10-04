@@ -67,21 +67,41 @@
 		to_chat(src, span_alium("Their plasma vessel is missing."))
 		return
 
-	om_ask(src, /datum/om/prompt/number/plasma_transfer, PROC_REF(plasma_amount_chosen), recipient = M)
+	open_request(src, /datum/prompt/number/plasma_transfer, PROC_REF(plasma_amount_chosen), answerer = src, recipient = M)
 
 /// How much plasma to give. Re-checked on the answer: still conscious, and the recipient still exists.
-/datum/om/prompt/number/plasma_transfer
-	message = "Amount:"
+/datum/prompt/number/plasma_transfer
+	question = "Amount:"
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
+	min_value = null
+	max_value = null
+	step = 1
+	default = 0
 	var/mob/living/carbon/human/recipient
 
-/datum/om/prompt/number/plasma_transfer/prepare()
-	title = "Transfer Plasma to [recipient]"
-	return TRUE
+CAPABILITIES(/datum/prompt/number/plasma_transfer)
+	ref_one(nameof(recipient), /mob/living/carbon/human)
 
-/mob/living/carbon/human/proc/plasma_amount_chosen(datum/om/prompt/number/plasma_transfer/ask)
+/datum/prompt/number/plasma_transfer/prepare(datum/act/context)
+	. = ..()
+	var/mob/living/carbon/human/captured = recipient
+	rel_clear(src, nameof(recipient))
+	rel_set(src, nameof(recipient), captured)
+	title = "Transfer Plasma to [recipient]"
+
+/datum/prompt/number/plasma_transfer/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(recipient) ? "recipient gone" : null
+
+/mob/living/carbon/human/proc/plasma_amount_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/plasma_transfer/ask = A.request
 	var/mob/living/carbon/human/M = ask.recipient
-	var/amount = abs(round(ask.number))
+	var/amount = abs(round(ask.answer_value))
 	if(amount && check_alien_ability(amount,0,O_PLASMA))
 		M.gain_plasma(amount)
 		to_chat(M, span_alium("[src] has transfered [amount] plasma to you."))
@@ -325,13 +345,13 @@
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	COOLDOWN_START(src, last_special, 75)
+	COOLDOWN_START(src, last_special, 7.5 SECONDS)
 	set_status_flags(status_flags | LEAPING)
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_VOICE_HISS5)
-	after(src, 5, PROC_REF(leap_land), with = list(T))
+	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T))
 
 /mob/living/carbon/human/proc/leap_land(mob/living/T)
 
@@ -383,7 +403,7 @@
 		to_chat(src, span_danger("You must have an aggressive grab to slaughter your prey!"))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	act_message(src, null, others = span_warning(span_bold("%U%") + " rips viciously at \the [G?.grab_target()]'s body with its claws!"))
 

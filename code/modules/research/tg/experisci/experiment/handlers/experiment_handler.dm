@@ -6,6 +6,10 @@
  * `experiment_handler` var; create it with `new /datum/experiment_handler(holder, ...)`.
  * It observes the holder's events and actions with observe().
  */
+CAPABILITIES(/datum/experiment_handler)
+	op("clear_server", ui_act(), then(PROC_REF(ui_act_clear_server)))
+	op("clear_experiment", ui_act(), then(PROC_REF(ui_act_clear_experiment)))
+
 /datum/experiment_handler
 	/// The movable this handler belongs to.
 	var/atom/movable/owner
@@ -413,10 +417,9 @@ UI_ACT_PROC(/datum/experiment_handler, ui_act_select_server)
 		link_techweb(new_techweb)
 		return
 
-UI_ACT(/datum/experiment_handler, "clear_server", ui_act_clear_server)
-UI_ACT_PROC(/datum/experiment_handler, ui_act_clear_server)
-	. = TRUE
+/datum/experiment_handler/proc/ui_act_clear_server(datum/act/op/A)
 	unlink_techweb()
+	return OP_OK
 
 UI_ACT(/datum/experiment_handler, "select_experiment", ui_act_select_experiment, UI_ARG_REF("ref", null, /datum/experiment))
 UI_ACT_PROC(/datum/experiment_handler, ui_act_select_experiment)
@@ -428,10 +431,9 @@ UI_ACT_PROC(/datum/experiment_handler, ui_act_select_experiment)
 	if (experiment)
 		link_experiment(experiment)
 
-UI_ACT(/datum/experiment_handler, "clear_experiment", ui_act_clear_experiment)
-UI_ACT_PROC(/datum/experiment_handler, ui_act_clear_experiment)
-	. = TRUE
+/datum/experiment_handler/proc/ui_act_clear_experiment(datum/act/op/A)
 	unlink_experiment()
+	return OP_OK
 
 UI_ACT(/datum/experiment_handler, "start_experiment_callback", ui_act_start_experiment_callback)
 UI_ACT_PROC(/datum/experiment_handler, ui_act_start_experiment_callback)

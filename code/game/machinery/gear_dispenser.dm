@@ -153,7 +153,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	var/list/dispenses = list(/datum/gear_disp/trash) // put your gear datums here!
 	var/datum/gear_disp/one_setting
 	var/dispenser_flags = GD_NOGREED|GD_UNLIMITED
-	var/unique_dispense_list = list()
+	var/list/unique_dispense_list
 	var/needs_power = 0
 	//req_one_access = list(whatever) // Note that each gear datum can have access, too.
 
@@ -273,7 +273,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 	if((dispenser_flags & GD_NOGREED) && !emagged)
 		GLOB.gear_distributed_to["[type]"] |= user.ckey
 	if((dispenser_flags & GD_UNIQUE) && !emagged)
-		unique_dispense_list |= user.ckey
+		LAZYOR(unique_dispense_list, user.ckey)
 
 	animate_dispensing()
 	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet))
@@ -389,7 +389,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 	if((dispenser_flags & GD_NOGREED) && !emagged)
 		GLOB.gear_distributed_to["[type]"] |= user.ckey
 	if((dispenser_flags & GD_UNIQUE) && !emagged)
-		unique_dispense_list |= user.ckey
+		LAZYOR(unique_dispense_list, user.ckey)
 
 	rel_set(src, nameof(held_gear_disp), S)
 
@@ -414,7 +414,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 	add_overlay("fullsuit")
 	door.icon_state = "open"
 	flick("anim_open", door)
-	after(src, 10.5, PROC_REF(animate_dispensing_lit))
+	after(src, 1.05 SECONDS, PROC_REF(animate_dispensing_lit))
 
 /obj/machinery/gear_dispenser/suit_fancy/proc/animate_dispensing_lit()
 	add_overlay("light2")

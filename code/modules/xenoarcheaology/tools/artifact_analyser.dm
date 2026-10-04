@@ -7,7 +7,6 @@
 	density = TRUE
 	bubble_icon = "science"
 	var/scan_in_progress = 0
-	var/scan_num = 0
 	var/tmp/obj/scanned_obj
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	EXPIRY_DECLARE(scan_completion_time)
@@ -118,7 +117,7 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 		else
 			scan_in_progress = 1
 			EXPIRY_SET(src, scan_completion_time, scan_duration, CLOCK_WORLD)
-			after(src, scan_duration + 1, PROC_REF(scan_timer_fired))
+			after(src, scan_duration + 0.1 SECONDS, PROC_REF(scan_timer_fired))
 			atom_say("Scanning begun.")
 	return TRUE
 

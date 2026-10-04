@@ -161,7 +161,6 @@ TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list
 	icon_state = "waterwings"
 
 
-// ??? Somehow wedding rigs were attributed to me from 9 years ago but is not upstream and is only on here, yet there's no chomp edits?
 /obj/item/clothing/gloves/weddingring
 	name = "golden wedding ring"
 	desc = "For showing your devotion to another person. It has a golden glimmer to it."
@@ -171,20 +170,22 @@ TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list
 	body_parts_covered = null
 	special_handling = TRUE
 
-CAPABILITIES(/obj/item/clothing/gloves/weddingring)
-	op("wedding_ring_engrave_self", in_hand(), label("Engrave"), asks(/datum/prompt/text, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your betrothed", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "a1"), then(PROC_REF(wedding_ring_engrave_self)))
+TRACKED(/obj/item/clothing/gloves/weddingring, partnername)
 
-/// Old attack_self: set the engraving.
-/obj/item/clothing/gloves/weddingring/proc/wedding_ring_engrave_self(datum/act/op/A)
-	var/_answer_a1 = A.step_answer("a1").answer_value
-	partnername = _answer_a1
+CAPABILITIES(/obj/item/clothing/gloves/weddingring)
+	op("engrave", in_hand(), label("Engrave"),
+		asks(/datum/prompt/text, keeps = 0, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your betrothed", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(engraving_picked)))
+
+/obj/item/clothing/gloves/weddingring/proc/engraving_picked(datum/act/op/A)
+	var/datum/prompt/text/picked = A.answer
+	set_partnername(picked.value)
 	name = "[initial(name)] - [partnername]"
+	return OP_OK
 
 /obj/item/clothing/gloves/weddingring/silver
 	name = "silver wedding ring"
 	icon_state = "wedring_s"
 	item_state = "wedring_s"
-// ???
 
 /obj/item/clothing/gloves/color
 	name = "gloves"

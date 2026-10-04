@@ -16,12 +16,18 @@ ADMIN_VERB(dq_spawn_medical_dummy, R_DEBUG, "DQ Spawn Medical Dummy", "Spawn a d
 
 
 ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /datum/affliction subtype to a target's organ.", ADMIN_CATEGORY_DEBUG)
+	advance_condition(user)
+
+/datum/admin_verb/dq_apply_condition/proc/advance_condition(client/user, stage = 0, picked_target_key = null, picked_key = null, organ_key = null)
 	var/list/candidates = _dq_list_living_humans_in_view(user.mob)
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = verb_ask(user.mob, "k23", args, /datum/om/prompt/choice, message = "Target patient:", title = "DQ Medical", choices = candidates)
-	if(isnull(picked_target_key))
+	if(stage <= 0)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/medical_debug_apply, PROC_REF(condition_choice_made), answerer = answerer, question = "Target patient:", choices = candidates, stage = 0, target_key = picked_target_key, condition_key = picked_key)
 		return
 	if(!picked_target_key)
 		return
@@ -35,8 +41,11 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 	if(!length(options))
 		to_chat(user.mob, span_warning("No /datum/affliction subtypes defined."))
 		return
-	var/picked_key = verb_ask(user.mob, "k36", args, /datum/om/prompt/choice, message = "Which condition?", title = "DQ Medical", choices = options)
-	if(isnull(picked_key))
+	if(stage <= 1)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/medical_debug_apply, PROC_REF(condition_choice_made), answerer = answerer, question = "Which condition?", choices = options, stage = 1, target_key = picked_target_key, condition_key = picked_key)
 		return
 	if(!picked_key)
 		return
@@ -46,8 +55,11 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 		organ_options["[O.name] (external)"] = O
 	for(var/obj/item/organ/O as anything in target.internal_organ_list())
 		organ_options["[O.name] (internal)"] = O
-	var/organ_key = verb_ask(user.mob, "k45", args, /datum/om/prompt/choice, message = "Which organ?", title = "DQ Medical", choices = organ_options)
-	if(isnull(organ_key))
+	if(stage <= 2)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/medical_debug_apply, PROC_REF(condition_choice_made), answerer = answerer, question = "Which organ?", choices = organ_options, stage = 2, target_key = picked_target_key, condition_key = picked_key)
 		return
 	if(!organ_key)
 		return
@@ -66,15 +78,79 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 	to_chat(user.mob, span_notice("Applied [C.name] to [target]'s [picked_organ.name]."))
 	log_admin("[key_name(user)] applied condition [condition_type] to [target] / [picked_organ.name].")
 
+/datum/prompt/choice/medical_debug_apply
+	parent_type = /datum/prompt/choice/medical_debug_target
+	var/stage
+	var/target_key
+	var/condition_key
+
+/datum/admin_verb/dq_apply_condition/proc/condition_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/medical_debug_apply/ask = A.answer
+	var/client/user = ask.answerer?.client
+	if(!user)
+		return
+	switch(ask.stage)
+		if(0)
+			advance_condition(user, 1, ask.answer_value)
+		if(1)
+			advance_condition(user, 2, ask.target_key, ask.answer_value)
+		if(2)
+			advance_condition(user, 3, ask.target_key, ask.condition_key, ask.answer_value)
+
+
 
 ADMIN_VERB(dq_clear_conditions, R_DEBUG, "DQ Clear Medical Conditions", "Remove every affliction from a target.", ADMIN_CATEGORY_DEBUG)
 	var/list/candidates = _dq_list_living_humans_in_view(user.mob)
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = verb_ask(user.mob, "k69", args, /datum/om/prompt/choice, message = "Target patient:", title = "DQ Medical", choices = candidates)
-	if(isnull(picked_target_key))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/medical_debug_target, PROC_REF(target_chosen), answerer = answerer, choices = candidates)
+
+
+ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print a target's active conditions and their severity / symptoms.", ADMIN_CATEGORY_DEBUG)
+	var/list/candidates = _dq_list_living_humans_in_view(user.mob)
+	if(!length(candidates))
+		to_chat(user, span_warning("No human targets in view."))
+		return
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/medical_debug_target, PROC_REF(target_chosen), answerer = answerer, choices = candidates)
+
+
+/// Internal helper: collect candidate target humans near a mob.
+/proc/_dq_list_living_humans_in_view(mob/observer)
+	var/list/L = list()
+	if(!observer)
+		return L
+	for(var/mob/living/carbon/human/H in view(7, observer))
+		L["[H.name] ([H.real_name])"] = H
+	return L
+
+/// Rebuild the target lookup after an answer, matching the original verb rerun.
+/datum/prompt/choice/medical_debug_target
+	question = "Target patient:"
+	title = "DQ Medical"
+	rights = R_DEBUG
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/admin_verb/dq_clear_conditions/proc/target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	var/list/candidates = _dq_list_living_humans_in_view(user.mob)
+	if(!length(candidates))
+		to_chat(user, span_warning("No human targets in view."))
+		return
+	var/picked_target_key = A.request.answer_value
 	if(!picked_target_key)
 		return
 	var/mob/living/carbon/human/target = candidates[picked_target_key]
@@ -84,15 +160,17 @@ ADMIN_VERB(dq_clear_conditions, R_DEBUG, "DQ Clear Medical Conditions", "Remove 
 	target.body?.clear_afflictions()
 	to_chat(user.mob, span_notice("Cleared [count] condition\s from [target]."))
 
-
-ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print a target's active conditions and their severity / symptoms.", ADMIN_CATEGORY_DEBUG)
+/datum/admin_verb/dq_dump_conditions/proc/target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
 	var/list/candidates = _dq_list_living_humans_in_view(user.mob)
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = verb_ask(user.mob, "k85", args, /datum/om/prompt/choice, message = "Target patient:", title = "DQ Medical", choices = candidates)
-	if(isnull(picked_target_key))
-		return
+	var/picked_target_key = A.request.answer_value
 	if(!picked_target_key)
 		to_chat(user, span_warning("DQ Inspect: cancelled (no target picked)."))
 		return
@@ -120,13 +198,3 @@ ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print 
 	to_chat(user, span_notice("  bp: [bp ? "[bp[1]]/[bp[2]] mmHg" : "no reading"]"))
 	to_chat(user, span_notice("  o2 sat: [target.get_o2_sat_reading()]%"))
 	to_chat(user, span_notice("  respiration: [target.get_respiratory_rate()] /min"))
-
-
-/// Internal helper: collect candidate target humans near a mob.
-/proc/_dq_list_living_humans_in_view(mob/observer)
-	var/list/L = list()
-	if(!observer)
-		return L
-	for(var/mob/living/carbon/human/H in view(7, observer))
-		L["[H.name] ([H.real_name])"] = H
-	return L

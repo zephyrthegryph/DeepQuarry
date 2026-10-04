@@ -121,11 +121,12 @@
 	set name = "Change Color"
 	set desc = "Change your main color."
 	set category = VERB_CAT_ABILITIES_GENERAL
-	om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick new colors:", title = "Color", default = goia_overlays["zorgoia_main"], overlay = "zorgoia_main")
+	open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick new colors:", title = "Color", default = goia_overlays["zorgoia_main"], overlay = "zorgoia_main")
 
 /// One of the zorgoia's overlay colours, picked after its style (if it has one). The style lands with the colour.
-/datum/om/prompt/color/goia_overlay
+/datum/prompt/color/goia_overlay
 	ask_flags = ASK_CAPABLE
+	timeout = 0
 	/// The goia_overlays key holding the colour ("zorgoia_ears", ...).
 	var/overlay
 	/// The goia_overlays key holding the style ("ears", ...); null: colour only.
@@ -133,12 +134,15 @@
 	/// The style picked.
 	var/style
 
-/mob/living/simple_mob/vore/zorgoia/proc/overlay_color_picked(datum/om/prompt/color/goia_overlay/ask)
-	if(!ask.picked_color)
+/mob/living/simple_mob/vore/zorgoia/proc/overlay_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/goia_overlay/ask = A.answer
+	if(!ask.value)
 		return
 	if(ask.style_key)
 		goia_overlays[ask.style_key] = ask.style
-	goia_overlays[ask.overlay] = ask.picked_color
+	goia_overlays[ask.overlay] = ask.value
 	update_icon()
 
 /mob/living/simple_mob/vore/zorgoia/proc/appearance_switch() //This is just copypastas of the radial menu code, each block of code is the options for each bit of customisation... all 9 of them
@@ -186,32 +190,41 @@
 	for(var/option in options)
 		var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = offset)
 		LAZYSET(options, option, I)
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(appearance_style_chosen), choices = options, anchor = src, radius = 90, subject = part)
+	open_request(src, /datum/prompt/choice/goia_style, PROC_REF(appearance_style_chosen), answerer = src, choices = options, anchor = src, radius = 90, part = part)
 
 /// Second radial answer: pick the colour for the chosen style.
-/mob/living/simple_mob/vore/zorgoia/proc/appearance_style_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/datum/prompt/choice/goia_style
+	radial = TRUE
+	autopick_single_option = TRUE
+	timeout = 0
+	var/part
+
+/mob/living/simple_mob/vore/zorgoia/proc/appearance_style_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/goia_style/ask = A.answer
+	var/choice = ask.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
-	switch(ask.subject)
+	switch(ask.part)
 		if("Ears")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick ears spike color:", title = "Ears Color", default = goia_overlays["zorgoia_ears"], overlay = "zorgoia_ears", style_key = "ears", style = choice)
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick ears spike color:", title = "Ears Color", default = goia_overlays["zorgoia_ears"], overlay = "zorgoia_ears", style_key = "ears", style = choice)
 		if("Spots")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick spot colors:", title = "Spots Color", default = goia_overlays["zorgoia_spots"], overlay = "zorgoia_spots", style_key = "spots", style = choice)
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick spot colors:", title = "Spots Color", default = goia_overlays["zorgoia_spots"], overlay = "zorgoia_spots", style_key = "spots", style = choice)
 		if("Claws")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick claw colors:", title = "Claws Color", default = goia_overlays["zorgoia_claws"], overlay = "zorgoia_claws", style_key = "claws", style = choice)
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick claw colors:", title = "Claws Color", default = goia_overlays["zorgoia_claws"], overlay = "zorgoia_claws", style_key = "claws", style = choice)
 		if("Spines")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick spines colors:", title = "Spines Color", default = goia_overlays["zorgoia_spines"], overlay = "zorgoia_spines", style_key = "spines", style = choice)
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick spines colors:", title = "Spines Color", default = goia_overlays["zorgoia_spines"], overlay = "zorgoia_spines", style_key = "spines", style = choice)
 		if("Fluff")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick fluff colors:", title = "Fluff Color", default = goia_overlays["zorgoia_fluff"], overlay = "zorgoia_fluff", style_key = "fluff", style = choice)
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick fluff colors:", title = "Fluff Color", default = goia_overlays["zorgoia_fluff"], overlay = "zorgoia_fluff", style_key = "fluff", style = choice)
 		if("Underbelly")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick underbelly colors:", title = "Underbelly Color", default = goia_overlays["zorgoia_underbelly"], overlay = "zorgoia_underbelly", style_key = "underbelly", style = choice)
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick underbelly colors:", title = "Underbelly Color", default = goia_overlays["zorgoia_underbelly"], overlay = "zorgoia_underbelly", style_key = "underbelly", style = choice)
 		if("Eyes")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick eye color:", title = "Eye Color", default = goia_overlays["zorgoia_eyes"], overlay = "zorgoia_eyes", style_key = "eyes", style = choice)
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick eye color:", title = "Eye Color", default = goia_overlays["zorgoia_eyes"], overlay = "zorgoia_eyes", style_key = "eyes", style = choice)
 		if("Spike")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick tail spike color:", title = "Tail Color", default = goia_overlays["zorgoia_spike"], overlay = "zorgoia_spike", style_key = "spike", style = choice) //This is overlay 10, not 2, swapped with main body, im not rewriting this array
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick tail spike color:", title = "Tail Color", default = goia_overlays["zorgoia_spike"], overlay = "zorgoia_spike", style_key = "spike", style = choice) //This is overlay 10, not 2, swapped with main body, im not rewriting this array
 		if("Belly")
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick belly color:", title = "Belly Color", default = goia_overlays["zorgoia_belly"], overlay = "zorgoia_belly", style_key = "belly", style = choice)
+			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick belly color:", title = "Belly Color", default = goia_overlays["zorgoia_belly"], overlay = "zorgoia_belly", style_key = "belly", style = choice)
 
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/appearance_switch)
@@ -438,10 +451,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/text, PROC_REF(import_style_entered), title = "Style loading", message = "Paste the style string you exported with Export Style.", max_length = 250)
+	open_request(src, /datum/prompt/text, PROC_REF(import_style_entered), answerer = src, title = "Style loading", question = "Paste the style string you exported with Export Style.", max_len = 250, timeout = 0)
 
-/mob/living/simple_mob/vore/zorgoia/proc/import_style_entered(datum/om/prompt/text/ask)
-	var/input_style = ask.text
+/mob/living/simple_mob/vore/zorgoia/proc/import_style_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/input_style = A.answer.answer_value
 	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")

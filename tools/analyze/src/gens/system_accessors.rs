@@ -64,8 +64,8 @@ impl Generator for SystemAccessors {
             }
         }
         rows.dedup_by(|a, b| a.0 == b.0);
-        // An accessor declared in a test fixture (code/tests/) exists only in a test build.
-        let (tests, content): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| r.3.starts_with("code/tests/"));
+        // An accessor declared in a test-only file (`test_only`) exists only in a test build.
+        let (tests, content): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| crate::sem::gen::test_only(&r.3));
         let emit = |out: &mut GenOut, rows: Vec<(String, String, String, String, u32)>| {
             for (name, system, var, rel, line) in rows {
                 out.doc(format!("SYSTEM_ACCESSOR({}, {}, nameof({})) at {}:{}: the {} system's `{}`, read as a plain var.", system, name, var, rel, line, system, var));
@@ -76,7 +76,7 @@ impl Generator for SystemAccessors {
         };
         emit(out, content);
         if !tests.is_empty() {
-            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
+            out.line(crate::sem::gen::TEST_GUARD);
             out.blank();
             emit(out, tests);
             out.line("#endif");

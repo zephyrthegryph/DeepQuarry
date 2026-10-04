@@ -253,7 +253,8 @@ DECLARE_REAGENTS(/obj/item/organ/internal/brain/slime, 50, null)
 		return 0
 
 	var/mob/living/carbon/human/H = new /mob/living/carbon/human(get_turf(src), source_dna.species)
-	QDEL_SWAP(H.dna, source_dna.Clone()) // a new body needs DNA of its own
+	own_clear(H, nameof(H.dna), OWN_DELETE)
+	rel_set(H, nameof(H.dna), source_dna.Clone()) // a new body needs DNA of its own
 
 	H.UpdateAppearance()
 	H.sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed

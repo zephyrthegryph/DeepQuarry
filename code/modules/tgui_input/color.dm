@@ -9,8 +9,6 @@
  * * autofocus - The bool that controls if this picker should grab window focus.
  */
 /proc/tgui_color_picker(mob/user, message, title, default = "#000000", timeout = 0, autofocus = TRUE, ui_state = GLOB.tgui_always_state)
-	if (!user)
-		user = usr
 	if (!istype(user))
 		if (istype(user, /client))
 			var/client/client = user

@@ -150,7 +150,8 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 	//The DNA2 stuff
 	rel_set(src, nameof(mydna), new /datum/dna2/record ())
-	QDEL_SWAP(mydna.dna, M.dna.Clone())
+	own_clear(mydna, nameof(mydna.dna), OWN_DELETE)
+	rel_set(mydna, nameof(mydna.dna), M.dna.Clone())
 	mydna.ckey = M.ckey
 	mydna.id = copytext(md5(M.real_name), 2, 6)
 	mydna.name = M.dna.real_name
@@ -321,7 +322,8 @@ CAPABILITIES(/datum/transhuman/body_record)
 	//Apply DNA from record
 	if(!mydna.dna) // This case should never happen, but copied from clone pod... Who knows with this codebase.
 		rel_set(mydna, nameof(mydna.dna), new /datum/dna())
-	QDEL_SWAP(H.dna, mydna.dna.Clone())
+	own_clear(H, nameof(H.dna), OWN_DELETE)
+	rel_set(H, nameof(H.dna), mydna.dna.Clone())
 	H.original_player = ckey
 
 	//Update appearance, remake icons

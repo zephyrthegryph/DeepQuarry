@@ -65,6 +65,10 @@ CAPABILITIES(/datum/tgui_module/teleport_control)
 	open_request(src, /datum/prompt/choice, PROC_REF(target_chosen), valid = PROC_REF(request_usable), answerer = A.actor, title = "Locking Menu", question = "Please select a location to lock in.", choices = teleport_targets(), timeout = 0)
 
 /datum/tgui_module/teleport_control/proc/target_chosen(datum/act/request/A)
+	target_chosen_apply(A)
+	SStgui.update_uis(src)
+
+/datum/tgui_module/teleport_control/proc/target_chosen_apply(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/desc = A.answer.answer_value
@@ -75,11 +79,10 @@ CAPABILITIES(/datum/tgui_module/teleport_control)
 		return
 	rel_set(src, nameof(/datum/cinematic::locked), L[desc])
 	locked_name = desc
-	SStgui.update_uis(src)
 
 /datum/tgui_module/teleport_control/proc/ui_act_test_fire(datum/act/op/A)
 	station()?.testfire()
-	return TRUE
+	return OP_OK
 
 /datum/tgui_module/teleport_control/proc/ui_act_toggle_on(datum/act/op/A)
 	var/mob/user = A.actor

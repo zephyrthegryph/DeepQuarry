@@ -31,11 +31,11 @@
 	var/overmap_range = 3
 
 CAPABILITIES(/obj/machinery/computer/telescience)
+	owns_one(nameof(inserted_gps), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(last_tele_data), /datum/projectile_data)
 
 /obj/machinery/computer/telescience/ownership()
 	. = ..()
-	. += owns(nameof(inserted_gps), policy = OWN_SPILL)
 	. += owns(nameof(crystals), policy = OWN_SPILL)
 
 // its crystals are ejected.

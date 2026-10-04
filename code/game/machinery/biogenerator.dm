@@ -308,7 +308,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 	update_icon()
 	play_sfx(src, SFX_MACHINES_BLENDER, 0.8)
 	use_power(S * 30)
-	after(src, (S + 15) / eat_eff, PROC_REF(finish_processing))
+	after(src, (S * (0.1 SECONDS) + 1.5 SECONDS) / eat_eff, PROC_REF(finish_processing))
 
 /obj/machinery/biogenerator/proc/finish_processing()
 	processing = 0

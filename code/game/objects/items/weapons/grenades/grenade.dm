@@ -28,7 +28,7 @@
 
 		activate(user)
 		add_fingerprint(user)
-		after(src, 5, PROC_REF(detonate))
+		after(src, 0.5 SECONDS, PROC_REF(detonate))
 		return 0
 	return 1
 
@@ -40,16 +40,12 @@
 		else if(det_time == null)
 			. += "\The [src] is set for instant detonation."
 
-// EXTEND, not DECLARE: subtypes DECLARE item interactions of their own, which this must not replace.
 CAPABILITIES(/obj/item/grenade)
-	op("grenade_interaction_self", in_hand(), label("Prime"), then(PROC_REF(grenade_interaction_self)))
+	op("prime", in_hand(), when(cond_not(nameof(special_handling))), label("Prime"), then(PROC_REF(grenade_primed)))
 	op("grenade_interaction_hand", hand(), ungated(), then(PROC_REF(grenade_interaction_hand)))
 
-/// Old attack_self. FALSE (special handling) moves on to a subtype's own self-use.
-/obj/item/grenade/proc/grenade_interaction_self(datum/act/op/A)
+/obj/item/grenade/proc/grenade_primed(datum/act/op/A)
 	var/mob/user = A.actor
-	if(special_handling)
-		return OP_DECLINE
 	if(!active)
 		if(clown_check(user))
 			to_chat(user, span_warning("You prime \the [name]! [det_time/10] seconds!"))
@@ -59,7 +55,7 @@ CAPABILITIES(/obj/item/grenade)
 			if(iscarbon(user))
 				var/mob/living/carbon/C = user
 				C.throw_mode_on()
-	return TRUE
+	return OP_OK
 
 /obj/item/grenade/proc/activate(mob/user as mob)
 	if(active)

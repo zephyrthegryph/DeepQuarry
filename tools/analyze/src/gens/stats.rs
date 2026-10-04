@@ -100,7 +100,7 @@ fn rows<'a>(cx: &'a GenCx, out: &mut GenOut) -> Vec<Row<'a>> {
 }
 
 fn emit(cx: &GenCx, out: &mut GenOut, rows: &[Row], vars: &HashMap<String, HashSet<String>>, test_only: bool) {
-    for r in rows.iter().filter(|r| r.m.rel.starts_with("code/tests/") == test_only) {
+    for r in rows.iter().filter(|r| crate::sem::gen::test_only(&r.m.rel) == test_only) {
         let base_opt = r.opts.iter().find(|(k, _)| k == "base").map(|(_, v)| v.clone());
         out.doc(format!("STAT({}, {}, {}) at {}:{}", r.ty, r.name, r.rule, r.m.rel, r.m.line));
         let is_virtual = r.opts.iter().any(|(k, v)| k == "virtual" && v == "TRUE");
@@ -141,7 +141,7 @@ impl Generator for Stats {
         let mut tests = GenOut::default();
         emit(cx, &mut tests, &rows, &vars, true);
         if !tests.text().trim().is_empty() {
-            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
+            out.line(crate::sem::gen::TEST_GUARD);
             out.blank();
             out.line(tests.text().trim_end());
             out.blank();

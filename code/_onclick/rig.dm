@@ -65,7 +65,7 @@
 				message_admins("[key_name_admin(src, include_name = 1)] is trying to force \the [key_name_admin(rig.wearer(), include_name = 1)] to use a hardsuit module.")
 			else
 				return 0
-		rig.selected_module.engage(A, alert_ai)
+		rig.selected_module.engage(A, alert_ai, src)
 		if(ismob(A)) // No instant mob attacking - though modules have their own cooldowns
 			setClickCooldown(get_attack_speed())
 		return 1

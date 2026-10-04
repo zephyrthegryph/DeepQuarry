@@ -379,7 +379,7 @@
 /datum/om/check/admin_rights/why_not(datum/actor, datum/target)
 	var/mob/M = actor
 	var/client/C = istype(M) ? M.client : null
-	if(!C?.holder || !check_rights_for(C, param(actor)))
+	if(!admin_can(C, 0) || !check_rights_for(C, param(actor)))
 		return "no admin rights"
 
 /// The actor is directly inside the target (a tunnel, a closet, a vehicle).

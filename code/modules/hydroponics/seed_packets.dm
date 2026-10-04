@@ -384,6 +384,5 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/proc/seed() as /datum/seed
 	return seed_static
 
-/obj/item/seeds/ownership()
-	. = ..()
-	. += rel_one(nameof(seed_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+CAPABILITIES(/obj/item/seeds)
+	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)

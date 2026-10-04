@@ -64,12 +64,6 @@ TYPE_TABLE(/obj/mecha/combat/gygax, mecha_starting_components, list( \
 	max_universal_equip = 1
 	max_special_equip = 2
 
-	starting_equipment = list(
-		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/scattershot,
-		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang,
-		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay,
-		/obj/item/mecha_parts/mecha_equipment/teleporter
-		)
 
 /obj/mecha/combat/gygax/dark/add_cell(obj/item/cell/C=null)
 	if(C)
@@ -143,3 +137,10 @@ CAPABILITIES(/obj/mecha/combat/gygax/serenity)
 /obj/mecha/combat/gygax/serenity/ownership()
 	. = ..()
 	. += owns(nameof(hud), policy = OWN_CONTAINED)
+
+TYPE_TABLE(/obj/mecha/combat/gygax/dark, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/scattershot, \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang, \
+		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, \
+		/obj/item/mecha_parts/mecha_equipment/teleporter \
+		))

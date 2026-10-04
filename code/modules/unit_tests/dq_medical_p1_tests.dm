@@ -333,9 +333,21 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	var/datum/affliction/A = new /datum/affliction/synthetic/coolant_leak(arm)
+	var/datum/affliction/B = new /datum/affliction/synthetic/thermal_runaway(arm)
+	var/datum/affliction/custom/compatible = new(arm)
 	rel_add(arm, nameof(arm.detached_afflictions), A)
+	rel_add(arm, nameof(arm.detached_afflictions), B)
+	rel_add(arm, nameof(arm.detached_afflictions), compatible)
+	TEST_ASSERT(!A.can_afflict(H.body, arm) && !B.can_afflict(H.body, arm), "both adjacent synthetic faults must actually reject the organic arm")
+	TEST_ASSERT(compatible.can_afflict(H.body, arm), "the real custom affliction must be compatible with the same arm")
 	H.body.attach_part(arm)
+	TEST_ASSERT(QDELETED(A) && QDELETED(B), "both exact adjacent rejected records must be disposed")
 	TEST_ASSERT(!H.body.has_affliction(/datum/affliction/synthetic/coolant_leak), "a coolant leak can't be carried onto an organic arm")
+	TEST_ASSERT(!H.body.has_affliction(/datum/affliction/synthetic/thermal_runaway), "thermal runaway can't be carried onto an organic arm")
+	TEST_ASSERT(!QDELETED(compatible), "the exact compatible record must survive both rejected neighbors")
+	TEST_ASSERT_EQUAL(H.body.find_affliction(/datum/affliction/custom, arm), compatible, "the body's index must adopt the exact compatible original")
+	TEST_ASSERT_EQUAL(owner_of(compatible), H.body, "the adopted original must be owned by the actual body")
+	TEST_ASSERT(!LAZYLEN(arm.detached_afflictions), "all original records must leave the carried index")
 
 /// D7: the scanner labels by robotic level, not a status bit.
 /datum/unit_test/dq_p1_d7_scanner_assisted_label

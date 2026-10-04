@@ -16,10 +16,10 @@
 	var/working = TRUE
 	/// if TRUE, someone manually disabled us via console.
 	var/research_disabled = FALSE
-	/// Until when an EMP keeps the server halted (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 
-CAPABILITY(/obj/machinery/rnd/server, emp_disable(60 SECONDS))
+CAPABILITIES(/obj/machinery/rnd/server)
+	emp_disable(60 SECONDS)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
 /obj/machinery/rnd/server/Initialize(mapload)
 	. = ..()
@@ -54,7 +54,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 
 /// Checks if we should be working or not, and updates accordingly.
 /obj/machinery/rnd/server/proc/refresh_working()
-	if(has_stat(NOPOWER | EMPED) || research_disabled)
+	if(has_stat(NOPOWER) || emp_disabled(src) || research_disabled)
 		working = FALSE
 	else
 		working = TRUE
@@ -70,8 +70,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 	return ..()
 
 /// Halted while EMP'd, working again once the outage lapses.
-/obj/machinery/rnd/server/emp_disable_changed(disabled)
-	..()
+/obj/machinery/rnd/server/proc/emp_state_changed(datum/act/A)
 	refresh_working()
 
 /// Toggles whether or not researched_disabled is, yknow, disabled
@@ -82,7 +81,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 
 /// Gets status text based on this server's status for the computer.
 /obj/machinery/rnd/server/proc/get_status_text()
-	if(has_stat(EMPED))
+	if(emp_disabled(src))
 		return "O&F@I*$ - R3*&O$T R@U!R%D"
 	else if(has_stat(NOPOWER))
 		return "Offline - Server Unpowered"

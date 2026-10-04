@@ -13,25 +13,32 @@
 
 
 /obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
-	om_ask(user, /datum/om/prompt/text/gravemarker_carving, PROC_REF(grave_name_chosen), title = "Gravestone Naming", message = "Who is \the [src.name] for?", subject = W)
+	open_request(src, /datum/prompt/text/gravemarker_carving, PROC_REF(grave_name_chosen), answerer = user, title = "Gravestone Naming", question = "Who is \the [src.name] for?", subject = W)
 	return NONE
 
 /// A carving for a grave marker (the name, then the epitaph). Re-checked on the answer: the tool (the subject) is still in hand.
-/datum/om/prompt/text/gravemarker_carving
-	max_length = MAX_NAME_LEN
+/datum/prompt/text/gravemarker_carving
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
 	encode = FALSE
 	ask_flags = ASK_HELD | ASK_CAPABLE
+	timeout = 0
 	/// The name given at the first step.
 	var/carved_name
 
-/obj/item/material/gravemarker/proc/grave_name_chosen(datum/om/prompt/text/gravemarker_carving/ask)
-	om_ask(ask.answerer, /datum/om/prompt/text/gravemarker_carving, PROC_REF(carvings_chosen), title = "Epitaph Carving", message = "What message should \the [src.name] have?", subject = ask.subject, carved_name = ask.text)
+/obj/item/material/gravemarker/proc/grave_name_chosen(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	open_request(src, /datum/prompt/text/gravemarker_carving, PROC_REF(carvings_chosen), answerer = A.request.answerer, title = "Epitaph Carving", question = "What message should \the [src.name] have?", subject = A.request.subject, carved_name = A.answer.answer_value)
 
-/obj/item/material/gravemarker/proc/carvings_chosen(datum/om/prompt/text/gravemarker_carving/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/W = ask.subject
-	var/carving_1 = sanitizeSafe(ask.carved_name, MAX_NAME_LEN)
-	var/carving_2 = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/obj/item/material/gravemarker/proc/carvings_chosen(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/datum/prompt/text/gravemarker_carving/prompt = A.answer
+	var/mob/user = A.request.answerer
+	var/obj/item/W = A.request.subject
+	var/carving_1 = sanitizeSafe(prompt.carved_name, MAX_NAME_LEN)
+	var/carving_2 = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
 	if(carving_1)
 		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
 	if(carving_2)

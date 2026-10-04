@@ -169,7 +169,7 @@ CAPABILITIES(/obj/item/clothing/head/cakehat)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head/ushanka)
-	op("ushanka_flaps_self", in_hand(), label("Toggle ear flaps"), then(PROC_REF(ushanka_flaps_self)))
+	op("flaps", in_hand(), label("Toggle ear flaps"), then(PROC_REF(ushanka_flaps_self)))
 
 /// Old attack_self.
 /obj/item/clothing/head/ushanka/proc/ushanka_flaps_self(datum/act/op/A)
@@ -180,6 +180,8 @@ CAPABILITIES(/obj/item/clothing/head/ushanka)
 	else
 		src.icon_state = initial(icon_state)
 		to_chat(user, "You lower the ear flaps on the ushanka.")
+	return OP_OK
+
 
 /obj/item/clothing/head/ushanka/black
 	icon_state = "blkushankadown"

@@ -187,11 +187,17 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 	if(!A)
 		to_chat(U, span_danger("Capture failed!") + ": The soul stone is empty! Go kill someone!")
 		return;
-	om_ask(U, /datum/om/prompt/choice, PROC_REF(construct_type_chosen), choices = possible_constructs, subject = T, title = "Construct Type", message = "Please choose which type of construct you wish to create.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(construct_type_chosen), answerer = U, choices = possible_constructs, subject = T, title = "Construct Type", question = "Please choose which type of construct you wish to create.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/soulstone/proc/construct_type_chosen(datum/om/prompt/choice/ask)
+/obj/item/soulstone/proc/construct_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_construct_type_chosen(A)
+
+/obj/item/soulstone/proc/apply_construct_type_chosen(datum/act/request/answer)
+	var/datum/request/ask = answer.request
 	var/mob/U = ask.answerer
-	var/construct_class = ask.choice
+	var/construct_class = answer.answer.answer_value
 	var/obj/structure/constructshell/T = ask.subject
 	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)
 	if(!A)

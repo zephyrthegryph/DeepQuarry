@@ -50,7 +50,9 @@
 	if(paired_juke() && !anchored && isturf(loc))
 		anchor()
 
+/// The remote and jukebox name each other; either one dying unpairs them.
 CAPABILITIES(/obj/item/juke_remote)
+	links(/obj/item/juke_remote::paired_juke, /obj/machinery/media/jukebox::remotes, b_many = TRUE)
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	op("juke_remote_verb_reset", menu(), label("Reset Pairing"), needs(carried()), then(PROC_REF(juke_remote_verb_reset)))
 
@@ -116,11 +118,3 @@ CAPABILITIES(/obj/item/juke_remote)
 /// the paired_juke this refers to (a relation view: null once it is deleted).
 /obj/item/juke_remote/proc/paired_juke() as /obj/machinery/media/jukebox
 	return paired_juke
-
-/// A paired speaker and its jukebox name each other; either one dying unpairs them.
-/obj/item/juke_remote/relations()
-	. = ..()
-	. += rel_one(nameof(paired_juke), back = nameof(/obj/machinery/media/jukebox::remotes))
-/obj/machinery/media/jukebox/relations()
-	. = ..()
-	. += rel_many(nameof(remotes), back = nameof(/obj/item/juke_remote::paired_juke))

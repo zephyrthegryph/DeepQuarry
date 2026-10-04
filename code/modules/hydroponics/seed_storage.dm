@@ -6,11 +6,13 @@
 	var/list/obj/item/seeds/seeds = list() // Tracks actual objects contained in the pile
 	var/ID
 
+CAPABILITIES(/datum/seed_pile)
+	owns_one(nameof(seed_type_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
+
 // The seed objects sit in the storage machine's contents; the pile only indexes them.
 /datum/seed_pile/ownership()
 	. = ..()
 	. += owns(nameof(seeds), policy = OWN_SPILL)
-	. += rel_one(nameof(seed_type_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name

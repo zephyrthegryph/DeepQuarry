@@ -1,8 +1,14 @@
 
 ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part target_x_cord target_y_cord target_z_cord range (captures part of a map originating from bottom left corner).", ADMIN_CATEGORY_SERVER_GAME)
 
-	var/pos_type = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Do you want to use your current loc or a manual number input?", title = "Where?", choices = list("Manual", "Location", "Cancel"))
-	if(isnull(pos_type))
+	advance_capture(user)
+
+/datum/admin_verb/capture_map/proc/advance_capture(client/user, stage = 0, pos_type = null, picked_x = null, picked_y = null, picked_z = null, capture_range = null, continue_choice = null)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	if(stage <= 0)
+		open_request(src, /datum/prompt/choice/admin_map_capture, PROC_REF(capture_question_answered), answerer = answerer, question = "Do you want to use your current loc or a manual number input?", title = "Where?", choices = list("Manual", "Location", "Cancel"), stage = 0)
 		return
 	if(!pos_type || pos_type == "Cancel")
 		return
@@ -15,22 +21,23 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 		ty = user.mob.y
 		tz = user.mob.z
 	else
-		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/number, message = "Select X location", title = "X Loc", default = 1, max = world.maxx, min = 1)
-		if(isnull(_answer_a2))
+		if(stage <= 1)
+			open_request(src, /datum/prompt/number/admin_map_capture, PROC_REF(capture_question_answered), answerer = answerer, question = "Select X location", title = "X Loc", max_value = world.maxx, stage = 1, pos_type = pos_type, picked_x = picked_x, picked_y = picked_y, picked_z = picked_z)
 			return
-		tx = _answer_a2
-		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/number, message = "Select Y location", title = "Y Loc", default = 1, max = world.maxy, min = 1)
-		if(isnull(_answer_a3))
+		tx = picked_x
+		if(stage <= 2)
+			open_request(src, /datum/prompt/number/admin_map_capture, PROC_REF(capture_question_answered), answerer = answerer, question = "Select Y location", title = "Y Loc", max_value = world.maxy, stage = 2, pos_type = pos_type, picked_x = picked_x, picked_y = picked_y, picked_z = picked_z)
 			return
-		ty = _answer_a3
-		var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/number, message = "Select Z location", title = "Z Loc", default = 1, max = world.maxz, min = 1)
-		if(isnull(_answer_a4))
+		ty = picked_y
+		if(stage <= 3)
+			open_request(src, /datum/prompt/number/admin_map_capture, PROC_REF(capture_question_answered), answerer = answerer, question = "Select Z location", title = "Z Loc", max_value = world.maxz, stage = 3, pos_type = pos_type, picked_x = picked_x, picked_y = picked_y, picked_z = picked_z)
 			return
-		tz = _answer_a4
+		tz = picked_z
 
-	var/range = verb_ask(user, "a5", args, /datum/om/prompt/number, message = "Select Range", title = "Range", default = 1, max = 32, min = 1)
-	if(isnull(range))
+	if(stage <= 4)
+		open_request(src, /datum/prompt/number/admin_map_capture, PROC_REF(capture_question_answered), answerer = answerer, question = "Select Range", title = "Range", max_value = 32, stage = 4, pos_type = pos_type, picked_x = picked_x, picked_y = picked_y, picked_z = picked_z)
 		return
+	var/range = capture_range
 
 	if(isnull(tx) || isnull(ty) || isnull(tz) || isnull(range))
 		to_chat(user, span_filter_notice("Capture Map Part, captures part of a map using camara like rendering."))
@@ -52,9 +59,10 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 					turfstocapture.Add(T)
 				else
 					if(!hasasked)
-						var/answer = verb_ask(user, "a6", args, /datum/om/prompt/choice/alert, message = "Capture includes non existant turf, Continue capture?", title = "Continue capture?", choices = list("No", "Yes"))
-						if(isnull(answer))
+						if(stage <= 5)
+							open_request(src, /datum/prompt/choice/admin_map_capture, PROC_REF(capture_question_answered), answerer = answerer, question = "Capture includes non existant turf, Continue capture?", title = "Continue capture?", choices = list("No", "Yes"), stage = 5, pos_type = pos_type, picked_x = picked_x, picked_y = picked_y, picked_z = picked_z, capture_range = capture_range)
 							return
+						var/answer = continue_choice
 						hasasked = TRUE
 						if(answer != "Yes")
 							return
@@ -74,8 +82,10 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 			if(A)
 				var/icon/img = getFlatIcon(A)
 				if(istype(img, /icon))
-					if(isliving(A) && A:lying)
-						img.BecomeLying()
+					if(isliving(A))
+						var/mob/living/L = A
+						if(L.lying)
+							img.BecomeLying()
 					var/xoff = (A.x - tx) * 32
 					var/yoff = (A.y - ty) * 32
 					cap.Blend(img, blendMode2iconMode(A.blend_mode),  A.pixel_x + xoff, A.pixel_y + yoff)
@@ -85,3 +95,59 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 		DIRECT_OUTPUT(user, browse_rsc(cap, file_name))
 	else
 		to_chat(user, span_filter_notice("Target coordinates are incorrect."))
+
+/datum/prompt/choice/admin_map_capture
+	rights = R_ADMIN
+	timeout = 0
+	var/stage
+	var/pos_type
+	var/picked_x
+	var/picked_y
+	var/picked_z
+	buttons = TRUE
+	var/capture_range
+	recheck_on_open = TRUE
+
+/datum/prompt/number/admin_map_capture
+	rights = R_ADMIN
+	timeout = 0
+	var/stage
+	var/pos_type
+	var/picked_x
+	var/picked_y
+	var/picked_z
+	default = 1
+	min_value = 1
+	step = 1
+	recheck_on_open = TRUE
+
+/datum/prompt/number/admin_map_capture/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/admin_verb/capture_map/proc/capture_question_answered(datum/act/request/A)
+	capture_answer(A)
+
+/datum/admin_verb/capture_map/proc/capture_answer(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	if(istype(A.request, /datum/prompt/choice/admin_map_capture))
+		var/datum/prompt/choice/admin_map_capture/ask = A.request
+		if(ask.stage == 0)
+			return advance_capture(user, 1, ask.answer_value)
+		return advance_capture(user, 6, ask.pos_type, ask.picked_x, ask.picked_y, ask.picked_z, ask.capture_range, ask.answer_value)
+	var/datum/prompt/number/admin_map_capture/ask = A.request
+	switch(ask.stage)
+		if(1)
+			return advance_capture(user, 2, ask.pos_type, ask.answer_value)
+		if(2)
+			return advance_capture(user, 3, ask.pos_type, ask.picked_x, ask.answer_value)
+		if(3)
+			return advance_capture(user, 4, ask.pos_type, ask.picked_x, ask.picked_y, ask.answer_value)
+		if(4)
+			return advance_capture(user, 5, ask.pos_type, ask.picked_x, ask.picked_y, ask.picked_z, ask.answer_value)

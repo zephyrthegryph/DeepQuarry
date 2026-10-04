@@ -176,9 +176,19 @@ ADMIN_VERB(cancel_reboot, R_SERVER, "Cancel Reboot", "Cancels a pending world re
 	message_admins("[key_name_admin(user)] cancelled the pending world reboot.")
 
 ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desires to the world.", ADMIN_CATEGORY_CHAT)
-	var/message = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Global message to send:", title = "Admin Announce", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-	if(isnull(message))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/text/admin_announcement, PROC_REF(announcement_answered), answerer = answerer)
+
+/datum/admin_verb/announce/proc/announcement_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	send_announcement(A)
+
+/datum/admin_verb/announce/proc/send_announcement(datum/act/request/A)
+	var/client/user = A.request.answerer.client
+	var/message = A.request.answer_value
 	if(!message)
 		return
 
@@ -190,67 +200,113 @@ ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desire
 	feedback_add_details("admin_verb","A") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(intercom, R_ADMIN|R_EVENT, "Intercom Msg", "Send an intercom message, like an arrivals announcement.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/channel = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Channel for message:", title = "Channel", choices = GLOB.radiochannels)
-	if(isnull(channel))
-		return
+	return advance_intercom(user)
 
-	if(!channel) //They didn't pick a channel
+/datum/admin_verb/intercom/proc/intercom_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/next_stage = 1
+	var/channel
+	var/sender
+	var/message
+	var/msgverb
+	if(istype(A.request, /datum/prompt/text/admin_intercom))
+		var/datum/prompt/text/admin_intercom/ask = A.request
+		next_stage = ask.next_stage
+		channel = ask.channel
+		sender = next_stage == 2 ? ask.answer_value : ask.sender
+		message = next_stage == 3 ? ask.answer_value : ask.message
+		msgverb = next_stage == 4 ? ask.answer_value : null
+	else
+		channel = A.request.answer_value
+	advance_intercom(A.request.answerer.client, next_stage, channel, sender, message, msgverb)
 
-	var/sender = verb_ask(user, "a3", args, /datum/om/prompt/text, message = "Name of sender (max 75):", title = "Announcement", default = "Announcement Computer")
-	if(isnull(sender))
+/datum/admin_verb/intercom/proc/advance_intercom(client/user, stage = 0, channel = null, sender = null, message = null, msgverb = null)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-
-	if(sender) //They put a sender
-		sender = sanitize(sender, 75, extra = 0)
-		var/message = verb_ask(user, "a4", args, /datum/om/prompt/text, message = "Message content (max 500):", title = "Contents", default = "This is a test of the announcement system.", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-		if(isnull(message))
-			return
-		var/msgverb = verb_ask(user, "a5", args, /datum/om/prompt/text, message = "Name of verb (Such as 'states', 'says', 'asks', etc):", title = "Verb", default = "says")
-		if(isnull(msgverb))
-			return
-		if(message) //They put a message
-			message = sanitize(message, 500, extra = 0)
-			if(msgverb)
-				msgverb = sanitize(msgverb, 50, extra = 0)
-			else
-				msgverb = "states"
-			GLOB.global_announcer.autosay("[message]", "[sender]", "[channel == "Common" ? null : channel]", states = msgverb) //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
-			log_admin("Intercom: [key_name(user)] : [sender]:[message]")
+	if(stage == 0)
+		open_request(src, /datum/prompt/choice/admin_intercom_channel, PROC_REF(intercom_answered), answerer = answerer, choices = GLOB.radiochannels)
+		return
+	if(!channel)
+		return
+	if(stage == 1)
+		open_request(src, /datum/prompt/text/admin_intercom, PROC_REF(intercom_answered), answerer = answerer, question = "Name of sender (max 75):", title = "Announcement", default = "Announcement Computer", next_stage = 2, channel = channel)
+		return
+	if(!sender)
+		feedback_add_details("admin_verb", "IN")
+		return
+	if(stage == 2)
+		open_request(src, /datum/prompt/text/admin_intercom, PROC_REF(intercom_answered), answerer = answerer, question = "Message content (max 500):", title = "Contents", default = "This is a test of the announcement system.", multiline = TRUE, max_len = MAX_TGUI_INPUT, next_stage = 3, channel = channel, sender = sender)
+		return
+	if(stage == 3)
+		open_request(src, /datum/prompt/text/admin_intercom, PROC_REF(intercom_answered), answerer = answerer, question = "Name of verb (Such as 'states', 'says', 'asks', etc):", title = "Verb", default = "says", next_stage = 4, channel = channel, sender = sender, message = message)
+		return
+	sender = sanitize(sender, 75, extra = 0)
+	if(message) //They put a message
+		message = sanitize(message, 500, extra = 0)
+		if(msgverb)
+			msgverb = sanitize(msgverb, 50, extra = 0)
+		else
+			msgverb = "states"
+		GLOB.global_announcer.autosay("[message]", "[sender]", "[channel == "Common" ? null : channel]", states = msgverb) //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
+		log_admin("Intercom: [key_name(user)] : [sender]:[message]")
 
 	feedback_add_details("admin_verb","IN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom conversation, like several uses of the Intercom Msg verb.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/channel = verb_ask(user, "a6", args, /datum/om/prompt/choice, message = "Channel for message:", title = "Channel", choices = GLOB.radiochannels)
-	if(isnull(channel))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_intercom_conversation_channel, PROC_REF(conversation_channel_selected), answerer = answerer, choices = GLOB.radiochannels)
 
-	if(!channel) //They picked a channel
+/datum/admin_verb/intercom_convo/proc/conversation_channel_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	ask_conversation_speech(context)
 
-	var/speech_verb = verb_ask(user, "a7", args, /datum/om/prompt/choice/alert, message = "What speech verb to use for the conversation?", title = "Type", choices = list("states", "says"))
-	if(isnull(speech_verb))
+/datum/admin_verb/intercom_convo/proc/ask_conversation_speech(datum/act/request/context)
+	var/channel = context.request.answer_value
+	if(!channel)
 		return
+	open_request(src, /datum/prompt/choice/admin_intercom_conversation_speech, PROC_REF(conversation_speech_selected), answerer = context.request.answerer, channel = channel)
+
+/datum/admin_verb/intercom_convo/proc/conversation_speech_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	ask_conversation_content(context)
+
+/datum/admin_verb/intercom_convo/proc/ask_conversation_content(datum/act/request/context)
+	var/datum/prompt/choice/admin_intercom_conversation_speech/request = context.request
+	var/speech_verb = request.answer_value
 	if(!speech_verb)
 		return
+	var/client/user = request.answerer.client
+	to_chat(user, span_notice(span_bold("Intercom Convo Directions") + "<br>Start the conversation with the sender, a pipe (|), and then the message on one line. Then hit enter to \
+	add another line, and type a (whole) number of seconds to pause between that message, and the next message, then repeat the message syntax up to 20 times. For example:<br>\
+	--- --- ---<br>\
+	Some Guy|Hello guys, what's up?<br>\
+	5<br>\
+	Other Guy|Hey, good to see you.<br>\
+	5<br>\
+	Some Guy|Yeah, you too.<br>\
+	--- --- ---<br>\
+	The above will result in those messages playing, with a 5 second gap between each. Maximum of 20 messages allowed."))
 
-	if(!om_answers?["a8"]) // Once, before the conversation is asked for.
-		to_chat(user, span_notice(span_bold("Intercom Convo Directions") + "<br>Start the conversation with the sender, a pipe (|), and then the message on one line. Then hit enter to \
-		add another line, and type a (whole) number of seconds to pause between that message, and the next message, then repeat the message syntax up to 20 times. For example:<br>\
-		--- --- ---<br>\
-		Some Guy|Hello guys, what's up?<br>\
-		5<br>\
-		Other Guy|Hey, good to see you.<br>\
-		5<br>\
-		Some Guy|Yeah, you too.<br>\
-		--- --- ---<br>\
-		The above will result in those messages playing, with a 5 second gap between each. Maximum of 20 messages allowed."))
+	open_request(src, /datum/prompt/text/admin_intercom_conversation_content, PROC_REF(conversation_content_selected), answerer = request.answerer, channel = request.channel, speech_verb = speech_verb)
 
-	var/list/decomposed
-	var/message = verb_ask(user, "a8", args, /datum/om/prompt/text, message = "See your chat box for instructions. Keep a copy elsewhere in case it is rejected when you click OK.", title = "Input Conversation", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-	if(isnull(message))
+/datum/admin_verb/intercom_convo/proc/conversation_content_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	send_conversation(context)
 
+/datum/admin_verb/intercom_convo/proc/send_conversation(datum/act/request/context)
+	var/datum/prompt/text/admin_intercom_conversation_content/request = context.request
+	var/client/user = request.answerer.client
+	var/channel = request.channel
+	var/speech_verb = request.speech_verb
+	var/message = request.answer_value
+	var/list/decomposed
 	if(!message)
 		return
 
@@ -320,7 +376,7 @@ ADMIN_VERB(toggleooc, R_ADMIN, "Toggle Player OOC", "Globally Toggles OOC.", ADM
 		to_chat(world, span_world("The OOC channel has been globally enabled!"))
 	else
 		to_chat(world, span_world("The OOC channel has been globally disabled!"))
-	log_and_message_admins("toggled OOC.")
+	log_and_message_admins("toggled OOC.", user.mob)
 	feedback_add_details("admin_verb","TOOC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(togglelooc, R_ADMIN, "Toggle Player LOOC", "Globally Toggles LOOC.", ADMIN_CATEGORY_SERVER_CHAT)
@@ -329,7 +385,7 @@ ADMIN_VERB(togglelooc, R_ADMIN, "Toggle Player LOOC", "Globally Toggles LOOC.", 
 		to_chat(world, span_world("The LOOC channel has been globally enabled!"))
 	else
 		to_chat(world, span_world("The LOOC channel has been globally disabled!"))
-	log_and_message_admins("toggled LOOC.")
+	log_and_message_admins("toggled LOOC.", user.mob)
 	feedback_add_details("admin_verb","TLOOC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(toggledsay, R_ADMIN, "Toggle DSAY", "Globally Toggles DSAY.", ADMIN_CATEGORY_SERVER_CHAT)
@@ -376,7 +432,7 @@ ADMIN_VERB(startnow, R_SERVER|R_EVENT, "Start Now", "Start the round ASAP.", ADM
 		return
 	SSticker.start_immediately = FALSE
 	to_chat(world, span_filter_system(span_blue("Immediate game start canceled. Normal startup resumed.")))
-	log_and_message_admins("cancelled immediate game start.")
+	log_and_message_admins("cancelled immediate game start.", user.mob)
 
 ADMIN_VERB(toggleenter, R_SERVER|R_ADMIN, "Toggle Entering", "Toggle if people can join the round.", ADMIN_CATEGORY_SERVER_GAME)
 	CONFIG_SET(flag/enter_allowed, !CONFIG_GET(flag/enter_allowed))
@@ -715,7 +771,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 
 //Returns 1 to let the dragdrop code know we are trapping this event
 //Returns 0 if we don't plan to trap the event
-/datum/admins/proc/cmd_ghost_drag(mob/observer/dead/frommob, mob/living/tomob)
+/datum/admins/proc/cmd_ghost_drag(mob/observer/dead/frommob, mob/living/tomob, mob/user)
 	if(!istype(frommob))
 		return //Extra sanity check to make sure only observers are shoved into things
 
@@ -728,7 +784,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	if (tomob.ckey)
 		question = "This mob already has a user ([tomob.key]) in control of it! "
 	question += "Are you sure you want to place [frommob.name]([frommob.key]) in control of [tomob.name]?"
-	om_ask(usr, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
+	om_ask(user, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
 	return 1
 
 /// Re-checked: the ghost still has a player.
@@ -780,37 +836,75 @@ ADMIN_VERB(force_mode_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Mode Spawn", "For
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
-	log_and_message_admins("attempting to force mode autospawn.")
+	log_and_message_admins("attempting to force mode autospawn.", user.mob)
 	SSticker.mode.try_latespawn()
 
 ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_MOBS))
+	return toggle_paralyze(user, living_target)
+
+/datum/admin_verb/paralyze_mob/proc/paralyze_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_paralyze_confirm/ask = A.request
+	toggle_paralyze(ask.answerer.client, ask.target, ask.answer_value, TRUE)
+
+/datum/admin_verb/paralyze_mob/proc/toggle_paralyze(client/user, mob/living/living_target, _answer_a15 = null, answered = FALSE)
 	var/msg
 	if (!living_target.has_status(EFFECT_PARALYZED))
-		living_target.status_set(EFFECT_PARALYZED, 8000)
+		living_target.status_set(EFFECT_PARALYZED, 800 SECONDS)
 		msg = "has paralyzed [key_name(living_target)]."
-		log_and_message_admins(msg)
+		log_and_message_admins(msg, user.mob)
 		return
-	var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice/alert, message = "[key_name(living_target)] is paralyzed, would you like to unparalyze them?", title = "Paralyze Mob", choices = list("Yes","No"))
+	if(!answered)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/admin_paralyze_confirm, PROC_REF(paralyze_answered), answerer = answerer, question = "[key_name(living_target)] is paralyzed, would you like to unparalyze them?", target = living_target)
+		return
 	if(isnull(_answer_a15))
 		return
 	if(_answer_a15 == "Yes")
 		living_target.status_set(EFFECT_PARALYZED, 0)
 		msg = "has unparalyzed [key_name(living_target)]."
-		log_and_message_admins(msg)
+		log_and_message_admins(msg, user)
 
 ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to change telecrystals of a user.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-	var/crystals = verb_ask(user, "a16", args, /datum/om/prompt/number, message = "Amount of telecrystals for [human_mob.ckey], currently [human_mob.mind.tcrystals].")
-	if(isnull(crystals))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/number/admin_telecrystals, PROC_REF(set_crystals), answerer = answerer, question = "Amount of telecrystals for [human_mob.ckey], currently [human_mob.mind.tcrystals].", human_target = human_mob)
+
+/datum/admin_verb/set_tcrystals/proc/set_crystals(datum/act/request/A)
+	crystals_answered(A)
+
+/datum/admin_verb/set_tcrystals/proc/crystals_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/admin_telecrystals/ask = A.request
+	var/mob/living/carbon/human/human_mob = ask.human_target
+	var/client/user = ask.answerer.client
+	var/crystals = ask.answer_value
 	if (!isnull(crystals))
 		human_mob.mind.tcrystals = crystals
 		var/msg = "[key_name(user)] has modified [human_mob.ckey]'s telecrystals to [crystals]."
 		message_admins(msg)
 
 ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to change telecrystals of a user by addition.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-	var/crystals = verb_ask(user, "a17", args, /datum/om/prompt/number, message = "Amount of telecrystals to give to [human_mob.ckey], currently [human_mob.mind.tcrystals].")
-	if(isnull(crystals))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/number/admin_telecrystals, PROC_REF(add_crystals), answerer = answerer, question = "Amount of telecrystals to give to [human_mob.ckey], currently [human_mob.mind.tcrystals].", human_target = human_mob)
+
+/datum/admin_verb/add_tcrystals/proc/add_crystals(datum/act/request/A)
+	crystals_answered(A)
+
+/datum/admin_verb/add_tcrystals/proc/crystals_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/admin_telecrystals/ask = A.request
+	var/mob/living/carbon/human/human_mob = ask.human_target
+	var/client/user = ask.answerer.client
+	var/crystals = ask.answer_value
 	if (!isnull(crystals))
 		human_mob.mind.tcrystals += crystals
 		var/msg = "[key_name(user)] has added [crystals] to [human_mob.ckey]'s telecrystals."
@@ -839,34 +933,92 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 /datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in (owned)
 
 /datum/admins/proc/faxCallback(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination)
-	om_ask(owner(), /datum/om/prompt/text/fax_title, PROC_REF(fax_titled), paper = P, destination = destination)
+	var/client/recipient = owner()
+	if((!isnull(P) && QDELETED(P)) || (!isnull(destination) && QDELETED(destination)))
+		return
+	var/mob/answerer = recipient?.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/fax_title, PROC_REF(fax_titled), answerer = answerer, paper = P, destination = destination)
 
 /// An admin fax reply: its title, then (admin-initiated) whether to stamp it. A cancel skips either.
-/datum/om/prompt/text/fax_title
+/datum/prompt/text/fax_title
 	name_text = TRUE
 	title = "Title"
-	message = "Pick a title for the report"
-	cancel_answer = ""
+	question = "Pick a title for the report"
+	timeout = 0
 	var/obj/item/paper/admin/paper
 	var/obj/machinery/photocopier/faxmachine/destination
+	var/paper_required = FALSE
+	var/destination_required = FALSE
 
-/datum/om/prompt/confirm/fax_stamp
+CAPABILITIES(/datum/prompt/text/fax_title)
+	ref_one(nameof(paper), /obj/item/paper/admin)
+	ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine)
+
+/datum/prompt/text/fax_title/prepare(datum/act/A)
+	..()
+	var/obj/item/paper/admin/captured_paper = paper
+	var/obj/machinery/photocopier/faxmachine/captured_destination = destination
+	paper_required = !isnull(captured_paper)
+	destination_required = !isnull(captured_destination)
+	rel_clear(src, nameof(paper))
+	rel_clear(src, nameof(destination))
+	rel_set(src, nameof(paper), captured_paper)
+	rel_set(src, nameof(destination), captured_destination)
+
+/datum/prompt/text/fax_title/recheck_extra()
+	return (paper_required && QDELETED(paper)) || (destination_required && QDELETED(destination)) ? "gone" : null
+
+/datum/prompt/choice/fax_stamp
 	title = "Stamped?"
-	message = "Would you like the fax stamped?"
-	answer_on_no = TRUE
-	cancel_answer = "No"
+	question = "Would you like the fax stamped?"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
 	var/obj/item/paper/admin/paper
 	var/obj/machinery/photocopier/faxmachine/destination
+	var/paper_required = FALSE
+	var/destination_required = FALSE
 	var/custom_title
 
-/datum/admins/proc/fax_titled(datum/om/prompt/text/fax_title/ask)
-	if(ask.paper.sender())
-		fax_answered(ask.paper, ask.destination, ask.text, FALSE)
-		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/fax_stamp, PROC_REF(fax_stamp_answered), paper = ask.paper, destination = ask.destination, custom_title = ask.text)
+CAPABILITIES(/datum/prompt/choice/fax_stamp)
+	ref_one(nameof(paper), /obj/item/paper/admin)
+	ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine)
 
-/datum/admins/proc/fax_stamp_answered(datum/om/prompt/confirm/fax_stamp/ask)
-	fax_answered(ask.paper, ask.destination, ask.custom_title, ask.yes)
+/datum/prompt/choice/fax_stamp/prepare(datum/act/A)
+	..()
+	var/obj/item/paper/admin/captured_paper = paper
+	var/obj/machinery/photocopier/faxmachine/captured_destination = destination
+	paper_required = !isnull(captured_paper)
+	destination_required = !isnull(captured_destination)
+	rel_clear(src, nameof(paper))
+	rel_clear(src, nameof(destination))
+	rel_set(src, nameof(paper), captured_paper)
+	rel_set(src, nameof(destination), captured_destination)
+
+/datum/prompt/choice/fax_stamp/recheck_extra()
+	return (paper_required && QDELETED(paper)) || (destination_required && QDELETED(destination)) ? "gone" : null
+
+/datum/admins/proc/fax_titled(datum/act/request/A)
+	var/datum/prompt/text/fax_title/ask = A.request
+	if(QDELETED(ask.answerer) || (ask.paper_required && QDELETED(ask.paper)) || (ask.destination_required && QDELETED(ask.destination)))
+		return
+	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value)))
+		return
+	var/custom_title = isnull(ask.answer_value) ? "" : ask.answer_value
+	if(ask.paper.sender())
+		fax_answered(ask.paper, ask.destination, custom_title, FALSE)
+		return
+	open_request(src, /datum/prompt/choice/fax_stamp, PROC_REF(fax_stamp_answered), answerer = ask.answerer, paper = ask.paper, destination = ask.destination, custom_title = custom_title)
+
+/datum/admins/proc/fax_stamp_answered(datum/act/request/A)
+	var/datum/prompt/choice/fax_stamp/ask = A.request
+	if(QDELETED(ask.answerer) || (ask.paper_required && QDELETED(ask.paper)) || (ask.destination_required && QDELETED(ask.destination)))
+		return
+	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value)))
+		return
+	fax_answered(ask.paper, ask.destination, ask.custom_title, ask.answer_value == "Yes")
 
 /datum/admins/proc/fax_answered(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination, customname, stamp)
 	P.name = "[P.origin] - [customname]"
@@ -928,13 +1080,143 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	return
 
 ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up an uplink on a character. This will be required for a character to use telecrystals.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/mob/living/carbon/human/traitor_human = verb_ask(user, "a18", args, /datum/om/prompt/choice, message = "Select whom to give an uplink.", title = "Set uplink", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
-	if(isnull(traitor_human))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!traitor_human)
-		return
+	open_request(src, /datum/prompt/choice/admin_uplink_target, PROC_REF(uplink_target_chosen), answerer = answerer, choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
+/datum/admin_verb/set_uplink/proc/uplink_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	give_selected_uplink(A)
+
+/datum/admin_verb/set_uplink/proc/give_selected_uplink(datum/act/request/A)
+	var/mob/living/carbon/human/traitor_human = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	GLOB.traitors.spawn_uplink(traitor_human)
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(user)] has given [traitor_human.ckey] an uplink.")
+
+/datum/prompt/number/admin_telecrystals
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	min_value = 0
+	max_value = INFINITY
+	step = 1
+	var/mob/living/carbon/human/human_target
+	recheck_on_open = TRUE
+
+CAPABILITIES(/datum/prompt/number/admin_telecrystals)
+	ref_one(nameof(human_target), /mob/living/carbon/human)
+
+/datum/prompt/number/admin_telecrystals/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/carbon/human/captured = human_target
+	rel_clear(src, nameof(human_target))
+	rel_set(src, nameof(human_target), captured)
+
+/datum/prompt/number/admin_telecrystals/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(human_target) ? "target is gone" : null
+
+/datum/prompt/number/admin_telecrystals/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/choice/admin_paralyze_confirm
+	rights = R_ADMIN|R_MOD|R_EVENT
+	timeout = 0
+	title = "Paralyze Mob"
+	buttons = TRUE
+	choices = list("Yes", "No")
+	var/mob/living/target
+	recheck_on_open = TRUE
+
+CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
+	ref_one(nameof(target), /mob/living)
+
+/datum/prompt/choice/admin_paralyze_confirm/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/captured = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured)
+
+/datum/prompt/choice/admin_paralyze_confirm/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(target) ? "target is gone" : null
+
+/datum/prompt/text/admin_announcement
+	rights = R_SERVER|R_ADMIN|R_EVENT
+	timeout = 0
+	question = "Global message to send:"
+	title = "Admin Announce"
+	multiline = TRUE
+	max_len = MAX_TGUI_INPUT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_uplink_target
+	rights = R_ADMIN|R_DEBUG
+	timeout = 0
+	question = "Select whom to give an uplink."
+	title = "Set uplink"
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_uplink_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/living/carbon/human/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_intercom_channel
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "Channel for message:"
+	title = "Channel"
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_intercom
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	var/next_stage
+	var/channel
+	var/sender
+	var/message
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_intercom_conversation_channel
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "Channel for message:"
+	title = "Channel"
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_intercom_conversation_speech
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "What speech verb to use for the conversation?"
+	title = "Type"
+	var/channel
+	choices = list("states", "says")
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_intercom_conversation_content
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "See your chat box for instructions. Keep a copy elsewhere in case it is rejected when you click OK."
+	title = "Input Conversation"
+	var/channel
+	var/speech_verb
+	multiline = TRUE
+	max_len = MAX_TGUI_INPUT
+	recheck_on_open = TRUE
+

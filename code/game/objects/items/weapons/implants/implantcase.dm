@@ -54,7 +54,7 @@ CAPABILITIES(/obj/item/implantcase)
 	if(imp.reagents.total_volume >= imp.reagents.maximum_volume)
 		to_chat(user, span_warning("\The [src] is full."))
 	else
-		after(src, 5, PROC_REF(inject_from), with = list(I, user))
+		after(src, 0.5 SECONDS, PROC_REF(inject_from), with = list(I, user))
 	return OP_OK
 
 /// An implanter and the case trade their implants.

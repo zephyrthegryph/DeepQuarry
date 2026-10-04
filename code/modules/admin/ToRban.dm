@@ -82,24 +82,57 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 
 		if("remove")
 			var/savefile/F = new(TORFILE)
-			var/choice = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Please select an IP address to remove from the ToR banlist:", title = "Remove ToR ban", choices = F.dir)
-			if(isnull(choice))
+			if(QDELETED(user.mob))
 				return
-			if(choice)
-				F.dir.Remove(choice)
-				to_chat(user, span_filter_adminlog(span_bold("Address removed")))
+			open_request(src, /datum/prompt/choice/admin_tor_remove, PROC_REF(address_selected), answerer = user.mob, choices = F.dir)
 		if("remove all")
 			to_chat(user, span_filter_adminlog(span_bold("[TORFILE] was [fdel(TORFILE)?"":"not "]removed.")))
 		if("find")
-			var/input = verb_ask(user, "a3", args, /datum/om/prompt/text, message = "Please input an IP address to search for:", title = "Find ToR ban")
-			if(isnull(input))
+			if(QDELETED(user.mob))
 				return
-			if(input)
-				if(ToRban_isbanned(input))
-					to_chat(user, span_filter_adminlog("[span_orange(span_bold("Address is a known ToR address"))]"))
-				else
-					to_chat(user, span_filter_adminlog(span_danger("Address is not a known ToR address")))
+			open_request(src, /datum/prompt/text/admin_tor_find, PROC_REF(address_entered), answerer = user.mob)
 	return
+
+/datum/admin_verb/ToRban/proc/address_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	remove_address(context)
+
+/datum/admin_verb/ToRban/proc/remove_address(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	var/choice = context.request.answer_value
+	var/savefile/F = new(TORFILE)
+	if(choice)
+		F.dir.Remove(choice)
+		to_chat(user, span_filter_adminlog(span_bold("Address removed")))
+
+/datum/admin_verb/ToRban/proc/address_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	find_address(context)
+
+/datum/admin_verb/ToRban/proc/find_address(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	var/input = context.request.answer_value
+	if(input)
+		if(ToRban_isbanned(input))
+			to_chat(user, span_filter_adminlog("[span_orange(span_bold("Address is a known ToR address"))]"))
+		else
+			to_chat(user, span_filter_adminlog(span_danger("Address is not a known ToR address")))
+
+/datum/prompt/choice/admin_tor_remove
+	rights = R_ADMIN|R_SERVER
+	timeout = 0
+	title = "Remove ToR ban"
+	question = "Please select an IP address to remove from the ToR banlist:"
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_tor_find
+	rights = R_ADMIN|R_SERVER
+	timeout = 0
+	title = "Find ToR ban"
+	question = "Please input an IP address to search for:"
+	recheck_on_open = TRUE
 
 #undef TORFILE
 #undef TOR_UPDATE_INTERVAL

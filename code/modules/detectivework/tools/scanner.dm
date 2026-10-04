@@ -3,7 +3,7 @@
 	name = "forensic scanner"
 	desc = "Used to scan objects for DNA and fingerprints."
 	icon_state = "forensic"
-	var/list/stored = list() // ALLOW(instance_list): d: scanner evidence store
+	var/list/stored
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 	flags = NOBLUDGEON
@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 
 	if(reveal_blood && target.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood found on [target]. Analysing..."))
-		after(user, 15, /proc/detective_scanner_blood_report, with = list(user, target))
+		after(user, 1.5 SECONDS, /proc/detective_scanner_blood_report, with = list(user, target))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/detective_scanner/afterattack(atom/A as obj|turf, mob/user, proximity)

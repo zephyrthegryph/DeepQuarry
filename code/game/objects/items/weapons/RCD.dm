@@ -139,9 +139,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 // RCD variants.
 
 // This one starts full.
-/obj/item/rcd/loaded/Initialize(mapload)
-	stored_matter = max_stored_matter
-	return ..()
+TYPE_TABLE(/obj/item/rcd/loaded, rcd_start_loaded, TRUE)
 
 // This one makes cooler walls by using an alternative material.
 /obj/item/rcd/shipwright
@@ -150,9 +148,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	used in the construction of hulls for starships. Reload with compressed matter cartridges."
 	material_to_use = MAT_STEELHULL
 
-/obj/item/rcd/shipwright/loaded/Initialize(mapload)
-	stored_matter = max_stored_matter
-	return ..()
+TYPE_TABLE(/obj/item/rcd/shipwright/loaded, rcd_start_loaded, TRUE)
 
 /obj/item/rcd/advanced
 	name = "advanced rapid construction device"
@@ -163,9 +159,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	toolspeed = 0.5 // Twice as fast.
 	max_stored_matter = RCD_MAX_CAPACITY * 3 // Three times capacity.
 
-/obj/item/rcd/advanced/loaded/Initialize(mapload)
-	stored_matter = max_stored_matter
-	return ..()
+TYPE_TABLE(/obj/item/rcd/advanced/loaded, rcd_start_loaded, TRUE)
 
 // Electric RCDs.
 // Currently just a base for the mounted RCDs.
@@ -320,7 +314,6 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	var/ammostate
 	var/list/effects
 
 	var/static/image/radial_image_airlock = image(icon = 'icons/mob/radial.dmi', icon_state = "airlock")
@@ -345,7 +338,11 @@ CAPABILITIES(/obj/item/rcd)
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
 
+TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_start_loaded, FALSE)
+
 /obj/item/rcd/Initialize(mapload)
+	if(TYPE_TABLE_GET(src, rcd_start_loaded))
+		stored_matter = max_stored_matter
 	. = ..()
 	update_icon()
 

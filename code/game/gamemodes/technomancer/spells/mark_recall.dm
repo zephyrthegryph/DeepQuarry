@@ -21,7 +21,7 @@
 	I.plane = TURF_PLANE
 	I.layer = ABOVE_TURF_LAYER
 	user.client?.images |= I
-	after(src, 23, PROC_REF(loop_animation)) //That's just how long the animation is
+	after(src, 2.3 SECONDS, PROC_REF(loop_animation)) //That's just how long the animation is
 
 // the marker image comes off its caster's client.
 /datum/technomancer_marker/lifecycle_prerelease()

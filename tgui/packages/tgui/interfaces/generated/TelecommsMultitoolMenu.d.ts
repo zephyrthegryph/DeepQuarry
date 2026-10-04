@@ -5,7 +5,6 @@ export type TelecommsMultitoolMenuData = {
 };
 
 export type TelecommsMultitoolMenuActions = {
-  toggle: Record<string, never>;
   id: Record<string, never>;
   network: Record<string, never>;
   freq: Record<string, never>;
@@ -20,5 +19,6 @@ export type TelecommsMultitoolMenuActions = {
   link: Record<string, never>;
   buffer: Record<string, never>;
   flush: Record<string, never>;
+  toggle: Record<string, never>;
   cleartemp: Record<string, never>;
 };

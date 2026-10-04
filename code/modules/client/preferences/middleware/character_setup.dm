@@ -592,7 +592,7 @@ UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_pick_color)
 		return FALSE
 	var/current = preferences().read_preference(pref.type)
 	// The pick is re-checked (same prefs, still accessible) and written in pref_color_picked().
-	om_ask(ui.user, /datum/om/prompt/color/prefs/entry, TYPE_PROC_REF(/datum/preferences, pref_color_picked), receiver = preferences(), title = "Color", message = "Pick a color", default = current || "#000000", preferences = preferences(), pref_key = key, ui_refresh = preferences(), ui_refresh_if_true = TRUE)
+	open_request(preferences(), /datum/prompt/color/prefs/entry, TYPE_PROC_REF(/datum/preferences, pref_color_picked), answerer = ui.user, title = "Color", question = "Pick a color", default = current || "#000000", preferences = preferences(), pref_key = key)
 	return TRUE
 
 // Atomic multi-pref operation handled by a registered editor.
@@ -612,10 +612,10 @@ UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_editor_actio
 	return (result == PREF_UPDATE_ACCEPTED)
 
 /// A colour for one /datum/preference/color entry. Re-checked: the entry is still accessible.
-/datum/om/prompt/color/prefs/entry
+/datum/prompt/color/prefs/entry
 	var/pref_key
 
-/datum/om/prompt/color/prefs/entry/valid()
+/datum/prompt/color/prefs/entry/recheck_extra()
 	. = ..()
 	if(.)
 		return
@@ -624,6 +624,12 @@ UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_editor_actio
 		return "not accessible"
 
 /// The picked colour is written through update_preference(); TRUE refreshes the prefs window.
-/datum/preferences/proc/pref_color_picked(datum/om/prompt/color/prefs/entry/ask)
+/datum/preferences/proc/pref_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/prefs/entry/ask = A.answer
 	var/datum/preference/pref = GLOB.preference_entries_by_key[ask.pref_key]
-	return update_preference(pref, ask.picked_color)
+	var/result = update_preference(pref, ask.answer_value)
+	if(result)
+		SStgui.update_uis(src)
+	return result

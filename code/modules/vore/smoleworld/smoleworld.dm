@@ -105,21 +105,22 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 /obj/structure/smoletrack/proc/smoletrack_verb_color(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	om_ask(user, /datum/om/prompt/color/smole_paint, PROC_REF(smole_paint_picked), default = color)
+	open_request(src, /datum/prompt/color/smole_paint, PROC_REF(smole_paint_picked), answerer = user, default = color)
 
 /// A smole road or building's colour. Re-checked on the answer: the painter is still next to it.
-/datum/om/prompt/color/smole_paint
+/datum/prompt/color/smole_paint
 	title = "Paint Color"
-	message = "Please select color."
+	question = "Please select color."
 	ask_flags = ASK_NEAR_SUBJECT
+	timeout = 0
 
-/obj/structure/smoletrack/proc/smole_paint_picked(datum/om/prompt/color/smole_paint/ask)
-	if(ask.picked_color)
-		color = ask.picked_color
+/obj/structure/smoletrack/proc/smole_paint_picked(datum/act/request/A)
+	if(A.answer)
+		color = A.answer.answer_value
 
-/obj/structure/smolebuilding/proc/smole_paint_picked(datum/om/prompt/color/smole_paint/ask)
-	if(ask.picked_color)
-		color = ask.picked_color
+/obj/structure/smolebuilding/proc/smole_paint_picked(datum/act/request/A)
+	if(A.answer)
+		color = A.answer.answer_value
 
 // probably redundant, allows for direct way to dismantal without knowing intents
 /// Old Take Road Apart verb.
@@ -280,7 +281,7 @@ DAMAGE_REACTION(/obj/structure/smoleruins, DAMAGE_PROJECTILE, PROC_REF(smoleruin
 /obj/structure/smolebuilding/proc/smolebuilding_verb_color(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	om_ask(user, /datum/om/prompt/color/smole_paint, PROC_REF(smole_paint_picked), default = color)
+	open_request(src, /datum/prompt/color/smole_paint, PROC_REF(smole_paint_picked), answerer = user, default = color)
 
 //probably a bit redundant but gives a more direct way to disassemble buildings without using intents
 /// Old Take Building Apart verb.

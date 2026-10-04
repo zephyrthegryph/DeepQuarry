@@ -66,14 +66,17 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 
 
 // Overrides the voidsuit screwdriver so people can't remove the helmet.
-/obj/item/clothing/suit/space/void/responseteam/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/clothing/suit/space/void/responseteam/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
 	if(!isliving(user))
 		return ITEM_INTERACT_BLOCKING
 	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(boots || tank || cooler)
-		var/choice = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "What component would you like to remove?", title = "Remove Component", choices = list(boots,tank,cooler))
+		if(isnull(answered_component))
+			open_component_request(user, tool, list(boots,tank,cooler))
+			return ITEM_INTERACT_BLOCKING
+		var/choice = answered_component
 		if(isnull(choice))
 			return ITEM_INTERACT_BLOCKING
 		if(!choice) return ITEM_INTERACT_SUCCESS

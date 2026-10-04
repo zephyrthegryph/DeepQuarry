@@ -152,10 +152,10 @@
 			shuttle_key_token = source
 	var/delay = powered ? next_refresh_delay() : 0
 	var/at = delay ? world.time + delay : 0
-	if(om_timer_slot_pending(src, "refresh_token"))
+	if(after_pending(src, "refresh_token"))
 		if(at && at == refresh_at)
 			return
-		om_cancel_timer_slot(src, "refresh_token")
+		cancel_after(src, "refresh_token")
 	refresh_at = at
 	if(at)
 		om_attach(src, /datum/om/behaviour/sleeper/status_display) // for the audit
@@ -168,7 +168,7 @@
 /obj/machinery/status_display/om_sleep_violation()
 	if(has_stat(NOPOWER))
 		return null
-	if(next_refresh_delay() && !om_timer_slot_pending(src, "refresh_token"))
+	if(next_refresh_delay() && !after_pending(src, "refresh_token"))
 		return "mode [mode] needs redrawing but has no timer"
 	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token)))
 		return "mode [mode] is not watching its shuttle"

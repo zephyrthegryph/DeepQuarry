@@ -47,6 +47,7 @@ Possible to do for anyone motivated enough:
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
 CAPABILITIES(/obj/machinery/hologram/holopad)
+	ref_many(nameof(masters))
 	owns_many(nameof(holograms), /obj/effect/overlay/aiholo)
 
 /obj/machinery/hologram/holopad/declare_interactions(list/into)
@@ -82,7 +83,7 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 		return
 	var/mob/living/carbon/human/user = A.request.answerer
 	if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!
-		COOLDOWN_START(src, request_cooldown, 200)
+		COOLDOWN_START(src, request_cooldown, 20 SECONDS)
 		to_chat(user, span_notice("You request an AI's presence."))
 		var/area/area = get_area(src)
 		for(var/mob/living/silicon/ai/AI in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
@@ -152,9 +153,6 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		master.show_message(rendered, type)
 	return
 
-/obj/machinery/hologram/holopad/relations()
-	. = ..()
-	. += rel_many(nameof(masters))
 
 /obj/machinery/hologram/holopad/proc/create_holo(mob/living/silicon/ai/A, turf/T = loc)
 	var/obj/effect/overlay/aiholo/hologram = new(T) // Spawn a blank effect at the location. // to specific type for adding vars

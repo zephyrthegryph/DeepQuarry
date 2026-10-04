@@ -16,8 +16,7 @@
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
-	var/access = list()
-	access = ACCESS_CRATE_CASH
+	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
 	drop_sound = SFX_ITEMS_DROP_PAPER
 	pickup_sound = SFX_ITEMS_PICKUP_PAPER

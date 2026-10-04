@@ -1,3 +1,23 @@
+CAPABILITIES(/datum/tgui_module/law_manager)
+	op("state_laws", ui_act("state_laws"), then(PROC_REF(ui_act_state_laws)))
+	op("notify_laws", ui_act("notify_laws"), then(PROC_REF(ui_act_notify_laws)))
+	interface("LawManager")
+	op("law_channel", ui_act("law_channel", arg("law_channel", schema_text(4096))), then(PROC_REF(ui_act_law_channel)))
+	op("state_law", ui_act("state_law", arg("ref"), arg("state_law", num())), then(PROC_REF(ui_act_state_law)))
+	op("add_zeroth_law", ui_act("add_zeroth_law"), then(PROC_REF(ui_act_add_zeroth_law)))
+	op("add_ion_law", ui_act("add_ion_law"), then(PROC_REF(ui_act_add_ion_law)))
+	op("add_inherent_law", ui_act("add_inherent_law"), then(PROC_REF(ui_act_add_inherent_law)))
+	op("add_supplied_law", ui_act("add_supplied_law"), then(PROC_REF(ui_act_add_supplied_law)))
+	op("change_zeroth_law", ui_act("change_zeroth_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_zeroth_law)))
+	op("change_ion_law", ui_act("change_ion_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_ion_law)))
+	op("change_inherent_law", ui_act("change_inherent_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_inherent_law)))
+	op("change_supplied_law", ui_act("change_supplied_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_supplied_law)))
+	op("change_supplied_law_position", ui_act("change_supplied_law_position"), then(PROC_REF(ui_act_change_supplied_law_position)))
+	op("edit_law", ui_act("edit_law", arg("edit_law")), needs(req(PROC_REF(ui_malf), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Edit Law", "question" = "Enter new law. Leaving the field blank will cancel the edit.", "default" = computed(PROC_REF(edit_law_default)))), then(PROC_REF(ui_act_edit_law)))
+	op("delete_law", ui_act("delete_law", arg("delete_law")), then(PROC_REF(ui_act_delete_law)))
+	op("state_law_set", ui_act("state_law_set", arg("state_law_set")), then(PROC_REF(ui_act_state_law_set)))
+	op("transfer_laws", ui_act("transfer_laws", arg("transfer_laws")), then(PROC_REF(ui_act_transfer_laws)))
+
 /datum/tgui_module/law_manager
 	name = "Law manager"
 	var/ion_law	= "IonLaw"
@@ -15,26 +35,6 @@
 /// Every law set the UI may name; handlers check a non-admin picked a player set.
 /datum/tgui_module/law_manager/proc/law_sets()
 	return GLOB.admin_laws | GLOB.player_laws
-
-CAPABILITIES(/datum/tgui_module/law_manager)
-	interface("LawManager")
-	op("law_channel", ui_act("law_channel", arg("law_channel", schema_text(4096))), then(PROC_REF(ui_act_law_channel)))
-	op("state_law", ui_act("state_law", arg("ref"), arg("state_law", num())), then(PROC_REF(ui_act_state_law)))
-	op("add_zeroth_law", ui_act("add_zeroth_law"), then(PROC_REF(ui_act_add_zeroth_law)))
-	op("add_ion_law", ui_act("add_ion_law"), then(PROC_REF(ui_act_add_ion_law)))
-	op("add_inherent_law", ui_act("add_inherent_law"), then(PROC_REF(ui_act_add_inherent_law)))
-	op("add_supplied_law", ui_act("add_supplied_law"), then(PROC_REF(ui_act_add_supplied_law)))
-	op("change_zeroth_law", ui_act("change_zeroth_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_zeroth_law)))
-	op("change_ion_law", ui_act("change_ion_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_ion_law)))
-	op("change_inherent_law", ui_act("change_inherent_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_inherent_law)))
-	op("change_supplied_law", ui_act("change_supplied_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_supplied_law)))
-	op("change_supplied_law_position", ui_act("change_supplied_law_position"), then(PROC_REF(ui_act_change_supplied_law_position)))
-	op("edit_law", ui_act("edit_law", arg("edit_law")), needs(req(PROC_REF(ui_malf), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Edit Law", "question" = "Enter new law. Leaving the field blank will cancel the edit.", "default" = computed(PROC_REF(edit_law_default)))), then(PROC_REF(ui_act_edit_law)))
-	op("delete_law", ui_act("delete_law", arg("delete_law")), then(PROC_REF(ui_act_delete_law)))
-	op("state_laws", ui_act("state_laws"), then(PROC_REF(ui_act_state_laws)))
-	op("state_law_set", ui_act("state_law_set", arg("state_law_set")), then(PROC_REF(ui_act_state_law_set)))
-	op("transfer_laws", ui_act("transfer_laws", arg("transfer_laws")), then(PROC_REF(ui_act_transfer_laws)))
-	op("notify_laws", ui_act("notify_laws"), then(PROC_REF(ui_act_notify_laws)))
 
 /datum/tgui_module/law_manager/proc/ui_act_law_channel(datum/act/op/A, law_channel)
 	if(law_channel in owner().law_channels())
@@ -138,7 +138,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 
 /datum/tgui_module/law_manager/proc/ui_act_state_laws(datum/act/op/A)
 	owner().statelaws(owner().laws)
-	return TRUE
+	return OP_OK
 
 /datum/tgui_module/law_manager/proc/ui_act_state_law_set(datum/act/op/A, state_law_set)
 	var/mob/user = A.actor
@@ -157,15 +157,14 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_notify_laws(datum/act/op/A)
-	var/mob/user = A.actor
 	to_chat(owner(), span_danger("Law Notice\n") + owner().laws.get_formatted_laws())
 	if(isAI(owner()))
 		var/mob/living/silicon/ai/AI = owner()
 		for(var/mob/living/silicon/robot/R in AI.connected_robots)
 			to_chat(R, span_danger("Law Notice\n") + R.laws.get_formatted_laws())
-	if(user != owner())
-		to_chat(user, span_notice("Laws displayed."))
-	return TRUE
+	if(A.actor != owner())
+		to_chat(A.actor, span_notice("Laws displayed."))
+	return OP_OK
 
 /// The list the UI_ARG_REF rows resolve refs in.
 /datum/tgui_module/law_manager/proc/ui_source_owner_laws_all_laws()

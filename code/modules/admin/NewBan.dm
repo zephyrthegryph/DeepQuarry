@@ -98,7 +98,7 @@ GLOBAL_DATUM(banlist, /savefile)
 	return 1
 
 
-/proc/AddBan(ckey, computerid, reason, bannedby, temp, minutes, address)
+/proc/AddBan(ckey, computerid, reason, bannedby, temp, minutes, address, mob/user)
 
 	var/bantimestamp
 
@@ -108,7 +108,7 @@ GLOBAL_DATUM(banlist, /savefile)
 
 	GLOB.banlist.cd = "/base"
 	if ( GLOB.banlist.dir.Find("[ckey][computerid]") )
-		to_chat(usr, span_filter_adminlog(span_warning("Ban already exists.")))
+		to_chat(user, span_filter_adminlog(span_warning("Ban already exists.")))
 		return 0
 	else
 		GLOB.banlist.dir.Add("[ckey][computerid]")
@@ -143,7 +143,7 @@ GLOBAL_DATUM(banlist, /savefile)
 		log_admin("[key_name_admin(user)] unbanned [key]")
 		message_admins("[key_name_admin(user)] unbanned: [key]")
 		feedback_inc("ban_unban",1)
-		user.client.holder.DB_ban_unban( ckey(key), BANTYPE_ANY_FULLBAN)
+		user.client.holder.DB_ban_unban(ckey(key), BANTYPE_ANY_FULLBAN, "", user)
 	for (var/A in GLOB.banlist.dir)
 		GLOB.banlist.cd = "/base/[A]"
 		if (key == GLOB.banlist["key"] /*|| id == GLOB.banlist["id"]*/)

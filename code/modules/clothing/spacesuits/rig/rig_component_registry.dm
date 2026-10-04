@@ -90,20 +90,22 @@
 /*
  * proc/destroy_pieces()
  *
- * Drops and qdels all six physical pieces, nulling their vars on the holder.
+ * Drops and disposes all six physical pieces through their owning slots.
  * Called from /obj/item/rig/on_destroy() with the rig itself: the holder
  * handle no longer resolves once the rig is being destroyed.
  */
 /datum/rig_component_registry/proc/destroy_pieces(obj/item/rig/R)
 	if(!R)
 		return
-	for(var/obj/item/piece in list(
-			R.gloves,
-			R.boots,
-			R.helmet,
-			R.chest,
-			R.cell,
-			R.air_supply))
+	var/list/pieces = list(
+		nameof(R.gloves) = R.gloves,
+		nameof(R.boots) = R.boots,
+		nameof(R.helmet) = R.helmet,
+		nameof(R.chest) = R.chest,
+		nameof(R.cell) = R.cell,
+		nameof(R.air_supply) = R.air_supply)
+	for(var/slot in pieces)
+		var/obj/item/piece = pieces[slot]
 		if(!istype(piece))
 			continue
 		// Orderly teardown: clear the back-ref so the piece's dropped() self-detach
@@ -114,18 +116,9 @@
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)
-		qdel(piece)
+		own_clear(R, slot, OWN_DELETE)
 
-	own_take(R, nameof(R.gloves))
-	own_take(R, nameof(R.boots))
-	own_take(R, nameof(R.helmet))
-	own_take(R, nameof(R.chest))
-	own_take(R, nameof(R.cell))
-	own_take(R, nameof(R.air_supply))
-
-	for(var/obj/item/rig_module/module in R.installed_modules)
-		qdel(module)
-	// the installed_modules list itself is dropped with the rig
+	own_clear(R, nameof(R.installed_modules), OWN_DELETE)
 
 /*
  * proc/get_equippable_pieces()

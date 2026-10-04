@@ -31,15 +31,19 @@ effective or pretty fucking useless.
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/batterer/proc/can_batter)))
+TRACKED(/obj/item/batterer, times_used)
+TRACKED(/obj/item/batterer, max_uses)
 
-/// Requirement: it has a limited number of uses.
-/obj/item/batterer/proc/can_batter(mob/user, atom/target, obj/item/held)
-	if(times_used >= max_uses)
-		return "the mind batterer has been burnt out"
-	return TRUE
+MSG_DEF_SELF(batterer/burnt, "the mind batterer has been burnt out")
 
-/obj/item/batterer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/batterer)
+	op("batter", in_hand(), label("Trigger mind batterer"), needs(req(PROC_REF(batter_available), because = MSG(batterer/burnt))), then(PROC_REF(batter_triggered)))
+
+/obj/item/batterer/proc/batter_available(datum/act/op/A)
+	return times_used < max_uses
+
+/obj/item/batterer/proc/batter_triggered(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/affected = list()
 	for(var/mob/living/carbon/human/M in orange(10, user))
 		affected += M
@@ -49,7 +53,7 @@ DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction
 
 	play_sfx(src, SFX_MISC_INTERFERENCE)
 	to_chat(user, span_notice("You trigger [src]."))
-	times_used += 1
+	set_times_used(times_used + 1)
 	if(times_used >= max_uses)
 		icon_state = "battererburnt"
 

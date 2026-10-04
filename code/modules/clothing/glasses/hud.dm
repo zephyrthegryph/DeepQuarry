@@ -345,21 +345,30 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, \
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
+TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch, eye)
+
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
-	op("security_eyepatch_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(security_eyepatch_switcheye_verb)))
+	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
-/// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/security/eyepatch/proc/security_eyepatch_switcheye_verb(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!isliving(user)) return
-	if(user.stat) return
+/obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch()
+	set name = "Switch Eyepatch"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "switch_eye", null, ORIGIN_VERB)
 
-	eye = !eye
+/obj/item/clothing/glasses/hud/security/eyepatch/proc/eye_switch_allowed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return istype(user) && user.stat == CONSCIOUS
+
+/obj/item/clothing/glasses/hud/security/eyepatch/proc/eye_switched(datum/act/op/A)
+	set_eye(!eye)
 	if(eye)
 		icon_state = "[icon_state]_1"
 	else
 		icon_state = initial(icon_state)
 	update_clothing_icon()
+	return OP_OK
 
 /obj/item/clothing/glasses/hud/security/eyepatch2
 	name = "Security Hudpatch MKII"
@@ -370,21 +379,30 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
+TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch2, eye)
+
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
-	op("eyepatch2_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatch2_switcheye_verb)))
+	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch, SLOT_ANY_CARRIED)
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
-/// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eyepatch2_switcheye_verb(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!isliving(user)) return
-	if(user.stat) return
+/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch()
+	set name = "Switch Eyepatch"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "switch_eye", null, ORIGIN_VERB)
 
-	eye = !eye
+/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eye_switch_allowed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return istype(user) && user.stat == CONSCIOUS
+
+/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eye_switched(datum/act/op/A)
+	set_eye(!eye)
 	if(eye)
 		icon_state = "[icon_state]_1"
 	else
 		icon_state = initial(icon_state)
 	update_clothing_icon()
+	return OP_OK
 
 /obj/item/clothing/glasses/hud/health/eyepatch
 	name = "Medical Hudpatch"
@@ -395,21 +413,30 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 	enables_planes =  list(VIS_CH_STATUS,VIS_CH_HEALTH)
 	var/eye = null
 
+TRACKED(/obj/item/clothing/glasses/hud/health/eyepatch, eye)
+
 CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
-	op("health_eyepatch_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(health_eyepatch_switcheye_verb)))
+	held_verb(/obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
-/// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/health/eyepatch/proc/health_eyepatch_switcheye_verb(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!isliving(user)) return
-	if(user.stat) return
+/obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch()
+	set name = "Switch Eyepatch"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "switch_eye", null, ORIGIN_VERB)
 
-	eye = !eye
+/obj/item/clothing/glasses/hud/health/eyepatch/proc/eye_switch_allowed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return istype(user) && user.stat == CONSCIOUS
+
+/obj/item/clothing/glasses/hud/health/eyepatch/proc/eye_switched(datum/act/op/A)
+	set_eye(!eye)
 	if(eye)
 		icon_state = "[icon_state]_1"
 	else
 		icon_state = initial(icon_state)
 	update_clothing_icon()
+	return OP_OK
 
 //Rx Variants
 /obj/item/clothing/glasses/omnihud/med/prescription

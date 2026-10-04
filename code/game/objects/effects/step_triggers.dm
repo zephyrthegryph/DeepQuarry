@@ -254,13 +254,9 @@ But for now, for what it's been used for, it works.
 	var/remove_implants = 0	//Havn't bothered to implement this yet
 	var/remove_mutations = 0
 
-/obj/effect/step_trigger/autostrip/relations()
-	. = ..()
-	. += rel_one(nameof(target), keyed = nameof(targetid), keyed_target = /obj/effect/autostriptarget)
-	. += rel_one(nameof(Mtarget), keyed = nameof(targetid), keyed_target = /obj/effect/autostriptarget/mob)
-/obj/effect/autostriptarget/relations()
-	. = ..()
-	. += rel_key(nameof(targetid))
+CAPABILITIES(/obj/effect/step_trigger/autostrip)
+	ref_one(nameof(target), /obj/effect/autostriptarget, by = nameof(targetid))
+	ref_one(nameof(Mtarget), /obj/effect/autostriptarget/mob, by = nameof(targetid))
 
 /obj/effect/step_trigger/autostrip/Trigger(mob/living/carbon/human/H as mob)
 	if(!istype(H))

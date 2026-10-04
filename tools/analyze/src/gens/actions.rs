@@ -178,10 +178,10 @@ impl Generator for Actions {
             all.extend(acts[n].fields.clone());
             acts.get_mut(n).unwrap().fields = all;
         }
-        let (tests, content): (Vec<&Action>, Vec<&Action>) = acts.values().partition(|a| a.rel.starts_with("code/tests/"));
+        let (tests, content): (Vec<&Action>, Vec<&Action>) = acts.values().partition(|a| crate::sem::gen::test_only(&a.rel));
         emit(cx, out, &content, &acts, "action_notice_types");
         if !tests.is_empty() {
-            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
+            out.line(crate::sem::gen::TEST_GUARD);
             out.blank();
             emit(cx, out, &tests, &acts, "action_notice_types_tests");
             out.line("#endif");

@@ -35,6 +35,7 @@
 	var/list/state_supplied = list() // ALLOW(instance_list): d: per law set, written through get/set_state_internal(); one per silicon
 
 CAPABILITIES(/datum/ai_laws)
+	ref_many(nameof(sorted_laws))
 	owns_one(nameof(zeroth_law), /datum/ai_law/zero)
 	owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero)
 	owns_many(nameof(inherent_laws), /datum/ai_law)
@@ -318,6 +319,3 @@ CAPABILITIES(/datum/ai_laws)
 	L = L ? L.Copy() : list()
 	L["sorted_laws"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
 	return L
-/datum/ai_laws/relations()
-	. = ..()
-	. += rel_many(nameof(sorted_laws))

@@ -209,6 +209,27 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 		return TRUE
 	return sys_periodic_def_holds(E, W)
 
+/// The every() gate for a manual periodic start: FALSE when `E`'s type declares type-level every(..., when = ...)
+/// work (code/engine/actions/every.dm) and none of those gates holds now. The PERIODIC_WHILE -> every() codemod
+/// moved the "runs only while X" rule from DECLARE_PERIODIC_WHILE into every()'s `when =`; om_task_periodic()
+/// asks this so a switched-off item still can't be started by hand. Ungated every() work and capability
+/// every() (an activation's) don't gate.
+/proc/sys_every_allows(datum/E)
+	var/datum/type_table/T = table_of(E)
+	if(!T)
+		return TRUE
+	var/gated = FALSE
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_EVERY))
+		if(!isnull(C.owner))
+			continue
+		var/datum/entry/entry = C.item
+		if(isnull(entry.args["when"]) && !length(C.whens))
+			continue
+		gated = TRUE
+		if(type_every_gate(E, C))
+			return TRUE
+	return !gated
+
 // ---------------------------------------------------------------- repeats
 
 /proc/sys_repeat_arm(datum/E, datum/sys_periodic_def/R)

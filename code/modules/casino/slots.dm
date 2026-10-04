@@ -57,7 +57,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
 /obj/machinery/slot_machine/wrench_act(mob/user, obj/item/tool)
 	if(om_busy(src))
@@ -206,7 +206,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
 /obj/machinery/station_slot_machine/wrench_act(mob/user, obj/item/tool)
 	if(om_busy(src))

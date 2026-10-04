@@ -515,61 +515,138 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 			R.data["viruses"] = preserve
 
 ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create an advanced virus and release it.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/i = VIRUS_SYMPTOM_LIMIT
-	var/mob/living/carbon/human/H = null
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	var/datum/admin_virus_creation/creation = new
+	creation.prepare_strain()
+	creation.ask_symptom(user)
 
-	var/datum/affliction/contagion/engineered/D = new(0, null)
-	own_clear(D, nameof(/datum/job::symptoms), OWN_DELETE)
+/// One draft survives every question; each distinct trait consumes one slot.
+/datum/admin_virus_creation
+	var/datum/affliction/contagion/engineered/strain
+	var/datum/viral_trait/candidate
+	var/remaining = VIRUS_SYMPTOM_LIMIT
 
-	var/list/symptoms = list()
-	symptoms += "Done"
-	symptoms += GLOB.viral_trait_types.Copy()
-	do
-		if(!user)
-			return
-		var/symptom = verb_ask(user, "k495", args, /datum/om/prompt/choice, message = "Choose a symptom to add ([i] remaining)", title = "Choose a Symptom", choices = symptoms)
-		if(isnull(symptom))
-			return
-		if(isnull(symptom))
-			return
-		else if(istext(symptom))
-			i = 0
-		else if(ispath(symptom))
-			var/datum/viral_trait/S = new symptom
-			if(!D.HasSymptom(S))
-				rel_add(D, nameof(/datum/job::symptoms), S)
-				i -= 1
-	while(i > 0)
+CAPABILITIES(/datum/admin_virus_creation)
+	owns_one(nameof(strain), /datum/affliction/contagion/engineered)
+	owns_one(nameof(candidate), /datum/viral_trait)
 
-	if(length(D.symptoms) > 0)
+/datum/admin_virus_creation/proc/prepare_strain()
+	if(!strain)
+		rel_set(src, nameof(strain), new /datum/affliction/contagion/engineered(0, null))
+		own_clear(strain, nameof(strain.symptoms), OWN_DELETE)
+	return strain
 
-		var/new_name = verb_ask(user, "k509", args, /datum/om/prompt/text, message = "Name your new disease.", title = "New Name")
-		if(isnull(new_name))
-			return
-		if(!new_name)
-			return FALSE
-		D.AssignName(new_name)
-		D.Finalize()
+/// The request schema provides a trait path. Duplicate answers never spend a slot or loop internally.
+/datum/admin_virus_creation/proc/select_symptom(symptom_type)
+	if(QDELETED(strain) || remaining <= 0 || !ispath(symptom_type, /datum/viral_trait))
+		return FALSE
+	rel_set(src, nameof(candidate), new symptom_type)
+	if(strain.HasSymptom(candidate))
+		rel_set(src, nameof(candidate), null)
+		return FALSE
+	rel_add(strain, nameof(strain.symptoms), rel_take(src, nameof(candidate)))
+	remaining -= 1
+	return TRUE
 
-		for(var/datum/affliction/contagion/engineered/AD in REGISTRY_MEMBERS(REGISTRY_ACTIVE_DISEASES))
-			AD.Refresh()
+/datum/admin_virus_creation/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
 
-		var/_answer_k518 = verb_ask(user, "k518", args, /datum/om/prompt/choice, message = "Choose infectee", title = "Infectees", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
-		if(isnull(_answer_k518))
-			return
-		H = _answer_k518
+/datum/prompt/choice/admin_virus_creation
+	rights = R_SPAWN|R_EVENT
+	timeout = 0
+	recheck_on_open = TRUE
 
-		if(isnull(H))
-			return FALSE
+/datum/prompt/choice/admin_virus_creation/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_virus_creation/creation = owner
+	return QDELETED(creation.strain) ? "draft is gone" : null
 
-		if(!H.has_contagion(D))
-			H.force_contagion(D)
+/datum/prompt/text/admin_virus_creation
+	question = "Name your new disease."
+	title = "New Name"
+	rights = R_SPAWN|R_EVENT
+	timeout = 0
+	recheck_on_open = TRUE
 
-		var/list/name_symptoms = list()
-		for(var/datum/viral_trait/S in D.symptoms)
-			name_symptoms += S.name
-		message_admins("[key_name_admin(user)] has triggered a custom virus outbreak of [D.name]! It has these symptoms: [english_list(name_symptoms)]")
-		log_admin("[key_name_admin(user)] infected [key_name_admin(H)] with [D.name]. It has these symptoms: [english_list(name_symptoms)]")
+/datum/prompt/text/admin_virus_creation/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_virus_creation/creation = owner
+	return QDELETED(creation.strain) ? "draft is gone" : null
+
+/datum/admin_virus_creation/proc/ask_symptom(client/user)
+	var/mob/answerer = user?.mob
+	if(QDELETED(answerer))
+		retire()
+		return
+	var/list/options = list("Done") + GLOB.viral_trait_types.Copy()
+	open_request(src, /datum/prompt/choice/admin_virus_creation, PROC_REF(symptom_chosen), answerer = answerer, question = "Choose a symptom to add ([remaining] remaining)", title = "Choose a Symptom", choices = options)
+
+/datum/admin_virus_creation/proc/symptom_chosen(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		retire()
+		return
+	if(istext(A.request.answer_value))
+		remaining = 0
+	else
+		select_symptom(A.request.answer_value)
+	if(remaining > 0)
+		ask_symptom(user)
+		return
+	if(!length(strain.symptoms))
+		retire()
+		return
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		retire()
+		return
+	open_request(src, /datum/prompt/text/admin_virus_creation, PROC_REF(name_chosen), answerer = answerer)
+
+/datum/admin_virus_creation/proc/name_chosen(datum/act/request/A)
+	if(!A.answer || !A.request.answer_value)
+		retire()
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		retire()
+		return
+	strain.AssignName(A.request.answer_value)
+	strain.Finalize()
+	for(var/datum/affliction/contagion/engineered/AD in REGISTRY_MEMBERS(REGISTRY_ACTIVE_DISEASES))
+		AD.Refresh()
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		retire()
+		return
+	open_request(src, /datum/prompt/choice/admin_virus_creation, PROC_REF(infectee_chosen), answerer = answerer, question = "Choose infectee", title = "Infectees", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
+
+/datum/admin_virus_creation/proc/infectee_chosen(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	var/client/user = A.request.answerer?.client
+	var/mob/living/carbon/human/H = A.request.answer_value
+	if(!user || !istype(H) || QDELETED(H))
+		retire()
+		return
+	var/datum/affliction/contagion/engineered/D = strain
+	if(!H.has_contagion(D))
+		H.force_contagion(D)
+	var/list/name_symptoms = list()
+	for(var/datum/viral_trait/S in D.symptoms)
+		name_symptoms += S.name
+	message_admins("[key_name_admin(user)] has triggered a custom virus outbreak of [D.name]! It has these symptoms: [english_list(name_symptoms)]")
+	log_admin("[key_name_admin(user)] infected [key_name_admin(H)] with [D.name]. It has these symptoms: [english_list(name_symptoms)]")
+	retire()
 
 /datum/affliction/contagion/engineered/infect(mob/living/infectee, make_copy = TRUE)
 	var/datum/affliction/contagion/engineered/A = make_copy ? Copy() : src

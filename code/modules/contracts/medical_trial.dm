@@ -326,8 +326,7 @@ CAPABILITIES(/datum/contract/medical_trial)
 		unobserve(subject, /datum/notice/mob_death, src)
 	SScontracts.void_evidence(participant.consent_evidence_id, "The subject withdrew consent before submission.")
 	medical_trial_cancel_subject_contracts(id, subject_id)
-	own_take_member(src, nameof(participants), subject_id)
-	qdel(participant)
+	rel_add(src, nameof(participants), null, subject_id)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject?.real_name || subject_id] withdrew consent; unsubmitted observations were discarded and the cohort slot reopened.")
 	return TRUE
 

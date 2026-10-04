@@ -450,7 +450,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		meter.charge(KM_SYS_OM_NATIVE, TICK_USAGE_TO_MS(native_start))
 		if(!native_done)
 			return FALSE
-	if(lane == LANE_PRESENTATION)
+	// The appearance and refresh queues are the world's (globals), not this scheduler's: only the live scheduler drains them. A test
+	// harness (manual time, a per-lane call cap) draining them spent its whole presentation cap on the live world's churn and starved its own
+	// presentation rings (om/regression_lanes_do_not_starve).
+	if(lane == LANE_PRESENTATION && isnull(manual_time))
 		// Declared appearances whose watched fields changed (code/datums/sys/appearance.dm).
 		var/appearance_start = TICK_USAGE
 		var/appearance_done = appearance_drain(src)

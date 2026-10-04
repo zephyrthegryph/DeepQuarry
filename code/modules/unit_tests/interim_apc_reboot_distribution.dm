@@ -15,8 +15,8 @@
 	apc.longtermpower = -1
 	apc.main_status = APC_EXTERNAL_POWER_GOOD
 	apc.energy_fail(3) // This API counts machine-service intervals, rather than deciseconds.
-	TEST_ASSERT(apc.power_failed, "the actual power-failure entry establishes a pending failure")
-	TEST_ASSERT(hold_left(apc, STAT_POWER_FAILED, SRC_POWER_FAILURE) > 0, "the actual failure has an outstanding revert")
+	TEST_ASSERT(apc.failure_left() > 0, "the actual power-failure entry establishes a pending failure")
+	TEST_ASSERT(hold_left(apc, STAT_OPERABLE, SRC_POWER_FAILURE) > 0, "the actual failure has an outstanding revert")
 	apc.reboot()
 	TEST_ASSERT_EQUAL(apc.lighting, POWERCHAN_ON_AUTO, "actual reboot restores lighting to automatic on")
 	TEST_ASSERT_EQUAL(apc.equipment, POWERCHAN_ON_AUTO, "actual reboot restores equipment to automatic on")
@@ -27,8 +27,8 @@
 	TEST_ASSERT_EQUAL(apc.chargecount, 0, "actual reboot clears the charging count")
 	TEST_ASSERT_EQUAL(apc.longtermpower, 10, "actual reboot resets the distribution's long-term power allowance")
 	TEST_ASSERT_EQUAL(apc.main_status, APC_EXTERNAL_POWER_NOTCONNECTED, "actual reboot clears the previously good external-power status")
-	TEST_ASSERT(!apc.power_failed, "actual reboot clears the current power failure")
-	TEST_ASSERT_NULL(hold_left(apc, STAT_POWER_FAILED, SRC_POWER_FAILURE), "actual reboot cancels the outstanding failure revert")
+	TEST_ASSERT(!apc.failure_left(), "actual reboot clears the current power failure")
+	TEST_ASSERT_NULL(hold_left(apc, STAT_OPERABLE, SRC_POWER_FAILURE), "actual reboot cancels the outstanding failure revert")
 	TEST_ASSERT_EQUAL(apc.cell, cell, "actual reboot retains the same installed cell")
 	TEST_ASSERT_EQUAL(cell.loc, apc, "actual reboot preserves physical cell containment")
 	TEST_ASSERT_EQUAL(cell.charge, charge_before, "actual reboot does not spend or grant stored cell charge")

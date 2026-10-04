@@ -26,11 +26,13 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 	// single-action panel; tgui_alert with the existing
 	// uses count is the right primitive.
 	user.set_machine(src)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(scroll_answered), title = "Teleportation Scroll", yes_text = "Teleport", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS, message = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.")
+	open_request(src, /datum/prompt/choice, PROC_REF(scroll_answered), answerer = user, title = "Teleportation Scroll", buttons = TRUE, choices = list("Teleport", "Cancel"), ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS, timeout = 0, question = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.")
 	return TRUE
 
-/obj/item/teleportation_scroll/proc/scroll_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/user = ask.answerer
+/obj/item/teleportation_scroll/proc/scroll_answered(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Teleport")
+		return
+	var/mob/living/carbon/human/user = A.request.answerer
 	if(ishuman(user) && !user.restrained() && uses >= 1)
 		teleportscroll(user)
 

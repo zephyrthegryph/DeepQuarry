@@ -76,10 +76,17 @@ UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_bellyspawn)
 	close_ui()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "mouse_spawn", ui_act_mouse_spawn)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_mouse_spawn)
-	become_mouse(ui.user)
-	. = TRUE
+CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
+	op("mouse_spawn", ui_act(), then(PROC_REF(ui_act_mouse_spawn)))
+	op("corgi_spawn", ui_act(), then(PROC_REF(ui_act_corgi_spawn)))
+	op("lost_drone_spawn", ui_act(), then(PROC_REF(ui_act_lost_drone_spawn)))
+	op("maintenance_critter", ui_act(), then(PROC_REF(ui_act_maintenance_critter)))
+	op("gravekeeper_spawn", ui_act(), then(PROC_REF(ui_act_gravekeeper_spawn)))
+
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_mouse_spawn(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	become_mouse(user)
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/ghost_spawn_menu, "drone_spawn", ui_act_drone_spawn, UI_ARG_TEXT("fabricator"))
 UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_drone_spawn)
@@ -91,25 +98,25 @@ UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_vr_spawn)
 	join_vr(ui.user, params["landmark"])
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "corgi_spawn", ui_act_corgi_spawn)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_corgi_spawn)
-	join_corgi(ui.user)
-	. = TRUE
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_corgi_spawn(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	join_corgi(user)
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "lost_drone_spawn", ui_act_lost_drone_spawn)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_lost_drone_spawn)
-	join_lost(ui.user)
-	. = TRUE
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_lost_drone_spawn(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	join_lost(user)
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "maintenance_critter", ui_act_maintenance_critter)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_maintenance_critter)
-	join_maintrcritter(ui.user)
-	. = TRUE
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_maintenance_critter(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	join_maintrcritter(user)
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "gravekeeper_spawn", ui_act_gravekeeper_spawn)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_gravekeeper_spawn)
-	join_grave(ui.user)
-	. = TRUE
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_gravekeeper_spawn(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	join_grave(user)
+	return OP_OK
 
 /datum/tgui_module/ghost_spawn_menu/proc/compile_pod_data()
 	var/list/compiled_pods = list()

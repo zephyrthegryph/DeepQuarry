@@ -1,8 +1,14 @@
+#define SCRAP_ICON_METAL 1
+#define SCRAP_ICON_CIRCUIT 2
+#define SCRAP_ICON_DEVICE 3
+
 /obj/item/trash/material
 	icon = 'icons/obj/material_trash.dmi'
 	MATERIAL_NONE
-	var/matter_chances = list()	//List of lists: list(mat_name, chance, amount)
+	var/list/matter_chances	//List of lists: list(mat_name, chance, amount)
 
+
+TYPE_TABLE_DECLARE(/obj/item/trash/material, scrap_icon_kind, null)
 
 /obj/item/trash/material/Initialize(mapload)
 	. = ..()
@@ -11,6 +17,14 @@
 			var/list/added = list()
 			added[L[1]] = max(0, L[3] + rand(-2,2))
 			add_materials(added)
+
+	switch(TYPE_TABLE_GET(src, scrap_icon_kind))
+		if(SCRAP_ICON_METAL)
+			icon_state = "metal[rand(4)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+		if(SCRAP_ICON_CIRCUIT)
+			icon_state = "circuit[rand(3)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+		if(SCRAP_ICON_DEVICE)
+			icon_state = "device[rand(3)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
 
 
@@ -27,9 +41,7 @@
 		list(MAT_PLASTEEL, 5, 10)
 	)
 
-/obj/item/trash/material/metal/Initialize(mapload)
-	. = ..()
-	icon_state = "metal[rand(4)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+TYPE_TABLE(/obj/item/trash/material/metal, scrap_icon_kind, SCRAP_ICON_METAL)
 
 
 /obj/item/trash/material/circuit
@@ -46,9 +58,7 @@
 		list(MAT_DIAMOND, 4, 2),
 	)
 
-/obj/item/trash/material/circuit/Initialize(mapload)
-	. = ..()
-	icon_state = "circuit[rand(3)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+TYPE_TABLE(/obj/item/trash/material/circuit, scrap_icon_kind, SCRAP_ICON_CIRCUIT)
 
 
 /obj/item/trash/material/device
@@ -65,6 +75,8 @@
 		list(MAT_DIAMOND, 5, 2),
 	)
 
-/obj/item/trash/material/device/Initialize(mapload)
-	. = ..()
-	icon_state = "device[rand(3)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+TYPE_TABLE(/obj/item/trash/material/device, scrap_icon_kind, SCRAP_ICON_DEVICE)
+
+#undef SCRAP_ICON_METAL
+#undef SCRAP_ICON_CIRCUIT
+#undef SCRAP_ICON_DEVICE

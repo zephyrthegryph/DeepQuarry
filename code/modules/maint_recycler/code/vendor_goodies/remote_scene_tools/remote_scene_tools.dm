@@ -108,7 +108,7 @@ why aren't these accessories?
 
 /obj/item/remote_scene_tool/proc/check_loc(datum/act/notice/A)
 	EVENT_HANDLER
-	after(src, 1, PROC_REF(delayed_loc_check))
+	after(src, 0.1 SECONDS, PROC_REF(delayed_loc_check))
 
 /obj/item/remote_scene_tool/proc/delayed_loc_check()
 //why is this delayed? because when moving stuff between slots, it considers it in a different spot, and calls the commsig multiple times - so the end
@@ -187,6 +187,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool, TYPE_PROC_REF(/atom, appear
 	return null
 
 CAPABILITIES(/obj/item/remote_scene_tool)
+	links(/obj/item/remote_scene_tool::linked, /obj/item/remote_scene_tool::linked)
 	op("remote_scene_tool_verb_summon", menu(), label("Summon Counterpart"), needs(carried()), then(PROC_REF(remote_scene_tool_verb_summon)))
 
 /// Old Summon Counterpart verb: Forcibly moves the linked object over to you - or, if it doesn't exist, spawn a new one.
@@ -218,7 +219,3 @@ CAPABILITIES(/obj/item/remote_scene_tool)
 /// Accessor for the worn_mob var.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return worn_mob
-
-/obj/item/remote_scene_tool/relations()
-	. = ..()
-	. += rel_one(nameof(linked), back = nameof(/obj/item/remote_scene_tool::linked))

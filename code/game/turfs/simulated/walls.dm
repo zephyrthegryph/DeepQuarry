@@ -33,8 +33,23 @@
 	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(1)
 
+TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
+
 /turf/simulated/wall/Initialize(mapload, materialtype, rmaterialtype, girdertype)
-	. = ..()
+	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
+	if(forced_materials)
+		materialtype = forced_materials[1]
+		rmaterialtype = length(forced_materials) >= 2 ? forced_materials[2] : null
+		girdertype = length(forced_materials) >= 3 ? forced_materials[3] : null
+		switch(length(forced_materials))
+			if(1)
+				. = ..(mapload, materialtype)
+			if(2)
+				. = ..(mapload, materialtype, rmaterialtype)
+			if(3)
+				. = ..(mapload, materialtype, rmaterialtype, girdertype)
+	else
+		. = ..()
 	icon_state = "blank"
 	if(!materialtype)
 		materialtype = DEFAULT_WALL_MATERIAL
@@ -328,7 +343,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/burn(temperature)
 	if(material.combustion_effect(src, temperature, 0.7))
-		after(src, 2, PROC_REF(burn_collapse), with = list(temperature, girder_material.name))
+		after(src, 0.2 SECONDS, PROC_REF(burn_collapse), with = list(temperature, girder_material.name))
 
 /turf/simulated/wall/proc/burn_collapse(temperature, girder_mat_name)
 	new /obj/structure/girder(src, girder_mat_name)

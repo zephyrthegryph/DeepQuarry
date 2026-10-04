@@ -23,6 +23,10 @@
 ///     CAPABILITIES(/obj/machinery/thing)
 ///         op("press", hand(), then(PROC_REF(pressed)))
 ///         extend("ui_open", needs(req_is(STAT_OPERABLE)))
+///
+///         section(controls, "The window and its buttons.")
+///         interface("Thing")
+///         op("eject", ui_act(), then(PROC_REF(eject)))
 #define CAPABILITIES(T) ##T/__capabilities()
 /// A capability whose body returns entries: CAPABILITY_DEF(name, CAP_X, key =, stacks =, param = default, ...).
 #define CAPABILITY_DEF(name, cap_id, params...)
@@ -45,8 +49,11 @@
 #define SYSTEM_ACCESSOR(system, name, key)
 /// A resource and its adapter (section 9, X2).
 #define RESOURCE_DEF(res, params...)
-/// A list of entries or parts under a name, kept in its own file (section 11).
-#define BUNDLE(name, entries...)
+/// A section of a CAPABILITIES block (section 1): `section(name, "doc")` on its own line groups the entries after it, up to the next section or
+/// the block's end. The entries stay the type's own (PROC_REF(x), nameof(v)); each carries the section's name with its file:line, which
+/// Explain Type and Explain Interaction print. A section is not reuse: entries several types share are a capability or a plain proc
+/// returning list(entries). Expands to nothing (the line is an empty statement of the header's proc).
+#define section(name, doc...)
 
 /// An accessor proc that stands for a producer key rather than a var: READS_AS(proc, KEY) or, through a relation,
 /// READS_AS(pad_occupied, OCCUPANTS_KEY, via = nameof(pad)). Generated reads do not follow the proc; readers subscribe to KEY

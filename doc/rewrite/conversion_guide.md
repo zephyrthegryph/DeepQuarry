@@ -33,6 +33,10 @@ examples, section 17 and `doc/rewrite/api_mapping.tsv` map old forms to new ones
    1. vars and tracked state: `TRACKED`, `STAT`, `SOURCE_DEF`, `STAGE_DEF`; one `var/x` per fact, defaults on the var line;
    2. the `CAPABILITIES(T)` block: bundles first (`wall_machine`, `maintenance_hatch`, `cell_bay`, `powered_by`), then links and relations
       (`owns_one`, `links`), then `interface()`, then ops, then `extend`s, then hooks (`on_notice`, `on_change`, `extend(/datum/act/hit/x, ...)`);
+      a long block groups the rest under `section(name, "doc")` lines at its end (a window's buttons, the hatch's rules): a section's
+      entries are the type's own, so they use `PROC_REF(x)` and `nameof(v)`, and Explain prints `file:line section name` for each. There is
+      no `BUNDLE`: what several types share is a library capability, or a plain `/proc/name()` returning `list(entries)` for a small
+      parameterless snippet;
    3. each old interaction becomes an op, each old condition a requirement, each old effect `then(PROC_REF(x))` with `x(datum/act/op/A, args...)`;
    4. timers become `after(src, delay, PROC_REF(x), key = "k", with = list(...))`, holds become `hold`/`release` with a `SOURCE_DEF`;
    5. presentation: `look_layer()` and `examine_line()` for plain layers and lines, `draw(look)` for computed ones, `ui_data(A)` for the window;
@@ -106,15 +110,19 @@ extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_rea
 extend("nightshift", drop = "lock"),   // this one button works whatever the lock says: relax the lock's requirement by its id
 ```
 
-**Timed state.** Before: `timed_set(src, nameof(power_failed), TRUE, for_time = d)` plus a `set_power_failed()` setter with side effects. After: a stat
-with timed holds and a hook for the consequence:
+**Timed state.** Before: `timed_set(src, nameof(power_failed), TRUE, for_time = d)` plus a `set_power_failed()` setter with side effects, then a
+`power_failed` stat of its own. After: "temporarily not operating" is a timed hold on `STAT_OPERABLE`, from the library's `emp_disable()` for a pulse and
+from the APC's own source for an event's failure, and what the APC does with it is a stat it feeds and a hook on that stat:
 
 ```dm
-STAT(/obj/machinery/power/apc, power_failed, ANY)
-SOURCE_DEF(power_failure)
-on_change(nameof(power_failed), ANY, then(PROC_REF(power_failed_changed))),
-// energy_fail(): hold(src, STAT_POWER_FAILED, TRUE, SRC_POWER_FAILURE, lasts); the UI shows hold_left(src, STAT_POWER_FAILED, SRC_POWER_FAILURE)
+emp_disable(PROC_REF(emp_outage), extends = TRUE)          // a pulse: hold(STAT_OPERABLE, FALSE, SRC_EMP, outage); emp_outage(severity) scales it (critical APCs)
+contributes(STAT_OPERABLE, PROC_REF(electronics_fastened), reads = list("graph:[CAP_CONSTRUCTION]"))   // was the MAINT bit
+contributes(STAT_SUPPLYING, STAT_OPERABLE)                   // a var-backed stat: what push_to_rust() and the area read (generated reads see a var)
+on_change(nameof(supplying), ANY, then(PROC_REF(supply_changed)))
+// energy_fail(): hold(src, STAT_OPERABLE, FALSE, SRC_POWER_FAILURE, lasts); the reboot releases both sources; the UI shows failure_left()
 ```
+
+The APC overrides `stat_bits_allow()` to read only `BROKEN`: it is its area's supply, so the area going dark (NOPOWER) must not make it inoperable.
 
 **Construction.** Before: `cap_construction(ladder_options(...), stage("frame"), build_insert(...), build_wire(10, ...), build_fasten(...))`. After a
 bundle (`apc_frame()`) of `construction(start(STAGE_APC_FRAME), stage(...), ..., dismantle(tool(TOOL_WELDER), becomes(...), ruined(cond, becomes(...))), at(BAY_HATCH))`,
@@ -122,7 +130,14 @@ a `STAGE_DEF` + `MSG_DEF(stage/apc/<name>)` per stage, a slot relation for `SLOT
 placed finished. Code that makes the thing part-built (the frame item) calls `graph_place(src, STAGE_APC_FRAME)`.
 
 **Hits.** Before: `DAMAGE_REACTION(...)`/`before_op(damage(...))`. After: `extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE)))`
-(takes the hit over), `on_notice(/datum/notice/hit/emp, then(PROC_REF(apc_emp_fail)))` (reacts after it). The bridge is `hit_try()` in `receive_damage()`.
+(takes the hit over); an EMP is `emp_disable()`, above. A swing that nothing answered is the attackby action's notice,
+`on_notice(/datum/notice/attacked_by, then(PROC_REF(apc_struck)))`; a signaller at the open wire panel is its own op (`item(/obj/item/assembly/signaler)`,
+`when(PANEL_OPEN)`), and a silicon's click reaches the window through the interface's `remote()` binding. The bridge is `hit_try()` in `receive_damage()`.
+
+**Links and the night shift.** The area is a link, `links(/obj/machinery/power/apc::area, /area::apc)`: `rel_set(src, nameof(area), A)` writes both ends.
+What the area's lights read from its APC is the APC's to say, `contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))`, where
+`wants_night_lights()` reads the night-shift system through its accessor `night_shift_active()` (section 16.11): the system sets one tracked flag and
+touches no APC. Registry membership is `membership(joins = REGISTRY_APCS)`.
 
 ## 5. Everything that read the old state
 
@@ -160,8 +175,9 @@ The full suite is one integration run per merge batch, not per worker.
 * **Global procs called from a condition need `READS_FROM(...)`** in their body (or a hit in an opaque directory); a call to a state accessor generated by
   `cap_keys` is recognised by the analysis. A helper that calls other globals is followed: annotate the leaf, not every caller.
 * **A requirement that reads `A.actor` takes `datum/act/op/A`**, not `datum/act/A` (DM types the var).
-* **`TRACKED_BRIDGED` stays for the vars the machine pipeline wakes on** (breaker, charge mode): a plain `TRACKED` setter does not raise the old channel and the
-  missed-wake audit fails the suite.
+* **`TRACKED_BRIDGED` stays only for a var a machine pipeline stage really wakes on**: a plain `TRACKED` setter does not raise the old channel, and the
+  missed-wake audit fails the suite when a stage needed it. The APC has no such stage (its work is the Rust power step and its poll), so its breaker,
+  charge mode, short and grid check are plain `TRACKED`: check what wakes on the channel before you keep the bridge.
 * **A capability key write marks the holder's outputs** (`capability_key_changed()` raises `CHANGE_CAPABILITY`), and a type whose table has a look layer is
   a type that is redrawn (`present_declares_look()`); without both the refresh-drift audit reports a draw that changed unmarked.
 * **Op clashes are a build error**: two ops with the same binding and tier need exclusive `when()`s, different tiers or `priority(above(key))`.
