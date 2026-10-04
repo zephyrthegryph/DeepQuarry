@@ -132,10 +132,22 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	for(var/mob/current_client in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(current_client.key && isobserver(current_client))
 			available += current_client
-	var/mob/choice = verb_ask(user, "player", args, /datum/om/prompt/choice, message = "Choose a player to play the pAI", title = "Spawn pAI", choices = available)
-	if(!choice || !choice.key)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_pai_player, PROC_REF(pai_player_chosen), answerer = answerer, choices = available)
 
+/datum/admin_verb/makepAI/proc/pai_player_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(make_chosen_pai), A)
+	if(!result.ok)
+		stack_trace("om flow makepAI answer pai_player_chosen: [result.error]")
+
+/datum/admin_verb/makepAI/proc/make_chosen_pai(datum/act/request/A)
+	var/mob/choice = A.request.answer_value
+	var/client/user = A.request.answerer.client
+	var/turf/target_turf = get_turf(user.mob)
 	var/obj/item/paicard/typeb/card = new(target_turf)
 	var/mob/living/silicon/pai/pai = new(card)
 	pai.real_name = pai.name
@@ -790,6 +802,27 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	choices = list("Players", "Admins", "Mobs", "Living Mobs", "Dead Mobs", "Clients")
 
 /datum/prompt/choice/admin_mob_list/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_pai_player
+	rights = R_ADMIN|R_EVENT|R_DEBUG
+	timeout = 0
+	question = "Choose a player to play the pAI"
+	title = "Spawn pAI"
+
+/datum/prompt/choice/admin_pai_player/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/picked = answer_value
+		if(QDELETED(picked) || !picked.key)
+			return "chosen player is gone"
+
+/datum/prompt/choice/admin_pai_player/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return
