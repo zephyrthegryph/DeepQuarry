@@ -7734,6 +7734,10 @@
 	into += entry_block("code/game/objects/structures/crates_lockers/closets/secure/freezer.dm", 1, /obj/structure/closet/secure_closet/freezer)
 	into += entry_line(2)
 	into += list(global.climb())
+	into += entry_line(3)
+	into += list(global.extend("climb.climb", global.when(global.cond_not(nameof(opened)))))
+	into += entry_line(4)
+	into += list(global.extend("climb.climb_menu", global.when(global.cond_not(nameof(opened)))))
 
 /// CAPABILITIES(/obj/structure/closet/secure_closet/mind) at code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm:133
 /obj/structure/closet/secure_closet/mind/declared_entries(list/into)

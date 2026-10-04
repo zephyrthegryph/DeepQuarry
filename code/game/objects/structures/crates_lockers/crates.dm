@@ -69,9 +69,9 @@ CAPABILITIES(/obj/structure/closet/crate)
 
 	playsound(src, open_sound, 50, 1, -3)
 	slot_empty(CONTAINER_SLOT_INTERIOR, get_turf(src))
+	climb_shake_off(src, null) // before the door moves: the climb waits on it being shut
 	set_opened(TRUE)
 
-	climb_shake_off(src, null)
 	update_icon()
 	return 1
 
