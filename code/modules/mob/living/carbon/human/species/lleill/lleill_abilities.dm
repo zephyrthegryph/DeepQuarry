@@ -401,6 +401,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 /// Pick who, pick how (and describe it, for Custom), then they consent. The actor stays
 /// conscious throughout.
 /datum/lleill_contact_review
+	parent_type = /datum/prompt_workflow
 	var/mob/living/carbon/human/actor
 	var/list/targets
 	var/list/contact_options
@@ -454,7 +455,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 /datum/lleill_contact_review/proc/start()
 	// flow_begin checked the actor before starting; it did not call ended on failure.
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	var/datum/result/result = safe_call(PROC_REF(start_step))
 	if(!result.ok)
@@ -466,11 +467,11 @@ CAPABILITIES(/datum/lleill_contact_review)
 /datum/lleill_contact_review/proc/stopped(declined = FALSE)
 	if(declined && !QDELETED(actor) && !QDELETED(chosen_target))
 		to_chat(actor, span_warning("\The [chosen_target] refuses the contact."))
-	consume(src)
+	retire()
 
 /datum/lleill_contact_review/proc/failed_step(step, error)
 	stack_trace("lleill contact step [step]: [error]")
-	consume(src)
+	retire()
 
 /datum/lleill_contact_review/proc/target_chosen(datum/act/request/A)
 	var/datum/result/result = safe_call(PROC_REF(target_chosen_step), A)
@@ -534,7 +535,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 		stopped(isnull(A.request.answer_value) || A.answer)
 		return
 	actor.lleill_contact_answered(chosen_target, contact_type, custom_text)
-	consume(src)
+	retire()
 
 /mob/living/carbon/human/proc/lleill_contact_answered(mob/living/carbon/human/chosen_target, contact_type, custom_text)
 	if(get_dist(src,chosen_target) > 1)

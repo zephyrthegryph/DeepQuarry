@@ -298,23 +298,23 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 
 /datum/control_transfer_review/morph_takeover/proc/target_entered(datum/act/request/A)
 	if(!A.answer)
-		consume(src)
+		retire()
 		return
 	run_step(PROC_REF(target_step), A)
 
 /datum/control_transfer_review/morph_takeover/proc/target_step(datum/act/request/A)
 	var/mob/living/selected = A.answer.answer_value
 	if(!istype(selected) || QDELETED(selected))
-		consume(src)
+		retire()
 		return
 	rel_set(src, nameof(prey), selected)
 	prey_selected = TRUE
 	if(QDELETED(prey))
-		consume(src)
+		retire()
 		return
 	if(!prey.allow_mimicry)
 		to_chat(actor, span_warning("\The [prey] cannot be impersonated!"))
-		consume(src)
+		retire()
 		return
 	ask(PROC_REF(sure_entered), "Take Over Prey", "You selected [prey] to attempt to take over. Are you sure?")
 
@@ -337,7 +337,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 /datum/control_transfer_review/morph_takeover/proc/finish_step(datum/act/request/A)
 	var/mob/living/simple_mob/vore/morph/operator = actor
 	operator.take_over_agreed(src)
-	consume(src)
+	retire()
 
 /mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/control_transfer_review/morph_takeover/seq)
 	var/mob/living/L = seq.prey

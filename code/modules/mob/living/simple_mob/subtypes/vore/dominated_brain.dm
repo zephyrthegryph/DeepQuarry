@@ -223,6 +223,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 
 /// Native consent sequences keep their participants weak without adding gameplay gates.
 /datum/control_transfer_review
+	parent_type = /datum/prompt_workflow
 	var/mob/actor
 
 CAPABILITIES(/datum/control_transfer_review)
@@ -251,7 +252,7 @@ CAPABILITIES(/datum/control_transfer_review)
 
 /datum/control_transfer_review/proc/start()
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	run_step(PROC_REF(start_step))
 
@@ -260,25 +261,25 @@ CAPABILITIES(/datum/control_transfer_review)
 
 /datum/control_transfer_review/proc/run_step(step, datum/act/request/A)
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	var/datum/result/result = safe_call(step, A)
 	if(!result.ok)
 		stack_trace("Control transfer step [step]: [result.error]")
-		consume(src)
+		retire()
 
 /datum/control_transfer_review/proc/ask(step, title, question, mob/user, decline_text)
 	open_request(src, /datum/prompt/choice/control_transfer_review, step, answerer = user || actor, asker = actor, title = title, question = question, decline_text = decline_text)
 
 /datum/control_transfer_review/proc/confirmed(datum/act/request/A, step)
 	if(!A.answer || QDELETED(actor))
-		consume(src)
+		retire()
 		return
 	if(A.answer.answer_value == "No")
 		var/datum/prompt/choice/control_transfer_review/question = A.request
 		if(question.decline_text)
 			to_chat(actor, span_warning("\The [question.answerer] [question.decline_text]"))
-		consume(src)
+		retire()
 		return
 	run_step(step, A)
 
@@ -323,7 +324,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 
 /datum/control_transfer_review/dominate_predator/proc/finish_step(datum/act/request/A)
 	actor.dominate_predator_agreed(src)
-	consume(src)
+	retire()
 
 /mob/proc/dominate_predator_agreed(datum/control_transfer_review/dominate_predator/seq)
 	var/mob/living/prey = src
@@ -468,7 +469,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 
 /datum/control_transfer_review/dominate_prey/proc/target_entered(datum/act/request/A)
 	if(!A.answer)
-		consume(src)
+		retire()
 		return
 	run_step(PROC_REF(target_step), A)
 
@@ -476,16 +477,16 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	var/mob/living/selected = A.answer.answer_value
 	if(!istype(selected))
 		to_chat(actor, span_warning("You must have a tighter grip to dominate this creature."))
-		consume(src)
+		retire()
 		return
 	rel_set(src, nameof(prey), selected)
 	prey_selected = TRUE
 	if(QDELETED(prey))
-		consume(src)
+		retire()
 		return
 	if(!prey.allow_mind_transfer)
 		to_chat(actor, span_warning("[prey] is unable to be dominated."))
-		consume(src)
+		retire()
 		return
 	ask(PROC_REF(sure_entered), "Dominate Prey", "You selected [prey] to attempt to dominate. Are you sure?")
 
@@ -509,7 +510,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 /datum/control_transfer_review/dominate_prey/proc/finish_step(datum/act/request/A)
 	var/mob/living/operator = actor
 	operator.dominate_prey_agreed(src)
-	consume(src)
+	retire()
 
 /mob/living/proc/dominate_prey_agreed(datum/control_transfer_review/dominate_prey/seq)
 	var/mob/living/M = seq.prey
@@ -658,7 +659,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 /datum/control_transfer_review/lend_prey_control/proc/finish_step(datum/act/request/A)
 	var/mob/living/operator = actor
 	operator.lend_prey_control_agreed(src)
-	consume(src)
+	retire()
 
 /mob/living/proc/lend_prey_control_agreed(datum/control_transfer_review/lend_prey_control/seq)
 	var/mob/living/prey = seq.prey

@@ -9,6 +9,7 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 
 /// The three gas amounts, then the bomb at the admin's feet. The admin keeps R_SPAWN throughout.
 /datum/ttv_bomb_review
+	parent_type = /datum/prompt_workflow
 	var/mob/actor
 	var/phoron
 	var/oxygen
@@ -26,24 +27,24 @@ CAPABILITIES(/datum/ttv_bomb_review)
 
 /datum/ttv_bomb_review/proc/start()
 	if(QDELETED(actor) || !admin_can(actor.client, R_SPAWN))
-		consume(src)
+		retire()
 		return
 	var/datum/result/result = safe_call(PROC_REF(start_step))
 	if(!result.ok)
 		stack_trace("TTV bomb start: [result.error]")
-		consume(src)
+		retire()
 
 /datum/ttv_bomb_review/proc/start_step()
 	open_request(src, /datum/prompt/number/ttv_bomb_review, PROC_REF(phoron_entered), answerer = actor, asker = actor, title = "Phoron", question = "Enter phoron amount (mol):", default = phoron)
 
 /datum/ttv_bomb_review/proc/run_step(step, datum/act/request/A)
 	if(!A.answer || QDELETED(actor))
-		consume(src)
+		retire()
 		return
 	var/datum/result/result = safe_call(step, A)
 	if(!result.ok)
 		stack_trace("TTV bomb step [step]: [result.error]")
-		consume(src)
+		retire()
 
 /datum/ttv_bomb_review/proc/phoron_entered(datum/act/request/A)
 	run_step(PROC_REF(phoron_step), A)
@@ -64,7 +65,7 @@ CAPABILITIES(/datum/ttv_bomb_review)
 
 /datum/ttv_bomb_review/proc/carbon_step(datum/act/request/A)
 	spawn_ttv_bomb(get_turf(actor), /obj/effect/spawner/newbomb/radio/custom, phoron, oxygen, A.answer.answer_value)
-	consume(src)
+	retire()
 
 /obj/effect/spawner/newbomb
 	name = "TTV bomb"

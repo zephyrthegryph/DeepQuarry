@@ -98,6 +98,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 /// A record pushed from a records console: the owner (actor) chooses to review it, edits the
 /// notes, and confirming saves their current slot. A no, a cancel or bad text refuses it.
 /datum/record_update_review
+	parent_type = /datum/prompt_workflow
 	var/mob/actor
 	/// REF() of the console, looked up again for its beeps.
 	var/console
@@ -169,11 +170,11 @@ CAPABILITIES(/datum/record_update_review)
 /datum/record_update_review/proc/review_step(datum/act/request/A)
 	var/datum/prompt/choice/record_update_review/ask = A.request
 	if(ask.initial_refusal)
-		consume(src)
+		retire()
 		return
 	if(!A.answer || A.request.answer_value != "Review Changes")
 		refused()
-		consume(src)
+		retire()
 		return
 	reviewed = TRUE
 	open_request(src, /datum/prompt/text/record_update_notes, PROC_REF(notes_entered), answerer = actor, title = "Character Preference", question = "Please review [pusher]'s changes to your [record_string] record before confirming. Confirming will SAVE your CURRENT character slot! If your new [record_string] record major errors, it is recomended to have it corrected IC instead of editing it yourself.", default = html_decode(record.fields["notes"]))
@@ -193,7 +194,7 @@ CAPABILITIES(/datum/record_update_review)
 	var/datum/result/result = safe_call(PROC_REF(refused))
 	if(!result.ok)
 		stack_trace("record update ended(error): [result.error]")
-	consume(src)
+	retire()
 
 /datum/record_update_review/proc/notes_entered(datum/act/request/A)
 	var/datum/result/result = safe_call(PROC_REF(notes_entered_step), A)
@@ -203,19 +204,19 @@ CAPABILITIES(/datum/record_update_review)
 /datum/record_update_review/proc/notes_entered_step(datum/act/request/A)
 	if(!A.answer)
 		refused()
-		consume(src)
+		retire()
 		return
 	var/mob/M = actor
 	var/new_data = strip_html_simple(A.request.answer_value, MAX_RECORD_LENGTH)
 	if(!new_data)
 		refused()
-		consume(src)
+		retire()
 		return
 	var/datum/preferences/prefs = M?.client?.prefs
 	if(!prefs || prefs.default_slot != M.mind?.loaded_from_slot)
 		message_admins("[record_name]'s [record_string] record could not be updated, player disconnected or changed slot.")
 		console_says("buzzes", SFX_MACHINES_DENIEDBEEP)
-		consume(src)
+		retire()
 		return
 
 	// Update records in the consoles, remember this can happen a while after a record is closed on the console... Use cached data.
@@ -234,7 +235,7 @@ CAPABILITIES(/datum/record_update_review)
 	to_chat(M,span_notice("Your [record_string] record for [record.fields["name"]] has been updated."))
 	message_admins("[record.fields["name"]] accepted the [record_string] record update from [pusher].")
 	console_says("dings", SFX_MACHINES_DING)
-	consume(src)
+	retire()
 
 /proc/client_record_update_unlock()
 	GLOB.client_record_update_lock = FALSE

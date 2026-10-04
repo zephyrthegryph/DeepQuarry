@@ -843,6 +843,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 /// The morph questions, one after another; each can be skipped (a cancel answers "").
 /// Re-checked before every step: still conscious and still a morph.
 /datum/morph_review
+	parent_type = /datum/prompt_workflow
 	var/mob/living/carbon/human/actor
 	var/list/hairs
 	var/list/fhairs
@@ -886,7 +887,7 @@ CAPABILITIES(/datum/morph_review)
 
 /datum/morph_review/proc/start()
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	run_step(PROC_REF(start_step))
 
@@ -894,7 +895,7 @@ CAPABILITIES(/datum/morph_review)
 	var/datum/result/result = safe_call(step, A)
 	if(!result.ok)
 		stack_trace("morph step [step]: [result.error]")
-		consume(src)
+		retire()
 
 /datum/morph_review/proc/accept_or_skip(datum/act/request/A)
 	// Even an old cancel_answer empty string resumed and rechecked the flow.
@@ -908,7 +909,7 @@ CAPABILITIES(/datum/morph_review)
 
 /datum/morph_review/proc/facial_color_picked_step(datum/act/request/A)
 	if(!accept_or_skip(A))
-		consume(src)
+		retire()
 		return
 	facial_color = A.answer ? A.request.answer_value : ""
 	open_request(src, /datum/prompt/color/morph, PROC_REF(hair_color_picked), answerer = actor, question = "Please select hair color.", default = rgb(actor.r_hair, actor.g_hair, actor.b_hair))
@@ -918,7 +919,7 @@ CAPABILITIES(/datum/morph_review)
 
 /datum/morph_review/proc/hair_color_picked_step(datum/act/request/A)
 	if(!accept_or_skip(A))
-		consume(src)
+		retire()
 		return
 	hair_color = A.answer ? A.request.answer_value : ""
 	open_request(src, /datum/prompt/color/morph, PROC_REF(eye_color_picked), answerer = actor, question = "Please select eye color.", default = rgb(actor.r_eyes, actor.g_eyes, actor.b_eyes))
@@ -928,7 +929,7 @@ CAPABILITIES(/datum/morph_review)
 
 /datum/morph_review/proc/eye_color_picked_step(datum/act/request/A)
 	if(!accept_or_skip(A))
-		consume(src)
+		retire()
 		return
 	eye_color = A.answer ? A.request.answer_value : ""
 	open_request(src, /datum/prompt/choice/morph, PROC_REF(hair_picked), answerer = actor, question = "Please select hair style", choices = hairs)
@@ -938,7 +939,7 @@ CAPABILITIES(/datum/morph_review)
 
 /datum/morph_review/proc/hair_picked_step(datum/act/request/A)
 	if(!accept_or_skip(A))
-		consume(src)
+		retire()
 		return
 	hair = A.answer ? A.request.answer_value : ""
 	open_request(src, /datum/prompt/choice/morph, PROC_REF(facial_picked), answerer = actor, question = "Please select facial style", choices = fhairs)
@@ -948,7 +949,7 @@ CAPABILITIES(/datum/morph_review)
 
 /datum/morph_review/proc/facial_picked_step(datum/act/request/A)
 	if(!accept_or_skip(A))
-		consume(src)
+		retire()
 		return
 	facial = A.answer ? A.request.answer_value : ""
 	open_request(src, /datum/prompt/choice/morph, PROC_REF(gender_picked), answerer = actor, question = "Please select gender.", choices = list("Male", "Female", "Neutral"), buttons = TRUE)
@@ -959,7 +960,7 @@ CAPABILITIES(/datum/morph_review)
 /datum/morph_review/proc/gender_picked_step(datum/act/request/A)
 	if(accept_or_skip(A))
 		actor.morph_answered(facial_color, hair_color, eye_color, hair, facial, A.answer ? A.request.answer_value : "")
-	consume(src)
+	retire()
 
 /mob/living/carbon/human/proc/morph_answered(new_facial, new_hair, new_eyes, new_h_style, new_f_style, new_gender)
 	if(new_facial)

@@ -12,6 +12,7 @@
 /// belly, picks absorbed or not and confirms; then the prey confirms. A no or a cancel at any
 /// step tells both sides, by the step it stopped at.
 /datum/inbelly_spawn_review
+	parent_type = /datum/prompt_workflow
 	var/mob/living/actor
 	/// Same identity lookup as the old flow's parked client, without retaining a client.
 	var/prey_ckey
@@ -60,7 +61,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 
 /datum/inbelly_spawn_review/proc/start()
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	run_step(PROC_REF(start_step))
 
@@ -74,7 +75,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	var/datum/result/result = safe_call(PROC_REF(notify_stopped), reason)
 	if(!result.ok)
 		stack_trace("inbelly spawn ended([reason]): [result.error]")
-	consume(src)
+	retire()
 
 /datum/inbelly_spawn_review/proc/failed_answer(datum/request/R)
 	if(QDELETED(actor) || (R.answerer_expected && QDELETED(R.answerer)))
@@ -160,7 +161,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	var/client/prey = prey_client()
 	// Old om_ask normalized the client to its current mob, and ended with no question if absent.
 	if(!prey.mob)
-		consume(src)
+		retire()
 		return
 	open_request(src, /datum/prompt/yes_no/inbelly_spawn, PROC_REF(prey_sure), answerer = prey.mob, asker = actor, question = "Are you certain that you to spawn in [actor]'s [belly][absorbed ? ", absorbed" : ""]?")
 
@@ -178,10 +179,10 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!is_alien_whitelisted(prey, GLOB.all_species[prey.prefs.read_preference(/datum/preference/choiced/species)]))
 		to_chat(prey, span_notice("You are not whitelisted to play as currently selected character."))
 		to_chat(actor, span_notice("Prey accepted the confirmation, but something went wrong with spawning their character."))
-		consume(src)
+		retire()
 		return
 	inbelly_spawn(prey, actor, belly, absorbed)
-	consume(src)
+	retire()
 
 /datum/inbelly_spawn_review/proc/notify_stopped(reason)
 	var/client/prey = prey_client()

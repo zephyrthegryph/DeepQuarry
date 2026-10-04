@@ -78,6 +78,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 /// confirmation, then the change. The customer stays next to the trader throughout, and any way
 /// the questions end frees the trader.
 /datum/trader_review
+	parent_type = /datum/prompt_workflow
 	var/mob/living/actor
 	var/obj/trader/trader
 	var/obj/product
@@ -124,7 +125,7 @@ CAPABILITIES(/datum/trader_review)
 /datum/trader_review/proc/start()
 	// Initial refusal did not run ended(), including its busy-state cleanup.
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	run_step(PROC_REF(start_step))
 
@@ -135,7 +136,7 @@ CAPABILITIES(/datum/trader_review)
 		var/datum/result/ending = safe_call(PROC_REF(stopped), "error")
 		if(!ending.ok)
 			stack_trace("trader trade ended(error): [ending.error]")
-			consume(src)
+			retire()
 
 /datum/trader_review/proc/stopped(reason)
 	if(stage != "change")
@@ -145,7 +146,7 @@ CAPABILITIES(/datum/trader_review)
 			to_chat(actor, span_notice("You decided not to."))
 		else if(reason != "cancelled" && reason != "declined" && reason != "gone")
 			to_chat(actor, span_notice("You aren't close enough."))
-	consume(src)
+	retire()
 
 /datum/trader_review/proc/failed_answer(datum/request/R)
 	stopped(isnull(R.answer_value) ? "cancelled" : R.last_error)
@@ -166,7 +167,7 @@ CAPABILITIES(/datum/trader_review)
 		trader.return_funds()
 	if(choice != "Yes")
 		trader.trading = FALSE
-		consume(src)
+		retire()
 		return
 	if(length(trader.interact_sound) > 0)
 		if(ELAPSED_SINCE(src, trader.sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
@@ -191,7 +192,7 @@ CAPABILITIES(/datum/trader_review)
 	if(!istype(product) || !(product in trader.products))
 		to_chat(actor, span_notice("You decided not to get anything."))
 		trader.trading = FALSE
-		consume(src)
+		retire()
 		return
 	var/p = trader.trade_price(product)
 	if(p <= 0)
@@ -217,14 +218,14 @@ CAPABILITIES(/datum/trader_review)
 	trader.trading = FALSE
 	var/obj/input = product
 	if(!istype(input) || !(input in trader.products))
-		consume(src)
+		retire()
 		return
 	var/t = input.type
 	var/p = trader.trade_price(input)
 	// The bank can have been drained while they chose.
 	if(p > 0 && trader.get_value(trader.accepts) < p)
 		to_chat(user, span_warning("You haven't provided enough funds!"))
-		consume(src)
+		retire()
 		return
 	if(t in trader.multiple)
 		trader.multiple[t] -= 1
@@ -255,7 +256,7 @@ CAPABILITIES(/datum/trader_review)
 		trader.return_funds()
 	else
 		to_chat(actor, span_notice("You decided leave your change banked."))
-	consume(src)
+	retire()
 
 /// Old attackby (ran ..() first): bank coins, cash or items; the base item handling still follows.
 /obj/trader/proc/interaction_trader_item(mob/user, obj/item/O, datum/interaction/interaction)

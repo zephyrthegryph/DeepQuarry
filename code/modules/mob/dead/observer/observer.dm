@@ -714,6 +714,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 /// A ghost writing in blood: which blood, which tile, then the message.
 /datum/ghost_doodle_review
+	parent_type = /datum/prompt_workflow
 	var/mob/observer/dead/ghost
 	var/list/choices
 	var/obj/effect/decal/cleanable/blood/blood
@@ -771,7 +772,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 
 /datum/ghost_doodle_review/proc/start()
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	run_step(PROC_REF(start_step))
 
@@ -779,7 +780,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	var/datum/result/result = safe_call(step, A)
 	if(!result.ok)
 		stack_trace("bloody doodle step [step]: [result.error]")
-		consume(src)
+		retire()
 
 /datum/ghost_doodle_review/proc/start_step()
 	open_request(src, /datum/prompt/choice/ghost_doodle, PROC_REF(blood_picked), answerer = ghost, title = "Blood Choice", question = "What blood would you like to use?", choices = choices)
@@ -789,12 +790,12 @@ CAPABILITIES(/datum/ghost_doodle_review)
 
 /datum/ghost_doodle_review/proc/blood_picked_step(datum/act/request/A)
 	if(!A.answer)
-		consume(src)
+		retire()
 		return
 	rel_set(src, nameof(blood), A.request.answer_value)
 	blood_selected = TRUE
 	if(QDELETED(blood))
-		consume(src)
+		retire()
 		return
 	open_request(src, /datum/prompt/choice/ghost_doodle, PROC_REF(direction_picked), answerer = ghost, title = "Tile selection", question = "Which way?", choices = list("Here","North","South","East","West"))
 
@@ -803,7 +804,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 
 /datum/ghost_doodle_review/proc/direction_picked_step(datum/act/request/A)
 	if(!A.answer)
-		consume(src)
+		retire()
 		return
 	direction = A.request.answer_value
 	open_request(src, /datum/prompt/text/ghost_doodle, PROC_REF(message_written), answerer = ghost, question = "Write a message. It cannot be longer than 50 characters.")
@@ -814,7 +815,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 /datum/ghost_doodle_review/proc/message_written_step(datum/act/request/A)
 	if(A.answer && !why_not())
 		ghost.bloody_doodle_written(blood, direction, A.request.answer_value)
-	consume(src)
+	retire()
 
 /mob/observer/dead/proc/bloody_doodle_written(obj/effect/decal/cleanable/blood/choice, direction, message)
 	var/turf/simulated/T = src.loc

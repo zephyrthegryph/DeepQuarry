@@ -470,6 +470,7 @@ CAPABILITIES(/datum/protean_power)
 
 /// The victim consents, then the protean chooses whether to copy their flavour text.
 /datum/protean_copy_review
+	parent_type = /datum/prompt_workflow
 	var/mob/living/carbon/human/actor
 	var/mob/living/carbon/human/victim
 	var/datum/protean_power/copy_form/power
@@ -510,7 +511,7 @@ CAPABILITIES(/datum/protean_copy_review)
 
 /datum/protean_copy_review/proc/start()
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	var/datum/result/result = safe_call(PROC_REF(start_step))
 	if(!result.ok)
@@ -521,7 +522,7 @@ CAPABILITIES(/datum/protean_copy_review)
 
 /datum/protean_copy_review/proc/failed_step(step, error)
 	stack_trace("protean copy form step [step]: [error]")
-	consume(src)
+	retire()
 
 /datum/protean_copy_review/proc/consent_given(datum/act/request/A)
 	var/datum/result/result = safe_call(PROC_REF(consent_given_step), A)
@@ -530,12 +531,12 @@ CAPABILITIES(/datum/protean_copy_review)
 
 /datum/protean_copy_review/proc/consent_given_step(datum/act/request/A)
 	if(QDELETED(actor) || QDELETED(victim))
-		consume(src)
+		retire()
 		return
 	if(!A.answer || A.request.answer_value != TRUE)
 		if(isnull(A.request.answer_value) || A.request.answer_value == FALSE)
 			to_chat(actor, span_notice("They declined your request."))
-		consume(src)
+		retire()
 		return
 	open_request(src, /datum/prompt/choice/protean_copy_flavour, PROC_REF(flavour_chosen), answerer = actor, asker = actor, question = "Copy [victim]'s flavourtext?", choices = list("Yes", "No", "Cancel"))
 
@@ -547,7 +548,7 @@ CAPABILITIES(/datum/protean_copy_review)
 /datum/protean_copy_review/proc/flavour_chosen_step(datum/act/request/A)
 	if(A.answer && A.request.answer_value != "Cancel")
 		power.copy_agreed(actor, victim, A.request.answer_value)
-	consume(src)
+	retire()
 
 /datum/protean_power/copy_form/proc/copy_agreed(mob/living/carbon/human/H, mob/living/carbon/human/victim, input)
 	if(!aggressive_grab_on(H, victim))

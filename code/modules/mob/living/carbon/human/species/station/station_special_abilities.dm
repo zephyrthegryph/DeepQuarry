@@ -550,6 +550,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 /// Which external organ (confirmed when vital), which internal one if any (likewise), and a
 /// belly to swallow it into if any. The actor stays conscious throughout.
 /datum/shred_limb_review
+	parent_type = /datum/prompt_workflow
 	var/mob/living/actor
 	var/mob/living/carbon/human/target
 	var/obj/item/organ/external/T_ext
@@ -595,7 +596,7 @@ CAPABILITIES(/datum/shred_limb_review)
 
 /datum/shred_limb_review/proc/start()
 	if(why_not())
-		consume(src)
+		retire()
 		return
 	var/datum/result/result = safe_call(PROC_REF(start_step))
 	if(!result.ok)
@@ -606,7 +607,7 @@ CAPABILITIES(/datum/shred_limb_review)
 
 /datum/shred_limb_review/proc/failed_step(step, error)
 	stack_trace("shred limb step [step]: [error]")
-	consume(src)
+	retire()
 
 /datum/shred_limb_review/proc/external_chosen(datum/act/request/A)
 	var/datum/result/result = safe_call(PROC_REF(external_chosen_step), A)
@@ -615,12 +616,12 @@ CAPABILITIES(/datum/shred_limb_review)
 
 /datum/shred_limb_review/proc/external_chosen_step(datum/act/request/A)
 	if(!A.answer)
-		consume(src)
+		retire()
 		return
 	rel_set(src, nameof(T_ext), A.request.answer_value)
 	external_selected = TRUE
 	if(QDELETED(T_ext))
-		consume(src)
+		retire()
 		return
 	if(T_ext.vital)
 		open_request(src, /datum/prompt/yes_no/shred_limb, PROC_REF(external_confirmed), answerer = actor, asker = actor, question = "Are you sure you wish to severely damage their [T_ext]? It will likely kill [target]...", title = "Shred Limb")
@@ -629,7 +630,7 @@ CAPABILITIES(/datum/shred_limb_review)
 
 /datum/shred_limb_review/proc/external_confirmed(datum/act/request/A)
 	if(!A.answer || A.request.answer_value != TRUE)
-		consume(src)
+		retire()
 		return
 	var/datum/result/result = safe_call(PROC_REF(ask_internal))
 	if(!result.ok)
@@ -650,11 +651,11 @@ CAPABILITIES(/datum/shred_limb_review)
 /datum/shred_limb_review/proc/internal_chosen_step(datum/act/request/A)
 	// Closing this optional question supplied an empty answer then rechecked the flow.
 	if(why_not() || (!A.answer && !isnull(A.request.answer_value)))
-		consume(src)
+		retire()
 		return
 	rel_set(src, nameof(T_int), A.answer ? A.request.answer_value : null)
 	if(A.answer && QDELETED(T_int))
-		consume(src)
+		retire()
 		return
 	internal_selected = !isnull(T_int)
 	if(T_int?.vital)
@@ -664,7 +665,7 @@ CAPABILITIES(/datum/shred_limb_review)
 
 /datum/shred_limb_review/proc/internal_confirmed(datum/act/request/A)
 	if(!A.answer || A.request.answer_value != TRUE)
-		consume(src)
+		retire()
 		return
 	var/datum/result/result = safe_call(PROC_REF(ask_belly))
 	if(!result.ok)
@@ -680,14 +681,14 @@ CAPABILITIES(/datum/shred_limb_review)
 
 /datum/shred_limb_review/proc/belly_chosen_step(datum/act/request/A)
 	if(why_not() || (!A.answer && !isnull(A.request.answer_value)))
-		consume(src)
+		retire()
 		return
 	rel_set(src, nameof(B), A.answer ? A.request.answer_value : null)
 	if(A.answer && QDELETED(B))
-		consume(src)
+		retire()
 		return
 	actor.shred_limb_answered(target, T_ext, T_int, B)
-	consume(src)
+	retire()
 
 /mob/living/proc/shred_limb_answered(mob/living/carbon/human/T, obj/item/organ/external/T_ext, obj/item/organ/internal/T_int, obj/belly/B)
 	if(can_shred(T) != T || T_ext.owner != T || (T_int && T_int.owner != T) || (B && B.owner != src))

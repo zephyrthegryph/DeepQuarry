@@ -931,11 +931,11 @@
 	into += entry_line(89)
 	into += list(global.owns_many(nameof(global_objectives), /datum/objective))
 
-/// CAPABILITIES(/datum/armalis_commune_review) at code/modules/mob/living/simple_mob/subtypes/animal/vox.dm:84
+/// CAPABILITIES(/datum/armalis_commune_review) at code/modules/mob/living/simple_mob/subtypes/animal/vox.dm:85
 /datum/armalis_commune_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/vox.dm", 84, /datum/armalis_commune_review)
-	into += entry_line(85)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/vox.dm", 85, /datum/armalis_commune_review)
+	into += entry_line(86)
 	into += list(global.ref_one(nameof(actor), /mob/living/simple_mob/vox/armalis))
 
 /// CAPABILITIES(/datum/artifact_effect/forcefield) at code/modules/xenoarcheaology/effects/forcefield.dm:10
@@ -1240,34 +1240,34 @@
 	into += entry_line(343)
 	into += list(global.owns_one(nameof(filter), /datum/contract_event_filter))
 
-/// CAPABILITIES(/datum/control_transfer_review) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:228
+/// CAPABILITIES(/datum/control_transfer_review) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:229
 /datum/control_transfer_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 228, /datum/control_transfer_review)
-	into += entry_line(229)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 229, /datum/control_transfer_review)
+	into += entry_line(230)
 	into += list(global.ref_one(nameof(actor), /mob))
 
-/// CAPABILITIES(/datum/control_transfer_review/dominate_predator) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:289
+/// CAPABILITIES(/datum/control_transfer_review/dominate_predator) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:290
 /datum/control_transfer_review/dominate_predator/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 289, /datum/control_transfer_review/dominate_predator)
-	into += entry_line(290)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 290, /datum/control_transfer_review/dominate_predator)
+	into += entry_line(291)
 	into += list(global.ref_one(nameof(pred), /mob/living))
 
-/// CAPABILITIES(/datum/control_transfer_review/dominate_prey) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:440
+/// CAPABILITIES(/datum/control_transfer_review/dominate_prey) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:441
 /datum/control_transfer_review/dominate_prey/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 440, /datum/control_transfer_review/dominate_prey)
-	into += entry_line(441)
-	into += list(global.ref_one(nameof(prey), /mob/living))
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 441, /datum/control_transfer_review/dominate_prey)
 	into += entry_line(442)
+	into += list(global.ref_one(nameof(prey), /mob/living))
+	into += entry_line(443)
 	into += list(global.ref_one(nameof(grab), /obj/item/grab))
 
-/// CAPABILITIES(/datum/control_transfer_review/lend_prey_control) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:629
+/// CAPABILITIES(/datum/control_transfer_review/lend_prey_control) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:630
 /datum/control_transfer_review/lend_prey_control/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 629, /datum/control_transfer_review/lend_prey_control)
-	into += entry_line(630)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 630, /datum/control_transfer_review/lend_prey_control)
+	into += entry_line(631)
 	into += list(global.ref_one(nameof(prey), /mob/living))
 
 /// CAPABILITIES(/datum/control_transfer_review/morph_takeover) at code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm:283
@@ -2290,13 +2290,13 @@
 	into += entry_line(258)
 	into += list(global.owns_many(nameof(issues)))
 
-/// CAPABILITIES(/datum/ghost_doodle_review) at code/modules/mob/dead/observer/observer.dm:723
+/// CAPABILITIES(/datum/ghost_doodle_review) at code/modules/mob/dead/observer/observer.dm:724
 /datum/ghost_doodle_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/dead/observer/observer.dm", 723, /datum/ghost_doodle_review)
-	into += entry_line(724)
-	into += list(global.ref_one(nameof(ghost), /mob/observer/dead))
+	into += entry_block("code/modules/mob/dead/observer/observer.dm", 724, /datum/ghost_doodle_review)
 	into += entry_line(725)
+	into += list(global.ref_one(nameof(ghost), /mob/observer/dead))
+	into += entry_line(726)
 	into += list(global.ref_one(nameof(blood), /obj/effect/decal/cleanable/blood))
 
 /// CAPABILITIES(/datum/global_hud) at code/_onclick/hud/hud.dm:39
@@ -2396,13 +2396,13 @@
 	into += entry_line(238)
 	into += list(global.owns_many(nameof(other_important)))
 
-/// CAPABILITIES(/datum/inbelly_spawn_review) at code/modules/vore/eating/inbelly_spawn.dm:24
+/// CAPABILITIES(/datum/inbelly_spawn_review) at code/modules/vore/eating/inbelly_spawn.dm:25
 /datum/inbelly_spawn_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/eating/inbelly_spawn.dm", 24, /datum/inbelly_spawn_review)
-	into += entry_line(25)
-	into += list(global.ref_one(nameof(actor), /mob/living))
+	into += entry_block("code/modules/vore/eating/inbelly_spawn.dm", 25, /datum/inbelly_spawn_review)
 	into += entry_line(26)
+	into += list(global.ref_one(nameof(actor), /mob/living))
+	into += entry_line(27)
 	into += list(global.ref_one(nameof(belly), /obj/belly))
 
 /// CAPABILITIES(/datum/instrument) at code/modules/instruments/instrument_data/_instrument_data.dm:49
@@ -2419,13 +2419,13 @@
 	into += entry_line(78)
 	into += list(global.owns_many(nameof(symptoms)))
 
-/// CAPABILITIES(/datum/lleill_contact_review) at code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm:411
+/// CAPABILITIES(/datum/lleill_contact_review) at code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm:412
 /datum/lleill_contact_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm", 411, /datum/lleill_contact_review)
-	into += entry_line(412)
-	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
+	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm", 412, /datum/lleill_contact_review)
 	into += entry_line(413)
+	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
+	into += entry_line(414)
 	into += list(global.ref_one(nameof(chosen_target), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/log_category) at code/modules/logging/log_category.dm:40
@@ -2556,11 +2556,11 @@
 	into += entry_line(45)
 	into += list(global.owns_many(nameof(transaction_log)))
 
-/// CAPABILITIES(/datum/morph_review) at code/modules/mob/living/carbon/human/human.dm:855
+/// CAPABILITIES(/datum/morph_review) at code/modules/mob/living/carbon/human/human.dm:856
 /datum/morph_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 855, /datum/morph_review)
-	into += entry_line(856)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 856, /datum/morph_review)
+	into += entry_line(857)
 	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/n_Interpreter) at code/modules/scripting/Interpreter/Interpreter.dm:59
@@ -3206,20 +3206,20 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
-/// CAPABILITIES(/datum/prompt/choice/succubus_bite) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1508
+/// CAPABILITIES(/datum/prompt/choice/succubus_bite) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1509
 /datum/prompt/choice/succubus_bite/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1508, /datum/prompt/choice/succubus_bite)
-	into += entry_line(1509)
-	into += list(global.ref_one(nameof(grab), /obj/item/grab))
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1509, /datum/prompt/choice/succubus_bite)
 	into += entry_line(1510)
+	into += list(global.ref_one(nameof(grab), /obj/item/grab))
+	into += entry_line(1511)
 	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/choice/victim/absorbed) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1733
+/// CAPABILITIES(/datum/prompt/choice/victim/absorbed) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1734
 /datum/prompt/choice/victim/absorbed/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1733, /datum/prompt/choice/victim/absorbed)
-	into += entry_line(1734)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1734, /datum/prompt/choice/victim/absorbed)
+	into += entry_line(1735)
 	into += list(global.ref_one(nameof(belly), /obj/belly))
 
 /// CAPABILITIES(/datum/prompt/choice/vv_edit) at code/game/atom/atom_vv.dm:30
@@ -3410,15 +3410,15 @@
 	into += entry_line(329)
 	into += list(global.owns_many(nameof(layers)))
 
-/// CAPABILITIES(/datum/protean_copy_review) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:477
+/// CAPABILITIES(/datum/protean_copy_review) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:478
 /datum/protean_copy_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 477, /datum/protean_copy_review)
-	into += entry_line(478)
-	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 478, /datum/protean_copy_review)
 	into += entry_line(479)
-	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
+	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
 	into += entry_line(480)
+	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
+	into += entry_line(481)
 	into += list(global.ref_one(nameof(power), /datum/protean_power/copy_form))
 
 /// CAPABILITIES(/datum/protean_power) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:54
@@ -3474,13 +3474,13 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(heat_set_watch), /datum/native_watch/heat))
 
-/// CAPABILITIES(/datum/record_update_review) at code/modules/client/record_updater.dm:112
+/// CAPABILITIES(/datum/record_update_review) at code/modules/client/record_updater.dm:113
 /datum/record_update_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/client/record_updater.dm", 112, /datum/record_update_review)
-	into += entry_line(113)
-	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_block("code/modules/client/record_updater.dm", 113, /datum/record_update_review)
 	into += entry_line(114)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(115)
 	into += list(global.ref_one(nameof(record), /datum/data/record))
 
 /// CAPABILITIES(/datum/remote_materials) at code/datums/entity_state/materials/remote_materials.dm:31
@@ -3564,19 +3564,19 @@
 	into += entry_line(354)
 	into += list(global.ref_many(nameof(active_dark_maws)))
 
-/// CAPABILITIES(/datum/shred_limb_review) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:561
+/// CAPABILITIES(/datum/shred_limb_review) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:562
 /datum/shred_limb_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 561, /datum/shred_limb_review)
-	into += entry_line(562)
-	into += list(global.ref_one(nameof(actor), /mob/living))
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 562, /datum/shred_limb_review)
 	into += entry_line(563)
-	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
+	into += list(global.ref_one(nameof(actor), /mob/living))
 	into += entry_line(564)
-	into += list(global.ref_one(nameof(T_ext), /obj/item/organ/external))
+	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
 	into += entry_line(565)
-	into += list(global.ref_one(nameof(T_int), /obj/item/organ/internal))
+	into += list(global.ref_one(nameof(T_ext), /obj/item/organ/external))
 	into += entry_line(566)
+	into += list(global.ref_one(nameof(T_int), /obj/item/organ/internal))
+	into += entry_line(567)
 	into += list(global.ref_one(nameof(B), /obj/belly))
 
 /// CAPABILITIES(/datum/shuttle/autodock/ferry/specops) at code/modules/shuttles/shuttle_specops.dm:24
@@ -4716,15 +4716,15 @@
 	into += entry_line(42)
 	into += list(global.owns_one(nameof(tooltip_window), /datum/tgui_window))
 
-/// CAPABILITIES(/datum/trader_review) at code/modules/economy/trader.dm:88
+/// CAPABILITIES(/datum/trader_review) at code/modules/economy/trader.dm:89
 /datum/trader_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/economy/trader.dm", 88, /datum/trader_review)
-	into += entry_line(89)
-	into += list(global.ref_one(nameof(actor), /mob/living))
+	into += entry_block("code/modules/economy/trader.dm", 89, /datum/trader_review)
 	into += entry_line(90)
-	into += list(global.ref_one(nameof(trader), /obj/trader))
+	into += list(global.ref_one(nameof(actor), /mob/living))
 	into += entry_line(91)
+	into += list(global.ref_one(nameof(trader), /obj/trader))
+	into += entry_line(92)
 	into += list(global.ref_one(nameof(product), /obj))
 
 /// CAPABILITIES(/datum/trait_state/radiation_effects) at code/datums/entity_state/traits/radiation_effects.dm:266
@@ -4779,11 +4779,11 @@
 	into += entry_line(102)
 	into += list(global.owns_one(nameof(mydna), /datum/dna2/record))
 
-/// CAPABILITIES(/datum/ttv_bomb_review) at code/game/objects/effects/spawners/bombspawner.dm:17
+/// CAPABILITIES(/datum/ttv_bomb_review) at code/game/objects/effects/spawners/bombspawner.dm:18
 /datum/ttv_bomb_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/effects/spawners/bombspawner.dm", 17, /datum/ttv_bomb_review)
-	into += entry_line(18)
+	into += entry_block("code/game/objects/effects/spawners/bombspawner.dm", 18, /datum/ttv_bomb_review)
+	into += entry_line(19)
 	into += list(global.ref_one(nameof(actor), /mob))
 
 /// CAPABILITIES(/datum/turbolift) at code/modules/turbolift/turbolift.dm:20
