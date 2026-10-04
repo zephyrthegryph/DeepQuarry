@@ -888,13 +888,26 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 		orbiter.orbit(center, distance, clock, speed, segments)
 
 ADMIN_VERB(removetickets, R_ADMIN, "Security Tickets", "Allows one to remove tickets from the global list.", ADMIN_CATEGORY_INVESTIGATE)
+	return security_ticket_stage(user, list())
+
+/datum/admin_verb/removetickets/proc/security_ticket_stage(client/user, list/ticket_answers)
 	if(GLOB.security_printer_tickets.len >= 1)
-		var/input = verb_ask(user, "a32", args, /datum/om/prompt/choice, message = "Which message?", title = "Security Tickets", choices = GLOB.security_printer_tickets)
+		if(!("a32" in ticket_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/choice/security_ticket_review, PROC_REF(security_ticket_answered), answerer = user.mob, ticket_answers = ticket_answers, ticket_key = "a32", question = "Which message?", title = "Security Tickets", choices = GLOB.security_printer_tickets)
+			return
+		var/input = ticket_answers["a32"]
 		if(isnull(input))
 			return
 		if(!input)
 			return
-		var/_answer_a33 = verb_ask(user, "a33", args, /datum/om/prompt/choice/alert, message = "Do you want to remove the following message from the global list? \"[input]\"", title = "Remove Ticket", choices = list("Yes", "No"))
+		if(!("a33" in ticket_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/choice/security_ticket_review, PROC_REF(security_ticket_answered), answerer = user.mob, ticket_answers = ticket_answers, ticket_key = "a33", question = "Do you want to remove the following message from the global list? \"[input]\"", title = "Remove Ticket", choices = list("Yes", "No"), buttons = TRUE)
+			return
+		var/_answer_a33 = ticket_answers["a33"]
 		if(isnull(_answer_a33))
 			return
 		if(_answer_a33 == "Yes")
@@ -1078,3 +1091,38 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	buttons = TRUE
 	choices = list("Yes", "No")
 	var/selected_level
+
+/datum/prompt/choice/security_ticket_review
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_ADMIN
+	var/list/ticket_answers
+	var/ticket_key
+
+/datum/prompt/choice/security_ticket_review/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+
+/proc/security_ticket_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/removetickets/proc/security_ticket_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(security_ticket_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/datum/prompt/choice/security_ticket_review/ask = context.answer
+	var/list/ticket_answers = ask.ticket_answers.Copy()
+	ticket_answers[ask.ticket_key] = ask.answer_value
+	return security_ticket_stage(user, ticket_answers)
