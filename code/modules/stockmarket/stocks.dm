@@ -52,6 +52,7 @@ CAPABILITIES(/datum/stock)
 	owns_one(nameof(industry), /datum/industry)
 	owns_many(nameof(articles))
 	owns_many(nameof(borrow_brokers))
+	owns_many(nameof(borrows))
 	owns_many(nameof(events))
 
 /datum/stock/proc/addEvent(datum/stockEvent/E)
@@ -193,23 +194,21 @@ CAPABILITIES(/datum/stock)
 		var/datum/borrow/borrow = B
 		if (ELAPSED(borrow, grace_expires, CLOCK_WORLD) > 0)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
-			own_take_member(src, nameof(borrows), borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
 				GLOB.FrozenAccounts[borrow.borrower] -= borrow
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 					GLOB.FrozenAccounts -= borrow.borrower
-			qdel(borrow)
+			rel_remove(src, nameof(borrows), borrow)
 		else if (ELAPSED(borrow, lease_expires, CLOCK_WORLD) > 0)
 			if (borrow.borrower in shareholders)
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
-					own_take_member(src, nameof(borrows), borrow)
 					if (borrow.borrower in GLOB.FrozenAccounts)
 						GLOB.FrozenAccounts[borrow.borrower] -= borrow
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 						GLOB.FrozenAccounts -= borrow.borrower
-					qdel(borrow)
+					rel_remove(src, nameof(borrows), borrow)
 				else
 					LAZYREMOVE(shareholders, borrow.borrower)
 					borrow.share_debt -= amt
