@@ -206,6 +206,8 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	for(var/key in index)
 		for(var/datum/hook/H as anything in index[key])
 			LAZYSET(rx_of(E).change_last, "[H.serial]", change_value(E, H))
+	// What the init's own writes marked is moot: the baseline is the value now, so nothing is owed a first run.
+	GLOB.hook_change_pending -= E
 
 /// The drain: each marked (holder, hook) is evaluated once; an edge or a changed value runs the hook's parts.
 /proc/hooks_drain_changes()

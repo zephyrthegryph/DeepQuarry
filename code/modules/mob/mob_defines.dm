@@ -300,7 +300,7 @@ CAPABILITIES(/mob)
 	owns_one(nameof(internals), /atom/movable/screen)
 	owns_one(nameof(item_use_icon), /atom/movable/screen/gun/item)
 	owns_one(nameof(ling_chem_display), /atom/movable/screen/ling/chems)
-	owns_one(nameof(lleill_display), /atom/movable/screen/shadekin)
+	owns_one(nameof(lleill_display), /atom/movable/screen/lleill)
 	owns_one(nameof(machine_shim), /datum/using_machine_shim)
 	owns_one(nameof(pain), /atom/movable/screen)
 	owns_one(nameof(plane_holder), /datum/plane_holder)
@@ -326,7 +326,7 @@ CAPABILITIES(/mob)
 	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
 	var/tmp/atom/movable/screen/shadekin/shadekin_display = null
-	var/tmp/atom/movable/screen/shadekin/lleill_display = null
+	var/tmp/atom/movable/screen/lleill/lleill_display = null
 	var/tmp/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display = null
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size

@@ -8,14 +8,14 @@
 	w_class = ITEMSIZE_NORMAL
 	throw_distance = 7
 	release_force = 5
-	var/obj/item/grenade/confetti/party_ball/chambered = null
+	var/obj/item/chambered = null // a party ball, banana peel or pie
 
 	var/confetti_charge = 0
 	var/max_confetti = 20
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
-	owns_one(nameof(chambered), /obj/item/grenade/confetti/party_ball)
+	owns_one(nameof(chambered), /obj/item)
 
 /obj/item/gun/launcher/confetti_cannon/examine(mob/user)
 	. = ..()
@@ -54,8 +54,9 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 	pump(user)
 
 /obj/item/gun/launcher/confetti_cannon/consume_next_projectile()
-	if(chambered)
-		chambered.activate(null)
+	var/obj/item/grenade/confetti/party_ball/ball = chambered
+	if(istype(ball))
+		ball.activate(null)
 	return chambered
 
 /obj/item/gun/launcher/confetti_cannon/handle_post_fire(mob/user)
@@ -111,7 +112,8 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 		to_chat(user, span_red("The [src] is already loaded!"))
 
 /obj/item/gun/launcher/confetti_cannon/robot/consume_next_projectile()
-	if(istype(chambered,/obj/item/grenade/confetti/party_ball))
-		chambered.activate(null)
+	var/obj/item/grenade/confetti/party_ball/ball = chambered
+	if(istype(ball))
+		ball.activate(null)
 	return chambered
 
