@@ -131,10 +131,12 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 		rel_set(src, nameof(next), LAZYACCESS(darts, 1))
 	add_fingerprint(user)
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/gun/launcher/syringe)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/gun/launcher/syringe/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/launcher/syringe/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(!length(darts))
 			to_chat(user, span_warning("[src] is empty."))
@@ -148,7 +150,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 		act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /// Old attackby.

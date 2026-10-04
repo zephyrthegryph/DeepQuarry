@@ -188,14 +188,16 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	make_tethered(who_ya_gunna_call)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/proton_pack, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/proton_pack)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/proton_pack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/proton_pack/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	// See important note in code/datums/behaviours/tethered_item.dm
 	if(tether_swap(user))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/proton_pack/MouseDrop()
 	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.

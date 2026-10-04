@@ -332,10 +332,13 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
 	move_into(src, nameof(src.container), G, user)
 
-EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC_REF(flesh_printer_interaction_item)))
+CAPABILITIES(/obj/machinery/organ_printer/flesh)
+	op("flesh_printer_interaction_item", item(/obj/item), then(PROC_REF(flesh_printer_interaction_item)))
 
 /// Old attackby; anything else falls through to the base printer's.
-/obj/machinery/organ_printer/flesh/proc/flesh_printer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/organ_printer/flesh/proc/flesh_printer_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	// DNA sample from syringe.
 	if(istype(W,/obj/item/reagent_containers/syringe))	//TODO: Make this actually empty the syringe
 		var/obj/item/reagent_containers/syringe/S = W
@@ -353,7 +356,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC
 		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, G))
 		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 // END FLESH ORGAN PRINTER
 
 /obj/machinery/organ_printer/ownership()

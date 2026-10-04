@@ -87,14 +87,16 @@
 		return INTERACTION_HANDLED_PASS
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/gun/launcher/grenade)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/gun/launcher/grenade/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/launcher/grenade/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		unload(user)
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/gun/launcher/grenade/consume_next_projectile()

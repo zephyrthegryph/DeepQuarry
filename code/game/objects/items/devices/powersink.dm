@@ -59,12 +59,14 @@ DECLARE_PERIODIC_WHILE(/obj/item/powersink, PERIODIC_SLOW, "operating")
 	return ITEM_INTERACT_SUCCESS
 
 
-DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/powersink)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
-/obj/item/powersink/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/powersink/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	switch(mode)
 		if(0)
-			return FALSE
+			return OP_DECLINE
 		if(1)
 			act_message(user, src, others = span_notice("%U% activates %T%!"))
 			set_mode(2)

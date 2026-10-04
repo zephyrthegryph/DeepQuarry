@@ -95,7 +95,26 @@
 		return null
 	if(defer_legacy && winner.legacy)
 		return null
-	return op_passes_chain(winner, op_begin(winner, R, null, FALSE), R, defer_legacy)
+	var/datum/op_result/result = op_begin(winner, R, null, FALSE)
+	// OP_DECLINE: the handler said "not handled": the next candidate whose conditions hold gets the click, then the next, until one takes it. Nothing
+	// was committed, told or published by the ones that declined; when every one declines a player's click is as if none had answered (null) and a driver-built click returns the last declined result.
+	var/datum/op_cand/tried = winner
+	while(result?.outcome == ACT_DECLINED)
+		var/datum/op_cand/next = null
+		var/seen = FALSE
+		for(var/datum/op_cand/C as anything in R.ordered)
+			if(C == tried)
+				seen = TRUE
+				continue
+			if(seen && op_cand_when(R, C))
+				next = C
+				break
+		if(!next || (defer_legacy && next.legacy))
+			return defer_legacy ? null : result
+		winner = next
+		tried = next
+		result = op_begin(next, R, null, FALSE)
+	return op_passes_chain(winner, result, R, defer_legacy)
 
 /// passes(): an op that ends committed and passes does not use the input up. The next candidate whose conditions hold runs, then the next, until one
 /// does not pass or commits nothing. When the chain ends on a pass (and a player's click, which has the legacy handling to go on to), the result is

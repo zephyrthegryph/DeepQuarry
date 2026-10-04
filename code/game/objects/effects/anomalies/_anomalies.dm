@@ -27,6 +27,7 @@ CAPABILITIES(/obj/effect/anomaly)
 	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly)
 	owns_one(nameof(stats), /datum/anomaly_stats)
 	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
+	op("scan_anomaly", item(/obj/item), then(PROC_REF(interaction_scan_anomaly)))
 
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
@@ -124,12 +125,10 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 		set_density(TRUE)
 	return
 
-EXTEND_INTERACTIONS(/obj/effect/anomaly, \
-	INTERACT_ITEM(null, PROC_REF(interaction_scan_anomaly)), \
-)
-
 /// Old attackby: analyzers read a stabilized core's frequency; anomaly scanners buffer the anomaly.
-/obj/effect/anomaly/proc/interaction_scan_anomaly(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/anomaly/proc/interaction_scan_anomaly(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/I = held
 	if(istype(I, /obj/item/analyzer) || (istype(I, /obj/item/anomaly_scanner) && !stats))
 		if(anomaly_core)
@@ -139,7 +138,7 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly, \
 		var/obj/item/anomaly_scanner/scanner = I
 		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/effect/anomaly/proc/attackby_timed_done(mob/user, obj/item/anomaly_scanner/scanner)
 	rel_set(scanner, nameof(scanner.buffered_anomaly), src)

@@ -34,6 +34,7 @@ CAPABILITIES(/obj/item/gun/magnetic)
 	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor)
 	owns_one(nameof(loaded), /obj/item, starts = nameof(loaded))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// The capacitor still has somewhere to go: charging from the cell, or bleeding without one.
 /// Swapping parts goes through rel_set()/own_take() (and a destroyed part is cleared by the
@@ -212,10 +213,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 		return
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(interaction_hand)))
-
 /// Old attack_hand.
-/obj/item/gun/magnetic/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/magnetic/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		var/obj/item/removing
 
@@ -233,7 +233,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			update_icon()
 			return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/gun/magnetic/proc/check_ammo()
 	return loaded

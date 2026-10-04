@@ -109,13 +109,15 @@
 	for(var/i in box_segments)
 		animate(i, color = new_color, time = new_time)
 
-DECLARE_INTERACTIONS(/obj/item/bork_medigun, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/bork_medigun)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/bork_medigun/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bork_medigun/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)// && loc != get_turf)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /// Relation view: current target (reads null once it is gone).
 /obj/item/bork_medigun/proc/current_target() as /mob

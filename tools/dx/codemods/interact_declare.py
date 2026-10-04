@@ -215,7 +215,8 @@ def main():
                 bad = "body_uses"
                 break
             if s["kind"] not in ("INTERACT_USE", "INTERACT_VERB"):
-                # the old resolver let a falsy return fall through to the next candidate: only a handler that always returns TRUE keeps that
+                # the old resolver let a falsy return fall through to the next candidate: a falsy return (FALSE, 0, null, bare) becomes OP_DECLINE, which the
+                # op engine reads the same way; the handler must end on a return so a fall-off-the-end (falsy then, truthy now) cannot change meaning
                 ret_ok = True
                 last_stmt = None
                 for bl in body.split("\n"):
@@ -223,12 +224,12 @@ def main():
                     if not t2:
                         continue
                     last_stmt = t2
-                    rm = re.match(r"^return\b\s*(.*)$", t2)
-                    if rm and rm.group(1).strip() != "TRUE":
-                        ret_ok = False
+                    for rm in re.finditer(r"\breturn\b(.*)$", t2):
+                        if rm.group(1).strip() not in ("", "TRUE", "FALSE", "0", "null"):
+                            ret_ok = False
                     if re.match(r"^\.\s*=", t2):
                         ret_ok = False
-                if not ret_ok or last_stmt != "return TRUE":
+                if not ret_ok or not re.match(r"^return\b", last_stmt or ""):
                     bad = "handler_returns"
                     break
             held_type = "obj/item"
@@ -303,6 +304,9 @@ def main():
                         extra = block
                     else:
                         f.lines[after] = f.lines[after] + block
+                if s["kind"] not in ("INTERACT_USE", "INTERACT_VERB"):
+                    for k3 in range(h["first"], h["last"] + 1):
+                        f.lines[k3] = re.sub(r"\breturn\b(?:\s+(?:FALSE|0|null))?(?=\s*(?://.*)?$)", "return OP_DECLINE", f.lines[k3])
                 f.lines[h["idx"]] = sig + extra
                 f.dirty = True
             kind0, rel, first, last, text = plan["decl"]

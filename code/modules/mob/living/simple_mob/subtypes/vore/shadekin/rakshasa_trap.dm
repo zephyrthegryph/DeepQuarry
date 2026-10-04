@@ -25,16 +25,18 @@ DECLARE_APPEARANCE_PROC(/obj/structure/gootrap, TYPE_PROC_REF(/atom, appearance_
 	. = ..()
 	update_icon()
 
-DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/gootrap)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/structure/gootrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/gootrap/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_buckled_mobs() && can_use(user))
 		var/victim = english_list(src?.buckled_mob_list())
 		act_message(user, victim, MSG_SELF(span_notice("You carefully begin to free %T% from \the [src].")), MSG_OTHERS(span_notice("%U% begins freeing %T% from \the [src].")))
 		om_task_timed(user, 5, target = src, receiver = src, on_done = PROC_REF(attack_hand_gootrap_done), done_args = list(user, victim))
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/structure/gootrap/proc/attack_hand_gootrap_done(mob/user, victim)
