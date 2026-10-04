@@ -8,6 +8,14 @@
 //!   covering both, no default precedence (a narrower item before storage.put_in), no passes(), and when() parts that are not mutually
 //!   exclusive. The engine's boot check (RULE_OP_CLASH) catches the identical-binding case at runtime; this one also sees overlapping item
 //!   types, statically. Ops the engine derives (a construction ladder's steps) are not modelled.
+//!
+//!   What it models as the resolver does (code/engine/parts/resolve.dm): the intents each binding answers (answers(), hostile(), a pinned
+//!   gesture(): a drag answers INTENT_DROP_ONTO, never a click), the tier by value (hostile() yields ATTACK; OP_PRIORITY_PART - 1 is its own
+//!   tier), disjoint stance() sets, when() conjuncts that negate (c / cond_not(c), req_is(K) / req_is(K, FALSE), req(X) is X, graph stages
+//!   that do not meet), and a constructor's entries its params switch off (`lid ? op(...) : null`, `if(by_hand)`). It does not model
+//!   specificity, because the resolver has none: item(/obj/item) beside tool(Q) or item(T) is ordered only by declaration order (the silent
+//!   "first declared wins" the design rejects), so it is a clash unless a tier, an order or an exclusive when() separates them. An opaque
+//!   when() proc is not exclusive of anything; the engine has no annotation that says it is.
 //! * `relative_priority`: a hand-written priority(above(...)) or priority(below(...)). Each one is a per-type patch for an order a bundle
 //!   should declare once (click_order()); the count is a ceiling that can only fall.
 //!
@@ -76,7 +84,14 @@ impl Lint for OpOrder {
             }
             comp.apply_extends();
             for (a, b, input) in comp.clashes() {
-                let msg = format!("{}: ops \"{}\" and \"{}\" both answer {} at tier {} with no order between them", ty, a.key, b.key, input, a.tier);
+                let msg = format!(
+                    "{}: ops \"{}\" and \"{}\" both answer {} at tier {} with no order between them",
+                    ty,
+                    a.key,
+                    b.key,
+                    input,
+                    a.tier.trim_start_matches("OP_PRIORITY_")
+                );
                 if let Some(f) = cx.tree.get(&m.rel) {
                     if out.allowed(f, m.line as usize, "op_order") {
                         continue;
@@ -100,7 +115,7 @@ struct CapDef {
 
 struct Model {
     caps: HashMap<String, CapDef>,
-    /// Named bundles (BUNDLE(name) and its entries): name -> the entries joined.
+    /// Entry procs (a global proc returning a list of entries): name -> the entries joined.
     bundles: HashMap<String, String>,
     /// Global procs: name -> (params, body).
     procs: HashMap<String, (Vec<String>, String)>,
@@ -131,9 +146,22 @@ impl Bind {
 struct Op {
     key: String,
     binds: Vec<Bind>,
+    /// The tier expression (OP_PRIORITY_X, or OP_PRIORITY_X+n): compared by value (`tier_value`).
     tier: String,
     explicit_tier: Option<String>,
-    intents: Vec<String>,
+    /// answers(...) / hostile(): the intents it answers, replacing what the binding implies (resolve.dm, op_answers).
+    answers: Option<Vec<String>>,
+    /// gesture(G): a pinned gesture; the op answers the intents that gesture means.
+    gesture: Option<String>,
+    /// toggles(...): a hand binding also answers INTENT_TOGGLE.
+    toggles: bool,
+    /// presents(T): the op answers INTENT_PRESENT only.
+    presents: bool,
+    /// hostile(): the op yields the attack tier.
+    hostile: bool,
+    /// stance(S...) / when(req_stance(S...)): the stances the actor must be in (a Match gate), or None for any.
+    stances: Option<BTreeSet<String>>,
+    /// The when() conditions, normalized (`norm_cond`), one per conjunct.
     conds: Vec<String>,
     rel: Option<String>,
     passes: bool,
@@ -366,7 +394,7 @@ impl Model {
             let body = entries.get(&datum).cloned().unwrap_or_default();
             caps.insert(name.clone(), CapDef { prefix, params, selector, body });
         }
-        let bundles = decls.markers_named("BUNDLE").filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].join(", ")))).collect();
+        let bundles = decls.markers_named(crate::sem::decls::ENTRY_PROC).filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].join(", ")))).collect();
         Model { caps, bundles, procs }
     }
 
@@ -376,6 +404,8 @@ impl Model {
             return;
         }
         let text = substitute(text, subst);
+        // a constructor's params decide some of its entries: `lid ? op(...) : null`, `if(by_hand)`
+        let text = if subst.is_empty() { text } else { prune_ifs(&prune_ternaries(&text)) };
         // a local `var/list/x = list(...)` of a body stands for its value where it is named
         let mut locals = HashMap::new();
         for c in crate::pat!(r"var/list/(\w+)\s*=\s*").captures_iter(&text) {
@@ -464,7 +494,7 @@ impl Model {
     fn parse_op(&self, args: &str, prefix: &str, depth: usize) -> Option<Op> {
         let parts = split_args(args);
         let key = unquote(parts.first()?)?;
-        let mut op = Op { key: format!("{}{}", prefix, key), tier: "NORMAL".to_string(), ..Op::default() };
+        let mut op = Op { key: format!("{}{}", prefix, key), ..Op::default() };
         let mut yields_part = false;
         let mut take_out = false;
         for p in &parts[1..] {
@@ -473,15 +503,23 @@ impl Model {
         if op.binds.is_empty() {
             return None;
         }
+        // the tier (plan.dm): an explicit priority, else the highest its parts yield
         op.tier = match &op.explicit_tier {
             Some(t) => t.clone(),
-            None if take_out => "TAKE_OUT".to_string(),
-            None if yields_part => "PART".to_string(),
-            None => "NORMAL".to_string(),
+            None => {
+                let mut tier = 0;
+                if op.hostile {
+                    tier = tier.max(20);
+                }
+                if yields_part {
+                    tier = tier.max(10);
+                }
+                if take_out {
+                    tier = tier.max(30);
+                }
+                tier_name(tier)
+            }
         };
-        if op.intents.is_empty() {
-            op.intents.push("default".to_string());
-        }
         Some(op)
     }
 
@@ -494,10 +532,12 @@ impl Model {
         match name.as_str() {
             "hand" => op.binds.push(Bind::Hand),
             "in_hand" => op.binds.push(Bind::InHand),
-            "tool" => {
-                if !none(&first) {
-                    op.binds.push(Bind::Tool(first));
-                    *yields_part = true;
+            "tool" | "any_of_tools" => {
+                for q in split_args(inner) {
+                    if !none(&q) && !q.contains('=') {
+                        op.binds.push(Bind::Tool(q));
+                        *yields_part = true;
+                    }
                 }
             }
             "item" => {
@@ -514,22 +554,15 @@ impl Model {
             }
             "put_in" => *yields_part = true,
             "take_out" => *take_out = true,
-            "priority" => {
-                if let Some(rest) = first.strip_prefix("above(").or_else(|| first.strip_prefix("below(")) {
-                    op.rel = unquote(rest.trim_end_matches(')'));
-                } else if let Some(t) = first.strip_prefix("OP_PRIORITY_") {
-                    op.explicit_tier = Some(t.to_string());
-                }
-            }
-            "when" => op.conds.push(compact(inner)),
-            "answers" => op.intents = split_args(inner).iter().map(|s| s.trim().to_string()).collect(),
-            "passes" => op.passes = true,
             "inputs" | "list" => {
                 for q in split_args(inner) {
                     self.read_part(&q, op, yields_part, take_out, depth);
                 }
             }
             other => {
+                if apply_select(other, inner, op) {
+                    return;
+                }
                 // a part bundle (force_pry(), component_swap(T)): a global proc returning parts
                 if depth < 4 {
                     if let Some((_, body)) = self.procs.get(other) {
@@ -550,6 +583,526 @@ impl Model {
             }
         }
     }
+}
+
+/// The select, order and Match parts an op or an extend() carries: priority, when, answers, hostile, gesture, stance, toggles, presents, passes.
+/// Returns whether `name` was one of them.
+fn apply_select(name: &str, inner: &str, op: &mut Op) -> bool {
+    let first = split_args(inner).first().cloned().unwrap_or_default();
+    match name {
+        "priority" => {
+            if let Some(rest) = first.strip_prefix("above(").or_else(|| first.strip_prefix("below(")) {
+                op.rel = unquote(rest.trim_end_matches(')'));
+            } else if first.starts_with("OP_PRIORITY_") {
+                op.explicit_tier = Some(compact(&first));
+                op.tier = compact(&first);
+            }
+        }
+        "when" => {
+            for c in split_args(inner) {
+                add_cond(op, &compact(&c));
+            }
+        }
+        "answers" => op.answers = Some(split_args(inner).iter().map(|s| s.trim().to_string()).collect()),
+        "hostile" => {
+            op.answers = Some(vec!["INTENT_ATTACK".to_string()]);
+            op.hostile = true;
+        }
+        "gesture" => op.gesture = Some(first.trim().to_string()),
+        "stance" => op.stances = stance_set(inner),
+        "toggles" | "toggles_hold" => op.toggles = true,
+        "presents" => op.presents = true,
+        "passes" => op.passes = true,
+        _ => return false,
+    }
+    true
+}
+
+/// `s` is `name(...)` with the call closing at its last character: the argument text, or None.
+fn whole_call<'a>(s: &'a str, name: &str) -> Option<&'a str> {
+    let rest = s.strip_prefix(name)?;
+    if !rest.starts_with('(') || matching_paren(s, name.len()) != Some(s.len() - 1) {
+        return None;
+    }
+    Some(&s[name.len() + 1..s.len() - 1])
+}
+
+/// The stances a stance(...) / req_stance(...) argument list names, or None when one is not a literal I_X.
+fn stance_set(inner: &str) -> Option<BTreeSet<String>> {
+    let mut out = BTreeSet::new();
+    for a in split_args(inner) {
+        let a = a.trim();
+        if let Some(l) = whole_call(a, "list") {
+            out.extend(stance_set(l)?);
+        } else if a.starts_with("I_") && a.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+            out.insert(a.to_string());
+        } else if !a.is_empty() {
+            return None;
+        }
+    }
+    Some(out)
+}
+
+/// Adds one when() condition: a conjunction is split into its conjuncts, a stance condition narrows the op's stances.
+fn add_cond(op: &mut Op, c: &str) {
+    if let Some(inner) = whole_call(c, "cond_all") {
+        for part in split_args(inner) {
+            add_cond(op, &compact(&part));
+        }
+        return;
+    }
+    if let Some(set) = whole_call(c, "req_stance").and_then(stance_set) {
+        op.stances = Some(match op.stances.take() {
+            Some(prev) => prev.intersection(&set).cloned().collect(),
+            None => set,
+        });
+        return;
+    }
+    op.conds.push(norm_cond(c));
+}
+
+/// One condition in a canonical spelling, so two spellings of one test compare equal: req(X) is X, req_is(K) is K, req_is(K, FALSE) is
+/// cond_not(K), and a double negation cancels.
+fn norm_cond(c: &str) -> String {
+    let c = c.trim();
+    if let Some(inner) = whole_call(c, "cond_not") {
+        let n = norm_cond(inner);
+        return match whole_call(&n, "cond_not") {
+            Some(back) => back.to_string(),
+            None => format!("cond_not({})", n),
+        };
+    }
+    if let Some(inner) = whole_call(c, "req_is") {
+        let args: Vec<String> = split_args(inner).into_iter().filter(|a| !a.contains('=') || a.contains("==")).collect();
+        if let Some(key) = args.first() {
+            match args.get(1).map(|v| v.as_str()) {
+                Some("FALSE") | Some("0") => return format!("cond_not({})", norm_cond(key)),
+                None | Some("TRUE") | Some("1") => return norm_cond(key),
+                _ => {}
+            }
+        }
+    }
+    if let Some(inner) = whole_call(c, "req") {
+        let args = split_args(inner);
+        if args.len() == 1 {
+            return norm_cond(&args[0]);
+        }
+    }
+    c.to_string()
+}
+
+/// The value of a tier expression (OP_PRIORITY_X, OP_PRIORITY_X+n, OP_PRIORITY_X-n, a number), or None.
+fn tier_value(expr: &str) -> Option<i64> {
+    let named = |n: &str| -> Option<i64> {
+        Some(match n {
+            "OP_PRIORITY_DEFAULT" => -2000,
+            "OP_PRIORITY_NORMAL" => 0,
+            "OP_PRIORITY_PART" => 10,
+            "OP_PRIORITY_ATTACK" => 20,
+            "OP_PRIORITY_TAKE_OUT" => 30,
+            "OP_PRIORITY_CLAW" => 40,
+            "OP_PRIORITY_SUBVERT" => 50,
+            _ => n.parse().ok()?,
+        })
+    };
+    let mut total = 0i64;
+    let mut sign = 1i64;
+    let mut term = String::new();
+    for ch in compact(expr).chars().chain(std::iter::once('+')) {
+        if ch == '+' || ch == '-' {
+            if term.is_empty() {
+                if ch == '-' {
+                    sign = -sign;
+                }
+                continue;
+            }
+            total += sign * named(&term)?;
+            term.clear();
+            sign = if ch == '-' { -1 } else { 1 };
+        } else {
+            term.push(ch);
+        }
+    }
+    Some(total)
+}
+
+fn tier_name(v: i64) -> String {
+    match v {
+        -2000 => "OP_PRIORITY_DEFAULT".to_string(),
+        0 => "OP_PRIORITY_NORMAL".to_string(),
+        10 => "OP_PRIORITY_PART".to_string(),
+        20 => "OP_PRIORITY_ATTACK".to_string(),
+        30 => "OP_PRIORITY_TAKE_OUT".to_string(),
+        40 => "OP_PRIORITY_CLAW".to_string(),
+        50 => "OP_PRIORITY_SUBVERT".to_string(),
+        n => n.to_string(),
+    }
+}
+
+fn same_tier(a: &str, b: &str) -> bool {
+    match (tier_value(a), tier_value(b)) {
+        (Some(x), Some(y)) => x == y,
+        _ => a == b,
+    }
+}
+
+/// The intents an op answers through one of its bindings (resolve.dm, op_answers): answers() when written, else a pinned gesture's, else
+/// INTENT_USE (and INTENT_TOGGLE for a toggling hand op; INTENT_PRESENT alone for presents()).
+fn bind_intents(op: &Op, b: &Bind) -> Vec<String> {
+    if let Some(a) = &op.answers {
+        return a.clone();
+    }
+    if let Some(g) = &op.gesture {
+        return match g.as_str() {
+            "GESTURE_CLICK" | "GESTURE_SELF" => vec!["INTENT_USE".to_string()],
+            "GESTURE_ALT" => vec!["INTENT_TOGGLE".to_string(), "INTENT_OPEN".to_string(), "INTENT_EJECT".to_string()],
+            "GESTURE_SHIFT" => vec!["INTENT_EXAMINE".to_string()],
+            "GESTURE_DRAG" => vec!["INTENT_DROP_ONTO".to_string()],
+            // a gesture the engine maps to no intent (ctrl, middle, right click) or one we cannot read: ops pinning the same one still meet
+            other => vec![format!("pinned:{}", other)],
+        };
+    }
+    if op.presents {
+        return vec!["INTENT_PRESENT".to_string()];
+    }
+    let mut v = vec!["INTENT_USE".to_string()];
+    if op.toggles && *b == Bind::Hand {
+        v.push("INTENT_TOGGLE".to_string());
+    }
+    v
+}
+
+// ---- constructor arguments decided at expansion: `cond ? a : b` and `if(cond)` in an entries() body ----
+
+/// The truth of a condition whose params are substituted, three-valued: Some when every operand is a literal (TRUE, FALSE, null, a number, a
+/// string, a list, length() of a literal list), else None.
+fn eval_cond(s: &str) -> Option<bool> {
+    let toks = cond_tokens(s)?;
+    let mut i = 0;
+    let v = cond_or(&toks, &mut i)?;
+    if i != toks.len() {
+        return None;
+    }
+    v
+}
+
+/// Tokens: operators ("!", "&&", "||", "(", ")", "==", "!=") and whole terms (a call with its arguments, a word, a number, a string, a path).
+fn cond_tokens(s: &str) -> Option<Vec<String>> {
+    let b = s.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < b.len() {
+        let c = b[i];
+        if c.is_ascii_whitespace() || c == b'\\' {
+            i += 1;
+            continue;
+        }
+        let two = if i + 1 < b.len() { &s[i..i + 2] } else { "" };
+        if matches!(two, "&&" | "||" | "==" | "!=") {
+            out.push(two.to_string());
+            i += 2;
+            continue;
+        }
+        if matches!(c, b'!' | b'(' | b')') {
+            out.push((c as char).to_string());
+            i += 1;
+            continue;
+        }
+        if c == b'"' {
+            let mut j = i + 1;
+            while j < b.len() && b[j] != b'"' {
+                if b[j] == b'\\' {
+                    j += 1;
+                }
+                j += 1;
+            }
+            if j >= b.len() {
+                return None;
+            }
+            out.push(s[i..=j].to_string());
+            i = j + 1;
+            continue;
+        }
+        if c.is_ascii_alphanumeric() || c == b'_' || c == b'/' || c == b'.' {
+            let mut j = i;
+            while j < b.len() && (b[j].is_ascii_alphanumeric() || b[j] == b'_' || b[j] == b'/' || b[j] == b'.') {
+                j += 1;
+            }
+            if j < b.len() && b[j] == b'(' {
+                j = matching_paren(s, j)? + 1;
+            }
+            out.push(s[i..j].to_string());
+            i = j;
+            continue;
+        }
+        return None;
+    }
+    Some(out)
+}
+
+/// The parse result is Some(truth) on a parse, None on a failure; the truth itself is Option (None: unknown).
+fn cond_or(t: &[String], i: &mut usize) -> Option<Option<bool>> {
+    let mut v = cond_and(t, i)?;
+    while t.get(*i).map(|x| x == "||").unwrap_or(false) {
+        *i += 1;
+        let r = cond_and(t, i)?;
+        v = match (v, r) {
+            (Some(true), _) | (_, Some(true)) => Some(true),
+            (Some(false), Some(false)) => Some(false),
+            _ => None,
+        };
+    }
+    Some(v)
+}
+
+fn cond_and(t: &[String], i: &mut usize) -> Option<Option<bool>> {
+    let mut v = cond_unary(t, i)?;
+    while t.get(*i).map(|x| x == "&&").unwrap_or(false) {
+        *i += 1;
+        let r = cond_unary(t, i)?;
+        v = match (v, r) {
+            (Some(false), _) | (_, Some(false)) => Some(false),
+            (Some(true), Some(true)) => Some(true),
+            _ => None,
+        };
+    }
+    Some(v)
+}
+
+fn cond_unary(t: &[String], i: &mut usize) -> Option<Option<bool>> {
+    let tok = t.get(*i)?.clone();
+    *i += 1;
+    let v = match tok.as_str() {
+        "!" => return cond_unary(t, i).map(|v| v.map(|b| !b)),
+        "(" => {
+            let v = cond_or(t, i)?;
+            if t.get(*i).map(|x| x.as_str()) != Some(")") {
+                return None;
+            }
+            *i += 1;
+            v
+        }
+        ")" | "&&" | "||" | "==" | "!=" => return None,
+        term => term_truth(term),
+    };
+    // a comparison is not decided here
+    if matches!(t.get(*i).map(|x| x.as_str()), Some("==") | Some("!=")) {
+        *i += 2;
+        if *i > t.len() {
+            return None;
+        }
+        return Some(None);
+    }
+    Some(v)
+}
+
+fn term_truth(term: &str) -> Option<bool> {
+    match term {
+        "TRUE" => return Some(true),
+        "FALSE" | "null" | "NONE" => return Some(false),
+        _ => {}
+    }
+    if let Ok(n) = term.parse::<f64>() {
+        return Some(n != 0.0);
+    }
+    if term.starts_with('"') {
+        return Some(term.len() > 2);
+    }
+    if term.starts_with('/') || whole_call(term, "list").is_some() {
+        return Some(true);
+    }
+    if let Some(inner) = whole_call(term, "length") {
+        let inner = inner.trim();
+        if inner == "null" {
+            return Some(false);
+        }
+        if let Some(items) = whole_call(inner, "list") {
+            return Some(split_args(items).iter().any(|a| !a.trim().is_empty()));
+        }
+    }
+    None
+}
+
+/// The bounds of each `cond ? a : b` at one nesting level whose condition is decided, replaced by the branch it takes. Undecided ones stay.
+fn prune_ternaries(text: &str) -> String {
+    let mut text = text.to_string();
+    let mut from = 0;
+    'scan: loop {
+        let b = text.as_bytes();
+        let mut in_str = false;
+        let mut q = None;
+        let mut i = from;
+        while i < b.len() {
+            let c = b[i];
+            if in_str {
+                if c == b'\\' {
+                    i += 1;
+                } else if c == b'"' {
+                    in_str = false;
+                }
+            } else if c == b'"' {
+                in_str = true;
+            } else if c == b'?' && !matches!(b.get(i + 1), Some(b'.') | Some(b'[') | Some(b':')) {
+                q = Some(i);
+                break;
+            }
+            i += 1;
+        }
+        let Some(q) = q else { break };
+        from = q + 1;
+        // the condition: back to the comma, the open paren, the assignment or the line start that bounds it
+        let mut depth = 0i32;
+        let mut start = 0;
+        let mut j = q;
+        while j > 0 {
+            j -= 1;
+            let c = b[j];
+            match c {
+                b')' => depth += 1,
+                b'(' => {
+                    if depth == 0 {
+                        start = j + 1;
+                        break;
+                    }
+                    depth -= 1;
+                }
+                b',' | b'\n' | b';' if depth == 0 => {
+                    start = j + 1;
+                    break;
+                }
+                b'=' if depth == 0 && !matches!(b.get(j + 1), Some(b'=')) && !(j > 0 && matches!(b[j - 1], b'=' | b'!' | b'<' | b'>')) => {
+                    start = j + 1;
+                    break;
+                }
+                _ => {}
+            }
+        }
+        let mut cond = text[start..q].trim();
+        cond = cond.strip_prefix("return ").unwrap_or(cond).trim();
+        if cond.is_empty() {
+            continue;
+        }
+        // the colon of this ternary, and the end of its else branch
+        let mut depth = 0i32;
+        let mut in_str = false;
+        let mut colon = None;
+        let mut end = b.len();
+        let mut k = q + 1;
+        while k < b.len() {
+            let c = b[k];
+            if in_str {
+                if c == b'\\' {
+                    k += 1;
+                } else if c == b'"' {
+                    in_str = false;
+                }
+                k += 1;
+                continue;
+            }
+            match c {
+                b'"' => in_str = true,
+                b'(' | b'[' => depth += 1,
+                b')' | b']' => {
+                    if depth == 0 {
+                        end = k;
+                        break;
+                    }
+                    depth -= 1;
+                }
+                b',' | b'\n' | b';' if depth == 0 => {
+                    if colon.is_none() {
+                        continue 'scan;
+                    }
+                    end = k;
+                    break;
+                }
+                b':' if depth == 0 && colon.is_none() => {
+                    if b.get(k + 1) == Some(&b':') {
+                        k += 2;
+                        continue;
+                    }
+                    colon = Some(k);
+                }
+                b'?' if depth == 0 && colon.is_none() => continue 'scan,
+                _ => {}
+            }
+            k += 1;
+        }
+        let Some(colon) = colon else { continue };
+        let Some(truth) = eval_cond(cond) else { continue };
+        let branch = if truth { &text[q + 1..colon] } else { &text[colon + 1..end] };
+        let branch = branch.trim().to_string();
+        let prefix_ws = if start > 0 && !text[..start].ends_with(char::is_whitespace) { " " } else { "" };
+        text = format!("{}{}{}{}", &text[..start], prefix_ws, branch, &text[end..]);
+        from = start;
+    }
+    text
+}
+
+/// Drops the statements of an `if(cond)` whose condition is decided false (keeping its else), or the else of one decided true.
+fn prune_ifs(text: &str) -> String {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let indent = |l: &str| l.len() - l.trim_start().len();
+    let mut out: Vec<String> = Vec::with_capacity(lines.len());
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i];
+        let t = line.trim_start();
+        let ind = indent(line);
+        let head = t.strip_prefix("if").filter(|r| r.trim_start().starts_with('('));
+        let Some(head) = head else {
+            out.push(line.to_string());
+            i += 1;
+            continue;
+        };
+        let open = t.len() - head.len() + (head.len() - head.trim_start().len());
+        let Some(close) = matching_paren(t, open) else {
+            out.push(line.to_string());
+            i += 1;
+            continue;
+        };
+        let cond = &t[open + 1..close];
+        let rest = t[close + 1..].trim();
+        // the if's body: the rest of its line, or the more indented lines below it
+        let mut j = i + 1;
+        if rest.is_empty() {
+            while j < lines.len() && (lines[j].trim().is_empty() || indent(lines[j]) > ind) {
+                j += 1;
+            }
+        }
+        let body: Vec<String> = if rest.is_empty() { lines[i + 1..j].iter().map(|s| s.to_string()).collect() } else { vec![format!("{}{}", &line[..ind], rest)] };
+        // an else at the same indent
+        let mut else_body: Vec<String> = Vec::new();
+        let mut k = j;
+        if j < lines.len() && indent(lines[j]) == ind && lines[j].trim_start().starts_with("else") {
+            let et = lines[j].trim_start();
+            let erest = et["else".len()..].trim();
+            k = j + 1;
+            if erest.is_empty() {
+                while k < lines.len() && (lines[k].trim().is_empty() || indent(lines[k]) > ind) {
+                    k += 1;
+                }
+                else_body = lines[j + 1..k].iter().map(|s| s.to_string()).collect();
+            } else {
+                else_body = vec![format!("{}{}", &lines[j][..ind], erest)];
+            }
+        }
+        match eval_cond(cond) {
+            Some(true) => {
+                out.extend(body);
+                i = k;
+            }
+            Some(false) => {
+                out.extend(else_body);
+                i = k;
+            }
+            None => {
+                out.push(line.to_string());
+                i += 1;
+            }
+        }
+    }
+    out.join("\n")
 }
 
 fn compact(s: &str) -> String {
@@ -578,16 +1131,22 @@ fn overlap(a: &Bind, b: &Bind) -> Option<String> {
     }
 }
 
+/// Two normalized conditions (`norm_cond`) that cannot both hold: c against cond_not(c), and graph stages that do not meet.
 fn cond_negates(a: &str, b: &str) -> bool {
     if b == format!("cond_not({})", a) || a == format!("cond_not({})", b) {
         return true;
     }
-    // req_is(K) against req_is(K, FALSE)
-    if let (Some(x), Some(y)) = (a.strip_prefix("req_is("), b.strip_prefix("req_is(")) {
-        let xa = split_args(x.trim_end_matches(')'));
-        let ya = split_args(y.trim_end_matches(')'));
-        let truthy = |v: &[String]| v.get(1).map(|s| s != "FALSE" && s != "0").unwrap_or(true);
-        return xa.first() == ya.first() && truthy(&xa) != truthy(&ya);
+    // req_graph_at(list(S...)) against one with none of its stages
+    if let (Some(x), Some(y)) = (whole_call(a, "req_graph_at"), whole_call(b, "req_graph_at")) {
+        let stages = |v: &str| -> Option<BTreeSet<String>> {
+            let first = split_args(v).into_iter().next()?;
+            let first = first.trim();
+            let items = whole_call(first, "list").map(split_args).unwrap_or_else(|| vec![first.to_string()]);
+            Some(items.into_iter().map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+        };
+        if let (Some(sx), Some(sy)) = (stages(x), stages(y)) {
+            return sx.is_disjoint(&sy);
+        }
     }
     false
 }
@@ -600,21 +1159,7 @@ impl Composition {
                 for p in &parts {
                     let p = p.trim();
                     let Some((name, open, close)) = call_at(p, 0) else { continue };
-                    let inner = &p[open..close];
-                    let first = split_args(inner).first().cloned().unwrap_or_default();
-                    match name.as_str() {
-                        "priority" => {
-                            if let Some(rest) = first.strip_prefix("above(").or_else(|| first.strip_prefix("below(")) {
-                                op.rel = unquote(rest.trim_end_matches(')'));
-                            } else if let Some(t) = first.strip_prefix("OP_PRIORITY_") {
-                                op.tier = t.to_string();
-                            }
-                        }
-                        "when" => op.conds.push(compact(inner)),
-                        "answers" => op.intents = split_args(inner).iter().map(|s| s.trim().to_string()).collect(),
-                        "passes" => op.passes = true,
-                        _ => {}
-                    }
+                    apply_select(&name, &p[open..close], op);
                 }
             }
         }
@@ -648,14 +1193,17 @@ impl Composition {
         for i in 0..ops.len() {
             for j in i + 1..ops.len() {
                 let (a, b) = (ops[i], ops[j]);
-                if a.tier != b.tier || a.passes || b.passes {
+                if !same_tier(&a.tier, &b.tier) || a.passes || b.passes {
                     continue;
                 }
                 if a.rel.as_deref() == Some(b.key.as_str()) || b.rel.as_deref() == Some(a.key.as_str()) {
                     continue;
                 }
-                if !a.intents.iter().any(|x| b.intents.contains(x)) {
-                    continue;
+                // stance() gates: an actor is in one stance at a time
+                if let (Some(sa), Some(sb)) = (&a.stances, &b.stances) {
+                    if sa.is_disjoint(sb) {
+                        continue;
+                    }
                 }
                 if a.conds.iter().any(|x| b.conds.iter().any(|y| cond_negates(x, y))) {
                     continue;
@@ -668,8 +1216,13 @@ impl Composition {
                     continue;
                 }
                 let mut input = None;
+                // two bindings meet when they take one held thing and answer an intent in common (plan.dm, op_plans_clash)
                 'outer: for x in &a.binds {
                     for y in &b.binds {
+                        let (ix, iy) = (bind_intents(a, x), bind_intents(b, y));
+                        if !ix.iter().any(|i| iy.contains(i)) {
+                            continue;
+                        }
                         if let Some(d) = overlap(x, y) {
                             input = Some(d);
                             break 'outer;
@@ -718,7 +1271,67 @@ mod tests {
     #[test]
     fn negation() {
         assert!(cond_negates("PANEL_OPEN", "cond_not(PANEL_OPEN)"));
-        assert!(cond_negates("req_is(K)", "req_is(K,FALSE)"));
+        assert!(cond_negates(&norm_cond("req_is(K)"), &norm_cond("req_is(K,FALSE)")));
+        assert!(cond_negates(&norm_cond("req(PROC_REF(x))"), &norm_cond("cond_not(PROC_REF(x))")));
+        assert!(cond_negates(&norm_cond("cond_not(cond_not(A))"), &norm_cond("cond_not(A)")));
+        assert!(cond_negates("req_graph_at(list(S1,S2))", "req_graph_at(list(S3))"));
+        assert!(!cond_negates("req_graph_at(list(S1,S2))", "req_graph_at(list(S2))"));
         assert!(!cond_negates("A", "B"));
+    }
+
+    #[test]
+    fn conjunctions_and_stances() {
+        let mut op = Op::default();
+        add_cond(&mut op, "cond_all(nameof(x),req_stance(list(I_HELP,I_GRAB)))");
+        assert_eq!(op.conds, vec!["nameof(x)".to_string()]);
+        assert_eq!(op.stances.unwrap().into_iter().collect::<Vec<_>>(), vec!["I_GRAB".to_string(), "I_HELP".to_string()]);
+        assert!(stance_set("I_HURT, CAP_PROC(x)").is_none());
+    }
+
+    #[test]
+    fn tiers_by_value() {
+        assert_eq!(tier_value("OP_PRIORITY_PART - 1"), Some(9));
+        assert_eq!(tier_value("OP_PRIORITY_SUBVERT+1"), Some(51));
+        assert!(same_tier("OP_PRIORITY_NORMAL+10", "OP_PRIORITY_PART"));
+        assert!(!same_tier("OP_PRIORITY_PART-1", "OP_PRIORITY_PART"));
+    }
+
+    #[test]
+    fn intents_of_bindings() {
+        let drag = Op { gesture: Some("GESTURE_DRAG".into()), ..Op::default() };
+        let plain = Op::default();
+        let toggle = Op { toggles: true, ..Op::default() };
+        let hostile = Op { answers: Some(vec!["INTENT_ATTACK".into()]), ..Op::default() };
+        assert_eq!(bind_intents(&drag, &Bind::Item("/obj/item".into())), vec!["INTENT_DROP_ONTO".to_string()]);
+        assert_eq!(bind_intents(&plain, &Bind::Hand), vec!["INTENT_USE".to_string()]);
+        assert!(bind_intents(&toggle, &Bind::Hand).contains(&"INTENT_TOGGLE".to_string()));
+        assert!(!bind_intents(&toggle, &Bind::InHand).contains(&"INTENT_TOGGLE".to_string()));
+        assert_eq!(bind_intents(&hostile, &Bind::Hand), vec!["INTENT_ATTACK".to_string()]);
+    }
+
+    #[test]
+    fn decided_conditions() {
+        assert_eq!(eval_cond("(FALSE && TRUE)"), Some(false));
+        assert_eq!(eval_cond("FALSE || nameof(x)"), None);
+        assert_eq!(eval_cond("TRUE || nameof(x)"), Some(true));
+        assert_eq!(eval_cond("!length(list(/obj/a))"), Some(false));
+        assert_eq!(eval_cond("length(null)"), Some(false));
+        assert_eq!(eval_cond("a == b"), None);
+    }
+
+    #[test]
+    fn ternaries_take_their_branch() {
+        let t = prune_ternaries("list(\n\t(FALSE && TRUE) ? op(\"lid\", in_hand()) : null,\n\t(FALSE || FALSE) ? null : op(\"pour\", at_target()),\n\tx ? op(\"k\") : null)");
+        assert!(!t.contains("\"lid\""), "{}", t);
+        assert!(t.contains("op(\"pour\", at_target())"), "{}", t);
+        assert!(t.contains("x ? op(\"k\") : null"), "{}", t);
+        // a null-conditional and a type::var path are not ternaries
+        assert_eq!(prune_ternaries("a?.b(/obj/x::y)"), "a?.b(/obj/x::y)");
+    }
+
+    #[test]
+    fn ifs_keep_their_taken_branch() {
+        let t = prune_ifs("\t. = list(op(\"a\"))\n\tif(FALSE)\n\t\t. += op(\"gone\")\n\telse\n\t\t. += op(\"kept\")\n\tif(TRUE) . += op(\"also\")\n\tif(x)\n\t\t. += op(\"maybe\")");
+        assert!(!t.contains("gone") && t.contains("kept") && t.contains("also") && t.contains("maybe"), "{}", t);
     }
 }

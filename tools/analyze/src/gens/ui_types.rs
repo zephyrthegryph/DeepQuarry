@@ -41,8 +41,8 @@ impl Generator for UiTypes {
                 }
             }
         }
-        // Named bundles (BUNDLE(name) and its entries): a CAPABILITIES entry `name()` stands for them.
-        let bundles: BTreeMap<String, Vec<String>> = cx.markers("BUNDLE").filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].to_vec()))).collect();
+        // Entry procs (a global proc returning a list of entries): a CAPABILITIES entry `name()` stands for them.
+        let bundles: BTreeMap<String, Vec<String>> = cx.markers(crate::sem::decls::ENTRY_PROC).filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].to_vec()))).collect();
         let mut windows: BTreeMap<String, Window> = BTreeMap::new();
         for m in cx.markers("CAPABILITIES") {
             let Some(owner) = m.args.first() else { continue };
@@ -124,7 +124,7 @@ impl Generator for UiTypes {
     }
 }
 
-/// The entries with each `name()` of a named bundle replaced by the bundle's entries (nested bundles too).
+/// The entries with each `name()` of an entry proc replaced by the proc's entries (nested ones too).
 fn expand_bundles(entries: &[String], bundles: &BTreeMap<String, Vec<String>>, out: &mut Vec<String>, depth: usize) {
     for raw in entries {
         let entry = clean(raw);

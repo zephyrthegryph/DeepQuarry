@@ -149,7 +149,7 @@ GLOBAL_VAR(declare_report_capture)
 		if(istype(item, /datum/entry/line))
 			var/datum/entry/line/L = item
 			if(file)
-				origin_now = "[file]:[L.line]"
+				origin_now = entry_origin_text(file, L.line, L.section_name)
 			continue
 		table_apply(T, item, origin_now, null, null)
 	table_validate(T)

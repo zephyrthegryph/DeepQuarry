@@ -7,7 +7,7 @@ Nothing here has runtime behaviour except the test driver's own bookkeeping. Eng
 
 | Path | What |
 |---|---|
-| `code/__defines/engine/markers.dm` | Declaration markers (`CAPABILITIES`, `ACTION`, `STAT`, `SCHEMA`, `SYSTEM_ACCESSOR`, `STAGE_DEF`, `STATE_GRAPH`, `RESOURCE_DEF`, `SOURCE_DEF`, `CAPABILITY_DEF/TYPE`, `cap_keys`, `BUNDLE`). Each expands to nothing: a declaration in the final syntax compiles and is skipped until the generator reads it. |
+| `code/__defines/engine/markers.dm` | Declaration markers (`CAPABILITIES`, `ACTION`, `STAT`, `SCHEMA`, `SYSTEM_ACCESSOR`, `STAGE_DEF`, `STATE_GRAPH`, `RESOURCE_DEF`, `SOURCE_DEF`, `CAPABILITY_DEF/TYPE`, `cap_keys`, and `section(name, "doc")` inside a `CAPABILITIES` block). Each expands to nothing: a declaration in the final syntax compiles and is skipped until the generator reads it. |
 | `code/__defines/engine/vocabulary.dm` | `ACT_*` outcomes and filters, `OP_*` effect reports, `ORIGIN_*`, `REACH_*`, `AUTH_*`, `INTENT_*`, keeps, `REQ_*` outcomes, resume policies, `DRAIN_MAX_PASSES`, `KERNEL_PHASE_S`, `LANE_WORLD`. |
 | `code/__defines/engine/test_hooks.dm` | The engine-to-driver seam: `TEST_REC_*`, `TEST_ROLL`, `TEST_LANE_BUDGET`, `TEST_EVAL_COST`, `ENGINE_STUB`, `E0_GATE`. In production every one compiles out. |
 | `code/contracts/ids/` | Hand-assigned stat, source, tag, resource, capability and stage ids (the generator keeps what is there). |
