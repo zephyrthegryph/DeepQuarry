@@ -1379,23 +1379,48 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	timeout = 0
 	rights = R_DEBUG
 
-/datum/om/prompt/text/vv_ai_faction
-	key = "faction"
+/datum/prompt/text/vv_ai_faction
 	title = "AI faction"
-	message = "Please input AI faction"
+	question = "Please input AI faction"
 	default = "neutral"
+	timeout = 0
+	rights = R_HOLDER
 
-/datum/om/prompt/choice/vv_ai_stance
-	key = "stance"
+/datum/prompt/text/vv_ai_faction/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/vv_ai_stance
 	title = "AI combat mode"
-	message = "Please choose AI combat mode"
+	question = "Please choose AI combat mode"
 	choices = list(I_HURT, I_HELP)
+	timeout = 0
+	rights = R_HOLDER
+	var/faction
 
-/datum/om/prompt/confirm/vv_ai_wake
-	key = "wake"
+/datum/prompt/choice/vv_ai_stance/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/vv_ai_wake
 	title = "Wake mob?"
-	message = "Make mob wake up? This is needed for carbon mobs."
-	answer_on_no = TRUE
+	question = "Make mob wake up? This is needed for carbon mobs."
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	rights = R_HOLDER
+	var/faction
+	var/stance
+
+/datum/prompt/choice/vv_ai_wake/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 /mob/proc/vv_language_added(datum/act/request/A)
 	if(!A.answer)
@@ -1499,20 +1524,47 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	rem_organ.removed()
 	qdel(rem_organ)
 
-/// A VV AI brain setup: the answers of the vv_ai_* prompts.
-/datum/om/flow/ask_sequence/vv_ai_setup
-	var/faction
-	var/stance
-	var/wake
+/// A VV AI brain setup: captured scalar answers advance only after each live admin re-check.
+/mob/proc/vv_ai_faction_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_ai_faction_apply), A)
+	if(!result.ok)
+		stack_trace("VV AI faction: [result.error]")
+	return result.value
 
-/mob/proc/vv_ai_configured(datum/om/flow/ask_sequence/vv_ai_setup/seq)
+/mob/proc/vv_ai_faction_apply(datum/act/request/A)
+	open_request(src, /datum/prompt/choice/vv_ai_stance, PROC_REF(vv_ai_stance_chosen), answerer = A.answer.answerer, faction = A.answer.answer_value)
+
+/mob/proc/vv_ai_stance_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_ai_stance_apply), A)
+	if(!result.ok)
+		stack_trace("VV AI combat stance: [result.error]")
+	return result.value
+
+/mob/proc/vv_ai_stance_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_ai_stance/ask = A.answer
+	open_request(src, /datum/prompt/choice/vv_ai_wake, PROC_REF(vv_ai_configured), answerer = ask.answerer, faction = ask.faction, stance = ask.answer_value)
+
+/mob/proc/vv_ai_configured(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_ai_configure_apply), A)
+	if(!result.ok)
+		stack_trace("VV AI configuration: [result.error]")
+	return result.value
+
+/mob/proc/vv_ai_configure_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_ai_wake/ask = A.answer
 	var/mob/living/L = src
 	if(!istype(L) || !L.ai_brain)
 		return
-	L.faction = seq.faction
-	if(seq.stance)
-		L.set_use_stance(seq.stance)
-	if(seq.wake)
+	L.faction = ask.faction
+	if(ask.stance)
+		L.set_use_stance(ask.stance)
+	if(ask.answer_value == "Yes")
 		L.status_adjust(EFFECT_SLEEPING, -100)
 
 VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS, PROC_REF(vv_topic_regen_icons))
@@ -1607,7 +1659,7 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	if(ai_brain)	//Cleaning up the original ai
 		own_clear(src, nameof(ai_brain), OWN_DELETE)
 	initialize_ai_brain()
-	om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, user, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
+	open_request(src, /datum/prompt/text/vv_ai_faction, PROC_REF(vv_ai_faction_chosen), answerer = user)
 	return TRUE
 
 /mob/proc/vv_topic_give_spell(mob/user, list/args)
