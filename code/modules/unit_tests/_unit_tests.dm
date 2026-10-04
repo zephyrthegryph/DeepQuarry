@@ -188,6 +188,7 @@
 #include "dq_atmos_tests.dm"
 #include "dq_after_init_tests.dm"
 #include "dq_init_settle_tests.dm"
+#include "dq_init_forms_behaviour_tests.dm"
 #include "dq_lifecycle_forms_tests.dm"
 #include "dq_rust_integration_tests.dm"
 #include "dq_native_tests.dm"
