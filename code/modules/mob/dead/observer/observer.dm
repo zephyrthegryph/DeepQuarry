@@ -1027,36 +1027,77 @@ CAPABILITIES(/datum/ghost_doodle_review)
 		var/list/options = list()
 		for(var/mob/living/Ms in view(src))
 			options += Ms
-		om_ask(src, /datum/om/prompt/choice/spectral_whisper_target, PROC_REF(spectral_whisper_target_chosen), choices = options)
+		open_request(src, /datum/prompt/choice/spectral_whisper_target, PROC_REF(spectral_whisper_target_chosen), answerer = src, choices = options)
 		return 1
 	else
 		to_chat(src, span_danger("You have not been pulled past the veil! You can not whisper to the living."))
 
 /// Only a manifested ghost can whisper: re-checked when each answer arrives.
-/datum/om/prompt/choice/spectral_whisper_target
+/datum/prompt/choice/spectral_whisper_target
 	title = "Whisper to?"
-	message = "Select who to whisper to:"
+	question = "Select who to whisper to:"
+	timeout = 0
 
-/datum/om/prompt/choice/spectral_whisper_target/valid()
+/datum/prompt/choice/spectral_whisper_target/recheck_extra()
+	if(isnull(answer_value))
+		return
+	var/mob/living/selected = answer_value
+	if(!istype(selected) || QDELETED(selected))
+		return "gone"
 	var/mob/observer/dead/ghost = answerer
 	return (istype(ghost) && ghost.is_manifest) ? null : "not manifest"
 
-/datum/om/prompt/text/spectral_whisper
+/datum/prompt/text/spectral_whisper
 	title = "Spectral Whisper"
-	message = "Message:"
+	question = "Message:"
 	default = ""
-	max_length = MAX_MESSAGE_LEN
+	max_len = MAX_MESSAGE_LEN
+	timeout = 0
+	var/mob/living/recipient
+	var/recipient_expected = FALSE
 
-/datum/om/prompt/text/spectral_whisper/valid()
+CAPABILITIES(/datum/prompt/text/spectral_whisper)
+	ref_one(nameof(recipient), /mob/living)
+
+/datum/prompt/text/spectral_whisper/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/captured_recipient = recipient
+	recipient_expected = !isnull(captured_recipient)
+	rel_clear(src, nameof(recipient))
+	if(captured_recipient && !QDELETED(captured_recipient))
+		rel_set(src, nameof(recipient), captured_recipient)
+
+/datum/prompt/text/spectral_whisper/recheck_extra()
+	if(recipient_expected && QDELETED(recipient))
+		return "gone"
+	if(isnull(answer_value))
+		return
 	var/mob/observer/dead/ghost = answerer
 	return (istype(ghost) && ghost.is_manifest) ? null : "not manifest"
 
-/mob/observer/dead/proc/spectral_whisper_target_chosen(datum/om/prompt/choice/spectral_whisper_target/ask)
-	om_ask(src, /datum/om/prompt/text/spectral_whisper, PROC_REF(spectral_whisper_written), subject = ask.choice)
+/mob/observer/dead/proc/spectral_whisper_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(spectral_whisper_target_apply), A)
+	if(!result.ok)
+		stack_trace("spectral whisper recipient: [result.error]")
+	return result.value
 
-/mob/observer/dead/proc/spectral_whisper_written(datum/om/prompt/text/spectral_whisper/ask)
-	var/mob/living/M = ask.subject
-	var/msg = ask.text
+/mob/observer/dead/proc/spectral_whisper_target_apply(datum/act/request/A)
+	open_request(src, /datum/prompt/text/spectral_whisper, PROC_REF(spectral_whisper_written), answerer = src, recipient = A.answer.answer_value)
+
+/mob/observer/dead/proc/spectral_whisper_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(spectral_whisper_apply), A)
+	if(!result.ok)
+		stack_trace("spectral whisper message: [result.error]")
+	return result.value
+
+/mob/observer/dead/proc/spectral_whisper_apply(datum/act/request/A)
+	var/datum/prompt/text/spectral_whisper/ask = A.answer
+	var/mob/living/M = ask.recipient
+	var/msg = ask.answer_value
 	if(msg)
 		log_talk("(SPECWHISP to [key_name(M)]): [msg]", LOG_WHISPER)
 		to_chat(M, span_warning(" You hear a strange, unidentifiable voice in your head... [span_purple("[msg]")]"))
@@ -1268,15 +1309,24 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	var/obj/machinery/transhuman/autoresleever/chosen_resleever = null
 	if(length(autoresleevers) > 1)
 		// Prompt user to choose which one they wanna go to
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(autoresleever_chosen), title = "Choose Auto-Resleever", message = "There are multiple auto-resleevers available! Choose one.", choices = autoresleevers)
+		open_request(src, /datum/prompt/choice, PROC_REF(autoresleever_chosen), answerer = src, title = "Choose Auto-Resleever", question = "There are multiple auto-resleevers available! Choose one.", choices = autoresleevers, timeout = 0)
 		return
 	else
 		// If there's less than one, just choose whatever one is available (if any)
 		chosen_resleever = autoresleevers[pick(autoresleevers)]
 	go_to_autoresleever(chosen_resleever)
 
-/mob/observer/dead/proc/autoresleever_chosen(datum/om/prompt/choice/ask)
-	go_to_autoresleever(ask.choices[ask.choice])
+/mob/observer/dead/proc/autoresleever_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(autoresleever_choice_apply), A)
+	if(!result.ok)
+		stack_trace("auto-resleever location selection: [result.error]")
+	return result.value
+
+/mob/observer/dead/proc/autoresleever_choice_apply(datum/act/request/A)
+	var/datum/prompt/choice/ask = A.answer
+	go_to_autoresleever(ask.choices[ask.answer_value])
 
 /mob/observer/dead/proc/go_to_autoresleever(obj/machinery/transhuman/autoresleever/chosen_resleever)
 	if(!chosen_resleever)

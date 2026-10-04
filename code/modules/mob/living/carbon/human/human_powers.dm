@@ -51,25 +51,41 @@
 			choices += M
 	choices -= src
 
-	om_ask(src, /datum/om/prompt/choice/tackle, PROC_REF(tackle_target_chosen), choices = choices)
+	open_request(src, /datum/prompt/choice/tackle, PROC_REF(tackle_target_chosen), answerer = src, choices = choices)
 
 /// Re-checked on the answer: conscious, next to the target, off cooldown and able to tackle.
-/datum/om/prompt/choice/tackle
+/datum/prompt/choice/tackle
 	title = "Target Choice"
-	message = "Who do you wish to tackle?"
+	question = "Who do you wish to tackle?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/tackle/valid()
+/datum/prompt/choice/tackle/recheck_extra()
+	if(isnull(answer_value))
+		return
+	var/mob/living/selected = answer_value
+	if(!istype(selected) || QDELETED(selected))
+		return "gone"
 	var/mob/living/carbon/human/H = answerer
-	if(!H.Adjacent(choice) || !COOLDOWN_FINISHED(H, last_special))
+	if(!H.Adjacent(selected) || !COOLDOWN_FINISHED(H, last_special))
 		return "can't reach"
 	if(H.stat || H.has_status(EFFECT_PARALYZED) || H.has_status(EFFECT_STUNNED) || H.has_status(EFFECT_WEAKENED) || H.lying || H.restrained() || H.buckled_to())
-		to_chat(H, span_notice("You cannot tackle in your current state."))
 		return "not able to"
 	return null
 
-/mob/living/carbon/human/proc/tackle_target_chosen(datum/om/prompt/choice/tackle/ask)
-	var/mob/living/T = ask.choice
+/mob/living/carbon/human/proc/tackle_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/request = A.request
+		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value) && request.last_error == "not able to")
+			to_chat(request.answerer, span_notice("You cannot tackle in your current state."))
+		return
+	var/datum/result/result = safe_call(PROC_REF(tackle_target_apply), A)
+	if(!result.ok)
+		stack_trace("tackle target selection: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/tackle_target_apply(datum/act/request/A)
+	var/mob/living/T = A.answer.answer_value
 
 	COOLDOWN_START(src, last_special, 5 SECONDS)
 
@@ -391,23 +407,49 @@
 	var/list/states
 	if(!states)
 		states = params2list(robohead.monitor_styles)
-	om_ask(src, /datum/om/prompt/choice/monitor_state, PROC_REF(monitor_state_chosen), choices = states, head = E)
+	open_request(src, /datum/prompt/choice/monitor_state, PROC_REF(monitor_state_chosen), answerer = src, choices = states, head = E)
 
 /// Re-checked on the answer: conscious, and it's still our head.
-/datum/om/prompt/choice/monitor_state
+/datum/prompt/choice/monitor_state
 	title = "Screen Icon Choice"
-	message = "Select a screen icon:"
+	question = "Select a screen icon:"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 	var/obj/item/organ/external/head/head
+	var/head_expected = FALSE
 
-/datum/om/prompt/choice/monitor_state/valid()
+CAPABILITIES(/datum/prompt/choice/monitor_state)
+	ref_one(nameof(head), /obj/item/organ/external/head)
+
+/datum/prompt/choice/monitor_state/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/organ/external/head/captured_head = head
+	head_expected = !isnull(captured_head)
+	rel_clear(src, nameof(head))
+	if(captured_head && !QDELETED(captured_head))
+		rel_set(src, nameof(head), captured_head)
+
+/datum/prompt/choice/monitor_state/recheck_extra()
+	if(head_expected && QDELETED(head))
+		return "gone"
+	if(isnull(answer_value))
+		return
 	var/mob/living/carbon/human/H = answerer
 	return H.organs_by_name[BP_HEAD] == head ? null : "head changed"
 
-/mob/living/carbon/human/proc/monitor_state_chosen(datum/om/prompt/choice/monitor_state/ask)
+/mob/living/carbon/human/proc/monitor_state_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(monitor_state_apply), A)
+	if(!result.ok)
+		stack_trace("monitor display selection: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/monitor_state_apply(datum/act/request/A)
+	var/datum/prompt/choice/monitor_state/ask = A.answer
 	var/obj/item/organ/external/head/E = ask.head
 	var/list/states = ask.choices
-	var/choice = ask.choice
+	var/choice = ask.answer_value
 	var/datum/robolimb/robohead = GLOB.all_robolimbs[E.model]
 	if(robohead?.monitor_icon)
 		E.eye_icon_location = robohead.monitor_icon

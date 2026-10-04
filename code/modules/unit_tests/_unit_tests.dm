@@ -467,6 +467,7 @@
 #include "dq_p2_engine_tests.dm"
 #include "interim_animal_digest_late_mode_switch.dm"
 #include "interim_artifact_blade_summon_request.dm"
+#include "interim_anomaly_battery_effect_custody.dm"
 #include "dq_p2_apc_behaviour.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"

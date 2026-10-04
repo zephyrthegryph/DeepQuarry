@@ -934,6 +934,20 @@
 	into += entry_line(81)
 	into += list(global.ref_one(nameof(target), /mob))
 
+/// CAPABILITIES(/datum/admin_save_conversion_review) at code/modules/admin/savefile_convert.dm:35
+/datum/admin_save_conversion_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/savefile_convert.dm", 35, /datum/admin_save_conversion_review)
+	into += entry_line(36)
+	into += list(global.ref_one(nameof(actor), /mob))
+
+/// CAPABILITIES(/datum/admin_server_news_review) at code/modules/admin/news.dm:26
+/datum/admin_server_news_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/news.dm", 26, /datum/admin_server_news_review)
+	into += entry_line(27)
+	into += list(global.ref_one(nameof(actor), /mob))
+
 /// CAPABILITIES(/datum/admin_virus_creation) at code/modules/medical/contagion/engineered/engineered.dm:531
 /datum/admin_virus_creation/declared_entries(list/into)
 	..(into)
@@ -3466,6 +3480,20 @@
 	into += entry_line(56)
 	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
 
+/// CAPABILITIES(/datum/prompt/choice/blueprint_expand) at code/game/objects/items/blueprints.dm:1010
+/datum/prompt/choice/blueprint_expand/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1010, /datum/prompt/choice/blueprint_expand)
+	into += entry_line(1011)
+	into += list(global.ref_one(nameof(editor), /obj/item/areaeditor))
+
+/// CAPABILITIES(/datum/prompt/choice/blueprint_whole_confirm) at code/game/objects/items/blueprints.dm:1116
+/datum/prompt/choice/blueprint_whole_confirm/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1116, /datum/prompt/choice/blueprint_whole_confirm)
+	into += entry_line(1117)
+	into += list(global.ref_one(nameof(chosen_area), /area))
+
 /// CAPABILITIES(/datum/prompt/choice/camera_direction) at code/game/machinery/camera/camera_assembly.dm:157
 /datum/prompt/choice/camera_direction/declared_entries(list/into)
 	..(into)
@@ -3576,18 +3604,18 @@
 	into += entry_line(66)
 	into += list(global.ref_one(nameof(asker), /mob))
 
-/// CAPABILITIES(/datum/prompt/choice/hand_game) at code/modules/mob/living/carbon/human/human_powers.dm:513
+/// CAPABILITIES(/datum/prompt/choice/hand_game) at code/modules/mob/living/carbon/human/human_powers.dm:555
 /datum/prompt/choice/hand_game/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 513, /datum/prompt/choice/hand_game)
-	into += entry_line(514)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 555, /datum/prompt/choice/hand_game)
+	into += entry_line(556)
 	into += list(global.ref_one(nameof(partner), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/choice/hand_game_move) at code/modules/mob/living/carbon/human/human_powers.dm:564
+/// CAPABILITIES(/datum/prompt/choice/hand_game_move) at code/modules/mob/living/carbon/human/human_powers.dm:606
 /datum/prompt/choice/hand_game_move/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 564, /datum/prompt/choice/hand_game_move)
-	into += entry_line(565)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 606, /datum/prompt/choice/hand_game_move)
+	into += entry_line(607)
 	into += list(global.ref_one(nameof(partner), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/choice/hud_status) at code/modules/mob/living/carbon/human/human.dm:655
@@ -3638,6 +3666,13 @@
 	into += entry_block("code/game/objects/items/devices/mind_binder.dm", 88, /datum/prompt/choice/mindbinder/store_mob)
 	into += entry_line(89)
 	into += list(global.ref_one(nameof(victim), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/choice/monitor_state) at code/modules/mob/living/carbon/human/human_powers.dm:421
+/datum/prompt/choice/monitor_state/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 421, /datum/prompt/choice/monitor_state)
+	into += entry_line(422)
+	into += list(global.ref_one(nameof(head), /obj/item/organ/external/head))
 
 /// CAPABILITIES(/datum/prompt/choice/organ_extraction) at code/modules/organs/organ_external.dm:1734
 /datum/prompt/choice/organ_extraction/declared_entries(list/into)
@@ -3878,11 +3913,11 @@
 	into += entry_line(510)
 	into += list(global.ref_one(nameof(shipment), /obj/structure/closet/crate))
 
-/// CAPABILITIES(/datum/prompt/number/hand_game_move) at code/modules/mob/living/carbon/human/human_powers.dm:615
+/// CAPABILITIES(/datum/prompt/number/hand_game_move) at code/modules/mob/living/carbon/human/human_powers.dm:657
 /datum/prompt/number/hand_game_move/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 615, /datum/prompt/number/hand_game_move)
-	into += entry_line(616)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 657, /datum/prompt/number/hand_game_move)
+	into += entry_line(658)
 	into += list(global.ref_one(nameof(partner), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/number/move_atom_coord) at code/modules/admin/verbs/adminjump.dm:266
@@ -3940,6 +3975,13 @@
 	into += entry_block("code/game/machinery/atmo_control.dm", 168, /datum/prompt/text/air_sensor_tag)
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
+
+/// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1050
+/datum/prompt/text/blueprint_area_name/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1050, /datum/prompt/text/blueprint_area_name)
+	into += entry_line(1051)
+	into += list(global.ref_one(nameof(editor), /obj/item/areaeditor))
 
 /// CAPABILITIES(/datum/prompt/text/blueprint_rename_area) at code/game/objects/items/blueprints.dm:356
 /datum/prompt/text/blueprint_rename_area/declared_entries(list/into)
@@ -4063,6 +4105,13 @@
 	into += entry_line(189)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/text/mob_type) at code/modules/mob/mob_transformation_simple.dm:16
+/datum/prompt/text/mob_type/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/mob_transformation_simple.dm", 16, /datum/prompt/text/mob_type)
+	into += entry_line(17)
+	into += list(global.ref_one(nameof(location), /turf))
+
 /// CAPABILITIES(/datum/prompt/text/pandemic_release_reason) at code/game/machinery/pandemic.dm:104
 /datum/prompt/text/pandemic_release_reason/declared_entries(list/into)
 	..(into)
@@ -4083,6 +4132,13 @@
 	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 1110, /datum/prompt/text/remotesay)
 	into += entry_line(1111)
 	into += list(global.ref_one(nameof(recipient), /mob))
+
+/// CAPABILITIES(/datum/prompt/text/spectral_whisper) at code/modules/mob/dead/observer/observer.dm:1059
+/datum/prompt/text/spectral_whisper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/dead/observer/observer.dm", 1059, /datum/prompt/text/spectral_whisper)
+	into += entry_line(1060)
+	into += list(global.ref_one(nameof(recipient), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/text/telepathy) at code/modules/mob/living/carbon/human/human_powers_YW.dm:15
 /datum/prompt/text/telepathy/declared_entries(list/into)
@@ -7935,11 +7991,18 @@
 	into += entry_line(50)
 	into += list(global.op("scan_anomalies", global.in_hand(), global.then(PROC_REF(scan_requested))))
 
-/// CAPABILITIES(/obj/item/anodevice) at code/modules/xenoarcheaology/tools/ano_device_battery.dm:69
+/// CAPABILITIES(/obj/item/anobattery) at code/modules/xenoarcheaology/tools/ano_device_battery.dm:14
+/obj/item/anobattery/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/ano_device_battery.dm", 14, /obj/item/anobattery)
+	into += entry_line(15)
+	into += list(global.owns_one(nameof(battery_effect), /datum/artifact_effect))
+
+/// CAPABILITIES(/obj/item/anodevice) at code/modules/xenoarcheaology/tools/ano_device_battery.dm:72
 /obj/item/anodevice/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/xenoarcheaology/tools/ano_device_battery.dm", 69, /obj/item/anodevice)
-	into += entry_line(71)
+	into += entry_block("code/modules/xenoarcheaology/tools/ano_device_battery.dm", 72, /obj/item/anodevice)
+	into += entry_line(74)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(anodevice_step)), when = nameof(activated)))
 
 /// CAPABILITIES(/obj/item/anomaly_neutralizer) at code/modules/anomalies/anomaly.dm:13

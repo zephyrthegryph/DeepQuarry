@@ -26,7 +26,7 @@
 	// Only a certain number of drips (or one large splatter) can be on a given turf.
 	for(var/obj/effect/decal/cleanable/blood/drip/drop in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood/drip))
 		drips |= drop.drips
-		qdel(drop)
+		consume(drop)
 	if(drips.len < 4)
 		decal_type = /obj/effect/decal/cleanable/blood/drip
 

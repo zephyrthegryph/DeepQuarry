@@ -9,19 +9,66 @@
 	return FALSE
 
 ADMIN_VERB(modify_server_news, R_SERVER|R_EVENT, "Modify Public News", "Modify the public news message.", ADMIN_CATEGORY_SERVER_GAME)
+	if(QDELETED(user.mob))
+		return
+	var/datum/admin_server_news_review/review = new
+	review.client_ckey = user.ckey
+	rel_set(review, nameof(review.actor), user.mob)
+	review.run_step()
+
+/datum/admin_server_news_review
+	var/tmp/mob/actor
+	var/client_ckey
+	var/stage = 0
+	var/news_title
+	var/news_body
+
+CAPABILITIES(/datum/admin_server_news_review)
+	ref_one(nameof(actor), /mob)
+
+/datum/admin_server_news_review/proc/refusal()
+	if(QDELETED(actor) || !GLOB.directory[client_ckey])
+		return "The requesting administrator is no longer available."
+
+/datum/admin_server_news_review/proc/run_step()
+	var/datum/result/result = safe_call(PROC_REF(replay))
+	if(!result.ok)
+		stack_trace("om flow modify_server_news continuation: [result.error]")
+	if(!result.ok || result.value != TRUE)
+		retire()
+
+/datum/admin_server_news_review/proc/answered(datum/act/request/context)
+	if(!context.answer)
+		retire()
+		return
+	if(stage == 0)
+		news_title = context.request.answer_value
+	else
+		news_body = context.request.answer_value
+	stage++
+	run_step()
+
+/datum/admin_server_news_review/proc/replay()
+	var/client/user = GLOB.directory[client_ckey]
+	if(!user || QDELETED(user.mob))
+		return
+	rel_set(src, nameof(actor), user.mob)
 	var/savefile/F = new(NEWSFILE)
 	if(F)
 		var/title = F["title"]
 		var/body = html2paper_markup(F["body"])
-		var/new_title = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Write a good title for the news update. Note: HTML is NOT supported.", title = "Write News", default = title)
+		if(stage == 0)
+			open_request(src, /datum/prompt/text/admin_server_news_title, PROC_REF(answered), answerer = actor, default = title)
+			return TRUE
+		var/new_title = news_title
 		if(isnull(new_title))
 			return
 		if(!new_title)
 			return
-		var/new_body = verb_ask(user, "body", args, /datum/om/prompt/text, message = "Write the body of the news update here. Note: HTML is NOT supported, however paper markup is supported.  \n\
-		Hitting enter will automatically add a line break.  \n\
-		Valid markup includes: \[b\], \[i\], \[u\], \[large\], \[h1\], \[h2\], \[h3\]\ \[*\], \[hr\], \[small\], \[list\], \[table\], \[grid\], \
-		\[row\], \[cell\], \[logo\], \[talogo\], \[sglogo\].", title = "Write News", default = body, max_length = MAX_MESSAGE_LEN, multiline = TRUE)
+		if(stage == 1)
+			open_request(src, /datum/prompt/text/admin_server_news_body, PROC_REF(answered), answerer = actor, default = body)
+			return TRUE
+		var/new_body = news_body
 		if(isnull(new_body))
 			return
 
@@ -35,6 +82,9 @@ ADMIN_VERB(modify_server_news, R_SERVER|R_EVENT, "Modify Public News", "Modify t
 		F["author"] << user.key
 		F["timestamp"] << time2text(world.realtime, "DDD, MMM DD YYYY")
 		message_admins("[user.key] modified the news to read:<br>[new_title]<br>[new_body]")
+
+/datum/admin_server_news_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
 
 /client/proc/get_server_news() // child of /client/
 	var/savefile/F = new(NEWSFILE)
@@ -119,5 +169,49 @@ ADMIN_VERB(modify_server_news, R_SERVER|R_EVENT, "Modify Public News", "Modify t
 	text = replacetext(text, "<img src=\ref['html/images/talonlogo.png']>", "\[talogo\]")
 	text = replacetext(text, "<img src=\ref['html/images/sglogo.png']>", "\[sglogo\]")
 	return text
+
+
+/datum/prompt/text/admin_server_news_title
+	rights = R_SERVER|R_EVENT
+	timeout = 0
+	title = "Write News"
+	question = "Write a good title for the news update. Note: HTML is NOT supported."
+
+/datum/prompt/text/admin_server_news_title/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_server_news_review/review = owner
+	return review.refusal()
+
+/datum/prompt/text/admin_server_news_title/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_server_news_body
+	rights = R_SERVER|R_EVENT
+	timeout = 0
+	title = "Write News"
+	question = "Write the body of the news update here. Note: HTML is NOT supported, however paper markup is supported.  \n\
+		Hitting enter will automatically add a line break.  \n\
+		Valid markup includes: \[b\], \[i\], \[u\], \[large\], \[h1\], \[h2\], \[h3\]\ \[*\], \[hr\], \[small\], \[list\], \[table\], \[grid\], \
+		\[row\], \[cell\], \[logo\], \[talogo\], \[sglogo\]."
+	max_len = MAX_MESSAGE_LEN
+	multiline = TRUE
+
+/datum/prompt/text/admin_server_news_body/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_server_news_review/review = owner
+	return review.refusal()
+
+/datum/prompt/text/admin_server_news_body/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 #undef NEWSFILE
