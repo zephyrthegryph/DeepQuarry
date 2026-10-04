@@ -25,7 +25,7 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 /obj/item/buttonofnormal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(colorindex)
 		nonrandom()
-	after(src, 10, PROC_REF(do_size_effect), with = list(capsuleowner()))
+	after(src, 1 SECONDS, PROC_REF(do_size_effect), with = list(capsuleowner()))
 	return TRUE
 
 /obj/item/buttonofnormal/throw_impact(atom/A, speed, mob/user)
@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	if(isliving(A))
 		if(colorindex)
 			nonrandom()
-		after(src, 5, PROC_REF(do_size_effect), with = list(A))
+		after(src, 0.5 SECONDS, PROC_REF(do_size_effect), with = list(A))
 
 /obj/item/buttonofnormal/proc/do_size_effect(atom/A)
 	var/mob/living/capsulehit = A

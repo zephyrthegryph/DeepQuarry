@@ -197,9 +197,8 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 
 // The screen owns its eye (implicit OWN aiEye); `screen` is only the way back (a relation),
 // so ownership stays a tree (tools/ci/ownership_cycle_lint.py).
-/mob/observer/eye/aiEye/pic_in_pic/relations()
-	. = ..()
-	. += rel_many(nameof(cameras_telegraphed))
+CAPABILITIES(/mob/observer/eye/aiEye/pic_in_pic)
+	ref_many(nameof(cameras_telegraphed))
 
 // stops telegraphing to the cameras it watched.
 /mob/observer/eye/aiEye/pic_in_pic/on_destroy(force)
@@ -279,7 +278,3 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 		eyeobj.setLoc(get_turf(P.center()))
 		P.set_view_center(eyeobj)
 		rel_set(src, nameof(master_multicam), P)
-
-/mob/living/silicon/ai/relations()
-	. = ..()
-	. += rel_many(nameof(multicam_screens))

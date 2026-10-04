@@ -153,6 +153,5 @@
 	no_vore = TRUE
 	can_pain_emote = FALSE
 
-/mob/living/voice/relations()
-	. = ..()
-	. += rel_one(nameof(comm))
+CAPABILITIES(/mob/living/voice)
+	ref_one(nameof(comm))

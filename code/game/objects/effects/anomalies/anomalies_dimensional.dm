@@ -83,7 +83,7 @@ CAPABILITIES(/obj/effect/anomaly/dimensional)
 	prepare_area()
 
 /obj/effect/anomaly/dimensional/detonate()
-	qdel(src)
+	consume(src)
 
 /obj/effect/temp_visual/transmute_tile_flash
 	icon = 'icons/effects/effects.dmi'

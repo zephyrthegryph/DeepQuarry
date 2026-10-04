@@ -118,7 +118,7 @@
 	playsound(src, interaction_sound, 50, 1)
 	if(two_stage)
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 3)
-		after(src, 3, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
+		after(src, 0.3 SECONDS, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
 	else
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 6) //Can't update transform because it will reset the angle.
 	return TRUE
@@ -146,7 +146,7 @@
 	playsound(src, interaction_sound, 50, 1)
 	if(two_stage)
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 3)
-		after(src, 3, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
+		after(src, 0.3 SECONDS, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
 	else
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 6)
 

@@ -16,9 +16,13 @@
 	//Simple variable to prevent me from doing attack_hand in both this and the child computer
 	var/zone = "This computer is working on a wireless range, the range is currently limited to "
 
-/obj/machinery/computer/area_atmos/relations()
-	. = ..()
-	. += rel_many(nameof(connectedscrubbers))
+CAPABILITIES(/obj/machinery/computer/area_atmos)
+	op("allon", ui_act("allon"), then(PROC_REF(ui_act_allon)))
+	op("alloff", ui_act("alloff"), then(PROC_REF(ui_act_alloff)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	ref_many(nameof(connectedscrubbers))
+	interface("AreaScrubberControl")
+	op("toggle", ui_act("toggle", arg("id", schema_text(4096))), then(PROC_REF(ui_act_toggle)))
 
 /// The connected scrubber with this id, or null.
 /obj/machinery/computer/area_atmos/proc/scrubber_by_id(scrub_id)
@@ -36,13 +40,6 @@
 		/datum/interaction/machine_hand/open_ui,
 	)
 	..()
-
-CAPABILITIES(/obj/machinery/computer/area_atmos)
-	interface("AreaScrubberControl")
-	op("toggle", ui_act("toggle", arg("id", schema_text(4096))), then(PROC_REF(ui_act_toggle)))
-	op("allon", ui_act("allon"), then(PROC_REF(ui_act_allon)))
-	op("alloff", ui_act("alloff"), then(PROC_REF(ui_act_alloff)))
-	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 
 /obj/machinery/computer/area_atmos/ui_data(datum/act/eval/A)
 	var/list/working = list()
@@ -75,22 +72,19 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 	add_fingerprint(user)
 
 /obj/machinery/computer/area_atmos/proc/ui_act_allon(datum/act/op/A)
-	var/mob/user = A.actor
 	toggle_all(TRUE)
-	. = TRUE
-	add_fingerprint(user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/ui_act_alloff(datum/act/op/A)
-	var/mob/user = A.actor
 	toggle_all(FALSE)
-	. = TRUE
-	add_fingerprint(user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/ui_act_scan(datum/act/op/A)
-	var/mob/user = A.actor
-	scanscrubbers_user(user)
-	. = TRUE
-	add_fingerprint(user)
+	scanscrubbers_user(A.actor)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/toggle_all(on)
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S as anything in connectedscrubbers)

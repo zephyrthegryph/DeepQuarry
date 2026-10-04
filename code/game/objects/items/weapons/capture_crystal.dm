@@ -606,14 +606,14 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(!active)					//The ball isn't set up, let's try to set it up.
 		if(isliving(target))	//We're hitting a mob, let's try to capture it.
-			after(src, 10, PROC_REF(activate), with = list(thrower, target))
+			after(src, 1 SECONDS, PROC_REF(activate), with = list(thrower, target))
 			return
-		after(src, 10, PROC_REF(activate), with = list(thrower, src))
+		after(src, 1 SECONDS, PROC_REF(activate), with = list(thrower, src))
 	else if(!bound_mob)				//We hit something else, and we don't have a mob, so we can't really do anything!
 		to_chat(thrower, span_notice("\The [src] clicks unpleasantly..."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(bound_mob in contents)	//We have our mob! Let's try to let it out.
-		after(src, 10, PROC_REF(unleash), with = list(thrower, src))
+		after(src, 1 SECONDS, PROC_REF(unleash), with = list(thrower, src))
 	else						//Our mob isn't here, we can't do anything.
 		to_chat(thrower, span_notice("\The [src] clicks unpleasantly..."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)

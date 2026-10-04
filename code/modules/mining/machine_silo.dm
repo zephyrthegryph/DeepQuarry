@@ -15,6 +15,8 @@
 	var/datum/material_container/materials
 
 CAPABILITIES(/obj/machinery/ore_silo)
+	ref_many(nameof(holds))
+	ref_many(nameof(ore_connected_machines))
 	owns_one(nameof(materials), /datum/material_container)
 	interface("OreSilo")
 	op("remove", ui_act("remove", arg("id", num())), then(PROC_REF(ui_act_remove)))
@@ -268,9 +270,3 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		separator = ", "
 		msg += "[amount < 0 ? "-" : "+"][val] [M.name]"
 	return msg.Join()
-
-
-/obj/machinery/ore_silo/relations()
-	. = ..()
-	. += rel_many(nameof(holds))
-	. += rel_many(nameof(ore_connected_machines))

@@ -578,6 +578,8 @@
 #include "interim_gravemarker_lifecycle.dm"
 #include "interim_barricade_dismantle.dm"
 #include "interim_floor_dismantle.dm"
+#include "interim_bola_thick_clothing.dm"
+#include "interim_mining_mixed_chunk_accounting.dm"
 #include "interim_telecrystal_release_validation.dm"
 #include "interim_syringe_container_doses.dm"
 #include "interim_cell_gradual_charge.dm"
@@ -928,6 +930,13 @@
 #include "round2_decorative_card_native.dm"
 #include "interim2_caseless_chamber_disposal.dm"
 #include "interim2_weapon_lazy_ammo_appearance.dm"
+#include "interim_bracelet_material_contract.dm"
+#include "interim_library_checkout_controls.dm"
+#include "interim_fighter_loadout_contract.dm"
+#include "interim_forensic_sample_release.dm"
+#include "interim_stamp_choice_metadata.dm"
+#include "interim_admin_reload_request_lifetime.dm"
+
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

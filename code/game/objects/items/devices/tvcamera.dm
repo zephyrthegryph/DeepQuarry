@@ -19,11 +19,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/tvcamera, PERIODIC_SLOW, "showing")
 CAPABILITIES(/obj/item/tvcamera)
 	owns_one(nameof(camera), starts = /obj/machinery/camera/network/thunder)
 	owns_one(nameof(radio), starts = /obj/item/radio)
-	interface("EyeBuddy", title = "Eye Buddy")
-	op("set_channel", ui_act("set_channel"), then(PROC_REF(ui_act_set_channel)))
-	op("toggle_video", ui_act("toggle_video"), then(PROC_REF(ui_act_toggle_video)))
-	op("toggle_audio", ui_act("toggle_audio"), then(PROC_REF(ui_act_toggle_audio)))
-	op("controls", in_hand(), label("Open broadcast controls"), then(PROC_REF(broadcast_controls_opened)))
+	op("toggle_video", ui_act(), then(PROC_REF(ui_act_toggle_video)))
+	op("toggle_audio", ui_act(), then(PROC_REF(ui_act_toggle_audio)))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 
@@ -46,7 +44,8 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	radio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-/obj/item/tvcamera/proc/broadcast_controls_opened(datum/act/op/A)
+
+/obj/item/tvcamera/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
 	user.set_machine(src)
@@ -152,11 +151,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/bodycam, PERIODIC_SLOW, "sho
 CAPABILITIES(/obj/item/clothing/accessory/bodycam)
 	owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera)
 	owns_one(nameof(bradio), starts = /obj/item/radio)
-	interface("EyeBuddy", title = "Eye Buddy")
-	op("set_channel", ui_act("set_channel"), then(PROC_REF(ui_act_set_channel)))
-	op("toggle_video", ui_act("toggle_video"), then(PROC_REF(ui_act_toggle_video)))
-	op("toggle_audio", ui_act("toggle_audio"), then(PROC_REF(ui_act_toggle_audio)))
-	op("configure_bodycam", in_hand(), then(PROC_REF(configure_bodycam)))
+	op("toggle_video", ui_act(), then(PROC_REF(ui_act_toggle_video)))
+	op("toggle_audio", ui_act(), then(PROC_REF(ui_act_toggle_audio)))
 
 DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)
 

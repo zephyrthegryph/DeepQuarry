@@ -261,9 +261,6 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 )
 
-CAPABILITIES(/obj/item/cataloguer)
-	op("controls", in_hand(), label("Open cataloguer"), then(PROC_REF(cataloguer_controls_opened)))
-
 /obj/item/cataloguer/proc/cataloguer_controls_opened(datum/act/op/A)
 	var/mob/living/user = A.actor
 	interact(user)

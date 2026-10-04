@@ -42,7 +42,7 @@
 
 /obj/effect/temporary_effect/pulse/snake/proc/snake_pulse()
 	if(!on_pulse())
-		qdel(src)
+		consume(src)
 		return
 	pulses_remaining--
 	snake_pulse_wait()

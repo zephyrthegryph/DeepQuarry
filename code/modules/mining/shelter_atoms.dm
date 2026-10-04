@@ -280,7 +280,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	template_static = SSmapping.shelter_templates[get_template_id()]
 	if(!template())
 		throw EXCEPTION("Shelter template ([template_id]) not found!")
-		qdel(src)
 
 /obj/item/survivalcapsule/proc/get_template_id()
 	return template_id

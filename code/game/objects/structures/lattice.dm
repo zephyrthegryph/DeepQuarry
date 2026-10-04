@@ -42,7 +42,7 @@
 			L.updateOverlays(src.loc)
 	if(istype(loc, /turf/simulated/open))
 		var/turf/simulated/open/O = loc
-		after(O, 1, TYPE_PROC_REF(/turf/simulated/open, update)) // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
+		after(O, 0.1 SECONDS, TYPE_PROC_REF(/turf/simulated/open, update)) // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
 	..()
 
 /obj/structure/lattice/declare_interactions(list/into)
@@ -78,7 +78,7 @@
 /obj/structure/lattice/proc/updateOverlays()
 	if(om_timer_slot_pending(src, "overlays"))
 		return
-	after(src, 1, PROC_REF(update_overlays_now), key = "overlays")
+	after(src, 0.1 SECONDS, PROC_REF(update_overlays_now), key = "overlays")
 
 // Moves upgrading lattices to their own proc for other stuff to call. Also makes them instant.
 /obj/structure/lattice/proc/upgrade(obj/item/stack/rods/R, mob/user)

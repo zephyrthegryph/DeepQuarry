@@ -69,9 +69,14 @@
 CAPABILITIES(/mob/living/simple_mob/metroid)
 	verb_entry(/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
 
+TYPE_TABLE_DECLARE(/mob/living/simple_mob/metroid, metroid_initial_sound, null)
+
 /mob/living/simple_mob/metroid/Initialize(mapload)
 	set_nutrition(100) //Have them start off pretty hungry still.
-	return ..()
+	. = ..()
+	var/initial_sound = TYPE_TABLE_GET(src, metroid_initial_sound)
+	if(initial_sound)
+		play_sfx(src, initial_sound)
 
 /datum/say_list/metroid
 	speak = list("Skree.", "Eree.", "Errer?")

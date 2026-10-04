@@ -95,7 +95,7 @@ CAPABILITIES(/datum/weather_holder)
 /datum/weather_holder/proc/get_next_weather(datum/weather/W)
 	if(!current_weather) // At roundstart, choose a suitable initial weather.
 		return pickweight(roundstart_weather_chances || list())
-	return pickweight(W.transition_chances)
+	return pickweight(W.transition_chances || list())
 
 /datum/weather_holder/proc/advance_forecast()
 	var/new_weather = forecast[1]
@@ -189,7 +189,7 @@ CAPABILITIES(/datum/weather_holder)
 	var/light_modifier = 1.0 // Lower numbers means more darkness.
 	var/light_color = null // If set, changes how the day/night light looks.
 	var/flight_failure_modifier = 0 // Some types of weather make flying harder, and therefore make crashes more likely. (This is not implemented)
-	var/transition_chances = list() // Assoc list of weather identifiers and the odds to shift to a specific type of weather. Can contain its own identifier to prolong it.
+	var/list/transition_chances // Assoc list of weather identifiers and the odds to shift to a specific type of weather. Can contain its own identifier to prolong it.
 	var/datum/weather_holder/holder = null // Reference to the datum that manages the planet's weather.
 	var/timer_low_bound = 5			// How long this weather must run before it tries to change, in minutes
 	var/timer_high_bound = 10		// How long this weather can run before it tries to change, in minutes

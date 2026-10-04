@@ -37,6 +37,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/perfect_tele)
+	ref_many(nameof(beacons))
 	owns_one(nameof(power_source), /obj/item/cell, starts = nameof(cell_type))
 
 /obj/item/perfect_tele/Initialize(mapload)
@@ -49,9 +50,6 @@ CAPABILITIES(/obj/item/perfect_tele)
 
 // Relation list view of beacons (a premade beacon may be listed by several translocators, so
 // no pair); each beacon names its maker one-sided (tele_hand), cleared when the maker dies.
-/obj/item/perfect_tele/relations()
-	. = ..()
-	. += rel_many(nameof(beacons))
 
 /// The beacon in `beacons` named `name`, or null.
 /obj/item/perfect_tele/proc/find_beacon(name)
@@ -418,7 +416,7 @@ This device records all warnings given and teleport events for admin review in c
 	var/tele_name
 	var/obj/item/perfect_tele/tele_hand
 	var/creator
-	var/warned_users = list()
+	var/list/warned_users
 	var/tele_network = null
 	flags = NOBLUDGEON
 
@@ -429,7 +427,7 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele_beacon, \
 
 /obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
-		warned_users |= user.ckey
+		LAZYOR(warned_users, user.ckey)
 		om_ask(user, /datum/om/prompt/confirm/tele_beacon_warning, PROC_REF(warning_answered))
 		return TRUE
 	return FALSE

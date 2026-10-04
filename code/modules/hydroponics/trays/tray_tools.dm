@@ -21,6 +21,10 @@
 		var/obj/effect/plant/P = A
 		P.die_off()
 
+CAPABILITIES(/obj/item/analyzer/plant_analyzer)
+	op("print", ui_act(), then(PROC_REF(ui_act_print)))
+	op("close", ui_act(), then(PROC_REF(ui_act_close)))
+
 /obj/item/analyzer/plant_analyzer
 	name = "plant analyzer"
 	icon = 'icons/obj/device.dmi'
@@ -56,16 +60,14 @@ UI_DATA(/obj/item/analyzer/plant_analyzer, "reagents=last_reagents:list", "merge
 
 	return data
 
-UI_ACT(/obj/item/analyzer/plant_analyzer, "print", ui_act_print)
-UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_print)
-	print_report(ui.user)
-	return TRUE
+/obj/item/analyzer/plant_analyzer/proc/ui_act_print(datum/act/op/A)
+	print_report(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/item/analyzer/plant_analyzer, "close", ui_act_close)
-UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
+/obj/item/analyzer/plant_analyzer/proc/ui_act_close(datum/act/op/A)
 	proto_set(src, nameof(/obj/item/analyzer/plant_analyzer::last_seed), null)
 	last_reagents = null
-	return TRUE
+	return OP_OK
 
 /obj/item/analyzer/plant_analyzer/afterattack(obj/target, mob/user, flag)
 	if(!flag)

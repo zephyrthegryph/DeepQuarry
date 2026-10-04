@@ -22,8 +22,36 @@
 CAPABILITIES(/obj/item/dnainjector)
 	owns_one(nameof(buf), /datum/dna2/record)
 
+TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
+
 // INIT: allocates this injector's owned gene record and DNA buffer, then writes its selected gene value before parent initialization
 /obj/item/dnainjector/Initialize(mapload)
+	var/selector = TYPE_TABLE_GET(src, injector_random_selector)
+	switch(selector)
+		if(/obj/item/dnainjector/random)
+			pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), FALSE, TRUE)
+		if(/obj/item/dnainjector/random_labeled)
+			pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), TRUE, TRUE)
+		if(/obj/item/dnainjector/random_good)
+			pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), FALSE, TRUE)
+		if(/obj/item/dnainjector/random_good_labeled)
+			pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), TRUE, TRUE)
+		if(/obj/item/dnainjector/random_bad)
+			pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), FALSE, TRUE)
+		if(/obj/item/dnainjector/random_bad_labeled)
+			pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), TRUE, TRUE)
+		if(/obj/item/dnainjector/random_verygood)
+			pick_block( pick(GLOB.dna_genes_good), FALSE, FALSE)
+		if(/obj/item/dnainjector/random_verygood_labeled)
+			pick_block( pick(GLOB.dna_genes_good), TRUE, FALSE)
+		if(/obj/item/dnainjector/random_verybad)
+			pick_block( pick(GLOB.dna_genes_bad), FALSE, FALSE)
+		if(/obj/item/dnainjector/random_verybad_labeled)
+			pick_block( pick(GLOB.dna_genes_bad), TRUE, FALSE)
+		if(/obj/item/dnainjector/random_neutral)
+			pick_block( pick(GLOB.dna_genes_neutral ), FALSE, TRUE)
+		if(/obj/item/dnainjector/random_neutral_labeled)
+			pick_block( pick(GLOB.dna_genes_neutral ), TRUE, TRUE)
 	if(datatype && block)
 		rel_set(src, nameof(buf), new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
 		rel_set(buf, nameof(buf.dna), new /datum/dna)
@@ -163,56 +191,32 @@ CAPABILITIES(/obj/item/dnainjector)
 	desc = "This injects the person with DNA."
 
 // Purely rando
-/obj/item/dnainjector/random/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), FALSE, TRUE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random, injector_random_selector, /obj/item/dnainjector/random)
 
-/obj/item/dnainjector/random_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), TRUE, TRUE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_labeled, injector_random_selector, /obj/item/dnainjector/random_labeled)
 
 // Good/bad but also neutral genes mixed in, less OP selection of genes
-/obj/item/dnainjector/random_good/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), FALSE, TRUE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_good, injector_random_selector, /obj/item/dnainjector/random_good)
 
-/obj/item/dnainjector/random_good_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), TRUE, TRUE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_good_labeled, injector_random_selector, /obj/item/dnainjector/random_good_labeled)
 
-/obj/item/dnainjector/random_bad/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), FALSE, TRUE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_bad, injector_random_selector, /obj/item/dnainjector/random_bad)
 
-/obj/item/dnainjector/random_bad_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), TRUE, TRUE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_bad_labeled, injector_random_selector, /obj/item/dnainjector/random_bad_labeled)
 
 // Purely good/bad genes, intended to be usually good rewards or punishments
-/obj/item/dnainjector/random_verygood/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good), FALSE, FALSE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_verygood, injector_random_selector, /obj/item/dnainjector/random_verygood)
 
-/obj/item/dnainjector/random_verygood_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good), TRUE, FALSE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_verygood_labeled, injector_random_selector, /obj/item/dnainjector/random_verygood_labeled)
 
-/obj/item/dnainjector/random_verybad/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_bad), FALSE, FALSE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_verybad, injector_random_selector, /obj/item/dnainjector/random_verybad)
 
-/obj/item/dnainjector/random_verybad_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_bad), TRUE, FALSE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_verybad_labeled, injector_random_selector, /obj/item/dnainjector/random_verybad_labeled)
 
 // Random neutral traits
-/obj/item/dnainjector/random_neutral/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_neutral ), FALSE, TRUE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_neutral, injector_random_selector, /obj/item/dnainjector/random_neutral)
 
-/obj/item/dnainjector/random_neutral_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_neutral ), TRUE, TRUE)
-	. = ..()
+TYPE_TABLE(/obj/item/dnainjector/random_neutral_labeled, injector_random_selector, /obj/item/dnainjector/random_neutral_labeled)
 
 // If you want a unique injector, use a subtype of these
 /obj/item/dnainjector/set_trait

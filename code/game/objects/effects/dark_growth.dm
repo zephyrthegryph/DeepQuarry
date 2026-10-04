@@ -130,7 +130,7 @@ DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
 	var/turf/U = get_turf(src)
 
 	if(isspace(U))
-		qdel(src)
+		consume(src)
 		return
 
 	if(!linked_node)

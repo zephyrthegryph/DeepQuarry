@@ -7,24 +7,20 @@
 	new_alien.set_species("Xenomorph [alien_caste]")
 	return new_alien
 
-/mob/living/carbon/human/xdrone/Initialize(mapload)
-	h_style = "Bald"
-	faction = FACTION_XENO
-	. = ..(mapload, SPECIES_XENO_DRONE)
+TYPE_TABLE(/mob/living/carbon/human/xdrone, forced_initial_species, SPECIES_XENO_DRONE)
+TYPE_TABLE(/mob/living/carbon/human/xdrone, forced_initial_hair, "Bald")
+TYPE_TABLE(/mob/living/carbon/human/xdrone, forced_initial_faction, FACTION_XENO)
 
-/mob/living/carbon/human/xsentinel/Initialize(mapload)
-	h_style = "Bald"
-	faction = FACTION_XENO
-	. = ..(mapload, SPECIES_XENO_SENTINEL)
+TYPE_TABLE(/mob/living/carbon/human/xsentinel, forced_initial_species, SPECIES_XENO_SENTINEL)
+TYPE_TABLE(/mob/living/carbon/human/xsentinel, forced_initial_hair, "Bald")
+TYPE_TABLE(/mob/living/carbon/human/xsentinel, forced_initial_faction, FACTION_XENO)
 
-/mob/living/carbon/human/xhunter/Initialize(mapload)
-	h_style = "Bald"
-	faction = FACTION_XENO
-	. = ..(mapload, SPECIES_XENO_HUNTER)
+TYPE_TABLE(/mob/living/carbon/human/xhunter, forced_initial_species, SPECIES_XENO_HUNTER)
+TYPE_TABLE(/mob/living/carbon/human/xhunter, forced_initial_hair, "Bald")
+TYPE_TABLE(/mob/living/carbon/human/xhunter, forced_initial_faction, FACTION_XENO)
 
-/mob/living/carbon/human/xqueen/Initialize(mapload)
-	h_style = "Bald"
-	faction = FACTION_XENO
-	. = ..(mapload, SPECIES_XENO_QUEEN)
+TYPE_TABLE(/mob/living/carbon/human/xqueen, forced_initial_species, SPECIES_XENO_QUEEN)
+TYPE_TABLE(/mob/living/carbon/human/xqueen, forced_initial_hair, "Bald")
+TYPE_TABLE(/mob/living/carbon/human/xqueen, forced_initial_faction, FACTION_XENO)
 
 //Removed AddInfectionImages, no longer required.

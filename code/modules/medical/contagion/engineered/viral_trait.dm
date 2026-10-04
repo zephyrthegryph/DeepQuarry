@@ -6,7 +6,7 @@ GLOBAL_LIST_INIT(viral_trait_types, subtypesof(/datum/viral_trait))
 	// Buffs/Debuffs the symptom has to the overall engineered disease.
 	var/name = ""
 	var/desc = "ERR://355. PanDEMIC was not able to initialize description!" // Someone forgot the description
-	var/threshold_descs = list()
+	var/list/threshold_descs
 	var/stealth = 0
 	var/resistance = 0
 	var/stage_speed = 0
@@ -107,5 +107,5 @@ GLOBAL_LIST_INIT(viral_trait_types, subtypesof(/datum/viral_trait))
 	data["transmission"] = transmission
 	data["neutered"] = neutered
 	data["level"] = level
-	data["threshold_desc"] = threshold_descs
+	data["threshold_desc"] = threshold_descs || list()
 	return data

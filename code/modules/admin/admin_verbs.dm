@@ -185,11 +185,11 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 #define AUTOBANTIME 10
 
 /client/proc/warn(warned_ckey)
-	if(!check_rights(R_ADMIN))	return
+	if(!admin_require(src, R_ADMIN, "warn"))	return
 
 	if(!warned_ckey || !istext(warned_ckey))	return
 	if(warned_ckey in GLOB.admin_datums)
-		to_chat(usr, span_warning("Error: warn(): You can't warn admins."))
+		to_chat(src, span_warning("Error: warn(): You can't warn admins."))
 		return
 
 	var/datum/preferences/D

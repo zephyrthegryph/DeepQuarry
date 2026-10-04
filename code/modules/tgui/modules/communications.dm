@@ -320,7 +320,7 @@ MSG_DEF_SELF(communications/arrays_recycling, "Arrays recycling. Please stand by
 		to_chat(user, span_warning("Message '[input]' is too short. [COMM_MSGLEN_MINIMUM] character minimum."))
 		return TRUE
 	crew_announcement.Announce(input)
-	COOLDOWN_START(src, message_cooldown, 600) //One minute
+	COOLDOWN_START(src, message_cooldown, 60 SECONDS) //One minute
 	return TRUE
 
 /datum/tgui_module/communications/proc/ui_act_callshuttle(datum/act/op/A)
@@ -408,7 +408,7 @@ MSG_DEF_SELF(communications/arrays_recycling, "Arrays recycling. Please stand by
 			CentCom_announce(input, user)
 			to_chat(user, span_blue("Message transmitted."))
 			log_game("[key_name(user)] has made an IA [using_map.boss_short] announcement: [input]")
-			COOLDOWN_START(src, centcomm_message_cooldown, 300) // 30 seconds
+			COOLDOWN_START(src, centcomm_message_cooldown, 30 SECONDS) // 30 seconds
 	setMenuState(user, COMM_SCREEN_MAIN)
 	return TRUE
 
@@ -426,7 +426,7 @@ MSG_DEF_SELF(communications/arrays_recycling, "Arrays recycling. Please stand by
 			Syndicate_announce(input, user)
 			to_chat(user, span_blue("Message transmitted."))
 			log_game("[key_name(user)] has made an illegal announcement: [input]")
-			COOLDOWN_START(src, centcomm_message_cooldown, 300) // 30 seconds
+			COOLDOWN_START(src, centcomm_message_cooldown, 30 SECONDS) // 30 seconds
 	return TRUE
 
 /datum/tgui_module/communications/proc/ui_act_restorebackup(datum/act/op/A)

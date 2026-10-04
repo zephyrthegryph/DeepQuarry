@@ -59,126 +59,96 @@
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
 	icon = 'icons/mob/human_races/r_tajaran.dmi'
-/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran/Initialize(mapload)
-	h_style = "Tajaran Ears"
-	return ..(mapload, SPECIES_TAJARAN)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran, forced_initial_species, SPECIES_TAJARAN)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran, forced_initial_hair, "Tajaran Ears")
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/unathi
 	icon = 'icons/mob/human_races/r_lizard.dmi'
-/mob/living/carbon/human/dummy/mannequin/autoequip/unathi/Initialize(mapload)
-	h_style = "Unathi Horns"
-	return ..(mapload, SPECIES_UNATHI)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/unathi, forced_initial_species, SPECIES_UNATHI)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/unathi, forced_initial_hair, "Unathi Horns")
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/sergal
 	icon = 'icons/mob/human_races/r_sergal.dmi' // our icons
-/mob/living/carbon/human/dummy/mannequin/autoequip/sergal/Initialize(mapload)
-	h_style = "Sergal Ears"
-	return ..(mapload, SPECIES_SERGAL)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal, forced_initial_species, SPECIES_SERGAL)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal, forced_initial_hair, "Sergal Ears")
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
 	icon = 'icons/mob/human_races/r_vulpkanin.dmi'
-/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin/Initialize(mapload)
-	h_style = "vulpkanin, dual-color"
-	return ..(mapload, SPECIES_VULPKANIN)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin, forced_initial_species, SPECIES_VULPKANIN)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin, forced_initial_hair, "vulpkanin, dual-color")
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/teshari
 	icon = 'icons/mob/human_races/r_teshari.dmi'
-/mob/living/carbon/human/dummy/mannequin/autoequip/teshari/Initialize(mapload)
-	return ..(mapload, SPECIES_TESHARI)
+TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/teshari, forced_initial_species, SPECIES_TESHARI)
 
-/mob/living/carbon/human/skrell/Initialize(mapload)
-	h_style = "Skrell Short Tentacles"
-	return ..(mapload, SPECIES_SKRELL)
+TYPE_TABLE(/mob/living/carbon/human/skrell, forced_initial_species, SPECIES_SKRELL)
+TYPE_TABLE(/mob/living/carbon/human/skrell, forced_initial_hair, "Skrell Short Tentacles")
 
-/mob/living/carbon/human/tajaran/Initialize(mapload)
-	h_style = "Tajaran Ears"
-	return ..(mapload, SPECIES_TAJARAN)
+TYPE_TABLE(/mob/living/carbon/human/tajaran, forced_initial_species, SPECIES_TAJARAN)
+TYPE_TABLE(/mob/living/carbon/human/tajaran, forced_initial_hair, "Tajaran Ears")
 
-/mob/living/carbon/human/unathi/Initialize(mapload)
-	h_style = "Unathi Horns"
-	return ..(mapload, SPECIES_UNATHI)
+TYPE_TABLE(/mob/living/carbon/human/unathi, forced_initial_species, SPECIES_UNATHI)
+TYPE_TABLE(/mob/living/carbon/human/unathi, forced_initial_hair, "Unathi Horns")
 
-/mob/living/carbon/human/vox/Initialize(mapload)
-	h_style = "Short Vox Quills"
-	return ..(mapload, SPECIES_VOX)
+TYPE_TABLE(/mob/living/carbon/human/vox, forced_initial_species, SPECIES_VOX)
+TYPE_TABLE(/mob/living/carbon/human/vox, forced_initial_hair, "Short Vox Quills")
 
-/mob/living/carbon/human/diona/Initialize(mapload)
-	return ..(mapload, SPECIES_DIONA)
+TYPE_TABLE(/mob/living/carbon/human/diona, forced_initial_species, SPECIES_DIONA)
 
-/mob/living/carbon/human/teshari/Initialize(mapload)
-	h_style = "Teshari Default"
-	return ..(mapload, SPECIES_TESHARI)
+TYPE_TABLE(/mob/living/carbon/human/teshari, forced_initial_species, SPECIES_TESHARI)
+TYPE_TABLE(/mob/living/carbon/human/teshari, forced_initial_hair, "Teshari Default")
 
-/mob/living/carbon/human/promethean/Initialize(mapload)
-	return ..(mapload, SPECIES_PROMETHEAN)
+TYPE_TABLE(/mob/living/carbon/human/promethean, forced_initial_species, SPECIES_PROMETHEAN)
 
-/mob/living/carbon/human/zaddat/Initialize(mapload)
-	return ..(mapload, SPECIES_ZADDAT)
+TYPE_TABLE(/mob/living/carbon/human/zaddat, forced_initial_species, SPECIES_ZADDAT)
 
 /mob/living/carbon/human/monkey
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/monkey/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/monkey, forced_initial_species, SPECIES_MONKEY)
+TYPE_TABLE(/mob/living/carbon/human/monkey, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/farwa
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/farwa/Initialize(mapload)
-	. = .. (mapload, SPECIES_MONKEY_TAJ)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/farwa, forced_initial_species, SPECIES_MONKEY_TAJ)
+TYPE_TABLE(/mob/living/carbon/human/farwa, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/neaera
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/neaera/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_SKRELL)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/neaera, forced_initial_species, SPECIES_MONKEY_SKRELL)
+TYPE_TABLE(/mob/living/carbon/human/neaera, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/stok
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/stok/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_UNATHI)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/stok, forced_initial_species, SPECIES_MONKEY_UNATHI)
+TYPE_TABLE(/mob/living/carbon/human/stok, initial_species_copy, TRUE)
 
-/mob/living/carbon/human/sergal/Initialize(mapload)
-	h_style = "Sergal Plain"
-	. = ..(mapload, SPECIES_SERGAL)
+TYPE_TABLE(/mob/living/carbon/human/sergal, forced_initial_species, SPECIES_SERGAL)
+TYPE_TABLE(/mob/living/carbon/human/sergal, forced_initial_hair, "Sergal Plain")
 
-/mob/living/carbon/human/akula/Initialize(mapload)
-	. = ..(mapload, SPECIES_AKULA)
+TYPE_TABLE(/mob/living/carbon/human/akula, forced_initial_species, SPECIES_AKULA)
 
-/mob/living/carbon/human/nevrean/Initialize(mapload)
-	. = ..(mapload, SPECIES_NEVREAN)
+TYPE_TABLE(/mob/living/carbon/human/nevrean, forced_initial_species, SPECIES_NEVREAN)
 
-/mob/living/carbon/human/xenochimera/Initialize(mapload)
-	. = ..(mapload, SPECIES_XENOCHIMERA)
+TYPE_TABLE(/mob/living/carbon/human/xenochimera, forced_initial_species, SPECIES_XENOCHIMERA)
 
-/mob/living/carbon/human/spider/Initialize(mapload)
-	. = ..(mapload, SPECIES_VASILISSAN)
+TYPE_TABLE(/mob/living/carbon/human/spider, forced_initial_species, SPECIES_VASILISSAN)
 
-/mob/living/carbon/human/vulpkanin/Initialize(mapload)
-	. = ..(mapload, SPECIES_VULPKANIN)
+TYPE_TABLE(/mob/living/carbon/human/vulpkanin, forced_initial_species, SPECIES_VULPKANIN)
 
-/mob/living/carbon/human/protean/Initialize(mapload)
-	. = ..(mapload, SPECIES_PROTEAN)
+TYPE_TABLE(/mob/living/carbon/human/protean, forced_initial_species, SPECIES_PROTEAN)
 
-/mob/living/carbon/human/alraune/Initialize(mapload)
-	. = ..(mapload, SPECIES_ALRAUNE)
+TYPE_TABLE(/mob/living/carbon/human/alraune, forced_initial_species, SPECIES_ALRAUNE)
 
-/mob/living/carbon/human/shadekin/Initialize(mapload)
-	. = ..(mapload, SPECIES_SHADEKIN)
+TYPE_TABLE(/mob/living/carbon/human/shadekin, forced_initial_species, SPECIES_SHADEKIN)
 
-/mob/living/carbon/human/altevian/Initialize(mapload)
-	. = ..(mapload, SPECIES_ALTEVIAN)
+TYPE_TABLE(/mob/living/carbon/human/altevian, forced_initial_species, SPECIES_ALTEVIAN)
 
-/mob/living/carbon/human/lleill/Initialize(mapload)
-	. = ..(mapload, SPECIES_LLEILL)
+TYPE_TABLE(/mob/living/carbon/human/lleill, forced_initial_species, SPECIES_LLEILL)
 
-/mob/living/carbon/human/hanner/Initialize(mapload)
-	. = ..(mapload, SPECIES_HANNER)
+TYPE_TABLE(/mob/living/carbon/human/hanner, forced_initial_species, SPECIES_HANNER)
 
-/mob/living/carbon/human/sparkledog/Initialize(mapload)
-	. = ..(mapload, SPECIES_SPARKLE)
+TYPE_TABLE(/mob/living/carbon/human/sparkledog, forced_initial_species, SPECIES_SPARKLE)

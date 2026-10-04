@@ -228,7 +228,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 	if(!COOLDOWN_FINISHED(user, last_special))
 		return
-	COOLDOWN_START(user, last_special, 10) //No spamming!
+	COOLDOWN_START(user, last_special, 1 SECONDS) //No spamming!
 
 	if(!bcell || !bcell.check_charge(generator_hit_cost) || !bcell.check_charge(generator_active_cost))
 		to_chat(user, span_warning("You require a charged cell to do this!"))
@@ -256,7 +256,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 	if(!COOLDOWN_FINISHED(user, last_special))
 		return
-	COOLDOWN_START(user, last_special, 10) //No spamming!
+	COOLDOWN_START(user, last_special, 1 SECONDS) //No spamming!
 
 	if(!active_weapon)
 		to_chat(user, span_warning("The gun is missing!"))
@@ -578,9 +578,8 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_se
 	return linked_generator
 
 // The generator gun runs off the generator's cell: a view, not an owned cell.
-/obj/item/gun/energy/gun/generator/relations()
-	. = ..()
-	. += rel_one(nameof(power_supply))
+CAPABILITIES(/obj/item/gun/energy/gun/generator)
+	ref_one(nameof(power_supply))
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \

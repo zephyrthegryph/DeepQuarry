@@ -164,7 +164,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			return FALSE
 		forceMove(parent)
 		rel_add(parent, nameof(parent.implants), src)
-		after(src, 1, PROC_REF(quick_install), with = list(H))
+		after(src, 0.1 SECONDS, PROC_REF(quick_install), with = list(H))
 		return TRUE
 
 	return FALSE

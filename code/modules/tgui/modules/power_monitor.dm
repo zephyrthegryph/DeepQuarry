@@ -45,11 +45,11 @@ CAPABILITIES(/datum/tgui_module/power_monitor)
 
 /datum/tgui_module/power_monitor/proc/ui_act_clear(datum/act/op/A)
 	active_sensor = null
-	. = TRUE
+	return OP_OK
 
 /datum/tgui_module/power_monitor/proc/ui_act_refresh(datum/act/op/A)
 	refresh_sensors()
-	. = TRUE
+	return OP_OK
 
 /datum/tgui_module/power_monitor/proc/ui_act_setsensor(datum/act/op/A, id)
 	active_sensor = id

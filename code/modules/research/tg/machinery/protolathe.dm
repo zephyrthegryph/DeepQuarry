@@ -6,6 +6,4 @@
 	production_animation = "protolathe_n"
 	allowed_buildtypes = PROTOLATHE
 
-/obj/machinery/rnd/production/protolathe/Initialize(mapload)
-	. = ..()
-	set_wires(new /datum/wires/protolathe(src))
+TYPE_TABLE(/obj/machinery/rnd/production/protolathe, production_initial_wires, /datum/wires/protolathe)

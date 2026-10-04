@@ -539,5 +539,5 @@ TYPE_TABLE(/obj/item/mecha_parts/mecha_equipment/crisis_drone/rad, drone_treatme
 		icon = initial(icon)
 		update_icon()
 		return
-	after(src, 1, PROC_REF(mech_syringe_flight), with = list(trg, steps_left - 1))
+	after(src, 0.1 SECONDS, PROC_REF(mech_syringe_flight), with = list(trg, steps_left - 1))
 

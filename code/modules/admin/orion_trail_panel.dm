@@ -100,47 +100,49 @@ UI_DATA_REPLACE(/obj/machinery/computer/arcade/orion_trail, "merge:ui_data_obj_m
 	data["screen"] = ORION_SCREEN_START
 	return data
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "menu", ui_act_menu)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_menu)
-	orion_menu(ui.user)
-	SStgui.update_uis(src)
-	return TRUE
+CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
+	op("menu", ui_act(), then(PROC_REF(native_orion_ui_menu)))
+	op("new_game", ui_act(), then(PROC_REF(native_orion_ui_new_game)))
+	op("continue", ui_act(), then(PROC_REF(native_orion_ui_continue)))
+	op("blackhole_continue", ui_act(), then(PROC_REF(native_orion_ui_blackhole_continue)))
+	op("blackhole_around", ui_act(), then(PROC_REF(native_orion_ui_blackhole_around)))
+	op("killcrew", ui_act(), then(PROC_REF(native_orion_ui_killcrew)))
+	op("close", ui_act(), then(PROC_REF(native_orion_ui_close)))
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "new_game", ui_act_new_game)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_new_game)
-	orion_newgame(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_menu(datum/act/op/A)
+	orion_menu(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "continue", ui_act_continue)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_continue)
-	orion_continue(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_new_game(datum/act/op/A)
+	orion_newgame(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "blackhole_continue", ui_act_blackhole_continue)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_blackhole_continue)
-	orion_blackhole(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_continue(datum/act/op/A)
+	orion_continue(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "blackhole_around", ui_act_blackhole_around)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_blackhole_around)
-	orion_pastblack(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_blackhole_continue(datum/act/op/A)
+	orion_blackhole(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "killcrew", ui_act_killcrew)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_killcrew)
-	orion_killcrew(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_blackhole_around(datum/act/op/A)
+	orion_pastblack(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "close", ui_act_close)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_close)
-	ui.user?.unset_machine()
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_killcrew(datum/act/op/A)
+	orion_killcrew(A.actor)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_close(datum/act/op/A)
+	A.actor?.unset_machine()
 	SStgui.close_uis(src)
-	return TRUE
+	return OP_OK
 
 
 #undef ORION_STATUS_START

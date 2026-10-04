@@ -31,9 +31,11 @@
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		return INITIALIZE_HINT_QDEL
 
-/obj/machinery/mineral/processing_unit_console/ownership()
-	. = ..()
-	. += owns(nameof(inserted_id), policy = OWN_SPILL)
+CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
+	op("showAllOres", ui_act(), then(PROC_REF(ui_act_showallores)))
+	op("speed_toggle", ui_act(), then(PROC_REF(ui_act_speed_toggle)))
+	op("power", ui_act(), then(PROC_REF(ui_act_power)))
+	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
 
 /obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
 	into += list(
@@ -131,15 +133,15 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_togglesmeltin
 	LAZYSET(unit.ores_processing, ore, new_setting)
 	. = TRUE
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_power)
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_power(datum/act/op/A)
+	add_fingerprint(A.actor)
 	machine().set_active(!machine().active)
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "showAllOres", ui_act_showallores)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_showallores)
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_showallores(datum/act/op/A)
+	add_fingerprint(A.actor)
 	show_all_ores = !show_all_ores
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/mineral/processing_unit_console, "logoff", ui_act_logoff)
 UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_logoff)
@@ -169,10 +171,10 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_insert)
 		to_chat(ui.user, span_warning("No valid ID."))
 	. = TRUE
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "speed_toggle", ui_act_speed_toggle)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_speed_toggle)
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_speed_toggle(datum/act/op/A)
+	add_fingerprint(A.actor)
 	machine().toggle_speed()
-	. = TRUE
+	return OP_OK
 
 /**********************Mineral processing unit**************************/
 
@@ -277,19 +279,24 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mineral/processing_unit, MACHINE_PIPEL
 				OB.stored_ore[ore] = 0 												// Set the value of the ore in the box to 0.
 
 	for(var/obj/item/ore_chunk/ore_chunk in input_marker().loc) //Special ore chunk item. For conveyor belt. Completely unneeded but keeps asthetics.
-		for(var/ore in ore_chunk.stored_ore)
-			if(ore_chunk.stored_ore[ore] > 0)
-				var/ore_amount = ore_chunk.stored_ore[ore]
+		if(!LAZYLEN(ore_chunk.stored_ore))
+			continue
+		var/list/chunk_ores = ore_chunk.stored_ore.Copy()
+		if(!consume(ore_chunk))
+			continue
+		for(var/ore in chunk_ores)
+			if(chunk_ores[ore] > 0)
+				var/ore_amount = chunk_ores[ore]
 				ores_stored[ore] += ore_amount
 				points += (ore_values[ore]*points_mult*ore_amount)
-				ore_chunk.stored_ore[ore] = 0
-			qdel(ore_chunk)
 
 	for(var/obj/item/ore/O in input_marker().loc)
-		if(!isnull(ores_stored[O.material]))
-			ores_stored[O.material]++
-			points += (ore_values[O.material]*points_mult)
-		qdel(O)
+		var/ore_material = O.material
+		if(!consume(O))
+			continue
+		if(!isnull(ores_stored[ore_material]))
+			ores_stored[ore_material]++
+			points += (ore_values[ore_material]*points_mult)
 
 	//Process our stored ores and spit out sheets.
 	var/sheets = 0

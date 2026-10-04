@@ -26,12 +26,12 @@
 	EXPIRY_DECLARE(emp_until)
 
 CAPABILITIES(/obj/machinery/exonet_node)
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
-	interface("ExonetNode")
 	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
 	op("toggle_PDA_port", ui_act("toggle_PDA_port"), then(PROC_REF(ui_act_toggle_pda_port)))
 	op("toggle_communicator_port", ui_act("toggle_communicator_port"), then(PROC_REF(ui_act_toggle_communicator_port)))
 	op("toggle_newscaster_port", ui_act("toggle_newscaster_port"), then(PROC_REF(ui_act_toggle_newscaster_port)))
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	interface("ExonetNode")
 
 // Proc: New()
 // Parameters: None
@@ -79,7 +79,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}
 	if(!noisy && on)
 		soundloop.start()
 		noisy = TRUE
-	update_icon()
 
 // An EMP shuts off the machine for awhile.  Ion anomalies also pulse it to turn it off.
 CAPABILITY(/obj/machinery/exonet_node, emp_disable(300 SECONDS))
@@ -139,45 +138,37 @@ CAPABILITY(/obj/machinery/exonet_node, emp_disable(300 SECONDS))
 // Parameters: 2 (standard tgui_act arguments)
 // Description: Responds to button presses on the TGUI interface.
 /obj/machinery/exonet_node/proc/ui_act_toggle_power(datum/act/op/A)
-	var/mob/user = A.actor
-	. = TRUE
 	toggle = !toggle
 	update_power()
 	if(!toggle)
-		var/msg = "[user.client.key] ([user]) has turned [src] off, at [x],[y],[z]."
+		var/msg = "[A.actor.client.key] ([A.actor]) has turned [src] off, at [x],[y],[z]."
 		message_admins(msg)
 		log_game(msg)
-	update_icon()
-	add_fingerprint(user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/exonet_node/proc/ui_act_toggle_pda_port(datum/act/op/A)
-	var/mob/user = A.actor
-	. = TRUE
 	allow_external_PDAs = !allow_external_PDAs
-	update_icon()
-	add_fingerprint(user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/exonet_node/proc/ui_act_toggle_communicator_port(datum/act/op/A)
-	var/mob/user = A.actor
-	. = TRUE
 	allow_external_communicators = !allow_external_communicators
 	if(!allow_external_communicators)
-		var/msg = "[user.client.key] ([user]) has turned [src]'s communicator port off, at [x],[y],[z]."
+		var/msg = "[A.actor.client.key] ([A.actor]) has turned [src]'s communicator port off, at [x],[y],[z]."
 		message_admins(msg)
 		log_game(msg)
-	update_icon()
-	add_fingerprint(user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/exonet_node/proc/ui_act_toggle_newscaster_port(datum/act/op/A)
-	var/mob/user = A.actor
-	. = TRUE
 	allow_external_newscasters = !allow_external_newscasters
 	if(!allow_external_newscasters)
-		var/msg = "[user.client.key] ([user]) has turned [src]'s newscaster port off, at [x],[y],[z]."
+		var/msg = "[A.actor.client.key] ([A.actor]) has turned [src]'s newscaster port off, at [x],[y],[z]."
 		message_admins(msg)
 		log_game(msg)
-	update_icon()
-	add_fingerprint(user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 // Proc: get_exonet_node()
 // Parameters: None

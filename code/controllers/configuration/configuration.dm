@@ -64,17 +64,18 @@
 	/// A list of configuration errors that occurred during load
 	var/static/list/configuration_errors
 
-/datum/controller/configuration/proc/admin_reload()
-	if(IsAdminAdvancedProcCall() || !PreConfigReload())
+/datum/controller/configuration/proc/admin_reload(mob/user)
+	var/admin_identity = key_name_admin(user)
+	if(IsAdminAdvancedProcCall() || !PreConfigReload(user))
 		return
-	log_admin("[key_name_admin(usr)] has forcefully reloaded the configuration from disk.")
-	message_admins("[key_name_admin(usr)] has forcefully reloaded the configuration from disk.")
+	log_admin("[admin_identity] has forcefully reloaded the configuration from disk.")
+	message_admins("[admin_identity] has forcefully reloaded the configuration from disk.")
 	full_wipe()
 	Load(world.params[OVERRIDE_CONFIG_DIRECTORY_PARAMETER])
 
-/datum/controller/configuration/proc/PreConfigReload()
+/datum/controller/configuration/proc/PreConfigReload(mob/user)
 	if(reload_in_progress)
-		to_chat(usr, span_warning("Another user is already reloading the config!"))
+		to_chat(user, span_warning("Another user is already reloading the config!"))
 		return FALSE
 
 	reload_in_progress = TRUE

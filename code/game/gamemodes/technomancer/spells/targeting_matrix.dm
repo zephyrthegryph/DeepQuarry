@@ -32,4 +32,4 @@
 
 			var/image/target_image = image(icon = 'icons/obj/spells.dmi', loc = get_turf(chosen_target), icon_state = "target")
 			user << target_image
-			after(user, 5, GLOBAL_PROC_REF(remove_client_image), with = list(user, target_image))
+			after(user, 0.5 SECONDS, GLOBAL_PROC_REF(remove_client_image), with = list(user, target_image))

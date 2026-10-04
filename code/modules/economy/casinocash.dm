@@ -5,8 +5,8 @@
 /obj/machinery/chipmachine
 	name = "Casino Chip Exchange"
 	desc = "Converts thalers to casino chips at a ratio of 5 thalers to 1 chip! It can also convert chips back to thalers at the same rate."
-	icon = 'icons/obj/casino_ch.dmi' //CHOMNPEdit
-	icon_state ="casino_atm" //CHOMNPEdit
+	icon = 'icons/obj/casino_ch.dmi'
+	icon_state ="casino_atm"
 	anchored = 1
 
 // Cap the worth used in the *5 / /5 conversion so the result stays within BYOND's
@@ -72,8 +72,7 @@
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
-	var/access = list()
-	access = ACCESS_CRATE_CASH
+	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
 
 /// Old attackby.
@@ -264,8 +263,7 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
-	var/access = list()
-	access = ACCESS_CRATE_CASH
+	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
 
 /// Old attackby.

@@ -34,7 +34,7 @@
 
 /obj/machinery/processor/proc/interaction_start(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(length(to_be_processed))
-		after(src, 1, PROC_REF(begin_processing))
+		after(src, 0.1 SECONDS, PROC_REF(begin_processing))
 	else
 		to_chat(user, span_warning("The processor is empty."))
 		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)

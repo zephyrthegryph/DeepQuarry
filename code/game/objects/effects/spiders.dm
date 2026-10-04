@@ -216,7 +216,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 		amount_grown += rand(0,2)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_async(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
-	after(src, rand(20,60), PROC_REF(vent_crawl_enter), with = list(entry, exit_vent))
+	after(src, rand(2 SECONDS,6 SECONDS), PROC_REF(vent_crawl_enter), with = list(entry, exit_vent))
 
 /obj/effect/spider/spiderling/proc/vent_crawl_enter(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	forceMove(exit_vent)
@@ -267,7 +267,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 			var/mob/living/simple_mob/animal/giant_spider/GS = new spawn_type(src.loc, src)
 			GS.faction = faction
 			if(stunted)
-				after(GS, 2, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
+				after(GS, 0.2 SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
 			replace_with(src, GS)
 
 /obj/effect/spider/spiderling/stunted

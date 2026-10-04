@@ -316,7 +316,7 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
 
 	if(!C.can_place())
 		to_chat(user, span_warning("There's not enough room to build that here!"))
-		qdel(C)
+		consume(C)
 		return
 
 	activate()

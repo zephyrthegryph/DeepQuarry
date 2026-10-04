@@ -217,8 +217,7 @@
 
 
 
-/obj/machinery/atmospherics/trinary/ownership()
-	. = ..()
-	. += rel_one(nameof(air1), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
-	. += rel_one(nameof(air2), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
-	. += rel_one(nameof(air3), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+CAPABILITIES(/obj/machinery/atmospherics/trinary)
+	owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	owns_one(nameof(air3), on_destroy = ON_DESTROY_PRIVATE_COPY)

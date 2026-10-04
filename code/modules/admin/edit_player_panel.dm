@@ -303,6 +303,7 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 	var/tref = "[REF(target())]"
 	forward_topic("forcespeech=[tref]")
 	return TRUE
+
 // Mute toggles
 
 /datum/edit_player_panel/proc/ui_act_mute(datum/act/op/A, mute_type_arg)
@@ -355,6 +356,7 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 		forward_topic("respawn=[cref]")
 		SStgui.update_uis(src)
 	return TRUE
+
 // DNA gene toggle
 
 /datum/edit_player_panel/proc/ui_act_togmutate(datum/act/op/A, block_arg)
@@ -396,6 +398,7 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 	var/tref = "[REF(target())]"
 	forward_topic("tdomeobserve=[tref]")
 	return TRUE
+
 // Language
 
 /datum/edit_player_panel/proc/ui_act_toglang(datum/act/op/A, lang_arg)

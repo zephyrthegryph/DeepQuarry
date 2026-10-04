@@ -25,7 +25,7 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 TOPIC_ACTION(/datum/map_report, "show", PROC_REF(topic_show), TOPIC_RIGHTS(R_ADMIN))
 
 /datum/map_report/topic_allowed(mob/user, list/href_list)
-	return user?.client?.holder?.CheckAdminHref(null, href_list)
+	return user?.client?.holder?.CheckAdminHref(null, href_list, user)
 
 /datum/map_report/proc/topic_show(mob/user, list/args)
 	show_to(user.client)

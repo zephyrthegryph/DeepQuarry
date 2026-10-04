@@ -1,0 +1,16 @@
+/// Real projectile impact must not emit cuffs when thick clothing rejects binding.
+/datum/unit_test/interim_bola_thick_clothing/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
+	var/obj/item/clothing/suit/space/suit = allocate(/obj/item/clothing/suit/space, T)
+	var/obj/item/projectile/bola/projectile = allocate(/obj/item/projectile/bola, T)
+	TEST_ASSERT(suit.body_parts_covered & FEET, "the real space suit covers feet")
+	TEST_ASSERT(suit.item_flags & THICKMATERIAL, "the real space suit has thick material")
+	TEST_ASSERT(target.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, disable_warning = TRUE), "the actual target equips its original suit")
+	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/handcuffs/legcuffs/bola)), 0, "the floor starts without any bola cuffs")
+	projectile.on_hit(target)
+	own_turf_contents(T)
+	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/handcuffs/legcuffs/bola)), 0, "the rejected actual impact emits no loose cuffs")
+	TEST_ASSERT_NULL(target.get_equipped_item(SLOT_ID_LEGCUFFED), "thick clothing prevents actual leg binding")
+	TEST_ASSERT_EQUAL(target.get_equipped_item(SLOT_ID_SUIT), suit, "the original protective suit remains equipped")
+	TEST_ASSERT(!QDELETED(target), "the target survives its actual impact callback")

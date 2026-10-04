@@ -1,3 +1,9 @@
+CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
+	interface("GasTemperatureSystem")
+	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
+	op("setPower", ui_act("setPower", arg("value", num())), then(PROC_REF(ui_act_setpower)))
+
 //TODO: Put this under a common parent type with heaters to cut down on the copypasta
 #define FREEZER_PERF_MULT 2.5
 #define REAGENT_COOLING_CONSUMED 0.1
@@ -74,12 +80,6 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freeze
 	)
 	..()
 
-CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
-	interface("GasTemperatureSystem")
-	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
-	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
-	op("setPower", ui_act("setPower", arg("value", num())), then(PROC_REF(ui_act_setpower)))
-
 /obj/machinery/atmospherics/unary/freezer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["powerSetting"] = power_setting
@@ -115,12 +115,10 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	return data
 
 /obj/machinery/atmospherics/unary/freezer/proc/ui_act_togglestatus(datum/act/op/A)
-	var/mob/user = A.actor
-	. = TRUE
 	set_use_power(!use_power)
-	add_fingerprint(user)
-	if(.)
-		invalidate_gas_dependencies()
+	add_fingerprint(A.actor)
+	invalidate_gas_dependencies()
+	return OP_OK
 
 /obj/machinery/atmospherics/unary/freezer/proc/ui_act_setgastemperature(datum/act/op/A, temp)
 	var/mob/user = A.actor

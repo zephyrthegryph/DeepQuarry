@@ -104,6 +104,8 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	can_be_antagged = TRUE
 
 CAPABILITIES(/mob/living/silicon/ai)
+	owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	ref_many(nameof(multicam_screens))
 	provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast))))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_shell_disconnect)))
@@ -1139,6 +1141,3 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	hacking = 0
 
 // A registered AI icon, or the AI's private custom icon (copy-on-write).
-/mob/living/silicon/ai/ownership()
-	. = ..()
-	. += rel_one(nameof(selected_sprite), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

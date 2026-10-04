@@ -28,7 +28,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		to_chat(user, span_danger("You feel pain, as rune disappears in reality shift caused by too much wear of space-time fabric."))
 		if (isliving(user))
 			user.injure(INJURY_BLUNT, 5)
-		qdel(src)
+		consume(src, user)
 	if(allrunesloc && index != 0)
 		if(istype(src,/obj/effect/rune))
 			user.say("Sas[pick("'","`")]so c'arta forbici!")//Only you can stop auto-muting
@@ -60,7 +60,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		to_chat(user, span_danger("You feel pain, as rune disappears in reality shift caused by too much wear of space-time fabric."))
 		if (isliving(user))
 			user.injure(INJURY_BLUNT, 5)
-		qdel(src)
+		consume(src, user)
 	for(var/mob/living/carbon/C in orange(1,src))
 		if(iscultist(C) && !C.stat)
 			culcount++
@@ -93,7 +93,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		new /obj/item/book/tome(src.loc)
 	else
 		new /obj/item/book/tome(user.loc)
-	qdel(src)
+	consume(src, user)
 	return
 
 
@@ -680,7 +680,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			to_chat(H.current, span_cult("[input]"))
 	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		to_chat(O, span_cult("[input]"))
-	qdel(src)
+	consume(src, user)
 	return 1
 
 /////////////////////////////////////////FIFTEENTH RUNE
@@ -930,7 +930,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	for(var/mob/living/carbon/C in users)
 		user.injure(INJURY_BLUNT, dam)
 		C.say("Khari[pick("'","`")]d! Gual'te nikka!")
-	qdel(src)
+	consume(src, user)
 
 /////////////////////////////////////////NINETEENTH RUNE
 
@@ -975,7 +975,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	act_message(user, null, MSG_SELF(span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a body.")), \
 		MSG_OTHERS(span_warning("Rune disappears with a flash of red light, and in its place now a body lies.")), \
 		MSG_BLIND(span_warning("You hear a pop and smell ozone.")))
-	qdel(src)
+	consume(src, user)
 
 /////////////////////////////////////////TWENTIETH RUNES
 
@@ -998,7 +998,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			user.say("Sti[pick("'","`")] kaliedir!")
 			to_chat(user,span_warning("The world becomes quiet as the deafening rune dissipates into fine dust."))
 			add_attack_logs(user,affected,"Deafen rune")
-			qdel(src)
+			consume(src, user)
 		else
 			return fizzle(user)
 	else
@@ -1044,7 +1044,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			user.say("Sti[pick("'","`")] kaliesin!")
 			to_chat(user,span_warning("The rune flashes, blinding those who not follow the Nar-Sie, and dissipates into fine dust."))
 			add_attack_logs(user, affected, "Blindness rune")
-			qdel(src)
+			consume(src, user)
 		else
 			return fizzle(user)
 	else
@@ -1100,7 +1100,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 				C.say("Dedo ol[pick("'","`")]btoh!")
 				C.injure(INJURY_BLUNT, 15)
 		add_attack_logs(user, victims, "Blood boil rune")
-		qdel(src)
+		consume(src, user)
 	else
 		return fizzle(user)
 	return
@@ -1131,7 +1131,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 					var/turf/T = get_turf(B)
 					T.hotspot_expose(700,125)
 					qdel(B)
-		qdel(src)
+		consume(src)
 
 //////////             Rune 24 (counting burningblood, which kinda doesnt work yet.)
 
@@ -1154,7 +1154,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 				S.status_at_least(EFFECT_WEAKENED, 5)
 				S.show_message(span_danger("BZZZT... The rune has exploded in a bright flash."), 3)
 				add_attack_logs(user,S,"Stun rune")
-		qdel(src)
+		consume(src, user)
 	else                        ///When invoked as talisman, stun and mute the target mob.
 		user.say("Dream sign ''Evil sealing talisman'[pick("'","`")]!")
 		var/obj/item/nullrod/N = locate_within(T, /obj/item/nullrod)
@@ -1199,5 +1199,5 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	//the below calls update_icons() at the end, which will update overlay icons by using the (now updated) cache
 	H.put_in_hands(new /obj/item/melee/cultblade(H))	//put in hands or on floor
 
-	qdel(src)
+	consume(src, user)
 	return

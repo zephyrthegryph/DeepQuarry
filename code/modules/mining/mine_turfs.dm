@@ -263,7 +263,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 			GetDrilled()
 
 	if(severity <= 2) // Now to expose the ore lying under the sand.
-		after(src, 1, PROC_REF(expose_ore)) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
+		after(src, 0.1 SECONDS, PROC_REF(expose_ore)) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
 
 /// After a blast: the ore lying under the sand spills out.
 /turf/simulated/mineral/proc/expose_ore()
@@ -581,7 +581,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 /turf/simulated/mineral/proc/clear_ore_effects()
 	turf_resource_types &= ~(TURF_HAS_ORE | TURF_HAS_RARE_ORE)
 	for(var/obj/effect/mineral/M in contents)
-		qdel(M)
+		consume(M)
 
 /turf/simulated/mineral/proc/DropMineral()
 	if(!mineral())
@@ -680,7 +680,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		if(!S)
 			if(X)
 				visible_message(span_danger("\The [pick("[display_name] crumbles away into dust","[display_name] breaks apart")]."))
-				qdel(X)
+				consume(X)
 
 	own_remove(src, nameof(finds), F)
 

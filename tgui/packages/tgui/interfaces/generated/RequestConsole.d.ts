@@ -5,6 +5,7 @@ export type RequestConsoleData = {
 };
 
 export type RequestConsoleActions = {
+  toggleSilent: Record<string, never>;
   write: {
     /** num */
     priority: number;
@@ -25,5 +26,4 @@ export type RequestConsoleActions = {
     /** num */
     setScreen: number;
   };
-  toggleSilent: Record<string, never>;
 };

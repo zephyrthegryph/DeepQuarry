@@ -38,22 +38,16 @@
 	**/
 	VAR_FINAL/incapacitated = NONE
 
-	//Not in use yet
-	var/obj/effect/organstructure/organStructure = null
-
 	var/tmp/atom/movable/screen/hands = null
 	var/tmp/atom/movable/screen/pullin = null
 	var/tmp/atom/movable/screen/purged = null
 	var/tmp/atom/movable/screen/internals = null
-	var/tmp/atom/movable/screen/i_select = null
-	var/tmp/atom/movable/screen/m_select = null
 	var/tmp/atom/movable/screen/healths = null
 	var/tmp/atom/movable/screen/throw_icon = null
 	var/tmp/atom/movable/screen/pain = null
 	var/tmp/atom/movable/screen/gun/item/item_use_icon = null
 	var/tmp/atom/movable/screen/gun/radio/radio_use_icon = null
 	var/tmp/atom/movable/screen/gun/move/gun_move_icon = null
-	var/tmp/atom/movable/screen/gun/run/gun_run_icon = null
 	var/tmp/atom/movable/screen/gun/mode/gun_setting_icon = null
 	var/tmp/atom/movable/screen/ling/chems/ling_chem_display = null
 	var/tmp/atom/movable/screen/borer/chems/borer_chem_display = null
@@ -83,10 +77,8 @@
 	var/computer_id = null
 	var/list/logging
 
-	var/already_placed = 0.0
 	var/other_mobs = null
 	var/memory = ""
-	var/poll_answer = 0.0
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
 	var/other = 0.0
@@ -101,7 +93,6 @@
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
-	var/antitoxs = null
 	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
@@ -155,7 +146,6 @@
 
 	var/inertia_dir = 0
 
-	var/music_lastplayed = "null"
 
 	var/job = null//Living
 
@@ -219,8 +209,6 @@
 
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 
-	var/tmp/list/radar_blips // list of screen objects, radar blips (currently unused; null until populated)
-	var/radar_open = 0 	// nonzero is radar is open
 
 
 	var/obj/control_object //Used by admins to possess objects. All mobs should have this var
@@ -258,7 +246,6 @@
 
 	var/registered_z
 
-	var/in_enclosed_vehicle = 0	//For mechs and fighters ambiance. Can be used in other cases.
 
 	///List of progress bars this mob is currently seeing for actions
 	var/tmp/list/progressbars = null //for stacking do_after bars

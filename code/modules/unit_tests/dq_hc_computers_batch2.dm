@@ -45,8 +45,8 @@
 	TEST_ASSERT(data["has_modify"], "the window shows a card to modify")
 	press(H, C, "modify")
 	TEST_ASSERT(isnull(C.modify), "the subject's card comes out")
-	var/atom/movable/fourth = R[4]
-	TEST_ASSERT(fourth.loc != C, "and is out of the console")
+	var/obj/item/card/id/subject = R[4]
+	TEST_ASSERT(subject.loc != C, "and is out of the console")
 	hc_hold(H, null)
 	press(H, C, "scan")
 	TEST_ASSERT(isnull(C.scan), "the operator's card comes out")

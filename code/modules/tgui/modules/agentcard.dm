@@ -50,11 +50,10 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	return ..()
 
 /datum/tgui_module/agentcard/proc/ui_act_electronic_warfare(datum/act/op/A)
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	S.electronic_warfare = !S.electronic_warfare
-	to_chat(user, span_notice("Electronic warfare [S.electronic_warfare ? "enabled" : "disabled"]."))
-	. = TRUE
+	to_chat(A.actor, span_notice("Electronic warfare [S.electronic_warfare ? "enabled" : "disabled"]."))
+	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_age(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()
@@ -192,11 +191,10 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	SStgui.update_uis(src)
 
 /datum/tgui_module/agentcard/proc/ui_act_photo(datum/act/op/A)
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	S.set_id_photo(user)
-	to_chat(user, span_notice("Photo changed."))
-	. = TRUE
+	S.set_id_photo(A.actor)
+	to_chat(A.actor, span_notice("Photo changed."))
+	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_sex(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()

@@ -23,7 +23,14 @@
 	var/min_harvests = -1
 	var/list/harvest_loot = null	// Should be an associative list for things to spawn, and their weights. An example would be a branch from a tree.
 
+TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
+
 /obj/structure/flora/Initialize(mapload)
+	switch(TYPE_TABLE_GET(src, initial_icon_variant_count))
+		if(2)
+			icon_state = "[initial(icon_state)][rand(1,2)]"
+		if(3)
+			icon_state = "[initial(icon_state)][rand(1,3)]"
 	. = ..()
 
 	if(randomize_size)
@@ -166,8 +173,15 @@
 		var/choice = pickweight(possibleseeds)
 		new choice(get_turf(user))
 
+TYPE_TABLE_DECLARE(/obj/structure/flora/ausbushes, ausbush_icon_choice, null)
+
 /obj/structure/flora/ausbushes/Initialize(mapload, bush_icon)
-	. = ..()
+	var/list/icon_choice = TYPE_TABLE_GET(src, ausbush_icon_choice)
+	if(icon_choice)
+		bush_icon = "[icon_choice[1]]_[rand(1, icon_choice[2])]"
+		. = ..(mapload, bush_icon)
+	else
+		. = ..()
 	if(bush_icon)
 		icon_state = bush_icon
 		return
@@ -176,38 +190,32 @@
 /obj/structure/flora/ausbushes/reedbush
 	icon_state = "reedbush_1"
 
-/obj/structure/flora/ausbushes/reedbush/Initialize(mapload)
-	. = ..(mapload, "reedbush_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/reedbush, ausbush_icon_choice, list("reedbush", 4, FALSE))
 
 /obj/structure/flora/ausbushes/leafybush
 	icon_state = "leafybush_1"
 
-/obj/structure/flora/ausbushes/leafybush/Initialize(mapload)
-	. = ..(mapload, "leafybush_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/leafybush, ausbush_icon_choice, list("leafybush", 3, FALSE))
 
 /obj/structure/flora/ausbushes/palebush
 	icon_state = "palebush_1"
 
-/obj/structure/flora/ausbushes/palebush/Initialize(mapload)
-	. = ..(mapload, "palebush_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/palebush, ausbush_icon_choice, list("palebush", 4, FALSE))
 
 /obj/structure/flora/ausbushes/stalkybush
 	icon_state = "stalkybush_1"
 
-/obj/structure/flora/ausbushes/stalkybush/Initialize(mapload)
-	. = ..(mapload, "stalkybush_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/stalkybush, ausbush_icon_choice, list("stalkybush", 3, FALSE))
 
 /obj/structure/flora/ausbushes/grassybush
 	icon_state = "grassybush_1"
 
-/obj/structure/flora/ausbushes/grassybush/Initialize(mapload)
-	. = ..(mapload, "grassybush_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/grassybush, ausbush_icon_choice, list("grassybush", 4, FALSE))
 
 /obj/structure/flora/ausbushes/fernybush
 	icon_state = "fernybush_1"
 
-/obj/structure/flora/ausbushes/fernybush/Initialize(mapload)
-	. = ..(mapload, "fernybush_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/fernybush, ausbush_icon_choice, list("fernybush", 3, FALSE))
 
 /obj/structure/flora/ausbushes/sunnybush
 	icon_state = "sunnybush_1"
@@ -226,44 +234,37 @@
 /obj/structure/flora/ausbushes/pointybush
 	icon_state = "pointybush_1"
 
-/obj/structure/flora/ausbushes/pointybush/Initialize(mapload)
-	. = ..(mapload, "pointybush_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/pointybush, ausbush_icon_choice, list("pointybush", 4, FALSE))
 
 /obj/structure/flora/ausbushes/lavendergrass
 	icon_state = "lavendergrass_1"
 
-/obj/structure/flora/ausbushes/lavendergrass/Initialize(mapload)
-	. = ..(mapload, "lavendergrass_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/lavendergrass, ausbush_icon_choice, list("lavendergrass", 4, FALSE))
 
 /obj/structure/flora/ausbushes/ywflowers
 	icon_state = "ywflowers_1"
 
-/obj/structure/flora/ausbushes/ywflowers/Initialize(mapload)
-	. = ..(mapload, "ywflowers_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/ywflowers, ausbush_icon_choice, list("ywflowers", 3, FALSE))
 
 /obj/structure/flora/ausbushes/brflowers
 	icon_state = "brflowers_1"
 
-/obj/structure/flora/ausbushes/brflowers/Initialize(mapload)
-	. = ..(mapload, "brflowers_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/brflowers, ausbush_icon_choice, list("brflowers", 3, FALSE))
 
 /obj/structure/flora/ausbushes/ppflowers
 	icon_state = "ppflowers_1"
 
-/obj/structure/flora/ausbushes/ppflowers/Initialize(mapload)
-	. = ..(mapload, "ppflowers_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/ppflowers, ausbush_icon_choice, list("ppflowers", 3, FALSE))
 
 /obj/structure/flora/ausbushes/sparsegrass
 	icon_state = "sparsegrass_1"
 
-/obj/structure/flora/ausbushes/sparsegrass/Initialize(mapload)
-	. = ..(mapload, "sparsegrass_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/sparsegrass, ausbush_icon_choice, list("sparsegrass", 3, FALSE))
 
 /obj/structure/flora/ausbushes/fullgrass
 	icon_state = "fullgrass_1"
 
-/obj/structure/flora/ausbushes/fullgrass/Initialize(mapload)
-	. = ..(mapload, "fullgrass_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/fullgrass, ausbush_icon_choice, list("fullgrass", 3, FALSE))
 
 /obj/structure/flora/skeleton
 	name = "hanging skeleton model"
@@ -581,9 +582,7 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 	max_harvests = 2
 	min_harvests = 0
 
-/obj/structure/flora/sif/subterranean/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,2)]"
-	. = ..()
+TYPE_TABLE(/obj/structure/flora/sif/subterranean, initial_icon_variant_count, 2)
 
 /datum/category_item/catalogue/flora/eyebulbs
 	name = "Sivian Flora - Eyebulbs"
@@ -602,9 +601,7 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 	min_harvests = 0
 	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/eyebulbs = 1)
 
-/obj/structure/flora/sif/eyes/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,3)]"
-	. = ..()
+TYPE_TABLE(/obj/structure/flora/sif/eyes, initial_icon_variant_count, 3)
 
 /datum/category_item/catalogue/flora/mosstendrils
 	name = "Sivian Flora - Moss Stalks"
@@ -629,9 +626,7 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 		/obj/item/reagent_containers/food/snacks/grown/sif/wildwabback = 30
 	)
 
-/obj/structure/flora/sif/tendrils/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,3)]"
-	. = ..()
+TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 
 /obj/structure/flora/sif/tendrils/get_harvestable_desc()
 	return span_notice("\The [src] seems to be growing over something.")

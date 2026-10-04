@@ -5,6 +5,7 @@ export type NtosNetDownloaderData = {
 };
 
 export type NtosNetDownloaderActions = {
+  PRG_reseterror: Record<string, never>;
   PRG_downloadfile: {
     /** text max 4096 */
     filename: string;
@@ -13,5 +14,4 @@ export type NtosNetDownloaderActions = {
     /** text max 4096 */
     filename: string;
   };
-  PRG_reseterror: Record<string, never>;
 };

@@ -29,8 +29,15 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 /obj/item/laser_pointer/purple
 	pointer_icon_state = "purple_laser"
 
+TYPE_TABLE_DECLARE(/obj/item/laser_pointer, pointer_forced_diode, null)
+
 /obj/item/laser_pointer/Initialize(mapload, laser_path)
-	. = ..()
+	var/forced_diode = TYPE_TABLE_GET(src, pointer_forced_diode)
+	if(forced_diode)
+		. = ..(mapload, forced_diode)
+		laser_path = forced_diode
+	else
+		. = ..()
 	if(ispath(laser_path))
 		rel_set(src, nameof(diode), new laser_path(src)) // ALLOW(decl): diode from an Initialize argument
 	else
@@ -38,11 +45,9 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	if(!pointer_icon_state)
 		pointer_icon_state = pick("red_laser","green_laser","blue_laser","purple_laser")
 
-/obj/item/laser_pointer/upgraded/Initialize(mapload)
-	. = ..(mapload, /obj/item/stock_parts/micro_laser)
+TYPE_TABLE(/obj/item/laser_pointer/upgraded, pointer_forced_diode, /obj/item/stock_parts/micro_laser)
 
-/obj/item/laser_pointer/ultimate/Initialize(mapload)
-	. = ..(mapload, /obj/item/stock_parts/micro_laser)
+TYPE_TABLE(/obj/item/laser_pointer/ultimate, pointer_forced_diode, /obj/item/stock_parts/micro_laser)
 
 /obj/item/laser_pointer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	laser_act(M, user)

@@ -363,12 +363,12 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_after_drift(smoke, direction, steps, 10)
-	after(src, steps * 10 + smoke.time_to_live*0.75+rand(10,30), PROC_REF(expire_smoke), with = list(smoke))
+	om_after_drift(smoke, direction, steps, 1 SECOND)
+	after(src, steps * 1 SECOND + smoke.time_to_live*0.75+rand(1 SECOND, 3 SECONDS), PROC_REF(expire_smoke), with = list(smoke))
 
 /datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
 	if(smoke)
-		qdel(smoke)
+		consume(smoke)
 	src.total_smoke--
 
 /datum/effect/effect/system/smoke_spread/start(I)
@@ -481,7 +481,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	after(src, 2, PROC_REF(reschedule_steam))
 
 /datum/effect/effect/system/steam_trail_follow/proc/expire_steam_trail(obj/effect/effect/steam/I)
-	qdel(I)
+	consume(I)
 	src.number--
 
 /datum/effect/effect/system/steam_trail_follow/proc/reschedule_steam()
@@ -586,7 +586,6 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	var/obj/effect/effect/teleport_greyscale/tele = new /obj/effect/effect/teleport_greyscale(src.get_location())
 	tele.color = color
 
-// === merged from effect_system_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 
 /////////////////////////////////////////////
 // Confetti and Glitter
@@ -640,12 +639,12 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_after_drift(confetti, direction, steps, 10)
-	after(src, steps * 10 + confetti.time_to_live*0.75+rand(10,30), PROC_REF(expire_confetti), with = list(confetti))
+	om_after_drift(confetti, direction, steps, 1 SECOND)
+	after(src, steps * 1 SECOND + confetti.time_to_live*0.75+rand(1 SECOND, 3 SECONDS), PROC_REF(expire_confetti), with = list(confetti))
 
 /datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)
 	if(confetti)
-		qdel(confetti)
+		consume(confetti)
 	src.total_confetti--
 
 /datum/effect/effect/system/confetti_spread/start(I)

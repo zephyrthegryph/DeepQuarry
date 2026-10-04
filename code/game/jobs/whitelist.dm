@@ -1,3 +1,10 @@
+CAPABILITIES(/datum/whitelist_editor)
+	op("reload_alienwhitelist", ui_act("reload_alienwhitelist"), then(PROC_REF(ui_act_reload_alienwhitelist)))
+	op("reload_jobwhitelist", ui_act("reload_jobwhitelist"), then(PROC_REF(ui_act_reload_jobwhitelist)))
+	interface("WhitelistEdit", rights = R_ADMIN)
+	op("add_alienwhitelist", ui_act("add_alienwhitelist", arg("ckey", schema_text(4096)), arg("role", schema_text(4096)), arg("type", schema_text(4096))), then(PROC_REF(ui_act_add_alienwhitelist)))
+	op("remove_alienwhitelist", ui_act("remove_alienwhitelist", arg("ckey", schema_text(4096)), arg("role", schema_text(4096)), arg("type", schema_text(4096))), then(PROC_REF(ui_act_remove_alienwhitelist)))
+
 #define WHITELISTFILE "data/whitelist.txt"
 #define VALID_KINDS list("job", "species", "language", "robot")
 
@@ -8,18 +15,11 @@ GLOBAL_LIST_EMPTY(language_whitelist)
 GLOBAL_LIST_EMPTY(robot_whitelist)
 
 ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Opens the editor for alien- and jobwhitelists.", ADMIN_CATEGORY_SERVER_CONFIG)
-	if(user.holder)
+	if(admin_can(user, 0))
 		user.holder.whitelist_editor = new /datum/whitelist_editor()
 		user.holder.whitelist_editor.tgui_interact(user.mob)
 
 /datum/whitelist_editor
-
-CAPABILITIES(/datum/whitelist_editor)
-	interface("WhitelistEdit", rights = R_ADMIN)
-	op("add_alienwhitelist", ui_act("add_alienwhitelist", arg("ckey", schema_text(4096)), arg("role", schema_text(4096)), arg("type", schema_text(4096))), then(PROC_REF(ui_act_add_alienwhitelist)))
-	op("remove_alienwhitelist", ui_act("remove_alienwhitelist", arg("ckey", schema_text(4096)), arg("role", schema_text(4096)), arg("type", schema_text(4096))), then(PROC_REF(ui_act_remove_alienwhitelist)))
-	op("reload_alienwhitelist", ui_act("reload_alienwhitelist"), then(PROC_REF(ui_act_reload_alienwhitelist)))
-	op("reload_jobwhitelist", ui_act("reload_jobwhitelist"), then(PROC_REF(ui_act_reload_jobwhitelist)))
 
 /// The computed part of /datum/whitelist_editor's window data (declared on its UI_DATA row).
 /datum/whitelist_editor/ui_data(datum/act/eval/A)
@@ -127,11 +127,11 @@ CAPABILITIES(/datum/whitelist_editor)
 
 /datum/whitelist_editor/proc/ui_act_reload_alienwhitelist(datum/act/op/A)
 	reload_alienwhitelist()
-	return TRUE
+	return OP_OK
 
 /datum/whitelist_editor/proc/ui_act_reload_jobwhitelist(datum/act/op/A)
 	reload_jobwhitelist()
-	return TRUE
+	return OP_OK
 
 /// om_io() callback for the whitelist editor's writes: reports and logs the outcome.
 /proc/whitelist_edit_done(list/result, error, admin_ckey, what, done_message)

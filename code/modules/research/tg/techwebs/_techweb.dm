@@ -83,6 +83,8 @@
 	var/list/research_queue_nodes
 
 CAPABILITIES(/datum/techweb)
+	ref_many(nameof(consoles_accessing))
+	ref_many(nameof(techweb_servers))
 	owns_many(nameof(available_experiments), /datum/experiment)
 	owns_many(nameof(completed_experiments), /datum/experiment)
 
@@ -581,8 +583,3 @@ CAPABILITIES(/datum/techweb)
 // 	for (var/datum/experiment/experiment as anything in available_experiments)
 // 		if(experiment.type != paper_to_add.experiment_path)
 // 			continue
-
-/datum/techweb/relations()
-	. = ..()
-	. += rel_many(nameof(consoles_accessing))
-	. += rel_many(nameof(techweb_servers))

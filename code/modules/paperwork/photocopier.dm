@@ -37,6 +37,9 @@
 	)
 	..()
 
+CAPABILITIES(/obj/machinery/photocopier)
+	op("make_copy", ui_act(), then(PROC_REF(ui_act_make_copy)))
+
 DECLARE_UI(/obj/machinery/photocopier, "Photocopier")
 
 UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copies:num", "max_copies=maxcopies:num", "merge:ui_data_obj_machinery_photocopier{has_item:bool,isAI:num,can_AI_print:bool,has_toner:bool,max_toner:num}")
@@ -53,10 +56,9 @@ UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copie
 
 	return data
 
-UI_ACT(/obj/machinery/photocopier, "make_copy", ui_act_make_copy)
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_make_copy)
-	after(src, 0, PROC_REF(copy_operation), with = list(ui.user))
-	. = TRUE
+/obj/machinery/photocopier/proc/ui_act_make_copy(datum/act/op/A)
+	after(src, 0, PROC_REF(copy_operation), with = list(A.actor))
+	return OP_OK
 
 UI_ACT(/obj/machinery/photocopier, "remove", ui_act_remove)
 UI_ACT_PROC(/obj/machinery/photocopier, ui_act_remove)
@@ -120,7 +122,7 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 		playsound(src, "sound/machines/copier.ogg", 100, 1)
 		audible_message(span_notice("You can hear [src] whirring as it attempts to scan."), runemessage = "whirr")
 		// Sit with your bare ass on the copier for a random time, feel like a fool, get stared at.
-		after(src, rand(20,45), PROC_REF(copy_ass_scan), with = list(user, left))
+		after(src, rand(2 SECONDS,4.5 SECONDS), PROC_REF(copy_ass_scan), with = list(user, left))
 	else
 		to_chat(user, span_warning("\The [copyitem] can't be copied by [src]."))
 		playsound(src, "sound/machines/buzz-two.ogg", 100)

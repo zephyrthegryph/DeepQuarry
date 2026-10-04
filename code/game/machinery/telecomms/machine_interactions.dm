@@ -1,3 +1,7 @@
+CAPABILITIES(/obj/machinery/telecomms/relay)
+	op("receive", ui_act(), then(PROC_REF(ui_act_receive)))
+	op("broadcast", ui_act(), then(PROC_REF(ui_act_broadcast)))
+
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
 /*
@@ -157,20 +161,17 @@
 	data["receiving"] = receiving
 	return data
 
-CAPABILITIES(/obj/machinery/telecomms/relay)
-	op("receive", ui_act("receive"), then(PROC_REF(ui_act_receive)))
-	op("broadcast", ui_act("broadcast"), then(PROC_REF(ui_act_broadcast)))
-	op("change_listening", ui_act("change_listening"), then(PROC_REF(ui_act_change_listening)))
-
 /obj/machinery/telecomms/relay/proc/ui_act_receive(datum/act/op/A)
-	. = TRUE
+	add_fingerprint(A.actor)
 	receiving = !receiving
 	set_temp("-% Receiving mode changed. %-", "average")
+	return OP_OK
 
 /obj/machinery/telecomms/relay/proc/ui_act_broadcast(datum/act/op/A)
-	. = TRUE
+	add_fingerprint(A.actor)
 	broadcasting = !broadcasting
 	set_temp("-% Broadcasting mode changed. %-", "average")
+	return OP_OK
 
 /obj/machinery/telecomms/relay/proc/ui_act_change_listening(datum/act/op/A)
 	. = TRUE
@@ -267,10 +268,11 @@ CAPABILITIES(/obj/machinery/telecomms/receiver)
 	return istype(M) && canAccess(M)
 
 /obj/machinery/telecomms/proc/ui_act_toggle(datum/act/op/A)
+	add_fingerprint(A.actor)
 	src.toggled = !src.toggled
 	set_temp("-% [src] has been [src.toggled ? "activated" : "deactivated"].", "average")
 	update_power()
-	. = TRUE
+	return OP_OK
 
 /obj/machinery/telecomms/proc/ui_act_id(datum/act/op/A)
 	open_request(src, /datum/prompt/text, PROC_REF(id_entered), valid = PROC_REF(access_valid), answerer = A.actor, title = "[src]", question = "Specify the new ID for this machine", default = id, ask_flags = ASK_CAPABLE, timeout = 0)
@@ -328,9 +330,9 @@ CAPABILITIES(/obj/machinery/telecomms/receiver)
 	. = TRUE
 
 /obj/machinery/telecomms/proc/ui_act_cleartemp(datum/act/op/A)
+	add_fingerprint(A.actor)
 	temp = null
-	. = TRUE
-
+	return OP_OK
 
 /obj/machinery/telecomms/proc/id_entered(datum/act/request/A)
 	if(!A.answer)

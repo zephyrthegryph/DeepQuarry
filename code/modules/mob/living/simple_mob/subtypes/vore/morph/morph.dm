@@ -40,7 +40,6 @@
 
 	meat_amount = 0
 
-	showvoreprefs = 0
 	vore_active = 1
 	vore_default_mode = DM_HOLD
 

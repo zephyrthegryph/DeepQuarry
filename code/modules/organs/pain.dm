@@ -1,7 +1,6 @@
 /mob/proc/flash_pain()
 	flick("pain",pain)
 
-/mob/var/list/pain_stored = list()
 /mob/var/last_pain_message = ""
 /mob/var/next_pain_time = 0
 /mob/var/multilimb_pain_time = 0 // Global pain cooldown exists to prevent spam for multi-limb damage

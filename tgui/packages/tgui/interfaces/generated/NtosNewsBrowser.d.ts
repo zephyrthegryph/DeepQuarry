@@ -5,12 +5,12 @@ export type NtosNewsBrowserData = {
 };
 
 export type NtosNewsBrowserActions = {
+  PRG_reset: Record<string, never>;
+  PRG_clearmessage: Record<string, never>;
+  PRG_toggle_archived: Record<string, never>;
   PRG_openarticle: {
     /** num */
     uid: number;
   };
-  PRG_reset: Record<string, never>;
-  PRG_clearmessage: Record<string, never>;
   PRG_savearticle: Record<string, never>;
-  PRG_toggle_archived: Record<string, never>;
 };

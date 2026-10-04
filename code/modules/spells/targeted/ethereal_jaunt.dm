@@ -51,7 +51,7 @@
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_reform(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
 	jaunt_reappear(animation, target)
-	after(src, 5, PROC_REF(jaunt_finish), with = list(target, holder, animation))
+	after(src, 0.5 SECONDS, PROC_REF(jaunt_finish), with = list(target, holder, animation))
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_finish(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
 	var/mobloc = holder.last_valid_turf()
@@ -108,7 +108,7 @@
 	else
 		to_chat(user, span_warning("Some strange aura is blocking the way!"))
 	src.canmove = 0
-	after(src, 2, PROC_REF(allow_move))
+	after(src, 0.2 SECONDS, PROC_REF(allow_move))
 
 DAMAGE_REACTION(/obj/effect/dummy/spell_jaunt, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
 

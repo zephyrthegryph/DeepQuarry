@@ -130,8 +130,9 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 				var/obj/item/stack/material/S = O
 				var/matname = S.material.name
 				if(!isnull(LAZYACCESS(stack_storage, matname)))
-					LAZYADDASSOC(stack_storage, matname, S.get_amount())
-					qdel(S)
+					var/stack_amount = S.get_amount()
+					if(consume(S))
+						LAZYADDASSOC(stack_storage, matname, stack_amount)
 				else
 					O.forceMove(output_marker().loc)
 			else

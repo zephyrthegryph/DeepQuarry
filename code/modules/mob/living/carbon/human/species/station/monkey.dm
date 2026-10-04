@@ -203,27 +203,23 @@
 /mob/living/carbon/human/sharkm
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/sharkm/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_AKULA)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/sharkm, forced_initial_species, SPECIES_MONKEY_AKULA)
+TYPE_TABLE(/mob/living/carbon/human/sharkm, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/sergallingm
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/sergallingm/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_SERGAL)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/sergallingm, forced_initial_species, SPECIES_MONKEY_SERGAL)
+TYPE_TABLE(/mob/living/carbon/human/sergallingm, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/sparram
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/sparram/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_NEVREAN)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/sparram, forced_initial_species, SPECIES_MONKEY_NEVREAN)
+TYPE_TABLE(/mob/living/carbon/human/sparram, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/wolpin
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/wolpin/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_VULPKANIN)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/wolpin, forced_initial_species, SPECIES_MONKEY_VULPKANIN)
+TYPE_TABLE(/mob/living/carbon/human/wolpin, initial_species_copy, TRUE)

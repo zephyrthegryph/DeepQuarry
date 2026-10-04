@@ -8,7 +8,7 @@
 		remove_antagonist(target)
 		return 0
 	if(flags & ANTAG_CHOOSE_NAME)
-		after(src, 1, PROC_REF(set_antag_name), with = list(target.current))
+		after(src, 0.1 SECONDS, PROC_REF(set_antag_name), with = list(target.current))
 	if(move)
 		place_mob(target.current)
 	update_leader()
@@ -35,7 +35,8 @@
 
 	var/obj/item/card/id/W = new id_type(player)
 	if(!W) return
-	W.access |= default_access
+	if(LAZYLEN(default_access))
+		W.access |= default_access
 	W.assignment = "[assignment]"
 	player.set_id_info(W)
 	if(equip) player.equip_to_slot_or_del(W, SLOT_ID_ID)

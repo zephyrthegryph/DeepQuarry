@@ -147,16 +147,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearanc
 			return
 
 // Preset types - left here for the code that uses them
-/obj/item/material/shard/shrapnel/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL)
+TYPE_TABLE(/obj/item/material/shard/shrapnel, weapon_forced_material, MAT_STEEL)
 
-/obj/item/material/shard/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PGLASS)
+TYPE_TABLE(/obj/item/material/shard/phoron, weapon_forced_material, MAT_PGLASS)
 
 
 // === merged from shards_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/item/material/shard/titaniumglass/Initialize(mapload)
-	. = ..(mapload, MAT_TITANIUMGLASS)
+TYPE_TABLE(/obj/item/material/shard/titaniumglass, weapon_forced_material, MAT_TITANIUMGLASS)
 
-/obj/item/material/shard/plastitaniumglass/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTITANIUMGLASS)
+TYPE_TABLE(/obj/item/material/shard/plastitaniumglass, weapon_forced_material, MAT_PLASTITANIUMGLASS)

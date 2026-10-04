@@ -6,9 +6,7 @@
 
 	movement_cooldown = 3
 
-/mob/living/simple_mob/animal/giant_spider/frost/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/frost/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/frost/broodling/replace_death(gibbed)
@@ -26,9 +24,7 @@
 
 	movement_cooldown = -1
 
-/mob/living/simple_mob/animal/giant_spider/electric/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/electric/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/electric/broodling/replace_death(gibbed)
@@ -43,9 +39,7 @@
 
 	movement_cooldown = 0
 
-/mob/living/simple_mob/animal/giant_spider/hunter/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/hunter/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling/replace_death(gibbed)
@@ -60,9 +54,7 @@
 
 	movement_cooldown = 0
 
-/mob/living/simple_mob/animal/giant_spider/lurker/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/lurker/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling/replace_death(gibbed)
@@ -77,9 +69,7 @@
 
 	movement_cooldown = 3
 
-/mob/living/simple_mob/animal/giant_spider/nurse/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/nurse/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling/replace_death(gibbed)
@@ -94,9 +84,7 @@
 
 	movement_cooldown = 3
 
-/mob/living/simple_mob/animal/giant_spider/pepper/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/pepper/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling/replace_death(gibbed)
@@ -114,9 +102,7 @@
 
 	movement_cooldown = 1
 
-/mob/living/simple_mob/animal/giant_spider/thermic/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/thermic/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling/replace_death(gibbed)
@@ -131,9 +117,7 @@
 
 	movement_cooldown = 1
 
-/mob/living/simple_mob/animal/giant_spider/tunneler/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/tunneler/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling/replace_death(gibbed)
@@ -150,9 +134,7 @@
 
 	movement_cooldown = 1.5
 
-/mob/living/simple_mob/animal/giant_spider/webslinger/broodling/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.75)
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/webslinger/broodling, broodling_initial_scale, 0.75)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling/replace_death(gibbed)
@@ -171,9 +153,10 @@
 	movement_cooldown = 3
 
 
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/broodling, broodling_initial_scale, 0.75)
+
 /mob/living/simple_mob/animal/giant_spider/broodling/Initialize(mapload)
 	. = ..()
-	adjust_scale(0.75)
 	after(src, 2 MINUTES, PROC_REF(death), key = "deathtimer")
 
 /// Vanishes instead of dying.

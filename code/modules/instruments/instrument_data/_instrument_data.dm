@@ -47,6 +47,7 @@
 	var/volume_multiplier = 0.33
 
 CAPABILITIES(/datum/instrument)
+	ref_many(nameof(songs_using))
 	owns_many(nameof(samples))
 
 /datum/instrument/New()
@@ -111,7 +112,3 @@ CAPABILITIES(/datum/instrument)
 		rel_add(src, nameof(samples), new /datum/instrument_key(first_sample, key, key - first_key), num2text(key))
 	for(var/key in last_key to HIGHEST_KEY)
 		rel_add(src, nameof(samples), new /datum/instrument_key(last_sample, key, key - last_key), num2text(key))
-
-/datum/instrument/relations()
-	. = ..()
-	. += rel_many(nameof(songs_using))

@@ -11,15 +11,6 @@
 
 	// Horray Furries!
 	var/tmp/datum/sprite_accessory/hair_accessory/hair_accessory_style_static
-	var/r_acc = 30
-	var/g_acc = 30
-	var/b_acc = 30
-	var/r_acc2 = 30
-	var/g_acc2 = 30
-	var/b_acc2 = 30
-	var/r_acc3 = 30
-	var/g_acc3 = 30
-	var/b_acc3 = 30
 
 /// A shared definition/flyweight (never cleared).
 /mob/living/carbon/human/proc/hair_accessory_style() as /datum/sprite_accessory/hair_accessory

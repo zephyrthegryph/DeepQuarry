@@ -230,7 +230,7 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 
 /obj/machinery/media/jukebox/proc/ui_act_stop(datum/act/op/A)
 	StopPlaying()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/media/jukebox/proc/ui_act_play(datum/act/op/A)
 	var/mob/user = A.actor

@@ -61,9 +61,7 @@
 /obj/item/organ/internal/liver/grey
 	icon_state = "liver_grey"
 
-/obj/item/organ/internal/liver/grey/colormatch/Initialize(mapload, internal)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+TYPE_TABLE(/obj/item/organ/internal/liver/grey/colormatch, internal_late_initialize, TRUE)
 
 /obj/item/organ/internal/liver/grey/colormatch/LateInitialize()
 	if(ishuman(owner)) // placed in its limb by now

@@ -174,7 +174,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	after(src, 5, PROC_REF(lunge_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(lunge_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/ddraig/proc/lunge_2(mob/living/L)
 

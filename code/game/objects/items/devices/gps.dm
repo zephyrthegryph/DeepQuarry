@@ -87,6 +87,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 		update_compass(src, TRUE)
 
 CAPABILITIES(/obj/item/gps)
+	op("power", ui_act(), then(PROC_REF(ui_act_power)))
+	op("localMode", ui_act(), then(PROC_REF(ui_act_localmode)))
 	owns_one(nameof(compass), starts = /obj/compass_holder)
 	op("toggle_tracking", hand(), gesture(GESTURE_ALT), needs(req_adjacent()), then(PROC_REF(tracking_toggled)))
 
@@ -262,10 +264,9 @@ UI_DATA_REPLACE(/obj/item/gps, "merge:ui_data_obj_item_gps{currentArea:unknown,p
 
 	return data
 
-UI_ACT(/obj/item/gps, "power", ui_act_power)
-UI_ACT_PROC(/obj/item/gps, ui_act_power)
+/obj/item/gps/proc/ui_act_power(datum/act/op/A)
 	toggle_tracking()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/gps, "rename", ui_act_rename, UI_ARG_TEXT("value"))
 UI_ACT_PROC(/obj/item/gps, ui_act_rename)
@@ -276,10 +277,9 @@ UI_ACT_PROC(/obj/item/gps, ui_act_rename)
 	name = "global positioning system ([gps_tag])"
 	return TRUE
 
-UI_ACT(/obj/item/gps, "localMode", ui_act_localmode)
-UI_ACT_PROC(/obj/item/gps, ui_act_localmode)
+/obj/item/gps/proc/ui_act_localmode(datum/act/op/A)
 	local_mode = !local_mode
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/gps, "hideSignal", ui_act_hidesignal)
 UI_ACT_PROC(/obj/item/gps, ui_act_hidesignal)

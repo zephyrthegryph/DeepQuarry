@@ -33,7 +33,7 @@
 	log_admin("[src]([src.ckey]) attempted to convert [player.current].")
 	message_admins(span_danger("[src]([src.ckey]) attempted to convert [player.current]."))
 
-	COOLDOWN_START(player, rev_cooldown, 100)
+	COOLDOWN_START(player, rev_cooldown, 10 SECONDS)
 	om_ask(player.current, /datum/om/prompt/confirm/faction_join, PROC_REF(faction_join_answered), asker = src, player = player, faction = faction)
 
 /// Asked to join a faction; a cancel is a refusal.

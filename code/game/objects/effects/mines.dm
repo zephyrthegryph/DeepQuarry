@@ -54,7 +54,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 		explosion(loc, 0, 2, 3, 4) //land mines are dangerous, folks.
 		visible_message("\The [src.name] detonates!")
 
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/proc/trigger_trap(mob/living/victim)
 	if(istype(trap, /obj/item/grenade))
@@ -148,7 +148,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		M.UpdateAppearance()
 	visible_message("\The [src.name] flashes violently before disintegrating!")
 	SSmotiontracker.ping(src,100)
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/stun
 	mineitemtype = /obj/item/mine/stun
@@ -191,7 +191,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 			target.hotspot_expose(1000, CELL_VOLUME)
 	visible_message("\The [src.name] detonates!")
 	SSmotiontracker.ping(src,100)
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/kick
 	mineitemtype = /obj/item/mine/kick
@@ -206,7 +206,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		M = E?.slot_item(MECHA_SLOT_PILOT)
 	if(istype(M))
 		qdel(M.client)
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/frag
 	mineitemtype = /obj/item/mine/frag
@@ -226,7 +226,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	src.fragmentate(O, num_fragments, spread_range, fragment_types) //only 20 weak fragments because you're stepping directly on it
 	visible_message("\The [src.name] detonates!")
 	SSmotiontracker.ping(src,100)
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/training	//Name and Desc commented out so it's possible to trick people with the training mines
 //	name = "training mine"
@@ -254,7 +254,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	visible_message("\The [src.name] flashes violently before disintegrating!")
 	SSmotiontracker.ping(src,100)
 	empulse(loc, 2, 4, 7, 10, 1) // As strong as an EMP grenade
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/emp/camo
 	camo_net = TRUE
@@ -307,7 +307,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		visible_message("\The [src.name] detonates!")
 	SSmotiontracker.ping(src,100)
 
-	qdel(src)
+	consume(src)
 
 /////////////////////////////////////////////
 // The held item version of the above mines
@@ -464,7 +464,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		return
 	src.launch_many_projectiles(O, spread_range, beam_types)
 	visible_message("\The [src.name] detonates!")
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/lasertag/red
 	mineitemtype = /obj/item/mine/lasertag/red

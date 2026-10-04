@@ -302,7 +302,7 @@
 				return
 			var/datum/D = locate(ref)
 			if(!D)
-				tgui_alert_async(usr,"Invalid ref!")
+				tgui_alert_async(mob,"Invalid ref!")
 				.["class"] = null
 				return
 			.["type"] = D.type

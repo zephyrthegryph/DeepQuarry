@@ -708,7 +708,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 		return
 	if(_answer_a16 != "Yes")
 		return
-	config.admin_reload()
+	config.admin_reload(user)
 
 
 /datum/admins/proc/quick_authentic_nif()

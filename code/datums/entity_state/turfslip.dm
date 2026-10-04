@@ -73,7 +73,7 @@
 	// Only start the slip timer if we are not already sliding
 	if(!already_slipping)
 		owner.slip("the [floor_type] floor", slip_stun)
-		after(src, 1, PROC_REF(next_slip))
+		after(src, 0.1 SECONDS, PROC_REF(next_slip))
 
 /datum/turfslip/proc/move_react(datum/act/notice/A)
 	EVENT_HANDLER
@@ -101,7 +101,7 @@
 		// Lube slips forever, if we re-enter the lube then restore our slip
 		slip_dist = 99
 
-	after(src, 1, PROC_REF(next_slip))
+	after(src, 0.1 SECONDS, PROC_REF(next_slip))
 
 /datum/turfslip/proc/next_slip()
 	// check tile for next slip

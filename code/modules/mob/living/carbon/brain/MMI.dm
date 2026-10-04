@@ -22,6 +22,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/mmi)
+	ref_one(nameof(mecha)) // the mech we are installed in
 	owns_one(nameof(body_backup), /mob/living)
 	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_interference)))
@@ -400,7 +401,3 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 /obj/item/mmi/ownership()
 	. = ..()
 	. += owns(nameof(brainobj), policy = OWN_CONTAINED)
-
-/obj/item/mmi/relations()
-	. = ..()
-	. += rel_one(nameof(mecha)) // the mech we are installed in

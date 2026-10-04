@@ -161,7 +161,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	if(LAZYLEN(spawnable))
 		var/t = pick(spawnable)
 		new t(get_turf(src))
-	qdel(src)
+	consume(src)
 
 /obj/effect/gateway/active/Crossed(atom/A)
 	if(A.is_incorporeal())

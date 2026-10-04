@@ -50,7 +50,7 @@
 
 	if(species.allergen_reaction & AG_GIBBING)
 		if(prob(disable_severity / 6))
-			after(H, rand(3,6), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
+			after(H, rand(0.3 SECONDS,0.6 SECONDS), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
 		else if(prob(disable_severity))
 			H.emote(pick(list("whimper","belch","belch","belch","choke","shiver")))
 			H.status_at_least(EFFECT_WEAKENED, disable_severity / 3)

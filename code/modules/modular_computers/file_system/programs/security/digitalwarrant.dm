@@ -66,8 +66,8 @@ CAPABILITIES(/datum/computer_file/program/digitalwarrant)
 	return data
 
 /datum/computer_file/program/digitalwarrant/proc/ui_act_back(datum/act/op/A)
-	. = TRUE
 	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
+	return OP_OK
 
 /datum/computer_file/program/digitalwarrant/proc/ui_act_editwarrant(datum/act/op/A, id)
 	. = TRUE

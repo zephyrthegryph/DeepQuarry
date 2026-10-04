@@ -67,4 +67,4 @@ CAPABILITIES(/obj/item/gun/projectile/dartgun)
 	add_fingerprint(user)
 	unload_ammo(user)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK

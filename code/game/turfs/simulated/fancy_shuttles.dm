@@ -56,8 +56,7 @@ MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolv
 	var/fancy_shuttle_tag
 
 // Reinforced hull steel
-/turf/simulated/wall/fancy_shuttle/Initialize(mapload, materialtype, rmaterialtype, girdertype)
-	. = ..(mapload,  MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL)
+TYPE_TABLE(/turf/simulated/wall/fancy_shuttle, wall_forced_materials, list(MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL))
 
 
 /turf/simulated/wall/fancy_shuttle/pre_translate_A(turf/B)

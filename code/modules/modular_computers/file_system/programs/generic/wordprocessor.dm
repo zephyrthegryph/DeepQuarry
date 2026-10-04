@@ -129,15 +129,15 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_closebrowser(datum/act/op/A)
 	browsing = 0
-	return TRUE
+	return OP_OK
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_backtomenu(datum/act/op/A)
 	error = null
-	return TRUE
+	return OP_OK
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_loadmenu(datum/act/op/A)
 	browsing = 1
-	return TRUE
+	return OP_OK
 
 /// Unsaved changes are asked about before another file replaces them.
 /datum/computer_file/program/wordprocessor/proc/unsaved_changes(datum/act/op/A)
