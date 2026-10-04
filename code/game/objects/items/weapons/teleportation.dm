@@ -177,13 +177,16 @@ DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interactio
 		turfs += T
 	if(turfs.len)
 		L["None (Dangerous)"] = pick(turfs)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(teleporter_chosen), title = "Hand Teleporter", message = "Please select a teleporter to lock in on.", choices = L, ask_flags = ASK_HELD | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(teleporter_chosen), answerer = user, title = "Hand Teleporter", question = "Please select a teleporter to lock in on.", choices = L, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/hand_tele/proc/teleporter_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/list/L = ask.choices
-	var/t1 = ask.choice
+/obj/item/hand_tele/proc/teleporter_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/datum/prompt/choice/prompt = A.answer
+	var/list/L = prompt.choices
+	var/t1 = A.answer.answer_value
 	var/count = 0	//num of portals from this teleport in world
 	for(var/obj/effect/portal/PO in REGISTRY_MEMBERS(REGISTRY_PORTALS))
 		if(PO.creator == src)	count++
