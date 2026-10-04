@@ -90,3 +90,31 @@
 
 /// An absolute tick usage no test world reaches (the boot ticks a test runs in are thousands of percent).
 #define WORK_TEST_LIMIT 1e9
+
+// ---- request re-checks (code/engine/kernel/requests.dm, request_recheck())
+// open_request(..., ask_flags = ASK_ALIVE | ASK_CAPABLE, asker = M, subject = S, rights = R_X, usable_state = "physical"): re-checked when the answer arrives,
+// before the handler runs; a failure ends the request cancelled (the handler sees no answer). Roles: the answerer sees the window; the asker started it
+// (default: the answerer); the subject is what it is about (default: the owner, when it is an atom).
+
+/// The answerer and the asker are alive.
+#define ASK_ALIVE (1<<0)
+/// The answerer and the asker are conscious.
+#define ASK_CONSCIOUS (1<<1)
+/// The answerer is next to the asker (next to the subject when they are the same mob).
+#define ASK_ADJACENT (1<<2)
+/// The subject is still in the asker's hands.
+#define ASK_HELD (1<<3)
+/// The subject is still somewhere on the asker (held, worn, in a bag).
+#define ASK_CARRIED (1<<4)
+/// Neither the answerer nor the asker is incapacitated.
+#define ASK_CAPABLE (1<<5)
+/// The subject is next to the answerer.
+#define ASK_NEAR_SUBJECT (1<<6)
+/// Neither the answerer nor the asker is restrained (cuffed, buckled in restraints).
+#define ASK_RESTRAINED (1<<7)
+/// The common "someone offers you something" set: both alive, awake and adjacent.
+#define ASK_FACE_TO_FACE (ASK_CONSCIOUS | ASK_ADJACENT)
+
+/// The answerer is directly inside the subject (a tunnel, a closet, a vehicle).
+#define ASK_INSIDE (1<<8)
+

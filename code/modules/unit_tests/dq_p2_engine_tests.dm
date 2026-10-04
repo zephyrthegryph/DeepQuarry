@@ -422,3 +422,44 @@
 	TEST_ASSERT_EQUAL(pressed?.outcome, ACT_COMMITTED, "a button on it runs as an op")
 	TEST_ASSERT_EQUAL(P.pressed, 1, "and its handler ran")
 	qdel(P)
+
+// ---------------------------------------------------------------------------------------------------------------------
+// open_request(ask_flags =, rights =, usable_state =): the answer is re-checked when it arrives; a failure ends the request cancelled.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/request_rechecks_drop_an_answer_that_no_longer_holds
+
+/datum/unit_test/dq_p2_engine/request_rechecks_drop_an_answer_that_no_longer_holds/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/p2_asker_item/I = allocate(/obj/item/p2_asker_item)
+	// held: the subject must still be in the asker's hands
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_HELD)
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(I.handled, 1, "the handler runs when the request ends")
+	TEST_ASSERT_NULL(I.seen_answer, "but an item that is not in the asker's hands drops the answer")
+	H.put_in_active_hand(I)
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_HELD)
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(I.handled, 2, "again")
+	TEST_ASSERT_EQUAL(I.seen_answer, TRUE, "and the answer stands while it is held")
+	// conscious: the answerer must still be awake
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_CONSCIOUS)
+	H.set_stat(UNCONSCIOUS)
+	test_answer(H, TRUE)
+	TEST_ASSERT_NULL(I.seen_answer, "an answerer who fell unconscious has no answer")
+	H.set_stat(CONSCIOUS)
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_CONSCIOUS)
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(I.seen_answer, TRUE, "an awake one does")
+	// inside: the answerer must be directly inside the subject
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_INSIDE)
+	test_answer(H, TRUE)
+	TEST_ASSERT_NULL(I.seen_answer, "an answerer outside the subject has no answer")
+	// rights: the answerer's player must hold them
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, rights = R_ADMIN)
+	test_answer(H, TRUE)
+	TEST_ASSERT_NULL(I.seen_answer, "a player with no admin rights has no answer")
+	// no flags: nothing is re-checked
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H)
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(I.seen_answer, TRUE, "a request that names no re-check keeps every answer")

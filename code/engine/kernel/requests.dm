@@ -49,6 +49,16 @@
 	var/datum/op_result/waiting
 	/// The fields captured when the op first suspended (name -> value): the op uses what the player saw.
 	var/list/captured
+	/// The re-checks of the answer (ASK_*): who must still be alive, awake, able, near or holding something when it arrives, else the request ends cancelled.
+	var/ask_flags = 0
+	/// Who started the question, for the re-checks (null: the answerer). A plain reference like the owner's: a gone one fails the check.
+	var/mob/asker
+	/// What the question is about, for the re-checks (null: the owner, when it is an atom).
+	var/atom/subject
+	/// Admin rights (R_* flags) the answerer's player must still hold; 0 asks none, any other value needs them (check_rights_for).
+	var/rights = 0
+	/// A tgui state name (GLOB.tgui_<name>_state: "default", "physical", ...) the answerer must still be able to work the subject through.
+	var/usable_state
 	/// A backend request's failure text (REQ_TRANSPORT_FAILED, REQ_FAILED), for the log.
 	var/last_error
 
@@ -183,6 +193,61 @@ SYSTEM_DEF(requests)
 	request_end(R, REQ_ANSWERED, answer)
 	return null
 
+/// null when the answer to `R` may stand, else why it may not: the re-checks of ask_flags, rights and usable_state against the roles the request
+/// names (the asker defaults to the answerer, the subject to the owner when that is an atom). Reads only.
+/proc/request_recheck(datum/request/R)
+	if(!R.ask_flags && !R.rights && !R.usable_state)
+		return null
+	var/flags = R.ask_flags
+	var/mob/answerer = R.answerer
+	var/mob/asker = R.asker || answerer
+	var/atom/subject = R.subject
+	if(!subject && isatom(R.owner))
+		subject = R.owner
+	if((flags & (ASK_ALIVE | ASK_CONSCIOUS | ASK_CAPABLE | ASK_ADJACENT | ASK_NEAR_SUBJECT | ASK_RESTRAINED)) && (!ismob(answerer) || !ismob(asker)))
+		return "not a mob"
+	if((flags & ASK_ALIVE) && (answerer.stat == DEAD || asker.stat == DEAD))
+		return "dead"
+	if((flags & ASK_CONSCIOUS) && (answerer.stat != CONSCIOUS || asker.stat != CONSCIOUS))
+		return "not conscious"
+	if((flags & ASK_CAPABLE) && (answerer.incapacitated() || asker.incapacitated()))
+		return "not able to"
+	if((flags & ASK_RESTRAINED) && (answerer.restrained() || asker.restrained()))
+		return "restrained"
+	if(flags & ASK_ADJACENT)
+		var/atom/other = (asker != answerer) ? asker : subject
+		if(!istype(other) || !answerer.Adjacent(other))
+			return "too far away"
+	if((flags & ASK_NEAR_SUBJECT) && (!istype(subject) || !answerer.Adjacent(subject)))
+		return "too far away"
+	if(flags & ASK_HELD)
+		if(!ismob(asker) || !subject || (asker.get_active_hand() != subject && asker.get_inactive_hand() != subject))
+			return "not holding it"
+	if(flags & ASK_CARRIED)
+		var/atom/movable/carried = subject
+		if(!istype(carried))
+			return "not carrying it"
+		var/found = FALSE
+		for(var/atom/holder = carried.loc; holder; holder = holder.loc)
+			if(holder == asker)
+				found = TRUE
+				break
+		if(!found)
+			return "not carrying it"
+	if(flags & ASK_INSIDE)
+		var/atom/movable/inside = answerer
+		if(!istype(inside) || !subject || inside.loc != subject)
+			return "not inside it"
+	if(R.rights)
+		var/client/C = ismob(answerer) ? answerer.client : null
+		if(!C?.holder || !check_rights_for(C, R.rights))
+			return "no admin rights"
+	if(R.usable_state)
+		var/datum/tgui_state/S = GLOB.vars["tgui_[R.usable_state]_state"]
+		if(!ismob(answerer) || !subject || !istype(S) || S.can_use_topic(subject, answerer) < STATUS_INTERACTIVE)
+			return "can't use it"
+	return null
+
 /// Ends `R` with `outcome` and runs its handler. Returns TRUE when this call ended it, FALSE when it had already ended.
 /// An answer that no longer passes its valid() check ends as REQ_CANCELLED.
 /proc/request_end(datum/request/R, outcome, value)
@@ -193,6 +258,11 @@ SYSTEM_DEF(requests)
 	if(outcome == REQ_ANSWERED)
 		R.answer_value = value
 		if(R.valid && R.owner && !call(R.owner, R.valid)(R))
+			outcome = REQ_CANCELLED
+		var/recheck = outcome == REQ_ANSWERED ? request_recheck(R) : null
+		if(recheck)
+			R.last_error = recheck
+			log_game("request: [R.type] answer dropped: [recheck]")
 			outcome = REQ_CANCELLED
 	R.outcome = outcome
 	if(istype(R, /datum/prompt))

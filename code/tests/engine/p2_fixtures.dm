@@ -375,3 +375,16 @@ CAPABILITIES(/datum/p2_panel)
 /datum/p2_panel/proc/panel_pressed(datum/act/op/A)
 	pressed++
 	return OP_OK
+
+// ---- request re-checks ----
+
+/// An item that asks and records what its handler saw.
+/obj/item/p2_asker_item
+	name = "p2 asker item"
+	var/handled = 0
+	var/seen_answer = null
+
+/obj/item/p2_asker_item/proc/answered(datum/act/request/A)
+	handled++
+	seen_answer = A.answer?.answer_value
+	return OP_OK
