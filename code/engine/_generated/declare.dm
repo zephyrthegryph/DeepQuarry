@@ -3221,6 +3221,25 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
+/// CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer) at code/modules/vore/eating/living.dm:2003
+/datum/prompt/choice/vore_liquid_transfer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/eating/living.dm", 2003, /datum/prompt/choice/vore_liquid_transfer)
+	into += entry_line(2004)
+	into += list(global.ref_one(nameof(liquid_source_mob), /mob))
+	into += entry_line(2005)
+	into += list(global.ref_one(nameof(liquid_source_belly), /obj/belly))
+	into += entry_line(2006)
+	into += list(global.ref_one(nameof(liquid_target_mob), /mob))
+	into += entry_line(2007)
+	into += list(global.ref_one(nameof(liquid_own_belly), /obj/belly))
+	into += entry_line(2008)
+	into += list(global.ref_one(nameof(liquid_other_belly), /obj/belly))
+	into += entry_line(2009)
+	into += list(global.ref_one(nameof(liquid_stomach_mob), /mob))
+	into += entry_line(2010)
+	into += list(global.ref_one(nameof(liquid_container), /obj/item/reagent_containers))
+
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
 /datum/prompt/color/paint_palette/declared_entries(list/into)
 	..(into)
@@ -6699,12 +6718,33 @@
 	into += entry_line(13)
 	into += list(global.owns_one(nameof(landmark), /obj/effect/shuttle_landmark/ship))
 
+/// CAPABILITIES(/obj/effect/phase_shift) at code/game/gamemodes/technomancer/spells/phase_shift.dm:36
+/obj/effect/phase_shift/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/gamemodes/technomancer/spells/phase_shift.dm", 36, /obj/effect/phase_shift)
+	into += entry_line(37)
+	into += list(global.owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL))
+
 /// CAPABILITIES(/obj/effect/plant) at code/modules/hydroponics/spreading/spreading.dm:61
 /obj/effect/plant/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/hydroponics/spreading/spreading.dm", 61, /obj/effect/plant)
 	into += entry_line(62)
 	into += list(global.owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
+
+/// CAPABILITIES(/obj/effect/spider/cocoon) at code/game/objects/effects/spiders.dm:311
+/obj/effect/spider/cocoon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/spiders.dm", 311, /obj/effect/spider/cocoon)
+	into += entry_line(312)
+	into += list(global.owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL))
+
+/// CAPABILITIES(/obj/effect/suspension_field) at code/modules/xenoarcheaology/tools/suspension_generator.dm:254
+/obj/effect/suspension_field/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/suspension_generator.dm", 254, /obj/effect/suspension_field)
+	into += entry_line(255)
+	into += list(global.owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL))
 
 /// CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate) at code/modules/mob/living/silicon/robot/drone/swarm_items.dm:109
 /obj/effect/temporary_effect/pulse/disintegrate/declared_entries(list/into)
