@@ -238,3 +238,30 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 	test_rec_event(TEST_EVENT_LOG, actor, key, outcome, text)
 
 #endif
+
+/// Calls an op handler directly, as the engine would: x(datum/act/op/A, args...) with the actor, the holder (also the target) and the held item set.
+/// For a test of what the handler itself does; a click is test_click().
+/proc/test_op_handler(datum/holder, proc_name, mob/actor, obj/item/held = null, ...)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.target = holder
+	A.actor = actor
+	A.held = held
+	var/list/call_args = list(A) // ALLOW(handlers): the list lives for this one call and the act is released right after it
+	if(length(args) > 4)
+		call_args += args.Copy(5)
+	. = call(holder, proc_name)(arglist(call_args))
+	A.release()
+
+/// Calls a request handler directly: x(datum/act/request/A) for a request that `answerer` answered with `value` (a prompt of `kind`, answered as given).
+/proc/test_request_handler(datum/holder, proc_name, mob/answerer, value, kind = /datum/prompt/choice)
+	var/datum/request/R = new kind
+	R.answerer = answerer // ALLOW(ownership): a throwaway request record for one direct handler call, discarded at the end of the proc
+	R.answer_value = value
+	var/datum/act/request/A = take(/datum/act/request)
+	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.request = R // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.answer = R // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	. = call(holder, proc_name)(A)
+	A.release()
+	qdel(R) // ALLOW(lifecycle): the throwaway request record of this test call was never owned by anything

@@ -289,7 +289,7 @@
 		var/expected_debris_type = remains.crumble_into
 		var/old_handle = om_handle(remains)
 		var/list/before = turf_contents_of_type(floor, expected_debris_type)
-		TEST_ASSERT(remains.interaction_crumble_remains(actor, null, null), "Touching floor remains must complete the crumble interaction")
+		TEST_ASSERT(test_op_handler(remains, "interaction_crumble_remains", actor), "Touching floor remains must complete the crumble interaction")
 		TEST_ASSERT(QDELETED(remains), "Crumbling must destroy the original remains")
 		var/list/after = turf_contents_of_type(floor, expected_debris_type)
 		var/list/created = after - before

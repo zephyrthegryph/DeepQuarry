@@ -214,11 +214,26 @@
 	. = op_require_reason_inner(A, P, B)
 	op_pure_end()
 
+/// What a hand() op on this atom must pass first, as a refusal reason (a /datum/msg type), or null. The base asks nothing; a machine asks its hand gate.
+/atom/proc/op_hand_refusal(datum/act/op/A)
+	return null
+
 /proc/op_require_reason_inner(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
 	if(B && B.physical() && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
 		var/mob/living/L = A.actor
 		if(istype(L) && !stat_value(L, STAT_CAN_ACT) && !LAZYACCESS(P.selects, "capable_ignoring"))
 			return stat_hold_reason(L, STAT_CAN_ACT) || /datum/msg/req_not_capable
+	// The hand gate: a hand() op needs a hand that works (conscious, not stunned), and on a machine what the old attack_hand passed first (power,
+	// posture, dexterity) unless it says ungated(): the old interactions that never called ..() (INTERACT_HAND_UNGATED) skipped hand_gate(), not the actor.
+	if(B && B.bind_kind == BIND_HAND && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
+		var/mob/living/toucher = A.actor
+		if(istype(toucher) && (toucher.stat != CONSCIOUS || toucher.incapacitated(INCAPACITATION_STUNNED)))
+			return /datum/msg/req_not_capable
+		var/atom/gated = A.target
+		if(istype(gated) && !LAZYACCESS(P.selects, "ungated"))
+			var/why_hand = gated.op_hand_refusal(A)
+			if(why_hand)
+				return why_hand
 	if(P.bay)
 		var/atom/T = A.target
 		var/why_bay = istype(T) ? T.bay_reason(P.bay, A.authority) : null

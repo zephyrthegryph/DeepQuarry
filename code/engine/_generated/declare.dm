@@ -2243,21 +2243,21 @@
 	into += entry_line(175)
 	into += list(global.owns_many(nameof(gridSets)))
 
-/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:324
+/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:339
 /datum/pending_op/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/run.dm", 324, /datum/pending_op)
-	into += entry_line(325)
+	into += entry_block("code/engine/parts/run.dm", 339, /datum/pending_op)
+	into += entry_line(340)
 	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(326)
+	into += entry_line(341)
 	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(327)
+	into += entry_line(342)
 	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(328)
+	into += entry_line(343)
 	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(329)
+	into += entry_line(344)
 	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
-	into += entry_line(330)
+	into += entry_line(345)
 	into += list(global.owns_one(nameof(cog), /datum/cogbar))
 
 /// CAPABILITIES(/datum/perk_tree) at code/modules/mind_body/_perk_tree.dm:35
@@ -15038,6 +15038,22 @@
 	into += entry_block("code/tests/engine/p2_fixtures.dm", 245, /obj/machinery/p2_box/slasher)
 	into += entry_line(246)
 	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(heard_slash))))
+
+/// CAPABILITIES(/obj/machinery/p2_hand_machine) at code/tests/engine/p2_fixtures.dm:400
+/obj/machinery/p2_hand_machine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 400, /obj/machinery/p2_hand_machine)
+	into += entry_line(401)
+	into += list(global.op("touch", global.hand(), global.then(PROC_REF(was_touched))))
+
+/// CAPABILITIES(/obj/machinery/p2_hand_machine/ungated) at code/tests/engine/p2_fixtures.dm:415
+/obj/machinery/p2_hand_machine/ungated/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 415, /obj/machinery/p2_hand_machine/ungated)
+	into += entry_line(416)
+	into += list(global.without("touch"))
+	into += entry_line(417)
+	into += list(global.op("touch_ungated", global.hand(), global.ungated(), global.then(PROC_REF(was_touched_ungated))))
 
 /// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:286
 /obj/p2_asker/declared_entries(list/into)

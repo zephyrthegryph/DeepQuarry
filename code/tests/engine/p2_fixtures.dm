@@ -388,3 +388,30 @@ CAPABILITIES(/datum/p2_panel)
 	handled++
 	seen_answer = A.answer?.answer_value
 	return OP_OK
+
+// ---- a machine's hand gate ----
+
+/// A machine with a hand op, one that opts out of the gate, and a plain item with a hand op.
+/obj/machinery/p2_hand_machine
+	name = "p2 hand machine"
+	var/touched = 0
+	var/touched_ungated = 0
+
+CAPABILITIES(/obj/machinery/p2_hand_machine)
+	op("touch", hand(), then(PROC_REF(was_touched)))
+
+/obj/machinery/p2_hand_machine/proc/was_touched(datum/act/op/A)
+	touched++
+	return OP_OK
+
+/obj/machinery/p2_hand_machine/proc/was_touched_ungated(datum/act/op/A)
+	touched_ungated++
+	return OP_OK
+
+/// The same machine whose touch says ungated(): it works unpowered, for an actor who is up.
+/obj/machinery/p2_hand_machine/ungated
+	name = "p2 hand machine ungated"
+
+CAPABILITIES(/obj/machinery/p2_hand_machine/ungated)
+	without("touch")
+	op("touch_ungated", hand(), ungated(), then(PROC_REF(was_touched_ungated)))

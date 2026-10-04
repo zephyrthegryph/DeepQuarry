@@ -7,7 +7,7 @@
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/machinery/beehive)), 0, "actual fixture starts without constructed hives")
 	TEST_ASSERT(user.put_in_active_hand(assembly), "the actor holds exact original assembly")
 	TEST_ASSERT(!user.incapacitated(INCAPACITATION_STUNNED | INCAPACITATION_KNOCKOUT), "actual construction actor starts capable")
-	assembly.interaction_self(user, assembly, null)
+	test_op_handler(assembly, "interaction_self", user, assembly)
 	TEST_ASSERT(LAZYLEN(user.do_afters), "public construction entry starts actual timed work")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/machinery/beehive)), 0, "starting construction creates no early hive")
 	scheduler_advance((2 SECONDS) / (1 SECOND))

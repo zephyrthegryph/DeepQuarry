@@ -159,4 +159,11 @@
 	for(var/name in golden)
 		var/type = text2path(name)
 		TEST_ASSERT(ispath(type), "[name] is still a type")
-		TEST_ASSERT_EQUAL(dx_menu_order_static(type), golden[name], "[name]: the order of its ops is the one captured before the default precedence")
+		// Ops declared since the capture (a converted interaction, a verb) may be new; the ones it had keep their order.
+		var/list/want = splittext(golden[name], ",")
+		var/list/have = splittext(dx_menu_order_static(type), ",")
+		var/list/kept = list()
+		for(var/key in have)
+			if(key in want)
+				kept += key
+		TEST_ASSERT_EQUAL(jointext(kept, ","), golden[name], "[name]: the order of its ops is the one captured before the default precedence")
