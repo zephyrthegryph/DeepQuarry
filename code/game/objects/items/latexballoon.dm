@@ -18,6 +18,9 @@
 
 CAPABILITIES(/obj/item/latexballon)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(balloon_blast))))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(balloon_shot))))
+	op("puncture", item(/obj/item), when(req(PROC_REF(punctures))), passes(), then(PROC_REF(punctured)))
 
 /obj/item/latexballon/proc/blow(obj/item/tank/tank)
 	if (icon_state == "latexballon_bursted")
@@ -34,23 +37,21 @@ CAPABILITIES(/obj/item/latexballon)
 	item_state = "lgloves"
 	loc.assume_air(air_contents)
 
-DAMAGE_REACTION(/obj/item/latexballon, DAMAGE_EXPLOSION, PROC_REF(balloon_blast))
-/// A blast bursts the balloon.
-/obj/item/latexballon/proc/balloon_blast(datum/damage_packet/packet)
+/// A blast bursts the balloon and still lands.
+/obj/item/latexballon/proc/balloon_blast(datum/act/A)
 	burst()
+	return HOOK_DECLINE
 
-DAMAGE_REACTION(/obj/item/latexballon, DAMAGE_PROJECTILE, PROC_REF(balloon_shot))
 /// A round bursts the balloon, and that's all it does.
-/obj/item/latexballon/proc/balloon_shot(datum/damage_packet/packet)
+/obj/item/latexballon/proc/balloon_shot(datum/act/A)
 	burst()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
+/// The held thing has a point.
+/obj/item/latexballon/proc/punctures(datum/act/op/A)
+	return can_puncture(A.held)
 
-DECLARE_INTERACTIONS(/obj/item/latexballon, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
-/// Old attackby.
-/obj/item/latexballon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if (can_puncture(W))
-		burst()
-	return INTERACTION_HANDLED_PASS
-
+/// A pointed thing bursts the balloon, and the click goes on to the ordinary attack.
+/obj/item/latexballon/proc/punctured(datum/act/op/A)
+	burst()
+	return OP_OK

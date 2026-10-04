@@ -34,38 +34,41 @@
 		to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/target)
+	op("unpin", hand(), when(req(PROC_REF(is_pinned))), then(PROC_REF(unpinned)))
 
-/// Old attack_hand.
-/obj/item/target/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	// taking pinned targets off!
-	var/obj/structure/target_stake/stake
+/// The stake this target is pinned to, if one is near.
+/obj/item/target/proc/pinning_stake()
 	for(var/obj/structure/target_stake/T in view(3,src))
 		if(T.pinned_target == src)
-			stake = T
-			break
+			return T
+	return null
 
-	if(stake)
-		if(stake.pinned_target)
-			stake.set_density(TRUE)
-			set_density(FALSE)
-			layer = OBJ_LAYER
+/// An empty hand takes a pinned target off its stake; a free target is picked up as any item.
+/obj/item/target/proc/is_pinned(datum/act/op/A)
+	return !!pinning_stake()
 
-			forceMove(user.loc)
-			if(ishuman(user))
-				if(!user.get_active_hand())
-					user.put_in_hands(src)
-					to_chat(user, "You take the target out of the stake.")
-			else
-				src.forceMove(get_turf(user))
-				to_chat(user, "You take the target out of the stake.")
+/// Taking pinned targets off.
+/obj/item/target/proc/unpinned(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/structure/target_stake/stake = pinning_stake()
+	if(!stake)
+		return OP_REFUSED
+	stake.set_density(TRUE)
+	set_density(FALSE)
+	layer = OBJ_LAYER
 
-			rel_clear(stake, nameof(stake.pinned_target))
-			return TRUE
-
+	forceMove(user.loc)
+	if(ishuman(user))
+		if(!user.get_active_hand())
+			user.put_in_hands(src)
+			to_chat(user, "You take the target out of the stake.")
 	else
-		return FALSE
-	return TRUE
+		src.forceMove(get_turf(user))
+		to_chat(user, "You take the target out of the stake.")
+
+	rel_clear(stake, nameof(stake.pinned_target))
+	return OP_OK
 
 /obj/item/target/syndicate
 	icon_state = "target_s"

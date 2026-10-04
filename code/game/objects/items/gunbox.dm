@@ -7,40 +7,55 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "gunbox"
 	w_class = ITEMSIZE_HUGE
-	///If the gunbox has custom attack_self code
-	var/variant_gunbox = FALSE
-DECLARE_INTERACTIONS(/obj/item/gunbox, INTERACT_USE("Open", PROC_REF(interaction_self)))
 
-/// Old attack_self.
-/obj/item/gunbox/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(variant_gunbox)
-		return
+CAPABILITIES(/obj/item/gunbox)
+	op("open", in_hand(), label("Open"), wait(0),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(kit_question)), "title" = computed(PROC_REF(kit_title)), "choices" = computed(PROC_REF(kit_names)))),
+		then(PROC_REF(kit_chosen)))
+
+/// The kits the box offers: a name mapped to the types it spawns (the gun first).
+/obj/item/gunbox/proc/kit_options()
 	var/list/options = list()
 	options["M1911 (.45)"] = list(/obj/item/gun/projectile/colt/detective, /obj/item/ammo_magazine/m45/rubber, /obj/item/ammo_magazine/m45/rubber)
 	options["MT Mk58 (.45)"] = list(/obj/item/gun/projectile/sec, /obj/item/ammo_magazine/m45/rubber, /obj/item/ammo_magazine/m45/rubber)
 	options["MarsTech R1 (.45)"] = list(/obj/item/gun/projectile/revolver/detective45, /obj/item/ammo_magazine/s45/rubber, /obj/item/ammo_magazine/s45/rubber)
 	options["MarsTech P92X (9mm)"] = list(/obj/item/gun/projectile/p92x/rubber, /obj/item/ammo_magazine/m9mm/rubber, /obj/item/ammo_magazine/m9mm/rubber)
-	offer_guns(user, "Would you prefer a pistol or a revolver?", "Gun!", options)
+	return options
 
-/// Asks which kit to unpack; `options` maps a name to the types it spawns (the gun first).
-/obj/item/gunbox/proc/offer_guns(mob/user, message, title, list/options, greeting = "Say hello to your new friend.")
-	om_ask(user, /datum/om/prompt/choice/gunbox, PROC_REF(gun_chosen), title = title, message = message, choices = options, greeting = greeting)
+/// The question the window asks.
+/obj/item/gunbox/proc/kit_question(datum/act/A)
+	return "Would you prefer a pistol or a revolver?"
 
-/// Picking a kit out of a gun box. Re-checked on the answer: the box is still carried.
-/datum/om/prompt/choice/gunbox
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-	var/greeting
+/// The title of the window.
+/obj/item/gunbox/proc/kit_title(datum/act/A)
+	return "Gun!"
 
-/obj/item/gunbox/proc/gun_chosen(datum/om/prompt/choice/gunbox/ask)
-	var/mob/user = ask.answerer
-	var/list/things_to_spawn = ask.choices[ask.choice]
+/// What the box says when the gun is unpacked.
+/obj/item/gunbox/proc/kit_greeting()
+	return "Say hello to your new friend."
+
+/// The names the window lists.
+/obj/item/gunbox/proc/kit_names(datum/act/A)
+	var/list/names = list()
+	for(var/kit in kit_options())
+		names += kit
+	return names
+
+/// A kit was picked: the box is used up and its things land where it was.
+/obj/item/gunbox/proc/kit_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	var/list/things_to_spawn = kit_options()[R?.value]
+	if(!things_to_spawn)
+		return OP_REFUSED
 	var/turf/delivery_turf = get_turf(src)
 	if(!consume(src, user))
-		return
+		return OP_REFUSED
 	for(var/new_type in things_to_spawn) // Spawn all the things, the gun and the ammo.
 		var/atom/movable/AM = new new_type(delivery_turf)
 		if(istype(AM, /obj/item/gun))
-			to_chat(user, "You have chosen \the [AM]. [ask.greeting]")
+			to_chat(user, "You have chosen \the [AM]. [kit_greeting()]")
+	return OP_OK
 
 /*
  * Sidearm Stun
@@ -48,16 +63,19 @@ DECLARE_INTERACTIONS(/obj/item/gunbox, INTERACT_USE("Open", PROC_REF(interaction
 /obj/item/gunbox/stun
 	name = "non-lethal sidearm box"
 	desc = "A secure box containing a non-lethal sidearm."
-	variant_gunbox = TRUE
-// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
-DECLARE_INTERACTIONS(/obj/item/gunbox/stun, INTERACT_USE("Open", PROC_REF(stun_interaction_self)))
 
-/// Old attack_self.
-/obj/item/gunbox/stun/proc/stun_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The kits of this box.
+/obj/item/gunbox/stun/kit_options()
 	var/list/options = list()
 	options["Stun Revolver"] = list(/obj/item/gun/energy/stunrevolver/detective, /obj/item/cell/device/weapon, /obj/item/cell/device/weapon)
 	options["Taser"] = list(/obj/item/gun/energy/taser, /obj/item/cell/device/weapon, /obj/item/cell/device/weapon)
-	offer_guns(user, "Please, select an option.", "Stun Gun!", options)
+	return options
+
+/obj/item/gunbox/stun/kit_question(datum/act/A)
+	return "Please, select an option."
+
+/obj/item/gunbox/stun/kit_title(datum/act/A)
+	return "Stun Gun!"
 
 /*
  * CentCom Pistol
@@ -66,17 +84,20 @@ DECLARE_INTERACTIONS(/obj/item/gunbox/stun, INTERACT_USE("Open", PROC_REF(stun_i
 	name = "centcom sidearm box"
 	desc = "A secure box containing a lethal sidearm used by Central Command."
 	w_class = ITEMSIZE_HUGE
-	variant_gunbox = TRUE
-// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
-DECLARE_INTERACTIONS(/obj/item/gunbox/centcom, INTERACT_USE("Open", PROC_REF(centcom_interaction_self)))
 
-/// Old attack_self.
-/obj/item/gunbox/centcom/proc/centcom_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The kits of this box.
+/obj/item/gunbox/centcom/kit_options()
 	var/list/options = list()
 	options["Écureuil (10mm)"] = list(/obj/item/gun/projectile/ecureuil, /obj/item/ammo_magazine/m10mm/pistol, /obj/item/ammo_magazine/m10mm/pistol)
 	options["Écureuil Olive (10mm)"] = list(/obj/item/gun/projectile/ecureuil/tac, /obj/item/ammo_magazine/m10mm/pistol, /obj/item/ammo_magazine/m10mm/pistol)
 	options["Écureuil Tan (10mm)"] = list(/obj/item/gun/projectile/ecureuil/tac2, /obj/item/ammo_magazine/m10mm/pistol, /obj/item/ammo_magazine/m10mm/pistol)
-	offer_guns(user, "Please, select an option.", "Gun!", options)
+	return options
+
+/obj/item/gunbox/centcom/kit_question(datum/act/A)
+	return "Please, select an option."
+
+/obj/item/gunbox/centcom/kit_title(datum/act/A)
+	return "Gun!"
 
 
 /*
@@ -87,17 +108,23 @@ DECLARE_INTERACTIONS(/obj/item/gunbox/centcom, INTERACT_USE("Open", PROC_REF(cen
 	desc = "A secure guncase containing the warden's beloved shotgun."
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "gunboxw"
-	variant_gunbox = TRUE
 
-// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
-DECLARE_INTERACTIONS(/obj/item/gunbox/warden, INTERACT_USE("Open", PROC_REF(warden_interaction_self)))
 
-/// Old attack_self.
-/obj/item/gunbox/warden/proc/warden_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The kits of this box.
+/obj/item/gunbox/warden/kit_options()
 	var/list/options = list()
 	options["Warden's combat shotgun"] = list(/obj/item/gun/projectile/shotgun/pump/combat/warden, /obj/item/ammo_magazine/ammo_box/b12g/beanbag)
 	options["Warden's compact shotgun"] = list(/obj/item/gun/projectile/shotgun/compact/warden, /obj/item/ammo_magazine/ammo_box/b12g/beanbag)
-	offer_guns(user, "Choose your boomstick!", "Shotgun!", options, "Say hello to your new best friend.")
+	return options
+
+/obj/item/gunbox/warden/kit_question(datum/act/A)
+	return "Choose your boomstick!"
+
+/obj/item/gunbox/warden/kit_title(datum/act/A)
+	return "Shotgun!"
+
+/obj/item/gunbox/warden/kit_greeting()
+	return "Say hello to your new best friend."
 
 /*
  * Site Manager's Box
@@ -107,31 +134,37 @@ DECLARE_INTERACTIONS(/obj/item/gunbox/warden, INTERACT_USE("Open", PROC_REF(ward
 	desc = "A secure box containing a sidearm befitting of the site manager. Includes both lethal and non-lethal munitions, beware what's loaded!"
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "gunbox"
-	variant_gunbox = TRUE
-// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
-DECLARE_INTERACTIONS(/obj/item/gunbox/captain, INTERACT_USE("Open", PROC_REF(captain_interaction_self)))
 
-/// Old attack_self.
-/obj/item/gunbox/captain/proc/captain_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The kits of this box.
+/obj/item/gunbox/captain/kit_options()
 	var/list/options = list()
 	options["M1911 (.45)"] = list(/obj/item/gun/projectile/colt/detective, /obj/item/ammo_magazine/m45/rubber, /obj/item/ammo_magazine/m45)
 	options["MT Mk58 (.45)"] = list(/obj/item/gun/projectile/sec, /obj/item/ammo_magazine/m45/rubber, /obj/item/ammo_magazine/m45)
 	options["LAEP80 \"Thor\" (Stun/Laser)"] = list(/obj/item/gun/energy/gun, /obj/item/cell/device/weapon, /obj/item/cell/device/weapon)
 	options["MarsTech P92X (9mm)"] = list(/obj/item/gun/projectile/p92x/rubber, /obj/item/ammo_magazine/m9mm/rubber, /obj/item/ammo_magazine/m9mm)
-	offer_guns(user, "Would you prefer a ballistic pistol or an energy gun?", "Gun!", options)
+	return options
+
+/obj/item/gunbox/captain/kit_question(datum/act/A)
+	return "Would you prefer a ballistic pistol or an energy gun?"
+
+/obj/item/gunbox/captain/kit_title(datum/act/A)
+	return "Gun!"
 
 
 /obj/item/gunbox/sec_officer
 	name = "lethal armament box"
 	desc = "A secure box containing a lethal sidearm."
-	variant_gunbox = TRUE
 
-// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
-DECLARE_INTERACTIONS(/obj/item/gunbox/sec_officer, INTERACT_USE("Open", PROC_REF(sec_officer_interaction_self)))
 
-/// Old attack_self.
-/obj/item/gunbox/sec_officer/proc/sec_officer_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The kits of this box.
+/obj/item/gunbox/sec_officer/kit_options()
 	var/list/options = list()
 	options["Laser Pistol"] = list(/obj/item/gun/energy/gun, /obj/item/cell/device/weapon, /obj/item/cell/device/weapon)
 	options["Normal Pistol"] = list(/obj/item/gun/projectile/pistol, /obj/item/ammo_magazine/m9mm/compact, /obj/item/ammo_magazine/m9mm/compact, /obj/item/ammo_magazine/m9mm/compact, /obj/item/ammo_magazine/m9mm/compact)
-	offer_guns(user, "Please, select an option.", "Lethal Gun!", options)
+	return options
+
+/obj/item/gunbox/sec_officer/kit_question(datum/act/A)
+	return "Please, select an option."
+
+/obj/item/gunbox/sec_officer/kit_title(datum/act/A)
+	return "Lethal Gun!"

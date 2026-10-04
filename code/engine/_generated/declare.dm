@@ -5237,12 +5237,23 @@
 	into += entry_line(25)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/geiger) at code/datums/entity_state/geiger_sound.dm:19
+/// CAPABILITIES(/obj/item/geiger) at code/game/objects/items/devices/geiger.dm:29
 /obj/item/geiger/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/datums/entity_state/geiger_sound.dm", 19, /obj/item/geiger)
-	into += entry_line(20)
+	into += entry_block("code/game/objects/items/devices/geiger.dm", 29, /obj/item/geiger)
+	into += entry_line(30)
 	into += list(global.owns_one(nameof(geiger_sound), /datum/geiger_sound))
+	into += entry_line(31)
+	into += list(global.op("toggle", global.in_hand(), global.then(PROC_REF(toggled))))
+	into += entry_line(32)
+	into += list(global.op("reset", global.hand(), global.gesture(GESTURE_ALT), global.label("Reset"), global.needs(global.req(PROC_REF(is_scanning), because = MSG(geiger/off))), global.then(PROC_REF(reset_counts))))
+
+/// CAPABILITIES(/obj/item/geiger/wall) at code/game/objects/items/devices/geiger.dm:202
+/obj/item/geiger/wall/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/geiger.dm", 202, /obj/item/geiger/wall)
+	into += entry_line(203)
+	into += list(global.op("wall_toggle", global.inputs(global.hand(), global.remote()), global.then(PROC_REF(wall_toggled))))
 
 /// CAPABILITIES(/obj/item/generic_item) at code/modules/eventkit/generic_objects/generic_item.dm:28
 /obj/item/generic_item/declared_entries(list/into)
@@ -5480,6 +5491,13 @@
 	into += entry_line(314)
 	into += list(global.op("compact_shotgun_verb_toggle_stock", global.menu(), global.label("Toggle stock"), global.needs(global.carried()), global.then(PROC_REF(compact_shotgun_verb_toggle_stock))))
 
+/// CAPABILITIES(/obj/item/gunbox) at code/game/objects/items/gunbox.dm:11
+/obj/item/gunbox/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/gunbox.dm", 11, /obj/item/gunbox)
+	into += entry_line(12)
+	into += list(global.op("open", global.in_hand(), global.label("Open"), global.wait(0), global.asks(/datum/prompt/choice, fields = list("question" = global.computed(PROC_REF(kit_question)), "title" = global.computed(PROC_REF(kit_title)), "choices" = global.computed(PROC_REF(kit_names)))), global.then(PROC_REF(kit_chosen))))
+
 /// CAPABILITIES(/obj/item/haircomb) at code/game/objects/items/weapons/cosmetics.dm:89
 /obj/item/haircomb/declared_entries(list/into)
 	..(into)
@@ -5648,6 +5666,12 @@
 	into += entry_block("code/game/objects/items/latexballoon.dm", 19, /obj/item/latexballon)
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(air_contents), /datum/gas_mixture))
+	into += entry_line(21)
+	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(balloon_blast)))))
+	into += entry_line(22)
+	into += list(global.extend(/datum/act/hit/projectile, global.instead(global.then(PROC_REF(balloon_shot)))))
+	into += entry_line(23)
+	into += list(global.op("puncture", global.item(/obj/item), global.when(global.req(PROC_REF(punctures))), global.passes(), global.then(PROC_REF(punctured))))
 
 /// CAPABILITIES(/obj/item/leash) at code/game/objects/items/leash.dm:186
 /obj/item/leash/declared_entries(list/into)
@@ -6141,6 +6165,13 @@
 	into += list(global.owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator))
 	into += entry_line(42)
 	into += list(global.owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell)))
+
+/// CAPABILITIES(/obj/item/petrifier) at code/game/objects/items/petrifier.dm:20
+/obj/item/petrifier/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/petrifier.dm", 20, /obj/item/petrifier)
+	into += entry_line(21)
+	into += list(global.op("fire", global.in_hand(), global.wait(0), global.needs(global.req(PROC_REF(can_fire), because = MSG(petrifier/beeps))), global.then(PROC_REF(fired))))
 
 /// CAPABILITIES(/obj/item/pipe_dispenser) at code/game/objects/items/weapons/RPD.dm:54
 /obj/item/pipe_dispenser/declared_entries(list/into)
@@ -8339,6 +8370,13 @@
 	into += entry_block("code/game/objects/items/devices/taperecorder.dm", 23, /obj/item/taperecorder)
 	into += entry_line(24)
 	into += list(global.owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape)))
+
+/// CAPABILITIES(/obj/item/target) at code/game/objects/items/shooting_range.dm:37
+/obj/item/target/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/shooting_range.dm", 37, /obj/item/target)
+	into += entry_line(38)
+	into += list(global.op("unpin", global.hand(), global.when(global.req(PROC_REF(is_pinned))), global.then(PROC_REF(unpinned))))
 
 /// CAPABILITIES(/obj/item/taskmanager) at code/game/objects/items/weapons/taskmanager.dm:311
 /obj/item/taskmanager/declared_entries(list/into)
