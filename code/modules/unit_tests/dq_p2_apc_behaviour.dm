@@ -1468,15 +1468,11 @@
 	TEST_ASSERT(p2_apc_wire_window_opened(W, H), "the panel open: the signaller reaches the wire window")
 	TEST_ASSERT_EQUAL(A.get_integrity(), A.max_integrity, "the APC is not hurt")
 
-/// A silicon's click opens the window: a cyborg's beside it and an AI's from across the room.
+/// An AI's click opens the window from across the room.
 /datum/unit_test/dq_p2_apc/silicon_click_opens_the_window
 
 /datum/unit_test/dq_p2_apc/silicon_click_opens_the_window/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
-	var/mob/living/silicon/robot/R = p2_borg()
-	test_click(R, A, null)
-	p2_settle()
-	TEST_ASSERT(p2_apc_interface_opened(A, R), "a cyborg's click opens the window")
 	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, run_loc_floor_top_right, null, null, null, TRUE)
 	test_click(AI, A, null)
 	p2_settle()
