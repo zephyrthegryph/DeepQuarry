@@ -275,6 +275,8 @@ def main():
                 s = h["spec"]
                 binding = s["held"] and "item(%s)" % s["held"] or KINDS[s["kind"]]
                 parts = ['op("%s"' % h["key"], binding]
+                if s["kind"] == "INTERACT_HAND_UNGATED":
+                    parts.append("ungated()")
                 if s["name"]:
                     parts.append("label(%s)" % s["name"])
                 if s.get("carried"):

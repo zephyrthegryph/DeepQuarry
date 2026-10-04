@@ -22,3 +22,12 @@ EXTEND_INTERACTIONS(/obj/item/bad, INTERACT_VERB("Uses held", PROC_REF(bad_verb)
 
 /obj/item/bad/proc/bad_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	held.name = "x"
+
+/obj/machinery/touchy
+	name = "touchy"
+
+EXTEND_INTERACTIONS(/obj/machinery/touchy, INTERACT_HAND_UNGATED("Poke", PROC_REF(touchy_poke)))
+
+/obj/machinery/touchy/proc/touchy_poke(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, "poked")
+	return TRUE
