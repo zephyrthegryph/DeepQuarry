@@ -38,16 +38,14 @@
 	desc = "Don't make fun, they have a condition."
 	digestable = 0
 
-/mob/living/simple_mob/animal/passive/mouse/jerboa/leggy/Initialize(mapload)
-	. = ..(mapload, TRUE)
+TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/jerboa/leggy, preserve_mouse_identity, TRUE)
 
 /mob/living/simple_mob/animal/passive/mouse/brown/feivel
 	name = "Feivel"
 	desc = "Heading out west wasn't far enough, so he's going to space!"
 	digestable = 0
 
-/mob/living/simple_mob/animal/passive/mouse/brown/feivel/Initialize(mapload)
-	. = ..(mapload, TRUE)
+TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/brown/feivel, preserve_mouse_identity, TRUE)
 
 /mob/living/simple_mob/animal/passive/cat/jones
 	name = "Jones"

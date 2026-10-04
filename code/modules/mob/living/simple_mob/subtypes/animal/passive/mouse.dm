@@ -56,8 +56,14 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/ventcrawl)
 DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 
+TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/passive/mouse, preserve_mouse_identity, FALSE)
+
 /mob/living/simple_mob/animal/passive/mouse/Initialize(mapload, keep_parent_data)
-	. = ..()
+	if(TYPE_TABLE_GET(src, preserve_mouse_identity))
+		keep_parent_data = TRUE
+		. = ..(mapload, keep_parent_data)
+	else
+		. = ..()
 	ghostjoin = TRUE
 	ghostjoin_icon()
 
@@ -151,8 +157,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 	name = "Tom"
 	desc = "Jerry the cat is not amused."
 
-/mob/living/simple_mob/animal/passive/mouse/brown/Tom/Initialize(mapload)
-	. = ..(mapload, TRUE)
+TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/brown/Tom, preserve_mouse_identity, TRUE)
 
 /mob/living/simple_mob/animal/passive/mouse/black
 	body_color = "black"
@@ -197,8 +202,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 	name = "Agent Cheese"
 	desc = "I like my cheese Swiss... not American."
 
-/mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese/Initialize(mapload)
-	. = ..(mapload, TRUE)
+TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese, preserve_mouse_identity, TRUE)
 
 // Mouse noises
 /datum/say_list/mouse
@@ -300,8 +304,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_U
 	desc = "Dainty, well groomed and cared for, her eyes glitter with untold knowledge..."
 	gender = FEMALE
 
-/mob/living/simple_mob/animal/passive/mouse/white/apple/Initialize(mapload, keep_parent_data)
-	. = ..(mapload, TRUE)
+TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/white/apple, preserve_mouse_identity, TRUE)
 
 EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interaction_self)))
 

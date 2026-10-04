@@ -23,7 +23,14 @@
 	var/min_harvests = -1
 	var/list/harvest_loot = null	// Should be an associative list for things to spawn, and their weights. An example would be a branch from a tree.
 
+TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
+
 /obj/structure/flora/Initialize(mapload)
+	switch(TYPE_TABLE_GET(src, initial_icon_variant_count))
+		if(2)
+			icon_state = "[initial(icon_state)][rand(1,2)]"
+		if(3)
+			icon_state = "[initial(icon_state)][rand(1,3)]"
 	. = ..()
 
 	if(randomize_size)
@@ -575,9 +582,7 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 	max_harvests = 2
 	min_harvests = 0
 
-/obj/structure/flora/sif/subterranean/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,2)]"
-	. = ..()
+TYPE_TABLE(/obj/structure/flora/sif/subterranean, initial_icon_variant_count, 2)
 
 /datum/category_item/catalogue/flora/eyebulbs
 	name = "Sivian Flora - Eyebulbs"
@@ -596,9 +601,7 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 	min_harvests = 0
 	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/eyebulbs = 1)
 
-/obj/structure/flora/sif/eyes/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,3)]"
-	. = ..()
+TYPE_TABLE(/obj/structure/flora/sif/eyes, initial_icon_variant_count, 3)
 
 /datum/category_item/catalogue/flora/mosstendrils
 	name = "Sivian Flora - Moss Stalks"
@@ -623,9 +626,7 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 		/obj/item/reagent_containers/food/snacks/grown/sif/wildwabback = 30
 	)
 
-/obj/structure/flora/sif/tendrils/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,3)]"
-	. = ..()
+TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 
 /obj/structure/flora/sif/tendrils/get_harvestable_desc()
 	return span_notice("\The [src] seems to be growing over something.")
