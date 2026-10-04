@@ -13529,7 +13529,7 @@
 	into += entry_line(92)
 	into += list(global.op("force_generic", global.ai(), global.wait(PROC_REF(generic_wait)), global.then(PROC_REF(generic_forced))))
 	into += entry_line(93)
-	into += list(global.op("pry", global.item(/obj/item), global.stance(I_HELP, I_DISARM, I_GRAB), global.when(global.req(PROC_REF(prying_item))), global.priority(OP_PRIORITY_PART - 1), global.wait(0), global.needs(global.req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), global.req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), global.then(PROC_REF(pry_forced))))
+	into += list(global.op("pry", global.item(/obj/item), global.stance(I_HELP, I_DISARM, I_GRAB), global.when(global.req(PROC_REF(prying_item))), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), global.req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), global.then(PROC_REF(pry_forced))))
 	into += entry_line(95)
 	into += list(global.op("pry_broken", global.item(/obj/item), global.stance(I_HURT), global.when(global.req(PROC_REF(prying_item))), global.when(PROC_REF(wrecked)), global.priority(OP_PRIORITY_CLAW), global.wait(0), global.needs(global.req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), global.req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), global.then(PROC_REF(pry_forced))))
 	into += entry_line(97)
