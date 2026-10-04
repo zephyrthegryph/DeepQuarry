@@ -567,7 +567,8 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	if(isanimal(bound_mob))
 		var/mob/living/simple_mob/M = bound_mob
 		M.ai_brain.go_wake()		//Okay it's time to do work, let's wake up!
-	bound_mob.faction = owner.faction	//Let's make sure we aren't hostile to our owner or their friends
+	if(owner)
+		bound_mob.faction = owner.faction	//Let's make sure we aren't hostile to our owner or their friends
 	act_message(bound_mob, src, MSG_SELF("The world around you rematerialize as you are unleashed from %T% next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will."), MSG_OTHERS("\The [user]'s [src] flashes, %U% appears in an instant!!!"))
 	animate_action(get_turf(bound_mob))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
@@ -575,10 +576,9 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 
 //Let's make a flashy sparkle when someone appears or disappears!
 /obj/item/capture_crystal/proc/animate_action(atom/thing)
-	var/image/coolanimation = image('icons/obj/capture_crystal_vr.dmi', null, "animation")
+	var/mutable_appearance/coolanimation = mutable_appearance('icons/obj/capture_crystal_vr.dmi', "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
-	thing.overlays += coolanimation
-	after(src, 1.1 SECOND, PROC_REF(animate_action_finished), with = list(thing, coolanimation))
+	thing.flick_overlay_view_atom(coolanimation, 1.1 SECONDS)
 
 /obj/item/capture_crystal/proc/animate_action_finished(atom/thing,image/coolanimation)
 	SHOULD_NOT_OVERRIDE(TRUE)

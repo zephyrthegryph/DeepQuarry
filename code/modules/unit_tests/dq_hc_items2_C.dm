@@ -162,3 +162,228 @@
 	H.nutrition = 400
 	test_time(7 SECONDS)
 	TEST_ASSERT(G.reagents.total_volume > 0, "once implanted the generator makes reagents on its own clock")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Capture crystal and ghost hunting (batch 2)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// Adapters: the crystal's four menu entries (a menu entry is reachable only through its handler here).
+/proc/hcic_crystal_menu(obj/item/capture_crystal/C, mob/user, entry)
+	switch(entry)
+		if("follow")
+			C.follow_owner_effect(user, null, null)
+		if("destroy")
+			C.destroy_crystal_effect(user, null, null)
+		if("release")
+			C.release_ownership_effect(user, null, null)
+		if("ghost")
+			C.invite_ghost_effect(user, null, null)
+
+/// A crystal with a mouse already bound to it and inside it.
+/datum/unit_test/dq_hc_items/proc/bound_crystal(turf/T, mob/owner_mob)
+	var/obj/item/capture_crystal/C = allocate(/obj/item/capture_crystal, T)
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
+	C.capture(M, owner_mob)
+	M.forceMove(C)
+	C.active = TRUE
+	return C
+
+/// Adapter: one watch step of a trap.
+/proc/hcic_trap_step(obj/item/ghost_trap/T)
+	T.periodic_step()
+
+/datum/unit_test/dq_hc_items/c_crystal_activates_unleashes_and_recalls
+
+/datum/unit_test/dq_hc_items/c_crystal_activates_unleashes_and_recalls/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/capture_crystal/C = allocate(/obj/item/capture_crystal, tile(2, 2))
+	C.spawn_mob_type = /mob/living/simple_mob/animal/passive/mouse
+	C.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(C.icon_state, "full", "a crystal that will spawn its mob shows full")
+	hci_click(H, C, C)
+	settle()
+	TEST_ASSERT_EQUAL(C.owner, H, "the user owns it")
+	TEST_ASSERT(C.active, "it is set up")
+	var/mob/living/M = C.bound_mob
+	TEST_ASSERT(istype(M), "a mob was bound")
+	TEST_ASSERT(!(M in C.contents), "and let out")
+	C.update_icon()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(C.icon_state, "empty-busy", "the crystal shows empty, busy while the cooldown runs")
+	C.recall(H)
+	TEST_ASSERT(M in C.contents, "recalling brings the mob back in")
+	C.update_icon()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(C.icon_state, "full-busy", "and shows full while the cooldown runs")
+	var/obj/item/capture_crystal/idle = allocate(/obj/item/capture_crystal, tile(3, 3))
+	idle.update_icon()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(idle.icon_state, "inactive", "a crystal with nothing bound is inactive")
+
+/datum/unit_test/dq_hc_items/c_crystal_claim_question
+
+/datum/unit_test/dq_hc_items/c_crystal_claim_question/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/capture_crystal/C = bound_crystal(tile(3, 3), H)
+	rel_clear(C, nameof(/obj/item/capture_crystal::owner))
+	TEST_ASSERT_NULL(C.owner, "an ownerless crystal")
+	hci_click(H, C, C)
+	settle()
+	hci_answer(H, TRUE)
+	settle()
+	TEST_ASSERT_EQUAL(C.owner, H, "agreeing claims it")
+	var/obj/item/capture_crystal/C2 = bound_crystal(tile(3, 4), H)
+	rel_clear(C2, nameof(/obj/item/capture_crystal::owner))
+	hci_click(H, C2, C2)
+	settle()
+	hci_answer(H, null, TRUE)
+	settle()
+	TEST_ASSERT_NULL(C2.owner, "walking away from the question leaves it ownerless")
+
+/datum/unit_test/dq_hc_items/c_crystal_menu_entries
+
+/datum/unit_test/dq_hc_items/c_crystal_menu_entries/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/capture_crystal/C = bound_crystal(tile(3, 3), H)
+	var/mob/living/simple_mob/animal/passive/mouse/M = C.bound_mob
+	H.put_in_active_hand(C)
+	TEST_ASSERT(istype(M) && M.ai_brain, "the bound mouse has a brain")
+	hcic_crystal_menu(C, H, "follow")
+	TEST_ASSERT_EQUAL(M.ai_brain.get_leader(), H, "the first toggle makes the mouse follow the owner")
+	hcic_crystal_menu(C, H, "follow")
+	TEST_ASSERT_NULL(M.ai_brain.get_leader(), "the second toggle stops it")
+	M.forceMove(get_turf(H))
+	M.ghostjoin = FALSE
+	hcic_crystal_menu(C, H, "ghost")
+	settle()
+	hci_answer(H, TRUE)
+	settle()
+	TEST_ASSERT(M.ghostjoin, "offering it to ghosts is confirmed")
+	hcic_crystal_menu(C, H, "ghost")
+	TEST_ASSERT(!M.ghostjoin, "toggling again withdraws the offer")
+	hcic_crystal_menu(C, H, "release")
+	TEST_ASSERT_NULL(C.owner, "releasing the ownership clears the owner")
+	rel_set(C, nameof(/obj/item/capture_crystal::owner), H)
+	hcic_crystal_menu(C, H, "destroy")
+	settle()
+	TEST_ASSERT(QDELETED(C), "the owner can destroy the crystal")
+
+/datum/unit_test/dq_hc_items/c_crystal_capture_asks_consent_twice
+
+/datum/unit_test/dq_hc_items/c_crystal_capture_asks_consent_twice/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/V = person(tile(3, 2))
+	var/obj/item/capture_crystal/C = allocate(/obj/item/capture_crystal, tile(2, 2))
+	C.capture_player(V, H)
+	settle()
+	hci_answer(V, TRUE)
+	settle()
+	TEST_ASSERT_NULL(C.bound_mob, "one yes is not enough")
+	hci_answer(V, TRUE)
+	settle()
+	TEST_ASSERT_EQUAL(C.bound_mob, V, "the second yes binds the volunteer")
+	TEST_ASSERT_EQUAL(C.owner, H, "to the one who asked")
+	TEST_ASSERT(V.capture_caught, "and marks them caught")
+	TEST_ASSERT(V in C.contents, "and they are recalled into the crystal")
+	var/mob/living/carbon/human/V2 = person(tile(4, 2))
+	var/obj/item/capture_crystal/C2 = allocate(/obj/item/capture_crystal, tile(2, 2))
+	C2.capture_player(V2, H)
+	settle()
+	hci_answer(V2, FALSE)
+	settle()
+	TEST_ASSERT_NULL(C2.bound_mob, "a no binds nobody")
+	TEST_ASSERT(!V2.capture_caught, "and marks nobody")
+
+/datum/unit_test/dq_hc_items/c_crystal_forgets_a_deleted_mob
+
+/datum/unit_test/dq_hc_items/c_crystal_forgets_a_deleted_mob/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/capture_crystal/C = bound_crystal(tile(3, 3), H)
+	var/mob/living/M = C.bound_mob
+	TEST_ASSERT(C.active, "set up")
+	qdel(M)
+	settle()
+	TEST_ASSERT_NULL(C.bound_mob, "the crystal forgets a mob that is deleted")
+	TEST_ASSERT_NULL(C.owner, "and its owner link")
+	TEST_ASSERT(!C.active, "and is no longer set up")
+	var/obj/item/capture_crystal/C2 = bound_crystal(tile(3, 4), H)
+	var/mob/living/M2 = C2.bound_mob
+	qdel(H)
+	settle()
+	TEST_ASSERT_NULL(C2.owner, "a deleted owner is forgotten")
+	TEST_ASSERT(!C2.active, "and the crystal is no longer set up")
+
+/// A listener of the trap's capture notice.
+/datum/hcic_trap_listener
+	var/heard = 0
+	var/datum/heard_entity
+
+CAPABILITIES(/datum/hcic_trap_listener)
+	ref_one(nameof(heard_entity), /datum)
+
+/datum/hcic_trap_listener/proc/trap_caught(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	heard++
+	var/datum/notice/world_ghost_captured/N = A
+	rel_set(src, nameof(heard_entity), N.passing_entity)
+
+/// Adapters: the trap's two menu entries.
+/proc/hcic_trap_menu(obj/item/ghost_trap/T, mob/user, entry)
+	if(entry == "release")
+		T.release_occupant_effect(user, null, null)
+	else
+		T.ghost_trap_hidden_vore_effect(user, null, null)
+
+/datum/unit_test/dq_hc_items/c_ghost_trap_deploys_catches_and_releases
+
+/datum/unit_test/dq_hc_items/c_ghost_trap_deploys_catches_and_releases/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/ghost_trap/T = allocate(/obj/item/ghost_trap, tile(2, 2))
+	var/obj/item/ghost_trap/start_active/pre = allocate(/obj/item/ghost_trap/start_active, tile(3, 3))
+	pre.update_icon()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(pre.icon_state, "on", "a deployed trap shows on")
+	hci_click(H, T, T)
+	test_time(7 SECONDS)
+	TEST_ASSERT(T.deployed, "using the trap in hand deploys it after a delay")
+	TEST_ASSERT(T.anchored, "and anchors it")
+	T.update_icon()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(T.icon_state, "on", "a deployed trap shows on")
+	var/datum/hcic_trap_listener/L = new
+	observe(T, /datum/notice/world_ghost_captured, L, then(TYPE_PROC_REF(/datum/hcic_trap_listener, trap_caught)))
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, tile(4, 4))
+	T.Crossed(ghost)
+	settle()
+	TEST_ASSERT_EQUAL(T.captured_entity, ghost, "an incorporeal mob crossing a deployed trap is caught")
+	TEST_ASSERT(!T.deployed, "the trap is spent")
+	TEST_ASSERT_EQUAL(ghost.loc, T, "the ghost is inside it")
+	TEST_ASSERT_EQUAL(L.heard, 1, "the capture is announced")
+	TEST_ASSERT_EQUAL(L.heard_entity, ghost, "with the entity")
+	T.update_icon()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(T.icon_state, "item_captured", "a trap with a catch shows captured")
+	ghost.forceMove(tile(4, 4))
+	hcic_trap_step(T)
+	TEST_ASSERT_NULL(T.captured_entity, "an entity that gets out is noticed within a few seconds")
+	T.update_icon()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(T.icon_state, "item", "and the trap shows empty")
+	var/obj/item/ghost_trap/R = allocate(/obj/item/ghost_trap, tile(5, 5))
+	var/mob/observer/dead/ghost2 = allocate(/mob/observer/dead, tile(4, 5))
+	R.catch_ghost(ghost2)
+	TEST_ASSERT_EQUAL(R.captured_entity, ghost2, "caught")
+	hcic_trap_menu(R, H, "release")
+	TEST_ASSERT_NULL(R.captured_entity, "the release entry lets the catch out")
+	TEST_ASSERT(ghost2.loc != R, "outside the trap")
+
+/datum/unit_test/dq_hc_items/c_ghost_trap_hand_picks_it_up_again
+
+/datum/unit_test/dq_hc_items/c_ghost_trap_hand_picks_it_up_again/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/ghost_trap/start_active/T = allocate(/obj/item/ghost_trap/start_active, tile(2, 2))
+	hci_click(H, T, null)
+	test_time(7 SECONDS)
+	TEST_ASSERT(!T.deployed, "an empty hand deactivates a deployed trap after a delay")
+	TEST_ASSERT(!T.anchored, "and unanchors it")
