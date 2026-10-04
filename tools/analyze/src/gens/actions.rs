@@ -21,7 +21,7 @@ use crate::sem::gen::{GenCx, GenOut, Generator};
 
 /// Vars every act carries: a typed field of this name is an error, except `origin`, which the design names for a move's turfs and which is the
 /// ORIGIN_* of the act, so it is declared `origin_turf`.
-const RESERVED: &[&str] = &["holder", "cap", "activation", "source", "target", "actor", "origin", "provider", "authority", "rolled", "outcome", "reason", "args", "key", "held"];
+const RESERVED: &[&str] = &["holder", "cap", "activation", "source", "target", "actor", "origin", "provider", "authority", "rolled", "outcome", "reason", "args", "key", "held", "reply"];
 
 struct Action {
     name: String,
