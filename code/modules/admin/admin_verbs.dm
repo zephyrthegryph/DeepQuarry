@@ -931,9 +931,21 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 	panel.tgui_interact(C.mob)
 
 ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/Robot recolour verb", "Makes it so new robots/simple_mobs spawn with a verb to recolour themselves for this round. You must set them separately.", ADMIN_CATEGORY_SERVER_GAME)
-	var/which = verb_ask(user, "a34", args, /datum/om/prompt/choice/alert, message = "Which do you want to toggle?", title = "Choose Recolour Toggle", choices = list("Robot", "Simple Mob"))
-	if(isnull(which))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_recolour_grant, PROC_REF(recolour_chosen), answerer = answerer)
+
+/datum/admin_verb/toggle_spawning_with_recolour/proc/recolour_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(apply_recolour_choice), A)
+	if(!result.ok)
+		stack_trace("om flow toggle_spawning_with_recolour answer recolour_chosen: [result.error]")
+
+/datum/admin_verb/toggle_spawning_with_recolour/proc/apply_recolour_choice(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/which = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	switch(which)
 		if("Robot")
 			CONFIG_SET(flag/allow_robot_recolor, !CONFIG_GET(flag/allow_robot_recolor))
@@ -990,3 +1002,17 @@ CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation)
 	if(.)
 		return
 	return QDELETED(target) ? "target is gone" : null
+
+/datum/prompt/choice/admin_recolour_grant
+	rights = R_ADMIN|R_EVENT|R_FUN
+	timeout = 0
+	question = "Which do you want to toggle?"
+	title = "Choose Recolour Toggle"
+	buttons = TRUE
+	choices = list("Robot", "Simple Mob")
+
+/datum/prompt/choice/admin_recolour_grant/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
