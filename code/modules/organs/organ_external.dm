@@ -275,7 +275,7 @@
 EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(external_interaction_item)))
 
 /// Old attackby.
-/obj/item/organ/external/proc/external_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/organ/external/proc/external_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction, obj/item/extraction_answer, extraction_answered = FALSE)
 	switch(stage)
 		if(0)
 			if(istype(W,/obj/item/surgical/scalpel))
@@ -294,7 +294,10 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 		if(2)
 			if(istype(W,/obj/item/surgical/hemostat))
 				if(LAZYLEN(contents))
-					var/obj/item/removing = rerun_ask(user, "k308", PROC_REF(external_interaction_item), args, /datum/om/prompt/choice, message = "What would you like to remove?", title = "Extraction", choices = contents, timeout = 20 SECONDS)
+					if(!extraction_answered)
+						open_request(src, /datum/prompt/choice/organ_extraction, PROC_REF(extraction_selected), answerer = user, captured_item = W, captured_interaction = interaction, item_expected = !isnull(W), interaction_expected = !isnull(interaction), question = "What would you like to remove?", title = "Extraction", choices = contents, timeout = 20 SECONDS)
+						return TRUE
+					var/obj/item/removing = extraction_answer
 					if(isnull(removing))
 						return TRUE
 					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
@@ -1709,3 +1712,45 @@ Note that amputating the affected organ does in fact remove the infection from t
 #undef LIMB_DISMEMBER_INELIGIBLE
 #undef LIMB_DISMEMBER_SPARED
 #undef LIMB_DISMEMBER_DROPPED
+
+/obj/item/organ/external/proc/extraction_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/organ_extraction/request = A.request
+	if(request.captures_gone())
+		return
+	var/datum/result/result = safe_call(PROC_REF(external_interaction_item), request.answerer, request.captured_item, request.captured_interaction, A.answer.answer_value, TRUE)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/datum/prompt/choice/organ_extraction
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/organ_extraction)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/choice/organ_extraction/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/choice/organ_extraction/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/choice/organ_extraction/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null
