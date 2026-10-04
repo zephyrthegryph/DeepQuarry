@@ -39,6 +39,7 @@
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(actor), "Nearby accepted pickup has actual warning")
 	test_answer(actor, "Take It")
 	test_time(0.1 SECONDS)
+	own_turf_contents(surface)
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Take It completes warning")
 	TEST_ASSERT(actor.item_is_in_hands(beacon), "Production callback actually picks original beacon into a real hand")
 	TEST_ASSERT_EQUAL(beacon.loc, actor, "Original beacon physically belongs to drawer after pickup")
