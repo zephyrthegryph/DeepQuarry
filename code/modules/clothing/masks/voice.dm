@@ -35,7 +35,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/voice, \
 	changer.voice = null
 	to_chat(user, span_notice("You have reset your voice changer's mimicry feature."))
 
-/obj/item/clothing/mask/gas/voice/ownership()
-	. = ..()
-	. += owns(nameof(changer), starts = /obj/item/voice_changer)
+CAPABILITIES(/obj/item/clothing/mask/gas/voice)
+	owns_one(nameof(changer), starts = /obj/item/voice_changer)
 

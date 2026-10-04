@@ -21,7 +21,7 @@ fn repo_root() -> PathBuf {
 fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
     let root = repo_root();
     let cfg = SpikeConfig::parse(&std::fs::read_to_string(root.join("tools/analyze/oracle/spike.toml")).expect("spike.toml"));
-    assert_eq!(cfg.handlers.len(), 17, "the spike pins 17 handlers");
+    assert_eq!(cfg.handlers.len(), 13, "the spike pins 13 handlers");
 
     let opts = Options { root: root.clone(), lints: vec!["sem/keys".to_string()], no_cache: true, raw: true, ..Default::default() };
     let engine = Engine::new(dq_analyze::run::registry(), opts).expect("engine");
@@ -34,6 +34,13 @@ fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
     all.extend(generated_entries(&root));
     let rows = evaluate(&sem, &eng, &all, &cfg.tokens);
 
+    let gone: Vec<String> = cfg
+        .handlers
+        .iter()
+        .filter(|(ty, kind, var)| !rows.iter().any(|r| &r.ty == ty && r.kind.label() == kind && &r.var == var))
+        .map(|(ty, kind, var)| format!("{} {} {}", ty, kind, var))
+        .collect();
+    assert!(gone.is_empty(), "pinned handlers with no hand-written list in the tree any more (converted: drop their pins from spike.toml and lower the count here): {:?}", gone);
     let mut needing_annotation = Vec::new();
     for (ty, kind, var) in &cfg.handlers {
         let row = rows

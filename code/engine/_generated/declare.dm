@@ -4205,6 +4205,13 @@
 	into += entry_line(33)
 	into += list(global.op("engagement_ring_present_self", global.in_hand(), global.label("Present"), global.then(PROC_REF(engagement_ring_present_self))))
 
+/// CAPABILITIES(/obj/item/clothing/accessory/storage) at code/modules/clothing/accessories/storage.dm:15
+/obj/item/clothing/accessory/storage/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/storage.dm", 15, /obj/item/clothing/accessory/storage)
+	into += entry_line(16)
+	into += list(global.owns_one(nameof(hold), starts = /obj/item/storage/internal))
+
 /// CAPABILITIES(/obj/item/clothing/accessory/watch/survival) at code/modules/clothing/accessories/watches.dm:61
 /obj/item/clothing/accessory/watch/survival/declared_entries(list/into)
 	..(into)
@@ -4429,6 +4436,13 @@
 	into += entry_block("code/modules/clothing/masks/gasmask.dm", 130, /obj/item/clothing/mask/gas/swat/vox)
 	into += entry_line(131)
 	into += list(global.op("vox_mask_port_self", global.in_hand(), global.label("Feeding port"), global.then(PROC_REF(vox_mask_port_self))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/gas/voice) at code/modules/clothing/masks/voice.dm:38
+/obj/item/clothing/mask/gas/voice/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/masks/voice.dm", 38, /obj/item/clothing/mask/gas/voice)
+	into += entry_line(39)
+	into += list(global.owns_one(nameof(changer), starts = /obj/item/voice_changer))
 
 /// CAPABILITIES(/obj/item/clothing/mask/paper) at code/modules/clothing/masks/miscellaneous.dm:355
 /obj/item/clothing/mask/paper/declared_entries(list/into)
