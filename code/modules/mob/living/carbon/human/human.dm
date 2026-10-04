@@ -228,7 +228,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			if (get_ear_protection() < 2)
 				set_ear_damage(ear_damage + (30))
 				status_adjust(EFFECT_DEAFENED, 120)
-				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
+				deaf_loop.start() // Ear Ringing/Deafness
 			if (prob(70) && !shielded)
 				status_at_least(EFFECT_PARALYZED, 10)
 				status_at_least(EFFECT_SLEEPING, 10)
@@ -240,7 +240,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			if (get_ear_protection() < 2)
 				set_ear_damage(ear_damage + (15))
 				status_adjust(EFFECT_DEAFENED, 60)
-				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
+				deaf_loop.start() // Ear Ringing/Deafness
 			if (prob(50) && !shielded)
 				status_at_least(EFFECT_PARALYZED, 10)
 				status_at_least(EFFECT_SLEEPING, 10)
@@ -293,7 +293,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			return 1
 	return 0
 
-/mob/living/carbon/human/var/temperature_resistance = T0C+75
 
 // called when something steps onto a human
 // this handles mobs on fire - mulebot and vehicle code has been relocated to /mob/living/Crossed()

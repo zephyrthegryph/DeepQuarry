@@ -6,7 +6,7 @@
 	item_state = "std_mod"
 	var/pto_type = null
 	var/hide_on_manifest = FALSE
-	var/channels = list()
+	var/list/channels
 	var/list/networks
 	var/languages = list(LANGUAGE_SOL_COMMON= 1,
 					LANGUAGE_TRADEBAND	= 1,

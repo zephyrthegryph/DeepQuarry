@@ -246,7 +246,6 @@
 
 	var/registered_z
 
-	var/in_enclosed_vehicle = 0	//For mechs and fighters ambiance. Can be used in other cases.
 
 	///List of progress bars this mob is currently seeing for actions
 	var/tmp/list/progressbars = null //for stacking do_after bars

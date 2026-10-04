@@ -78,7 +78,6 @@
 	var/hand_blood_color
 
 	var/list/flavor_texts	// Lazy.
-	var/robolimb_count = 0 // Total number of external robot parts.
 	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
 
 	mob_bump_flag = HUMAN

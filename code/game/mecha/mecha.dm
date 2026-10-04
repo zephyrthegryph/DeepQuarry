@@ -1654,7 +1654,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 
 		// The *_possible capability vars gate the pilot's Menu entries (pred_mecha_can_* in mecha_actions.dm).
 
-		occupant.in_enclosed_vehicle = 1	//Useful for when you need to know if someone is in a mecho.
 		update_cell_alerts()
 		update_damage_alerts()
 		set_dir(dir_in)
@@ -1741,7 +1740,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			occupant.canmove = 0
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
-		occupant.in_enclosed_vehicle = 0
 		update_icon()
 		set_dir(dir_in)
 
@@ -2190,7 +2188,7 @@ UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
 			output += "Universal Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
 		for(var/obj/item/mecha_parts/mecha_equipment/W in special_equipment)
 			output += "Special Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_utility_equipment) // VOREstation Edit -  Adds micro equipent to the menu
+		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_utility_equipment) // Adds micro equipent to the menu
 			output += "Micro Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
 		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_weapon_equipment)
 			output += "Micro Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
@@ -2704,7 +2702,6 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 
 	return TRUE
 
-// === merged from mecha_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/mecha
 	damage_minimum = 5				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
 	minimum_penetration = 10		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.

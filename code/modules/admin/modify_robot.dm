@@ -395,24 +395,25 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_channel)
 		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/syndicate(target())
 		target().radio.syndie = 1
-	target().module.channels += list("[selected_radio_channel]" = 1)
-	target().radio.channels[selected_radio_channel] = target().module.channels[selected_radio_channel]
+	LAZYADD(target().module.channels, list("[selected_radio_channel]" = 1))
+	target().radio.channels[selected_radio_channel] = LAZYACCESS(target().module.channels, selected_radio_channel)
 	target().radio.secure_radio_connections[selected_radio_channel] = SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
 	return TRUE
 
 UI_ACT(/datum/eventkit/modify_robot, "rem_channel", ui_act_rem_channel, UI_ARG_VALUE("channel"))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_channel)
 	var/selected_radio_channel = params["channel"]
-	if((selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM) && !(target().module.channels[CHANNEL_SPECIAL_OPS] || target().module.channels[CHANNEL_RESPONSE_TEAM]))
+	if((selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM) && !(LAZYACCESS(target().module.channels, CHANNEL_SPECIAL_OPS) || LAZYACCESS(target().module.channels, CHANNEL_RESPONSE_TEAM)))
 		target().radio.centComm = 0
-	target().module.channels -= selected_radio_channel
-	if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(target().module.channels[CHANNEL_RAIDER] || target().module.channels[CHANNEL_MERCENARY]))
+	if(target().module.channels)
+		target().module.channels -= selected_radio_channel
+	if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(LAZYACCESS(target().module.channels, CHANNEL_RAIDER) || LAZYACCESS(target().module.channels, CHANNEL_MERCENARY)))
 		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = null
 		target().radio.syndie = 0
 	target().radio.channels = list()
 	for(var/n_chan in target().module.channels)
-		target().radio.channels[n_chan] = target().module.channels[n_chan]
+		target().radio.channels[n_chan] = LAZYACCESS(target().module.channels, n_chan)
 	SSradio.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
 	target().radio.secure_radio_connections -= selected_radio_channel
 	return TRUE

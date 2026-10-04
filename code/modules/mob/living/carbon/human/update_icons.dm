@@ -217,7 +217,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 /// every part is transparent: list(key, whole icon transparent). Also recounts prosthetic limbs
 /// and applies the tail's sprite offset.
 /mob/living/carbon/human/proc/body_icon_key()
-	robolimb_count = 0
 	robobody_count = 0
 
 	var/g = (gender == MALE ? "male" : "female")
@@ -249,7 +248,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		wholeicontransparent &&= part.transparent
 		icon_key += body_part_icon_key(part)
 		if(part.is_robotic())
-			robolimb_count++
 			if((part.robotic == ORGAN_ROBOT || part.robotic == ORGAN_LIFELIKE) && (part.organ_tag == BP_HEAD || part.organ_tag == BP_TORSO || part.organ_tag == BP_GROIN))
 				robobody_count++
 
