@@ -263,7 +263,11 @@
 		return COMPONENT_BLOCK_IRRADIATION
 
 ///TGUI below here
-DECLARE_UI(/datum/trait_state/radiation_effects, "RadiationConfig", UI_TITLE("Radiation Config"))
+CAPABILITIES(/datum/trait_state/radiation_effects)
+	interface("RadiationConfig", title = "Radiation Config")
+	op("toggle_color", ui_act("toggle_color"), then(PROC_REF(ui_act_toggle_color)))
+	op("toggle_glow", ui_act("toggle_glow"), then(PROC_REF(ui_act_toggle_glow)))
+	op("toggle_nutrition", ui_act("toggle_nutrition"), then(PROC_REF(ui_act_toggle_nutrition)))
 
 /mob/living/proc/radiation_control_panel()
 	set name = "Radiation Control Panel"
@@ -277,10 +281,8 @@ DECLARE_UI(/datum/trait_state/radiation_effects, "RadiationConfig", UI_TITLE("Ra
 
 	rad.tgui_interact(src)
 
-UI_DATA_REPLACE(/datum/trait_state/radiation_effects, "merge:ui_data_datum_trait_state_radiation_effects{glowing:num,radiation_color:text,glowtoggle:num,radiation_nutrition:num,nutrition_toggle:num,radiation_nutrition_cap:num,current_nutrition:num}")
-
 /// The computed part of /datum/trait_state/radiation_effects's window data (declared on its UI_DATA row).
-/datum/trait_state/radiation_effects/proc/ui_data_datum_trait_state_radiation_effects(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/trait_state/radiation_effects/ui_data(datum/act/eval/A)
 	var/mob/living/living_guy = owner
 	var/data = list(
 		"glowing" = glows,
@@ -299,19 +301,17 @@ UI_DATA_REPLACE(/datum/trait_state/radiation_effects, "merge:ui_data_datum_trait
 		return
 	radiation_color = ask.picked_color
 
-UI_ACT(/datum/trait_state/radiation_effects, "toggle_color", ui_act_toggle_color)
-UI_ACT_PROC(/datum/trait_state/radiation_effects, ui_act_toggle_color)
-	om_ask(ui.user, /datum/om/prompt/color, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src, title = "Color Selector")
+/datum/trait_state/radiation_effects/proc/ui_act_toggle_color(datum/act/op/A)
+	var/mob/user = A.actor
+	om_ask(user, /datum/om/prompt/color, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src, title = "Color Selector")
 	return FALSE
 
-UI_ACT(/datum/trait_state/radiation_effects, "toggle_glow", ui_act_toggle_glow)
-UI_ACT_PROC(/datum/trait_state/radiation_effects, ui_act_toggle_glow)
+/datum/trait_state/radiation_effects/proc/ui_act_toggle_glow(datum/act/op/A)
 	glows = !glows
 	to_chat(owner, span_info("You are [glows ? "now" : "no longer"] glowing."))
 	return FALSE
 
-UI_ACT(/datum/trait_state/radiation_effects, "toggle_nutrition", ui_act_toggle_nutrition)
-UI_ACT_PROC(/datum/trait_state/radiation_effects, ui_act_toggle_nutrition)
+/datum/trait_state/radiation_effects/proc/ui_act_toggle_nutrition(datum/act/op/A)
 	radiation_nutrition = !radiation_nutrition
 	to_chat(owner, span_info("You are [radiation_nutrition ? "now" : "no longer"] gaining nutrition from radiation."))
 	return FALSE

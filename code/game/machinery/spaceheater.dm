@@ -50,6 +50,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/space_heater, MACHINE_PIPELINE, "state")
 
 CAPABILITIES(/obj/machinery/space_heater)
 	climb()
+	interface("SpaceHeater")
+	op("temp", ui_act("temp", arg("newtemp", num())), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_temp)))
+	op("cellremove", ui_act("cellremove"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellremove)))
+	op("cellinstall", ui_act("cellinstall"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellinstall)))
 
 /obj/machinery/space_heater/Initialize(mapload)
 	. = ..()
@@ -178,9 +182,16 @@ DECLARE_UI_STATE(/obj/machinery/space_heater, GLOB.tgui_physical_state)
 		return STATUS_CLOSE
 	return ..()
 
-DECLARE_UI(/obj/machinery/space_heater, "SpaceHeater")
-
-UI_DATA_REPLACE(/obj/machinery/space_heater, "temp=set_temperature", "minTemp=min_temperature", "maxTemp=max_temperature:num", "merge:ui_data_obj_machinery_space_heater{cell:bool,power:num}")
+/obj/machinery/space_heater/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["temp"] = set_temperature
+	data["minTemp"] = min_temperature
+	data["maxTemp"] = max_temperature
+	var/list/merged_1 = ui_data_obj_machinery_space_heater(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/space_heater's window data (declared on its UI_DATA row).
 /obj/machinery/space_heater/proc/ui_data_obj_machinery_space_heater(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -191,40 +202,37 @@ UI_DATA_REPLACE(/obj/machinery/space_heater, "temp=set_temperature", "minTemp=mi
 
 	return data
 
-/obj/machinery/space_heater/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/space_heater/proc/ui_gate(datum/act/op/A)
 	if(!panel_open)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/space_heater, "temp", ui_act_temp, UI_ARG_NUM("newtemp"))
-UI_ACT_PROC(/obj/machinery/space_heater, ui_act_temp)
+/obj/machinery/space_heater/proc/ui_act_temp(datum/act/op/A, newtemp)
 	// limit to 0-90 degC
-	set_temperature = clamp(params["newtemp"], min_temperature, max_temperature)
+	set_temperature = clamp(newtemp, min_temperature, max_temperature)
 	. = TRUE
 
-UI_ACT(/obj/machinery/space_heater, "cellremove", ui_act_cellremove)
-UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellremove)
-	if(cell && !ui.user.get_active_hand())
-		act_message(ui.user, src, MSG_SELF(span_notice("You remove [cell] from %T%.")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%.")))
+/obj/machinery/space_heater/proc/ui_act_cellremove(datum/act/op/A)
+	var/mob/user = A.actor
+	if(cell && !user.get_active_hand())
+		act_message(user, src, MSG_SELF(span_notice("You remove [cell] from %T%.")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%.")))
 		cell.update_icon()
-		ui.user.put_in_hands(cell)
-		cell.add_fingerprint(ui.user)
+		user.put_in_hands(cell)
+		cell.add_fingerprint(user)
 		own_take(src, nameof(/obj/mecha::cell))
 		power_change()
 		. = TRUE
 
-UI_ACT(/obj/machinery/space_heater, "cellinstall", ui_act_cellinstall)
-UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
+/obj/machinery/space_heater/proc/ui_act_cellinstall(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!cell)
-		var/obj/item/cell/C = ui.user.get_active_hand()
+		var/obj/item/cell/C = user.get_active_hand()
 		if(istype(C))
-			if(!move_into(src, nameof(src.cell), C, ui.user))
+			if(!move_into(src, nameof(src.cell), C, user))
 				return
-			C.add_fingerprint(ui.user)
+			C.add_fingerprint(user)
 			power_change()
-			act_message(ui.user, src, MSG_SELF(span_notice("You insert %I% into %T%.")), \
+			act_message(user, src, MSG_SELF(span_notice("You insert %I% into %T%.")), \
 				MSG_OTHERS(span_notice("%U% inserts %I% into %T%.")), \
 				item = C)
 		. = TRUE

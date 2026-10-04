@@ -51,9 +51,20 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/roguezones, "RogueZones")
+CAPABILITIES(/obj/machinery/computer/roguezones)
+	interface("RogueZones")
+	op("scan_for_new", ui_act("scan_for_new"), then(PROC_REF(ui_act_scan_for_new)))
+	op("recall_shuttle", ui_act("recall_shuttle"), then(PROC_REF(ui_act_recall_shuttle)))
 
-UI_DATA(/obj/machinery/computer/roguezones, "scanning:num", "debug:num", "merge:ui_data_obj_machinery_computer_roguezones{timeout_percent:num,diffstep:num,difficulty:unknown,occupied:unknown,updated:bool,shuttle_location:text,shuttle_at_station:num,scan_ready:num,can_recall_shuttle:bool}")
+/obj/machinery/computer/roguezones/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["scanning"] = scanning
+	data["debug"] = debug
+	var/list/merged_1 = ui_data_obj_machinery_computer_roguezones(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/computer/roguezones's window data (declared on its UI_DATA row).
 /obj/machinery/computer/roguezones/proc/ui_data_obj_machinery_computer_roguezones(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -94,17 +105,17 @@ UI_DATA(/obj/machinery/computer/roguezones, "scanning:num", "debug:num", "merge:
 	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied)
 	return data
 
-UI_ACT(/obj/machinery/computer/roguezones, "scan_for_new", ui_act_scan_for_new)
-UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_scan_for_new)
+/obj/machinery/computer/roguezones/proc/ui_act_scan_for_new(datum/act/op/A)
+	var/mob/user = A.actor
 	scan_for_new_zone()
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/computer/roguezones, "recall_shuttle", ui_act_recall_shuttle)
-UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
-	failsafe_shuttle_recall(ui.user)
+/obj/machinery/computer/roguezones/proc/ui_act_recall_shuttle(datum/act/op/A)
+	var/mob/user = A.actor
+	failsafe_shuttle_recall(user)
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 /obj/machinery/computer/roguezones/proc/scan_for_new_zone()
 	if(scanning)

@@ -14,15 +14,15 @@ CAPABILITIES(/obj/machinery/guarded)
 /obj/machinery/checked
 	name = "checked"
 
-DECLARE_UI(/obj/machinery/checked, "Checked")
+CAPABILITIES(/obj/machinery/checked)
+	interface("Checked")
+	op("go", ui_act("go"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_go)))
 
-/obj/machinery/checked/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/checked/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/checked, "go", ui_act_go)
-UI_ACT_PROC(/obj/machinery/checked, ui_act_go)
+/obj/machinery/checked/proc/ui_act_go(datum/act/op/A)
 	return TRUE

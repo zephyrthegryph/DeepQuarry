@@ -31,6 +31,8 @@
 CAPABILITIES(/obj/machinery/maint_vendor)
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
 	owns_many(nameof(product_datums))
+	interface("RecyclerVendor")
+	op("purchase", ui_act("purchase", arg("index", num())), then(PROC_REF(ui_act_purchase)))
 
 /obj/machinery/maint_vendor/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
@@ -171,23 +173,20 @@ APPEARANCE_EMISSIVE(/obj/machinery/maint_vendor, "appearance_powered", list("1" 
 		get_asset_datum(/datum/asset/spritesheet_batched/maint_vendor) //for the item icons
 	)
 
-UI_ACT(/obj/machinery/maint_vendor, "purchase", ui_act_purchase, UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/maint_vendor, ui_act_purchase)
-	var/datum/maint_recycler_vendor_entry/entry = product_datums[params["index"]]
-	attempt_purchase(ui.user,entry)
+/obj/machinery/maint_vendor/proc/ui_act_purchase(datum/act/op/A, index)
+	var/mob/user = A.actor
+	var/datum/maint_recycler_vendor_entry/entry = product_datums[index]
+	attempt_purchase(user,entry)
 	return TRUE
-
-DECLARE_UI(/obj/machinery/maint_vendor, "RecyclerVendor")
 
 /obj/machinery/maint_vendor/tgui_close(mob/user)
 	. = ..()
 	if(LAZYLEN(open_tguis) > 0) return
 	set_on_state(FALSE)
 
-UI_DATA_REPLACE(/obj/machinery/maint_vendor, "merge:ui_data_obj_machinery_maint_vendor{items:list,userBalance:unknown,userName:text}")
-
 /// The computed part of /obj/machinery/maint_vendor's window data (declared on its UI_DATA row).
-/obj/machinery/maint_vendor/proc/ui_data_obj_machinery_maint_vendor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/maint_vendor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	var/list/items = list()
 

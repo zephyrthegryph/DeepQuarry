@@ -1,7 +1,10 @@
 /datum/tgui_feedback
 	var/selected_window
 
-DECLARE_UI(/datum/tgui_feedback, "TguiFeedback", UI_TITLE("TGUI Feedback Submission"))
+CAPABILITIES(/datum/tgui_feedback)
+	interface("TguiFeedback", title = "TGUI Feedback Submission")
+	op("pick_window", ui_act("pick_window", arg("win", schema_text(4096))), then(PROC_REF(ui_act_pick_window)))
+	op("submit", ui_act("submit", arg("comment", schema_text(4096)), arg("rating", schema_text(4096))), then(PROC_REF(ui_act_submit)))
 
 DECLARE_UI_STATE(/datum/tgui_feedback, GLOB.tgui_always_state)
 
@@ -14,19 +17,20 @@ DECLARE_UI_STATE(/datum/tgui_feedback, GLOB.tgui_always_state)
 
 	return data
 
-UI_DATA_REPLACE(/datum/tgui_feedback, "selected_window")
+/datum/tgui_feedback/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["selected_window"] = selected_window
+	return data
 
-UI_ACT(/datum/tgui_feedback, "pick_window", ui_act_pick_window, UI_ARG_TEXT("win"))
-UI_ACT_PROC(/datum/tgui_feedback, ui_act_pick_window)
-	if(!params["win"])
+/datum/tgui_feedback/proc/ui_act_pick_window(datum/act/op/A, win)
+	if(!win)
 		return
 
-	selected_window = sanitize(params["win"])
+	selected_window = sanitize(win)
 	. = TRUE
 
-UI_ACT(/datum/tgui_feedback, "submit", ui_act_submit, UI_ARG_TEXT("comment"), UI_ARG_TEXT("rating"))
-UI_ACT_PROC(/datum/tgui_feedback, ui_act_submit)
-	message_admins("TGUI Feedback: Rating [params["rating"]] - Comment: [params["comment"]]")
+/datum/tgui_feedback/proc/ui_act_submit(datum/act/op/A, comment, rating)
+	message_admins("TGUI Feedback: Rating [rating] - Comment: [comment]")
 	. = TRUE
 
 /client/verb/tgui_feedback()

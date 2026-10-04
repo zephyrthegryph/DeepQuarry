@@ -88,7 +88,10 @@
 	while (!choice && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
-DECLARE_UI(/datum/tgui_alert, "AlertModal")
+CAPABILITIES(/datum/tgui_alert)
+	interface("AlertModal")
+	op("choose", ui_act("choose", arg("choice", schema_text(4096))), then(PROC_REF(ui_act_choose)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
 /datum/tgui_alert/tgui_close(mob/user)
 	. = ..()
@@ -107,25 +110,21 @@ DECLARE_UI(/datum/tgui_alert, "AlertModal")
 	data["title"] = title
 	return data
 
-UI_DATA_REPLACE(/datum/tgui_alert, "merge:ui_data_datum_tgui_alert{timeout:num}")
-
 /// The computed part of /datum/tgui_alert's window data (declared on its UI_DATA row).
-/datum/tgui_alert/proc/ui_data_datum_tgui_alert(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_alert/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-UI_ACT(/datum/tgui_alert, "choose", ui_act_choose, UI_ARG_TEXT("choice"))
-UI_ACT_PROC(/datum/tgui_alert, ui_act_choose)
-	if (!(params["choice"] in buttons))
+/datum/tgui_alert/proc/ui_act_choose(datum/act/op/A, choice)
+	if (!(choice in buttons))
 		return
-	set_choice(params["choice"])
+	set_choice(choice)
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_alert, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/tgui_alert, ui_act_cancel)
+/datum/tgui_alert/proc/ui_act_cancel(datum/act/op/A)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
