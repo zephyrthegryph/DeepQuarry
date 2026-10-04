@@ -433,7 +433,6 @@ base_var	code/modules/mob/living/butchering.dm	var/list/butchery_loot // Associa
 base_var	code/modules/mob/living/carbon/breathe.dm	/mob/living/carbon/var/breath_cycle = 0
 base_var	code/modules/mob/living/carbon/carbon.dm	var/germs_rolled_at
 base_var	code/modules/mob/living/carbon/carbon.dm	var/datum/looping_sound/mob/cozyloop/cozyloop
-base_var	code/modules/mob/living/carbon/carbon.dm	var/slip_reflex = FALSE
 base_var	code/modules/mob/living/carbon/carbon.dm	var/synth_reag_processing = TRUE
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/species/species //Contains icon generation and language information, set during New().
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/antibodies = list() // ALLOW(instance_list): d: per-mob antibodies, filled at runtime; mobs are few
