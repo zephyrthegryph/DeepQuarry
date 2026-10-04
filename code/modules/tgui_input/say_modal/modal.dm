@@ -138,7 +138,7 @@ CAPABILITIES(/datum/tgui_say)
 	if(type == "entry" || type == "force")
 		var/id = href_list["packetId"]
 		if(!isnull(id))
-			payload = handle_packets(id, href_list["totalPackets"], href_list["packet"])
+			payload = handle_packets(id, href_list["totalPackets"], href_list["packet"], client()?.mob)
 			if(!payload)
 				return FALSE
 		handle_entry(type, payload)

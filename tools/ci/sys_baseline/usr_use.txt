@@ -140,7 +140,6 @@ usr_outside_verb	code/modules/admin/DB ban/functions.dm	usr = admin // DB_ban_ed
 usr_outside_verb	code/modules/admin/DB ban/functions.dm	to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to a ban id not being present in the database.")]"))
 usr_outside_verb	code/modules/admin/DB ban/functions.dm	to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to multiple bans having the same ID. Contact the database admin.")]"))
 usr_outside_verb	code/modules/admin/DB ban/functions.dm	message_admins("[key_name_admin(usr)] has lifted [pckey]'s ban.")
-usr_outside_verb	code/modules/admin/admin.dm	om_ask(usr, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
 usr_outside_verb	code/modules/admin/admin_attack_log.dm	/proc/log_and_message_admins(message as text, mob/user = usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
@@ -263,9 +262,6 @@ usr_outside_verb	code/modules/keybindings/router.dm	usr.DblClickOn(src, params)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.MouseWheelOn(src, delta_x, delta_y, params)
 usr_outside_verb	code/modules/keybindings/router.dm	GLOB.input_router.route_drag(usr, src, over, src_location, over_location, src_control, over_control, params)
 usr_outside_verb	code/modules/mob/combat_mode.dm	usr.set_combat_mode(!usr.combat_mode)
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if(!usr || !over) return
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if (isobserver(usr) && usr.client && check_rights_for(usr.client, R_HOLDER) && isliving(over))
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if (usr.client.holder.cmd_ghost_drag(src,over))
 usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	if(isAI(usr))
 usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	var/mob/living/silicon/ai/AI = usr
 usr_outside_verb	code/modules/mob/holder.dm	get_scooped(H, (usr == src))
@@ -288,17 +284,12 @@ usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
-usr_outside_verb	code/modules/tgui/helpers.dm	log_tgui(usr, "Error: Invalid JSON")
 usr_outside_verb	code/modules/tgui/modules/overmap.dm	CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
 usr_outside_verb	code/modules/tgui_input/checkboxes.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/keycombo.dm	/proc/tgui_input_keycombo(mob/user = usr, message, title = "Key Input", default = 0, timeout = 0, ui_state = GLOB.tgui_always_state)
 usr_outside_verb	code/modules/tgui_input/matrix.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/say_modal/speech.dm	CRASH("[usr] entered in a null payload to the chat window.")
 usr_outside_verb	code/modules/tgui_input/say_modal/speech.dm	CRASH("[usr] has entered more characters than allowed into a TGUI-Say")
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(M != usr) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(usr == src) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(!Adjacent(usr)) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	O.show_inventory_panel(usr, state = GLOB.tgui_deep_inventory_state)
 usr_outside_verb	code/modules/xenoarcheaology/anomaly_container.dm	if(!QDELETED(src) && isturf(loc) && is_anomalous() && Adjacent(over_object) && CanMouseDrop(over_object, usr))
 usr_outside_verb	code/modules/xenoarcheaology/anomaly_container.dm	Bumped(usr)
 usr_outside_verb	code/modules/xenoarcheaology/effect_master.dm	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/om/prompt/choice, message = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))

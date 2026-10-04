@@ -1,5 +1,5 @@
 
-/datum/tgui_say/proc/handle_packets(id, total_packets, packet)
+/datum/tgui_say/proc/handle_packets(id, total_packets, packet, mob/user)
 	id = text2num(id)
 
 	var/total = text2num(total_packets)
@@ -27,7 +27,7 @@
 	om_cancel_timer_slot(src, "packet_timeout")
 	partial_packets = null
 	if (!rustg_json_is_valid(assembled_payload))
-		log_tgui(usr, "Error: Invalid JSON")
+		log_tgui(user, "Error: Invalid JSON")
 		return
 	return json_decode(assembled_payload)
 

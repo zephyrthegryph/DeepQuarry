@@ -665,9 +665,10 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 //This is called when a ghost is drag clicked to something.
 /mob/observer/dead/MouseDrop(atom/over)
-	if(!usr || !over) return
-	if (isobserver(usr) && usr.client && check_rights_for(usr.client, R_HOLDER) && isliving(over))
-		if (usr.client.holder.cmd_ghost_drag(src,over))
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native drag delivery supplies the initiating mob; pass that actor to the confirmation helper.
+	if(!user || !over) return
+	if (isobserver(user) && user.client && check_rights_for(user.client, R_HOLDER) && isliving(over))
+		if (user.client.holder.cmd_ghost_drag(src, over, user))
 			return
 
 	return ..()
