@@ -66,31 +66,41 @@ CAPABILITIES(/obj/item/gold_star_printer)
 
 /// Asking a mob to be stuck with a sticker. Re-checked on the answer: face to face, and the
 /// sticker is still the asker's. No, or a cancel, tells the asker.
-/datum/om/prompt/confirm/gold_sticker
+/datum/prompt/choice/gold_sticker
 	title = "Sticker!"
-	no_first = TRUE
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
 	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-/datum/om/prompt/confirm/gold_sticker/prepare()
-	message = "[asker] is attempting to stick a [subject] on you. Will you allow this?"
-	return TRUE
+CAPABILITIES(/datum/prompt/choice/gold_sticker)
+	ref_one(nameof(asker), /mob)
 
-/datum/om/prompt/confirm/gold_sticker/valid()
-	var/obj/item/clothing/accessory/gold_sticker/S = subject
+/datum/prompt/choice/gold_sticker/prepare(datum/act/A)
+	..()
+	var/mob/captured_asker = asker
+	var/datum/request/request = src
+	rel_clear(request, nameof(request.asker))
+	rel_set(request, nameof(request.asker), captured_asker)
+	question = "[asker] is attempting to stick a [owner] on you. Will you allow this?"
+
+/datum/prompt/choice/gold_sticker/recheck_extra()
+	if(QDELETED(asker))
+		return "gone"
+	var/obj/item/clothing/accessory/gold_sticker/S = owner
 	return S.loc == asker ? null : "not holding it"
-
-/datum/om/prompt/confirm/gold_sticker/declined()
-	var/obj/item/clothing/accessory/gold_sticker/S = subject
-	S?.sticker_refused(answerer, asker)
-
-/datum/om/prompt/confirm/gold_sticker/cancelled()
-	var/obj/item/clothing/accessory/gold_sticker/S = subject
-	S?.sticker_refused(answerer, asker)
 
 /obj/item/clothing/accessory/gold_sticker/proc/sticker_refused(mob/living/M, mob/user)
 	to_chat(user, span_warning("\The [M] does not allow you to stick the [src] on them."))
 
-/obj/item/clothing/accessory/gold_sticker/proc/sticker_answered(datum/om/prompt/confirm/gold_sticker/ask)
+/obj/item/clothing/accessory/gold_sticker/proc/sticker_answered(datum/act/request/A)
+	var/datum/prompt/choice/gold_sticker/ask = A.request
+	if(QDELETED(ask.answerer) || QDELETED(ask.asker))
+		return
+	if(!A.answer || ask.answer_value != "Yes")
+		if(ask.answer_value == "No" || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+			sticker_refused(ask.answerer, ask.asker)
+		return
 	var/mob/living/M = ask.answerer
 	var/mob/user = ask.asker
 	apply_sticker(M,user)
@@ -108,7 +118,7 @@ CAPABILITIES(/obj/item/gold_star_printer)
 	if(isanimal(target) || issilicon(target))
 		var/mob/living/M = target
 		if(M.client)
-			om_ask(M, /datum/om/prompt/confirm/gold_sticker, PROC_REF(sticker_answered), asker = user)
+			open_request(src, /datum/prompt/choice/gold_sticker, PROC_REF(sticker_answered), answerer = M, asker = user)
 			return
 		else
 			apply_sticker(M,user)

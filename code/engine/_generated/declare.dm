@@ -2347,6 +2347,13 @@
 	into += entry_line(212)
 	into += list(global.ref_one(nameof(gland), /obj/item/organ/internal/fruitgland))
 
+/// CAPABILITIES(/datum/prompt/choice/gold_sticker) at code/game/objects/items/devices/gold_star_printer.dm:76
+/datum/prompt/choice/gold_sticker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/gold_star_printer.dm", 76, /datum/prompt/choice/gold_sticker)
+	into += entry_line(77)
+	into += list(global.ref_one(nameof(asker), /mob))
+
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:121
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
 	..(into)
@@ -11009,6 +11016,8 @@
 	into += entry_block("code/ATMOSPHERICS/components/unary/heat_exchanger.dm", 20, /obj/machinery/atmospherics/unary/heat_exchanger)
 	into += entry_line(21)
 	into += list(global.climb())
+	into += entry_line(22)
+	into += list(global.entry_link("/obj/machinery/atmospherics/unary/heat_exchanger::partner", "/obj/machinery/atmospherics/unary/heat_exchanger::partner"))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/heater) at code/ATMOSPHERICS/components/unary/heat_source.dm:121
 /obj/machinery/atmospherics/unary/heater/declared_entries(list/into)
