@@ -345,6 +345,9 @@ pub fn summary(cm: &dyn Codemod, res: &RunResult, keys: &KeyReport, took: std::t
         let many = res.declared.iter().filter(|n| n.many).count();
         let _ = writeln!(o, "  declarations added    : {} ({} owns_one, {} owns_many, on {} types)", res.declared.len(), res.declared.len() - many, many, types.len());
     }
+    if res.followed > 0 {
+        let _ = writeln!(o, "  definitions followed  : {}", res.followed);
+    }
     let _ = writeln!(o, "  residue               : {}", res.residue.len());
     let by = res.residue_by_reason();
     let mut docs: std::collections::BTreeMap<&str, &str> = std::collections::BTreeMap::new();

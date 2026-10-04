@@ -1405,7 +1405,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 /datum/vore_panel_button/New(mob/living/M)
 	..()
 	rel_set(src, nameof(owner), M)
-	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
+	observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_client_login)))
 	if(owner.client)
 		create_mob_button(owner)
 	om_grant(owner, GRANT_VERB, /mob/proc/insidePanel, src)
@@ -1433,8 +1433,9 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		rel_set(src, nameof(vore_panel_button), new /datum/vore_panel_button(src))
 	return vore_panel_button
 
-/datum/vore_panel_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
+/datum/vore_panel_button/proc/on_client_login(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	create_mob_button(source)
 
 /datum/vore_panel_button/proc/create_mob_button(mob/user)
@@ -1442,7 +1443,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	if(!screen_icon)
 		// The HUD owns the icon (other_important, below); the button keeps a relation to it.
 		rel_set(src, nameof(screen_icon), new /atom/movable/screen/vore_panel())
-		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(vore_panel_click))
+		observe(screen_icon, /datum/notice/click, src, then(PROC_REF(vore_panel_click)))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
 		screen_icon.screen_loc = ui_acti
@@ -1456,8 +1457,9 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		own_move(screen_icon, HUD, nameof(HUD.other_important))
 	user.client?.screen += screen_icon
 
-/datum/vore_panel_button/proc/vore_panel_click(datum/source, datum/om/event/click/event)
+/datum/vore_panel_button/proc/vore_panel_click(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/click/event = A
 	var/mob/living/clicker = event.user
 	if(istype(clicker) && clicker.vorePanel)
 		INVOKE_ASYNC(clicker, TYPE_PROC_REF(/mob/living, insidePanel), clicker) // ALLOW(scheduler): tgui_interact may block on asset/window setup

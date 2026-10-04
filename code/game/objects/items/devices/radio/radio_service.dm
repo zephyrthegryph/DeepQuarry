@@ -126,10 +126,11 @@ SYSTEM_DEF(radio)
 	devices_line |= device // idempotent: on_materialize() may rejoin what Initialize() already joined
 	// The frequency owns the membership: a listener that is destroyed leaves by
 	// itself, so no device unregisters its radio in Destroy().
-	om_hook(device, /datum/om/event/qdeleting, src, PROC_REF(on_listener_deleted))
+	observe(device, /datum/notice/qdeleting, src, then(PROC_REF(on_listener_deleted)))
 
-/datum/radio_frequency/proc/on_listener_deleted(obj/device, datum/om/event/qdeleting/event)
+/datum/radio_frequency/proc/on_listener_deleted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/obj/device = A.target
 	SSradio.remove_object(device, frequency)
 
 /datum/radio_frequency/proc/remove_listener(obj/device)

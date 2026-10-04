@@ -74,15 +74,16 @@
 		om_unhook(shuttle_docking_controller, /datum/om/event/qdeleting, src)
 	rel_set(src, nameof(shuttle_docking_controller), controller)
 	if(shuttle_docking_controller)
-		om_hook(shuttle_docking_controller, /datum/om/event/qdeleting, src, PROC_REF(docking_controller_deleted))
+		observe(shuttle_docking_controller, /datum/notice/qdeleting, src, then(PROC_REF(docking_controller_deleted)))
 
 /// The active controller is a relation view: it reads null once the controller is deleted, so it
 /// needs no qdeleting hook.
 /datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
 	rel_set(src, nameof(active_docking_controller), controller)
 
-/datum/shuttle/autodock/proc/docking_controller_deleted(datum/source, datum/om/event/qdeleting/event)
+/datum/shuttle/autodock/proc/docking_controller_deleted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	if(shuttle_docking_controller == source)
 		rel_clear(src, nameof(shuttle_docking_controller))
 /*

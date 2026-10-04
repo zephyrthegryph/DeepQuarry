@@ -23,8 +23,8 @@
 	rel_set(src, nameof(owner), new_owner)
 	visible_connection = visibly_connects
 	om_hook(owner, /datum/om/event/before/disposal_flush, src, PROC_REF(on_flush))
-	om_hook(owner, /datum/om/event/disposal_link, src, PROC_REF(link_to_trunk))
-	om_hook(owner, /datum/om/event/disposal_unlink, src, PROC_REF(unlink_from_trunk))
+	observe(owner, /datum/notice/disposal_link, src, then(PROC_REF(link_to_trunk)))
+	observe(owner, /datum/notice/disposal_unlink, src, then(PROC_REF(unlink_from_trunk)))
 	om_hook(owner, /datum/om/event/examine, src, PROC_REF(on_examine))
 
 
@@ -38,9 +38,10 @@
 	// Important note, the flush_gas will be passed to the disposal packet when it's made. Caller should make a fresh gasmix datum after flushing this one!
 	return handle_flush(flushed_items, flush_gas)
 
-/datum/disposal_system_connection/proc/link_to_trunk(datum/source, datum/om/event/disposal_link/event)
+/datum/disposal_system_connection/proc/link_to_trunk(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
+	var/datum/notice/disposal_link/event = A
 	var/obj/structure/disposalpipe/trunk/trunk = event.trunk
 	if(!trunk)
 		return FALSE
@@ -50,7 +51,7 @@
 	rel_set(trunk, nameof(trunk.linked), disposal_owner())
 	om_hook(trunk, /datum/om/event/before/disposal_send, src, PROC_REF(on_recieve))
 
-/datum/disposal_system_connection/proc/unlink_from_trunk(datum/source, datum/om/event/disposal_unlink/event)
+/datum/disposal_system_connection/proc/unlink_from_trunk(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(connected_trunk())

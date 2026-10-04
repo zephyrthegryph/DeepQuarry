@@ -148,16 +148,20 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 
 /// An admin-spawned pAI loads its saved data, or else names itself.
 /mob/living/silicon/pai/proc/offer_admin_spawn_load()
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(admin_spawn_load_chosen), title = "Load", message = "Do you want to load your pAI data?", answer_on_no = TRUE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(admin_spawn_load_chosen), answerer = src, title = "Load", question = "Do you want to load your pAI data?", timeout = 0)
 
-/mob/living/silicon/pai/proc/admin_spawn_load_chosen(datum/om/prompt/confirm/ask)
-	if(ask.yes)
+/mob/living/silicon/pai/proc/admin_spawn_load_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
 		apply_preferences(client)
 		return
-	om_ask(src, /datum/om/prompt/text, PROC_REF(admin_spawn_name_entered), title = "pAI Name", message = "Enter your pAI name:", default = "Personal AI", encode = FALSE)
+	open_request(src, /datum/prompt/text, PROC_REF(admin_spawn_name_entered), answerer = src, title = "pAI Name", question = "Enter your pAI name:", default = "Personal AI", encode = FALSE, timeout = 0)
 
-/mob/living/silicon/pai/proc/admin_spawn_name_entered(datum/om/prompt/text/ask)
-	var/new_name = sanitizeName(ask.text, allow_numbers = TRUE)
+/mob/living/silicon/pai/proc/admin_spawn_name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_name = sanitizeName(A.answer.answer_value, allow_numbers = TRUE)
 	if(new_name)
 		name = new_name
 

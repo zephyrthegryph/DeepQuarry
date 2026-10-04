@@ -73,7 +73,7 @@ CAPABILITIES(/datum/event/jellyfish_migration)
 // Spawn a single jellyfish at given location.
 /datum/event/jellyfish_migration/proc/spawn_one_jellyfish(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_jellyfish_destruction))
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_jellyfish_destruction)))
 	rel_add(src, nameof(spawned_jellyfish), M)
 	return M
 
@@ -85,8 +85,9 @@ CAPABILITIES(/datum/event/jellyfish_migration)
 			. += 1
 
 // If jellyfish is bomphed, remove it from the list.
-/datum/event/jellyfish_migration/proc/on_jellyfish_destruction(datum/source, datum/om/event/qdeleting/event)
+/datum/event/jellyfish_migration/proc/on_jellyfish_destruction(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	var/mob/M = source
 	own_take_member(src, nameof(spawned_jellyfish), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)

@@ -136,7 +136,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 			rel_set(src, nameof(watching_mob), user)
 			dq_add_recursive_move(watching_mob())
 			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
-			om_hook(watching_mob(), /datum/om/event/qdeleting, src, PROC_REF(on_watcher_deleted))
+			observe(watching_mob(), /datum/notice/qdeleting, src, then(PROC_REF(on_watcher_deleted)))
 			set_use_power(USE_POWER_ACTIVE)
 
 			if(bogus)
@@ -156,8 +156,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 	if(!watching_mob() || (watching_mob().loc != loc) || (dir != watching_mob().dir))
 		stopWatching()
 
-/obj/machinery/station_map/proc/on_watcher_deleted(datum/source, datum/om/event/qdeleting/event)
+/obj/machinery/station_map/proc/on_watcher_deleted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	// watching_mob() already reads null for a watcher mid-delete: hand it over.
 	if((watching_mob == source))
 		stopWatching(source)

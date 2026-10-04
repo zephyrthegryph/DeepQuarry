@@ -304,10 +304,11 @@ CAPABILITIES(/obj/item/card_fluff)
 	if(isrobot(loc))
 		rel_set(src, nameof(robot_owner), loc)
 		registered_name = robot_owner().braintype
-		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
+		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
-/obj/item/card/id/synthetic/borg/proc/check_loc(atom/movable/mover, datum/om/event/movable_attempted_move/event)
+/obj/item/card/id/synthetic/borg/proc/check_loc(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == robot_owner() || old_loc == robot_owner().module)
 		last_robot_loc = old_loc

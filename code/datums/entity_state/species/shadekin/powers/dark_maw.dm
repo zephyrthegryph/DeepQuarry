@@ -78,7 +78,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/abstract/dark_maw, PERIODIC_SLOW, "armed")
 		rel_set(src, nameof(owner), user)
 		if(owner().vore_selected)
 			rel_set(src, nameof(target), owner().vore_selected)
-		om_hook(owner(), /datum/om/event/qdeleting, src, PROC_REF(drop_everything_and_delete))
+		observe(owner(), /datum/notice/qdeleting, src, then(PROC_REF(drop_everything_and_delete)))
 		has_signal = TRUE
 		SK = owner().get_shadekin_state()
 
@@ -109,7 +109,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/abstract/dark_maw, PERIODIC_SLOW, "armed")
 		set_armed(TRUE)
 
 ///Called when we get a signal that our owner is being qdel'd
-/obj/effect/abstract/dark_maw/proc/drop_everything_and_delete(datum/source, datum/om/event/qdeleting/event)
+/obj/effect/abstract/dark_maw/proc/drop_everything_and_delete(datum/act/notice/A)
 	EVENT_HANDLER
 	qdel(src)
 

@@ -23,7 +23,7 @@
 		experiment_events = explosive_events, \
 	)
 	. = ..()
-	om_hook(OM_WORLD, /datum/om/event/world_explosion, src, PROC_REF(sense_explosion))
+	observe(OM_WORLD, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
 DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
@@ -33,8 +33,9 @@ DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
 	data["explosions"] = length(detected_explosions) ? detected_explosions : null;
 	return data
 
-/obj/machinery/doppler_array/proc/sense_explosion(datum/source, datum/om/event/world_explosion/event)
+/obj/machinery/doppler_array/proc/sense_explosion(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/world_explosion/event = A
 	var/turf/epicenter = event.epicenter
 	var/devastation_range = event.devastation_range
 	var/heavy_impact_range = event.heavy_impact_range

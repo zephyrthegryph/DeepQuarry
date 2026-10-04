@@ -108,6 +108,8 @@ CAPABILITIES(/datum/prompt)
 	var/name_text = FALSE
 	/// What the box starts with.
 	var/default
+	/// The window HTML-encodes the answer (the default; a prompt whose answer is shown as plain text, or fed to say(), turns it off).
+	var/encode = TRUE
 
 /datum/prompt/text/normalize(given)
 	if(!istext(given))
@@ -119,7 +121,7 @@ CAPABILITIES(/datum/prompt)
 	return given
 
 /datum/prompt/text/present(mob/user)
-	var/datum/tgui_input_text/prompt/box = new(user, question, title || "Text Input", default, max_len, multiline, TRUE, timeout, GLOB.tgui_always_state)
+	var/datum/tgui_input_text/prompt/box = new(user, question, title || "Text Input", default, max_len, multiline, encode, timeout, GLOB.tgui_always_state)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box

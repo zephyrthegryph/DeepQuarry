@@ -70,7 +70,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(loc, /obj/structure/disposalpipe/trunk)
 
 	add_disposal_connection()
-	om_hook(src, /datum/om/event/disposal_receive, src, PROC_REF(on_disposal_receive))
+	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(on_disposal_receive)))
 	if(trunk)
 		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
 
@@ -704,8 +704,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 // should usually only occur if the pipe network if modified or delivering mail
 
 /// Hooked on our own disposal_receive event.
-/obj/machinery/disposal/proc/on_disposal_receive(datum/source, datum/om/event/disposal_receive/event)
+/obj/machinery/disposal/proc/on_disposal_receive(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
+	var/datum/notice/disposal_receive/event = A
 	packet_expel(source, event.items, event.gas)
 
 /obj/machinery/disposal/proc/packet_expel(datum/source, list/expelled_items, datum/gas_mixture/gas)

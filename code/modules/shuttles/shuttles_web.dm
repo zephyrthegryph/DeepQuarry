@@ -438,11 +438,12 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 
 /obj/shuttle_connector/Initialize(mapload)
 	. = ..()
-	om_hook(SSshuttles, /datum/om/event/observer_shuttle_added, src, PROC_REF(setup_routes))
+	observe(SSshuttles, /datum/notice/observer_shuttle_added, src, then(PROC_REF(setup_routes)))
 
 // This is called whenever a shuttle is initialized.  If its our shuttle, do our thing!
-/obj/shuttle_connector/proc/setup_routes(datum/source, datum/om/event/observer_shuttle_added/event)
+/obj/shuttle_connector/proc/setup_routes(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/observer_shuttle_added/event = A
 	var/new_shuttle = event.shuttle
 	var/datum/shuttle/autodock/web_shuttle/ES = SSshuttles.shuttles[shuttle_name]
 	if(ES != new_shuttle)

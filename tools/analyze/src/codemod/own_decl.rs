@@ -129,7 +129,7 @@ pub fn rewrite(cx: &Ctx, new: &str, many: bool) -> Outcome {
     };
     // Already declared on the type or an ancestor: the call only changes its name.
     if prep.idx.decl(&rtype, &var).is_some() || parents(&rtype).iter().any(|p| prep.decls.is_relation(p, &var)) || prep.decls.is_relation(&owner, &var) {
-        return Outcome::Rewrite(Rewrite { edits, keys, needs: Vec::new() });
+        return Outcome::Rewrite(Rewrite { edits, keys, ..Default::default() });
     }
     let Some(sig) = cx.sem.var_decl(&owner, &var) else {
         return Outcome::Residue("unknown_var", format!("{} has no declared var {}", owner, var));
@@ -152,11 +152,11 @@ pub fn rewrite(cx: &Ctx, new: &str, many: bool) -> Outcome {
         return Outcome::Residue("untyped_var", format!("{} is not an entity type: nothing to own", vtype));
     }
     let vtype = if many && prep.list_set_vars.contains(&var) { String::new() } else { vtype };
-    Outcome::Rewrite(Rewrite { edits, keys, needs: vec![Need { holder: owner, var, many, vtype, origin: cx.origin() }] })
+    Outcome::Rewrite(Rewrite { edits, keys, needs: vec![Need { holder: owner, var, many, vtype, origin: cx.origin() }], ..Default::default() })
 }
 
 fn renamed_without_prep(edits: Vec<Edit>, keys: Vec<KeyUse>) -> Outcome {
-    Outcome::Rewrite(Rewrite { edits, keys, needs: Vec::new() })
+    Outcome::Rewrite(Rewrite { edits, keys, ..Default::default() })
 }
 
 /// The newline a file uses.

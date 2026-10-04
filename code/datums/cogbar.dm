@@ -38,7 +38,7 @@
 
 	add_cog_to_user()
 
-	om_hook(user, /datum/om/event/qdeleting, src, PROC_REF(on_user_delete))
+	observe(user, /datum/notice/qdeleting, src, then(PROC_REF(on_user_delete)))
 
 
 /// Phase 1: take the overlay off the user and the blank image (owned, dropped in phase 4) off the client.
@@ -83,7 +83,7 @@
 	om_qdel_after(src, COGBAR_ANIMATION_TIME)
 
 /// When the user is deleted, remove the cog
-/datum/cogbar/proc/on_user_delete(datum/source, datum/om/event/qdeleting/event)
+/datum/cogbar/proc/on_user_delete(datum/act/notice/A)
 	EVENT_HANDLER
 
 	qdel(src)

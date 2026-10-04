@@ -13,6 +13,7 @@ CAPABILITIES(/mob/living/carbon/human)
 
 CAPABILITIES(/mob/living/silicon/robot)
 	hands()
+	provides(AFF_CONTROL, reach = BORG_INTERFACE_REACH, authority = AUTH_REMOTE_ACCESS)
 	owns_one(nameof(camera), /obj/machinery/camera)
 	owns_one(nameof(communicator), /obj/item/communicator/integrated)
 	owns_one(nameof(decal_control), /datum/tgui_module/robot_ui_decals)

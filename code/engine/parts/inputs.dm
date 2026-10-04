@@ -85,7 +85,7 @@
 /// (the tool's own act first, then the entries) exactly as it did before the type declared an op. A player's click takes it; a driver-built one does not.
 /proc/op_resolve_click(mob/actor, atom/target, obj/item/held, gesture, origin, quiet = FALSE, defer_legacy = FALSE)
 	RETURN_TYPE(/datum/op_result)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, AUTH_PHYSICAL, gesture, null, TRUE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, actor_authority(actor), gesture, null, TRUE)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	if(!winner)
 		if(!quiet && length(R.all))
@@ -133,7 +133,7 @@
 /// The menu seam: the op named by key, picked from the target's context menu.
 /proc/input_resolve_menu(datum/input_event/menu/E)
 	RETURN_TYPE(/datum/op_result)
-	return op_perform_by_key(E.actor, E.target, E.held, E.op_key, ORIGIN_MENU, AUTH_PHYSICAL, FALSE)
+	return op_perform_by_key(E.actor, E.target, E.held, E.op_key, ORIGIN_MENU, actor_authority(E.actor), FALSE)
 
 /// The window seam: a driver-built window action (a player's goes through the tgui window as before).
 /proc/input_resolve_ui(datum/input_event/ui_act/E)
@@ -182,7 +182,7 @@
 		op_tell(actor, why)
 		TEST_REC_OUTCOME(P.key, ACT_REFUSED, why, actor)
 		return refused
-	return op_perform_by_key(actor, holder, null, P.key, ORIGIN_UI, AUTH_PHYSICAL, FALSE, values)
+	return op_perform_by_key(actor, holder, null, P.key, ORIGIN_UI, actor_authority(actor), FALSE, values)
 
 /// Runs a payload through the declared arg() schemas: fills `values` (name -> value) and returns a reason when one is refused. A number outside
 /// its range is clamped and logged; any other failure refuses the press.
@@ -232,7 +232,7 @@
 			refused.reason = why
 			TEST_REC_OUTCOME(P.key, ACT_REFUSED, why, actor)
 			return refused
-		return op_perform_by_key(actor, holder, null, P.key, ORIGIN_UI, AUTH_PHYSICAL, FALSE, values)
+		return op_perform_by_key(actor, holder, null, P.key, ORIGIN_UI, actor_authority(actor), FALSE, values)
 	return null
 
 // ---- legacy interaction entries as candidates ----

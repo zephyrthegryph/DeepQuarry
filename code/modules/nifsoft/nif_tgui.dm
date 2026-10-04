@@ -36,8 +36,8 @@ CAPABILITIES(/obj/item/nif)
 		log_runtime("nif_menu created without a mob owner ([M]).")
 		return
 	rel_set(src, nameof(owner), M)
-	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
-	om_hook(owner, /datum/om/event/qdeleting, src, PROC_REF(on_owner_qdeleting))
+	observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_client_login)))
+	observe(owner, /datum/notice/qdeleting, src, then(PROC_REF(on_owner_qdeleting)))
 	if(owner.client)
 		create_mob_button(owner)
 
@@ -51,12 +51,13 @@ CAPABILITIES(/obj/item/nif)
 			own_remove(button_hud, nameof(button_hud.other_important), screen_icon)
 	..()
 
-/datum/nif_menu/proc/on_owner_qdeleting(datum/source, datum/om/event/qdeleting/event)
+/datum/nif_menu/proc/on_owner_qdeleting(datum/act/notice/A)
 	EVENT_HANDLER
 	qdel(src)
 
-/datum/nif_menu/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
+/datum/nif_menu/proc/on_client_login(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	create_mob_button(source)
 
 /datum/nif_menu/proc/create_mob_button(mob/user)
@@ -67,7 +68,7 @@ CAPABILITIES(/obj/item/nif)
 		var/atom/movable/screen/nif/button = new
 		rel_add(HUD, nameof(HUD.other_important), button)
 		rel_set(src, nameof(screen_icon), button)
-		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(nif_menu_click))
+		observe(screen_icon, /datum/notice/click, src, then(PROC_REF(nif_menu_click)))
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color
 	screen_icon.alpha = HUD.ui_alpha
@@ -75,8 +76,9 @@ CAPABILITIES(/obj/item/nif)
 
 	om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/nif_menu, src)
 
-/datum/nif_menu/proc/nif_menu_click(datum/source, datum/om/event/click/event)
+/datum/nif_menu/proc/nif_menu_click(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/click/event = A
 	var/mob/living/carbon/human/H = event.user
 	if(istype(H) && H.nif)
 		INVOKE_ASYNC(H.nif, PROC_REF(tgui_interact), H) // ALLOW(scheduler): tgui_interact may block on asset/window setup

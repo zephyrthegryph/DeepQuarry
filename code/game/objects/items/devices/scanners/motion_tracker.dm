@@ -16,7 +16,7 @@ MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/motiontracker/Initialize(mapload)
-	om_hook(SSmotiontracker, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
+	observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
 	. = ..()
 	if(ismob(loc))
 		var/mob/M = loc
@@ -29,11 +29,12 @@ MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 		M.motiontracker_unsubscribe()
 	..()
 
-/obj/item/motiontracker/proc/handle_motion_tracking(datum/source, datum/om/event/movable_motiontracker/event)
+/obj/item/motiontracker/proc/handle_motion_tracking(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	var/atom/echo_source = event.source
+	var/datum/notice/movable_motiontracker/event = A
+	var/atom/echo_source = event.source_
 	var/atom/scan_pos = src
 	if(!isturf(loc))
 		scan_pos = loc

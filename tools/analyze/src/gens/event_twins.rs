@@ -16,14 +16,15 @@ use crate::sem::gen::{GenCx, GenOut, Generator};
 const MAP: &str = "tools/dx/codemods/om_event_map.json";
 
 #[derive(Default)]
-struct Row {
-    target: String,
-    notice_fields: Vec<String>,
-    reads_result: bool,
+pub(crate) struct Row {
+    pub target: String,
+    pub fields: Vec<String>,
+    pub notice_fields: Vec<String>,
+    pub reads_result: bool,
 }
 
 /// The map is the regular output of `json.dumps(indent=1, sort_keys=True)`: event keys at one space of indent, scalar rows at two, list items at three.
-fn parse(text: &str) -> BTreeMap<String, Row> {
+pub(crate) fn parse(text: &str) -> BTreeMap<String, Row> {
     let mut rows: BTreeMap<String, Row> = BTreeMap::new();
     let mut cur: Option<String> = None;
     let mut list_key: Option<String> = None;
@@ -47,9 +48,13 @@ fn parse(text: &str) -> BTreeMap<String, Row> {
                 row.reads_result = rest.trim_end_matches(',') == "true";
             } else if t.starts_with("\"notice_fields\": [") {
                 list_key = Some("notice_fields".into());
+            } else if t.starts_with("\"fields\": [") {
+                list_key = Some("fields".into());
             }
         } else if indent == 3 && list_key.as_deref() == Some("notice_fields") {
             row.notice_fields.push(t.trim_end_matches(',').trim_matches('"').to_string());
+        } else if indent == 3 && list_key.as_deref() == Some("fields") {
+            row.fields.push(t.trim_end_matches(',').trim_matches('"').to_string());
         }
     }
     rows

@@ -463,7 +463,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 	if(!possible_mobs)
 		to_chat(src, span_warning("There are no valid targets inside of you."))
 		return
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(lend_prey_control_chosen), title = "Give Prey Control", message = "Select a mob to give control:", choices = possible_mobs)
+	open_request(src, /datum/prompt/choice, PROC_REF(lend_prey_control_chosen), answerer = src, title = "Give Prey Control", question = "Select a mob to give control:", choices = possible_mobs, timeout = 0)
 
 /// Whether we can hand our body to `prey` right now; says why not.
 /mob/living/proc/can_lend_prey_control(mob/living/prey)
@@ -485,8 +485,10 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 		return FALSE
 	return TRUE
 
-/mob/living/proc/lend_prey_control_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/prey = ask.choice
+/mob/living/proc/lend_prey_control_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/prey = A.answer.answer_value
 	if(!can_lend_prey_control(prey))
 		return
 	om_ask_sequence(/datum/om/flow/ask_sequence/lend_prey_control, src, null, prey = prey, on_done = PROC_REF(lend_prey_control_agreed), steps = list(

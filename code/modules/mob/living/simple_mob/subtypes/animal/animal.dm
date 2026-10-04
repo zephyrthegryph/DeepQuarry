@@ -32,10 +32,12 @@ TYPE_TABLE(/datum/decl/mob_organ_names/quadruped, mob_organ_hit_zones, list("hea
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Set your flavour text."
 	set src = usr
-	om_ask(src, /datum/om/prompt/text, PROC_REF(flavour_text_entered), title = "Flavour Text", message = "Please describe yourself.", default = flavor_text, multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(flavour_text_entered), answerer = src, title = "Flavour Text", question = "Please describe yourself.", default = flavor_text, multiline = TRUE, timeout = 0)
 
-/mob/living/simple_mob/animal/proc/flavour_text_entered(datum/om/prompt/text/ask)
-	var/new_flavour_text = ask.text
+/mob/living/simple_mob/animal/proc/flavour_text_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_flavour_text = A.answer.answer_value
 	if(length(new_flavour_text))
 		flavor_text = new_flavour_text
 		to_chat(src, span_notice("Your flavour text has been updated."))

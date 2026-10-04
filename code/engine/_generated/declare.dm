@@ -1491,11 +1491,11 @@
 	into += entry_line(41)
 	into += list(global.owns_many(nameof(placements)))
 
-/// CAPABILITIES(/datum/generated_station_defense_runtime) at code/modules/generated_station/generated_station_defenders.dm:74
+/// CAPABILITIES(/datum/generated_station_defense_runtime) at code/modules/generated_station/generated_station_defenders.dm:75
 /datum/generated_station_defense_runtime/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/generated_station/generated_station_defenders.dm", 74, /datum/generated_station_defense_runtime)
-	into += entry_line(75)
+	into += entry_block("code/modules/generated_station/generated_station_defenders.dm", 75, /datum/generated_station_defense_runtime)
+	into += entry_line(76)
 	into += list(global.owns_many(nameof(agents)))
 
 /// CAPABILITIES(/datum/generated_station_department_definition) at code/modules/generated_station/generated_station_types.dm:11
@@ -2300,11 +2300,11 @@
 	into += entry_line(9)
 	into += list(global.owns_one(nameof(sun), /atom/movable/sun_visuals))
 
-/// CAPABILITIES(/datum/supply_demand_order/gas) at code/modules/events/supply_demand.dm:252
+/// CAPABILITIES(/datum/supply_demand_order/gas) at code/modules/events/supply_demand.dm:253
 /datum/supply_demand_order/gas/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/events/supply_demand.dm", 252, /datum/supply_demand_order/gas)
-	into += entry_line(253)
+	into += entry_block("code/modules/events/supply_demand.dm", 253, /datum/supply_demand_order/gas)
+	into += entry_line(254)
 	into += list(global.owns_one(nameof(mixture), /datum/gas_mixture))
 
 /// CAPABILITIES(/datum/syringe_contamination) at code/modules/reagents/reagent_containers/syringes.dm:138
@@ -2766,18 +2766,20 @@
 	..(into)
 	into += entry_block("code/modules/mob/living/silicon/ai/ai.dm", 106, /mob/living/silicon/ai)
 	into += entry_line(107)
-	into += list(global.owns_one(nameof(aiCommunicator), /obj/item/communicator))
+	into += list(global.provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS))
 	into += entry_line(108)
-	into += list(global.owns_one(nameof(aiPDA), /obj/item/pda/ai))
+	into += list(global.owns_one(nameof(aiCommunicator), /obj/item/communicator))
 	into += entry_line(109)
-	into += list(global.owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated))
+	into += list(global.owns_one(nameof(aiPDA), /obj/item/pda/ai))
 	into += entry_line(110)
-	into += list(global.owns_one(nameof(announcement), /datum/announcement/priority))
+	into += list(global.owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated))
 	into += entry_line(111)
-	into += list(global.owns_one(nameof(psupply), /obj/machinery/ai_powersupply))
+	into += list(global.owns_one(nameof(announcement), /datum/announcement/priority))
 	into += entry_line(112)
-	into += list(global.owns_one(nameof(research), /datum/malf_research))
+	into += list(global.owns_one(nameof(psupply), /obj/machinery/ai_powersupply))
 	into += entry_line(113)
+	into += list(global.owns_one(nameof(research), /datum/malf_research))
+	into += entry_line(114)
 	into += list(global.owns_one(nameof(track), /datum/trackable))
 
 /// CAPABILITIES(/mob/living/silicon/pai) at code/modules/mob/living/silicon/pai/pai.dm:107
@@ -2796,20 +2798,22 @@
 	into += entry_line(15)
 	into += list(global.hands())
 	into += entry_line(16)
-	into += list(global.owns_one(nameof(camera), /obj/machinery/camera))
+	into += list(global.provides(AFF_CONTROL, reach = BORG_INTERFACE_REACH, authority = AUTH_REMOTE_ACCESS))
 	into += entry_line(17)
-	into += list(global.owns_one(nameof(communicator), /obj/item/communicator/integrated))
+	into += list(global.owns_one(nameof(camera), /obj/machinery/camera))
 	into += entry_line(18)
-	into += list(global.owns_one(nameof(decal_control), /datum/tgui_module/robot_ui_decals))
+	into += list(global.owns_one(nameof(communicator), /obj/item/communicator/integrated))
 	into += entry_line(19)
-	into += list(global.owns_one(nameof(module), /obj/item/robot_module))
+	into += list(global.owns_one(nameof(decal_control), /datum/tgui_module/robot_ui_decals))
 	into += entry_line(20)
-	into += list(global.owns_one(nameof(radio), /obj/item/radio/borg))
+	into += list(global.owns_one(nameof(module), /obj/item/robot_module))
 	into += entry_line(21)
-	into += list(global.owns_one(nameof(rbPDA), /obj/item/pda/ai))
+	into += list(global.owns_one(nameof(radio), /obj/item/radio/borg))
 	into += entry_line(22)
-	into += list(global.owns_one(nameof(robot_belly), /datum/robot_belly))
+	into += list(global.owns_one(nameof(rbPDA), /obj/item/pda/ai))
 	into += entry_line(23)
+	into += list(global.owns_one(nameof(robot_belly), /datum/robot_belly))
+	into += entry_line(24)
 	into += list(global.owns_one(nameof(robot_modules_background), /atom/movable/screen))
 
 /// CAPABILITIES(/mob/living/simple_mob) at code/modules/mob/living/simple_mob/simple_mob.dm:175
@@ -3798,26 +3802,26 @@
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(air_contents), /datum/gas_mixture))
 
-/// CAPABILITIES(/obj/item/light) at code/modules/power/lighting.dm:1016
+/// CAPABILITIES(/obj/item/light) at code/modules/power/lighting.dm:1012
 /obj/item/light/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/lighting.dm", 1016, /obj/item/light)
-	into += entry_line(1017)
+	into += entry_block("code/modules/power/lighting.dm", 1012, /obj/item/light)
+	into += entry_line(1013)
 	into += list(global.op("tune", global.tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), global.then(PROC_REF(tuned))))
-	into += entry_line(1018)
+	into += entry_line(1014)
 	into += list(global.op("rig", global.item(/obj/item/reagent_containers/syringe), global.wait(0), global.then(PROC_REF(rigged_by_syringe))))
-	into += entry_line(1019)
+	into += entry_line(1015)
 	into += list(global.op("shatter", global.at_target(), global.hostile(), global.when(global.cond_not(global.req(/obj/machinery/light, of = ON_TARGET))), global.wait(0), global.then(PROC_REF(shatter_on_hit))))
-	into += entry_line(1020)
+	into += entry_line(1016)
 	into += list(global.on_change(nameof(status), ANY, global.then(PROC_REF(status_changed))))
 
-/// CAPABILITIES(/obj/item/lightpainter) at code/game/objects/items/devices/lightreplacer.dm:289
+/// CAPABILITIES(/obj/item/lightpainter) at code/game/objects/items/devices/lightreplacer.dm:284
 /obj/item/lightpainter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/lightreplacer.dm", 289, /obj/item/lightpainter)
-	into += entry_line(290)
+	into += entry_block("code/game/objects/items/devices/lightreplacer.dm", 284, /obj/item/lightpainter)
+	into += entry_line(285)
 	into += list(global.op("paint", global.at_target(/obj/machinery/light), global.wait(0), global.then(PROC_REF(paint_light))))
-	into += entry_line(291)
+	into += entry_line(286)
 	into += list(global.op("use", global.in_hand(), global.wait(0), global.asks(/datum/prompt/color, fields = list("question" = "Choose Light Color", "default" = nameof(setcolor)), when = PROC_REF(not_painting)), global.then(PROC_REF(used_in_hand))))
 
 /// CAPABILITIES(/obj/item/lightreplacer) at code/game/objects/items/devices/lightreplacer.dm:77
@@ -3836,6 +3840,17 @@
 	into += list(global.op("replace", global.at_target(/obj/machinery/light), global.wait(0), global.then(PROC_REF(replace_light_at))))
 	into += entry_line(84)
 	into += list(global.op("colour", global.in_hand(), global.when(PROC_REF(say_uses)), global.wait(0), global.asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), global.then(PROC_REF(colour_asked))))
+
+/// CAPABILITIES(/obj/item/lightreplacer/dogborg) at code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:289
+/obj/item/lightreplacer/dogborg/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm", 289, /obj/item/lightreplacer/dogborg)
+	into += entry_line(290)
+	into += list(global.op("choose", global.in_hand(), global.label("Reserves or colour"), global.priority(global.above("colour")), global.asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)), global.then(PROC_REF(dogborg_chosen))))
+	into += entry_line(293)
+	into += list(global.op("pick_colour", global.ai(), global.wait(0), global.asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), global.then(PROC_REF(colour_asked))))
+	into += entry_line(294)
+	into += list(global.op("fabricate", global.ai(), global.needs(global.req(PROC_REF(has_room), because = MSG(lightreplacer/full))), global.wait(5 SECONDS), global.then(PROC_REF(fabricated))))
 
 /// CAPABILITIES(/obj/item/lipstick) at code/game/objects/items/weapons/cosmetics.dm:36
 /obj/item/lipstick/declared_entries(list/into)
@@ -3990,11 +4005,11 @@
 	into += entry_line(131)
 	into += list(global.op("set_range", global.inputs(global.hand(), global.menu()), global.gesture(GESTURE_ALT), global.label("Set Scanner Range"), global.needs(global.req_adjacent(), global.req_on_origin(ORIGIN_VERB | ORIGIN_MENU, global.carried())), global.asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), global.then(PROC_REF(range_picked))))
 
-/// CAPABILITIES(/obj/item/mining_scanner/robot) at code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:494
+/// CAPABILITIES(/obj/item/mining_scanner/robot) at code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:491
 /obj/item/mining_scanner/robot/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm", 494, /obj/item/mining_scanner/robot)
-	into += entry_line(495)
+	into += entry_block("code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm", 491, /obj/item/mining_scanner/robot)
+	into += entry_line(492)
 	into += list(global.op("set_range", global.hand(), global.gesture(GESTURE_ALT), global.label("Set Scanner Range"), global.when(nameof(exact)), global.needs(global.carried()), global.asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), global.then(PROC_REF(range_picked))))
 
 /// CAPABILITIES(/obj/item/mmi) at code/modules/mob/living/carbon/brain/MMI.dm:24
@@ -7029,48 +7044,50 @@
 	into += entry_line(116)
 	into += list(global.op("hit", global.item(/obj/item), global.hostile(), global.wait(0), global.then(PROC_REF(hit_by))))
 	into += entry_line(117)
-	into += list(global.op("open_casing", global.tool(TOOL_SCREWDRIVER), global.when(PROC_REF(socket_empty)), global.wait(0), global.then(PROC_REF(open_casing))))
+	into += list(global.op("toggle_emergency", global.remote(), global.label("Toggle emergency lights"), global.wait(0), global.then(PROC_REF(toggle_emergency_lights))))
 	into += entry_line(118)
-	into += list(global.op("tune", global.tool(TOOL_MULTITOOL), global.when(PROC_REF(bulb_can_be_tuned)), light_tune_parts(TYPE_PROC_REF(/obj/machinery/light, tune_needs_number), TYPE_PROC_REF(/obj/machinery/light, tune_needs_color)), global.then(PROC_REF(tuned))))
+	into += list(global.op("open_casing", global.tool(TOOL_SCREWDRIVER), global.when(PROC_REF(socket_empty)), global.wait(0), global.then(PROC_REF(open_casing))))
 	into += entry_line(119)
-	into += list(global.examine_line(PROC_REF(examine_status)))
+	into += list(global.op("tune", global.tool(TOOL_MULTITOOL), global.when(PROC_REF(bulb_can_be_tuned)), light_tune_parts(TYPE_PROC_REF(/obj/machinery/light, tune_needs_number), TYPE_PROC_REF(/obj/machinery/light, tune_needs_color)), global.then(PROC_REF(tuned))))
 	into += entry_line(120)
-	into += list(global.examine_line(PROC_REF(examine_charge)))
+	into += list(global.examine_line(PROC_REF(examine_status)))
 	into += entry_line(121)
-	into += list(global.on_change(nameof(status), ANY, global.then(PROC_REF(status_changed))))
+	into += list(global.examine_line(PROC_REF(examine_charge)))
 	into += entry_line(122)
-	into += list(global.on_change(nameof(nightshift_enabled), ANY, global.then(PROC_REF(area_lighting_changed))))
+	into += list(global.on_change(nameof(status), ANY, global.then(PROC_REF(status_changed))))
 	into += entry_line(123)
-	into += list(global.on_change(nameof(area_emergency_off), ANY, global.then(PROC_REF(area_lighting_changed))))
+	into += list(global.on_change(nameof(nightshift_enabled), ANY, global.then(PROC_REF(area_lighting_changed))))
 	into += entry_line(124)
-	into += list(global.every(PROC_REF(flicker_delay), global.then(PROC_REF(do_flicker)), when = nameof(flickering)))
+	into += list(global.on_change(nameof(area_emergency_off), ANY, global.then(PROC_REF(area_lighting_changed))))
 	into += entry_line(125)
+	into += list(global.every(PROC_REF(flicker_delay), global.then(PROC_REF(do_flicker)), when = nameof(flickering)))
+	into += entry_line(126)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching)))
 
-/// CAPABILITIES(/obj/machinery/light/flamp) at code/modules/power/lighting.dm:1413
+/// CAPABILITIES(/obj/machinery/light/flamp) at code/modules/power/lighting.dm:1409
 /obj/machinery/light/flamp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/lighting.dm", 1413, /obj/machinery/light/flamp)
-	into += entry_line(1414)
+	into += entry_block("code/modules/power/lighting.dm", 1409, /obj/machinery/light/flamp)
+	into += entry_line(1410)
 	into += list(global.anchor())
-	into += entry_line(1415)
+	into += entry_line(1411)
 	into += list(global.op("add_shade", global.item(/obj/item/lampshade), global.when(global.cond_not(nameof(lamp_shade))), global.wait(0), global.then(PROC_REF(shade_on))))
-	into += entry_line(1416)
+	into += entry_line(1412)
 	into += list(global.op("remove_shade", global.tool(TOOL_SCREWDRIVER), global.when(nameof(lamp_shade)), global.priority(global.above("open_casing")), global.wait(0), global.then(PROC_REF(shade_off))))
-	into += entry_line(1417)
+	into += entry_line(1413)
 	into += list(global.op("toggle", global.hand(), global.label("Toggle"), global.when(nameof(lamp_shade)), global.when(req_empty_hand()), global.priority(global.above("remove")), global.wait(0), global.needs(global.req(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), global.then(PROC_REF(toggle_lamp))))
-	into += entry_line(1419)
+	into += entry_line(1415)
 	into += list(global.extend("open_casing", global.when(global.cond_not(nameof(lamp_shade)))))
 
-/// CAPABILITIES(/obj/machinery/light/small/torch) at code/modules/power/lighting.dm:1389
+/// CAPABILITIES(/obj/machinery/light/small/torch) at code/modules/power/lighting.dm:1385
 /obj/machinery/light/small/torch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/lighting.dm", 1389, /obj/machinery/light/small/torch)
-	into += entry_line(1390)
+	into += entry_block("code/modules/power/lighting.dm", 1385, /obj/machinery/light/small/torch)
+	into += entry_line(1386)
 	into += list(global.without("insert"))
-	into += entry_line(1391)
+	into += entry_line(1387)
 	into += list(global.without("hit"))
-	into += entry_line(1392)
+	into += entry_line(1388)
 	into += list(global.op("swallow", global.item(/obj/item), global.answers(INTENT_USE, INTENT_ATTACK), global.wait(0), global.then(PROC_REF(swallowed))))
 
 /// CAPABILITIES(/obj/machinery/light_construct) at code/modules/power/light_construct.dm:33
@@ -7731,11 +7748,11 @@
 	into += entry_line(34)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:517
+/// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:518
 /obj/machinery/shower/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 517, /obj/machinery/shower)
-	into += entry_line(518)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 518, /obj/machinery/shower)
+	into += entry_line(519)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/showering))
 
 /// CAPABILITIES(/obj/machinery/slot_machine) at code/modules/casino/slots.dm:34

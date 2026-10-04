@@ -245,12 +245,13 @@
 
 /datum/trait_state/promethean_biology/attach()
 	..()
-	om_hook(owner, /datum/om/event/moved, src, PROC_REF(on_moved))
-	om_hook(owner, /datum/om/event/mob_equipped_item, src, PROC_REF(on_equipped))
+	observe(owner, /datum/notice/moved, src, then(PROC_REF(on_moved)))
+	observe(owner, /datum/notice/mob_equipped_item, src, then(PROC_REF(on_equipped)))
 	restart_stillness()
 
 /datum/trait_state/promethean_biology/detach()
-	om_unhook(owner, list(/datum/om/event/moved, /datum/om/event/mob_equipped_item), src)
+	unobserve(owner, /datum/notice/moved, src)
+	unobserve(owner, /datum/notice/mob_equipped_item, src)
 	..()
 	if(om_timer_slot_pending(src, "still_timer"))
 		om_cancel_timer_slot(src, "still_timer")
@@ -262,8 +263,9 @@
 /datum/trait_state/promethean_biology/proc/became_still()
 	still = TRUE
 
-/datum/trait_state/promethean_biology/proc/on_moved(mob/living/carbon/human/source, datum/om/event/moved/event)
+/datum/trait_state/promethean_biology/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/source = A.target
 	restart_stillness()
 	if(isturf(source.loc))
 		clean_on_entry(source, source.loc)
@@ -299,8 +301,10 @@
 		H.update_bloodied()
 
 /// Whatever a bare-handed promethean picks up gets cleaned too.
-/datum/trait_state/promethean_biology/proc/on_equipped(mob/living/carbon/human/source, datum/om/event/mob_equipped_item/event)
+/datum/trait_state/promethean_biology/proc/on_equipped(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/source = A.target
+	var/datum/notice/mob_equipped_item/event = A
 	var/obj/item/equipped_item = event.equipped_item
 	var/slot = event.slot
 	if(slot != SLOT_ID_HAND_L && slot != SLOT_ID_HAND_R)

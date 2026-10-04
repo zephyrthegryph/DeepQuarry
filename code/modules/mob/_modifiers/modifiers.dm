@@ -75,11 +75,11 @@
 // Per-application state: the handle of the generator projecting the shield.
 
 /datum/body_effect/shield_projection/on_start(mob/living/L)
-	om_hook(L, /datum/om/event/living_shield_injury, src, PROC_REF(on_holder_injure))
+	observe(L, /datum/notice/living_shield_injury, src, then(PROC_REF(on_holder_injure)))
 	on_check(L)
 
 /datum/body_effect/shield_projection/on_end(mob/living/L, expired)
-	om_unhook(L, /datum/om/event/living_shield_injury, src)
+	unobserve(L, /datum/notice/living_shield_injury, src)
 
 /// The generator worn on the back, belt or suit storage (only humans wear them), or null.
 /datum/body_effect/shield_projection/proc/find_generator(mob/living/L)
@@ -124,8 +124,10 @@
 		var/mult = empty + (resist_full[key] - empty) * efficiency
 		. = isnull(.) ? mult : . * mult
 
-/datum/body_effect/shield_projection/proc/on_holder_injure(mob/living/source, datum/om/event/living_shield_injury/event)
+/datum/body_effect/shield_projection/proc/on_holder_injure(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/source = A.target
+	var/datum/notice/living_shield_injury/event = A
 	var/kind = event.kind
 	var/list/amount_ref = event.amount_ref
 	var/mult = resistance(source, injury_category(kind))

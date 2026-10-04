@@ -50,8 +50,8 @@
 /datum/capability/two_handed/on_holder_init(atom/holder, mapload)
 	if(!isitem(holder))
 		return
-	om_hook(holder, /datum/om/event/item_dropped, holder, TYPE_PROC_REF(/obj/item, cap_two_handed_dropped))
-	om_hook(holder, /datum/om/event/item_equipped, holder, TYPE_PROC_REF(/obj/item, cap_two_handed_equipped))
+	observe(holder, /datum/notice/item_dropped, holder, then(TYPE_PROC_REF(/obj/item, cap_two_handed_dropped)))
+	observe(holder, /datum/notice/item_equipped, holder, then(TYPE_PROC_REF(/obj/item, cap_two_handed_equipped)))
 
 /datum/capability/two_handed/draw(atom/holder, datum/look/look)
 	if(icon_base)
@@ -104,13 +104,13 @@ GLOBAL_LIST_INIT(cap_examine_unwielded, list("It can be wielded in both hands.")
 		D.force_unwielded = holder.force
 		holder.force = C.wielded_force(holder.force)
 		if(user)
-			om_hook(user, /datum/om/event/mob_equipped_item, holder, TYPE_PROC_REF(/obj/item, cap_two_handed_other_hand))
+			observe(user, /datum/notice/mob_equipped_item, holder, then(TYPE_PROC_REF(/obj/item, cap_two_handed_other_hand)))
 	else
 		if(!isnull(D.force_unwielded))
 			holder.force = D.force_unwielded
 		D.force_unwielded = null
 		if(user)
-			om_unhook(user, /datum/om/event/mob_equipped_item, holder)
+			unobserve(user, /datum/notice/mob_equipped_item, holder)
 	cap_set(holder, CAP_WIELDED, on)
 	if(C.icon_base)
 		holder.item_state = "[C.icon_base][on ? 1 : 0]"
@@ -120,19 +120,23 @@ GLOBAL_LIST_INIT(cap_examine_unwielded, list("It can be wielded in both hands.")
 	holder.update_held_icon()
 	return TRUE
 
-/obj/item/proc/cap_two_handed_dropped(datum/source, datum/om/event/item_dropped/event)
+/obj/item/proc/cap_two_handed_dropped(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/item_dropped/event = A
 	cap_two_handed_set(src, FALSE, event.user)
 
 /// Equipped into a slot that isn't a hand (a back, a belt): unwielded.
-/obj/item/proc/cap_two_handed_equipped(datum/source, datum/om/event/item_equipped/event)
+/obj/item/proc/cap_two_handed_equipped(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/item_equipped/event = A
 	if(event.slot != SLOT_ID_HAND_L && event.slot != SLOT_ID_HAND_R)
 		cap_two_handed_set(src, FALSE, event.equipper)
 
 /// The wielder put something else in a hand: the other hand is no longer free.
-/obj/item/proc/cap_two_handed_other_hand(datum/source, datum/om/event/mob_equipped_item/event)
+/obj/item/proc/cap_two_handed_other_hand(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
+	var/datum/notice/mob_equipped_item/event = A
 	if(event.equipped_item == src)
 		return
 	if(event.slot == SLOT_ID_HAND_L || event.slot == SLOT_ID_HAND_R)

@@ -53,7 +53,7 @@
 		return
 	if(owner)
 		rel_add(owner, nameof(owner.status_effects), src)
-		om_hook(owner, /datum/om/event/living_aheal, src, PROC_REF(remove_effect_on_heal))
+		observe(owner, /datum/notice/living_aheal, src, then(PROC_REF(remove_effect_on_heal)))
 
 	if(duration == INFINITY)
 		// we will optionally allow INFINITY, because i imagine it'll be convenient in some places,
@@ -191,7 +191,7 @@
 	return 0
 
 /// /datum/om/event/living_aheal handler: removes us on a full heal
-/datum/status_effect/proc/remove_effect_on_heal(datum/source, datum/om/event/living_aheal/event)
+/datum/status_effect/proc/remove_effect_on_heal(datum/act/notice/A)
 	EVENT_HANDLER
 
 	if(!remove_on_fullheal)

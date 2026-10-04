@@ -51,9 +51,9 @@
 		new_containers += get_nested_locs(owner)
 	for(var/atom/movable/C as anything in watched_containers)
 		if(!(C in new_containers))
-			om_unhook(C, /datum/om/event/moved, src)
+			unobserve(C, /datum/notice/moved, src)
 	for(var/atom/movable/C as anything in new_containers)
-		om_hook(C, /datum/om/event/moved, src, PROC_REF(on_moved))
+		observe(C, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 	rel_clear(src, nameof(watched_containers))
 	for(var/atom/movable/C as anything in new_containers)
 		rel_add(src, nameof(watched_containers), C)
@@ -61,17 +61,19 @@
 	var/list/new_turfs = T ? RANGE_TURFS(range, T) : list()
 	for(var/turf/old as anything in watched_turfs)
 		if(!(old in new_turfs))
-			om_unhook(old, /datum/om/event/atom_entered, src)
+			unobserve(old, /datum/notice/atom_entered, src)
 	for(var/turf/nt as anything in new_turfs)
-		om_hook(nt, /datum/om/event/atom_entered, src, PROC_REF(on_turf_entered))
+		observe(nt, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
 	watched_turfs = new_turfs
 
-/datum/reactive_icon_update/proc/on_moved(datum/source, datum/om/event/moved/event)
+/datum/reactive_icon_update/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
 	update_watch()
 
-/datum/reactive_icon_update/proc/on_turf_entered(turf/source, datum/om/event/atom_entered/event)
+/datum/reactive_icon_update/proc/on_turf_entered(datum/act/notice/A)
 	EVENT_HANDLER
+	var/turf/source = A.target
+	var/datum/notice/atom_entered/event = A
 	update_proximity_icon(source, event.arrived, event.old_loc)
 
 /datum/reactive_icon_update/proc/update_proximity_icon(atom/current_loc, atom/movable/AM, atom/old_loc)

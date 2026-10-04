@@ -54,7 +54,7 @@
 	return
 
 /datum/blob_type/reactive_spines/chunk_setup(obj/item/blobcore_chunk/B)
-	om_hook(SSmobs, /datum/om/event/observer_globalmoved, B, TYPE_PROC_REF(/obj/item/blobcore_chunk, call_chunk_unique))
+	observe(SSmobs, /datum/notice/observer_globalmoved, B, then(TYPE_PROC_REF(/obj/item/blobcore_chunk, call_chunk_unique)))
 	return
 
 //I'm putting this here so everybody knows that it's this shitty code that is why that event exists.

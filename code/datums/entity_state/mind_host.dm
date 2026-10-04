@@ -82,10 +82,10 @@ CAPABILITIES(/datum/mind_host)
 		om_unhook(tissue, /datum/om/event/qdeleting, src)
 	rel_set(src, nameof(tissue), QDELETED(new_tissue) ? null : new_tissue)
 	if(tissue)
-		om_hook(tissue, /datum/om/event/qdeleting, src, PROC_REF(on_tissue_deleted))
+		observe(tissue, /datum/notice/qdeleting, src, then(PROC_REF(on_tissue_deleted)))
 	view?.refresh_host_status()
 
-/datum/mind_host/proc/on_tissue_deleted(datum/source, datum/om/event/qdeleting/event)
+/datum/mind_host/proc/on_tissue_deleted(datum/act/notice/A)
 	EVENT_HANDLER
 	set_tissue(null)
 

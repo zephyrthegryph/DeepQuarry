@@ -34,21 +34,23 @@
 	// /atom doesn't have vis_contents, /turf and /atom/movable do
 	var/atom/movable/lie_about_areas = get_parent()
 	lie_about_areas.vis_contents += src
-	om_hook(get_parent(), /datum/om/event/qdeleting, src, PROC_REF(parent_deleted))
+	observe(get_parent(), /datum/notice/qdeleting, src, then(PROC_REF(parent_deleted)))
 
 	if(particle_flags & PARTICLE_ATTACH_MOB)
-		om_hook(get_parent(), /datum/om/event/moved, src, PROC_REF(on_parent_moved))
+		observe(get_parent(), /datum/notice/moved, src, then(PROC_REF(on_parent_moved)))
 	on_move(get_parent(), null, NORTH)
 
 
 /// Non movables don't delete contents on destroy, so we gotta do this
-/obj/effect/abstract/particle_holder/proc/parent_deleted(datum/source, datum/om/event/qdeleting/event)
+/obj/effect/abstract/particle_holder/proc/parent_deleted(datum/act/notice/A)
 	EVENT_HANDLER
 	consume(src)
 
 /// Hooked on the parent's moved event.
-/obj/effect/abstract/particle_holder/proc/on_parent_moved(atom/movable/attached, datum/om/event/moved/event)
+/obj/effect/abstract/particle_holder/proc/on_parent_moved(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/movable/attached = A.target
+	var/datum/notice/moved/event = A
 	on_move(attached, event.old_loc, event.direction)
 
 /// called when a parent that's been hooked into this moves

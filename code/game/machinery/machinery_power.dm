@@ -94,7 +94,7 @@
 	if(!recursive_set && loc && !isturf(loc))
 		recursive_set = TRUE
 		dq_add_recursive_move(src)
-		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(update_power_on_move)) //we only need this for recursive moving
+		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(0, power)
 	power_init_complete = TRUE
@@ -120,10 +120,11 @@
 	if(!recursive_set && loc && !isturf(loc))
 		recursive_set = TRUE
 		dq_add_recursive_move(src)
-		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(update_power_on_move)) //we only need this for recursive moving
+		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
 
-/obj/machinery/proc/update_power_on_move(atom/movable/mover, datum/om/event/movable_attempted_move/event)
+/obj/machinery/proc/update_power_on_move(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/movable_attempted_move/event = A
 	power_area_moved(event.old_loc, event.new_loc)
 
 /obj/machinery/proc/power_area_moved(atom/old_loc, atom/new_loc)

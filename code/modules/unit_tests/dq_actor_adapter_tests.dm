@@ -192,9 +192,9 @@ GLOBAL_LIST_EMPTY(dq_actor_calls)
 		TEST_ASSERT_EQUAL(dq_actor_click(R, closet), "", "closet, at range: nothing, and no AI-style interfacing")
 		closet.forceMove(T)
 	// The AI-style forwards reach the cyborg through attack_robot -> attack_ai. A cyborg
-	// with no client (or one looking through a camera) can't control machines remotely.
+	// looking through a camera can't control machines remotely (a cyborg with no client is not blocked: only a player's click or a script reaches it).
 	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/structure/privacyswitch/dq_actor_probe, T)), "attack_hand", "privacy switch: the cyborg interfaces like the AI")
-	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/machinery/button/dq_actor_probe, T)), "", "button: a cyborg without a client can't control a machine remotely")
+	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/machinery/button/dq_actor_probe, T)), "attack_hand", "button: a cyborg not looking through a camera controls a machine like the AI")
 
 /// A ghost's Use on types whose attack_ghost only called tgui_interact.
 /datum/unit_test/dq_actor_parity_ghost

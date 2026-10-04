@@ -32,21 +32,21 @@ CAPABILITIES(/obj/structure/ghost_pod)
 		log_and_message_admins(adminalert, user)
 	busy = TRUE
 	rel_set(src, nameof(Q), new ghost_query_type())
-	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
+	observe(Q, /datum/notice/ghost_query_complete, src, then(PROC_REF(get_winner)))
 	Q.query()
 
-/obj/structure/ghost_pod/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
+/obj/structure/ghost_pod/proc/get_winner(datum/act/notice/A)
 	EVENT_HANDLER
 	busy = FALSE
 	if(length(Q.candidates))
 		var/mob/observer/dead/D = Q.candidates[1]
-		om_unhook(Q, /datum/om/event/ghost_query_complete, src)
+		unobserve(Q, /datum/notice/ghost_query_complete, src)
 		own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
 		create_occupant(D)
 		return
 
 	// No volunteer: an automatic pod's auto_trigger() repeat tries again after delay_to_try_again.
-	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
+	unobserve(Q, /datum/notice/ghost_query_complete, src)
 	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
 
 // Override this to create whatever mob you need. Be sure to call ..() if you don't want it to make infinite mobs.
@@ -225,9 +225,11 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 
 /// Offers the new mob's player their saved vore bellies.
 /mob/living/proc/offer_load_bellies()
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(load_bellies_answered), title = "Load Bellies", message = "Do you want to load the vore bellies from your current slot?")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(load_bellies_answered), answerer = src, title = "Load Bellies", question = "Do you want to load the vore bellies from your current slot?", timeout = 0)
 
-/mob/living/proc/load_bellies_answered(datum/om/prompt/confirm/ask)
+/mob/living/proc/load_bellies_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
 		rel_set(src, nameof(vore_selected), vore_organs[1])

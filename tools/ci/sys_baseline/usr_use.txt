@@ -18,6 +18,7 @@ usr_outside_verb	code/_onclick/hud/alert.dm	openToolTip(usr, src, params, title 
 usr_outside_verb	code/_onclick/hud/alert.dm	closeToolTip(usr, src)
 usr_outside_verb	code/_onclick/hud/ghost.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/ghost.dm	closeToolTip(usr, src)
+
 usr_outside_verb	code/_onclick/hud/radial.dm	openToolTip(usr, src, params, title = name)
 usr_outside_verb	code/_onclick/hud/radial.dm	if (click_on_hover && !isnull(usr) && !isnull(parent()))
 usr_outside_verb	code/_onclick/hud/radial.dm	closeToolTip(usr, src)
@@ -234,3 +235,4 @@ usr_outside_verb	code/modules/xenoarcheaology/effect_master.dm	to_chat(usr, span
 usr_outside_verb	code/modules/xenoarcheaology/effect_master.dm	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/om/prompt/choice, message = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
 usr_outside_verb	code/modules/xenoarcheaology/finds/find_spawning.dm	to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 usr_outside_verb	code/modules/xenoarcheaology/finds/find_spawning.dm	om_ask_begin(null, usr, /datum/om/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), list(receiver = usr.client, subject = target, title = "Spawn Artifact", message = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list"))
+usr_outside_verb	code/_onclick/hud/picture_in_picture.dm	observe(usr, /datum/notice/popup_cleared, src, then(PROC_REF(on_popup_clear)))

@@ -187,10 +187,12 @@
 		to_chat(src, span_warning("You cannot do that while in full control of a host."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(secrete_chemical_chosen), title = "Chemicals", message = "Select a chemical to secrete.", choices = borer_chem_list)
+	open_request(src, /datum/prompt/choice, PROC_REF(secrete_chemical_chosen), answerer = src, title = "Chemicals", question = "Select a chemical to secrete.", choices = borer_chem_list, timeout = 0)
 
-/mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(datum/om/prompt/choice/ask)
-	var/injection_choice = ask.choice
+/mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/injection_choice = A.answer.answer_value
 	var/mob/living/carbon/human/host = src?.borer_host() // may have changed while choosing
 	if(!host)
 		return

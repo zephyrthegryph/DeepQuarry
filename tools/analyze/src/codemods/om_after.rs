@@ -77,7 +77,7 @@ impl Codemod for OmAfter {
             edits.push(Edit::insert(first.span.start, "with = list("));
             edits.push(Edit::insert(last.span.end, ")"));
         }
-        Outcome::Rewrite(Rewrite { edits, keys, needs: Vec::new() })
+        Outcome::Rewrite(Rewrite { edits, keys, ..Default::default() })
     }
 }
 

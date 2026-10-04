@@ -55,14 +55,16 @@ CAPABILITIES(/atom/movable/screen/map_view_tg)
  */
 /atom/movable/screen/map_view_tg/proc/display_to(mob/show_to, datum/tgui_window/window)
 	if(window && !window.visible)
-		om_hook(window, /datum/om/event/tgui_window_visible, src, PROC_REF(display_on_ui_visible))
+		observe(window, /datum/notice/tgui_window_visible, src, then(PROC_REF(display_on_ui_visible)))
 	else
 		display_to_client(show_to.client)
 
-/atom/movable/screen/map_view_tg/proc/display_on_ui_visible(datum/tgui_window/window, datum/om/event/tgui_window_visible/event)
+/atom/movable/screen/map_view_tg/proc/display_on_ui_visible(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/tgui_window/window = A.target
+	var/datum/notice/tgui_window_visible/event = A
 	display_to_client(event.client)
-	om_unhook(window, /datum/om/event/tgui_window_visible, src)
+	unobserve(window, /datum/notice/tgui_window_visible, src)
 
 /atom/movable/screen/map_view_tg/proc/display_to_client(client/show_to)
 	show_to.register_map_obj(src)

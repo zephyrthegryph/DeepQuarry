@@ -97,9 +97,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	om_hook(H, /datum/om/event/before/atom_bullet_act, src, PROC_REF(on_bullet))
 	om_hook(H, /datum/om/event/before/attack_hand, src, PROC_REF(on_attack_hand))
 	om_hook(H, /datum/om/event/before/movable_bump, src, PROC_REF(on_bump))
-	om_hook(H, /datum/om/event/atom_bumped, src, PROC_REF(on_bumped))
-	om_hook(H, /datum/om/event/moved, src, PROC_REF(on_moved))
-	om_hook(H, /datum/om/event/reagent_expose_obj, src, PROC_REF(on_reagent))
+	observe(H, /datum/notice/atom_bumped, src, then(PROC_REF(on_bumped)))
+	observe(H, /datum/notice/moved, src, then(PROC_REF(on_moved)))
+	observe(H, /datum/notice/reagent_expose_obj, src, then(PROC_REF(on_reagent)))
 
 /datum/artifact_master/proc/do_unregister()
 	var/atom/H = holder()
@@ -287,8 +287,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(warn && isliving(bumped))
 		to_chat(bumped, span_filter_notice(span_bold("You accidentally touch \the [holder()] as it hits you.")))
 
-/datum/artifact_master/proc/on_bumped(datum/source, datum/om/event/atom_bumped/event)
+/datum/artifact_master/proc/on_bumped(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/atom_bumped/event = A
 	bumped_by(event.bumped)
 
 /// Something bumped (or is pulling) the holder.
@@ -395,8 +396,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 			if (my_effect.trigger == TRIGGER_FORCE && W.force >= 10)
 				my_effect.ToggleActivate()
 
-/datum/artifact_master/proc/on_reagent(datum/source, datum/om/event/reagent_expose_obj/event)
+/datum/artifact_master/proc/on_reagent(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/reagent_expose_obj/event = A
 	//A strange bug here is that, when a reagent is splashed on an artifact, it calls this proc twice.
 	//Why? I have no clue. I only accidentally stumbled upon it during debugging!
 	//I left one of the debug logs commented out so others can confirm this.
@@ -417,7 +419,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 			if(my_effect.trigger == TRIGGER_TOXIN)
 				my_effect.ToggleActivate()
 
-/datum/artifact_master/proc/on_moved(datum/source, datum/om/event/moved/event)
+/datum/artifact_master/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect)

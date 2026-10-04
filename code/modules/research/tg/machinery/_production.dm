@@ -92,12 +92,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appe
 
 /obj/machinery/rnd/production/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research)
-		om_unhook(stored_research, list(/datum/om/event/techweb_add_design, /datum/om/event/techweb_remove_design), src)
+		unobserve(stored_research, /datum/notice/techweb_add_design, src)
+		unobserve(stored_research, /datum/notice/techweb_remove_design, src)
 	return ..()
 
 /obj/machinery/rnd/production/on_connected_techweb()
 	. = ..()
-	om_hook(stored_research, list(/datum/om/event/techweb_add_design, /datum/om/event/techweb_remove_design), src, TYPE_PROC_REF(/obj/machinery/rnd/production, on_techweb_update))
+	observe(stored_research, /datum/notice/techweb_add_design, src, then(TYPE_PROC_REF(/obj/machinery/rnd/production, on_techweb_update)))
+	observe(stored_research, /datum/notice/techweb_remove_design, src, then(TYPE_PROC_REF(/obj/machinery/rnd/production, on_techweb_update)))
 	update_designs()
 
 /// Updates the list of designs this fabricator can print.
@@ -125,7 +127,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appe
 
 	update_static_data_for_all_viewers()
 
-/obj/machinery/rnd/production/proc/on_techweb_update(datum/source, datum/om/event/event)
+/obj/machinery/rnd/production/proc/on_techweb_update(datum/act/notice/A)
 	EVENT_HANDLER
 
 	if(!techweb_updating) //so we batch these updates together

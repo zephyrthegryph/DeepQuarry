@@ -151,8 +151,10 @@
 	return
 
 /// Hooked on the turfs sense_proximity() watches: something entered one of them.
-/atom/proc/on_proximity_turf_entered(turf/source, datum/om/event/observer_turf_entered/event)
+/atom/proc/on_proximity_turf_entered(datum/act/notice/A)
 	EVENT_HANDLER
+	var/turf/source = A.target
+	var/datum/notice/observer_turf_entered/event = A
 	HasProximity(source, event.arrived, event.old_loc)
 
 //Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived, old_loc);
@@ -162,7 +164,7 @@
 	ASSERT(isturf(loc))
 	var/list/turfs = trange(range, src)
 	for(var/turf/T as anything in turfs)
-		om_hook(T, /datum/om/event/observer_turf_entered, src, PROC_REF(on_proximity_turf_entered))
+		observe(T, /datum/notice/observer_turf_entered, src, then(PROC_REF(on_proximity_turf_entered)))
 
 //Unregister from prox listening in a certain range. You should do this BEFORE you move, but if you
 // really can't, then you can set the center where you moved from.
@@ -170,7 +172,7 @@
 	ASSERT(isturf(center) || isturf(loc))
 	var/list/turfs = trange(range, center ? center : src)
 	for(var/turf/T as anything in turfs)
-		om_unhook(T, /datum/om/event/observer_turf_entered, src)
+		unobserve(T, /datum/notice/observer_turf_entered, src)
 
 
 /atom

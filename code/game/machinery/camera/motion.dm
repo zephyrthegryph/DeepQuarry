@@ -20,20 +20,23 @@
 	if (!(target in motionTargets))
 		LAZYADD(motionTargets, target)
 		// Losing a target is event driven: it moves, dies or is deleted.
-		om_hook(target, list(/datum/om/event/moved, /datum/om/event/mob_statchange), src, PROC_REF(on_motion_target_changed))
-		om_hook(target, /datum/om/event/qdeleting, src, PROC_REF(on_motion_target_deleted))
+		observe(target, /datum/notice/moved, src, then(PROC_REF(on_motion_target_changed)))
+		observe(target, /datum/notice/mob_statchange, src, then(PROC_REF(on_motion_target_changed)))
+		observe(target, /datum/notice/qdeleting, src, then(PROC_REF(on_motion_target_deleted)))
 	schedule_camera_timer()
 	return 1
 
 /// A tracked target moved or changed stat: drop it if it died or (outside an
 /// ai_monitored area, which tracks its own exits) left the camera's range.
-/obj/machinery/camera/proc/on_motion_target_changed(mob/target, datum/om/event/event)
+/obj/machinery/camera/proc/on_motion_target_changed(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/target = A.target
 	if(target.stat == DEAD || (!area_motion() && !in_range(src, target)))
 		lostTarget(target)
 
-/obj/machinery/camera/proc/on_motion_target_deleted(mob/target, datum/om/event/qdeleting/event)
+/obj/machinery/camera/proc/on_motion_target_deleted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/target = A.target
 	lostTarget(target)
 
 /obj/machinery/camera/proc/lostTarget(mob/target)

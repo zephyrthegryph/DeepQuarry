@@ -210,10 +210,12 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 	set name = "Set Mouse Colour"
 	set category = VERB_CAT_ABILITIES_MOUSE
 	set desc = "Set the colour of your mouse."
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(mouse_colour_chosen), title = "Pick a colour", message = "Set Mouse Colour", choices = list("brown","gray","white","black"))
+	open_request(src, /datum/prompt/choice, PROC_REF(mouse_colour_chosen), answerer = src, title = "Pick a colour", question = "Set Mouse Colour", choices = list("brown","gray","white","black"), timeout = 0)
 
-/mob/living/simple_mob/animal/passive/mouse/proc/mouse_colour_chosen(datum/om/prompt/choice/ask)
-	var/new_mouse_colour = ask.choice
+/mob/living/simple_mob/animal/passive/mouse/proc/mouse_colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_mouse_colour = A.answer.answer_value
 	icon_state = resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]"
 	item_state = "mouse_[new_mouse_colour]"
 	icon_living = "mouse_[new_mouse_colour]"

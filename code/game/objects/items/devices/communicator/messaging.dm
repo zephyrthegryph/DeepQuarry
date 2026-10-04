@@ -166,7 +166,7 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(ghost_text_recipient_chosen), choices = choices, title = "Recipient Choice", message = "Send a text message to whom?")
+	open_request(src, /datum/prompt/choice, PROC_REF(ghost_text_recipient_chosen), answerer = src, title = "Recipient Choice", question = "Send a text message to whom?", choices = choices, timeout = 0)
 
 /datum/om/prompt/text/ghost_text
 	message = "What do you want the message to say?"
@@ -174,8 +174,10 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 	multiline = TRUE
 	var/obj/item/communicator/recipient
 
-/mob/observer/dead/proc/ghost_text_recipient_chosen(datum/om/prompt/choice/ask)
-	om_ask(src, /datum/om/prompt/text/ghost_text, PROC_REF(ghost_text_written), recipient = ask.choice)
+/mob/observer/dead/proc/ghost_text_recipient_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	om_ask(src, /datum/om/prompt/text/ghost_text, PROC_REF(ghost_text_written), recipient = A.answer.answer_value)
 
 /mob/observer/dead/proc/ghost_text_written(datum/om/prompt/text/ghost_text/ask)
 	var/obj/item/communicator/chosen_communicator = ask.recipient

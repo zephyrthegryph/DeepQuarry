@@ -36,10 +36,12 @@
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Speech Verbs"
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(speech_verbs_chosen), title = "Theme Choice", message = "What theme would you like to use for your speech verbs?", choices = GLOB.possible_say_verbs)
+	open_request(src, /datum/prompt/choice, PROC_REF(speech_verbs_chosen), answerer = src, title = "Theme Choice", question = "What theme would you like to use for your speech verbs?", choices = GLOB.possible_say_verbs, timeout = 0)
 
-/mob/living/silicon/pai/proc/speech_verbs_chosen(datum/om/prompt/choice/ask)
-	var/list/sayverbs = GLOB.possible_say_verbs[ask.choice]
+/mob/living/silicon/pai/proc/speech_verbs_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/sayverbs = GLOB.possible_say_verbs[A.answer.answer_value]
 	speak_statement = sayverbs[1]
 	speak_exclamation = sayverbs[(sayverbs.len>1 ? 2 : sayverbs.len)]
 	speak_query = sayverbs[(sayverbs.len>2 ? 3 : sayverbs.len)]
@@ -60,11 +62,13 @@
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
 	set category = VERB_CAT_IC_SETTINGS
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(pai_gender_chosen), title = "Set Gender Identity", message = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM))
+	open_request(src, /datum/prompt/choice, PROC_REF(pai_gender_chosen), answerer = src, title = "Set Gender Identity", question = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM), timeout = 0)
 	return 1
 
-/mob/living/silicon/pai/proc/pai_gender_chosen(datum/om/prompt/choice/ask)
-	gender = ask.choice
+/mob/living/silicon/pai/proc/pai_gender_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	gender = A.answer.answer_value
 
 /mob/living/silicon/pai/verb/pai_hide()
 	set name = "Hide"
@@ -90,12 +94,14 @@
 	if(loc != card)
 		to_chat(src, span_warning("Your message won't be visible while unfolded!"))
 	if (!message)
-		om_ask(src, /datum/om/prompt/text, PROC_REF(screen_message_entered), title = "Screen Message", message = "Enter text you would like to show on your screen.", encode = FALSE)
+		open_request(src, /datum/prompt/text, PROC_REF(screen_message_entered), answerer = src, title = "Screen Message", question = "Enter text you would like to show on your screen.", encode = FALSE, timeout = 0)
 		return
 	show_screen_message(message)
 
-/mob/living/silicon/pai/proc/screen_message_entered(datum/om/prompt/text/ask)
-	show_screen_message(ask.text)
+/mob/living/silicon/pai/proc/screen_message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	show_screen_message(A.answer.answer_value)
 
 /mob/living/silicon/pai/proc/show_screen_message(message)
 	message = sanitize_or_reflect(message,src)

@@ -68,11 +68,11 @@
 	if(!tracked())
 		return
 	//Hook the new tracked atom and its surroundings.
-	om_hook(tracked(), /datum/om/event/moved, src, PROC_REF(on_moved))
-	om_hook(tracked(), /datum/om/event/qdeleting, src, PROC_REF(handle_tracked_qdel))
+	observe(tracked(), /datum/notice/moved, src, then(PROC_REF(on_moved)))
+	observe(tracked(), /datum/notice/qdeleting, src, then(PROC_REF(handle_tracked_qdel)))
 	update_hooks(tracked())
 
-/datum/connect_range/proc/handle_tracked_qdel(datum/source, datum/om/event/qdeleting/event)
+/datum/connect_range/proc/handle_tracked_qdel(datum/act/notice/A)
 	EVENT_HANDLER
 	qdel(src)
 
@@ -101,7 +101,7 @@
 	if(loc_is_movable)
 		//Keep track of possible movement of all movables the target is in.
 		for(var/atom/movable/container as anything in get_nested_locs(target))
-			om_hook(container, /datum/om/event/moved, src, PROC_REF(on_moved))
+			observe(container, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 	if(!listener)
 		return
 	for(var/turf/target_turf as anything in turfs - old_turfs)
@@ -115,7 +115,7 @@
 
 	if(ismovable(location))
 		for(var/atom/movable/target as anything in (get_nested_locs(location) + location))
-			om_unhook(target, /datum/om/event/moved, src)
+			unobserve(target, /datum/notice/moved, src)
 
 	if(!length(remove_from) || !listener)
 		return
@@ -125,8 +125,10 @@
 	for(var/turf/target_turf as anything in remove_from)
 		om_unhook(target_turf, paths, listener)
 
-/datum/connect_range/proc/on_moved(atom/movable/moved_thing, datum/om/event/moved/event)
+/datum/connect_range/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/movable/moved_thing = A.target
+	var/datum/notice/moved/event = A
 	update_hooks(moved_thing, event.old_loc)
 
 /// The atom being tracked (a relation view).

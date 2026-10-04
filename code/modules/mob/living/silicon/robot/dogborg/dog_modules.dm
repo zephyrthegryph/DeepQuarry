@@ -282,48 +282,44 @@ DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interact
 	desc = "A device to automatically replace lights. This version is capable to produce a few replacements using your internal matter reserves."
 	max_uses = 16
 	uses = 10
-	var/cooldown = 0
 	var/datum/matter_synth/glass = null
 	special_handling = TRUE
 
-/// Old attack_self (the light replacer's self-use chain: /obj/item/lightreplacer/proc/interaction_self()).
-/obj/item/lightreplacer/dogborg/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)//Recharger refill is so last season. Now we recycle without magic!
-	. = ..()
-	if(.)
-		return TRUE
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(dogborg_choice_made), title = "Selection List", message = "Do you wish to check the reserves or change the color?", choices = list("Reserves", "Color"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/// Using it in the hand asks what to do: check the reserves (and fabricate a light from them), or change the colour of the lights it makes.
+CAPABILITIES(/obj/item/lightreplacer/dogborg)
+	op("choose", in_hand(), label("Reserves or colour"), priority(above("colour")),
+		asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)),
+		then(PROC_REF(dogborg_chosen)))
+	op("pick_colour", ai(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked)))
+	op("fabricate", ai(), needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full))), wait(5 SECONDS), then(PROC_REF(fabricated)))
 
-/obj/item/lightreplacer/dogborg/proc/dogborg_color_chosen(datum/om/prompt/color/ask)
-	selected_color = ask.picked_color
-	to_chat(ask.answerer, span_filter_notice("The light color has been changed."))
+/obj/item/lightreplacer/dogborg/proc/has_reserves()
+	return glass && glass.energy >= 125
 
-/obj/item/lightreplacer/dogborg/proc/dogborg_choice_made(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	if(ask.choice == "Color")
-		om_ask(user, /datum/om/prompt/color, PROC_REF(dogborg_color_chosen), message = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", default = selected_color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-		return
-	else
-		if(uses >= max_uses)
-			to_chat(user, span_warning("[src.name] is full."))
-			return
-		if(uses < max_uses && cooldown == 0)
-			if(glass.energy < 125)
-				to_chat(user, span_warning("Insufficient material reserves."))
-				return
-			to_chat(user, span_filter_notice("It has [uses] lights remaining. Attempting to fabricate a replacement. Please stand still."))
-			cooldown = 1
-			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_dogborg_done), done_args = list(), on_fail = PROC_REF(attack_self_dogborg_failed), fail_args = list())
-		else
-			to_chat(user, span_filter_notice("It has [uses] lights remaining."))
-			return
+/// "Color" opens the picker (the replacer's colour step), "Reserves" gives (the count, then a light fabricated from the matter reserves while the borg stands still).
+/obj/item/lightreplacer/dogborg/proc/dogborg_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/choice/picked = A.answer
+	if(picked?.value == "Color")
+		perform_op(user, src, "pick_colour", null, ORIGIN_AI, AUTH_AI)
+		return OP_OK
+	if(uses >= max_uses)
+		to_chat(user, span_warning("[src.name] is full."))
+		return OP_OK
+	if(!has_reserves())
+		to_chat(user, span_warning("Insufficient material reserves."))
+		return OP_OK
+	to_chat(user, span_filter_notice("It has [uses] lights remaining. Attempting to fabricate a replacement. Please stand still."))
+	perform_op(user, src, "fabricate", null, ORIGIN_AI, AUTH_AI)
+	return OP_OK
 
-/obj/item/lightreplacer/dogborg/proc/attack_self_dogborg_done()
+/obj/item/lightreplacer/dogborg/proc/fabricated(datum/act/op/A)
+	if(!has_reserves())
+		to_chat(A.actor, span_warning("Insufficient material reserves."))
+		return OP_REFUSED
 	glass.use_charge(125)
 	add_uses(1)
-	cooldown = 0
-
-/obj/item/lightreplacer/dogborg/proc/attack_self_dogborg_failed()
-	cooldown = 0
+	return OP_OK
 
 /obj/item/dogborg/stasis_clamp
 	name = "stasis clamp"
@@ -467,10 +463,11 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 /obj/item/reagent_containers/glass/beaker/large/borg/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(R), loc.loc)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
-/obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(datum/source, datum/om/event/movable_attempted_move/event)
+/obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == R || old_loc == R.module)
 		last_robot_loc = old_loc

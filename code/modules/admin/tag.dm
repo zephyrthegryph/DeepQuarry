@@ -10,12 +10,13 @@
 		return
 
 	LAZYADD(tagged_datums, target_datum)
-	om_hook(target_datum, /datum/om/event/qdeleting, src, PROC_REF(handle_tagged_del))
+	observe(target_datum, /datum/notice/qdeleting, src, then(PROC_REF(handle_tagged_del)))
 	to_chat(owner(), span_notice("[target_datum] has been tagged."))
 
 /// Get ahead of the curve with deleting
-/datum/admins/proc/handle_tagged_del(datum/source, datum/om/event/qdeleting/event)
+/datum/admins/proc/handle_tagged_del(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 
 	if(owner())
 		to_chat(owner(), span_boldnotice("Tagged datum [source] ([source.type]) has been deleted."))

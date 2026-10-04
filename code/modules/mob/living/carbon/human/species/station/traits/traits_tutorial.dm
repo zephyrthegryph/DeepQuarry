@@ -33,7 +33,7 @@ TGUI frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 		to_chat(src, span_notice("You do not have any custom traits!"))
 		return //Dont want an empty TGUI panel and list by accident after all.
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(trait_tutorial_mode_chosen), title = "Choose preferred tutorial interface", message = "Would you like the tutorial text to be printed to chat?", choices = list("TGUI", "To Chat", "Cancel"), buttons = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(trait_tutorial_mode_chosen), answerer = src, title = "Choose preferred tutorial interface", question = "Would you like the tutorial text to be printed to chat?", choices = list("TGUI", "To Chat", "Cancel"), buttons = TRUE, timeout = 0)
 
 /// The tutorial's tables: names, then name -> category, description and guide.
 /mob/living/carbon/human/proc/trait_tutorial_tables()
@@ -55,17 +55,21 @@ TGUI frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 				trait_category[T.name] = "Positive Trait"
 	return list(trait_names, trait_category, trait_desc, trait_tutorial)
 
-/mob/living/carbon/human/proc/trait_tutorial_mode_chosen(datum/om/prompt/choice/ask)
+/mob/living/carbon/human/proc/trait_tutorial_mode_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
 	var/list/tables = trait_tutorial_tables()
-	if(ask.choice == "To Chat")
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(trait_tutorial_trait_chosen), title = "Print to Chat", message = "Please choose the trait to be explained", choices = tables[1])
-	else if(ask.choice == "TGUI")
+	if(A.answer.answer_value == "To Chat")
+		open_request(src, /datum/prompt/choice, PROC_REF(trait_tutorial_trait_chosen), answerer = src, title = "Print to Chat", question = "Please choose the trait to be explained", choices = tables[1], timeout = 0)
+	else if(A.answer.answer_value == "TGUI")
 		var/datum/tgui_module/trait_tutorial_tgui/fancy_UI = new /datum/tgui_module/trait_tutorial_tgui/
 		fancy_UI.set_vars(tables[1], tables[2], tables[3], tables[4])
 		fancy_UI.tgui_interact(src)
 
-/mob/living/carbon/human/proc/trait_tutorial_trait_chosen(datum/om/prompt/choice/ask)
-	var/to_chat_choice = ask.choice
+/mob/living/carbon/human/proc/trait_tutorial_trait_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/to_chat_choice = A.answer.answer_value
 	var/list/tables = trait_tutorial_tables()
 	var/list/trait_category = tables[2]
 	var/list/trait_desc = tables[3]

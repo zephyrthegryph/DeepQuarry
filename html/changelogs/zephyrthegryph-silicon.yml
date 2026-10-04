@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "AIs and cyborgs now have engine providers for remote use; the light emergency switch and the cyborg light replacer are engine ops"

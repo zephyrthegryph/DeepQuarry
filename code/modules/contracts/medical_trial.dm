@@ -155,13 +155,15 @@ CAPABILITIES(/datum/contract/medical_trial)
 			return FALSE
 	var/datum/medical_trial_participant/participant = new(identity.id, baseline, is_healthy, clinician_account)
 	own_put(src, nameof(participants), identity.id, participant)
-	om_hook(subject, /datum/om/event/mob_death, src, PROC_REF(on_participant_death))
+	observe(subject, /datum/notice/mob_death, src, then(PROC_REF(on_participant_death)))
 	medical_trial_offer_patient_advocate(src, participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject.real_name] consented and baseline telemetry was recorded.")
 	return TRUE
 
-/datum/contract/medical_trial/proc/on_participant_death(mob/living/carbon/human/subject, datum/om/event/mob_death/event)
+/datum/contract/medical_trial/proc/on_participant_death(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/subject = A.target
+	var/datum/notice/mob_death/event = A
 	var/gibbed = event.gibbed
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 	var/datum/medical_trial_participant/participant = participants?[identity?.id]
@@ -320,7 +322,7 @@ CAPABILITIES(/datum/contract/medical_trial)
 		return TRUE
 	var/mob/living/carbon/human/subject = participant.current_subject()
 	if(subject)
-		om_unhook(subject, /datum/om/event/mob_death, src)
+		unobserve(subject, /datum/notice/mob_death, src)
 	SScontracts.void_evidence(participant.consent_evidence_id, "The subject withdrew consent before submission.")
 	medical_trial_cancel_subject_contracts(id, subject_id)
 	own_take_member(src, nameof(participants), subject_id)

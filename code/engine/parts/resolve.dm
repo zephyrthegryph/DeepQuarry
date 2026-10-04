@@ -633,7 +633,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		var/list/cached_rows = cached[1]
 		return cached_rows.Copy()
 	GLOB.op_menu_builds++
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, AUTH_PHYSICAL, null, null, FALSE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null, FALSE)
 	var/list/rows = list()
 	var/list/seen = list()
 	var/timed = FALSE
@@ -675,7 +675,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/obj/item/held = held_or_gesture
 	if(!istext(held_or_gesture) && !isnull(held_or_gesture) && !isobj(held_or_gesture))
 		return null
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, AUTH_PHYSICAL, gesture, null, FALSE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, FALSE)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	if(!winner)
 		return null

@@ -94,10 +94,12 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_gende
 	if(limit_renames && nameset)
 		to_chat(src, span_userdanger("You've already set your name. Ask an admin to toggle \"nameset\" to 0 if you really must."))
 		return
-	om_ask(src, /datum/om/prompt/text, PROC_REF(name_set_entered), title = "Name set", message = "Set your name. You only get to do this once. Max 52 chars.", max_length = MAX_NAME_LEN, encode = FALSE)
+	open_request(src, /datum/prompt/text, PROC_REF(name_set_entered), answerer = src, title = "Name set", question = "Set your name. You only get to do this once. Max 52 chars.", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE, timeout = 0)
 
-/mob/living/simple_mob/proc/name_set_entered(datum/om/prompt/text/ask)
-	var/newname = ask.text
+/mob/living/simple_mob/proc/name_set_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newname = A.answer.answer_value
 	newname = sanitizeSafe(newname, MAX_NAME_LEN)
 	if(limit_renames && nameset)
 		return
@@ -110,10 +112,12 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_gende
 	set name = "Set Description"
 	set desc = "Set your description."
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/text, PROC_REF(desc_set_entered), title = "Description set", message = "Set your description. Max 4096 chars.", multiline = TRUE, encode = FALSE)
+	open_request(src, /datum/prompt/text, PROC_REF(desc_set_entered), answerer = src, title = "Description set", question = "Set your description. Max 4096 chars.", multiline = TRUE, encode = FALSE, timeout = 0)
 
-/mob/living/simple_mob/proc/desc_set_entered(datum/om/prompt/text/ask)
-	var/newdesc = ask.text
+/mob/living/simple_mob/proc/desc_set_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newdesc = A.answer.answer_value
 	newdesc = sanitizeSafe(newdesc, MAX_MESSAGE_LEN)
 	if(newdesc)
 		desc = newdesc
@@ -122,10 +126,12 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_gende
 	set name = "Set Gender"
 	set desc = "Set your gender."
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(gender_set_chosen), title = "Set Gender", message = "Please select a gender:", choices = list(FEMALE, MALE, NEUTER, PLURAL))
+	open_request(src, /datum/prompt/choice, PROC_REF(gender_set_chosen), answerer = src, title = "Set Gender", question = "Please select a gender:", choices = list(FEMALE, MALE, NEUTER, PLURAL), timeout = 0)
 
-/mob/living/simple_mob/proc/gender_set_chosen(datum/om/prompt/choice/ask)
-	var/newgender = ask.choice
+/mob/living/simple_mob/proc/gender_set_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newgender = A.answer.answer_value
 	gender = newgender
 
 /mob/living/simple_mob/vore/aggressive

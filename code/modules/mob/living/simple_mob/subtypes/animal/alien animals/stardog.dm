@@ -482,10 +482,12 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	if(!isliving(user))
 		return
 	var/mob/living/L = user
-	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_answered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
+	open_request(src, /datum/prompt/text, PROC_REF(emote_beyond_answered), answerer = L, title = "Emote Beyond", question = "Type a message to emote.", encode = FALSE, timeout = 0)
 
-/turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/om/prompt/text/ask)
-	emote_beyond_entered(ask.answerer, ask.text)
+/turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	emote_beyond_entered(A.request.answerer, A.answer.answer_value)
 
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message)
 	message = sanitize_or_reflect(message,L)
@@ -959,12 +961,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_e
 	if(!isliving(user))
 		return TRUE
 	var/mob/living/L = user
-	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_entered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
+	open_request(src, /datum/prompt/text, PROC_REF(emote_beyond_entered), answerer = L, title = "Emote Beyond", question = "Type a message to emote.", encode = FALSE, timeout = 0)
 	return TRUE
 
-/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/om/prompt/text/ask)
-	var/mob/living/L = ask.answerer
-	var/message = sanitize_or_reflect(ask.text, L)
+/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/L = A.request.answerer
+	var/message = sanitize_or_reflect(A.answer.answer_value, L)
 	if (!message)
 		return
 	if (L.stat == DEAD)

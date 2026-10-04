@@ -62,9 +62,11 @@
 	set name = "Log Out Of Virtual Reality"
 	set category = VERB_CAT_ABILITIES_VR
 
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(fake_exit_vr_answered), title = "Log out?", message = "Would you like to log out of virtual reality?")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(fake_exit_vr_answered), answerer = src, title = "Log out?", question = "Would you like to log out of virtual reality?", timeout = 0)
 
-/mob/living/carbon/human/proc/fake_exit_vr_answered(datum/om/prompt/confirm/ask)
+/mob/living/carbon/human/proc/fake_exit_vr_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
 	release_vore_contents(TRUE)
 	for(var/obj/item/I in contents_of(src))
 		drop_from_inventory(I)
@@ -105,9 +107,11 @@
 	avatar.ask_vr_ghost_name(src.name)
 
 /mob/living/carbon/human/proc/ask_vr_ghost_name(old_name)
-	om_ask(src, /datum/om/prompt/text, PROC_REF(vr_avatar_renamed), message = "You are entering virtual reality. Your username is currently [old_name]. Would you like to change it to something else?", title = "Name change", max_length = MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text, PROC_REF(vr_avatar_renamed), answerer = src, title = "Name change", question = "You are entering virtual reality. Your username is currently [old_name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
 
-/mob/living/carbon/human/proc/vr_avatar_renamed(datum/om/prompt/text/ask)
-	if(ask.text)
-		real_name = ask.text
-		name = ask.text
+/mob/living/carbon/human/proc/vr_avatar_renamed(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		real_name = A.answer.answer_value
+		name = A.answer.answer_value

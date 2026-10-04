@@ -266,7 +266,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 
 /datum/material_service/proc/clear_watches()
 	if(watched_turf())
-		om_unhook(watched_turf(), /datum/om/event/turf_change, src)
+		unobserve(watched_turf(), /datum/notice/turf_change, src)
 		rel_clear(src, nameof(watched_turf))
 	// om_watch_disarm() keys off this datum's handle as om_handle_of() reads it, which still names it
 	// while it is being deleted (code/datums/om/watch.dm), so there's no QDELETED race to work around.
@@ -276,18 +276,20 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	mixture_pressures = null
 	mixture_corrosion = null
 	for(var/atom/movable/source as anything in movement_sources)
-		om_unhook(source, /datum/om/event/moved, src)
+		unobserve(source, /datum/notice/moved, src)
 	movement_sources = null
 
-/datum/material_service/proc/moved(datum/source, datum/om/event/moved/event)
+/datum/material_service/proc/moved(datum/act/notice/A)
 	EVENT_HANDLER
 	watches_dirty = TRUE
 	environment_changed()
 
-/datum/material_service/proc/changing_turf(datum/source, datum/om/event/turf_change/event)
+/datum/material_service/proc/changing_turf(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
+	var/datum/notice/turf_change/event = A
 	var/list/post_change_callbacks = event.post_change_callbacks
-	om_unhook(source, /datum/om/event/turf_change, src)
+	unobserve(source, /datum/notice/turf_change, src)
 	rel_clear(src, nameof(watched_turf))
 	watches_dirty = TRUE
 	post_change_callbacks += list(om_callable(src, PROC_REF(environment_changed)))
@@ -359,10 +361,10 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/turf/location = get_turf(owner())
 	if(location != watched_turf())
 		if(watched_turf())
-			om_unhook(watched_turf(), /datum/om/event/turf_change, src)
+			unobserve(watched_turf(), /datum/notice/turf_change, src)
 		rel_set(src, nameof(watched_turf), location)
 		if(watched_turf())
-			om_hook(watched_turf(), /datum/om/event/turf_change, src, PROC_REF(changing_turf))
+			observe(watched_turf(), /datum/notice/turf_change, src, then(PROC_REF(changing_turf)))
 	var/datum/gas_mixture/ambient = location?.return_air()
 	if(ambient)
 		var/ambient_id = ambient.arena_id()
@@ -391,10 +393,10 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		location_source = location_source.loc
 	for(var/atom/movable/source as anything in movement_sources)
 		if(!(source in next_sources))
-			om_unhook(source, /datum/om/event/moved, src)
+			unobserve(source, /datum/notice/moved, src)
 	for(var/atom/movable/source as anything in next_sources)
 		if(!(source in movement_sources))
-			om_hook(source, /datum/om/event/moved, src, PROC_REF(moved))
+			observe(source, /datum/notice/moved, src, then(PROC_REF(moved)))
 	movement_sources = next_sources
 
 /datum/material_service/proc/contents_changed()

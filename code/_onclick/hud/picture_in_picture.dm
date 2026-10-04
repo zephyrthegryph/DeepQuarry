@@ -182,12 +182,14 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 		return
 	user.client.setup_popup("camera-[REF(src)]", width, height, 2, "1984")
 	popup_screen.display_to(user)
-	om_hook(user, /datum/om/event/popup_cleared, src, PROC_REF(on_popup_clear))
+	observe(user, /datum/notice/popup_cleared, src, then(PROC_REF(on_popup_clear)))
 
-/atom/movable/screen/movable/pic_in_pic/proc/on_popup_clear(mob/source, datum/om/event/popup_cleared/event)
+/atom/movable/screen/movable/pic_in_pic/proc/on_popup_clear(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/source = A.target
+	var/datum/notice/popup_cleared/event = A
 	if(event.window_id == "camera-[REF(src)]")
-		om_unhook(source, /datum/om/event/popup_cleared, src)
+		unobserve(source, /datum/notice/popup_cleared, src)
 		popup_screen.hide_from(source)
 
 /// The atom this view is centred on (a relation view: null once that is deleted).

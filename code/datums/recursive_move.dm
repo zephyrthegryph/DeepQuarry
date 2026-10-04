@@ -52,12 +52,12 @@
 			break
 		recursion++
 		rel_add(src, nameof(parents), cur_parent)
-		om_hook(cur_parent, /datum/om/event/atom_exited, src, PROC_REF(on_parent_exited))
-		om_hook(cur_parent, /datum/om/event/qdeleting, src, PROC_REF(on_qdel))
+		observe(cur_parent, /datum/notice/atom_exited, src, then(PROC_REF(on_parent_exited)))
+		observe(cur_parent, /datum/notice/qdeleting, src, then(PROC_REF(on_qdel)))
 		// Because the turf is not considered to be in the heirarchy by the relay, picking
 		// up a bag with an recursive item inside it will not rebuild the heirarchy when it
 		// enters the mob unless we fire this. Can't use pickup event as it happens too early...
-		om_hook(cur_parent, /datum/om/event/item_equipped, src, PROC_REF(on_parent_equipped))
+		observe(cur_parent, /datum/notice/item_equipped, src, then(PROC_REF(on_parent_equipped)))
 		cur_parent = cur_parent.loc
 
 	if(recursion >= 64) // If we escaped due to iteration limit, cancel
@@ -67,18 +67,18 @@
 
 	if(length(parents))
 		//Only need to watch top parent for movement. Everything is covered by Exited
-		om_hook(parents[length(parents)], /datum/om/event/atom_entering, src, PROC_REF(top_moved))
+		observe(parents[length(parents)], /datum/notice/atom_entering, src, then(PROC_REF(top_moved)))
 
 	//If we have no parents of type atom/movable then we wait to see if that changes, checking every time our holder moves.
 	if(!length(parents) && !noparents)
 		noparents = TRUE
-		om_hook(holder, /datum/om/event/atom_entering, src, PROC_REF(on_holder_entering))
+		observe(holder, /datum/notice/atom_entering, src, then(PROC_REF(on_holder_entering)))
 
 	if(length(parents) && noparents)
 		noparents = FALSE
-		om_unhook(holder, /datum/om/event/atom_entering, src)
+		unobserve(holder, /datum/notice/atom_entering, src)
 
-/datum/recursive_move/proc/on_holder_entering(datum/source, datum/om/event/atom_entering/event)
+/datum/recursive_move/proc/on_holder_entering(datum/act/notice/A)
 	EVENT_HANDLER
 	setup_parents()
 
@@ -86,27 +86,32 @@
 	if(noparents) // safety check
 		noparents = FALSE
 		if(holder)
-			om_unhook(holder, /datum/om/event/atom_entering, src)
+			unobserve(holder, /datum/notice/atom_entering, src)
 	if(!length(parents))
 		return
 	for(var/atom/movable/cur_parent in parents)
 		om_unhook(cur_parent, list(/datum/om/event/qdeleting, /datum/om/event/atom_exited, /datum/om/event/item_equipped), src)
 
 	if(length(parents))
-		om_unhook(parents[length(parents)], /datum/om/event/atom_entering, src)
+		unobserve(parents[length(parents)], /datum/notice/atom_entering, src)
 
 //Parent at top of heirarchy moved.
-/datum/recursive_move/proc/top_moved(atom/movable/am, datum/om/event/atom_entering/event)
+/datum/recursive_move/proc/top_moved(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/atom_entering/event = A
 	OM_EMIT(holder, /datum/om/event/movable_attempted_move, event.old_loc, event.destination)
 
 //One of the parents other than the top parent moved.
-/datum/recursive_move/proc/on_parent_exited(atom/old_loc, datum/om/event/atom_exited/event)
+/datum/recursive_move/proc/on_parent_exited(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/old_loc = A.target
+	var/datum/notice/atom_exited/event = A
 	heirarchy_changed(old_loc, event.new_loc)
 
-/datum/recursive_move/proc/on_parent_equipped(atom/old_loc, datum/om/event/item_equipped/event)
+/datum/recursive_move/proc/on_parent_equipped(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/old_loc = A.target
+	var/datum/notice/item_equipped/event = A
 	// As before: the equip signal's second argument (the slot) stood in for the new loc.
 	heirarchy_changed(old_loc, event.slot)
 
@@ -118,12 +123,12 @@
 
 //Some things will move their contents on qdel so we should prepare ourselves to be moved.
 //If this qdel does destroy our holder, the holder deletes us (we are owned).
-/datum/recursive_move/proc/on_qdel(datum/source, datum/om/event/qdeleting/event)
+/datum/recursive_move/proc/on_qdel(datum/act/notice/A)
 	EVENT_HANDLER
 	reset_parents()
 	noparents = TRUE
 	if(holder)
-		om_hook(holder, /datum/om/event/atom_entering, src, PROC_REF(on_holder_entering))
+		observe(holder, /datum/notice/atom_entering, src, then(PROC_REF(on_holder_entering)))
 
 /datum/recursive_move/proc/reset_parents()
 	unregister_hooks()
@@ -134,8 +139,10 @@
 	name = "banana peel of testing"
 	desc = "spams world log with debugging information"
 
-/obj/item/bananapeel/test/proc/shmove(atom/source, datum/om/event/movable_attempted_move/event)
+/obj/item/bananapeel/test/proc/shmove(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/source = A.target
+	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	var/atom/new_loc = event.new_loc
 	world.log << "the [source] moved from [old_loc]([old_loc.x],[old_loc.y],[old_loc.z]) to [new_loc]([new_loc.x],[new_loc.y],[new_loc.z])"
@@ -143,4 +150,4 @@
 /obj/item/bananapeel/test/Initialize(mapload)
 	. = ..()
 	dq_add_recursive_move(src)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(shmove))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(shmove)))

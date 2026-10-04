@@ -80,7 +80,7 @@
 
 /datum/event2/event/mob_spawning/proc/spawn_one_mob(new_loc, mob_type)
 	var/mob/living/simple_mob/M = new mob_type(new_loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_mob_destruction))
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_mob_destruction)))
 	rel_add(src, nameof(spawned_mobs), M)
 	return M
 
@@ -92,8 +92,9 @@
 			. += 1
 
 // If simple_mob is bomphed, remove it from the list.
-/datum/event2/event/mob_spawning/proc/on_mob_destruction(datum/source, datum/om/event/qdeleting/event)
+/datum/event2/event/mob_spawning/proc/on_mob_destruction(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	var/mob/M = source
 	rel_remove(src, nameof(spawned_mobs), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)

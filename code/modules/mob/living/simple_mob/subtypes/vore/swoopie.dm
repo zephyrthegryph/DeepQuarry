@@ -289,10 +289,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 		if(usr != src)
 			usr.put_in_active_hand(Vac)
 		else
-			om_ask(src, /datum/om/prompt/choice, PROC_REF(vac_borrower_chosen), title = "Swoopie", message = "Borrow Vac-Pack for", choices = mobs_in_view(1, src))
+			open_request(src, /datum/prompt/choice, PROC_REF(vac_borrower_chosen), answerer = src, title = "Swoopie", question = "Borrow Vac-Pack for", choices = mobs_in_view(1, src), timeout = 0)
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/L = ask.choice
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/L = A.answer.answer_value
 	if(L == src || !istype(Vac) || !Adjacent(L))
 		return
 	L.put_in_active_hand(Vac)

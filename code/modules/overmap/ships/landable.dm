@@ -70,8 +70,8 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	if(istype(shuttle_datum,/datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/oms = shuttle_datum
 		rel_set(oms, nameof(oms.myship), src)
-	om_hook(shuttle_datum, /datum/om/event/observer_shuttle_pre_move, src, PROC_REF(pre_shuttle_jump))
-	om_hook(shuttle_datum, /datum/om/event/observer_shuttle_moved, src, PROC_REF(on_shuttle_jump))
+	observe(shuttle_datum, /datum/notice/observer_shuttle_pre_move, src, then(PROC_REF(pre_shuttle_jump)))
+	observe(shuttle_datum, /datum/notice/observer_shuttle_moved, src, then(PROC_REF(on_shuttle_jump)))
 	on_landing(landmark, shuttle_datum.current_location()) // We "land" at round start to properly place ourselves on the overmap.
 
 //
@@ -139,12 +139,14 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 
 /obj/effect/shuttle_landmark/visiting_shuttle/shuttle_arrived(datum/shuttle/shuttle)
 	rel_add(core_landmark, nameof(core_landmark.visitors), src)
-	om_hook(shuttle, /datum/om/event/observer_shuttle_moved, src, PROC_REF(shuttle_left))
+	observe(shuttle, /datum/notice/observer_shuttle_moved, src, then(PROC_REF(shuttle_left)))
 
-/obj/effect/shuttle_landmark/visiting_shuttle/proc/shuttle_left(datum/shuttle/shuttle, datum/om/event/observer_shuttle_moved/event)
+/obj/effect/shuttle_landmark/visiting_shuttle/proc/shuttle_left(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/shuttle/shuttle = A.target
+	var/datum/notice/observer_shuttle_moved/event = A
 	if(event.old_location == src)
-		om_unhook(shuttle, /datum/om/event/observer_shuttle_moved, src)
+		unobserve(shuttle, /datum/notice/observer_shuttle_moved, src)
 		if(core_landmark)
 			rel_remove(core_landmark, nameof(core_landmark.visitors), src)
 
@@ -152,17 +154,21 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 // More ship procs
 //
 
-/obj/effect/overmap/visitable/ship/landable/proc/pre_shuttle_jump(datum/shuttle/given_shuttle, datum/om/event/observer_shuttle_pre_move/event)
+/obj/effect/overmap/visitable/ship/landable/proc/pre_shuttle_jump(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/shuttle/given_shuttle = A.target
+	var/datum/notice/observer_shuttle_pre_move/event = A
 	var/obj/effect/shuttle_landmark/into = event.destination
 	if(given_shuttle != SSshuttles.shuttles[shuttle])
 		return
 	if(into == landmark)
 		setup_overmap_location() // They're coming boys, better actually exist!
-		om_unhook(SSshuttles.shuttles[shuttle], /datum/om/event/observer_shuttle_pre_move, src)
+		unobserve(SSshuttles.shuttles[shuttle], /datum/notice/observer_shuttle_pre_move, src)
 
-/obj/effect/overmap/visitable/ship/landable/proc/on_shuttle_jump(datum/shuttle/given_shuttle, datum/om/event/observer_shuttle_moved/event)
+/obj/effect/overmap/visitable/ship/landable/proc/on_shuttle_jump(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/shuttle/given_shuttle = A.target
+	var/datum/notice/observer_shuttle_moved/event = A
 	var/obj/effect/shuttle_landmark/from = event.old_location
 	var/obj/effect/shuttle_landmark/into = event.destination
 	if(given_shuttle != SSshuttles.shuttles[shuttle])

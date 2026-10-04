@@ -38,11 +38,11 @@ CAPABILITIES(/datum/proximity_monitor)
 	if(new_receiver)
 		rel_set(src, nameof(hasprox_receiver), new_receiver)
 		if(new_receiver != new_host)
-			om_hook(new_receiver, /datum/om/event/qdeleting, src, PROC_REF(on_host_or_receiver_del))
+			observe(new_receiver, /datum/notice/qdeleting, src, then(PROC_REF(on_host_or_receiver_del)))
 	else if(hasprox_receiver() == host()) //Default case
 		rel_set(src, nameof(hasprox_receiver), new_host)
 	rel_set(src, nameof(host), new_host)
-	om_hook(new_host, /datum/om/event/qdeleting, src, PROC_REF(on_host_or_receiver_del))
+	observe(new_host, /datum/notice/qdeleting, src, then(PROC_REF(on_host_or_receiver_del)))
 	var/static/list/containers_connections = list(/datum/om/event/moved = PROC_REF(on_moved), /datum/om/event/before/movable_z_changed = PROC_REF(on_z_change))
 	if(containers_connector && !QDELETED(containers_connector))
 		containers_connector.update(host(), containers_connections)
@@ -52,7 +52,7 @@ CAPABILITIES(/datum/proximity_monitor)
 	om_hook(host(), /datum/om/event/before/movable_z_changed, src, PROC_REF(on_z_change))
 	set_range(current_range, TRUE)
 
-/datum/proximity_monitor/proc/on_host_or_receiver_del(datum/source, datum/om/event/qdeleting/event)
+/datum/proximity_monitor/proc/on_host_or_receiver_del(datum/act/notice/A)
 	EVENT_HANDLER
 	qdel(src)
 

@@ -1068,7 +1068,7 @@ SETTER(/mob/living, nutrition)
 /datum/character_setup_button/New(mob/living/M)
 	..()
 	rel_set(src, nameof(owner), M)
-	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
+	observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_client_login)))
 	if(owner.client)
 		create_mob_button(owner)
 
@@ -1087,8 +1087,9 @@ SETTER(/mob/living, nutrition)
 		rel_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
 	return character_setup_button
 
-/datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
+/datum/character_setup_button/proc/on_client_login(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	create_mob_button(source)
 
 /datum/character_setup_button/proc/create_mob_button(mob/user)
@@ -1099,7 +1100,7 @@ SETTER(/mob/living, nutrition)
 		var/atom/movable/screen/character_setup/button = new
 		rel_add(HUD, nameof(HUD.other_important), button)
 		rel_set(src, nameof(screen_icon), button)
-		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
+		observe(screen_icon, /datum/notice/click, src, then(PROC_REF(character_setup_click)))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
 		screen_icon.screen_loc = ui_acti
@@ -1111,8 +1112,9 @@ SETTER(/mob/living, nutrition)
 		screen_icon.screen_loc = ui_ai_pda_send
 	user.client?.screen += screen_icon
 
-/datum/character_setup_button/proc/character_setup_click(datum/source, datum/om/event/click/event)
+/datum/character_setup_button/proc/character_setup_click(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/click/event = A
 	var/mob/clicker = event.user
 	if(clicker?.client?.prefs)
 		INVOKE_ASYNC(clicker.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), clicker) // ALLOW(scheduler): ShowChoices opens tgui (asset/window setup)
@@ -1202,14 +1204,16 @@ SETTER(/mob/living, nutrition)
 	set desc = "Customize the text which appears when you type- e.g. 'says', 'asks', 'exclaims'."
 
 	if(src.client)
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(custom_say_verb_chosen), title = "Select Verb", message = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE)
+		open_request(src, /datum/prompt/choice, PROC_REF(custom_say_verb_chosen), answerer = src, title = "Select Verb", question = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE, timeout = 0)
 
 /// A custom speech verb. `say_var` is the mob var it sets.
 /datum/om/prompt/text/custom_say
 	var/say_var
 
-/mob/living/proc/custom_say_verb_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/mob/living/proc/custom_say_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.answer_value)
 		if("Say")
 			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Say", message = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
 		if("Whisper")
@@ -1389,12 +1393,14 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/voice_freq_preset_chosen(datum/om/prompt/choice/ask)
 	var/choice = ask.choices[ask.choice]
 	if(choice == 1)
-		om_ask(src, /datum/om/prompt/number, PROC_REF(voice_freq_entered), title = "Custom Voice Frequency", message = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max = MAX_VOICE_FREQ, min = MIN_VOICE_FREQ)
+		open_request(src, /datum/prompt/number, PROC_REF(voice_freq_entered), answerer = src, title = "Custom Voice Frequency", question = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max_value = MAX_VOICE_FREQ, min_value = MIN_VOICE_FREQ, timeout = 0)
 		return
 	apply_voice_freq(choice)
 
-/mob/living/proc/voice_freq_entered(datum/om/prompt/number/ask)
-	apply_voice_freq(ask.number)
+/mob/living/proc/voice_freq_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_voice_freq(A.answer.answer_value)
 
 /mob/living/proc/apply_voice_freq(choice)
 	if(choice == 0)
@@ -1441,11 +1447,13 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/set_metainfo_private_notes(mob/user)
 	if(user != src)
 		return
-	om_ask(src, /datum/om/prompt/text, PROC_REF(private_notes_entered), title = "Private Notes", message = "Write some notes for yourself. These can be anything that is useful, whether it's character events that you want to remember or a bit of lore. Things that you would normally stick in a txt file for yourself! This will not be saved unless you press save in the private notes panel.", default = html_decode(private_notes), multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(private_notes_entered), answerer = src, title = "Private Notes", question = "Write some notes for yourself. These can be anything that is useful, whether it's character events that you want to remember or a bit of lore. Things that you would normally stick in a txt file for yourself! This will not be saved unless you press save in the private notes panel.", default = html_decode(private_notes), multiline = TRUE, timeout = 0)
 
-/mob/living/proc/private_notes_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_metadata = ask.text
+/mob/living/proc/private_notes_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/new_metadata = A.answer.answer_value
 	if(new_metadata && CanUseTopic(src))
 		private_notes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)

@@ -29,7 +29,7 @@
 /datum/material_service/proc/register_diagnostics()
 	om_hook(owner(), /datum/om/event/before/atom_tool_act, src, PROC_REF(on_tool_act))
 	om_hook(owner(), /datum/om/event/before/attackby, src, PROC_REF(replace_with_stock))
-	om_hook(owner(), /datum/om/event/examine, src, PROC_REF(examine_service))
+	observe(owner(), /datum/notice/examine, src, then(PROC_REF(examine_service)))
 
 /// Secondary multitool / screwdriver use on the owner.
 /datum/material_service/proc/on_tool_act(datum/source, datum/om/event/before/atom_tool_act/event)
@@ -57,8 +57,9 @@
 	rel_clear(src, nameof(monitor_user))
 	last_reading = null
 
-/datum/material_service/proc/examine_service(datum/source, datum/om/event/examine/event)
+/datum/material_service/proc/examine_service(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/examine/event = A
 	var/list/text = event.texts
 	text += span_notice("[summary()] Right-click with a multitool to measure operation; right-click with a screwdriver to open the service cover.")
 	if(maintenance_open)
