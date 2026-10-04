@@ -2366,6 +2366,13 @@
 	into += entry_line(198)
 	into += list(global.ref_one(nameof(area), /area))
 
+/// CAPABILITIES(/datum/prompt/choice/copy_body_flavour) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:829
+/datum/prompt/choice/copy_body_flavour/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 829, /datum/prompt/choice/copy_body_flavour)
+	into += entry_line(830)
+	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/prompt/choice/crystal_capture) at code/game/objects/items/weapons/capture_crystal.dm:404
 /datum/prompt/choice/crystal_capture/declared_entries(list/into)
 	..(into)
@@ -2426,6 +2433,13 @@
 	into += entry_line(86)
 	into += list(global.ref_one(nameof(inquirer), /mob))
 
+/// CAPABILITIES(/datum/prompt/choice/petrify_consent) at code/game/machinery/petrification.dm:240
+/datum/prompt/choice/petrify_consent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/petrification.dm", 240, /datum/prompt/choice/petrify_consent)
+	into += entry_line(241)
+	into += list(global.ref_one(nameof(operator), /mob))
+
 /// CAPABILITIES(/datum/prompt/choice/platform_paint) at code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm:83
 /datum/prompt/choice/platform_paint/declared_entries(list/into)
 	..(into)
@@ -2475,6 +2489,15 @@
 	into += entry_line(357)
 	into += list(global.ref_one(nameof(area_to_rename), /area))
 
+/// CAPABILITIES(/datum/prompt/text/chaplain_religion) at code/game/jobs/job/civilian_chaplain.dm:78
+/datum/prompt/text/chaplain_religion/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/jobs/job/civilian_chaplain.dm", 78, /datum/prompt/text/chaplain_religion)
+	into += entry_line(79)
+	into += list(global.ref_one(nameof(bible), /obj/item/storage/bible))
+	into += entry_line(80)
+	into += list(global.ref_one(nameof(id), /obj/item/card/id))
+
 /// CAPABILITIES(/datum/prompt/text/fax_title) at code/modules/admin/admin.dm:858
 /datum/prompt/text/fax_title/declared_entries(list/into)
 	..(into)
@@ -2506,6 +2529,13 @@
 	into += list(global.ref_one(nameof(door), /obj/machinery/door/airlock))
 	into += entry_line(965)
 	into += list(global.ref_one(nameof(requester), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/yes_no/copy_body_consent) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:802
+/datum/prompt/yes_no/copy_body_consent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 802, /datum/prompt/yes_no/copy_body_consent)
+	into += entry_line(803)
+	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:83
 /datum/prompt/yes_no/pai_dna_sample/declared_entries(list/into)
@@ -12010,6 +12040,15 @@
 	into += entry_line(405)
 	into += list(global.op("doors", global.ui_act("doors"), global.then(PROC_REF(ui_act_doors))))
 
+/// CAPABILITIES(/obj/machinery/conveyor_switch) at code/modules/recycling/conveyor2.dm:259
+/obj/machinery/conveyor_switch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/recycling/conveyor2.dm", 259, /obj/machinery/conveyor_switch)
+	into += entry_line(260)
+	into += list(global.ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id)))
+	into += entry_line(261)
+	into += list(global.ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id)))
+
 /// CAPABILITIES(/obj/machinery/deployable/barrier) at code/game/machinery/deployable.dm:89
 /obj/machinery/deployable/barrier/declared_entries(list/into)
 	..(into)
@@ -16262,6 +16301,8 @@
 /// declared_keyed_targets(): target type -> the id var a keyed relation (by =) matches it on, read once before the first ownership table.
 /proc/declared_keyed_targets()
 	. = list()
+	.[/obj/machinery/conveyor] = "id"
+	.[/obj/machinery/conveyor_switch] = "id"
 	.[/obj/machinery/door/blast] = "id"
 	.[/obj/machinery/door/window/brigdoor] = "id"
 	.[/obj/machinery/flasher] = "id"

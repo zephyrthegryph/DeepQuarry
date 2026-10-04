@@ -791,42 +791,95 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	to_chat(character, span_notice("Waiting for other person's consent."))
 	// The victim is asked; the answer runs on us with the victim as its user.
-	om_flow_start(/datum/om/flow/copy_body, src, victim)
+	open_request(src, /datum/prompt/yes_no/copy_body_consent, PROC_REF(shapeshifter_copy_consent_given), answerer = victim, question = "Allow [src] to copy what you look like?", victim = victim)
 
-/// The victim consents, then we choose whether to copy their flavour text. Re-checked before
-/// each step: we still hold them in an aggressive grab.
-/datum/om/flow/copy_body
-	var/consented = FALSE
-
-/datum/om/flow/copy_body/valid()
-	var/mob/living/carbon/human/H = actor
-	return H.copy_body_gripping(target) ? null : "lost grip"
-
-/datum/om/flow/copy_body/ended(reason)
-	if(!actor)
-		return
-	if(reason == "lost grip")
-		to_chat(actor, span_warning("You lost your grip on [target]!"))
-	else if(!consented && (reason == "declined" || reason == "cancelled"))
-		to_chat(actor, span_notice("They declined your request."))
-
-/datum/om/prompt/confirm/copy_body_consent
+/// The victim consents, then we choose whether to copy their flavour text.
+/datum/prompt/yes_no/copy_body_consent
 	title = "Consent"
+	timeout = 0
+	var/mob/living/carbon/human/victim
 
-/datum/om/prompt/confirm/copy_body_consent/prepare()
-	message = "Allow [asker] to copy what you look like?"
-	return TRUE
+CAPABILITIES(/datum/prompt/yes_no/copy_body_consent)
+	ref_one(nameof(victim), /mob/living/carbon/human)
 
-/datum/om/flow/copy_body/start()
-	om_ask(target, /datum/om/prompt/confirm/copy_body_consent, PROC_REF(consent_given))
+/datum/prompt/yes_no/copy_body_consent/prepare(datum/act/context)
+	. = ..()
+	var/mob/living/carbon/human/captured = victim
+	rel_clear(src, nameof(victim))
+	rel_set(src, nameof(victim), captured)
 
-/datum/om/flow/copy_body/proc/consent_given(datum/om/prompt/confirm/ask)
-	consented = TRUE
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(flavour_chosen), message = "Copy [target]'s flavourtext?", title = "Copy Form", choices = list("Yes","No","Cancel"), buttons = TRUE, ask_flags = ASK_CONSCIOUS)
+/datum/prompt/yes_no/copy_body_consent/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(victim))
+		return "gone"
+	if(answer_value)
+		var/mob/living/carbon/human/H = owner
+		return H.copy_body_gripping(victim) ? null : "lost grip"
+	return null
 
-/datum/om/flow/copy_body/proc/flavour_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/H = actor
-	H.copy_body_flavour_chosen(target, ask.choice)
+/datum/prompt/choice/copy_body_flavour
+	title = "Copy Form"
+	timeout = 0
+	buttons = TRUE
+	ask_flags = ASK_CONSCIOUS
+	var/mob/living/carbon/human/victim
+
+CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
+	ref_one(nameof(victim), /mob/living/carbon/human)
+
+/datum/prompt/choice/copy_body_flavour/prepare(datum/act/context)
+	. = ..()
+	var/mob/living/carbon/human/captured = victim
+	rel_clear(src, nameof(victim))
+	rel_set(src, nameof(victim), captured)
+
+/datum/prompt/choice/copy_body_flavour/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(victim))
+		return "gone"
+	if(!isnull(answer_value))
+		var/mob/living/carbon/human/H = owner
+		return H.copy_body_gripping(victim) ? null : "lost grip"
+	return null
+
+/mob/living/carbon/human/proc/shapeshifter_copy_consent_given(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(shapeshifter_copy_consent_step), A)
+	if(!result.ok)
+		stack_trace("copy body consent step: [result.error]")
+
+/mob/living/carbon/human/proc/shapeshifter_copy_consent_step(datum/act/request/A)
+	var/datum/prompt/yes_no/copy_body_consent/ask = A.request
+	if(QDELETED(ask.victim))
+		return
+	if(!A.answer)
+		if(!isnull(ask.answer_value) && ask.last_error == "lost grip")
+			to_chat(src, span_warning("You lost your grip on [ask.victim]!"))
+		else if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value))
+			to_chat(src, span_notice("They declined your request."))
+		return
+	if(!ask.answer_value)
+		to_chat(src, span_notice("They declined your request."))
+		return
+	open_request(src, /datum/prompt/choice/copy_body_flavour, PROC_REF(shapeshifter_copy_flavour_picked), answerer = src, question = "Copy [ask.victim]'s flavourtext?", choices = list("Yes", "No", "Cancel"), victim = ask.victim)
+
+/mob/living/carbon/human/proc/shapeshifter_copy_flavour_picked(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(shapeshifter_copy_flavour_step), A)
+	if(!result.ok)
+		stack_trace("copy body flavour step: [result.error]")
+
+/mob/living/carbon/human/proc/shapeshifter_copy_flavour_step(datum/act/request/A)
+	var/datum/prompt/choice/copy_body_flavour/ask = A.request
+	if(QDELETED(ask.victim))
+		return
+	if(!A.answer)
+		if(!isnull(ask.answer_value) && ask.last_error == "lost grip")
+			to_chat(src, span_warning("You lost your grip on [ask.victim]!"))
+		return
+	copy_body_flavour_chosen(ask.victim, ask.answer_value)
 
 /// TRUE while we still hold `victim` in at least an aggressive grab.
 /mob/living/carbon/human/proc/copy_body_gripping(mob/living/carbon/human/victim)
