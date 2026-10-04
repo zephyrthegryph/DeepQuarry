@@ -529,9 +529,21 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 
 
 ADMIN_VERB(cmd_debug_mob_lists, R_DEBUG, "Debug Mob Lists", "For when you just gotta know.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	var/_answer_a7 = verb_ask(user, "a7", args, /datum/om/prompt/choice, message = "Which list?", title = "List Choice", choices = list("Players","Admins","Mobs","Living Mobs","Dead Mobs", "Clients"))
-	if(isnull(_answer_a7))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_mob_list, PROC_REF(list_chosen), answerer = answerer)
+
+/datum/admin_verb/cmd_debug_mob_lists/proc/list_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(show_chosen_list), A)
+	if(!result.ok)
+		stack_trace("om flow cmd_debug_mob_lists answer list_chosen: [result.error]")
+
+/datum/admin_verb/cmd_debug_mob_lists/proc/show_chosen_list(datum/act/request/A)
+	var/client/user = A.request.answerer.client
+	var/_answer_a7 = A.request.answer_value
 	switch(_answer_a7)
 		if("Players")
 			to_chat(user, span_filter_debuglogs(jointext(REGISTRY_MEMBERS(REGISTRY_PLAYERS),",")))
@@ -765,6 +777,19 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	title = "Delete:"
 
 /datum/prompt/choice/admin_delete_type/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_mob_list
+	rights = R_DEBUG
+	timeout = 0
+	question = "Which list?"
+	title = "List Choice"
+	choices = list("Players", "Admins", "Mobs", "Living Mobs", "Dead Mobs", "Clients")
+
+/datum/prompt/choice/admin_mob_list/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return
