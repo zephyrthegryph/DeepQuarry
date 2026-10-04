@@ -149,10 +149,16 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	message_passengers(padded_message)
 
 /datum/shuttle/autodock/web_shuttle/proc/rename_shuttle(mob/user)
+	return rename_shuttle_stage(user, null, FALSE)
+
+/datum/shuttle/autodock/web_shuttle/proc/rename_shuttle_stage(mob/user, response, response_ready)
 	if(!can_rename)
 		to_chat(user, span_warning("You can't rename this vessel."))
 		return
-	var/new_name = rerun_ask(user, "k161", PROC_REF(rename_shuttle), args, /datum/om/prompt/text, message = "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely.", title = "Rename Shuttle", default = visible_name)
+	if(!response_ready)
+		open_request(src, /datum/prompt/text/web_shuttle_name, PROC_REF(rename_shuttle_answered), answerer = user, default = visible_name)
+		return
+	var/new_name = response
 	if(isnull(new_name))
 		return
 	var/sanitized_name = sanitizeName(new_name, MAX_NAME_LEN, TRUE)
@@ -514,3 +520,20 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 	. = ..()
 	. += rel_many(nameof(linked_doors))
 	. += rel_many(nameof(linked_sensors))
+
+/datum/prompt/text/web_shuttle_name
+	title = "Rename Shuttle"
+	question = "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely."
+	timeout = 0
+
+/datum/shuttle/autodock/web_shuttle/proc/rename_shuttle_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(rename_shuttle_apply), A)
+	if(!result.ok)
+		stack_trace("Shuttle rename replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/datum/shuttle/autodock/web_shuttle/proc/rename_shuttle_apply(datum/act/request/A)
+	return rename_shuttle_stage(A.request.answerer, A.request.answer_value, TRUE)
