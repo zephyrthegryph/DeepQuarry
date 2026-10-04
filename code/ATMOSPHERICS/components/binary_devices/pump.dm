@@ -225,7 +225,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
 	set_use_power(!use_power)
 	set_on(!!use_power)
 	add_fingerprint(A.actor)
-	update_icon()
 	return OP_OK
 
 UI_ACT(/obj/machinery/atmospherics/binary/pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))

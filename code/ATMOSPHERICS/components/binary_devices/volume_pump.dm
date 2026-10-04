@@ -247,7 +247,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 /obj/machinery/atmospherics/binary/volume_pump/proc/power_switched(datum/act/op/A)
 	set_use_power(!use_power)
 	add_fingerprint(A.actor)
-	update_icon()
 	return OP_OK
 
 UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))

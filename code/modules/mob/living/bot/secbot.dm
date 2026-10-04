@@ -2,6 +2,14 @@
 #define SECBOT_THREAT_ARREST 4		//threat level at which we decide to arrest someone
 #define SECBOT_THREAT_ATTACK 8		//threat level at which was assume immediate danger and attack right away
 
+CAPABILITIES(/mob/living/bot/secbot)
+	op("idcheck", ui_act(), then(PROC_REF(native_ui_act_idcheck)))
+	op("ignorerec", ui_act(), then(PROC_REF(native_ui_act_ignorerec)))
+	op("ignorearr", ui_act(), then(PROC_REF(native_ui_act_ignorearr)))
+	op("switchmode", ui_act(), then(PROC_REF(native_ui_act_switchmode)))
+	op("patrol", ui_act(), then(PROC_REF(native_ui_act_patrol)))
+	op("declarearrests", ui_act(), then(PROC_REF(native_ui_act_declarearrests)))
+
 /mob/living/bot/secbot
 	name = "Securitron"
 	desc = "A little security robot.  He looks less than thrilled."
@@ -137,47 +145,47 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_power)
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "idcheck", ui_act_idcheck)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_idcheck)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/native_ui_act_idcheck(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(locked && !issilicon(A.actor))
+		return OP_OK
 	idcheck = !idcheck
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/secbot, "ignorerec", ui_act_ignorerec)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_ignorerec)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/native_ui_act_ignorerec(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(locked && !issilicon(A.actor))
+		return OP_OK
 	check_records = !check_records
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/secbot, "ignorearr", ui_act_ignorearr)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_ignorearr)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/native_ui_act_ignorearr(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(locked && !issilicon(A.actor))
+		return OP_OK
 	check_arrest = !check_arrest
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/secbot, "switchmode", ui_act_switchmode)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_switchmode)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/native_ui_act_switchmode(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(locked && !issilicon(A.actor))
+		return OP_OK
 	arrest_type = !arrest_type
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/secbot, "patrol", ui_act_patrol)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_patrol)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/native_ui_act_patrol(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(locked && !issilicon(A.actor))
+		return OP_OK
 	will_patrol = !will_patrol
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/mob/living/bot/secbot, "declarearrests", ui_act_declarearrests)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/native_ui_act_declarearrests(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(locked && !issilicon(A.actor))
+		return OP_OK
 	declare_arrests = !declare_arrests
-	. = TRUE
+	return OP_OK
 
 /mob/living/bot/secbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()

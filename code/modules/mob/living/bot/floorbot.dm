@@ -4,6 +4,9 @@
 // Therefore that functionality is disabled for now.  But it can be turned on by uncommenting this.
 // # define FLOORBOT_PATCHES_HOLES 1
 
+CAPABILITIES(/mob/living/bot/floorbot)
+	op("start", ui_act(), then(PROC_REF(native_ui_act_start)))
+
 /mob/living/bot/floorbot
 	name = "Floorbot"
 	desc = "A little floor repairing robot, it looks so excited!"
@@ -71,13 +74,13 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 	add_fingerprint(src)
 	return TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "start", ui_act_start)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_start)
+/mob/living/bot/floorbot/proc/native_ui_act_start(datum/act/op/A)
+	add_fingerprint(src)
 	if(on)
 		turn_off()
 	else
 		turn_on()
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/mob/living/bot/floorbot, "vocal", ui_act_vocal)
 UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_vocal)
