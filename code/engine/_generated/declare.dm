@@ -2789,11 +2789,11 @@
 	into += entry_line(198)
 	into += list(global.ref_one(nameof(area), /area))
 
-/// CAPABILITIES(/datum/prompt/choice/copy_body_flavour) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:829
+/// CAPABILITIES(/datum/prompt/choice/copy_body_flavour) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:870
 /datum/prompt/choice/copy_body_flavour/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 829, /datum/prompt/choice/copy_body_flavour)
-	into += entry_line(830)
+	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 870, /datum/prompt/choice/copy_body_flavour)
+	into += entry_line(871)
 	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/choice/crystal_capture) at code/game/objects/items/weapons/capture_crystal.dm:404
@@ -2825,6 +2825,20 @@
 	into += entry_block("code/game/objects/items/devices/gold_star_printer.dm", 76, /datum/prompt/choice/gold_sticker)
 	into += entry_line(77)
 	into += list(global.ref_one(nameof(asker), /mob))
+
+/// CAPABILITIES(/datum/prompt/choice/hand_game) at code/modules/mob/living/carbon/human/human_powers.dm:486
+/datum/prompt/choice/hand_game/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 486, /datum/prompt/choice/hand_game)
+	into += entry_line(487)
+	into += list(global.ref_one(nameof(partner), /mob/living/carbon/human))
+
+/// CAPABILITIES(/datum/prompt/choice/hand_game_move) at code/modules/mob/living/carbon/human/human_powers.dm:537
+/datum/prompt/choice/hand_game_move/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 537, /datum/prompt/choice/hand_game_move)
+	into += entry_line(538)
+	into += list(global.ref_one(nameof(partner), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/choice/map_template_place) at code/modules/admin/verbs/map_template_loadverb.dm:36
 /datum/prompt/choice/map_template_place/declared_entries(list/into)
@@ -2883,6 +2897,13 @@
 	into += entry_block("code/game/objects/structures/artstuff.dm", 351, /datum/prompt/color/paint_palette)
 	into += entry_line(352)
 	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
+
+/// CAPABILITIES(/datum/prompt/number/hand_game_move) at code/modules/mob/living/carbon/human/human_powers.dm:588
+/datum/prompt/number/hand_game_move/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 588, /datum/prompt/number/hand_game_move)
+	into += entry_line(589)
+	into += list(global.ref_one(nameof(partner), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/number/move_atom_coord) at code/modules/admin/verbs/adminjump.dm:254
 /datum/prompt/number/move_atom_coord/declared_entries(list/into)
@@ -2953,11 +2974,11 @@
 	into += entry_line(965)
 	into += list(global.ref_one(nameof(requester), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/yes_no/copy_body_consent) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:802
+/// CAPABILITIES(/datum/prompt/yes_no/copy_body_consent) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:833
 /datum/prompt/yes_no/copy_body_consent/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 802, /datum/prompt/yes_no/copy_body_consent)
-	into += entry_line(803)
+	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 833, /datum/prompt/yes_no/copy_body_consent)
+	into += entry_line(834)
 	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:83
@@ -4816,15 +4837,15 @@
 	into += entry_line(28)
 	into += list(global.owns_one(nameof(robotact), starts = /datum/tgui_module/robot_ui))
 
-/// CAPABILITIES(/mob/living/silicon/robot/drone) at code/modules/mob/living/silicon/robot/drone/drone.dm:259
+/// CAPABILITIES(/mob/living/silicon/robot/drone) at code/modules/mob/living/silicon/robot/drone/drone.dm:265
 /mob/living/silicon/robot/drone/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/drone/drone.dm", 259, /mob/living/silicon/robot/drone)
-	into += entry_line(260)
+	into += entry_block("code/modules/mob/living/silicon/robot/drone/drone.dm", 265, /mob/living/silicon/robot/drone)
+	into += entry_line(266)
 	into += list(global.op("hat", global.item(/obj/item/clothing/head), global.stance(I_HELP), global.label("Put on hat"), global.then(PROC_REF(hat_put_on))))
-	into += entry_line(261)
+	into += entry_line(267)
 	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
-	into += entry_line(262)
+	into += entry_line(268)
 	into += list(global.verb_entry(/mob/living/proc/hide))
 
 /// CAPABILITIES(/mob/living/simple_mob) at code/modules/mob/living/simple_mob/simple_mob.dm:175
