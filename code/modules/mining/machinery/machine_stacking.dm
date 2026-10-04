@@ -35,12 +35,13 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/mineral/stacking_unit_console, "MiningStackingConsole")
-
-UI_DATA(/obj/machinery/mineral/stacking_unit_console, "merge:ui_data_obj_machinery_mineral_stacking_unit_console{stacktypes:list,stackingAmt:num}")
+CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
+	interface("MiningStackingConsole")
+	op("change_stack", ui_act("change_stack", arg("amt", num(1, 50))), then(PROC_REF(ui_act_change_stack)))
+	op("release_stack", ui_act("release_stack", arg("stack", schema_text(4096))), then(PROC_REF(ui_act_release_stack)))
 
 /// The computed part of /obj/machinery/mineral/stacking_unit_console's window data (declared on its UI_DATA row).
-/obj/machinery/mineral/stacking_unit_console/proc/ui_data_obj_machinery_mineral_stacking_unit_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/mineral/stacking_unit_console/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/stacktypes = list()
@@ -54,23 +55,23 @@ UI_DATA(/obj/machinery/mineral/stacking_unit_console, "merge:ui_data_obj_machine
 	data["stackingAmt"] = machine().stack_amt
 	return data
 
-UI_ACT(/obj/machinery/mineral/stacking_unit_console, "change_stack", ui_act_change_stack, UI_ARG_NUM("amt", 1, 50))
-UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_change_stack)
-	machine().stack_amt = params["amt"]
+/obj/machinery/mineral/stacking_unit_console/proc/ui_act_change_stack(datum/act/op/A, amt)
+	var/mob/user = A.actor
+	machine().stack_amt = amt
 	machine().wake_mining()
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/mineral/stacking_unit_console, "release_stack", ui_act_release_stack, UI_ARG_TEXT("stack"))
-UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_release_stack)
-	var/stack = params["stack"]
+/obj/machinery/mineral/stacking_unit_console/proc/ui_act_release_stack(datum/act/op/A, stack_arg)
+	var/mob/user = A.actor
+	var/stack = stack_arg
 	if(LAZYACCESS(machine().stack_storage, stack) > 0)
 		var/stacktype = LAZYACCESS(machine().stack_paths, stack)
 		new stacktype(get_turf(machine().output_marker()), LAZYACCESS(machine().stack_storage, stack))
 		var/obj/machinery/mineral/stacking_machine/stacker = machine()
 		LAZYSET(stacker.stack_storage, stack, 0)
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 /**********************Mineral stacking unit**************************/
 

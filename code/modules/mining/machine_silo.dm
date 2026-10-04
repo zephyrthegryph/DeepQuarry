@@ -16,6 +16,10 @@
 
 CAPABILITIES(/obj/machinery/ore_silo)
 	owns_one(nameof(materials), /datum/material_container)
+	interface("OreSilo")
+	op("remove", ui_act("remove", arg("id", num())), then(PROC_REF(ui_act_remove)))
+	op("hold", ui_act("hold", arg("id", num())), then(PROC_REF(ui_act_hold)))
+	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_mat)))
 
 /obj/machinery/ore_silo/Initialize(mapload)
 	. = ..()
@@ -94,15 +98,12 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials)
 	)
 
-DECLARE_UI(/obj/machinery/ore_silo, "OreSilo")
-
 /obj/machinery/ore_silo/tgui_static_data(mob/user)
 	return materials.tgui_static_data(user)
 
-UI_DATA(/obj/machinery/ore_silo, "merge:ui_data_obj_machinery_ore_silo{materials:unknown,machines:list,logs:list}")
-
 /// The computed part of /obj/machinery/ore_silo's window data (declared on its UI_DATA row).
-/obj/machinery/ore_silo/proc/ui_data_obj_machinery_ore_silo(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/ore_silo/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["materials"] = materials.material_list_data(user)
@@ -135,9 +136,8 @@ UI_DATA(/obj/machinery/ore_silo, "merge:ui_data_obj_machinery_ore_silo{materials
 
 	return data
 
-UI_ACT(/obj/machinery/ore_silo, "remove", ui_act_remove, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove)
-	var/index = params["id"]
+/obj/machinery/ore_silo/proc/ui_act_remove(datum/act/op/A, id)
+	var/index = id
 	if(isnull(index))
 		return
 
@@ -148,9 +148,8 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove)
 	remote.disconnect()
 	return TRUE
 
-UI_ACT(/obj/machinery/ore_silo, "hold", ui_act_hold, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_hold)
-	var/index = params["id"]
+/obj/machinery/ore_silo/proc/ui_act_hold(datum/act/op/A, id)
+	var/index = id
 	if(isnull(index))
 		return
 
@@ -161,13 +160,12 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_hold)
 	remote.toggle_holding()
 	return TRUE
 
-UI_ACT(/obj/machinery/ore_silo, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove_mat)
-	var/datum/material/ejecting = GET_MATERIAL_REF(params["id"])
+/obj/machinery/ore_silo/proc/ui_act_remove_mat(datum/act/op/A, amount_arg, id)
+	var/datum/material/ejecting = GET_MATERIAL_REF(id)
 	if(!istype(ejecting))
 		return
 
-	var/amount = params["amount"]
+	var/amount = amount_arg
 	if(isnull(amount))
 		return
 
