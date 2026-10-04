@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/recharger)
 	anchor(empty = nameof(charging))
 	part_replacement()
 	owns_one(nameof(charging), /obj/item, on_destroy = ON_DESTROY_SPILL)
-	op("insert", item(/obj/item), when(req(PROC_REF(takes_device))),
+	op("insert", item(/obj/item), priority(OP_PRIORITY_PART - 1), when(req(PROC_REF(takes_device))),
 		needs(req(PROC_REF(device_ok), because = PROC_REF(device_refusal))),
 		then(PROC_REF(insert_device)))
 	op("insert_drag", item(/obj/item), gesture(GESTURE_DRAG), when(req(PROC_REF(takes_device))),

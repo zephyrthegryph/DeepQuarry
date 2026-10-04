@@ -32,7 +32,7 @@ CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING, key = NONE)
 	return list(
 		op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"), \
 			asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, label_applied))),
-		op("dip", item(/obj/item), stance(I_DISARM, I_GRAB, I_HURT), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_fits)), label("Dip into it"), \
+		op("dip", item(/obj/item), stance(I_DISARM, I_GRAB, I_HURT), priority(OP_PRIORITY_PART - 1), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_fits)), label("Dip into it"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_applied))),
 		op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(req(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), label("Test the blood"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers, blood_tested))))
