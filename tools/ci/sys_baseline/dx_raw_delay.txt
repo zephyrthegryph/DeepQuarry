@@ -58,7 +58,6 @@ dx_raw_delay	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, 3, 
 dx_raw_delay	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, 3, PROC_REF(streak_step), with = list(direction, i + 1, steps))
 dx_raw_delay	code/game/objects/effects/effect_system.dm	after(src, steps * 10 + smoke.time_to_live*0.75+rand(10,30), PROC_REF(expire_smoke), with = list(smoke))
 dx_raw_delay	code/game/objects/effects/effect_system.dm	after(src, steps * 10 + confetti.time_to_live*0.75+rand(10,30), PROC_REF(expire_confetti), with = list(confetti))
-dx_raw_delay	code/game/objects/effects/map_effects/map_effects.dm	after(src, max(next_attempt - world.time, 1), /datum/proc/periodic_resume)
 dx_raw_delay	code/game/objects/effects/spiders.dm	after(src, rand(20,60), PROC_REF(vent_crawl_enter), with = list(entry, exit_vent))
 dx_raw_delay	code/game/objects/effects/spiders.dm	after(GS, 2, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
 dx_raw_delay	code/game/objects/effects/zone_divider.dm	after(src, 1, PROC_REF(join_zone))
