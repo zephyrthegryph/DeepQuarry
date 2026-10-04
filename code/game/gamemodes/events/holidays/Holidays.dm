@@ -231,22 +231,45 @@ GLOBAL_LIST_EMPTY(Holiday) //Holidays are lists now, so we can have more than on
 ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable to make the game think it's a certain day.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	GLOB.Holiday = list()
 
-	om_ask(user, /datum/om/prompt/text/set_holiday, TYPE_PROC_REF(/client, set_holiday_named), receiver = user, message = "What holiday is it today?")
+	if(!ismob(user.mob) || QDELETED(user.mob))
+		return
+	open_request(user, /datum/prompt/text/set_holiday, TYPE_PROC_REF(/client, set_holiday_named), answerer = user.mob, question = "What holiday is it today?")
 
 /// "Set Holiday": its name, then what it's about (`holiday` carries the name).
-/datum/om/prompt/text/set_holiday
+/datum/prompt/text/set_holiday
 	title = "Set Holiday"
-	requires = PROMPT_ADMIN(R_SERVER)
+	rights = R_SERVER
+	timeout = 0
 	var/holiday
 
-/client/proc/set_holiday_named(datum/om/prompt/text/set_holiday/ask)
-	if(!ask.text)
+/client/proc/set_holiday_named(datum/act/request/A)
+	if(!A.answer)
 		return
-	om_ask(mob, /datum/om/prompt/text/set_holiday, PROC_REF(set_holiday_answered), message = "Now explain what the holiday is about", multiline = TRUE, holiday = ask.text)
+	var/datum/result/result = safe_call(PROC_REF(set_holiday_name_apply), A)
+	if(!result.ok)
+		stack_trace("set holiday name: [result.error]")
+	return result.value
 
-/client/proc/set_holiday_answered(datum/om/prompt/text/set_holiday/ask)
+/client/proc/set_holiday_name_apply(datum/act/request/A)
+	var/datum/prompt/text/set_holiday/ask = A.answer
+	if(!ask.answer_value)
+		return
+	if(!ismob(mob) || QDELETED(mob))
+		return
+	open_request(src, /datum/prompt/text/set_holiday, PROC_REF(set_holiday_answered), answerer = mob, question = "Now explain what the holiday is about", multiline = TRUE, holiday = ask.answer_value)
+
+/client/proc/set_holiday_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(set_holiday_apply), A)
+	if(!result.ok)
+		stack_trace("set holiday description: [result.error]")
+	return result.value
+
+/client/proc/set_holiday_apply(datum/act/request/A)
+	var/datum/prompt/text/set_holiday/ask = A.answer
 	var/H = ask.holiday
-	var/B = ask.text
+	var/B = ask.answer_value
 	if(!H || !B)
 		return
 	GLOB.Holiday = list()

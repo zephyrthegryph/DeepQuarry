@@ -131,8 +131,8 @@
 			return 0
 	return 1
 
-/mob/new_player/proc/AttemptLateSpawn(rank)
-	if (src != usr)
+/mob/new_player/proc/AttemptLateSpawn(rank, mob/user)
+	if (src != user)
 		return 0
 	return do_late_spawn(rank)
 

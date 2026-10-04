@@ -351,7 +351,7 @@
 	if(picked_mode)
 		subtle_mode = picked_mode
 	if(mode_selection && !subtle_mode)
-		om_ask(src, /datum/om/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), title = "Custom Subtle Mode", message = "Select Custom Subtle Mode", choices = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person"), m_type = m_type, text = message)
+		open_request(src, /datum/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), answerer = src, title = "Custom Subtle Mode", question = "Select Custom Subtle Mode", choices = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person"), m_type = m_type, emote_text = message)
 		return
 	if(!subtle_mode)
 		if(mode_selection)
@@ -363,7 +363,7 @@
 
 	var/input
 	if(!message)
-		om_ask(src, /datum/om/prompt/text/custom_subtle, PROC_REF(custom_subtle_text_entered), m_type = m_type, subtle_mode = subtle_mode)
+		open_request(src, /datum/prompt/text/custom_subtle, PROC_REF(custom_subtle_text_entered), answerer = src, m_type = m_type, subtle_mode = subtle_mode)
 		return
 	input = message
 
@@ -456,7 +456,7 @@
 					return
 				var/obj/belly/B = picked
 				if(!B)
-					om_ask(src, /datum/om/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), title = "Select Belly", message = "Which belly do you want to sent the subtle to?", choices = L.vore_organs, m_type = m_type, text = input, subtle_mode = subtle_mode)
+					open_request(src, /datum/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), answerer = src, title = "Select Belly", question = "Which belly do you want to sent the subtle to?", choices = L.vore_organs, m_type = m_type, emote_text = input, subtle_mode = subtle_mode)
 					return
 				if(!istype(B) || B.owner != L)
 					to_chat(src, span_warning("You have not selected a valid belly. Your input has not been sent, but preserved:") + " [input]")
@@ -491,7 +491,7 @@
 					return
 				var/target = picked
 				if(!target)
-					om_ask(src, /datum/om/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), title = "Select Target", message = "Who do we send our message to?", choices = vis_mobs, m_type = m_type, text = input, subtle_mode = subtle_mode)
+					open_request(src, /datum/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), answerer = src, title = "Select Target", question = "Who do we send our message to?", choices = vis_mobs, m_type = m_type, emote_text = input, subtle_mode = subtle_mode)
 					return
 				if(!(target in vis_mobs))
 					to_chat(src, span_warning("No target selected. Your input has not been sent, but preserved:") + " [input]")
@@ -558,32 +558,58 @@
 
 /// One more question of a custom subtle emote: the mode (subtle_mode unset), else the belly or
 /// person for that mode. The answer re-enters custom_emote_vr().
-/datum/om/prompt/choice/custom_subtle
+/datum/prompt/choice/custom_subtle
+	timeout = 0
 	var/m_type
 	/// The emote typed so far (null: asked after the pick).
-	var/text
+	var/emote_text
 	var/subtle_mode
 
-/datum/om/prompt/choice/custom_subtle/cancelled()
-	unpark()
-	if(text && answerer)
-		to_chat(answerer, span_warning("Nothing was picked. Your input has not been sent, but preserved:") + " [text]")
+/datum/prompt/choice/custom_subtle/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
 
 /// The emote text of a custom subtle emote whose mode is already known.
-/datum/om/prompt/text/custom_subtle
-	message = "Choose an emote to display."
+/datum/prompt/text/custom_subtle
+	question = "Choose an emote to display."
+	timeout = 0
 	encode = FALSE
 	var/m_type
 	var/subtle_mode
 
-/mob/proc/custom_subtle_picked(datum/om/prompt/choice/custom_subtle/ask)
-	if(ask.subtle_mode)
-		custom_emote_vr(ask.m_type, ask.text, FALSE, ask.subtle_mode, ask.choice)
-	else
-		custom_emote_vr(ask.m_type, ask.text, FALSE, ask.choice)
+/mob/proc/custom_subtle_picked(datum/act/request/A)
+	var/datum/prompt/choice/custom_subtle/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value) && ask.emote_text && !QDELETED(ask.answerer))
+			to_chat(ask.answerer, span_warning("Nothing was picked. Your input has not been sent, but preserved:") + " [ask.emote_text]")
+		return
+	var/datum/result/result = safe_call(PROC_REF(custom_subtle_pick_apply), A)
+	if(!result.ok)
+		stack_trace("custom subtle selection: [result.error]")
+	return result.value
 
-/mob/proc/custom_subtle_text_entered(datum/om/prompt/text/custom_subtle/ask)
-	var/text = sanitize_or_reflect(ask.text, src)
+/mob/proc/custom_subtle_pick_apply(datum/act/request/A)
+	var/datum/prompt/choice/custom_subtle/ask = A.answer
+	if(ask.subtle_mode)
+		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.subtle_mode, ask.answer_value)
+	else
+		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.answer_value)
+
+/mob/proc/custom_subtle_text_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(custom_subtle_text_apply), A)
+	if(!result.ok)
+		stack_trace("custom subtle text: [result.error]")
+	return result.value
+
+/mob/proc/custom_subtle_text_apply(datum/act/request/A)
+	var/datum/prompt/text/custom_subtle/ask = A.answer
+	var/text = sanitize_or_reflect(ask.answer_value, src)
 	if(text)
 		custom_emote_vr(ask.m_type, text, FALSE, ask.subtle_mode)
 

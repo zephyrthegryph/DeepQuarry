@@ -1,11 +1,16 @@
 /obj/belly/proc/instant_digest(mob/user, mob/living/target)
+	return instant_digest_stage(user, target, null)
+
+/obj/belly/proc/instant_digest_stage(mob/user, mob/living/target, decision)
 	if(target.absorbed)
 		to_chat(user, span_vwarning("\The [target] is absorbed, and cannot presently be digested."))
 		return FALSE
-	var/_answer_a1 = rerun_ask(target, "a1", PROC_REF(instant_digest), args, /datum/om/prompt/choice/alert, message = "\The [user] is attempting to instantly digest you. Is this something you are okay with happening to you?", title = "Instant Digest", choices = list("No", "Yes"))
-	if(isnull(_answer_a1))
+	if(isnull(decision))
+		if(!ismob(target) || QDELETED(target))
+			return
+		open_request(src, /datum/prompt/choice/belly_instant_consent, PROC_REF(instant_digest_answered), answerer = target, subject = src, instigator = user, question = "\The [user] is attempting to instantly digest you. Is this something you are okay with happening to you?", title = "Instant Digest")
 		return
-	if(_answer_a1 != "Yes")
+	if(decision != "Yes")
 		to_chat(user, span_vwarning("\The [target] declined your digest attempt."))
 		to_chat(target, span_vwarning("You declined the digest attempt."))
 		return FALSE
@@ -33,16 +38,21 @@
 	return TRUE
 
 /obj/belly/proc/instant_break_bone(mob/user, mob/living/target)
+	return instant_break_bone_stage(user, target, null)
+
+/obj/belly/proc/instant_break_bone_stage(mob/user, mob/living/target, decision)
 	if(!ishuman(target))
 		to_chat(user, span_vwarning("\The [target] has no breakable organs."))
 		return FALSE
 	if(target.absorbed)
 		to_chat(user, span_vwarning("\The [target] is absorbed, and cannot presently be broken."))
 		return FALSE
-	var/_answer_a2 = rerun_ask(target, "a2", PROC_REF(instant_break_bone), args, /datum/om/prompt/choice/alert, message = "\The [user] is attempting to break one of your bones. Is this something you are okay with happening to you?", title = "Break Bones", choices = list("No", "Yes"))
-	if(isnull(_answer_a2))
+	if(isnull(decision))
+		if(!ismob(target) || QDELETED(target))
+			return
+		open_request(src, /datum/prompt/choice/belly_instant_consent, PROC_REF(instant_break_bone_answered), answerer = target, subject = src, instigator = user, question = "\The [user] is attempting to break one of your bones. Is this something you are okay with happening to you?", title = "Break Bones")
 		return
-	if(_answer_a2 != "Yes")
+	if(decision != "Yes")
 		to_chat(user, span_vwarning("\The [target] declined your breaking bones attempt."))
 		to_chat(target, span_vwarning("You declined the breaking bones attempt."))
 		return FALSE
@@ -59,10 +69,15 @@
 	return TRUE
 
 /obj/belly/proc/instant_absorb(mob/user, mob/living/target)
-	var/_answer_a3 = rerun_ask(target, "a3", PROC_REF(instant_absorb), args, /datum/om/prompt/choice/alert, message = "\The [user] is attempting to instantly absorb you. Is this something you are okay with happening to you?", title = "Instant Absorb", choices = list("No", "Yes"))
-	if(isnull(_answer_a3))
+	return instant_absorb_stage(user, target, null)
+
+/obj/belly/proc/instant_absorb_stage(mob/user, mob/living/target, decision)
+	if(isnull(decision))
+		if(!ismob(target) || QDELETED(target))
+			return
+		open_request(src, /datum/prompt/choice/belly_instant_consent, PROC_REF(instant_absorb_answered), answerer = target, subject = src, instigator = user, question = "\The [user] is attempting to instantly absorb you. Is this something you are okay with happening to you?", title = "Instant Absorb")
 		return
-	if(_answer_a3 != "Yes")
+	if(decision != "Yes")
 		to_chat(user, span_vwarning("\The [target] declined your absorb attempt."))
 		to_chat(target, span_vwarning("You declined the absorb attempt."))
 		return FALSE
@@ -78,10 +93,15 @@
 	return TRUE
 
 /obj/belly/proc/instant_knockout(mob/user, mob/living/target)
-	var/_answer_a4 = rerun_ask(target, "a4", PROC_REF(instant_knockout), args, /datum/om/prompt/choice/alert, message = "\The [user] is attempting to instantly make you unconscious, you will be unable until ejected from the pred. Is this something you are okay with happening to you?", title = "Instant Knockout", choices = list("No", "Yes"))
-	if(isnull(_answer_a4))
+	return instant_knockout_stage(user, target, null)
+
+/obj/belly/proc/instant_knockout_stage(mob/user, mob/living/target, decision)
+	if(isnull(decision))
+		if(!ismob(target) || QDELETED(target))
+			return
+		open_request(src, /datum/prompt/choice/belly_instant_consent, PROC_REF(instant_knockout_answered), answerer = target, subject = src, instigator = user, question = "\The [user] is attempting to instantly make you unconscious, you will be unable until ejected from the pred. Is this something you are okay with happening to you?", title = "Instant Knockout")
 		return
-	if(_answer_a4 != "Yes")
+	if(decision != "Yes")
 		to_chat(user, span_vwarning("\The [target] declined your knockout attempt."))
 		to_chat(target, span_vwarning("You declined the knockout attempt."))
 		return FALSE
@@ -91,3 +111,81 @@
 	target.status_adjust(EFFECT_SLEEPING, 500000)
 	to_chat(target, span_vwarning("\The [user] has put you to sleep, you will remain unconscious until ejected from the belly."))
 	return TRUE
+
+/obj/belly/proc/instant_digest_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(instant_digest_accepted), A)
+	if(!result.ok)
+		stack_trace("belly instant_digest consent: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/belly/proc/instant_digest_accepted(datum/act/request/A)
+	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
+	return instant_digest_stage(ask.instigator, ask.answerer, ask.answer_value)
+
+/obj/belly/proc/instant_break_bone_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(instant_break_bone_accepted), A)
+	if(!result.ok)
+		stack_trace("belly instant_break_bone consent: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/belly/proc/instant_break_bone_accepted(datum/act/request/A)
+	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
+	return instant_break_bone_stage(ask.instigator, ask.answerer, ask.answer_value)
+
+/obj/belly/proc/instant_absorb_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(instant_absorb_accepted), A)
+	if(!result.ok)
+		stack_trace("belly instant_absorb consent: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/belly/proc/instant_absorb_accepted(datum/act/request/A)
+	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
+	return instant_absorb_stage(ask.instigator, ask.answerer, ask.answer_value)
+
+/obj/belly/proc/instant_knockout_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(instant_knockout_accepted), A)
+	if(!result.ok)
+		stack_trace("belly instant_knockout consent: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/belly/proc/instant_knockout_accepted(datum/act/request/A)
+	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
+	return instant_knockout_stage(ask.instigator, ask.answerer, ask.answer_value)
+
+/// The original requester's identity is captured weakly, as the old kept proc arguments were.
+/datum/prompt/choice/belly_instant_consent
+	timeout = 0
+	buttons = TRUE
+	choices = list("No", "Yes")
+	var/mob/instigator
+	var/instigator_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/belly_instant_consent)
+	ref_one(nameof(instigator), /mob)
+
+/datum/prompt/choice/belly_instant_consent/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured = instigator
+	instigator_expected = !isnull(captured)
+	rel_clear(src, nameof(instigator))
+	if(captured && !QDELETED(captured))
+		rel_set(src, nameof(instigator), captured)
+
+/datum/prompt/choice/belly_instant_consent/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(instigator_expected && QDELETED(instigator))
+		return "gone"

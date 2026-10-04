@@ -880,6 +880,24 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(landing), /atom/movable/screen/action_landing))
 
+/// CAPABILITIES(/datum/admin_emp_review) at code/modules/admin/verbs/adminfun.dm:141
+/datum/admin_emp_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/adminfun.dm", 141, /datum/admin_emp_review)
+	into += entry_line(142)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(143)
+	into += list(global.ref_one(nameof(originator), /atom))
+
+/// CAPABILITIES(/datum/admin_explosion_review) at code/modules/admin/verbs/adminfun.dm:241
+/datum/admin_explosion_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/adminfun.dm", 241, /datum/admin_explosion_review)
+	into += entry_line(242)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(243)
+	into += list(global.ref_one(nameof(originator), /atom))
+
 /// CAPABILITIES(/datum/admin_memo_review) at code/modules/admin/admin_memo.dm:131
 /datum/admin_memo_review/declared_entries(list/into)
 	..(into)
@@ -3334,12 +3352,26 @@
 	into += entry_line(400)
 	into += list(global.ref_one(nameof(living_target), /mob/living))
 
+/// CAPABILITIES(/datum/prompt/choice/admin_control_target) at code/modules/admin/verbs/debug.dm:879
+/datum/prompt/choice/admin_control_target/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/debug.dm", 879, /datum/prompt/choice/admin_control_target)
+	into += entry_line(880)
+	into += list(global.ref_one(nameof(controlled_mob), /mob))
+
 /// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1270
 /datum/prompt/choice/admin_drop_pod/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1270, /datum/prompt/choice/admin_drop_pod)
 	into += entry_line(1271)
 	into += list(global.ref_one(nameof(drop_mob), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/choice/admin_gib_target) at code/modules/admin/verbs/adminfun.dm:95
+/datum/prompt/choice/admin_gib_target/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/adminfun.dm", 95, /datum/prompt/choice/admin_gib_target)
+	into += entry_line(96)
+	into += list(global.ref_one(nameof(victim), /mob))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_mail) at code/game/objects/mail.dm:327
 /datum/prompt/choice/admin_mail/declared_entries(list/into)
@@ -3355,11 +3387,11 @@
 	into += entry_line(1057)
 	into += list(global.ref_one(nameof(target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm) at code/modules/admin/admin.dm:1134
+/// CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm) at code/modules/admin/admin.dm:1162
 /datum/prompt/choice/admin_paralyze_confirm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 1134, /datum/prompt/choice/admin_paralyze_confirm)
-	into += entry_line(1135)
+	into += entry_block("code/modules/admin/admin.dm", 1162, /datum/prompt/choice/admin_paralyze_confirm)
+	into += entry_line(1163)
 	into += list(global.ref_one(nameof(target), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:209
@@ -3410,6 +3442,13 @@
 	into += entry_block("code/game/objects/items/weapons/implants/implantaugment.dm", 77, /datum/prompt/choice/augment_location)
 	into += entry_line(78)
 	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
+
+/// CAPABILITIES(/datum/prompt/choice/belly_instant_consent) at code/modules/vore/eating/belly_actions.dm:175
+/datum/prompt/choice/belly_instant_consent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/eating/belly_actions.dm", 175, /datum/prompt/choice/belly_instant_consent)
+	into += entry_line(176)
+	into += list(global.ref_one(nameof(instigator), /mob))
 
 /// CAPABILITIES(/datum/prompt/choice/bloodsuck) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:55
 /datum/prompt/choice/bloodsuck/declared_entries(list/into)
@@ -3491,13 +3530,13 @@
 	into += entry_line(48)
 	into += list(global.ref_one(nameof(faction), /datum/antagonist))
 
-/// CAPABILITIES(/datum/prompt/choice/fax_stamp) at code/modules/admin/admin.dm:973
+/// CAPABILITIES(/datum/prompt/choice/fax_stamp) at code/modules/admin/admin.dm:1001
 /datum/prompt/choice/fax_stamp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 973, /datum/prompt/choice/fax_stamp)
-	into += entry_line(974)
+	into += entry_block("code/modules/admin/admin.dm", 1001, /datum/prompt/choice/fax_stamp)
+	into += entry_line(1002)
 	into += list(global.ref_one(nameof(paper), /obj/item/paper/admin))
-	into += entry_line(975)
+	into += entry_line(1003)
 	into += list(global.ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine))
 
 /// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:46
@@ -3506,6 +3545,13 @@
 	into += entry_block("code/game/machinery/wall_frames.dm", 46, /datum/prompt/choice/frame_type_wall)
 	into += entry_line(47)
 	into += list(global.ref_one(nameof(wall_turf), /turf))
+
+/// CAPABILITIES(/datum/prompt/choice/freight_certification) at code/modules/economy/sales_lots.dm:457
+/datum/prompt/choice/freight_certification/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/sales_lots.dm", 457, /datum/prompt/choice/freight_certification)
+	into += entry_line(458)
+	into += list(global.ref_one(nameof(shipment), /obj/structure/closet/crate))
 
 /// CAPABILITIES(/datum/prompt/choice/fruit_gland) at code/modules/mob/living/carbon/human/species/station/alraune.dm:211
 /datum/prompt/choice/fruit_gland/declared_entries(list/into)
@@ -3777,11 +3823,11 @@
 	into += entry_line(432)
 	into += list(global.ref_one(nameof(living_target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:1099
+/// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:1127
 /datum/prompt/number/admin_telecrystals/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 1099, /datum/prompt/number/admin_telecrystals)
-	into += entry_line(1100)
+	into += entry_block("code/modules/admin/admin.dm", 1127, /datum/prompt/number/admin_telecrystals)
+	into += entry_line(1128)
 	into += list(global.ref_one(nameof(human_target), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:81
@@ -3797,6 +3843,13 @@
 	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 247, /datum/prompt/number/excavation_depth)
 	into += entry_line(248)
 	into += list(global.ref_one(nameof(captured_item), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/number/freight_certification) at code/modules/economy/sales_lots.dm:509
+/datum/prompt/number/freight_certification/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/sales_lots.dm", 509, /datum/prompt/number/freight_certification)
+	into += entry_line(510)
+	into += list(global.ref_one(nameof(shipment), /obj/structure/closet/crate))
 
 /// CAPABILITIES(/datum/prompt/number/hand_game_move) at code/modules/mob/living/carbon/human/human_powers.dm:615
 /datum/prompt/number/hand_game_move/declared_entries(list/into)
@@ -3895,6 +3948,13 @@
 	into += entry_line(1012)
 	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
+/// CAPABILITIES(/datum/prompt/text/communicator_reply) at code/game/objects/items/devices/communicator/messaging.dm:109
+/datum/prompt/text/communicator_reply/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/messaging.dm", 109, /datum/prompt/text/communicator_reply)
+	into += entry_line(110)
+	into += list(global.ref_one(nameof(comm), /obj/item/communicator))
+
 /// CAPABILITIES(/datum/prompt/text/compliance_laws) at code/game/objects/items/weapons/implants/implant.dm:875
 /datum/prompt/text/compliance_laws/declared_entries(list/into)
 	..(into)
@@ -3925,14 +3985,28 @@
 	into += entry_line(324)
 	into += list(global.ref_one(nameof(source), /mob))
 
-/// CAPABILITIES(/datum/prompt/text/fax_title) at code/modules/admin/admin.dm:943
+/// CAPABILITIES(/datum/prompt/text/fax_title) at code/modules/admin/admin.dm:971
 /datum/prompt/text/fax_title/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 943, /datum/prompt/text/fax_title)
-	into += entry_line(944)
+	into += entry_block("code/modules/admin/admin.dm", 971, /datum/prompt/text/fax_title)
+	into += entry_line(972)
 	into += list(global.ref_one(nameof(paper), /obj/item/paper/admin))
-	into += entry_line(945)
+	into += entry_line(973)
 	into += list(global.ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine))
+
+/// CAPABILITIES(/datum/prompt/text/freight_certification) at code/modules/economy/sales_lots.dm:483
+/datum/prompt/text/freight_certification/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/sales_lots.dm", 483, /datum/prompt/text/freight_certification)
+	into += entry_line(484)
+	into += list(global.ref_one(nameof(shipment), /obj/structure/closet/crate))
+
+/// CAPABILITIES(/datum/prompt/text/ghost_text) at code/game/objects/items/devices/communicator/messaging.dm:209
+/datum/prompt/text/ghost_text/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/messaging.dm", 209, /datum/prompt/text/ghost_text)
+	into += entry_line(210)
+	into += list(global.ref_one(nameof(recipient), /obj/item/communicator))
 
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
@@ -9019,11 +9093,11 @@
 	into += entry_line(184)
 	into += list(global.op("flip", global.in_hand(), global.label("Flip coin"), global.then(PROC_REF(coin_flip_requested))))
 
-/// CAPABILITIES(/obj/item/commcard) at code/game/objects/items/devices/communicator/cartridge.dm:18
+/// CAPABILITIES(/obj/item/commcard) at code/game/objects/items/devices/communicator/cartridge.dm:17
 /obj/item/commcard/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 18, /obj/item/commcard)
-	into += entry_line(19)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 17, /obj/item/commcard)
+	into += entry_line(18)
 	into += list(global.owns_many(nameof(internal_devices)))
 
 /// CAPABILITIES(/obj/item/communicator) at code/game/objects/items/devices/communicator/UI_tgui.dm:12

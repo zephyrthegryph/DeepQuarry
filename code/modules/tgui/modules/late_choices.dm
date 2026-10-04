@@ -139,4 +139,4 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 		tgui_alert_async(new_user,"Your current species, [pref_species], is not available for play on the station.")
 		return 0
 
-	new_user.AttemptLateSpawn(job)
+	new_user.AttemptLateSpawn(job, user)

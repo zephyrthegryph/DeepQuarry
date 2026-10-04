@@ -98,14 +98,44 @@
 		to_chat(L, span_notice("[icon2html(src,L.client)] Message from [who]: <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)"))
 
 // This is the only Topic the communicators really uses
-/datum/om/prompt/text/communicator/reply
+/datum/prompt/text/communicator_reply
 	title = "Reply"
-	message = "Enter your message below."
+	question = "Enter your message below."
+	timeout = 0
+	usable_state = "default"
 	var/obj/item/communicator/comm
+	var/comm_expected = FALSE
 
-/obj/item/communicator/proc/reply_entered(datum/om/prompt/text/communicator/reply/ask)
+CAPABILITIES(/datum/prompt/text/communicator_reply)
+	ref_one(nameof(comm), /obj/item/communicator)
+
+/datum/prompt/text/communicator_reply/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/communicator/captured = comm
+	comm_expected = !isnull(captured)
+	rel_clear(src, nameof(comm))
+	if(captured && !QDELETED(captured))
+		rel_set(src, nameof(comm), captured)
+
+/datum/prompt/text/communicator_reply/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(comm_expected && QDELETED(comm))
+		return "gone"
+
+/obj/item/communicator/proc/reply_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(reply_apply), A)
+	if(!result.ok)
+		stack_trace("communicator reply: [result.error]")
+	return result.value
+
+/obj/item/communicator/proc/reply_apply(datum/act/request/A)
+	var/datum/prompt/text/communicator_reply/ask = A.answer
 	var/mob/user = ask.answerer
-	var/message = ask.text
+	var/message = ask.answer_value
 	var/obj/item/communicator/comm = ask.comm
 	if(!message || !comm.exonet)
 		return
@@ -124,7 +154,7 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 	var/obj/item/communicator/comm = args["target"]
 	if(!comm?.exonet)
 		return
-	om_ask(user, /datum/om/prompt/text/communicator/reply, PROC_REF(reply_entered), comm = comm)
+	open_request(src, /datum/prompt/text/communicator_reply, PROC_REF(reply_entered), answerer = user, subject = src, comm = comm)
 	return TRUE
 
 // Verb: text_communicator()
@@ -168,21 +198,53 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 
 	open_request(src, /datum/prompt/choice, PROC_REF(ghost_text_recipient_chosen), answerer = src, title = "Recipient Choice", question = "Send a text message to whom?", choices = choices, timeout = 0)
 
-/datum/om/prompt/text/ghost_text
-	message = "What do you want the message to say?"
+/datum/prompt/text/ghost_text
+	question = "What do you want the message to say?"
+	timeout = 0
 	encode = FALSE
 	multiline = TRUE
 	var/obj/item/communicator/recipient
+	var/recipient_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/ghost_text)
+	ref_one(nameof(recipient), /obj/item/communicator)
+
+/datum/prompt/text/ghost_text/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/communicator/captured = recipient
+	recipient_expected = !isnull(captured)
+	rel_clear(src, nameof(recipient))
+	if(captured && !QDELETED(captured))
+		rel_set(src, nameof(recipient), captured)
+
+/datum/prompt/text/ghost_text/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(recipient_expected && QDELETED(recipient))
+		return "gone"
 
 /mob/observer/dead/proc/ghost_text_recipient_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	om_ask(src, /datum/om/prompt/text/ghost_text, PROC_REF(ghost_text_written), recipient = A.answer.answer_value)
+	var/obj/item/communicator/recipient = A.answer.answer_value
+	if(!istype(recipient) || QDELETED(recipient))
+		return
+	open_request(src, /datum/prompt/text/ghost_text, PROC_REF(ghost_text_written), answerer = src, recipient = recipient)
 
-/mob/observer/dead/proc/ghost_text_written(datum/om/prompt/text/ghost_text/ask)
+/mob/observer/dead/proc/ghost_text_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(ghost_text_apply), A)
+	if(!result.ok)
+		stack_trace("ghost communicator text: [result.error]")
+	return result.value
+
+/mob/observer/dead/proc/ghost_text_apply(datum/act/request/A)
+	var/datum/prompt/text/ghost_text/ask = A.answer
 	var/obj/item/communicator/chosen_communicator = ask.recipient
 	var/mob/observer/dead/O = src
-	var/text_message = sanitize(ask.text, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	var/text_message = sanitize(ask.answer_value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
 	if(text_message && O.exonet && chosen_communicator.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "text", text_message)
 

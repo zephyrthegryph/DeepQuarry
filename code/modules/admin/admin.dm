@@ -259,36 +259,64 @@ ADMIN_VERB(intercom, R_ADMIN|R_EVENT, "Intercom Msg", "Send an intercom message,
 	feedback_add_details("admin_verb","IN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom conversation, like several uses of the Intercom Msg verb.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/channel = verb_ask(user, "a6", args, /datum/om/prompt/choice, message = "Channel for message:", title = "Channel", choices = GLOB.radiochannels)
-	if(isnull(channel))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_intercom_conversation_channel, PROC_REF(conversation_channel_selected), answerer = answerer, choices = GLOB.radiochannels)
 
-	if(!channel) //They picked a channel
+/datum/admin_verb/intercom_convo/proc/conversation_channel_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(ask_conversation_speech), context)
+	if(!result.ok)
+		stack_trace("om flow intercom_convo answer conversation_channel_selected: [result.error]")
 
-	var/speech_verb = verb_ask(user, "a7", args, /datum/om/prompt/choice/alert, message = "What speech verb to use for the conversation?", title = "Type", choices = list("states", "says"))
-	if(isnull(speech_verb))
+/datum/admin_verb/intercom_convo/proc/ask_conversation_speech(datum/act/request/context)
+	var/channel = context.request.answer_value
+	if(!channel)
 		return
+	open_request(src, /datum/prompt/choice/admin_intercom_conversation_speech, PROC_REF(conversation_speech_selected), answerer = context.request.answerer, channel = channel)
+
+/datum/admin_verb/intercom_convo/proc/conversation_speech_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(ask_conversation_content), context)
+	if(!result.ok)
+		stack_trace("om flow intercom_convo answer conversation_speech_selected: [result.error]")
+
+/datum/admin_verb/intercom_convo/proc/ask_conversation_content(datum/act/request/context)
+	var/datum/prompt/choice/admin_intercom_conversation_speech/request = context.request
+	var/speech_verb = request.answer_value
 	if(!speech_verb)
 		return
+	var/client/user = request.answerer.client
+	to_chat(user, span_notice(span_bold("Intercom Convo Directions") + "<br>Start the conversation with the sender, a pipe (|), and then the message on one line. Then hit enter to \
+	add another line, and type a (whole) number of seconds to pause between that message, and the next message, then repeat the message syntax up to 20 times. For example:<br>\
+	--- --- ---<br>\
+	Some Guy|Hello guys, what's up?<br>\
+	5<br>\
+	Other Guy|Hey, good to see you.<br>\
+	5<br>\
+	Some Guy|Yeah, you too.<br>\
+	--- --- ---<br>\
+	The above will result in those messages playing, with a 5 second gap between each. Maximum of 20 messages allowed."))
 
-	if(!om_answers?["a8"]) // Once, before the conversation is asked for.
-		to_chat(user, span_notice(span_bold("Intercom Convo Directions") + "<br>Start the conversation with the sender, a pipe (|), and then the message on one line. Then hit enter to \
-		add another line, and type a (whole) number of seconds to pause between that message, and the next message, then repeat the message syntax up to 20 times. For example:<br>\
-		--- --- ---<br>\
-		Some Guy|Hello guys, what's up?<br>\
-		5<br>\
-		Other Guy|Hey, good to see you.<br>\
-		5<br>\
-		Some Guy|Yeah, you too.<br>\
-		--- --- ---<br>\
-		The above will result in those messages playing, with a 5 second gap between each. Maximum of 20 messages allowed."))
+	open_request(src, /datum/prompt/text/admin_intercom_conversation_content, PROC_REF(conversation_content_selected), answerer = request.answerer, channel = request.channel, speech_verb = speech_verb)
 
-	var/list/decomposed
-	var/message = verb_ask(user, "a8", args, /datum/om/prompt/text, message = "See your chat box for instructions. Keep a copy elsewhere in case it is rejected when you click OK.", title = "Input Conversation", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-	if(isnull(message))
+/datum/admin_verb/intercom_convo/proc/conversation_content_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(send_conversation), context)
+	if(!result.ok)
+		stack_trace("om flow intercom_convo answer conversation_content_selected: [result.error]")
 
+/datum/admin_verb/intercom_convo/proc/send_conversation(datum/act/request/context)
+	var/datum/prompt/text/admin_intercom_conversation_content/request = context.request
+	var/client/user = request.answerer.client
+	var/channel = request.channel
+	var/speech_verb = request.speech_verb
+	var/message = request.answer_value
+	var/list/decomposed
 	if(!message)
 		return
 
@@ -1207,6 +1235,49 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	var/message
 
 /datum/prompt/text/admin_intercom/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_intercom_conversation_channel
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "Channel for message:"
+	title = "Channel"
+
+/datum/prompt/choice/admin_intercom_conversation_channel/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_intercom_conversation_speech
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "What speech verb to use for the conversation?"
+	title = "Type"
+	var/channel
+	choices = list("states", "says")
+	buttons = TRUE
+
+/datum/prompt/choice/admin_intercom_conversation_speech/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_intercom_conversation_content
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "See your chat box for instructions. Keep a copy elsewhere in case it is rejected when you click OK."
+	title = "Input Conversation"
+	var/channel
+	var/speech_verb
+	multiline = TRUE
+	max_len = MAX_TGUI_INPUT
+
+/datum/prompt/text/admin_intercom_conversation_content/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return

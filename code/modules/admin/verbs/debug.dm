@@ -302,11 +302,28 @@ ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "G
 
 ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct Control", "Assume direct control of a mob.", ADMIN_CATEGORY_GAME, mob/M)
 	if(M.ckey)
-		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "This mob is being controlled by [M.ckey]. Are you sure you wish to assume control of it? [M.ckey] will be made a ghost.", title = "Confirmation", choices = list("Yes","No"))
-		if(isnull(_answer_a2))
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
 			return
-		if(_answer_a2 != "Yes")
-			return
+		open_request(src, /datum/prompt/choice/admin_control_target, PROC_REF(control_confirmed), answerer = answerer, controlled_mob = M, question = "This mob is being controlled by [M.ckey]. Are you sure you wish to assume control of it? [M.ckey] will be made a ghost.")
+		return
+	apply_control(user, M)
+
+/datum/admin_verb/cmd_assume_direct_control/proc/control_confirmed(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(finish_control), context)
+	if(!result.ok)
+		stack_trace("om flow cmd_assume_direct_control answer finish_control: [result.error]")
+
+/datum/admin_verb/cmd_assume_direct_control/proc/finish_control(datum/act/request/context)
+	var/datum/prompt/choice/admin_control_target/request = context.request
+	var/mob/M = request.controlled_mob
+	if(M.ckey && request.answer_value != "Yes")
+		return
+	apply_control(request.answerer.client, M)
+
+/datum/admin_verb/cmd_assume_direct_control/proc/apply_control(client/user, mob/M)
 	if(!M || QDELETED(M))
 		to_chat(user, span_warning("The target mob no longer exists."))
 		return
@@ -413,36 +430,61 @@ ADMIN_VERB(cmd_admin_areatest, R_DEBUG, "Test areas", "Manually tests all areas 
 
 ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mob.", ADMIN_CATEGORY_FUN_EVENT_KIT, input)
 	if(!input)
-		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Pick Target", title = "Select the target to dress.", choices = getmobs())
-		if(isnull(_answer_a3))
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
 			return
-		input = _answer_a3
-		if(!input)
-			return
+		open_request(src, /datum/prompt/choice/admin_dress_target, PROC_REF(dress_target_selected), answerer = answerer, choices = getmobs())
+		return
+	ask_outfit(user, input)
 
+/datum/admin_verb/cmd_admin_dress/proc/dress_target_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(open_selected_outfit), context)
+	if(!result.ok)
+		stack_trace("om flow cmd_admin_dress answer open_selected_outfit: [result.error]")
+
+/datum/admin_verb/cmd_admin_dress/proc/open_selected_outfit(datum/act/request/context)
+	var/input = context.request.answer_value
+	if(!input)
+		return
+	ask_outfit(context.request.answerer.client, input)
+
+/datum/admin_verb/cmd_admin_dress/proc/ask_outfit(client/user, input)
 	var/target = getmobs()[input]
-
 	if(!ishuman(target))
 		return
-
-	var/mob/living/carbon/human/target_human = target
-
-	var/datum/decl/hierarchy/outfit/outfit = verb_ask(user, "a4", args, /datum/om/prompt/choice, message = "Select outfit.", title = "Select equipment.", choices = GLOB.outfits_decls)
-	if(isnull(outfit))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_dress_outfit, PROC_REF(outfit_selected), answerer = answerer, choices = GLOB.outfits_decls, target_label = input)
+
+/datum/admin_verb/cmd_admin_dress/proc/outfit_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(dress_selected_outfit), context)
+	if(!result.ok)
+		stack_trace("om flow cmd_admin_dress answer dress_selected_outfit: [result.error]")
+
+/datum/admin_verb/cmd_admin_dress/proc/dress_selected_outfit(datum/act/request/context)
+	var/datum/prompt/choice/admin_dress_outfit/request = context.request
+	var/target = getmobs()[request.target_label]
+	if(!ishuman(target))
+		return
+	var/mob/living/carbon/human/target_human = target
+	var/datum/decl/hierarchy/outfit/outfit = request.answer_value
 	if(!outfit)
 		return
-
 	feedback_add_details("admin_verb","SEQ")
-	dressup_human(target_human, outfit, 1)
+	dressup_human(target_human, outfit, request.answerer)
 
-/proc/dressup_human(mob/living/carbon/human/H, datum/decl/hierarchy/outfit/outfit)
+/proc/dressup_human(mob/living/carbon/human/H, datum/decl/hierarchy/outfit/outfit, mob/user)
 	if(!H || !outfit)
 		return
 	if(outfit.undress)
 		H.delete_inventory()
 	outfit.equip(H)
-	log_and_message_admins("changed the equipment of [key_name(H)] to [outfit.name].")
+	log_and_message_admins("changed the equipment of [key_name(H)] to [outfit.name].", user)
 
 /// "Setup supermatter" brings the crystal up to a working power shortly after the rest of the engine room is set.
 /proc/admin_boost_supermatter(obj/machinery/power/supermatter/SM)
@@ -821,6 +863,68 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 			return "chosen player is gone"
 
 /datum/prompt/choice/admin_pai_player/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_control_target
+	rights = R_DEBUG|R_ADMIN|R_EVENT
+	timeout = 0
+	title = "Confirmation"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	var/mob/controlled_mob
+
+CAPABILITIES(/datum/prompt/choice/admin_control_target)
+	ref_one(nameof(controlled_mob), /mob)
+
+/datum/prompt/choice/admin_control_target/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured = controlled_mob
+	rel_clear(src, nameof(controlled_mob))
+	rel_set(src, nameof(controlled_mob), captured)
+
+/datum/prompt/choice/admin_control_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(controlled_mob) ? "target is gone" : null
+
+/datum/prompt/choice/admin_control_target/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_dress_target
+	rights = R_FUN
+	timeout = 0
+	title = "Select the target to dress."
+	question = "Pick Target"
+
+/datum/prompt/choice/admin_dress_target/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_dress_outfit
+	rights = R_FUN
+	timeout = 0
+	title = "Select equipment."
+	question = "Select outfit."
+	var/target_label
+
+/datum/prompt/choice/admin_dress_outfit/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/datum/decl/hierarchy/outfit/picked = answer_value
+		return QDELETED(picked) ? "outfit is gone" : null
+
+/datum/prompt/choice/admin_dress_outfit/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return

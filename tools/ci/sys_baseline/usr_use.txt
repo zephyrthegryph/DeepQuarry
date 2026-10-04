@@ -108,7 +108,6 @@ usr_outside_verb	code/modules/admin/callproc/callproc.dm	var/is_remote_handler =
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	to_chat(usr, span_adminnotice("Another set of admin called procs are still running. Try again later."), confidential = TRUE)
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	log_admin("[key_name(usr)] attempted to call world/proc/[procname] with arguments: [english_list(arguments)]")
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == usr?.client?.ckey) || (GLOB.AdminProcCallHandler && usr == GLOB.AdminProcCallHandler)
-usr_outside_verb	code/modules/admin/functions/modify_traits.dm	om_ask(usr, /datum/om/prompt/choice/modify_trait, PROC_REF(ask_trait), message = "Remove/Add?", choices = list("Add","Remove"), target = D)
 usr_outside_verb	code/modules/admin/holder2.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/holder2.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/holder2.dm	alert_to_permissions_elevation_attempt(usr)
@@ -163,7 +162,6 @@ usr_outside_verb	code/modules/mob/living/carbon/human/species/outsider/event.dm	
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/modules/mob/mob.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/mob/mob.dm	closeToolTip(usr, src) //No reason not to, really
-usr_outside_verb	code/modules/mob/new_player/new_player.dm	if (src != usr)
 usr_outside_verb	code/modules/mob/say.dm	if(stat || !use_me && usr == src)
 usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src = src, params = params, title = name)
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
