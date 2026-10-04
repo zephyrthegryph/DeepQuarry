@@ -146,7 +146,7 @@
 	var/obj/machinery/computer/timeclock/C = hc_console(/obj/machinery/computer/timeclock)
 	var/mob/living/carbon/human/H = hc_actor()
 	press(H, C, "switch-to-offduty")
-	press(H, C, "switch-to-onduty-rank", list("switch-to-onduty-assignment" = "x", "switch-to-onduty-rank" = "y"))
+	press(H, C, "switch-to-onduty-rank", list("assignment" = "x", "rank" = "y"))
 	TEST_ASSERT(isnull(C.card), "with no card inserted a switch does nothing")
 
 // ---- robotics control ----

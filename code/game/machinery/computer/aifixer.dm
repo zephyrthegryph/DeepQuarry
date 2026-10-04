@@ -12,8 +12,10 @@
 	/// Variable containing transferred AI
 	var/mob/living/silicon/ai/occupier
 
-/// Variable dictating if we are in the process of restoring the occupier AI
-OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTINGS)
+	/// Variable dictating if we are in the process of restoring the occupier AI
+	var/restoring = FALSE
+
+TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "restoring")
 
 /obj/machinery/computer/aifixer/declare_interactions(list/into)
@@ -78,12 +80,12 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "resto
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/aifixer, "AiRestorer")
+CAPABILITIES(/obj/machinery/computer/aifixer)
+	interface("AiRestorer")
+	op("PRG_beginReconstruction", ui_act("PRG_beginReconstruction"), then(PROC_REF(ui_act_prg_beginreconstruction)))
+	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 
-UI_DATA_REPLACE(/obj/machinery/computer/aifixer, "merge:ui_data_obj_machinery_computer_aifixer{ejectable:bool,AI_present:bool,error:text,name:text,restoring:num,health:unknown,isDead:bool,laws:list}")
-
-/// The computed part of /obj/machinery/computer/aifixer's window data (declared on its UI_DATA row).
-/obj/machinery/computer/aifixer/proc/ui_data_obj_machinery_computer_aifixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/aifixer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["ejectable"] = FALSE
@@ -104,19 +106,16 @@ UI_DATA_REPLACE(/obj/machinery/computer/aifixer, "merge:ui_data_obj_machinery_co
 
 	return data
 
-/obj/machinery/computer/aifixer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/// Every button clicks, and restoring stops when nobody is in the terminal (the old window guard's side effects).
+/obj/machinery/computer/aifixer/proc/ui_typed(datum/act/op/A)
 	if(!occupier())
 		set_restoring(FALSE)
-	if(action)
-		play_sfx(src, SFX_TERMINAL_TYPE)
-	return TRUE
+	play_sfx(src, SFX_TERMINAL_TYPE)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/aifixer, "PRG_beginReconstruction", ui_act_prg_beginreconstruction)
-UI_ACT_PROC(/obj/machinery/computer/aifixer, ui_act_prg_beginreconstruction)
+/obj/machinery/computer/aifixer/proc/ui_act_prg_beginreconstruction(datum/act/op/A)
 	if(occupier() && (occupier().vitality() < 1 || occupier().backup_capacitor() < 100))
-		to_chat(ui.user, span_notice("Reconstruction in progress. This will take several minutes."))
+		to_chat(A.actor, span_notice("Reconstruction in progress. This will take several minutes."))
 		play_sfx(src, SFX_MACHINES_TERMINAL_PROMPT_CONFIRM)
 		set_restoring(TRUE)
 		var/mob/observer/dead/ghost = occupier().get_ghost()

@@ -37,13 +37,32 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 	INTERACT_SILICON("Use", TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
 )
 
-DECLARE_UI(/obj/machinery/computer/operating, "OperatingComputer", UI_TITLE("Patient Monitor"))
+CAPABILITIES(/obj/machinery/computer/operating)
+	interface("OperatingComputer", title = "Patient Monitor")
+	op("verboseOn", ui_act("verboseOn"), then(PROC_REF(ui_act_verboseon)))
+	op("verboseOff", ui_act("verboseOff"), then(PROC_REF(ui_act_verboseoff)))
+	op("healthOn", ui_act("healthOn"), then(PROC_REF(ui_act_healthon)))
+	op("healthOff", ui_act("healthOff"), then(PROC_REF(ui_act_healthoff)))
+	op("critOn", ui_act("critOn"), then(PROC_REF(ui_act_criton)))
+	op("critOff", ui_act("critOff"), then(PROC_REF(ui_act_critoff)))
+	op("spo2On", ui_act("spo2On"), then(PROC_REF(ui_act_spo2on)))
+	op("spo2Off", ui_act("spo2Off"), then(PROC_REF(ui_act_spo2off)))
+	op("spo2_adj", ui_act("spo2_adj", arg("new", num(0, 100))), then(PROC_REF(ui_act_spo2_adj)))
+	op("choiceOn", ui_act("choiceOn"), then(PROC_REF(ui_act_choiceon)))
+	op("choiceOff", ui_act("choiceOff"), then(PROC_REF(ui_act_choiceoff)))
+	op("health_adj", ui_act("health_adj", arg("new", num(-100, 100))), then(PROC_REF(ui_act_health_adj)))
+	extend(TAG_UI, then(PROC_REF(ui_attended), early = TRUE))
 
-UI_DATA_REPLACE(/obj/machinery/computer/operating, "verbose:num", "spo2Alarm:num", "choice", "health=healthAnnounce:num", "crit:num", "healthAlarm:num", "spo2:num", "merge:ui_data_obj_machinery_computer_operating{hasOccupant:num,occupant:list}")
-
-/// The computed part of /obj/machinery/computer/operating's window data (declared on its UI_DATA row).
-/obj/machinery/computer/operating/proc/ui_data_obj_machinery_computer_operating(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/operating/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
+	data["verbose"] = verbose
+	data["spo2Alarm"] = spo2Alarm
+	data["choice"] = choice
+	data["health"] = healthAnnounce
+	data["crit"] = crit
+	data["healthAlarm"] = healthAlarm
+	data["spo2"] = spo2
 	var/mob/living/carbon/human/occupant
 	if(table)
 		occupant = table.victim
@@ -66,72 +85,60 @@ UI_DATA_REPLACE(/obj/machinery/computer/operating, "verbose:num", "spo2Alarm:num
 
 	return data
 
-/obj/machinery/computer/operating/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if((ui.user.contents.Find(src) || (in_range(src, ui.user) && istype(src.loc, /turf))) || (istype(ui.user, /mob/living/silicon)))
-		ui.user.set_machine(src)
-	return TRUE
+/// Whoever works the monitor from within reach, or a silicon, has it as their machine (the old window guard's side effect).
+/obj/machinery/computer/operating/proc/ui_attended(datum/act/op/A)
+	var/mob/user = A.actor
+	if((user.contents.Find(src) || (in_range(src, user) && istype(src.loc, /turf))) || (istype(user, /mob/living/silicon)))
+		user.set_machine(src)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/operating, "verboseOn", ui_act_verboseon)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_verboseon)
+/obj/machinery/computer/operating/proc/ui_act_verboseon(datum/act/op/A)
 	. = TRUE
 	verbose = TRUE
 
-UI_ACT(/obj/machinery/computer/operating, "verboseOff", ui_act_verboseoff)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_verboseoff)
+/obj/machinery/computer/operating/proc/ui_act_verboseoff(datum/act/op/A)
 	. = TRUE
 	verbose = FALSE
 
-UI_ACT(/obj/machinery/computer/operating, "healthOn", ui_act_healthon)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_healthon)
+/obj/machinery/computer/operating/proc/ui_act_healthon(datum/act/op/A)
 	. = TRUE
 	healthAnnounce = TRUE
 
-UI_ACT(/obj/machinery/computer/operating, "healthOff", ui_act_healthoff)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_healthoff)
+/obj/machinery/computer/operating/proc/ui_act_healthoff(datum/act/op/A)
 	. = TRUE
 	healthAnnounce = FALSE
 
-UI_ACT(/obj/machinery/computer/operating, "critOn", ui_act_criton)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_criton)
+/obj/machinery/computer/operating/proc/ui_act_criton(datum/act/op/A)
 	. = TRUE
 	crit = TRUE
 
-UI_ACT(/obj/machinery/computer/operating, "critOff", ui_act_critoff)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_critoff)
+/obj/machinery/computer/operating/proc/ui_act_critoff(datum/act/op/A)
 	. = TRUE
 	crit = FALSE
 
-UI_ACT(/obj/machinery/computer/operating, "spo2On", ui_act_spo2on)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_spo2on)
+/obj/machinery/computer/operating/proc/ui_act_spo2on(datum/act/op/A)
 	. = TRUE
 	spo2 = TRUE
 
-UI_ACT(/obj/machinery/computer/operating, "spo2Off", ui_act_spo2off)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_spo2off)
+/obj/machinery/computer/operating/proc/ui_act_spo2off(datum/act/op/A)
 	. = TRUE
 	spo2 = FALSE
 
-UI_ACT(/obj/machinery/computer/operating, "spo2_adj", ui_act_spo2_adj, UI_ARG_NUM("new", 0, 100))
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_spo2_adj)
+/obj/machinery/computer/operating/proc/ui_act_spo2_adj(datum/act/op/A, value)
 	. = TRUE
-	spo2Alarm = params["new"]
+	spo2Alarm = value
 
-UI_ACT(/obj/machinery/computer/operating, "choiceOn", ui_act_choiceon)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_choiceon)
+/obj/machinery/computer/operating/proc/ui_act_choiceon(datum/act/op/A)
 	. = TRUE
 	choice = TRUE
 
-UI_ACT(/obj/machinery/computer/operating, "choiceOff", ui_act_choiceoff)
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_choiceoff)
+/obj/machinery/computer/operating/proc/ui_act_choiceoff(datum/act/op/A)
 	. = TRUE
 	choice = FALSE
 
-UI_ACT(/obj/machinery/computer/operating, "health_adj", ui_act_health_adj, UI_ARG_NUM("new", -100, 100))
-UI_ACT_PROC(/obj/machinery/computer/operating, ui_act_health_adj)
+/obj/machinery/computer/operating/proc/ui_act_health_adj(datum/act/op/A, value)
 	. = TRUE
-	healthAlarm = params["new"]
+	healthAlarm = value
 
 /obj/machinery/computer/operating/machine_step()
 	if(!table || !table.check_victim())

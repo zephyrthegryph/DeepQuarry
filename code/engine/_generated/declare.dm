@@ -8550,6 +8550,26 @@
 	into += entry_line(29)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/machinery/computer/aifixer) at code/game/machinery/computer/aifixer.dm:83
+/obj/machinery/computer/aifixer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/aifixer.dm", 83, /obj/machinery/computer/aifixer)
+	into += entry_line(84)
+	into += list(global.interface("AiRestorer"))
+	into += entry_line(85)
+	into += list(global.op("PRG_beginReconstruction", global.ui_act("PRG_beginReconstruction"), global.then(PROC_REF(ui_act_prg_beginreconstruction))))
+	into += entry_line(86)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_typed), early = TRUE)))
+
+/// CAPABILITIES(/obj/machinery/computer/atmos_alert) at code/game/machinery/computer/atmos_alert.dm:27
+/obj/machinery/computer/atmos_alert/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/atmos_alert.dm", 27, /obj/machinery/computer/atmos_alert)
+	into += entry_line(28)
+	into += list(global.interface("AtmosAlertConsole"))
+	into += entry_line(29)
+	into += list(global.op("clear", global.ui_act("clear", global.arg("ref")), global.then(PROC_REF(ui_act_clear))))
+
 /// CAPABILITIES(/obj/machinery/computer/atmoscontrol) at code/game/machinery/computer/atmos_control.dm:18
 /obj/machinery/computer/atmoscontrol/declared_entries(list/into)
 	..(into)
@@ -8621,6 +8641,39 @@
 	into += entry_line(31)
 	into += list(global.owns_one(nameof(scan), /obj/item/card/id))
 
+/// CAPABILITIES(/obj/machinery/computer/operating) at code/game/machinery/computer/Operating.dm:40
+/obj/machinery/computer/operating/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/Operating.dm", 40, /obj/machinery/computer/operating)
+	into += entry_line(41)
+	into += list(global.interface("OperatingComputer", title = "Patient Monitor"))
+	into += entry_line(42)
+	into += list(global.op("verboseOn", global.ui_act("verboseOn"), global.then(PROC_REF(ui_act_verboseon))))
+	into += entry_line(43)
+	into += list(global.op("verboseOff", global.ui_act("verboseOff"), global.then(PROC_REF(ui_act_verboseoff))))
+	into += entry_line(44)
+	into += list(global.op("healthOn", global.ui_act("healthOn"), global.then(PROC_REF(ui_act_healthon))))
+	into += entry_line(45)
+	into += list(global.op("healthOff", global.ui_act("healthOff"), global.then(PROC_REF(ui_act_healthoff))))
+	into += entry_line(46)
+	into += list(global.op("critOn", global.ui_act("critOn"), global.then(PROC_REF(ui_act_criton))))
+	into += entry_line(47)
+	into += list(global.op("critOff", global.ui_act("critOff"), global.then(PROC_REF(ui_act_critoff))))
+	into += entry_line(48)
+	into += list(global.op("spo2On", global.ui_act("spo2On"), global.then(PROC_REF(ui_act_spo2on))))
+	into += entry_line(49)
+	into += list(global.op("spo2Off", global.ui_act("spo2Off"), global.then(PROC_REF(ui_act_spo2off))))
+	into += entry_line(50)
+	into += list(global.op("spo2_adj", global.ui_act("spo2_adj", global.arg("new", global.num(0, 100))), global.then(PROC_REF(ui_act_spo2_adj))))
+	into += entry_line(51)
+	into += list(global.op("choiceOn", global.ui_act("choiceOn"), global.then(PROC_REF(ui_act_choiceon))))
+	into += entry_line(52)
+	into += list(global.op("choiceOff", global.ui_act("choiceOff"), global.then(PROC_REF(ui_act_choiceoff))))
+	into += entry_line(53)
+	into += list(global.op("health_adj", global.ui_act("health_adj", global.arg("new", global.num(-100, 100))), global.then(PROC_REF(ui_act_health_adj))))
+	into += entry_line(54)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_attended), early = TRUE)))
+
 /// CAPABILITIES(/obj/machinery/computer/pod) at code/game/machinery/computer/pod.dm:69
 /obj/machinery/computer/pod/declared_entries(list/into)
 	..(into)
@@ -8658,12 +8711,44 @@
 	into += entry_line(66)
 	into += list(global.op("send_to_station", global.ui_act("send_to_station"), global.then(PROC_REF(ui_act_send_to_station))))
 
+/// CAPABILITIES(/obj/machinery/computer/prisoner) at code/game/machinery/computer/prisoner.dm:24
+/obj/machinery/computer/prisoner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/prisoner.dm", 24, /obj/machinery/computer/prisoner)
+	into += entry_line(25)
+	into += list(global.interface("PrisonerManagement"))
+	into += entry_line(26)
+	into += list(global.op("inject", global.ui_act("inject", global.arg("imp"), global.arg("val", global.num())), global.then(PROC_REF(ui_act_inject))))
+	into += entry_line(27)
+	into += list(global.op("lock", global.ui_act("lock"), global.then(PROC_REF(ui_act_lock))))
+	into += entry_line(28)
+	into += list(global.op("warn", global.ui_act("warn", global.arg("imp", global.schema_text(4096))), global.asks(/datum/prompt/text, fields = list("title" = "Enter your message here!", "question" = "Message:")), global.then(PROC_REF(ui_act_warn))))
+
 /// CAPABILITIES(/obj/machinery/computer/rcon) at code/game/machinery/computer/RCON_Console.dm:18
 /obj/machinery/computer/rcon/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/computer/RCON_Console.dm", 18, /obj/machinery/computer/rcon)
 	into += entry_line(19)
 	into += list(global.owns_one(nameof(rcon), starts = /datum/tgui_module/rcon))
+
+/// CAPABILITIES(/obj/machinery/computer/robotics) at code/game/machinery/computer/robot.dm:132
+/obj/machinery/computer/robotics/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/robot.dm", 132, /obj/machinery/computer/robotics)
+	into += entry_line(133)
+	into += list(global.interface("RoboticsControlConsole"))
+	into += entry_line(134)
+	into += list(global.op("arm", global.ui_act("arm"), global.then(PROC_REF(ui_act_arm))))
+	into += entry_line(135)
+	into += list(global.op("nuke", global.ui_act("nuke"), global.then(PROC_REF(ui_act_nuke))))
+	into += entry_line(136)
+	into += list(global.op("killbot", global.ui_act("killbot", global.arg("ref")), global.then(PROC_REF(ui_act_killbot))))
+	into += entry_line(137)
+	into += list(global.op("stopbot", global.ui_act("stopbot", global.arg("ref")), global.then(PROC_REF(ui_act_stopbot))))
+	into += entry_line(138)
+	into += list(global.op("hackbot", global.ui_act("hackbot", global.arg("ref")), global.needs(global.req(PROC_REF(hack_possible), because = MSG(robotics/cannot_hack))), global.asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), global.then(PROC_REF(ui_act_hackbot))))
+	into += entry_line(139)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_authenticated), because = MSG(robotics/access_denied)))))
 
 /// CAPABILITIES(/obj/machinery/computer/scan_consolenew) at code/game/dna/dna_modifier.dm:351
 /obj/machinery/computer/scan_consolenew/declared_entries(list/into)
@@ -8748,6 +8833,21 @@
 	into += entry_block("code/modules/telesci/telesci_computer.dm", 33, /obj/machinery/computer/telescience)
 	into += entry_line(34)
 	into += list(global.owns_one(nameof(last_tele_data), /datum/projectile_data))
+
+/// CAPABILITIES(/obj/machinery/computer/timeclock) at code/game/machinery/computer/timeclock.dm:70
+/obj/machinery/computer/timeclock/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/timeclock.dm", 70, /obj/machinery/computer/timeclock)
+	into += entry_line(71)
+	into += list(global.interface("TimeClock"))
+	into += entry_line(72)
+	into += list(global.op("id", global.ui_act("id"), global.then(PROC_REF(ui_act_id))))
+	into += entry_line(73)
+	into += list(global.op("switch-to-onduty-rank", global.ui_act("switch-to-onduty-rank", global.arg("assignment"), global.arg("rank")), global.then(PROC_REF(ui_act_switch_to_onduty_rank))))
+	into += entry_line(74)
+	into += list(global.op("switch-to-offduty", global.ui_act("switch-to-offduty"), global.then(PROC_REF(ui_act_switch_to_offduty))))
+	into += entry_line(75)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_touched), early = TRUE)))
 
 /// CAPABILITIES(/obj/machinery/computer/transhuman/designer) at code/modules/resleeving/designer.dm:26
 /obj/machinery/computer/transhuman/designer/declared_entries(list/into)

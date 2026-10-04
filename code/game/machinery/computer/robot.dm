@@ -11,6 +11,9 @@
 /obj/machinery/computer/robotics
 	silicon_use = SILICON_USE_UI
 
+MSG_DEF_SELF(robotics/access_denied, "Access denied.")
+MSG_DEF_SELF(robotics/cannot_hack, "You cannot hack that.")
+
 /obj/machinery/computer/robotics/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/robotics_use,
@@ -102,8 +105,8 @@
 			return TRUE
 	if(!isAI(user))
 		return FALSE
-	var/mob/living/original = user.mind.original_character
-	return (user.mind.special_role && (original && original == user))
+	var/mob/living/original = user.mind.original_character // ALLOW(reads): who may hack is asked when the question opens and again when it is answered, never cached
+	return (user.mind.special_role && (original && original == user)) // ALLOW(reads): who may hack is asked when the question opens and again when it is answered, never cached
 
 /**
  * Check if the user is allowed to hack a specific borg
@@ -126,26 +129,32 @@
 	return TRUE
 
 
-DECLARE_UI(/obj/machinery/computer/robotics, "RoboticsControlConsole")
+CAPABILITIES(/obj/machinery/computer/robotics)
+	interface("RoboticsControlConsole")
+	op("arm", ui_act("arm"), then(PROC_REF(ui_act_arm)))
+	op("nuke", ui_act("nuke"), then(PROC_REF(ui_act_nuke)))
+	op("killbot", ui_act("killbot", arg("ref")), then(PROC_REF(ui_act_killbot)))
+	op("stopbot", ui_act("stopbot", arg("ref")), then(PROC_REF(ui_act_stopbot)))
+	op("hackbot", ui_act("hackbot", arg("ref")), needs(req(PROC_REF(hack_possible), because = MSG(robotics/cannot_hack))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_authenticated), because = MSG(robotics/access_denied))))
 
-UI_DATA_REPLACE(/obj/machinery/computer/robotics, "safety:num", "merge:ui_data_obj_machinery_computer_robotics{auth:unknown,can_hack:unknown,cyborgs:list,show_detonate_all:bool}")
-
-/// The computed part of /obj/machinery/computer/robotics's window data (declared on its UI_DATA row).
-/obj/machinery/computer/robotics/proc/ui_data_obj_machinery_computer_robotics(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/robotics/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
+	data["safety"] = safety
 	data["auth"] = is_authenticated(user)
 	data["can_hack"] = can_hack_any(user)
 	data["cyborgs"] = list()
 	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!console_shows(R))
 			continue
-		var/area/A = get_area(R)
+		var/area/cyborg_area = get_area(R)
 		var/turf/T = get_turf(R)
 		var/list/cyborg_data = list(
 			name = R.name,
 			ref = REF(R),
 			locked_down = R.lockcharge,
-			locstring = "[A.name] ([T.x], [T.y])",
+			locstring = "[cyborg_area.name] ([T.x], [T.y])",
 			status = R.stat,
 			health = round(R.vitality() * 100, 0.1),
 			charge = R.cell ? round(R.cell.percent()) : null,
@@ -160,34 +169,27 @@ UI_DATA_REPLACE(/obj/machinery/computer/robotics, "safety:num", "merge:ui_data_o
 	data["show_detonate_all"] = (data["auth"] && length(data["cyborgs"]) > 0 && ishuman(user))
 	return data
 
-/obj/machinery/computer/robotics/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	. = FALSE
-	if(!is_authenticated(ui.user))
-		to_chat(ui.user, span_warning("Access denied."))
-		return FALSE
-	return TRUE
+/// Every button needs the operator to be authenticated (the old window guard).
+/obj/machinery/computer/robotics/proc/ui_authenticated(datum/act/op/A)
+	return is_authenticated(A.actor)
 
-UI_ACT(/obj/machinery/computer/robotics, "arm", ui_act_arm)
-UI_ACT_PROC(/obj/machinery/computer/robotics, ui_act_arm)
-	if(issilicon(ui.user))
-		to_chat(ui.user, span_danger("Access Denied (silicon detected)"))
+/obj/machinery/computer/robotics/proc/ui_act_arm(datum/act/op/A)
+	if(issilicon(A.actor))
+		to_chat(A.actor, span_danger("Access Denied (silicon detected)"))
 		return
 	safety = !safety
-	to_chat(ui.user, span_notice("You [safety ? "disarm" : "arm"] the emergency self destruct."))
+	to_chat(A.actor, span_notice("You [safety ? "disarm" : "arm"] the emergency self destruct."))
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/robotics, "nuke", ui_act_nuke)
-UI_ACT_PROC(/obj/machinery/computer/robotics, ui_act_nuke)
-	if(issilicon(ui.user))
-		to_chat(ui.user, span_danger("Access Denied (silicon detected)"))
+/obj/machinery/computer/robotics/proc/ui_act_nuke(datum/act/op/A)
+	if(issilicon(A.actor))
+		to_chat(A.actor, span_danger("Access Denied (silicon detected)"))
 		return
 	if(safety)
-		to_chat(ui.user, span_danger("Self-destruct aborted - safety active"))
+		to_chat(A.actor, span_danger("Self-destruct aborted - safety active"))
 		return
-	message_admins(span_notice("[key_name_admin(ui.user)] detonated all cyborgs!"))
-	log_game(span_notice("[key_name(ui.user)] detonated all cyborgs!"))
+	message_admins(span_notice("[key_name_admin(A.actor)] detonated all cyborgs!"))
+	log_game(span_notice("[key_name(A.actor)] detonated all cyborgs!"))
 	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(istype(R, /mob/living/silicon/robot/drone))
 			continue
@@ -200,10 +202,9 @@ UI_ACT_PROC(/obj/machinery/computer/robotics, ui_act_nuke)
 		R.self_destruct()
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/robotics, "killbot", ui_act_killbot, UI_ARG_REF("ref", null, /mob/living/silicon/robot))
-UI_ACT_PROC(/obj/machinery/computer/robotics, ui_act_killbot)
-	var/mob/living/silicon/robot/R = params["ref"]
-	if(!can_control(ui.user, R, TRUE))
+/obj/machinery/computer/robotics/proc/ui_act_killbot(datum/act/op/A, ref)
+	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
+	if(!can_control(A.actor, R, TRUE))
 		return
 	if(R.mind && R.mind.special_role && R.emagged)
 		to_chat(R, span_userdanger("Extreme danger!  Termination codes detected.  Scrambling security codes and automatic AI unlink triggered."))
@@ -211,56 +212,45 @@ UI_ACT_PROC(/obj/machinery/computer/robotics, ui_act_killbot)
 		. = TRUE
 		return
 	var/turf/T = get_turf(R)
-	message_admins(span_notice("[key_name_admin(ui.user)] detonated [key_name_admin(R)] ([ADMIN_COORDJMP(T)])!"))
-	log_game(span_notice("[key_name(ui.user)] detonated [key_name(R)]!"))
+	message_admins(span_notice("[key_name_admin(A.actor)] detonated [key_name_admin(R)] ([ADMIN_COORDJMP(T)])!"))
+	log_game(span_notice("[key_name(A.actor)] detonated [key_name(R)]!"))
 	to_chat(R, span_danger("Self-destruct command received."))
 	if(R.connected_ai)
 		to_chat(R.connected_ai, "<br><br>[span_alert("ALERT - Cyborg detonation detected: [R.name]")]<br>")
 	R.self_destruct()
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/robotics, "stopbot", ui_act_stopbot, UI_ARG_REF("ref", null, /mob/living/silicon/robot))
-UI_ACT_PROC(/obj/machinery/computer/robotics, ui_act_stopbot)
-	if(isrobot(ui.user))
-		to_chat(ui.user, span_danger("Access Denied."))
+/obj/machinery/computer/robotics/proc/ui_act_stopbot(datum/act/op/A, ref)
+	if(isrobot(A.actor))
+		to_chat(A.actor, span_danger("Access Denied."))
 		return
-	var/mob/living/silicon/robot/R = params["ref"]
-	if(!can_control(ui.user, R, TRUE))
+	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
+	if(!can_control(A.actor, R, TRUE))
 		return
-	message_admins(span_notice("[ADMIN_LOOKUPFLW(ui.user)] [!R.lockcharge ? "locked down" : "released"] [ADMIN_LOOKUPFLW(R)]!"))
-	log_game("[key_name(ui.user)] [!R.lockcharge ? "locked down" : "released"] [key_name(R)]!")
+	message_admins(span_notice("[ADMIN_LOOKUPFLW(A.actor)] [!R.lockcharge ? "locked down" : "released"] [ADMIN_LOOKUPFLW(R)]!"))
+	log_game("[key_name(A.actor)] [!R.lockcharge ? "locked down" : "released"] [key_name(R)]!")
 	R.SetLockdown(!R.lockcharge)
 	to_chat(R, "[!R.lockcharge ? span_notice("Your lockdown has been lifted!") : span_alert("You have been locked down!")]")
 	if(R.connected_ai)
 		to_chat(R.connected_ai, "[!R.lockcharge ? span_notice("NOTICE - Cyborg lockdown lifted") : span_alert("ALERT - Cyborg lockdown detected")]: <a href='byond://?src=[REF(R.connected_ai)];track=[html_encode(R.name)]'>[R.name]</a><br>")
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/robotics, "hackbot", ui_act_hackbot, UI_ARG_REF("ref", null, /mob/living/silicon/robot))
-UI_ACT_PROC(/obj/machinery/computer/robotics, ui_act_hackbot)
-	var/mob/living/silicon/robot/R = params["ref"]
-	if(!can_hack(ui.user, R))
-		return
-	om_ask(ui.user, /datum/om/prompt/confirm/robot_hack, PROC_REF(hack_confirmed), borg = R)
-	. = TRUE
+/// The cyborg the window button named, when the console shows it.
+/obj/machinery/computer/robotics/proc/hack_target(datum/act/op/A)
+	return ui_ref(A.args["ref"], null, /mob/living/silicon/robot)
 
-/datum/om/prompt/confirm/robot_hack
-	title = "Hack?"
-	requires = PROMPT_USABLE
-	var/mob/living/silicon/robot/borg
+/obj/machinery/computer/robotics/proc/hack_possible(datum/act/op/A)
+	return can_hack(A.actor, hack_target(A))
 
-/datum/om/prompt/confirm/robot_hack/prepare()
-	message = "Really hack [borg.name]? This cannot be undone."
-	return TRUE
-
-/datum/om/prompt/confirm/robot_hack/valid()
-	var/obj/machinery/computer/robotics/console = subject
-	return console.can_hack(answerer, borg) ? null : "can't hack"
-
-/obj/machinery/computer/robotics/proc/hack_confirmed(datum/om/prompt/confirm/robot_hack/ask)
-	var/mob/living/silicon/robot/R = ask.borg
-	var/mob/user = ask.answerer
-	log_game("[key_name(user)] emagged [key_name(R)] using robotic console!")
-	message_admins(span_notice("[key_name_admin(user)] emagged [key_name_admin(R)] using robotic console!"))
+/obj/machinery/computer/robotics/proc/ui_act_hackbot(datum/act/op/A, ref)
+	var/datum/prompt/answer = A.answer
+	if(!answer?.value)
+		return OP_OK
+	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
+	if(!can_hack(A.actor, R))
+		return OP_REFUSED
+	log_game("[key_name(A.actor)] emagged [key_name(R)] using robotic console!")
+	message_admins(span_notice("[key_name_admin(A.actor)] emagged [key_name_admin(R)] using robotic console!"))
 	R.set_emagged(TRUE)
 	to_chat(R, span_notice("Failsafe protocols overridden. New tools available."))
-	. = TRUE
+	return OP_OK

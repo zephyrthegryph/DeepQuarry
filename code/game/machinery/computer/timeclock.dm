@@ -67,12 +67,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/timeclock, TYPE_PROC_REF(/atom, 
 		to_chat(user, span_warning("There is already ID card inside."))
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/timeclock, "TimeClock")
+CAPABILITIES(/obj/machinery/computer/timeclock)
+	interface("TimeClock")
+	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
+	op("switch-to-onduty-rank", ui_act("switch-to-onduty-rank", arg("assignment"), arg("rank")), then(PROC_REF(ui_act_switch_to_onduty_rank)))
+	op("switch-to-offduty", ui_act("switch-to-offduty"), then(PROC_REF(ui_act_switch_to_offduty)))
+	extend(TAG_UI, then(PROC_REF(ui_touched), early = TRUE))
 
-UI_DATA(/obj/machinery/computer/timeclock, "merge:ui_data_obj_machinery_computer_timeclock{department_hours:unknown,user_name:text,card:text,assignment:text,job_datum:list,allow_change_job:bool,job_choices:unknown,card_cooldown:unknown}")
-
-/// The computed part of /obj/machinery/computer/timeclock's window data (declared on its UI_DATA row).
-/obj/machinery/computer/timeclock/proc/ui_data_obj_machinery_computer_timeclock(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/timeclock/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	// Okay, data for showing the user's OWN PTO stuff
@@ -107,42 +110,38 @@ UI_DATA(/obj/machinery/computer/timeclock, "merge:ui_data_obj_machinery_computer
 
 	return data
 
-/obj/machinery/computer/timeclock/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
+/// Every button leaves the presser's fingerprints (the old window guard's side effect).
+/obj/machinery/computer/timeclock/proc/ui_touched(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/timeclock, "id", ui_act_id)
-UI_ACT_PROC(/obj/machinery/computer/timeclock, ui_act_id)
+/obj/machinery/computer/timeclock/proc/ui_act_id(datum/act/op/A)
 	if(card)
-		ui.user.put_in_hands(card)
+		A.actor.put_in_hands(card)
 		own_take(src, nameof(/mob/living/silicon/pai::card))
 		play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	else
-		var/obj/item/I = ui.user.get_active_hand()
-		if (istype(I, /obj/item/card/id) && move_into(src, nameof(src.card), I, ui.user))
+		var/obj/item/I = A.actor.get_active_hand()
+		if (istype(I, /obj/item/card/id) && move_into(src, nameof(src.card), I, A.actor))
 			play_sfx(src, SFX_EFFECTS_INSERT_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/timeclock, "switch-to-onduty-rank", ui_act_switch_to_onduty_rank, UI_ARG_VALUE("switch-to-onduty-assignment"), UI_ARG_VALUE("switch-to-onduty-rank"))
-UI_ACT_PROC(/obj/machinery/computer/timeclock, ui_act_switch_to_onduty_rank)
-	if(checkFace(ui.user))
-		if(checkCardCooldown(ui.user))
-			makeOnDuty(params["switch-to-onduty-rank"], params["switch-to-onduty-assignment"], ui.user)
-			ui.user.put_in_hands(card)
+/obj/machinery/computer/timeclock/proc/ui_act_switch_to_onduty_rank(datum/act/op/A, assignment, rank)
+	if(checkFace(A.actor))
+		if(checkCardCooldown(A.actor))
+			makeOnDuty(rank, assignment, A.actor)
+			A.actor.put_in_hands(card)
 			own_take(src, nameof(/mob/living/silicon/pai::card))
 			play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/timeclock, "switch-to-offduty", ui_act_switch_to_offduty)
-UI_ACT_PROC(/obj/machinery/computer/timeclock, ui_act_switch_to_offduty)
-	if(checkFace(ui.user))
-		if(checkCardCooldown(ui.user))
-			makeOffDuty(ui.user)
-			ui.user.put_in_hands(card)
+/obj/machinery/computer/timeclock/proc/ui_act_switch_to_offduty(datum/act/op/A)
+	if(checkFace(A.actor))
+		if(checkCardCooldown(A.actor))
+			makeOffDuty(A.actor)
+			A.actor.put_in_hands(card)
 			own_take(src, nameof(/mob/living/silicon/pai::card))
 			play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	update_icon()
