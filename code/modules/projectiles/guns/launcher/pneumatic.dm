@@ -39,7 +39,22 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 
 /// Old Set Valve Pressure verb.
 /obj/item/gun/launcher/pneumatic/proc/pneumatic_verb_set_pressure(mob/user, obj/item/held, datum/interaction/interaction)
-	var/N = rerun_ask(user, "k42", PROC_REF(pneumatic_verb_set_pressure), args, /datum/om/prompt/choice, message = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts)
+	open_request(src, /datum/prompt/choice, PROC_REF(pneumatic_pressure_chosen), answerer = user, question = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts, timeout = 0)
+
+/obj/item/gun/launcher/pneumatic/proc/pneumatic_pressure_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_pneumatic_pressure), A)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/gun/launcher/pneumatic/proc/apply_pneumatic_pressure(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/N = A.answer.answer_value
 	if(isnull(N))
 		return
 	if (N)
