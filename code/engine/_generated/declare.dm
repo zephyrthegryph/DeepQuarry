@@ -2402,6 +2402,15 @@
 	into += entry_line(114)
 	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
 
+/// CAPABILITIES(/datum/prompt/choice/protean_power) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:269
+/datum/prompt/choice/protean_power/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 269, /datum/prompt/choice/protean_power)
+	into += entry_line(270)
+	into += list(global.ref_one(nameof(power), /datum/protean_power))
+	into += entry_line(271)
+	into += list(global.ref_one(nameof(form), /datum/forms/protean))
+
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
 	..(into)
@@ -2450,6 +2459,13 @@
 	into += entry_block("code/game/machinery/CableLayer.dm", 81, /datum/prompt/number/cablelayer_cut)
 	into += entry_line(82)
 	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/number/protean_store) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:606
+/datum/prompt/number/protean_store/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 606, /datum/prompt/number/protean_store)
+	into += entry_line(607)
+	into += list(global.ref_one(nameof(stack), /obj/item/stack/material))
 
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
@@ -2503,6 +2519,15 @@
 	into += entry_block("code/game/machinery/pandemic.dm", 109, /datum/prompt/yes_no/pandemic_release_sign)
 	into += entry_line(110)
 	into += list(global.ref_one(nameof(disease), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/yes_no/protean_power) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:294
+/datum/prompt/yes_no/protean_power/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 294, /datum/prompt/yes_no/protean_power)
+	into += entry_line(295)
+	into += list(global.ref_one(nameof(power), /datum/protean_power))
+	into += entry_line(296)
+	into += list(global.ref_one(nameof(form), /datum/forms/protean))
 
 /// CAPABILITIES(/datum/prompt/yes_no/record_notes_delete) at code/game/machinery/computer/medical.dm:430
 /datum/prompt/yes_no/record_notes_delete/declared_entries(list/into)
@@ -12722,11 +12747,11 @@
 	into += entry_line(98)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/organ_printer/flesh) at code/game/machinery/bioprinter.dm:335
+/// CAPABILITIES(/obj/machinery/organ_printer/flesh) at code/game/machinery/bioprinter.dm:341
 /obj/machinery/organ_printer/flesh/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/bioprinter.dm", 335, /obj/machinery/organ_printer/flesh)
-	into += entry_line(336)
+	into += entry_block("code/game/machinery/bioprinter.dm", 341, /obj/machinery/organ_printer/flesh)
+	into += entry_line(342)
 	into += list(global.op("flesh_printer_interaction_item", global.item(/obj/item), global.then(PROC_REF(flesh_printer_interaction_item))))
 
 /// CAPABILITIES(/obj/machinery/oxygen_pump) at code/game/machinery/oxygen_pump.dm:21
