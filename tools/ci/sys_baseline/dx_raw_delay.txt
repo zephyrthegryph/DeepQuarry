@@ -99,7 +99,6 @@ dx_raw_delay	code/game/objects/structures/cliff.dm	after(bottom_cliff, 5, TYPE_P
 dx_raw_delay	code/game/objects/structures/crates_lockers/__closets.dm	after(src, 1, TYPE_PROC_REF(/datum, om_qdel_self))
 dx_raw_delay	code/game/objects/structures/electricchair.dm	COOLDOWN_START(src, shock_cooldown, 50)
 dx_raw_delay	code/game/objects/structures/girders.dm	after(src, 1, PROC_REF(dismantle))
-dx_raw_delay	code/game/objects/structures/holoplant.dm	after(src, rand(2,4), PROC_REF(flicker_step), with = list(n + 1))
 dx_raw_delay	code/game/objects/structures/lattice.dm	after(O, 1, TYPE_PROC_REF(/turf/simulated/open, update)) // This lattice may be supporting things on top of it. If it's being deleted, they need to fall down.
 dx_raw_delay	code/game/objects/structures/lattice.dm	after(src, 1, PROC_REF(update_overlays_now), key = "overlays")
 dx_raw_delay	code/game/objects/structures/props/beam_prism.dm	after(src, 3, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
@@ -122,7 +121,6 @@ dx_raw_delay	code/modules/clothing/spacesuits/rig/modules/specific/jetpack.dm	af
 dx_raw_delay	code/modules/clothing/spacesuits/rig/rig.dm	COOLDOWN_START(src, wearer_move_delay, 2)
 dx_raw_delay	code/modules/combat_ai/ports/slime_state.dm	after(speaker, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(message))
 dx_raw_delay	code/modules/combat_ai/ports/voice_commands.dm	after(who, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(pick(options)))
-dx_raw_delay	code/modules/contracts/faction_agent_contracts.dm	after(SSsupply, 1, TYPE_PROC_REF(/datum/system/supply, replay_market_audit_evidence), with = list(src))
 dx_raw_delay	code/modules/flufftext/Hallucination.dm	after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), PROC_REF(trigger))
 dx_raw_delay	code/modules/food/food/snacks.dm	after(user, 5, /proc/food_finished_emote, with = list(user, !reagents?.total_volume))
 dx_raw_delay	code/modules/gamemaster/event2/events/engineering/airlock_failure.dm	after(src, 1, PROC_REF(break_door), with = list(door)) // Emagging proc is actually a blocking proc and that's bad for the ticker.

@@ -193,7 +193,7 @@
 
 /datum/contract/covert_market_investigation/on_accepted(mob/living/user, atom/source)
 	. = ..()
-	after(SSsupply, 1, TYPE_PROC_REF(/datum/system/supply, replay_market_audit_evidence), with = list(src))
+	after(SSsupply, 0.1 SECONDS, TYPE_PROC_REF(/datum/system/supply, replay_market_audit_evidence), with = list(src))
 
 /datum/contract_definition/covert_market_investigation
 	id = "covert_market_investigation"
