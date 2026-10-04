@@ -185,9 +185,15 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 // --- GM setup -----------------------------------------------------------------------
 
 /mob/living/carbon/human/proc/custom_medical_issue(mob/user)
+	return medical_custom_stage(user, list())
+
+/mob/living/carbon/human/proc/medical_custom_stage(mob/user, list/medical_answers, obj/item/organ/selected_organ)
 	var/static/list/possible_symptoms = list("vomit", "temporary weakness", "permanent weakness", "temporary sleeping", "permanent sleeping", "jittery", "paralysed", "cough", "confusion", "None")
 
-	var/issue_name = rerun_ask(user, "a1", PROC_REF(custom_medical_issue), args, /datum/om/prompt/text, message = "What would you like to call this medical issue?", title = "Name")
+	if(!("a1" in medical_answers))
+		open_request(src, /datum/prompt/text/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a1", medical_organ = selected_organ, question = "What would you like to call this medical issue?", title = "Name")
+		return
+	var/issue_name = medical_answers["a1"]
 	if(isnull(issue_name))
 		return
 	if(!issue_name)
@@ -198,13 +204,19 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 		organ_options |= E
 	for(var/obj/item/organ/I in internal_organ_list())
 		organ_options |= I
-	var/obj/item/organ/issue_organ = rerun_ask(user, "a2", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which organ should this issue be attached to?", title = "Affect organ", choices = organ_options)
+	if(!("a2" in medical_answers))
+		open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a2", medical_organ = selected_organ, question = "Which organ should this issue be attached to?", title = "Affect organ", choices = organ_options)
+		return
+	var/obj/item/organ/issue_organ = selected_organ
 	if(isnull(issue_organ))
 		return
 	if(!issue_organ)
 		return
 
-	var/damage = rerun_ask(user, "a3", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice/alert, message = "Should this apply damage?", title = "Damage", choices = list("Yes", "No", "Cancel"))
+	if(!("a3" in medical_answers))
+		open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a3", medical_organ = selected_organ, question = "Should this apply damage?", title = "Damage", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+		return
+	var/damage = medical_answers["a3"]
 	if(isnull(damage))
 		return
 	if(!damage || damage == "Cancel")
@@ -214,17 +226,26 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 	var/damage_max
 	var/damage_kind
 	if(damage == "Yes")
-		var/_answer_a4 = rerun_ask(user, "a4", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice/alert, message = "Should this damage the organ or body?", title = "Damage", choices = list("Organ", "Body"))
+		if(!("a4" in medical_answers))
+			open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a4", medical_organ = selected_organ, question = "Should this damage the organ or body?", title = "Damage", choices = list("Organ", "Body"), buttons = TRUE)
+			return
+		var/_answer_a4 = medical_answers["a4"]
 		if(isnull(_answer_a4))
 			return
 		damage_organ = _answer_a4
 		if(!damage_organ)
 			return
-		var/damage_value_pre = rerun_ask(user, "a5", PROC_REF(custom_medical_issue), args, /datum/om/prompt/number, message = "How much damage should this apply per processing. Low values are recommended, automatically divided by 10.", title = "Damage", default = 1)
+		if(!("a5" in medical_answers))
+			open_request(src, /datum/prompt/number/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a5", medical_organ = selected_organ, question = "How much damage should this apply per processing. Low values are recommended, automatically divided by 10.", title = "Damage", default = 1)
+			return
+		var/damage_value_pre = medical_answers["a5"]
 		if(isnull(damage_value_pre))
 			return
 		damage_value = max(0, damage_value_pre) / 10
-		var/_answer_a6 = rerun_ask(user, "a6", PROC_REF(custom_medical_issue), args, /datum/om/prompt/number, message = "What is the maximum amount of damage this issue can apply? It will not damage above this value.", title = "Damage", default = 300)
+		if(!("a6" in medical_answers))
+			open_request(src, /datum/prompt/number/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a6", medical_organ = selected_organ, question = "What is the maximum amount of damage this issue can apply? It will not damage above this value.", title = "Damage", default = 300)
+			return
+		var/_answer_a6 = medical_answers["a6"]
 		if(isnull(_answer_a6))
 			return
 		damage_max = _answer_a6
@@ -232,14 +253,20 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 			var/list/kinds = list()
 			for(var/kind in 1 to INJURY_KIND_COUNT)
 				kinds[injury_kind_name(kind)] = kind
-			var/kind_name = rerun_ask(user, "a7", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "What kind of harm should this do to the body?", title = "Damage", choices = kinds, default = injury_kind_name(INJURY_BLUNT))
+			if(!("a7" in medical_answers))
+				open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a7", medical_organ = selected_organ, question = "What kind of harm should this do to the body?", title = "Damage", choices = kinds, default = injury_kind_name(INJURY_BLUNT))
+				return
+			var/kind_name = medical_answers["a7"]
 			if(isnull(kind_name))
 				return
 			if(!kind_name)
 				return
 			damage_kind = kinds[kind_name]
 
-	var/cure_q = rerun_ask(user, "a8", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice/alert, message = "Should this be cured by a reagent, surgery or organ removal only? Note that organ removal will always be an option if it's not a vital body part.", title = "Cure", choices = list("Reagent", "Surgery", "Removal", "Cancel"))
+	if(!("a8" in medical_answers))
+		open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a8", medical_organ = selected_organ, question = "Should this be cured by a reagent, surgery or organ removal only? Note that organ removal will always be an option if it's not a vital body part.", title = "Cure", choices = list("Reagent", "Surgery", "Removal", "Cancel"), buttons = TRUE)
+		return
+	var/cure_q = medical_answers["a8"]
 	if(isnull(cure_q))
 		return
 	if(!cure_q || cure_q == "Cancel")
@@ -247,39 +274,60 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 	var/datum/reagent/cure_reagent_type
 	var/cure_surgery_name
 	if(cure_q == "Reagent")
-		var/_answer_a9 = rerun_ask(user, "a9", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which reagent should be the cure?", title = "Cure", choices = subtypesof(/datum/reagent))
+		if(!("a9" in medical_answers))
+			open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a9", medical_organ = selected_organ, question = "Which reagent should be the cure?", title = "Cure", choices = subtypesof(/datum/reagent))
+			return
+		var/_answer_a9 = medical_answers["a9"]
 		if(isnull(_answer_a9))
 			return
 		cure_reagent_type = _answer_a9
 		if(!cure_reagent_type)
 			return
 	if(cure_q == "Surgery")
-		var/_answer_a10 = rerun_ask(user, "a10", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which surgery step should cure it?", title = "Cure", choices = istype(issue_organ, /obj/item/organ/internal) ? GLOB.dq_custom_internal_surgeries : GLOB.dq_custom_external_surgeries)
+		if(!("a10" in medical_answers))
+			open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a10", medical_organ = selected_organ, question = "Which surgery step should cure it?", title = "Cure", choices = istype(issue_organ, /obj/item/organ/internal) ? GLOB.dq_custom_internal_surgeries : GLOB.dq_custom_external_surgeries)
+			return
+		var/_answer_a10 = medical_answers["a10"]
 		if(isnull(_answer_a10))
 			return
 		cure_surgery_name = _answer_a10
 		if(!cure_surgery_name)
 			return
 
-	var/symptom_text = rerun_ask(user, "a11", PROC_REF(custom_medical_issue), args, /datum/om/prompt/text, message = "What text should be displayed to the affected patient about their symptoms?", title = "Symptoms")
+	if(!("a11" in medical_answers))
+		open_request(src, /datum/prompt/text/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a11", medical_organ = selected_organ, question = "What text should be displayed to the affected patient about their symptoms?", title = "Symptoms")
+		return
+	var/symptom_text = medical_answers["a11"]
 	if(isnull(symptom_text))
 		return
-	var/symptom_affect = rerun_ask(user, "a12", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "What observable symptom should they display?", title = "Symptoms", choices = possible_symptoms)
+	if(!("a12" in medical_answers))
+		open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a12", medical_organ = selected_organ, question = "What observable symptom should they display?", title = "Symptoms", choices = possible_symptoms)
+		return
+	var/symptom_affect = medical_answers["a12"]
 	if(isnull(symptom_affect))
 		return
 	if(!symptom_affect)
 		return
 
-	var/scanner_show = rerun_ask(user, "a13", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice/alert, message = "Should this show on body scanners?", title = "Diagnosis", choices = list("Yes", "No", "Cancel"))
+	if(!("a13" in medical_answers))
+		open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a13", medical_organ = selected_organ, question = "Should this show on body scanners?", title = "Diagnosis", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+		return
+	var/scanner_show = medical_answers["a13"]
 	if(isnull(scanner_show))
 		return
 	if(!scanner_show || scanner_show == "Cancel")
 		return
 
-	var/scanner_strength = rerun_ask(user, "a14", PROC_REF(custom_medical_issue), args, /datum/om/prompt/number, message = "What level of health analyser is needed to see this? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", title = "Diagnosis", default = 0)
+	if(!("a14" in medical_answers))
+		open_request(src, /datum/prompt/number/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a14", medical_organ = selected_organ, question = "What level of health analyser is needed to see this? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", title = "Diagnosis", default = 0)
+		return
+	var/scanner_strength = medical_answers["a14"]
 	if(isnull(scanner_strength))
 		return
-	var/advscan_cure = rerun_ask(user, "a15", PROC_REF(custom_medical_issue), args, /datum/om/prompt/number, message = "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", title = "Diagnosis", default = 0)
+	if(!("a15" in medical_answers))
+		open_request(src, /datum/prompt/number/custom_medical_review, PROC_REF(medical_custom_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a15", medical_organ = selected_organ, question = "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", title = "Diagnosis", default = 0)
+		return
+	var/advscan_cure = medical_answers["a15"]
 	if(isnull(advscan_cure))
 		return
 
@@ -327,11 +375,17 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 		to_chat(user, "[issue_name] can only be cured by amputation or removal of \the [issue_organ]!")
 
 /mob/living/carbon/human/proc/clear_medical_issue(mob/user)
+	return medical_clear_stage(user, list())
+
+/mob/living/carbon/human/proc/medical_clear_stage(mob/user, list/medical_answers, datum/affliction/custom/selected_issue)
 	var/list/all_issues = dq_custom_afflictions_of(src)
 	if(!length(all_issues))
 		to_chat(user, "No custom medical issues found in [src]!")
 		return
-	var/broad = rerun_ask(user, "a16", PROC_REF(clear_medical_issue), args, /datum/om/prompt/choice/alert, message = "Would you like to clear all custom medical issues or a specific one?", title = "Damage", choices = list("All", "One", "Cancel"))
+	if(!("a16" in medical_answers))
+		open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_clear_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a16", medical_issue = selected_issue, question = "Would you like to clear all custom medical issues or a specific one?", title = "Damage", choices = list("All", "One", "Cancel"), buttons = TRUE)
+		return
+	var/broad = medical_answers["a16"]
 	if(isnull(broad))
 		return
 	if(!broad || broad == "Cancel")
@@ -343,10 +397,174 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 			A.cure()
 		return
 
-	var/datum/affliction/custom/one_issue = rerun_ask(user, "a17", PROC_REF(clear_medical_issue), args, /datum/om/prompt/choice, message = "Which issue would you like to remove?", title = "Symptoms", choices = all_issues)
+	if(!("a17" in medical_answers))
+		open_request(src, /datum/prompt/choice/custom_medical_review, PROC_REF(medical_clear_answered), answerer = user, medical_operator = user, medical_answers = medical_answers, medical_key = "a17", medical_issue = selected_issue, question = "Which issue would you like to remove?", title = "Symptoms", choices = all_issues)
+		return
+	var/datum/affliction/custom/one_issue = selected_issue
 	if(isnull(one_issue))
 		return
 	if(!one_issue || QDELETED(one_issue) || one_issue.owner != src)
 		return
 	to_chat(user, "[one_issue.name] removed from [one_issue.location] in [src].")
 	one_issue.cure()
+
+/mob/living/carbon/human/proc/medical_custom_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(medical_custom_apply), A)
+	if(!caught.ok)
+		stack_trace("Custom medical custom replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/carbon/human/proc/medical_custom_apply(datum/act/request/A)
+	if(istype(A.answer, /datum/prompt/choice/custom_medical_review))
+		var/datum/prompt/choice/custom_medical_review/ask = A.answer
+		if(ask.medical_key == "a2")
+			var/obj/item/organ/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.medical_organ), chosen)
+			ask.medical_answers[ask.medical_key] = TRUE
+		else
+			ask.medical_answers[ask.medical_key] = ask.answer_value
+		return medical_custom_stage(ask.medical_operator, ask.medical_answers, ask.medical_organ)
+	if(istype(A.answer, /datum/prompt/text/custom_medical_review))
+		var/datum/prompt/text/custom_medical_review/ask = A.answer
+		ask.medical_answers[ask.medical_key] = ask.answer_value
+		return medical_custom_stage(ask.medical_operator, ask.medical_answers, ask.medical_organ)
+	if(istype(A.answer, /datum/prompt/number/custom_medical_review))
+		var/datum/prompt/number/custom_medical_review/ask = A.answer
+		ask.medical_answers[ask.medical_key] = ask.answer_value
+		return medical_custom_stage(ask.medical_operator, ask.medical_answers, ask.medical_organ)
+
+/mob/living/carbon/human/proc/medical_clear_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(medical_clear_apply), A)
+	if(!caught.ok)
+		stack_trace("Custom medical clear replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/carbon/human/proc/medical_clear_apply(datum/act/request/A)
+	if(istype(A.answer, /datum/prompt/choice/custom_medical_review))
+		var/datum/prompt/choice/custom_medical_review/ask = A.answer
+		if(ask.medical_key == "a17")
+			var/datum/affliction/custom/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.medical_issue), chosen)
+			ask.medical_answers[ask.medical_key] = TRUE
+		else
+			ask.medical_answers[ask.medical_key] = ask.answer_value
+		return medical_clear_stage(ask.medical_operator, ask.medical_answers, ask.medical_issue)
+
+/datum/prompt/text/custom_medical_review
+	timeout = 0
+	var/mob/medical_operator
+	var/medical_operator_expected = FALSE
+	var/obj/item/organ/medical_organ
+	var/datum/affliction/custom/medical_issue
+	var/list/medical_answers
+	var/medical_key
+
+CAPABILITIES(/datum/prompt/text/custom_medical_review)
+	ref_one(nameof(medical_operator), /mob)
+	ref_one(nameof(medical_organ), /obj/item/organ)
+	ref_one(nameof(medical_issue), /datum/affliction/custom)
+
+/datum/prompt/text/custom_medical_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_medical_operator = medical_operator
+	medical_operator_expected = !isnull(captured_medical_operator)
+	rel_clear(src, nameof(medical_operator))
+	if(captured_medical_operator && !QDELETED(captured_medical_operator))
+		rel_set(src, nameof(medical_operator), captured_medical_operator)
+	var/obj/item/organ/captured_medical_organ = medical_organ
+	rel_clear(src, nameof(medical_organ))
+	if(captured_medical_organ && !QDELETED(captured_medical_organ))
+		rel_set(src, nameof(medical_organ), captured_medical_organ)
+	var/datum/affliction/custom/captured_medical_issue = medical_issue
+	rel_clear(src, nameof(medical_issue))
+	if(captured_medical_issue && !QDELETED(captured_medical_issue))
+		rel_set(src, nameof(medical_issue), captured_medical_issue)
+
+/datum/prompt/text/custom_medical_review/recheck_extra()
+	if(medical_operator_expected && QDELETED(medical_operator))
+		return "gone"
+
+/datum/prompt/number/custom_medical_review
+	timeout = 0
+	min_value = null
+	max_value = null
+	step = null
+	var/mob/medical_operator
+	var/medical_operator_expected = FALSE
+	var/obj/item/organ/medical_organ
+	var/datum/affliction/custom/medical_issue
+	var/list/medical_answers
+	var/medical_key
+
+CAPABILITIES(/datum/prompt/number/custom_medical_review)
+	ref_one(nameof(medical_operator), /mob)
+	ref_one(nameof(medical_organ), /obj/item/organ)
+	ref_one(nameof(medical_issue), /datum/affliction/custom)
+
+/datum/prompt/number/custom_medical_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_medical_operator = medical_operator
+	medical_operator_expected = !isnull(captured_medical_operator)
+	rel_clear(src, nameof(medical_operator))
+	if(captured_medical_operator && !QDELETED(captured_medical_operator))
+		rel_set(src, nameof(medical_operator), captured_medical_operator)
+	var/obj/item/organ/captured_medical_organ = medical_organ
+	rel_clear(src, nameof(medical_organ))
+	if(captured_medical_organ && !QDELETED(captured_medical_organ))
+		rel_set(src, nameof(medical_organ), captured_medical_organ)
+	var/datum/affliction/custom/captured_medical_issue = medical_issue
+	rel_clear(src, nameof(medical_issue))
+	if(captured_medical_issue && !QDELETED(captured_medical_issue))
+		rel_set(src, nameof(medical_issue), captured_medical_issue)
+
+/datum/prompt/number/custom_medical_review/recheck_extra()
+	if(medical_operator_expected && QDELETED(medical_operator))
+		return "gone"
+
+/datum/prompt/choice/custom_medical_review
+	timeout = 0
+	var/mob/medical_operator
+	var/medical_operator_expected = FALSE
+	var/obj/item/organ/medical_organ
+	var/datum/affliction/custom/medical_issue
+	var/list/medical_answers
+	var/medical_key
+
+CAPABILITIES(/datum/prompt/choice/custom_medical_review)
+	ref_one(nameof(medical_operator), /mob)
+	ref_one(nameof(medical_organ), /obj/item/organ)
+	ref_one(nameof(medical_issue), /datum/affliction/custom)
+
+/datum/prompt/choice/custom_medical_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_medical_operator = medical_operator
+	medical_operator_expected = !isnull(captured_medical_operator)
+	rel_clear(src, nameof(medical_operator))
+	if(captured_medical_operator && !QDELETED(captured_medical_operator))
+		rel_set(src, nameof(medical_operator), captured_medical_operator)
+	var/obj/item/organ/captured_medical_organ = medical_organ
+	rel_clear(src, nameof(medical_organ))
+	if(captured_medical_organ && !QDELETED(captured_medical_organ))
+		rel_set(src, nameof(medical_organ), captured_medical_organ)
+	var/datum/affliction/custom/captured_medical_issue = medical_issue
+	rel_clear(src, nameof(medical_issue))
+	if(captured_medical_issue && !QDELETED(captured_medical_issue))
+		rel_set(src, nameof(medical_issue), captured_medical_issue)
+
+/datum/prompt/choice/custom_medical_review/recheck_extra()
+	if(medical_operator_expected && QDELETED(medical_operator))
+		return "gone"
+	if(!isnull(answer_value) && medical_key == "a2")
+		var/obj/item/organ/chosen_organ = answer_value
+		if(!istype(chosen_organ) || QDELETED(chosen_organ))
+			return "gone"
+	if(!isnull(answer_value) && medical_key == "a17")
+		var/datum/affliction/custom/chosen_issue = answer_value
+		if(!istype(chosen_issue) || QDELETED(chosen_issue))
+			return "gone"
