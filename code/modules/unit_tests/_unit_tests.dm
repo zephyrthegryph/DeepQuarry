@@ -453,6 +453,7 @@
 #include "dq_e4_actions_tests.dm"
 #include "dq_veto_tests.dm"
 #include "dq_veto_sites_tests.dm"
+#include "dq_dying_observers_tests.dm"
 #include "dq_hook_hand_tests.dm"
 #include "dq_e2_parts_tests.dm"
 #include "dq_lib_tests.dm"
