@@ -573,12 +573,25 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	return 0
 
 ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seedtype = verb_ask(user, "a9", args, /datum/om/prompt/choice, message = "Select Seed.", title = "Seed Type", choices = SSplants.seeds)
+	return seed_spawn_stage(user, list())
+
+/datum/admin_verb/spawn_fruit/proc/seed_spawn_stage(client/user, list/seed_answers)
+	if(!("a9" in seed_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/admin_seed_spawn, PROC_REF(seed_spawn_answered), answerer = user.mob, seed_answers = seed_answers, seed_key = "a9", question = "Select Seed.", title = "Seed Type", choices = SSplants.seeds)
+		return
+	var/seedtype = seed_answers["a9"]
 	if(isnull(seedtype))
 		return
 	if(!seedtype || !SSplants.seeds[seedtype])
 		return
-	var/amount = verb_ask(user, "a10", args, /datum/om/prompt/number, message = "Amount of fruit to spawn", title = "Fruit Amount", default = 1)
+	if(!("a10" in seed_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/number/admin_seed_spawn, PROC_REF(seed_spawn_answered), answerer = user.mob, seed_answers = seed_answers, seed_key = "a10", question = "Amount of fruit to spawn", title = "Fruit Amount", default = 1)
+		return
+	var/amount = seed_answers["a10"]
 	if(isnull(amount))
 		return
 	var/mob/user_mob = user.mob
@@ -621,7 +634,15 @@ ADMIN_VERB(check_custom_items, R_SPAWN, "Check Custom Items", "Check the custom 
 			to_chat(user, "- name: [item.name] icon: [item.item_icon] path: [item.item_path] desc: [item.item_desc]")
 
 ADMIN_VERB(spawn_plant, R_SPAWN, "Spawn Plant", "Spawn a spreading plant effect.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seedtype = verb_ask(user, "a13", args, /datum/om/prompt/choice, message = "Select Seed.", title = "Seed Type", choices = SSplants.seeds)
+	return seed_spawn_stage(user, list())
+
+/datum/admin_verb/spawn_plant/proc/seed_spawn_stage(client/user, list/seed_answers)
+	if(!("a13" in seed_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/admin_seed_spawn, PROC_REF(seed_spawn_answered), answerer = user.mob, seed_answers = seed_answers, seed_key = "a13", question = "Select Seed.", title = "Seed Type", choices = SSplants.seeds)
+		return
+	var/seedtype = seed_answers["a13"]
 	if(isnull(seedtype))
 		return
 	if(!seedtype || !SSplants.seeds[seedtype])
@@ -1220,3 +1241,82 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	max_len = MAX_TGUI_INPUT
 	recheck_on_open = TRUE
 
+
+/datum/prompt/choice/admin_seed_spawn
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_SPAWN
+	var/list/seed_answers
+	var/seed_key
+
+/datum/prompt/choice/admin_seed_spawn/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+
+/datum/prompt/number/admin_seed_spawn
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_SPAWN
+	var/list/seed_answers
+	var/seed_key
+
+/datum/prompt/number/admin_seed_spawn/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+
+/proc/admin_seed_spawn_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/spawn_fruit/proc/seed_spawn_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(admin_seed_spawn_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/list/seed_answers
+	var/seed_key
+	if(istype(context.answer, /datum/prompt/choice/admin_seed_spawn))
+		var/datum/prompt/choice/admin_seed_spawn/ask = context.answer
+		seed_answers = ask.seed_answers.Copy()
+		seed_key = ask.seed_key
+	else
+		var/datum/prompt/number/admin_seed_spawn/ask = context.answer
+		seed_answers = ask.seed_answers.Copy()
+		seed_key = ask.seed_key
+	seed_answers[seed_key] = context.answer.answer_value
+	return seed_spawn_stage(user, seed_answers)
+
+/datum/admin_verb/spawn_plant/proc/seed_spawn_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(admin_seed_spawn_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/list/seed_answers
+	var/seed_key
+	if(istype(context.answer, /datum/prompt/choice/admin_seed_spawn))
+		var/datum/prompt/choice/admin_seed_spawn/ask = context.answer
+		seed_answers = ask.seed_answers.Copy()
+		seed_key = ask.seed_key
+	else
+		var/datum/prompt/number/admin_seed_spawn/ask = context.answer
+		seed_answers = ask.seed_answers.Copy()
+		seed_key = ask.seed_key
+	seed_answers[seed_key] = context.answer.answer_value
+	return seed_spawn_stage(user, seed_answers)

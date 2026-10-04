@@ -570,19 +570,28 @@ ADMIN_VERB(shuttle_panel, R_ADMIN|R_EVENT, "Shuttle Control Panel", "Access the 
 	feedback_add_details("admin_verb","SHCP")
 
 ADMIN_VERB(free_slot, R_ADMIN|R_FUN|R_EVENT, "Free Job Slot", "Frees another job slot.", ADMIN_CATEGORY_EVENTS)
+	return job_slot_stage(user, list())
+
+/datum/admin_verb/free_slot/proc/job_slot_stage(client/user, list/job_answers)
+	var/mob/actor = user?.mob
 	var/list/jobs = list()
 	for(var/datum/job/J in SSjob.occupations)
 		if (J.current_positions >= J.total_positions && J.total_positions != -1)
 			jobs += J.title
 	if(!jobs.len)
-		to_chat(usr, "There are no fully staffed jobs.")
+		to_chat(actor, "There are no fully staffed jobs.")
 		return
-	var/job = verb_ask(usr, "a16", args, /datum/om/prompt/choice, message = "Please select job slot to free", title = "Free job slot", choices = jobs)
+	if(!("a16" in job_answers))
+		if(!actor || QDELETED(actor))
+			return
+		open_request(src, /datum/prompt/choice/admin_job_slot, PROC_REF(job_slot_answered), answerer = actor, choices = jobs)
+		return
+	var/job = job_answers["a16"]
 	if(isnull(job))
 		return
 	if(job)
 		SSjob.free_role(job)
-		message_admins("A job slot for [job] has been opened by [key_name_admin(usr)]")
+		message_admins("A job slot for [job] has been opened by [key_name_admin(actor)]")
 		return
 
 ADMIN_VERB(toggleghostwriters, R_ADMIN|R_FUN|R_EVENT, "Toggle ghost writers", "Toggles ghost writing.", ADMIN_CATEGORY_SERVER_GAME)
@@ -1166,3 +1175,35 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	return reagent_spawn_stage(user, list("a22" = context.answer.answer_value))
+
+/datum/prompt/choice/admin_job_slot
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_ADMIN|R_FUN|R_EVENT
+	question = "Please select job slot to free"
+	title = "Free job slot"
+
+/datum/prompt/choice/admin_job_slot/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+
+/proc/job_slot_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/free_slot/proc/job_slot_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(job_slot_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	return job_slot_stage(user, list("a16" = context.answer.answer_value))
