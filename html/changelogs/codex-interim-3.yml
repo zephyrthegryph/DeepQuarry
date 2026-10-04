@@ -7,3 +7,4 @@ changes:
   - bugfix: "Combining forensic evidence now respects samples that cannot be released from inventory."
   - bugfix: "Revelation malware safely finishes destroying hardware after retiring its own executable."
   - bugfix: "Chameleon stamp choices no longer leak temporary stamps when canceled or when labels repeat."
+  - bugfix: "Admin helper authorization and diagnostics now follow the actual requester through callbacks and cross-client variable views."

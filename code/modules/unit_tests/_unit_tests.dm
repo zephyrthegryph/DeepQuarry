@@ -901,6 +901,7 @@
 #include "interim_fighter_loadout_contract.dm"
 #include "interim_forensic_sample_release.dm"
 #include "interim_stamp_choice_metadata.dm"
+#include "interim_admin_reload_request_lifetime.dm"
 
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
