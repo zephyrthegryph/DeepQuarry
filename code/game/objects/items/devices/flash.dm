@@ -261,9 +261,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 	return TRUE
 
 
-DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/flash)
+	op("self", in_hand(), label("Flash"), then(PROC_REF(interaction_self)))
 
-/obj/item/flash/proc/interaction_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flash/proc/interaction_self(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	if(!istype(user) || !clown_check(user)) 	return
 
 	user.setClickCooldown(user.get_attack_speed(src))

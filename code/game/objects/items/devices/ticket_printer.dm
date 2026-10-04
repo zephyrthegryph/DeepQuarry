@@ -10,9 +10,11 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 	w_class = ITEMSIZE_SMALL //because something so small, trivial, and used for silly RP should not be practically gigantic.
 
-DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/ticket_printer)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
-/obj/item/ticket_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ticket_printer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, print_cooldown_until))
 		print_a_ticket(user)
 	else

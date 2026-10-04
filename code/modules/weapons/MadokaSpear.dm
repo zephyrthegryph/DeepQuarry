@@ -62,10 +62,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/oldtwohanded, TYPE_PROC_REF(/atom, appearance_
 /obj/item/oldtwohanded/pickup(mob/user)
 	unwield()
 
-DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/oldtwohanded)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/oldtwohanded/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/oldtwohanded/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(wielded) //Trying to unwield it
 		unwield()

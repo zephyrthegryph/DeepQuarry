@@ -261,10 +261,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 		to_chat(user, span_notice("Invalid target for the device."))
 		return
 
-DECLARE_INTERACTIONS(/obj/item/rms, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/rms)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/rms/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rms/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/choices = list(
 		"Steel" = radial_image_steel,
 		"Glass" = radial_image_glass,

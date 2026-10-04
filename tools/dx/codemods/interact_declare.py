@@ -227,7 +227,10 @@ def main():
             held_type = "obj/item"
             if "/" in ps[1].replace("var/", ""):
                 held_type = ps[1].replace("var/", "").rsplit("/", 1)[0]
-            handlers.append({"spec": s, "rel": drel, "idx": di, "first": fb, "last": lb, "actor": n_actor, "held": n_held, "held_type": held_type, "body": body})
+            actor_type = "mob"
+            if "/" in ps[0].replace("var/", ""):
+                actor_type = ps[0].replace("var/", "").rsplit("/", 1)[0]
+            handlers.append({"actor_type": actor_type, "spec": s, "rel": drel, "idx": di, "first": fb, "last": lb, "actor": n_actor, "held": n_held, "held_type": held_type, "body": body})
         if bad:
             residue[t] = bad
             continue
@@ -264,7 +267,7 @@ def main():
                 sig = t + "/proc/" + s["proc"] + "(datum/act/op/A)"
                 locals_ = []
                 if words_in(h["body"], h["actor"]):
-                    locals_.append("var/mob/%s = A.actor" % h["actor"])
+                    locals_.append("var/%s/%s = A.actor" % (h["actor_type"], h["actor"]))
                 if words_in(h["body"], h["held"]):
                     locals_.append("var/%s/%s = A.held" % (h["held_type"], h["held"]))
                 extra = ""

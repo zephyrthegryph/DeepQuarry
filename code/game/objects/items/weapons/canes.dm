@@ -95,10 +95,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/cane/concealed, TYPE_PROC_REF(/atom, appearanc
 	force = 3
 	var/on = 0
 
-DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/cane/white/collapsible)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/cane/white/collapsible/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cane/white/collapsible/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	on = !on
 	if(on)
 		act_message(user, null, MSG_SELF(span_warning("You extend the white cane.")), \

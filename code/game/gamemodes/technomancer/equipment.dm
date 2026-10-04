@@ -189,10 +189,12 @@
 	slot_flags = SLOT_BELT
 	attack_verb = list("beaten", "smashed", "struck", "whacked")
 
-DECLARE_INTERACTIONS(/obj/item/scepter, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/scepter)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/scepter/proc/interaction_self(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/item/scepter/proc/interaction_self(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	var/obj/item/item_to_test = user.get_other_hand(src)
 	if(istype(item_to_test, /obj/item/spell))
 		var/obj/item/spell/S = item_to_test

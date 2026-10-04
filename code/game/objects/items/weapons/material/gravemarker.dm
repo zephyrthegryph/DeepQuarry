@@ -81,10 +81,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, TYPE_PROC_REF(/atom, app
 
 	. += ..()
 
-DECLARE_INTERACTIONS(/obj/item/material/gravemarker, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/material/gravemarker)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/material/gravemarker/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/gravemarker/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	src.add_fingerprint(user)
 
 	if(!isturf(user.loc))

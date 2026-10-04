@@ -387,12 +387,12 @@ DECLARE_APPEARANCE(/obj/item/rectape, "ruined", list( \
 ))
 
 
-DECLARE_INTERACTIONS(/obj/item/rectape, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_INSERT(/obj/item/pen, PROC_REF(interaction_item), "Label"), \
-)
+CAPABILITIES(/obj/item/rectape)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item/pen), label("Label"), then(PROC_REF(interaction_item)))
 
-/obj/item/rectape/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rectape/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ruined)
 		to_chat(user, span_notice("You pull out all the tape!"))
 		ruin()
@@ -425,7 +425,8 @@ DECLARE_INTERACTIONS(/obj/item/rectape, \
 		name = "tape"
 		to_chat(user, span_notice("You scratch off the label."))
 
-/obj/item/rectape/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/rectape/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
 	if(loc == user && !user.incapacitated())
 		om_ask(user, /datum/om/prompt/text, PROC_REF(label_entered), title = "Tape labeling", message = "What would you like to label the tape?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE

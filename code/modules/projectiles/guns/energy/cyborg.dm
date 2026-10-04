@@ -178,10 +178,12 @@
 	defend_chance = 5
 	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
 	var/emagged = 0
-DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/melee/robotic/jaws/small)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/melee/robotic/jaws/small/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/robotic/jaws/small/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	if(!istype(R))
 		return TRUE

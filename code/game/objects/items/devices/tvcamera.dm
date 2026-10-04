@@ -39,9 +39,11 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	radio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/tvcamera)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
-/obj/item/tvcamera/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tvcamera/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	user.set_machine(src)
 	show_ui(user)

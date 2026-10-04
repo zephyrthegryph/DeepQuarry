@@ -7,10 +7,12 @@
 	throw_range = 4
 	force = 0
 
-DECLARE_INTERACTIONS(/obj/item/surplus_voucher, INTERACT_USE("Redeem", PROC_REF(interaction_redeem)))
+CAPABILITIES(/obj/item/surplus_voucher)
+	op("redeem", in_hand(), label("Redeem"), then(PROC_REF(interaction_redeem)))
 
 /// Redeem the voucher: its surplus delivery lands here. Each kind of voucher overrides spawn_item().
-/obj/item/surplus_voucher/proc/interaction_redeem(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/surplus_voucher/proc/interaction_redeem(datum/act/op/A)
+	var/mob/user = A.actor
 	return !!spawn_item(get_turf(src), user)
 
 /obj/item/surplus_voucher/proc/spawn_item(turf/T, mob/user)

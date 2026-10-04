@@ -197,10 +197,12 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 						play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 						return
 
-DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/material/whip)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/material/whip/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/whip/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_warning("%U% cracks %T%!"))
 	play_sfx(src, SFX_EFFECTS_SNAP)
 	return TRUE

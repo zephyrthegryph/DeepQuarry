@@ -25,9 +25,11 @@
 
 	P.change_color(GLOB.pipe_colors[mode])
 
-DECLARE_INTERACTIONS(/obj/item/pipe_painter, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/pipe_painter)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
-/obj/item/pipe_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pipe_painter/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(mode_chosen), title = "Pipe painter", message = "Which colour do you want to use?", choices = modes, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/pipe_painter/proc/mode_chosen(datum/om/prompt/choice/ask)

@@ -157,10 +157,12 @@ CAPABILITIES(/obj/item/aiModule)
 	var/targetName = ""
 	desc = "A 'safeguard' AI module: 'Safeguard <name>. Anyone threatening or attempting to harm <name> is no longer to be considered a crew member, and is a threat which must be neutralized.'"
 
-DECLARE_INTERACTIONS(/obj/item/aiModule/safeguard, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/aiModule/safeguard)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/aiModule/safeguard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/aiModule/safeguard/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(target_named), title = "Safeguard who?", message = "Please enter the name of the person to safeguard.", default = user.name)
 	return TRUE
 
@@ -193,10 +195,12 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/safeguard, INTERACT_USE(null, PROC_REF(i
 	var/targetName = ""
 	desc = "A 'one crew member' AI module: 'Only <name> is a crew member.'"
 
-DECLARE_INTERACTIONS(/obj/item/aiModule/oneHuman, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/aiModule/oneHuman)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/aiModule/oneHuman/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/aiModule/oneHuman/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(target_named), title = "Who?", message = "Please enter the name of the person who is the only crew member.", default = user.real_name)
 	return TRUE
 
@@ -273,10 +277,12 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/oneHuman, INTERACT_USE(null, PROC_REF(in
 	var/lawpos = 15
 	desc = "A 'freeform' AI module: '<freeform>'"
 
-DECLARE_INTERACTIONS(/obj/item/aiModule/freeform, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/aiModule/freeform)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/aiModule/freeform/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/aiModule/freeform/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/number, PROC_REF(law_position_entered), title = "Law Priority (15+)", message = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", default = lawpos, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 
@@ -392,10 +398,12 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/freeform, INTERACT_USE(null, PROC_REF(in
 	var/newFreeFormLaw = ""
 	desc = "A 'freeform' Core AI module: '<freeform>'"
 
-DECLARE_INTERACTIONS(/obj/item/aiModule/freeformcore, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/aiModule/freeformcore)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/aiModule/freeformcore/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/aiModule/freeformcore/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new core law for the AI.")
 	return TRUE
 
@@ -419,10 +427,12 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/freeformcore, INTERACT_USE(null, PROC_RE
 	var/newFreeFormLaw = ""
 	desc = "A hacked AI law module: '<freeform>'"
 
-DECLARE_INTERACTIONS(/obj/item/aiModule/syndicate, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/aiModule/syndicate)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/aiModule/syndicate/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/aiModule/syndicate/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new law for the AI.")
 	return TRUE
 

@@ -11,9 +11,11 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_INTERACTIONS(/obj/item/gold_star_printer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/gold_star_printer)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
-/obj/item/gold_star_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gold_star_printer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, print_cooldown_until))
 		make_star(user)
 	else

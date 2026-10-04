@@ -227,6 +227,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, TYPE_PROC_REF(/atom, appearan
 
 CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
 	owns_one(nameof(offhand), /obj/item/offhand/crushergauntlets)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// TRUE from equipped() until dropped(): while worn it checks its offhand still exists.
 OM_FIELD(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn, FALSE, CHANGE_EXPLICIT)
@@ -241,10 +242,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/kinetic_crusher/machete/gauntlets, PERIODIC_SEC
 	set_gauntlets_worn(FALSE)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/kinetic_crusher/machete/gauntlets/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/kinetic_crusher/machete/gauntlets/proc/interaction_self(datum/act/op/A)
 	ready_toggle()
 	return TRUE
 

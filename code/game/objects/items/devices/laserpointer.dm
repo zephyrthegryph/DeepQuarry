@@ -48,9 +48,12 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	laser_act(M, user)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_parts/micro_laser, PROC_REF(interaction_item), "Install"))
+CAPABILITIES(/obj/item/laser_pointer)
+	op("item", item(/obj/item/stock_parts/micro_laser), label("Install"), then(PROC_REF(interaction_item)))
 
-/obj/item/laser_pointer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/laser_pointer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!diode)
 		if(!move_into(src, nameof(src.diode), W, user))
 			return TRUE

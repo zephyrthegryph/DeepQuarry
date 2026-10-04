@@ -21,10 +21,12 @@
 	replace_with(src, refund_type, refund_amt)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/frame, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/frame)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/frame/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/frame/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	update_type_list()
 	if(!build_machine_type && !build_wall_only)
 		om_ask(user, /datum/om/prompt/choice/frame_type, PROC_REF(floor_frame_chosen), choices = frame_types_floor)

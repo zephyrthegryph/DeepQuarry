@@ -51,10 +51,12 @@ EXTEND_INTERACTIONS(/obj/effect, \
 	INTERACT_INSERT(/obj/item/soap, TYPE_PROC_REF(/atom, interaction_pass), null), \
 )
 
-DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/mop_deploy)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/mop_deploy/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mop_deploy/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.drop_from_inventory(src)
 	expire(1)
 	return TRUE

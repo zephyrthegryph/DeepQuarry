@@ -463,10 +463,12 @@ UI_ACT_PROC(/obj/item/book/bundle, ui_act_prev_page)
 	var/tmp/obj/item/book/book	//  Currently scanned book
 	var/mode = 0 					// 0 - Scan only, 1 - Scan and Set Buffer, 2 - Scan and Attempt to Check In, 3 - Scan and Attempt to Add to Inventory
 
-DECLARE_INTERACTIONS(/obj/item/barcodescanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/barcodescanner)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/barcodescanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/barcodescanner/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	mode += 1
 	if(mode > 3)
 		mode = 0

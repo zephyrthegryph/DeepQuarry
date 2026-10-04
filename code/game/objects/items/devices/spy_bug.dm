@@ -169,15 +169,17 @@ DAMAGE_REACTION(/obj/item/camerabug, DAMAGE_PROJECTILE, PROC_REF(camerabug_shot)
 /obj/item/bug_monitor/Initialize(mapload)
 	radio = new(src)
 */
-DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_INSERT(/obj/item/camerabug, PROC_REF(interaction_item), null), \
-)
+CAPABILITIES(/obj/item/bug_monitor)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item/camerabug), then(PROC_REF(interaction_item)))
 
-/obj/item/bug_monitor/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bug_monitor/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	view_cameras(user)
 
-/obj/item/bug_monitor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/bug_monitor/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	W.attackby(src, user)
 	return TRUE
 

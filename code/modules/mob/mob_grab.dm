@@ -173,10 +173,11 @@
 						act_message(assailant, target, others = span_warning("%U% sits on %T%'s face!"))
 
 
-DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(interaction_tighten)))
+CAPABILITIES(/obj/item/grab)
+	op("tighten", in_hand(), label("Tighten grip"), then(PROC_REF(interaction_tighten)))
 
 /// Old attack_self: upgrade the grab.
-/obj/item/grab/proc/interaction_tighten(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/grab/proc/interaction_tighten(datum/act/op/A)
 	s_click(hud)
 	return TRUE
 

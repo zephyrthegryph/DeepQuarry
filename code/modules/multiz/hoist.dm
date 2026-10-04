@@ -10,10 +10,12 @@
 	icon = 'icons/obj/hoists.dmi'
 	icon_state = "hoist_case"
 
-DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/hoist_kit)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/hoist_kit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/hoist_kit/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	new /obj/structure/hoist (get_turf(user), user.dir)
 	act_message(user, null, MSG_SELF(span_notice("You deploy the hoist kit!")), \
 		MSG_OTHERS(span_warning("%U% deploys the hoist kit!")), \

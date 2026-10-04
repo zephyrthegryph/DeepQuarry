@@ -298,10 +298,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_ove
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS | SLOT_HOLSTER
 
-DECLARE_INTERACTIONS(/obj/item/toy/bosunwhistle, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/bosunwhistle)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/bosunwhistle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/bosunwhistle/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		to_chat(user, span_notice("You blow on [src], creating an ear-splitting noise!"))
 		play_sfx(src, SFX_MISC_BOATSWAIN)
@@ -325,10 +327,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/bosunwhistle, INTERACT_USE(null, PROC_REF(int
 	. = ..()
 	desc = "A \"Space Life\" brand [name]"
 
-DECLARE_INTERACTIONS(/obj/item/toy/figure, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/figure)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/figure/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/figure/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
 		user.visible_message(span_notice("The [src] says \"[toysay]\"."))
@@ -1297,10 +1301,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
 
 TYPE_TABLE_DECLARE(/obj/item/toy/eight_ball, eight_ball_answers, list("Definitely.", "All signs point to yes.", "Most likely.", "Yes.", "Ask again later.", "Better not tell you now.", "Future unclear.", "Maybe.", "Doubtful.", "No.", "Don't count on it.", "Never."))
 
-DECLARE_INTERACTIONS(/obj/item/toy/eight_ball, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/eight_ball)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/eight_ball/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/eight_ball/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
 		var/answer = pick(TYPE_TABLE_GET(src, eight_ball_answers))
@@ -1373,10 +1379,12 @@ TYPE_TABLE(/obj/item/toy/eight_ball/conch, eight_ball_answers, list("Yes.", "No.
 	w_class = ITEMSIZE_SMALL
 	COOLDOWN_DECLARE(cooldown)
 
-DECLARE_INTERACTIONS(/obj/item/toy/owl, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/owl)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/owl/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/owl/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown)) //for the sanity of everyone
 		var/message = pick("You won't get away this time, Griffin!", "Stop right there, criminal!", "Hoot! Hoot!", "I am the night!")
 		to_chat(user, span_notice("You pull the string on the [src]."))
@@ -1392,10 +1400,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/owl, INTERACT_USE(null, PROC_REF(interaction_
 	w_class = ITEMSIZE_SMALL
 	COOLDOWN_DECLARE(cooldown)
 
-DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/griffin)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/griffin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/griffin/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown)) //for the sanity of everyone
 		var/message = pick("You can't stop me, Owl!", "My plan is flawless! The vault is mine!", "Caaaawwww!", "You will never catch me!")
 		to_chat(user, span_notice("You pull the string on the [src]."))
@@ -2007,10 +2017,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/rock, INTERACT_INSERT(/obj/item/pen, PROC_REF
 	desc = "A hard-rubber chewtoy shaped vaguely like a snowman. Perfect for your dog! You wouldn't want to chew on it, right?"
 	icon_state = "chewtoy_poly"
 
-DECLARE_INTERACTIONS(/obj/item/toy/chewtoy, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/chewtoy)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/chewtoy/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/chewtoy/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(loc, SFX_ITEMS_DROP_PLUSHIE)
 	act_message(user, src, MSG_SELF(span_notice("You gnaw on %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " gnaws on %T%!")))
 	return TRUE
@@ -2076,10 +2088,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/chewtoy, INTERACT_USE(null, PROC_REF(interact
 	w_class = ITEMSIZE_SMALL
 	var/cooldown = 0
 
-DECLARE_INTERACTIONS(/obj/item/toy/redbutton, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/redbutton)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/redbutton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/redbutton/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 300) // Sets cooldown at 30 seconds
 		act_message(user, null, MSG_SELF(span_notice("You press the button, it plays a loud noise!")), MSG_OTHERS(span_warning("%U% presses the big red button.")), MSG_BLIND(span_notice("The button clicks loudly.")))
@@ -2112,10 +2126,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/redbutton, INTERACT_USE(null, PROC_REF(intera
 	var/cooldown = 0
 	var/list/possible_answers = null
 
-DECLARE_INTERACTIONS(/obj/item/toy/AI, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/AI)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/AI/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/AI/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!COOLDOWN_FINISHED(src, cooldown)) //No, I'm not allowing you to spamclick this to do a search over REGISTRY_MEMBERS(REGISTRY_PLAYERS)
 		return TRUE
 	var/list/players = list()
@@ -2281,10 +2297,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 /obj/item/toy/toy_xeno/proc/hiss_rewound()
 	icon_state = "[initial(icon_state)]"
 
-DECLARE_INTERACTIONS(/obj/item/toy/toy_xeno, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/toy_xeno)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/toy_xeno/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/toy_xeno/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 50) //5 second cooldown
 		act_message(user, src, others = span_notice("%U% pulls back the string on %T%."))
@@ -2321,10 +2339,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/toy_xeno, INTERACT_USE(null, PROC_REF(interac
 	. = ..()
 	spin_cylinder()
 
-DECLARE_INTERACTIONS(/obj/item/toy/russian_revolver, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/russian_revolver)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/russian_revolver/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/russian_revolver/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!bullets_left)
 		act_message(user, src, others = span_warning("%U% loads a bullet into %T%'s cylinder before spinning it."))
 		spin_cylinder()
@@ -2416,10 +2436,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/russian_revolver, INTERACT_USE(null, PROC_REF
 	attack_verb = list("sawed", "cut", "hacked", "carved", "cleaved", "butchered", "felled", "timbered")
 	var/cooldown = 0
 
-DECLARE_INTERACTIONS(/obj/item/toy/chainsaw, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/chainsaw)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/chainsaw/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/chainsaw/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!cooldown)
 		play_sfx(user, SFX_WEAPONS_CHAINSAW_STARTUP)
 		cooldown = 1
@@ -2728,10 +2750,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/desk, \
 	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
 	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_INTERACTIONS(/obj/item/toy/partypopper, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/toy/partypopper)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/toy/partypopper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/partypopper/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(icon_state == "partypopper")
 		act_message(user, null, MSG_SELF(span_notice("You pull on the string, releasing a burst of confetti!")), MSG_OTHERS(span_notice("%U% pulls on the string, releasing a burst of confetti!")))
 		play_sfx(src, SFX_EFFECTS_SNAP)

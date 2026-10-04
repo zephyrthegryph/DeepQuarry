@@ -40,10 +40,12 @@
 
 // TGUI migration. attack_self opens Soulstone.tsx; Topic
 // "Summon" handler moves to tgui_act.
-DECLARE_INTERACTIONS(/obj/item/soulstone, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/soulstone)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/soulstone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/soulstone/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!in_range(src, user))
 		return TRUE
 	tgui_interact(user)

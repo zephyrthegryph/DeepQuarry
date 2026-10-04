@@ -232,10 +232,12 @@ DECLARE_INTERACTIONS(/obj/item/spacecasinocash, \
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
 
-DECLARE_INTERACTIONS(/obj/item/casino_platinum_chip, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/casino_platinum_chip)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/casino_platinum_chip/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/casino_platinum_chip/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)

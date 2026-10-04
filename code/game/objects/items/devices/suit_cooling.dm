@@ -28,6 +28,8 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 
 CAPABILITIES(/obj/item/suit_cooling_unit)
 	owns_one(nameof(cell), /obj/item/cell)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item/cell), label("Insert cell"), then(PROC_REF(interaction_item)))
 
 /obj/item/suit_cooling_unit/ui_action_click(mob/user, actiontype)
 	toggle(user)
@@ -120,12 +122,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
 	set_on(0)
 	update_icon()
 
-DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_INSERT(/obj/item/cell, PROC_REF(interaction_item), "Insert cell"), \
-)
-
-/obj/item/suit_cooling_unit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/suit_cooling_unit/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(cover_open && cell)
 		if(ishuman(user))
 			user.put_in_hands(cell)
@@ -149,7 +147,9 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		turn_on()
 	to_chat(user, span_notice("You switch \the [src] [on ? "on" : "off"]."))
 
-/obj/item/suit_cooling_unit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/suit_cooling_unit/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(cover_open)
 		if(cell)
 			to_chat(user, "There is a [cell] already installed here.")

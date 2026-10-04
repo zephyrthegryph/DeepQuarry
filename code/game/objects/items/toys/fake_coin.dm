@@ -106,10 +106,12 @@
 	desc = "Shiny green " + MAT_VERDANTIUM + ", pressed into a coin. It almost seems to glimmer under starlight."
 	icon_state = "coin_verdantium"
 
-DECLARE_INTERACTIONS(/obj/item/fake_coin, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/fake_coin)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/fake_coin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/fake_coin/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)

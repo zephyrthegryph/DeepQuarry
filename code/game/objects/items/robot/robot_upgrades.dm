@@ -66,10 +66,12 @@
 	item_state = "cyborg_upgrade"
 	var/heldname = "default name"
 
-DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/borg/upgrade/utility/rename/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/borg/upgrade/utility/rename/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/text, PROC_REF(name_entered), title = "Robot Reclassification", message = "Enter new robot name", default = heldname, max_length = MAX_NAME_LEN, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 

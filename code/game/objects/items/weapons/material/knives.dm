@@ -44,10 +44,12 @@
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.2 // 4 when thrown with weight 20 (steel)
 
-DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/material/butterfly)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/material/butterfly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/butterfly/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	active = !active
 	update_force()
 

@@ -39,10 +39,11 @@
 	. = ..()
 	update_icon()
 
-DECLARE_INTERACTIONS(/obj/item/melee/umbrella, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/melee/umbrella)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/melee/umbrella/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/umbrella/proc/interaction_self(datum/act/op/A)
 	toggle_umbrella()
 	return TRUE
 
