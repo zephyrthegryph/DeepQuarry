@@ -2444,6 +2444,13 @@
 	into += entry_line(168)
 	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
 
+/// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:81
+/datum/prompt/number/cablelayer_cut/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/CableLayer.dm", 81, /datum/prompt/number/cablelayer_cut)
+	into += entry_line(82)
+	into += list(global.ref_one(nameof(tool), /obj/item))
+
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
 	..(into)
