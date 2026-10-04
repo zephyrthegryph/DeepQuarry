@@ -463,3 +463,23 @@
 	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H)
 	test_answer(H, TRUE)
 	TEST_ASSERT_EQUAL(I.seen_answer, TRUE, "a request that names no re-check keeps every answer")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The choice ring's options: require_near drops an answer given out of reach of the anchor.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_radial_prompt_drops_an_answer_out_of_reach
+
+/datum/unit_test/dq_p2_engine/a_radial_prompt_drops_an_answer_out_of_reach/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/p2_asker_item/I = allocate(/obj/item/p2_asker_item)
+	var/obj/item/p2_asker_item/far = allocate(/obj/item/p2_asker_item, run_loc_floor_top_right)
+	open_request(I, /datum/prompt/choice, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, choices = list("a", "b"), radial = TRUE, require_near = TRUE, anchor = far)
+	test_answer(H, "a")
+	TEST_ASSERT_NULL(I.seen_answer, "an anchor out of reach drops the answer")
+	open_request(I, /datum/prompt/choice, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, choices = list("a", "b"), radial = TRUE, require_near = TRUE, anchor = I)
+	test_answer(H, "b")
+	TEST_ASSERT_EQUAL(I.seen_answer, "b", "an anchor in reach keeps it")
+	open_request(I, /datum/prompt/choice, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, choices = list("a", "b"), radial = TRUE, anchor = far)
+	test_answer(H, "a")
+	TEST_ASSERT_EQUAL(I.seen_answer, "a", "without require_near the distance does not matter")

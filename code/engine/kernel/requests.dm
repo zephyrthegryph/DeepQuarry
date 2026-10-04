@@ -62,6 +62,10 @@
 	/// A backend request's failure text (REQ_TRANSPORT_FAILED, REQ_FAILED), for the log.
 	var/last_error
 
+/// A kind's own re-check of an answer when it arrives: null, or why the answer is dropped. Reads only.
+/datum/request/proc/recheck_extra()
+	return null
+
 /// A request that has ended can not be answered again.
 /datum/request/proc/is_open()
 	return isnull(outcome) && !QDELETED(src)
@@ -197,7 +201,7 @@ SYSTEM_DEF(requests)
 /// names (the asker defaults to the answerer, the subject to the owner when that is an atom). Reads only.
 /proc/request_recheck(datum/request/R)
 	if(!R.ask_flags && !R.rights && !R.usable_state)
-		return null
+		return R.recheck_extra()
 	var/flags = R.ask_flags
 	var/mob/answerer = R.answerer
 	var/mob/asker = R.asker || answerer
@@ -246,7 +250,7 @@ SYSTEM_DEF(requests)
 		var/datum/tgui_state/S = GLOB.vars["tgui_[R.usable_state]_state"]
 		if(!ismob(answerer) || !subject || !istype(S) || S.can_use_topic(subject, answerer) < STATUS_INTERACTIVE)
 			return "can't use it"
-	return null
+	return R.recheck_extra()
 
 /// Ends `R` with `outcome` and runs its handler. Returns TRUE when this call ended it, FALSE when it had already ended.
 /// An answer that no longer passes its valid() check ends as REQ_CANCELLED.

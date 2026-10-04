@@ -28,10 +28,46 @@
 	var/radius
 	/// The radial ring shows each choice's name as a tooltip.
 	var/tooltips = FALSE
+	/// The ring's slice icon state.
+	var/radial_slice_icon = "radial_slice"
+	/// A ring with one choice answers with it at once, without drawing (default off: the old radial kind turned it on).
+	var/autopick_single_option = FALSE
+	/// The ring's entries slide out when it opens.
+	var/entry_animation = TRUE
+	/// Hovering an entry picks it.
+	var/click_on_hover = FALSE
+	/// Draw the ring around the answerer, offset toward the anchor.
+	var/user_space = FALSE
+	/// Drop an answer given out of reach (in_range) of the anchor, or of the subject when there is none.
+	var/require_near = FALSE
+	/// The key GLOB.radial_menus holds the ring under (default: the answerer and the anchor); asking again with the same key closes the open ring.
+	var/uniqueid
 
 /datum/prompt/choice/refusal(given)
 	if(isnull(given) || !(given in choices))
 		return "that is not one of the choices"
+	return null
+
+/// A ring with a single choice and autopick_single_option answers itself, after the request has finished opening.
+/datum/prompt/choice/begin()
+	var/mob/user = answerer
+	if(radial && autopick_single_option && length(choices) == 1 && istype(user) && user.client)
+		after(src, 0, TYPE_PROC_REF(/datum/prompt/choice, autopick), key = "request_begin")
+		return
+	return ..()
+
+/datum/prompt/choice/proc/autopick()
+	if(is_open())
+		prompt_window_answer(src, choices[1])
+
+/// require_near: an answer given out of reach of the anchor (else the subject) is dropped.
+/datum/prompt/choice/recheck_extra()
+	if(!require_near)
+		return null
+	var/mob/user = answerer
+	var/atom/where = anchor || subject || (isatom(owner) ? owner : null)
+	if(where && user && !in_range(where, user))
+		return "out of reach"
 	return null
 
 /datum/prompt/choice/present(mob/user)
@@ -54,7 +90,7 @@
 
 /datum/prompt/choice/proc/present_radial(mob/user)
 	var/atom/where = anchor || user
-	var/id = "defmenu_[REF(user)]_[REF(where)]"
+	var/id = uniqueid || "defmenu_[REF(user)]_[REF(where)]"
 	var/datum/radial_menu/prompt/open_menu = GLOB.radial_menus[id]
 	if(open_menu)
 		// asking again while it is open toggles it shut (and this question with it)
@@ -65,11 +101,20 @@
 	GLOB.radial_menus[id] = menu
 	if(radius)
 		menu.radius = radius
-	rel_set(menu, nameof(menu.anchor), where)
+	menu.entry_animation = entry_animation
+	menu.radial_slice_icon = radial_slice_icon
+	rel_set(menu, nameof(menu.anchor), user_space ? user : where)
 	menu.check_screen_border(user)
-	menu.set_choices(choices, tooltips)
+	menu.set_choices(choices, tooltips, click_on_hover)
 	rel_set(menu, nameof(menu.prompt), src)
-	menu.show_to(user)
+	var/offset_x = 0
+	var/offset_y = 0
+	if(user_space)
+		var/turf/user_turf = get_turf(user)
+		var/turf/anchor_turf = get_turf(where)
+		offset_x = (anchor_turf.x - user_turf.x) * ICON_SIZE_X + where.pixel_x - user.pixel_x
+		offset_y = (anchor_turf.y - user_turf.y) * ICON_SIZE_Y + where.pixel_y - user.pixel_y
+	menu.show_to(user, offset_x, offset_y)
 	log_input("Input: [key_name(user)] was shown a radial menu ([type]) on [where].")
 	return menu
 
