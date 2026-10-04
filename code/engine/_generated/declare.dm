@@ -3221,6 +3221,24 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
+/// CAPABILITIES(/datum/prompt/choice/soulcatcher_settings) at code/modules/nifsoft/software/13_soulcatcher.dm:823
+/datum/prompt/choice/soulcatcher_settings/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/nifsoft/software/13_soulcatcher.dm", 823, /datum/prompt/choice/soulcatcher_settings)
+	into += entry_line(824)
+	into += list(global.ref_one(nameof(settings_operator), /mob/living/carbon/human))
+	into += entry_line(825)
+	into += list(global.ref_one(nameof(selected_soul), /mob/living/carbon/brain/caught_soul))
+
+/// CAPABILITIES(/datum/prompt/choice/soulgem_consent) at code/modules/vore/eating/soulcatcher.dm:642
+/datum/prompt/choice/soulgem_consent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/eating/soulcatcher.dm", 642, /datum/prompt/choice/soulgem_consent)
+	into += entry_line(643)
+	into += list(global.ref_one(nameof(soulgem_mob), /mob))
+	into += entry_line(644)
+	into += list(global.ref_one(nameof(soulgem_destination), /obj/soulgem))
+
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
 /datum/prompt/color/paint_palette/declared_entries(list/into)
 	..(into)
@@ -3283,6 +3301,15 @@
 	into += entry_block("code/game/machinery/pandemic.dm", 104, /datum/prompt/text/pandemic_release_reason)
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/text/soulcatcher_settings) at code/modules/nifsoft/software/13_soulcatcher.dm:795
+/datum/prompt/text/soulcatcher_settings/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/nifsoft/software/13_soulcatcher.dm", 795, /datum/prompt/text/soulcatcher_settings)
+	into += entry_line(796)
+	into += list(global.ref_one(nameof(settings_operator), /mob/living/carbon/human))
+	into += entry_line(797)
+	into += list(global.ref_one(nameof(selected_soul), /mob/living/carbon/brain/caught_soul))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
@@ -5609,6 +5636,15 @@
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite))
 	into += entry_line(943)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc))
+
+/// CAPABILITIES(/mob/living/simple_mob/blob) at code/modules/mob/living/simple_mob/subtypes/blob/blob.dm:47
+/mob/living/simple_mob/blob/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/blob/blob.dm", 47, /mob/living/simple_mob/blob)
+	into += entry_line(48)
+	into += list(global.entry_link("/mob/living/simple_mob/blob::overmind", "/mob/observer/blob::blob_mobs", b_many = TRUE))
+	into += entry_line(49)
+	into += list(global.entry_link("/mob/living/simple_mob/blob::factory", "/obj/structure/blob/factory::spores", b_many = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/horror/BigTim) at code/modules/mob/living/simple_mob/subtypes/horror/shittytim.dm:36
 /mob/living/simple_mob/horror/BigTim/declared_entries(list/into)
