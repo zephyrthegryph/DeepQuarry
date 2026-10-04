@@ -190,14 +190,15 @@ UI_DATA_REPLACE(/obj/machinery/bodyscanner, "merge:ui_data_obj_machinery_bodysca
 	// Implementation lives in code/modules/medical/bodyscanner/.
 	return dq_build_tgui_data()
 
-UI_ACT(/obj/machinery/bodyscanner, "ejectify", ui_act_ejectify)
-UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_ejectify)
-	. = TRUE
-	bodyscanner_eject(user)
+CAPABILITIES(/obj/machinery/bodyscanner)
+	op("ejectify", ui_act(), then(PROC_REF(native_bodyscanner_ui_ejectify)))
+	op("print_p", ui_act(), then(PROC_REF(native_bodyscanner_ui_print_p)))
 
-UI_ACT(/obj/machinery/bodyscanner, "print_p", ui_act_print_p)
-UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
-	. = TRUE
+/obj/machinery/bodyscanner/proc/native_bodyscanner_ui_ejectify(datum/act/op/A)
+	bodyscanner_eject(A.actor)
+	return OP_OK
+
+/obj/machinery/bodyscanner/proc/native_bodyscanner_ui_print_p(datum/act/op/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	var/atom/target = console ? console : src
 	visible_message(span_notice("[target] rattles and prints out a sheet of paper."))
@@ -213,7 +214,7 @@ UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
 	P.info += "<br><br>" + span_bold("Notes:") + "<br>"
 	P.name = "Body Scan - [name] ([stationtime2text()])"
 	if(istype(scanned_human))
-		var/datum/money_account/operator_account = medical_trial_account_for_mob(ui?.user)
+		var/datum/money_account/operator_account = medical_trial_account_for_mob(A.actor)
 		var/datum/contract_subject_identity/identity = SScontracts.subject_identity(scanned_human)
 		P.medical_scan_evidence = list(
 			"subject_ref" = identity.id,
@@ -234,7 +235,8 @@ UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
 			"evidence_ids" = list(evidence_id),
 			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 			"detail" = "Authenticated body scan printed",
-		), "medical-scan:[evidence_id]", src, ui?.user, scanned_human)
+		), "medical-scan:[evidence_id]", src, A.actor, scanned_human)
+	return OP_OK
 
 /// The printed report: the body scanner diagnosis (paper renderer) plus the
 /// patient details a printout carries (species, reagents, allergens, implants).

@@ -223,6 +223,8 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
 
 CAPABILITIES(/obj/machinery/computer/ship)
 	owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui)
+	op("sync", ui_act(), then(PROC_REF(native_ship_ui_sync)))
+	op("close", ui_act(), then(PROC_REF(native_ship_ui_close)))
 
 /// Helm and navigation consoles show the Flight Operations UI.
 /obj/machinery/computer/ship/proc/flight_operations()

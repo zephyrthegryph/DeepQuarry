@@ -138,27 +138,29 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_delete)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "obj_announce", ui_act_obj_announce)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_announce)
+CAPABILITIES(/datum/edit_memory_panel)
+	op("obj_announce", ui_act(), then(PROC_REF(native_memory_ui_obj_announce)))
+	op("obj_add", ui_act(), then(PROC_REF(native_memory_ui_obj_add)))
+	op("refresh_antags", ui_act(), then(PROC_REF(native_memory_ui_refresh_antags)))
+
+/datum/edit_memory_panel/proc/native_memory_ui_obj_announce(datum/act/op/A)
 	if(target_mind.current)
 		to_chat(target_mind.current, span_blue("Your current objectives:"))
 		var/obj_count = 1
 		for(var/datum/objective/objective in target_mind.objectives)
 			to_chat(target_mind.current, span_bold("Objective #[obj_count]") + ": [objective.explanation_text]")
 			obj_count++
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/edit_memory_panel, "obj_add", ui_act_obj_add)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_add)
-	target_mind.begin_objective_add(ui.user)
+/datum/edit_memory_panel/proc/native_memory_ui_obj_add(datum/act/op/A)
+	target_mind.begin_objective_add(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/edit_memory_panel, "refresh_antags", ui_act_refresh_antags)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_refresh_antags)
+/datum/edit_memory_panel/proc/native_memory_ui_refresh_antags(datum/act/op/A)
 	snapshot_antag_blocks()
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/edit_memory_panel, "antag_add", ui_act_antag_add, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_add)
