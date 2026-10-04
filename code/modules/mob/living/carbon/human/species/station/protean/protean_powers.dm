@@ -461,29 +461,93 @@ CAPABILITIES(/datum/protean_power)
 		to_chat(H, span_notice("The person you try this on must have a client!"))
 		return
 	to_chat(H, span_notice("Waiting for other person's consent."))
-	om_flow_start(/datum/om/flow/protean_copy_form, H, victim, power = src)
+	var/datum/protean_copy_review/review = new
+	rel_set(review, nameof(review.actor), H)
+	rel_set(review, nameof(review.victim), victim)
+	rel_set(review, nameof(review.power), src)
+	review.start()
 	return TRUE
 
 /// The victim consents, then the protean chooses whether to copy their flavour text.
-/datum/om/flow/protean_copy_form
+/datum/protean_copy_review
+	var/mob/living/carbon/human/actor
+	var/mob/living/carbon/human/victim
 	var/datum/protean_power/copy_form/power
-	var/consented = FALSE
 
-/datum/om/flow/protean_copy_form/ended(reason)
-	if(actor && !consented && (reason == "declined" || reason == "cancelled"))
-		to_chat(actor, span_notice("They declined your request."))
+CAPABILITIES(/datum/protean_copy_review)
+	ref_one(nameof(actor), /mob/living/carbon/human)
+	ref_one(nameof(victim), /mob/living/carbon/human)
+	ref_one(nameof(power), /datum/protean_power/copy_form)
 
-/datum/om/flow/protean_copy_form/start()
-	om_ask(target, /datum/om/prompt/confirm/copy_body_consent, PROC_REF(consent_given))
+/datum/prompt/yes_no/protean_copy_consent
+	title = "Consent"
+	timeout = 0
 
-/datum/om/flow/protean_copy_form/proc/consent_given(datum/om/prompt/confirm/ask)
-	consented = TRUE
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(flavour_chosen), message = "Copy [target]'s flavourtext?", title = "Copy Form", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
-
-/datum/om/flow/protean_copy_form/proc/flavour_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/datum/prompt/yes_no/protean_copy_consent/recheck_extra()
+	. = ..()
+	if(.)
 		return
-	power.copy_agreed(actor, target, ask.choice)
+	var/datum/protean_copy_review/review = owner
+	if(QDELETED(review.actor) || QDELETED(review.victim))
+		return "gone"
+	// A No stopped the old flow before its captured-power recheck.
+	return answer_value == FALSE ? null : review.why_not()
+
+/datum/prompt/choice/protean_copy_flavour
+	title = "Copy Form"
+	timeout = 0
+	buttons = TRUE
+
+/datum/prompt/choice/protean_copy_flavour/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/protean_copy_review/review = owner
+	return review.why_not()
+
+/datum/protean_copy_review/proc/why_not()
+	return QDELETED(actor) || QDELETED(victim) || QDELETED(power) ? "gone" : null
+
+/datum/protean_copy_review/proc/start()
+	if(why_not())
+		consume(src)
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		failed_step("start", result.error)
+
+/datum/protean_copy_review/proc/start_step()
+	open_request(src, /datum/prompt/yes_no/protean_copy_consent, PROC_REF(consent_given), answerer = victim, asker = actor, question = "Allow [actor] to copy what you look like?")
+
+/datum/protean_copy_review/proc/failed_step(step, error)
+	stack_trace("protean copy form step [step]: [error]")
+	consume(src)
+
+/datum/protean_copy_review/proc/consent_given(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(consent_given_step), A)
+	if(!result.ok)
+		failed_step("consent", result.error)
+
+/datum/protean_copy_review/proc/consent_given_step(datum/act/request/A)
+	if(QDELETED(actor) || QDELETED(victim))
+		consume(src)
+		return
+	if(!A.answer || A.request.answer_value != TRUE)
+		if(isnull(A.request.answer_value) || A.request.answer_value == FALSE)
+			to_chat(actor, span_notice("They declined your request."))
+		consume(src)
+		return
+	open_request(src, /datum/prompt/choice/protean_copy_flavour, PROC_REF(flavour_chosen), answerer = actor, asker = actor, question = "Copy [victim]'s flavourtext?", choices = list("Yes", "No", "Cancel"))
+
+/datum/protean_copy_review/proc/flavour_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(flavour_chosen_step), A)
+	if(!result.ok)
+		failed_step("flavour", result.error)
+
+/datum/protean_copy_review/proc/flavour_chosen_step(datum/act/request/A)
+	if(A.answer && A.request.answer_value != "Cancel")
+		power.copy_agreed(actor, victim, A.request.answer_value)
+	consume(src)
 
 /datum/protean_power/copy_form/proc/copy_agreed(mob/living/carbon/human/H, mob/living/carbon/human/victim, input)
 	if(!aggressive_grab_on(H, victim))

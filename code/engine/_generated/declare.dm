@@ -3039,6 +3039,17 @@
 	into += entry_line(329)
 	into += list(global.owns_many(nameof(layers)))
 
+/// CAPABILITIES(/datum/protean_copy_review) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:477
+/datum/protean_copy_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 477, /datum/protean_copy_review)
+	into += entry_line(478)
+	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
+	into += entry_line(479)
+	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
+	into += entry_line(480)
+	into += list(global.ref_one(nameof(power), /datum/protean_power/copy_form))
+
 /// CAPABILITIES(/datum/protean_power) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:54
 /datum/protean_power/declared_entries(list/into)
 	..(into)
