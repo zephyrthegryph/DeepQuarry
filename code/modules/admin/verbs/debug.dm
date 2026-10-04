@@ -280,11 +280,28 @@ ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "G
 
 ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct Control", "Assume direct control of a mob.", ADMIN_CATEGORY_GAME, mob/M)
 	if(M.ckey)
-		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "This mob is being controlled by [M.ckey]. Are you sure you wish to assume control of it? [M.ckey] will be made a ghost.", title = "Confirmation", choices = list("Yes","No"))
-		if(isnull(_answer_a2))
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
 			return
-		if(_answer_a2 != "Yes")
-			return
+		open_request(src, /datum/prompt/choice/admin_control_target, PROC_REF(control_confirmed), answerer = answerer, controlled_mob = M, question = "This mob is being controlled by [M.ckey]. Are you sure you wish to assume control of it? [M.ckey] will be made a ghost.")
+		return
+	apply_control(user, M)
+
+/datum/admin_verb/cmd_assume_direct_control/proc/control_confirmed(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(finish_control), context)
+	if(!result.ok)
+		stack_trace("om flow cmd_assume_direct_control answer finish_control: [result.error]")
+
+/datum/admin_verb/cmd_assume_direct_control/proc/finish_control(datum/act/request/context)
+	var/datum/prompt/choice/admin_control_target/request = context.request
+	var/mob/M = request.controlled_mob
+	if(M.ckey && request.answer_value != "Yes")
+		return
+	apply_control(request.answerer.client, M)
+
+/datum/admin_verb/cmd_assume_direct_control/proc/apply_control(client/user, mob/M)
 	if(!M || QDELETED(M))
 		to_chat(user, span_warning("The target mob no longer exists."))
 		return
@@ -745,3 +762,32 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 
 	log_and_message_admins("[key_name(src)] Quick Authentic NIF'd [H.real_name].")
 	feedback_add_details("admin_verb","QANIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_control_target
+	rights = R_DEBUG|R_ADMIN|R_EVENT
+	timeout = 0
+	title = "Confirmation"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	var/mob/controlled_mob
+
+CAPABILITIES(/datum/prompt/choice/admin_control_target)
+	ref_one(nameof(controlled_mob), /mob)
+
+/datum/prompt/choice/admin_control_target/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured = controlled_mob
+	rel_clear(src, nameof(controlled_mob))
+	rel_set(src, nameof(controlled_mob), captured)
+
+/datum/prompt/choice/admin_control_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(controlled_mob) ? "target is gone" : null
+
+/datum/prompt/choice/admin_control_target/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
