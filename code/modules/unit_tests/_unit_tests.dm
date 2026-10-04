@@ -931,6 +931,10 @@
 
 #include "round2_reactive_shell_core_consumption.dm"
 
+#include "round2_taskmanager_department_native.dm"
+
+#include "round2_eyepatch_native_controls.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

@@ -28,6 +28,7 @@
 
 CAPABILITIES(/obj/item/melee/baton)
 	owns_one(nameof(bcell), /obj/item/cell)
+	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
 
 /obj/item/melee/baton/Initialize(mapload)
 	. = ..()
@@ -148,7 +149,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 	return INTERACTION_HANDLED_PASS
 
 DECLARE_INTERACTIONS(/obj/item/melee/baton, \
-	INTERACT_SELF("Toggle", PROC_REF(interaction_self)), \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
@@ -168,10 +168,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 	else
 		return FALSE
 
-/// Old attack_self. FALSE (special handling) moves on to a subtype's own attack_self.
-/obj/item/melee/baton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+/obj/item/melee/baton/proc/baton_power_toggled(datum/act/op/A)
+	var/mob/user = A.actor
 	if(bcell && bcell.charge >= hitcost)
 		status = !status
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
@@ -184,7 +182,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 		else
 			to_chat(user, span_warning("[src] is out of charge."))
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/melee/baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(status && CLUMSY_FAIL_CHANCE(user))
@@ -291,4 +289,3 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_R
 	..(target, user, hit_zone, attack_modifier, stance)
 	if(status && (target.ai_brain != null))
 		target.taunt(user)
-

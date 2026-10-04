@@ -440,5 +440,3 @@ APPEARANCE_TEMPLATE(/obj/item/communicator, "{initial(icon_state)}{appearance_co
 #undef WTHRTAB
 #undef MANITAB
 #undef SETTTAB
-
-DECLARE_DEFAULT_CHILD(/mob/observer/dead, "exonet", /datum/exonet_protocol)

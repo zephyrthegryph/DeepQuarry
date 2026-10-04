@@ -5,6 +5,7 @@
 
 CAPABILITIES(/mob/observer/dead)
 	owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel)
+	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
 /datum/exonet_log_panel
 	var/tmp/mob/observer/dead/host

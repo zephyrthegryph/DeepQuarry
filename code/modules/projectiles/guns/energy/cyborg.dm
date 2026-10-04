@@ -178,15 +178,17 @@
 	defend_chance = 5
 	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
 	var/emagged = 0
-DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/melee/robotic/jaws/small, emagged)
 
-/// Old attack_self.
-/obj/item/melee/robotic/jaws/small/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/silicon/robot/R = user
+CAPABILITIES(/obj/item/melee/robotic/jaws/small)
+	op("jaw_mode", in_hand(), label("Toggle combat jaws"), then(PROC_REF(jaw_mode_toggled)))
+
+/obj/item/melee/robotic/jaws/small/proc/jaw_mode_toggled(datum/act/op/A)
+	var/mob/living/silicon/robot/R = A.actor
 	if(!istype(R))
-		return TRUE
+		return OP_OK
 	if(R.emagged || R.emag_items)
-		emagged = !emagged
+		set_emagged(!emagged)
 		if(R.sprite_datum?.dogborg_sprites)
 			if(emagged)
 				name = "combat jaws"
@@ -226,7 +228,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 				armor_penetration = 0
 				defend_chance = 5
 		update_icon()
-	return TRUE
+	return OP_OK
 
 
 /obj/item/melee/robotic/borg_combat_shocker //Like a baton, but is always on.
@@ -462,27 +464,29 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/baton, TYPE_PROC_REF(/atom, appe
 	else
 		set_light(0)
 
-DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+TRACKED(/obj/item/melee/robotic/baton, status)
 
-/// Old attack_hand.
-/obj/item/melee/robotic/baton/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+CAPABILITIES(/obj/item/melee/robotic/baton)
+	op("blocked_pickup", hand(), when(req_empty_hand()), label("Touch baton"), then(PROC_REF(baton_pickup_blocked)))
+	op("power", in_hand(), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
+	op("item_pass", item(/obj/item), when(req(PROC_REF(baton_used_by_other_item))), label("Use item on baton"), then(PROC_REF(baton_item_passed)), passes())
 
-/// Old attack_self.
-/obj/item/melee/robotic/baton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	status = !status
+/obj/item/melee/robotic/baton/proc/baton_pickup_blocked(datum/act/op/A)
+	return OP_OK
+
+/obj/item/melee/robotic/baton/proc/baton_power_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_status(!status)
 	to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 	update_icon()
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/obj/item/melee/robotic/baton/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+/obj/item/melee/robotic/baton/proc/baton_used_by_other_item(datum/act/op/A)
+	return A.held != A.target
+
+/obj/item/melee/robotic/baton/proc/baton_item_passed(datum/act/op/A)
+	return OP_OK
 
 /obj/item/melee/robotic/baton/proc/deductcharge()
 	var/mob/living/silicon/robot/R = loc

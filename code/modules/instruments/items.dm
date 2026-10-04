@@ -17,6 +17,7 @@
 
 CAPABILITIES(/obj/item/instrument)
 	owns_one(nameof(song), /datum/song/handheld)
+	op("controls", in_hand(), label("Open instrument controls"), then(PROC_REF(instrument_controls_opened)))
 
 /obj/item/instrument/Initialize(mapload)
 	. = ..()
@@ -34,15 +35,13 @@ CAPABILITIES(/obj/item/instrument)
 		return FALSE
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/instrument/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/instrument/proc/instrument_controls_opened(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.IsAdvancedToolUser())
-		return TRUE
+		return OP_OK
 
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/instrument/ui_redirect(mob/user)
 	return song

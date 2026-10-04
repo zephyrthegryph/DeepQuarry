@@ -21,3 +21,5 @@ changes:
   - bugfix: "Reactive armour shells require successful consumption of their anomaly core before producing armour."
   - bugfix: "Migrated configuration prompts preserve their original cancellation, defaults and unlimited response time."
   - bugfix: "Native hand requirements update when an item moves between hands and worn slots within the same inventory."
+  - code_imp: "Eyepatches, survival watches, concealed canes, taskmanagers, robotic equipment, smartguns and handheld instrument controls use native operations."
+  - code_imp: "Console helpers use native ownership declarations, and dimensional armour effects reuse immutable theme templates."

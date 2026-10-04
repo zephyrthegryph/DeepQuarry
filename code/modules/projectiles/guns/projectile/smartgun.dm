@@ -62,16 +62,20 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 		return
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+TRACKED(/obj/item/gun/projectile/smartgun, closed)
+TRACKED(/obj/item/gun/projectile/smartgun, cycling)
 
-/// Old click_alt.
-/obj/item/gun/projectile/smartgun/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/gun/projectile/smartgun)
+	op("ready", hand(), answers(INTENT_TOGGLE), label("Ready or unready rifle"), then(PROC_REF(readiness_toggled)))
+
+/obj/item/gun/projectile/smartgun/proc/readiness_toggled(datum/act/op/A)
+	var/mob/user = A.actor
 	if(ishuman(user) && !user.incapacitated() && Adjacent(user))
 		if(cycling)
 			to_chat(user, span_warning("[src] is still cycling!"))
-			return TRUE
+			return OP_OK
 
-		cycling = TRUE
+		set_cycling(TRUE)
 
 		if(closed)
 			icon_state = "[initial(icon_state)]_open"
@@ -82,11 +86,11 @@ DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_
 			play_sfx(src, SFX_WEAPONS_SMARTGUNCLOSE)
 			to_chat(user, span_notice("You ready [src] so that it can be fired."))
 		after(src, 2 SECONDS, PROC_REF(toggle_real_state), key = "smartgun_cycle")
-	return TRUE
+	return OP_OK
 
 /obj/item/gun/projectile/smartgun/proc/toggle_real_state()
-	cycling = FALSE
-	closed = !closed
+	set_cycling(FALSE)
+	set_closed(!closed)
 
 DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/smartgun, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/smartgun/appearance_overlays()

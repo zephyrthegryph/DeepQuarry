@@ -10,7 +10,8 @@
 /mob/living/simple_mob/slime
 	use_modern_ai = TRUE
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/slime/xenobio, "slime_state", /datum/slime_state)
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio)
+	owns_one(nameof(slime_state), /datum/slime_state, starts = /datum/slime_state)
 
 
 /mob/living/simple_mob/slime/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)

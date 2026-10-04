@@ -23,13 +23,12 @@
 	var/obj/item/material/sword/katana/caneblade/concealed_blade
 
 
-DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/cane/concealed)
+	op("unsheathe", in_hand(), label("Unsheathe blade"), then(PROC_REF(blade_unsheathed)))
+	op("sheathe", item(/obj/item/material/butterfly), label("Sheathe blade"), then(PROC_REF(blade_sheathed)), passes())
 
-/// Old attack_self.
-/obj/item/cane/concealed/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cane/concealed/proc/blade_unsheathed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(concealed_blade)
 		act_message(user, src, MSG_SELF("You unsheathe \the [concealed_blade] from %T%."), MSG_OTHERS(span_warning("%U% has unsheathed \a [concealed_blade] from %THEIR% %T%!")))
 		// Calling drop/put in hands to properly call item drop/pickup procs
@@ -41,19 +40,18 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 		user.update_inv_r_hand()
 		own_take(src, nameof(concealed_blade))
 		update_icon()
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/obj/item/cane/concealed/proc/interaction_item(mob/user, obj/item/material/butterfly/W, datum/interaction/interaction)
-	if(!src.concealed_blade && istype(W))
+/obj/item/cane/concealed/proc/blade_sheathed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/material/butterfly/W = A.held
+	if(!src.concealed_blade)
 		act_message(user, src, MSG_SELF("You sheathe \the [W] into %T%."), MSG_OTHERS(span_warning("%U% has sheathed \a [W] into %THEIR% %T%!")))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHIN)
 		if(!own_set(src, nameof(src.concealed_blade), W, user = user))
-			return FALSE
+			return OP_OK
 		update_icon()
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/item/cane/concealed, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/cane/concealed/appearance_overlays()

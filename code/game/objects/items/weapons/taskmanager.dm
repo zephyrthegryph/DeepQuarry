@@ -301,42 +301,47 @@
 	var/static/image/radial_image_service = image(icon = 'icons/mob/radial_ch.dmi', icon_state = "bar")
 	var/static/image/radial_image_security = image(icon = 'icons/mob/radial_ch.dmi', icon_state = "armory")
 
-/obj/item/taskmanager/proc/check_menu(mob/living/user)
-	if(!istype(user))
-		return FALSE
-	if(user.incapacitated() || !user.Adjacent(src))
-		return FALSE
-	return TRUE
+TRACKED(/obj/item/taskmanager, mode)
+TRACKED(/obj/item/taskmanager, scancount)
+TRACKED(/obj/item/taskmanager, scanreq)
 
-DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/taskmanager)
+	op("choose_department", in_hand(), label("Choose department"), needs(req_adjacent(), req_capable(), req(PROC_REF(living_operator), because = MSG(op/not_available))),
+		asks(/datum/prompt/choice/taskmanager_department, keeps = 0), then(PROC_REF(department_chosen)))
 
-/// Old attack_self.
-/obj/item/taskmanager/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/list/choices = list(
-		TM_MODE_BRIDGE = radial_image_bridge,
-		TM_MODE_ENGINEERING = radial_image_engineering,
-		TM_MODE_MEDICAL = radial_image_medical,
-		TM_MODE_SCIENCE = radial_image_science,
-		TM_MODE_SERVICE = radial_image_service,
-		TM_MODE_SECURITY = radial_image_security
-	)
+/obj/item/taskmanager/proc/living_operator(datum/act/op/A)
+	return isliving(A.actor)
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(mode_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
-	return TRUE
+/datum/prompt/choice/taskmanager_department
+	radial = TRUE
+	tooltips = TRUE
+	timeout = 0
 
-/obj/item/taskmanager/proc/mode_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
-	if(!(choice in ask.choices) || !check_menu(user))
-		return
+/datum/prompt/choice/taskmanager_department/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/taskmanager/manager = asking.target
+		if(istype(manager))
+			rel_set(src, nameof(anchor), manager)
+			choices = list(
+				TM_MODE_BRIDGE = manager.radial_image_bridge,
+				TM_MODE_ENGINEERING = manager.radial_image_engineering,
+				TM_MODE_MEDICAL = manager.radial_image_medical,
+				TM_MODE_SCIENCE = manager.radial_image_science,
+				TM_MODE_SERVICE = manager.radial_image_service,
+				TM_MODE_SECURITY = manager.radial_image_security
+			)
 
-	mode = choice
-	scancount = 0
+/obj/item/taskmanager/proc/department_chosen(datum/act/op/A)
+	var/datum/prompt/choice/chosen = A.answer
+	set_mode(chosen.value)
+	set_scancount(0)
 	LAZYCLEARLIST(scanned)
-
-	scanreq = rand(3,9)
-	to_chat(user, span_notice("Changed mode to '[choice]'."))
+	set_scanreq(rand(3,9))
+	to_chat(A.actor, span_notice("Changed mode to '[chosen.value]'."))
 	play_sfx(loc, SFX_EFFECTS_POP)
+	return OP_OK
 
 /obj/item/taskmanager/afterattack(atom/target, mob/user, proximity)
 	if(!proximity)
@@ -348,7 +353,7 @@ DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interact
 		to_chat(user, span_notice("You must choose a department first!"))
 		return
 	if((target.type in scannables[mode]) && scancount < scanreq && !(target.type in scanned))
-		scancount = scancount + 1
+		set_scancount(scancount + 1)
 		LAZYADD(scanned, target.type)
 		var/scansleft = scanreq - scancount
 		play_sfx(src, SFX_MACHINES_BEEP)
@@ -373,7 +378,7 @@ DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interact
 	var/obj/item/paper/P = paper
 	if(findtext(P.info,format))
 		deploy_voucher(get_turf(src))
-		scancount = 0
+		set_scancount(0)
 		scanned = list()
 		consume(P)
 		to_chat(user, span_notice("Format accepted, printing voucher!"))
