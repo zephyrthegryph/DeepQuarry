@@ -46,7 +46,7 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT_NULL(leg.tourniquet, "The unchanged timed callback releases the actual sole limb")
 	TEST_ASSERT_EQUAL(leg_strap.loc, user, "The explicit actor receives that exact strap")
-	TEST_ASSERT(leg_strap == user.get_equipped_item(SLOT_ID_L_HAND) || leg_strap == user.get_equipped_item(SLOT_ID_R_HAND), "The removed strap occupies a real hand")
+	TEST_ASSERT(leg_strap == user.get_equipped_item(SLOT_ID_HAND_L) || leg_strap == user.get_equipped_item(SLOT_ID_HAND_R), "The removed strap occupies a real hand")
 	TEST_ASSERT_EQUAL(left_strap.loc, T, "The other previously removed strap stays on the actual floor")
 	TEST_ASSERT_EQUAL(right_strap.loc, T, "The bystander strap is never collected by fallback")
 	test_driver_end()
