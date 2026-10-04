@@ -42,12 +42,11 @@
 	attack_hand(user)
 	return ITEM_INTERACT_SUCCESS
 
-UI_DATA_REPLACE(/obj/machinery/telecomms, "temp:text", "merge:ui_data_obj_machinery_telecomms{on:num,id:unknown,network:unknown,autolinkers:bool,shadowlink:bool,options:unknown,linked:list,filter:list,multitool:bool,multitool_buffer:listmap}")
-
-/// The computed part of /obj/machinery/telecomms's window data (declared on its UI_DATA row).
-/obj/machinery/telecomms/proc/ui_data_obj_machinery_telecomms(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/telecomms/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
+	data["temp"] = temp
 	data["on"] = on
 
 	data["id"] = null
@@ -104,8 +103,6 @@ UI_DATA_REPLACE(/obj/machinery/telecomms, "temp:text", "merge:ui_data_obj_machin
 			return STATUS_CLOSE
 	. = ..()
 
-DECLARE_UI(/obj/machinery/telecomms, "TelecommsMultitoolMenu")
-
 // Off-Site Relays
 //
 // You are able to send/receive signals from the station's z level (changeable in the STATION_Z #define) if
@@ -160,20 +157,22 @@ DECLARE_UI(/obj/machinery/telecomms, "TelecommsMultitoolMenu")
 	data["receiving"] = receiving
 	return data
 
-UI_ACT(/obj/machinery/telecomms/relay, "receive", ui_act_receive)
-UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_receive)
+CAPABILITIES(/obj/machinery/telecomms/relay)
+	op("receive", ui_act("receive"), then(PROC_REF(ui_act_receive)))
+	op("broadcast", ui_act("broadcast"), then(PROC_REF(ui_act_broadcast)))
+	op("change_listening", ui_act("change_listening"), then(PROC_REF(ui_act_change_listening)))
+
+/obj/machinery/telecomms/relay/proc/ui_act_receive(datum/act/op/A)
 	. = TRUE
 	receiving = !receiving
 	set_temp("-% Receiving mode changed. %-", "average")
 
-UI_ACT(/obj/machinery/telecomms/relay, "broadcast", ui_act_broadcast)
-UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_broadcast)
+/obj/machinery/telecomms/relay/proc/ui_act_broadcast(datum/act/op/A)
 	. = TRUE
 	broadcasting = !broadcasting
 	set_temp("-% Broadcasting mode changed. %-", "average")
 
-UI_ACT(/obj/machinery/telecomms/relay, "change_listening", ui_act_change_listening)
-UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_change_listening)
+/obj/machinery/telecomms/relay/proc/ui_act_change_listening(datum/act/op/A)
 	. = TRUE
 	//Lock to the station OR lock to the current position!
 	//You need at least two receivers and two broadcasters for this to work, this includes the machine.
@@ -191,28 +190,20 @@ UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_change_listening)
 	data["change_freq"] = change_frequency
 	return data
 
-UI_ACT(/obj/machinery/telecomms/bus, "change_freq", ui_act_change_freq)
-UI_ACT_PROC(/obj/machinery/telecomms/bus, ui_act_change_freq)
+CAPABILITIES(/obj/machinery/telecomms/bus)
+	op("change_freq", ui_act("change_freq"), then(PROC_REF(ui_act_change_freq)))
+
+/obj/machinery/telecomms/bus/proc/ui_act_change_freq(datum/act/op/A)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/number/telecomms_change_frequency, PROC_REF(change_frequency_entered), title = "[src]", default = network)
+	open_request(src, /datum/prompt/number, PROC_REF(change_frequency_entered), valid = PROC_REF(access_valid), answerer = A.actor, title = "[src]", question = "Specify a new frequency for new signals to change to. Enter null to turn off frequency changing. Decimals assigned automatically.", default = network, ask_flags = ASK_CAPABLE, timeout = 0)
 
 /// A cancel turns frequency changing off.
-/datum/om/prompt/number/telecomms_change_frequency
-	message = "Specify a new frequency for new signals to change to. Enter null to turn off frequency changing. Decimals assigned automatically."
-	round_entry = FALSE
-	requires = PROMPT_USABLE
-
-/datum/om/prompt/number/telecomms_change_frequency/valid()
-	var/obj/machinery/telecomms/machine = subject
-	return machine.canAccess(answerer) ? null : "no access"
-
-/datum/om/prompt/number/telecomms_change_frequency/cancelled()
-	var/obj/machinery/telecomms/bus/machine = subject
-	if(machine?.canAccess(answerer))
-		machine.set_change_frequency(null)
-
-/obj/machinery/telecomms/bus/proc/change_frequency_entered(datum/om/prompt/number/telecomms_change_frequency/ask)
-	set_change_frequency(ask.number)
+/obj/machinery/telecomms/bus/proc/change_frequency_entered(datum/act/request/A)
+	if(!A.answer)
+		if(canAccess(A.request.answerer))
+			set_change_frequency(null)
+		return
+	set_change_frequency(A.answer.answer_value)
 
 /obj/machinery/telecomms/bus/proc/set_change_frequency(newfreq)
 	if(newfreq)
@@ -237,9 +228,11 @@ UI_ACT_PROC(/obj/machinery/telecomms/bus, ui_act_change_freq)
 /obj/machinery/telecomms/broadcaster
 	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 
-UI_ACT(/obj/machinery/telecomms/broadcaster, "range", ui_act_range, UI_ARG_NUM("range"))
-UI_ACT_PROC(/obj/machinery/telecomms/broadcaster, ui_act_range)
-	var/new_range = params["range"]
+CAPABILITIES(/obj/machinery/telecomms/broadcaster)
+	op("range", ui_act("range", arg("range", num())), then(PROC_REF(ui_act_range)))
+
+/obj/machinery/telecomms/broadcaster/proc/ui_act_range(datum/act/op/A, range)
+	var/new_range = range
 	overmap_range = clamp(new_range, overmap_range_min, overmap_range_max)
 	update_idle_power_usage(initial(idle_power_usage)**(overmap_range+1))
 
@@ -255,50 +248,50 @@ UI_ACT_PROC(/obj/machinery/telecomms/broadcaster, ui_act_range)
 /obj/machinery/telecomms/receiver
 	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 
-UI_ACT(/obj/machinery/telecomms/receiver, "range", ui_act_range, UI_ARG_NUM("range"))
-UI_ACT_PROC(/obj/machinery/telecomms/receiver, ui_act_range)
-	var/new_range = params["range"]
+CAPABILITIES(/obj/machinery/telecomms/receiver)
+	op("range", ui_act("range", arg("range", num())), then(PROC_REF(ui_act_range)))
+
+/obj/machinery/telecomms/receiver/proc/ui_act_range(datum/act/op/A, range)
+	var/new_range = range
 	overmap_range = clamp(new_range, overmap_range_min, overmap_range_max)
 	update_idle_power_usage(initial(idle_power_usage)**(overmap_range+1))
 
-/obj/machinery/telecomms/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(user)
-	return TRUE
+/// Whoever presses a button leaves their prints on the machine.
+/obj/machinery/telecomms/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/machinery/telecomms, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_toggle)
+/// Re-checked on every question the window asks: the answerer can still access the machine.
+/obj/machinery/telecomms/proc/access_valid(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && canAccess(M)
+
+/obj/machinery/telecomms/proc/ui_act_toggle(datum/act/op/A)
 	src.toggled = !src.toggled
 	set_temp("-% [src] has been [src.toggled ? "activated" : "deactivated"].", "average")
 	update_power()
 	. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "id", ui_act_id)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_id)
-	om_ask(ui.user, /datum/om/prompt/text/telecomms_setting, PROC_REF(id_entered), title = "[src]", message = "Specify the new ID for this machine", default = id)
+/obj/machinery/telecomms/proc/ui_act_id(datum/act/op/A)
+	open_request(src, /datum/prompt/text, PROC_REF(id_entered), valid = PROC_REF(access_valid), answerer = A.actor, title = "[src]", question = "Specify the new ID for this machine", default = id, ask_flags = ASK_CAPABLE, timeout = 0)
 	. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "network", ui_act_network)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_network)
-	om_ask(ui.user, /datum/om/prompt/text/telecomms_setting, PROC_REF(network_entered), title = "[src]", message = "Specify the new network for this machine. This will break all current links.", default = network, max_length = 15)
+/obj/machinery/telecomms/proc/ui_act_network(datum/act/op/A)
+	open_request(src, /datum/prompt/text, PROC_REF(network_entered), valid = PROC_REF(access_valid), answerer = A.actor, title = "[src]", question = "Specify the new network for this machine. This will break all current links.", default = network, max_len = 15, ask_flags = ASK_CAPABLE, timeout = 0)
 	. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "freq", ui_act_freq)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_freq)
-	om_ask(ui.user, /datum/om/prompt/number/telecomms_setting, PROC_REF(filter_frequency_entered), title = "[src]", message = "Specify a new frequency to filter (GHz). Decimals assigned automatically.", max = 9999)
+/obj/machinery/telecomms/proc/ui_act_freq(datum/act/op/A)
+	open_request(src, /datum/prompt/number, PROC_REF(filter_frequency_entered), valid = PROC_REF(access_valid), answerer = A.actor, title = "[src]", question = "Specify a new frequency to filter (GHz). Decimals assigned automatically.", max_value = 9999, ask_flags = ASK_CAPABLE, timeout = 0)
 	. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "delete", ui_act_delete, UI_ARG_NUM("delete"))
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_delete)
-	var/x = params["delete"]
+/obj/machinery/telecomms/proc/ui_act_delete(datum/act/op/A, delete)
+	var/x = delete
 	set_temp("-% Removed frequency filter [x] %-", "average")
 	LAZYREMOVE(freq_listening, x)
 	. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "unlink", ui_act_unlink, UI_ARG_NUM("unlink"))
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_unlink)
-	var/unlink_index = params["unlink"]
+/obj/machinery/telecomms/proc/ui_act_unlink(datum/act/op/A, unlink)
+	var/unlink_index = unlink
 	if(unlink_index >= 1 && unlink_index <= length(links))
 		var/obj/machinery/telecomms/T = LAZYACCESS(links, unlink_index)
 		set_temp("-% Removed \ref[T] [T.name] from linked entities. %-", "average")
@@ -308,9 +301,8 @@ UI_ACT_PROC(/obj/machinery/telecomms, ui_act_unlink)
 		rel_remove(src, nameof(/obj/machinery/telecomms::links), T)
 		. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "link", ui_act_link)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_link)
-	var/obj/item/multitool/P = get_multitool(ui.user)
+/obj/machinery/telecomms/proc/ui_act_link(datum/act/op/A)
+	var/obj/item/multitool/P = get_multitool(A.actor)
 	if(P)
 		if(P.buffer() && P.buffer() != src)
 			rel_add(src, nameof(/obj/machinery/telecomms::links), P.buffer())
@@ -321,52 +313,38 @@ UI_ACT_PROC(/obj/machinery/telecomms, ui_act_link)
 			set_temp("-% Unable to acquire buffer %-", "average")
 		. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "buffer", ui_act_buffer)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_buffer)
-	var/obj/item/multitool/P = get_multitool(ui.user)
+/obj/machinery/telecomms/proc/ui_act_buffer(datum/act/op/A)
+	var/obj/item/multitool/P = get_multitool(A.actor)
 	if(P)
 		rel_set(P, nameof(/obj/item/debugger::buffer), src)
 		set_temp("-% Successfully stored \ref[P.buffer()] [P.buffer().name] in buffer %-", "average")
 	. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "flush", ui_act_flush)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_flush)
-	var/obj/item/multitool/P = get_multitool(ui.user)
+/obj/machinery/telecomms/proc/ui_act_flush(datum/act/op/A)
+	var/obj/item/multitool/P = get_multitool(A.actor)
 	if(P)
 		set_temp("-% Buffer successfully flushed. %-", "average")
 		rel_clear(P, nameof(/obj/item/debugger::buffer))
 	. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_cleartemp)
+/obj/machinery/telecomms/proc/ui_act_cleartemp(datum/act/op/A)
 	temp = null
 	. = TRUE
 
 
-/// A telecomms machine setting; re-checked on the answer: the answerer can still access the machine.
-/datum/om/prompt/text/telecomms_setting
-	requires = PROMPT_USABLE
-
-/datum/om/prompt/text/telecomms_setting/valid()
-	var/obj/machinery/telecomms/machine = subject
-	return machine.canAccess(answerer) ? null : "no access"
-
-/datum/om/prompt/number/telecomms_setting
-	requires = PROMPT_USABLE
-
-/datum/om/prompt/number/telecomms_setting/valid()
-	var/obj/machinery/telecomms/machine = subject
-	return machine.canAccess(answerer) ? null : "no access"
-
-/obj/machinery/telecomms/proc/id_entered(datum/om/prompt/text/telecomms_setting/ask)
-	var/newid = copytext(reject_bad_text(ask.text),1,MAX_MESSAGE_LEN)
+/obj/machinery/telecomms/proc/id_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newid = copytext(reject_bad_text(A.answer.answer_value),1,MAX_MESSAGE_LEN)
 	if(newid)
 		id = newid
 		set_temp("-% New ID assigned: \"[id]\" %-", "average")
 		SStgui.update_uis(src)
 
-/obj/machinery/telecomms/proc/network_entered(datum/om/prompt/text/telecomms_setting/ask)
-	var/newnet = ask.text
+/obj/machinery/telecomms/proc/network_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newnet = A.answer.answer_value
 	SStgui.update_uis(src)
 
 	if(length(newnet) > 15)
@@ -379,8 +357,10 @@ UI_ACT_PROC(/obj/machinery/telecomms, ui_act_cleartemp)
 		set_temp("-% New network tag assigned: \"[network]\" %-", "average")
 	. = TRUE
 
-/obj/machinery/telecomms/proc/filter_frequency_entered(datum/om/prompt/number/telecomms_setting/ask)
-	var/newfreq = ask.number
+/obj/machinery/telecomms/proc/filter_frequency_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newfreq = A.answer.answer_value
 	if(!newfreq)
 		return
 	SStgui.update_uis(src)

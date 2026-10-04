@@ -302,7 +302,12 @@
 		"/obj/machinery/alarm" = "atmos_alarm,danger_level,environment_data,fire_alarm,locked,rcon,remoteUser,siliconUser,target_temperature",
 		"/obj/machinery/autolathe" = "active,materialChoices,materials,materialsmax,materialtotal",
 		"/obj/machinery/bomb_tester" = "canister,mode,simulating,sim_canister_output,tank1,tank1ref,tank2,tank2ref",
-		"/obj/machinery/doppler_array" = "",
+		"/obj/machinery/doppler_array" = "explosions",
+		"/obj/machinery/computer/general_air_control" = "sensors",
+		"/obj/machinery/computer/general_air_control/large_tank_control" = "input_flow_setting,input_info,max_flowrate,max_pressure,output_info,pressure_setting,sensors,tanks",
+		"/obj/machinery/computer/general_air_control/supermatter_core" = "core,input_flow_setting,input_info,max_flowrate,max_pressure,output_info,pressure_setting,sensors",
+		"/obj/machinery/computer/general_air_control/fuel_injection" = "automation,device_info,fuel,sensors",
+		"/obj/machinery/computer/cryopod" = "allow_items,crew,items,real_name",
 		"/obj/machinery/exonet_node" = "allowCommunicators,allowNewscasters,allowPDAs,logs,on",
 		"/obj/machinery/media/jukebox" = "admin,current_genre,current_track,current_track_ref,loop_mode,percent,playing,tracks,volume",
 		"/obj/machinery/newscaster" = "active_num,channels,channel_name,company,c_locked,message_num,msg,paper_remaining,photo_data,securityCaster,temp,title,total_num,unit_no,user,viewing_channel,wanted_issue",
@@ -547,3 +552,205 @@
 	hci_answer(H, "northern_net")
 	settle()
 	TEST_ASSERT_EQUAL(P.id_tag, "northern_net", "the answer becomes the tag")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Newscaster, suit storage, jukebox, colour painter (batch M6)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/newscaster_draft_is_edited_through_its_window
+/datum/unit_test/dq_hc_struct/newscaster_draft_is_edited_through_its_window/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/newscaster/N = mach(/obj/machinery/newscaster, tile(3, 2))
+	var/locked_before = N.c_locked
+	press(H, N, "set_channel_lock")
+	TEST_ASSERT(N.c_locked != locked_before, "the lock button flips the new channel's lock")
+	press(H, N, "set_channel_name", list("val" = "Daily Tidings"))
+	TEST_ASSERT_EQUAL(N.channel_name, "Daily Tidings", "the name box names the channel")
+	N.set_temp("hello", "info", FALSE)
+	press(H, N, "cleartemp")
+	TEST_ASSERT_NULL(N.temp, "the clear button drops the notice")
+	press(H, N, "set_new_title")
+	TEST_ASSERT(asked(H), "the title button asks for a title")
+	hci_answer(H, "Headline")
+	settle()
+	TEST_ASSERT_EQUAL(N.title, "Headline", "the answer becomes the title")
+
+/datum/unit_test/dq_hc_struct/suit_storage_door_and_lock_work_until_it_is_broken
+/datum/unit_test/dq_hc_struct/suit_storage_door_and_lock_work_until_it_is_broken/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/suit_storage_unit/U = mach(/obj/machinery/suit_storage_unit, tile(3, 2))
+	var/open_before = U.isopen
+	press(H, U, "door")
+	TEST_ASSERT(U.isopen != open_before, "the door button works the door")
+	var/open_now = U.isopen
+	U.isbroken = TRUE
+	press(H, U, "door")
+	TEST_ASSERT_EQUAL(U.isopen, open_now, "a broken unit answers no button")
+
+/datum/unit_test/dq_hc_struct/jukebox_volume_and_loop_are_set_through_its_window
+/datum/unit_test/dq_hc_struct/jukebox_volume_and_loop_are_set_through_its_window/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/media/jukebox/J = mach(/obj/machinery/media/jukebox, tile(3, 2))
+	press(H, J, "volume", list("val" = 7))
+	TEST_ASSERT_EQUAL(J.volume, 1, "the volume is clamped to full")
+	press(H, J, "volume", list("val" = 0.25))
+	TEST_ASSERT_EQUAL(J.volume, 0.25, "and set as given")
+	press(H, J, "loopmode", list("loopmode" = JUKEMODE_REPEAT_SONG))
+	TEST_ASSERT_EQUAL(J.loop_mode, JUKEMODE_REPEAT_SONG, "the loop mode follows the button")
+	press(H, J, "loopmode", list("loopmode" = 99))
+	TEST_ASSERT_EQUAL(J.loop_mode, JUKEMODE_REPEAT_SONG, "an unknown loop mode changes nothing")
+
+/datum/unit_test/dq_hc_struct/painter_takes_no_setting_while_empty
+/datum/unit_test/dq_hc_struct/painter_takes_no_setting_while_empty/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/gear_painter/P = mach(/obj/machinery/gear_painter, tile(3, 2))
+	var/mode_before = P.active_mode
+	press(H, P, "switch_modes", list("mode" = mode_before + 1))
+	TEST_ASSERT_EQUAL(P.active_mode, mode_before, "with nothing inside the mode stays")
+	press(H, P, "choose_color")
+	TEST_ASSERT(!asked(H), "and no colour is asked for")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Atmospherics control consoles and gas sensors (batch M7)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/air_control_setpoints_are_set_through_the_window
+/datum/unit_test/dq_hc_struct/air_control_setpoints_are_set_through_the_window/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/computer/general_air_control/large_tank_control/C = mach(/obj/machinery/computer/general_air_control/large_tank_control, tile(3, 2))
+	press(H, C, "adj_pressure", list("adj_pressure" = 1000))
+	TEST_ASSERT_EQUAL(C.pressure_setting, 1000, "the pressure box sets the output pressure")
+	press(H, C, "adj_input_flow_rate", list("adj_input_flow_rate" = 120))
+	TEST_ASSERT_EQUAL(C.input_flow_setting, 120, "the flow box sets the injector rate")
+	var/obj/machinery/computer/general_air_control/supermatter_core/S = mach(/obj/machinery/computer/general_air_control/supermatter_core, tile(4, 2))
+	press(H, S, "adj_pressure", list("adj_pressure" = 50))
+	TEST_ASSERT_EQUAL(S.pressure_setting, 50, "the core console takes its own pressure")
+
+/datum/unit_test/dq_hc_struct/air_sensor_output_is_toggled_through_its_menu
+/datum/unit_test/dq_hc_struct/air_sensor_output_is_toggled_through_its_menu/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/air_sensor/S = mach(/obj/machinery/air_sensor, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
+	H.put_in_active_hand(M)
+	var/before = S.output
+	S.multitool_act(H, M)
+	TEST_ASSERT(asked(H), "the multitool asks what to change")
+	hci_answer(H, "Pressure: \[[(before & 1) ? "YES" : "NO"]]")
+	settle()
+	TEST_ASSERT_EQUAL(S.output & 1, (before & 1) ? 0 : 1, "the pressure bit is flipped")
+
+/datum/unit_test/dq_hc_struct/air_control_menu_leads_to_the_frequency_question
+/datum/unit_test/dq_hc_struct/air_control_menu_leads_to_the_frequency_question/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/computer/general_air_control/C = mach(/obj/machinery/computer/general_air_control, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
+	H.put_in_active_hand(M)
+	C.multitool_act(H, M)
+	TEST_ASSERT(asked(H), "the multitool asks what to change")
+	hci_answer(H, "Frequency")
+	settle()
+	TEST_ASSERT(asked(H), "the frequency is asked next")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Telecommunications, small machines and the questions they ask (batch M7)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/telecomms_node_is_configured_through_its_window
+/datum/unit_test/dq_hc_struct/telecomms_node_is_configured_through_its_window/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/telecomms/relay/R = mach(/obj/machinery/telecomms/relay, tile(3, 2))
+	var/toggled_before = R.toggled
+	press(H, R, "toggle")
+	TEST_ASSERT(R.toggled != toggled_before, "the power button switches the node")
+	press(H, R, "id")
+	TEST_ASSERT(asked(H), "the id button asks for a new id")
+	hci_answer(H, "relay_north")
+	settle()
+	TEST_ASSERT_EQUAL(R.id, "relay_north", "the answer becomes the id")
+	var/receiving_before = R.receiving
+	press(H, R, "receive")
+	TEST_ASSERT(R.receiving != receiving_before, "the relay's own buttons work too")
+	press(H, R, "cleartemp")
+	TEST_ASSERT_NULL(R.temp, "the clear button drops the notice")
+
+/datum/unit_test/dq_hc_struct/telecomms_monitor_changes_its_network_through_a_question
+/datum/unit_test/dq_hc_struct/telecomms_monitor_changes_its_network_through_a_question/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/computer/telecomms/monitor/M = mach(/obj/machinery/computer/telecomms/monitor, tile(3, 2))
+	press(H, M, "network")
+	TEST_ASSERT(asked(H), "the network button asks for a network")
+	hci_answer(H, "tcomsat")
+	settle()
+	TEST_ASSERT_EQUAL(M.network, "tcomsat", "the answer becomes the network")
+	var/obj/machinery/computer/telecomms/server/S = mach(/obj/machinery/computer/telecomms/server, tile(4, 2))
+	press(H, S, "network")
+	TEST_ASSERT(asked(H), "the log browser asks as well")
+	hci_answer(H, "tcomsat2")
+	settle()
+	TEST_ASSERT_EQUAL(S.network, "tcomsat2", "and takes the answer")
+
+/datum/unit_test/dq_hc_struct/thermoregulator_takes_a_temperature_from_a_multitool
+/datum/unit_test/dq_hc_struct/thermoregulator_takes_a_temperature_from_a_multitool/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/power/thermoregulator/T = mach(/obj/machinery/power/thermoregulator, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
+	H.put_in_active_hand(M)
+	T.multitool_act(H, M)
+	TEST_ASSERT(asked(H), "the multitool asks for a temperature")
+	hci_answer(H, 20)
+	settle()
+	TEST_ASSERT(abs(T.target_temp - convert_c2k(20)) < 0.1, "the answer in degrees C becomes the target")
+
+/datum/unit_test/dq_hc_struct/meter_takes_an_id_only_while_its_panel_is_open
+/datum/unit_test/dq_hc_struct/meter_takes_an_id_only_while_its_panel_is_open/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/meter/N = mach(/obj/machinery/meter, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
+	H.put_in_active_hand(M)
+	N.open = TRUE
+	N.multitool_act(H, M)
+	TEST_ASSERT(asked(H), "an open meter asks for an id")
+	hci_answer(H, "exhaust_pipe")
+	settle()
+	TEST_ASSERT_EQUAL(N.id, "exhaust_pipe", "the answer becomes the id")
+	N.multitool_act(H, M)
+	N.open = FALSE
+	var/before = N.id
+	hci_answer(H, "other_tag")
+	settle()
+	TEST_ASSERT_EQUAL(N.id, before, "a panel shut meanwhile drops the answer")
+
+/datum/unit_test/dq_hc_struct/mass_driver_id_is_set_with_a_multitool
+/datum/unit_test/dq_hc_struct/mass_driver_id_is_set_with_a_multitool/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/mass_driver/D = mach(/obj/machinery/mass_driver, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
+	H.put_in_active_hand(M)
+	D.multitool_act(H, M)
+	TEST_ASSERT_EQUAL(asked(H), FALSE, "a closed driver asks nothing")
+	D.panel_open = TRUE // ALLOW(api): the test opens the maintenance panel as a screwdriver would, and the machine has no setter for it
+	D.multitool_act(H, M)
+	TEST_ASSERT(asked(H), "an open driver asks for an id")
+	hci_answer(H, 42)
+	settle()
+	TEST_ASSERT_EQUAL(D.id, 42, "the answer becomes the id")
+
+/datum/unit_test/dq_hc_struct/camera_assembly_is_configured_through_three_questions
+/datum/unit_test/dq_hc_struct/camera_assembly_is_configured_through_three_questions/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/turf/T = tile(3, 2)
+	var/obj/item/camera_assembly/C = allocate(/obj/item/camera_assembly, T)
+	C.state = 3
+	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, H)
+	H.put_in_active_hand(S)
+	C.screwdriver_act(H, S)
+	TEST_ASSERT(asked(H), "the screwdriver asks for the networks")
+	hci_answer(H, "Security,Secret")
+	settle()
+	TEST_ASSERT(asked(H), "then for a name")
+	hci_answer(H, "Hall camera")
+	settle()
+	var/obj/machinery/camera/cam = locate(/obj/machinery/camera) in T
+	TEST_ASSERT_NOTNULL(cam, "the camera is built")
+	TEST_ASSERT_EQUAL(C.state, 4, "and the assembly is closed up")
+	TEST_ASSERT(asked(H), "then for a direction")

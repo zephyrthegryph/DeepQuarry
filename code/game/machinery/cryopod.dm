@@ -92,15 +92,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/cryopod, TYPE_PROC_REF(/atom, ap
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/cryopod, "CryoStorage")
+CAPABILITIES(/obj/machinery/computer/cryopod)
+	interface("CryoStorage")
+	ui_shape(allow_items = bool(), real_name = schema_text(), crew = list_of(schema_text()), items = list_of(schema_text()))
 
 /obj/machinery/computer/cryopod/ui_title(mob/user)
 	return storage_name
 
-UI_DATA(/obj/machinery/computer/cryopod, "allow_items:num", "merge:ui_data_obj_machinery_computer_cryopod{real_name:text,crew:bool,items:list}")
-
-/// The computed part of /obj/machinery/computer/cryopod's window data (declared on its UI_DATA row).
-/obj/machinery/computer/cryopod/proc/ui_data_obj_machinery_computer_cryopod(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/cryopod/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["real_name"] = user.real_name
@@ -118,6 +118,7 @@ UI_DATA(/obj/machinery/computer/cryopod, "allow_items:num", "merge:ui_data_obj_m
 			*/
 	data["items"] = items
 
+	data["allow_items"] = allow_items
 	return data
 
 /obj/item/circuitboard/cryopodcontrol
@@ -706,18 +707,22 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 		return
 
 	if(M.client)
-		om_ask(M, /datum/om/prompt/confirm/cryo_consent, PROC_REF(storage_consent_answered), loader = user)
+		open_request(src, /datum/prompt/yes_no/cryo_consent, PROC_REF(storage_consent_answered), answerer = M, title = "Cryopod", question = "Would you like to enter long-term storage?", loader = user, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 		return
 	finish_go_in(M, user, 1)
 
-/datum/om/prompt/confirm/cryo_consent
-	title = "Cryopod"
-	message = "Would you like to enter long-term storage?"
-	requires = PROMPT_ADJACENT
+/// Consent to long-term storage: whoever loaded the pod is kept on the question.
+/datum/prompt/yes_no/cryo_consent
 	var/mob/loader
 
-/obj/machinery/cryopod/proc/storage_consent_answered(datum/om/prompt/confirm/cryo_consent/ask)
-	finish_go_in(ask.answerer, ask.loader, TRUE)
+CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
+	ref_one(nameof(loader), /mob)
+
+/obj/machinery/cryopod/proc/storage_consent_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/yes_no/cryo_consent/R = A.request
+	finish_go_in(R.answerer, R.loader, TRUE)
 
 /obj/machinery/cryopod/proc/finish_go_in(mob/M, mob/user, willing)
 

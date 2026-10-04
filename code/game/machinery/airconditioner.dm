@@ -187,11 +187,13 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/thermoregulator/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(target_temperature_entered), default = convert_k2c(target_temp), min = convert_k2c(TCMB), title = "Target Temperature", message = "Input a new target temperature, in degrees C.", max = MAX_ATMOS_TEMPERATURE, round_entry = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/number, PROC_REF(target_temperature_entered), answerer = user, default = convert_k2c(target_temp), min_value = convert_k2c(TCMB), title = "Target Temperature", question = "Input a new target temperature, in degrees C.", max_value = MAX_ATMOS_TEMPERATURE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/thermoregulator/proc/target_temperature_entered(datum/om/prompt/number/ask)
-	var/new_temp = convert_c2k(ask.number)
+/obj/machinery/power/thermoregulator/proc/target_temperature_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_temp = convert_c2k(A.answer.answer_value)
 	target_temp = max(new_temp, TCMB)
 	wake_for_state_change()
 	return ITEM_INTERACT_SUCCESS

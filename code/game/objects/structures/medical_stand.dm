@@ -25,6 +25,8 @@ CAPABILITIES(/obj/structure/medical_stand)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	op("toggle_iv_mode", menu(), label("Toggle IV Mode"), needs(req(PROC_REF(actor_is_living), because = MSG(medical_stand/cannot))), then(PROC_REF(medical_stand_toggle_mode_effect)))
 	op("set_iv_transfer", menu(), label("Set IV transfer amount"), then(PROC_REF(set_APTFT_effect)))
+	op("medical_stand_interaction_hand", hand(), ungated(), then(PROC_REF(medical_stand_interaction_hand)))
+	op("medical_stand_interaction_item", item(/obj/item), then(PROC_REF(medical_stand_interaction_item)))
 
 MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 
@@ -207,13 +209,9 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		update_icon()
 	return
 
-DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(medical_stand_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(medical_stand_interaction_item)), \
-)
-
 /// Old attack_hand (it never reached the structure gate).
-/obj/structure/medical_stand/proc/medical_stand_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/medical_stand/proc/medical_stand_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/available_options = list()
 	if (tank)
 		available_options += "Toggle valve"
@@ -342,7 +340,9 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 	return 1
 
 /// Old attackby.
-/obj/structure/medical_stand/proc/medical_stand_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/medical_stand/proc/medical_stand_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/tank))
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
@@ -365,7 +365,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		to_chat(user, "You attach \the [W] to \the [src].")
 		update_icon()
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/structure/medical_stand/wrench_act(mob/user, obj/item/W)
 	if(valve_opened)

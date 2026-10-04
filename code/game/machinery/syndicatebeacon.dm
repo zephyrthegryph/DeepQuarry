@@ -46,14 +46,20 @@
 		message += "\n\n[temptext]"
 	if(can_traitor)
 		var/offer = pick("I want to switch teams.", "I want to work for you.", "Let me join you.", "I can be of use to you.", "You want me working for you, and here's why...", "Give me an objective.", "How's the 401k over at the Syndicate?")
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(beacon_offer_answered), title = "Ominous Beacon", message = message, yes_text = offer, no_text = "Hang up", requires = PROMPT_ADJACENT)
+		open_request(src, /datum/prompt/choice, PROC_REF(beacon_offer_answered), answerer = user, title = "Ominous Beacon", question = message, choices = list(offer, "Hang up"), buttons = TRUE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	else
-		om_ask(user, /datum/om/prompt/choice, null, title = "Ominous Beacon", message = message, choices = list("Hang up"), buttons = TRUE)
+		open_request(src, /datum/prompt/choice, PROC_REF(beacon_hung_up), answerer = user, title = "Ominous Beacon", question = message, choices = list("Hang up"), buttons = TRUE, timeout = 0)
 	return TRUE
 
-/obj/machinery/syndicate_beacon/proc/beacon_offer_answered(datum/om/prompt/confirm/ask)
-	var/mob/user = ask.answerer
+/obj/machinery/syndicate_beacon/proc/beacon_offer_answered(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value == "Hang up")
+		return
+	var/mob/user = A.request.answerer
 	betraitor(user, user)
+
+/// The only button of the second window ends the call.
+/obj/machinery/syndicate_beacon/proc/beacon_hung_up(datum/act/request/A)
+	return
 
 /// Offers `M` (who must be `user`) a traitor role; the beacon's accept path.
 /obj/machinery/syndicate_beacon/proc/betraitor(mob/user, mob/M)

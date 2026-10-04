@@ -143,11 +143,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:
 /obj/machinery/button/doorbell/proc/interaction_rename(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(panel_open && istype(held, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/text, PROC_REF(doorbell_named), message = "Enter the name for \the [src].", title = name, default = initial(name), max_length = MAX_NAME_LEN, encode = FALSE, requires = PROMPT_ADJACENT)
+		open_request(src, /datum/prompt/text, PROC_REF(doorbell_named), answerer = user, question = "Enter the name for \the [src].", title = name, default = initial(name), max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/machinery/button/doorbell/proc/doorbell_named(datum/om/prompt/text/ask)
-	var/t = ask.text
+/obj/machinery/button/doorbell/proc/doorbell_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/t = A.answer.answer_value
 	t = sanitizeSafe(t, MAX_NAME_LEN)
 	if(t && panel_open)
 		name = t

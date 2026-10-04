@@ -99,12 +99,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/chemical_analyzer, "chem_analyzer{appearance_
 	tgui_interact(user) // Show last analysis
 	return TRUE
 
-DECLARE_UI(/obj/machinery/chemical_analyzer, "ChemAnalyzerPro")
+CAPABILITIES(/obj/machinery/chemical_analyzer)
+	interface("ChemAnalyzerPro")
+	ui_shape(scannedReagents = list_of(row()), beakerTotal = num(), beakerMax = num())
 
-UI_DATA_REPLACE(/obj/machinery/chemical_analyzer, "merge:ui_data_obj_machinery_chemical_analyzer{scannedReagents:list,beakerTotal:num,beakerMax:unknown}")
-
-/// The computed part of /obj/machinery/chemical_analyzer's window data (declared on its UI_DATA row).
-/obj/machinery/chemical_analyzer/proc/ui_data_obj_machinery_chemical_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/chemical_analyzer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/total_vol = 0

@@ -214,10 +214,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, TYPE_PROC_RE
 
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
-DECLARE_INTERACTIONS(/obj/structure/atmospheric_retention_field, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/atmospheric_retention_field)
+	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/structure/atmospheric_retention_field/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/atmospheric_retention_field/proc/interaction_hand(datum/act/op/A)
 	if(density)
 		visible_message("You touch the retention field, and it crackles faintly. Tingly!")
 	else

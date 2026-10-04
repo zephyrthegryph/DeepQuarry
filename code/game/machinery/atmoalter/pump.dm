@@ -23,7 +23,7 @@
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	climb()
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(pump_emp))))
-	interface("PortablePump")
+	interface("PortablePump", state = nameof(GLOB.tgui_physical_state))
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("direction", ui_act("direction"), then(PROC_REF(ui_act_direction)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
@@ -143,8 +143,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump, TYPE_
 	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
 
-
-DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/powered/pump, GLOB.tgui_physical_state)
 
 /obj/machinery/portable_atmospherics/powered/pump/ui_data(datum/act/eval/A)
 	var/list/data = list()

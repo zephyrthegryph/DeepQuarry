@@ -50,10 +50,8 @@ DECLARE_APPEARANCE(/obj/structure/dispenser, "appearance_phoron", list("1" = lis
 	name = "Use"
 	effect = /atom/proc/interaction_open_ui
 
-DECLARE_UI_STATE(/obj/structure/dispenser, GLOB.tgui_physical_state)
-
 CAPABILITIES(/obj/structure/dispenser)
-	interface("TankDispenser")
+	interface("TankDispenser", state = nameof(GLOB.tgui_physical_state))
 	op("phoron", ui_act("phoron"), then(PROC_REF(ui_act_phoron)))
 	op("oxygen", ui_act("oxygen"), then(PROC_REF(ui_act_oxygen)))
 

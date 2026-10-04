@@ -50,7 +50,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/space_heater, MACHINE_PIPELINE, "state")
 
 CAPABILITIES(/obj/machinery/space_heater)
 	climb()
-	interface("SpaceHeater")
+	interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state))
 	op("temp", ui_act("temp", arg("newtemp", num())), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_temp)))
 	op("cellremove", ui_act("cellremove"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellremove)))
 	op("cellinstall", ui_act("cellinstall"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellinstall)))
@@ -174,8 +174,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")),
 			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
 	return
-
-DECLARE_UI_STATE(/obj/machinery/space_heater, GLOB.tgui_physical_state)
 
 /obj/machinery/space_heater/tgui_status(mob/user)
 	if(!panel_open)

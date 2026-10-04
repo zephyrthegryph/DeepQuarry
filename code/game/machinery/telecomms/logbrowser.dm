@@ -19,10 +19,7 @@
 
 	req_access = list(ACCESS_TCOMSAT)
 
-UI_DATA_REPLACE(/obj/machinery/computer/telecomms/server, "universal_translate:num", "network", "temp:text", "merge:ui_data_obj_machinery_computer_telecomms_server{servers:list,selectedServer:list}")
-
-/// The computed part of /obj/machinery/computer/telecomms/server's window data (declared on its UI_DATA row).
-/obj/machinery/computer/telecomms/server/proc/ui_data_obj_machinery_computer_telecomms_server(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/telecomms/server/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 
@@ -62,6 +59,9 @@ UI_DATA_REPLACE(/obj/machinery/computer/telecomms/server, "universal_translate:n
 
 		data["selectedServer"]["logs"] = logs
 
+	data["universal_translate"] = universal_translate
+	data["network"] = network
+	data["temp"] = temp
 	return data
 
 /obj/machinery/computer/telecomms/server/declare_interactions(list/into)
@@ -82,35 +82,39 @@ UI_DATA_REPLACE(/obj/machinery/computer/telecomms/server, "universal_translate:n
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/telecomms/server, "TelecommsLogBrowser")
+CAPABILITIES(/obj/machinery/computer/telecomms/server)
+	interface("TelecommsLogBrowser")
+	op("view", ui_act("view", arg("id", schema_text(4096))), then(PROC_REF(ui_act_view)))
+	op("mainmenu", ui_act("mainmenu"), then(PROC_REF(ui_act_mainmenu)))
+	op("release", ui_act("release"), then(PROC_REF(ui_act_release)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("delete", ui_act("delete", arg("id", num())), then(PROC_REF(ui_act_delete)))
+	op("network", ui_act("network"), then(PROC_REF(ui_act_network)))
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	emag(then(PROC_REF(on_emag)))
 
-/obj/machinery/computer/telecomms/server/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
+/obj/machinery/computer/telecomms/server/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/telecomms/server, "view", ui_act_view, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_view)
+/obj/machinery/computer/telecomms/server/proc/ui_act_view(datum/act/op/A, raw_id)
 	for(var/obj/machinery/telecomms/T in servers)
-		if(T.id == params["id"])
+		if(T.id == raw_id)
 			rel_set(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer), T)
 			break
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/server, "mainmenu", ui_act_mainmenu)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_mainmenu)
+/obj/machinery/computer/telecomms/server/proc/ui_act_mainmenu(datum/act/op/A)
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/server, "release", ui_act_release)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_release)
+/obj/machinery/computer/telecomms/server/proc/ui_act_release(datum/act/op/A)
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::servers))
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/server, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_scan)
+/obj/machinery/computer/telecomms/server/proc/ui_act_scan(datum/act/op/A)
 	if(length(servers) > 0)
 		set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
 		return TRUE
@@ -125,14 +129,14 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_scan)
 		set_temp("[length(servers)] SERVERS PROBED & BUFFERED", "good")
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/server, "delete", ui_act_delete, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_delete)
-	if(!allowed(ui.user) && !emagged)
-		to_chat(ui.user, span_warning("ACCESS DENIED."))
+/obj/machinery/computer/telecomms/server/proc/ui_act_delete(datum/act/op/A, id)
+	var/mob/user = A.actor
+	if(!allowed(user) && !emagged)
+		to_chat(user, span_warning("ACCESS DENIED."))
 		return
 
 	if(SelectedServer())
-		var/idx = params["id"]
+		var/idx = id
 		if(!idx || idx < 1 || idx > length(SelectedServer().log_entries))
 			return
 		var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer().log_entries, idx)
@@ -142,19 +146,19 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_delete)
 		set_temp("FAILED: NO SELECTED MACHINE", "bad")
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/server, "network", ui_act_network)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_network)
-	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
+/obj/machinery/computer/telecomms/server/proc/ui_act_network(datum/act/op/A)
+	open_request(src, /datum/prompt/text, PROC_REF(network_entered), answerer = A.actor, title = "Comm Monitor", question = "Which network do you want to view?", default = network, max_len = 15, ask_flags = ASK_CAPABLE, timeout = 0)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/server, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_cleartemp)
+/obj/machinery/computer/telecomms/server/proc/ui_act_cleartemp(datum/act/op/A)
 	temp = null
 	. = TRUE
 
-/obj/machinery/computer/telecomms/server/proc/network_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/newnet = ask.text
+/obj/machinery/computer/telecomms/server/proc/network_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/newnet = A.answer.answer_value
 	SStgui.update_uis(src)
 	if(newnet && ((user in range(1, src)) || issilicon(user)))
 		if(length(newnet) > 15)
@@ -166,12 +170,11 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_cleartemp)
 
 	. = TRUE
 
-DECLARE_EMAG(/obj/machinery/computer/telecomms/server, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/telecomms/server/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/telecomms/server/proc/on_emag(datum/act/op/A)
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	set_emagged(1)
-	to_chat(user, span_notice("You you disable the security protocols"))
-	return 1
+	to_chat(A.actor, span_notice("You you disable the security protocols"))
+	return OP_OK
 
 /obj/machinery/computer/telecomms/server/proc/set_temp(text, color = "average")
 	temp = list("color" = color, "text" = text)

@@ -245,19 +245,23 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 		return
 
 	if(avatar())
-		om_ask(avatar(), /datum/om/prompt/confirm/leave_vr, PROC_REF(perform_exit))
+		ask_leave_vr(PROC_REF(perform_exit_confirmed))
 		return
 
 	perform_exit()
 
-/// The avatar is asked to leave. Re-checked on the answer: they are still this pod's avatar.
-/datum/om/prompt/confirm/leave_vr
-	title = "Leave VR?"
-	message = "Someone wants to remove you from virtual reality. Do you want to leave?"
+/// The avatar is asked to leave; `handler` runs on a yes.
+/obj/machinery/vr_sleeper/proc/ask_leave_vr(handler)
+	open_request(src, /datum/prompt/yes_no, handler, valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Leave VR?", question = "Someone wants to remove you from virtual reality. Do you want to leave?", timeout = 0)
 
-/datum/om/prompt/confirm/leave_vr/valid()
-	var/obj/machinery/vr_sleeper/pod = subject
-	return pod.avatar() == answerer ? null : "not the avatar"
+/// Re-checked on the answer: they are still this pod's avatar.
+/obj/machinery/vr_sleeper/proc/asked_is_avatar(datum/request/R)
+	return avatar() == R.answerer
+
+/obj/machinery/vr_sleeper/proc/perform_exit_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	perform_exit()
 
 //The actual bulk of the exit code.
 /obj/machinery/vr_sleeper/proc/perform_exit()
@@ -320,31 +324,39 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	var/list/vr_landmarks = list()
 	for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		vr_landmarks += sloc.name
-	om_flow_start(/datum/om/flow/vr_choose_avatar, occupant, src, landmarks = vr_landmarks)
+	open_request(src, /datum/prompt/choice, PROC_REF(location_chosen), valid = PROC_REF(occupant_inside), answerer = occupant, title = "Spawn location", question = "Please select a location to spawn your avatar at:", choices = vr_landmarks, timeout = 0)
 
-/// Spawn location, then "as a creature?", then which creature. The occupant stays in the pod throughout.
-/datum/om/flow/vr_choose_avatar
-	requires = list(/datum/om/check/inside_target)
-	var/list/landmarks
+/// Re-checked on every answer of the avatar choice: the asked is still the one inside the pod.
+/obj/machinery/vr_sleeper/proc/occupant_inside(datum/request/R)
+	return slot_item(OCCUPANT_SLOT_VR_POD) == R.answerer
+
+/// Which creature to be: the spawn location is kept on the question.
+/datum/prompt/yes_no/vr_avatar_mob
 	var/location
 
-/datum/om/flow/vr_choose_avatar/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(location_chosen), choices = landmarks, title = "Spawn location", message = "Please select a location to spawn your avatar at:")
+/datum/prompt/choice/vr_avatar_creature
+	var/location
 
-/datum/om/flow/vr_choose_avatar/proc/location_chosen(datum/om/prompt/choice/ask)
-	location = ask.choice
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(as_mob_answered), title = "Join as a mob?", message = "Would you like to play as a different creature?", answer_on_no = TRUE)
-
-/datum/om/flow/vr_choose_avatar/proc/as_mob_answered(datum/om/prompt/confirm/ask)
-	if(ask.yes)
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(creature_chosen), choices = GLOB.vr_mob_tf_options, title = "Mob list", message = "Please select a creature:")
+/// Spawn location, then "as a creature?", then which creature. The occupant stays in the pod throughout.
+/obj/machinery/vr_sleeper/proc/location_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/obj/machinery/vr_sleeper/pod = target
-	pod.vr_avatar_chosen(actor, location, null)
+	open_request(src, /datum/prompt/yes_no/vr_avatar_mob, PROC_REF(as_mob_answered), valid = PROC_REF(occupant_inside), answerer = A.request.answerer, title = "Join as a mob?", question = "Would you like to play as a different creature?", location = A.answer.answer_value, timeout = 0)
 
-/datum/om/flow/vr_choose_avatar/proc/creature_chosen(datum/om/prompt/choice/ask)
-	var/obj/machinery/vr_sleeper/pod = target
-	pod.vr_avatar_chosen(actor, location, GLOB.vr_mob_tf_options[ask.choice])
+/obj/machinery/vr_sleeper/proc/as_mob_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/yes_no/vr_avatar_mob/R = A.request
+	if(A.answer.answer_value)
+		open_request(src, /datum/prompt/choice/vr_avatar_creature, PROC_REF(creature_chosen), valid = PROC_REF(occupant_inside), answerer = R.answerer, title = "Mob list", question = "Please select a creature:", choices = GLOB.vr_mob_tf_options, location = R.location, timeout = 0)
+		return
+	vr_avatar_chosen(R.answerer, R.location, null)
+
+/obj/machinery/vr_sleeper/proc/creature_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/vr_avatar_creature/R = A.request
+	vr_avatar_chosen(R.answerer, R.location, GLOB.vr_mob_tf_options[A.answer.answer_value])
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_chosen(mob/living/carbon/human/occupant, S, tf)
 	if(avatar())
@@ -395,21 +407,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	avatar().status_at_least(EFFECT_SLEEPING, 1)
 
 	// Prompt for username after they've enterred the body.
-	om_ask(avatar(), /datum/om/prompt/text/vr_avatar_name, PROC_REF(vr_avatar_named), message = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?")
+	open_request(src, /datum/prompt/text, PROC_REF(vr_avatar_named), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 
-/// Naming a pod's avatar. Re-checked on the answer: the answerer is still the pod's avatar.
-/datum/om/prompt/text/vr_avatar_name
-	title = "Name change"
-	max_length = MAX_NAME_LEN
-
-/datum/om/prompt/text/vr_avatar_name/valid()
-	var/obj/machinery/vr_sleeper/pod = subject
-	return (istype(pod) && pod.avatar() == answerer) ? null : "not the avatar"
-
-/obj/machinery/vr_sleeper/proc/vr_avatar_named(datum/om/prompt/text/vr_avatar_name/ask)
-	if(ask.text)
-		avatar().real_name = ask.text
-		avatar().name = ask.text
+/obj/machinery/vr_sleeper/proc/vr_avatar_named(datum/act/request/A)
+	if(A.answer && A.answer.answer_value)
+		avatar().real_name = A.answer.answer_value
+		avatar().name = A.answer.answer_value
 
 /obj/machinery/vr_sleeper/proc/vr_reenter(mob/living/carbon/human/occupant)
 	// If TFed, revert TF. Easier than coding mind transfer stuff for edge cases.

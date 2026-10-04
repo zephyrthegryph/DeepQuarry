@@ -59,12 +59,14 @@ DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, \
 	for(var/mob/living/R in oview(user.loc,1))
 		receivers += R
 
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(present_receiver_chosen), message = "Choose who to give a present to.", title = "Give Present", choices = mobs_in_view(1, user), requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(present_receiver_chosen), answerer = user, question = "Choose who to give a present to.", title = "Give Present", choices = mobs_in_view(1, user), ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/structure/event/santa_sack/proc/present_receiver_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/mob/living/T = ask.choice
+/obj/structure/event/santa_sack/proc/present_receiver_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/mob/living/T = A.answer.answer_value
 	if(!T.ckey)
 		return
 

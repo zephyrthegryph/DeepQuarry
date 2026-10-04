@@ -124,12 +124,14 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 /obj/machinery/computer/teleporter/proc/interaction_set_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!operable() || !isliving(user))
 		return TRUE
-	om_ask(user, /datum/om/prompt/text, PROC_REF(teleporter_id_entered), title = "Set teleporter ID", message = "ID Tag:", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/text, PROC_REF(teleporter_id_entered), answerer = user, title = "Set teleporter ID", question = "ID Tag:", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/machinery/computer/teleporter/proc/teleporter_id_entered(datum/om/prompt/text/ask)
-	if(ask.text)
-		id = ask.text
+/obj/machinery/computer/teleporter/proc/teleporter_id_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		id = A.answer.answer_value
 	return TRUE
 
 //////

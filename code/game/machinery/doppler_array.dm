@@ -26,11 +26,13 @@
 	observe(OM_WORLD, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
-DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
+CAPABILITIES(/obj/machinery/doppler_array)
+	interface("DopplerArray")
+	ui_shape(explosions = list_of(row(index = int(), time = schema_text(), x = int(), y = int(), z = int(), devastation_range = num(), heavy_impact_range = num(), light_impact_range = num(), seconds_taken = num())))
 
-/obj/machinery/doppler_array/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/doppler_array/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["explosions"] = length(detected_explosions) ? detected_explosions : null;
+	data["explosions"] = length(detected_explosions) ? detected_explosions : null
 	return data
 
 /obj/machinery/doppler_array/proc/sense_explosion(datum/act/notice/A)
@@ -68,7 +70,7 @@ DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
 			"seconds_taken" = seconds_taken,
 		)
 	)
-	update_static_data_for_all_viewers()
+	SStgui.update_uis(src)
 
 /obj/machinery/doppler_array/power_change()
 	. = ..()

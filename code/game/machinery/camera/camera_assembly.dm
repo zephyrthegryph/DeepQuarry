@@ -107,76 +107,78 @@ CAPABILITIES(/obj/item/camera_assembly)
 	if(state != 3)
 		return FALSE
 	playsound(src, tool.usesound, 50, TRUE)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(camera_networks_entered), message = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", default = camera_network ? camera_network : NETWORK_DEFAULT, title = "Set Network", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/text, PROC_REF(camera_networks_entered), answerer = user, title = "Set Network", question = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", default = camera_network ? camera_network : NETWORK_DEFAULT, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/camera_assembly/proc/camera_networks_entered(datum/om/prompt/text/ask)
-	if(!ask.text)
-		to_chat(ask.answerer, "No input found please hang up and try your call again.")
+/obj/item/camera_assembly/proc/camera_networks_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/list/tempnetwork = splittext(ask.text, ",")
+	var/mob/user = A.request.answerer
+	if(!A.answer.answer_value)
+		to_chat(user, "No input found please hang up and try your call again.")
+		return
+	var/list/tempnetwork = splittext(A.answer.answer_value, ",")
 	if(tempnetwork.len < 1)
-		to_chat(ask.answerer, "No network found please hang up and try your call again.")
+		to_chat(user, "No network found please hang up and try your call again.")
 		return
 	var/area/camera_area = get_area(src)
 	var/temptag = "[sanitize(camera_area.name)] ([rand(1, 999)])"
-	om_ask(ask.answerer, /datum/om/prompt/text/camera_name, PROC_REF(camera_configured), default = camera_name ? camera_name : temptag, networks = tempnetwork)
+	open_request(src, /datum/prompt/text/camera_name, PROC_REF(camera_configured), valid = PROC_REF(camera_state_ok), answerer = user, title = "Set Camera Name", question = "How would you like to name the camera?", default = camera_name ? camera_name : temptag, max_len = MAX_NAME_LEN, encode = FALSE, networks = tempnetwork, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/datum/om/prompt/text/camera_name
-	title = "Set Camera Name"
-	message = "How would you like to name the camera?"
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	requires = PROMPT_ADJACENT
+/// The camera's naming question: the networks chosen so far are kept on it.
+/datum/prompt/text/camera_name
 	var/list/networks
 
-/datum/om/prompt/text/camera_name/valid()
-	var/obj/item/camera_assembly/A = subject
-	return A.state == 3 ? null : "wrong state"
+/// Re-checked on the answer: the assembly is still wired and not yet closed up.
+/obj/item/camera_assembly/proc/camera_state_ok(datum/request/R)
+	return state == 3
 
-/obj/item/camera_assembly/proc/camera_configured(datum/om/prompt/text/camera_name/ask)
+/obj/item/camera_assembly/proc/camera_configured(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/camera_name/R = A.request
 	state = 4
 	var/obj/machinery/camera/C = new(loc)
 	forceMove(C)
 	rel_set(C, nameof(C.assembly), src)
 	C.auto_turn()
-	C.replace_networks(uniqueList(ask.networks))
-	C.c_tag = sanitizeSafe(ask.text, MAX_NAME_LEN)
-	ask_camera_direction(ask.answerer, C, 5)
+	C.replace_networks(uniqueList(R.networks))
+	C.c_tag = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	ask_camera_direction(R.answerer, C, 5)
 
 /// Turns the new camera until the builder is happy, with up to `chances` more tries.
 /obj/item/camera_assembly/proc/ask_camera_direction(mob/user, obj/machinery/camera/C, chances)
-	om_ask(user, /datum/om/prompt/choice/camera_direction, PROC_REF(camera_direction_chosen), subject = C, camera = C, chances = chances)
+	open_request(src, /datum/prompt/choice/camera_direction, PROC_REF(camera_direction_chosen), answerer = user, title = "Assembling Camera", question = "Direction?", choices = list("NORTH", "EAST", "SOUTH", "WEST", "LEAVE IT"), camera = C, chances = chances, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/datum/om/prompt/choice/camera_direction
-	title = "Assembling Camera"
-	message = "Direction?"
-	choices = list("NORTH", "EAST", "SOUTH", "WEST", "LEAVE IT")
-	requires = PROMPT_ADJACENT
+/datum/prompt/choice/camera_direction
 	var/obj/machinery/camera/camera
 	var/chances = 0
 
-/obj/item/camera_assembly/proc/camera_direction_chosen(datum/om/prompt/choice/camera_direction/ask)
-	var/obj/machinery/camera/C = ask.camera
-	if(ask.choice != "LEAVE IT")
-		C.dir = text2dir(ask.choice)
-	if(ask.chances > 0)
-		om_ask(ask.answerer, /datum/om/prompt/confirm/camera_direction_ok, PROC_REF(camera_direction_confirmed), subject = C, camera = C, chances = ask.chances)
+CAPABILITIES(/datum/prompt/choice/camera_direction)
+	ref_one(nameof(camera), /obj/machinery/camera)
 
-/datum/om/prompt/confirm/camera_direction_ok
-	title = "Confirmation"
-	answer_on_no = TRUE
-	var/obj/machinery/camera/camera
-	var/chances = 0
-
-/datum/om/prompt/confirm/camera_direction_ok/prepare()
-	message = "Is this what you want? Chances Remaining: [chances]"
-	return TRUE
-
-/obj/item/camera_assembly/proc/camera_direction_confirmed(datum/om/prompt/confirm/camera_direction_ok/ask)
-	if(ask.yes)
+/obj/item/camera_assembly/proc/camera_direction_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	ask_camera_direction(ask.answerer, ask.camera, ask.chances - 1)
+	var/datum/prompt/choice/camera_direction/R = A.request
+	var/obj/machinery/camera/C = R.camera
+	if(A.answer.answer_value != "LEAVE IT")
+		C.dir = text2dir(A.answer.answer_value)
+	if(R.chances > 0)
+		open_request(src, /datum/prompt/yes_no/camera_direction_ok, PROC_REF(camera_direction_confirmed), answerer = R.answerer, title = "Confirmation", question = "Is this what you want? Chances Remaining: [R.chances]", camera = C, chances = R.chances, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+
+/datum/prompt/yes_no/camera_direction_ok
+	var/obj/machinery/camera/camera
+	var/chances = 0
+
+CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok)
+	ref_one(nameof(camera), /obj/machinery/camera)
+
+/obj/item/camera_assembly/proc/camera_direction_confirmed(datum/act/request/A)
+	var/datum/prompt/yes_no/camera_direction_ok/R = A.request
+	if(!A.answer || A.answer.answer_value)
+		return
+	ask_camera_direction(R.answerer, R.camera, R.chances - 1)
 
 DECLARE_APPEARANCE(/obj/item/camera_assembly, "anchored", list("1" = list(APPEARANCE_ICON_STATE = "camera1"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "cameracase")))
 

@@ -153,13 +153,15 @@ CAPABILITIES(/obj/machinery/organ_printer)
 		return TRUE
 
 	if(container)
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(bioprinter_menu_answered), title = "Bioprinter Menu", message = "What do you want to do?", yes_text = "Print Limbs", no_text = "Cancel", requires = PROMPT_ADJACENT)
+		open_request(src, /datum/prompt/choice, PROC_REF(bioprinter_menu_answered), answerer = user, title = "Bioprinter Menu", question = "What do you want to do?", choices = list("Print Limbs", "Cancel"), buttons = TRUE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	else
 		to_chat(user, span_warning("\The [src] can't operate without a reagent reservoir!"))
 	return TRUE
 
-/obj/machinery/organ_printer/proc/bioprinter_menu_answered(datum/om/prompt/confirm/ask)
-	printing_menu(ask.answerer)
+/obj/machinery/organ_printer/proc/bioprinter_menu_answered(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Print Limbs")
+		return
+	printing_menu(A.request.answerer)
 
 /obj/machinery/organ_printer/proc/printing_menu(mob/user)
 	var/list/possible_list = list()
@@ -177,22 +179,18 @@ CAPABILITIES(/obj/machinery/organ_printer)
 		possible_list |= engineered_products
 	// end
 
-	om_ask(user, /datum/om/prompt/choice/bioprinter_print, PROC_REF(print_choice_made), choices = possible_list)
+	open_request(src, /datum/prompt/choice, PROC_REF(print_choice_made), valid = PROC_REF(printer_ready), answerer = user, title = "Print Choice", question = "What would you like to print?", choices = possible_list, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/datum/om/prompt/choice/bioprinter_print
-	title = "Print Choice"
-	message = "What would you like to print?"
-	requires = PROMPT_ADJACENT
+/// Re-checked on the answer: the printer is idle and works.
+/obj/machinery/organ_printer/proc/printer_ready(datum/request/R)
+	return !printing && operable()
 
-/datum/om/prompt/choice/bioprinter_print/valid()
-	var/obj/machinery/organ_printer/P = subject
-	if(P.printing || (!P.operable()))
-		return "busy"
-	return null
-
-/obj/machinery/organ_printer/proc/print_choice_made(datum/om/prompt/choice/bioprinter_print/ask)
-	var/list/possible_list = ask.choices
-	var/choice = ask.choice
+/obj/machinery/organ_printer/proc/print_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/R = A.request
+	var/list/possible_list = R.choices
+	var/choice = A.answer.answer_value
 
 	if(!can_print(choice, possible_list[choice][2]))
 		return

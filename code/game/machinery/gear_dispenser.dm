@@ -201,30 +201,21 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 			dispenser_flags &= ~GD_BUSY
 			return TRUE
 
-		om_ask(user, /datum/om/prompt/choice/gear_dispense, PROC_REF(gear_chosen), choices = gear_list)
+		open_request(src, /datum/prompt/choice, PROC_REF(gear_chosen), answerer = user, title = "Equipment Dispenser", question = "Select equipment to dispense.", choices = gear_list, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	else
 		dispense(one_setting,user)
 	return TRUE
 
 /// The dispenser is busy while the list is open; a cancel or a failed re-check frees it.
-/datum/om/prompt/choice/gear_dispense
-	title = "Equipment Dispenser"
-	message = "Select equipment to dispense."
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/choice/gear_dispense/cancelled()
-	var/obj/machinery/gear_dispenser/D = subject
-	D?.dispense_cancelled()
-
-/datum/om/prompt/choice/gear_dispense/refused(reason)
-	var/obj/machinery/gear_dispenser/D = subject
-	D?.dispense_cancelled()
-
 /obj/machinery/gear_dispenser/proc/dispense_cancelled()
 	dispenser_flags &= ~GD_BUSY
 
-/obj/machinery/gear_dispenser/proc/gear_chosen(datum/om/prompt/choice/gear_dispense/ask)
-	dispense(ask.choices[ask.choice], ask.answerer)
+/obj/machinery/gear_dispenser/proc/gear_chosen(datum/act/request/A)
+	if(!A.answer)
+		dispense_cancelled()
+		return
+	var/datum/prompt/choice/R = A.request
+	dispense(R.choices[A.answer.answer_value], R.answerer)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]

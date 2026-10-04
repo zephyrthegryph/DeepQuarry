@@ -84,34 +84,20 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 	// User requests service
 	act_message(user, src, MSG_SELF("You wake %T%."), MSG_OTHERS(span_bold("%U%") + " wakes %T%."))
-	om_ask(user, /datum/om/prompt/choice/kiosk_service, PROC_REF(service_chosen), title = "[src]")
+	open_request(src, /datum/prompt/choice, PROC_REF(service_chosen), valid = PROC_REF(kiosk_ready), answerer = user, title = "[src]", question = "What service would you like?", choices = list("Health Scan", "Backup Scan", "Cancel"), buttons = TRUE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 10 SECONDS)
 	return TRUE
 
+/// Re-checked on the answer: the kiosk still works and its panel is shut.
+/obj/machinery/medical_kiosk/proc/kiosk_ready(datum/request/R)
+	return operable() && !panel_open
+
 /// A cancel, a timeout or a failed re-check (moved away, kiosk broken or opened) suspends the kiosk.
-/datum/om/prompt/choice/kiosk_service
-	message = "What service would you like?"
-	choices = list("Health Scan", "Backup Scan", "Cancel")
-	buttons = TRUE
-	timeout = 10 SECONDS
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/choice/kiosk_service/valid()
-	var/obj/machinery/medical_kiosk/K = subject
-	if(choice == "Cancel" || !K.operable() || K.panel_open)
-		return "cancelled"
-	return null
-
-/datum/om/prompt/choice/kiosk_service/cancelled()
-	var/obj/machinery/medical_kiosk/K = subject
-	K?.suspend()
-
-/datum/om/prompt/choice/kiosk_service/refused(reason)
-	var/obj/machinery/medical_kiosk/K = subject
-	K?.suspend()
-
-/obj/machinery/medical_kiosk/proc/service_chosen(datum/om/prompt/choice/kiosk_service/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
+/obj/machinery/medical_kiosk/proc/service_chosen(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value == "Cancel")
+		suspend()
+		return
+	var/mob/living/user = A.request.answerer
+	var/choice = A.answer.answer_value
 
 	// Service begins, delay
 	act_message(src, user, others = span_bold("%U%") + " scans %T% thoroughly!")
