@@ -128,10 +128,12 @@
 	icon_state = "face"
 	var/mob/living/homunculus // relation: the homunculus we summoned
 
-DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/glamour_face)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/glamour_face/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/glamour_face/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!homunculus)
 		var/list/targets = list()
 		for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))

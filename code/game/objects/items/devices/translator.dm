@@ -28,9 +28,11 @@
 		icon_state = "[initial(icon_state)]1"
 	to_chat(user, span_notice("You enable \the [src], translating into [langset().name]."))
 
-DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/universal_translator)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
-/obj/item/universal_translator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/universal_translator/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!listening) //Turning ON
 		om_ask(user, /datum/om/prompt/choice, PROC_REF(language_chosen), title = "Language Selection", message = "Translate to which of your languages?", choices = user.languages, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	else	//Turning OFF

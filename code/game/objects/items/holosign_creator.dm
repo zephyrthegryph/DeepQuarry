@@ -45,10 +45,12 @@
 		else
 			to_chat(user, span_notice("[src] is projecting at max capacity!"))
 
-DECLARE_INTERACTIONS(/obj/item/holosign_creator, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/holosign_creator)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/holosign_creator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/holosign_creator/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(length(signs))
 		for(var/obj/structure/holosign/H as anything in signs.Copy())
 			consume(H, user)

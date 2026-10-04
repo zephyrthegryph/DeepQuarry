@@ -47,10 +47,12 @@ CAPABILITIES(/obj/item/antag_spawner)
 	icon_state = "oldshieldoff"
 	ghost_query_type = /datum/ghost_query/apprentice
 
-DECLARE_INTERACTIONS(/obj/item/antag_spawner/technomancer_apprentice, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/antag_spawner/technomancer_apprentice)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/antag_spawner/technomancer_apprentice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/antag_spawner/technomancer_apprentice/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Teleporter attempting to lock on to your apprentice."))
 	request_player()
 	return TRUE
@@ -96,10 +98,12 @@ DECLARE_INTERACTIONS(/obj/item/antag_spawner/technomancer_apprentice, INTERACT_U
 	ghost_query_type = /datum/ghost_query/syndicate_drone
 	var/drone_type = null
 
-DECLARE_INTERACTIONS(/obj/item/antag_spawner/syndicate_drone, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/antag_spawner/syndicate_drone)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/antag_spawner/syndicate_drone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/antag_spawner/syndicate_drone/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Teleporter attempting to lock on to an available unit."))
 	request_player()
 	return TRUE

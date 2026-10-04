@@ -21,10 +21,11 @@
 OM_FIELD(/obj/item/uv_light, on, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/uv_light, PERIODIC_SLOW, "on")
 
-DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/uv_light)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/uv_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/uv_light/proc/interaction_self(datum/act/op/A)
 	set_on(!on)
 	if(on)
 		set_light(range, 2, "#007fff")

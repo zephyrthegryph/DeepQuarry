@@ -17,6 +17,7 @@
 
 CAPABILITIES(/obj/item/instrument)
 	owns_one(nameof(song), /datum/song/handheld)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /obj/item/instrument/Initialize(mapload)
 	. = ..()
@@ -34,10 +35,9 @@ CAPABILITIES(/obj/item/instrument)
 		return FALSE
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/instrument/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/instrument/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 

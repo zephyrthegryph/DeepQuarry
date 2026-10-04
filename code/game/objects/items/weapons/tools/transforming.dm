@@ -8,6 +8,7 @@
 
 CAPABILITIES(/obj/item/tool/transforming)
 	owns_one(nameof(welder), /obj/item/weldingtool)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /obj/item/tool/transforming/Initialize(mapload, no_counterpart = TRUE)
 	. = ..()
@@ -19,10 +20,9 @@ CAPABILITIES(/obj/item/tool/transforming)
 /obj/item/tool/transforming/get_welder()
 	return welder
 
-DECLARE_INTERACTIONS(/obj/item/tool/transforming, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/tool/transforming/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tool/transforming/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!length(possible_tooltypes) || length(possible_tooltypes) < 2)
 		return TRUE
 	if(current_tooltype == length(possible_tooltypes))

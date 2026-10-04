@@ -25,10 +25,12 @@
 	. = ..()
 	. += "[uses] uses remaining."
 
-DECLARE_INTERACTIONS(/obj/item/disposable_teleporter, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/disposable_teleporter)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/disposable_teleporter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/disposable_teleporter/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!uses)
 		to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
 		return TRUE

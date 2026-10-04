@@ -29,10 +29,12 @@ UI_DATA(/obj/item/destTagger, "currTag:num", "merge:ui_data_obj_item_destTagger{
 
 	return data
 
-DECLARE_INTERACTIONS(/obj/item/destTagger, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/destTagger)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/destTagger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/destTagger/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

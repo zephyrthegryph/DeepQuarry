@@ -427,10 +427,12 @@ REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 		registry_join(REGISTRY_MAPPING_BEACONS, src)
 		icon_state = initial(icon_state) + (in_list ? "_on" : "")
 
-DECLARE_INTERACTIONS(/obj/item/holomap_beacon, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/holomap_beacon)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/holomap_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/holomap_beacon/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!in_list)
 		in_list = TRUE
 		registry_join(REGISTRY_MAPPING_BEACONS, src)

@@ -183,10 +183,11 @@
 
 //Called when the leash is used in hand
 //Tugs the pet closer
-DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/leash)
+	op("self", in_hand(), label("Tug"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/leash/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/leash/proc/interaction_self(datum/act/op/A)
 	var/mob/living/leash_pet = src?.leash_pet()
 	var/mob/living/leash_master = src?.leash_master()
 	if(!leash_pet || !leash_master) //No pet, no tug.

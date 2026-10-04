@@ -37,12 +37,13 @@
 
 	refresh_parts()
 
-DECLARE_INTERACTIONS(/obj/item/extrapolator, \
-	INTERACT_INSERT(/obj/item/stock_parts/scanning_module, PROC_REF(interaction_item), "Install"), \
-	INTERACT_USE("Toggle mode", PROC_REF(interaction_self)), \
-)
+CAPABILITIES(/obj/item/extrapolator)
+	op("item", item(/obj/item/stock_parts/scanning_module), label("Install"), then(PROC_REF(interaction_item)))
+	op("self", in_hand(), label("Toggle mode"), then(PROC_REF(interaction_self)))
 
-/obj/item/extrapolator/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/item/extrapolator/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	if(!scanner)
 		if(!move_into(src, nameof(src.scanner), item, user))
 			return TRUE
@@ -62,7 +63,8 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	playsound(src, tool.usesound, 50, 1)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/extrapolator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/extrapolator/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_MACHINES_CLICK)
 	if(scan)
 		icon_state = "extrapolator_sample"

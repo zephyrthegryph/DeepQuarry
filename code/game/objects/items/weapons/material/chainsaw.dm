@@ -61,10 +61,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/chainsaw, PERIODIC_SLOW, "on")
 	set_on(FALSE)
 	update_icon()
 
-DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/chainsaw)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/chainsaw/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/chainsaw/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!on)
 		turnOn(user)
 	else

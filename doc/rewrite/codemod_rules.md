@@ -156,4 +156,32 @@ Residue codes: `ui_options`, `ui_state`, `ui_forms` (a form outside the list), `
 
 ## DECLARE_INTERACTIONS -> op()
 
-(Written with its codemod.)
+Unit: one host type `T` with one `DECLARE_INTERACTIONS(T, specs...)`.
+
+| Old spec (what the old resolver did: code/datums/interactions/compact.dm) | New entry in `CAPABILITIES(T)` |
+|---|---|
+| `INTERACT_USE(name, PROC_REF(h))` (self-use of the held item; the return is ignored, base requirement `REQ_SELF_USE_REACH`) | `op("key", in_hand(), label(name), then(PROC_REF(h)))` |
+| `INTERACT_HAND(name, PROC_REF(h))` (an empty hand; base requirement `REQ_INTERACTION_REACH`) | `op("key", hand(), label(name), then(PROC_REF(h)))` |
+| `INTERACT_INSERT(/held/type, PROC_REF(h), name)` (an item of that type) | `op("key", item(/held/type), label(name), then(PROC_REF(h)))` |
+| `INTERACT_ITEM(name, PROC_REF(h))` (any item) | `op("key", item(/obj/item), label(name), then(PROC_REF(h)))` |
+| a `null` name | no `label()` (the old name was derived from the proc name) |
+| handler `h(mob/a, obj/item/w, datum/interaction/i)` | `h(datum/act/op/A)`; `var/mob/a = A.actor` and `var/<w's type>/w = A.held` as the first body lines (after the leading settings) when used |
+
+The op key is the handler's name without `interaction_` (the whole name when that key is taken by another op anywhere in the tree). The ops are added to the type's
+`CAPABILITIES` block, or the block is made where the `DECLARE_INTERACTIONS` stood.
+
+Evidence: the roller and the roller rack (`6234356964`): `INTERACT_USE(null, PROC_REF(interaction_self))` -> `op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))` with the handler on `(datum/act/op/A)`,
+`var/mob/user = A.actor`, `return OP_OK`; `INTERACT_ITEM` -> `op("loose", item(/obj/item), label("Use"), ...)`; the touch -> `op("touch", hand(), label("Use"), ...)`. Departures on purpose: those conversions chose their own keys and labels and split one handler
+into several ops (a `when()` for each branch); the codemod never splits a handler, so a handler that branches stays a candidate only when it can always answer.
+
+Why the returns matter: an old HAND, INSERT or ITEM effect that returned falsy let the next candidate (or the type's default) have the input, and an op cannot decline once its handler runs. So these three convert only when the
+handler never returns anything but `TRUE` and ends with `return TRUE`; an `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` is the `passes()` part and stays residue.
+
+A type converts only when:
+- it is not in a hierarchy with a type that REPLACES what it inherits (a `DECLARE_INTERACTIONS` or a `get_interactions` / `declare_interactions` override that does not call `..()`): ops accumulate down the tree, so a replacement would stop meaning anything. `EXTEND_INTERACTIONS` only adds and never blocks;
+- every spec is one of the four kinds above with no requirement argument (`REQ_*`), a literal or `null` name, and `PROC_REF(h)` / `TYPE_PROC_REF(T, h)` as the effect;
+- each handler is defined once on `T` with three parameters, no related type defines the same name, and nothing else mentions it (a call, a `PROC_REF`, a `..()`);
+- the body does not use the third parameter, `INTERACTION_HANDLED_PASS`, `..()` or a local named `A`.
+
+Residue codes: `interaction_forms` (an `EXTEND_INTERACTIONS`, a `declare_interactions` override or a datum interaction type, a second row, a name or effect that is not a literal), `interaction_related`, `interaction_kind` (`INTERACT_HAND_UNGATED`, `INTERACT_ALT`, `INTERACT_SELF`, `INTERACT_VERB`,
+the `_AS`, `_HOSTILE`, `_PEACEFUL`, `_DEFAULT`, `INTERACT_SILICON`, `ROBOT`, `TK`, `OBSERVER` shapes), `requires`, `effect_expr`, `handler_shape`, `handler_shared`, `handler_returns`, `body_uses`, `key_clash`.

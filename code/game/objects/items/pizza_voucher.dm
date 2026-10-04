@@ -20,10 +20,12 @@
 	"WE ALWAYS DELIVER! WE ALWAYS DELIVER! WE ALWAYS DELIVER!")
 	desc = "A pocket-sized plastic slip with a button in the middle. \"[pick(descstrings)]\" is written on the back."
 
-DECLARE_INTERACTIONS(/obj/item/pizzavoucher, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/pizzavoucher)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/pizzavoucher/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pizzavoucher/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!spent)
 		act_message(user, src, others = span_notice("%U% presses a button on %T%!"))

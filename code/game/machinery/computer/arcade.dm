@@ -1029,10 +1029,12 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/orion_trail, PROC_REF(on_emag), null
 		else
 			. += span_notice("There's a little switch on the bottom. It's flipped up.")
 
-DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/orion_ship)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/orion_ship/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/orion_ship/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(active)
 		return TRUE
 

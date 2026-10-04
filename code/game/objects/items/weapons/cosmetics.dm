@@ -31,10 +31,12 @@
 	colour = pick("red","purple","jade","black")
 	name = "[colour] lipstick"
 
-DECLARE_INTERACTIONS(/obj/item/lipstick, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/lipstick)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/lipstick/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/lipstick/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You twist \the [src] [open ? "closed" : "open"]."))
 	open = !open
 	if(open)
@@ -84,10 +86,12 @@ DECLARE_INTERACTIONS(/obj/item/lipstick, INTERACT_USE(null, PROC_REF(interaction
 	icon = 'icons/obj/items.dmi'
 	icon_state = "purplecomb"
 
-DECLARE_INTERACTIONS(/obj/item/haircomb, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/haircomb)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/haircomb/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/haircomb/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	var/text = "person"
 	if(ishuman(user))
 		var/mob/living/carbon/human/U = user
@@ -114,10 +118,12 @@ DECLARE_INTERACTIONS(/obj/item/haircomb, INTERACT_USE(null, PROC_REF(interaction
 	var/datum/tgui_module/appearance_changer/mirror/coskit/M
 
 
-DECLARE_INTERACTIONS(/obj/item/makeover, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/makeover)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/makeover/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/makeover/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(ishuman(user))
 		to_chat(user, span_notice("You flip open \the [src] and begin to adjust your appearance."))
 		M.tgui_interact(user)

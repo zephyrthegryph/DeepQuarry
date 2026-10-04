@@ -843,10 +843,12 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 	. = ..()
 	. += rel_one(nameof(host), back = nameof(/mob/living/simple_mob/vore/overmap/stardog::control_node))
 
-DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/control_pod)
+	op("hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/structure/control_pod/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/control_pod/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!host)
 		set_up()
 		if(!host)

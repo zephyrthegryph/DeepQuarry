@@ -120,10 +120,12 @@ MSG_DEF_SELF(powder/not_flesh, "You have to be fleshy to snort the naughty drugs
 	item_state = "table_parts"
 	w_class = ITEMSIZE_HUGE
 
-DECLARE_INTERACTIONS(/obj/item/stolenpackage, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/stolenpackage)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/stolenpackage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stolenpackage/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	// Another way of doing this. Commented out because the other method is better for this application.
 	/*var/spawn_chance = rand(1,100)
 	switch(spawn_chance)
@@ -218,10 +220,12 @@ DECLARE_INTERACTIONS(/obj/item/stolenpackage, INTERACT_USE(null, PROC_REF(intera
 	icon = 'icons/obj/contraband_vr.dmi'
 	w_class = ITEMSIZE_NORMAL
 
-DECLARE_INTERACTIONS(/obj/item/miscdisc, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/miscdisc)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/miscdisc/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/miscdisc/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	to_chat(user, "As you hold the large disc in your open palm, fingers cusped around the edge, the crystal embedded in the item begins to vibrate. It lifts itself from the disc a few cenimetres, before beginning to glow with a bright red light. The glow lasts for a few seconds, before the crystal embeds itself back into the disc with a quick snap.")
 	return TRUE
 

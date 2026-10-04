@@ -207,10 +207,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/card_fluff, TYPE_PROC_REF(/atom, appearance_ov
 		else
 			. += image(base_icon, iconstate)
 
-DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/card_fluff)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/card_fluff/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card_fluff/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(customize_chosen), title = "Customize Card", message = "What element would you like to customize?", choices = list("Band","Stamp","Reset"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 

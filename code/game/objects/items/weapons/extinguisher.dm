@@ -66,10 +66,12 @@ DECLARE_REAGENTS(/obj/item/extinguisher/atmo, null, list(REAGENT_ID_FIREFOAM = 3
 	if(get_dist(user, src) == 0)
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
-DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/extinguisher)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/extinguisher/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/extinguisher/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	safety = !safety
 	icon_state = "[sprite_name][!safety]"
 	desc = "The safety is [safety ? "on" : "off"]."

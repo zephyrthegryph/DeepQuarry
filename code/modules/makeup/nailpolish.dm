@@ -28,10 +28,12 @@ CAPABILITIES(/obj/item/organ/external)
 	desc = "<font color='[colour]'>Nail polish,</font> " + initial(desc)
 	update_icon()
 
-DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/nailpolish)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/nailpolish/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/nailpolish/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	open = !open
 	to_chat(user, span_notice("You [open ? "open" : "close"] \the [src]."))
 	update_icon()
@@ -125,10 +127,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_ov
 	icon_state = "nailpolishremover"
 	var/open = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/nailpolish_remover)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/nailpolish_remover/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/nailpolish_remover/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	open = !open
 	to_chat(user, span_notice("You [open ? "open" : "close"] \the [src]."))
 	update_icon()

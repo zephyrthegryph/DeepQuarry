@@ -202,10 +202,12 @@ EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode",
 	if(istype(target,/obj/structure/table))
 		deploy_paper(user)
 
-DECLARE_INTERACTIONS(/obj/item/form_printer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/form_printer)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/form_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/form_printer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	deploy_paper(user)
 	return TRUE
 
@@ -534,10 +536,12 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	. += "It has [stored_walls] wall segment\s and [stored_doors] door segment\s stored."
 	. += "It is set to deploy [mode ? "doors" : "walls"]"
 
-DECLARE_INTERACTIONS(/obj/item/inflatable_dispenser, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/inflatable_dispenser)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/inflatable_dispenser/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/inflatable_dispenser/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	mode = !mode
 	to_chat(user, span_filter_notice("You set \the [src] to deploy [mode ? "doors" : "walls"]."))
 	return TRUE
@@ -619,10 +623,12 @@ DECLARE_INTERACTIONS(/obj/item/inflatable_dispenser, INTERACT_USE(null, PROC_REF
 	icon = 'icons/obj/integrated_electronics/electronic_setups.dmi'
 	icon_state = "setup_device_box"
 
-DECLARE_INTERACTIONS(/obj/item/robo_dice, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/robo_dice)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/robo_dice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/robo_dice/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/DI = 'icons/obj/dice.dmi'
 	var/dice_options = list(
 		"roll a custom die"	= image(icon = 'icons/obj/integrated_electronics/electronic_setups.dmi', icon_state = "setup_device_box"),

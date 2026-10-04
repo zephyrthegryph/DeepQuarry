@@ -28,10 +28,12 @@
 	else
 		icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
-DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/gift)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/gift/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gift/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!release_wrapper(user))
 		return TRUE
 	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)

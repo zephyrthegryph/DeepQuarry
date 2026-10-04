@@ -46,10 +46,12 @@ MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	EXPIRY_DECLARE(last_repopulation_time)
 	var/repopulation_delay = 600 //Anti spam.
 
-DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/ano_scanner)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/ano_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ano_scanner/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	interact(user)
 	return TRUE
 
@@ -114,6 +116,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 
 CAPABILITIES(/obj/item/depth_scanner)
 	owns_many(nameof(positive_locations))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /datum/depth_scan
 	var/time = ""
@@ -162,10 +165,9 @@ CAPABILITIES(/obj/item/depth_scanner)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 
-DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/depth_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/depth_scanner/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
@@ -286,10 +288,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
 			icon_state = "pinoff"
 
 
-DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(interaction_open)))
+CAPABILITIES(/obj/item/beacon_locator)
+	op("interaction_open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
 
 /// Old attack_self: open the interface.
-/obj/item/beacon_locator/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/beacon_locator/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

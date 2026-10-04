@@ -149,6 +149,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 		transfer_default = nameof(amount_per_transfer_from_this))
 	synthesizer()
 	extend("synthesizer.inject", then(PROC_REF(injected)))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// The click on a person (the old attack handler).
 /obj/item/reagent_containers/borghypo/proc/injected(datum/act/op/A)
@@ -207,10 +208,9 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 					return OP_OK
 	return OP_REFUSED
 
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/reagent_containers/borghypo/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/borghypo/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

@@ -436,10 +436,12 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced")
 
-DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/changeling_debug)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/changeling_debug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/changeling_debug/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.make_changeling()
 	return TRUE
 

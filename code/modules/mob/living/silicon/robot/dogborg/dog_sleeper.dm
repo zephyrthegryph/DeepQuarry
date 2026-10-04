@@ -54,6 +54,7 @@
 CAPABILITIES(/obj/item/dogborg/sleeper)
 	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer)
 	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL))
 
@@ -277,10 +278,9 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	rel_set(src, nameof(hound), R)
 	return R.draw_power(ROBOT_CELL_JOULES(amt), src, 0, TRUE)
 
-DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/dogborg/sleeper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/dogborg/sleeper/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

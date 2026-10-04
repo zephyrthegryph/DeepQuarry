@@ -25,10 +25,12 @@
 
 /obj/item/generic_item/var/delay_passed = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/generic_item, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/generic_item)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/generic_item/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/generic_item/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(activatable_hand)
 		if(!on)
 			if(delay_time && !delay_passed)

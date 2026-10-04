@@ -77,10 +77,12 @@
 	return TRUE
 
 
-DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/evidencebag)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/evidencebag/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/evidencebag/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(LAZYLEN(contents))
 		var/obj/item/I = contents[1]
 		act_message(user, src, MSG_SELF("You take [I] out of %T%."), \

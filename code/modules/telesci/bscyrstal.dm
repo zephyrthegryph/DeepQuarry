@@ -13,10 +13,12 @@
 	pixel_x = rand(-5, 5)
 	pixel_y = rand(-5, 5)
 
-DECLARE_INTERACTIONS(/obj/item/bluespace_crystal, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/bluespace_crystal)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/bluespace_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespace_crystal/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.balloon_alert_visible("[user] crushes [src]!", "Crushed [src]!") // Balloon alert
 	fx_sparks(get_turf(src), 5)
 	blink_mob(user)

@@ -50,10 +50,12 @@ UI_ACT_PROC(/obj/item/integrated_electronics/detailer, ui_act_change_color)
 	update_icon()
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/integrated_electronics/detailer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/integrated_electronics/detailer)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/integrated_electronics/detailer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_electronics/detailer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

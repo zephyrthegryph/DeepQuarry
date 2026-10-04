@@ -10,10 +10,12 @@
 	w_class = ITEMSIZE_TINY
 	flags = NOBLUDGEON //No more attack messages
 
-DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/boop_module)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/boop_module/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/boop_module/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if (!( istype(user.loc, /turf) ))
 		return TRUE
 
@@ -111,10 +113,12 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/hound/trauma, borghypo_reagent_
 	var/datum/matter_synth/water = null // readds water
 	flags = NOBLUDGEON //No more attack messages
 
-DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/robot_tongue)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/robot_tongue/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/robot_tongue/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	if(R.emagged || R.emag_items)
 		emagged = !emagged
@@ -262,10 +266,12 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 	var/enabled = FALSE
 	flags = NOBLUDGEON
 
-DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/pupscrubber)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/pupscrubber/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pupscrubber/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	if(!enabled)
 		R.scrubbing = TRUE
@@ -351,10 +357,12 @@ CAPABILITIES(/obj/item/lightreplacer/dogborg)
 	var/bluespace = FALSE
 	flags = NOBLUDGEON
 
-DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/dogborg/pounce)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/dogborg/pounce/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/dogborg/pounce/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	R.leap(bluespace)
 	return TRUE

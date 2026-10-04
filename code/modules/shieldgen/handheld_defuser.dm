@@ -30,10 +30,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/shield_diffuser, "cell", /obj/item/cell/device)
 
 APPEARANCE_TEMPLATE(/obj/item/shield_diffuser, "hdiffuser_{enabled?on:off}")
 
-DECLARE_INTERACTIONS(/obj/item/shield_diffuser, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/shield_diffuser)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/shield_diffuser/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/shield_diffuser/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	set_enabled(!enabled)
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
 	return TRUE

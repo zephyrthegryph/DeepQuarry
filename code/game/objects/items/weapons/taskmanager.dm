@@ -308,10 +308,12 @@
 		return FALSE
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/taskmanager)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/taskmanager/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/taskmanager/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/choices = list(
 		TM_MODE_BRIDGE = radial_image_bridge,
 		TM_MODE_ENGINEERING = radial_image_engineering,

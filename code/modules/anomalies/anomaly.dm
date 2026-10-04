@@ -86,10 +86,12 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 	/// Relation view: the last anomaly scanned (set by the anomaly's scan, _anomalies.dm).
 	var/obj/effect/anomaly/buffered_anomaly
 
-DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/anomaly_scanner)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/anomaly_scanner/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/anomaly_scanner/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

@@ -9,10 +9,12 @@
 	icon_state = "slime cube"
 	var/searching = 0
 
-DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/slime_cube)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/slime_cube/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/slime_cube/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!searching)
 		to_chat(user, span_warning("You stare at the slimy cube, watching as some activity occurs."))
 		icon_state = "slime cube active"
@@ -98,10 +100,12 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 	safe_blink(target, 14)
 	consume(src, user)
 
-DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/slime_crystal)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/slime_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/slime_crystal/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(loc?.release_refusal(src, user))
 		return FALSE
 	act_message(user, src, others = span_warning("%U% teleports themselves with %T%!"))

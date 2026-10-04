@@ -11,10 +11,11 @@
 	var/syndie = 0
 	var/list/channels = list() // ALLOW(instance_list): d: every key defines its channels
 
-DECLARE_INTERACTIONS(/obj/item/encryptionkey, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/encryptionkey)
+	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /// Old attackby was an empty stub: it always swallowed the click with no action, no fallthrough.
-/obj/item/encryptionkey/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/encryptionkey/proc/interaction_item(datum/act/op/A)
 	return TRUE
 
 /obj/item/encryptionkey/syndicate

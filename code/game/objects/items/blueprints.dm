@@ -145,10 +145,12 @@ TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_ar
 	preserve_item = 1
 	var/legend = 1
 
-DECLARE_INTERACTIONS(/obj/item/wire_reader, INTERACT_USE("Read", PROC_REF(interaction_read_wires)))
+CAPABILITIES(/obj/item/wire_reader)
+	op("read_wires", in_hand(), label("Read"), then(PROC_REF(interaction_read_wires)))
 
 /// Old attack_self. Convert this to TGUI some time.
-/obj/item/wire_reader/proc/interaction_read_wires(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/wire_reader/proc/interaction_read_wires(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"

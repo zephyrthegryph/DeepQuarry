@@ -11,10 +11,12 @@
 	name = "inactive supermatter supply beacon"
 	deploy_path = /obj/machinery/power/supply_beacon/supermatter
 
-DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/supply_beacon)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/supply_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/supply_beacon/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " begins setting up %T%."))
 	om_task_timed(user, deploy_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE

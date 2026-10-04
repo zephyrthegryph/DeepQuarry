@@ -21,10 +21,12 @@
 		if(SLOT_ID_BELT)
 			sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi')
 
-DECLARE_INTERACTIONS(/obj/item/towel, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/towel)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/towel/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/towel/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, src, others = span_notice("%U% uses %T% to towel themselves off."))
 	play_sfx(src, SFX_WEAPONS_TOWELWIPE)
 	if(user.fire_stacks > 0)

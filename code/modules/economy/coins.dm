@@ -235,10 +235,12 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 	desc = "A curious triangular coin made primarily of some kind of dark, smooth metal. This one's markings appear to reveal a purple material underneath."
 	value = 20
 
-DECLARE_INTERACTIONS(/obj/item/aliencoin, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/aliencoin)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/aliencoin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/aliencoin/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)

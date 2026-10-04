@@ -53,10 +53,12 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 // RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
 DECLARE_DEFAULT_CHILD(/obj/item/pipe_dispenser, "tool", /obj/item/tool/wrench/cyborg)
 
-DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/pipe_dispenser)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/pipe_dispenser/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pipe_dispenser/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

@@ -367,10 +367,12 @@ DECLARE_APPEARANCE(/obj/item/honey_frame, "appearance_has_honey", list("1" = lis
 	icon = 'icons/obj/apiary_bees_etc.dmi'
 	icon_state = "apiary"
 
-DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/beehive_assembly)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/beehive_assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/beehive_assembly/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You start assembling \the [src]..."))
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(assemble_done), list(user))
 	return TRUE

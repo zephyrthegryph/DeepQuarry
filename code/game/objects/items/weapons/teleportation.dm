@@ -30,10 +30,12 @@
 
 // TGUI migration. attack_self opens Locator.tsx; Topic
 // frequency/refresh/clear actions move to tgui_act.
-DECLARE_INTERACTIONS(/obj/item/locator, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/locator)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/locator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/locator/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

@@ -21,10 +21,12 @@
 	var/repairing = FALSE
 	flags = NOBLUDGEON
 
-DECLARE_INTERACTIONS(/obj/item/self_repair_system, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/self_repair_system)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/self_repair_system/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/self_repair_system/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(repairing)
 		return TRUE
 	var/mob/living/silicon/robot/R = user

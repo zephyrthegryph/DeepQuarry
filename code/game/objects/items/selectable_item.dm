@@ -11,10 +11,12 @@
 TYPE_TABLE_DECLARE(/obj/item/selectable_item, selectable_item_options, list("Gift" = /obj/item/a_gift, \
 									"Health Analyzer" = /obj/item/healthanalyzer))
 
-DECLARE_INTERACTIONS(/obj/item/selectable_item, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/selectable_item)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/selectable_item/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/selectable_item/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	om_ask(user, /datum/om/prompt/confirm, PROC_REF(preface_confirmed), title = preface_title, message = preface_string, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 
