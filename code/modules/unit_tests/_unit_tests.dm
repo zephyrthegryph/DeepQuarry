@@ -500,6 +500,7 @@
 #include "dq_p2_reagent_rag_behaviour.dm"
 #include "dq_eg2_gap_tests.dm"
 #include "interim_shapeshift_reform_initial_gate.dm"
+#include "interim_domination_native_cancel.dm"
 #include "dq_p2_reagent_drink_behaviour.dm"
 #include "dq_p2_food_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
