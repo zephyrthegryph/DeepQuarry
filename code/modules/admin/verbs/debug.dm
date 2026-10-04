@@ -183,9 +183,21 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_alienize, R_ADMIN|R_EVENT|R_DEBUG, "Make A
 ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instances of a type.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
 	// to prevent REALLY stupid deletions
 	var/blocked = list(/obj, /mob, /mob/living, /mob/living/carbon, /mob/living/carbon/human, /mob/observer/dead, /mob/living/silicon, /mob/living/silicon/robot, /mob/living/silicon/ai)
-	var/hsbitem = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Choose an object to delete.", title = "Delete:", choices = typesof(/obj) + typesof(/mob) - blocked)
-	if(isnull(hsbitem))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_delete_type, PROC_REF(delete_type_chosen), answerer = answerer, choices = typesof(/obj) + typesof(/mob) - blocked)
+
+/datum/admin_verb/cmd_debug_del_all/proc/delete_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(delete_type_answered), A)
+	if(!result.ok)
+		stack_trace("om flow cmd_debug_del_all answer delete_type_chosen: [result.error]")
+
+/datum/admin_verb/cmd_debug_del_all/proc/delete_type_answered(datum/act/request/A)
+	var/hsbitem = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	if(hsbitem)
 		for(var/atom/O in world)
 			if(istype(O, hsbitem))
@@ -745,3 +757,15 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 
 	log_and_message_admins("[key_name(src)] Quick Authentic NIF'd [H.real_name].")
 	feedback_add_details("admin_verb","QANIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_delete_type
+	rights = R_SERVER
+	timeout = 0
+	question = "Choose an object to delete."
+	title = "Delete:"
+
+/datum/prompt/choice/admin_delete_type/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
