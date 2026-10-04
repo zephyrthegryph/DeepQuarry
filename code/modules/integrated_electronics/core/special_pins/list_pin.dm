@@ -241,7 +241,11 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 	open_request(src, /datum/prompt/choice/pin_list_selection, PROC_REF(selection_entered), answerer = actor, title = title, question = question, choices = choices)
 
 /datum/pin_value_review/list_edit/selection/proc/selection_entered(datum/act/request/A)
+	var/datum/integrated_io/refreshed_pin = pin
+	var/refresh = A.answer && !why_not()
 	run_step(PROC_REF(selection_step), A)
+	if(refresh && !QDELETED(refreshed_pin))
+		SStgui.update_uis(refreshed_pin)
 
 /datum/pin_value_review/list_edit/selection/proc/selection_step(datum/act/request/A)
 	var/selected = A.answer.answer_value

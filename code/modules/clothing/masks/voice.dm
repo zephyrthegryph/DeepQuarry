@@ -27,6 +27,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/voice, \
 /obj/item/clothing/mask/gas/voice/proc/voice_name_entered(datum/act/request/A)
 	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_voice_name), A)
+	if(!result.ok)
+		stack_trace("Native request voice_name_entered: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/clothing/mask/gas/voice/proc/apply_voice_name(datum/act/request/A)
 	var/mob/user = A.request.answerer
 	var/new_name = A.answer.answer_value
 	if(isnull(new_name) || get(src, /mob) != user)

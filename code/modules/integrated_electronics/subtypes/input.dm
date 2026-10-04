@@ -99,6 +99,12 @@
 /obj/item/integrated_circuit/input/numberpad/proc/input_entered(datum/act/request/A)
 	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_input), A)
+	if(!result.ok)
+		stack_trace("Native request input_entered: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/integrated_circuit/input/numberpad/proc/apply_input(datum/act/request/A)
 	var/datum/prompt/number/circuit_numberpad/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
@@ -137,6 +143,12 @@
 /obj/item/integrated_circuit/input/textpad/proc/input_entered(datum/act/request/A)
 	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_input), A)
+	if(!result.ok)
+		stack_trace("Native request input_entered: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/integrated_circuit/input/textpad/proc/apply_input(datum/act/request/A)
 	var/datum/prompt/text/circuit_textpad/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)

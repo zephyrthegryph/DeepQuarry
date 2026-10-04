@@ -18,6 +18,12 @@
 /datum/integrated_io/number/proc/pin_input_entered(datum/act/request/A)
 	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_pin_input), A)
+	if(!result.ok)
+		stack_trace("Native request pin_input_entered: [result.error]")
+	SStgui.update_uis(src)
+
+/datum/integrated_io/number/proc/apply_pin_input(datum/act/request/A)
 	var/datum/prompt/number/typed_pin_number/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)

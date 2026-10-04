@@ -222,7 +222,15 @@
 
 /mob/living/carbon/human/proc/loosen_tourniquet_chosen(datum/act/request/A)
 	if(!A.answer)
+		if(!isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			SStgui.update_uis(src)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_tourniquet_choice), A)
+	if(!result.ok)
+		stack_trace("Native request loosen_tourniquet_chosen: [result.error]")
+	SStgui.update_uis(src)
+
+/mob/living/carbon/human/proc/apply_tourniquet_choice(datum/act/request/A)
 	var/mob/living/user = A.request.answerer
 	var/list/cinched = list()
 	for(var/obj/item/organ/external/limb as anything in organs)
