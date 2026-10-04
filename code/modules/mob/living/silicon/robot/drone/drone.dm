@@ -188,6 +188,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 	open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(shell_picked), answerer = src, title = "Customize Shell", question = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", choices = choices)
 
 /// Picking a drone shell: the shell, then optional eye and plating colours.
+/datum/prompt/choice/drone_shell/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
 /datum/prompt/choice/drone_shell
 	timeout = 0
 	var/shell_state

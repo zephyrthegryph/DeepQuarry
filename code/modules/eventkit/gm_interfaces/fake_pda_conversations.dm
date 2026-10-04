@@ -64,12 +64,24 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 Invoked by vv topic "fakepdapropconvo" in code\modules\admin\view_variables\topic.dm found in PDA vv dropdown.
 */
 /// A prop PDA conversation: select a mode and identity, then up to 30 messages.
+/datum/prompt/choice/prop_pda_conversation/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
 /datum/prompt/choice/prop_pda_conversation
 	timeout = 0
 	rights = R_FUN
 	var/identity
 	var/messages_left = 30
 	var/conversation_message
+
+/datum/prompt/text/prop_pda_conversation/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 /datum/prompt/text/prop_pda_conversation
 	timeout = 0

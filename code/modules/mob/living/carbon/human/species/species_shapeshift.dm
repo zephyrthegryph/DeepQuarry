@@ -118,6 +118,12 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	shapeshifter_ask_hair(valid_hairstyles, valid_gradstyles, valid_facialhairstyles)
 
 /// Hair, gradient and facial hair styles in turn (each only if there are any to pick).
+/datum/prompt/choice/shapeshift_hair/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
 /datum/prompt/choice/shapeshift_hair
 	title = "Shapeshifter Hair"
 	timeout = 0
@@ -443,6 +449,12 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	open_request(src, /datum/prompt/choice/shapeshift_accessory, PROC_REF(shapeshifter_accessory_style_picked), answerer = src, question = I["pick"], title = "Character Preference", choices = pretty_styles, kind = kind)
 
 /// An accessory style, then its colours and alpha; each colour and the alpha can be skipped.
+/datum/prompt/choice/shapeshift_accessory/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
 /datum/prompt/choice/shapeshift_accessory
 	timeout = 0
 	ask_flags = ASK_CONSCIOUS
@@ -611,12 +623,24 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 			defaults += LAZYACCESS(ear_secondary_colors, channel) || "#ffffff"
 	shapeshifter_next_secondary_ear_channel(defaults, list(), 0)
 
+/datum/prompt/color/shapeshift_secondary_ears/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
 /datum/prompt/color/shapeshift_secondary_ears
 	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 	var/list/defaults
 	var/list/new_colors
 	var/channel
+
+/datum/prompt/number/shapeshift_secondary_ears/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 /datum/prompt/number/shapeshift_secondary_ears
 	timeout = 0
@@ -717,6 +741,12 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_confirmed), answerer = src, title = "Reformation", question = "Do you want to copy the appearance data of your currently loaded save slot?", choices = list("Reform", "Cancel"), finish_proc = PROC_REF(shapeshifter_regenerate_answered))
 
 /// "Are you sure?", then whether to include flavour text and OOC notes.
+/datum/prompt/choice/shapeshift_reform/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
 /datum/prompt/choice/shapeshift_reform
 	timeout = 0
 	buttons = TRUE
@@ -798,9 +828,20 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	title = "Consent"
 	timeout = 0
 	var/mob/living/carbon/human/victim
+	var/initial_refusal
 
 CAPABILITIES(/datum/prompt/yes_no/copy_body_consent)
 	ref_one(nameof(victim), /mob/living/carbon/human)
+
+/datum/prompt/yes_no/copy_body_consent/begin()
+	initial_refusal = request_recheck(src)
+	if(!initial_refusal)
+		var/mob/living/carbon/human/H = owner
+		initial_refusal = H.copy_body_gripping(victim) ? null : "lost grip"
+	if(initial_refusal)
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 /datum/prompt/yes_no/copy_body_consent/prepare(datum/act/context)
 	. = ..()
@@ -853,7 +894,7 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 
 /mob/living/carbon/human/proc/shapeshifter_copy_consent_step(datum/act/request/A)
 	var/datum/prompt/yes_no/copy_body_consent/ask = A.request
-	if(QDELETED(ask.victim))
+	if(ask.initial_refusal || QDELETED(ask.victim))
 		return
 	if(!A.answer)
 		if(!isnull(ask.answer_value) && ask.last_error == "lost grip")

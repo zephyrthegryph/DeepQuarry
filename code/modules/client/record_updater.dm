@@ -113,9 +113,20 @@ CAPABILITIES(/datum/record_update_review)
 	ref_one(nameof(actor), /mob)
 	ref_one(nameof(record), /datum/data/record)
 
+/datum/prompt/choice/record_update_review/begin()
+	var/why = request_recheck(src)
+	if(why)
+		var/datum/record_update_review/review = owner
+		if(QDELETED(review.actor))
+			initial_refusal = why
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
 /datum/prompt/choice/record_update_review
 	timeout = 0
 	buttons = TRUE
+	var/initial_refusal
 
 /datum/prompt/choice/record_update_review/recheck_extra()
 	. = ..()
@@ -123,6 +134,12 @@ CAPABILITIES(/datum/record_update_review)
 		return
 	var/datum/record_update_review/review = owner
 	return QDELETED(review.actor) || QDELETED(review.record) ? "record gone" : null
+
+/datum/prompt/text/record_update_notes/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 /datum/prompt/text/record_update_notes
 	timeout = 0
@@ -150,6 +167,10 @@ CAPABILITIES(/datum/record_update_review)
 		failed_step("review", result.error)
 
 /datum/record_update_review/proc/review_step(datum/act/request/A)
+	var/datum/prompt/choice/record_update_review/ask = A.request
+	if(ask.initial_refusal)
+		consume(src)
+		return
 	if(!A.answer || A.request.answer_value != "Review Changes")
 		refused()
 		consume(src)
