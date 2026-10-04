@@ -64,6 +64,14 @@
 	. = ..()
 	. += drawn_from(nameof(base_state), nameof(status))
 
+/obj/item/radio/intercom/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(area_powered), nameof(light_color), nameof(light_power), nameof(wiresexposed))
+
+/obj/item/radio_jammer/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(active_state), nameof(on), nameof(power_source))
+
 /obj/item/reagent_containers/cooking_container/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(food_items), nameof(max_space))

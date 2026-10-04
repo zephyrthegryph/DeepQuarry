@@ -174,17 +174,18 @@
 
 // ---------------------------------------------------------------- interactions
 
-/// A headset EXTENDs the radio's interactions instead of discarding its Use (the radio UI).
+/// A headset keeps the radio's Use (the radio window) and adds its own Insert key.
 /datum/unit_test/dq_headset_keeps_radio_use
 
 /datum/unit_test/dq_headset_keeps_radio_use/Run()
-	var/obj/item/radio/headset/H = allocate(/obj/item/radio/headset, test_floor())
-	var/has_use = FALSE
-	var/has_insert = FALSE
-	for(var/datum/interaction/I as anything in interaction_candidates(H))
-		if(I.default_action == INPUT_ACTION_USE && !I.tool && I.name != "Insert key")
-			has_use = TRUE
-		if(I.name == "Insert key")
-			has_insert = TRUE
-	TEST_ASSERT(has_use, "a headset keeps the radio's Use")
-	TEST_ASSERT(has_insert, "and has its own Insert key")
+	test_driver_begin()
+	var/obj/item/radio/headset/hci2a2_probe/H = allocate(/obj/item/radio/headset/hci2a2_probe, test_floor())
+	var/mob/living/carbon/human/M = allocate(/mob/living/carbon/human, test_floor())
+	test_click(M, H, H)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(H.opened_by, M, "a headset keeps the radio's Use")
+	var/obj/item/encryptionkey/headset_sec/K = allocate(/obj/item/encryptionkey/headset_sec, test_floor())
+	test_click(M, H, K)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(H.keyslot1, K, "and has its own Insert key")
+	test_driver_end()

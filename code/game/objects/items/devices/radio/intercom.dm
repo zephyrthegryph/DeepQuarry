@@ -16,20 +16,34 @@
 	var/circuit = /obj/item/circuitboard/intercom
 	var/number = 0
 	var/wiresexposed = FALSE
+	/// Whether the area gives the intercom power (what its look and its `on` follow).
+	var/area_powered = FALSE
 
 /obj/item/radio/intercom/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)
 	if(A)
 		observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
-	update_icon()
+	sync_power()
+
+/// The area's power for the equipment channel: the intercom's `on` and its look follow it.
+/obj/item/radio/intercom/proc/sync_power()
+	var/area/A = get_area(src)
+	var/powered = !!A?.powered(EQUIP)
+	on = powered
+	set_area_powered(powered)
 
 /obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/A)
-	EVENT_HANDLER
-	update_icon()
+	sync_power()
+
+TRACKED(/obj/item/radio/intercom, area_powered)
+TRACKED(/obj/item/radio/intercom, wiresexposed)
 
 CAPABILITIES(/obj/item/radio/intercom)
 	owns_one(nameof(circuit), starts = nameof(circuit))
+	/// An empty hand, or a silicon's click, on an intercom opens its window.
+	extend("ui_open", inputs(hand(), in_hand(), remote()), then(PROC_REF(touched)))
+	op("fingerprint_item", item(/obj/item), then(PROC_REF(item_touched)))
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"
@@ -127,25 +141,18 @@ CAPABILITIES(/obj/item/radio/intercom)
 	. = ..()
 	internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
-// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SILICON("Use", PROC_REF(interaction_hand)), \
-)
+/// The touch leaves a fingerprint, then the window opens.
+/obj/item/radio/intercom/proc/touched(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-/// Old attack_hand, and old attack_ai (the same body).
-/obj/item/radio/intercom/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	attack_self(user)
-	return TRUE
-
-/obj/item/radio/intercom/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	add_fingerprint(user)
-	return FALSE
+/// Any item held to it leaves a fingerprint and goes on to its own use.
+/obj/item/radio/intercom/proc/item_touched(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_DECLINE
 
 /obj/item/radio/intercom/screwdriver_act(mob/user, obj/item/tool)
-	wiresexposed = !wiresexposed
+	set_wiresexposed(!wiresexposed)
 	to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
 	playsound(src, tool.usesound, 50, TRUE)
 	update_icon()
@@ -186,31 +193,18 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 
 	return canhear_range
 
-DECLARE_APPEARANCE_PROC(/obj/item/radio/intercom, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/radio/intercom/appearance_overlays()
-	. = list()
-	var/area/A = get_area(src)
-	on = A?.powered(EQUIP)
-
-
-	if(!on)
-		set_light(0)
-		set_light_on(FALSE)
-		if(wiresexposed)
-			icon_state = "intercom-p_open"
-		else
-			icon_state = "intercom-p"
+/obj/item/radio/intercom/draw(datum/look/look)
+	..()
+	if(!area_powered)
+		look.state(wiresexposed ? "intercom-p_open" : "intercom-p")
+	else if(wiresexposed)
+		look.state("intercom_open")
 	else
-		if(wiresexposed)
-			icon_state = "intercom_open"
-			set_light(0)
-			set_light_on(FALSE)
-		else
-			icon_state = initial(icon_state)
-			. += mutable_appearance(icon, "[icon_state]_ov")
-			. += emissive_appearance(icon, "[icon_state]_ov")
-			set_light(2)
-			set_light_on(TRUE)
+		var/state = initial(icon_state)
+		look.state(state)
+		look.overlay(mutable_appearance(icon, "[state]_ov"))
+		look.overlay(emissive_appearance(icon, "[state]_ov"))
+		look.light(2, light_power, light_color)
 
 /obj/item/radio/intercom/silicon_pull(mob/living/silicon/user)
 	if(!isAI(user))

@@ -25,6 +25,7 @@
 CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
+	op("insert_key", item(/obj/item/encryptionkey), label("Insert key"), needs(req(PROC_REF(can_insert_key), because = MSG(headset/keys_full))), then(PROC_REF(key_inserted)))
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
@@ -32,6 +33,11 @@ CAPABILITIES(/obj/item/radio/headset)
 	// Compute channels but don't register with SSradio yet (C5): on_materialize()
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
+
+/// A headset's window needs it in your inventory.
+/obj/item/radio/headset/on_materialize()
+	. = ..()
+	tgui_window_state = GLOB.tgui_inventory_state
 
 /obj/item/radio/headset/list_channels(mob/user)
 	return list_secure_channels()
@@ -81,18 +87,15 @@ CAPABILITIES(/obj/item/radio/headset)
 
 	return "[..()][append]"
 
-DECLARE_UI_STATE(/obj/item/radio/headset, GLOB.tgui_inventory_state)
-
-// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key", REQ_TARGET_STATE(/obj/item/radio/headset/proc/can_insert_key)))
+MSG_DEF_SELF(headset/keys_full, "The headset can't hold another key.")
 
 /// Requirement: a free key slot.
-/obj/item/radio/headset/proc/can_insert_key(mob/user, atom/target, obj/item/held)
-	if(keyslot1 && keyslot2)
-		return "the headset can't hold another key"
-	return TRUE
+/obj/item/radio/headset/proc/can_insert_key(datum/act/op/A)
+	return !(keyslot1 && keyslot2)
 
-/obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/radio/headset/proc/key_inserted(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!keyslot1)
 		move_into(src, nameof(src.keyslot1), W, user)
 
@@ -102,7 +105,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 
 	recalculateChannels()
 
-	return TRUE
+	return OP_OK
 
 /obj/item/radio/headset/screwdriver_act(mob/user, obj/item/tool)
 	if(!keyslot1 && !keyslot2)

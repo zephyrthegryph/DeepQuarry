@@ -907,12 +907,14 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 	icon_state = "radio"
 	loudspeaker = FALSE
 
-/// Old attackby was an empty stub, replacing radio/borg's own (no ..() chain): always swallowed, no action.
-/obj/item/radio/borg/pai/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+/// Old attackby was an empty stub, replacing radio/borg's own: the radio's Use and key slot go, an item is always swallowed with no action.
+CAPABILITIES(/obj/item/radio/borg/pai)
+	without("ui_open")
+	without("insert_key")
+	op("swallow", item(/obj/item), label("Use"), then(PROC_REF(item_swallowed)))
 
-/obj/item/radio/borg/pai/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return TRUE
+/obj/item/radio/borg/pai/proc/item_swallowed(datum/act/op/A)
+	return OP_OK
 
 /obj/item/radio/borg/pai/recalculateChannels()
 	if(!istype(loc,/obj/item/paicard))

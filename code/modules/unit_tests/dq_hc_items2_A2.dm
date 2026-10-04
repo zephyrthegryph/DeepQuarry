@@ -9,28 +9,28 @@
 
 /// Radios that say who opened their window: a person with no client cannot open a real one.
 /obj/item/radio/hci2a2_probe
-	var/mob/opened_by
+	var/tmp/mob/opened_by
 
 /obj/item/radio/hci2a2_probe/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	opened_by = user
 	return TRUE
 
 /obj/item/radio/headset/hci2a2_probe
-	var/mob/opened_by
+	var/tmp/mob/opened_by
 
 /obj/item/radio/headset/hci2a2_probe/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	opened_by = user
 	return TRUE
 
 /obj/item/radio/electropack/hci2a2_probe
-	var/mob/opened_by
+	var/tmp/mob/opened_by
 
 /obj/item/radio/electropack/hci2a2_probe/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	opened_by = user
 	return TRUE
 
 /obj/item/radio/intercom/hci2a2_probe
-	var/mob/opened_by
+	var/tmp/mob/opened_by
 
 /obj/item/radio/intercom/hci2a2_probe/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	opened_by = user
@@ -58,7 +58,7 @@
 	hci_click(H, R, R)
 	settle()
 	TEST_ASSERT_EQUAL(R.opened_by, H, "using a headset in hand opens its window")
-	TEST_ASSERT_EQUAL(R.tgui_state(H), GLOB.tgui_inventory_state, "a headset's window needs it in your inventory")
+	TEST_ASSERT_EQUAL(R.tgui_window_state, GLOB.tgui_inventory_state, "a headset's window needs it in your inventory")
 
 /datum/unit_test/dq_hc_items/radio_window_buttons
 
@@ -88,7 +88,29 @@
 	hci_ui(H, R, "toggleLoudspeaker")
 	TEST_ASSERT(!R.loudspeaker, "a radio that cannot switch ignores the loudspeaker button")
 
+/datum/unit_test/dq_hc_items/radio_window_channel_button
+
+/datum/unit_test/dq_hc_items/radio_window_channel_button/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/radio/R = allocate(/obj/item/radio, tile(2, 2))
+	R.channels = list("Security" = 0)
+	hci_ui(H, R, "channel", list("channel" = "Security"))
+	TEST_ASSERT(R.channels["Security"] & R.FREQ_LISTENING, "a channel's button switches its speaker on")
+	hci_ui(H, R, "channel", list("channel" = "Security"))
+	TEST_ASSERT(!(R.channels["Security"] & R.FREQ_LISTENING), "and off")
+
 /datum/unit_test/dq_hc_items/radio_emp_silences
+
+/datum/unit_test/dq_hc_items/radio_window_channel_button
+
+/datum/unit_test/dq_hc_items/radio_window_channel_button/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/radio/R = allocate(/obj/item/radio, tile(2, 2))
+	R.channels = list("Security" = 0)
+	hci_ui(H, R, "channel", list("channel" = "Security"))
+	TEST_ASSERT(R.channels["Security"] & R.FREQ_LISTENING, "a channel's button switches its speaker on")
+	hci_ui(H, R, "channel", list("channel" = "Security"))
+	TEST_ASSERT(!(R.channels["Security"] & R.FREQ_LISTENING), "and off")
 
 /datum/unit_test/dq_hc_items/radio_emp_silences/run_gate()
 	var/obj/item/radio/R = allocate(/obj/item/radio, tile(2, 2))
@@ -261,7 +283,7 @@
 
 /// The beacon's alter-signal question, asked the way the game does for the menu entry (adapter: the legacy handler is called directly).
 /proc/hci2a2_alter_beacon(mob/living/carbon/human/H, obj/item/radio/beacon/B)
-	B.alter_signal_effect(H, null, null)
+	test_menu(H, B, "alter_signal")
 
 /datum/unit_test/dq_hc_items/beacon_alter_signal_asks_for_a_code
 
@@ -275,6 +297,13 @@
 	settle()
 	TEST_ASSERT_EQUAL(B.code, "tango", "the answer is the new code")
 
+/// Adapters: what the converted intercom needs the tests to say (its panel and its area's power are tracked state).
+/proc/hci2a2_expose(obj/item/radio/intercom/I, value)
+	I.set_wiresexposed(value)
+
+/proc/hci2a2_power_changed(obj/item/radio/intercom/I)
+	I.sync_power()
+
 /datum/unit_test/dq_hc_items/intercom_look_follows_power_and_panel
 
 /datum/unit_test/dq_hc_items/intercom_look_follows_power_and_panel/run_gate()
@@ -283,20 +312,22 @@
 	var/had = A.requires_power
 	A.requires_power = TRUE
 	A.power_equip = FALSE
+	hci2a2_power_changed(I)
 	I.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(I.icon_state, "intercom-p", "an unpowered intercom shows its dark state")
 	TEST_ASSERT(!I.on, "and is off")
-	I.wiresexposed = TRUE
+	hci2a2_expose(I, TRUE)
 	I.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(I.icon_state, "intercom-p_open", "with its wires out")
 	A.requires_power = FALSE
+	hci2a2_power_changed(I)
 	I.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(I.icon_state, "intercom_open", "a powered intercom with its wires out")
 	TEST_ASSERT(I.on, "is on")
-	I.wiresexposed = FALSE
+	hci2a2_expose(I, FALSE)
 	I.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(I.icon_state, initial(I.icon_state), "a powered intercom shows its plain state")
@@ -310,3 +341,16 @@
 	hci_click(H, I, null)
 	settle()
 	TEST_ASSERT_EQUAL(I.opened_by, H, "an empty hand on an intercom opens its window")
+
+/datum/unit_test/dq_hc_items/zz_debug_electropack
+
+/datum/unit_test/dq_hc_items/zz_debug_electropack/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/radio/electropack/hci2a2_probe/E = allocate(/obj/item/radio/electropack/hci2a2_probe, tile(2, 2))
+	var/obj/item/radio/hci2a2_probe/R = allocate(/obj/item/radio/hci2a2_probe, tile(3, 2))
+	H.put_in_active_hand(E)
+	var/t1 = explain_click(H, E, E, GESTURE_CLICK)
+	H.drop_item()
+	H.put_in_active_hand(R)
+	var/t2 = explain_click(H, R, R, GESTURE_CLICK)
+	TEST_FAIL("ELECTROPACK: [t1] ## RADIO: [t2]")

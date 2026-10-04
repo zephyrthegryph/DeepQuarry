@@ -8,7 +8,7 @@
 	TEST_ASSERT(!pack.b_stat, "The actual original electropack starts closed to modification")
 	TEST_ASSERT_EQUAL(pack.screwdriver_act(actor, screwdriver), ITEM_INTERACT_SUCCESS, "The actual screwdriver opens the original pack for assembly")
 	TEST_ASSERT(pack.b_stat, "The actual opened pack permits real assembly")
-	pack.interaction_item(actor, helmet, null)
+	test_op_handler(pack, "helmet_attached", actor, helmet)
 	var/obj/item/assembly/shock_kit/kit = locate_within(actor, /obj/item/assembly/shock_kit)
 	TEST_ASSERT_NOTNULL(kit, "Actual public pack assembly creates its original electrohelmet")
 	own(kit)

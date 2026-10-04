@@ -16,53 +16,60 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 	var/code = 2
 	electric_pack = TRUE
 
-// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/item/radio/electropack/proc/can_take_off)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/radio/electropack)
+	without("ui_open")
+	interface("Electropack", input = in_hand())
+	extend("ui_open", when(req(PROC_REF(user_is_human))))
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
+	op("code", ui_act("code", arg("delta", num())), then(PROC_REF(ui_act_code)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_usable), silent = TRUE)))
+	op("keep_on", hand(), then(PROC_REF(hand_goes_on)))
+	op("attach_helmet", item(/obj/item/clothing/head/helmet), label("Attach"), then(PROC_REF(helmet_attached)))
 
-/// Requirement: the wearer can't take it off their own back.
-/obj/item/radio/electropack/proc/can_take_off(mob/living/user, atom/target, obj/item/held)
+/// The pack's window opens for a person's hand.
+/obj/item/radio/electropack/proc/user_is_human(datum/act/op/A)
+	return ishuman(A.actor)
+
+/// The wearer can't take it off their own back.
+/obj/item/radio/electropack/proc/hand_goes_on(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(src == user.get_equipped_item(SLOT_ID_BACK))
-		return "you need help taking this off"
-	return TRUE
+		to_chat(user, span_warning("You need help taking this off."))
+		return OP_REFUSED
+	return OP_DECLINE // an empty hand that was not refused goes on to the ordinary hand
 
-/// Blocks self-removal through can_take_off(); otherwise falls through to the ordinary hand.
-/obj/item/radio/electropack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	return FALSE
+/obj/item/radio/electropack/proc/helmet_attached(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(!b_stat)
+		to_chat(user, span_notice("[src] is not ready to be attached!"))
+		return OP_OK
+	var/obj/item/assembly/shock_kit/kit = new /obj/item/assembly/shock_kit( user )
+	kit.icon = 'icons/obj/assemblies.dmi'
 
-/obj/item/radio/electropack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/clothing/head/helmet))
-		if(!b_stat)
-			to_chat(user, span_notice("[src] is not ready to be attached!"))
-			return TRUE
-		var/obj/item/assembly/shock_kit/A = new /obj/item/assembly/shock_kit( user )
-		A.icon = 'icons/obj/assemblies.dmi'
+	rel_set(W, nameof(W.master), kit)
+	if(!move_into(kit, nameof(kit.part1), W, user))
+		return OP_OK
 
-		rel_set(W, nameof(W.master), A)
-		if(!move_into(A, nameof(A.part1), W, user))
-			return TRUE
+	rel_set(src, nameof(src.master), kit)
+	if(!move_into(kit, nameof(kit.part2), src, user))
+		return OP_OK
 
-		rel_set(src, nameof(src.master), A)
-		if(!move_into(A, nameof(A.part2), src, user))
-			return TRUE
-
-		user.put_in_hands(A)
-		A.add_fingerprint(user)
-		return TRUE
-	return FALSE
+	user.put_in_hands(kit)
+	kit.add_fingerprint(user)
+	return OP_OK
 
 // TGUI migration. The electropack's panel had three
 // controls (power, frequency, code); they all flow through tgui_act now.
 /obj/item/radio/electropack/proc/can_use(mob/user)
 	if(!user || user.stat || user.restrained())
 		return FALSE
-	if(ishuman(user) && (!SSticker || SSticker.mode != "monkey") && user.contents.Find(src))
+	if(ishuman(user) && (!SSticker || SSticker.mode != "monkey") && user.contents.Find(src)) // ALLOW(reads): who holds the pack is read when a button is pressed, never from a cached menu
 		return TRUE
-	if(user.contents.Find(master))
+	if(user.contents.Find(master)) // ALLOW(reads): the pack's master is read when a button is pressed, never from a cached menu
 		return TRUE
-	if(in_range(src, user) && isturf(loc))
+	if(in_range(src, user) && isturf(loc)) // ALLOW(reads): where the pack lies is read when a button is pressed, never from a cached menu
 		return TRUE
 	return FALSE
 
@@ -88,20 +95,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 	return
 
 // TGUI Electropack window; no more browse() panel.
-/obj/item/radio/electropack/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(!ishuman(user))
-		return
-	user.set_machine(src)
-	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/item/radio/electropack, "Electropack")
-
-UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_electropack{on:num,frequency:num,freq_display:text,code:unknown}")
-
-/// The computed part of /obj/item/radio/electropack's window data (declared on its UI_DATA row).
-/obj/item/radio/electropack/proc/ui_data_obj_item_radio_electropack(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/radio/electropack/ui_data(datum/act/eval/A)
 	return list(
 		"on" = on,
 		"frequency" = frequency,
@@ -109,30 +103,22 @@ UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_elect
 		"code" = code,
 	)
 
-/obj/item/radio/electropack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!can_use(user))
-		return FALSE
-	user.set_machine(src)
-	return TRUE
+/// The window answers a viewer who can use the pack (the old can_use() guard, silent).
+/obj/item/radio/electropack/proc/ui_usable(datum/act/op/A)
+	return can_use(A.actor)
 
-UI_ACT(/obj/item/radio/electropack, "power", ui_act_power)
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_power)
+/obj/item/radio/electropack/proc/ui_act_power(datum/act/op/A)
+	A.actor.set_machine(src)
 	on = !on
 	icon_state = "electropack[on]"
 	return TRUE
 
-UI_ACT(/obj/item/radio/electropack, "freq", ui_act_freq, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_freq)
-	var/delta = params["delta"]
-	if(isnum(delta))
-		set_frequency(sanitize_frequency(frequency + delta))
+/obj/item/radio/electropack/proc/ui_act_freq(datum/act/op/A, delta)
+	A.actor.set_machine(src)
+	set_frequency(sanitize_frequency(frequency + delta))
 	return TRUE
 
-UI_ACT(/obj/item/radio/electropack, "code", ui_act_code, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_code)
-	var/delta = params["delta"]
-	if(isnum(delta))
-		code = clamp(round(code + delta), 1, 100)
+/obj/item/radio/electropack/proc/ui_act_code(datum/act/op/A, delta)
+	A.actor.set_machine(src)
+	code = clamp(round(code + delta), 1, 100)
 	return TRUE

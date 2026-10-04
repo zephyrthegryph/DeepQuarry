@@ -229,13 +229,6 @@ UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
 	. = ..()
 	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 
-/obj/item/radio/uplink/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(.)
-		return TRUE
-	if(item_hidden_uplink(src))
-		item_hidden_uplink(src).trigger(user)
-
 /obj/item/multitool/uplink
 	uplink = TRUE
 
