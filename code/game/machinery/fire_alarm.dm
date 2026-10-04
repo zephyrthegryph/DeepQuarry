@@ -40,6 +40,8 @@ CAPABILITIES(/obj/machinery/firealarm)
 	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm)
 	owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm)
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(firealarm_shot))))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(firealarm_emp))))
 
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
@@ -129,16 +131,17 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	if(detecting)
 		alarm()
 
-DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_PROJECTILE, PROC_REF(firealarm_shot))
-/// Getting shot sets the alarm off.
-/obj/machinery/firealarm/proc/firealarm_shot(datum/damage_packet/packet)
+/// Getting shot sets the alarm off (before the hit lands; the hit goes on).
+/obj/machinery/firealarm/proc/firealarm_shot(datum/act/hit/projectile/A)
 	alarm()
+	return HOOK_DECLINE
 
-DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_EMP, PROC_REF(firealarm_emp))
-/// An EMP may set the alarm off for a while.
-/obj/machinery/firealarm/proc/firealarm_emp(datum/damage_packet/packet)
-	if(prob(50 / packet.severity))
-		alarm(rand(30 / packet.severity, 60 / packet.severity))
+/// An EMP may set the alarm off for a while (before the hit lands; the hit goes on).
+/obj/machinery/firealarm/proc/firealarm_emp(datum/act/hit/emp/A)
+	var/severity = A.packet.severity
+	if(prob(50 / severity))
+		alarm(rand(30 / severity, 60 / severity))
+	return HOOK_DECLINE
 
 /obj/machinery/firealarm/declare_interactions(list/into)
 	into += list(
@@ -282,17 +285,29 @@ DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_EMP, PROC_REF(firealarm_emp))
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/partyalarm, "PartyAlarm", UI_TITLE("Party Button"))
+CAPABILITIES(/obj/machinery/partyalarm)
+	interface("PartyAlarm", title = "Party Button")
+	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
+	op("alarm", ui_act("alarm"), then(PROC_REF(ui_act_alarm)))
+	op("time", ui_act("time", arg("value", num())), then(PROC_REF(ui_act_time)))
+	op("tp", ui_act("tp", arg("value", num())), then(PROC_REF(ui_act_tp)))
+	extend(TAG_UI, needs(req(PROC_REF(button_usable), because = MSG(partyalarm/unusable))))
 
-UI_DATA_REPLACE(/obj/machinery/partyalarm, "time:num", "merge:ui_data_obj_machinery_partyalarm{party_on:unknown,timing:bool,scrambled:bool}")
+MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 
-/// The computed part of /obj/machinery/partyalarm's window data (declared on its UI_DATA row).
-/obj/machinery/partyalarm/proc/ui_data_obj_machinery_partyalarm(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The button answers someone who is awake, and only while it works.
+/obj/machinery/partyalarm/proc/button_usable(datum/act/op/A)
+	var/mob/user = A.actor
+	return !user.stat && operable()
+
+/obj/machinery/partyalarm/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-	var/area/A = get_area(src)
-	data["party_on"] = !!A?.party
+	var/area/here = get_area(src)
+	data["party_on"] = !!here?.party
 	data["timing"] = !!timing
 	data["scrambled"] = !(ishuman(user) || isAI(user))
+	data["time"] = time
 	return data
 
 /obj/machinery/partyalarm/proc/reset()
@@ -311,32 +326,21 @@ UI_DATA_REPLACE(/obj/machinery/partyalarm, "time:num", "merge:ui_data_obj_machin
 	A.partyalert()
 	return
 
-// Topic dispatch lifted into tgui_act.
-/obj/machinery/partyalarm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(user.stat || !operable())
-		return FALSE
-	return TRUE
 
-UI_ACT(/obj/machinery/partyalarm, "reset", ui_act_reset)
-UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_reset)
+/obj/machinery/partyalarm/proc/ui_act_reset(datum/act/op/A)
 	reset()
 	return TRUE
 
-UI_ACT(/obj/machinery/partyalarm, "alarm", ui_act_alarm)
-UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_alarm)
+/obj/machinery/partyalarm/proc/ui_act_alarm(datum/act/op/A)
 	alarm()
 	return TRUE
 
-UI_ACT(/obj/machinery/partyalarm, "time", ui_act_time, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_time)
-	timing = params["value"]
+/obj/machinery/partyalarm/proc/ui_act_time(datum/act/op/A, value)
+	timing = value
 	return TRUE
 
-UI_ACT(/obj/machinery/partyalarm, "tp", ui_act_tp, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_tp)
-	var/tp = params["value"]
+/obj/machinery/partyalarm/proc/ui_act_tp(datum/act/op/A, value)
+	var/tp = value
 	time += tp
 	time = min(max(round(time), 0), 120)
 	return TRUE

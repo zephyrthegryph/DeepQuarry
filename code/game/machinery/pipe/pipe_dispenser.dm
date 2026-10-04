@@ -31,12 +31,20 @@
 		get_asset_datum(/datum/asset/spritesheet/pipes),
 	)
 
-DECLARE_UI(/obj/machinery/pipedispenser, "PipeDispenser")
+CAPABILITIES(/obj/machinery/pipedispenser)
+	interface("PipeDispenser")
+	op("p_layer", ui_act("p_layer", arg("p_layer", num())), then(PROC_REF(ui_act_p_layer)))
+	op("dispense_pipe", ui_act("dispense_pipe", arg("bent"), arg("ref")), then(PROC_REF(ui_act_dispense_pipe)))
+	extend(TAG_UI, needs(req(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use))))
 
-UI_DATA_REPLACE(/obj/machinery/pipedispenser, "merge:ui_data_obj_machinery_pipedispenser{disposals:num,p_layer:unknown,pipe_layers:list,categories:list}")
+MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 
-/// The computed part of /obj/machinery/pipedispenser's window data (declared on its UI_DATA row).
-/obj/machinery/pipedispenser/proc/ui_data_obj_machinery_pipedispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The dispenser answers someone next to it who can move and act, and only while it is bolted down.
+/obj/machinery/pipedispenser/proc/dispenser_usable(datum/act/op/A)
+	var/mob/user = A.actor
+	return !unwrenched && user.canmove && !user.stat && !user.restrained() && get_dist(loc, user) <= 1 // ALLOW(reads): the bolts and the person are read when a button is pressed, never from a cached menu
+
+/obj/machinery/pipedispenser/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"disposals" = disposals,
 		"p_layer" = p_layer,
@@ -68,28 +76,21 @@ UI_DATA_REPLACE(/obj/machinery/pipedispenser, "merge:ui_data_obj_machinery_piped
 
 	return data
 
-/obj/machinery/pipedispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(unwrenched || !ui.user.canmove || ui.user.stat || ui.user.restrained() || !in_range(loc, ui.user))
-		return FALSE
-	return TRUE
 
-UI_ACT(/obj/machinery/pipedispenser, "p_layer", ui_act_p_layer, UI_ARG_NUM("p_layer"))
-UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_p_layer)
+/obj/machinery/pipedispenser/proc/ui_act_p_layer(datum/act/op/A, raw_p_layer)
 	. = TRUE
-	p_layer = params["p_layer"]
+	p_layer = raw_p_layer
 
-UI_ACT(/obj/machinery/pipedispenser, "dispense_pipe", ui_act_dispense_pipe, UI_ARG_VALUE("bent"), UI_ARG_REF("ref", null, /datum/pipe_recipe))
-UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_dispense_pipe)
+/obj/machinery/pipedispenser/proc/ui_act_dispense_pipe(datum/act/op/A, bent, raw_ref)
+	var/mob/user = A.actor
 	. = TRUE
 	if(COOLDOWN_FINISHED(src, wait))
-		var/datum/pipe_recipe/recipe = params["ref"]
+		var/datum/pipe_recipe/recipe = ui_ref(raw_ref, null, /datum/pipe_recipe)
 		if(!istype(recipe))
 			return
 
 		var/target_dir = NORTH
-		if(params["bent"])
+		if(bent)
 			target_dir = NORTHEAST
 
 		var/obj/created_object = null
@@ -106,10 +107,10 @@ UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_dispense_pipe)
 		else if(istype(recipe, /datum/pipe_recipe/meter))
 			created_object = new recipe.pipe_type(loc)
 		else
-			log_runtime(EXCEPTION("Warning: [ui.user] attempted to spawn pipe recipe type by ref [params["ref"]] ([recipe] [recipe?.type]), but it was not allowed by this machine ([src] [type])"))
+			log_runtime(EXCEPTION("Warning: [user] attempted to spawn pipe recipe type by ref [ui_ref(raw_ref, null, /datum/pipe_recipe)] ([recipe] [recipe?.type]), but it was not allowed by this machine ([src] [type])"))
 			return
 
-		created_object.add_fingerprint(ui.user)
+		created_object.add_fingerprint(user)
 		COOLDOWN_START(src, wait, 15)
 
 

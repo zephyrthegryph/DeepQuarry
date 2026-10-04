@@ -1675,19 +1675,13 @@ CAPABILITIES(/obj/structure/sign/flag)
 	effect = /obj/structure/sign/flag/proc/interaction_rip
 
 /obj/structure/sign/flag/proc/interaction_rip(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/confirm/flag_rip, PROC_REF(rip_answered))
+	open_request(src, /datum/prompt/yes_no, PROC_REF(rip_answered), answerer = user, title = "You think...", question = "Do you want to rip \the [src] from its place?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/datum/om/prompt/confirm/flag_rip
-	title = "You think..."
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/datum/om/prompt/confirm/flag_rip/prepare()
-	message = "Do you want to rip \the [subject] from its place?"
-	return TRUE
-
-/obj/structure/sign/flag/proc/rip_answered(datum/om/prompt/confirm/flag_rip/ask)
-	var/mob/user = ask.answerer
+/obj/structure/sign/flag/proc/rip_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/user = A.request.answerer
 	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!" ))
 	play_sfx(src.loc, SFX_ITEMS_POSTER_RIPPED)
 	add_fingerprint(user)

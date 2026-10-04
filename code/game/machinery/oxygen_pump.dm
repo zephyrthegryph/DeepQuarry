@@ -21,6 +21,8 @@
 CAPABILITIES(/obj/machinery/oxygen_pump)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	owns_one(nameof(contained), starts = nameof(mask_type))
+	interface("Tank")
+	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 
 /// Who wears the mask (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
@@ -211,8 +213,6 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 /obj/machinery/oxygen_pump/proc/oxygen_pump_settings(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 
-DECLARE_UI(/obj/machinery/oxygen_pump, "Tank")
-
 /obj/machinery/oxygen_pump/ui_prepare(mob/user, datum/tgui/ui)
 	if(!tank)
 		to_chat(user, span_warning("[src] is missing a tank."))
@@ -220,10 +220,7 @@ DECLARE_UI(/obj/machinery/oxygen_pump, "Tank")
 
 	return TRUE
 
-UI_DATA(/obj/machinery/oxygen_pump, "merge:ui_data_obj_machinery_oxygen_pump{showToggle:bool,maskConnected:bool,tankPressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num}")
-
-/// The computed part of /obj/machinery/oxygen_pump's window data (declared on its UI_DATA row).
-/obj/machinery/oxygen_pump/proc/ui_data_obj_machinery_oxygen_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/oxygen_pump/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["showToggle"] = FALSE
@@ -242,9 +239,8 @@ UI_DATA(/obj/machinery/oxygen_pump, "merge:ui_data_obj_machinery_oxygen_pump{sho
 
 	return data
 
-UI_ACT(/obj/machinery/oxygen_pump, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
-UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
-	var/pressure = params["pressure"]
+/obj/machinery/oxygen_pump/proc/ui_act_pressure(datum/act/op/A, raw_pressure)
+	var/pressure = raw_pressure
 	if(pressure == "reset")
 		pressure = TANK_DEFAULT_RELEASE_PRESSURE
 		. = TRUE

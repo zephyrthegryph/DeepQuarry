@@ -10531,6 +10531,19 @@
 	into += entry_line(45)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/machinery/ai_slipper) at code/game/machinery/ai_slipper.dm:82
+/obj/machinery/ai_slipper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/ai_slipper.dm", 82, /obj/machinery/ai_slipper)
+	into += entry_line(83)
+	into += list(global.interface("AiSlipper", title = "AI Liquid Dispenser"))
+	into += entry_line(84)
+	into += list(global.op("toggle_on", global.ui_act("toggle_on"), global.then(PROC_REF(ui_act_toggle_on))))
+	into += entry_line(85)
+	into += list(global.op("toggle_use", global.ui_act("toggle_use"), global.then(PROC_REF(ui_act_toggle_use))))
+	into += entry_line(86)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(panel_unlocked), because = MSG(ai_slipper/panel_locked)))))
+
 /// CAPABILITIES(/obj/machinery/airlock_sensor) at code/game/machinery/doors/airlock_control.dm:191
 /obj/machinery/airlock_sensor/declared_entries(list/into)
 	..(into)
@@ -11848,6 +11861,10 @@
 	into += list(global.owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm))
 	into += entry_line(42)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm))
+	into += entry_line(43)
+	into += list(global.extend(/datum/act/hit/projectile, global.instead(global.then(PROC_REF(firealarm_shot)))))
+	into += entry_line(44)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(firealarm_emp)))))
 
 /// CAPABILITIES(/obj/machinery/fitness/heavy) at code/modules/vore/weight/fitness_machines.dm:70
 /obj/machinery/fitness/heavy/declared_entries(list/into)
@@ -12140,6 +12157,25 @@
 	into += entry_line(99)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell)))
 
+/// CAPABILITIES(/obj/machinery/navbeacon) at code/game/machinery/navbeacon.dm:94
+/obj/machinery/navbeacon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/navbeacon.dm", 94, /obj/machinery/navbeacon)
+	into += entry_line(95)
+	into += list(global.interface("NavBeacon"))
+	into += entry_line(96)
+	into += list(global.op("lock", global.ui_act("lock"), global.then(PROC_REF(ui_act_lock))))
+	into += entry_line(97)
+	into += list(global.op("loc_edit", global.ui_act("loc_edit", global.arg("new_loc", global.schema_text(4096))), global.then(PROC_REF(ui_act_loc_edit))))
+	into += entry_line(98)
+	into += list(global.op("trans_edit_key", global.ui_act("trans_edit_key", global.arg("code", global.schema_text(4096)), global.arg("new_key", global.schema_text(4096))), global.then(PROC_REF(ui_act_trans_edit_key))))
+	into += entry_line(99)
+	into += list(global.op("trans_edit_code", global.ui_act("trans_edit_code", global.arg("code", global.schema_text(4096)), global.arg("new_val", global.schema_text(4096))), global.then(PROC_REF(ui_act_trans_edit_code))))
+	into += entry_line(100)
+	into += list(global.op("trans_add_code", global.ui_act("trans_add_code", global.arg("new_key", global.schema_text(4096)), global.arg("new_val", global.schema_text(4096))), global.then(PROC_REF(ui_act_trans_add_code))))
+	into += entry_line(101)
+	into += list(global.op("trans_del", global.ui_act("trans_del", global.arg("code", global.schema_text(4096))), global.then(PROC_REF(ui_act_trans_del))))
+
 /// CAPABILITIES(/obj/machinery/newscaster) at code/game/machinery/newscaster.dm:161
 /obj/machinery/newscaster/declared_entries(list/into)
 	..(into)
@@ -12183,6 +12219,10 @@
 	into += list(global.owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type)))
 	into += entry_line(23)
 	into += list(global.owns_one(nameof(contained), starts = nameof(mask_type)))
+	into += entry_line(24)
+	into += list(global.interface("Tank"))
+	into += entry_line(25)
+	into += list(global.op("pressure", global.ui_act("pressure", global.arg("pressure")), global.then(PROC_REF(ui_act_pressure))))
 
 /// CAPABILITIES(/obj/machinery/papershredder) at code/modules/paperwork/papershredder.dm:29
 /obj/machinery/papershredder/declared_entries(list/into)
@@ -12205,6 +12245,23 @@
 	into += entry_line(30)
 	into += list(global.owns_many(nameof(recipes)))
 
+/// CAPABILITIES(/obj/machinery/partyalarm) at code/game/machinery/fire_alarm.dm:288
+/obj/machinery/partyalarm/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/fire_alarm.dm", 288, /obj/machinery/partyalarm)
+	into += entry_line(289)
+	into += list(global.interface("PartyAlarm", title = "Party Button"))
+	into += entry_line(290)
+	into += list(global.op("reset", global.ui_act("reset"), global.then(PROC_REF(ui_act_reset))))
+	into += entry_line(291)
+	into += list(global.op("alarm", global.ui_act("alarm"), global.then(PROC_REF(ui_act_alarm))))
+	into += entry_line(292)
+	into += list(global.op("time", global.ui_act("time", global.arg("value", global.num())), global.then(PROC_REF(ui_act_time))))
+	into += entry_line(293)
+	into += list(global.op("tp", global.ui_act("tp", global.arg("value", global.num())), global.then(PROC_REF(ui_act_tp))))
+	into += entry_line(294)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(button_usable), because = MSG(partyalarm/unusable)))))
+
 /// CAPABILITIES(/obj/machinery/pda_multicaster) at code/game/machinery/pda_multicaster.dm:21
 /obj/machinery/pda_multicaster/declared_entries(list/into)
 	..(into)
@@ -12218,6 +12275,19 @@
 	into += entry_block("code/game/machinery/petrification.dm", 22, /obj/machinery/petrification)
 	into += entry_line(23)
 	into += list(global.owns_many(nameof(remotes)))
+
+/// CAPABILITIES(/obj/machinery/pipedispenser) at code/game/machinery/pipe/pipe_dispenser.dm:34
+/obj/machinery/pipedispenser/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/pipe/pipe_dispenser.dm", 34, /obj/machinery/pipedispenser)
+	into += entry_line(35)
+	into += list(global.interface("PipeDispenser"))
+	into += entry_line(36)
+	into += list(global.op("p_layer", global.ui_act("p_layer", global.arg("p_layer", global.num())), global.then(PROC_REF(ui_act_p_layer))))
+	into += entry_line(37)
+	into += list(global.op("dispense_pipe", global.ui_act("dispense_pipe", global.arg("bent"), global.arg("ref")), global.then(PROC_REF(ui_act_dispense_pipe))))
+	into += entry_line(38)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use)))))
 
 /// CAPABILITIES(/obj/machinery/pipelayer) at code/game/machinery/pipe/pipelayer.dm:25
 /obj/machinery/pipelayer/declared_entries(list/into)
