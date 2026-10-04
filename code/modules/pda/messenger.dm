@@ -207,32 +207,6 @@ TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_mes
 		to_chat(U, span_notice("ERROR: Messaging server is not responding.\n\n\
 			However, your message has been saved: ") + t)
 
-/datum/data/pda/app/messenger/proc/available_pdas()
-	var/list/names = list()
-	var/list/plist = list()
-	var/list/namecounts = list()
-
-	if(toff)
-		to_chat(usr, "Turn on your receiver in order to send messages.")
-		return
-
-	for(var/obj/item/pda/P as anything in REGISTRY_MEMBERS(REGISTRY_PDAS))
-		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
-
-		if(!P.owner || !PM || PM.hidden || P == pda() || PM.toff)
-			continue
-
-		var/name = P.owner
-		if(name in names)
-			namecounts[name]++
-			name = text("[name] ([namecounts[name]])")
-		else
-			names.Add(name)
-			namecounts[name] = 1
-
-		plist[text("[name]")] = P
-	return plist
-
 /datum/data/pda/app/messenger/proc/can_receive()
 	return pda().owner && !toff && !hidden
 

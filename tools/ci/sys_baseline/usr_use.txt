@@ -181,8 +181,6 @@ usr_outside_verb	code/modules/error_handler/error_viewer.dm	usr_ref = "[REF(usr)
 usr_outside_verb	code/modules/error_handler/error_viewer.dm	rel_set(src, nameof(usr_loc), get_turf(usr))
 usr_outside_verb	code/modules/examine/examine.dm	return "[icon2html(GLOB.description_icons[icon_state], usr)]&emsp;"
 usr_outside_verb	code/modules/food/food/snacks.dm	if(istype(user) && user == usr)
-usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	wirer.wire(pin, usr)
-usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	debugger.write_data(pin, usr)
 usr_outside_verb	code/modules/keybindings/hover.dm	usr?.client?.note_hover(src)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.DblClickOn(src, params)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.MouseWheelOn(src, delta_x, delta_y, params)
@@ -206,7 +204,6 @@ usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_object))
-usr_outside_verb	code/modules/pda/messenger.dm	to_chat(usr, "Turn on your receiver in order to send messages.")
 usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
 usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"

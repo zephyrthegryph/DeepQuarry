@@ -102,7 +102,7 @@
 			EXPIRY_SET(src, buzzed, 6 SECONDS, CLOCK_WORLD)
 
 		icon_state = "holo_medical-deny"
-		om_after_replace(src, 10 SECONDS, PROC_REF(reset_deny_icon))
+		after(src, 10 SECONDS, PROC_REF(reset_deny_icon), key = "medical_holosign_deny_reset")
 
 /obj/structure/holosign/barrier/medical/proc/reset_deny_icon()
 	icon_state = "holo_medical"

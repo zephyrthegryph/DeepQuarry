@@ -243,9 +243,8 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	for (var/atom/movable/target in repulse_targets(owner))
 		repulse(target, owner)
 
-	var/datum/armour_dimensional_theme/theme = new()
+	var/datum/armour_dimensional_theme/theme = dq_proto(/datum/armour_dimensional_theme)
 	theme.apply_random(get_turf(owner), dangerous = FALSE)
-	qdel(theme)
 
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
@@ -273,9 +272,8 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 
 /obj/item/clothing/suit/armor/reactive/barricade/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("The reactive armor shunts matter from an unstable dimension!"))
-	var/datum/armour_dimensional_theme/theme = new()
+	var/datum/armour_dimensional_theme/theme = dq_proto(/datum/armour_dimensional_theme)
 	theme.apply_random(get_turf(owner), dangerous = TRUE)
-	qdel(theme)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
