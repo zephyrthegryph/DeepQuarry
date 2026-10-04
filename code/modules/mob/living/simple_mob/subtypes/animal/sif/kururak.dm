@@ -184,8 +184,10 @@
 	if(!A.answer && (R.outcome != REQ_CANCELLED || !isnull(R.answer_value)))
 		return
 	var/target = A.answer ? A.answer.answer_value : null
-	if(isdatum(target) && QDELETED(target))
-		return
+	if(isdatum(target))
+		var/datum/target_datum = target
+		if(QDELETED(target_datum))
+			return
 	tail_flash_now(isatom(target) ? target : null)
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_now(atom/A)
