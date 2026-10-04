@@ -435,12 +435,18 @@ CAPABILITIES(/obj/soulgem)
 
 // Transfer the selected soul to either a valid object or another soulcatcher
 /obj/soulgem/proc/transfer_selected()
+	return soulgem_selected_stage()
+
+/obj/soulgem/proc/soulgem_selected_stage(obj/selected_target, prompted = FALSE)
 	if(!selected_soul()) return
 	if(!(selected_soul().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER)) return
 	var/list/valid_objects = find_transfer_objects()
 	if(!valid_objects || !valid_objects.len)
 		return
-	var/obj/target = rerun_ask(owner(), "a1", PROC_REF(transfer_selected), args, /datum/om/prompt/choice, message = "Select where you want to store the mind into.", title = "Mind Transfer Target", choices = valid_objects)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/soulgem_consent, PROC_REF(soulgem_selected_answered), answerer = owner(), question = "Select where you want to store the mind into.", title = "Mind Transfer Target", choices = valid_objects)
+		return
+	var/obj/target = selected_target
 	if(isnull(target))
 		return
 	transfer_mob_selector(selected_soul(), target)
@@ -482,10 +488,16 @@ CAPABILITIES(/obj/soulgem)
 
 // Transfers a captured soul to another soulcatcher
 /obj/soulgem/proc/transfer_mob_soulcatcher(mob/living/carbon/brain/caught_soul/vore/M, obj/soulgem/gem)
+	return soulgem_transfer_stage(M, gem)
+
+/obj/soulgem/proc/soulgem_transfer_stage(mob/living/carbon/brain/caught_soul/vore/M, obj/soulgem/gem, response, prompted = FALSE)
 	if(is_taken_over()) return
 	if(!istype(M) || !gem) return
 	if(!gem.owner()) return
-	var/_answer_a2 = rerun_ask(gem.owner(), "a2", PROC_REF(transfer_mob_soulcatcher), args, /datum/om/prompt/choice/alert, message = "Do you want to allow [owner()] to transfer [selected_soul()] to your soulcatcher?", title = "Allow Transfer", choices = list("No", "Yes"))
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/soulgem_consent, PROC_REF(soulgem_transfer_answered), answerer = gem.owner(), soulgem_mob = M, soulgem_destination = gem, question = "Do you want to allow [owner()] to transfer [selected_soul()] to your soulcatcher?", title = "Allow Transfer", choices = list("No", "Yes"), buttons = TRUE)
+		return
+	var/_answer_a2 = response
 	if(isnull(_answer_a2))
 		return
 	if((_answer_a2 != "Yes"))
@@ -543,11 +555,17 @@ CAPABILITIES(/obj/soulgem)
 
 // The function handling the actual delete, returns TRUE on success
 /obj/soulgem/proc/delete_mob(mob/M)
+	return soulgem_delete_stage(M)
+
+/obj/soulgem/proc/soulgem_delete_stage(mob/M, response, prompted = FALSE)
 	if(is_taken_over()) return FALSE
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION))
 		return release_mob(M)
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION_INSTANT))
-		var/_answer_a3 = rerun_ask(M, "a3", PROC_REF(delete_mob), args, /datum/om/prompt/choice/alert, message = "Do you really want to allow [owner()] to delete you? On decline, you'll be ghosted.", title = "Allow Deletion", choices = list("No", "Yes"), timeout = 1 MINUTES)
+		if(!prompted)
+			open_request(src, /datum/prompt/choice/soulgem_consent, PROC_REF(soulgem_delete_answered), answerer = M, soulgem_mob = M, question = "Do you really want to allow [owner()] to delete you? On decline, you'll be ghosted.", title = "Allow Deletion", choices = list("No", "Yes"), timeout = 1 MINUTES, buttons = TRUE)
+			return
+		var/_answer_a3 = response
 		if(isnull(_answer_a3))
 			return
 		if(_answer_a3 != "Yes")
@@ -574,3 +592,65 @@ CAPABILITIES(/obj/soulgem)
 /// the owner this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/owner() as /mob/living
 	return owner
+
+/obj/soulgem/proc/soulgem_selected_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = soulgem_selected_apply(A)
+	SStgui.update_uis(src)
+
+/obj/soulgem/proc/soulgem_selected_apply(datum/act/request/A)
+	var/datum/prompt/choice/soulgem_consent/ask = A.answer
+	return soulgem_selected_stage(ask.answer_value, TRUE)
+
+/obj/soulgem/proc/soulgem_transfer_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = soulgem_transfer_apply(A)
+	SStgui.update_uis(src)
+
+/obj/soulgem/proc/soulgem_transfer_apply(datum/act/request/A)
+	var/datum/prompt/choice/soulgem_consent/ask = A.answer
+	return soulgem_transfer_stage(ask.soulgem_mob, ask.soulgem_destination, ask.answer_value, TRUE)
+
+/obj/soulgem/proc/soulgem_delete_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = soulgem_delete_apply(A)
+	SStgui.update_uis(src)
+
+/obj/soulgem/proc/soulgem_delete_apply(datum/act/request/A)
+	var/datum/prompt/choice/soulgem_consent/ask = A.answer
+	return soulgem_delete_stage(ask.soulgem_mob, ask.answer_value, TRUE)
+
+/datum/prompt/choice/soulgem_consent
+	timeout = 0
+	var/mob/soulgem_mob
+	var/soulgem_mob_expected = FALSE
+	var/obj/soulgem/soulgem_destination
+	var/soulgem_destination_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/soulgem_consent)
+	ref_one(nameof(soulgem_mob), /mob)
+	ref_one(nameof(soulgem_destination), /obj/soulgem)
+
+/datum/prompt/choice/soulgem_consent/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_mob = soulgem_mob
+	soulgem_mob_expected = !isnull(captured_mob)
+	rel_clear(src, nameof(soulgem_mob))
+	if(captured_mob && !QDELETED(captured_mob))
+		rel_set(src, nameof(soulgem_mob), captured_mob)
+	var/obj/soulgem/captured_destination = soulgem_destination
+	soulgem_destination_expected = !isnull(captured_destination)
+	rel_clear(src, nameof(soulgem_destination))
+	if(captured_destination && !QDELETED(captured_destination))
+		rel_set(src, nameof(soulgem_destination), captured_destination)
+
+/datum/prompt/choice/soulgem_consent/recheck_extra()
+	if((soulgem_mob_expected && QDELETED(soulgem_mob)) || (soulgem_destination_expected && QDELETED(soulgem_destination)))
+		return "gone"
+	if(!isnull(answer_value) && istype(answer_value, /datum))
+		var/datum/selected = answer_value
+		if(QDELETED(selected))
+			return "gone"

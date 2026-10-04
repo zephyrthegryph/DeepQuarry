@@ -33,9 +33,8 @@ DECLARE_PERIODIC(/obj/effect/phase_shift, PERIODIC_SLOW)
 	set_light(3, 5, l_color = "#FA58F4")
 
 // whatever phased inside comes back out on the turf.
-/obj/effect/phase_shift/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+CAPABILITIES(/obj/effect/phase_shift)
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 
 /// Wears on whoever hides inside every 2 s; empty, it sleeps.
 /obj/effect/phase_shift/periodic_step()

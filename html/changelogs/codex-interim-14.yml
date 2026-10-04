@@ -1,0 +1,4 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated revival, research, checkout and admin prompts to native requests."

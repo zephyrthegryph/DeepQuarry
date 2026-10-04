@@ -4,19 +4,69 @@ GLOBAL_VAR_INIT(send_beruang, FALSE)
 GLOBAL_VAR_INIT(can_call_traders, TRUE)
 
 ADMIN_VERB(trader_ship, R_ADMIN|R_EVENT, "Dispatch Beruang Trader Ship", "Invite players to join the Beruang.", ADMIN_CATEGORY_FUN_EVENT_KIT)
+	if(QDELETED(user.mob))
+		return
+	var/datum/admin_trader_dispatch_review/review = new
+	review.client_ckey = user.ckey
+	rel_set(review, nameof(review.actor), user.mob)
+	review.run_step()
+
+/datum/admin_trader_dispatch_review
+	var/tmp/mob/actor
+	var/client_ckey
+	var/stage = 0
+	var/dispatch_answer
+	var/alert_answer
+
+CAPABILITIES(/datum/admin_trader_dispatch_review)
+	ref_one(nameof(actor), /mob)
+
+/datum/admin_trader_dispatch_review/proc/refusal()
+	if(QDELETED(actor) || !GLOB.directory[client_ckey])
+		return "The requesting administrator is no longer available."
+
+/datum/admin_trader_dispatch_review/proc/run_step()
+	var/datum/result/result = safe_call(PROC_REF(replay))
+	if(!result.ok)
+		stack_trace("om flow trader_ship continuation: [result.error]")
+	if(!result.ok || result.value != TRUE)
+		retire()
+
+/datum/admin_trader_dispatch_review/proc/answered(datum/act/request/context)
+	if(!context.answer)
+		retire()
+		return
+	if(stage == 0)
+		dispatch_answer = context.request.answer_value
+	else
+		alert_answer = context.request.answer_value
+	stage++
+	run_step()
+
+/datum/admin_trader_dispatch_review/proc/replay()
+	var/client/user = GLOB.directory[client_ckey]
+	if(!user || QDELETED(user.mob))
+		return
+	rel_set(src, nameof(actor), user.mob)
 	if(SSticker.current_state <= GAME_STATE_PREGAME)
 		to_chat(user, span_danger("The round hasn't started yet!"))
 		return
 	if(GLOB.send_beruang)
 		to_chat(user, span_danger("The Beruang has already been sent this round!"))
 		return
-	var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Do you want to dispatch the Beruang trade ship?", title = "Trade Ship", choices = list("Yes","No"))
+	if(stage == 0)
+		open_request(src, /datum/prompt/choice/admin_trader_dispatch, PROC_REF(answered), answerer = actor)
+		return TRUE
+	var/_answer_a1 = dispatch_answer
 	if(isnull(_answer_a1))
 		return
 	if(_answer_a1 != "Yes")
 		return
 	if(get_security_level() == "red") // Allow admins to reconsider if the alert level is Red
-		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "The station is in red alert. Do you still want to send traders?", title = "Trade Ship", choices = list("Yes","No"))
+		if(stage == 1)
+			open_request(src, /datum/prompt/choice/admin_trader_red_alert, PROC_REF(answered), answerer = actor)
+			return TRUE
+		var/_answer_a2 = alert_answer
 		if(isnull(_answer_a2))
 			return
 		if(_answer_a2 != "Yes")
@@ -28,6 +78,29 @@ ADMIN_VERB(trader_ship, R_ADMIN|R_EVENT, "Dispatch Beruang Trader Ship", "Invite
 	message_admins("[key_name_admin(user)] is dispatching the Beruang.")
 	log_admin("[key_name(user)] used Dispatch Beruang Trader Ship.")
 	trigger_trader_visit()
+
+/datum/admin_trader_dispatch_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+
+/datum/prompt/choice/admin_trader_dispatch
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	title = "Trade Ship"
+	question = "Do you want to dispatch the Beruang trade ship?"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_trader_dispatch/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_trader_dispatch_review/review = owner
+	return review.refusal()
+
+/datum/prompt/choice/admin_trader_red_alert
+	parent_type = /datum/prompt/choice/admin_trader_dispatch
+	question = "The station is in red alert. Do you still want to send traders?"
 
 /client/verb/JoinTraders()
 	set name = "Join Trader Visit"

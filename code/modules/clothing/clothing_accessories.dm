@@ -137,6 +137,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 	removetie_proc(usr)
 
 /obj/item/clothing/proc/removetie_proc(mob/living/user)
+	return accessory_remove_stage(user)
+
+/obj/item/clothing/proc/accessory_remove_stage(mob/living/user, obj/item/clothing/accessory/selected_accessory, prompted = FALSE)
 
 	if(!isliving(user))
 		return
@@ -163,10 +166,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 		if(accessory_amount == 1)
 			A = accessories[1] // If there's only one accessory, just remove it without any additional prompts.
 		else
-			var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(removetie_proc), args, /datum/om/prompt/choice, message = "Select an accessory to remove from \the [src]", title = "Accessory Choice", choices = accessories)
-			if(isnull(_answer_a1))
+			if(!prompted)
+				open_request(src, /datum/prompt/choice/accessory_remove_review, PROC_REF(accessory_remove_answered), answerer = user, question = "Select an accessory to remove from \the [src]", title = "Accessory Choice", choices = accessories)
 				return
-			A = _answer_a1
+			if(isnull(selected_accessory))
+				return
+			A = selected_accessory
 
 	if(A)
 		if(A.can_remove)
@@ -178,3 +183,21 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 	if(!LAZYLEN(accessories))
 		revoke(src, granted_verb(/obj/item/clothing/proc/removetie_verb), src)
 		own_take_all(src, nameof(accessories))
+
+/obj/item/clothing/proc/accessory_remove_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	. = accessory_remove_apply(context)
+	SStgui.update_uis(src)
+
+/obj/item/clothing/proc/accessory_remove_apply(datum/act/request/context)
+	return accessory_remove_stage(context.request.answerer, context.answer.answer_value, TRUE)
+
+/datum/prompt/choice/accessory_remove_review
+	timeout = 0
+
+/datum/prompt/choice/accessory_remove_review/recheck_extra()
+	if(!isnull(answer_value))
+		var/obj/item/clothing/accessory/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"

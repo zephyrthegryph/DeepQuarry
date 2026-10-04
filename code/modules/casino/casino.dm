@@ -294,9 +294,8 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 	if(trapped && trapped.held_mob)
 		to_chat(trapped.held_mob, span_critical("THE WHOLE WORLD IS SENT WHIRLING AS THE ROULETTE SPINS!!!"))
 
-/obj/item/roulette_ball/hollow/ownership()
-	. = ..()
-	. += owns(nameof(trapped), policy = OWN_SPILL)
+CAPABILITIES(/obj/item/roulette_ball/hollow)
+	owns_one(nameof(trapped), on_destroy = ON_DESTROY_SPILL)
 
 /obj/item/roulette_ball/cheat
 	cheatball = TRUE
@@ -425,10 +424,16 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	return !om_busy(src)
 
 /obj/machinery/wheel_of_fortune/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+	return wheel_use_stage(user, held, interaction, list())
+
+/obj/machinery/wheel_of_fortune/proc/wheel_use_stage(mob/user, obj/item/held, datum/interaction/interaction, list/wheel_answers)
 	if(user.incapacitated())
 		return TRUE
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k410 = rerun_ask(user, "k410", PROC_REF(interaction_use), args, /datum/om/prompt/choice, message = "Choose what to do", title = "Wheel Of Fortune", choices = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel"))
+		if(!("k410" in wheel_answers))
+			open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_use_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k410", wheel_held = held, wheel_interaction = interaction, question = "Choose what to do", title = "Wheel Of Fortune", choices = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel"))
+			return
+		var/_answer_k410 = wheel_answers["k410"]
 		if(isnull(_answer_k410))
 			return
 		switch(_answer_k410)
@@ -441,7 +446,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 				to_chat(user,span_notice("You spin the wheel!"))
 				spin_the_wheel("not_lottery")
 			if("Set the interval")
-				interaction_setinterval(user)
+				wheel_interval_stage(user, list())
 	return TRUE
 
 /datum/interaction/machine_item/wheel_of_fortune_id
@@ -466,9 +471,15 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	return TRUE
 
 /obj/machinery/wheel_of_fortune/proc/interaction_id(mob/user, obj/item/W, datum/interaction/interaction)
+	return wheel_management_stage(user, W, interaction, list())
+
+/obj/machinery/wheel_of_fortune/proc/wheel_management_stage(mob/user, obj/item/W, datum/interaction/interaction, list/wheel_answers)
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k445 = rerun_ask(user, "k445", PROC_REF(interaction_id), args, /datum/om/prompt/choice, message = "Choose what to do (Management)", title = "Wheel Of Fortune (Management)", choices = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel"))
+		if(!("k445" in wheel_answers))
+			open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_management_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k445", wheel_held = W, wheel_interaction = interaction, question = "Choose what to do (Management)", title = "Wheel Of Fortune (Management)", choices = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel"))
+			return
+		var/_answer_k445 = wheel_answers["k445"]
 		if(isnull(_answer_k445))
 			return
 		switch(_answer_k445)
@@ -495,7 +506,10 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 				to_chat(user,span_notice("Public spins has been disabled."))
 
 			if("Reset Lottery")
-				var/confirm = rerun_ask(user, "k469", PROC_REF(interaction_id), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to reset Lottery?", title = "Confirm Lottery Reset", choices = list("Yes", "No"))
+				if(!("k469" in wheel_answers))
+					open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_management_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k469", wheel_held = W, wheel_interaction = interaction, question = "Are you sure you want to reset Lottery?", title = "Confirm Lottery Reset", choices = list("Yes", "No"), buttons = TRUE)
+					return
+				var/confirm = wheel_answers["k469"]
 				if(isnull(confirm))
 					return
 				if(confirm == "Yes")
@@ -582,10 +596,16 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 
 /// Old verb body, also called directly from the attack_hand "Set the interval" menu option.
 /obj/machinery/wheel_of_fortune/proc/interaction_setinterval(mob/user)
+	return wheel_interval_stage(user, list())
+
+/obj/machinery/wheel_of_fortune/proc/wheel_interval_stage(mob/user, list/wheel_answers)
 	if(user.incapacitated())
 		return
 	if(ishuman(user) || isrobot(user))
-		var/new_interval = rerun_ask(user, "k556", PROC_REF(interaction_setinterval), args, /datum/om/prompt/number, message = "Put the desired interval (1-1000)", title = "Set Interval", max = 1000, min = 1)
+		if(!("k556" in wheel_answers))
+			open_request(src, /datum/prompt/number/wheel_review, PROC_REF(wheel_interval_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k556", question = "Put the desired interval (1-1000)", title = "Set Interval")
+			return
+		var/new_interval = wheel_answers["k556"]
 		if(isnull(new_interval))
 			return
 		if(!isnum(new_interval) || new_interval < 1 || new_interval > 1000)
@@ -1036,3 +1056,121 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 /obj/structure/casino_table/roulette_table/ownership()
 	. = ..()
 	. += owns(nameof(ball), policy = OWN_CONTAINED, starts = /obj/item/roulette_ball)
+
+/obj/machinery/wheel_of_fortune/proc/wheel_use_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = wheel_use_apply(A)
+	SStgui.update_uis(src)
+
+/obj/machinery/wheel_of_fortune/proc/wheel_use_apply(datum/act/request/A)
+	var/datum/prompt/choice/wheel_review/ask = A.answer
+	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	return wheel_use_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_interaction, ask.wheel_answers)
+
+/obj/machinery/wheel_of_fortune/proc/wheel_management_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = wheel_management_apply(A)
+	SStgui.update_uis(src)
+
+/obj/machinery/wheel_of_fortune/proc/wheel_management_apply(datum/act/request/A)
+	var/datum/prompt/choice/wheel_review/ask = A.answer
+	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	return wheel_management_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_interaction, ask.wheel_answers)
+
+/obj/machinery/wheel_of_fortune/proc/wheel_interval_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = wheel_interval_apply(A)
+	SStgui.update_uis(src)
+
+/obj/machinery/wheel_of_fortune/proc/wheel_interval_apply(datum/act/request/A)
+	var/datum/prompt/number/wheel_review/ask = A.answer
+	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	return wheel_interval_stage(ask.wheel_operator, ask.wheel_answers)
+
+/datum/prompt/choice/wheel_review
+	timeout = 0
+	var/mob/wheel_operator
+	var/wheel_operator_expected = FALSE
+	var/obj/item/wheel_held
+	var/wheel_held_expected = FALSE
+	var/datum/interaction/wheel_interaction
+	var/wheel_interaction_expected = FALSE
+	var/list/wheel_answers
+	var/wheel_key
+
+CAPABILITIES(/datum/prompt/choice/wheel_review)
+	ref_one(nameof(wheel_operator), /mob)
+	ref_one(nameof(wheel_held), /obj/item)
+	ref_one(nameof(wheel_interaction), /datum/interaction)
+
+/datum/prompt/choice/wheel_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_wheel_operator = wheel_operator
+	wheel_operator_expected = !isnull(captured_wheel_operator)
+	rel_clear(src, nameof(wheel_operator))
+	if(captured_wheel_operator && !QDELETED(captured_wheel_operator))
+		rel_set(src, nameof(wheel_operator), captured_wheel_operator)
+	var/obj/item/captured_wheel_held = wheel_held
+	wheel_held_expected = !isnull(captured_wheel_held)
+	rel_clear(src, nameof(wheel_held))
+	if(captured_wheel_held && !QDELETED(captured_wheel_held))
+		rel_set(src, nameof(wheel_held), captured_wheel_held)
+	var/datum/interaction/captured_wheel_interaction = wheel_interaction
+	wheel_interaction_expected = !isnull(captured_wheel_interaction)
+	rel_clear(src, nameof(wheel_interaction))
+	if(captured_wheel_interaction && !QDELETED(captured_wheel_interaction))
+		rel_set(src, nameof(wheel_interaction), captured_wheel_interaction)
+
+/datum/prompt/choice/wheel_review/recheck_extra()
+	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)) || (wheel_interaction_expected && QDELETED(wheel_interaction)))
+		return "gone"
+
+/datum/prompt/number/wheel_review
+	timeout = 0
+	min_value = null
+	max_value = null
+	step = null
+	var/mob/wheel_operator
+	var/wheel_operator_expected = FALSE
+	var/obj/item/wheel_held
+	var/wheel_held_expected = FALSE
+	var/datum/interaction/wheel_interaction
+	var/wheel_interaction_expected = FALSE
+	var/list/wheel_answers
+	var/wheel_key
+
+CAPABILITIES(/datum/prompt/number/wheel_review)
+	ref_one(nameof(wheel_operator), /mob)
+	ref_one(nameof(wheel_held), /obj/item)
+	ref_one(nameof(wheel_interaction), /datum/interaction)
+
+/datum/prompt/number/wheel_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_wheel_operator = wheel_operator
+	wheel_operator_expected = !isnull(captured_wheel_operator)
+	rel_clear(src, nameof(wheel_operator))
+	if(captured_wheel_operator && !QDELETED(captured_wheel_operator))
+		rel_set(src, nameof(wheel_operator), captured_wheel_operator)
+	var/obj/item/captured_wheel_held = wheel_held
+	wheel_held_expected = !isnull(captured_wheel_held)
+	rel_clear(src, nameof(wheel_held))
+	if(captured_wheel_held && !QDELETED(captured_wheel_held))
+		rel_set(src, nameof(wheel_held), captured_wheel_held)
+	var/datum/interaction/captured_wheel_interaction = wheel_interaction
+	wheel_interaction_expected = !isnull(captured_wheel_interaction)
+	rel_clear(src, nameof(wheel_interaction))
+	if(captured_wheel_interaction && !QDELETED(captured_wheel_interaction))
+		rel_set(src, nameof(wheel_interaction), captured_wheel_interaction)
+
+/datum/prompt/number/wheel_review/recheck_extra()
+	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)) || (wheel_interaction_expected && QDELETED(wheel_interaction)))
+		return "gone"
+
+/datum/prompt/number/wheel_review/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, 1000, 1, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box

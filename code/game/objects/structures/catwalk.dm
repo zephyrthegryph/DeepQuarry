@@ -29,7 +29,7 @@
 			if(!(C.flags & ATOM_INITIALIZED))
 				C.delete_me = TRUE
 			else
-				qdel(C)
+				consume(C)
 	update_connections(1)
 	update_icon()
 

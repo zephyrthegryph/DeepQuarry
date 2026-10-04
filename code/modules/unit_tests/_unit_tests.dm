@@ -317,6 +317,7 @@
 #include "dq_verb_framework_tests.dm"
 #include "dq_surgery_tests.dm"
 #include "dq_sys_fields_tests.dm"
+#include "dq_wires_behaviour.dm"
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_om_world_watch_tests.dm"
@@ -468,6 +469,7 @@
 #include "interim_animal_digest_late_mode_switch.dm"
 #include "interim_artifact_blade_summon_request.dm"
 #include "interim_anomaly_battery_effect_custody.dm"
+#include "interim_xenochimera_branch_replay.dm"
 #include "dq_p2_apc_behaviour.dm"
 #include "dq_emp_disable_behaviour.dm"
 #include "dq_p2_chargers_behaviour.dm"
@@ -917,6 +919,8 @@
 #include "interim_autopsy_snapshot_ownership.dm"
 #include "interim_living_inventory_drag_actor.dm"
 #include "interim_assembly_holder_sticky_disassembly.dm"
+#include "interim_synth_native_recipe.dm"
+#include "interim_rcd_native_choices.dm"
 #include "interim2_space_breach_owned_repair.dm"
 #include "interim2_detached_wound_owned_expiry.dm"
 #include "interim2_macrobattery_empty_projectile_disposal.dm"
@@ -958,6 +962,9 @@
 #include "interim_admin_virus_creation_progress.dm"
 #include "interim_tourniquet_late_choice.dm"
 #include "interim_native_number_window_rounding.dm"
+#include "interim_parcel_native_label.dm"
+#include "interim_handlabeler_native_configuration.dm"
+#include "interim_blob_native_pairs.dm"
 // END_INCLUDE
 
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

@@ -85,9 +85,15 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 	desc = "Confetti, pies, banana peels, chaos!"
 
 /obj/item/gun/launcher/confetti_cannon/robot/pump(mob/user)
+	return party_payload_stage(user)
+
+/obj/item/gun/launcher/confetti_cannon/robot/proc/party_payload_stage(mob/user, settings_answer, settings_ready = FALSE)
 	play_sfx(user, SFX_WEAPONS_SHOTGUNPUMP)
 	if(!chambered)
-		var/choice = rerun_ask(user, "k83", PROC_REF(pump), args, /datum/om/prompt/choice/alert, message = "Load the Party Canon with?", title = "Change What?", choices = list("Confetti","Banana Peel","Cream Pie"))
+		if(!settings_ready)
+			open_request(src, /datum/prompt/choice/weapon_setting_review, PROC_REF(party_payload_answered), answerer = user, settings_operator = user, question = "Load the Party Canon with?", title = "Change What?", choices = list("Confetti","Banana Peel","Cream Pie"), buttons = TRUE)
+			return
+		var/choice = settings_answer
 		if(isnull(choice))
 			return
 		if(!choice)
@@ -117,3 +123,13 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 		ball.activate(null)
 	return chambered
 
+
+/obj/item/gun/launcher/confetti_cannon/robot/proc/party_payload_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	. = party_payload_apply(context)
+	SStgui.update_uis(src)
+
+/obj/item/gun/launcher/confetti_cannon/robot/proc/party_payload_apply(datum/act/request/context)
+	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
+	return party_payload_stage(ask.settings_operator, ask.answer_value, TRUE)

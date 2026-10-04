@@ -1,3 +1,6 @@
+#define SYNTH_REQUEST_GUIDED 1
+#define SYNTH_REQUEST_IMPORT 2
+
 #define SYNTHESIZER_MAX_CARTRIDGES 40
 #define SYNTHESIZER_MAX_RECIPES 20
 #define SYNTHESIZER_MAX_QUEUE 40
@@ -550,8 +553,14 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 
 // This proc is lets users create recipes step-by-step and exports a comma delineated list to chat. It's intended to teach how to use the machine.
 /obj/machinery/chemical_synthesizer/proc/babystep_recipe(mob/user)
+	return synth_babystep_recipe_stage(user, list())
+
+/obj/machinery/chemical_synthesizer/proc/synth_babystep_recipe_stage(mob/user, list/synth_answers)
 	// Each answer re-runs this proc; steps are keyed by their number.
-	var/answer = rerun_ask(user, "name", PROC_REF(babystep_recipe), args, /datum/om/prompt/text, message = "Name your recipe. Consider including the output volume.", title = "Recipe naming")
+	if(!("name" in synth_answers))
+		open_request(src, /datum/prompt/text/synth_recipe_review, PROC_REF(synth_recipe_answered), answerer = user, synth_answers = synth_answers, synth_key = "name", synth_mode = SYNTH_REQUEST_GUIDED, question = "Name your recipe. Consider including the output volume.", title = "Recipe naming")
+		return
+	var/answer = synth_answers["name"]
 	if(isnull(answer))
 		return
 	var/rec_name = sanitizeSafe(answer)
@@ -559,7 +568,10 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 		to_chat(user, "Please provide a unique recipe name!")
 		return
 
-	var/step_count = rerun_ask(user, "steps", PROC_REF(babystep_recipe), args, /datum/om/prompt/number, message = "How many steps does your recipe contain ([RECIPE_MAX_STEPS] max)?", title = "Steps", default = 1, max = RECIPE_MAX_STEPS, min = 1)
+	if(!("steps" in synth_answers))
+		open_request(src, /datum/prompt/number/synth_recipe_review, PROC_REF(synth_recipe_answered), answerer = user, synth_answers = synth_answers, synth_key = "steps", synth_mode = SYNTH_REQUEST_GUIDED, question = "How many steps does your recipe contain ([RECIPE_MAX_STEPS] max)?", title = "Steps", default = 1, synth_max = RECIPE_MAX_STEPS, synth_min = 1)
+		return
+	var/step_count = synth_answers["steps"]
 	if(isnull(step_count))
 		return
 	var/steps = 2 * step_count
@@ -569,14 +581,20 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 
 	var/list/new_rec = list() // This holds the actual recipe.
 	for(var/i = 1, i < steps, i += 2) // For the user, 1 step is both text and volume. For list arithmetic, that's 2 steps.
-		var/label = rerun_ask(user, "label[i]", PROC_REF(babystep_recipe), args, /datum/om/prompt/choice, message = "Which chemical would you like to use?", title = "Chemical Synthesizer", choices = cartridges)
+		if(!("label[i]" in synth_answers))
+			open_request(src, /datum/prompt/choice/synth_recipe_review, PROC_REF(synth_recipe_answered), answerer = user, synth_answers = synth_answers, synth_key = "label[i]", synth_mode = SYNTH_REQUEST_GUIDED, question = "Which chemical would you like to use?", title = "Chemical Synthesizer", choices = cartridges)
+			return
+		var/label = synth_answers["label[i]"]
 		if(isnull(label))
 			return
 		if(!label)
 			to_chat(user, "Please select a chemical!")
 			return
 		new_rec[++new_rec.len] = label // Add the reagent ID.
-		var/amount = rerun_ask(user, "amount[i]", PROC_REF(babystep_recipe), args, /datum/om/prompt/number, message = "How much of the chemical would you like to add?", title = "Volume", default = 1, max = src.reagents.maximum_volume, min = 1)
+		if(!("amount[i]" in synth_answers))
+			open_request(src, /datum/prompt/number/synth_recipe_review, PROC_REF(synth_recipe_answered), answerer = user, synth_answers = synth_answers, synth_key = "amount[i]", synth_mode = SYNTH_REQUEST_GUIDED, question = "How much of the chemical would you like to add?", title = "Volume", default = 1, synth_max = src.reagents.maximum_volume, synth_min = 1)
+			return
+		var/amount = synth_answers["amount[i]"]
 		if(isnull(amount))
 			return
 		if(!amount)
@@ -593,7 +611,13 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 
 // This proc allows users to copy-paste a comma delineated list to create a recipe. The recipe will cause a stall() if formatted incorrectly.
 /obj/machinery/chemical_synthesizer/proc/import_recipe(mob/user)
-	var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(import_recipe), args, /datum/om/prompt/text, message = "Name your recipe. Consider including the output volume.", title = "Recipe naming", max_length = MAX_NAME_LEN)
+	return synth_import_recipe_stage(user, list())
+
+/obj/machinery/chemical_synthesizer/proc/synth_import_recipe_stage(mob/user, list/synth_answers)
+	if(!("a2" in synth_answers))
+		open_request(src, /datum/prompt/text/synth_recipe_review, PROC_REF(synth_recipe_answered), answerer = user, synth_answers = synth_answers, synth_key = "a2", synth_mode = SYNTH_REQUEST_IMPORT, question = "Name your recipe. Consider including the output volume.", title = "Recipe naming", max_len = MAX_NAME_LEN, name_text = TRUE)
+		return
+	var/_answer_a2 = synth_answers["a2"]
 	if(isnull(_answer_a2))
 		return
 	var/rec_name = sanitizeSafe(_answer_a2, MAX_NAME_LEN)
@@ -601,7 +625,10 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 		to_chat(user, "Please provide a unique recipe name!")
 		return
 
-	var/rec_input = rerun_ask(user, "a3", PROC_REF(import_recipe), args, /datum/om/prompt/text, message = "Input your recipe as 'Chem1,vol1,Chem2,vol2,...'", title = "Import recipe")
+	if(!("a3" in synth_answers))
+		open_request(src, /datum/prompt/text/synth_recipe_review, PROC_REF(synth_recipe_answered), answerer = user, synth_answers = synth_answers, synth_key = "a3", synth_mode = SYNTH_REQUEST_IMPORT, question = "Input your recipe as 'Chem1,vol1,Chem2,vol2,...'", title = "Import recipe")
+		return
+	var/rec_input = synth_answers["a3"]
 	if(isnull(rec_input))
 		return
 	if(!rec_input || (length(rec_input) > RECIPE_MAX_STRING) || !findtext(rec_input, ",")) // The smallest possible recipe will contain 1 comma.
@@ -841,3 +868,62 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 	. = ..()
 	. += owns(nameof(catalyst), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/beaker)
 // Label -> installed cartridge (in contents); they go with the machine.
+
+/obj/machinery/chemical_synthesizer/proc/synth_recipe_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	. = synth_recipe_apply(context)
+	SStgui.update_uis(src)
+
+/obj/machinery/chemical_synthesizer/proc/synth_recipe_apply(datum/act/request/context)
+	var/list/synth_answers
+	var/synth_key
+	var/synth_mode
+	if(istype(context.answer, /datum/prompt/text/synth_recipe_review))
+		var/datum/prompt/text/synth_recipe_review/ask_text = context.answer
+		synth_answers = ask_text.synth_answers.Copy()
+		synth_key = ask_text.synth_key
+		synth_mode = ask_text.synth_mode
+	else if(istype(context.answer, /datum/prompt/choice/synth_recipe_review))
+		var/datum/prompt/choice/synth_recipe_review/ask_choice = context.answer
+		synth_answers = ask_choice.synth_answers.Copy()
+		synth_key = ask_choice.synth_key
+		synth_mode = ask_choice.synth_mode
+	else
+		var/datum/prompt/number/synth_recipe_review/ask_number = context.answer
+		synth_answers = ask_number.synth_answers.Copy()
+		synth_key = ask_number.synth_key
+		synth_mode = ask_number.synth_mode
+	synth_answers[synth_key] = context.answer.answer_value
+	if(synth_mode == SYNTH_REQUEST_GUIDED)
+		return synth_babystep_recipe_stage(context.request.answerer, synth_answers)
+	return synth_import_recipe_stage(context.request.answerer, synth_answers)
+
+/datum/prompt/text/synth_recipe_review
+	timeout = 0
+	var/list/synth_answers
+	var/synth_key
+	var/synth_mode
+
+/datum/prompt/choice/synth_recipe_review
+	timeout = 0
+	var/list/synth_answers
+	var/synth_key
+	var/synth_mode
+
+/datum/prompt/number/synth_recipe_review
+	timeout = 0
+	var/list/synth_answers
+	var/synth_key
+	var/synth_mode
+	var/synth_min = 0
+	var/synth_max = INFINITY
+
+/datum/prompt/number/synth_recipe_review/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, synth_max, synth_min, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+#undef SYNTH_REQUEST_GUIDED
+#undef SYNTH_REQUEST_IMPORT

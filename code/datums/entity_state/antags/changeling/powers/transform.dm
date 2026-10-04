@@ -10,6 +10,9 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Transform (5)"
 
+	return changeling_transform_review()
+
+/mob/proc/changeling_transform_review(answered = FALSE, reply)
 	var/datum/changeling/changeling = changeling_power(5,1,0)
 	if(!changeling)
 		return
@@ -22,7 +25,10 @@
 	for(var/datum/absorbed_dna/DNA in changeling.absorbed_dna)
 		names += "[DNA.name]"
 
-	var/S = rerun_ask(src, "a1", PROC_REF(changeling_transform), args, /datum/om/prompt/choice, message = "Select the target DNA:", title = "Target DNA", choices = names)
+	if(!answered)
+		open_request(src, /datum/prompt/choice, PROC_REF(changeling_transform_answered), answerer = src, title = "Target DNA", question = "Select the target DNA:", choices = names, timeout = 0)
+		return
+	var/S = reply
 	if(isnull(S))
 		return
 	if(!S)
@@ -69,3 +75,11 @@
 
 	feedback_add_details("changeling_powers","TR")
 	return TRUE
+
+/// Replay the current changeling state and choices after an accepted native answer.
+/mob/proc/changeling_transform_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	changeling_transform_review(TRUE, context.answer.answer_value)
+	if(!QDELETED(src))
+		SStgui.update_uis(src)
