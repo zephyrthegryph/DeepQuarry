@@ -403,3 +403,22 @@
 	T.open = TRUE
 	test_ui(H, T, "press")
 	TEST_ASSERT_EQUAL(T.pressed, 1, "once the guard holds the press runs")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// A window hosted by a datum: ui_data() and the window's buttons work without an atom to reach.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_datum_hosts_a_window
+
+/datum/unit_test/dq_p2_engine/a_datum_hosts_a_window/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/p2_panel/P = new
+	var/list/data = list()
+	present_tgui_data(P, H, data)
+	TEST_ASSERT_EQUAL(data["pressed"], 0, "the datum's ui_data() output is the window's data")
+	TEST_ASSERT_EQUAL(data["viewer"], "[H]", "with the viewer on the act")
+	TEST_ASSERT_EQUAL(P.ui_interface(H), "P2Panel", "and the window it declares is the one it opens")
+	var/datum/op_result/pressed = test_ui(H, P, "panel_press")
+	TEST_ASSERT_EQUAL(pressed?.outcome, ACT_COMMITTED, "a button on it runs as an op")
+	TEST_ASSERT_EQUAL(P.pressed, 1, "and its handler ran")
+	qdel(P)

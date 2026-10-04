@@ -162,8 +162,9 @@
 		found = C.item
 	return found
 
-/// A type's own window data: the output of the standard name ui_data(datum/act/A). A.actor is the viewer. Base: no data.
-/atom/proc/ui_data(datum/act/eval/A)
+/// A type's own window data: the output of the standard name ui_data(datum/act/A). A.actor is the viewer. Base: no data. On /datum: a window's host
+/// need not be an atom (tgui modules, prompt windows, apps); only the reach rules of a window's ops are atom-specific.
+/datum/proc/ui_data(datum/act/eval/A)
 	return list()
 
 /// The window data of a holder that declares an interface or overrides ui_data(): the type's ui_data(A) (A.holder the holder, A.actor the viewer)
@@ -175,8 +176,7 @@
 	var/datum/act/eval/A = take(/datum/act/eval)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.actor = user // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-	var/atom/window_host = holder
-	var/list/own = istype(window_host) ? window_host.ui_data(A) : null
+	var/list/own = holder.ui_data(A)
 	A.release()
 	if(islist(own))
 		for(var/key in own)

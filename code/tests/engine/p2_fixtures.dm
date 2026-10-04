@@ -358,3 +358,20 @@ CAPABILITIES(/obj/p2_silent)
 /obj/p2_silent/proc/was_pressed(datum/act/op/A)
 	pressed++
 	return OP_OK
+
+// ---- a window on a datum ----
+
+/// A window host that is not an atom (a tgui module, a prompt window, an app): data and a button, no reach.
+/datum/p2_panel
+	var/pressed = 0
+
+CAPABILITIES(/datum/p2_panel)
+	interface("P2Panel")
+	op("panel_press", ui_act(), then(PROC_REF(panel_pressed)))
+
+/datum/p2_panel/ui_data(datum/act/eval/A)
+	return list("pressed" = pressed, "viewer" = A.actor ? "[A.actor]" : null)
+
+/datum/p2_panel/proc/panel_pressed(datum/act/op/A)
+	pressed++
+	return OP_OK

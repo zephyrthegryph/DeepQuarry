@@ -12126,6 +12126,15 @@
 	into += entry_line(155)
 	into += list(global.on_notice(/datum/notice/atom_bumped, global.then(PROC_REF(notice_heard))))
 
+/// CAPABILITIES(/datum/p2_panel) at code/tests/engine/p2_fixtures.dm:368
+/datum/p2_panel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 368, /datum/p2_panel)
+	into += entry_line(369)
+	into += list(global.interface("P2Panel"))
+	into += entry_line(370)
+	into += list(global.op("panel_press", global.ui_act(), global.then(PROC_REF(panel_pressed))))
+
 /// CAPABILITIES(/datum/s1_species/brawler) at code/tests/engine/s1_fixtures.dm:165
 /datum/s1_species/brawler/declared_entries(list/into)
 	..(into)
