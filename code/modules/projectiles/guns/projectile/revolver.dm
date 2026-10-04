@@ -241,6 +241,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-{appeara
 
 CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 	owns_many(nameof(secondary_loaded))
+	owns_many(nameof(tertiary_loaded))
 
 
 /obj/item/gun/projectile/revolver/lemat/Initialize(mapload)
@@ -290,7 +291,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	var/list/current = own_take_all(src, nameof(loaded))
 	var/list/incoming = own_take_all(src, incoming_var)
 	for(var/obj/item/ammo_casing/casing as anything in current)
-		own_add(src, stash_var, casing)
+		rel_add(src, stash_var, casing)
 	for(var/obj/item/ammo_casing/casing as anything in incoming)
 		rel_add(src, nameof(loaded), casing)
 

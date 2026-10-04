@@ -74,6 +74,11 @@ GLOBAL_LIST_INIT(all_integrated_circuits, initialize_integrated_circuits_list())
 	var/allow_multitool = 1			// Allows additional multitool functionality
 									// Used as a global var, (Do not set manually in children).
 
+CAPABILITIES(/obj/item/integrated_circuit)
+	owns_many(nameof(inputs))
+	owns_many(nameof(outputs))
+	owns_many(nameof(activators))
+
 /// Reference to the assembly holding this circuit, if any. (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/proc/assembly() as /obj/item/electronic_assembly
 	return assembly

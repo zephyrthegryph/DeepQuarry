@@ -223,7 +223,7 @@ SYSTEM_DEF(transcore)
 /datum/transcore_db/proc/add_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
 	own_put(src, nameof(backed_up), MR.mindname, MR)
-	own_set(src, nameof(backed_up), sortAssoc(backed_up))
+	backed_up = sortAssoc(backed_up) // ALLOW(ownership): the same records re-ordered by name; membership and stamps do not change
 
 // Remove a mind_record from the backup-checking list.  Keeps track of it in has_left // Why do we do that? ~Leshana
 /datum/transcore_db/proc/stop_backup(datum/transhuman/mind_record/MR)
@@ -235,7 +235,7 @@ SYSTEM_DEF(transcore)
 /datum/transcore_db/proc/add_body(datum/transhuman/body_record/BR)
 	ASSERT(BR)
 	own_put(src, nameof(body_scans), BR.mydna.name, BR) // deletes a record it replaces
-	own_set(src, nameof(body_scans), sortAssoc(body_scans))
+	body_scans = sortAssoc(body_scans) // ALLOW(ownership): the same records re-ordered by name; membership and stamps do not change
 
 // Remove a body record from the database (Usually done when someone cryos)  // Why? ~Leshana
 /datum/transcore_db/proc/remove_body(datum/transhuman/body_record/BR)

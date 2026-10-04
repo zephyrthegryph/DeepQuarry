@@ -673,7 +673,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 				return TRUE
 			var/datum/transhuman/body_record/buf = buffers[bufferId]
 			// Traitgenes Properly clone records
-			own_set(disk, nameof(/datum/stored_item::stored), new /datum/transhuman/body_record())
+			rel_set(disk, nameof(disk.stored), new /datum/transhuman/body_record())
 			disk.stored.init_from_br(buf)
 			disk.stored.mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE // DNA disks need to maintain their data
 			disk.name = "Body Design Disk ('[buf.mydna.name]')"
@@ -691,7 +691,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_wipedisk)
 	// Traitgenes Storing the entire body record
 	if(isnull(disk))
 		return TRUE
-	own_clear(disk, nameof(/datum/stored_item::stored), OWN_DELETE)
+	own_clear(disk, nameof(disk.stored), OWN_DELETE)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectDisk", ui_act_ejectdisk)

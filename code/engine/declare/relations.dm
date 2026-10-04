@@ -37,7 +37,7 @@
 				if(policy == OWN_PRIVATE_COPY)
 					. += proto(E.args["var"])
 				else
-					. += owns(E.args["var"], policy = policy, type = E.args["type"], starts = starts)
+					. += owns(E.args["var"], policy = policy, type = E.args["type"], starts = starts, is_list = (E.kind == ENTRY_OWNS_MANY))
 
 /// The starts = of an owns_* entry as the legacy table keeps it: a type, a list, a var name, or a starts spec entry (pick_one, a proc,
 /// when(), with starts_args) that own_init_starts() resolves at init.
