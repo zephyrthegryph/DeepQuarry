@@ -2326,6 +2326,15 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/faction_join) at code/game/antagonist/antagonist_factions.dm:46
+/datum/prompt/choice/faction_join/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/antagonist/antagonist_factions.dm", 46, /datum/prompt/choice/faction_join)
+	into += entry_line(47)
+	into += list(global.ref_one(nameof(player), /datum/mind))
+	into += entry_line(48)
+	into += list(global.ref_one(nameof(faction), /datum/antagonist))
+
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:121
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
 	..(into)
@@ -2362,6 +2371,13 @@
 	into += entry_block("code/game/machinery/computer/shuttle.dm", 59, /datum/prompt/choice/shuttle_authorization)
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
+
+/// CAPABILITIES(/datum/prompt/choice/weave_confirmation) at code/datums/entity_state/traits/weaver.dm:65
+/datum/prompt/choice/weave_confirmation/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/traits/weaver.dm", 65, /datum/prompt/choice/weave_confirmation)
+	into += entry_line(66)
+	into += list(global.ref_one(nameof(recipe), /datum/weaver_recipe/item))
 
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
 /datum/prompt/color/paint_palette/declared_entries(list/into)
@@ -3285,27 +3301,27 @@
 	into += entry_line(270)
 	into += list(global.op("toggle_nutrition", global.ui_act("toggle_nutrition"), global.then(PROC_REF(ui_act_toggle_nutrition))))
 
-/// CAPABILITIES(/datum/trait_state/weaver) at code/datums/entity_state/traits/weaver.dm:79
+/// CAPABILITIES(/datum/trait_state/weaver) at code/datums/entity_state/traits/weaver.dm:102
 /datum/trait_state/weaver/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/datums/entity_state/traits/weaver.dm", 79, /datum/trait_state/weaver)
-	into += entry_line(80)
+	into += entry_block("code/datums/entity_state/traits/weaver.dm", 102, /datum/trait_state/weaver)
+	into += entry_line(103)
 	into += list(global.interface("WeaverConfig", title = "Weaver Config"))
-	into += entry_line(81)
+	into += entry_line(104)
 	into += list(global.op("new_silk_color", global.ui_act("new_silk_color"), global.then(PROC_REF(ui_act_new_silk_color))))
-	into += entry_line(82)
+	into += entry_line(105)
 	into += list(global.op("toggle_silk_production", global.ui_act("toggle_silk_production"), global.then(PROC_REF(ui_act_toggle_silk_production))))
-	into += entry_line(83)
+	into += entry_line(106)
 	into += list(global.op("check_silk_amount", global.ui_act("check_silk_amount"), global.then(PROC_REF(ui_act_check_silk_amount))))
-	into += entry_line(84)
+	into += entry_line(107)
 	into += list(global.op("weave_binding", global.ui_act("weave_binding"), global.then(PROC_REF(ui_act_weave_binding))))
-	into += entry_line(85)
+	into += entry_line(108)
 	into += list(global.op("weave_floor", global.ui_act("weave_floor"), global.then(PROC_REF(ui_act_weave_floor))))
-	into += entry_line(86)
+	into += entry_line(109)
 	into += list(global.op("weave_wall", global.ui_act("weave_wall"), global.then(PROC_REF(ui_act_weave_wall))))
-	into += entry_line(87)
+	into += entry_line(110)
 	into += list(global.op("weave_nest", global.ui_act("weave_nest"), global.then(PROC_REF(ui_act_weave_nest))))
-	into += entry_line(88)
+	into += entry_line(111)
 	into += list(global.op("weave_trap", global.ui_act("weave_trap"), global.then(PROC_REF(ui_act_weave_trap))))
 
 /// CAPABILITIES(/datum/transcore_db) at code/modules/resleeving/transcore_service.dm:178
@@ -4891,23 +4907,23 @@
 	into += entry_line(56)
 	into += list(global.verb_entry(/mob/living/proc/hide))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/zorgoia) at code/modules/mob/living/simple_mob/subtypes/vore/goia.dm:216
+/// CAPABILITIES(/mob/living/simple_mob/vore/zorgoia) at code/modules/mob/living/simple_mob/subtypes/vore/goia.dm:229
 /mob/living/simple_mob/vore/zorgoia/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/goia.dm", 216, /mob/living/simple_mob/vore/zorgoia)
-	into += entry_line(217)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/goia.dm", 229, /mob/living/simple_mob/vore/zorgoia)
+	into += entry_line(230)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/appearance_switch))
-	into += entry_line(218)
+	into += entry_line(231)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/recolor))
-	into += entry_line(219)
+	into += entry_line(232)
 	into += list(global.verb_entry(/mob/living/proc/injection))
-	into += entry_line(220)
+	into += entry_line(233)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/export_style))
-	into += entry_line(221)
+	into += entry_line(234)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/import_style))
-	into += entry_line(222)
+	into += entry_line(235)
 	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
-	into += entry_line(223)
+	into += entry_line(236)
 	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee) at code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm:53
@@ -7142,11 +7158,11 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(exonet), starts = /datum/exonet_protocol))
 
-/// CAPABILITIES(/obj/item/integrated_circuit/input/EPv2) at code/modules/integrated_electronics/subtypes/input.dm:525
+/// CAPABILITIES(/obj/item/integrated_circuit/input/EPv2) at code/modules/integrated_electronics/subtypes/input.dm:527
 /obj/item/integrated_circuit/input/EPv2/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/integrated_electronics/subtypes/input.dm", 525, /obj/item/integrated_circuit/input/EPv2)
-	into += entry_line(526)
+	into += entry_block("code/modules/integrated_electronics/subtypes/input.dm", 527, /obj/item/integrated_circuit/input/EPv2)
+	into += entry_line(528)
 	into += list(global.owns_one(nameof(exonet), starts = /datum/exonet_protocol))
 
 /// CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input) at code/modules/integrated_electronics/subtypes/camera.dm:167
