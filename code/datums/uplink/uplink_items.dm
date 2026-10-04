@@ -53,6 +53,10 @@ CAPABILITIES(/datum/uplink)
 
 /datum/uplink_item/proc/buy(obj/item/uplink/U, mob/user)
 	var/extra_args = extra_args(user, args)
+	return buy_prepared(U, user, extra_args)
+
+/// Runs the unchanged purchase tail after an entry has collected its extra arguments.
+/datum/uplink_item/proc/buy_prepared(obj/item/uplink/U, mob/user, extra_args)
 	if(!extra_args)
 		return
 

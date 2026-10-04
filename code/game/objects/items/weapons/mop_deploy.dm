@@ -26,7 +26,7 @@ DECLARE_START_TIMER(/obj/item/mop_deploy, 0, PROC_REF(check_held))
 			T.dirt = 0
 		for(var/obj/effect/O in turf_contents_of_type(src, /obj/effect))
 			if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
-				qdel(O)
+				consume(O)
 /*	//Reagent code changed at some point and the below doesn't work.  To be fixed later.
 	source.reagents.reaction(src, TOUCH, 10)	//10 is the multiplier for the reaction effect. probably needed to wet the floor properly.
 	source.reagents.remove_any(1)				//reaction() doesn't use up the reagents
