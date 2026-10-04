@@ -4260,6 +4260,25 @@
 	into += entry_line(526)
 	into += list(global.ref_one(nameof(captured_tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer) at code/modules/vore/eating/living.dm:1986
+/datum/prompt/choice/vore_liquid_transfer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/eating/living.dm", 1986, /datum/prompt/choice/vore_liquid_transfer)
+	into += entry_line(1987)
+	into += list(global.ref_one(nameof(liquid_source_mob), /mob))
+	into += entry_line(1988)
+	into += list(global.ref_one(nameof(liquid_source_belly), /obj/belly))
+	into += entry_line(1989)
+	into += list(global.ref_one(nameof(liquid_target_mob), /mob))
+	into += entry_line(1990)
+	into += list(global.ref_one(nameof(liquid_own_belly), /obj/belly))
+	into += entry_line(1991)
+	into += list(global.ref_one(nameof(liquid_other_belly), /obj/belly))
+	into += entry_line(1992)
+	into += list(global.ref_one(nameof(liquid_stomach_mob), /mob))
+	into += entry_line(1993)
+	into += list(global.ref_one(nameof(liquid_container), /obj/item/reagent_containers))
+
 /// CAPABILITIES(/datum/prompt/choice/vv_edit) at code/game/atom/atom_vv.dm:31
 /datum/prompt/choice/vv_edit/declared_entries(list/into)
 	..(into)
@@ -8495,6 +8514,13 @@
 	into += entry_line(13)
 	into += list(global.owns_one(nameof(landmark), /obj/effect/shuttle_landmark/ship))
 
+/// CAPABILITIES(/obj/effect/phase_shift) at code/game/gamemodes/technomancer/spells/phase_shift.dm:36
+/obj/effect/phase_shift/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/gamemodes/technomancer/spells/phase_shift.dm", 36, /obj/effect/phase_shift)
+	into += entry_line(37)
+	into += list(global.owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL))
+
 /// CAPABILITIES(/obj/effect/plant) at code/modules/hydroponics/spreading/spreading.dm:61
 /obj/effect/plant/declared_entries(list/into)
 	..(into)
@@ -8518,6 +8544,13 @@
 	into += entry_line(241)
 	into += list(global.ref_many(nameof(visitors)))
 
+/// CAPABILITIES(/obj/effect/spider/cocoon) at code/game/objects/effects/spiders.dm:311
+/obj/effect/spider/cocoon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/spiders.dm", 311, /obj/effect/spider/cocoon)
+	into += entry_line(312)
+	into += list(global.owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL))
+
 /// CAPABILITIES(/obj/effect/step_trigger/autostrip) at code/game/objects/effects/step_triggers.dm:257
 /obj/effect/step_trigger/autostrip/declared_entries(list/into)
 	..(into)
@@ -8526,6 +8559,13 @@
 	into += list(global.ref_one(nameof(target), /obj/effect/autostriptarget, by = nameof(targetid)))
 	into += entry_line(259)
 	into += list(global.ref_one(nameof(Mtarget), /obj/effect/autostriptarget/mob, by = nameof(targetid)))
+
+/// CAPABILITIES(/obj/effect/suspension_field) at code/modules/xenoarcheaology/tools/suspension_generator.dm:254
+/obj/effect/suspension_field/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/suspension_generator.dm", 254, /obj/effect/suspension_field)
+	into += entry_line(255)
+	into += list(global.owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL))
 
 /// CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate) at code/modules/mob/living/silicon/robot/drone/swarm_items.dm:109
 /obj/effect/temporary_effect/pulse/disintegrate/declared_entries(list/into)

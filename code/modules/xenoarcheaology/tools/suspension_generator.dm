@@ -251,9 +251,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appe
 	anchored = 1
 	density = 1
 
-/obj/effect/suspension_field/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+CAPABILITIES(/obj/effect/suspension_field)
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 
 
 /obj/machinery/suspension_gen/ownership()
