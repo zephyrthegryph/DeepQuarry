@@ -2,11 +2,21 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize", mob/li
 	user.do_resize(living_target)
 
 ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any living mob without any restrictions on size.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/mob/target_mob = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select target to resize.", title = "Resize Target", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
-	if(isnull(target_mob))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!target_mob)
+	open_request(src, /datum/prompt/choice/admin_resize_target, PROC_REF(resize_target_selected), answerer = answerer, choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
+
+/datum/admin_verb/mob_resize/proc/resize_target_selected(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(open_target_resize), A)
+	if(!result.ok)
+		stack_trace("om flow mob_resize answer resize_target_selected: [result.error]")
+
+/datum/admin_verb/mob_resize/proc/open_target_resize(datum/act/request/A)
+	var/mob/target_mob = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	user.do_resize(target_mob)
 
 /client/proc/do_resize(mob/living/living_target)
@@ -29,3 +39,23 @@ ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any liv
 
 	log_and_message_admins("has changed [key_name(living_target)]'s size multiplier to [size_multiplier].", src)
 	feedback_add_details("admin_verb","RESIZE")
+
+/datum/prompt/choice/admin_resize_target
+	rights = R_ADMIN|R_FUN|R_VAREDIT
+	timeout = 0
+	question = "Select target to resize."
+	title = "Resize Target"
+
+/datum/prompt/choice/admin_resize_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_resize_target/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
