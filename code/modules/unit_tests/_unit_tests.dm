@@ -464,6 +464,7 @@
 #include "dq_p1_close_tests.dm"
 #include "dq_p2_library_tests.dm"
 #include "dq_p2_engine_tests.dm"
+#include "interim_xenochimera_branch_replay.dm"
 #include "dq_p2_apc_behaviour.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"
