@@ -101,3 +101,40 @@
 	TEST_ASSERT_EQUAL(ACT_FINAL(after_a, amount, 10), 11, "with one listener gone only the other adjusts")
 	act_done(after_a)
 	qdel(b)
+
+/datum/unit_test/dq_veto/unobserve_all_and_observer_counts
+
+/datum/unit_test/dq_veto/unobserve_all_and_observer_counts/run_veto()
+	var/obj/veto_fixture/target = allocate(/obj/veto_fixture)
+	var/obj/veto_fixture/other = allocate(/obj/veto_fixture)
+	var/datum/veto_listener/listener = new
+	var/datum/veto_listener/second = new
+	observe(target, /datum/act/veto_strike, listener, instead(when(TYPE_PROC_REF(/datum/veto_listener, blocks))))
+	observe(other, /datum/act/veto_strike, listener, adjusts_with(TYPE_PROC_REF(/datum/veto_listener, add_flag)))
+	observe(target, /datum/act/veto_strike, second, adjusts_with(TYPE_PROC_REF(/datum/veto_listener, add_flag)))
+	TEST_ASSERT_EQUAL(observer_count(target, /datum/act/veto_strike), 2, "two listeners observe the action on the target")
+	TEST_ASSERT_EQUAL(observer_count(other, /datum/act/veto_strike), 1, "one on the other")
+	TEST_ASSERT_EQUAL(observer_count(target, /datum/act/hit), 0, "none observe another action")
+	TEST_ASSERT_EQUAL(unobserve_all(listener), 2, "unobserve_all ends everything a listener observes, wherever it is")
+	TEST_ASSERT_EQUAL(observer_count(target, /datum/act/veto_strike), 1, "the other listener's hook stays")
+	TEST_ASSERT_EQUAL(observer_count(other, /datum/act/veto_strike), 0, "and the hook on the other entity is gone")
+	qdel(listener)
+	qdel(second)
+
+/datum/unit_test/dq_veto/qdeleting_notice_reaches_observers_of_the_dying_entity
+
+/datum/unit_test/dq_veto/qdeleting_notice_reaches_observers_of_the_dying_entity/run_veto()
+	var/obj/veto_fixture/target = allocate(/obj/veto_fixture)
+	var/datum/veto_listener/watcher = new
+	observe(target, /datum/notice/qdeleting, watcher, then(TYPE_PROC_REF(/datum/veto_listener, take)))
+	qdel(target)
+	TEST_ASSERT_EQUAL(watcher.ran, 1, "an observer of an entity hears that its deletion has begun")
+	TEST_ASSERT(watcher.ran_on_me, "on the observer")
+	qdel(watcher)
+	// An entity observing itself hears it too: its own deletion has begun, and nothing else runs on it from here.
+	var/obj/veto_fixture/loner = allocate(/obj/veto_fixture)
+	var/datum/veto_listener/self_watcher = new
+	observe(self_watcher, /datum/notice/qdeleting, self_watcher, then(TYPE_PROC_REF(/datum/veto_listener, take)))
+	qdel(self_watcher)
+	TEST_ASSERT_EQUAL(self_watcher.ran, 1, "a datum that observes itself hears its own qdeleting")
+	qdel(loner)

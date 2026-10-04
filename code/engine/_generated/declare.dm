@@ -2090,11 +2090,11 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
-/// CAPABILITIES(/datum/protean_blob_style/layered) at code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm:332
+/// CAPABILITIES(/datum/protean_blob_style/layered) at code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm:328
 /datum/protean_blob_style/layered/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm", 332, /datum/protean_blob_style/layered)
-	into += entry_line(333)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm", 328, /datum/protean_blob_style/layered)
+	into += entry_line(329)
 	into += list(global.owns_many(nameof(layers)))
 
 /// CAPABILITIES(/datum/protean_power) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:54

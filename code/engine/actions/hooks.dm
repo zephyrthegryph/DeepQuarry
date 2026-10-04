@@ -140,6 +140,8 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 		return legacy_observe(source, trigger, listener, p1)
 	if(!source || !listener || QDELETED(source) || QDELETED(listener))
 		return null
+	if(!own_guard(listener, source, "an observe ([trigger])")) // the one teardown guard (code/datums/ownership/guard.dm)
+		return null
 	if(ispath(trigger, /datum/act/action))
 		var/datum/entry/hook_entry = extend(trigger, p1, p2, p3, p4, p5)
 		return grant(source, hook_capability_of(list(hook_entry), TRUE), listener)
@@ -166,6 +168,36 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 		if(matched)
 			activation_end(A)
 			.++
+
+/// The observe() hooks on `source`: trigger (a notice or an action type) -> how many listeners observe it.
+/proc/observer_counts(datum/source)
+	. = list()
+	for(var/datum/activation/A as anything in source?.rx?.activations)
+		if(A.dead || A.def.cap_id != CAP_HOOK)
+			continue
+		var/datum/capability/hook/def = A.def
+		if(!def.on_listener)
+			continue
+		for(var/datum/entry/E in def.hook_entries)
+			var/trigger = E.kind == ENTRY_ON_NOTICE ? E.args["notice"] : E.args["target"]
+			.[trigger] = (.[trigger] || 0) + 1
+
+/// How many listeners observe `trigger` (a notice or an action type) on `source`.
+/proc/observer_count(datum/source, trigger)
+	var/list/counts = observer_counts(source)
+	return counts[trigger] || 0
+
+/// Ends every observe() the listener made, on anything (a state that leaves its mob, a view that is torn down). The count ended.
+/proc/unobserve_all(datum/listener)
+	. = 0
+	for(var/datum/activation/A as anything in listener?.rx?.sourced?.Copy())
+		if(A.dead || A.def.cap_id != CAP_HOOK)
+			continue
+		var/datum/capability/hook/def = A.def
+		if(!def.on_listener)
+			continue
+		activation_end(A)
+		.++
 
 // ---- compiling entries into hooks ----
 
