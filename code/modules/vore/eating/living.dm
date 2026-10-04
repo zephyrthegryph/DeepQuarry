@@ -422,22 +422,28 @@
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
 	selecting_slots = TRUE
-	om_ask(user, /datum/om/prompt/choice/vore_slot, PROC_REF(vore_slot_chosen), choices = charlist, default = default, prefs = src)
+	open_request(src, /datum/prompt/choice/vore_slot_review, PROC_REF(vore_slot_answered), answerer = user, choices = charlist, default = default)
 
-/// A character slot to load. Closing it ends the selection.
-/datum/om/prompt/choice/vore_slot
+/// A character slot to load. Every completion releases the selection latch.
+/datum/prompt/choice/vore_slot_review
+	timeout = 0
 	title = "Load Slot"
-	message = "Select a character to load:"
-	var/datum/preferences/prefs
+	question = "Select a character to load:"
 
-/datum/om/prompt/choice/vore_slot/cancelled()
-	if(prefs)
-		prefs.selecting_slots = FALSE
+/datum/preferences/proc/vore_slot_answered(datum/act/request/A)
+	selecting_slots = FALSE
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_slot_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore slot selection: [caught.error]")
+	return caught.value
 
-/datum/preferences/proc/vore_slot_chosen(datum/om/prompt/choice/vore_slot/ask)
+/datum/preferences/proc/vore_slot_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_slot_review/ask = A.answer
 	selecting_slots = FALSE
 	var/mob/user = ask.answerer
-	var/choice = ask.choice
+	var/choice = ask.answer_value
 	var/list/charlist = ask.choices
 	var/remember_default = default_slot
 	var/slotnum = charlist[choice]
