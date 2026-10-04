@@ -2355,13 +2355,13 @@
 	into += entry_line(78)
 	into += list(global.owns_many(nameof(symptoms)))
 
-/// CAPABILITIES(/datum/lleill_contact_review) at code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm:394
+/// CAPABILITIES(/datum/lleill_contact_review) at code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm:411
 /datum/lleill_contact_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm", 394, /datum/lleill_contact_review)
-	into += entry_line(395)
+	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm", 411, /datum/lleill_contact_review)
+	into += entry_line(412)
 	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
-	into += entry_line(396)
+	into += entry_line(413)
 	into += list(global.ref_one(nameof(chosen_target), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/log_category) at code/modules/logging/log_category.dm:40
@@ -2982,6 +2982,20 @@
 	into += entry_block("code/modules/mob/living/carbon/human/human_powers.dm", 537, /datum/prompt/choice/hand_game_move)
 	into += entry_line(538)
 	into += list(global.ref_one(nameof(partner), /mob/living/carbon/human))
+
+/// CAPABILITIES(/datum/prompt/choice/lleill_transmute) at code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm:151
+/datum/prompt/choice/lleill_transmute/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm", 151, /datum/prompt/choice/lleill_transmute)
+	into += entry_line(152)
+	into += list(global.ref_one(nameof(item), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/choice/manage_event_triggers) at code/modules/admin/verbs/event_triggers.dm:15
+/datum/prompt/choice/manage_event_triggers/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/event_triggers.dm", 15, /datum/prompt/choice/manage_event_triggers)
+	into += entry_line(16)
+	into += list(global.ref_one(nameof(trigger), /obj/effect/landmark/event_trigger))
 
 /// CAPABILITIES(/datum/prompt/choice/map_template_place) at code/modules/admin/verbs/map_template_loadverb.dm:36
 /datum/prompt/choice/map_template_place/declared_entries(list/into)

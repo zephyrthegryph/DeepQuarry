@@ -137,33 +137,42 @@
 		to_chat(src, span_warning("You have no item in your active hand."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice/lleill_energy/lleill_transmute, PROC_REF(lleill_transmute_chosen), choices = transmute_list, energy_cost = energy_cost, item = I)
+	open_request(src, /datum/prompt/choice/lleill_transmute, PROC_REF(lleill_transmute_chosen), answerer = src, choices = transmute_list, energy_cost = energy_cost, item = I)
 
-/// A Lleill power's pick that costs energy. Re-checked on the answer: conscious, and still
-/// enough energy.
-/datum/om/prompt/choice/lleill_energy
+/// A glamour pick: conscious, still holding its item, and enough energy to transmute.
+/datum/prompt/choice/lleill_transmute
+	title = "Transmutation"
+	question = "Choose a glamour to transmute the item into:"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 	var/energy_cost
-
-/datum/om/prompt/choice/lleill_energy/valid()
-	var/mob/living/carbon/human/H = answerer
-	if(H.species.lleill_energy < energy_cost)
-		to_chat(H, span_warning("You do not have enough energy to do that! You currently have [H.species.lleill_energy] energy."))
-		return "no energy"
-	return null
-
-/// Also re-checked: the item is still in the active hand.
-/datum/om/prompt/choice/lleill_energy/lleill_transmute
-	title = "Transmutation"
-	message = "Choose a glamour to transmute the item into:"
 	var/obj/item/item
 
-/datum/om/prompt/choice/lleill_energy/lleill_transmute/valid()
+CAPABILITIES(/datum/prompt/choice/lleill_transmute)
+	ref_one(nameof(item), /obj/item)
+
+/datum/prompt/choice/lleill_transmute/prepare(datum/act/A)
+	..()
+	var/obj/item/captured = item
+	rel_clear(src, nameof(item))
+	rel_set(src, nameof(item), captured)
+
+/datum/prompt/choice/lleill_transmute/begin()
+	if(QDELETED(item))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/lleill_transmute/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(item))
+		return "gone"
 	var/mob/living/carbon/human/H = answerer
 	if(H.get_active_hand() != item)
-		to_chat(H, span_warning("The item is no longer in your hands."))
 		return "not in hand"
-	return ..()
+	return H.species.lleill_energy < energy_cost ? "no energy" : null
 
 /datum/prompt/choice/lleill_beast
 	title = "Choose Beast Form"
@@ -179,10 +188,18 @@
 	var/mob/living/carbon/human/H = answerer
 	return H.species.lleill_energy < energy_cost ? "no energy" : null
 
-/mob/living/carbon/human/proc/lleill_transmute_chosen(datum/om/prompt/choice/lleill_energy/lleill_transmute/ask)
+/mob/living/carbon/human/proc/lleill_transmute_chosen(datum/act/request/A)
+	var/datum/prompt/choice/lleill_transmute/ask = A.request
+	if(!A.answer)
+		if(!isnull(ask.answer_value))
+			if(ask.last_error == "not in hand")
+				to_chat(src, span_warning("The item is no longer in your hands."))
+			else if(ask.last_error == "no energy")
+				to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
+		return
 	var/obj/item/I = ask.item
 	var/energy_cost = ask.energy_cost
-	var/obj/item/transmute_product = ask.choices[ask.choice]
+	var/obj/item/transmute_product = ask.choices[A.answer.answer_value]
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
 	om_task_start(/datum/om/task/timed/human_lleill_transmute_human, src, I, energy_cost = energy_cost, transmute_product = transmute_product)
 
