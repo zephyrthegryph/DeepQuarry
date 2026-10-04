@@ -126,8 +126,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_animalize, R_ADMIN|R_EVENT|R_DEBUG, "Make 
 	after(target_mob, 1 SECOND, TYPE_PROC_REF(/mob, Animalize))
 
 ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a pAI!", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/turf/target_turf = get_turf(user.mob)
-
 	var/list/available = list()
 	for(var/mob/current_client in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(current_client.key && isobserver(current_client))
