@@ -30,16 +30,24 @@
 	else
 		icon_state = "floorbot[on]e"
 
-DECLARE_UI(/mob/living/bot/floorbot, "Floorbot")
+CAPABILITIES(/mob/living/bot/floorbot)
+	interface("Floorbot")
+	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
+	op("vocal", ui_act("vocal"), then(PROC_REF(ui_act_vocal)))
+	op("improve", ui_act("improve"), then(PROC_REF(ui_act_improve)))
+	op("tiles", ui_act("tiles"), then(PROC_REF(ui_act_tiles)))
+	op("make", ui_act("make"), then(PROC_REF(ui_act_make)))
+	op("bridgemode", ui_act("bridgemode", arg("dir")), then(PROC_REF(ui_act_bridgemode)))
 
-UI_DATA(/mob/living/bot/floorbot, "on:num", "open:num", "locked:num", "vocal:num", "amount:num", "merge:ui_data_mob_living_bot_floorbot{possible_bmode:list,improvefloors:num,eattiles:num,maketiles:num,bmode:text}")
-
-/// The computed part of /mob/living/bot/floorbot's window data (declared on its UI_DATA row).
-/mob/living/bot/floorbot/proc/ui_data_mob_living_bot_floorbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
+/mob/living/bot/floorbot/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-
-
-
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
+	data["vocal"] = vocal
+	data["amount"] = amount
 	data["possible_bmode"] = list("NORTH", "EAST", "SOUTH", "WEST")
 
 	data["improvefloors"] = null
@@ -54,8 +62,6 @@ UI_DATA(/mob/living/bot/floorbot, "on:num", "open:num", "locked:num", "vocal:num
 		data["bmode"] = dir2text(targetdirection)
 	return data
 
-EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
-
 /mob/living/bot/floorbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
 	if(!emagged)
@@ -65,53 +71,41 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 			play_sfx(src, SFX_MACHINES_BUZZBEEP)
 		return 1
 
-/mob/living/bot/floorbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(src)
-	return TRUE
-
-UI_ACT(/mob/living/bot/floorbot, "start", ui_act_start)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_start)
+/mob/living/bot/floorbot/proc/ui_act_start(datum/act/op/A)
 	if(on)
 		turn_off()
 	else
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "vocal", ui_act_vocal)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_vocal)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/floorbot/proc/ui_act_vocal(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return
 	vocal = !vocal
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "improve", ui_act_improve)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_improve)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/floorbot/proc/ui_act_improve(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return
 	improvefloors = !improvefloors
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "tiles", ui_act_tiles)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_tiles)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/floorbot/proc/ui_act_tiles(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return
 	eattiles = !eattiles
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "make", ui_act_make)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_make)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/floorbot/proc/ui_act_make(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return
 	maketiles = !maketiles
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "bridgemode", ui_act_bridgemode, UI_ARG_VALUE("dir"))
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/floorbot/proc/ui_act_bridgemode(datum/act/op/A, dir)
+	if(locked && !issilicon(A.actor))
 		return
-	targetdirection = text2dir(params["dir"])
+	targetdirection = text2dir(dir)
 	. = TRUE
 
 /mob/living/bot/floorbot/handleRegular()

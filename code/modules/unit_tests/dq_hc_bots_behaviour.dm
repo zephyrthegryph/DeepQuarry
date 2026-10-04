@@ -155,7 +155,7 @@
 	B.locked = TRUE
 	TEST_ASSERT_NULL(hc_bot_data(crew, B)["waters_trays"], "a locked one hides them")
 
-/// The medbot limits (MEDBOT_MIN_URGENCY 1, MEDBOT_MAX_URGENCY 4, MEDBOT_MAX_INJECTION 15) are written out: the defines are the bot file's own.
+/// The medbot limits (code/__defines/medbot.dm: urgency 1 to 4, injection up to 15) are written out as numbers.
 /datum/unit_test/dq_hc_bots/medbot_buttons
 /datum/unit_test/dq_hc_bots/medbot_buttons/Run()
 	set_up_actors()

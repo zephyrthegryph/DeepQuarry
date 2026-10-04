@@ -207,60 +207,57 @@
 	else
 		icon_state = "cleanbot[on]"
 
-EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
+CAPABILITIES(/mob/living/bot/cleanbot)
+	interface("Cleanbot")
+	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
+	op("blood", ui_act("blood"), then(PROC_REF(ui_act_blood)))
+	op("patrol", ui_act("patrol"), then(PROC_REF(ui_act_patrol)))
+	op("vocal", ui_act("vocal"), then(PROC_REF(ui_act_vocal)))
+	op("wet_floors", ui_act("wet_floors"), then(PROC_REF(ui_act_wet_floors)))
+	op("spray_blood", ui_act("spray_blood"), then(PROC_REF(ui_act_spray_blood)))
 
-DECLARE_UI(/mob/living/bot/cleanbot, "Cleanbot")
-
-UI_DATA(/mob/living/bot/cleanbot, "on:num", "open:num", "locked:num", "blood:num", "patrol=will_patrol:num", "vocal:num", "wet_floors:num", "spray_blood:num", "merge:ui_data_mob_living_bot_cleanbot{version:text}")
-
-/// The computed part of /mob/living/bot/cleanbot's window data (declared on its UI_DATA row).
-/mob/living/bot/cleanbot/proc/ui_data_mob_living_bot_cleanbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state and settings.
+/mob/living/bot/cleanbot/ui_data(datum/act/eval/A)
 	var/list/data = list()
-
-
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
+	data["blood"] = blood
+	data["patrol"] = will_patrol
+	data["vocal"] = vocal
+	data["wet_floors"] = wet_floors
+	data["spray_blood"] = spray_blood
 	data["version"] = "v2.0"
 	return data
 
-/mob/living/bot/cleanbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/cleanbot, "start", ui_act_start)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_start)
+/mob/living/bot/cleanbot/proc/ui_act_start(datum/act/op/A)
 	if(on)
 		turn_off()
 	else
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "blood", ui_act_blood)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_blood)
+/mob/living/bot/cleanbot/proc/ui_act_blood(datum/act/op/A)
 	blood = !blood
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "patrol", ui_act_patrol)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_patrol)
+/mob/living/bot/cleanbot/proc/ui_act_patrol(datum/act/op/A)
 	will_patrol = !will_patrol
 	patrol_path = null
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "vocal", ui_act_vocal)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_vocal)
+/mob/living/bot/cleanbot/proc/ui_act_vocal(datum/act/op/A)
 	vocal = !vocal
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "wet_floors", ui_act_wet_floors)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_wet_floors)
+/mob/living/bot/cleanbot/proc/ui_act_wet_floors(datum/act/op/A)
 	wet_floors = !wet_floors
-	to_chat(ui.user, span_notice("You twiddle the screw."))
+	to_chat(A.actor, span_notice("You twiddle the screw."))
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "spray_blood", ui_act_spray_blood)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_spray_blood)
+/mob/living/bot/cleanbot/proc/ui_act_spray_blood(datum/act/op/A)
 	spray_blood = !spray_blood
-	to_chat(ui.user, span_notice("You press the weird button."))
+	to_chat(A.actor, span_notice("You press the weird button."))
 	. = TRUE
 
 /mob/living/bot/cleanbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)

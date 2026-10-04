@@ -91,14 +91,23 @@
 	else
 		set_light(0)
 
-DECLARE_UI(/mob/living/bot/secbot, "Secbot")
+CAPABILITIES(/mob/living/bot/secbot)
+	interface("Secbot")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("idcheck", ui_act("idcheck"), then(PROC_REF(ui_act_idcheck)))
+	op("ignorerec", ui_act("ignorerec"), then(PROC_REF(ui_act_ignorerec)))
+	op("ignorearr", ui_act("ignorearr"), then(PROC_REF(ui_act_ignorearr)))
+	op("switchmode", ui_act("switchmode"), then(PROC_REF(ui_act_switchmode)))
+	op("patrol", ui_act("patrol"), then(PROC_REF(ui_act_patrol)))
+	op("declarearrests", ui_act("declarearrests"), then(PROC_REF(ui_act_declarearrests)))
 
-UI_DATA(/mob/living/bot/secbot, "on:num", "open:num", "locked:num", "merge:ui_data_mob_living_bot_secbot{idcheck:unknown,check_records:num,check_arrest:num,arrest_type:unknown,declare_arrests:unknown,bot_patrolling:unknown,will_patrol:unknown,patrol:num}")
-
-/// The computed part of /mob/living/bot/secbot's window data (declared on its UI_DATA row).
-/mob/living/bot/secbot/proc/ui_data_mob_living_bot_secbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
+/mob/living/bot/secbot/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
 
 	data["idcheck"] = null
 	data["check_records"] = null
@@ -119,17 +128,8 @@ UI_DATA(/mob/living/bot/secbot, "on:num", "open:num", "locked:num", "merge:ui_da
 
 	return data
 
-EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
-
-/mob/living/bot/secbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/secbot, "power", ui_act_power)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_power)
-	if(!access_scanner.allowed(ui.user))
+/mob/living/bot/secbot/proc/ui_act_power(datum/act/op/A)
+	if(!access_scanner.allowed(A.actor))
 		return FALSE
 	if(on)
 		turn_off()
@@ -137,44 +137,38 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_power)
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "idcheck", ui_act_idcheck)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_idcheck)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/secbot/proc/ui_act_idcheck(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	idcheck = !idcheck
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "ignorerec", ui_act_ignorerec)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_ignorerec)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/secbot/proc/ui_act_ignorerec(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	check_records = !check_records
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "ignorearr", ui_act_ignorearr)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_ignorearr)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/secbot/proc/ui_act_ignorearr(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	check_arrest = !check_arrest
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "switchmode", ui_act_switchmode)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_switchmode)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/secbot/proc/ui_act_switchmode(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	arrest_type = !arrest_type
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "patrol", ui_act_patrol)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_patrol)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/secbot/proc/ui_act_patrol(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	will_patrol = !will_patrol
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "declarearrests", ui_act_declarearrests)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
-	if(locked && !issilicon(ui.user))
+/mob/living/bot/secbot/proc/ui_act_declarearrests(datum/act/op/A)
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	declare_arrests = !declare_arrests
 	. = TRUE

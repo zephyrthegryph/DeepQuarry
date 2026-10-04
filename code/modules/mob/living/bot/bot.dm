@@ -48,6 +48,13 @@
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 	allow_mind_transfer = TRUE
 
+CAPABILITIES(/mob/living/bot)
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
+
+/// Whoever presses a button of the bot's window leaves their prints on it.
+/mob/living/bot/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+
 /mob/living/bot/Initialize(mapload)
 	. = ..()
 
