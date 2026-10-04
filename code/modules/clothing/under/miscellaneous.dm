@@ -2471,11 +2471,14 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 	return bluespace_size(request.answerer, A.answer.answer_value, request.large_bounds)
 
 /datum/prompt/number/bluespace_clothing_size
-	question = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas."
 	title = "Set Size"
 	timeout = 0
 	step = 1
 	var/large_bounds = FALSE
+
+/datum/prompt/number/bluespace_clothing_size/prepare(datum/act/A)
+	. = ..()
+	question = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas."
 
 /datum/prompt/number/bluespace_clothing_size/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, TRUE, GLOB.tgui_always_state)
