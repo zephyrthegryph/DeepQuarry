@@ -27,6 +27,10 @@
 /*
  * Balloons
  */
+/// A toy clicked with itself in the hand is not that toy held against another thing.
+/obj/item/toy/proc/held_is_another(datum/act/op/A)
+	return A.held != src
+
 /obj/item/toy/balloon
 	name = "water balloon"
 	desc = "A translucent balloon. There's nothing in it."
@@ -52,25 +56,27 @@
 		src.update_icon()
 	return
 
-DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/toy/balloon)
+	op("fill", item(/obj/item/reagent_containers/glass), passes(), then(PROC_REF(filled)))
 
-/// Old attackby.
-/obj/item/toy/balloon/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
-	if(istype(O, /obj/item/reagent_containers/glass))
-		if(O.reagents)
-			if(O.reagents.total_volume < 1)
-				to_chat(user, "The [O] is empty.")
-			else if(O.reagents.total_volume >= 1)
-				if(O.reagents.has_reagent(REAGENT_ID_PACID, 1))
-					to_chat(user, "The acid chews through the balloon!")
-					O.reagents.splash(user, reagents.total_volume)
-					consume(src, user)
-				else
-					src.desc = "A translucent balloon with some form of liquid sloshing around in it."
-					to_chat(user, span_notice("You fill the balloon with the contents of [O]."))
-					O.reagents.trans_to_obj(src, 10)
+/// A glass held to the balloon: it fills from it (acid chews through the balloon).
+/obj/item/toy/balloon/proc/filled(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/O = A.held
+	if(O.reagents)
+		if(O.reagents.total_volume < 1)
+			to_chat(user, "The [O] is empty.")
+		else if(O.reagents.total_volume >= 1)
+			if(O.reagents.has_reagent(REAGENT_ID_PACID, 1))
+				to_chat(user, "The acid chews through the balloon!")
+				O.reagents.splash(user, reagents.total_volume)
+				consume(src, user)
+			else
+				src.desc = "A translucent balloon with some form of liquid sloshing around in it."
+				to_chat(user, span_notice("You fill the balloon with the contents of [O]."))
+				O.reagents.trans_to_obj(src, 10)
 	src.update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/toy/balloon/throw_impact(atom/hit_atom)
 	if(src.reagents.total_volume >= 1)
@@ -163,15 +169,18 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("attacked", "struck", "hit")
 
-DECLARE_INTERACTIONS(/obj/item/toy/sword, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/toy/sword/proc/can_recolor)), \
-)
+TRACKED(/obj/item/toy/sword, active)
+TRACKED(/obj/item/toy/sword, lcolor)
 
-/// Old attack_self.
-/obj/item/toy/sword/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active = !active
+CAPABILITIES(/obj/item/toy/sword)
+	op("toggle", in_hand(), then(PROC_REF(toggled)))
+	op("tune", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(tuned)))
+	op("recolor", hand(), gesture(GESTURE_ALT), needs(req_capable()), then(PROC_REF(recolor)))
+
+/// The blade goes out or comes back in.
+/obj/item/toy/sword/proc/toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
 	if(active)
 		to_chat(user, span_notice("You extend the plastic blade with a quick flick of your wrist."))
 		play_sfx(src, SFX_WEAPONS_SABERON)
@@ -183,54 +192,59 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 		item_state = "[icon_state]"
 		w_class = ITEMSIZE_SMALL
 	update_icon()
+	redraw_holder()
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/toy/sword/appearance_overlays()
-	. = list()
-	. += ..()
+/// The blade is drawn over the handle, in its colour, while it is out.
+/obj/item/toy/sword/draw(datum/look/look)
+	..()
+	if(active)
+		look.overlay(blade_appearance())
+
+/// The blade over the handle, in the blade's colour (a fresh appearance: the colour is part of what is drawn).
+/obj/item/toy/sword/proc/blade_appearance()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	blade_overlay.color = lcolor
-	if(active)
-		. += blade_overlay
+	return blade_overlay
+
+/// Whoever holds the sword has its in-hand sprite redrawn (the blade shows in the hand too).
+/obj/item/toy/sword/proc/redraw_holder()
 	var/mob/living/carbon/human/holder = loc
 	if(istype(holder))
 		holder.update_inv_l_hand()
 		holder.update_inv_r_hand()
 
-/// Requirement for recolouring the blade.
-/obj/item/toy/sword/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
-	if(!in_range(src, user))
-		return TRUE // the effect declines silently
-	if(user.incapacitated() || !istype(user))
-		return "you can't do that right now"
-	return TRUE
-
-/// Old click_alt.
-/obj/item/toy/sword/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// An alt-click asks whether to recolour the blade.
+/obj/item/toy/sword/proc/recolor(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
+		return OP_OK
 
 	open_request(src, /datum/prompt/yes_no, PROC_REF(ask_blade_color), answerer = user, title = "Confirm Recolor", question = "Are you sure you want to recolor your blade?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return TRUE
+	return OP_OK
 
 /obj/item/toy/sword/proc/ask_blade_color(datum/act/request/A)
 	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(A.request.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color, PROC_REF(blade_recolored), answerer = A.request.answerer, default = lcolor || "#000000", title = "Choose Energy Color", question = "Pick a color.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/toy/sword/proc/blade_recolored(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		lcolor = sanitize_hexcolor(ask.picked_color)
+/obj/item/toy/sword/proc/blade_recolored(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		set_lcolor(sanitize_hexcolor(A.answer.answer_value))
 	update_icon()
+	redraw_holder()
 
 /obj/item/toy/sword/examine(mob/user)
 	. = ..()
 	. += span_notice("Alt-click to recolor it.")
 
-/// Old attackby.
-/obj/item/toy/sword/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// A multitool held to a retracted sword switches its rainbow colour controller.
+/obj/item/toy/sword/proc/tuned(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
@@ -238,7 +252,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_ove
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
 		update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 /obj/item/toy/katana
 	name = "replica katana"
 	desc = "Woefully underpowered in D20."
@@ -732,21 +746,21 @@ DECLARE_LOOT(/obj/random/carp_plushie, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/ite
 		if(in_range(user, src) && stored_item)
 			. += span_italics("You can see something in there...")
 
-DECLARE_INTERACTIONS(/obj/structure/plushie, \
-	INTERACT_HAND_HOSTILE("Punch", PROC_REF(interaction_punch)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Hug", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Poke", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Strangle", PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/structure/plushie)
+	op("punch", hand(), hostile(), label("Punch"), then(PROC_REF(punched)))
+	op("hug", hand(), ungated(), stance(I_HELP), label("Hug"), then(PROC_REF(hugged)))
+	op("poke", hand(), ungated(), stance(I_DISARM), label("Poke"), then(PROC_REF(poked)))
+	op("strangle", hand(), ungated(), stance(I_GRAB), label("Strangle"), then(PROC_REF(strangled)))
+	op("tend", item(/obj/item), passes(), then(PROC_REF(item_used)))
 
 /// Old attack_hand's harm branch: punch the plushie (combat mode only).
-/obj/structure/plushie/proc/interaction_punch(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/plushie/proc/punched(datum/act/op/A)
+	var/mob/user = A.actor
 	touch_started(user)
 	act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
 	if(phrase)
 		atom_say("[phrase]")
-	return TRUE
+	return OP_OK
 
 /// A touch of any kind: take out whatever is hidden inside.
 /obj/structure/plushie/proc/touch_started(mob/user)
@@ -754,18 +768,32 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	if(stored_item && opened && !om_busy(src))
 		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 
+/// Hug it.
+/obj/structure/plushie/proc/hugged(datum/act/op/A)
+	touched(A.actor, I_HELP)
+	return OP_OK
+
+/// Poke it.
+/obj/structure/plushie/proc/poked(datum/act/op/A)
+	touched(A.actor, I_DISARM)
+	return OP_OK
+
+/// Strangle it.
+/obj/structure/plushie/proc/strangled(datum/act/op/A)
+	touched(A.actor, I_GRAB)
+	return OP_OK
+
 /// Old attack_hand: hug it (or, holding Grab, strangle it; Disarm pokes it).
-/obj/structure/plushie/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/plushie/proc/touched(mob/user, stance)
 	touch_started(user)
-	if(interaction.stance == I_HELP)
+	if(stance == I_HELP)
 		act_message(user, src, MSG_SELF(span_notice("You hug %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " hugs %T%!")))
-	else if (interaction.stance == I_GRAB)
+	else if (stance == I_GRAB)
 		act_message(user, src, MSG_SELF(span_warning("You attempt to strangle %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to strangle %T%!")))
 	else
 		act_message(user, src, MSG_SELF(span_notice("You poke %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%.")))
 	if(phrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		atom_say("[phrase]")
-	return TRUE
 
 /obj/structure/plushie/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
@@ -773,32 +801,33 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	own_take(src, nameof(stored_item))
 	return
 
-/// Old attackby.
-/obj/structure/plushie/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// Sew it, slit it open, or put something small inside.
+/obj/structure/plushie/proc/item_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/threadneedle) && opened)
 		to_chat(user, "You sew the hole in [src].")
 		opened = FALSE
-		return INTERACTION_HANDLED_PASS
+		return OP_OK
 
 	if(is_sharp(I) && !opened)
 		to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
 		opened = TRUE
-		return INTERACTION_HANDLED_PASS
+		return OP_OK
 
 	if(opened)
 		if(stored_item)
 			to_chat(user, "There is already something in here.")
-			return INTERACTION_HANDLED_PASS
+			return OP_OK
 
 		if(!(I.w_class > w_class))
 			to_chat(user, "You place [I] inside [src].")
-			if(!move_into(src, nameof(src.stored_item), I, user))
-				return INTERACTION_HANDLED_PASS
-			return INTERACTION_HANDLED_PASS
+			move_into(src, nameof(src.stored_item), I, user)
+			return OP_OK
 		else
 			to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/structure/plushie/ian
 	name = "plush corgi"
@@ -866,8 +895,33 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 		if(in_range(user, src) && stored_item)
 			. += span_italics("You can see something in there...")
 
+/// Hug it.
+/obj/item/toy/plushie/proc/hugged(datum/act/op/A)
+	squeeze(A.actor, I_HELP)
+	return OP_OK
+
+/// Poke it.
+/obj/item/toy/plushie/proc/poked(datum/act/op/A)
+	squeeze(A.actor, I_DISARM)
+	return OP_OK
+
+/// Strangle it.
+/obj/item/toy/plushie/proc/strangled(datum/act/op/A)
+	squeeze(A.actor, I_GRAB)
+	return OP_OK
+
+/// Punch it.
+/obj/item/toy/plushie/proc/punched(datum/act/op/A)
+	squeeze(A.actor, I_HURT)
+	return OP_OK
+
+/// What a plushie does before it is squeezed (a type with a noise of its own plays it here).
+/obj/item/toy/plushie/proc/squeeze_prelude(mob/user, stance)
+	return
+
 /// Old attack_self: hug, punch or poke it, and fish out anything stitched inside.
-/obj/item/toy/plushie/proc/interaction_squeeze(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/plushie/proc/squeeze(mob/user, stance)
+	squeeze_prelude(user, stance)
 	if(special_handling)
 		return
 	if(stored_item && opened && !om_busy(src))
@@ -875,11 +929,11 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 1 SECOND)
 		return
-	if(interaction.stance == I_HELP)
+	if(stance == I_HELP)
 		act_message(user, src, MSG_SELF(span_notice("You hug %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " hugs %T%!")))
-	else if (interaction.stance == I_HURT)
+	else if (stance == I_HURT)
 		act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
-	else if (interaction.stance == I_GRAB)
+	else if (stance == I_GRAB)
 		act_message(user, src, MSG_SELF(span_warning("You attempt to strangle %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to strangle %T%!")))
 	else
 		act_message(user, src, MSG_SELF(span_notice("You poke %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%.")))
@@ -908,12 +962,14 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	atom_say("[pokephrase]")
 	name = adjusted_name
 
-/obj/item/toy/plushie/proc/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
+/// Asks what to call the plushie (only someone with a mind may).
+/obj/item/toy/plushie/proc/rename_plushie(datum/act/op/A)
+	var/mob/M = A.actor
 	if(!M.mind)
-		return 0
+		return OP_DECLINE
 
 	open_request(src, /datum/prompt/text, PROC_REF(plushie_named), answerer = M, question = "What do you want to name the plushie?", default = "", max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
+	return OP_OK
 
 /obj/item/toy/plushie/proc/plushie_named(datum/act/request/A)
 	if(!A.answer)
@@ -929,43 +985,45 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 		to_chat(M, "You name the plushie [input], giving it a hug for good luck.")
 		return 1
 
-DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
-	INTERACT_USE_AS(I_HELP, "Hug", PROC_REF(interaction_squeeze)), \
-	INTERACT_USE_AS(I_DISARM, "Poke", PROC_REF(interaction_squeeze)), \
-	INTERACT_USE_AS(I_GRAB, "Strangle", PROC_REF(interaction_squeeze)), \
-	INTERACT_USE_AS(I_HURT, "Punch", PROC_REF(interaction_squeeze)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/toy/plushie)
+	op("hug", in_hand(), stance(I_HELP), label("Hug"), then(PROC_REF(hugged)))
+	op("poke", in_hand(), stance(I_DISARM), label("Poke"), then(PROC_REF(poked)))
+	op("strangle", in_hand(), stance(I_GRAB), label("Strangle"), then(PROC_REF(strangled)))
+	op("punch", in_hand(), stance(I_HURT), label("Punch"), then(PROC_REF(punched)))
+	op("tend", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(item_used)))
+	op("rename", menu(), label("Name Plushie"), needs(carried(), req(PROC_REF(can_rename), because = PROC_REF(rename_refusal))), then(PROC_REF(rename_plushie)))
 
-/// Old attackby.
-/obj/item/toy/plushie/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// Kiss it, sew it, slit it open, or put something small inside.
+/obj/item/toy/plushie/proc/item_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/toy/plushie) || istype(I, /obj/item/organ/external/head))
 		act_message(user, src, MSG_SELF(span_notice("You make \the [I] kiss %T%!.")), \
 			MSG_OTHERS(span_notice("%U% makes \the [I] kiss %T%!.")))
-		return INTERACTION_HANDLED_PASS
+		return OP_OK
 
 	if(istype(I, /obj/item/threadneedle) && opened)
 		to_chat(user, "You sew the hole underneath [src].")
 		opened = FALSE
-		return INTERACTION_HANDLED_PASS
+		return OP_OK
 
 	if(is_sharp(I) && !opened)
 		to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
 		opened = TRUE
-		return INTERACTION_HANDLED_PASS
+		return OP_OK
 
 	if( (!(I.w_class > w_class)) && opened)
 		if(stored_item)
 			to_chat(user, "There is already something in here.")
-			return INTERACTION_HANDLED_PASS
+			return OP_OK
 
 		to_chat(user, "You place [I] inside [src].")
 		if(!move_into(src, nameof(src.stored_item), I, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_OK
 		to_chat(user, "You placed [I] into [src].")
-		return INTERACTION_HANDLED_PASS
+		return OP_OK
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/toy/plushie/nymph
 	name = "diona nymph plush"
@@ -1508,30 +1566,44 @@ CAPABILITIES(/obj/item/toy/griffin)
 	anchored = FALSE
 	density = FALSE
 
-DECLARE_INTERACTIONS(/obj/structure/balloon, \
-	INTERACT_HAND_HOSTILE("Punch", PROC_REF(interaction_punch)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Poke", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Bat", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Try to pop", PROC_REF(interaction_hand)), \
-)
+CAPABILITIES(/obj/structure/balloon)
+	op("punch", hand(), hostile(), label("Punch"), then(PROC_REF(punched)))
+	op("poke", hand(), ungated(), stance(I_HELP), label("Poke"), then(PROC_REF(poked)))
+	op("bat", hand(), ungated(), stance(I_DISARM), label("Bat"), then(PROC_REF(batted)))
+	op("pop", hand(), ungated(), stance(I_GRAB), label("Try to pop"), then(PROC_REF(popped)))
 
 /// Old attack_hand's harm branch: punch the balloon (combat mode only).
-/obj/structure/balloon/proc/interaction_punch(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/balloon/proc/punched(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
-	return TRUE
+	return OP_OK
+
+/// Poke it.
+/obj/structure/balloon/proc/poked(datum/act/op/A)
+	touched(A.actor, I_HELP)
+	return OP_OK
+
+/// Bat it.
+/obj/structure/balloon/proc/batted(datum/act/op/A)
+	touched(A.actor, I_DISARM)
+	return OP_OK
+
+/// Try to pop it.
+/obj/structure/balloon/proc/popped(datum/act/op/A)
+	touched(A.actor, I_GRAB)
+	return OP_OK
 
 /// Old attack_hand: poke it (or, holding Grab, try to pop it; Disarm bats it).
-/obj/structure/balloon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/balloon/proc/touched(mob/user, stance)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
-	if(interaction.stance == I_HELP)
+	if(stance == I_HELP)
 		act_message(user, src, MSG_SELF(span_notice("You poke %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%!")))
-	else if (interaction.stance == I_GRAB)
+	else if (stance == I_GRAB)
 		act_message(user, src, MSG_SELF(span_warning("You attempt to pop %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to pop %T%!")))
 	else
 		act_message(user, src, MSG_SELF(span_notice("You lightly bat %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " lightly bats %T%.")))
-	return TRUE
 
 /obj/structure/balloon/bat
 	name = "giant bat balloon"
@@ -1581,22 +1653,14 @@ DECLARE_INTERACTIONS(/obj/structure/balloon, \
 	desc = "No teppi were harmed in the creation of this plushie."
 	icon_state = "teppialt"
 
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
-	INTERACT_USE_AS(I_HELP, "Hug", PROC_REF(interaction_teppi_squeeze)), \
-	INTERACT_USE_AS(I_DISARM, "Poke", PROC_REF(interaction_teppi_squeeze)), \
-	INTERACT_USE_AS(I_GRAB, "Strangle", PROC_REF(interaction_teppi_squeeze)), \
-	INTERACT_USE_AS(I_HURT, "Punch", PROC_REF(interaction_teppi_squeeze)), \
-)
-
-/// Old attack_self: the teppi noise, then the plushie's squeeze.
-/obj/item/toy/plushie/teppi/proc/interaction_teppi_squeeze(mob/user, obj/item/held, datum/interaction/interaction)
-	if(interaction.stance == I_HURT || interaction.stance == I_GRAB)
+/// The teppi noise, before the plushie's squeeze.
+/obj/item/toy/plushie/teppi/squeeze_prelude(mob/user, stance)
+	if(stance == I_HURT || stance == I_GRAB)
 		play_sfx(user, SFX_VOICE_TEPPI_ROAR)
 	else
 		var/teppi_noise = SFX_VOICE_TEPPI_WHINE_MIX
 		playsound(user, teppi_noise, 10, 0)
 		src.visible_message(span_notice("Gyooooooooh!"))
-	return interaction_squeeze(user, held, interaction)
 
 /*
  * Hand buzzer
@@ -1733,23 +1797,27 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
 	icon = 'icons/obj/drakietoy.dmi'
 	var/lights_glowing = FALSE
 
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+TRACKED(/obj/item/toy/plushie/borgplushie/drake, lights_glowing)
 
-/// Old click_alt.
-/obj/item/toy/plushie/borgplushie/drake/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake)
+	op("lights", hand(), gesture(GESTURE_ALT), label("Toggle lights"), then(PROC_REF(lights_toggled)))
+
+/// An alt-click switches the glow-fabric.
+/obj/item/toy/plushie/borgplushie/drake/proc/lights_toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	var/turf/T = get_turf(src)
 	if(!T.AdjacentQuick(user)) // So people aren't messing with these from across the room
-		return TRUE
-	lights_glowing = !lights_glowing
+		return OP_OK
+	set_lights_glowing(!lights_glowing)
 	to_chat(user, span_notice("You turn the [src]'s glow-fabric [lights_glowing ? "on" : "off"]."))
 	update_icon()
-	return TRUE
+	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/borgplushie/drake, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/toy/plushie/borgplushie/drake/appearance_overlays()
-	. = list()
-	if (lights_glowing)
-		. += emissive_appearance(icon, "[icon_state]-lights")
+/// The lit fabric glows.
+/obj/item/toy/plushie/borgplushie/drake/draw(datum/look/look)
+	..()
+	if(lights_glowing)
+		look.overlay(emissive_appearance(icon, "[initial(icon_state)]-lights"))
 
 /obj/item/toy/plushie/borgplushie/drake/get_mechanics_info(list/additional_information)
 	return "The lights on the plushie can be toggled [lights_glowing ? "off" : "on"] by alt-clicking on it."
@@ -1849,17 +1917,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/borgplushie/drake, TYPE_PROC_REF(/
 		to_chat(user, span_notice(" You insert bread into the toaster. "))
 		play_sfx(loc, SFX_MACHINES_DING)
 
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_interaction_item)))
+CAPABILITIES(/obj/item/toy/plushie/ipc)
+	op("toast", item(/obj/item/material/kitchen/utensil), passes(), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(utensil_inserted)))
 
-/// Old attackby.
-/obj/item/toy/plushie/ipc/proc/ipc_interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/material/kitchen/utensil))
-		to_chat(user, span_notice(" You insert the [I] into the toaster. "))
-		fx_sparks(src, 5)
-		user.electrocute_act(15,src,0.75)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// A utensil in the toaster.
+/obj/item/toy/plushie/ipc/proc/utensil_inserted(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
+	to_chat(user, span_notice(" You insert the [I] into the toaster. "))
+	fx_sparks(src, 5)
+	user.electrocute_act(15,src,0.75)
+	return OP_OK
 
 /obj/item/toy/plushie/ipc/toaster
 	name = "toaster plushie"
@@ -1977,16 +2045,19 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_
 	icon_state = "rock"
 	attack_verb = list("grug'd", "unga'd")
 
-DECLARE_INTERACTIONS(/obj/item/toy/rock, INTERACT_INSERT(/obj/item/pen, PROC_REF(interaction_draw_face), "Draw a face"))
+CAPABILITIES(/obj/item/toy/rock)
+	op("draw_face", item(/obj/item/pen), passes(), label("Draw a face"), then(PROC_REF(draw_face)))
 
-/// Old attackby.
-/obj/item/toy/rock/proc/interaction_draw_face(mob/living/user, obj/item/I, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(face_chosen), title = "Faces", message = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE)
-	return INTERACTION_HANDLED_PASS
+/// A pen held to the rock: asks which face to draw.
+/obj/item/toy/rock/proc/draw_face(datum/act/op/A)
+	open_request(src, /datum/prompt/choice, PROC_REF(face_chosen), answerer = A.actor, title = "Faces", question = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = A.held, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
+	return OP_OK
 
-/obj/item/toy/rock/proc/face_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/user = ask.answerer
-	switch(ask.choice)
+/obj/item/toy/rock/proc/face_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("fred")
 			src.icon_state = "fred"
 			to_chat(user, "You draw a face on the rock.")
@@ -2196,13 +2267,13 @@ CAPABILITIES(/obj/item/storage/box/handcuffs/fake)
 	icon_state = "nuketoyidle"
 	var/cooldown = 0
 
-DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/toy/nuke)
+	op("press", in_hand(), then(PROC_REF(pressed)))
+	op("disk", item(/obj/item/disk/nuclear), passes(), then(PROC_REF(disk_shown)))
 
-/// Old attack_self.
-/obj/item/toy/nuke/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The button: the alarm sounds, once per cooldown.
+/obj/item/toy/nuke/proc/pressed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 1800) //3 minutes
 		act_message(user, src, MSG_SELF(span_notice("You activate %T%, it plays a loud noise!")), MSG_OTHERS(span_warning("%U% presses a button on %T%")), MSG_BLIND(span_notice("You hear the click of a button.")))
@@ -2210,13 +2281,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 	else
 		var/timeleft = (cooldown - world.time)
 		to_chat(user, span_warning("Nothing happens, and") + " '[round(timeleft/10)]' " + span_warning("appears on a small display."))
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/obj/item/toy/nuke/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/disk/nuclear))
-		to_chat(user, span_warning("Nice try. Put that disk back where it belongs."))
-	return INTERACTION_HANDLED_PASS
+/// The disk does not belong in it.
+/obj/item/toy/nuke/proc/disk_shown(datum/act/op/A)
+	to_chat(A.actor, span_warning("Nice try. Put that disk back where it belongs."))
+	return OP_OK
 
 /*
  * Toy gibber
@@ -2232,15 +2302,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 
 CAPABILITIES(/obj/item/toy/minigibber)
 	owns_one(nameof(stored_minature), /obj)
+	op("grind", in_hand(), then(PROC_REF(ground)))
+	op("feed", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), label("Feed"), then(PROC_REF(fed)))
 
-
-DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM("Feed", PROC_REF(interaction_feed)), \
-)
-
-/// Old attack_self.
-/obj/item/toy/minigibber/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The gib button: whatever is inside is ground up.
+/obj/item/toy/minigibber/proc/ground(datum/act/op/A)
+	var/mob/user = A.actor
 	if(stored_minature)
 		to_chat(user, span_danger("\The [src] makes a violent grinding noise as it tears apart the miniature figure inside!"))
 		play_sfx(src, SFX_EFFECTS_SPLAT)
@@ -2250,15 +2317,17 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 		to_chat(user, span_notice("You hit the gib button on \the [src]."))
 
 		COOLDOWN_START(src, cooldown, 0.8 SECONDS)
-	return TRUE
+	return OP_OK
 
-/// Old attackby: feed a figure into the gibber.
-/obj/item/toy/minigibber/proc/interaction_feed(mob/user, obj/O, datum/interaction/interaction)
+/// A figure held to the gibber is fed into it.
+/obj/item/toy/minigibber/proc/fed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/O = A.held
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
 		om_task_start(/datum/om/task/timed/minigibber_attackby, user, src, receiver = src, O = O)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /datum/om/task/timed/minigibber_attackby
 	duration = 1 SECOND
@@ -2482,13 +2551,14 @@ DECLARE_LOOT(/obj/random/miniature, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/t
 	if(prob(0.1))
 		real = 1
 
-DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/toy/snake_popper)
+	op("pop", in_hand(), then(PROC_REF(pop_open)))
+	op("reload", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(reloaded)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 
-/// Old attack_self.
-/obj/item/toy/snake_popper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Opening the tube: the snake pops out.
+/obj/item/toy/snake_popper/proc/pop_open(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!popped)
 		to_chat(user, span_warning("A snake popped out of [src]!"))
 		if(real == 0)
@@ -2511,16 +2581,17 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 		var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 		s.set_up(5, 1, src)
 		s.start()
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/obj/item/toy/snake_popper/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
+/// A snake (or, on a fake one, anything) put back in an emptied tube reloads it.
+/obj/item/toy/snake_popper/proc/reloaded(datum/act/op/A)
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/toy/plushie/snakeplushie) || !real)
 		if(popped && !real)
 			qdel(O)
 			popped = 0
 			icon_state = "tastybread"
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/toy/snake_popper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(ishuman(M))
@@ -2550,8 +2621,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 		return ITEM_INTERACT_FAILURE
 	return NONE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/toy/snake_popper, PROC_REF(on_emag), null)
-/obj/item/toy/snake_popper/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer shorts out the refill system: the snake is a real one.
+/obj/item/toy/snake_popper/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(real != 2)
 		real = 2
 		to_chat(user, span_notice("You short out the bluespace refill system of [src]."))
@@ -2664,28 +2736,27 @@ CAPABILITIES(/obj/item/storage/box/timecap)
 	var/on = FALSE
 	var/activation_sound = SFX_MACHINES_CLICK
 
-APPEARANCE_TEMPLATE(/obj/item/toy/desk, "{initial(icon_state)}{on?-on:}")
+TRACKED(/obj/item/toy/desk, on)
+
+/// Shown lit while it is on.
+/obj/item/toy/desk/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][on ? "-on" : ""]")
 
 /obj/item/toy/desk/proc/activate(mob/user as mob)
-	on = !on
+	set_on(!on)
 	playsound(src.loc, activation_sound, 75, 1)
 	update_icon()
 	return 1
 
-DECLARE_INTERACTIONS(/obj/item/toy/desk, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
+CAPABILITIES(/obj/item/toy/desk)
+	op("use", in_hand(), then(PROC_REF(used)))
+	op("alt", hand(), gesture(GESTURE_ALT), then(PROC_REF(used)))
 
-/// Old attack_self.
-/obj/item/toy/desk/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	activate(user)
-	return TRUE
-
-/// Old click_alt.
-/obj/item/toy/desk/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	activate(user)
-	return TRUE
+/// Use it in hand, or alt-click it: it switches.
+/obj/item/toy/desk/proc/used(datum/act/op/A)
+	activate(A.actor)
+	return OP_OK
 
 /obj/item/toy/desk/MouseDrop(mob/user as mob) // Code from Paper bin, so you can still pick up the deck
 	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native tabletop-item drag captures its initiating actor separately from its drop destination.
@@ -2833,36 +2904,41 @@ CAPABILITIES(/obj/item/toy/partypopper)
 	EXPIRY_DECLARE(next_use)
 	var/registered_mob //On request, only one person is able to use it at a time.
 
-DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/toy/acorn_branch/proc/can_pull_acorn)))
+MSG_DEF_SELF(acorn_branch/recharging, "You need to wait a bit longer before you can pull out another acorn.")
+
+CAPABILITIES(/obj/item/toy/acorn_branch)
+	op("pull", in_hand(), needs(req(PROC_REF(can_pull_acorn), because = MSG(acorn_branch/recharging))), then(PROC_REF(acorn_pulled)))
 
 /// Requirement: acorns come out on a cooldown.
-/obj/item/toy/acorn_branch/proc/can_pull_acorn(mob/user, atom/target, obj/item/held)
+/obj/item/toy/acorn_branch/proc/can_pull_acorn(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || !ishuman(user))
 		return TRUE // the effect declines silently
-	if(!COOLDOWN_FINISHED(src, next_use))
-		return "you need to wait a bit longer before you can pull out another acorn"
+	if(!COOLDOWN_FINISHED(src, next_use)) // ALLOW(reads): the branch's own cooldown stamp, read at the moment of the pull
+		return FALSE
 	return TRUE
 
-/// Old attack_self.
-/obj/item/toy/acorn_branch/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Pulls an acorn out for the branch's one owner.
+/obj/item/toy/acorn_branch/proc/acorn_pulled(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || !ishuman(user))
-		return TRUE
+		return OP_OK
 	var/mob/living/carbon/human/H = user
 	if(registered_mob)
 		if(registered_mob != H)
 			to_chat(user, span_notice("It's a lovely branch!"))
-			return TRUE
+			return OP_OK
 	else
 		registered_mob = H
 	if(H.get_inactive_hand())
 		to_chat(user, span_notice("You need to have a free hand to pick an acorn out!"))
-		return TRUE
+		return OP_OK
 	var/spawnloc = get_turf(H)
 	var/obj/item/I = new /obj/item/reagent_containers/food/snacks/acorn(spawnloc)
 	H.put_in_inactive_hand(I)
 	EXPIRY_SET(src, next_use, 30 SECONDS, CLOCK_WORLD)
 	act_message(H, src, others = span_notice("%U% pulls an acorn from %T%!"))
-	return TRUE
+	return OP_OK
 
 /obj/item/toy/plushie/dragon
 	name = "dragon plushie"
@@ -2878,7 +2954,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 		pokephrase = pick("ROAR!", "RAWR!", "GAWR!", "GRR!", "GROAR!", "GRAH!", "Weh!", "Merp!")
 
 CAPABILITIES(/obj/item/toy/plushie/dragon)
-	op("dragon_squeeze", in_hand(), label("Squeeze"), then(PROC_REF(interaction_dragon_squeeze)))
+	op("dragon_squeeze", in_hand(), priority(OP_PRIORITY_NORMAL + 1), label("Squeeze"), then(PROC_REF(interaction_dragon_squeeze)))
 
 /// Old attack_self: the dragon noise. The plushie's squeeze does nothing for it (special_handling).
 /obj/item/toy/plushie/dragon/proc/interaction_dragon_squeeze(datum/act/op/A)
@@ -2934,14 +3010,20 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
 
-/obj/item/toy/plushie/teshari/strix/can_rename(mob/user, atom/target, obj/item/held)
+MSG_DEF_SELF(plushie/strix_no_rename, "You cannot rename Strix Hades, you hug him anyway.")
+
+/obj/item/toy/plushie/teshari/strix/can_rename(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.mind && !user.stat && in_range(user, src))
-		return "you cannot rename Strix Hades, you hug him anyway"
+		return FALSE
 	return TRUE
 
+/obj/item/toy/plushie/teshari/strix/rename_refusal(datum/act/op/A)
+	return /datum/msg/plushie/strix_no_rename
+
 /// Strix can't be renamed: can_rename() refuses when the rename would have gone through.
-/obj/item/toy/plushie/teshari/strix/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	return 0
+/obj/item/toy/plushie/teshari/strix/rename_plushie(datum/act/op/A)
+	return OP_DECLINE
 
 /obj/item/toy/plushie/teshari/eili
 	name = "Eili"
@@ -2957,14 +3039,20 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_back_str = 'icons/vore/custom_onmob_yw.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_yw.dmi')
 
-/obj/item/toy/plushie/teshari/eili/can_rename(mob/user, atom/target, obj/item/held)
+MSG_DEF_SELF(plushie/eili_no_rename, "You cannot rename Eili, you hug her anyway.")
+
+/obj/item/toy/plushie/teshari/eili/can_rename(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.mind && !user.stat && in_range(user, src))
-		return "you cannot rename Eili, you hug her anyway"
+		return FALSE
 	return TRUE
 
+/obj/item/toy/plushie/teshari/eili/rename_refusal(datum/act/op/A)
+	return /datum/msg/plushie/eili_no_rename
+
 /// Eili can't be renamed: can_rename() refuses when the rename would have gone through.
-/obj/item/toy/plushie/teshari/eili/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	return 0
+/obj/item/toy/plushie/teshari/eili/rename_plushie(datum/act/op/A)
+	return OP_DECLINE
 
 /obj/item/toy/plushie/teshari/_yw
 	name = "lifelike teshari plush"
@@ -3036,11 +3124,10 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 	. = ..()
 	. += owns(nameof(stored_item), policy = OWN_CONTAINED)
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/toy/plushie, \
-	INTERACT_VERB("Name Plushie", PROC_REF(rename_plushie_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/toy/plushie/proc/can_rename)), \
-)
-
-/// Requirement for renaming: TRUE, or why this plushie can't be renamed (unique plushies override it).
-/obj/item/toy/plushie/proc/can_rename(mob/user, atom/target, obj/item/held)
+/// Requirement for renaming: whether this plushie can be (unique plushies override it).
+/obj/item/toy/plushie/proc/can_rename(datum/act/op/A)
 	return TRUE
+
+/// Why this plushie can't be renamed (what a unique plushie says when can_rename() is false).
+/obj/item/toy/plushie/proc/rename_refusal(datum/act/op/A)
+	return null

@@ -113,39 +113,44 @@
 	return TRUE
 
 //all credit to skasi for toy mech fun ideas
-DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_TK(null, PROC_REF(interaction_tk)), \
-)
+CAPABILITIES(/obj/item/toy/mecha)
+	op("play", in_hand(), then(PROC_REF(played)))
+	op("collide", item(/obj/item/toy/mecha), reach(REACH_RANGE(2)), when(req(PROC_REF(held_is_another))), then(PROC_REF(collided)))
+	op("pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(picked_up)))
 
-/// Old attack_self.
-/obj/item/toy/mecha/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Play with it: its noise, once per cooldown.
+/obj/item/toy/mecha/proc/play_with(mob/user)
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
 		play_sfx(user, SFX_MECHA_MECHSTEP)
-	return TRUE
 
-EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(mecha_toy_pick_up)))
+/// Used in hand: it plays.
+/obj/item/toy/mecha/proc/played(datum/act/op/A)
+	play_with(A.actor)
+	return OP_OK
 
 /// Picking up a toy mech plays with it once it's in hand.
-/obj/item/toy/mecha/proc/mecha_toy_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_pick_up(user, held, interaction)
+/obj/item/toy/mecha/proc/picked_up(datum/act/op/A)
+	var/mob/living/user = A.actor
+	pick_up_by_hand(user)
 	if(loc == user)
-		attack_self(user)
-	return TRUE
+		play_with(user)
+	return OP_OK
+
+/// The telekinetic play: the one input of this toy that has no op form yet (no telekinesis binding on master).
+EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_TK(null, PROC_REF(interaction_tk)))
 
 /**
  * If you attack a mech with a mech, initiate combat between them
  */
-/// Old attackby.
-/obj/item/toy/mecha/proc/interaction_item(mob/living/user, obj/item/user_toy, datum/interaction/interaction)
-	if(istype(user_toy, /obj/item/toy/mecha))
-		var/obj/item/toy/mecha/M = user_toy
-		if(check_battle_start(user, M))
-			mecha_brawl(M, user)
-	return FALSE
+/// A mech held to this one: a battle, if both are ready. The click goes on either way (it was never handled).
+/obj/item/toy/mecha/proc/collided(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/toy/mecha/M = A.held
+	if(check_battle_start(user, M))
+		mecha_brawl(M, user)
+	return OP_DECLINE
 
 /**
  * Attack is called from the user's toy, aimed at target(another human), checking for target's toy.

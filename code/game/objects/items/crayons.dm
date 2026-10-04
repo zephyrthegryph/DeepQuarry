@@ -40,80 +40,71 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 
 /// A rainbow crayon or marker picks its main colour, then its shade (a cancel keeps that one).
 /obj/item/pen/crayon/proc/ask_rainbow_colour(mob/user, main_title, shade_title)
-	om_ask(user, /datum/om/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), title = main_title, message = "Please select the main colour.", default = colour, shade_title = shade_title)
+	open_request(src, /datum/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), answerer = user, title = main_title, question = "Please select the main colour.", default = colour, shade_title = shade_title, ask_flags = ASK_CARRIED, timeout = 0)
 
 /obj/item/pen/crayon/proc/ask_rainbow_shade(mob/user, shade_title)
-	om_ask(user, /datum/om/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), title = shade_title, message = "Please select the shade colour.", default = shadeColour, shade = TRUE)
+	open_request(src, /datum/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), answerer = user, title = shade_title, question = "Please select the shade colour.", default = shadeColour, shade = TRUE, ask_flags = ASK_CARRIED, timeout = 0)
 
-/// Re-checked on the answer: the crayon is still carried.
-/datum/om/prompt/color/crayon_colour
-	ask_flags = ASK_CARRIED
+/// The colour question of a rainbow crayon. The shade pick is the second one; the first remembers the title the shade window will carry.
+/datum/prompt/color/crayon_colour
 	/// TRUE: this is the shade pick.
 	var/shade = FALSE
 	var/shade_title
 
-/datum/om/prompt/color/crayon_colour/cancelled()
-	var/obj/item/pen/crayon/C = subject
-	if(!shade && C)
-		C.ask_rainbow_shade(answerer, shade_title)
-
-/obj/item/pen/crayon/proc/rainbow_colour_picked(datum/om/prompt/color/crayon_colour/ask)
-	if(ask.shade)
-		if(ask.picked_color)
-			shadeColour = ask.picked_color
+/// The main colour was picked, or the question ended without one (a cancel keeps the colour): either way the shade is asked next. The shade answer ends it.
+/obj/item/pen/crayon/proc/rainbow_colour_picked(datum/act/request/A)
+	var/datum/prompt/color/crayon_colour/R = A.request
+	if(R.shade)
+		if(A.answer?.answer_value)
+			shadeColour = A.answer.answer_value
 		return
-	if(ask.picked_color)
-		colour = ask.picked_color
-	ask_rainbow_shade(ask.answerer, ask.shade_title)
+	if(A.answer?.answer_value)
+		colour = A.answer.answer_value
+	ask_rainbow_shade(R.answerer, R.shade_title)
 
 /obj/item/pen/crayon/afterattack(atom/target, mob/user, proximity, click_parameters)
 	if(!proximity) return
 	if(istype(target,/turf/simulated/floor))
-		om_ask(user, /datum/om/prompt/choice/crayon_kind, PROC_REF(ask_drawing), subject = target, click_parameters = click_parameters)
+		open_request(src, /datum/prompt/choice/crayon_kind, PROC_REF(ask_drawing), answerer = user, subject = target, title = "Crayon scribbles", question = "Choose what you'd like to draw.", choices = list("graffiti","rune","letter","arrow"), click_parameters = click_parameters, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return
 
 /// What to draw, then which one. The subject is the floor: still in reach, and the drawer able.
-/datum/om/prompt/choice/crayon_kind
-	title = "Crayon scribbles"
-	message = "Choose what you'd like to draw."
-	choices = list("graffiti","rune","letter","arrow")
-	requires = list(/datum/om/check/in_range, /datum/om/check/not_incapacitated)
+/datum/prompt/choice/crayon_kind
 	var/click_parameters
 
-/datum/om/prompt/choice/crayon_drawing
-	title = "Crayon scribbles"
-	requires = list(/datum/om/check/in_range, /datum/om/check/not_incapacitated)
+/// The second question: which letter, graffiti, rune or arrow. It keeps the click the drawing will land at.
+/datum/prompt/choice/crayon_drawing
 	var/drawing_kind
 	var/click_parameters
 
-/datum/om/prompt/choice/crayon_drawing/prepare()
-	switch(drawing_kind)
-		if("letter")
-			message = "Choose the letter."
-			choices = list("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z")
-		if("graffiti")
-			message = "Choose the graffiti."
-			choices = list("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa")
-		if("rune")
-			message = "Choose the rune."
-			choices = list("rune1", "rune2", "rune3", "rune4", "rune5", "rune6")
-		if("arrow")
-			message = "Choose the arrow."
-			choices = list("left", "right", "up", "down")
-		else
-			return FALSE
-	return TRUE
+/// What each kind of drawing offers: the question the second prompt asks and the things it lists.
+/obj/item/pen/crayon/var/static/list/drawing_menus = list(
+	"letter" = list("Choose the letter.", list("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z")),
+	"graffiti" = list("Choose the graffiti.", list("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa")),
+	"rune" = list("Choose the rune.", list("rune1", "rune2", "rune3", "rune4", "rune5", "rune6")),
+	"arrow" = list("Choose the arrow.", list("left", "right", "up", "down")),
+)
 
-/obj/item/pen/crayon/proc/ask_drawing(datum/om/prompt/choice/crayon_kind/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/crayon_drawing, PROC_REF(drawing_chosen), subject = ask.subject, drawing_kind = ask.choice, click_parameters = ask.click_parameters)
+/obj/item/pen/crayon/proc/ask_drawing(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/crayon_kind/R = A.request
+	var/kind = A.answer.answer_value
+	var/list/menu = drawing_menus[kind]
+	if(!menu)
+		return
+	open_request(src, /datum/prompt/choice/crayon_drawing, PROC_REF(drawing_chosen), answerer = R.answerer, subject = R.subject, title = "Crayon scribbles", question = menu[1], choices = menu[2], drawing_kind = kind, click_parameters = R.click_parameters, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/pen/crayon/proc/drawing_chosen(datum/om/prompt/choice/crayon_drawing/ask)
-	var/mob/user = ask.answerer
-	var/atom/target = ask.subject
-	var/drawtype = ask.choice
+/obj/item/pen/crayon/proc/drawing_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/crayon_drawing/R = A.request
+	var/mob/user = R.answerer
+	var/atom/target = R.subject
+	var/drawtype = A.answer.answer_value
 	if(!drawtype)
 		return
-	switch(ask.drawing_kind)
+	switch(R.drawing_kind)
 		if("letter")
 			to_chat(user, "You start drawing a letter on the [target.name].")
 		if("graffiti")
@@ -122,7 +113,7 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 			to_chat(user, "You start drawing a rune on the [target.name].")
 		if("arrow")
 			to_chat(user, "You start drawing an arrow on the [target.name].")
-	om_task_start(/datum/om/task/timed/crayon_draw, user, src, duration = instant ? 0 : 5 SECONDS, receiver = src, surface = target, drawtype = drawtype, click_parameters = ask.click_parameters)
+	om_task_start(/datum/om/task/timed/crayon_draw, user, src, duration = instant ? 0 : 5 SECONDS, receiver = src, surface = target, drawtype = drawtype, click_parameters = R.click_parameters)
 
 /datum/om/task/timed/crayon_draw
 	complete_proc = /obj/item/pen/crayon/proc/draw_done

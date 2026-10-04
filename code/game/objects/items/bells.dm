@@ -24,33 +24,37 @@
 	..()
 
 /**
- * Were eight INTERACT_*_AS specs, one per stance for the hand and for an item. The stance is a gesture modifier now: the
- * harm ops answer ACT_ATTACK (a harm click reaches it before ACT_USE), and the ring ops name the stances they answer
- * (an offered requirement: a harm click passes them over). `entry` keeps attack_hand() and attackby() reaching them
- * for their other callers. Each op knows its stance, so each has its own handler.
+ * Were eight INTERACT_*_AS specs, one per stance for the hand and for an item. The stance is a selector now: the harm ops
+ * answer the attack input in a harm stance (a harm click reaches it before the use), and the ring ops name the stances they
+ * answer (a harm click passes them over). Each op knows its stance, so each has its own handler.
  */
-/obj/item/deskbell/capabilities()
-	. = ..()
-	. += cap_op("Ring", PROC_REF(ring_by_hand), using = EMPTY_HAND, key = "ring", stance = list(I_HELP, I_DISARM, I_GRAB), entry = INTERACTION_ENTRY_HAND)
-	. += cap_op("Hammer rudely", PROC_REF(hammer_by_hand), using = EMPTY_HAND, key = "hammer", action = ACT_ATTACK, stance = I_HURT, entry = INTERACTION_ENTRY_HAND)
-	. += cap_op("Ring", PROC_REF(ring_with_item), using = /obj/item, key = "ring_with_item", stance = list(I_HELP, I_DISARM, I_GRAB), entry = INTERACTION_ENTRY_ITEM)
-	. += cap_op("Hammer rudely", PROC_REF(hammer_with_item), using = /obj/item, key = "hammer_with_item", action = ACT_ATTACK, stance = I_HURT, entry = INTERACTION_ENTRY_ITEM)
+CAPABILITIES(/obj/item/deskbell)
+	op("ring", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), then(PROC_REF(ring_by_hand)))
+	op("hammer", hand(), hostile(), stance(I_HURT), label("Hammer rudely"), then(PROC_REF(hammer_by_hand)))
+	op("ring_with_item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), when(req(PROC_REF(held_is_another))), then(PROC_REF(ring_with_item)))
+	op("hammer_with_item", item(/obj/item), hostile(), stance(I_HURT), label("Hammer rudely"), when(req(PROC_REF(held_is_another))), then(PROC_REF(hammer_with_item)))
 
-/obj/item/deskbell/proc/ring_by_hand(mob/user)
-	return bell_radial(user, I_HELP)
+/// A bell clicked with itself in the hand is not an item used on the bell.
+/obj/item/deskbell/proc/held_is_another(datum/act/op/A)
+	return A.held != src
 
-/obj/item/deskbell/proc/hammer_by_hand(mob/user)
-	return bell_radial(user, I_HURT)
+/obj/item/deskbell/proc/ring_by_hand(datum/act/op/A)
+	bell_radial(A.actor, I_HELP)
+	return OP_OK
 
-/obj/item/deskbell/proc/ring_with_item(mob/user, obj/item/held)
+/obj/item/deskbell/proc/hammer_by_hand(datum/act/op/A)
+	bell_radial(A.actor, I_HURT)
+	return OP_OK
+
+/obj/item/deskbell/proc/ring_with_item(datum/act/op/A)
 	if(!broken)
-		ring(user, I_HELP)
-	return TRUE
+		ring(A.actor, I_HELP)
+	return OP_OK
 
-/obj/item/deskbell/proc/hammer_with_item(mob/user, obj/item/held)
+/obj/item/deskbell/proc/hammer_with_item(datum/act/op/A)
 	if(!broken)
-		ring(user, I_HURT)
-	return TRUE
+		ring(A.actor, I_HURT)
+	return OP_OK
 
 /// The touch: a radial to examine, pick up or ring it (in `stance`: a harm touch hammers).
 /obj/item/deskbell/proc/bell_radial(mob/user, stance)
@@ -68,25 +72,28 @@
 		return TRUE
 
 	// A single available option is answered at once (autopick_single_option); otherwise the player picks.
-	om_ask(user, /datum/om/prompt/choice/radial/deskbell, PROC_REF(option_chosen), stance = stance, choices = options, anchor = src, require_near = !issilicon(user))
+	open_request(src, /datum/prompt/choice/deskbell, PROC_REF(option_chosen), answerer = user, choices = options, anchor = src, require_near = !issilicon(user), radial = TRUE, autopick_single_option = TRUE, stance = stance, timeout = 0)
 	return TRUE
 
 /// The bell's radial remembers the stance it was opened in, so "use" rings (or hammers) accordingly.
-/datum/om/prompt/choice/radial/deskbell
+/datum/prompt/choice/deskbell
 	var/stance = I_HELP
 
-/obj/item/deskbell/proc/option_chosen(datum/om/prompt/choice/radial/deskbell/ask)
-	var/mob/user = ask.answerer
+/obj/item/deskbell/proc/option_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/deskbell/R = A.request
+	var/mob/user = R.answerer
 	if(!user || user.incapacitated())
 		return
 	// Once the player has decided their option, choose the behaviour that will happen under said option.
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("examine")
 			user.examinate(src)
 
 		if("use")
 			if(check_ability(user))
-				ring(user, ask.stance)
+				ring(user, R.stance)
 				add_fingerprint(user)
 
 		if("pick up")

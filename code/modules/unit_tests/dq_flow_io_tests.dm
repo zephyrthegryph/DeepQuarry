@@ -96,11 +96,10 @@
 /datum/unit_test/om/rainbow_crayon_asks_colours
 
 /datum/unit_test/om/rainbow_crayon_asks_colours/run_om(list/made)
-	sched.test_prompts = list()
-	var/datum/om_test_entity/user = entity(made)
-	var/obj/item/pen/crayon/rainbow/crayon = new
-	made += crayon
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
+	var/obj/item/pen/crayon/rainbow/crayon = allocate(/obj/item/pen/crayon/rainbow)
 	crayon.ask_rainbow_colour(user, "Crayon colour", "Crayon shade colour")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the colours are asked with om_prompt, not a blocking picker")
-	var/datum/om/prompt/P = sched.test_prompts[1]
-	TEST_ASSERT(istype(P, /datum/om/prompt/color/crayon_colour), "a colour prompt for the main colour first")
+	var/datum/prompt/color/crayon_colour/P = SSrequests.open_for(user)
+	TEST_ASSERT(istype(P), "the colours are asked as a request, not a blocking picker")
+	TEST_ASSERT(!P.shade, "the main colour first")
+	TEST_ASSERT_EQUAL(P.shade_title, "Crayon shade colour", "and the shade window's title rides on it")
