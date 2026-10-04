@@ -13390,11 +13390,11 @@
 	into += entry_line(19)
 	into += list(global.owns_one(nameof(Q), /datum/ghost_query))
 
-/// CAPABILITIES(/obj/structure/girder) at code/game/objects/structures/girders.dm:140
+/// CAPABILITIES(/obj/structure/girder) at code/game/objects/structures/girders.dm:139
 /obj/structure/girder/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/girders.dm", 140, /obj/structure/girder)
-	into += entry_line(141)
+	into += entry_block("code/game/objects/structures/girders.dm", 139, /obj/structure/girder)
+	into += entry_line(140)
 	into += list(global.extend(/datum/act/hit/blob, global.instead(global.then(PROC_REF(girder_blob)))))
 
 /// CAPABILITIES(/obj/structure/gootrap) at code/modules/mob/living/simple_mob/subtypes/vore/shadekin/rakshasa_trap.dm:28

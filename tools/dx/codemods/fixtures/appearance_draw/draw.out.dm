@@ -3,8 +3,8 @@
 	icon_state = "gizmo"
 	var/open = FALSE
 	var/glow = 0
-TRACKED(/obj/item/gizmo, open)
 TRACKED(/obj/item/gizmo, glow)
+TRACKED(/obj/item/gizmo, open)
 
 /obj/item/gizmo/var/lit = FALSE
 TRACKED(/obj/item/gizmo, lit)

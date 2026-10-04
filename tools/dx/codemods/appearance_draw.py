@@ -261,7 +261,7 @@ def main():
             if re.match(r"\??\.\s*[A-Za-z_]", rest):
                 hops.add(name)
         result = {}
-        for name in found:
+        for name in sorted(found):
             owners = [u for (u, v) in list(var_decls) + list(omfield) if v == name and (t == u or t.startswith(u + "/"))]
             if owners:
                 result[name] = max(owners, key=len)
