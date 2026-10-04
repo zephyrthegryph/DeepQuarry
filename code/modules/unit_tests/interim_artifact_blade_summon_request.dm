@@ -23,6 +23,8 @@
 	TEST_ASSERT_EQUAL(blade.stored_blood, 200, "Accepted NO does not debit lifeforce")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Accepted NO ends the native request")
 	for(var/obj/item/soulstone/stone in contents_of(T))
+		if(!(stone in original_stones))
+			own(stone)
 		TEST_ASSERT(stone in original_stones, "Accepted NO creates no stone")
 
 	blade.summon_item(actor, "Soulstone")
@@ -32,6 +34,8 @@
 	TEST_ASSERT_EQUAL(blade.stored_blood, 199, "Late blood check rejects YES without a debit")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Late rejected YES ends its native request")
 	for(var/obj/item/soulstone/stone in contents_of(T))
+		if(!(stone in original_stones))
+			own(stone)
 		TEST_ASSERT(stone in original_stones, "Late blood insufficiency creates no stone")
 
 	blade.stored_blood = 200
@@ -43,6 +47,8 @@
 	TEST_ASSERT_EQUAL(blade.stored_blood, 200, "Explicit close preserves lifeforce")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Explicit close does not reopen confirmation")
 	for(var/obj/item/soulstone/stone in contents_of(T))
+		if(!(stone in original_stones))
+			own(stone)
 		TEST_ASSERT(stone in original_stones, "Explicit close creates no stone")
 
 	blade.summon_item(actor, "Soulstone")
