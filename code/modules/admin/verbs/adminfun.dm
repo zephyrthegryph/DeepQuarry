@@ -34,32 +34,15 @@ ADMIN_VERB(admin_explosion, R_ADMIN|R_FUN, "Explosion", ADMIN_VERB_NO_DESCRIPTIO
 		feedback_add_details("admin_verb","EXPL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(admin_emp, R_ADMIN|R_FUN, "EM Pulse", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, atom/orignator as obj|mob|turf)
-	var/heavy = verb_ask(user, "a6", args, /datum/om/prompt/number, message = "Range of heavy pulse.", title = "Input")
-	if(isnull(heavy))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(heavy == null)
-		return
-	var/med = verb_ask(user, "a7", args, /datum/om/prompt/number, message = "Range of medium pulse.", title = "Input")
-	if(isnull(med))
-		return
-	if(med == null)
-		return
-	var/light = verb_ask(user, "a8", args, /datum/om/prompt/number, message = "Range of light pulse.", title = "Input")
-	if(isnull(light))
-		return
-	if(light == null)
-		return
-	var/long = verb_ask(user, "a9", args, /datum/om/prompt/number, message = "Range of long pulse.", title = "Input")
-	if(isnull(long))
-		return
-	if(long == null)
-		return
-
-	if (heavy || med || light || long)
-		empulse(orignator, heavy, med, light, long)
-		log_admin("[key_name(user)] created an EM Pulse ([heavy],[med],[light],[long]) at ([orignator.x],[orignator.y],[orignator.z])")
-		message_admins("[key_name_admin(user)] created an EM PUlse ([heavy],[med],[light],[long]) at ([orignator.x],[orignator.y],[orignator.z])", 1)
-		feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	var/datum/admin_emp_review/review = new
+	rel_set(review, nameof(review.actor), answerer)
+	rel_set(review, nameof(review.originator), orignator)
+	review.originator_expected = !isnull(orignator)
+	review.client_ckey = user.ckey
+	review.ask_next()
 
 ADMIN_VERB(gib_them, (R_ADMIN|R_FUN), "Gib", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/victim in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	var/confirm = verb_ask(user, "a10", args, /datum/om/prompt/choice/alert, message = "You sure?", title = "Confirm", choices = list("Yes", "No"))
@@ -96,3 +79,103 @@ ADMIN_VERB(gib_self, R_HOLDER, "Gibself", "Give yourself the same treatment you 
 		log_admin("[key_name(user)] used gibself.")
 		message_admins(span_blue("[key_name_admin(user)] used gibself."), 1)
 		feedback_add_details("admin_verb","GIBS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/admin_emp_review
+	var/mob/actor
+	var/atom/originator
+	var/originator_expected = FALSE
+	var/client_ckey
+	var/stage = 1
+	var/heavy
+	var/med
+	var/light
+	var/long
+
+CAPABILITIES(/datum/admin_emp_review)
+	ref_one(nameof(actor), /mob)
+	ref_one(nameof(originator), /atom)
+
+/datum/admin_emp_review/proc/refusal()
+	if(QDELETED(actor) || !GLOB.directory[client_ckey])
+		return "participant is gone"
+	return originator_expected && QDELETED(originator) ? "target is gone" : null
+
+/datum/admin_emp_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+
+/datum/admin_emp_review/proc/ask_next()
+	var/client/user = GLOB.directory[client_ckey]
+	rel_set(src, nameof(actor), user.mob)
+	var/question
+	switch(stage)
+		if(1)
+			question = "Range of heavy pulse."
+		if(2)
+			question = "Range of medium pulse."
+		if(3)
+			question = "Range of light pulse."
+		if(4)
+			question = "Range of long pulse."
+	open_request(src, /datum/prompt/number/admin_emp_range, PROC_REF(range_answered), answerer = actor, question = question)
+
+/datum/admin_emp_review/proc/range_answered(datum/act/request/context)
+	var/datum/result/result = safe_call(PROC_REF(continue_range), context)
+	if(!result.ok)
+		stack_trace("om flow admin_emp answer continue_range: [result.error]")
+		retire()
+
+/datum/admin_emp_review/proc/continue_range(datum/act/request/context)
+	if(!context.answer)
+		retire()
+		return
+	switch(stage)
+		if(1)
+			heavy = context.request.answer_value
+		if(2)
+			med = context.request.answer_value
+		if(3)
+			light = context.request.answer_value
+		if(4)
+			long = context.request.answer_value
+	stage++
+	if(stage <= 4)
+		ask_next()
+		return
+	apply_pulse()
+	retire()
+
+/datum/admin_emp_review/proc/apply_pulse()
+	var/client/user = GLOB.directory[client_ckey]
+	var/atom/orignator = originator
+	if (heavy || med || light || long)
+		empulse(orignator, heavy, med, light, long)
+		log_admin("[key_name(user)] created an EM Pulse ([heavy],[med],[light],[long]) at ([orignator.x],[orignator.y],[orignator.z])")
+		message_admins("[key_name_admin(user)] created an EM PUlse ([heavy],[med],[light],[long]) at ([orignator.x],[orignator.y],[orignator.z])", 1)
+		feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/number/admin_emp_range
+	rights = R_ADMIN|R_FUN
+	timeout = 0
+	title = "Input"
+	default = 0
+	min_value = 0
+	step = 1
+
+/datum/prompt/number/admin_emp_range/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_emp_review/review = owner
+	return review.refusal()
+
+/datum/prompt/number/admin_emp_range/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/number/admin_emp_range/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
