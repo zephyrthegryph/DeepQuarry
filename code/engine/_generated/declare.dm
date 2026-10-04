@@ -1468,6 +1468,13 @@
 	into += entry_line(14)
 	into += list(global.owns_many(nameof(required_items)))
 
+/// CAPABILITIES(/datum/event2/event/blob) at code/modules/gamemaster/event2/events/engineering/blob.dm:157
+/datum/event2/event/blob/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/engineering/blob.dm", 157, /datum/event2/event/blob)
+	into += entry_line(158)
+	into += list(global.ref_many(nameof(blobs)))
+
 /// CAPABILITIES(/datum/event2/event/legacy) at code/modules/gamemaster/event2/events/legacy/legacy.dm:13
 /datum/event2/event/legacy/declared_entries(list/into)
 	..(into)
@@ -7611,22 +7618,24 @@
 	..(into)
 	into += entry_block("code/modules/modular_computers/computers/modular_computer/variables.dm", 79, /obj/item/modular_computer)
 	into += entry_line(80)
-	into += list(global.owns_one(nameof(processor_unit), /obj/item/computer_hardware/processor_unit))
+	into += list(global.ref_many(nameof(paired_uavs)))
 	into += entry_line(81)
-	into += list(global.owns_one(nameof(network_card), /obj/item/computer_hardware/network_card))
+	into += list(global.owns_one(nameof(processor_unit), /obj/item/computer_hardware/processor_unit))
 	into += entry_line(82)
-	into += list(global.owns_one(nameof(hard_drive), /obj/item/computer_hardware/hard_drive))
+	into += list(global.owns_one(nameof(network_card), /obj/item/computer_hardware/network_card))
 	into += entry_line(83)
-	into += list(global.owns_one(nameof(battery_module), /obj/item/computer_hardware/battery_module))
+	into += list(global.owns_one(nameof(hard_drive), /obj/item/computer_hardware/hard_drive))
 	into += entry_line(84)
-	into += list(global.owns_one(nameof(card_slot), /obj/item/computer_hardware/card_slot))
+	into += list(global.owns_one(nameof(battery_module), /obj/item/computer_hardware/battery_module))
 	into += entry_line(85)
-	into += list(global.owns_one(nameof(nano_printer), /obj/item/computer_hardware/nano_printer))
+	into += list(global.owns_one(nameof(card_slot), /obj/item/computer_hardware/card_slot))
 	into += entry_line(86)
-	into += list(global.owns_one(nameof(portable_drive), /obj/item/computer_hardware/hard_drive/portable))
+	into += list(global.owns_one(nameof(nano_printer), /obj/item/computer_hardware/nano_printer))
 	into += entry_line(87)
-	into += list(global.owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link))
+	into += list(global.owns_one(nameof(portable_drive), /obj/item/computer_hardware/hard_drive/portable))
 	into += entry_line(88)
+	into += list(global.owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link))
+	into += entry_line(89)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(modular_computer_step)), when = nameof(enabled)))
 
 /// CAPABILITIES(/obj/item/mop_deploy) at code/game/objects/items/weapons/mop_deploy.dm:54
@@ -13751,6 +13760,8 @@
 	..(into)
 	into += entry_block("code/game/objects/structures/ghost_pods/ghost_pods.dm", 18, /obj/structure/ghost_pod)
 	into += entry_line(19)
+	into += list(global.ref_one(nameof(opening_actor)))
+	into += entry_line(20)
 	into += list(global.owns_one(nameof(Q), /datum/ghost_query))
 
 /// CAPABILITIES(/obj/structure/girder) at code/game/objects/structures/girders.dm:139
