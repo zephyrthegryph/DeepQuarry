@@ -178,11 +178,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/floor_light, TYPE_PROC_REF(/atom, appeara
 /obj/machinery/floor_light/proc/broken()
 	return (!operable())
 
-DAMAGE_REACTION(/obj/machinery/floor_light, DAMAGE_EXPLOSION, PROC_REF(floor_light_blast))
+CAPABILITIES(/obj/machinery/floor_light)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(floor_light_blast))))
+
 /// A lighter blast marks the light as (lightly) damaged.
-/obj/machinery/floor_light/proc/floor_light_blast(datum/damage_packet/packet)
+/obj/machinery/floor_light/proc/floor_light_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(packet.severity >= 2 && isnull(damaged))
 		damaged = 0
+	return HOOK_DECLINE
 
 /obj/machinery/floor_light/cultify()
 	default_light_colour = "#FF0000"

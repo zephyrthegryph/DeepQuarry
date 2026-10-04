@@ -36,6 +36,7 @@
 
 CAPABILITIES(/obj/machinery/vr_sleeper)
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
 
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
@@ -145,12 +146,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	go_in(target, user)
 	return TRUE
 
-DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 /// An EMP throws the occupant out of VR, maybe frying their brain on the way.
-/obj/machinery/vr_sleeper/proc/vr_sleeper_emp(datum/damage_packet/packet)
+/obj/machinery/vr_sleeper/proc/vr_sleeper_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	var/severity = packet.severity
 
 	if(occupant)
@@ -163,6 +164,7 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 			smoke.set_up(severity, 0, src)
 			smoke.start("#202020")
 		perform_exit()
+	return HOOK_DECLINE
 
 /datum/interaction/machine_verb/vr_sleeper_eject
 	id = "vr_sleeper_eject"

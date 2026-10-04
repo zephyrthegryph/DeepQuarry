@@ -459,3 +459,91 @@
 	TEST_ASSERT_EQUAL(R.priority, 1, "at the chosen priority")
 	var/list/data = hc_data(R, H)
 	TEST_ASSERT_EQUAL(data["message"], "Send crates", "the window shows it")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Hits and emags of machines and tanks
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/tanks_burst_when_hit
+/datum/unit_test/dq_hc_struct/tanks_burst_when_hit/run_gate()
+	var/obj/structure/reagent_dispensers/watertank/W = allocate(/obj/structure/reagent_dispensers/watertank, tile(3, 2))
+	W.blob_act()
+	TEST_ASSERT(QDELETED(W), "a blob bursts a water tank")
+	var/obj/structure/reagent_dispensers/cookingoil/O = allocate(/obj/structure/reagent_dispensers/cookingoil, tile(3, 3))
+	O.ex_act(1)
+	TEST_ASSERT(QDELETED(O), "a blast bursts a cooking oil barrel")
+	var/obj/machinery/portable_atmospherics/canister/C = allocate(/obj/machinery/portable_atmospherics/canister, tile(2, 3))
+	C.blob_act()
+	TEST_ASSERT(QDELETED(C), "a blob bursts a canister")
+
+/datum/unit_test/dq_hc_struct/operating_table_may_be_knocked_flat_by_a_light_blast
+/datum/unit_test/dq_hc_struct/operating_table_may_be_knocked_flat_by_a_light_blast/run_gate()
+	var/obj/machinery/optable/T = mach(/obj/machinery/optable, tile(3, 2))
+	TEST_ASSERT(T.density, "starts standing")
+	for(var/i in 1 to 60)
+		T.ex_act(3)
+		if(!T.density)
+			break
+	TEST_ASSERT(!T.density, "light blasts knock it flat in the end")
+
+/datum/unit_test/dq_hc_struct/barrier_takes_two_sequencers
+/datum/unit_test/dq_hc_struct/barrier_takes_two_sequencers/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/deployable/barrier/B = mach(/obj/machinery/deployable/barrier, tile(3, 2))
+	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
+	E.uses = 10
+	hci_click(H, B, E)
+	settle()
+	TEST_ASSERT_EQUAL(B.emagged, 1, "the first sequencer breaks the access lock")
+	hci_click(H, B, E)
+	settle()
+	TEST_ASSERT_EQUAL(B.emagged, 2, "the second shorts out the anchoring")
+
+/datum/unit_test/dq_hc_struct/gear_dispenser_is_emagged_but_the_custom_one_refuses
+/datum/unit_test/dq_hc_struct/gear_dispenser_is_emagged_but_the_custom_one_refuses/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/gear_dispenser/G = mach(/obj/machinery/gear_dispenser, tile(3, 2))
+	var/obj/machinery/gear_dispenser/custom/C = mach(/obj/machinery/gear_dispenser/custom, tile(3, 3))
+	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
+	E.uses = 10
+	hci_click(H, G, E)
+	settle()
+	TEST_ASSERT(G.emagged, "an emag subverts the dispenser")
+	hci_click(H, C, E)
+	settle()
+	TEST_ASSERT(!C.emagged, "the custom one will not be emagged")
+
+/datum/unit_test/dq_hc_struct/thermoregulator_is_switched_on_by_an_emp
+/datum/unit_test/dq_hc_struct/thermoregulator_is_switched_on_by_an_emp/run_gate()
+	var/obj/machinery/power/thermoregulator/T = mach(/obj/machinery/power/thermoregulator, tile(3, 2))
+	TEST_ASSERT(!T.on, "starts off")
+	T.emp_act(1)
+	TEST_ASSERT(T.on, "an EMP switches it on")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Bomb tester and point defence (batch M5)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/bomb_tester_takes_settings_only_when_idle
+/datum/unit_test/dq_hc_struct/bomb_tester_takes_settings_only_when_idle/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/bomb_tester/B = mach(/obj/machinery/bomb_tester, tile(3, 2))
+	press(H, B, "set_mode", list("mode" = 2))
+	TEST_ASSERT_EQUAL(B.sim_mode, 2, "the mode button sets the mode")
+	press(H, B, "set_can_pressure", list("pressure" = 1e9))
+	TEST_ASSERT(B.sim_canister_output <= ONE_ATMOSPHERE * 10, "the canister pressure is clamped")
+	B.simulating = 1
+	press(H, B, "set_mode", list("mode" = 1))
+	TEST_ASSERT_EQUAL(B.sim_mode, 2, "a running simulation takes no new mode")
+
+/datum/unit_test/dq_hc_struct/point_defense_gun_is_retagged_with_a_multitool
+/datum/unit_test/dq_hc_struct/point_defense_gun_is_retagged_with_a_multitool/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/pointdefense/P = mach(/obj/machinery/pointdefense, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
+	H.put_in_active_hand(M)
+	P.multitool_act(H, M)
+	TEST_ASSERT(asked(H), "the multitool asks for the new tag")
+	hci_answer(H, "northern_net")
+	settle()
+	TEST_ASSERT_EQUAL(P.id_tag, "northern_net", "the answer becomes the tag")

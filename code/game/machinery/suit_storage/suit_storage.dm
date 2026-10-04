@@ -29,6 +29,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	owns_one(nameof(HELMET), /obj/item/clothing/head/helmet/space, starts = nameof(helmet_type))
 	owns_one(nameof(MASK), /obj/item/clothing/mask, starts = nameof(mask_type))
 	owns_one(nameof(SUIT), /obj/item/clothing/suit/space, starts = nameof(suit_type))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(suit_storage_blast))))
 
 /obj/machinery/suit_storage_unit/Initialize(mapload)
 	. = ..()
@@ -59,11 +60,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	else
 		after(src, rand(0, 15), PROC_REF(lose_power))
 
-DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(suit_storage_blast))
 /// A heavy blast may throw the unit's contents out.
-/obj/machinery/suit_storage_unit/proc/suit_storage_blast(datum/damage_packet/packet)
+/obj/machinery/suit_storage_unit/proc/suit_storage_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(packet.severity <= 2 && prob(50))
 		dump_everything()
+	return HOOK_DECLINE
 
 /obj/machinery/suit_storage_unit/declare_interactions(list/into)
 	into += list(

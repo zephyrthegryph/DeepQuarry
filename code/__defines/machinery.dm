@@ -215,3 +215,8 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 //#define  PART_AI  		/obj/item/computer_hardware/ai_slot						// AI slot, an intellicard housing that allows modifications of AIs.
 #define  PART_TESLA  	/obj/item/computer_hardware/tesla_link					// Tesla Link, Allows remote charging from nearest APC.
 //#define  PART_SCANNER  	/obj/item/computer_hardware/scanner						// One of several optional scanner attachments.
+
+// Bomb tester simulation modes.
+#define BOMB_TESTER_MODE_SINGLE 1
+#define BOMB_TESTER_MODE_DOUBLE 2
+#define BOMB_TESTER_MODE_CANISTER 3

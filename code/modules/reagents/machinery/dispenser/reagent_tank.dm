@@ -62,12 +62,13 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	if (N)
 		amount_per_transfer_from_this = N
 
-DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispenser_blob_burst))
+CAPABILITIES(/obj/structure/reagent_dispensers)
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(dispenser_blob_burst))))
 
 /// A blob bursts the tank outright.
-/obj/structure/reagent_dispensers/proc/dispenser_blob_burst(datum/damage_packet/packet)
+/obj/structure/reagent_dispensers/proc/dispenser_blob_burst(datum/act/hit/blob/A)
 	qdel(src)
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /// Old click_alt.
 /obj/structure/reagent_dispensers/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
@@ -131,6 +132,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
 
 CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	climb()
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 
 /obj/structure/reagent_dispensers/fueltank/high
 	name = "high-capacity fuel tank"
@@ -276,17 +278,15 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		if(!istype(Proj ,/obj/item/projectile/beam/lasertag) && !istype(Proj ,/obj/item/projectile/beam/practice) )
 			explode()
 
-DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PROC_REF(tank_blast_explode))
-
 /// A blast sets the fuel off.
-/obj/structure/reagent_dispensers/fueltank/proc/tank_blast_explode(datum/damage_packet/packet)
+/obj/structure/reagent_dispensers/fueltank/proc/tank_blast_explode(datum/act/hit/explosion/A)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /// A blob sets the fuel off.
-/obj/structure/reagent_dispensers/fueltank/dispenser_blob_burst(datum/damage_packet/packet)
+/obj/structure/reagent_dispensers/fueltank/dispenser_blob_burst(datum/act/hit/blob/A)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/structure/reagent_dispensers/fueltank/proc/explode()
 	if (reagents.total_volume > 500)
@@ -555,17 +555,16 @@ CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg)
 
 CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil)
 	climb()
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 
 /obj/structure/reagent_dispensers/cookingoil/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
 		explode()
 
-DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, PROC_REF(tank_blast_explode))
-
 /// A blast bursts the barrel.
-/obj/structure/reagent_dispensers/cookingoil/proc/tank_blast_explode(datum/damage_packet/packet)
+/obj/structure/reagent_dispensers/cookingoil/proc/tank_blast_explode(datum/act/hit/explosion/A)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/structure/reagent_dispensers/cookingoil/proc/explode()
 	reagents.splash_area(get_turf(src), 3)

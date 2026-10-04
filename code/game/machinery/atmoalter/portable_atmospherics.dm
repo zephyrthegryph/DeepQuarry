@@ -17,6 +17,7 @@
 
 CAPABILITIES(/obj/machinery/portable_atmospherics)
 	owns_one(nameof(holding), /obj/item/tank)
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_bursts))))
 
 /obj/machinery/portable_atmospherics/Initialize(mapload)
 	..()
@@ -65,7 +66,10 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	clear_gas_dependency()
 	changed(src, CHANGE_MACHINE_GAS)
 
-DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_qdel))
+/// A blob bursts a portable canister or pump outright.
+/obj/machinery/portable_atmospherics/proc/blob_bursts(datum/act/hit/blob/A)
+	damage_reaction_qdel(A.packet)
+	return TRUE
 
 /obj/machinery/portable_atmospherics/proc/StandardAirMix()
 	return list(

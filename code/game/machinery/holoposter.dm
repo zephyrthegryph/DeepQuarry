@@ -109,9 +109,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-DAMAGE_REACTION(/obj/machinery/holoposter, DAMAGE_EMP, PROC_REF(holoposter_emp))
+CAPABILITIES(/obj/machinery/holoposter)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(holoposter_emp))))
+
 /// An EMP breaks the poster.
-/obj/machinery/holoposter/proc/holoposter_emp(datum/damage_packet/packet)
+/obj/machinery/holoposter/proc/holoposter_emp(datum/act/hit/emp/A)
 	if(has_stat(BROKEN))
-		return
+		return HOOK_DECLINE
 	atom_break()
+	return HOOK_DECLINE

@@ -110,12 +110,15 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 		location.hotspot_expose(1000,500,1)
 	return 1
 
-DAMAGE_REACTION(/obj/machinery/sparker, DAMAGE_EMP, PROC_REF(sparker_emp))
+CAPABILITIES(/obj/machinery/sparker)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(sparker_emp))))
+
 /// An EMP makes a working sparker spark.
-/obj/machinery/sparker/proc/sparker_emp(datum/damage_packet/packet)
+/obj/machinery/sparker/proc/sparker_emp(datum/act/hit/emp/A)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	ignite()
+	return HOOK_DECLINE
 
 /obj/machinery/button/ignition
 	name = "ignition switch"

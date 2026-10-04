@@ -26,11 +26,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/optable, MACHINE_PIPELINE, "victim")
 			rel_set(computer, nameof(computer.table), src)
 			break
 
-DAMAGE_REACTION(/obj/machinery/optable, DAMAGE_EXPLOSION, PROC_REF(optable_blast))
+CAPABILITIES(/obj/machinery/optable)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(optable_blast))))
+
 /// A light blast may knock the table flat.
-/obj/machinery/optable/proc/optable_blast(datum/damage_packet/packet)
+/obj/machinery/optable/proc/optable_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(packet.severity == 3 && prob(25))
 		set_density(FALSE)
+	return HOOK_DECLINE
 
 EXTEND_INTERACTIONS(/obj/machinery/optable, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(optable_interaction_hand)), \
