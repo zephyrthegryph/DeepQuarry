@@ -487,6 +487,7 @@ SYSTEM_DEF(tgui)
  * return datum/tgui The found UI.
  */
 /datum/system/tgui/proc/get_open_ui(mob/user, datum/src_object)
+	RETURN_TYPE(/datum/tgui)
 	// No UIs opened for this src_object
 	if(!LAZYLEN(src_object?.open_tguis))
 		return null

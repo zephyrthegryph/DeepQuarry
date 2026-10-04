@@ -41,7 +41,7 @@
 		test_click(user, charge, charge)
 		test_time(1 SECOND)
 		TEST_ASSERT(istype(SSrequests.open_for(user), /datum/prompt/number), "actual charge opens request before same-container reslot")
-		TEST_ASSERT(charge.move_into(user, SLOT_ID_POCKET_L, user), "actual charge moves from hand into the actor's pocket")
+		TEST_ASSERT(move_into(user, SLOT_ID_POCKET_L, charge, user), "actual charge moves from hand into the actor's pocket")
 		TEST_ASSERT_EQUAL(charge.loc, user, "same-container reslot preserves the original actor containment")
 		test_answer(user, 42)
 		test_time(1 SECOND)

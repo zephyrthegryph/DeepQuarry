@@ -18,6 +18,7 @@
 	category = PROG_OFFICE
 
 /datum/computer_file/program/wordprocessor/proc/get_file(filename)
+	RETURN_TYPE(/datum/computer_file/data)
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	if(!HDD)
 		return

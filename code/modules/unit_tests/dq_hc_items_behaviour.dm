@@ -239,7 +239,8 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/target/X = allocate(/obj/item/target, tile(2, 3))
 	var/obj/structure/target_stake/S = allocate(/obj/structure/target_stake, tile(2, 3))
-	tile(2, 3).luminosity = 3 // view() sees only lit turfs
+	var/turf/lit = tile(2, 3)
+	lit.luminosity = 3 // view() sees only lit turfs
 	rel_set(S, nameof(S.pinned_target), X)
 	S.set_density(FALSE)
 	hci_click(H, X, null)

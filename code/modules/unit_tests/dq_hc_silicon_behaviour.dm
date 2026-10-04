@@ -448,7 +448,7 @@
 	var/obj/item/mining_scanner/robot/scanner = allocate(/obj/item/mining_scanner/robot, test_floor())
 	scanner.forceMove(R)
 	scanner.upgrade(R)
-	scanner.change_size(R)
+	perform_op(R, scanner, "set_range", null, ORIGIN_CLICK)
 	hci_answer(R, 5)
 	settle()
 	TEST_ASSERT_EQUAL(scanner.range, 5, "the picked range is the scanner's")
