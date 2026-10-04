@@ -107,15 +107,19 @@
 /// A species that is sensitive to EMPs hurts its carbon mob on a pulse; one that is not, does not.
 /datum/unit_test/dq_hc_mobs/carbon_species_emp
 /datum/unit_test/dq_hc_mobs/carbon_species_emp/Run()
-	var/mob/living/carbon/human/sensitive = allocate(/mob/living/carbon/human, test_floor())
-	var/mob/living/carbon/human/steady = allocate(/mob/living/carbon/human, test_floor())
-	sensitive.species.emp_sensitivity = EMP_BRUTE_DMG
-	var/before = sensitive.vitality()
-	var/steady_before = steady.vitality()
-	sensitive.emp_act(EMP_HEAVY)
-	steady.emp_act(EMP_HEAVY)
-	TEST_ASSERT(sensitive.vitality() < before, "an EMP-sensitive species takes injury from a pulse")
-	TEST_ASSERT_EQUAL(steady.vitality(), steady_before, "a species with no EMP sensitivity does not")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/species/S = H.species
+	var/was = S.emp_sensitivity
+	S.emp_sensitivity = 0
+	var/steady = H.vitality()
+	H.emp_act(EMP_HEAVY)
+	var/unmoved = H.vitality()
+	S.emp_sensitivity = EMP_BRUTE_DMG
+	H.emp_act(EMP_HEAVY)
+	var/hurt = H.vitality()
+	S.emp_sensitivity = was
+	TEST_ASSERT_EQUAL(unmoved, steady, "a species with no EMP sensitivity takes nothing from a pulse")
+	TEST_ASSERT(hurt < unmoved, "an EMP-sensitive species takes injury from a pulse")
 
 /// A cloaked lurker uncloaks when a round hits it.
 /datum/unit_test/dq_hc_mobs/lurker_cloak_breaks_on_hit
