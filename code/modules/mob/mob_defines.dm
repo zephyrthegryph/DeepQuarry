@@ -42,15 +42,12 @@
 	var/tmp/atom/movable/screen/pullin = null
 	var/tmp/atom/movable/screen/purged = null
 	var/tmp/atom/movable/screen/internals = null
-	var/tmp/atom/movable/screen/i_select = null
-	var/tmp/atom/movable/screen/m_select = null
 	var/tmp/atom/movable/screen/healths = null
 	var/tmp/atom/movable/screen/throw_icon = null
 	var/tmp/atom/movable/screen/pain = null
 	var/tmp/atom/movable/screen/gun/item/item_use_icon = null
 	var/tmp/atom/movable/screen/gun/radio/radio_use_icon = null
 	var/tmp/atom/movable/screen/gun/move/gun_move_icon = null
-	var/tmp/atom/movable/screen/gun/run/gun_run_icon = null
 	var/tmp/atom/movable/screen/gun/mode/gun_setting_icon = null
 	var/tmp/atom/movable/screen/ling/chems/ling_chem_display = null
 	var/tmp/atom/movable/screen/borer/chems/borer_chem_display = null

@@ -368,7 +368,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
 	if(smoke)
-		qdel(smoke)
+		consume(smoke)
 	src.total_smoke--
 
 /datum/effect/effect/system/smoke_spread/start(I)
@@ -481,7 +481,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	after(src, 2, PROC_REF(reschedule_steam))
 
 /datum/effect/effect/system/steam_trail_follow/proc/expire_steam_trail(obj/effect/effect/steam/I)
-	qdel(I)
+	consume(I)
 	src.number--
 
 /datum/effect/effect/system/steam_trail_follow/proc/reschedule_steam()
@@ -586,7 +586,6 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	var/obj/effect/effect/teleport_greyscale/tele = new /obj/effect/effect/teleport_greyscale(src.get_location())
 	tele.color = color
 
-// === merged from effect_system_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 
 /////////////////////////////////////////////
 // Confetti and Glitter
@@ -645,7 +644,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)
 	if(confetti)
-		qdel(confetti)
+		consume(confetti)
 	src.total_confetti--
 
 /datum/effect/effect/system/confetti_spread/start(I)

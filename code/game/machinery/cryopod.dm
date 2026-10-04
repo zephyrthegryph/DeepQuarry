@@ -186,7 +186,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 	var/on_store_visible_message_2 = "into storage."
 	var/announce_channel = "Common"
 	var/allow_occupant_types = list(/mob/living/carbon/human)
-	var/disallow_occupant_types = list()
+	var/list/disallow_occupant_types
 
 	var/time_till_despawn = 60 // Down to 1 minute to reflect respawn times. //Now 6 seconds. Mind the deciseconds.
 	EXPIRY_DECLARE(time_entered) // Used to keep track of the safe period.
