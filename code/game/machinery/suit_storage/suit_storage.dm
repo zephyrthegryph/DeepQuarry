@@ -30,6 +30,15 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	owns_one(nameof(MASK), /obj/item/clothing/mask, starts = nameof(mask_type))
 	owns_one(nameof(SUIT), /obj/item/clothing/suit/space, starts = nameof(suit_type))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(suit_storage_blast))))
+	interface("SuitStorageUnit", state = nameof(GLOB.tgui_notcontained_state))
+	op("door", ui_act("door"), then(PROC_REF(ui_act_door)))
+	op("dispense", ui_act("dispense", arg("item", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
+	op("uv", ui_act("uv"), then(PROC_REF(ui_act_uv)))
+	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
+	op("eject_guy", ui_act("eject_guy"), then(PROC_REF(ui_act_eject_guy)))
+	op("toggleUV", ui_act("toggleUV"), then(PROC_REF(ui_act_toggleuv)))
+	op("togglesafeties", ui_act("togglesafeties"), then(PROC_REF(ui_act_togglesafeties)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 
 /obj/machinery/suit_storage_unit/Initialize(mapload)
 	. = ..()
@@ -90,14 +99,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/suit_storage_unit, GLOB.tgui_notcontained_state)
-
-DECLARE_UI(/obj/machinery/suit_storage_unit, "SuitStorageUnit")
-
-UI_DATA_REPLACE(/obj/machinery/suit_storage_unit, "broken=isbroken:num", "panelopen:num", "locked=islocked:num", "open=isopen:num", "safeties=safetieson:num", "uv_active=isUV:num", "uv_super=issuperUV:num", "merge:ui_data_obj_machinery_suit_storage_unit{helmet:text,suit:text,mask:text,storage:unknown,occupied:bool}")
-
-/// The computed part of /obj/machinery/suit_storage_unit's window data (declared on its UI_DATA row).
-/obj/machinery/suit_storage_unit/proc/ui_data_obj_machinery_suit_storage_unit(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/suit_storage_unit/ui_data(datum/act/eval/A)
 	var/mob/living/carbon/human/OCCUPANT = slot_item_real(OCCUPANT_SLOT_SUIT_STORAGE)
 	var/list/data = list()
 
@@ -119,75 +121,79 @@ UI_DATA_REPLACE(/obj/machinery/suit_storage_unit, "broken=isbroken:num", "panelo
 		data["occupied"] = TRUE
 	else
 		data["occupied"] = FALSE
+	data["broken"] = isbroken
+	data["panelopen"] = panelopen
+	data["locked"] = islocked
+	data["open"] = isopen
+	data["safeties"] = safetieson
+	data["uv_active"] = isUV
+	data["uv_super"] = issuperUV
 	return data
 
-/obj/machinery/suit_storage_unit/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(isUV || isbroken)
-		return FALSE
-	return TRUE
+/// The window answers while the unit is neither disinfecting nor broken.
+/obj/machinery/suit_storage_unit/proc/ui_gate(datum/act/op/A)
+	return !isUV && !isbroken // ALLOW(reads): the unit's state is read when a button is pressed, never from a cached menu
 
-UI_ACT(/obj/machinery/suit_storage_unit, "door", ui_act_door)
-UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_door)
-	toggle_open(ui.user)
+/obj/machinery/suit_storage_unit/proc/ui_act_door(datum/act/op/A)
+	var/mob/user = A.actor
+	toggle_open(user)
 	. = TRUE
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/suit_storage_unit, "dispense", ui_act_dispense, UI_ARG_TEXT("item"))
-UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_dispense)
-	switch(params["item"])
+/obj/machinery/suit_storage_unit/proc/ui_act_dispense(datum/act/op/A, item)
+	var/mob/user = A.actor
+	switch(item)
 		if("helmet")
-			dispense_helmet(ui.user)
+			dispense_helmet(user)
 		if("mask")
-			dispense_mask(ui.user)
+			dispense_mask(user)
 		if("suit")
-			dispense_suit(ui.user)
+			dispense_suit(user)
 	. = TRUE
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/suit_storage_unit, "uv", ui_act_uv)
-UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_uv)
-	start_UV(ui.user)
+/obj/machinery/suit_storage_unit/proc/ui_act_uv(datum/act/op/A)
+	var/mob/user = A.actor
+	start_UV(user)
 	. = TRUE
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/suit_storage_unit, "lock", ui_act_lock)
-UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_lock)
-	toggle_lock(ui.user)
+/obj/machinery/suit_storage_unit/proc/ui_act_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	toggle_lock(user)
 	. = TRUE
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/suit_storage_unit, "eject_guy", ui_act_eject_guy)
-UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_eject_guy)
-	eject_occupant(ui.user)
+/obj/machinery/suit_storage_unit/proc/ui_act_eject_guy(datum/act/op/A)
+	var/mob/user = A.actor
+	eject_occupant(user)
 	. = TRUE
 
 	// Panel Open stuff
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/suit_storage_unit, "toggleUV", ui_act_toggleuv)
-UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_toggleuv)
-	if(!(!. && panelopen))
+/obj/machinery/suit_storage_unit/proc/ui_act_toggleuv(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!panelopen)
 		return FALSE
-	toggleUV(ui.user)
+	toggleUV(user)
 	. = TRUE
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/suit_storage_unit, "togglesafeties", ui_act_togglesafeties)
-UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
-	if(!(!. && panelopen))
+/obj/machinery/suit_storage_unit/proc/ui_act_togglesafeties(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!panelopen)
 		return FALSE
-	togglesafeties(ui.user)
+	togglesafeties(user)
 	. = TRUE
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 
 /obj/machinery/suit_storage_unit/proc/toggleUV(mob/user as mob)

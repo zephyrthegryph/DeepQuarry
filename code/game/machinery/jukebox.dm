@@ -32,6 +32,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 
 CAPABILITIES(/obj/machinery/media/jukebox)
 	climb()
+	interface("Jukebox", title = "RetroBox - Space Style")
+	op("change_track", ui_act("change_track", arg("change_track")), then(PROC_REF(ui_act_change_track)))
+	op("loopmode", ui_act("loopmode", arg("loopmode", num())), then(PROC_REF(ui_act_loopmode)))
+	op("volume", ui_act("volume", arg("val", num())), then(PROC_REF(ui_act_volume)))
+	op("stop", ui_act("stop"), then(PROC_REF(ui_act_stop)))
+	op("play", ui_act("play"), then(PROC_REF(ui_act_play)))
+	op("add_new_track", ui_act("add_new_track", arg("artist", schema_text(4096)), arg("duration", num()), arg("genre", schema_text(4096)), arg("lobby", num()), arg("secret", num()), arg("title", schema_text(4096)), arg("url", schema_text(4096))), then(PROC_REF(ui_act_add_new_track)))
+	op("remove_new_track", ui_act("remove_new_track", arg("ref")), then(PROC_REF(ui_act_remove_new_track)))
+	emag(then(PROC_REF(on_emag)))
 
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
@@ -177,12 +186,8 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 		return STATUS_CLOSE
 	. = ..()
 
-DECLARE_UI(/obj/machinery/media/jukebox, "Jukebox", UI_TITLE("RetroBox - Space Style"))
-
-UI_DATA(/obj/machinery/media/jukebox, "playing:num", "loop_mode", "volume:num", "merge:ui_data_obj_machinery_media_jukebox{current_track_ref:text,current_track:unknown,current_genre:unknown,percent:unknown,tracks:list,admin:num}")
-
-/// The computed part of /obj/machinery/media/jukebox's window data (declared on its UI_DATA row).
-/obj/machinery/media/jukebox/proc/ui_data_obj_machinery_media_jukebox(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/media/jukebox/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["current_track_ref"] = null
@@ -200,36 +205,35 @@ UI_DATA(/obj/machinery/media/jukebox, "playing:num", "loop_mode", "volume:num", 
 	data["tracks"] = tgui_tracks
 	data["admin"] = is_admin(user)
 
+	data["playing"] = playing
+	data["loop_mode"] = loop_mode
+	data["volume"] = volume
 	return data
 
-UI_ACT(/obj/machinery/media/jukebox, "change_track", ui_act_change_track, UI_ARG_REF("change_track", "proc:getTracksList", /datum/track))
-UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_change_track)
-	var/datum/track/T = params["change_track"]
+/obj/machinery/media/jukebox/proc/ui_act_change_track(datum/act/op/A, change_track)
+	var/datum/track/T = ui_ref(change_track, getTracksList(), /datum/track)
 	if(istype(T))
 		rel_set(src, nameof(/obj/item/walkpod::current_track), T)
 		StartPlaying()
 	return TRUE
 
-UI_ACT(/obj/machinery/media/jukebox, "loopmode", ui_act_loopmode, UI_ARG_NUM("loopmode"))
-UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_loopmode)
-	var/newval = params["loopmode"]
+/obj/machinery/media/jukebox/proc/ui_act_loopmode(datum/act/op/A, loopmode)
+	var/newval = loopmode
 	loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
 	return TRUE
 
-UI_ACT(/obj/machinery/media/jukebox, "volume", ui_act_volume, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_volume)
-	var/newval = params["val"]
+/obj/machinery/media/jukebox/proc/ui_act_volume(datum/act/op/A, val)
+	var/newval = val
 	volume = clamp(newval, 0, 1)
 	update_music() // To broadcast volume change without restarting song
 	return TRUE
 
-UI_ACT(/obj/machinery/media/jukebox, "stop", ui_act_stop)
-UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_stop)
+/obj/machinery/media/jukebox/proc/ui_act_stop(datum/act/op/A)
 	StopPlaying()
 	return TRUE
 
-UI_ACT(/obj/machinery/media/jukebox, "play", ui_act_play)
-UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_play)
+/obj/machinery/media/jukebox/proc/ui_act_play(datum/act/op/A)
+	var/mob/user = A.actor
 	if(emagged)
 		play_sfx(src, SFX_ITEMS_AIRHORN)
 		for(var/mob/living/carbon/M in ohearers(6, src))
@@ -247,21 +251,21 @@ UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_play)
 				M.status_adjust(EFFECT_JITTERY, 500)
 		om_after_unique(src, 1.5 SECONDS, PROC_REF(explode))
 	else if(current_track() == null)
-		to_chat(ui.user, "No track selected.")
+		to_chat(user, "No track selected.")
 	else
 		StartPlaying()
 	return TRUE
 
-UI_ACT(/obj/machinery/media/jukebox, "add_new_track", ui_act_add_new_track, UI_ARG_TEXT("artist"), UI_ARG_NUM("duration"), UI_ARG_TEXT("genre"), UI_ARG_NUM("lobby"), UI_ARG_NUM("secret"), UI_ARG_TEXT("title"), UI_ARG_TEXT("url"))
-UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_add_new_track)
-	SSmedia_tracks.add_track(ui.user, params["url"], params["title"], params["duration"] * 10, params["artist"], params["genre"], params["secret"], params["lobby"])
+/obj/machinery/media/jukebox/proc/ui_act_add_new_track(datum/act/op/A, artist, duration, genre, lobby, secret, title, url)
+	var/mob/user = A.actor
+	SSmedia_tracks.add_track(user, url, title, duration * 10, artist, genre, secret, lobby)
 
-UI_ACT(/obj/machinery/media/jukebox, "remove_new_track", ui_act_remove_new_track, UI_ARG_REF("ref", "proc:getTracksList", /datum/track))
-UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_remove_new_track)
-	var/datum/track/track_to_remove = params["ref"]
+/obj/machinery/media/jukebox/proc/ui_act_remove_new_track(datum/act/op/A, raw_ref)
+	var/mob/user = A.actor
+	var/datum/track/track_to_remove = ui_ref(raw_ref, getTracksList(), /datum/track)
 	if(track_to_remove == current_track() && playing)
 		StopPlaying()
-	SSmedia_tracks.remove_track(ui.user, track_to_remove)
+	SSmedia_tracks.remove_track(user, track_to_remove)
 
 /// The old attack_hand: never called ..(), just interacted.
 /datum/interaction/machine_hand/ungated/jukebox_interact
@@ -282,13 +286,12 @@ UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_remove_new_track)
 
 	replace_with(src, /obj/effect/decal/cleanable/blood/oil)
 
-DECLARE_EMAG(/obj/machinery/media/jukebox, PROC_REF(on_emag), null, null)
-/obj/machinery/media/jukebox/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/media/jukebox/proc/on_emag(datum/act/op/A)
 	set_emagged(1)
 	StopPlaying()
 	visible_message(span_danger("\The [src] makes a fizzling sound."))
 	update_icon()
-	return 1
+	return OP_OK
 
 /obj/machinery/media/jukebox/proc/StopPlaying()
 	set_playing(0)
@@ -400,41 +403,41 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	if(!admin_require(user?.client, R_FUN|R_ADMIN, "check_rights in [callee?.proc]"))
 		return
 
-	om_flow_start(/datum/om/flow/jukebox_track_add, user, src)
+	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(url_entered), answerer = user, title = "Track URL", question = "REQUIRED: Provide URL for track", rights = R_FUN|R_ADMIN, timeout = 0)
 
-/// An admin adds a custom track: url, title, duration, then an optional artist.
-/datum/om/flow/jukebox_track_add
-	name = "jukebox track add"
-	var/url
-	var/title
-	var/duration
+/// A custom track being added: what the admin has answered so far is kept on the question.
+/datum/prompt/text/jukebox_track
+	var/track_url
+	var/track_title
+	var/track_duration
 
-/datum/om/flow/jukebox_track_add/start()
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(url_entered), title = "Track URL", message = "REQUIRED: Provide URL for track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+/datum/prompt/number/jukebox_track
+	var/track_url
+	var/track_title
 
-/datum/om/flow/jukebox_track_add/proc/url_entered(datum/om/prompt/text/ask)
-	url = ask.text
-	if(!url)
+/obj/machinery/media/jukebox/ghost/proc/url_entered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(title_entered), title = "Track Title", message = "REQUIRED: Provide title for track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(title_entered), answerer = A.request.answerer, title = "Track Title", question = "REQUIRED: Provide title for track", rights = R_FUN|R_ADMIN, track_url = A.answer.answer_value, timeout = 0)
 
-/datum/om/flow/jukebox_track_add/proc/title_entered(datum/om/prompt/text/ask)
-	title = ask.text
-	if(!title)
+/obj/machinery/media/jukebox/ghost/proc/title_entered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(duration_entered), title = "Track Duration", message = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+	var/datum/prompt/text/jukebox_track/R = A.request
+	open_request(src, /datum/prompt/number/jukebox_track, PROC_REF(duration_entered), answerer = R.answerer, title = "Track Duration", question = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", rights = R_FUN|R_ADMIN, track_url = R.track_url, track_title = A.answer.answer_value, timeout = 0)
 
-/datum/om/flow/jukebox_track_add/proc/duration_entered(datum/om/prompt/number/ask)
-	duration = ask.number
-	if(!duration)
+/obj/machinery/media/jukebox/ghost/proc/duration_entered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(artist_entered), title = "Track Artist", message = "Optional: Provide artist for track", cancel_answer = "", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+	var/datum/prompt/number/jukebox_track/R = A.request
+	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(artist_entered), answerer = R.answerer, title = "Track Artist", question = "Optional: Provide artist for track", rights = R_FUN|R_ADMIN, track_url = R.track_url, track_title = R.track_title, track_duration = A.answer.answer_value, timeout = 0)
 
-/datum/om/flow/jukebox_track_add/proc/artist_entered(datum/om/prompt/text/ask)
-	var/obj/machinery/media/jukebox/ghost/jukebox = target
+/obj/machinery/media/jukebox/ghost/proc/artist_entered(datum/act/request/A)
+	var/datum/prompt/text/jukebox_track/R = A.request
+	var/artist = A.answer ? A.answer.answer_value : ""
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
-	rel_add(jukebox, nameof(jukebox.custom_tracks), new /datum/track(url, title, duration, ask.text, genre))
+	rel_add(src, nameof(custom_tracks), new /datum/track(R.track_url, R.track_title, R.track_duration, artist, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove(mob/user)
 	if(!admin_require(user?.client, R_FUN|R_ADMIN, "check_rights in [callee?.proc]"))

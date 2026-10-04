@@ -329,10 +329,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/suit_cycler, GLOB.tgui_notcontained_state)
-
 CAPABILITIES(/obj/machinery/suit_cycler)
-	interface("SuitCycler")
+	interface("SuitCycler", state = nameof(GLOB.tgui_notcontained_state))
 	op("dispense", ui_act("dispense", arg("item", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
 	op("department", ui_act("department", arg("department")), then(PROC_REF(ui_act_department)))
 	op("species", ui_act("species", arg("species")), then(PROC_REF(ui_act_species)))

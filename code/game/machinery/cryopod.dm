@@ -92,15 +92,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/cryopod, TYPE_PROC_REF(/atom, ap
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/cryopod, "CryoStorage")
+CAPABILITIES(/obj/machinery/computer/cryopod)
+	interface("CryoStorage")
+	ui_shape(allow_items = bool(), real_name = schema_text(), crew = list_of(schema_text()), items = list_of(schema_text()))
 
 /obj/machinery/computer/cryopod/ui_title(mob/user)
 	return storage_name
 
-UI_DATA(/obj/machinery/computer/cryopod, "allow_items:num", "merge:ui_data_obj_machinery_computer_cryopod{real_name:text,crew:bool,items:list}")
-
-/// The computed part of /obj/machinery/computer/cryopod's window data (declared on its UI_DATA row).
-/obj/machinery/computer/cryopod/proc/ui_data_obj_machinery_computer_cryopod(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/cryopod/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["real_name"] = user.real_name
@@ -118,6 +118,7 @@ UI_DATA(/obj/machinery/computer/cryopod, "allow_items:num", "merge:ui_data_obj_m
 			*/
 	data["items"] = items
 
+	data["allow_items"] = allow_items
 	return data
 
 /obj/item/circuitboard/cryopodcontrol

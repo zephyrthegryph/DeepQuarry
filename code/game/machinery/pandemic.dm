@@ -90,10 +90,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/pandemic, TYPE_PROC_REF(/atom, a
 	print_form(strain, user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/computer/pandemic, GLOB.tgui_default_state)
-
 CAPABILITIES(/obj/machinery/computer/pandemic)
-	interface("Pandemic")
+	interface("Pandemic", state = nameof(GLOB.tgui_default_state))
 	op("create_culture_bottle", ui_act("create_culture_bottle", arg("index", num())), then(PROC_REF(ui_act_create_culture_bottle)))
 	op("create_vaccine_bottle", ui_act("create_vaccine_bottle", arg("index", schema_text(4096))), then(PROC_REF(ui_act_create_vaccine_bottle)))
 	op("eject_beaker", ui_act("eject_beaker"), then(PROC_REF(ui_act_eject_beaker)))

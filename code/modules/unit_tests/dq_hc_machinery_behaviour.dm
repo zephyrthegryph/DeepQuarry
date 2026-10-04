@@ -302,7 +302,8 @@
 		"/obj/machinery/alarm" = "atmos_alarm,danger_level,environment_data,fire_alarm,locked,rcon,remoteUser,siliconUser,target_temperature",
 		"/obj/machinery/autolathe" = "active,materialChoices,materials,materialsmax,materialtotal",
 		"/obj/machinery/bomb_tester" = "canister,mode,simulating,sim_canister_output,tank1,tank1ref,tank2,tank2ref",
-		"/obj/machinery/doppler_array" = "",
+		"/obj/machinery/doppler_array" = "explosions",
+		"/obj/machinery/computer/cryopod" = "allow_items,crew,items,real_name",
 		"/obj/machinery/exonet_node" = "allowCommunicators,allowNewscasters,allowPDAs,logs,on",
 		"/obj/machinery/media/jukebox" = "admin,current_genre,current_track,current_track_ref,loop_mode,percent,playing,tracks,volume",
 		"/obj/machinery/newscaster" = "active_num,channels,channel_name,company,c_locked,message_num,msg,paper_remaining,photo_data,securityCaster,temp,title,total_num,unit_no,user,viewing_channel,wanted_issue",
@@ -547,3 +548,60 @@
 	hci_answer(H, "northern_net")
 	settle()
 	TEST_ASSERT_EQUAL(P.id_tag, "northern_net", "the answer becomes the tag")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Newscaster, suit storage, jukebox, colour painter (batch M6)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/newscaster_draft_is_edited_through_its_window
+/datum/unit_test/dq_hc_struct/newscaster_draft_is_edited_through_its_window/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/newscaster/N = mach(/obj/machinery/newscaster, tile(3, 2))
+	var/locked_before = N.c_locked
+	press(H, N, "set_channel_lock")
+	TEST_ASSERT(N.c_locked != locked_before, "the lock button flips the new channel's lock")
+	press(H, N, "set_channel_name", list("val" = "Daily Tidings"))
+	TEST_ASSERT_EQUAL(N.channel_name, "Daily Tidings", "the name box names the channel")
+	N.set_temp("hello", "info", FALSE)
+	press(H, N, "cleartemp")
+	TEST_ASSERT_NULL(N.temp, "the clear button drops the notice")
+	press(H, N, "set_new_title")
+	TEST_ASSERT(asked(H), "the title button asks for a title")
+	hci_answer(H, "Headline")
+	settle()
+	TEST_ASSERT_EQUAL(N.title, "Headline", "the answer becomes the title")
+
+/datum/unit_test/dq_hc_struct/suit_storage_door_and_lock_work_until_it_is_broken
+/datum/unit_test/dq_hc_struct/suit_storage_door_and_lock_work_until_it_is_broken/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/suit_storage_unit/U = mach(/obj/machinery/suit_storage_unit, tile(3, 2))
+	var/open_before = U.isopen
+	press(H, U, "door")
+	TEST_ASSERT(U.isopen != open_before, "the door button works the door")
+	var/open_now = U.isopen
+	U.isbroken = TRUE
+	press(H, U, "door")
+	TEST_ASSERT_EQUAL(U.isopen, open_now, "a broken unit answers no button")
+
+/datum/unit_test/dq_hc_struct/jukebox_volume_and_loop_are_set_through_its_window
+/datum/unit_test/dq_hc_struct/jukebox_volume_and_loop_are_set_through_its_window/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/media/jukebox/J = mach(/obj/machinery/media/jukebox, tile(3, 2))
+	press(H, J, "volume", list("val" = 7))
+	TEST_ASSERT_EQUAL(J.volume, 1, "the volume is clamped to full")
+	press(H, J, "volume", list("val" = 0.25))
+	TEST_ASSERT_EQUAL(J.volume, 0.25, "and set as given")
+	press(H, J, "loopmode", list("loopmode" = JUKEMODE_REPEAT_SONG))
+	TEST_ASSERT_EQUAL(J.loop_mode, JUKEMODE_REPEAT_SONG, "the loop mode follows the button")
+	press(H, J, "loopmode", list("loopmode" = 99))
+	TEST_ASSERT_EQUAL(J.loop_mode, JUKEMODE_REPEAT_SONG, "an unknown loop mode changes nothing")
+
+/datum/unit_test/dq_hc_struct/painter_takes_no_setting_while_empty
+/datum/unit_test/dq_hc_struct/painter_takes_no_setting_while_empty/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/gear_painter/P = mach(/obj/machinery/gear_painter, tile(3, 2))
+	var/mode_before = P.active_mode
+	press(H, P, "switch_modes", list("mode" = mode_before + 1))
+	TEST_ASSERT_EQUAL(P.active_mode, mode_before, "with nothing inside the mode stays")
+	press(H, P, "choose_color")
+	TEST_ASSERT(!asked(H), "and no colour is asked for")

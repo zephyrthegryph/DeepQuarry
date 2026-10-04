@@ -160,6 +160,25 @@ CAPABILITIES(/datum/feed_network)
 
 CAPABILITIES(/obj/machinery/newscaster)
 	owns_one(nameof(photo_data), /datum/news_photo)
+	interface("Newscaster")
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	op("set_channel_name", ui_act("set_channel_name", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_channel_name)))
+	op("set_channel_lock", ui_act("set_channel_lock"), then(PROC_REF(ui_act_set_channel_lock)))
+	op("submit_new_channel", ui_act("submit_new_channel"), then(PROC_REF(ui_act_submit_new_channel)))
+	op("set_channel_receiving", ui_act("set_channel_receiving"), then(PROC_REF(ui_act_set_channel_receiving)))
+	op("set_new_message", ui_act("set_new_message"), then(PROC_REF(ui_act_set_new_message)))
+	op("set_new_title", ui_act("set_new_title"), then(PROC_REF(ui_act_set_new_title)))
+	op("set_attachment", ui_act("set_attachment"), then(PROC_REF(ui_act_set_attachment)))
+	op("submit_new_message", ui_act("submit_new_message"), then(PROC_REF(ui_act_submit_new_message)))
+	op("print_paper", ui_act("print_paper"), then(PROC_REF(ui_act_print_paper)))
+	op("set_wanted_desc", ui_act("set_wanted_desc", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_wanted_desc)))
+	op("submit_wanted", ui_act("submit_wanted"), then(PROC_REF(ui_act_submit_wanted)))
+	op("cancel_wanted", ui_act("cancel_wanted"), then(PROC_REF(ui_act_cancel_wanted)))
+	op("censor_channel_author", ui_act("censor_channel_author", arg("ref")), then(PROC_REF(ui_act_censor_channel_author)))
+	op("censor_channel_story_author", ui_act("censor_channel_story_author", arg("ref")), then(PROC_REF(ui_act_censor_channel_story_author)))
+	op("censor_channel_story_body", ui_act("censor_channel_story_body", arg("ref")), then(PROC_REF(ui_act_censor_channel_story_body)))
+	op("toggle_d_notice", ui_act("toggle_d_notice", arg("ref")), then(PROC_REF(ui_act_toggle_d_notice)))
+	op("show_channel", ui_act("show_channel", arg("show_channel")), then(PROC_REF(ui_act_show_channel)))
 
 /obj/machinery/newscaster/security_unit                   //Security unit
 	name = "Security Newscaster"
@@ -270,15 +289,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	if(update_now)
 		SStgui.update_uis(src)
 
-DECLARE_UI(/obj/machinery/newscaster, "Newscaster")
-
 /obj/machinery/newscaster/ui_title(mob/user)
 	return "Newscaster Unit #[unit_no]"
 
-UI_DATA(/obj/machinery/newscaster, "temp:text", "unit_no", "channel_name:text", "c_locked:num", "msg:text", "title:text", "paper_remaining:num", "merge:ui_data_obj_machinery_newscaster{user:text,wanted_issue:unknown,securityCaster:bool,channels:list,photo_data:bool,total_num:num,active_num:num,message_num:num,viewing_channel:unknown,company:text}")
-
-/// The computed part of /obj/machinery/newscaster's window data (declared on its UI_DATA row).
-/obj/machinery/newscaster/proc/ui_data_obj_machinery_newscaster(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/newscaster/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	// Main menu
@@ -362,25 +377,29 @@ UI_DATA(/obj/machinery/newscaster, "temp:text", "unit_no", "channel_name:text", 
 	// Censorship
 	data["company"] = using_map.company_name
 
+	data["temp"] = temp
+	data["unit_no"] = unit_no
+	data["channel_name"] = channel_name
+	data["c_locked"] = c_locked
+	data["msg"] = msg
+	data["title"] = title
+	data["paper_remaining"] = paper_remaining
 	return data
 
-UI_ACT(/obj/machinery/newscaster, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_cleartemp)
+/obj/machinery/newscaster/proc/ui_act_cleartemp(datum/act/op/A)
 	temp = null
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_channel_name", ui_act_set_channel_name, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_channel_name)
-	channel_name = sanitizeSafe(params["val"], MAX_LNAME_LEN)
+/obj/machinery/newscaster/proc/ui_act_set_channel_name(datum/act/op/A, val)
+	channel_name = sanitizeSafe(val, MAX_LNAME_LEN)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_channel_lock", ui_act_set_channel_lock)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_channel_lock)
+/obj/machinery/newscaster/proc/ui_act_set_channel_lock(datum/act/op/A)
 	c_locked = !c_locked
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "submit_new_channel", ui_act_submit_new_channel)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_channel)
+/obj/machinery/newscaster/proc/ui_act_submit_new_channel(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/existing_authors = list()
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
 		if(FC.author == "\[REDACTED\]")
@@ -392,7 +411,7 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_channel)
 		if(FC.channel_name == channel_name)
 			check = 1
 			break
-	var/our_user = tgui_user_name(ui.user)
+	var/our_user = tgui_user_name(user)
 	if(channel_name == "" || channel_name == "\[REDACTED\]")
 		set_temp("Error: Could not submit feed channel to network: Invalid Channel Name.", "danger", FALSE)
 		return TRUE
@@ -406,36 +425,36 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_channel)
 		set_temp("Error: Could not submit feed channel to network: A feed channel already exists under your name.", "danger", FALSE)
 		return TRUE
 
-	om_ask(ui.user, /datum/om/prompt/confirm/news_channel_create, PROC_REF(channel_creation_confirmed), message = "Please confirm Feed channel creation", title = "Network Channel Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel", author = our_user, channel = channel_name, locked = c_locked)
+	open_request(src, /datum/prompt/yes_no/news_channel_create, PROC_REF(channel_creation_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Channel Handler", question = "Please confirm Feed channel creation", author = our_user, channel = channel_name, locked = c_locked, timeout = 0)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_channel_receiving", ui_act_set_channel_receiving)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_channel_receiving)
+/obj/machinery/newscaster/proc/ui_act_set_channel_receiving(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/available_channels = list()
 	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 		if((!F.locked || F.author == scanned_user) && !F.censored)
 			available_channels += F.channel_name
-	om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(receiving_channel_chosen), message = "Choose receiving Feed Channel", title = "Network Channel Handler", choices = available_channels, requires = PROMPT_USABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(receiving_channel_chosen), valid = PROC_REF(caster_valid), answerer = user, title = "Network Channel Handler", question = "Choose receiving Feed Channel", choices = available_channels, timeout = 0)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_new_message", ui_act_set_new_message)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_new_message)
-	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(story_written), message = "Write your Feed story", title = "Network Channel Handler", default = "", max_length = MAX_MESSAGE_LEN, multiline = TRUE, encode = FALSE, requires = PROMPT_USABLE, ui_refresh = src)
+/obj/machinery/newscaster/proc/ui_act_set_new_message(datum/act/op/A)
+	var/mob/user = A.actor
+	open_request(src, /datum/prompt/text, PROC_REF(story_written), valid = PROC_REF(caster_valid), answerer = user, title = "Network Channel Handler", question = "Write your Feed story", default = "", max_len = MAX_MESSAGE_LEN, multiline = TRUE, encode = FALSE, timeout = 0)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_new_title", ui_act_set_new_title)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_new_title)
-	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(title_written), message = "Enter your Feed title", title = "Network Channel Handler", default = "", max_length = MAX_KEYPAD_INPUT_LEN, requires = PROMPT_USABLE, ui_refresh = src)
+/obj/machinery/newscaster/proc/ui_act_set_new_title(datum/act/op/A)
+	var/mob/user = A.actor
+	open_request(src, /datum/prompt/text, PROC_REF(title_written), valid = PROC_REF(caster_valid), answerer = user, title = "Network Channel Handler", question = "Enter your Feed title", default = "", max_len = MAX_KEYPAD_INPUT_LEN, timeout = 0)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_attachment", ui_act_set_attachment)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_attachment)
-	AttachPhoto(ui.user)
+/obj/machinery/newscaster/proc/ui_act_set_attachment(datum/act/op/A)
+	var/mob/user = A.actor
+	AttachPhoto(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "submit_new_message", ui_act_submit_new_message)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_message)
-	var/our_user = tgui_user_name(ui.user)
+/obj/machinery/newscaster/proc/ui_act_submit_new_message(datum/act/op/A)
+	var/mob/user = A.actor
+	var/our_user = tgui_user_name(user)
 	if(msg == "" || msg == "\[REDACTED\]")
 		set_temp("Error: Could not submit feed message to network: Invalid Message.", "danger", FALSE)
 		return TRUE
@@ -455,8 +474,7 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_message)
 	set_temp("Feed message created successfully.", "success", FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "print_paper", ui_act_print_paper)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_print_paper)
+/obj/machinery/newscaster/proc/ui_act_print_paper(datum/act/op/A)
 	if(!paper_remaining)
 		set_temp("Unable to print newspaper. Insufficient paper. Please notify maintenance personnel to refill machine storage.", "danger", FALSE)
 		return TRUE
@@ -465,16 +483,15 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_print_paper)
 	set_temp("Printing successful. Please receive your newspaper from the bottom of the machine.", "success", FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_wanted_desc", ui_act_set_wanted_desc, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_wanted_desc)
-	msg = sanitize(params["val"])
+/obj/machinery/newscaster/proc/ui_act_set_wanted_desc(datum/act/op/A, val)
+	msg = sanitize(val)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "submit_wanted", ui_act_submit_wanted)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_wanted)
+/obj/machinery/newscaster/proc/ui_act_submit_wanted(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!securityCaster)
 		return FALSE
-	var/our_user = tgui_user_name(ui.user)
+	var/our_user = tgui_user_name(user)
 	if(channel_name == "")
 		set_temp("Error: Could not submit wanted issue to network: Invalid Criminal Name.", "danger", FALSE)
 		return TRUE
@@ -485,26 +502,28 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_wanted)
 		set_temp("Error: Could not submit wanted issue to network: Author unverified.", "danger", FALSE)
 		return TRUE
 
-	om_ask(ui.user, /datum/om/prompt/confirm, PROC_REF(wanted_change_confirmed), message = "Please confirm Wanted Issue change.", title = "Network Security Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(wanted_change_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Security Handler", question = "Please confirm Wanted Issue change.", timeout = 0)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "cancel_wanted", ui_act_cancel_wanted)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_cancel_wanted)
+/obj/machinery/newscaster/proc/ui_act_cancel_wanted(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!securityCaster)
 		return FALSE
 	if(GLOB.news_network.wanted_issue().is_admin_message)
-		tgui_alert_async(ui.user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot take it down.")
+		tgui_alert_async(user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot take it down.")
 		return
-	om_ask(ui.user, /datum/om/prompt/confirm, PROC_REF(wanted_removal_confirmed), message = "Please confirm Wanted Issue removal", title = "Network Security Handler", requires = PROMPT_USABLE, yes_text = "Confirm", no_text = "Cancel")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(wanted_removal_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Security Handler", question = "Please confirm Wanted Issue removal", timeout = 0)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "censor_channel_author", ui_act_censor_channel_author, UI_ARG_REF("ref", null, /datum/feed_channel))
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_author)
+/obj/machinery/newscaster/proc/ui_act_censor_channel_author(datum/act/op/A, raw_ref)
+	var/mob/user = A.actor
 	if(!securityCaster)
 		return FALSE
-	var/datum/feed_channel/FC = params["ref"]
+	var/datum/feed_channel/FC = ui_ref(raw_ref, null, /datum/feed_channel)
+	if(!FC)
+		return
 	if(FC.is_admin_channel)
-		tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot censor it.")
+		tgui_alert_async(user, "This channel was created by a [using_map.company_name] Officer. You cannot censor it.")
 		return
 	if(FC.author != "\[REDACTED\]")
 		FC.backup_author = FC.author
@@ -514,13 +533,15 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_author)
 	FC.update()
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "censor_channel_story_author", ui_act_censor_channel_story_author, UI_ARG_REF("ref", null, /datum/feed_message))
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_story_author)
+/obj/machinery/newscaster/proc/ui_act_censor_channel_story_author(datum/act/op/A, raw_ref)
+	var/mob/user = A.actor
 	if(!securityCaster)
 		return FALSE
-	var/datum/feed_message/MSG = params["ref"]
+	var/datum/feed_message/MSG = ui_ref(raw_ref, null, /datum/feed_message)
+	if(!MSG)
+		return
 	if(MSG.is_admin_message)
-		tgui_alert_async(ui.user, "This message was created by a [using_map.company_name] Officer. You cannot censor its author.")
+		tgui_alert_async(user, "This message was created by a [using_map.company_name] Officer. You cannot censor its author.")
 		return
 	if(MSG.author != "\[REDACTED\]")
 		MSG.backup_author = MSG.author
@@ -530,13 +551,15 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_story_author)
 	MSG.parent_channel().update()
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "censor_channel_story_body", ui_act_censor_channel_story_body, UI_ARG_REF("ref", null, /datum/feed_message))
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_story_body)
+/obj/machinery/newscaster/proc/ui_act_censor_channel_story_body(datum/act/op/A, raw_ref)
+	var/mob/user = A.actor
 	if(!securityCaster)
 		return FALSE
-	var/datum/feed_message/MSG = params["ref"]
+	var/datum/feed_message/MSG = ui_ref(raw_ref, null, /datum/feed_message)
+	if(!MSG)
+		return
 	if(MSG.is_admin_message)
-		tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot censor it.")
+		tgui_alert_async(user, "This channel was created by a [using_map.company_name] Officer. You cannot censor it.")
 		return
 	if(MSG.body != "\[REDACTED\]")
 		MSG.backup_body = MSG.body
@@ -553,55 +576,65 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_censor_channel_story_body)
 	MSG.parent_channel().update()
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "toggle_d_notice", ui_act_toggle_d_notice, UI_ARG_REF("ref", null, /datum/feed_channel))
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_toggle_d_notice)
+/obj/machinery/newscaster/proc/ui_act_toggle_d_notice(datum/act/op/A, raw_ref)
+	var/mob/user = A.actor
 	if(!securityCaster)
 		return FALSE
-	var/datum/feed_channel/FC = params["ref"]
+	var/datum/feed_channel/FC = ui_ref(raw_ref, null, /datum/feed_channel)
+	if(!FC)
+		return
 	if(FC.is_admin_channel)
-		tgui_alert_async(ui.user, "This channel was created by a [using_map.company_name] Officer. You cannot place a D-Notice upon it.")
+		tgui_alert_async(user, "This channel was created by a [using_map.company_name] Officer. You cannot place a D-Notice upon it.")
 		return
 	FC.censored = !FC.censored
 	FC.update()
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "show_channel", ui_act_show_channel, UI_ARG_REF("show_channel", null, /datum/feed_channel))
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
-	var/datum/feed_channel/FC = params["show_channel"]
+/obj/machinery/newscaster/proc/ui_act_show_channel(datum/act/op/A, show_channel)
+	var/datum/feed_channel/FC = ui_ref(show_channel, null, /datum/feed_channel)
 	rel_set(src, nameof(/obj/machinery/newscaster::viewing_channel), FC)
 	return TRUE
 
-/datum/om/prompt/confirm/news_channel_create
+/datum/prompt/yes_no/news_channel_create
 	var/author
 	var/channel
 	var/locked = FALSE
 
-/obj/machinery/newscaster/proc/channel_creation_confirmed(datum/om/prompt/confirm/news_channel_create/ask)
-	var/our_user = ask.author
-	var/channel_name = ask.channel
-	var/c_locked = ask.locked
-	GLOB.news_network.CreateFeedChannel(channel_name, our_user, c_locked)
-	set_temp("Feed channel [channel_name] created successfully.", "success", FALSE)
-	return TRUE
+/// Re-checked: the person is still next to the newscaster and able.
+/obj/machinery/newscaster/proc/caster_valid(datum/request/R)
+	return answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
 
-/obj/machinery/newscaster/proc/receiving_channel_chosen(datum/om/prompt/choice/ask)
-	var/new_channel_name = ask.choice
+/obj/machinery/newscaster/proc/channel_creation_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/yes_no/news_channel_create/R = A.request
+	GLOB.news_network.CreateFeedChannel(R.channel, R.author, R.locked)
+	set_temp("Feed channel [R.channel] created successfully.", "success", FALSE)
+	SStgui.update_uis(src)
+
+/obj/machinery/newscaster/proc/receiving_channel_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_channel_name = A.answer.answer_value
 	channel_name = new_channel_name
 	SStgui.update_uis(src)
-	if(new_channel_name)
-		channel_name = new_channel_name
-	return TRUE
 
-/obj/machinery/newscaster/proc/story_written(datum/om/prompt/text/ask)
-	var/text = ask.text
-	msg = sanitize(text, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+/obj/machinery/newscaster/proc/story_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	msg = sanitize(A.answer.answer_value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	SStgui.update_uis(src)
 
-/obj/machinery/newscaster/proc/title_written(datum/om/prompt/text/ask)
-	var/text = ask.text
-	title = text
+/obj/machinery/newscaster/proc/title_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	title = A.answer.answer_value
+	SStgui.update_uis(src)
 
-/obj/machinery/newscaster/proc/wanted_change_confirmed(datum/om/prompt/confirm/ask)
-	var/mob/user = ask.answerer
+/obj/machinery/newscaster/proc/wanted_change_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/user = A.request.answerer
 	if(GLOB.news_network.wanted_issue())
 		if(GLOB.news_network.wanted_issue() && GLOB.news_network.wanted_issue().is_admin_message)
 			tgui_alert_async(user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot edit it.")
@@ -612,7 +645,8 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 		if(photo_data)
 			GLOB.news_network.wanted_issue().img = photo_data.photo().img
 		set_temp("Wanted issue for [channel_name] successfully edited.", "success", FALSE)
-		return TRUE
+		SStgui.update_uis(src)
+		return
 
 	var/datum/feed_message/WANTED = new /datum/feed_message
 	WANTED.author = channel_name
@@ -623,15 +657,17 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 	rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
 	GLOB.news_network.alert_readers()
 	set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
-	return TRUE
+	SStgui.update_uis(src)
 
-/obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/om/prompt/confirm/ask)
+/obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
 	if(GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
 		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
 		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 			NEWSCASTER.update_icon()
 		set_temp("Wanted issue taken down.", "success", FALSE)
-	return TRUE
+		SStgui.update_uis(src)
 
 /// Old attackby: any item used on the newscaster just forwarded to attack_hand().
 /datum/interaction/machine_item/newscaster_item_open

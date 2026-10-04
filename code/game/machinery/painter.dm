@@ -130,12 +130,21 @@ DECLARE_APPEARANCE(/obj/machinery/gear_painter, "panel_open", list("1" = list(AP
 	update_icon()
 	SStgui.update_uis(src)
 
-DECLARE_UI(/obj/machinery/gear_painter, "ColorMate")
+CAPABILITIES(/obj/machinery/gear_painter)
+	interface("ColorMate")
+	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))
+	op("choose_color", ui_act("choose_color"), then(PROC_REF(ui_act_choose_color)))
+	op("paint", ui_act("paint"), then(PROC_REF(ui_act_paint)))
+	op("drop", ui_act("drop"), then(PROC_REF(ui_act_drop)))
+	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
+	op("set_matrix_color", ui_act("set_matrix_color", arg("color", num()), arg("value", num())), then(PROC_REF(ui_act_set_matrix_color)))
+	op("set_matrix_string", ui_act("set_matrix_string", arg("value", schema_text(4096))), then(PROC_REF(ui_act_set_matrix_string)))
+	op("set_hue", ui_act("set_hue", arg("buildhue", num(0, 360))), then(PROC_REF(ui_act_set_hue)))
+	op("set_sat", ui_act("set_sat", arg("buildsat", num(-10, 10))), then(PROC_REF(ui_act_set_sat)))
+	op("set_val", ui_act("set_val", arg("buildval", num(-10, 10))), then(PROC_REF(ui_act_set_val)))
 
-UI_DATA_REPLACE(/obj/machinery/gear_painter, "activemode=active_mode", "buildhue=build_hue:num", "buildsat=build_sat:num", "buildval=build_val:num", "merge:ui_data_obj_machinery_gear_painter{matrixcolors:list,temp:text,item_name:text,item_sprite:text,item_preview:text}")
-
-/// The computed part of /obj/machinery/gear_painter's window data (declared on its UI_DATA row).
-/obj/machinery/gear_painter/proc/ui_data_obj_machinery_gear_painter(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/gear_painter/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	. = list()
 	.["matrixcolors"] = list(
 		"rr" = color_matrix_last[1],
@@ -161,45 +170,52 @@ UI_DATA_REPLACE(/obj/machinery/gear_painter, "activemode=active_mode", "buildhue
 		.["item_name"] = null
 		.["item_sprite"] = null
 		.["item_preview"] = null
+	.["activemode"] = active_mode
+	.["buildhue"] = build_hue
+	.["buildsat"] = build_sat
+	.["buildval"] = build_val
 
-/obj/machinery/gear_painter/proc/color_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		activecolor = ask.picked_color
-		SStgui.update_uis(src)
+/// Re-checked: the person is still next to the painter and able.
+/obj/machinery/gear_painter/proc/colour_valid(datum/request/R)
+	return answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
 
-UI_ACT(/obj/machinery/gear_painter, "switch_modes", ui_act_switch_modes, UI_ARG_NUM("mode"))
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_switch_modes)
+/obj/machinery/gear_painter/proc/color_chosen(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	activecolor = A.answer.answer_value
+	SStgui.update_uis(src)
+
+/obj/machinery/gear_painter/proc/ui_act_switch_modes(datum/act/op/A, mode)
 	if(!(inserted))
 		return
-	active_mode = params["mode"]
+	active_mode = mode
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "choose_color", ui_act_choose_color)
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_choose_color)
+/obj/machinery/gear_painter/proc/ui_act_choose_color(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(inserted))
 		return
-	om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), default = activecolor, title = "ColorMate colour picking", message = "Choose a color: ", requires = PROMPT_USABLE)
+	open_request(src, /datum/prompt/color, PROC_REF(color_chosen), valid = PROC_REF(colour_valid), answerer = user, default = activecolor, title = "ColorMate colour picking", question = "Choose a color: ", timeout = 0)
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "paint", ui_act_paint)
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_paint)
+/obj/machinery/gear_painter/proc/ui_act_paint(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(inserted))
 		return
-	if(!do_paint(ui.user))
+	if(!do_paint(user))
 		return TRUE
 	temp = "Painted Successfully!"
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "drop", ui_act_drop)
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_drop)
+/obj/machinery/gear_painter/proc/ui_act_drop(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(inserted))
 		return
 	temp = ""
-	drop_item(ui.user)
+	drop_item(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_clear)
+/obj/machinery/gear_painter/proc/ui_act_clear(datum/act/op/A)
 	if(!(inserted))
 		return
 	inserted.remove_atom_colour(FIXED_COLOUR_PRIORITY)
@@ -207,19 +223,17 @@ UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_clear)
 	temp = "Cleared Successfully!"
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "set_matrix_color", ui_act_set_matrix_color, UI_ARG_NUM("color"), UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_matrix_color)
+/obj/machinery/gear_painter/proc/ui_act_set_matrix_color(datum/act/op/A, raw_color, value)
 	if(!(inserted))
 		return
-	color_matrix_last[params["color"]] = params["value"]
+	color_matrix_last[raw_color] = value
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "set_matrix_string", ui_act_set_matrix_string, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_matrix_string)
+/obj/machinery/gear_painter/proc/ui_act_set_matrix_string(datum/act/op/A, value)
 	if(!(inserted))
 		return
-	if(params["value"])
-		var/list/colours = splittext(params["value"], ",")
+	if(value)
+		var/list/colours = splittext(value, ",")
 		if(colours.len > 12)
 			colours.Cut(13)
 		for(var/i = 1, i <= colours.len, i++)
@@ -228,25 +242,22 @@ UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_matrix_string)
 				color_matrix_last[i] = clamp(number, -10, 10)
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "set_hue", ui_act_set_hue, UI_ARG_NUM("buildhue", 0, 360))
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_hue)
+/obj/machinery/gear_painter/proc/ui_act_set_hue(datum/act/op/A, buildhue)
 	if(!(inserted))
 		return
-	build_hue = params["buildhue"]
+	build_hue = buildhue
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "set_sat", ui_act_set_sat, UI_ARG_NUM("buildsat", -10, 10))
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_sat)
+/obj/machinery/gear_painter/proc/ui_act_set_sat(datum/act/op/A, buildsat)
 	if(!(inserted))
 		return
-	build_sat = params["buildsat"]
+	build_sat = buildsat
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "set_val", ui_act_set_val, UI_ARG_NUM("buildval", -10, 10))
-UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_val)
+/obj/machinery/gear_painter/proc/ui_act_set_val(datum/act/op/A, buildval)
 	if(!(inserted))
 		return
-	build_val = params["buildval"]
+	build_val = buildval
 	return TRUE
 
 /obj/machinery/gear_painter/proc/do_paint(mob/user)

@@ -30,7 +30,7 @@
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	climb()
-	interface("Canister")
+	interface("Canister", state = nameof(GLOB.tgui_physical_state))
 	op("relabel", ui_act("relabel"), then(PROC_REF(ui_act_relabel)))
 	op("pressure", ui_act("pressure", arg("pressure", num())), then(PROC_REF(ui_act_pressure)))
 	op("valve", ui_act("valve"), then(PROC_REF(ui_act_valve)))
@@ -329,8 +329,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 	if(connected_port())
 		disconnect()
 	replace_with(src, /obj/item/stack/material/steel, 10)
-
-DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/canister, GLOB.tgui_physical_state)
 
 /obj/machinery/portable_atmospherics/canister/ui_prepare(mob/user, datum/tgui/ui)
 	if(destroyed)

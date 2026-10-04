@@ -133,6 +133,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
 CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
+	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("fueltank_interaction_item", item(/obj/item), then(PROC_REF(fueltank_interaction_item)))
 
 /obj/structure/reagent_dispensers/fueltank/high
 	name = "high-capacity fuel tank"
@@ -207,13 +209,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 		if(rig)
 			. += span_notice("There is some kind of device rigged to the tank.")
 
-EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(fueltank_interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/structure/reagent_dispensers/fueltank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/fueltank/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (rig)
 		act_message(user, src, MSG_SELF("You begin to detach [rig] from %T%"), MSG_OTHERS("%U% begins to detach [rig] from %T%."))
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
@@ -228,16 +226,18 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 	overlays = new/list()
 
 /// Old attackby.
-/obj/structure/reagent_dispensers/fueltank/proc/fueltank_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/fueltank/proc/fueltank_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	src.add_fingerprint(user)
 	if (istype(W,/obj/item/assembly_holder))
 		if (rig)
 			to_chat(user, span_warning("There is another device in the way."))
-			return FALSE
+			return OP_DECLINE
 		act_message(user, src, MSG_SELF("You begin rigging [W] to %T%"), MSG_OTHERS("%U% begins rigging [W] to %T%."))
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(mob/user, obj/item/assembly_holder/H)
 	if(rig)
