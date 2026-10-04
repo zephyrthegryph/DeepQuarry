@@ -19,53 +19,61 @@
 	return
 
 /// Labelling a case with a pen. Re-checked on the answer: the pen is still in hand, the case still in reach.
-/datum/om/prompt/text/implantcase_label
-	message = "What would you like the label to be?"
-	max_length = MAX_NAME_LEN
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/item/implantcase/case
+/obj/item/implantcase/proc/label_in_reach(datum/request/R)
+	var/mob/M = R.answerer
+	return in_range(src, M) || loc == M
 
-/datum/om/prompt/text/implantcase_label/valid()
-	if(!in_range(case, answerer) && case.loc != answerer)
-		return "too far away"
-	return null
-
-/obj/item/implantcase/proc/label_entered(datum/om/prompt/text/implantcase_label/ask)
-	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/obj/item/implantcase/proc/label_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/t = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
 	if(t)
 		name = text("Glass Case - '[]'", t)
 	else
 		name = "Glass Case"
 
-DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/implantcase)
+	op("label", item(/obj/item/pen), passes(), label("Label"), then(PROC_REF(label_asked)))
+	op("fill_from_syringe", item(/obj/item/reagent_containers/syringe), passes(), label("Fill"), then(PROC_REF(syringe_used)))
+	op("swap_implant", item(/obj/item/implanter), passes(), label("Swap implant"), then(PROC_REF(implanter_used)))
 
-/// Old attackby.
-/obj/item/implantcase/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if (istype(I, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/text/implantcase_label, PROC_REF(label_entered), title = "[name]", subject = I, case = src)
-	else if(istype(I, /obj/item/reagent_containers/syringe))
-		if(!imp)	return INTERACTION_HANDLED_PASS
-		if(!imp.allow_reagents)	return INTERACTION_HANDLED_PASS
-		if(imp.reagents.total_volume >= imp.reagents.maximum_volume)
-			to_chat(user, span_warning("\The [src] is full."))
-		else
-			after(src, 5, PROC_REF(inject_from), with = list(I, user))
-	else if (istype(I, /obj/item/implanter))
-		var/obj/item/implanter/M = I
-		if (M.imp)
-			if ((imp || M.imp.implanted))
-				return INTERACTION_HANDLED_PASS
-			M.imp.forceMove(src)
-			own_transfer(M, nameof(M.imp), src, nameof(imp))
+/// A pen labels the case.
+/obj/item/implantcase/proc/label_asked(datum/act/op/A)
+	var/mob/user = A.actor
+	open_request(src, /datum/prompt/text, PROC_REF(label_entered), answerer = user, title = "[name]", question = "What would you like the label to be?", max_len = MAX_NAME_LEN, name_text = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE, subject = A.held, valid = PROC_REF(label_in_reach), timeout = 0)
+	return OP_OK
+
+/// A syringe fills a reagent implant in the case.
+/obj/item/implantcase/proc/syringe_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(!imp)
+		return OP_OK
+	if(!imp.allow_reagents)
+		return OP_OK
+	if(imp.reagents.total_volume >= imp.reagents.maximum_volume)
+		to_chat(user, span_warning("\The [src] is full."))
+	else
+		after(src, 5, PROC_REF(inject_from), with = list(I, user))
+	return OP_OK
+
+/// An implanter and the case trade their implants.
+/obj/item/implantcase/proc/implanter_used(datum/act/op/A)
+	var/obj/item/implanter/M = A.held
+	if (M.imp)
+		if ((imp || M.imp.implanted))
+			return OP_OK
+		M.imp.forceMove(src)
+		own_transfer(M, nameof(M.imp), src, nameof(imp))
+		update()
+		M.update()
+	else
+		if (imp)
+			imp.forceMove(M)
+			own_transfer(src, nameof(imp), M, nameof(M.imp))
 			update()
-			M.update()
-		else
-			if (imp)
-				imp.forceMove(M)
-				own_transfer(src, nameof(imp), M, nameof(M.imp))
-				update()
-			M.update()
-	return INTERACTION_HANDLED_PASS
+		M.update()
+	return OP_OK
 
 
 /obj/item/implantcase/tracking

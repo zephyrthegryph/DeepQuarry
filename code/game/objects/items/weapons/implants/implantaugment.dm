@@ -62,18 +62,23 @@ TYPE_TABLE_DECLARE(/obj/item/implant/organ/limbaugment, limbaugment_targets, lis
 
 		var/list/choices = augment_choices(H)
 		if(length(choices) > 1)
-			om_ask(user, /datum/om/prompt/choice/augment_location, PROC_REF(augment_location_chosen), choices = choices, patient = H)
+			if(user)
+				open_request(src, /datum/prompt/choice/augment_location, PROC_REF(augment_location_chosen), answerer = user, patient = H, title = "Choose Location", question = "Choose augment location:", choices = choices, timeout = 0)
 			return
 		install_augment(H, length(choices) ? choices[1] : null)
 
 /// Where a limb augment goes on `patient`.
-/datum/om/prompt/choice/augment_location
-	title = "Choose Location"
-	message = "Choose augment location:"
+/datum/prompt/choice/augment_location
 	var/mob/living/carbon/human/patient
 
-/obj/item/implant/organ/limbaugment/proc/augment_location_chosen(datum/om/prompt/choice/augment_location/ask)
-	install_augment(ask.patient, ask.choice)
+CAPABILITIES(/datum/prompt/choice/augment_location)
+	ref_one(nameof(patient), /mob/living/carbon/human)
+
+/obj/item/implant/organ/limbaugment/proc/augment_location_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/augment_location/R = A.request
+	install_augment(R.patient, A.answer.answer_value)
 
 /obj/item/implant/organ/limbaugment/proc/augment_choices(mob/living/carbon/human/H)
 	. = TYPE_TABLE_COPY(src, limbaugment_targets)

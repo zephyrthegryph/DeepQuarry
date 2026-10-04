@@ -15,9 +15,9 @@
 TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes, list("lay", "force out", "push out"))
 
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_generating(TRUE)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	grant(source, granted_verb(implant_verb_key()), src) // TGPanel
+	grant(source, implant_verb(), src) // TGPanel
 	grant(source, granted_verb(/mob/living/carbon/human/proc/toggle_cascade), src) // TGPanel
 	return 1
 
@@ -175,6 +175,12 @@ TYPE_TABLE_DECLARE(/obj/item/implant/reagent_generator, reagent_implant_self_emo
 
 DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
 
+/// Makes its reagents every 2 s from implantation on.
+/obj/item/implant/reagent_generator/var/generating = FALSE
+TRACKED(/obj/item/implant/reagent_generator, generating)
+CAPABILITIES(/obj/item/implant/reagent_generator)
+	every(2 SECONDS, then(PROC_REF(reagent_step)), when = nameof(generating))
+
 /obj/item/implanter/reagent_generator
 	var/implant_type = /obj/item/implant/reagent_generator
 
@@ -186,20 +192,20 @@ DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /// The verb this implant gives its host: assigned_proc under the implant's verb_name/verb_desc.
-/obj/item/implant/reagent_generator/proc/implant_verb_key()
-	return VERB_NAMED(assigned_proc, verb_name, verb_desc)
+/obj/item/implant/reagent_generator/proc/implant_verb()
+	return granted_verb(assigned_proc, verb_name = verb_name, verb_desc = verb_desc)
 
 /// Egg implants give the verb under its own name.
-/obj/item/implant/reagent_generator/egg/implant_verb_key()
-	return assigned_proc
+/obj/item/implant/reagent_generator/egg/implant_verb()
+	return granted_verb(assigned_proc)
 
 /obj/item/implant/reagent_generator/post_implant(mob/living/carbon/source)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_generating(TRUE)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	grant(source, granted_verb(implant_verb_key()), src)
+	grant(source, implant_verb(), src)
 	return 1
 
-/obj/item/implant/reagent_generator/periodic_step()
+/obj/item/implant/reagent_generator/proc/reagent_step(datum/act/timer/A)
 	var/before_gen
 	if(isliving(imp_in()) && generated_reagents)
 		before_gen = reagents.total_volume
@@ -210,7 +216,7 @@ DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
 		else
 			return
 	else
-		revoke(imp_in(), granted_verb(implant_verb_key()), src)
+		revoke(imp_in(), implant_verb(), src)
 		return
 
 	if(reagents)

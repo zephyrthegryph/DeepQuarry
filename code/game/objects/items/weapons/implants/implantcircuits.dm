@@ -14,6 +14,11 @@
 
 CAPABILITIES(/obj/item/implant/integrated_circuit)
 	owns_one(nameof(IC), starts = /obj/item/electronic_assembly/implant)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(circuit_implant_emp))))
+	op("use", in_hand(), label("Use"), then(PROC_REF(circuit_use)))
+	op("add_electronics", item(/obj/item/integrated_electronics), passes(), label("Add"), then(PROC_REF(circuit_attacked)))
+	op("add_circuit", item(/obj/item/integrated_circuit), passes(), label("Add"), then(PROC_REF(circuit_attacked)))
+	op("add_cell", item(/obj/item/cell/device), passes(), label("Add"), then(PROC_REF(circuit_attacked)))
 
 /obj/item/implant/integrated_circuit/get_data()
 	var/dat = {"
@@ -29,22 +34,20 @@ CAPABILITIES(/obj/item/implant/integrated_circuit)
 	<b>Integrity:</b> Implant is not shielded from electromagnetic interference, otherwise it is independent of subject's status."}
 	return dat
 
-DAMAGE_REACTION(/obj/item/implant/integrated_circuit, DAMAGE_EMP, PROC_REF(circuit_implant_emp))
 /// The pulse reaches the assembly inside.
-/obj/item/implant/integrated_circuit/proc/circuit_implant_emp(datum/damage_packet/packet)
+/obj/item/implant/integrated_circuit/proc/circuit_implant_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	IC.emp_act(packet.severity)
+	return HOOK_DECLINE
 
 /obj/item/implant/integrated_circuit/examine(mob/user)
 	. = ..()
 	. += IC.examine(user)
 
-/// Old attackby.
-/obj/item/implant/integrated_circuit/proc/integrated_circuit_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(istype(O, /obj/item/integrated_electronics) || istype(O, /obj/item/integrated_circuit) || istype(O, /obj/item/cell/device))
-		IC.attackby(O, user)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// A circuit, an assembly part or a device cell is offered to the assembly inside; the click goes on.
+/obj/item/implant/integrated_circuit/proc/circuit_attacked(datum/act/op/A)
+	IC.attackby(A.held, A.actor)
+	return OP_OK
 
 /obj/item/implant/integrated_circuit/crowbar_act(mob/user, obj/item/tool)
 	return IC.crowbar_act(user, tool)
@@ -52,12 +55,7 @@ DAMAGE_REACTION(/obj/item/implant/integrated_circuit, DAMAGE_EMP, PROC_REF(circu
 /obj/item/implant/integrated_circuit/screwdriver_act(mob/user, obj/item/tool)
 	return IC.screwdriver_act(user, tool)
 
-EXTEND_INTERACTIONS(/obj/item/implant/integrated_circuit, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(integrated_circuit_interaction_item)), \
-)
-
-/// Old attack_self.
-/obj/item/implant/integrated_circuit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	IC.attack_self(user)
-	return TRUE
+/// Using the implant uses the assembly.
+/obj/item/implant/integrated_circuit/proc/circuit_use(datum/act/op/A)
+	IC.attack_self(A.actor)
+	return OP_OK
