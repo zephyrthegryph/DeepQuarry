@@ -277,12 +277,8 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	return src
 
 /// `target` and the atom's heat_watches name each other (setting `target` lists the watch there).
-/datum/native_watch/heat/relations()
-	. = ..()
-	. += rel_one(nameof(target), back = nameof(/atom::heat_watches))
-/atom/relations()
-	. = ..()
-	. += rel_many(nameof(heat_watches), back = nameof(/datum/native_watch/heat::target))
+CAPABILITIES(/datum/native_watch/heat)
+	links(/datum/native_watch/heat::target, /atom::heat_watches, b_many = TRUE)
 
 /// The watch port and cell of this watch's target: a body's world kind and entity, or the turf solid
 /// (VG_HEAT_CELLS) and the turf.
