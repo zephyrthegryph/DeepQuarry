@@ -438,7 +438,6 @@ base_var	code/modules/mob/living/carbon/carbon.dm	var/synth_reag_processing = TR
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/species/species //Contains icon generation and language information, set during New().
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/antibodies = list() // ALLOW(instance_list): d: per-mob antibodies, filled at runtime; mobs are few
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/life_tick = 0 // The amount of life ticks that have processed on this mob.
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/number_wounds = 0
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/surgery_zones_in_progress
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pose = null
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pose_move = FALSE
