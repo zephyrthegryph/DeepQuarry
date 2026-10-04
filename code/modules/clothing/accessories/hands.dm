@@ -59,8 +59,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 	material_slowdown_multiplier = 0
 	slowdown = 0
 
+TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
+
 /obj/item/clothing/accessory/bracelet/material/Initialize(mapload, new_material)
-	. = ..()
+	var/forced_material = TYPE_TABLE_GET(src, bracelet_forced_material)
+	if(forced_material)
+		. = ..(mapload, forced_material)
+		new_material = forced_material
+	else
+		. = ..()
 	if(!new_material)
 		new_material = MAT_STEEL
 	material = get_material_by_name(new_material)
@@ -73,32 +80,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 /obj/item/clothing/accessory/bracelet/material/get_material()
 	return material
 
-/obj/item/clothing/accessory/bracelet/material/wood/Initialize(mapload)
-	. = ..(mapload, MAT_WOOD)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/wood, bracelet_forced_material, MAT_WOOD)
 
-/obj/item/clothing/accessory/bracelet/material/plastic/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTIC)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/plastic, bracelet_forced_material, MAT_PLASTIC)
 
-/obj/item/clothing/accessory/bracelet/material/iron/Initialize(mapload)
-	. = ..(mapload, MAT_IRON)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/iron, bracelet_forced_material, MAT_IRON)
 
-/obj/item/clothing/accessory/bracelet/material/steel/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/steel, bracelet_forced_material, MAT_STEEL)
 
-/obj/item/clothing/accessory/bracelet/material/silver/Initialize(mapload)
-	. = ..(mapload, MAT_SILVER)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/silver, bracelet_forced_material, MAT_SILVER)
 
-/obj/item/clothing/accessory/bracelet/material/gold/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/gold, bracelet_forced_material, MAT_GOLD)
 
-/obj/item/clothing/accessory/bracelet/material/platinum/Initialize(mapload)
-	. = ..(mapload, MAT_PLATINUM)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/platinum, bracelet_forced_material, MAT_PLATINUM)
 
-/obj/item/clothing/accessory/bracelet/material/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/phoron, bracelet_forced_material, MAT_PHORON)
 
-/obj/item/clothing/accessory/bracelet/material/glass/Initialize(mapload)
-	. = ..(mapload, MAT_GLASS)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/glass, bracelet_forced_material, MAT_GLASS)
 
 //wristbands
 

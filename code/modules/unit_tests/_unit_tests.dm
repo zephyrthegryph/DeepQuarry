@@ -885,6 +885,8 @@
 #include "interim_autopsy_snapshot_ownership.dm"
 #include "interim_living_inventory_drag_actor.dm"
 #include "interim_assembly_holder_sticky_disassembly.dm"
+#include "interim_bracelet_material_contract.dm"
+#include "interim_library_checkout_controls.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
