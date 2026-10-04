@@ -2805,6 +2805,13 @@
 	into += entry_line(198)
 	into += list(global.ref_one(nameof(area), /area))
 
+/// CAPABILITIES(/datum/prompt/choice/bloodsuck) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:55
+/datum/prompt/choice/bloodsuck/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 55, /datum/prompt/choice/bloodsuck)
+	into += entry_line(56)
+	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/prompt/choice/copy_body_flavour) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:870
 /datum/prompt/choice/copy_body_flavour/declared_entries(list/into)
 	..(into)
@@ -3167,6 +3174,21 @@
 	into += list(global.owns_many(nameof(functions)))
 	into += entry_line(13)
 	into += list(global.owns_many(nameof(variables)))
+
+/// CAPABILITIES(/datum/shred_limb_review) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:561
+/datum/shred_limb_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 561, /datum/shred_limb_review)
+	into += entry_line(562)
+	into += list(global.ref_one(nameof(actor), /mob/living))
+	into += entry_line(563)
+	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
+	into += entry_line(564)
+	into += list(global.ref_one(nameof(T_ext), /obj/item/organ/external))
+	into += entry_line(565)
+	into += list(global.ref_one(nameof(T_int), /obj/item/organ/internal))
+	into += entry_line(566)
+	into += list(global.ref_one(nameof(B), /obj/belly))
 
 /// CAPABILITIES(/datum/shuttle/autodock/ferry/specops) at code/modules/shuttles/shuttle_specops.dm:24
 /datum/shuttle/autodock/ferry/specops/declared_entries(list/into)
