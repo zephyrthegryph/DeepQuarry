@@ -2559,6 +2559,8 @@
 	..(into)
 	into += entry_block("code/modules/shuttles/shuttles_web.dm", 26, /datum/shuttle/autodock/web_shuttle)
 	into += entry_line(27)
+	into += list(global.ref_many(nameof(helmets)))
+	into += entry_line(28)
 	into += list(global.owns_one(nameof(web_master), /datum/shuttle_web_master))
 
 /// CAPABILITIES(/datum/shuttle_web_master) at code/modules/shuttles/web_datums.dm:170
@@ -4984,6 +4986,13 @@
 	into += list(global.owns_one(nameof(cam_screen), /atom/movable/screen/map_view))
 	into += entry_line(40)
 	into += list(global.owns_many(nameof(cam_plane_masters)))
+
+/// CAPABILITIES(/obj/effect/overmap/bluespace_rift) at code/modules/overmap/bluespace_rift.dm:17
+/obj/effect/overmap/bluespace_rift/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/overmap/bluespace_rift.dm", 17, /obj/effect/overmap/bluespace_rift)
+	into += entry_line(18)
+	into += list(global.entry_link("/obj/effect/overmap/bluespace_rift::partner", "/obj/effect/overmap/bluespace_rift::partner"))
 
 /// CAPABILITIES(/obj/effect/overmap/visitable/sector/expedition) at code/modules/expedition/expedition_transport.dm:85
 /obj/effect/overmap/visitable/sector/expedition/declared_entries(list/into)
@@ -10864,6 +10873,15 @@
 	into += entry_line(243)
 	into += list(global.owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui))
 
+/// CAPABILITIES(/obj/machinery/computer/shuttle_control/web) at code/modules/shuttles/shuttles_web.dm:512
+/obj/machinery/computer/shuttle_control/web/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/shuttles/shuttles_web.dm", 512, /obj/machinery/computer/shuttle_control/web)
+	into += entry_line(513)
+	into += list(global.ref_many(nameof(linked_doors)))
+	into += entry_line(514)
+	into += list(global.ref_many(nameof(linked_sensors)))
+
 /// CAPABILITIES(/obj/machinery/computer/skills) at code/game/machinery/computer/skills.dm:249
 /obj/machinery/computer/skills/declared_entries(list/into)
 	..(into)
@@ -13124,6 +13142,13 @@
 	into += entry_line(317)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/structure/fuel_port) at code/modules/overmap/overmap_shuttle.dm:199
+/obj/structure/fuel_port/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/overmap/overmap_shuttle.dm", 199, /obj/structure/fuel_port)
+	into += entry_line(200)
+	into += list(global.entry_link("/obj/structure/fuel_port::parent_shuttle", "/datum/shuttle/autodock/overmap::fuel_ports", b_many = TRUE))
+
 /// CAPABILITIES(/obj/structure/generic_structure) at code/modules/eventkit/generic_objects/generic_structure.dm:32
 /obj/structure/generic_structure/declared_entries(list/into)
 	..(into)
@@ -13426,6 +13451,13 @@
 	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 102, /obj/structure/reagent_dispensers/watertank)
 	into += entry_line(103)
 	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/redgate) at code/modules/awaymissions/redgate.dm:563
+/obj/structure/redgate/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/awaymissions/redgate.dm", 563, /obj/structure/redgate)
+	into += entry_line(564)
+	into += list(global.entry_link("/obj/structure/redgate::target", "/obj/structure/redgate::target"))
 
 /// CAPABILITIES(/obj/structure/safe) at code/game/objects/structures/safe.dm:88
 /obj/structure/safe/declared_entries(list/into)
