@@ -24,15 +24,13 @@
 	var/tmp/datum/transcore_db/our_db_static	// These persist all round and are never destroyed, just keep a hard ref
 
 CAPABILITIES(/obj/machinery/computer/transhuman/designer)
+	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer)
 
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
 	our_db_static = SStranscore.db_by_key(db_key)
 
-/obj/machinery/computer/transhuman/designer/ownership()
-	. = ..()
-	. += owns(nameof(disk), policy = OWN_SPILL)
 
 /obj/machinery/computer/transhuman/designer/dismantle()
 	if(disk)
