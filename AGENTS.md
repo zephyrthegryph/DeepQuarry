@@ -197,7 +197,7 @@ orchestrates; `tools/build/build.sh <target>` is the POSIX front end.
   `tools/build/build.sh verdigris-bindings`). If `cargo` is absent the build warns and skips
   it, and atmospherics and cave-gen then fail at runtime.
 - **Worktrees: shared DLL cache.** VerdigrisTarget keeps a content-addressed cache of built
-  libraries outside the worktrees (`DQ_VERDIGRIS_CACHE`, default `D:/dq-cache/verdigris`, else
+  libraries outside the worktrees (`DQ_VERDIGRIS_CACHE`, default `E:/dq-cache/verdigris`, else
   `~/.cache/dq/verdigris`; `off` disables it). The key is the git ids at `HEAD` of `verdigris/`
   plus the generated bindings and other Rust inputs, the target triple, profile and `RUSTFLAGS`.
   On a hit the build copies the DLL in and runs no cargo, so a fresh worktree needs no
@@ -206,6 +206,13 @@ orchestrates; `tools/build/build.sh <target>` is the POSIX front end.
   another checkout's `verdigris.dll` by hand (`DQ_PREBUILT_VERDIGRIS=1`); a DLL built from other
   sources fails that check and loses every shard. If you do build Rust in a worktree, its
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
+- **Worktrees and caches live on E: only.** Create worktrees only under `E:/projects/dq-wt/<name>`
+  and build caches only under `E:/dq-cache/`; never on `D:` or `C:`. When E: runs low, prune
+  merged worktrees: unlink their junctions first (e.g. `node_modules`), then
+  `git worktree remove`, then `git worktree prune`.
+- **Git safety.** Never delete `.git/index.lock` or any other lock file; another process holds
+  it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
+  `git cherry-pick`; they discard or move other agents' work.
 - **Production build:** `tools/build/build.sh dm` compiles without `UNIT_TESTS` (CI's Compile Checks job
   runs it). Test-only code (`code/tests/`, `code/modules/unit_tests/`) must stay behind
   `#if defined(UNIT_TESTS)`; generators do this via `sem::gen::test_only`, and `analyze gen --check`
