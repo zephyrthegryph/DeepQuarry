@@ -169,7 +169,22 @@ DECLARE_INTERACTIONS(/obj/item/pickaxe/excavationdrill, INTERACT_USE(null, PROC_
 
 /// Old attack_self.
 /obj/item/pickaxe/excavationdrill/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/depth = rerun_ask(user, "k171", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "Put the desired depth (1-60 centimeters).", title = "Set Depth", default = excavation_amount, max = 60, min = 1)
+	open_request(src, /datum/prompt/number/excavation_depth, PROC_REF(excavation_depth_entered), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "Put the desired depth (1-60 centimeters).", title = "Set Depth", default = excavation_amount, max_value = 60, min_value = 1, timeout = 0)
+	return TRUE
+
+/obj/item/pickaxe/excavationdrill/proc/excavation_depth_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/excavation_depth/request = A.request
+	if(request.captures_gone())
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_excavation_depth), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/pickaxe/excavationdrill/proc/apply_excavation_depth(mob/user, depth)
 	if(isnull(depth))
 		return TRUE
 	if(depth>60 || depth<1)
@@ -220,3 +235,33 @@ DECLARE_INTERACTIONS(/obj/item/pickaxe/excavationdrill, INTERACT_USE(null, PROC_
 
 /obj/item/pickaxe/hand
 	icon = 'icons/obj/xenoarchaeology.dmi'
+
+/datum/prompt/number/excavation_depth
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/number/excavation_depth)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/number/excavation_depth/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/number/excavation_depth/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/number/excavation_depth/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null
