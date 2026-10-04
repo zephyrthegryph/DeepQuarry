@@ -205,7 +205,9 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 	if(why_not())
 		retire()
 		return
-	open_selection()
+	var/datum/result/result = safe_call(PROC_REF(open_selection))
+	if(!result.ok)
+		stack_trace("[type] open_selection: [result.error]")
 		retire()
 
 /datum/pin_value_review/list_edit/selection/why_not()

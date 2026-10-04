@@ -152,7 +152,9 @@ CAPABILITIES(/datum/admin_emp_review)
 	open_request(src, /datum/prompt/number/admin_emp_range, PROC_REF(range_answered), answerer = actor, question = question)
 
 /datum/admin_emp_review/proc/range_answered(datum/act/request/context)
-	continue_range(context)
+	var/datum/result/result = safe_call(PROC_REF(continue_range), context)
+	if(!result.ok)
+		stack_trace("[type] continue_range: [result.error]")
 		retire()
 
 /datum/admin_emp_review/proc/continue_range(datum/act/request/context)
@@ -245,7 +247,9 @@ CAPABILITIES(/datum/admin_explosion_review)
 	open_request(src, /datum/prompt/number/admin_explosion_range, PROC_REF(range_answered), answerer = actor, question = question)
 
 /datum/admin_explosion_review/proc/range_answered(datum/act/request/context)
-	continue_range(context)
+	var/datum/result/result = safe_call(PROC_REF(continue_range), context)
+	if(!result.ok)
+		stack_trace("[type] continue_range: [result.error]")
 		retire()
 
 /datum/admin_explosion_review/proc/continue_range(datum/act/request/context)

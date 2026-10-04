@@ -230,7 +230,9 @@ CAPABILITIES(/datum/pin_value_review)
 	if(why_not())
 		retire()
 		return
-	start_step(allowed_data_types)
+	var/datum/result/result = safe_call(PROC_REF(start_step), allowed_data_types)
+	if(!result.ok)
+		stack_trace("[type] start_step: [result.error]")
 		retire()
 
 /datum/pin_value_review/proc/start_step(list/allowed_data_types)

@@ -84,7 +84,9 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 			open_request(src, /datum/prompt/choice/admin_edit_new_gender, PROC_REF(answered), answerer = actor)
 
 /datum/admin_edit_appearance_review/proc/answered(datum/act/request/context)
-	continue_edit(context)
+	var/datum/result/result = safe_call(PROC_REF(continue_edit), context)
+	if(!result.ok)
+		stack_trace("[type] continue_edit: [result.error]")
 		retire()
 
 /datum/admin_edit_appearance_review/proc/continue_edit(datum/act/request/context)

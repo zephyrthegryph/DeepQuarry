@@ -686,7 +686,9 @@ CAPABILITIES(/datum/circuit_memory_review)
 	if(why_not())
 		retire()
 		return
-	start_step()
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		stack_trace("[type] start_step: [result.error]")
 		retire()
 
 /datum/circuit_memory_review/proc/start_step()

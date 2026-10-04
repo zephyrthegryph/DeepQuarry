@@ -2236,9 +2236,9 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 /mob/living/carbon/human/proc/vv_transform_confirmed(datum/act/request/A)
 	if(!A.answer || A.answer.answer_value != "Transform")
 		return
-	return vv_transform_apply(A)
+	return vv_transform_mob_apply(A)
 
-/mob/living/carbon/human/proc/vv_transform_apply(datum/act/request/A)
+/mob/living/carbon/human/proc/vv_transform_mob_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_transform/ask = A.answer
 	var/mob/user = ask.answerer
 	switch(ask.into)
