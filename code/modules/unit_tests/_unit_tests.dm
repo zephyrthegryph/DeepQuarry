@@ -468,6 +468,7 @@
 #include "interim_animal_digest_late_mode_switch.dm"
 #include "interim_artifact_blade_summon_request.dm"
 #include "interim_anomaly_battery_effect_custody.dm"
+#include "interim_xenochimera_branch_replay.dm"
 #include "dq_p2_apc_behaviour.dm"
 #include "dq_emp_disable_behaviour.dm"
 #include "dq_p2_chargers_behaviour.dm"

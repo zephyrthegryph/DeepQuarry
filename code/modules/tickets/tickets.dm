@@ -36,7 +36,6 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/obj/effect/statclick/ticket_list/cstatclick = new(null, null, AHELP_CLOSED)
 	var/obj/effect/statclick/ticket_list/rstatclick = new(null, null, AHELP_RESOLVED)
 
-
 //private
 /// Adopts `new_ticket` (unowned, or owned by another of our lists) into the list for its
 /// state, kept sorted by id.
@@ -556,9 +555,15 @@ CAPABILITIES(/datum/ticket)
 	metrics_state_event("handled")
 
 /datum/ticket/proc/Retitle(mob/user)
+	return retitle_stage(user, null, FALSE)
+
+/datum/ticket/proc/retitle_stage(mob/user, response, response_ready)
 	if(!admin_require(user?.client, level == 0 ? (R_ADMIN|R_SERVER|R_MOD|R_MENTOR) : (R_ADMIN|R_SERVER|R_MOD), "ticket.retitle"))
 		return
-	var/new_title = rerun_ask(user, "k558", PROC_REF(Retitle), args, /datum/om/prompt/text, message = "Enter a title for the ticket", title = "Rename Ticket", default = name)
+	if(!response_ready)
+		open_request(src, /datum/prompt/text/ticket_title, PROC_REF(title_entered), answerer = user, title = "Rename Ticket", question = "Enter a title for the ticket", default = name)
+		return
+	var/new_title = response
 	if(isnull(new_title))
 		return
 	if(new_title)
@@ -571,11 +576,17 @@ CAPABILITIES(/datum/ticket)
 
 //Kick ticket to next level
 /datum/ticket/proc/Escalate(mob/user)
+	return escalate_stage(user, null, FALSE)
+
+/datum/ticket/proc/escalate_stage(mob/user, response, response_ready)
 	if(level != 0)
 		return
 	if(!admin_require(user?.client, R_ADMIN|R_SERVER|R_MOD|R_MENTOR, "ticket.escalate"))
 		return
-	var/_answer_k569 = rerun_ask(user, "k569", PROC_REF(Escalate), args, /datum/om/prompt/choice/alert, message = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", title = "Escalate", choices = list("Yes","No"))
+	if(!response_ready)
+		open_request(src, /datum/prompt/choice/ticket_escalate, PROC_REF(escalation_chosen), answerer = user, title = "Escalate", question = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", choices = list("Yes","No"))
+		return
+	var/_answer_k569 = response
 	if(isnull(_answer_k569))
 		return
 	if(_answer_k569 != "Yes")
@@ -771,7 +782,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 	return msg
 
-
 /// The ticket_datum this refers to (a relation view: null once that is deleted).
 /obj/effect/statclick/ticket/proc/ticket_datum() as /datum/ticket
 	return ticket_datum
@@ -803,3 +813,28 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /// The handling admin's client, or null while they are disconnected.
 /datum/ticket/proc/handler_client()
 	return handler_ckey ? GLOB.directory[handler_ckey] : null
+
+/datum/prompt/text/ticket_title
+	timeout = 0
+
+/datum/ticket/proc/title_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = title_entered_apply(A)
+	SStgui.update_uis(src)
+
+/datum/ticket/proc/title_entered_apply(datum/act/request/A)
+	return retitle_stage(A.request.answerer, A.request.answer_value, TRUE)
+
+/datum/prompt/choice/ticket_escalate
+	timeout = 0
+	buttons = TRUE
+
+/datum/ticket/proc/escalation_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = escalation_chosen_apply(A)
+	SStgui.update_uis(src)
+
+/datum/ticket/proc/escalation_chosen_apply(datum/act/request/A)
+	return escalate_stage(A.request.answerer, A.request.answer_value, TRUE)

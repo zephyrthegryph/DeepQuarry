@@ -33,24 +33,92 @@ CAPABILITIES(/obj/item/slime_cube)
 				question(O.client)
 
 /obj/item/slime_cube/proc/question(client/C)
-	// rerun_ask() does not wait: it returns null at once and runs this proc again with the answer, so
-	// asking every ghost in turn here is fine and needs no detached thread per ghost.
-	if(!C)
+	if(!C || QDELETED(C.mob))
 		return
-	var/response = rerun_ask(C, "k34", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Someone is requesting a soul for a promethean. Would you like to play as one?", title = "Promethean request", choices = list("Yes", "No", "Never for this round"))
-	if(isnull(response))
+	var/datum/slime_cube_invitation_review/review = new
+	review.client_ckey = C.ckey
+	rel_set(review, nameof(review.actor), C.mob)
+	rel_set(review, nameof(review.cube), src)
+	review.run_step()
+
+/datum/slime_cube_invitation_review
+	var/tmp/mob/actor
+	var/tmp/obj/item/slime_cube/cube
+	var/client_ckey
+	var/stage = 0
+	var/first_answer
+	var/confirmation
+
+CAPABILITIES(/datum/slime_cube_invitation_review)
+	ref_one(nameof(actor), /mob)
+	ref_one(nameof(cube), /obj/item/slime_cube)
+
+/datum/slime_cube_invitation_review/proc/refusal()
+	if(QDELETED(actor) || QDELETED(cube) || !GLOB.directory[client_ckey])
+		return "The original invitation is no longer available."
+
+/datum/slime_cube_invitation_review/proc/run_step()
+	var/datum/result/result = safe_call(PROC_REF(replay))
+	if(!result.ok)
+		stack_trace("Slime cube invitation continuation: [result.error]")
+	if(stage > 0 && !QDELETED(cube))
+		SStgui.update_uis(cube)
+	if(!result.ok || result.value != TRUE)
+		retire()
+
+/datum/slime_cube_invitation_review/proc/answered(datum/act/request/context)
+	if(!context.answer)
+		retire()
 		return
+	if(stage == 0)
+		first_answer = context.request.answer_value
+	else
+		confirmation = context.request.answer_value
+	stage++
+	run_step()
+
+/datum/slime_cube_invitation_review/proc/replay()
+	var/client/C = GLOB.directory[client_ckey]
+	if(!C || QDELETED(C.mob) || QDELETED(cube))
+		return
+	rel_set(src, nameof(actor), C.mob)
+	if(stage == 0)
+		open_request(src, /datum/prompt/choice/slime_cube_invitation, PROC_REF(answered), answerer = actor)
+		return TRUE
+	var/response = first_answer
 	if(response == "Yes")
-		var/_answer_k36 = rerun_ask(C, "k36", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to play as a promethean?", title = "Promethean request", choices = list("Yes", "No"))
-		if(isnull(_answer_k36))
-			return
-		response = _answer_k36
-	if(!C || 2 == searching)
-		return //handle logouts that happen whilst the alert is waiting for a response, and responses issued after a brain has been located.
+		if(stage == 1)
+			open_request(src, /datum/prompt/choice/slime_cube_invitation/confirm, PROC_REF(answered), answerer = actor)
+			return TRUE
+		response = confirmation
+	if(!C || 2 == cube.searching)
+		return // Preserve responses issued after a brain has been located.
 	if(response == "Yes")
-		transfer_personality(C.mob)
+		cube.transfer_personality(C.mob)
 	else if(response == "Never for this round")
-		C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN) // migrated
+		C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN)
+
+/datum/slime_cube_invitation_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+
+/datum/prompt/choice/slime_cube_invitation
+	title = "Promethean request"
+	question = "Someone is requesting a soul for a promethean. Would you like to play as one?"
+	choices = list("Yes", "No", "Never for this round")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/slime_cube_invitation/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/slime_cube_invitation_review/review = owner
+	return review.refusal()
+
+/datum/prompt/choice/slime_cube_invitation/confirm
+	question = "Are you sure you want to play as a promethean?"
+	choices = list("Yes", "No")
 
 /obj/item/slime_cube/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	icon_state = "slime cube"
@@ -145,7 +213,6 @@ CAPABILITIES(/obj/item/slime_crystal)
 	center_of_mass_y = 10
 	nutriment_amt = 25 // Very filling.
 	nutriment_desc = list("slime" = 10, "sweetness" = 10, REAGENT_ID_BLISS = 5)
-
 
 //Flashlight
 
