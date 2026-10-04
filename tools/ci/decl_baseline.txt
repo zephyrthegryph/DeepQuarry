@@ -194,7 +194,6 @@ init_visuals	code/game/objects/structures/flora/grass.dm	icon_state = grass_icon
 init_visuals	code/game/objects/structures/flora/moretrees.dm	add_overlay(i)
 init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = choose_icon_state()
 init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = "[base_state][rand(1, 6)]"
-init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = "[base_state][rand(1, 6)]"
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
 init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"

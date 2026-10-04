@@ -446,7 +446,6 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/image/pose_indicat
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/bloodstream/bloodstr = null
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/ingested/ingested = null
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/touch/touching = null
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/toxin_gut = FALSE
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pulse = PULSE_NORM //current pulse level
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/does_not_breathe = 0 //Used for specific mobs that can't take advantage of the species flags (changelings)
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/last_taste_text = ""
@@ -464,7 +463,6 @@ base_var	code/modules/mob/living/carbon/human/human.dm	var/active_regen_delay = 
 base_var	code/modules/mob/living/carbon/human/human.dm	var/list/teleporters = list() //Used for lleill abilities
 base_var	code/modules/mob/living/carbon/human/human.dm	var/rest_dir = 0 //To lay down in a specific direction
 base_var	code/modules/mob/living/carbon/human/human.dm	var/list/datum/genetics/side_effect/genetic_side_effects = list() //For any genetic side effects we currently have.
-base_var	code/modules/mob/living/carbon/human/human.dm	/mob/living/carbon/human/var/temperature_resistance = T0C+75
 base_var	code/modules/mob/living/carbon/human/human_attackhand.dm	var/datum/unarmed_attack/default_attack
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_hair = 0
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_hair = 0
@@ -514,7 +512,6 @@ base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/last_dam = -1
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/xylophone = 0 //For the spoooooooky xylophone cooldown: world.time it can play again
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hand_blood_color
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/flavor_texts // Lazy.
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/robolimb_count = 0 // Total number of external robot parts.
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/identifying_gender // In case the human identifies as another gender than it's biological
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/step_count = 0 // Track how many footsteps have been taken to know when to play footstep sounds
@@ -650,7 +647,6 @@ base_var	code/modules/mob/living/living_defines.dm	var/custom_exclaim = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_whisper = null
 base_var	code/modules/mob/living/living_defines.dm	var/list/custom_heat
 base_var	code/modules/mob/living/living_defines.dm	var/list/custom_cold
-base_var	code/modules/mob/living/living_defines.dm	var/wingdings = 0
 base_var	code/modules/mob/living/living_defines.dm	var/can_climb = FALSE //Checked by turfs when using climb_wall(). Defined here for silicons and simple mobs
 base_var	code/modules/mob/living/living_defines.dm	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
 base_var	code/modules/mob/living/living_defines.dm	var/eggs = 0
@@ -784,7 +780,6 @@ base_var	code/modules/mob/mob_defines.dm	var/default_pixel_y = 0
 base_var	code/modules/mob/mob_defines.dm	var/attack_icon //Icon to use when attacking w/o anything in-hand
 base_var	code/modules/mob/mob_defines.dm	var/attack_icon_state //State for above
 base_var	code/modules/mob/mob_defines.dm	var/registered_z
-base_var	code/modules/mob/mob_defines.dm	var/in_enclosed_vehicle = 0 //For mechs and fighters ambiance. Can be used in other cases.
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/progressbars = null //for stacking do_after bars
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/do_afters
 base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/click_intercept
@@ -1010,14 +1005,11 @@ list_init	code/game/machinery/telecomms/telecomunications.dm	var/parameters = li
 list_init	code/game/skincmd.dm	/mob/var/skincmds = list()
 list_init	code/modules/asset_cache/asset_list.dm	var/assets = list()
 list_init	code/modules/casino/casino.dm	var/collar_list = list()
-list_init	code/modules/client/preferences/preferences_tg.dm	var/value_cache = list()
-list_init	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/channels = list()
 list_init	code/modules/mob/mob_defines.dm	var/proc_holder_list[] = list()//Right now unused.
 list_init	code/modules/mob/new_player/sprite_accessories_markings.dm	var/body_parts = list() //A list of bodyparts this covers, in organ_tag defines
 list_init	code/modules/modular_computers/NTNet/emails/email_account.dm	var/connected_clients = list()
 list_init	code/modules/planet/sun.dm	var/turfs_providing_spreads = list()
 list_init	code/modules/planet/sun.dm	var/spreads = list()
-list_init	code/modules/planet/weather.dm	var/transition_chances = list() // Assoc list of weather identifiers and the odds to shift to a specific type of weather. Can contain its own identifier to prolong it.
 list_init	code/modules/projectiles/targeting/targeting_mob.dm	/mob/living/var/list/aimed = list()
 list_init	code/modules/tgui/external.dm	/mob/var/list/tgui_open_uis = list()
 list_init	code/modules/tgui/external.dm	/client/var/list/tgui_windows = list()
