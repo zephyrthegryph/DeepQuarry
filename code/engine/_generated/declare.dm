@@ -3320,6 +3320,13 @@
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
 
+/// CAPABILITIES(/datum/prompt/text/telepathy) at code/modules/mob/living/carbon/human/human_powers_YW.dm:15
+/datum/prompt/text/telepathy/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human_powers_YW.dm", 15, /datum/prompt/text/telepathy)
+	into += entry_line(16)
+	into += list(global.ref_one(nameof(recipient), /mob))
+
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
 	..(into)
