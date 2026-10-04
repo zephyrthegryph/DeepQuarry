@@ -5,12 +5,16 @@
 
 /datum/unit_test/dq_hc_silicon
 	abstract_type = /datum/unit_test/dq_hc_silicon
+	/// Cards a test tied to a pAI.
+	var/list/linked_cards = list()
 
 /datum/unit_test/dq_hc_silicon/Run()
 	test_driver_begin()
 	test_rng(13)
 	om_scheduler().test_prompts = list()
 	run_gate()
+	for(var/obj/item/paicard/card as anything in linked_cards)
+		card.removePersonality() // the card lets go of its pAI before the block is swept, so no spark outlives the test
 	for(var/turf/N in range(3, test_floor()))
 		own_turf_contents(N)
 	test_driver_end()
@@ -159,6 +163,9 @@
 /datum/unit_test/dq_hc_silicon/proc/make_pai(mob/living/carbon/human/H)
 	var/obj/item/paicard/card = allocate(/obj/item/paicard, test_floor())
 	var/mob/living/silicon/pai/P = allocate(/mob/living/silicon/pai, card)
+	if(!card.pai)
+		rel_set(card, nameof(card.pai), P)
+		linked_cards += card
 	P.forceMove(get_step(H, EAST))
 	return P
 

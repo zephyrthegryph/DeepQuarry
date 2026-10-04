@@ -17,7 +17,7 @@
 			soft_si = TRUE
 		if(istype(soft,/datum/pai_software/deathalarm))
 			soft_da = TRUE
-	for(var/atom/movable/screen/pai/button in hud_used.other)
+	for(var/atom/movable/screen/pai/button in hud_used?.other) // a pAI nobody plays has no hud
 		if(button.name == "medical records")
 			if(soft_mr)
 				button.icon_state = "[button.base_state]"
