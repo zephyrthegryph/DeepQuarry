@@ -821,6 +821,15 @@
 	into += entry_line(40)
 	into += list(global.op("close", global.ui_act("close"), global.then(PROC_REF(ui_act_close))))
 
+/// CAPABILITIES(/datum/admin_virus_creation) at code/modules/medical/contagion/engineered/engineered.dm:531
+/datum/admin_virus_creation/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/medical/contagion/engineered/engineered.dm", 531, /datum/admin_virus_creation)
+	into += entry_line(532)
+	into += list(global.owns_one(nameof(strain), /datum/affliction/contagion/engineered))
+	into += entry_line(533)
+	into += list(global.owns_one(nameof(candidate), /datum/viral_trait))
+
 /// CAPABILITIES(/datum/admins) at code/modules/admin/holder2.dm:55
 /datum/admins/declared_entries(list/into)
 	..(into)
