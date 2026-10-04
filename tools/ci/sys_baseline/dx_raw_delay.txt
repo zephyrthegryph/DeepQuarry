@@ -33,7 +33,6 @@ dx_raw_delay	code/game/gamemodes/technomancer/spells/mark_recall.dm	after(src, 2
 dx_raw_delay	code/game/gamemodes/technomancer/spells/targeting_matrix.dm	after(user, 5, GLOBAL_PROC_REF(remove_client_image), with = list(user, target_image))
 dx_raw_delay	code/game/machinery/adv_med.dm	after(src, 5, PROC_REF(findscanner_now))
 dx_raw_delay	code/game/machinery/air_alarm.dm	after(src, 10, PROC_REF(send_signal), with = list(m_id, list("init" = new_name)))
-dx_raw_delay	code/game/machinery/biogenerator.dm	after(src, (S + 15) / eat_eff, PROC_REF(finish_processing))
 dx_raw_delay	code/game/machinery/cloning.dm	after(src, 30, PROC_REF(clear_eject_wait), with = list(BR, clonemind))
 dx_raw_delay	code/game/machinery/computer/arcade.dm	after(src, 3.6, PROC_REF(countdown), with = list(3))
 dx_raw_delay	code/game/machinery/fire_alarm.dm	after(src, rand(0,15), PROC_REF(power_change_settle), key = "power_settle")
