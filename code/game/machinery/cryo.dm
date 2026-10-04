@@ -107,12 +107,21 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/atmospherics/unary/cryo_cell, "Cryo", UI_TITLE("Cryo Cell"))
+CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
+	interface("Cryo", title = "Cryo Cell")
+	op("switchOn", ui_act("switchOn"), then(PROC_REF(ui_act_switchon)))
+	op("switchOff", ui_act("switchOff"), then(PROC_REF(ui_act_switchoff)))
+	op("ejectBeaker", ui_act("ejectBeaker"), then(PROC_REF(ui_act_ejectbeaker)))
+	op("ejectOccupant", ui_act("ejectOccupant"), then(PROC_REF(ui_act_ejectoccupant)))
+	extend(TAG_UI, needs(req(PROC_REF(actor_not_inside), because = MSG(cryo_cell/occupant_locked_out))))
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/cryo_cell, "merge:ui_data_obj_machinery_atmospherics_unary_cryo_cell{isOperating:num,hasOccupant:bool,occupant:unknown,cellTemperature:num,cellTemperatureStatus:text,isBeakerLoaded:bool,beakerLabel:text,beakerVolume:unknown}")
+MSG_DEF_SELF(cryo_cell/occupant_locked_out, "You can't reach the controls from in here.")
 
-/// The computed part of /obj/machinery/atmospherics/unary/cryo_cell's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/unary/cryo_cell/proc/ui_data_obj_machinery_atmospherics_unary_cryo_cell(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The cell's own occupant takes no part in working its window.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/actor_not_inside(datum/act/op/A)
+	return A.actor.loc != src // ALLOW(reads): who is inside is read when a button is pressed, never from a cached menu
+
+/obj/machinery/atmospherics/unary/cryo_cell/ui_data(datum/act/eval/A)
 	var/mob/living/carbon/occupant = slot_item_real(OCCUPANT_SLOT_CRYO)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
@@ -150,43 +159,36 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/cryo_cell, "merge:ui_data_obj_
 
 	return data
 
-/obj/machinery/atmospherics/unary/cryo_cell/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(ui.user == occupant)
-		return FALSE
-	return TRUE
 
-UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "switchOn", ui_act_switchon)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_switchon)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/ui_act_switchon(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	set_on(1)
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "switchOff", ui_act_switchoff)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_switchoff)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/ui_act_switchoff(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	set_on(0)
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "ejectBeaker", ui_act_ejectbeaker)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectbeaker)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/ui_act_ejectbeaker(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(beaker)
 		beaker.forceMove(get_step(src.loc, SOUTH))
 		own_take(src, nameof(/obj/machinery/biogenerator::beaker))
 		update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "ejectOccupant", ui_act_ejectoccupant)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectoccupant)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/ui_act_ejectoccupant(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(!occupant || isslime(ui.user) || ispAI(ui.user))
+	if(!occupant || isslime(user) || ispAI(user))
 		return 0 // don't update UIs attached to this object
 	go_out()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 /// Old attackby. It never called ..(), so every item stops here.
 /obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_item(mob/user, obj/item/G, datum/interaction/interaction)

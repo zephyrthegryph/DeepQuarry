@@ -21,6 +21,16 @@
 
 CAPABILITIES(/obj/machinery/petrification)
 	owns_many(nameof(remotes))
+	interface("PetrificationInterface")
+	op("set_option", ui_act("set_option", arg("option", schema_text(4096))), then(PROC_REF(ui_act_set_option)))
+	op("petrify", ui_act("petrify"), then(PROC_REF(ui_act_petrify)))
+	op("remote", ui_act("remote"), then(PROC_REF(ui_act_remote)))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+
+/// Whoever presses a button leaves their prints on the machine.
+/obj/machinery/petrification/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/petrification/Initialize(mapload)
 	. = ..()
@@ -149,17 +159,18 @@ CAPABILITIES(/obj/machinery/petrification)
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/petrification, "PetrificationInterface")
-
-UI_DATA_REPLACE(/obj/machinery/petrification, "material:text", "identifier:text", "adjective:text", "tint:text", "able_to_unpetrify:num", "discard_clothes:num", "merge:ui_data_obj_machinery_petrification{t:bool,target:text,can_remote:bool}")
-
-/// The computed part of /obj/machinery/petrification's window data (declared on its UI_DATA row).
-/obj/machinery/petrification/proc/ui_data_obj_machinery_petrification(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/petrification/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/h = rgb2num(tint)
 	data["t"] = ((h[1]*0.299)+(h[2]*0.587)+(h[3]*0.114)) > 102 //0.4 luminance
 	data["target"] = "[target_ref() ? target_ref() : "None"]"
 	data["can_remote"] = is_valid_target(target_ref()) && istext(material) && istext(identifier) && istext(adjective) && istext(tint)
+	data["material"] = material
+	data["identifier"] = identifier
+	data["adjective"] = adjective
+	data["tint"] = tint
+	data["able_to_unpetrify"] = able_to_unpetrify
+	data["discard_clothes"] = discard_clothes
 	return data
 
 /obj/machinery/petrification/proc/set_input(option, mob/user)
@@ -241,27 +252,21 @@ UI_DATA_REPLACE(/obj/machinery/petrification, "material:text", "identifier:text"
 		return
 	machine.popup_msg(actor, "They declined the request.", FALSE)
 
-/obj/machinery/petrification/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if (ui.user)
-		add_fingerprint(ui.user)
-	return TRUE
 
-UI_ACT(/obj/machinery/petrification, "set_option", ui_act_set_option, UI_ARG_TEXT("option"))
-UI_ACT_PROC(/obj/machinery/petrification, ui_act_set_option)
-	if (params["option"])
-		set_input(params["option"], ui.user)
+/obj/machinery/petrification/proc/ui_act_set_option(datum/act/op/A, option)
+	var/mob/user = A.actor
+	if (option)
+		set_input(option, user)
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/petrification, "petrify", ui_act_petrify)
-UI_ACT_PROC(/obj/machinery/petrification, ui_act_petrify)
-	petrify(ui.user)
+/obj/machinery/petrification/proc/ui_act_petrify(datum/act/op/A)
+	var/mob/user = A.actor
+	petrify(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/petrification, "remote", ui_act_remote)
-UI_ACT_PROC(/obj/machinery/petrification, ui_act_remote)
+/obj/machinery/petrification/proc/ui_act_remote(datum/act/op/A)
+	var/mob/user = A.actor
 	if (is_valid_target(target_ref()) && istext(material) && istext(identifier) && istext(adjective) && istext(tint))
 		var/obj/item/petrifier/PE = LAZYACCESS(remotes, target_ref())
 		if (!QDELETED(PE))
@@ -276,7 +281,7 @@ UI_ACT_PROC(/obj/machinery/petrification, ui_act_remote)
 		P.discard_clothes = discard_clothes
 		rel_set(P, nameof(/datum/accessory_stat_modifier::target), target_ref())
 		rel_add(src, nameof(/obj/machinery/petrification::remotes), P, target_ref())
-		ui.user.put_in_hands(P)
+		user.put_in_hands(P)
 	return TRUE
 
 /obj/item/paper/petrification_notes

@@ -178,25 +178,25 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return src
 	return console ? console : src
 
-DECLARE_UI(/obj/machinery/bodyscanner, "BodyScanner", UI_TITLE("Body Scanner"))
+CAPABILITIES(/obj/machinery/bodyscanner)
+	interface("BodyScanner", title = "Body Scanner")
+	op("ejectify", ui_act("ejectify"), then(PROC_REF(ui_act_ejectify)))
+	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
 
-UI_DATA_REPLACE(/obj/machinery/bodyscanner, "merge:ui_data_obj_machinery_bodyscanner{}")
-
-/// The computed part of /obj/machinery/bodyscanner's window data (declared on its UI_DATA row).
-/obj/machinery/bodyscanner/proc/ui_data_obj_machinery_bodyscanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/bodyscanner/ui_data(datum/act/eval/A)
 	// qualitative scanner output. The old block dumped exact
 	// damage numbers and every affliction's name; the new builder
 	// returns qualitative bands plus DQ scanner-audience findings.
 	// Implementation lives in code/modules/medical/bodyscanner/.
 	return dq_build_tgui_data()
 
-UI_ACT(/obj/machinery/bodyscanner, "ejectify", ui_act_ejectify)
-UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_ejectify)
+/obj/machinery/bodyscanner/proc/ui_act_ejectify(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	bodyscanner_eject(user)
 
-UI_ACT(/obj/machinery/bodyscanner, "print_p", ui_act_print_p)
-UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
+/obj/machinery/bodyscanner/proc/ui_act_print_p(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	var/atom/target = console ? console : src
@@ -213,7 +213,7 @@ UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
 	P.info += "<br><br>" + span_bold("Notes:") + "<br>"
 	P.name = "Body Scan - [name] ([stationtime2text()])"
 	if(istype(scanned_human))
-		var/datum/money_account/operator_account = medical_trial_account_for_mob(ui?.user)
+		var/datum/money_account/operator_account = medical_trial_account_for_mob(user)
 		var/datum/contract_subject_identity/identity = SScontracts.subject_identity(scanned_human)
 		P.medical_scan_evidence = list(
 			"subject_ref" = identity.id,
@@ -234,7 +234,7 @@ UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
 			"evidence_ids" = list(evidence_id),
 			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 			"detail" = "Authenticated body scan printed",
-		), "medical-scan:[evidence_id]", src, ui?.user, scanned_human)
+		), "medical-scan:[evidence_id]", src, user, scanned_human)
 
 /// The printed report: the body scanner diagnosis (paper renderer) plus the
 /// patient details a printout carries (species, reagents, allergens, implants).

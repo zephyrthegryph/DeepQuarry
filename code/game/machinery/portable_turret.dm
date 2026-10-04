@@ -181,10 +181,14 @@
 /obj/machinery/porta_turret/industrial/projectile_damage(obj/item/projectile/P, def_zone)
 	return receive_projectile(P, def_zone, 1.33)
 
-DAMAGE_REACTION(/obj/machinery/porta_turret/industrial, DAMAGE_GENERIC_ATTACK, PROC_REF(industrial_turret_blow))
-/// The industrial casing takes a fifth off animal blows.
-/obj/machinery/porta_turret/industrial/proc/industrial_turret_blow(datum/damage_packet/packet)
-	packet.scale(0.8)
+CAPABILITIES(/obj/machinery/porta_turret/industrial)
+	extend(/datum/act/hit/melee, instead(then(PROC_REF(industrial_turret_blow))))
+
+/// The industrial casing takes a fifth off animal blows (a generic attack, not a weapon).
+/obj/machinery/porta_turret/industrial/proc/industrial_turret_blow(datum/act/hit/melee/A)
+	if(A.packet.entry == DAMAGE_ENTRY_GENERIC)
+		A.packet.scale(0.8)
+	return HOOK_DECLINE
 
 /obj/machinery/porta_turret/industrial/teleport_defense
 	name = "defense turret"
@@ -273,10 +277,9 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 				return TURRET_PRIORITY_TARGET
 		return TURRET_NOT_TARGET
 
-UI_DATA_REPLACE(/obj/machinery/porta_turret/lasertag, "merge:ui_data_obj_machinery_porta_turret_lasertag{locked:unknown,on:num,lethal:num,lethal_is_configurable:num}")
-
-/// The computed part of /obj/machinery/porta_turret/lasertag's window data (declared on its UI_DATA row).
-/obj/machinery/porta_turret/lasertag/proc/ui_data_obj_machinery_porta_turret_lasertag(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// A lasertag turret's window shows only the settings it has (the parent's list of targets does not apply to it).
+/obj/machinery/porta_turret/lasertag/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list(
 		"locked" = isLocked(user), // does the current user have access?
 		"on" = enabled, // is turret turned on?
@@ -367,27 +370,30 @@ APPEARANCE_TEMPLATE(/obj/machinery/porta_turret, "{appearance_prefix}{turret_typ
 			lethal_shot_sound = SFX_WEAPONS_ELUGER
 			shot_sound = SFX_WEAPONS_TASER
 
-/obj/machinery/porta_turret/proc/isLocked(mob/user)
+MSG_DEF_SELF(porta_turret/controls_locked, "Controls locked.")
+MSG_DEF_SELF(porta_turret/controlled, "It can only be controlled using its assigned turret controller.")
+MSG_DEF_SELF(porta_turret/firewall, "There seems to be a firewall preventing you from accessing this device.")
+
+/// Why the turret's controls refuse `user` (a message type), or null when they answer: reads only.
+/obj/machinery/porta_turret/proc/lock_refusal(mob/user)
 	if(locked && !issilicon(user))
-		to_chat(user, span_notice("Controls locked."))
-		return TRUE
+		return /datum/msg/porta_turret/controls_locked
 	if(HasController())
-		return TRUE
+		return /datum/msg/porta_turret/controlled
 	if(isrobot(user) || isAI(user))
-		if(ailock)
-			to_chat(user, span_notice("There seems to be a firewall preventing you from accessing this device."))
-			return TRUE
-		else
-			return FALSE
+		return ailock ? /datum/msg/porta_turret/firewall : null // ALLOW(reads): the firewall is read when a button is pressed, never from a cached menu
 	if(isobserver(user))
 		var/mob/observer/dead/D = user
-		if(D.can_admin_interact())
-			return FALSE
-		else
-			return TRUE
-	if(locked)
-		return TRUE
-	return FALSE
+		return D.can_admin_interact() ? null : /datum/msg/porta_turret/controlled
+	return locked ? /datum/msg/porta_turret/controlled : null
+
+/obj/machinery/porta_turret/proc/isLocked(mob/user)
+	var/why = lock_refusal(user)
+	if(why == /datum/msg/porta_turret/controls_locked)
+		to_chat(user, span_notice("Controls locked."))
+	else if(why == /datum/msg/porta_turret/firewall)
+		to_chat(user, span_notice("There seems to be a firewall preventing you from accessing this device."))
+	return !!why
 
 /obj/machinery/porta_turret
 	silicon_use = SILICON_USE_UI
@@ -402,10 +408,39 @@ APPEARANCE_TEMPLATE(/obj/machinery/porta_turret, "{appearance_prefix}{turret_typ
 	..()
 
 /obj/machinery/porta_turret/proc/HasController()
-	var/area/A = get_area(src)
+	var/area/A = loc?.loc // ALLOW(reads): the area a turret stands in is legacy map state, read when a button is pressed, never from a cached menu
 	return A && length(A.turret_controls) > 0
 
-DECLARE_UI(/obj/machinery/porta_turret, "PortableTurret")
+CAPABILITIES(/obj/machinery/porta_turret)
+	interface("PortableTurret")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("lethal", ui_act("lethal"), then(PROC_REF(ui_act_lethal)))
+	op("authweapon", ui_act("authweapon"), then(PROC_REF(ui_act_authweapon)))
+	op("authaccess", ui_act("authaccess"), then(PROC_REF(ui_act_authaccess)))
+	op("authnorecord", ui_act("authnorecord"), then(PROC_REF(ui_act_authnorecord)))
+	op("autharrest", ui_act("autharrest"), then(PROC_REF(ui_act_autharrest)))
+	op("authxeno", ui_act("authxeno"), then(PROC_REF(ui_act_authxeno)))
+	op("authsynth", ui_act("authsynth"), then(PROC_REF(ui_act_authsynth)))
+	op("authall", ui_act("authall"), then(PROC_REF(ui_act_authall)))
+	op("authdown", ui_act("authdown"), then(PROC_REF(ui_act_authdown)))
+	extend(TAG_UI, needs(req(PROC_REF(turret_unlocked), because = PROC_REF(turret_lock_reason))))
+	extend(TAG_UI, then(PROC_REF(settings_changed), early = TRUE))
+	emag(then(PROC_REF(on_emag)))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(turret_emp))))
+
+
+/// The window answers someone who has the turret's access.
+/obj/machinery/porta_turret/proc/turret_unlocked(datum/act/op/A)
+	return isnull(lock_refusal(A.actor))
+
+/// Why the window refuses someone.
+/obj/machinery/porta_turret/proc/turret_lock_reason(datum/act/op/A)
+	return lock_refusal(A.actor) || /datum/msg/porta_turret/controls_locked
+
+/// Every button the lock allows wakes the machine to its changed settings.
+/obj/machinery/porta_turret/proc/settings_changed(datum/act/op/A)
+	changed(src, CHANGE_MACHINE_SETTINGS)
+	return OP_OK
 
 /obj/machinery/porta_turret/ui_prepare(mob/user, datum/tgui/ui)
 	if(HasController())
@@ -416,10 +451,8 @@ DECLARE_UI(/obj/machinery/porta_turret, "PortableTurret")
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/porta_turret, "merge:ui_data_obj_machinery_porta_turret{locked:unknown,on:num,targetting_is_configurable:unknown,lethal:num,lethal_is_configurable:num,check_weapons:unknown,neutralize_noaccess:unknown,neutralize_norecord:num,neutralize_criminals:num,neutralize_all:unknown,neutralize_nonsynth:unknown,neutralize_unidentified:unknown,neutralize_down:unknown}")
-
-/// The computed part of /obj/machinery/porta_turret's window data (declared on its UI_DATA row).
-/obj/machinery/porta_turret/proc/ui_data_obj_machinery_porta_turret(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/porta_turret/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list(
 		"locked" = isLocked(user), // does the current user have access?
 		"on" = enabled,
@@ -437,76 +470,59 @@ UI_DATA_REPLACE(/obj/machinery/porta_turret, "merge:ui_data_obj_machinery_porta_
 	)
 	return data
 
-/obj/machinery/porta_turret/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(isLocked(ui.user))
-		return FALSE
-	changed(src, CHANGE_MACHINE_SETTINGS)
-	return TRUE
 
-UI_ACT(/obj/machinery/porta_turret, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_power)
+/obj/machinery/porta_turret/proc/ui_act_power(datum/act/op/A)
 	. = TRUE
 	enabled = !enabled
 
-UI_ACT(/obj/machinery/porta_turret, "lethal", ui_act_lethal)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_lethal)
+/obj/machinery/porta_turret/proc/ui_act_lethal(datum/act/op/A)
 	. = TRUE
 	if(lethal_is_configurable)
 		lethal = !lethal
 
-UI_ACT(/obj/machinery/porta_turret, "authweapon", ui_act_authweapon)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authweapon)
+/obj/machinery/porta_turret/proc/ui_act_authweapon(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_weapons = !check_weapons
 
-UI_ACT(/obj/machinery/porta_turret, "authaccess", ui_act_authaccess)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authaccess)
+/obj/machinery/porta_turret/proc/ui_act_authaccess(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_access = !check_access
 
-UI_ACT(/obj/machinery/porta_turret, "authnorecord", ui_act_authnorecord)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authnorecord)
+/obj/machinery/porta_turret/proc/ui_act_authnorecord(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_records = !check_records
 
-UI_ACT(/obj/machinery/porta_turret, "autharrest", ui_act_autharrest)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_autharrest)
+/obj/machinery/porta_turret/proc/ui_act_autharrest(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_arrest = !check_arrest
 
-UI_ACT(/obj/machinery/porta_turret, "authxeno", ui_act_authxeno)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authxeno)
+/obj/machinery/porta_turret/proc/ui_act_authxeno(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_anomalies = !check_anomalies
 
-UI_ACT(/obj/machinery/porta_turret, "authsynth", ui_act_authsynth)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authsynth)
+/obj/machinery/porta_turret/proc/ui_act_authsynth(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_synth = !check_synth
 
-UI_ACT(/obj/machinery/porta_turret, "authall", ui_act_authall)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authall)
+/obj/machinery/porta_turret/proc/ui_act_authall(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_all = !check_all
 
-UI_ACT(/obj/machinery/porta_turret, "authdown", ui_act_authdown)
-UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authdown)
+/obj/machinery/porta_turret/proc/ui_act_authdown(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
@@ -642,18 +658,17 @@ UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authdown)
 		visible_message(span_infoplain(span_bold("\The [L]") + " bonks \the [src]'s casing!"))
 	return ..()
 
-DECLARE_EMAG(/obj/machinery/porta_turret, PROC_REF(on_emag), null, null)
-/obj/machinery/porta_turret/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/porta_turret/proc/on_emag(datum/act/op/A)
 	//Emagging the turret makes it go bonkers and stun everyone. It also makes
 	//the turret shoot much, much faster.
-	to_chat(user, span_warning("You short out [src]'s threat assessment circuits."))
+	to_chat(A.actor, span_warning("You short out [src]'s threat assessment circuits."))
 	visible_message(span_info("[src] hums oddly..."))
 	set_emagged(TRUE)
 	controllock = TRUE
 	enabled = FALSE //turns off the turret temporarily
 	// 6 seconds for the traitor to gtfo of the area before the turret decides to ruin his shit.
 	after(src, 6 SECONDS, PROC_REF(emag_reenable)) // Turns it back on. The cover popUp() popDown() are automatically called in process(), no need to define it here
-	return 1
+	return OP_OK
 
 // While the cover is closed the turret is heavily armored: incoming damage is
 // cut to an eighth, and anything that small is shrugged off entirely.
@@ -684,9 +699,8 @@ DECLARE_EMAG(/obj/machinery/porta_turret, PROC_REF(on_emag), null, null)
 	..()
 	attempt_retaliate(damage)
 
-DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
-/// An EMP on an active turret disables it for a while and scrambles its settings.
-/obj/machinery/porta_turret/proc/turret_emp(datum/damage_packet/packet)
+/// An EMP on an active turret disables it for a while and scrambles its settings (before the hit lands; the hit goes on).
+/obj/machinery/porta_turret/proc/turret_emp(datum/act/hit/emp/A)
 	if(enabled)
 		//if the turret is on, the EMP no matter how severe disables the turret for a while
 		//and scrambles its settings, with a slight chance of having an emag effect
@@ -695,18 +709,19 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 		check_weapons = prob(50)
 		check_access = prob(20)	// check_access is a pretty big deal, so it's least likely to get turned on
 		check_anomalies = prob(50)
-		if(prob(20 * (1/packet.severity))) //sev 1  = 20% chance sev 2 = 10% sev 3 = ~6 sev 4 = 5%
+		if(prob(20 * (1/A.packet.severity))) //sev 1  = 20% chance sev 2 = 10% sev 3 = ~6 sev 4 = 5%
 			set_emagged(TRUE)
 
 		enabled=0
 		after(src, rand(60, 600), PROC_REF(emp_reenable))
+	return HOOK_DECLINE
 
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
 		enabled = TRUE
 	changed(src, CHANGE_MACHINE_SETTINGS)
 
-/obj/machinery/porta_turret/alien/turret_emp(datum/damage_packet/packet)
+/obj/machinery/porta_turret/alien/turret_emp(datum/act/hit/emp/A)
 	. = ..()
 	if(prob(75)) // Superior alien technology, I guess.
 		return
@@ -1174,11 +1189,13 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 
 /obj/machinery/porta_turret_construct/proc/interaction_rename(mob/user, obj/item/I, datum/interaction/interaction)
 	//you can rename turrets like bots!
-	om_ask(user, /datum/om/prompt/text, PROC_REF(turret_named), message = "Enter new turret name", title = name, default = finish_name, max_length = MAX_NAME_LEN, encode = FALSE, requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/text, PROC_REF(turret_named), answerer = user, title = name, question = "Enter new turret name", default = finish_name, max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/machinery/porta_turret_construct/proc/turret_named(datum/om/prompt/text/ask)
-	var/t = ask.text
+/obj/machinery/porta_turret_construct/proc/turret_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/t = A.answer.answer_value
 	t = sanitizeSafe(t, MAX_NAME_LEN)
 	if(!t)
 		return

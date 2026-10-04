@@ -34,7 +34,7 @@ DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
 	return data
 
 /obj/machinery/doppler_array/proc/sense_explosion(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/world_explosion/event = A
 	var/turf/epicenter = event.epicenter
 	var/devastation_range = event.devastation_range

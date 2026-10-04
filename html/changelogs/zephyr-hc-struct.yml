@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "Converted structure hit reactions, emags, windows (janitorial cart, safe, tank dispenser, underwear dresser, canvas) and in-hand uses, and the questions structures ask (ghost pods, prisms, grave markers, morgues, signs, bonfires and more) to the final op, hook and request forms."
+  - refactor: "Converted structure and machine hit reactions, emags, windows and questions (janitorial cart, safe, tank dispenser, canvas, ghost pods, prisms, canisters, pumps, turrets, cryo cell, requests console, suit cycler, floor layer and more) to the final op, hook and request forms."

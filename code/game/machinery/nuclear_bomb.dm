@@ -220,12 +220,34 @@ GLOBAL_VAR(bomb_set)
 		extended = 1
 	return TRUE
 
-DECLARE_UI(/obj/machinery/nuclearbomb, "NuclearBomb", UI_TITLE("Nuclear Fission Explosive"))
+CAPABILITIES(/obj/machinery/nuclearbomb)
+	interface("NuclearBomb", title = "Nuclear Fission Explosive")
+	op("auth", ui_act("auth"), then(PROC_REF(ui_act_auth)))
+	op("type", ui_act("type", arg("key", schema_text(4096))), then(PROC_REF(ui_act_type)))
+	op("time", ui_act("time", arg("delta", num())), then(PROC_REF(ui_act_time)))
+	op("timer", ui_act("timer"), then(PROC_REF(ui_act_timer)))
+	op("safety", ui_act("safety"), then(PROC_REF(ui_act_safety)))
+	op("anchor", ui_act("anchor"), then(PROC_REF(ui_act_anchor)))
+	op("wire", ui_act("wire", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_wire)))
+	op("pulse", ui_act("pulse", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_pulse)))
+	extend(TAG_UI, needs(req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 
-UI_DATA_REPLACE(/obj/machinery/nuclearbomb, "timeleft:num", "merge:ui_data_obj_machinery_nuclearbomb{wire_view:bool,lighthack:bool,wires:list,auth:bool,yes_code:bool,timing:bool,safety:bool,anchored:bool,status_label:num,code_display:unknown}")
+MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 
-/// The computed part of /obj/machinery/nuclearbomb's window data (declared on its UI_DATA row).
-/obj/machinery/nuclearbomb/proc/ui_data_obj_machinery_nuclearbomb(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The panel answers someone who can move and act and stands next to the bomb (an AI works it from anywhere).
+/obj/machinery/nuclearbomb/proc/bomb_reachable(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the person is read when a button is pressed, never from a cached menu
+		return FALSE
+	return get_dist(src, user) <= 1 || isAI(user)
+
+/// Whoever presses a button leaves their prints on the bomb.
+/obj/machinery/nuclearbomb/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
+
+/obj/machinery/nuclearbomb/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["wire_view"] = !!wire_view
 	data["lighthack"] = !!lighthack
@@ -261,20 +283,12 @@ UI_DATA_REPLACE(/obj/machinery/nuclearbomb, "timeleft:num", "merge:ui_data_obj_m
 	else
 		display = code || ""
 	data["code_display"] = display
+	data["timeleft"] = timeleft
 	return data
 
-/obj/machinery/nuclearbomb/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!user.canmove || user.stat || user.restrained())
-		return FALSE
-	if(get_dist(src, user) > 1 && !isAI(user))
-		return FALSE
-	add_fingerprint(user)
-	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "auth", ui_act_auth)
-UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_auth)
+/obj/machinery/nuclearbomb/proc/ui_act_auth(datum/act/op/A)
+	var/mob/user = A.actor
 	if(auth())
 		auth().forceMove(src.loc)
 		yes_code = 0
@@ -285,11 +299,10 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_auth)
 			insert_auth_disk(user, I)
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "type", ui_act_type, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_type)
+/obj/machinery/nuclearbomb/proc/ui_act_type(datum/act/op/A, raw_key)
 	if(!auth())
 		return TRUE
-	var/key = params["key"]
+	var/key = raw_key
 	if(key == "E")
 		if(code == r_code)
 			yes_code = 1
@@ -305,17 +318,16 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_type)
 			code = "ERROR"
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "time", ui_act_time, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_time)
+/obj/machinery/nuclearbomb/proc/ui_act_time(datum/act/op/A, raw_delta)
 	if(!auth() || !yes_code)
 		return TRUE
-	var/delta = params["delta"]
+	var/delta = raw_delta
 	timeleft += delta
 	timeleft = min(max(round(timeleft), 60), 600)
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "timer", ui_act_timer)
-UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_timer)
+/obj/machinery/nuclearbomb/proc/ui_act_timer(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!auth() || !yes_code || timing == -1.0)
 		return TRUE
 	if(safety)
@@ -338,8 +350,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_timer)
 			icon_state = "nuclearbomb1"
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "safety", ui_act_safety)
-UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_safety)
+/obj/machinery/nuclearbomb/proc/ui_act_safety(datum/act/op/A)
 	if(!auth() || !yes_code)
 		return TRUE
 	safety = !safety
@@ -349,8 +360,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_safety)
 		set_security_level("red")
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "anchor", ui_act_anchor)
-UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_anchor)
+/obj/machinery/nuclearbomb/proc/ui_act_anchor(datum/act/op/A)
 	if(!auth() || !yes_code)
 		return TRUE
 	if(removal_stage == 5)
@@ -364,9 +374,9 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_anchor)
 		visible_message(span_warning("The anchoring bolts slide back into the depths of [src]."))
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "wire", ui_act_wire, UI_ARG_TEXT("wire"))
-UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_wire)
-	var/wire = params["wire"]
+/obj/machinery/nuclearbomb/proc/ui_act_wire(datum/act/op/A, raw_wire)
+	var/mob/user = A.actor
+	var/wire = raw_wire
 	if(!(wire in wires_list))
 		return TRUE
 	var/obj/item/I = user.get_active_hand()
@@ -386,9 +396,9 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_wire)
 		lighthack = !lighthack
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "pulse", ui_act_pulse, UI_ARG_TEXT("wire"))
-UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
-	var/wire = params["wire"]
+/obj/machinery/nuclearbomb/proc/ui_act_pulse(datum/act/op/A, raw_wire)
+	var/mob/user = A.actor
+	var/wire = raw_wire
 	if(!(wire in wires_list))
 		return TRUE
 	var/obj/item/hand_item = user.get_active_hand()
