@@ -2333,6 +2333,13 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/crystal_ghost_invite) at code/game/objects/items/weapons/capture_crystal.dm:205
+/datum/prompt/choice/crystal_ghost_invite/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/capture_crystal.dm", 205, /datum/prompt/choice/crystal_ghost_invite)
+	into += entry_line(206)
+	into += list(global.ref_one(nameof(bound), /mob/living/simple_mob))
+
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:121
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
 	..(into)
