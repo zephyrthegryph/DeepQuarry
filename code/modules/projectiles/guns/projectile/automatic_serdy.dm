@@ -702,7 +702,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	load_method = SINGLE_CASING | SPEEDLOADER
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY | LOCK_MANUAL_LOCK
 	misc_loading_flags = INTERNAL_MAG_SEPARATE
-	var/semiauto_mode = TRUE
 	w_class = ITEMSIZE_HUGE
 	one_handed_penalty = 50
 
