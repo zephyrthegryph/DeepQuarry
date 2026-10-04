@@ -383,27 +383,27 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 /// ACTION(flush_disposal) at code/contracts/acts/world_actions.dm:55
 /datum/act/flush_disposal
 	parent_type = /datum/act/action
-	var/list/items
+	var/items
 	var/datum/gas_mixture/gas
 /datum/notice/disposal_flushed
-	var/list/items
+	var/items
 	var/datum/gas_mixture/gas
 
 /datum/act/flush_disposal/make_notice()
 	RETURN_TYPE(/datum/notice/disposal_flushed)
 	var/datum/notice/disposal_flushed/N = notice_take(/datum/notice/disposal_flushed)
-	N.items = items // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	N.items = items
 	N.gas = gas // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return N
 
-/proc/act_flush_disposal(datum/holder, list/items, datum/gas_mixture/gas)
+/proc/act_flush_disposal(datum/holder, items, datum/gas_mixture/gas)
 	RETURN_TYPE(/datum/act/flush_disposal)
 	if(!act_wanted(holder, /datum/act/flush_disposal))
 		return ACT_PASS
 	var/datum/act/flush_disposal/A = act_begin(/datum/act/flush_disposal, holder)
 	if(!A)
 		return null
-	A.items = items // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	A.items = items
 	A.gas = gas // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
