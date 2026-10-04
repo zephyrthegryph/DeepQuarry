@@ -22,6 +22,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/mmi)
+	ref_one(nameof(mecha)) // the mech we are installed in
 	owns_one(nameof(body_backup), /mob/living)
 
 /obj/item/mmi/Initialize(mapload)
@@ -400,7 +401,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/mmi, "radio", /obj/item/radio/headset/mmi_radio)
 /obj/item/mmi/ownership()
 	. = ..()
 	. += owns(nameof(brainobj), policy = OWN_CONTAINED)
-
-/obj/item/mmi/relations()
-	. = ..()
-	. += rel_one(nameof(mecha)) // the mech we are installed in

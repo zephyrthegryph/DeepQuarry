@@ -119,9 +119,8 @@
 	emote_see = list("sniffs","looks around", "rubs its hands")
 	emote_hear = list("chitters", "clicks")
 
-/mob/living/simple_mob/animal/sif/sakimm/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/sif/sakimm/appearance_overlays()

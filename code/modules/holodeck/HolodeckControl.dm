@@ -186,10 +186,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 
 //This could all be done better, but it works for now.
 // the holodeck shuts down.
-/obj/machinery/computer/HolodeckControl/relations()
-	. = ..()
-	. += rel_many(nameof(holographic_objs))
-	. += rel_many(nameof(holographic_mobs))
+CAPABILITIES(/obj/machinery/computer/HolodeckControl)
+	ref_many(nameof(holographic_objs))
+	ref_many(nameof(holographic_mobs))
 
 /obj/machinery/computer/HolodeckControl/on_destroy(force)
 	emergencyShutdown()

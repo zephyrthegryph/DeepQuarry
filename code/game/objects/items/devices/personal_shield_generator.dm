@@ -576,9 +576,8 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_se
 	return linked_generator
 
 // The generator gun runs off the generator's cell: a view, not an owned cell.
-/obj/item/gun/energy/gun/generator/relations()
-	. = ..()
-	. += rel_one(nameof(power_supply))
+CAPABILITIES(/obj/item/gun/energy/gun/generator)
+	ref_one(nameof(power_supply))
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \

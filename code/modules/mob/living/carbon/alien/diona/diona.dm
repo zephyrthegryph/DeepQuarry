@@ -75,6 +75,5 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	if(prob(1))
 		D.emote(pick("scratch","jump","chirp","roll"))
 
-/mob/living/carbon/alien/diona/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/carbon/alien/diona)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)

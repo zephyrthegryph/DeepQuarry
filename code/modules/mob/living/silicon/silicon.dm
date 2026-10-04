@@ -384,10 +384,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	..()
 	src.category = category
 
-/datum/silicon_alarm_queue/relations()
-	. = ..()
-	. += rel_many(nameof(raised))
-	. += rel_many(nameof(cleared))
+CAPABILITIES(/datum/silicon_alarm_queue)
+	ref_many(nameof(raised))
+	ref_many(nameof(cleared))
 
 /mob/living/silicon/proc/raised_alarm(datum/alarm/A)
 	to_chat(src, span_filter_warning("[A.alarm_name()]!"))

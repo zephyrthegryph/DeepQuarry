@@ -110,9 +110,8 @@ DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/
 DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/hide)
 DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
 
-/mob/living/simple_mob/vore/alienanimals/catslug/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \

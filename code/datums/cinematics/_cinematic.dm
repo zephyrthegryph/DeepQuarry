@@ -50,6 +50,8 @@
 	var/stop_ooc = TRUE
 
 CAPABILITIES(/datum/cinematic)
+	ref_many(nameof(watching))
+	ref_many(nameof(locked))
 	owns_one(nameof(screen), /atom/movable/screen/cinematic)
 	owns_one(nameof(special_callback), /datum/callback)
 
@@ -183,10 +185,6 @@ CAPABILITIES(/datum/cinematic)
 
 	rel_remove(src, nameof(watching), no_longer_watching)
 
-/datum/cinematic/relations()
-	. = ..()
-	. += rel_many(nameof(watching))
-	. += rel_many(nameof(locked))
 
 #undef CINEMATIC_SOURCE
 

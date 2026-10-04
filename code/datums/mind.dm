@@ -68,6 +68,7 @@
 	var/datum/religion/my_religion
 
 CAPABILITIES(/datum/mind)
+	ref_many(nameof(shared_objectives))
 	owns_one(nameof(antag_holder), /datum/antag_holder)
 	owns_one(nameof(identity), /datum/character_identity)
 	owns_one(nameof(my_religion), /datum/religion)
@@ -531,7 +532,3 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 		. += objectives
 	if(shared_objectives)
 		. += shared_objectives
-
-/datum/mind/relations()
-	. = ..()
-	. += rel_many(nameof(shared_objectives))

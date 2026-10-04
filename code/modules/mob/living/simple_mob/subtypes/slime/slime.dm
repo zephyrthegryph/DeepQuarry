@@ -102,9 +102,8 @@ DECLARE_VERB(/mob/living/simple_mob/slime, /mob/living/proc/ventcrawl)
 	update_icon()
 	return ..()
 
-/mob/living/simple_mob/slime/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/slime)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
 // Slime unique items
 TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \

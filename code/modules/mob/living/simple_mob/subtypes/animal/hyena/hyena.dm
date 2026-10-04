@@ -149,9 +149,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_see = list("sniffs", "looks around", "grooms itself", "rolls around")
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
-/mob/living/simple_mob/animal/hyena/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/hyena, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/hyena/appearance_overlays()

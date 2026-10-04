@@ -155,6 +155,5 @@
 	L["visible_neutrals"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
 	return L
 
-/datum/world_model/relations()
-	. = ..()
-	. += rel_many(nameof(hazard_atoms))
+CAPABILITIES(/datum/world_model)
+	ref_many(nameof(hazard_atoms))

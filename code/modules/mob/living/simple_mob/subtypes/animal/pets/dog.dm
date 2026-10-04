@@ -253,7 +253,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 //You monster.
 TYPE_TABLE(/datum/decl/mob_organ_names/corgi, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "heart"))
 
-/mob/living/simple_mob/animal/passive/dog/ownership()
-	. = ..()
-	. += owns(nameof(inventory_head), policy = OWN_SPILL)
-	. += owns(nameof(inventory_back), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
+	owns_one(nameof(inventory_head), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(inventory_back), on_destroy = ON_DESTROY_SPILL)

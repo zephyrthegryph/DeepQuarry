@@ -15,6 +15,8 @@
 	var/datum/material_container/materials
 
 CAPABILITIES(/obj/machinery/ore_silo)
+	ref_many(nameof(holds))
+	ref_many(nameof(ore_connected_machines))
 	owns_one(nameof(materials), /datum/material_container)
 
 /obj/machinery/ore_silo/Initialize(mapload)
@@ -270,9 +272,3 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove_mat)
 		separator = ", "
 		msg += "[amount < 0 ? "-" : "+"][val] [M.name]"
 	return msg.Join()
-
-
-/obj/machinery/ore_silo/relations()
-	. = ..()
-	. += rel_many(nameof(holds))
-	. += rel_many(nameof(ore_connected_machines))
