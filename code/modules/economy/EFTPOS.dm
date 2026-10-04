@@ -247,6 +247,9 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_reset)
 	return TRUE
 
 /obj/item/eftpos/proc/scan_card(obj/item/card/I, obj/item/ID_container, mob/user)
+	return scan_card_stage(I, ID_container, user)
+
+/obj/item/eftpos/proc/scan_card_stage(obj/item/card/I, obj/item/ID_container, mob/user, pin, pin_ready = FALSE)
 	if (istype(I, /obj/item/card/id))
 		var/obj/item/card/id/C = I
 		if(I==ID_container || ID_container == null)
@@ -266,7 +269,10 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_reset)
 					var/attempt_pin = ""
 					var/datum/money_account/D = get_account(C.associated_account_number)
 					if(D.security_level)
-						var/_answer_k244 = rerun_ask(user, "k244", PROC_REF(scan_card), args, /datum/om/prompt/number, message = "Enter pin code", title = "EFTPOS transaction")
+						var/_answer_k244 = pin
+						if(!pin_ready)
+							open_request(src, /datum/prompt/number/eftpos_pin, PROC_REF(pin_entered), answerer = user, payer_card = I, card_holder = ID_container, operator = user)
+							return
 						if(isnull(_answer_k244))
 							return
 						attempt_pin = _answer_k244
@@ -316,3 +322,55 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_reset)
 /// the linked_account this refers to (a relation view: null once it is deleted).
 /obj/item/eftpos/proc/linked_account() as /datum/money_account
 	return linked_account
+
+/// The original scan arguments stay borrowed while the payer enters the PIN.
+/datum/prompt/number/eftpos_pin
+	title = "EFTPOS transaction"
+	question = "Enter pin code"
+	timeout = 0
+	var/obj/item/card/payer_card
+	var/obj/item/card_holder
+	var/mob/operator
+	var/payer_card_expected = FALSE
+	var/card_holder_expected = FALSE
+	var/operator_expected = FALSE
+
+CAPABILITIES(/datum/prompt/number/eftpos_pin)
+	ref_one(nameof(payer_card), /obj/item/card)
+	ref_one(nameof(card_holder), /obj/item)
+	ref_one(nameof(operator), /mob)
+
+/datum/prompt/number/eftpos_pin/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/card/captured_card = payer_card
+	var/obj/item/captured_holder = card_holder
+	var/mob/captured_operator = operator
+	payer_card_expected = !isnull(captured_card)
+	card_holder_expected = !isnull(captured_holder)
+	operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(payer_card))
+	rel_clear(src, nameof(card_holder))
+	rel_clear(src, nameof(operator))
+	if(captured_card && !QDELETED(captured_card))
+		rel_set(src, nameof(payer_card), captured_card)
+	if(captured_holder && !QDELETED(captured_holder))
+		rel_set(src, nameof(card_holder), captured_holder)
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(operator), captured_operator)
+
+/datum/prompt/number/eftpos_pin/recheck_extra()
+	if((payer_card_expected && QDELETED(payer_card)) || (card_holder_expected && QDELETED(card_holder)) || (operator_expected && QDELETED(operator)))
+		return "gone"
+
+/obj/item/eftpos/proc/pin_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(pin_apply), A)
+	if(!result.ok)
+		stack_trace("EFTPOS PIN replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/item/eftpos/proc/pin_apply(datum/act/request/A)
+	var/datum/prompt/number/eftpos_pin/ask = A.answer
+	return scan_card_stage(ask.payer_card, ask.card_holder, ask.operator, ask.answer_value, TRUE)
