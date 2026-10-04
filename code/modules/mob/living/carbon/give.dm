@@ -28,22 +28,43 @@
 	act_message(src, target, MSG_SELF(span_notice("You hold out %I% to %T%, waiting for them to accept it.")), MSG_OTHERS(span_notice("%U% holds out %I% to %T%.")), item = I)
 
 	// The offer is answered by the target; the answer runs on us.
-	om_ask(target, /datum/om/prompt/confirm/give_item, PROC_REF(give_answered), asker = src, subject = I)
+	open_request(src, /datum/prompt/choice/give_item, PROC_REF(give_request_finished), answerer = target, asker = src, subject = I)
 
 /// An item offer (the subject), answered by the target. Re-checked on the answer: both able,
 /// still adjacent, and the item still in the giver's hands.
-/datum/om/prompt/confirm/give_item
+/datum/prompt/choice/give_item
 	title = "Item Offer"
-	ask_flags = ASK_CAPABLE | ASK_ADJACENT | ASK_HELD
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
 
-/datum/om/prompt/confirm/give_item/prepare()
-	message = "[asker] wants to give you \a [subject]. Will you accept it?"
-	return TRUE
+/datum/prompt/choice/give_item/prepare(datum/act/A)
+	..()
+	question = "[asker] wants to give you \a [subject]. Will you accept it?"
 
-/datum/om/prompt/confirm/give_item/declined()
-	answerer.visible_message(span_notice("\The [asker] tried to hand \the [subject] to \the [answerer], but \the [answerer] didn't want it."))
+/datum/prompt/choice/give_item/proc/captures_available()
+	return !QDELETED(asker) && !QDELETED(answerer) && !QDELETED(subject)
 
-/datum/om/prompt/confirm/give_item/refused(reason)
+/datum/prompt/choice/give_item/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_available())
+		return "The original item offer is no longer available."
+	// Old No/decline was delivered before typed_recheck, even after movement or incapacity.
+	if(isnull(answer_value) || answer_value == "No")
+		return
+	if(answerer.incapacitated() || asker.incapacitated())
+		return "not able to"
+	if(!answerer.Adjacent(asker))
+		return "too far away"
+	if(asker.get_active_hand() != subject && asker.get_inactive_hand() != subject)
+		return "not holding it"
+
+/datum/prompt/choice/give_item/proc/declined()
+	act_message(answerer, asker, others = span_notice("%T% tried to hand %I% to %U%, but %U% didn't want it."), item = subject)
+
+/datum/prompt/choice/give_item/proc/refused(reason)
 	if(!asker || !answerer || !subject)
 		return
 	if(reason == "too far away")
@@ -53,7 +74,25 @@
 		to_chat(asker, span_warning("You need to keep the item in your hands."))
 		to_chat(answerer, span_warning("\The [asker] seems to have given up on passing \the [subject] to you."))
 
-/mob/living/proc/give_answered(datum/om/prompt/confirm/give_item/ask)
+/mob/living/proc/give_request_finished(datum/act/request/context)
+	var/datum/result/result = safe_call(PROC_REF(resolve_item_offer), context)
+	if(!result.ok)
+		stack_trace("Item offer prompt continuation: [result.error]")
+
+/mob/living/proc/resolve_item_offer(datum/act/request/context)
+	var/datum/prompt/choice/give_item/ask = context.request
+	if(!ask.captures_available())
+		return
+	if(!context.answer)
+		if(!isnull(ask.answer_value))
+			ask.refused(ask.last_error)
+		return
+	if(ask.answer_value == "No")
+		ask.declined()
+		return
+	give_answered(ask)
+
+/mob/living/proc/give_answered(datum/prompt/choice/give_item/ask)
 	var/obj/item/I = ask.subject
 	var/mob/living/carbon/human/target = ask.answerer
 
