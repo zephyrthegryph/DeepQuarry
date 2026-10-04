@@ -96,10 +96,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_RE
 	set name = "Set Sex"
 	set desc = "Set what sprite set you use (male/female)"
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(sex_chosen), title = "Set Sex", message = "Please select a sex:", choices = list(FEMALE, MALE))
+	open_request(src, /datum/prompt/choice, PROC_REF(sex_chosen), answerer = src, title = "Set Sex", question = "Please select a sex:", choices = list(FEMALE, MALE), timeout = 0)
 
-/mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(datum/om/prompt/choice/ask)
-	var/newsex = ask.choice
+/mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newsex = A.answer.answer_value
 	if(newsex == FEMALE)
 		icon_living = "lioness"
 		icon_dead = "lioness-dead"

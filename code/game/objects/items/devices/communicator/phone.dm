@@ -336,10 +336,12 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_request_target_chosen), choices = choices, title = "Recipient Choice", message = "Send a voice request to whom?")
+	open_request(src, /datum/prompt/choice, PROC_REF(voice_request_target_chosen), answerer = src, title = "Recipient Choice", question = "Send a voice request to whom?", choices = choices, timeout = 0)
 
-/mob/observer/dead/proc/voice_request_target_chosen(datum/om/prompt/choice/ask)
-	var/obj/item/communicator/chosen_communicator = ask.choice
+/mob/observer/dead/proc/voice_request_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/item/communicator/chosen_communicator = A.answer.answer_value
 	var/mob/observer/dead/O = src
 	if(O.exonet && chosen_communicator.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "voice")

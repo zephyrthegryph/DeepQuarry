@@ -864,10 +864,12 @@
 	set name = "Select Speech Bubble"
 	set category = VERB_CAT_OOC_CHAT_SETTINGS
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(speech_bubble_chosen), title = "Character Preference", message = "Pick new voice (default for automatic selection)", choices = GLOB.selectable_speech_bubbles)
+	open_request(src, /datum/prompt/choice, PROC_REF(speech_bubble_chosen), answerer = src, title = "Character Preference", question = "Pick new voice (default for automatic selection)", choices = GLOB.selectable_speech_bubbles, timeout = 0)
 
-/mob/proc/speech_bubble_chosen(datum/om/prompt/choice/ask)
-	var/new_speech_bubble = ask.choice
+/mob/proc/speech_bubble_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_speech_bubble = A.answer.answer_value
 	if(new_speech_bubble)
 		custom_speech_bubble = new_speech_bubble
 		if(dna)

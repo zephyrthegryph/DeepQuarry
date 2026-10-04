@@ -251,10 +251,12 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 		return
 
 	var/nagmessage = "Pick a size between [RESIZE_MINIMUM * 100] to [RESIZE_MAXIMUM * 100]%. (Only usable once!)"
-	om_ask(src, /datum/om/prompt/number, PROC_REF(size_picked), title = "Pick a Size", message = nagmessage, default = size_multiplier*100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100)
+	open_request(src, /datum/prompt/number, PROC_REF(size_picked), answerer = src, title = "Pick a Size", question = nagmessage, default = size_multiplier*100, max_value = RESIZE_MAXIMUM * 100, min_value = RESIZE_MINIMUM * 100, timeout = 0)
 
-/mob/living/simple_mob/proc/size_picked(datum/om/prompt/number/ask)
-	var/new_size = ask.number
+/mob/living/simple_mob/proc/size_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_size = A.answer.answer_value
 	if(!picked_size && size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 		picked_size = TRUE

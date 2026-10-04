@@ -88,11 +88,13 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 		testing("rogue_ai set_antag_name called on non-silicon mob [player]!")
 		return
 	// Choose a name, if any.
-	om_ask(player, /datum/om/prompt/text, PROC_REF(rogue_ai_name_chosen), message = "You are a [role_text]. Would you like to change your name to something else?", title = "Name change", max_length = MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text, PROC_REF(rogue_ai_name_chosen), answerer = player, title = "Name change", question = "You are a [role_text]. Would you like to change your name to something else?", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
 
-/datum/antagonist/rogue_ai/proc/rogue_ai_name_chosen(datum/om/prompt/text/ask)
-	var/mob/living/silicon/player = ask.answerer
-	var/newname = ask.text
+/datum/antagonist/rogue_ai/proc/rogue_ai_name_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/player = A.request.answerer
+	var/newname = A.answer.answer_value
 	if (newname)
 		player.SetName(newname)
 	if(player.mind) player.mind.name = player.name

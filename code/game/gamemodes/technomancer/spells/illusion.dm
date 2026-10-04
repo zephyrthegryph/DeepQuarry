@@ -45,23 +45,29 @@ CAPABILITIES(/obj/item/spell/illusion)
 				illusion.ai_brain?.give_destination(T)
 /obj/item/spell/illusion/on_use_cast(mob/user)
 	if(illusion)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(illusion_action_chosen), title = "Illusion", message = "Would you like to have \the [illusion] speak, or do an emote?", choices = list("Speak","Emote","Cancel"), buttons = TRUE)
+		open_request(src, /datum/prompt/choice, PROC_REF(illusion_action_chosen), answerer = user, title = "Illusion", question = "Would you like to have \the [illusion] speak, or do an emote?", choices = list("Speak","Emote","Cancel"), buttons = TRUE, timeout = 0)
 
-/obj/item/spell/illusion/proc/illusion_action_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/obj/item/spell/illusion/proc/illusion_action_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.answer_value)
 		if("Speak")
-			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(illusion_speak), title = "Illusion Speak", message = "What do you want \the [illusion] to say?", encode = FALSE)
+			open_request(src, /datum/prompt/text, PROC_REF(illusion_speak), answerer = A.request.answerer, title = "Illusion Speak", question = "What do you want \the [illusion] to say?", encode = FALSE, timeout = 0)
 		if("Emote")
-			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(illusion_emote), title = "Illusion Emote", message = "What do you want \the [illusion] to do?", encode = FALSE)
+			open_request(src, /datum/prompt/text, PROC_REF(illusion_emote), answerer = A.request.answerer, title = "Illusion Emote", question = "What do you want \the [illusion] to do?", encode = FALSE, timeout = 0)
 
-/obj/item/spell/illusion/proc/illusion_speak(datum/om/prompt/text/ask)
+/obj/item/spell/illusion/proc/illusion_speak(datum/act/request/A)
+	if(!A.answer)
+		return
 	//Sanitize occurs inside say() already.
-	if(ask.text && illusion)
-		illusion.say(ask.text)
+	if(A.answer.answer_value && illusion)
+		illusion.say(A.answer.answer_value)
 
-/obj/item/spell/illusion/proc/illusion_emote(datum/om/prompt/text/ask)
-	if(ask.text && illusion)
-		illusion.emote(ask.text)
+/obj/item/spell/illusion/proc/illusion_emote(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value && illusion)
+		illusion.emote(A.answer.answer_value)
 
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.

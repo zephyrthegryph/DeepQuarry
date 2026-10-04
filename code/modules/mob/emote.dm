@@ -5,8 +5,10 @@
 /mob/proc/audible_emote(act_desc)
 	custom_emote(AUDIBLE_MESSAGE, act_desc)
 
-/mob/proc/emote_dead_entered(datum/om/prompt/text/ask)
-	var/message = sanitize_or_reflect(ask.text, src) // Reflect too long messages, within reason
+/mob/proc/emote_dead_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/message = sanitize_or_reflect(A.answer.answer_value, src) // Reflect too long messages, within reason
 	if(message)
 		emote_dead(message)
 
@@ -27,7 +29,7 @@
 
 
 	if(!message)
-		om_ask(src, /datum/om/prompt/text, PROC_REF(emote_dead_entered), message = "Choose an emote to display.", encode = FALSE)
+		open_request(src, /datum/prompt/text, PROC_REF(emote_dead_entered), answerer = src, question = "Choose an emote to display.", encode = FALSE, timeout = 0)
 		return
 	var/input = message
 

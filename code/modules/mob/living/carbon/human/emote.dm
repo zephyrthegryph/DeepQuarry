@@ -543,11 +543,13 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
 	set category = VERB_CAT_IC_SETTINGS
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(gender_identity_chosen), message = "Please select a gender Identity:", title = "Set Gender Identity", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM))
+	open_request(src, /datum/prompt/choice, PROC_REF(gender_identity_chosen), answerer = src, title = "Set Gender Identity", question = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM), timeout = 0)
 	return 1
 
-/mob/living/carbon/human/proc/gender_identity_chosen(datum/om/prompt/choice/ask)
-	change_gender_identity(ask.choice)
+/mob/living/carbon/human/proc/gender_identity_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	change_gender_identity(A.answer.answer_value)
 
 /mob/living/carbon/human/verb/hide_wings_vr()
 	set name = "Show/Hide wings"

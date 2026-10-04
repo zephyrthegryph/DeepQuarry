@@ -270,11 +270,13 @@
 	set desc = "Changes the amount you grow/shrink people."
 	set category = VERB_CAT_ABILITIES_DEMON
 
-	om_ask(src, /datum/om/prompt/number, PROC_REF(sizespell_chosen), title = "Set Size", message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", default = size_amount * 100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100) //Stolen from sizegun code
+	open_request(src, /datum/prompt/number, PROC_REF(sizespell_chosen), answerer = src, title = "Set Size", question = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", default = size_amount * 100, max_value = RESIZE_MAXIMUM * 100, min_value = RESIZE_MINIMUM * 100, timeout = 0) //Stolen from sizegun code
 
-/mob/living/simple_mob/vore/demon/proc/sizespell_chosen(datum/om/prompt/number/ask)
-	var/mob/user = ask.answerer
-	var/size_select = ask.number
+/mob/living/simple_mob/vore/demon/proc/sizespell_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/size_select = A.answer.answer_value
 	if(!size_select)
 		return
 	size_amount = (size_select/100)

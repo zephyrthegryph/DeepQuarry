@@ -224,12 +224,14 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		announce_ghost_joinleave(ghostize(1))
 	else
 		if(check_rights_for(src.client, R_ADMIN|R_SERVER|R_MOD)) //No need to sanity check for client and holder here as that is part of check_rights
-			om_ask(src, /datum/om/prompt/choice, PROC_REF(ghost_choice_made), message = "You have the ability to Admin-Ghost. The regular Ghost verb will announce your presence to dead chat. Both variants will allow you to return to your body using 'aghost'.\n\nWhat do you wish to do?", choices = list("Admin Ghost", "Ghost", "Stay in body"), title = "Are you sure you want to ghost?", buttons = TRUE)
+			open_request(src, /datum/prompt/choice, PROC_REF(ghost_choice_made), answerer = src, title = "Are you sure you want to ghost?", question = "You have the ability to Admin-Ghost. The regular Ghost verb will announce your presence to dead chat. Both variants will allow you to return to your body using 'aghost'.\n\nWhat do you wish to do?", choices = list("Admin Ghost", "Ghost", "Stay in body"), buttons = TRUE, timeout = 0)
 		else
-			om_ask(src, /datum/om/prompt/choice, PROC_REF(ghost_choice_made), message = "Are you -sure- you want to ghost?\n(You are alive, or otherwise have the potential to become alive. Don't abuse ghost unless you are inside a cryopod or equivalent! You can't change your mind so choose wisely!)", choices = list("Stay in body", "Ghost"), title = "Are you sure you want to ghost?", buttons = TRUE)
+			open_request(src, /datum/prompt/choice, PROC_REF(ghost_choice_made), answerer = src, title = "Are you sure you want to ghost?", question = "Are you -sure- you want to ghost?\n(You are alive, or otherwise have the potential to become alive. Don't abuse ghost unless you are inside a cryopod or equivalent! You can't change your mind so choose wisely!)", choices = list("Stay in body", "Ghost"), buttons = TRUE, timeout = 0)
 
-/mob/living/proc/ghost_choice_made(datum/om/prompt/choice/ask)
-	var/response = ask.choice
+/mob/living/proc/ghost_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/response = A.answer.answer_value
 	if(response == "Admin Ghost")
 		if(!src.client)
 			return
@@ -332,11 +334,13 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, span_filter_notice(span_red(span_bold("You have been banned from using this feature"))))
 		return
 	if(CONFIG_GET(flag/antag_hud_restricted) && !has_enabled_antagHUD && !check_rights_for(client, R_HOLDER))
-		om_ask(src, /datum/om/prompt/confirm, PROC_REF(antag_hud_confirmed), title = "Are you sure you want to turn this feature on?", message = "If you turn this on, you will not be able to take any part in the round.")
+		open_request(src, /datum/prompt/yes_no, PROC_REF(antag_hud_confirmed), answerer = src, title = "Are you sure you want to turn this feature on?", question = "If you turn this on, you will not be able to take any part in the round.", timeout = 0)
 		return
 	toggle_antag_hud_now()
 
-/mob/observer/dead/proc/antag_hud_confirmed(datum/om/prompt/confirm/ask)
+/mob/observer/dead/proc/antag_hud_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
 	can_reenter_corpse = FALSE
 	set_respawn_timer(-1) // Foreeeever
 	toggle_antag_hud_now()
@@ -391,12 +395,14 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(areaname)
 		A = return_sorted_areas()[areaname]
 	else
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(dead_tele_chosen), title = "Ghost Teleport", message = "Select an area:", choices = jumpable_areas())
+		open_request(src, /datum/prompt/choice, PROC_REF(dead_tele_chosen), answerer = src, title = "Ghost Teleport", question = "Select an area:", choices = jumpable_areas(), timeout = 0)
 		return
 	dead_tele_to(A)
 
-/mob/observer/dead/proc/dead_tele_chosen(datum/om/prompt/choice/ask)
-	dead_tele_to(return_sorted_areas()[ask.choice])
+/mob/observer/dead/proc/dead_tele_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	dead_tele_to(return_sorted_areas()[A.answer.answer_value])
 
 /mob/observer/dead/proc/dead_tele_to(area/A)
 	if(!A)

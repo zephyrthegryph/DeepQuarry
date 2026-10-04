@@ -54,7 +54,7 @@
 /mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/carbon/human/B = ask.choice
 	if(B == src) //We are using this to minimize the amount of pop-ups or buttons.
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(bloodsuck_mode_chosen), message = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and stance modes. Choosing stance prints controls to chat.", title = "Configure Bloodsuck", choices = list("always loud", "pop-up", "stance", "always subtle"), default = "always loud")
+		open_request(src, /datum/prompt/choice, PROC_REF(bloodsuck_mode_chosen), answerer = src, title = "Configure Bloodsuck", question = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and stance modes. Choosing stance prints controls to chat.", choices = list("always loud", "pop-up", "stance", "always subtle"), default = "always loud", timeout = 0)
 		return
 	if(!bloodsuck_can(B))
 		return
@@ -84,8 +84,10 @@
 				bleed = TRUE
 	bloodsuck_begin(B, noise, bleed)
 
-/mob/living/carbon/human/proc/bloodsuck_mode_chosen(datum/om/prompt/choice/ask)
-	var/mode = ask.choice
+/mob/living/carbon/human/proc/bloodsuck_mode_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mode = A.answer.answer_value
 	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.bloodsucker_controlmode = mode
 	if(mode == "stance") //We are printing to chat for better readability
@@ -869,14 +871,16 @@
 		to_chat(src, span_warning("It doesn't work that way."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(long_vore_chosen), message = "Do you wish to change the color of your appendage, use it, or change its functionality?", title = "Selection List", choices = list("Use it", "Color", "Functionality"), buttons = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(long_vore_chosen), answerer = src, title = "Selection List", question = "Do you wish to change the color of your appendage, use it, or change its functionality?", choices = list("Use it", "Color", "Functionality"), buttons = TRUE, timeout = 0)
 
-/mob/living/proc/long_vore_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/mob/living/proc/long_vore_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.answer_value)
 		if("Color") //Easy way to set color so we don't bloat up the menu with even more buttons.
 			om_ask(src, /datum/om/prompt/color, PROC_REF(appendage_color_chosen), message = "Choose a color to set your appendage to!", default = appendage_color)
 		if("Functionality")
-			om_ask(src, /datum/om/prompt/choice, PROC_REF(appendage_setting_chosen), message = "Choose if you want to be pulled to the target or pull them to you!", title = "Functionality Setting", choices = list("Pull target to self", "Pull self to target"), buttons = TRUE)
+			open_request(src, /datum/prompt/choice, PROC_REF(appendage_setting_chosen), answerer = src, title = "Functionality Setting", question = "Choose if you want to be pulled to the target or pull them to you!", choices = list("Pull target to self", "Pull self to target"), buttons = TRUE, timeout = 0)
 		if("Use it")
 			var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT.
 			for(var/mob/living/L in range(5, src))
@@ -892,8 +896,10 @@
 /mob/living/proc/appendage_color_chosen(datum/om/prompt/color/ask)
 	appendage_color = ask.picked_color
 
-/mob/living/proc/appendage_setting_chosen(datum/om/prompt/choice/ask)
-	appendage_alt_setting = (ask.choice != "Pull target to self")
+/mob/living/proc/appendage_setting_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	appendage_alt_setting = (A.answer.answer_value != "Pull target to self")
 
 /mob/living/proc/long_vore_target_chosen(datum/om/prompt/choice/victim/ask)
 	var/mob/living/target = ask.choice
@@ -1157,10 +1163,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	choices += "Change verb"
 	choices += "Chemical Refresher"
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(injection_chosen), message = "Do you wish to inject somebody, or adjust settings?", title = "Selection List", choices = choices, buttons = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(injection_chosen), answerer = src, title = "Selection List", question = "Do you wish to inject somebody, or adjust settings?", choices = choices, buttons = TRUE, timeout = 0)
 
-/mob/living/proc/injection_reagent_chosen(datum/om/prompt/choice/ask)
-	var/reagent_choice = ask.choice
+/mob/living/proc/injection_reagent_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/reagent_choice = A.answer.answer_value
 	if(reagent_choice in trait_injection_reagents)
 		trait_injection_selected = reagent_choice
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
@@ -1173,10 +1181,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	trait_injection_verb = ask.text
 	to_chat(src, span_notice("You will [trait_injection_verb] your targets."))
 
-/mob/living/proc/injection_chosen(datum/om/prompt/choice/ask)
-	var/choice = ask.choice
+/mob/living/proc/injection_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.answer_value
 	if(choice == "Change reagent")
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(injection_reagent_chosen), message = "Choose which reagent to inject!", title = "Select reagent", choices = trait_injection_reagents || list())
+		open_request(src, /datum/prompt/choice, PROC_REF(injection_reagent_chosen), answerer = src, title = "Select reagent", question = "Choose which reagent to inject!", choices = trait_injection_reagents || list(), timeout = 0)
 		return
 	if(choice == "Change amount")
 		om_ask(src, /datum/om/prompt/number, PROC_REF(injection_amount_chosen), message = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = trait_injection_amount, max = 5, min = 0, round_entry = FALSE)
@@ -1570,10 +1580,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
-	om_ask(src, /datum/om/prompt/text, PROC_REF(name_change_entered), message = "What would you like your name to become?", title = "Name change", default = name, max_length = MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text, PROC_REF(name_change_entered), answerer = src, title = "Name change", question = "What would you like your name to become?", default = name, max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
 
-/mob/living/proc/name_change_entered(datum/om/prompt/text/ask)
-	var/chosen_name = ask.text
+/mob/living/proc/name_change_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/chosen_name = A.answer.answer_value
 	if(!length(chosen_name) || !COOLDOWN_FINISHED(src, last_special))
 		return
 

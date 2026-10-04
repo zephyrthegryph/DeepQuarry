@@ -408,10 +408,12 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 		return
 
 	if(host)
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(meds_chosen), title = "Chemicals", message = "Select a chemical to produce.", choices = produceable_chemicals)
+		open_request(src, /datum/prompt/choice, PROC_REF(meds_chosen), answerer = src, title = "Chemicals", question = "Select a chemical to produce.", choices = produceable_chemicals, timeout = 0)
 
-/mob/living/simple_mob/animal/sif/leech/proc/meds_chosen(datum/om/prompt/choice/ask)
-	var/chem = ask.choice
+/mob/living/simple_mob/animal/sif/leech/proc/meds_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/chem = A.answer.answer_value
 	if(chemicals > 50 && !docile)
 		inject_meds(chem)
 

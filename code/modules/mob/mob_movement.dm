@@ -394,10 +394,12 @@
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 	set name = "Set Incorporeal Speed"
 
-	om_ask(usr, /datum/om/prompt/number, PROC_REF(incorporeal_speed_entered), title = "Incorporeal movement speed", message = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max = 5, min = 0)
+	open_request(src, /datum/prompt/number, PROC_REF(incorporeal_speed_entered), answerer = usr, title = "Incorporeal movement speed", question = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max_value = 5, min_value = 0, timeout = 0)
 
-/client/proc/incorporeal_speed_entered(datum/om/prompt/number/ask)
-	incorporeal_speed = ask.number * world.tick_lag
+/client/proc/incorporeal_speed_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	incorporeal_speed = A.answer.answer_value * world.tick_lag
 
 ///Process_Incorpmove
 ///Called by client/Move()

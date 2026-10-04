@@ -704,7 +704,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 		if("Crew Member") //A seeable crew member (or a dog)
 			var/list/targets = trackable_mobs()
 			if(targets.len)
-				om_ask(src, /datum/om/prompt/choice, PROC_REF(hologram_crew_chosen), title = "Hologram Choice", message = "Select a crew member:", choices = targets) //The definition of "crew member" is a little loose...
+				open_request(src, /datum/prompt/choice, PROC_REF(hologram_crew_chosen), answerer = src, title = "Hologram Choice", question = "Select a crew member:", choices = targets, timeout = 0) //The definition of "crew member" is a little loose...
 			else
 				tgui_alert_async(src, "No suitable records found. Aborting.")
 
@@ -743,10 +743,12 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 				"male skrell",
 				"female skrell"
 			)
-			om_ask(src, /datum/om/prompt/choice, PROC_REF(hologram_premade_chosen), title = "Hologram Choice", message = "Please select a hologram:", choices = icon_list)
+			open_request(src, /datum/prompt/choice, PROC_REF(hologram_premade_chosen), answerer = src, title = "Hologram Choice", question = "Please select a hologram:", choices = icon_list, timeout = 0)
 
-/mob/living/silicon/ai/proc/hologram_crew_chosen(datum/om/prompt/choice/ask)
-	var/input = ask.choice
+/mob/living/silicon/ai/proc/hologram_crew_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/input = A.answer.answer_value
 	//This is torture, I know. If someone knows a better way...
 	var/list/targets = trackable_mobs()
 	if(!targets[input])
@@ -755,9 +757,11 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	qdel(holo_icon)
 	holo_icon = new_holo
 
-/mob/living/silicon/ai/proc/hologram_premade_chosen(datum/om/prompt/choice/ask)
+/mob/living/silicon/ai/proc/hologram_premade_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
 	qdel(holo_icon)
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("default")
 			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 		if("floating face")

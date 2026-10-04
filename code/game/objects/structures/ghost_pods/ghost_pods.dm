@@ -225,9 +225,11 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 
 /// Offers the new mob's player their saved vore bellies.
 /mob/living/proc/offer_load_bellies()
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(load_bellies_answered), title = "Load Bellies", message = "Do you want to load the vore bellies from your current slot?")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(load_bellies_answered), answerer = src, title = "Load Bellies", question = "Do you want to load the vore bellies from your current slot?", timeout = 0)
 
-/mob/living/proc/load_bellies_answered(datum/om/prompt/confirm/ask)
+/mob/living/proc/load_bellies_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
 		rel_set(src, nameof(vore_selected), vore_organs[1])

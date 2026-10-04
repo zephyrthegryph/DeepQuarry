@@ -927,10 +927,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/text, PROC_REF(import_style_entered), title = "Style loading", message = "Paste the style string you exported with Export Style.")
+	open_request(src, /datum/prompt/text, PROC_REF(import_style_entered), answerer = src, title = "Style loading", question = "Paste the style string you exported with Export Style.", timeout = 0)
 
-/mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(datum/om/prompt/text/ask)
-	var/input_style = ask.text
+/mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/input_style = A.answer.answer_value
 	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")
