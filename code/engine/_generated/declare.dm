@@ -2326,6 +2326,13 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:197
+/datum/prompt/choice/admin_sendmob/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/adminjump.dm", 197, /datum/prompt/choice/admin_sendmob)
+	into += entry_line(198)
+	into += list(global.ref_one(nameof(area), /area))
+
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:121
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
 	..(into)
@@ -2369,6 +2376,13 @@
 	into += entry_block("code/game/objects/structures/artstuff.dm", 351, /datum/prompt/color/paint_palette)
 	into += entry_line(352)
 	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
+
+/// CAPABILITIES(/datum/prompt/text/blueprint_rename_area) at code/game/objects/items/blueprints.dm:356
+/datum/prompt/text/blueprint_rename_area/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/blueprints.dm", 356, /datum/prompt/text/blueprint_rename_area)
+	into += entry_line(357)
+	into += list(global.ref_one(nameof(area_to_rename), /area))
 
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
@@ -8326,11 +8340,11 @@
 	into += entry_line(37)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(radio_jammer_step)), when = nameof(on)))
 
-/// CAPABILITIES(/obj/item/rcd) at code/game/objects/items/weapons/RCD.dm:329
+/// CAPABILITIES(/obj/item/rcd) at code/game/objects/items/weapons/RCD.dm:328
 /obj/item/rcd/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/RCD.dm", 329, /obj/item/rcd)
-	into += entry_line(330)
+	into += entry_block("code/game/objects/items/weapons/RCD.dm", 328, /obj/item/rcd)
+	into += entry_line(329)
 	into += list(global.owns_many(nameof(effects)))
 
 /// CAPABILITIES(/obj/item/rcd/electric) at code/game/objects/items/weapons/RCD.dm:182
@@ -8932,11 +8946,11 @@
 	into += entry_line(120)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(rig_step)), when = nameof(carried_by_mob)))
 
-/// CAPABILITIES(/obj/item/rig_module) at code/modules/clothing/spacesuits/rig/modules/modules.dm:58
+/// CAPABILITIES(/obj/item/rig_module) at code/modules/clothing/spacesuits/rig/modules/modules.dm:57
 /obj/item/rig_module/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/spacesuits/rig/modules/modules.dm", 58, /obj/item/rig_module)
-	into += entry_line(59)
+	into += entry_block("code/modules/clothing/spacesuits/rig/modules/modules.dm", 57, /obj/item/rig_module)
+	into += entry_line(58)
 	into += list(global.owns_many(nameof(stat_modules)))
 
 /// CAPABILITIES(/obj/item/rig_module/ai_container) at code/modules/clothing/spacesuits/rig/modules/specific/ai_container.dm:41

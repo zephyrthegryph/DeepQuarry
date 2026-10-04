@@ -185,18 +185,46 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))
-		om_ask(usr, /datum/om/prompt/choice/admin_jump, PROC_REF(sendmob_area_picked), title = "Send Mob", message = "Pick an area:", choices = return_sorted_areas())
+		open_request(src, /datum/prompt/choice/admin_sendmob, PROC_REF(sendmob_area_picked), answerer = usr, title = "Send Mob", question = "Pick an area:", choices = return_sorted_areas())
 	else
 		tgui_alert_async(usr, "Admin jumping disabled")
 
-/client/proc/sendmob_area_picked(datum/om/prompt/choice/admin_jump/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/admin_jump, PROC_REF(sendmob_answered), title = "Send Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), area = ask.choice)
+/datum/prompt/choice/admin_sendmob
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+	var/area/area
 
-/client/proc/sendmob_answered(datum/om/prompt/choice/admin_jump/ask)
+CAPABILITIES(/datum/prompt/choice/admin_sendmob)
+	ref_one(nameof(area), /area)
+
+/datum/prompt/choice/admin_sendmob/prepare(datum/act/A)
+	..()
+	var/area/captured_area = area
+	rel_clear(src, nameof(area))
+	rel_set(src, nameof(area), captured_area)
+
+/datum/prompt/choice/admin_sendmob/recheck_extra()
+	return isnull(area) || !QDELETED(area) ? null : "gone"
+
+/client/proc/sendmob_area_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/area/selected_area = A.answer.answer_value
+	if(!istype(selected_area) || QDELETED(selected_area))
+		return
+	open_request(src, /datum/prompt/choice/admin_sendmob, PROC_REF(sendmob_answered), answerer = A.request.answerer, title = "Send Mob", question = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), area = selected_area)
+
+/client/proc/sendmob_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/admin_sendmob/ask = context.answer
+	var/mob/selected_mob = ask.answer_value
+	if(!istype(ask.area, /area) || QDELETED(ask.area) || !istype(selected_mob) || QDELETED(selected_mob))
+		return
 	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "adminjump.sendmob_answered"))
 		return
 	var/area/A = ask.area
-	var/mob/M = ask.choice
+	var/mob/M = ask.answer_value
 	if(CONFIG_GET(flag/allow_admin_jump))
 		M.on_mob_jump()
 		M.reset_perspective(M) // Force reset to self before teleport

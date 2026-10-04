@@ -163,9 +163,19 @@
 		return "not in hand"
 	return ..()
 
-/datum/om/prompt/choice/lleill_energy/lleill_beast
+/datum/prompt/choice/lleill_beast
 	title = "Choose Beast Form"
-	message = "Which form would you like to take?"
+	question = "Which form would you like to take?"
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	var/energy_cost
+
+/datum/prompt/choice/lleill_beast/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/mob/living/carbon/human/H = answerer
+	return H.species.lleill_energy < energy_cost ? "no energy" : null
 
 /mob/living/carbon/human/proc/lleill_transmute_chosen(datum/om/prompt/choice/lleill_energy/lleill_transmute/ask)
 	var/obj/item/I = ask.item
@@ -554,12 +564,17 @@
 									"Unicorn" = /mob/living/simple_mob/vore/horse/unicorn/beastmode
 									)
 
-	om_ask(src, /datum/om/prompt/choice/lleill_energy/lleill_beast, PROC_REF(lleill_beast_chosen), choices = beast_options, energy_cost = energy_cost)
+	open_request(src, /datum/prompt/choice/lleill_beast, PROC_REF(lleill_beast_chosen), answerer = src, choices = beast_options, energy_cost = energy_cost)
 
-/mob/living/carbon/human/proc/lleill_beast_chosen(datum/om/prompt/choice/lleill_energy/lleill_beast/ask)
+/mob/living/carbon/human/proc/lleill_beast_chosen(datum/act/request/A)
+	var/datum/prompt/choice/lleill_beast/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
+		return
 	var/list/beast_options = ask.choices
 	var/energy_cost = ask.energy_cost
-	var/chosen_beast = ask.choice
+	var/chosen_beast = ask.answer_value
 
 	var/mob/living/M = src
 	if(!istype(M))
@@ -718,12 +733,17 @@
 									"Unicorn" = /mob/living/simple_mob/vore/horse/unicorn/beastmode
 									)
 
-	om_ask(src, /datum/om/prompt/choice/lleill_energy/lleill_beast, PROC_REF(hanner_beast_chosen), choices = beast_options, energy_cost = energy_cost)
+	open_request(src, /datum/prompt/choice/lleill_beast, PROC_REF(hanner_beast_chosen), answerer = src, choices = beast_options, energy_cost = energy_cost)
 
-/mob/living/carbon/human/proc/hanner_beast_chosen(datum/om/prompt/choice/lleill_energy/lleill_beast/ask)
+/mob/living/carbon/human/proc/hanner_beast_chosen(datum/act/request/A)
+	var/datum/prompt/choice/lleill_beast/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
+		return
 	var/list/beast_options = ask.choices
 	var/energy_cost = ask.energy_cost
-	var/chosen_beast = ask.choice
+	var/chosen_beast = ask.answer_value
 
 	var/mob/living/M = src
 	if(!istype(M))
