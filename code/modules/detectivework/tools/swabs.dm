@@ -69,7 +69,9 @@
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/forensics/swab/afterattack(atom/A, mob/user, proximity)
+	return collect_swab_evidence(A, user, proximity)
 
+/obj/item/forensics/swab/proc/collect_swab_evidence(atom/A, mob/user, proximity, selected_evidence)
 	if(!proximity || istype(A, /obj/machinery/dnaforensics))
 		return
 
@@ -92,10 +94,10 @@
 	else if(choices.len == 1)
 		choice = choices[1]
 	else
-		var/_answer_k95 = rerun_ask(user, "k95", PROC_REF(afterattack), args, /datum/om/prompt/choice, message = "What kind of evidence are you looking for?", title = "Evidence Collection", choices = choices)
-		if(isnull(_answer_k95))
+		if(isnull(selected_evidence))
+			open_request(src, /datum/prompt/choice/forensic_swab_evidence, PROC_REF(forensic_swab_evidence_answered), answerer = user, choices = choices, target = A, captured_proximity = proximity)
 			return TRUE
-		choice = _answer_k95
+		choice = selected_evidence
 
 	if(!choice)
 		return
@@ -117,6 +119,45 @@
 	if(sample_type)
 		act_message(user, A, MSG_SELF("You swab %T% for a sample."), MSG_OTHERS("%U% swabs %T% for a sample."))
 		set_used(sample_type, A)
+
+
+/obj/item/forensics/swab/proc/forensic_swab_evidence_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/forensic_swab_evidence/request = context.request
+	var/datum/result/result = safe_call(PROC_REF(collect_swab_evidence), request.target, request.answerer, request.captured_proximity, request.answer_value)
+	if(!result.ok)
+		stack_trace("Forensic swab evidence continuation: [result.error]")
+	SStgui.update_uis(src)
+
+/datum/prompt/choice/forensic_swab_evidence
+	title = "Evidence Collection"
+	question = "What kind of evidence are you looking for?"
+	timeout = 0
+	var/atom/target
+	var/captured_proximity
+
+CAPABILITIES(/datum/prompt/choice/forensic_swab_evidence)
+	ref_one(nameof(target), /atom)
+
+/datum/prompt/choice/forensic_swab_evidence/prepare(datum/act/A)
+	..()
+	var/atom/captured_target = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured_target)
+
+/datum/prompt/choice/forensic_swab_evidence/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(target))
+		return "The original sample source is no longer available."
+
+/datum/prompt/choice/forensic_swab_evidence/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 /obj/item/forensics/swab/proc/set_used(sample_str, atom/source)
 	name = "[initial(name)] ([sample_str] - [source])"
