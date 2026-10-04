@@ -27,6 +27,12 @@
 	light_color = "#315ab4"
 
 CAPABILITIES(/obj/machinery/computer/cloning)
+	op("scan", ui_act(), then(PROC_REF(native_ui_act_scan)))
+	op("lock", ui_act(), then(PROC_REF(native_ui_act_lock)))
+	op("refresh", ui_act(), then(PROC_REF(native_ui_act_refresh)))
+	op("toggle_mode", ui_act(), then(PROC_REF(native_ui_act_toggle_mode)))
+	op("eject", ui_act(), then(PROC_REF(native_ui_act_eject)))
+	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
 	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)
 	owns_many(nameof(records))
 
@@ -230,17 +236,16 @@ UI_DATA_REPLACE(/obj/machinery/computer/cloning, "menu", "loading:num", "autopro
 		else
 			set_temp("Access denied.", "danger")
 
-UI_ACT(/obj/machinery/computer/cloning, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_scan)
-	. = TRUE
+/obj/machinery/computer/cloning/proc/native_ui_act_scan(datum/act/op/A)
 	var/mob/living/carbon/human/scanner_occupant = scanner()?.get_occupant()
 	if(!scanner() || !scanner_occupant || loading)
-		return
+		return OP_OK
 	set_scan_temp("Scanner ready.", "good")
 	loading = TRUE
 
 	after(src, 2 SECONDS, PROC_REF(delayed_scan), with = list(scanner_occupant))
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/cloning, "autoprocess", ui_act_autoprocess, UI_ARG_NUM("on"))
 UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_autoprocess)
@@ -248,14 +253,13 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_autoprocess)
 	set_autoprocess(params["on"] > 0)
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/cloning, "lock", ui_act_lock)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_lock)
-	. = TRUE
+/obj/machinery/computer/cloning/proc/native_ui_act_lock(datum/act/op/A)
 	var/mob/living/carbon/human/scanner_occupant = scanner()?.get_occupant()
 	if(isnull(scanner()) || !scanner_occupant) //No locking an open scanner.
-		return
+		return OP_OK
 	scanner().locked = !scanner().locked
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/cloning, "view_rec", ui_act_view_rec, UI_ARG_REF("ref", null, /datum/transhuman/body_record))
 UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_view_rec)
@@ -325,11 +329,10 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_disk)
 				own_take(src, nameof(/obj/machinery/computer/cloning::diskette))
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/cloning, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_refresh)
-	. = TRUE
+/obj/machinery/computer/cloning/proc/native_ui_act_refresh(datum/act/op/A)
 	SStgui.update_uis(src)
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/cloning, "selectpod", ui_act_selectpod, UI_ARG_REF("ref", null, /obj/machinery/clonepod))
 UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_selectpod)
@@ -385,31 +388,28 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_menu)
 	menu = params["num"]
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/cloning, "toggle_mode", ui_act_toggle_mode)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_toggle_mode)
-	. = TRUE
+/obj/machinery/computer/cloning/proc/native_ui_act_toggle_mode(datum/act/op/A)
 	if(loading)
-		return
+		return OP_OK
 	if(can_brainscan())
 		scan_mode = !scan_mode
 	else
 		scan_mode = FALSE
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/cloning, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_eject)
-	. = TRUE
-	if(ui.user.incapacitated() || !scanner() || loading)
-		return
-	scanner().eject_occupant(ui.user)
-	scanner().add_fingerprint(ui.user)
-	add_fingerprint(ui.user)
+/obj/machinery/computer/cloning/proc/native_ui_act_eject(datum/act/op/A)
+	if(A.actor.incapacitated() || !scanner() || loading)
+		return OP_OK
+	scanner().eject_occupant(A.actor)
+	scanner().add_fingerprint(A.actor)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/cloning, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_cleartemp)
-	. = TRUE
+/obj/machinery/computer/cloning/proc/native_ui_act_cleartemp(datum/act/op/A)
 	temp = null
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/cloning/proc/scan_mob(mob/living/carbon/human/subject as mob, scan_brain = 0)
 	if(has_stat(NOPOWER))

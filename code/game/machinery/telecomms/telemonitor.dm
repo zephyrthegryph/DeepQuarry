@@ -20,6 +20,12 @@
 
 	var/list/temp = null				// temporary feedback messages
 
+CAPABILITIES(/obj/machinery/computer/telecomms/monitor)
+	op("mainmenu", ui_act(), then(PROC_REF(native_ui_act_mainmenu)))
+	op("release", ui_act(), then(PROC_REF(native_ui_act_release)))
+	op("scan", ui_act(), then(PROC_REF(native_ui_act_scan)))
+	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
+
 UI_DATA_REPLACE(/obj/machinery/computer/telecomms/monitor, "network", "temp:text", "merge:ui_data_obj_machinery_computer_telecomms_monitor{machinelist:list,selectedMachine:list}")
 
 /// The computed part of /obj/machinery/computer/telecomms/monitor's window data (declared on its UI_DATA row).
@@ -84,22 +90,22 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_view)
 			break
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/monitor, "mainmenu", ui_act_mainmenu)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_mainmenu)
+/obj/machinery/computer/telecomms/monitor/proc/native_ui_act_mainmenu(datum/act/op/A)
+	add_fingerprint(A.actor)
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/monitor::SelectedMachine))
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/telecomms/monitor, "release", ui_act_release)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_release)
+/obj/machinery/computer/telecomms/monitor/proc/native_ui_act_release(datum/act/op/A)
+	add_fingerprint(A.actor)
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/monitor::machinelist))
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/monitor::SelectedMachine))
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/telecomms/monitor, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_scan)
+/obj/machinery/computer/telecomms/monitor/proc/native_ui_act_scan(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(length(machinelist) > 0)
 		set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
-		return TRUE
+		return OP_OK
 
 	for(var/obj/machinery/telecomms/T in range(25, src))
 		if(T.network == network)
@@ -109,17 +115,17 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_scan)
 		set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
 	else
 		set_temp("[length(machinelist)] ENTITIES LOCATED & BUFFERED", "good")
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/telecomms/monitor, "network", ui_act_network)
 UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_network)
 	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/monitor, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_cleartemp)
+/obj/machinery/computer/telecomms/monitor/proc/native_ui_act_cleartemp(datum/act/op/A)
+	add_fingerprint(A.actor)
 	temp = null
-	. = TRUE
+	return OP_OK
 
 /obj/machinery/computer/telecomms/monitor/proc/network_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer

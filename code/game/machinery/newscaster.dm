@@ -159,6 +159,11 @@ CAPABILITIES(/datum/feed_network)
 	var/list/temp = null
 
 CAPABILITIES(/obj/machinery/newscaster)
+	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
+	op("set_channel_lock", ui_act(), then(PROC_REF(native_ui_act_set_channel_lock)))
+	op("set_attachment", ui_act(), then(PROC_REF(native_ui_act_set_attachment)))
+	op("submit_new_message", ui_act(), then(PROC_REF(native_ui_act_submit_new_message)))
+	op("print_paper", ui_act(), then(PROC_REF(native_ui_act_print_paper)))
 	owns_one(nameof(photo_data), /datum/news_photo)
 
 /obj/machinery/newscaster/security_unit                   //Security unit
@@ -364,20 +369,18 @@ UI_DATA(/obj/machinery/newscaster, "temp:text", "unit_no", "channel_name:text", 
 
 	return data
 
-UI_ACT(/obj/machinery/newscaster, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_cleartemp)
+/obj/machinery/newscaster/proc/native_ui_act_cleartemp(datum/act/op/A)
 	temp = null
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/newscaster, "set_channel_name", ui_act_set_channel_name, UI_ARG_TEXT("val"))
 UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_channel_name)
 	channel_name = sanitizeSafe(params["val"], MAX_LNAME_LEN)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_channel_lock", ui_act_set_channel_lock)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_channel_lock)
+/obj/machinery/newscaster/proc/native_ui_act_set_channel_lock(datum/act/op/A)
 	c_locked = !c_locked
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/newscaster, "submit_new_channel", ui_act_submit_new_channel)
 UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_channel)
@@ -428,42 +431,39 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_new_title)
 	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(title_written), message = "Enter your Feed title", title = "Network Channel Handler", default = "", max_length = MAX_KEYPAD_INPUT_LEN, requires = PROMPT_USABLE, ui_refresh = src)
 	return TRUE
 
-UI_ACT(/obj/machinery/newscaster, "set_attachment", ui_act_set_attachment)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_attachment)
-	AttachPhoto(ui.user)
-	return TRUE
+/obj/machinery/newscaster/proc/native_ui_act_set_attachment(datum/act/op/A)
+	AttachPhoto(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/machinery/newscaster, "submit_new_message", ui_act_submit_new_message)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_message)
-	var/our_user = tgui_user_name(ui.user)
+/obj/machinery/newscaster/proc/native_ui_act_submit_new_message(datum/act/op/A)
+	var/our_user = tgui_user_name(A.actor)
 	if(msg == "" || msg == "\[REDACTED\]")
 		set_temp("Error: Could not submit feed message to network: Invalid Message.", "danger", FALSE)
-		return TRUE
+		return OP_OK
 	if(our_user == "Unknown")
 		set_temp("Error: Could not submit feed message to network: Channel author unverified.", "danger", FALSE)
-		return TRUE
+		return OP_OK
 	if(channel_name == "")
 		set_temp("Error: Could not submit feed message to network: No feed channel selected.", "danger", FALSE)
-		return TRUE
+		return OP_OK
 	if(title == "")
 		set_temp("Error: Invalid Title.", "danger", FALSE)
-		return TRUE
+		return OP_OK
 
 	var/image = photo_data ? photo_data.photo() : null
 	feedback_inc("newscaster_stories",1)
 	GLOB.news_network.SubmitArticle(msg, our_user, channel_name, image, 0, "", title)
 	set_temp("Feed message created successfully.", "success", FALSE)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/newscaster, "print_paper", ui_act_print_paper)
-UI_ACT_PROC(/obj/machinery/newscaster, ui_act_print_paper)
+/obj/machinery/newscaster/proc/native_ui_act_print_paper(datum/act/op/A)
 	if(!paper_remaining)
 		set_temp("Unable to print newspaper. Insufficient paper. Please notify maintenance personnel to refill machine storage.", "danger", FALSE)
-		return TRUE
+		return OP_OK
 
 	print_paper()
 	set_temp("Printing successful. Please receive your newspaper from the bottom of the machine.", "success", FALSE)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/newscaster, "set_wanted_desc", ui_act_set_wanted_desc, UI_ARG_TEXT("val"))
 UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_wanted_desc)

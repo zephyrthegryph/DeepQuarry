@@ -37,6 +37,9 @@
 	)
 	..()
 
+CAPABILITIES(/obj/machinery/photocopier)
+	op("make_copy", ui_act(), then(PROC_REF(native_ui_act_make_copy)))
+
 DECLARE_UI(/obj/machinery/photocopier, "Photocopier")
 
 UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copies:num", "max_copies=maxcopies:num", "merge:ui_data_obj_machinery_photocopier{has_item:bool,isAI:num,can_AI_print:bool,has_toner:bool,max_toner:num}")
@@ -53,10 +56,9 @@ UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copie
 
 	return data
 
-UI_ACT(/obj/machinery/photocopier, "make_copy", ui_act_make_copy)
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_make_copy)
-	after(src, 0, PROC_REF(copy_operation), with = list(ui.user))
-	. = TRUE
+/obj/machinery/photocopier/proc/native_ui_act_make_copy(datum/act/op/A)
+	after(src, 0, PROC_REF(copy_operation), with = list(A.actor))
+	return OP_OK
 
 UI_ACT(/obj/machinery/photocopier, "remove", ui_act_remove)
 UI_ACT_PROC(/obj/machinery/photocopier, ui_act_remove)
