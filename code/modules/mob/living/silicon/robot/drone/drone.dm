@@ -185,53 +185,60 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 		choices["Blitz"] = "blitzshell"
 
 	// If you add more, datumize these. Having 'basically two' is not enough to make me bother though.
-	om_flow_start(/datum/om/flow/drone_shell, src, null, shells = choices)
+	open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(shell_picked), answerer = src, title = "Customize Shell", question = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", choices = choices)
 
-/// Picking a drone shell: the shell, then (for some shells) eye and plating colours. The colour
-/// picks are optional: a cancel leaves that accessory off.
-/datum/om/flow/drone_shell
-	name = "drone shell"
-	/// Shell name -> icon_state.
-	var/list/shells
+/// Picking a drone shell: the shell, then optional eye and plating colours.
+/datum/prompt/choice/drone_shell
+	timeout = 0
 	var/shell_state
 	var/eyes
-	var/plating
 
-/datum/om/flow/drone_shell/valid()
-	var/mob/living/silicon/robot/drone/D = actor
+/datum/prompt/choice/drone_shell/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/mob/living/silicon/robot/drone/D = owner
 	return D.can_pick_shell ? null : "already picked"
 
-/datum/om/flow/drone_shell/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(shell_picked), title = "Customize Shell", message = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", choices = shells)
-
-/datum/om/flow/drone_shell/proc/shell_picked(datum/om/prompt/choice/ask)
-	shell_state = shells[ask.choice]
+/mob/living/silicon/robot/drone/proc/shell_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/drone_shell/ask = A.request
+	var/shell_state = ask.choices[ask.answer_value]
 	if(shell_state in list("repairbot", "maintbot"))
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(eyes_picked), title = "Eye Color", message = "Select eye color:", choices = list("blue", "red", "orange", "green", "violet"), cancel_answer = "")
+		open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(eyes_picked), answerer = src, title = "Eye Color", question = "Select eye color:", choices = list("blue", "red", "orange", "green", "violet"), shell_state = shell_state)
 		return
-	finish()
+	shell_customize_finish(shell_state)
 
-/datum/om/flow/drone_shell/proc/eyes_picked(datum/om/prompt/choice/ask)
-	eyes = ask.choice
-	if(shell_state == "maintbot")
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(plating_picked), title = "Eye Color", message = "Select plating color:", choices = list("blue", "red", "orange", "green", "brown"), cancel_answer = "")
+/mob/living/silicon/robot/drone/proc/eyes_picked(datum/act/request/A)
+	var/datum/prompt/choice/drone_shell/ask = A.request
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
 		return
-	finish()
+	if(!A.answer && request_recheck(ask))
+		return
+	var/eyes = A.answer ? ask.answer_value : ""
+	if(ask.shell_state == "maintbot")
+		open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(plating_picked), answerer = src, title = "Eye Color", question = "Select plating color:", choices = list("blue", "red", "orange", "green", "brown"), shell_state = ask.shell_state, eyes = eyes)
+		return
+	shell_customize_finish(ask.shell_state, eyes)
 
-/datum/om/flow/drone_shell/proc/plating_picked(datum/om/prompt/choice/ask)
-	plating = ask.choice
-	finish()
+/mob/living/silicon/robot/drone/proc/plating_picked(datum/act/request/A)
+	var/datum/prompt/choice/drone_shell/ask = A.request
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		return
+	if(!A.answer && request_recheck(ask))
+		return
+	shell_customize_finish(ask.shell_state, ask.eyes, A.answer ? ask.answer_value : "")
 
-/datum/om/flow/drone_shell/proc/finish()
-	var/mob/living/silicon/robot/drone/D = actor
-	D.icon_state = shell_state
-	D.shell_accessories = null
+/mob/living/silicon/robot/drone/proc/shell_customize_finish(shell_state, eyes, plating)
+	icon_state = shell_state
+	shell_accessories = null
 	if(eyes)
-		LAZYADD(D.shell_accessories, "[shell_state]-eyes-[eyes]")
+		LAZYADD(shell_accessories, "[shell_state]-eyes-[eyes]")
 	if(plating)
-		LAZYADD(D.shell_accessories, "[shell_state]-shell-[plating]")
-	D.can_pick_shell = FALSE
-	D.update_icon()
+		LAZYADD(shell_accessories, "[shell_state]-shell-[plating]")
+	can_pick_shell = FALSE
+	update_icon()
 
 /datum/interaction/ability/self/robot_pick_shell
 	id = ABILITY_ID_ROBOT_PICK_SHELL
