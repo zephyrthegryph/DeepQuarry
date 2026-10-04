@@ -80,18 +80,25 @@
 
 /datum/unit_test/om/ability_picker_asks_without_waiting
 
-/datum/unit_test/om/ability_picker_asks_without_waiting/run_om(list/made)
-	sched.test_prompts = list()
-	var/datum/om_test_entity/actor = entity(made)
-	var/datum/om_test_entity/candidate = entity(made)
-	var/datum/interaction/ability/picker/test_flow/A = new
-	made += A
+/datum/unit_test/om/ability_picker_asks_without_waiting/Run()
+	test_driver_begin()
+	exercise_native_picker()
+	test_driver_end()
+
+/datum/unit_test/om/ability_picker_asks_without_waiting/proc/exercise_native_picker()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	actor.enable_godmode()
+	var/mob/living/carbon/human/candidate = allocate(/mob/living/carbon/human, T)
+	candidate.enable_godmode()
+	var/datum/interaction/ability/picker/test_flow/A = allocate(/datum/interaction/ability/picker/test_flow)
 	rel_set(A, nameof(A.test_candidate), candidate)
-	TEST_ASSERT_NULL(A.pick_target(actor), "pick_target() asks and returns at once")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the pick is an om_prompt")
-	var/datum/om/prompt/choice/P = sched.test_prompts[1]
-	TEST_ASSERT(istype(P, /datum/om/prompt/choice), "a list of the candidates")
-	TEST_ASSERT(candidate in P.choices, "offering the candidates")
+	TEST_ASSERT_NULL(A.pick_target(actor), "The real picker asks and returns without waiting")
+	var/datum/prompt/choice/ability_target/P = SSrequests.open_for(actor)
+	TEST_ASSERT(istype(P), "The real picker opened its native choice")
+	TEST_ASSERT(candidate in P.choices, "The actual candidate identity is offered")
+	test_answer(actor, null, REQ_CANCELLED)
+	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Explicit close retires the actual request without attempting the ability")
 
 /datum/unit_test/om/rainbow_crayon_asks_colours
 
