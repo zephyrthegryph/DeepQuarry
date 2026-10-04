@@ -219,7 +219,9 @@
 	switch(param)
 		if("reason")
 			if(!value)
-				om_ask(user, /datum/om/prompt/text/ban_edit_reason, PROC_REF(ban_edit_value_entered), message = "Insert the new reason for [pckey]'s ban", default = "[reason]", banid = banid, param = param)
+				if(!user.mob || QDELETED(user.mob))
+					return
+				open_request(src, /datum/prompt/text/ban_edit_reason, PROC_REF(ban_edit_value_entered), answerer = user.mob, question = "Insert the new reason for [pckey]'s ban", default = "[reason]", banid = banid, param = param)
 				return
 			value = sql_sanitize_text(value)
 			if(!value)
@@ -231,7 +233,9 @@
 			return
 		if("duration")
 			if(!value)
-				om_ask(user, /datum/om/prompt/number/ban_edit_duration, PROC_REF(ban_edit_value_entered), message = "Insert the new duration (in minutes) for [pckey]'s ban", default = text2num(duration), banid = banid, param = param)
+				if(!user.mob || QDELETED(user.mob))
+					return
+				open_request(src, /datum/prompt/number/ban_edit_duration, PROC_REF(ban_edit_value_entered), answerer = user.mob, question = "Insert the new duration (in minutes) for [pckey]'s ban", default = text2num(duration), banid = banid, param = param)
 				return
 			if(!isnum(value) || !value)
 				to_chat(user, "Cancelled")
@@ -245,52 +249,64 @@
 				DB_ban_unban_by_id(banid, user.mob)
 				return
 			if(!value)
-				om_ask(user, /datum/om/prompt/confirm/ban_edit_unban, PROC_REF(ban_edit_value_entered), message = "Unban [pckey]?", banid = banid, param = param)
+				if(!user.mob || QDELETED(user.mob))
+					return
+				open_request(src, /datum/prompt/choice/ban_edit_unban, PROC_REF(ban_edit_value_entered), answerer = user.mob, question = "Unban [pckey]?", banid = banid, param = param)
 				return
 	to_chat(user, span_filter_adminlog("Cancelled"))
 	return
 
 /// The value asked for re-enters DB_ban_edit(), which re-reads the ban.
-/datum/om/prompt/text/ban_edit_reason
+/datum/prompt/text/ban_edit_reason
 	title = "New Reason"
-	max_length = MAX_MESSAGE_LEN
-	requires = PROMPT_ADMIN(R_BAN)
+	max_len = MAX_MESSAGE_LEN
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BAN
 	var/banid
 	var/param
 
-/datum/om/prompt/number/ban_edit_duration
+/datum/prompt/number/ban_edit_duration
 	title = "New Duration"
-	requires = PROMPT_ADMIN(R_BAN)
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BAN
 	var/banid
 	var/param
 
-/datum/om/prompt/confirm/ban_edit_unban
+/datum/prompt/choice/ban_edit_unban
 	title = "Unban?"
-	answer_on_no = TRUE
-	requires = PROMPT_ADMIN(R_BAN)
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BAN
 	var/banid
 	var/param
 
-/datum/admins/proc/ban_edit_value_entered(datum/om/prompt/ask)
+/datum/admins/proc/ban_edit_value_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/request/ask = context.request
 	var/mob/admin = ask.answerer
 	if(!admin.client)
 		return
 	var/value
 	var/banid
 	var/param
-	if(istype(ask, /datum/om/prompt/text/ban_edit_reason))
-		var/datum/om/prompt/text/ban_edit_reason/reason_ask = ask
-		value = reason_ask.text
+	if(istype(ask, /datum/prompt/text/ban_edit_reason))
+		var/datum/prompt/text/ban_edit_reason/reason_ask = ask
+		value = reason_ask.answer_value
 		banid = reason_ask.banid
 		param = reason_ask.param
-	else if(istype(ask, /datum/om/prompt/number/ban_edit_duration))
-		var/datum/om/prompt/number/ban_edit_duration/duration_ask = ask
-		value = duration_ask.number
+	else if(istype(ask, /datum/prompt/number/ban_edit_duration))
+		var/datum/prompt/number/ban_edit_duration/duration_ask = ask
+		value = duration_ask.answer_value
 		banid = duration_ask.banid
 		param = duration_ask.param
 	else
-		var/datum/om/prompt/confirm/ban_edit_unban/unban_ask = ask
-		value = unban_ask.yes ? "Yes" : "No"
+		var/datum/prompt/choice/ban_edit_unban/unban_ask = ask
+		value = unban_ask.answer_value
 		banid = unban_ask.banid
 		param = unban_ask.param
 	usr = admin // ALLOW(sys_usr_outside_verb): legacy prompt-flow I/O captures this initiating admin for login and cancellation checks
@@ -355,3 +371,15 @@
 
 	var/datum/tgui_ban_panel/tgui = new(user, playerckey, src)
 	tgui.tgui_interact(user.mob)
+
+/datum/prompt/text/ban_edit_reason/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/number/ban_edit_duration/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/ban_edit_unban/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/ban_edit_reason/normalize(given)
+	return istext(given) ? given : null
