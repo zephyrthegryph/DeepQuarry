@@ -123,7 +123,7 @@
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
 
 /obj/machinery/proc/update_power_on_move(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/movable_attempted_move/event = A
 	power_area_moved(event.old_loc, event.new_loc)
 

@@ -109,11 +109,15 @@ CAPABILITY(/obj/machinery/atmospheric_field_generator, emp_disable(7.5 SECONDS))
 	else if(alwaysactive || wasactive) //reboot after a short delay if we were online before
 		generate_field()
 
-DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PROC_REF(field_generator_blast))
+CAPABILITIES(/obj/machinery/atmospheric_field_generator)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_generator_blast))))
+
 /// A light blast knocks the field generator out like a pulse.
-/obj/machinery/atmospheric_field_generator/proc/field_generator_blast(datum/damage_packet/packet)
+/obj/machinery/atmospheric_field_generator/proc/field_generator_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(packet.severity == 3)
 		emp_act(3)
+	return HOOK_DECLINE
 
 /obj/machinery/atmospheric_field_generator/atom_break(damage_flag)
 	. = ..()

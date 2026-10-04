@@ -126,6 +126,8 @@ CAPABILITIES(/obj/machinery/clonepod)
 	op("clonepod_interaction_item", item(/obj/item), then(PROC_REF(clonepod_interaction_item)))
 	op("clonepod_eject", menu(), label("Eject Cloner"), then(PROC_REF(clonepod_eject)))
 	op("clonepod_empty_beakers", menu(), label("Eject Beakers"), then(PROC_REF(clonepod_empty_beakers)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(clonepod_emp))))
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/clonepod/proc/clonepod_interaction_hand(datum/act/op/A)
@@ -344,14 +346,14 @@ CAPABILITIES(/obj/machinery/clonepod)
 	multitool.update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
-/obj/machinery/clonepod/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer forces an emergency ejection.
+/obj/machinery/clonepod/proc/on_emag(datum/act/op/A)
 	if(isnull(get_occupant()))
-		return
-	to_chat(user, "You force an emergency ejection.")
+		return OP_OK
+	to_chat(A.actor, "You force an emergency ejection.")
 	set_locked(0)
 	go_out()
-	return 1
+	return OP_OK
 
 //Put messages in the connected computer's temp var for display.
 /obj/machinery/clonepod/proc/connected_message(message)
@@ -494,12 +496,13 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 		return
 	go_out()
 
-DAMAGE_REACTION(/obj/machinery/clonepod, DAMAGE_EMP, PROC_REF(clonepod_emp))
 /// An EMP may make the pod malfunction.
-/obj/machinery/clonepod/proc/clonepod_emp(datum/damage_packet/packet)
+/obj/machinery/clonepod/proc/clonepod_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!prob(100/packet.severity))
-		return
+		return HOOK_DECLINE
 	malfunction()
+	return HOOK_DECLINE
 
 /obj/machinery/clonepod/explosion_contents_severity(severity)
 	return severity

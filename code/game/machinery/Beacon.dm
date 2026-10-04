@@ -52,7 +52,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon{invisibility?
 	MACHINE_WAKE(src)
 
 /obj/machinery/bluespace_beacon/proc/beacon_changed(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	if(source == Beacon && QDELETED(source))
 		own_take(src, nameof(Beacon))

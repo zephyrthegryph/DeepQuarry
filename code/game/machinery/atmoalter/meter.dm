@@ -27,7 +27,7 @@
 		observe(target_ref(), /datum/notice/qdeleting, src, then(PROC_REF(on_target_deleted)))
 
 /obj/machinery/meter/proc/on_target_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	rel_clear(src, nameof(target))
 	if(QDELETED(src))
 		return

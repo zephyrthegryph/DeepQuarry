@@ -135,7 +135,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 	tgui_interact(user)
 
 /obj/machinery/autolathe/proc/AfterMaterialInsert(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	flick("autolathe_loading", src)//plays metal insertion animation
 	SStgui.update_uis(src)
 

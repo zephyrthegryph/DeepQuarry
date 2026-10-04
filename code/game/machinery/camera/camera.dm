@@ -44,6 +44,7 @@
 
 CAPABILITIES(/obj/machinery/camera)
 	owns_one(nameof(assembly), /obj/item/camera_assembly)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(camera_emp))))
 
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
@@ -137,14 +138,15 @@ CAPABILITIES(/obj/machinery/camera)
 
 /// The area's channel change reaches cameras as the machinery power events.
 /obj/machinery/camera/proc/on_power_signal(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	schedule_camera_timer()
 
-DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 /// An EMP may knock the camera out (camera_disrupt()).
-/obj/machinery/camera/proc/camera_emp(datum/damage_packet/packet)
+/obj/machinery/camera/proc/camera_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(prob(100/packet.severity))
 		camera_disrupt(packet.severity)
+	return HOOK_DECLINE
 
 /// Knocks the camera out for 90 seconds / severity (EMPs, laser pointers). EMP-proof cameras shrug it off.
 /obj/machinery/camera/proc/camera_disrupt(severity)

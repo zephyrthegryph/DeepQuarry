@@ -159,10 +159,11 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 CAPABILITIES(/obj/machinery/gear_dispenser)
 	owns_one(nameof(one_setting), /datum/gear_disp)
+	emag(then(PROC_REF(on_emag)))
 
-/obj/machinery/gear_dispenser/custom/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(user, span_warning("Your moral standards prevent you from emagging this machine!"))
-	return EMAG_DECLINED // Letting people emag this one would be bad times
+/obj/machinery/gear_dispenser/custom/on_emag(datum/act/op/A)
+	to_chat(A.actor, span_warning("Your moral standards prevent you from emagging this machine!"))
+	return OP_DECLINE // Letting people emag this one would be bad times
 
 /obj/machinery/gear_dispenser/Initialize(mapload)
 	. = ..()
@@ -312,12 +313,11 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 	flick("[icon_state]-dispense",src)
 	dispenser_flags |= GD_BUSY
 
-DECLARE_EMAG(/obj/machinery/gear_dispenser, PROC_REF(on_emag), null, null)
-/obj/machinery/gear_dispenser/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/gear_dispenser/proc/on_emag(datum/act/op/A)
 	set_emagged(TRUE)
-	act_message(user, src, others = span_warning("%U% slides a weird looking ID into %T%!"), \
+	act_message(A.actor, src, others = span_warning("%U% slides a weird looking ID into %T%!"), \
 		blind = span_warning("You temporarily short the safety mechanisms."))
-	return 1
+	return OP_OK
 
 // Just a different sprite
 /obj/machinery/gear_dispenser/suit

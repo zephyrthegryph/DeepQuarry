@@ -10840,6 +10840,13 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker))
 
+/// CAPABILITIES(/obj/machinery/atmospheric_field_generator) at code/game/machinery/atm_ret_field.dm:112
+/obj/machinery/atmospheric_field_generator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atm_ret_field.dm", 112, /obj/machinery/atmospheric_field_generator)
+	into += entry_line(113)
+	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(field_generator_blast)))))
+
 /// CAPABILITIES(/obj/machinery/atmospherics) at code/ATMOSPHERICS/rust_pipenets.dm:79
 /obj/machinery/atmospherics/declared_entries(list/into)
 	..(into)
@@ -10988,6 +10995,13 @@
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(Beacon), /obj/item/radio/beacon))
 
+/// CAPABILITIES(/obj/machinery/bluespace_denier) at code/game/machinery/bluespace_denier.dm:59
+/obj/machinery/bluespace_denier/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/bluespace_denier.dm", 59, /obj/machinery/bluespace_denier)
+	into += entry_line(60)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(denier_emp)))))
+
 /// CAPABILITIES(/obj/machinery/bodyscanner) at code/game/machinery/adv_med.dm:181
 /obj/machinery/bodyscanner/declared_entries(list/into)
 	..(into)
@@ -11078,6 +11092,8 @@
 	into += entry_block("code/game/machinery/camera/camera.dm", 45, /obj/machinery/camera)
 	into += entry_line(46)
 	into += list(global.owns_one(nameof(assembly), /obj/item/camera_assembly))
+	into += entry_line(47)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(camera_emp)))))
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
@@ -11134,6 +11150,10 @@
 	into += list(global.op("clonepod_eject", global.menu(), global.label("Eject Cloner"), global.then(PROC_REF(clonepod_eject))))
 	into += entry_line(128)
 	into += list(global.op("clonepod_empty_beakers", global.menu(), global.label("Eject Beakers"), global.then(PROC_REF(clonepod_empty_beakers))))
+	into += entry_line(129)
+	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
+	into += entry_line(130)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(clonepod_emp)))))
 
 /// CAPABILITIES(/obj/machinery/compressor) at code/modules/power/turbine.dm:45
 /obj/machinery/compressor/declared_entries(list/into)
@@ -11782,6 +11802,15 @@
 	into += entry_line(405)
 	into += list(global.op("doors", global.ui_act("doors"), global.then(PROC_REF(ui_act_doors))))
 
+/// CAPABILITIES(/obj/machinery/deployable/barrier) at code/game/machinery/deployable.dm:89
+/obj/machinery/deployable/barrier/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/deployable.dm", 89, /obj/machinery/deployable/barrier)
+	into += entry_line(90)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(barrier_emp)))))
+	into += entry_line(91)
+	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
+
 /// CAPABILITIES(/obj/machinery/disposal) at code/modules/recycling/disposal_machines.dm:40
 /obj/machinery/disposal/declared_entries(list/into)
 	..(into)
@@ -12144,6 +12173,13 @@
 	into += entry_line(71)
 	into += list(global.op("heavy_fitness_safety_hand", global.hand(), global.then(PROC_REF(heavy_fitness_safety_hand))))
 
+/// CAPABILITIES(/obj/machinery/flasher) at code/game/machinery/flasher.dm:101
+/obj/machinery/flasher/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/flasher.dm", 101, /obj/machinery/flasher)
+	into += entry_line(102)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(flasher_emp)))))
+
 /// CAPABILITIES(/obj/machinery/floodlight) at code/game/machinery/floodlight.dm:18
 /obj/machinery/floodlight/declared_entries(list/into)
 	..(into)
@@ -12151,12 +12187,21 @@
 	into += entry_line(19)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/machinery/floor_light) at code/game/machinery/floor_light.dm:181
+/obj/machinery/floor_light/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/floor_light.dm", 181, /obj/machinery/floor_light)
+	into += entry_line(182)
+	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(floor_light_blast)))))
+
 /// CAPABILITIES(/obj/machinery/gear_dispenser) at code/game/machinery/gear_dispenser.dm:160
 /obj/machinery/gear_dispenser/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/gear_dispenser.dm", 160, /obj/machinery/gear_dispenser)
 	into += entry_line(161)
 	into += list(global.owns_one(nameof(one_setting), /datum/gear_disp))
+	into += entry_line(162)
+	into += list(global.emag(global.then(PROC_REF(on_emag))))
 
 /// CAPABILITIES(/obj/machinery/gravity_generator/main) at code/modules/power/gravitygenerator.dm:149
 /obj/machinery/gravity_generator/main/declared_entries(list/into)
@@ -12178,6 +12223,13 @@
 	into += entry_block("code/game/objects/structures/holoplant.dm", 92, /obj/machinery/holoplant)
 	into += entry_line(93)
 	into += list(global.emag(global.then(PROC_REF(on_emag))))
+
+/// CAPABILITIES(/obj/machinery/holoposter) at code/game/machinery/holoposter.dm:110
+/obj/machinery/holoposter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/holoposter.dm", 110, /obj/machinery/holoposter)
+	into += entry_line(111)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(holoposter_emp)))))
 
 /// CAPABILITIES(/obj/machinery/hyperpad/centre) at code/modules/telesci/hyper_pad.dm:28
 /obj/machinery/hyperpad/centre/declared_entries(list/into)
@@ -12362,6 +12414,13 @@
 	into += entry_line(35)
 	into += list(global.op("purchase", global.ui_act("purchase", global.arg("index", global.num())), global.then(PROC_REF(ui_act_purchase))))
 
+/// CAPABILITIES(/obj/machinery/mass_driver) at code/game/machinery/mass_driver.dm:69
+/obj/machinery/mass_driver/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/mass_driver.dm", 69, /obj/machinery/mass_driver)
+	into += entry_line(70)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(mass_driver_emp)))))
+
 /// CAPABILITIES(/obj/machinery/material_furnace) at code/modules/materials/engineering/material_machines.dm:68
 /obj/machinery/material_furnace/declared_entries(list/into)
 	..(into)
@@ -12487,6 +12546,13 @@
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable)))))
 	into += entry_line(234)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint), early = TRUE)))
+
+/// CAPABILITIES(/obj/machinery/optable) at code/game/machinery/OpTable.dm:29
+/obj/machinery/optable/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/OpTable.dm", 29, /obj/machinery/optable)
+	into += entry_line(30)
+	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(optable_blast)))))
 
 /// CAPABILITIES(/obj/machinery/ore_silo) at code/modules/mining/machine_silo.dm:17
 /obj/machinery/ore_silo/declared_entries(list/into)
@@ -12652,6 +12718,8 @@
 	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 18, /obj/machinery/portable_atmospherics)
 	into += entry_line(19)
 	into += list(global.owns_one(nameof(holding), /obj/item/tank))
+	into += entry_line(20)
+	into += list(global.extend(/datum/act/hit/blob, global.instead(global.then(PROC_REF(blob_bursts)))))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/canister) at code/game/machinery/atmoalter/canister.dm:31
 /obj/machinery/portable_atmospherics/canister/declared_entries(list/into)
@@ -12985,6 +13053,8 @@
 	into += entry_block("code/game/machinery/airconditioner.dm", 155, /obj/machinery/power/thermoregulator)
 	into += entry_line(156)
 	into += list(global.climb())
+	into += entry_line(157)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(thermoregulator_emp)))))
 
 /// CAPABILITIES(/obj/machinery/power/turbine) at code/modules/power/turbine.dm:321
 /obj/machinery/power/turbine/declared_entries(list/into)
@@ -13288,6 +13358,13 @@
 	into += entry_line(56)
 	into += list(global.op("cellinstall", global.ui_act("cellinstall"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellinstall))))
 
+/// CAPABILITIES(/obj/machinery/sparker) at code/game/machinery/igniter.dm:113
+/obj/machinery/sparker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/igniter.dm", 113, /obj/machinery/sparker)
+	into += entry_line(114)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(sparker_emp)))))
+
 /// CAPABILITIES(/obj/machinery/station_map) at code/modules/holomap/station_holomap.dm:36
 /obj/machinery/station_map/declared_entries(list/into)
 	..(into)
@@ -13301,6 +13378,13 @@
 	into += entry_block("code/modules/casino/slots.dm", 183, /obj/machinery/station_slot_machine)
 	into += entry_line(184)
 	into += list(global.owns_one(nameof(confetti_spread), /datum/effect/effect/system))
+
+/// CAPABILITIES(/obj/machinery/status_display) at code/game/machinery/status_display.dm:182
+/obj/machinery/status_display/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/status_display.dm", 182, /obj/machinery/status_display)
+	into += entry_line(183)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(status_display_emp)))))
 
 /// CAPABILITIES(/obj/machinery/suit_cycler) at code/game/machinery/suit_storage/suit_cycler.dm:334
 /obj/machinery/suit_cycler/declared_entries(list/into)
@@ -13339,6 +13423,8 @@
 	into += list(global.owns_one(nameof(MASK), /obj/item/clothing/mask, starts = nameof(mask_type)))
 	into += entry_line(31)
 	into += list(global.owns_one(nameof(SUIT), /obj/item/clothing/suit/space, starts = nameof(suit_type)))
+	into += entry_line(32)
+	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(suit_storage_blast)))))
 
 /// CAPABILITIES(/obj/machinery/suspension_gen) at code/modules/xenoarcheaology/tools/suspension_generator.dm:17
 /obj/machinery/suspension_gen/declared_entries(list/into)
@@ -13485,6 +13571,8 @@
 	into += entry_block("code/game/machinery/virtual_reality/vr_console.dm", 37, /obj/machinery/vr_sleeper)
 	into += entry_line(38)
 	into += list(global.owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad))
+	into += entry_line(39)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(vr_sleeper_emp)))))
 
 /// CAPABILITIES(/obj/machinery/washing_machine) at code/game/machinery/washing_machine.dm:33
 /obj/machinery/washing_machine/declared_entries(list/into)
@@ -13629,13 +13717,13 @@
 	into += entry_line(15)
 	into += list(global.extend(/datum/act/hit, global.instead(global.then(PROC_REF(alien_thrown_at)))))
 
-/// CAPABILITIES(/obj/structure/barricade/cutout) at code/game/machinery/deployable.dm:208
+/// CAPABILITIES(/obj/structure/barricade/cutout) at code/game/machinery/deployable.dm:213
 /obj/structure/barricade/cutout/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/deployable.dm", 208, /obj/structure/barricade/cutout)
-	into += entry_line(209)
+	into += entry_block("code/game/machinery/deployable.dm", 213, /obj/structure/barricade/cutout)
+	into += entry_line(214)
 	into += list(global.op("cutout_interaction_hand", global.hand(), global.label("Stand up"), global.then(PROC_REF(cutout_interaction_hand))))
-	into += entry_line(210)
+	into += entry_line(215)
 	into += list(global.op("cutout_interaction_item", global.item(/obj/item), global.then(PROC_REF(cutout_interaction_item))))
 
 /// CAPABILITIES(/obj/structure/bed) at code/game/objects/structures/stool_bed_chair_nest/bed.dm:98
@@ -14470,6 +14558,13 @@
 	into += entry_line(39)
 	into += list(global.climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over)))
 
+/// CAPABILITIES(/obj/structure/reagent_dispensers) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:65
+/obj/structure/reagent_dispensers/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 65, /obj/structure/reagent_dispensers)
+	into += entry_line(66)
+	into += list(global.extend(/datum/act/hit/blob, global.instead(global.then(PROC_REF(dispenser_blob_burst)))))
+
 /// CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:521
 /obj/structure/reagent_dispensers/beerkeg/declared_entries(list/into)
 	..(into)
@@ -14477,11 +14572,11 @@
 	into += entry_line(522)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:582
+/// CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:581
 /obj/structure/reagent_dispensers/bloodbarrel/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 582, /obj/structure/reagent_dispensers/bloodbarrel)
-	into += entry_line(583)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 581, /obj/structure/reagent_dispensers/bloodbarrel)
+	into += entry_line(582)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:556
@@ -14490,26 +14585,30 @@
 	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 556, /obj/structure/reagent_dispensers/cookingoil)
 	into += entry_line(557)
 	into += list(global.climb())
+	into += entry_line(558)
+	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(tank_blast_explode)))))
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/foam) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:155
+/// CAPABILITIES(/obj/structure/reagent_dispensers/foam) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:157
 /obj/structure/reagent_dispensers/foam/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 155, /obj/structure/reagent_dispensers/foam)
-	into += entry_line(156)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 157, /obj/structure/reagent_dispensers/foam)
+	into += entry_line(158)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/fueltank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:132
+/// CAPABILITIES(/obj/structure/reagent_dispensers/fueltank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:133
 /obj/structure/reagent_dispensers/fueltank/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 132, /obj/structure/reagent_dispensers/fueltank)
-	into += entry_line(133)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 133, /obj/structure/reagent_dispensers/fueltank)
+	into += entry_line(134)
 	into += list(global.climb())
+	into += entry_line(135)
+	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(tank_blast_explode)))))
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/he3) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:169
+/// CAPABILITIES(/obj/structure/reagent_dispensers/he3) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:171
 /obj/structure/reagent_dispensers/he3/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 169, /obj/structure/reagent_dispensers/he3)
-	into += entry_line(170)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 171, /obj/structure/reagent_dispensers/he3)
+	into += entry_line(172)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:378
@@ -14519,11 +14618,11 @@
 	into += entry_line(379)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/watertank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:102
+/// CAPABILITIES(/obj/structure/reagent_dispensers/watertank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:103
 /obj/structure/reagent_dispensers/watertank/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 102, /obj/structure/reagent_dispensers/watertank)
-	into += entry_line(103)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 103, /obj/structure/reagent_dispensers/watertank)
+	into += entry_line(104)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/safe) at code/game/objects/structures/safe.dm:88

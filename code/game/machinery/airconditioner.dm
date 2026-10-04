@@ -70,7 +70,7 @@
 	env.merge(removed)
 
 // Given the power behind this thermodynamics defying machine, nerfing EMP effectiveness.
-/obj/machinery/power/thermoregulator/southerncross/thermoregulator_emp(datum/damage_packet/packet)
+/obj/machinery/power/thermoregulator/southerncross/thermoregulator_emp(datum/act/hit/emp/A)
 	if(!on)
 		set_on(1)
 	target_temp += rand(0, 20)
@@ -154,6 +154,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/thermoregulator, MACHINE_PIPELINE, "
 
 CAPABILITIES(/obj/machinery/power/thermoregulator)
 	climb()
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(thermoregulator_emp))))
 
 /obj/machinery/power/thermoregulator/Initialize(mapload)
 	. = ..()
@@ -312,14 +313,14 @@ DECLARE_APPEARANCE(/obj/machinery/power/thermoregulator, "appearance_mode", list
 		return
 	set_mode(new_mode)
 
-DAMAGE_REACTION(/obj/machinery/power/thermoregulator, DAMAGE_EMP, PROC_REF(thermoregulator_emp))
-/// An EMP switches the regulator on and scrambles its target temperature.
-/obj/machinery/power/thermoregulator/proc/thermoregulator_emp(datum/damage_packet/packet)
+/// An EMP switches the regulator on and scrambles its target temperature (before the hit lands; the hit goes on).
+/obj/machinery/power/thermoregulator/proc/thermoregulator_emp(datum/act/hit/emp/A)
 	if(!on)
 		set_on(TRUE)
 	target_temp += rand(0, 1000)
 	wake_for_state_change()
 	update_icon()
+	return HOOK_DECLINE
 
 /obj/machinery/power/thermoregulator/overload(obj/machinery/power/source)
 	if(!anchored || !power_region)

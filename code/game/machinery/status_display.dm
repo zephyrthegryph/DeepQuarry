@@ -179,12 +179,15 @@
 	if(.)
 		refresh()
 
-DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_display_emp))
+CAPABILITIES(/obj/machinery/status_display)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(status_display_emp))))
+
 /// An EMP blue-screens a working display.
-/obj/machinery/status_display/proc/status_display_emp(datum/damage_packet/packet)
+/obj/machinery/status_display/proc/status_display_emp(datum/act/hit/emp/A)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	set_picture("ai_bsod")
+	return HOOK_DECLINE
 
 // set what is displayed
 /obj/machinery/status_display/proc/update()

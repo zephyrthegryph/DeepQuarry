@@ -66,9 +66,12 @@
 	flick("mass_driver1", src)
 	return
 
-DAMAGE_REACTION(/obj/machinery/mass_driver, DAMAGE_EMP, PROC_REF(mass_driver_emp))
+CAPABILITIES(/obj/machinery/mass_driver)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(mass_driver_emp))))
+
 /// An EMP fires the driver.
-/obj/machinery/mass_driver/proc/mass_driver_emp(datum/damage_packet/packet)
+/obj/machinery/mass_driver/proc/mass_driver_emp(datum/act/hit/emp/A)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	drive()
+	return HOOK_DECLINE

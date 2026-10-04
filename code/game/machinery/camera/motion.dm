@@ -29,13 +29,13 @@
 /// A tracked target moved or changed stat: drop it if it died or (outside an
 /// ai_monitored area, which tracks its own exits) left the camera's range.
 /obj/machinery/camera/proc/on_motion_target_changed(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/target = A.target
 	if(target.stat == DEAD || (!area_motion() && !in_range(src, target)))
 		lostTarget(target)
 
 /obj/machinery/camera/proc/on_motion_target_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/target = A.target
 	lostTarget(target)
 

@@ -86,15 +86,20 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 	explode(FALSE)
 	return ..()
 
-DAMAGE_REACTION(/obj/machinery/deployable/barrier, DAMAGE_EMP, PROC_REF(barrier_emp))
+CAPABILITIES(/obj/machinery/deployable/barrier)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(barrier_emp))))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+
 /// An EMP may flip the barrier's lock and anchors.
-/obj/machinery/deployable/barrier/proc/barrier_emp(datum/damage_packet/packet)
+/obj/machinery/deployable/barrier/proc/barrier_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	if(prob(50/packet.severity))
 		set_locked(!locked)
 		set_anchored(!anchored)
 		icon_state = "barrier[locked]"
+	return HOOK_DECLINE
 
 /obj/machinery/deployable/barrier/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
 	if(istype(mover) && mover.checkpass(PASSTABLE) && !isliving(mover)) // Check if living so teshari can't evade security barriers by pressing W
@@ -115,8 +120,9 @@ DAMAGE_REACTION(/obj/machinery/deployable/barrier, DAMAGE_EMP, PROC_REF(barrier_
 	if(delete_after && !QDELETED(src))
 		qdel(src)
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), null)
-/obj/machinery/deployable/barrier/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer breaks the access lock, a second one the anchoring.
+/obj/machinery/deployable/barrier/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(emagged == 0)
 		set_emagged(1)
 		req_access = null
@@ -124,13 +130,12 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), nu
 		to_chat(user, "You break the ID authentication lock on \the [src].")
 		fx_sparks(src, 2)
 		visible_message(span_warning("BZZzZZzZZzZT"))
-		return 1
 	else if(emagged == 1)
 		set_emagged(2)
 		to_chat(user, "You short out the anchoring mechanism on \the [src].")
 		fx_sparks(src, 2)
 		visible_message(span_warning("BZZzZZzZZzZT"))
-		return 1
+	return OP_OK
 
 
 /obj/structure/barricade/cutout
