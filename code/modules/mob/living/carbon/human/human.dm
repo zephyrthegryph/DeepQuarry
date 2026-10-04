@@ -39,6 +39,7 @@
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_species, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_hair, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
+TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
@@ -91,6 +92,8 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
 	var/image/img = image('icons/mob/animal.dmi', src, animal)
 	img.override = TRUE
 	add_alt_appearance("animals", img, displayTo = REGISTRY_MEMBERS(REGISTRY_ALT_FARMANIMALS))
+	if(TYPE_TABLE_GET(src, initial_species_copy))
+		species.produceCopy(species.traits.Copy(),src,null,FALSE)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_HUMANS)
 

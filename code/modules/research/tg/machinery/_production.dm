@@ -44,6 +44,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 DECLARE_REPEAT(/obj/machinery/rnd/production, "build_time_per_item", do_make_item, "busy")
 
 
+TYPE_TABLE_DECLARE(/obj/machinery/rnd/production, production_initial_wires, null)
+
 /obj/machinery/rnd/production/Initialize(mapload)
 	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
 	rel_set(src, nameof(materials), new /datum/remote_materials(
@@ -61,6 +63,12 @@ DECLARE_REPEAT(/obj/machinery/rnd/production, "build_time_per_item", do_make_ite
 	default_apply_parts()
 	RefreshParts()
 	update_icon()
+
+	switch(TYPE_TABLE_GET(src, production_initial_wires))
+		if(/datum/wires/protolathe)
+			set_wires(new /datum/wires/protolathe(src))
+		if(/datum/wires/circuit_imprinter)
+			set_wires(new /datum/wires/circuit_imprinter(src))
 
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appearance_overlays), list())

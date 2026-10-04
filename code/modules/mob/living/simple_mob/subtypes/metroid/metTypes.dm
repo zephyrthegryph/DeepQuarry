@@ -105,9 +105,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 	is_juvenile = TRUE
 
-/mob/living/simple_mob/metroid/juvenile/baby/Initialize(mapload)
-	. = ..()
-	play_sfx(src, SFX_METROID_METROIDSEE)
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/baby, metroid_initial_sound, SFX_METROID_METROIDSEE)
 
 
 
@@ -169,9 +167,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 	is_juvenile = TRUE
 
-/mob/living/simple_mob/metroid/juvenile/super/Initialize(mapload)
-	. = ..()
-	play_sfx(src, SFX_METROID_METROIDSEE)
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/super, metroid_initial_sound, SFX_METROID_METROIDSEE)
 
 /mob/living/simple_mob/metroid/juvenile/super/on_death(gibbed)
 	..()
@@ -212,9 +208,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/gamma"
 
-/mob/living/simple_mob/metroid/juvenile/alpha/Initialize(mapload)
-	. = ..()
-	play_sfx(src, SFX_METROID_METROIDSEE)
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/alpha, metroid_initial_sound, SFX_METROID_METROIDSEE)
 
 /mob/living/simple_mob/metroid/juvenile/alpha/on_death(gibbed)
 	..()
@@ -279,9 +273,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/zeta"
 
-/mob/living/simple_mob/metroid/juvenile/gamma/Initialize(mapload)
-	. = ..()
-	play_sfx(src, SFX_METROID_METROIDGAMMA)
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound, SFX_METROID_METROIDGAMMA)
 
 /mob/living/simple_mob/metroid/juvenile/gamma/on_death(gibbed)
 	..()
@@ -367,9 +359,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
 
-/mob/living/simple_mob/metroid/juvenile/zeta/Initialize(mapload)
-	. = ..()
-	play_sfx(src, SFX_METROID_METROIDZETA)
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, SFX_METROID_METROIDZETA)
 
 /mob/living/simple_mob/metroid/juvenile/zeta/on_death(gibbed)
 	..()
@@ -456,9 +446,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 	death_sound_override = SFX_METROID_METROIDOMEGADEATH // We override the death sound to play our custom here
 
-/mob/living/simple_mob/metroid/juvenile/omega/Initialize(mapload)
-	. = ..()
-	play_sfx(src, SFX_METROID_METROIDOMEGA)
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound, SFX_METROID_METROIDOMEGA)
 
 /mob/living/simple_mob/metroid/juvenile/omega/on_death(gibbed)
 	..()

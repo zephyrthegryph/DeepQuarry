@@ -384,5 +384,21 @@
 	TEST_ASSERT_EQUAL(custom.body.owner, custom, "the generic body belongs to the original mob")
 	TEST_ASSERT_EQUAL(fixed.body.owner, fixed, "the canonical skrell body belongs to the original mob")
 	TEST_ASSERT_EQUAL(drone.body.owner, drone, "the canonical alien body belongs to the original mob")
+	var/datum/species/registered_monkey = GLOB.all_species[SPECIES_MONKEY]
+	TEST_ASSERT_NOTNULL(registered_monkey, "the canonical monkey species is registered")
+	var/mob/living/carbon/human/monkey/monkey = allocate(/mob/living/carbon/human/monkey, T, SPECIES_TAJARAN)
+	TEST_ASSERT(monkey && !QDELETED(monkey), "the actual monkey constructor completes despite a mismatched caller species")
+	TEST_ASSERT_EQUAL(monkey.species.name, SPECIES_MONKEY, "monkey construction forces its original canonical species")
+	TEST_ASSERT_NOTNULL(monkey.body, "the canonical monkey constructor creates its actual body")
+	TEST_ASSERT_EQUAL(monkey.body.owner, monkey, "the constructed monkey body retains its original mob owner")
+	TEST_ASSERT(monkey.species != registered_monkey, "the post-construction copy is a private species object, not the registry prototype")
+	TEST_ASSERT_EQUAL(monkey.species.type, registered_monkey.type, "the actual copy retains the canonical species type")
+	TEST_ASSERT_NOTNULL(monkey.species.traits, "the actual species copy retains its trait list")
+	TEST_ASSERT(monkey.species.traits != registered_monkey.traits, "the monkey copy isolates mutable traits from the registered prototype")
+	TEST_ASSERT_EQUAL(length(monkey.species.traits), length(registered_monkey.traits), "the clone retains the exact canonical trait count")
+	for(var/trait in registered_monkey.traits)
+		TEST_ASSERT(trait in monkey.species.traits, "each canonical trait survives actual construction")
+		TEST_ASSERT_EQUAL(monkey.species.traits[trait], registered_monkey.traits[trait], "canonical trait data survives the actual species clone")
+
 
 #endif

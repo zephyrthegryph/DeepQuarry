@@ -105,30 +105,26 @@ TYPE_TABLE(/mob/living/carbon/human/zaddat, forced_initial_species, SPECIES_ZADD
 /mob/living/carbon/human/monkey
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/monkey/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/monkey, forced_initial_species, SPECIES_MONKEY)
+TYPE_TABLE(/mob/living/carbon/human/monkey, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/farwa
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/farwa/Initialize(mapload)
-	. = .. (mapload, SPECIES_MONKEY_TAJ)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/farwa, forced_initial_species, SPECIES_MONKEY_TAJ)
+TYPE_TABLE(/mob/living/carbon/human/farwa, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/neaera
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/neaera/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_SKRELL)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/neaera, forced_initial_species, SPECIES_MONKEY_SKRELL)
+TYPE_TABLE(/mob/living/carbon/human/neaera, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/stok
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/stok/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_UNATHI)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+TYPE_TABLE(/mob/living/carbon/human/stok, forced_initial_species, SPECIES_MONKEY_UNATHI)
+TYPE_TABLE(/mob/living/carbon/human/stok, initial_species_copy, TRUE)
 
 TYPE_TABLE(/mob/living/carbon/human/sergal, forced_initial_species, SPECIES_SERGAL)
 TYPE_TABLE(/mob/living/carbon/human/sergal, forced_initial_hair, "Sergal Plain")

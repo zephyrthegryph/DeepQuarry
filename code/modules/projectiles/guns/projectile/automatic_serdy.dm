@@ -1133,9 +1133,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
 APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r{appearance_mag_state}")
 
-/obj/item/gun/projectile/automatic/c20r/Initialize(mapload)
-	. = ..()
-	update_transform()
+TYPE_TABLE(/obj/item/gun/projectile/automatic/c20r, projectile_initial_transform, TRUE)
 
 /obj/item/gun/projectile/automatic/c20r/update_transform()
 	. = ..()
@@ -1153,9 +1151,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(
 	. += ..()
 	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
 
-/obj/item/gun/projectile/automatic/sts35/Initialize(mapload)
-	. = ..()
-	update_transform()
+TYPE_TABLE(/obj/item/gun/projectile/automatic/sts35, projectile_initial_transform, TRUE)
 
 /obj/item/gun/projectile/automatic/sts35/update_transform()
 	. = ..()
@@ -1174,9 +1170,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, TYPE_PROC_REF(
 	. += ..()
 	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
 */
-/obj/item/gun/projectile/automatic/wt550/Initialize(mapload)
-	. = ..()
-	update_transform()
+TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transform, TRUE)
 
 /obj/item/gun/projectile/automatic/wt550/update_transform()
 	. = ..()
