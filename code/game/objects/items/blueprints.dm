@@ -487,7 +487,6 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	open_request(src, /datum/prompt/text/blueprint_area_name, PROC_REF(create_area_named), answerer = ask.answerer, subject = ask.subject, editor = src, turfs = ask.turfs)
 
 /obj/item/areaeditor/proc/create_area_named(datum/act/request/context)
-	var/datum/prompt/text/blueprint_area_name/ask = context.request
 	if(!context.answer)
 		return
 	var/datum/result/result = safe_call(PROC_REF(create_area_named_apply), context)
@@ -620,7 +619,6 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	open_request(src, /datum/prompt/text/blueprint_area_name, PROC_REF(whole_area_named), answerer = creator, subject = ask.subject, turfs = ask.turfs)
 
 /obj/item/areaeditor/proc/whole_area_named(datum/act/request/context)
-	var/datum/prompt/text/blueprint_area_name/ask = context.request
 	if(!context.answer)
 		return
 	var/datum/result/result = safe_call(PROC_REF(whole_area_named_apply), context)
