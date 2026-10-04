@@ -622,25 +622,35 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 
 	add_overlay("bomb_assembly")
 
+TYPE_TABLE_DECLARE(/obj/item/tank/phoron/onetankbomb, phoron_bomb_forced_fill, null)
+
 /obj/item/tank/phoron/onetankbomb/Initialize(mapload, amount = 1)
-	. = ..()
+	var/forced_fill = TYPE_TABLE_GET(src, phoron_bomb_forced_fill)
+	if(!isnull(forced_fill))
+		amount = forced_fill
+		. = ..(mapload, amount)
+	else
+		. = ..()
 	onetankbomb(amount)
+
+TYPE_TABLE_DECLARE(/obj/item/tank/oxygen/onetankbomb, oxygen_bomb_forced_fill, null)
 
 /obj/item/tank/oxygen/onetankbomb/Initialize(mapload, amount = 1)
-	. = ..()
+	var/forced_fill = TYPE_TABLE_GET(src, oxygen_bomb_forced_fill)
+	if(!isnull(forced_fill))
+		amount = forced_fill
+		. = ..(mapload, amount)
+	else
+		. = ..()
 	onetankbomb(amount)
 
-/obj/item/tank/phoron/onetankbomb/full/Initialize(mapload)
-	. = ..(mapload, 2)
+TYPE_TABLE(/obj/item/tank/phoron/onetankbomb/full, phoron_bomb_forced_fill, 2)
 
-/obj/item/tank/oxygen/onetankbomb/full/Initialize(mapload)
-	. = ..(mapload, 2)
+TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/full, oxygen_bomb_forced_fill, 2)
 
-/obj/item/tank/phoron/onetankbomb/small/Initialize(mapload)
-	. = ..(mapload, 0)
+TYPE_TABLE(/obj/item/tank/phoron/onetankbomb/small, phoron_bomb_forced_fill, 0)
 
-/obj/item/tank/oxygen/onetankbomb/small/Initialize(mapload)
-	. = ..(mapload, 0)
+TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/small, oxygen_bomb_forced_fill, 0)
 
 /////////////////////////////////
 ///Pulled from rewritten bomb.dm

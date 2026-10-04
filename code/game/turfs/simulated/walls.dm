@@ -33,8 +33,23 @@
 	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(1)
 
+TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
+
 /turf/simulated/wall/Initialize(mapload, materialtype, rmaterialtype, girdertype)
-	. = ..()
+	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
+	if(forced_materials)
+		materialtype = forced_materials[1]
+		rmaterialtype = length(forced_materials) >= 2 ? forced_materials[2] : null
+		girdertype = length(forced_materials) >= 3 ? forced_materials[3] : null
+		switch(length(forced_materials))
+			if(1)
+				. = ..(mapload, materialtype)
+			if(2)
+				. = ..(mapload, materialtype, rmaterialtype)
+			if(3)
+				. = ..(mapload, materialtype, rmaterialtype, girdertype)
+	else
+		. = ..()
 	icon_state = "blank"
 	if(!materialtype)
 		materialtype = DEFAULT_WALL_MATERIAL

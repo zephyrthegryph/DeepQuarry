@@ -1,89 +1,69 @@
 /turf/simulated/wall/r_wall
 	icon_state = "rgeneric"
 	rad_insulation = RAD_HEAVY_INSULATION
-/turf/simulated/wall/r_wall/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL) //3strong
+TYPE_TABLE(/turf/simulated/wall/r_wall, wall_forced_materials, list(MAT_PLASTEEL,MAT_PLASTEEL)) //3strong
 
 /turf/simulated/wall/shull
 	icon_state = "hull-steel"
-/turf/simulated/wall/shull/Initialize(mapload) //Spaaaace ship.
-	. = ..(mapload,  MAT_STEELHULL, null, MAT_STEELHULL)
+TYPE_TABLE(/turf/simulated/wall/shull, wall_forced_materials, list(MAT_STEELHULL, null, MAT_STEELHULL)) //Spaaaace ship.
 /turf/simulated/wall/rshull
 	icon_state = "hull-r_steel"
 	rad_insulation = RAD_HEAVY_INSULATION
-/turf/simulated/wall/rshull/Initialize(mapload)
-	. = ..(mapload,  MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL)
+TYPE_TABLE(/turf/simulated/wall/rshull, wall_forced_materials, list(MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL))
 /turf/simulated/wall/rpshull
 	icon_state = "hull-r_plasteel"
-/turf/simulated/wall/rpshull/Initialize(mapload)
-	. = ..(mapload,  MAT_PLASTEELHULL, MAT_PLASTEELHULL, MAT_PLASTEELHULL)
+TYPE_TABLE(/turf/simulated/wall/rpshull, wall_forced_materials, list(MAT_PLASTEELHULL, MAT_PLASTEELHULL, MAT_PLASTEELHULL))
 
 /turf/simulated/wall/thull
 	icon_state = "hull-titanium"
 	rad_insulation = RAD_HEAVY_INSULATION
 
-/turf/simulated/wall/thull/Initialize(mapload)
-	. = ..(mapload,  MAT_TITANIUMHULL, null, MAT_TITANIUMHULL)
+TYPE_TABLE(/turf/simulated/wall/thull, wall_forced_materials, list(MAT_TITANIUMHULL, null, MAT_TITANIUMHULL))
 
 /turf/simulated/wall/cult
 	icon_state = "cult"
-/turf/simulated/wall/cult/Initialize(mapload)
-	. = ..(mapload, MAT_CULT,MAT_CULT2,MAT_CULT)
+TYPE_TABLE(/turf/simulated/wall/cult, wall_forced_materials, list(MAT_CULT,MAT_CULT2,MAT_CULT))
 /turf/unsimulated/wall/cult
 	name = "cult wall"
 	desc = "Hideous images dance beneath the surface."
 	icon = 'icons/turf/wall_masks.dmi'
 	icon_state = "cult"
 
-/turf/simulated/wall/iron/Initialize(mapload)
-	. = ..(mapload, MAT_IRON)
-/turf/simulated/wall/diamond/Initialize(mapload)
-	. = ..(mapload, MAT_DIAMOND)
-/turf/simulated/wall/gold/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD)
+TYPE_TABLE(/turf/simulated/wall/iron, wall_forced_materials, list(MAT_IRON))
+TYPE_TABLE(/turf/simulated/wall/diamond, wall_forced_materials, list(MAT_DIAMOND))
+TYPE_TABLE(/turf/simulated/wall/gold, wall_forced_materials, list(MAT_GOLD))
 
 /turf/simulated/wall/r_lead
 	rad_insulation = RAD_EXTREME_INSULATION
 
-/turf/simulated/wall/r_lead/Initialize(mapload)
-	. = ..(mapload, MAT_LEAD, MAT_LEAD)
-/turf/simulated/wall/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
-/turf/simulated/wall/sandstone/Initialize(mapload)
-	. = ..(mapload, MAT_SANDSTONE)
-/turf/simulated/wall/golddiamond/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD,MAT_DIAMOND)
-/turf/simulated/wall/snowbrick/Initialize(mapload)
-	. = ..(mapload, MAT_SNOWBRICK)
+TYPE_TABLE(/turf/simulated/wall/r_lead, wall_forced_materials, list(MAT_LEAD, MAT_LEAD))
+TYPE_TABLE(/turf/simulated/wall/phoron, wall_forced_materials, list(MAT_PHORON))
+TYPE_TABLE(/turf/simulated/wall/sandstone, wall_forced_materials, list(MAT_SANDSTONE))
+TYPE_TABLE(/turf/simulated/wall/golddiamond, wall_forced_materials, list(MAT_GOLD,MAT_DIAMOND))
+TYPE_TABLE(/turf/simulated/wall/snowbrick, wall_forced_materials, list(MAT_SNOWBRICK))
 
 /turf/simulated/wall/concrete
 	icon_state = "brick"
 	rad_insulation = RAD_HEAVY_INSULATION
 
-/turf/simulated/wall/concrete/Initialize(mapload)
-	. = ..(mapload, MAT_CONCRETE) //3strong
+TYPE_TABLE(/turf/simulated/wall/concrete, wall_forced_materials, list(MAT_CONCRETE)) //3strong
 
 // Kind of wondering if this is going to bite me in the butt.
-/turf/simulated/wall/skipjack/Initialize(mapload)
-	. = ..(mapload, MAT_ALIENALLOY)
+TYPE_TABLE(/turf/simulated/wall/skipjack, wall_forced_materials, list(MAT_ALIENALLOY))
 // Old attackby: items do nothing here.
 EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
-/turf/simulated/wall/titanium/Initialize(mapload)
-	. = ..(mapload, MAT_TITANIUM)
+TYPE_TABLE(/turf/simulated/wall/titanium, wall_forced_materials, list(MAT_TITANIUM))
 
 /turf/simulated/wall/durasteel
 	rad_insulation = RAD_HEAVY_INSULATION
 
-/turf/simulated/wall/durasteel/Initialize(mapload)
-	. = ..(mapload, MAT_DURASTEEL, MAT_DURASTEEL)
+TYPE_TABLE(/turf/simulated/wall/durasteel, wall_forced_materials, list(MAT_DURASTEEL, MAT_DURASTEEL))
 
 // ENd
 
-/turf/simulated/wall/wood/Initialize(mapload)
-	. = ..(mapload,  MAT_WOOD)
+TYPE_TABLE(/turf/simulated/wall/wood, wall_forced_materials, list(MAT_WOOD))
 
-/turf/simulated/wall/log_sif/Initialize(mapload)
-	. = ..(mapload,  MAT_SIFLOG)
+TYPE_TABLE(/turf/simulated/wall/log_sif, wall_forced_materials, list(MAT_SIFLOG))
 
 // Shuttle Walls
 /turf/simulated/shuttle/wall
@@ -560,8 +540,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_o
 /turf/simulated/wall/rplastihull
 	icon_state = "rhull-plastitanium"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-/turf/simulated/wall/rplastihull/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL)
+TYPE_TABLE(/turf/simulated/wall/rplastihull, wall_forced_materials, list(MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL))
 
 /turf/simulated/wall/diamond
 	icon_state = "diamond"
@@ -657,13 +636,11 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_o
 	icon_state = "stonelogs"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-/turf/simulated/wall/stonelogs/Initialize(mapload)
-			. = ..(mapload, MAT_CONCRETE,MAT_LOG)
+TYPE_TABLE(/turf/simulated/wall/stonelogs, wall_forced_materials, list(MAT_CONCRETE,MAT_LOG))
 
 /turf/simulated/wall/glass
 	icon = 'icons/obj/structures_vr.dmi'
 	icon_state = "window-full"
 	opacity = 0
 
-/turf/simulated/wall/glass/Initialize(mapload)
-	. = ..(mapload, MAT_GLASS)
+TYPE_TABLE(/turf/simulated/wall/glass, wall_forced_materials, list(MAT_GLASS))
