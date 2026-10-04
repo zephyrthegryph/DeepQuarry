@@ -14,42 +14,66 @@
 			to_chat(src, span_warning("You must be a human or a robot to use this verb."))
 			return
 
-	var/current_style = prefs.read_preference(/datum/preference/choiced/ui_style)
-	var/current_alpha = prefs.read_preference(/datum/preference/numeric/ui_style_alpha)
-	var/current_color = prefs.read_preference(/datum/preference/color/ui_style_color)
-	var/UI_style_new = client_ask("a1", VERB_REF(change_ui), args, 0, /datum/om/prompt/choice, message = "Select a style. White is recommended for customization", title = "UI Style Choice", choices = GLOB.all_ui_styles, default = current_style)
-	if(isnull(UI_style_new))
-		return
-	if(!UI_style_new) return
+	open_request(src, /datum/prompt/choice, PROC_REF(ui_style_chosen), answerer = mob, title = "UI Style Choice", question = "Select a style. White is recommended for customization", choices = GLOB.all_ui_styles, default = prefs.read_preference(/datum/preference/choiced/ui_style), timeout = 0)
 
-	var/UI_style_alpha_new = client_ask("a2", VERB_REF(change_ui), args, 0, /datum/om/prompt/number, message = "Select a new alpha (transparency) parameter for your UI, between 50 and 255", default = current_alpha, max = 255, min = 50)
-	if(isnull(UI_style_alpha_new))
+/client/proc/ui_style_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	if(!UI_style_alpha_new || !(UI_style_alpha_new <= 255 && UI_style_alpha_new >= 50)) return
+	var/mob/user = A.request.answerer
+	if(!ishuman(user) && !isrobot(user))
+		to_chat(src, span_warning("You must be a human or a robot to use this verb."))
+		return
+	var/style = A.request.answer_value
+	if(!style)
+		return
+	open_request(src, /datum/prompt/number/ui_style_alpha, PROC_REF(ui_alpha_picked), answerer = mob, default = prefs.read_preference(/datum/preference/numeric/ui_style_alpha), style = style)
 
-	om_ask(src, /datum/om/prompt/color/ui_style, PROC_REF(ui_color_picked), default = current_color, style = UI_style_new, alpha = UI_style_alpha_new, old_style = current_style, old_alpha = current_alpha, old_color = current_color)
+/datum/prompt/number/ui_style_alpha
+	question = "Select a new alpha (transparency) parameter for your UI, between 50 and 255"
+	timeout = 0
+	min_value = 50
+	max_value = 255
+	step = 1
+	var/style
+
+/client/proc/ui_alpha_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	if(!ishuman(user) && !isrobot(user))
+		to_chat(src, span_warning("You must be a human or a robot to use this verb."))
+		return
+	var/datum/prompt/number/ui_style_alpha/ask = A.request
+	var/alpha = ask.answer_value
+	if(!alpha || !(alpha <= 255 && alpha >= 50))
+		return
+	open_request(src, /datum/prompt/color/ui_style, PROC_REF(ui_color_picked), answerer = mob, default = prefs.read_preference(/datum/preference/color/ui_style_color), style = ask.style, alpha = alpha, old_style = prefs.read_preference(/datum/preference/choiced/ui_style), old_alpha = prefs.read_preference(/datum/preference/numeric/ui_style_alpha), old_color = prefs.read_preference(/datum/preference/color/ui_style_color))
 
 /// The UI colour pick of Change UI; the state is the style and alpha already picked, and the old
 /// look to go back to.
-/datum/om/prompt/color/ui_style
-	message = "Choose your UI color. Dark colors are not recommended!"
+/datum/prompt/color/ui_style
+	timeout = 0
+	question = "Choose your UI color. Dark colors are not recommended!"
 	var/style
 	var/alpha
 	var/old_style
 	var/old_alpha
 	var/old_color
 
-/client/proc/ui_color_picked(datum/om/prompt/color/ui_style/ask)
+/client/proc/ui_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/ui_style/ask = A.request
+	var/mob/user = ask.answerer
 	//update UI
-	ask.answerer.update_ui_style(ask.style, ask.alpha, ask.picked_color)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/ui_style_save, PROC_REF(ui_style_saved), style = ask.style, alpha = ask.alpha, color = ask.picked_color, old_style = ask.old_style, old_alpha = ask.old_alpha, old_color = ask.old_color)
+	user.update_ui_style(ask.style, ask.alpha, ask.answer_value)
+	open_request(src, /datum/prompt/yes_no/ui_style_save, PROC_REF(ui_style_saved), answerer = user, style = ask.style, alpha = ask.alpha, color = ask.answer_value, old_style = ask.old_style, old_alpha = ask.old_alpha, old_color = ask.old_color)
 
 /// Keep the new UI look? No (or a closed window) puts the old one back.
-/datum/om/prompt/confirm/ui_style_save
+/datum/prompt/yes_no/ui_style_save
+	timeout = 0
 	title = "Save?"
-	message = "Like it? Save changes?"
-	answer_on_no = TRUE
-	cancel_answer = "No"
+	question = "Like it? Save changes?"
 	var/style
 	var/alpha
 	var/color
@@ -57,9 +81,14 @@
 	var/old_alpha
 	var/old_color
 
-/client/proc/ui_style_saved(datum/om/prompt/confirm/ui_style_save/ask)
+/client/proc/ui_style_saved(datum/act/request/A)
+	var/datum/prompt/yes_no/ui_style_save/ask = A.request
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		return
 	var/mob/user = ask.answerer
-	if(ask.yes)
+	if(QDELETED(user))
+		return
+	if(A.answer && ask.answer_value)
 		user.write_preference_directly(/datum/preference/choiced/ui_style, ask.style, WRITE_PREF_MANUAL)
 		user.write_preference_directly(/datum/preference/numeric/ui_style_alpha, ask.alpha, WRITE_PREF_MANUAL)
 		user.write_preference_directly(/datum/preference/color/ui_style_color, ask.color, WRITE_PREF_MANUAL)
