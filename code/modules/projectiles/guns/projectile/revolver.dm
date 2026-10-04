@@ -69,10 +69,16 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("
 
 /// Old Name Gun verb: Click to rename your gun. If you're the detective.
 /obj/item/gun/projectile/revolver/detective/proc/det_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	return weapon_label_detective_name_stage(user, held, interaction)
+
+/obj/item/gun/projectile/revolver/detective/proc/weapon_label_detective_name_stage(mob/user, obj/item/held, datum/interaction/interaction, weapon_answer, weapon_answer_ready = FALSE)
 	var/mob/M = user
 	if(!M.mind)	return 0
 
-	var/_answer_k69 = rerun_ask(M, "k69", PROC_REF(det_revolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
+	if(!weapon_answer_ready)
+		open_request(src, /datum/prompt/text/weapon_label_review, PROC_REF(weapon_label_detective_name_answered), answerer = M, weapon_operator = user, weapon_held = held, weapon_interaction = interaction, question = "What do you want to name the gun?", title = "Rename Revolver", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k69 = weapon_answer
 	if(isnull(_answer_k69))
 		return
 	var/input = sanitizeSafe(_answer_k69)
@@ -97,9 +103,15 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 
 /// Old Name Gun verb: rename your gun, if you are the detective.
 /obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	return weapon_label_detective45_name_stage(user, held, interaction)
+
+/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_name_stage(mob/user, obj/item/held, datum/interaction/interaction, weapon_answer, weapon_answer_ready = FALSE)
 	var/mob/M = user
 	if(!M.mind)	return 0
-	var/_answer_k96 = rerun_ask(M, "k96", PROC_REF(det45_revolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
+	if(!weapon_answer_ready)
+		open_request(src, /datum/prompt/text/weapon_label_review, PROC_REF(weapon_label_detective45_name_answered), answerer = M, weapon_operator = user, weapon_held = held, weapon_interaction = interaction, question = "What do you want to name the gun?", title = "Rename Revolver", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k96 = weapon_answer
 	if(isnull(_answer_k96))
 		return
 	var/input = sanitizeSafe(_answer_k96, MAX_NAME_LEN)
@@ -111,6 +123,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 
 /// Old Resprite gun verb: Click to choose a sprite for your gun.
 /obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
+	return weapon_label_detective45_style_stage(user, held, interaction)
+
+/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_style_stage(mob/user, obj/item/held, datum/interaction/interaction, weapon_answer, weapon_answer_ready = FALSE)
 	var/mob/M = user
 	var/list/options = list()
 	options["MarsTech R1 Snubnose"] = "detective"
@@ -122,7 +137,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 	options["MarsTech Frontiersman Shadow"] = "detective_peacemaker_dark"
 	options["Jindal Duke"] = "detective_fitz"
 	options["H-H M1895"] = "nagant"
-	var/choice = rerun_ask(M, "k119", PROC_REF(det45_revolver_verb_reskin), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
+	if(!weapon_answer_ready)
+		open_request(src, /datum/prompt/choice/weapon_label_review, PROC_REF(weapon_label_detective45_style_answered), answerer = M, weapon_operator = user, weapon_held = held, weapon_interaction = interaction, question = "Choose your sprite!", title = "Resprite Gun", choices = options)
+		return
+	var/choice = weapon_answer
 	if(isnull(choice))
 		return
 	if(src && choice && !M.stat && in_range(M,src))
@@ -402,3 +420,42 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, TYPE_PROC_REF(
 	desc = "A high-power, fancy looking revolver that can stop nearly everything it's pointed at. Comes with a standard six-round-cylinder. There is ,Hesphiastos Industries, stamped along it's cylinder." // Yes I'm serious. -Spades
 	icon_state = "cerb"
 	icon = 'icons/obj/gun_yw.dmi'
+
+/obj/item/gun/projectile/revolver/detective/proc/weapon_label_detective_name_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(weapon_label_detective_name_apply), A)
+	if(!caught.ok)
+		stack_trace("Weapon detective_name replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/gun/projectile/revolver/detective/proc/weapon_label_detective_name_apply(datum/act/request/A)
+	var/datum/prompt/text/weapon_label_review/ask = A.answer
+	return weapon_label_detective_name_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.answer_value, TRUE)
+
+/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_name_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(weapon_label_detective45_name_apply), A)
+	if(!caught.ok)
+		stack_trace("Weapon detective45_name replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_name_apply(datum/act/request/A)
+	var/datum/prompt/text/weapon_label_review/ask = A.answer
+	return weapon_label_detective45_name_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.answer_value, TRUE)
+
+/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_style_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(weapon_label_detective45_style_apply), A)
+	if(!caught.ok)
+		stack_trace("Weapon detective45_style replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_style_apply(datum/act/request/A)
+	var/datum/prompt/choice/weapon_label_review/ask = A.answer
+	return weapon_label_detective45_style_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.answer_value, TRUE)

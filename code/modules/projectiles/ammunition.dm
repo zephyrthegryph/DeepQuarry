@@ -106,10 +106,16 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/ammo_casing/screwdriver_act(mob/user, obj/item/tool)
+	return weapon_label_inscription_stage(user, tool)
+
+/obj/item/ammo_casing/proc/weapon_label_inscription_stage(mob/user, obj/item/tool, weapon_answer, weapon_answer_ready = FALSE)
 	if(!BB)
 		to_chat(user, span_blue("There is no bullet in the casing to inscribe anything into."))
 		return ITEM_INTERACT_BLOCKING
-	var/_answer_k91 = rerun_ask(user, "k91", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/text, message = "Inscribe some text into \the [initial(BB.name)]", title = "Inscription", max_length = MAX_NAME_LEN, encode = FALSE)
+	if(!weapon_answer_ready)
+		open_request(src, /datum/prompt/text/weapon_label_review, PROC_REF(weapon_label_inscription_answered), answerer = user, weapon_operator = user, weapon_held = tool, question = "Inscribe some text into \the [initial(BB.name)]", title = "Inscription", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return ITEM_INTERACT_BLOCKING
+	var/_answer_k91 = weapon_answer
 	if(isnull(_answer_k91))
 		return ITEM_INTERACT_BLOCKING
 	var/label_text = sanitizeSafe(_answer_k91, MAX_NAME_LEN)
@@ -393,3 +399,88 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 
 	. += span_notice("Alt-click to extract contents.")
 
+
+/obj/item/ammo_casing/proc/weapon_label_inscription_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(weapon_label_inscription_apply), A)
+	if(!caught.ok)
+		stack_trace("Weapon inscription replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/ammo_casing/proc/weapon_label_inscription_apply(datum/act/request/A)
+	var/datum/prompt/text/weapon_label_review/ask = A.answer
+	return weapon_label_inscription_stage(ask.weapon_operator, ask.weapon_held, ask.answer_value, TRUE)
+
+/datum/prompt/text/weapon_label_review
+	timeout = 0
+	var/mob/weapon_operator
+	var/weapon_operator_expected = FALSE
+	var/obj/item/weapon_held
+	var/weapon_held_expected = FALSE
+	var/datum/interaction/weapon_interaction
+	var/weapon_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/weapon_label_review)
+	ref_one(nameof(weapon_operator), /mob)
+	ref_one(nameof(weapon_held), /obj/item)
+	ref_one(nameof(weapon_interaction), /datum/interaction)
+
+/datum/prompt/text/weapon_label_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_weapon_operator = weapon_operator
+	weapon_operator_expected = !isnull(captured_weapon_operator)
+	rel_clear(src, nameof(weapon_operator))
+	if(captured_weapon_operator && !QDELETED(captured_weapon_operator))
+		rel_set(src, nameof(weapon_operator), captured_weapon_operator)
+	var/obj/item/captured_weapon_held = weapon_held
+	weapon_held_expected = !isnull(captured_weapon_held)
+	rel_clear(src, nameof(weapon_held))
+	if(captured_weapon_held && !QDELETED(captured_weapon_held))
+		rel_set(src, nameof(weapon_held), captured_weapon_held)
+	var/datum/interaction/captured_weapon_interaction = weapon_interaction
+	weapon_interaction_expected = !isnull(captured_weapon_interaction)
+	rel_clear(src, nameof(weapon_interaction))
+	if(captured_weapon_interaction && !QDELETED(captured_weapon_interaction))
+		rel_set(src, nameof(weapon_interaction), captured_weapon_interaction)
+
+/datum/prompt/text/weapon_label_review/recheck_extra()
+	if((weapon_operator_expected && QDELETED(weapon_operator)) || (weapon_held_expected && QDELETED(weapon_held)) || (weapon_interaction_expected && QDELETED(weapon_interaction)))
+		return "gone"
+
+/datum/prompt/choice/weapon_label_review
+	timeout = 0
+	var/mob/weapon_operator
+	var/weapon_operator_expected = FALSE
+	var/obj/item/weapon_held
+	var/weapon_held_expected = FALSE
+	var/datum/interaction/weapon_interaction
+	var/weapon_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/weapon_label_review)
+	ref_one(nameof(weapon_operator), /mob)
+	ref_one(nameof(weapon_held), /obj/item)
+	ref_one(nameof(weapon_interaction), /datum/interaction)
+
+/datum/prompt/choice/weapon_label_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_weapon_operator = weapon_operator
+	weapon_operator_expected = !isnull(captured_weapon_operator)
+	rel_clear(src, nameof(weapon_operator))
+	if(captured_weapon_operator && !QDELETED(captured_weapon_operator))
+		rel_set(src, nameof(weapon_operator), captured_weapon_operator)
+	var/obj/item/captured_weapon_held = weapon_held
+	weapon_held_expected = !isnull(captured_weapon_held)
+	rel_clear(src, nameof(weapon_held))
+	if(captured_weapon_held && !QDELETED(captured_weapon_held))
+		rel_set(src, nameof(weapon_held), captured_weapon_held)
+	var/datum/interaction/captured_weapon_interaction = weapon_interaction
+	weapon_interaction_expected = !isnull(captured_weapon_interaction)
+	rel_clear(src, nameof(weapon_interaction))
+	if(captured_weapon_interaction && !QDELETED(captured_weapon_interaction))
+		rel_set(src, nameof(weapon_interaction), captured_weapon_interaction)
+
+/datum/prompt/choice/weapon_label_review/recheck_extra()
+	if((weapon_operator_expected && QDELETED(weapon_operator)) || (weapon_held_expected && QDELETED(weapon_held)) || (weapon_interaction_expected && QDELETED(weapon_interaction)))
+		return "gone"
