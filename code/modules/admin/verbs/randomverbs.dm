@@ -1133,59 +1133,110 @@ ADMIN_VERB(toggle_vantag_hud_global, R_EVENT|R_SERVER|R_ADMIN, "Toggle Global Ev
 
 
 ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a specified ckey as a chosen mob.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	om_flow_start(/datum/om/flow/spawn_character_mob, user.mob, null, requires = PROMPT_ADMIN(permissions))
+	user.mob?.ask_spawn_character_mob(permissions)
 
-/// Spawn Character As Mob: the client, the mob type (typed, then picked when several match),
-/// and whether to carry over their name, vore organs and flavor text. "Cancel" stops it.
-/datum/om/flow/spawn_character_mob
-	name = "spawn character mob"
-	var/client/picked
+/// Native spawn-character questions retain the selected client and initiating admin mob.
+/datum/prompt/choice/spawn_character
+	timeout = 0
+	var/picked_ckey
+	var/needs_picked = FALSE
 	var/mob_type
 	var/use_name = FALSE
 	var/organs = FALSE
 
-/datum/om/flow/spawn_character_mob/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(client_picked), title = "Client", message = "Who are we spawning as a mob?", choices = GLOB.clients)
+/datum/prompt/choice/spawn_character/recheck_extra()
+	if(needs_picked && !GLOB.directory[picked_ckey])
+		return "gone"
+	return null
 
-/datum/om/flow/spawn_character_mob/proc/client_picked(datum/om/prompt/choice/ask)
-	picked = ask.choice
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(path_entered), title = "Mob", message = "Mob path to spawn as?")
+/datum/prompt/text/spawn_character
+	timeout = 0
+	var/picked_ckey
+	var/needs_picked = FALSE
 
-/datum/om/flow/spawn_character_mob/proc/path_entered(datum/om/prompt/text/ask)
+/datum/prompt/text/spawn_character/recheck_extra()
+	if(needs_picked && !GLOB.directory[picked_ckey])
+		return "gone"
+	return null
+
+/datum/prompt/choice/spawn_character/begin()
+	// Match the old flow's initial rights gate before its first client selector is shown.
+	var/reason = request_recheck(src)
+	if(reason)
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/mob/proc/ask_spawn_character_mob(rights)
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_client_picked), answerer = src, rights = rights, title = "Client", question = "Who are we spawning as a mob?", choices = GLOB.clients)
+
+/mob/proc/spawn_character_client_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/spawn_character/ask = A.answer
+	var/client/picked = ask.answer_value
+	if(!istype(picked))
+		return
+	open_request(src, /datum/prompt/text/spawn_character, PROC_REF(spawn_character_path_entered), answerer = src, rights = ask.rights, picked_ckey = picked.ckey, needs_picked = TRUE, title = "Mob", question = "Mob path to spawn as?")
+
+/mob/proc/spawn_character_path_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/datum/prompt/text/spawn_character/ask = A.answer
 	var/list/matches = list()
 	for(var/path in typesof(/mob/living))
-		if(findtext("[path]", ask.text))
+		if(findtext("[path]", ask.answer_value))
 			matches += path
 	if(!matches.len)
 		return
 	if(matches.len == 1)
-		mob_type = matches[1]
-		ask_name()
+		ask_spawn_character_name(ask.picked_ckey, matches[1], ask.rights)
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_picked), title = "Select Mob", message = "Select a mob type", choices = matches)
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_type_picked), answerer = src, rights = ask.rights, picked_ckey = ask.picked_ckey, needs_picked = TRUE, title = "Select Mob", question = "Select a mob type", choices = matches)
 
-/datum/om/flow/spawn_character_mob/proc/type_picked(datum/om/prompt/choice/ask)
-	mob_type = ask.choice
-	ask_name()
+/mob/proc/spawn_character_type_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/spawn_character/ask = A.answer
+	ask_spawn_character_name(ask.picked_ckey, ask.answer_value, ask.rights)
 
-/datum/om/flow/spawn_character_mob/proc/ask_name()
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(name_picked), title = "Mob name", message = "Spawn mob with their character name?", choices = list("Yes", "No", "Cancel"))
+/mob/proc/ask_spawn_character_name(picked_ckey, mob_type, rights)
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_name_picked), answerer = src, rights = rights, picked_ckey = picked_ckey, needs_picked = TRUE, mob_type = mob_type, buttons = TRUE, title = "Mob name", question = "Spawn mob with their character name?", choices = list("Yes", "No", "Cancel"))
 
-/datum/om/flow/spawn_character_mob/proc/name_picked(datum/om/prompt/choice/ask)
-	use_name = ask.choice == "Yes"
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(organs_picked), title = "Vore organs", message = "Spawn mob with their character's vore organs and prefs?", choices = list("Yes", "No", "Cancel"))
+/mob/proc/spawn_character_name_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/spawn_character/ask = A.answer
+	if(ask.answer_value == "Cancel")
+		return
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_organs_picked), answerer = src, rights = ask.rights, picked_ckey = ask.picked_ckey, needs_picked = TRUE, mob_type = ask.mob_type, use_name = ask.answer_value == "Yes", buttons = TRUE, title = "Vore organs", question = "Spawn mob with their character's vore organs and prefs?", choices = list("Yes", "No", "Cancel"))
 
-/datum/om/flow/spawn_character_mob/proc/organs_picked(datum/om/prompt/choice/ask)
-	organs = ask.choice == "Yes"
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(spawn_answered), buttons = TRUE, title = "Flavor text", message = "Spawn mob with their character's flavor text?", choices = list("General", "Robot", "Cancel"), cancel_answer = "Cancel")
+/mob/proc/spawn_character_organs_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/spawn_character/ask = A.answer
+	if(ask.answer_value == "Cancel")
+		return
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_answered), answerer = src, rights = ask.rights, picked_ckey = ask.picked_ckey, needs_picked = TRUE, mob_type = ask.mob_type, use_name = ask.use_name, organs = ask.answer_value == "Yes", buttons = TRUE, title = "Flavor text", question = "Spawn mob with their character's flavor text?", choices = list("General", "Robot", "Cancel"))
 
-/datum/om/flow/spawn_character_mob/proc/spawn_answered(datum/om/prompt/choice/ask)
-	var/mob/admin_mob = actor
+/mob/proc/spawn_character_answered(datum/act/request/A)
+	var/datum/prompt/choice/spawn_character/ask = A.request
+	if(QDELETED(ask.answerer) || !GLOB.directory[ask.picked_ckey])
+		return
+	var/flavor = ask.answer_value
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value))
+			return
+		// The old cancel_answer="Cancel" still resumes the flow, including its late rights/lifetime check.
+		if(request_recheck(ask))
+			return
+		flavor = "Cancel"
+	var/mob/admin_mob = src
 	var/client/user = admin_mob.client
-	var/client/picked_client = picked
-	var/mob/living/chosen = mob_type
-	var/name = use_name
-	var/flavor = ask.choice
+	var/client/picked_client = GLOB.directory[ask.picked_ckey]
+	var/mob/living/chosen = ask.mob_type
+	var/name = ask.use_name
+	var/organs = ask.organs
 
 	var/spawnloc
 	if(!user.mob)

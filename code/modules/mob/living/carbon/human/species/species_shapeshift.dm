@@ -197,8 +197,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	open_request(src, /datum/prompt/choice, PROC_REF(shapeshifter_gender_picked), answerer = src, title = "Shapeshifter Gender", question = "Please select a gender.", choices = list(FEMALE, MALE, NEUTER, PLURAL), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// The gender identity; carries the gender picked first.
-/datum/om/prompt/choice/shapeshift_identity
-	message = "Please select a gender Identity."
+/datum/prompt/choice/shapeshift_identity
+	timeout = 0
+	question = "Please select a gender Identity."
 	title = "Shapeshifter Gender Identity"
 	choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM)
 	ask_flags = ASK_CONSCIOUS
@@ -207,12 +208,15 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_gender_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	om_ask(src, /datum/om/prompt/choice/shapeshift_identity, PROC_REF(shapeshifter_gender_chosen), new_gender = A.answer.answer_value)
+	open_request(src, /datum/prompt/choice/shapeshift_identity, PROC_REF(shapeshifter_gender_chosen), answerer = src, new_gender = A.answer.answer_value)
 
-/mob/living/carbon/human/proc/shapeshifter_gender_chosen(datum/om/prompt/choice/shapeshift_identity/ask)
+/mob/living/carbon/human/proc/shapeshifter_gender_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/shapeshift_identity/ask = A.request
 	act_message(src, null, others = span_notice("%U%'s form contorts subtly."))
 	change_gender(ask.new_gender)
-	change_gender_identity(ask.choice)
+	change_gender_identity(A.answer.answer_value)
 
 /mob/living/carbon/human/proc/shapeshifter_select_shape()
 
@@ -224,24 +228,31 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	COOLDOWN_START(src, last_special, 50)
 
-	om_ask(src, /datum/om/prompt/choice/shapeshifter_form, PROC_REF(shapeshifter_shape_chosen), choices = species.get_valid_shapeshifter_forms(src))
+	open_request(src, /datum/prompt/choice/shapeshifter_form, PROC_REF(shapeshifter_shape_chosen), answerer = src, choices = species.get_valid_shapeshifter_forms(src))
 
 /// Picking a form. Re-checked on the answer: still conscious, and the form is still one to take.
-/datum/om/prompt/choice/shapeshifter_form
+/datum/prompt/choice/shapeshifter_form
+	timeout = 0
 	title = "Shapeshifter Body"
-	message = "Please select a species to emulate."
+	question = "Please select a species to emulate."
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/shapeshifter_form/valid()
-	var/mob/living/carbon/human/shifter = asker
+/datum/prompt/choice/shapeshifter_form/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/mob/living/carbon/human/shifter = asker || answerer
+	var/choice = answer_value
 	if(!GLOB.all_species[choice] || GLOB.wrapped_species_by_ref["\ref[shifter]"] == choice || !(choice in shifter.species.get_valid_shapeshifter_forms(shifter)))
 		return "not a form to take"
 	return null
 
-/mob/living/carbon/human/proc/shapeshifter_shape_chosen(datum/om/prompt/choice/shapeshifter_form/ask)
-	shapeshifter_change_shape(ask.choice)
+/mob/living/carbon/human/proc/shapeshifter_shape_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	shapeshifter_change_shape(A.answer.answer_value)
 
-/* moved to species_shapeshift_vr.dm
+/*
 /mob/living/carbon/human/proc/shapeshifter_change_shape(new_species = null)
 	if(!new_species)
 		return

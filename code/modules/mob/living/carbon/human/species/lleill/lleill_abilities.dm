@@ -47,10 +47,12 @@
 
 	COOLDOWN_START(src, last_special, 50)
 
-	om_ask(src, /datum/om/prompt/choice/shapeshifter_form, PROC_REF(lleill_shape_chosen), choices = species.get_valid_shapeshifter_forms(src))
+	open_request(src, /datum/prompt/choice/shapeshifter_form, PROC_REF(lleill_shape_chosen), answerer = src, choices = species.get_valid_shapeshifter_forms(src))
 
-/mob/living/carbon/human/proc/lleill_shape_chosen(datum/om/prompt/choice/shapeshifter_form/ask)
-	lleill_change_shape(ask.choice)
+/mob/living/carbon/human/proc/lleill_shape_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	lleill_change_shape(A.answer.answer_value)
 
 /mob/living/carbon/human/proc/lleill_change_shape(new_species = null)
 	if(!new_species)

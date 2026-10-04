@@ -2277,13 +2277,13 @@
 	into += entry_line(78)
 	into += list(global.owns_many(nameof(symptoms)))
 
-/// CAPABILITIES(/datum/lleill_contact_review) at code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm:392
+/// CAPABILITIES(/datum/lleill_contact_review) at code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm:394
 /datum/lleill_contact_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm", 392, /datum/lleill_contact_review)
-	into += entry_line(393)
+	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm", 394, /datum/lleill_contact_review)
+	into += entry_line(395)
 	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
-	into += entry_line(394)
+	into += entry_line(396)
 	into += list(global.ref_one(nameof(chosen_target), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/log_category) at code/modules/logging/log_category.dm:40
@@ -2847,11 +2847,11 @@
 	into += entry_line(158)
 	into += list(global.ref_one(nameof(camera), /obj/machinery/camera))
 
-/// CAPABILITIES(/datum/prompt/choice/copy_body_flavour) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:870
+/// CAPABILITIES(/datum/prompt/choice/copy_body_flavour) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:881
 /datum/prompt/choice/copy_body_flavour/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 870, /datum/prompt/choice/copy_body_flavour)
-	into += entry_line(871)
+	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 881, /datum/prompt/choice/copy_body_flavour)
+	into += entry_line(882)
 	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/choice/crystal_capture) at code/game/objects/items/weapons/capture_crystal.dm:404
@@ -2963,14 +2963,21 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
-/// CAPABILITIES(/datum/prompt/choice/succubus_bite) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1469
+/// CAPABILITIES(/datum/prompt/choice/succubus_bite) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1482
 /datum/prompt/choice/succubus_bite/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1469, /datum/prompt/choice/succubus_bite)
-	into += entry_line(1470)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1482, /datum/prompt/choice/succubus_bite)
+	into += entry_line(1483)
 	into += list(global.ref_one(nameof(grab), /obj/item/grab))
-	into += entry_line(1471)
+	into += entry_line(1484)
 	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
+
+/// CAPABILITIES(/datum/prompt/choice/victim/absorbed) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1702
+/datum/prompt/choice/victim/absorbed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1702, /datum/prompt/choice/victim/absorbed)
+	into += entry_line(1703)
+	into += list(global.ref_one(nameof(belly), /obj/belly))
 
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
 /datum/prompt/color/paint_palette/declared_entries(list/into)
@@ -3090,11 +3097,11 @@
 	into += entry_line(175)
 	into += list(global.ref_one(nameof(camera), /obj/machinery/camera))
 
-/// CAPABILITIES(/datum/prompt/yes_no/copy_body_consent) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:833
+/// CAPABILITIES(/datum/prompt/yes_no/copy_body_consent) at code/modules/mob/living/carbon/human/species/species_shapeshift.dm:844
 /datum/prompt/yes_no/copy_body_consent/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 833, /datum/prompt/yes_no/copy_body_consent)
-	into += entry_line(834)
+	into += entry_block("code/modules/mob/living/carbon/human/species/species_shapeshift.dm", 844, /datum/prompt/yes_no/copy_body_consent)
+	into += entry_line(845)
 	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/yes_no/cryo_consent) at code/game/machinery/cryopod.dm:718

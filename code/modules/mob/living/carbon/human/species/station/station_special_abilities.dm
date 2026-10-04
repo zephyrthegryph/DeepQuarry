@@ -926,25 +926,31 @@ CAPABILITIES(/datum/shred_limb_review)
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice/victim/underwater, PROC_REF(underwater_devour_target_chosen), choices = targets)
+	open_request(src, /datum/prompt/choice/victim/underwater, PROC_REF(underwater_devour_target_chosen), answerer = src, choices = targets)
 
 /// Picking a victim for a vore ability. Re-checked on the answer: conscious.
-/datum/om/prompt/choice/victim
+/datum/prompt/choice/victim
+	timeout = 0
 	title = "Victim"
-	message = "Please select a target."
+	question = "Please select a target."
 	ask_flags = ASK_CONSCIOUS
 
 /// Also re-checked: still stealthed underwater, and the target is still next to us.
-/datum/om/prompt/choice/victim/underwater
+/datum/prompt/choice/victim/underwater
 
-/datum/om/prompt/choice/victim/underwater/valid()
+/datum/prompt/choice/victim/underwater/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/L = answerer
-	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, choice) > 1)
+	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, answer_value) > 1)
 		return "lost the chance"
 	return null
 
-/mob/living/carbon/human/proc/underwater_devour_target_chosen(datum/om/prompt/choice/victim/underwater/ask)
-	var/mob/living/target = ask.choice
+/mob/living/carbon/human/proc/underwater_devour_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.answer_value
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
 	var/starting_loc = target.loc
 
@@ -1014,7 +1020,7 @@ CAPABILITIES(/datum/shred_limb_review)
 			if(!(targets.len))
 				to_chat(src, span_notice("No eligible targets found."))
 				return
-			om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(long_vore_target_chosen), choices = targets)
+			open_request(src, /datum/prompt/choice/victim, PROC_REF(long_vore_target_chosen), answerer = src, choices = targets)
 
 /mob/living/proc/appendage_color_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1026,8 +1032,10 @@ CAPABILITIES(/datum/shred_limb_review)
 		return
 	appendage_alt_setting = (A.answer.answer_value != "Pull target to self")
 
-/mob/living/proc/long_vore_target_chosen(datum/om/prompt/choice/victim/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/long_vore_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.answer_value
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
@@ -1221,15 +1229,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice/victim/lunge, PROC_REF(target_lunge_chosen), choices = targets, leap_warmup = leap_warmup, leap_sound = leap_sound)
+		open_request(src, /datum/prompt/choice/victim/lunge, PROC_REF(target_lunge_chosen), answerer = src, choices = targets, leap_warmup = leap_warmup, leap_sound = leap_sound)
 
 /// Carries the lunge's warm-up and sound.
-/datum/om/prompt/choice/victim/lunge
+/datum/prompt/choice/victim/lunge
 	var/leap_warmup
 	var/leap_sound
 
-/mob/living/proc/target_lunge_chosen(datum/om/prompt/choice/victim/lunge/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/target_lunge_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/victim/lunge/ask = A.request
+	var/mob/living/target = A.answer.answer_value
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
@@ -1371,10 +1382,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(injection_target_chosen), choices = targets)
+		open_request(src, /datum/prompt/choice/victim, PROC_REF(injection_target_chosen), answerer = src, choices = targets)
 
-/mob/living/proc/injection_target_chosen(datum/om/prompt/choice/victim/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/injection_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.answer_value
 	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !Adjacent(target))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
@@ -1628,22 +1641,28 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	var/list/victims = list()
 	for(var/mob/living/carbon/C in oview(1))
 		victims += C
-	om_ask(src, /datum/om/prompt/choice/insect_sting, PROC_REF(insect_sting_chosen), choices = victims)
+	open_request(src, /datum/prompt/choice/insect_sting, PROC_REF(insect_sting_chosen), answerer = src, choices = victims)
 
 /// Re-checked on the answer: conscious, off cooldown, and next to the target.
-/datum/om/prompt/choice/insect_sting
+/datum/prompt/choice/insect_sting
+	timeout = 0
 	title = "Target"
-	message = "Who will we sting?"
+	question = "Who will we sting?"
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/insect_sting/valid()
+/datum/prompt/choice/insect_sting/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/L = answerer
-	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(choice))
+	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(answer_value))
 		return "can't reach"
 	return null
 
-/mob/living/proc/insect_sting_chosen(datum/om/prompt/choice/insect_sting/ask)
-	var/mob/living/carbon/T = ask.choice
+/mob/living/proc/insect_sting_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/T = A.answer.answer_value
 	if(HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
@@ -1672,22 +1691,42 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	if(!(targets.len))
 		to_chat(src, span_notice("No eligible targets found."))
 		return
-	om_ask(src, /datum/om/prompt/choice/victim/absorbed, PROC_REF(absorb_devour_chosen), choices = targets, belly = belly)
+	open_request(src, /datum/prompt/choice/victim/absorbed, PROC_REF(absorb_devour_chosen), answerer = src, choices = targets, belly = belly)
 
 /// An absorbed prey picking a victim for its pred's belly. Re-checked on the answer: still
 /// absorbed in that belly, inside a living pred. (No consciousness check.)
-/datum/om/prompt/choice/victim/absorbed
+/datum/prompt/choice/victim/absorbed
 	ask_flags = NONE
 	var/obj/belly/belly
 
-/datum/om/prompt/choice/victim/absorbed/valid()
+CAPABILITIES(/datum/prompt/choice/victim/absorbed)
+	ref_one(nameof(belly), /obj/belly)
+
+/datum/prompt/choice/victim/absorbed/prepare(datum/act/A)
+	..()
+	var/obj/belly/captured = belly
+	rel_clear(src, nameof(belly))
+	rel_set(src, nameof(belly), captured)
+
+/datum/prompt/choice/victim/absorbed/begin()
+	if(QDELETED(belly))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/victim/absorbed/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/L = answerer
-	if(!L.absorbed || L.loc != belly || !isliving(belly.loc))
+	if(QDELETED(belly) || !L.absorbed || L.loc != belly || !isliving(belly.loc))
 		return "not absorbed"
 	return null
 
-/mob/living/proc/absorb_devour_chosen(datum/om/prompt/choice/victim/absorbed/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/absorb_devour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.answer_value
 	var/mob/living/pred = loc.loc
 	var/obj/belly/belly = loc
 	if(!isliving(target)) //Safety.
