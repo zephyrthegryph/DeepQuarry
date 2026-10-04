@@ -464,6 +464,7 @@
 #include "dq_p1_close_tests.dm"
 #include "dq_p2_library_tests.dm"
 #include "dq_p2_engine_tests.dm"
+#include "interim_anomaly_battery_effect_custody.dm"
 #include "dq_p2_apc_behaviour.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"
