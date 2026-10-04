@@ -246,7 +246,20 @@ pub fn prepare(tree: &Tree, sem: &Sem, excluded: &dyn Fn(&str) -> bool) -> Arc<d
             } else {
                 None
             };
-            if node.args.iter().any(|a| super::helpers::has_comment(a.trailing.text(text))) {
+            let gaps_have_comment = {
+                let mut gaps: Vec<&str> = Vec::new();
+                if let Some(first) = node.args.first() {
+                    gaps.push(&text[node.open + 1..first.span.start]);
+                }
+                for w in node.args.windows(2) {
+                    gaps.push(&text[w[0].span.end..w[1].span.start]);
+                }
+                if let Some(last) = node.args.last() {
+                    gaps.push(&text[last.span.end..node.close]);
+                }
+                gaps.iter().any(|g| super::helpers::has_comment(g))
+            };
+            if gaps_have_comment {
                 base.get_or_insert("comment_in_call");
             }
             if !starts_line(text, off) {

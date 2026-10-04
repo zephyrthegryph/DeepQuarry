@@ -525,6 +525,11 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
         for n in names {
             for off in scan::call_offsets(&clean, n) {
                 if !claimed.contains(&off) {
+                    // The definition of a macro form (`#define om_ask(...)`) is the form itself, not a use of it.
+                    let ls = text[..off].rfind('\n').map(|p| p + 1).unwrap_or(0);
+                    if text[ls..off].trim_start().strip_prefix("#define").map(|r| r.trim().is_empty()).unwrap_or(false) {
+                        continue;
+                    }
                     let line = text[..off].bytes().filter(|b| *b == b'\n').count() as u32 + 1;
                     pending.push(ResidueSite { file: rel.clone(), line, reason: "not_in_ast".into(), text: snippet(&text, off) });
                 }
