@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The om_hook residue converted by hand: 132 of 173 sites now observe()/unobserve() (handlers take datum/act/notice); veto events whose remaining listeners only watch gained notice twins"

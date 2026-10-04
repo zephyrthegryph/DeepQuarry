@@ -90,7 +90,9 @@
 	if(!length(parents))
 		return
 	for(var/atom/movable/cur_parent in parents)
-		om_unhook(cur_parent, list(/datum/om/event/qdeleting, /datum/om/event/atom_exited, /datum/om/event/item_equipped), src)
+		unobserve(cur_parent, /datum/notice/qdeleting, src)
+		unobserve(cur_parent, /datum/notice/atom_exited, src)
+		unobserve(cur_parent, /datum/notice/item_equipped, src)
 
 	if(length(parents))
 		unobserve(parents[length(parents)], /datum/notice/atom_entering, src)

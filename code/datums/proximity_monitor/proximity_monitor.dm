@@ -32,9 +32,10 @@ CAPABILITIES(/datum/proximity_monitor)
 	if(new_host == host())
 		return
 	if(host()) //No need to delete the range and containers connectors. They'll be updated with the new tracked host.
-		om_unhook(host(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
+		unobserve(host(), /datum/notice/moved, src)
+		unobserve(host(), /datum/notice/qdeleting, src)
 	if(hasprox_receiver())
-		om_unhook(hasprox_receiver(), /datum/om/event/qdeleting, src)
+		unobserve(hasprox_receiver(), /datum/notice/qdeleting, src)
 	if(new_receiver)
 		rel_set(src, nameof(hasprox_receiver), new_receiver)
 		if(new_receiver != new_host)
@@ -43,13 +44,13 @@ CAPABILITIES(/datum/proximity_monitor)
 		rel_set(src, nameof(hasprox_receiver), new_host)
 	rel_set(src, nameof(host), new_host)
 	observe(new_host, /datum/notice/qdeleting, src, then(PROC_REF(on_host_or_receiver_del)))
-	var/static/list/containers_connections = list(/datum/om/event/moved = PROC_REF(on_moved), /datum/om/event/before/movable_z_changed = PROC_REF(on_z_change))
+	var/static/list/containers_connections = list(/datum/notice/moved = PROC_REF(on_moved), /datum/notice/movable_z_changed = PROC_REF(on_z_change))
 	if(containers_connector && !QDELETED(containers_connector))
 		containers_connector.update(host(), containers_connections)
 	else if(ismovable(host()))
 		rel_set(src, nameof(containers_connector), new /datum/connect_containers(src, host(), containers_connections))
-	om_hook(host(), /datum/om/event/moved, src, PROC_REF(on_moved))
-	om_hook(host(), /datum/om/event/before/movable_z_changed, src, PROC_REF(on_z_change))
+	observe(host(), /datum/notice/moved, src, then(PROC_REF(on_moved)))
+	observe(host(), /datum/notice/movable_z_changed, src, then(PROC_REF(on_z_change)))
 	set_range(current_range, TRUE)
 
 /datum/proximity_monitor/proc/on_host_or_receiver_del(datum/act/notice/A)
@@ -72,12 +73,13 @@ CAPABILITIES(/datum/proximity_monitor)
 		return
 	rel_set(src, nameof(range_connector), new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
 
-/datum/proximity_monitor/proc/on_moved(atom/movable/source, datum/om/event/moved/event)
+/datum/proximity_monitor/proc/on_moved(datum/act/notice/N)
 	EVENT_HANDLER
+	var/atom/movable/source = N.target
 	if(source == host())
 		hasprox_receiver()?.HasProximity(host())
 
-/datum/proximity_monitor/proc/on_z_change(datum/source, datum/om/event/before/movable_z_changed/event)
+/datum/proximity_monitor/proc/on_z_change(datum/act/notice/N)
 	EVENT_HANDLER
 	return
 

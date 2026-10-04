@@ -225,15 +225,15 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 // These procs do not relocate the grenade, that's the callers responsibility
 /obj/item/integrated_circuit/manipulation/grenade/proc/attach_grenade(obj/item/grenade/G)
 	rel_set(src, nameof(attached_grenade), G)
-	om_hook(attached_grenade, /datum/om/event/qdeleting, src, PROC_REF(detach_grenade))
+	observe(attached_grenade, /datum/notice/qdeleting, src, then(PROC_REF(detach_grenade)))
 	size += G.w_class
 	desc += " \An [attached_grenade] is attached to it!"
 
-/obj/item/integrated_circuit/manipulation/grenade/proc/detach_grenade()
+/obj/item/integrated_circuit/manipulation/grenade/proc/detach_grenade(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!attached_grenade)
 		return
-	om_unhook(attached_grenade, /datum/om/event/qdeleting, src)
+	unobserve(attached_grenade, /datum/notice/qdeleting, src)
 	own_take(src, nameof(attached_grenade))
 	size = initial(size)
 	desc = initial(desc)

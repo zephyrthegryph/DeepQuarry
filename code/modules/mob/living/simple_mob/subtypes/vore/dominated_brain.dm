@@ -47,25 +47,25 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 
 /mob/living/dominated_brain/proc/lets_register_our_signals()
 	if(prey_body)
-		om_hook(prey_body, /datum/om/event/qdeleting, src, PROC_REF(prey_was_deleted))
-	om_hook(pred_body, /datum/om/event/qdeleting, src, PROC_REF(pred_was_deleted))
+		global.observe(prey_body, /datum/notice/qdeleting, src, then(PROC_REF(prey_was_deleted)))
+	global.observe(pred_body, /datum/notice/qdeleting, src, then(PROC_REF(pred_was_deleted)))
 
 /mob/living/dominated_brain/proc/lets_unregister_our_signals()
 	prey_was_deleted()
 	pred_was_deleted()
 
 /// Also called directly with no args (lets_unregister_our_signals).
-/mob/living/dominated_brain/proc/prey_was_deleted(datum/source, datum/om/event/qdeleting/event)
+/mob/living/dominated_brain/proc/prey_was_deleted(datum/act/notice/N)
 	EVENT_HANDLER
 	if(prey_body)
-		om_unhook(prey_body, /datum/om/event/qdeleting, src)
+		unobserve(prey_body, /datum/notice/qdeleting, src)
 		rel_clear(src, nameof(prey_body))
 
 /// Also called directly with no args (lets_unregister_our_signals).
-/mob/living/dominated_brain/proc/pred_was_deleted(datum/source, datum/om/event/qdeleting/event)
+/mob/living/dominated_brain/proc/pred_was_deleted(datum/act/notice/N)
 	EVENT_HANDLER
 	if(pred_body)
-		om_unhook(pred_body, /datum/om/event/qdeleting, src)
+		unobserve(pred_body, /datum/notice/qdeleting, src)
 		rel_clear(src, nameof(pred_body))
 
 /mob/living/dominated_brain/process_resist()

@@ -5,7 +5,7 @@
 /datum/connect_containers
 	/// Who the connection hooks are made for (their procs are called).
 	var/datum/listener
-	/// An assoc list of /datum/om/event path -> proc ref (on listener) to hook onto each container.
+	/// An assoc list of /datum/notice path -> proc ref (on listener) to hook onto each container.
 	var/list/connections
 	/**
 	 * The atom being tracked. The datum deletes itself if the tracked is deleted.
@@ -43,7 +43,8 @@
 
 /datum/connect_containers/proc/set_tracked(atom/movable/new_tracked)
 	if(tracked())
-		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
+		unobserve(tracked(), /datum/notice/moved, src)
+		unobserve(tracked(), /datum/notice/qdeleting, src)
 		unregister_hooks(tracked())
 	rel_set(src, nameof(tracked), new_tracked)
 	if(!tracked())
@@ -63,7 +64,7 @@
 	for(var/atom/movable/container as anything in get_nested_locs(moved_thing))
 		observe(container, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 		for(var/event_path in connections)
-			om_hook(container, event_path, listener, connections[event_path])
+			observe(container, event_path, listener, then(connections[event_path]))
 
 /datum/connect_containers/proc/unregister_hooks(atom/movable/location)
 	if(!ismovable(location))
@@ -75,7 +76,8 @@
 	for(var/atom/movable/target as anything in (get_nested_locs(location) + location))
 		unobserve(target, /datum/notice/moved, src)
 		if(listener)
-			om_unhook(target, paths, listener)
+			for(var/event_path in paths)
+				unobserve(target, event_path, listener)
 
 /datum/connect_containers/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER

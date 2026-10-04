@@ -31,7 +31,7 @@ CAPABILITIES(/obj/item/geiger)
 	if(!wall_mounted)
 		rel_set(src, nameof(sound), new /datum/looping_sound/geiger(list(owner), TRUE))
 
-	om_hook(owner, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
+	observe(owner, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_pre_potential_irradiation)))
 
 	add_trait(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, src)
 
@@ -43,10 +43,8 @@ CAPABILITIES(/obj/item/geiger)
 /datum/geiger_sound/proc/detach()
 	if(!owner)
 		return
-	om_unhook(owner, list(
-		/datum/om/event/moved,
-		/datum/om/event/before/in_range_of_irradiation,
-	), src)
+	unobserve(owner, /datum/notice/moved, src)
+	unobserve(owner, /datum/notice/in_range_of_irradiation, src)
 
 	remove_trait(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, src)
 
@@ -56,8 +54,10 @@ CAPABILITIES(/obj/item/geiger)
 	detach() // reads owner, which phase 4 nulls
 	last_parent = null
 
-/datum/geiger_sound/proc/on_pre_potential_irradiation(datum/source, datum/om/event/before/in_range_of_irradiation/event)
+/datum/geiger_sound/proc/on_pre_potential_irradiation(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/source = N.target
+	var/datum/notice/in_range_of_irradiation/event = N
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 
 	sound.last_insulation_to_target = event.insulation_to_target
@@ -77,12 +77,12 @@ CAPABILITIES(/obj/item/geiger)
 
 	if(!isnull(last_parent))
 		sound.stop(last_parent)
-		om_unhook(last_parent, /datum/om/event/before/in_range_of_irradiation, src)
+		unobserve(last_parent, /datum/notice/in_range_of_irradiation, src)
 
 	last_parent = new_loc
 
 	if(!isnull(new_loc))
-		om_hook(new_loc, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
+		observe(new_loc, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_pre_potential_irradiation)))
 
 /datum/looping_sound/geiger
 	mid_sounds = list(

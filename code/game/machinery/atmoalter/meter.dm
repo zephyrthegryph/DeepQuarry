@@ -21,7 +21,7 @@
 /// pipe target: when the pipe is destroyed the meter comes off as an item.
 /obj/machinery/meter/proc/set_target(new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
-		om_unhook(target_ref(), /datum/om/event/qdeleting, src)
+		unobserve(target_ref(), /datum/notice/qdeleting, src)
 	rel_set(src, nameof(target), new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
 		observe(target_ref(), /datum/notice/qdeleting, src, then(PROC_REF(on_target_deleted)))

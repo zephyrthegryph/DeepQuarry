@@ -209,7 +209,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	if(!owned_by())
 		qdel(src)
 		return
-	om_hook(message_loc(), /datum/om/event/qdeleting, src, TYPE_PROC_REF(/datum, qdel_self))
+	observe(message_loc(), /datum/notice/qdeleting, src, then(TYPE_PROC_REF(/datum, qdel_self)))
 	if(owned_by().seen_messages)
 		var/idx = 1
 		var/combined_height = approx_lines

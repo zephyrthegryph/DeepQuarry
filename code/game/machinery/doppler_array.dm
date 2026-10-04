@@ -14,7 +14,7 @@
 /obj/machinery/doppler_array/Initialize(mapload)
 	//Explosive analysis
 	var/static/list/explosive_events = list(
-		/datum/om/event/machinery_explosion_detected = TYPE_PROC_REF(/datum/experiment_handler, try_run_ordinance_experiment),
+		/datum/notice/machinery_explosion_detected = TYPE_PROC_REF(/datum/experiment_handler, try_run_ordinance_experiment),
 	)
 	new /datum/experiment_handler(src, \
 		config_mode = EXPERIMENT_CONFIG_ALTCLICK, \

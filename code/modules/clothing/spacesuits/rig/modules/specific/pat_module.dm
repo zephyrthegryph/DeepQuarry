@@ -29,7 +29,7 @@
 	var/mob/living/carbon/human/H = holder.wearer()
 	to_chat(H,span_notice("You activate the P.A.T. module."))
 	dq_add_recursive_move(H)
-	om_hook(H, /datum/om/event/movable_attempted_move, src, PROC_REF(boop))
+	observe(H, /datum/notice/movable_attempted_move, src, then(PROC_REF(boop)))
 
 /obj/item/rig_module/pat_module/deactivate()
 	if(!..())
@@ -37,10 +37,12 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	to_chat(H,span_notice("Your disable the P.A.T. module."))
-	om_unhook(H, /datum/om/event/movable_attempted_move, src)
+	unobserve(H, /datum/notice/movable_attempted_move, src)
 
-/obj/item/rig_module/pat_module/proc/boop(datum/source, datum/om/event/movable_attempted_move/event)
+/obj/item/rig_module/pat_module/proc/boop(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/source = N.target
+	var/datum/notice/movable_attempted_move/event = N
 	var/mob/living/carbon/human/user = source
 	var/turf/To = event.old_loc
 	var/turf/Tn = event.new_loc

@@ -108,7 +108,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	. = ..()
 	if(owner() == user || !customize_usr)
 		close_ui()
-		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
+		unobserve(owner(), /datum/notice/movable_attempted_move, src)
 		OM_EMIT(owner(), /datum/om/event/human_dna_finalized) // Update any components using our saved appearance
 		rel_clear(src, nameof(owner))
 		rel_clear(src, nameof(last_camera_turf))
@@ -771,7 +771,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_back_to_library)
 /datum/tgui_module/appearance_changer/ui_opening(mob/user, datum/tgui/ui)
 	..()
 	dq_add_recursive_move(owner())
-	om_hook(owner(), /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
+	observe(owner(), /datum/notice/movable_attempted_move, src, then(PROC_REF(update_active_camera_screen)))
 	// Register map objects
 	user.client.register_map_obj(cam_screen)
 	for(var/plane in cam_plane_masters)
@@ -988,7 +988,7 @@ UI_DATA(/datum/tgui_module/appearance_changer, "merge:ui_data_datum_tgui_module_
 		data["facial_hair_color"] = rgb(owner().r_facial, owner().g_facial, owner().b_facial)
 	return data
 
-/datum/tgui_module/appearance_changer/proc/update_active_camera_screen(datum/source, datum/om/event/movable_attempted_move/event)
+/datum/tgui_module/appearance_changer/proc/update_active_camera_screen(datum/act/notice/N)
 	EVENT_HANDLER
 	cam_screen.vis_contents = list(owner()) // Copied from the vore version.
 	cam_background.icon_state = "clear"
@@ -1128,7 +1128,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 	if(!QDELETED(src))
 		qdel(src)
 
-/datum/tgui_module/appearance_changer/vore/update_active_camera_screen(datum/source, datum/om/event/movable_attempted_move/event)
+/datum/tgui_module/appearance_changer/vore/update_active_camera_screen(datum/act/notice/N)
 	cam_screen.vis_contents = list(owner())
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)
@@ -1237,7 +1237,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 /datum/tgui_module/appearance_changer/body_designer/proc/make_fake_owner()
 	// checks for monkey to tell if on the menu
 	if(owner())
-		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
+		unobserve(owner(), /datum/notice/movable_attempted_move, src)
 		own_clear(src, nameof(mannequin), OWN_DELETE)
 		rel_clear(src, nameof(owner))
 	rel_set(src, nameof(mannequin), new /mob/living/carbon/human(src))
@@ -1247,11 +1247,11 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 	owner().invisibility = INVISIBILITY_ABSTRACT
 	// Add listeners back
 	dq_add_recursive_move(owner())
-	om_hook(owner(), /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
+	observe(owner(), /datum/notice/movable_attempted_move, src, then(PROC_REF(update_active_camera_screen)))
 
 /datum/tgui_module/appearance_changer/body_designer/proc/load_record_to_body(datum/transhuman/body_record/current_project)
 	if(owner())
-		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
+		unobserve(owner(), /datum/notice/movable_attempted_move, src)
 		own_clear(src, nameof(mannequin), OWN_DELETE)
 		rel_clear(src, nameof(owner))
 	rel_set(src, nameof(mannequin), current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
@@ -1266,7 +1266,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 		owner().custom_species = current_project.speciesname
 	// Add listeners back
 	dq_add_recursive_move(owner())
-	om_hook(owner(), /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
+	observe(owner(), /datum/notice/movable_attempted_move, src, then(PROC_REF(update_active_camera_screen)))
 
 /datum/tgui_module/appearance_changer/self_deleting
 /datum/tgui_module/appearance_changer/self_deleting/tgui_close(mob/user)

@@ -71,7 +71,7 @@
 	if(shuttle_docking_controller == controller)
 		return
 	if(shuttle_docking_controller)
-		om_unhook(shuttle_docking_controller, /datum/om/event/qdeleting, src)
+		unobserve(shuttle_docking_controller, /datum/notice/qdeleting, src)
 	rel_set(src, nameof(shuttle_docking_controller), controller)
 	if(shuttle_docking_controller)
 		observe(shuttle_docking_controller, /datum/notice/qdeleting, src, then(PROC_REF(docking_controller_deleted)))

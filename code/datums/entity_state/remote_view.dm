@@ -63,24 +63,24 @@ CAPABILITIES(/datum/remote_view)
 	// Begin remoteview
 	host_mob.reset_perspective(focused_on) // Must be done before hooking the events
 	if(settings.forbid_movement)
-		om_hook(host_mob, /datum/om/event/moved, src, PROC_REF(on_hostmob_moved_event))
+		observe(host_mob, /datum/notice/moved, src, then(PROC_REF(on_hostmob_moved_event)))
 	else
-		om_hook(host_mob, /datum/om/event/before/movable_z_changed, src, PROC_REF(on_hostmob_moved_event))
+		observe(host_mob, /datum/notice/movable_z_changed, src, then(PROC_REF(on_hostmob_moved_event)))
 	observe(host_mob, /datum/notice/mob_reset_perspective, src, then(PROC_REF(on_reset_perspective)))
 	observe(host_mob, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 	// Upon any disruptive status effects
 	if(settings.will_stun)
-		om_hook(host_mob, /datum/om/event/living_status_stun, src, PROC_REF(on_status_effect_event))
+		observe(host_mob, /datum/notice/living_status_stun, src, then(PROC_REF(on_status_effect_event)))
 	if(settings.will_weaken)
-		om_hook(host_mob, /datum/om/event/living_status_weaken, src, PROC_REF(on_status_effect_event))
+		observe(host_mob, /datum/notice/living_status_weaken, src, then(PROC_REF(on_status_effect_event)))
 	if(settings.will_paralyze)
-		om_hook(host_mob, /datum/om/event/living_status_paralyze, src, PROC_REF(on_status_effect_event))
+		observe(host_mob, /datum/notice/living_status_paralyze, src, then(PROC_REF(on_status_effect_event)))
 	if(settings.will_sleep)
-		om_hook(host_mob, /datum/om/event/before/living_status_sleep, src, PROC_REF(on_status_effect_event))
+		observe(host_mob, /datum/notice/living_status_sleep, src, then(PROC_REF(on_status_effect_event)))
 	if(settings.will_blind)
-		om_hook(host_mob, /datum/om/event/living_status_blind, src, PROC_REF(on_status_effect_event))
+		observe(host_mob, /datum/notice/living_status_blind, src, then(PROC_REF(on_status_effect_event)))
 	if(settings.will_death)
-		om_hook(host_mob, /datum/om/event/mob_death, src, PROC_REF(handle_endview))
+		observe(host_mob, /datum/notice/mob_death, src, then(PROC_REF(handle_endview)))
 	// Handle relayed movement
 	if(settings.relay_movement)
 		om_hook(host_mob, /datum/om/event/before/mob_relay_movement, src, PROC_REF(handle_relay_movement))
@@ -98,7 +98,7 @@ CAPABILITIES(/datum/remote_view)
 	// Focus on remote view
 	rel_set(src, nameof(remote_view_target), focused_on)
 	if(host_mob != remote_view_target) // Some items just offset our view, so we set ourselves as the view target, don't double dip if so!
-		om_hook(remote_view_target, /datum/om/event/qdeleting, src, PROC_REF(handle_endview))
+		observe(remote_view_target, /datum/notice/qdeleting, src, then(PROC_REF(handle_endview)))
 		observe(remote_view_target, /datum/notice/mob_reset_perspective, src, then(PROC_REF(on_remotetarget_reset_perspective)))
 		observe(remote_view_target, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 	// If the user has already limited their HUD this avoids them having a HUD when they zoom in
@@ -136,12 +136,13 @@ CAPABILITIES(/datum/remote_view)
 
 // Event handlers
 
-/datum/remote_view/proc/on_hostmob_moved_event(atom/source, datum/om/event/event)
+/datum/remote_view/proc/on_hostmob_moved_event(datum/act/notice/N)
 	EVENT_HANDLER
 	PRIVATE_PROC(TRUE)
+	var/atom/source = N.target
 	var/atom/oldloc
-	if(istype(event, /datum/om/event/moved))
-		var/datum/om/event/moved/moved_event = event
+	if(istype(N, /datum/notice/moved))
+		var/datum/notice/moved/moved_event = N
 		oldloc = moved_event.old_loc
 	handle_hostmob_moved(source, oldloc)
 
@@ -184,9 +185,9 @@ CAPABILITIES(/datum/remote_view)
 	SHOULD_NOT_SLEEP(TRUE)
 	PROTECTED_PROC(TRUE)
 	RETURN_TYPE(null)
-	handle_endview(source)
+	handle_endview()
 
-/datum/remote_view/proc/handle_endview(datum/source, datum/om/event/event)
+/datum/remote_view/proc/handle_endview(datum/act/notice/N)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
@@ -196,24 +197,25 @@ CAPABILITIES(/datum/remote_view)
 	end_view()
 	qdel(src)
 
-/datum/remote_view/proc/on_status_effect_event(datum/source, datum/om/event/event)
+/datum/remote_view/proc/on_status_effect_event(datum/act/notice/N)
 	EVENT_HANDLER
 	PRIVATE_PROC(TRUE)
+	var/datum/source = N.target
 	var/amount = 0
-	if(istype(event, /datum/om/event/living_status_stun))
-		var/datum/om/event/living_status_stun/stun_event = event
+	if(istype(N, /datum/notice/living_status_stun))
+		var/datum/notice/living_status_stun/stun_event = N
 		amount = stun_event.amount
-	else if(istype(event, /datum/om/event/living_status_weaken))
-		var/datum/om/event/living_status_weaken/weaken_event = event
+	else if(istype(N, /datum/notice/living_status_weaken))
+		var/datum/notice/living_status_weaken/weaken_event = N
 		amount = weaken_event.amount
-	else if(istype(event, /datum/om/event/living_status_paralyze))
-		var/datum/om/event/living_status_paralyze/paralyze_event = event
+	else if(istype(N, /datum/notice/living_status_paralyze))
+		var/datum/notice/living_status_paralyze/paralyze_event = N
 		amount = paralyze_event.amount
-	else if(istype(event, /datum/om/event/before/living_status_sleep))
-		var/datum/om/event/before/living_status_sleep/sleep_event = event
+	else if(istype(N, /datum/notice/living_status_sleep))
+		var/datum/notice/living_status_sleep/sleep_event = N
 		amount = sleep_event.amount
-	else if(istype(event, /datum/om/event/living_status_blind))
-		var/datum/om/event/living_status_blind/blind_event = event
+	else if(istype(N, /datum/notice/living_status_blind))
+		var/datum/notice/living_status_blind/blind_event = N
 		amount = blind_event.amount
 	handle_status_effects(source, amount)
 
@@ -228,7 +230,7 @@ CAPABILITIES(/datum/remote_view)
 		return
 	if(host_mob.client && isturf(host_mob.client.eye) && host_mob.client.eye == get_turf(host_mob.client.mob)) // This handles turf decoupling being protected until we actually move.
 		return
-	handle_endview(source)
+	handle_endview()
 
 /datum/remote_view/proc/on_reset_perspective(datum/act/notice/A)
 	EVENT_HANDLER
@@ -345,12 +347,10 @@ CAPABILITIES(/datum/remote_view)
 	if(!.)
 		return
 	rel_set(src, nameof(host_item), our_item)
-	om_hook(host_item, list(
-		/datum/om/event/qdeleting,
-		/datum/om/event/moved,
-		/datum/om/event/item_dropped,
-		/datum/om/event/item_equipped,
-		), src, PROC_REF(handle_endview))
+	observe(host_item, /datum/notice/qdeleting, src, then(PROC_REF(handle_endview)))
+	observe(host_item, /datum/notice/moved, src, then(PROC_REF(handle_endview)))
+	observe(host_item, /datum/notice/item_dropped, src, then(PROC_REF(handle_endview)))
+	observe(host_item, /datum/notice/item_equipped, src, then(PROC_REF(handle_endview)))
 	observe(host_item, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 	// Unfortunately too many things read this to control item state for me to remove this.
 	// Oh well! better than looking the view up everywhere. Lets just manage item/zoom in this datum though...
@@ -405,7 +405,7 @@ CAPABILITIES(/datum/remote_view)
 	// Remote view mutation stops viewing when mobs die or if we lose the mutation/gene
 	observe(host_mob, /datum/notice/mob_dna_mutation, src, then(PROC_REF(on_mutation)))
 	if(host_mob != remote_view_target)
-		om_hook(remote_view_target, /datum/om/event/mob_death, src, PROC_REF(handle_endview))
+		observe(remote_view_target, /datum/notice/mob_death, src, then(PROC_REF(handle_endview)))
 
 /datum/remote_view/mremote_mutation/proc/on_mutation(datum/act/notice/A)
 	EVENT_HANDLER

@@ -97,4 +97,4 @@
 	var/datum/source = A.target
 	var/mob/M = source
 	rel_remove(src, nameof(spawned_mobs), M)
-	om_unhook(M, /datum/om/event/qdeleting, src)
+	unobserve(M, /datum/notice/qdeleting, src)

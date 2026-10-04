@@ -627,9 +627,9 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_o
 
 /turf/simulated/wall/uranium/Initialize(mapload)
 	. = ..(mapload, MAT_URANIUM)
-	om_hook(src, /datum/om/event/atom_propagate_rad_pulse, src, PROC_REF(radiate))
+	observe(src, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(radiate)))
 
-/turf/simulated/wall/uranium/radiate()
+/turf/simulated/wall/uranium/radiate(datum/act/notice/N)
 	// EVENT_HANDLER is declared on /turf/simulated/wall/radiate(); this override
 	// inherits the contract and must not re-set the should_not_sleep pragma.
 	if(active)

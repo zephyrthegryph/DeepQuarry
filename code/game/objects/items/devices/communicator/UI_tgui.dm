@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/communicator)
 // Proc: update_active_camera_screen()
 // Parameters: None
 // Description: This refreshes the camera location
-/obj/item/communicator/proc/update_active_camera_screen()
+/obj/item/communicator/proc/update_active_camera_screen(datum/act/notice/N)
 	EVENT_HANDLER
 	if(!video_source?.can_use())
 		show_static()

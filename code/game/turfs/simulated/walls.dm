@@ -309,7 +309,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 	if(O)
 		qdel(O)
 
-/turf/simulated/wall/proc/radiate()
+/turf/simulated/wall/proc/radiate(datum/act/notice/N)
 	EVENT_HANDLER
 	// radioactivity moved to a component on /datum/material.
 	var/total_radiation = wall_radioactivity()

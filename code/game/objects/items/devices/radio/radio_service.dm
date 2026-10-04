@@ -134,7 +134,7 @@ SYSTEM_DEF(radio)
 	SSradio.remove_object(device, frequency)
 
 /datum/radio_frequency/proc/remove_listener(obj/device)
-	om_unhook(device, /datum/om/event/qdeleting, src)
+	unobserve(device, /datum/notice/qdeleting, src)
 	for (var/devices_filter in devices)
 		var/list/devices_line = devices[devices_filter]
 		devices_line-=device

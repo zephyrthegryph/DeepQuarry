@@ -118,7 +118,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	rel_set(src, nameof(core_landmark), master)
 	name = _name
 	landmark_tag = master.shuttle_name + _name
-	om_hook(master, /datum/om/event/qdeleting, src, TYPE_PROC_REF(/datum, qdel_self))
+	observe(master, /datum/notice/qdeleting, src, then(TYPE_PROC_REF(/datum, qdel_self)))
 	. = ..()
 
 // core_landmark is a one-sided view; visitors lists only the landmarks with a shuttle stationed

@@ -90,7 +90,7 @@ CAPABILITIES(/datum/event/jellyfish_migration)
 	var/datum/source = A.target
 	var/mob/M = source
 	own_take_member(src, nameof(spawned_jellyfish), M)
-	om_unhook(M, /datum/om/event/qdeleting, src)
+	unobserve(M, /datum/notice/qdeleting, src)
 
 /datum/event/jellyfish_migration/end()
 	. = ..()

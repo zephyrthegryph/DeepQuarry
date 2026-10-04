@@ -74,7 +74,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/omni_shield, "toggle_omnishie
 /obj/item/shield_projector/rectangle/mecha/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(my_mech), loc)
-	om_hook(my_mech(), /datum/om/event/movable_attempted_move, src, TYPE_PROC_REF(/obj/item/shield_projector, update_shield_positions))
+	observe(my_mech(), /datum/notice/movable_attempted_move, src, then(TYPE_PROC_REF(/obj/item/shield_projector, update_shield_positions)))
 	dq_add_recursive_move(my_mech())
 	update_shift(my_mech())
 

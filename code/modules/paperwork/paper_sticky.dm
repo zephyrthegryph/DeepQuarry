@@ -114,9 +114,9 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 /obj/item/paper/sticky/Initialize(mapload)
 	. = ..()
 	dq_add_recursive_move(src)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(reset_persistence_tracking))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(reset_persistence_tracking)))
 
-/obj/item/paper/sticky/proc/reset_persistence_tracking()
+/obj/item/paper/sticky/proc/reset_persistence_tracking(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	SSpersistence.forget_value(src, /datum/persistent/paper/sticky)
 	pixel_x = 0

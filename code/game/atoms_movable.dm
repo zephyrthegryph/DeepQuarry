@@ -61,7 +61,7 @@
 			rel_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
 			// Note, this should be refactored to drop priority overlays
 			add_overlay(list(em_block), TRUE)
-			om_hook(em_block, /datum/om/event/qdeleting, src, PROC_REF(emblocker_gc))
+			observe(em_block, /datum/notice/qdeleting, src, then(PROC_REF(emblocker_gc)))
 	else
 		var/mutable_appearance/gen_emissive_blocker = mutable_appearance(icon, icon_state, plane = PLANE_EMISSIVE, alpha = src.alpha)
 		gen_emissive_blocker.color = GLOB.em_block_color
@@ -136,7 +136,7 @@
 	// checks that it released them (dq_lifecycle_check_released()).
 	if(em_block)
 		cut_overlay(em_block)
-		om_unhook(em_block, /datum/om/event/qdeleting, src)
+		unobserve(em_block, /datum/notice/qdeleting, src)
 		own_clear(src, nameof(em_block), OWN_DELETE)
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
@@ -777,9 +777,10 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 /atom/movable/proc/get_cell()
 	return
 
-/atom/movable/proc/emblocker_gc(datum/source, datum/om/event/qdeleting/event)
+/atom/movable/proc/emblocker_gc(datum/act/notice/N)
 	EVENT_HANDLER
-	om_unhook(source, /datum/om/event/qdeleting, src)
+	var/datum/source = N.target
+	unobserve(source, /datum/notice/qdeleting, src)
 	cut_overlay(source)
 	// A blocker deleted from outside leaves em_block in its destroy's phase 2.
 

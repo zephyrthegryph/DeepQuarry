@@ -52,7 +52,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 		subtypesof(/datum/material), \
 		0, \
 		MATCONTAINER_EXAMINE, \
-		container_events = list((/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/autolathe, AfterMaterialInsert)) \
+		container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/autolathe, AfterMaterialInsert)) \
 	))
 	. = ..()
 
@@ -134,7 +134,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 
 	tgui_interact(user)
 
-/obj/machinery/autolathe/proc/AfterMaterialInsert(datum/source, datum/om/event/matcontainer_item_consumed/event)
+/obj/machinery/autolathe/proc/AfterMaterialInsert(datum/act/notice/N)
 	EVENT_HANDLER
 	flick("autolathe_loading", src)//plays metal insertion animation
 	SStgui.update_uis(src)

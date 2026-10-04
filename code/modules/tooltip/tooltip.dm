@@ -94,7 +94,7 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 		return FALSE
 
 	if(!isnull(last_target()))
-		om_unhook(last_target(), /datum/om/event/qdeleting, src)
+		unobserve(last_target(), /datum/notice/qdeleting, src)
 	observe(thing, /datum/notice/qdeleting, src, then(PROC_REF(on_target_qdel)))
 	rel_set(src, nameof(last_target), thing)
 	_revision++
@@ -167,7 +167,7 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 	if(!owner())
 		return
 	if(last_target())
-		om_unhook(last_target(), /datum/om/event/qdeleting, src)
+		unobserve(last_target(), /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(last_target))
 	_visible = FALSE
 	SStgui.update_uis(src)

@@ -377,7 +377,7 @@
 	rel_set(src, nameof(video_source), comm.camera)
 	comm.visible_message(span_danger("[icon2html(src,viewers(src))] New video connection from [comm]."))
 	update_active_camera_screen()
-	om_hook(video_source, /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
+	observe(video_source, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_active_camera_screen)))
 	dq_add_recursive_move(video_source)
 	update_icon()
 
@@ -385,7 +385,7 @@
 // Parameters: reason - the text reason to print for why it ended
 // Description: Ends the video call by clearing video_source
 /obj/item/communicator/proc/end_video(reason)
-	om_unhook(video_source, /datum/om/event/movable_attempted_move, src)
+	unobserve(video_source, /datum/notice/movable_attempted_move, src)
 	show_static()
 	rel_clear(src, nameof(video_source))
 

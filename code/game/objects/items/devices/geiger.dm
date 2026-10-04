@@ -27,7 +27,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 
 /obj/item/geiger/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
+	observe(src, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_pre_potential_irradiation)))
 
 /obj/item/geiger/examine(mob/user)
 	. = ..()
@@ -110,15 +110,16 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 /obj/item/geiger/equipped(mob/user, slot, initial)
 	. = ..()
 
-	om_hook(user, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
+	observe(user, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_pre_potential_irradiation)))
 
 /obj/item/geiger/dropped(mob/user, equipping, slot)
 	. = ..()
 
-	om_unhook(user, /datum/om/event/before/in_range_of_irradiation, src)
+	unobserve(user, /datum/notice/in_range_of_irradiation, src)
 
-/obj/item/geiger/proc/on_pre_potential_irradiation(datum/source, datum/om/event/before/in_range_of_irradiation/event)
+/obj/item/geiger/proc/on_pre_potential_irradiation(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/in_range_of_irradiation/event = N
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 	var/insulation_to_target = event.insulation_to_target
 

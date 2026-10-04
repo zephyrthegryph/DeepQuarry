@@ -161,11 +161,11 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_switch_camera)
 	var/list/cameras = get_available_cameras(ui.user)
 	var/obj/machinery/camera/C = cameras["[ckey(c_tag)]"]
 	if(active_camera())
-		om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
+		unobserve(active_camera(), /datum/notice/movable_attempted_move, src)
 	if(C)
 		rel_set(src, nameof(/datum/tgui_module/camera::active_camera), C)
 		dq_add_recursive_move(active_camera())
-		om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
+		observe(active_camera(), /datum/notice/movable_attempted_move, src, then(PROC_REF(on_active_camera_moved_event)))
 	playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
 	update_active_camera_screen()
 	return TRUE
@@ -191,20 +191,20 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 
 		if(target)
 			if(active_camera())
-				om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
+				unobserve(active_camera(), /datum/notice/movable_attempted_move, src)
 			rel_set(src, nameof(/datum/tgui_module/camera::active_camera), target)
 			dq_add_recursive_move(active_camera())
-			om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
+			observe(active_camera(), /datum/notice/movable_attempted_move, src, then(PROC_REF(on_active_camera_moved_event)))
 			playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
 			update_active_camera_screen()
 			. = TRUE
 
 /// Event wrapper: the watched camera (or something carrying it) moved.
-/datum/tgui_module/camera/proc/on_active_camera_moved_event(datum/source, datum/om/event/movable_attempted_move/event)
+/datum/tgui_module/camera/proc/on_active_camera_moved_event(datum/act/notice/N)
 	EVENT_HANDLER
 	update_active_camera_screen()
 
-/datum/tgui_module/camera/proc/update_active_camera_screen()
+/datum/tgui_module/camera/proc/update_active_camera_screen(datum/act/notice/N)
 	if(!active_camera()?.can_use())
 		cam_screen_tg.show_camera_static()
 		return TRUE
@@ -292,7 +292,7 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 	// Turn off the console
 	if(length(concurrent_users) == 0 && is_living)
 		if(active_camera())
-			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
+			unobserve(active_camera(), /datum/notice/movable_attempted_move, src)
 		rel_clear(src, nameof(active_camera))
 		rel_clear(src, nameof(last_camera_turf))
 		play_sfx(tgui_host(), SFX_MACHINES_TERMINAL_OFF, 0.5, vary = FALSE)

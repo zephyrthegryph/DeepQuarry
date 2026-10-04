@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 
 /obj/item/ore_bag/dropped(mob/user, equipping, slot)
 	..()
-	om_unhook(user, /datum/om/event/movable_attempted_move, src)
+	unobserve(user, /datum/notice/movable_attempted_move, src)
 
 /obj/item/ore_bag/proc/autoload(datum/act/notice/A)
 	EVENT_HANDLER

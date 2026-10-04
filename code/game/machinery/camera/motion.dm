@@ -42,7 +42,9 @@
 /obj/machinery/camera/proc/lostTarget(mob/target)
 	if (target in motionTargets)
 		LAZYREMOVE(motionTargets, target)
-		om_unhook(target, list(/datum/om/event/moved, /datum/om/event/mob_statchange, /datum/om/event/qdeleting), src)
+		unobserve(target, /datum/notice/moved, src)
+		unobserve(target, /datum/notice/mob_statchange, src)
+		unobserve(target, /datum/notice/qdeleting, src)
 	if (LAZYLEN(motionTargets) == 0)
 		cancelAlarm()
 

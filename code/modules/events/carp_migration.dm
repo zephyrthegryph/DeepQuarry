@@ -93,7 +93,7 @@ CAPABILITIES(/datum/event/carp_migration)
 	EVENT_HANDLER
 	var/mob/carp_to_remove = A.target
 	own_take_member(src, nameof(spawned_carp), carp_to_remove)
-	om_unhook(carp_to_remove, /datum/om/event/qdeleting, src)
+	unobserve(carp_to_remove, /datum/notice/qdeleting, src)
 
 /datum/event/carp_migration/end()
 	. = ..()
