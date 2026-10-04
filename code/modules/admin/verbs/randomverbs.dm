@@ -44,11 +44,13 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 
 //Allows staff to determine who the newer players are.
 ADMIN_VERB(cmd_check_new_players, R_HOLDER, "Check new Players", "Check the account age.", ADMIN_CATEGORY_INVESTIGATE)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(age_chosen), buttons = TRUE, title = "Show accounts yonger then _____ days", message = "Age check", choices = list("7","30","All"), requires = PROMPT_ADMIN(permissions))
+	open_request(src, /datum/prompt/choice, PROC_REF(age_chosen), answerer = user.mob, buttons = TRUE, title = "Show accounts yonger then _____ days", question = "Age check", choices = list("7","30","All"), rights = permissions, timeout = 0)
 
-/datum/admin_verb/cmd_check_new_players/proc/age_chosen(datum/om/prompt/choice/ask)
-	var/client/user = ask.answerer.client
-	var/age = ask.choice
+/datum/admin_verb/cmd_check_new_players/proc/age_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer.client
+	var/age = A.answer.answer_value
 	if(age == "All")
 		age = 9999999
 	else
@@ -76,17 +78,36 @@ ADMIN_VERB(cmd_check_new_players, R_HOLDER, "Check new Players", "Check the acco
 	to_chat(user, "No matches for that age range found.")
 
 ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_subtle_message, R_HOLDER, "Subtle Message", mob/targat_mob in get_mob_with_client_list())
-	om_ask(user, /datum/om/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Subtle PM to [targat_mob.key]", requires = PROMPT_ADMIN(permissions), subject = targat_mob)
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Subtle PM to [targat_mob.key]", answerer = user.mob, rights = permissions, subject = targat_mob)
 
 /// An admin's narration or message text (HTML allowed when the whole text is HTML, so not encoded).
-/datum/om/prompt/text/admin_narrate
-	message = "Message:"
+/datum/prompt/text/admin_narrate
+	question = "Message:"
 	encode = FALSE
+	timeout = 0
+	var/subject_required = FALSE
 
-/datum/admin_verb/cmd_admin_subtle_message/proc/message_entered(datum/om/prompt/text/admin_narrate/ask)
+CAPABILITIES(/datum/prompt/text/admin_narrate)
+	ref_one(nameof(subject), /mob)
+
+/datum/prompt/text/admin_narrate/prepare(datum/act/A)
+	..()
+	var/datum/request/request = src
+	var/mob/captured_subject = subject
+	subject_required = !isnull(captured_subject)
+	rel_clear(request, nameof(request.subject))
+	rel_set(request, nameof(request.subject), captured_subject)
+
+/datum/prompt/text/admin_narrate/recheck_extra()
+	return subject_required && QDELETED(subject) ? "gone" : null
+
+/datum/admin_verb/cmd_admin_subtle_message/proc/message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_narrate/ask = A.answer
 	var/client/user = ask.answerer.client
 	var/mob/targat_mob = ask.subject
-	var/msg = ask.text
+	var/msg = ask.answer_value
 	if(!(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 
@@ -99,11 +120,14 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_subtle_message, R_HOLDER, "Subtle Message
 	feedback_add_details("admin_verb","SMS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_world_narrate, R_FUN|R_EVENT, "Global Narrate", "Globally narrate.", ADMIN_CATEGORY_FUN_NARRATE) // Allows administrators to fluff events a little easier -- TLE
-	om_ask(user, /datum/om/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone:", requires = PROMPT_ADMIN(permissions))
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone:", answerer = user.mob, rights = permissions)
 
-/datum/admin_verb/cmd_admin_world_narrate/proc/message_entered(datum/om/prompt/text/admin_narrate/ask)
+/datum/admin_verb/cmd_admin_world_narrate/proc/message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_narrate/ask = A.answer
 	var/client/user = ask.answerer.client
-	var/msg = ask.text
+	var/msg = ask.answer_value
 	if(!(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 	if (!msg)		// We check both before and after, just in case sanitization ended us up with empty message.
@@ -115,11 +139,14 @@ ADMIN_VERB(cmd_admin_world_narrate, R_FUN|R_EVENT, "Global Narrate", "Globally n
 	feedback_add_details("admin_verb","GLN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_local_narrate, R_FUN|R_EVENT, "Local Narrate", "Locally narrate.", ADMIN_CATEGORY_FUN_NARRATE)
-	om_ask(user, /datum/om/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone within view range:", requires = PROMPT_ADMIN(permissions))
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone within view range:", answerer = user.mob, rights = permissions)
 
-/datum/admin_verb/cmd_admin_local_narrate/proc/message_entered(datum/om/prompt/text/admin_narrate/ask)
+/datum/admin_verb/cmd_admin_local_narrate/proc/message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_narrate/ask = A.answer
 	var/client/user = ask.answerer.client
-	var/msg = ask.text
+	var/msg = ask.answer_value
 	if(!(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 	if (!msg)		// We check both before and after, just in case sanitization ended us up with empty message.
@@ -136,20 +163,36 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Nar
 	if(target_mob)
 		ask_message(user, target_mob)
 		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(target_picked), title = "Active Players", message = "Direct narrate to who?", choices = get_mob_with_client_list(), requires = PROMPT_ADMIN(permissions))
+	open_request(src, /datum/prompt/choice, PROC_REF(target_picked), answerer = user.mob, title = "Active Players", question = "Direct narrate to who?", choices = get_mob_with_client_list(), rights = permissions, timeout = 0)
 
-/datum/admin_verb/cmd_admin_direct_narrate/proc/target_picked(datum/om/prompt/choice/ask)
-	ask_message(ask.answerer, ask.choice)
+/datum/admin_verb/cmd_admin_direct_narrate/proc/target_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/selected = A.answer.answer_value
+	if(!istype(selected) || QDELETED(selected))
+		return
+	ask_message(A.request.answerer, selected)
 
 /datum/admin_verb/cmd_admin_direct_narrate/proc/ask_message(user, mob/target_mob)
-	if(!ismob(target_mob))
+	if(!ismob(target_mob) || QDELETED(target_mob))
 		return
-	om_ask(user, /datum/om/prompt/text/admin_narrate, PROC_REF(narrate_answered), title = "Enter the text you wish to appear to your target:", requires = PROMPT_ADMIN(permissions), subject = target_mob)
+	var/mob/answerer
+	if(istype(user, /client))
+		var/client/recipient = user
+		answerer = recipient.mob
+	else if(ismob(user))
+		answerer = user
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(narrate_answered), title = "Enter the text you wish to appear to your target:", answerer = answerer, rights = permissions, subject = target_mob)
 
-/datum/admin_verb/cmd_admin_direct_narrate/proc/narrate_answered(datum/om/prompt/text/admin_narrate/ask)
+/datum/admin_verb/cmd_admin_direct_narrate/proc/narrate_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_narrate/ask = A.answer
 	var/client/user = ask.answerer.client
 	var/mob/target_mob = ask.subject
-	var/msg = ask.text
+	var/msg = ask.answer_value
 	if(msg && !(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 

@@ -84,13 +84,22 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 		return "Update syncronization failed (OOC: Player's current character slot does not match their played slot. They have been informed.)"
 
 	// The owner reviews the change; the flow applies it.
-	om_flow_start(/datum/om/flow/client_record_update, M, null, console = REF(COM), console_path = console_path, record = active, record_name = active.fields["name"], record_string = record_string, pusher = "[user]")
+	var/datum/record_update_review/review = new
+	rel_set(review, nameof(review.actor), M)
+	rel_set(review, nameof(review.record), active)
+	review.console = REF(COM)
+	review.console_path = console_path
+	review.record_name = active.fields["name"]
+	review.record_string = record_string
+	review.pusher = "[user]"
+	review.start()
 	return "Update sent. Waiting for the record's owner to review it."
 
 /// A record pushed from a records console: the owner (actor) chooses to review it, edits the
 /// notes, and confirming saves their current slot. A no, a cancel or bad text refuses it.
-/datum/om/flow/client_record_update
+/datum/record_update_review
 	name = "client record update"
+	var/mob/actor
 	/// REF() of the console, looked up again for its beeps.
 	var/console
 	var/console_path
@@ -101,36 +110,87 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	var/pusher
 	var/reviewed = FALSE
 
-/datum/om/flow/client_record_update/start()
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(review), title = "Record Updated", message = "Your [record_string] record has been updated from the a records console by [pusher]. Please review the changes made to your [record_string] record. Accepting these changes will SAVE your CURRENT character slot! If your new [record_string] record has errors, it is recomended to have it corrected IC instead of editing it yourself.", yes_text = "Review Changes", no_text = "DENY")
+CAPABILITIES(/datum/record_update_review)
+	ref_one(nameof(actor), /mob)
+	ref_one(nameof(record), /datum/data/record)
 
-/datum/om/flow/client_record_update/proc/review()
+/datum/prompt/choice/record_update_review
+	timeout = 0
+	buttons = TRUE
+
+/datum/prompt/choice/record_update_review/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/record_update_review/review = owner
+	return QDELETED(review.actor) || QDELETED(review.record) ? "record gone" : null
+
+/datum/prompt/text/record_update_notes
+	timeout = 0
+	max_len = MAX_RECORD_LENGTH
+	multiline = TRUE
+
+/datum/prompt/text/record_update_notes/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/record_update_review/review = owner
+	return QDELETED(review.actor) || QDELETED(review.record) ? "record gone" : null
+
+/datum/record_update_review/proc/start()
+	open_request(src, /datum/prompt/choice/record_update_review, PROC_REF(review), answerer = actor, title = "Record Updated", question = "Your [record_string] record has been updated from the a records console by [pusher]. Please review the changes made to your [record_string] record. Accepting these changes will SAVE your CURRENT character slot! If your new [record_string] record has errors, it is recomended to have it corrected IC instead of editing it yourself.", choices = list("Review Changes", "DENY"))
+
+/datum/record_update_review/proc/review(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(review_step), A)
+	if(!result.ok)
+		failed_step("review", result.error)
+
+/datum/record_update_review/proc/review_step(datum/act/request/A)
+	if(!A.answer || A.request.answer_value != "Review Changes")
+		refused()
+		consume(src)
+		return
 	reviewed = TRUE
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(notes_entered), title = "Character Preference", message = "Please review [pusher]'s changes to your [record_string] record before confirming. Confirming will SAVE your CURRENT character slot! If your new [record_string] record major errors, it is recomended to have it corrected IC instead of editing it yourself.", default = html_decode(record.fields["notes"]), max_length = MAX_RECORD_LENGTH, multiline = TRUE)
+	open_request(src, /datum/prompt/text/record_update_notes, PROC_REF(notes_entered), answerer = actor, title = "Character Preference", question = "Please review [pusher]'s changes to your [record_string] record before confirming. Confirming will SAVE your CURRENT character slot! If your new [record_string] record major errors, it is recomended to have it corrected IC instead of editing it yourself.", default = html_decode(record.fields["notes"]))
 
-/datum/om/flow/client_record_update/proc/console_says(message, sound)
+/datum/record_update_review/proc/console_says(message, sound)
 	var/obj/machinery/computer/COM = locate(console)
 	if(istype(COM) && !QDELETED(COM))
 		COM.visible_message(span_notice("\The [COM] [message]!"))
 		play_sfx(COM, sound, volume = 50, vary = sound == SFX_MACHINES_DING)
 
-/datum/om/flow/client_record_update/proc/refused()
+/datum/record_update_review/proc/refused()
 	message_admins("[record_name] refused [record_string] record update from [pusher][reviewed ? " with review" : " without review"].")
 	console_says("buzzes", SFX_MACHINES_DENIEDBEEP)
 
-/datum/om/flow/client_record_update/ended(reason)
-	refused()
+/datum/record_update_review/proc/failed_step(step, error)
+	stack_trace("record update step [step]: [error]")
+	var/datum/result/result = safe_call(PROC_REF(refused))
+	if(!result.ok)
+		stack_trace("record update ended(error): [result.error]")
+	consume(src)
 
-/datum/om/flow/client_record_update/proc/notes_entered(datum/om/prompt/text/ask)
+/datum/record_update_review/proc/notes_entered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(notes_entered_step), A)
+	if(!result.ok)
+		failed_step("notes_entered", result.error)
+
+/datum/record_update_review/proc/notes_entered_step(datum/act/request/A)
+	if(!A.answer)
+		refused()
+		consume(src)
+		return
 	var/mob/M = actor
-	var/new_data = strip_html_simple(ask.text, MAX_RECORD_LENGTH)
+	var/new_data = strip_html_simple(A.request.answer_value, MAX_RECORD_LENGTH)
 	if(!new_data)
 		refused()
+		consume(src)
 		return
 	var/datum/preferences/prefs = M?.client?.prefs
 	if(!prefs || prefs.default_slot != M.mind?.loaded_from_slot)
 		message_admins("[record_name]'s [record_string] record could not be updated, player disconnected or changed slot.")
 		console_says("buzzes", SFX_MACHINES_DENIEDBEEP)
+		consume(src)
 		return
 
 	// Update records in the consoles, remember this can happen a while after a record is closed on the console... Use cached data.
@@ -149,6 +209,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	to_chat(M,span_notice("Your [record_string] record for [record.fields["name"]] has been updated."))
 	message_admins("[record.fields["name"]] accepted the [record_string] record update from [pusher].")
 	console_says("dings", SFX_MACHINES_DING)
+	consume(src)
 
 /proc/client_record_update_unlock()
 	GLOB.client_record_update_lock = FALSE

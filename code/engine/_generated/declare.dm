@@ -2438,6 +2438,13 @@
 	into += entry_line(84)
 	into += list(global.ref_one(nameof(recipient), /mob/living/carbon/human))
 
+/// CAPABILITIES(/datum/prompt/text/admin_narrate) at code/modules/admin/verbs/randomverbs.dm:88
+/datum/prompt/text/admin_narrate/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 88, /datum/prompt/text/admin_narrate)
+	into += entry_line(89)
+	into += list(global.ref_one(nameof(subject), /mob))
+
 /// CAPABILITIES(/datum/prompt/text/blueprint_rename_area) at code/game/objects/items/blueprints.dm:356
 /datum/prompt/text/blueprint_rename_area/declared_entries(list/into)
 	..(into)
@@ -2564,6 +2571,15 @@
 	into += entry_block("code/modules/reagents/holder/distilling.dm", 28, /datum/reagents/distilling)
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(heat_set_watch), /datum/native_watch/heat))
+
+/// CAPABILITIES(/datum/record_update_review) at code/modules/client/record_updater.dm:113
+/datum/record_update_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/client/record_updater.dm", 113, /datum/record_update_review)
+	into += entry_line(114)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(115)
+	into += list(global.ref_one(nameof(record), /datum/data/record))
 
 /// CAPABILITIES(/datum/remote_materials) at code/datums/entity_state/materials/remote_materials.dm:31
 /datum/remote_materials/declared_entries(list/into)

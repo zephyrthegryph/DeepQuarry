@@ -115,55 +115,63 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	act_message(src, null, others = span_notice("%U%'s form contorts subtly."))
 	// A cancel picks none (bald, no gradient, shaved).
-	om_flow_start(/datum/om/flow/shapeshift_hair, src, src, hairs = valid_hairstyles, grads = valid_gradstyles, facials = valid_facialhairstyles)
+	shapeshifter_ask_hair(valid_hairstyles, valid_gradstyles, valid_facialhairstyles)
 
 /datum/om/prompt/color/shapeshift_optional
 	ask_flags = ASK_CONSCIOUS
 	cancel_answer = ""
 
 /// Hair, gradient and facial hair styles in turn (each only if there are any to pick).
-/datum/om/flow/shapeshift_hair
-	requires = PROMPT_CONSCIOUS
-	var/list/hairs
+/datum/prompt/choice/shapeshift_hair
+	title = "Shapeshifter Hair"
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
 	var/list/grads
 	var/list/facials
 	var/hair
 	var/gradient
-	var/facial
 
-/datum/om/flow/shapeshift_hair/start()
+/mob/living/carbon/human/proc/shapeshifter_ask_hair(list/hairs, list/grads, list/facials)
 	if(!length(hairs))
-		ask_gradient()
+		shapeshifter_ask_gradient(grads, facials)
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(hair_chosen), message = "Select a hairstyle.", title = "Shapeshifter Hair", choices = hairs, ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+	open_request(src, /datum/prompt/choice/shapeshift_hair, PROC_REF(shapeshifter_hair_style_picked), answerer = src, question = "Select a hairstyle.", choices = hairs, grads = grads, facials = facials)
 
-/datum/om/flow/shapeshift_hair/proc/hair_chosen(datum/om/prompt/choice/ask)
-	hair = ask.choice || "Bald"
-	ask_gradient()
+/mob/living/carbon/human/proc/shapeshifter_hair_style_picked(datum/act/request/A)
+	var/datum/prompt/choice/shapeshift_hair/ask = A.request
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+			return
+	var/hair = A.answer ? ask.answer_value || "Bald" : "Bald"
+	shapeshifter_ask_gradient(ask.grads, ask.facials, hair)
 
-/datum/om/flow/shapeshift_hair/proc/ask_gradient()
+/mob/living/carbon/human/proc/shapeshifter_ask_gradient(list/grads, list/facials, hair)
 	if(!length(grads))
-		ask_facial()
+		shapeshifter_ask_facial(facials, hair)
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(gradient_chosen), message = "Select a hair gradient style.", title = "Shapeshifter Hair", choices = grads, ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+	open_request(src, /datum/prompt/choice/shapeshift_hair, PROC_REF(shapeshifter_gradient_style_picked), answerer = src, question = "Select a hair gradient style.", choices = grads, facials = facials, hair = hair)
 
-/datum/om/flow/shapeshift_hair/proc/gradient_chosen(datum/om/prompt/choice/ask)
-	gradient = ask.choice || "None"
-	ask_facial()
+/mob/living/carbon/human/proc/shapeshifter_gradient_style_picked(datum/act/request/A)
+	var/datum/prompt/choice/shapeshift_hair/ask = A.request
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+			return
+	var/gradient = A.answer ? ask.answer_value || "None" : "None"
+	shapeshifter_ask_facial(ask.facials, ask.hair, gradient)
 
-/datum/om/flow/shapeshift_hair/proc/ask_facial()
+/mob/living/carbon/human/proc/shapeshifter_ask_facial(list/facials, hair, gradient)
 	if(!length(facials))
-		finish()
+		shapeshifter_hair_chosen(hair, gradient, null)
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(facial_chosen), message = "Select a facial hair style.", title = "Shapeshifter Hair", choices = facials, ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+	open_request(src, /datum/prompt/choice/shapeshift_hair, PROC_REF(shapeshifter_facial_style_picked), answerer = src, question = "Select a facial hair style.", choices = facials, hair = hair, gradient = gradient)
 
-/datum/om/flow/shapeshift_hair/proc/facial_chosen(datum/om/prompt/choice/ask)
-	facial = ask.choice || "Shaved"
-	finish()
-
-/datum/om/flow/shapeshift_hair/proc/finish()
-	var/mob/living/carbon/human/H = actor
-	H.shapeshifter_hair_chosen(hair, gradient, facial)
+/mob/living/carbon/human/proc/shapeshifter_facial_style_picked(datum/act/request/A)
+	var/datum/prompt/choice/shapeshift_hair/ask = A.request
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+			return
+	var/facial = A.answer ? ask.answer_value || "Shaved" : "Shaved"
+	shapeshifter_hair_chosen(ask.hair, ask.gradient, facial)
 
 /// Applies the picked styles (null: that one wasn't asked).
 /mob/living/carbon/human/proc/shapeshifter_hair_chosen(new_hair, new_gradient, new_facial)
