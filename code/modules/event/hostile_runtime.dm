@@ -75,6 +75,5 @@
 /datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
 	return apc
 
-/datum/event/hostile_runtime/relations()
-	. = ..()
-	. += rel_many(nameof(target_airlocks))
+CAPABILITIES(/datum/event/hostile_runtime)
+	ref_many(nameof(target_airlocks))

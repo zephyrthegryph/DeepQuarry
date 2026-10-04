@@ -1382,6 +1382,15 @@
 	into += entry_line(143)
 	into += list(global.owns_one(nameof(exc), /exception))
 
+/// CAPABILITIES(/datum/event/brand_intelligence) at code/modules/events/brand_intelligence.dm:71
+/datum/event/brand_intelligence/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/events/brand_intelligence.dm", 71, /datum/event/brand_intelligence)
+	into += entry_line(72)
+	into += list(global.ref_many(nameof(vendingMachines)))
+	into += entry_line(73)
+	into += list(global.ref_many(nameof(infectedVendingMachines)))
+
 /// CAPABILITIES(/datum/event/carp_migration) at code/modules/events/carp_migration.dm:8
 /datum/event/carp_migration/declared_entries(list/into)
 	..(into)
@@ -1409,6 +1418,13 @@
 	into += entry_block("code/modules/event/horde_infestation.dm", 10, /datum/event/horde_infestation)
 	into += entry_line(11)
 	into += list(global.owns_many(nameof(alive_metroids)))
+
+/// CAPABILITIES(/datum/event/hostile_runtime) at code/modules/event/hostile_runtime.dm:78
+/datum/event/hostile_runtime/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/event/hostile_runtime.dm", 78, /datum/event/hostile_runtime)
+	into += entry_line(79)
+	into += list(global.ref_many(nameof(target_airlocks)))
 
 /// CAPABILITIES(/datum/event/jellyfish_migration) at code/modules/events/jellyfish_migration.dm:8
 /datum/event/jellyfish_migration/declared_entries(list/into)
@@ -2438,11 +2454,11 @@
 	into += entry_line(84)
 	into += list(global.ref_one(nameof(recipient), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/text/admin_narrate) at code/modules/admin/verbs/randomverbs.dm:88
+/// CAPABILITIES(/datum/prompt/text/admin_narrate) at code/modules/admin/verbs/randomverbs.dm:90
 /datum/prompt/text/admin_narrate/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 88, /datum/prompt/text/admin_narrate)
-	into += entry_line(89)
+	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 90, /datum/prompt/text/admin_narrate)
+	into += entry_line(91)
 	into += list(global.ref_one(nameof(subject), /mob))
 
 /// CAPABILITIES(/datum/prompt/text/blueprint_rename_area) at code/game/objects/items/blueprints.dm:356

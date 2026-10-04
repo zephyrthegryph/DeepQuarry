@@ -138,6 +138,11 @@ CAPABILITIES(/datum/record_update_review)
 	return QDELETED(review.actor) || QDELETED(review.record) ? "record gone" : null
 
 /datum/record_update_review/proc/start()
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		failed_step("start", result.error)
+
+/datum/record_update_review/proc/start_step()
 	open_request(src, /datum/prompt/choice/record_update_review, PROC_REF(review), answerer = actor, title = "Record Updated", question = "Your [record_string] record has been updated from the a records console by [pusher]. Please review the changes made to your [record_string] record. Accepting these changes will SAVE your CURRENT character slot! If your new [record_string] record has errors, it is recomended to have it corrected IC instead of editing it yourself.", choices = list("Review Changes", "DENY"))
 
 /datum/record_update_review/proc/review(datum/act/request/A)
