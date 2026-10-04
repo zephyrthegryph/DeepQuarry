@@ -473,7 +473,7 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 /// The types that declare a FORMULA stat (STAT(type, x, FORMULA)), read from the generated /datum/stat_decl rows so it works while the
 /// globals initialize too (type tables are statics and may be built then).
 /proc/stat_formula_types()
-	var/static/list/types
+	var/static/list/types // ALLOW(sys_static_getter): read while the globals initialize (type tables build then), so it cannot be a GLOBAL_LIST_INIT
 	if(!types)
 		types = list()
 		for(var/decl_type in subtypesof(/datum/stat_decl))
