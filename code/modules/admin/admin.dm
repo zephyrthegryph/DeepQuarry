@@ -202,33 +202,59 @@ ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desire
 	feedback_add_details("admin_verb","A") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(intercom, R_ADMIN|R_EVENT, "Intercom Msg", "Send an intercom message, like an arrivals announcement.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/channel = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Channel for message:", title = "Channel", choices = GLOB.radiochannels)
-	if(isnull(channel))
-		return
+	return advance_intercom(user)
 
-	if(!channel) //They didn't pick a channel
+/datum/admin_verb/intercom/proc/intercom_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/next_stage = 1
+	var/channel
+	var/sender
+	var/message
+	var/msgverb
+	if(istype(A.request, /datum/prompt/text/admin_intercom))
+		var/datum/prompt/text/admin_intercom/ask = A.request
+		next_stage = ask.next_stage
+		channel = ask.channel
+		sender = next_stage == 2 ? ask.answer_value : ask.sender
+		message = next_stage == 3 ? ask.answer_value : ask.message
+		msgverb = next_stage == 4 ? ask.answer_value : null
+	else
+		channel = A.request.answer_value
+	var/datum/result/result = safe_call(PROC_REF(advance_intercom), A.request.answerer.client, next_stage, channel, sender, message, msgverb)
+	if(!result.ok)
+		stack_trace("om flow intercom answer intercom_answered: [result.error]")
 
-	var/sender = verb_ask(user, "a3", args, /datum/om/prompt/text, message = "Name of sender (max 75):", title = "Announcement", default = "Announcement Computer")
-	if(isnull(sender))
+/datum/admin_verb/intercom/proc/advance_intercom(client/user, stage = 0, channel = null, sender = null, message = null, msgverb = null)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-
-	if(sender) //They put a sender
-		sender = sanitize(sender, 75, extra = 0)
-		var/message = verb_ask(user, "a4", args, /datum/om/prompt/text, message = "Message content (max 500):", title = "Contents", default = "This is a test of the announcement system.", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-		if(isnull(message))
-			return
-		var/msgverb = verb_ask(user, "a5", args, /datum/om/prompt/text, message = "Name of verb (Such as 'states', 'says', 'asks', etc):", title = "Verb", default = "says")
-		if(isnull(msgverb))
-			return
-		if(message) //They put a message
-			message = sanitize(message, 500, extra = 0)
-			if(msgverb)
-				msgverb = sanitize(msgverb, 50, extra = 0)
-			else
-				msgverb = "states"
-			GLOB.global_announcer.autosay("[message]", "[sender]", "[channel == "Common" ? null : channel]", states = msgverb) //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
-			log_admin("Intercom: [key_name(user)] : [sender]:[message]")
+	if(stage == 0)
+		open_request(src, /datum/prompt/choice/admin_intercom_channel, PROC_REF(intercom_answered), answerer = answerer, choices = GLOB.radiochannels)
+		return
+	if(!channel)
+		return
+	if(stage == 1)
+		open_request(src, /datum/prompt/text/admin_intercom, PROC_REF(intercom_answered), answerer = answerer, question = "Name of sender (max 75):", title = "Announcement", default = "Announcement Computer", next_stage = 2, channel = channel)
+		return
+	if(!sender)
+		feedback_add_details("admin_verb", "IN")
+		return
+	if(stage == 2)
+		open_request(src, /datum/prompt/text/admin_intercom, PROC_REF(intercom_answered), answerer = answerer, question = "Message content (max 500):", title = "Contents", default = "This is a test of the announcement system.", multiline = TRUE, max_len = MAX_TGUI_INPUT, next_stage = 3, channel = channel, sender = sender)
+		return
+	if(stage == 3)
+		open_request(src, /datum/prompt/text/admin_intercom, PROC_REF(intercom_answered), answerer = answerer, question = "Name of verb (Such as 'states', 'says', 'asks', etc):", title = "Verb", default = "says", next_stage = 4, channel = channel, sender = sender, message = message)
+		return
+	sender = sanitize(sender, 75, extra = 0)
+	if(message) //They put a message
+		message = sanitize(message, 500, extra = 0)
+		if(msgverb)
+			msgverb = sanitize(msgverb, 50, extra = 0)
+		else
+			msgverb = "states"
+		GLOB.global_announcer.autosay("[message]", "[sender]", "[channel == "Common" ? null : channel]", states = msgverb) //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
+		log_admin("Intercom: [key_name(user)] : [sender]:[message]")
 
 	feedback_add_details("admin_verb","IN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -989,6 +1015,32 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 		return QDELETED(picked) ? "target is gone" : null
 
 /datum/prompt/choice/admin_uplink_target/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_intercom_channel
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "Channel for message:"
+	title = "Channel"
+
+/datum/prompt/choice/admin_intercom_channel/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_intercom
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	var/next_stage
+	var/channel
+	var/sender
+	var/message
+
+/datum/prompt/text/admin_intercom/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return
