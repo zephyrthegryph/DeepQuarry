@@ -44,15 +44,16 @@
 
 	var/datum/looping_sound/idle_carengine/soundloop // Looping engine audio.
 
-	/// Until when an EMP keeps the vehicle dead (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 	/// Whether it was running when the EMP took it down (it restarts when the outage lapses).
 	var/emp_was_on = FALSE
 
+/// A vehicle runs unless a pulse knocked its engine out (emp_disable() holds it down).
+STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
+
 CAPABILITIES(/obj/vehicle)
 	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine)
-
-CAPABILITY(/obj/vehicle, emp_disable(30 SECONDS))
+	emp_disable(PROC_REF(emp_outage))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
 //-------------------------------------------
 // Standard procs
@@ -173,16 +174,13 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	else
 		repair_damage(amount)
 
-/// Only mechanical vehicles care about EMPs.
-/obj/vehicle/emp_disable_react(datum/damage_packet/packet)
-	if(!mechanical)
-		return
-	return ..()
+/// emp_disable()'s outage: 30 s over the severity, for a mechanical vehicle only.
+/obj/vehicle/proc/emp_outage(severity)
+	return mechanical ? 30 SECONDS / max(severity, 1) : 0
 
 /// Down: sparks and the engine dies. Back: it restarts if it was running.
-/obj/vehicle/emp_disable_changed(disabled)
-	..()
-	if(!disabled)
+/obj/vehicle/proc/emp_state_changed(datum/act/A)
+	if(!emp_disabled(src))
 		stat_remove(EMPED)
 		if(emp_was_on)
 			turn_on()

@@ -9,8 +9,6 @@
 	MATERIAL_BULK(MAT_STEEL, 500)
 
 	var/gps_tag = "GEN0"
-	/// Until when an EMP keeps the unit busted (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 	var/long_range = FALSE		// If true, can see farther, depending on get_map_levels().
 	var/local_mode = FALSE		// If true, only GPS signals of the same Z level are shown.
 	var/hide_signal = FALSE		// If true, signal is not visible to other GPS devices.
@@ -86,11 +84,16 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 	if(holder_ref())
 		update_compass(src, TRUE)
 
+/// A GPS works unless a pulse knocked it out (emp_disable() holds it down).
+STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
+
 CAPABILITIES(/obj/item/gps)
 	op("power", ui_act(), then(PROC_REF(ui_act_power)))
 	op("localMode", ui_act(), then(PROC_REF(ui_act_localmode)))
 	owns_one(nameof(compass), starts = /obj/compass_holder)
 	op("toggle_tracking", hand(), gesture(GESTURE_ALT), needs(req_adjacent()), then(PROC_REF(tracking_toggled)))
+	emp_disable(5 MINUTES)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)
@@ -98,7 +101,7 @@ CAPABILITIES(/obj/item/gps)
 	..()
 
 /obj/item/gps/proc/can_track(obj/item/gps/other, reachable_z_levels)
-	if(!other.tracking || EXPIRY_ACTIVE(other, emp_until, CLOCK_WORLD) || other.hide_signal || is_vore_jammed(other))
+	if(!other.tracking || emp_disabled(other) || other.hide_signal || is_vore_jammed(other))
 		return FALSE
 	var/turf/origin = get_turf(src)
 	var/turf/target = get_turf(other)
@@ -144,7 +147,7 @@ CAPABILITIES(/obj/item/gps)
 /obj/item/gps/proc/toggletracking(mob/living/user)
 	if(!istype(user))
 		return
-	if(EXPIRY_ACTIVE(src, emp_until, CLOCK_WORLD))
+	if(emp_disabled(src))
 		to_chat(user, "It's busted!")
 		return
 
@@ -163,16 +166,14 @@ CAPABILITIES(/obj/item/gps)
 	update_holder()
 	update_icon()
 
-CAPABILITY(/obj/item/gps, emp_disable(5 MINUTES))
-
-/obj/item/gps/emp_disable_changed(disabled)
-	..()
+/// A pulse knocked it out (it shows "emp") or its outage ended (it says so).
+/obj/item/gps/proc/emp_state_changed(datum/act/A)
 	update_icon()
-	if(!disabled)
+	if(!emp_disabled(src))
 		visible_message("\The [src] appears to be functional again.")
 
 /obj/item/gps/proc/appearance_gps_state()
-	if(EXPIRY_ACTIVE(src, emp_until, CLOCK_WORLD))
+	if(emp_disabled(src))
 		return "emp"
 	if(tracking)
 		return "working"

@@ -67,6 +67,13 @@ import {
   installVerdigrisLibrary,
   verdigrisInputHash,
 } from './lib/verdigris_provenance';
+import {
+  dropVerdigris,
+  restoreVerdigris,
+  storeVerdigris,
+  verdigrisCacheDir,
+  verdigrisCacheKey,
+} from './lib/verdigris_cache';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -338,6 +345,67 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
 });
 // DQAdd End
 
+// Shared content-addressed cache of built libraries (lib/verdigris_cache.ts), so a
+// fresh worktree copies the DLL instead of compiling the Rust workspace.
+const verdigrisAbi = (): string | undefined => {
+  try {
+    return /#define VERDIGRIS_ABI "([0-9a-f]+)"/.exec(
+      fs.readFileSync('code/__defines/verdigris/_bindings.dm', 'utf-8'),
+    )?.[1];
+  } catch {
+    return undefined;
+  }
+};
+let verdigrisPendingStore: { cache: string; key: string; commit: string } | null = null;
+const verdigrisCacheHit = (): boolean => {
+  verdigrisPendingStore = null;
+  const cache = verdigrisCacheDir();
+  if (!cache) return false;
+  const k = verdigrisCacheKey(
+    process.cwd(),
+    VERDIGRIS_RUST_TARGET,
+    process.env.RUSTFLAGS || '',
+    VERDIGRIS_PROVENANCE_ENFORCED ? 'provenance' : '',
+  );
+  if ('bypass' in k) {
+    Juke.logger.info(`verdigris cache: bypassed (${k.bypass})`);
+    return false;
+  }
+  const sidecars = VERDIGRIS_PROVENANCE_ENFORCED ? [VERDIGRIS_PROVENANCE] : [];
+  if (restoreVerdigris(cache, k.key, VERDIGRIS_LIB, sidecars)) {
+    const abi = verdigrisAbi();
+    const abiOk = !abi || fs.readFileSync(VERDIGRIS_LIB).includes(Buffer.from(abi, 'latin1'));
+    if (abiOk && !verdigrisProvenanceMismatch()) {
+      Juke.logger.info(`verdigris cache: hit ${k.key} (${cache})`);
+      return true;
+    }
+    Juke.logger.warn(`verdigris cache: entry ${k.key} fails the ABI/provenance check; dropping it and rebuilding`);
+    dropVerdigris(cache, k.key);
+    fs.rmSync(VERDIGRIS_LIB, { force: true });
+  } else {
+    Juke.logger.info(`verdigris cache: miss ${k.key}; building and storing`);
+  }
+  verdigrisPendingStore = { cache, key: k.key, commit: k.commit };
+  return false;
+};
+const storeVerdigrisBuild = (built: string): void => {
+  const pending = verdigrisPendingStore;
+  if (!pending) return;
+  verdigrisPendingStore = null;
+  try {
+    const files = [VERDIGRIS_LIB, built.replace(/\.dll$/, '.pdb')];
+    if (VERDIGRIS_PROVENANCE_ENFORCED) files.push(VERDIGRIS_PROVENANCE);
+    storeVerdigris(pending.cache, pending.key, pending.commit, files, {
+      target: VERDIGRIS_RUST_TARGET,
+      rustflags: process.env.RUSTFLAGS || '',
+      abi: verdigrisAbi() || null,
+    });
+    Juke.logger.info(`verdigris cache: stored ${pending.key}`);
+  } catch (error) {
+    Juke.logger.warn(`verdigris cache: store failed: ${error instanceof Error ? error.message : error}`);
+  }
+};
+
 export const VerdigrisTarget = new Juke.Target({
   dependsOn: [VerdigrisBindingsCheckTarget],
   onlyWhen: () => {
@@ -361,6 +429,7 @@ export const VerdigrisTarget = new Juke.Target({
       }
       return false;
     }
+    if (verdigrisCacheHit()) return false;
     const probe = spawnSync('cargo', ['--version'], {
       stdio: 'ignore',
       shell: true,
@@ -423,6 +492,7 @@ export const VerdigrisTarget = new Juke.Target({
     if (!VERDIGRIS_PROVENANCE_ENFORCED) {
       await Juke.exec('cargo', ['build', '--release', '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
       fs.copyFileSync(built, VERDIGRIS_LIB);
+      storeVerdigrisBuild(built);
       return;
     }
     const rustflags = process.env.RUSTFLAGS || '';
@@ -453,6 +523,7 @@ export const VerdigrisTarget = new Juke.Target({
       await Juke.exec('cargo', ['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
       installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
     }
+    storeVerdigrisBuild(built);
   },
 });
 // DQAdd End

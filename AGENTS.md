@@ -196,14 +196,16 @@ orchestrates; `tools/build/build.sh <target>` is the POSIX front end.
   (`code/__defines/verdigris/_bindings.dm`, regenerate with
   `tools/build/build.sh verdigris-bindings`). If `cargo` is absent the build warns and skips
   it, and atmospherics and cave-gen then fail at runtime.
-- **Worktrees:** build verdigris inside each worktree (`verdigris/build-windows.sh`, or let
-  the build's VerdigrisTarget do it). Do not copy the main tree's `verdigris.dll` with
-  `DQ_PREBUILT_VERDIGRIS=1`: the test runner checks `VERDIGRIS_ABI` against the worktree's
-  bindings and refuses a DLL built from other sources, losing every shard. A prebuilt DLL is
-  only safe when it was built from this exact `verdigris/` source (same commit). Each
-  worktree's Rust target is about 1.3 GB, so check free disk first and delete your own
-  `verdigris/target` when you remove the worktree. A shared `CARGO_TARGET_DIR` plus
-  `RUSTC_WRAPPER=sccache` cuts rebuild time and disk.
+- **Worktrees: shared DLL cache.** VerdigrisTarget keeps a content-addressed cache of built
+  libraries outside the worktrees (`DQ_VERDIGRIS_CACHE`, default `D:/dq-cache/verdigris`, else
+  `~/.cache/dq/verdigris`; `off` disables it). The key is the git ids at `HEAD` of `verdigris/`
+  plus the generated bindings and other Rust inputs, the target triple, profile and `RUSTFLAGS`.
+  On a hit the build copies the DLL in and runs no cargo, so a fresh worktree needs no
+  `verdigris/target`. A miss builds and stores it. Uncommitted changes to those inputs bypass
+  the cache and build normally. The runner's `VERDIGRIS_ABI` check still applies. Do not copy
+  another checkout's `verdigris.dll` by hand (`DQ_PREBUILT_VERDIGRIS=1`); a DLL built from other
+  sources fails that check and loses every shard. If you do build Rust in a worktree, its
+  target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 

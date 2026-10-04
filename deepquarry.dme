@@ -5724,6 +5724,7 @@
 #include "code\library\machine\parts.dm"
 #include "code\library\machine\wires.dm"
 #include "code\library\machine\machine.dm"
+#include "code\library\machine\emp_disable.dm"
 #include "code\library\machine\doors.dm"
 #include "code\library\machine\door_parts.dm"
 #include "code\library\machine\multitool_settings.dm"

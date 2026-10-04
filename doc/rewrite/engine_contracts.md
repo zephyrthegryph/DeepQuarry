@@ -64,7 +64,7 @@ returns it with a null outcome and the same pending op fills the same record lat
 | `cap_of` | legacy `cap_of(atom, key)` | not stubbed; E1 replaces it in one change |
 | `TRACKED`, `SYSTEM_DEF`, `MSG_DEF` | legacy macros | no marker; final-form lines are in comments |
 | `AFF_CONTROL` | `MANIPULATE \| INTERFACE`, with `AFF_INTERFACE`/`AFF_TELEKINESIS` | untouched; E2 redefines when it deletes the legacy bits. `AFF_ATTACK`, `AFF_OBSERVE` added |
-| `/datum/notice/hit` | live notice | E4 renamed the legacy one `/datum/notice/legacy_hit` (its callers follow) and `hit` is the action's notice (field `packet`) |
+| `/datum/notice/hit` | live notice | E4 renamed the legacy one `/datum/notice/legacy_hit`; its last listener (the APC) moved to the attackby action's `/datum/notice/attacked_by` and it is deleted. `hit` is the action's notice (field `packet`) |
 | `KERNEL_PHASE_*` | K,N,U,D,P,R,G = 1..7 | `KERNEL_PHASE_S` = 8 outside the live range; E6 renumbers |
 | `LANE_*` | five lanes | `LANE_WORLD` = 6, unknown to the scheduler until E6 |
 

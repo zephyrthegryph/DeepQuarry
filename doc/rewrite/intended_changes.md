@@ -521,3 +521,29 @@ Pinned by `code/modules/unit_tests/dq_hc_items2_B.dm` (written on the legacy for
 * **The e-cig's look** draws its own on, off and empty states and its light; its `item_state` follows `active` and the cartridge (`on_change`).
 * **Ashtray:** the look reads a tracked `butts` count (`sync_butts()` after anything puts butts in or takes them out, including the disposal unit that empties it) and a tracked dish overlay made once at creation; the "full" and "half-filled" descriptions are written when the count changes instead of on every redraw. The ashtray's item op answers before the material's repair op (`priority(above())`) and ends the click, as its old handler did (it never called its parent).
 * **Chewables:** `wrapped` is tracked and the wrapper overlay is a `draw()`.
+
+## APC: the last legacy forms (outages, notices, night shift, area link) and the final emp_disable()
+
+Pinned by `code/modules/unit_tests/dq_p2_apc_behaviour.dm` (the outage, overload, signaller, silicon and night-shift tests were added and run green on the
+legacy tree first) and `code/modules/unit_tests/dq_emp_disable_behaviour.dm` (three users of the legacy `emp_disable()`, also green on the legacy tree).
+
+* **An outage is a hold on operability.** A pulse (`emp_disable()`, source `SRC_EMP`) and an event's power failure (`energy_fail()`, the electrical fault
+  and the supermatter shutdown, source `SRC_POWER_FAILURE`) hold `STAT_OPERABLE` off for their time; the `power_failed` stat is gone. While it lasts the
+  ID lock, the emag and opening the window are refused like on a broken APC ("It isn't working."). On master the area went dark during an outage, which set
+  the APC's NOPOWER bit and refused the same things in any area that needs power; the difference shows only in an area that needs none.
+* **The APC's own area going dark no longer makes it inoperable.** It is the area's supply: its `stat_bits_allow()` reads only BROKEN (its unfinished
+  frame is the build graph's, its outages are holds). On master the breaker off darkened the area, set NOPOWER on the APC and refused the ID lock until
+  the breaker was on again.
+* **A broken APC keeps its area dark** even if a silicon turns its breaker back on (the area reads `supplying`, which a broken APC is not). On master the
+  breaker alone decided once the APC was broken.
+* **The night shift reaches every APC on "automatic" at once and keeps reaching it.** The system sets one tracked flag; an APC built, or switched back to
+  automatic, during the night dims its area straight away (on master it waited for the next dusk or dawn walk). The night-shift step no longer walks the
+  APCs across ticks.
+* **The station power-failure event, its restore and the supermatter cascade set the APC cells for real** (`set_cell_charge()`: the cell and Rust's charge
+  together). On master they wrote the cell and the next power poll put Rust's charge back.
+* **emp_disable() users** (PDA multicaster, exonet node, telecomms, research server, port generator, atmospheric field generator, GPS, vehicles): the outage
+  is the same length and a pulse while down still does not lengthen it; it now runs on the holder's own clock instead of the world clock, so a holder
+  whose clock is slowed recovers on its own time. The EMPED bit is no longer set by it (a vehicle still sets its own); the legacy `operable()` reader sees
+  the hold. A GPS and a vehicle declare `operable` beside their types.
+* **The fault lights of the APC's examine text** are an `examine_line()`, so they come after the capabilities' lines instead of before them.
+

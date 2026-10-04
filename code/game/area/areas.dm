@@ -681,36 +681,11 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	if(flag_check(AREA_NO_SPOILERS))
 		set_spoiler_obfuscation(TRUE)
 
-/// The area's APC: a one-sided relation view (the APC's own `area` var is a plain area ref, and
-/// areas are never relation targets). A dying APC leaves it.
-/area/relations()
-	. = ..()
-	. += rel_one(nameof(apc))
-
-/// What the area's lights read from its APC, as stats the APC's state feeds through the apc relation: the lights read them through theirs.
-CAPABILITIES(/area)
-	contributes(STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))
-	contributes(STAT_LIGHTS_EMERGENCY_OFF, PROC_REF(emergency_lights_switched_off))
-
-/// Night lighting: the night shift's ask to the APC, under the APC's UI setting.
-/area/proc/wants_night_lights(datum/act/A)
-	if(!apc)
-		return FALSE
-	switch(apc.nightshift_setting)
-		if(NIGHTSHIFT_NEVER)
-			return FALSE
-		if(NIGHTSHIFT_ALWAYS)
-			return TRUE
-	return !!apc.nightshift_lights
-
-/// The APC switched emergency lighting off.
-/area/proc/emergency_lights_switched_off(datum/act/A)
-	return !!apc?.emergency_lights
-
+/// The area's APC is the other end of the APC's `area` link (links() in the APC's CAPABILITIES): rel_set() on either end writes both, and a
+/// dying APC lets go. The APC also feeds the area's lights_nightshift and lights_emergency_off (its contributes_to entries).
 /// A new APC (or none) serves the area: its Rust node takes the area's static loads.
-/area/reactions()
-	. = ..()
-	. += on_change(list(nameof(apc)), PROC_REF(apc_changed))
+CAPABILITIES(/area)
+	on_change(nameof(apc), ANY, then(PROC_REF(apc_changed)))
 
-/area/proc/apc_changed(list/keys)
+/area/proc/apc_changed(datum/act/A)
 	power_loads_changed()

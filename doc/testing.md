@@ -29,6 +29,15 @@ registered in `_unit_tests.dm`. `dm-test` compiles the game with `UNIT_TESTS`,
 `CITESTING` and `CIBUILDING`, boots it in DreamDaemon, runs every test, and
 shuts down. It also repacks icons and builds Verdigris first if they are stale.
 
+Verdigris comes from a shared cache when it can: the build keys the DLL on the
+git ids of its inputs at `HEAD` (the `verdigris/` tree, the generated bindings,
+target, profile, `RUSTFLAGS`) and copies a cached build from
+`DQ_VERDIGRIS_CACHE` (default `D:/dq-cache/verdigris`) instead of running cargo,
+so a new worktree needs no `verdigris/target`. A miss builds and stores the DLL
+(atomic temp-dir rename; the newest 10 entries and anything used in 14 days are
+kept). Uncommitted edits to those inputs skip the cache. `DQ_VERDIGRIS_CACHE=off`
+disables it. The runner still checks `VERDIGRIS_ABI` before booting.
+
 - **Map.** Under `CITESTING` the world boots `maps/virgo_minitest/`, one small
   station level that loads in seconds. Add `-DCITESTING_FULL_MAP` to boot
   Southern Cross instead; use that for map-specific tests.

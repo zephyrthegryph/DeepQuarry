@@ -13,15 +13,12 @@
 	var/integrity_at_after = 0
 	var/pain_seen = 0
 	var/block_projectiles = FALSE
-	var/disable_changes = 0
-	EXPIRY_DECLARE(emp_until)
 
 DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_EMP, PROC_REF(on_emp))
 DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_PROJECTILE, PROC_REF(on_projectile))
 DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_EXPLOSION, PROC_REF(on_blast))
 DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_PAIN, PROC_REF(on_pain))
 DAMAGE_REACTION_AFTER(/obj/machinery/dq_reaction_probe, DAMAGE_PROJECTILE, PROC_REF(after_projectile))
-EMP_DISABLE(/obj/machinery/dq_reaction_probe, 30 SECONDS, "emp_until")
 
 /obj/machinery/dq_reaction_probe/proc/on_emp(datum/damage_packet/packet)
 	emp_seen++
@@ -41,10 +38,6 @@ EMP_DISABLE(/obj/machinery/dq_reaction_probe, 30 SECONDS, "emp_until")
 /obj/machinery/dq_reaction_probe/proc/after_projectile(datum/damage_packet/packet)
 	after_seen++
 	integrity_at_after = get_integrity()
-
-/obj/machinery/dq_reaction_probe/emp_disable_changed(disabled)
-	..()
-	disable_changes++
 
 /// Reflects every projectile.
 /obj/structure/dq_reflect_probe
@@ -103,12 +96,11 @@ CAPABILITY(/obj/structure/dq_reflect_probe/burn_only, reflects(list(BURN), PROC_
 	probe.deal_damage(DAMAGE_THERMAL, 10)
 	TEST_ASSERT_EQUAL(probe.before_seen, 2, "a kind trigger ignores other kinds")
 	var/obj/machinery/dq_reaction_probe/machine = allocate(/obj/machinery/dq_reaction_probe)
-	TEST_ASSERT(cap_of(machine, /datum/capability/emp_disable), "EMP_DISABLE is the emp_disable() capability")
 	var/emp_rows = 0
 	for(var/list/row as anything in damage_rows_of(machine))
 		if(row[1] == DAMAGE_EMP)
 			emp_rows++
-	TEST_ASSERT_EQUAL(emp_rows, 2, "the capability contributes its damage reaction beside the type's own")
+	TEST_ASSERT_EQUAL(emp_rows, 1, "the type's own EMP reaction is one row")
 
 /datum/unit_test/sys_damage_reactions
 	abstract_type = /datum/unit_test/sys_damage_reactions
@@ -153,40 +145,17 @@ CAPABILITY(/obj/structure/dq_reflect_probe/burn_only, reflects(list(BURN), PROC_
 	probe.deal_damage(DAMAGE_BLUNT, 5)
 	TEST_ASSERT_EQUAL(probe.pain_seen, 1, "a kind trigger doesn't fire for other kinds")
 
-/// EMP reactions: fire only when the pulse isn't blocked; EMP_DISABLE sets the field and EMPED,
-/// and the lapse (section 17) restores them, once.
-/datum/unit_test/sys_damage_reactions/emp_disable
+/// EMP reactions fire only when the pulse isn't blocked.
+/datum/unit_test/sys_damage_reactions/emp_blocked
 
-/datum/unit_test/sys_damage_reactions/emp_disable/Run()
+/datum/unit_test/sys_damage_reactions/emp_blocked/Run()
 	var/obj/machinery/dq_reaction_probe/probe = allocate(/obj/machinery/dq_reaction_probe)
-	TEST_ASSERT(!probe.has_stat(EMPED), "starts working")
 	probe.emp_act(EMP_MEDIUM)
 	TEST_ASSERT_EQUAL(probe.emp_seen, 1, "an EMP runs the DAMAGE_EMP reaction")
 	TEST_ASSERT_EQUAL(probe.emp_severity, EMP_MEDIUM, "with the pulse's severity")
-	TEST_ASSERT(probe.has_stat(EMPED), "EMP_DISABLE sets EMPED on machinery")
-	TEST_ASSERT(EXPIRY_ACTIVE(probe, emp_until, CLOCK_WORLD), "EMP_DISABLE sets the declared field")
-	TEST_ASSERT_EQUAL(EXPIRY_LEFT(probe, emp_until, CLOCK_WORLD), 30 SECONDS / EMP_MEDIUM, "for duration / severity")
-	TEST_ASSERT_EQUAL(probe.disable_changes, 1, "emp_disable_changed(TRUE) ran")
-
-	var/until = probe.emp_until
-	probe.emp_act(EMP_HEAVY)
-	TEST_ASSERT_EQUAL(probe.emp_until, until, "an EMP while down doesn't extend the outage")
-	TEST_ASSERT_EQUAL(probe.disable_changes, 1, "nor re-runs the down hook")
-
-	TEST_ASSERT(after_pending(probe, EMP_DISABLE_KEY), "the lapse is a keyed world-clock after()")
-	TEST_ASSERT_EQUAL(after_left(probe, EMP_DISABLE_KEY), 30 SECONDS / EMP_MEDIUM, "due when the outage ends")
-	probe.emp_until = world.time - 1
-	emp_disable_lapse_due(probe)
-	TEST_ASSERT(!probe.has_stat(EMPED), "the lapse clears EMPED")
-	TEST_ASSERT_EQUAL(probe.emp_until, 0, "and the field")
-	TEST_ASSERT_EQUAL(probe.disable_changes, 2, "emp_disable_changed(FALSE) ran")
-	probe.emp_disable_lapsed()
-	TEST_ASSERT_EQUAL(probe.disable_changes, 2, "the lapse hook is idempotent")
-
 	probe.emp_protection_flags = EMP_PROTECT_SELF
 	probe.emp_act(EMP_HEAVY)
-	TEST_ASSERT_EQUAL(probe.emp_seen, 2, "a blocked pulse runs no EMP reaction")
-	TEST_ASSERT(!probe.has_stat(EMPED), "and disables nothing")
+	TEST_ASSERT_EQUAL(probe.emp_seen, 1, "a blocked pulse runs no EMP reaction")
 
 /// REFLECTS: a matching round bounces (bullet_act returns PROJECTILE_CONTINUE) and lands nothing.
 /datum/unit_test/sys_damage_reactions/reflects

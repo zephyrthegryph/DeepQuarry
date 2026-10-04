@@ -77,6 +77,12 @@
 /datum/stat_decl/mob/living/__clock_rate_bio/spec()
 	return list(/mob/living, /mob/living/proc/__stat_clock_rate_bio)
 
+/// STAT(/obj/item/gps, operable, ALL) at code/game/objects/items/devices/gps.dm:88
+/obj/item/gps/proc/__stat_operable()
+	return list("operable", "ALL", list(id = STAT_OPERABLE))
+/datum/stat_decl/obj/item/gps/__operable/spec()
+	return list(/obj/item/gps, /obj/item/gps/proc/__stat_operable)
+
 /// STAT(/obj/machinery, operable, ALL) at code/contracts/ids/stats.dm:5
 /obj/machinery/proc/__stat_operable()
 	return list("operable", "ALL", list(id = STAT_OPERABLE))
@@ -103,12 +109,18 @@
 /datum/stat_decl/obj/machinery/light/__nightshift_enabled/spec()
 	return list(/obj/machinery/light, /obj/machinery/light/proc/__stat_nightshift_enabled)
 
-/// STAT(/obj/machinery/power/apc, power_failed, ANY) at code/modules/power/apc.dm:135
-/obj/machinery/power/apc/var/power_failed = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
-/obj/machinery/power/apc/proc/__stat_power_failed()
-	return list("power_failed", "ANY", list(id = STAT_POWER_FAILED))
-/datum/stat_decl/obj/machinery/power/apc/__power_failed/spec()
-	return list(/obj/machinery/power/apc, /obj/machinery/power/apc/proc/__stat_power_failed)
+/// STAT(/obj/machinery/power/apc, supplying, ALL) at code/modules/power/apc.dm:135
+/obj/machinery/power/apc/var/supplying = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/power/apc/proc/__stat_supplying()
+	return list("supplying", "ALL", list(id = STAT_SUPPLYING))
+/datum/stat_decl/obj/machinery/power/apc/__supplying/spec()
+	return list(/obj/machinery/power/apc, /obj/machinery/power/apc/proc/__stat_supplying)
+
+/// STAT(/obj/vehicle, operable, ALL) at code/modules/vehicles/vehicle.dm:51
+/obj/vehicle/proc/__stat_operable()
+	return list("operable", "ALL", list(id = STAT_OPERABLE))
+/datum/stat_decl/obj/vehicle/__operable/spec()
+	return list(/obj/vehicle, /obj/vehicle/proc/__stat_operable)
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

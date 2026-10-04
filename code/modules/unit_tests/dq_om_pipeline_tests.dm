@@ -498,12 +498,12 @@
 		om_run_frame_now(A, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "a settled APC parks")
 	A.energy_fail(1)
-	TEST_ASSERT(A.power_failed, "the failure is on")
-	TEST_ASSERT(hold_left(A, STAT_POWER_FAILED, SRC_POWER_FAILURE) > 0, "a timed hold ends the failure, no pipeline rewake")
-	release(A, STAT_POWER_FAILED, SRC_POWER_FAILURE)
-	TEST_ASSERT(!A.power_failed, "a reboot ends it")
+	TEST_ASSERT(A.failure_left() > 0, "the failure is on")
+	TEST_ASSERT(hold_left(A, STAT_OPERABLE, SRC_POWER_FAILURE) > 0, "a timed hold ends the failure, no pipeline rewake")
+	A.end_power_failure()
+	TEST_ASSERT(!A.failure_left(), "a reboot ends it")
 	om_run_frame_now(A, /datum/om/pipeline/machine)
-	A.update()
+	A.apply_area_power()
 	rel_set(src, nameof(sched), om_test_begin())
 
 /// A fire alarm parks once its (dead-code today) lockdown countdown is off, and a settings

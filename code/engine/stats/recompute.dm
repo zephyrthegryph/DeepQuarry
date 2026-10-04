@@ -438,6 +438,19 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 			else
 				stat_mark(reader, def)
 
+/// The singleton a SYSTEM_ACCESSOR's system name stands for: a GLOB `<name>_service` (a lazy system) or the `SS<name>` real global that
+/// SYSTEM_DEF declares. Indexing a vars list by a name it does not hold is a runtime, so each is looked up only when it exists.
+/proc/stat_system_singleton(system_name)
+	var/service_key = "[system_name]_service"
+	if(service_key in GLOB.vars)
+		var/datum/service = GLOB.vars[service_key]
+		if(service)
+			return service
+	var/ss_key = "SS[system_name]"
+	if(ss_key in global.vars)
+		return global.vars[ss_key]
+	return null
+
 /// A system's tracked var changed: the readers registered through a SYSTEM_ACCESSOR are marked (an accessor edge is never inline).
 /proc/stat_notify_system(datum/E, key)
 	for(var/system_key in GLOB.stat_sys_index)
@@ -445,8 +458,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		if(!dot || copytext(system_key, dot + 1) != key)
 			continue
 		var/system_name = copytext(system_key, 1, dot)
-		var/datum/singleton = GLOB.vars["[system_name]_service"] || GLOB.vars["SS[system_name]"]
-		if(singleton != E)
+		if(stat_system_singleton(system_name) != E)
 			continue
 		var/list/readers = GLOB.stat_sys_index[system_key]
 		for(var/datum/reader as anything in readers)

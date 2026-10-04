@@ -15,11 +15,11 @@
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
-	/// Until when an EMP keeps the multicaster down (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 
 CAPABILITIES(/obj/machinery/pda_multicaster)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	emp_disable(300 SECONDS)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
 /obj/machinery/pda_multicaster/Initialize(mapload)
 	. = ..()
@@ -118,10 +118,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 	. = ..()
 	update_power()
 
-CAPABILITY(/obj/machinery/pda_multicaster, emp_disable(300 SECONDS))
-
-/obj/machinery/pda_multicaster/emp_disable_changed(disabled)
-	..()
+/// A pulse took it down or its outage ended (emp_disable()): it reconciles.
+/obj/machinery/pda_multicaster/proc/emp_state_changed(datum/act/A)
 	update_power()
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

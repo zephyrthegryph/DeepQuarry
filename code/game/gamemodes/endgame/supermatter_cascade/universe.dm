@@ -81,10 +81,8 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if (!APC.has_stat(BROKEN) && !APC.is_critical)
 			APC.set_chargemode(0)
-			if(APC.cell)
-				APC.cell.charge = 0
-			APC.wake_for_power_dependency()
-			APC.set_emagged(1)
+			APC.set_cell_charge(0)
+			cap_key_set(APC, EMAG_EMAGGED, TRUE, null)
 
 /datum/universal_state/supermatter_cascade/proc/PlayerSet()
 	for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))

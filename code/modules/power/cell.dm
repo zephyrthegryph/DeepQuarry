@@ -291,9 +291,6 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	if(used && self_recharge)
 		// ALLOW(sys_periodic_toggle): wake, not a toggle: the declared state (self_recharge) already holds; the self-recharge body parks itself once full (work of its own that ran out) and this restarts it after a discharge. `charge` has 200+ writers across the tree, so it is not a field.
 		om_task_periodic(src, PERIODIC_SLOW)
-	if(used && istype(loc, /obj/machinery/power/apc))
-		var/obj/machinery/power/apc/A = loc
-		A.wake_for_power_dependency()
 	if(update_appearance)
 		update_icon()
 	return used
@@ -313,9 +310,6 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 
 	var/amount_used = clamp(amount, 0, maxcharge - charge)
 	charge += amount_used
-	if(amount_used && istype(loc, /obj/machinery/power/apc))
-		var/obj/machinery/power/apc/A = loc
-		A.wake_for_power_dependency()
 	if(update_appearance)
 		update_icon()
 		if(loc)

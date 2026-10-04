@@ -153,7 +153,7 @@
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
-	A.update()
+	A.apply_area_power()
 	refresh_flush()
 	var/drained = FALSE
 	for(var/i in 1 to 20)
@@ -187,7 +187,7 @@
 	A.area().use_power_static(-2000, EQUIP)
 	A.cell.charge = old_charge
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
-	A.update()
+	A.apply_area_power()
 	refresh_flush()
 	unobserve(M, /datum/notice/machinery_power_lost, src)
 	unobserve(M, /datum/notice/machinery_power_restored, src)
@@ -219,7 +219,7 @@
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
 	A.cell.charge = A.cell.maxcharge
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
-	A.update()
+	A.apply_area_power()
 	refresh_flush()
 	var/obj/machinery/power/smes/S
 	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))

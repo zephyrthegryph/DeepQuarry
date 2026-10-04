@@ -36,6 +36,14 @@
 	for(var/datum/capability/membership/C in caps_of(A))
 		for(var/id in C.registries)
 			LAZYOR(., id)
+	// membership(joins =) in a CAPABILITIES block: the compiled table keeps it among its type-level capabilities.
+	var/datum/type_table/T = table_of(A)
+	for(var/key in T.caps)
+		var/datum/capability/membership/declared = T.caps[key]
+		if(!istype(declared))
+			continue
+		for(var/id in declared.registries)
+			LAZYOR(., id)
 
 /// Registry membership declared by capabilities (membership(joins =)) is the type's too: type_registries()
 /// (cached per type) sees it, so on_materialize() joins and on_dematerialize() leaves it like REGISTRY_MEMBERSHIP.

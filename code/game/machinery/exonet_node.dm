@@ -22,10 +22,10 @@
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
-	/// Until when an EMP keeps the node down (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	emp_disable(300 SECONDS)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
 	op("toggle_PDA_port", ui_act("toggle_PDA_port"), then(PROC_REF(ui_act_toggle_pda_port)))
 	op("toggle_communicator_port", ui_act("toggle_communicator_port"), then(PROC_REF(ui_act_toggle_communicator_port)))
@@ -80,11 +80,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}
 		soundloop.start()
 		noisy = TRUE
 
-// An EMP shuts off the machine for awhile.  Ion anomalies also pulse it to turn it off.
-CAPABILITY(/obj/machinery/exonet_node, emp_disable(300 SECONDS))
-
-/obj/machinery/exonet_node/emp_disable_changed(disabled)
-	..()
+/// An EMP shuts off the machine for awhile (emp_disable()); ion anomalies also pulse it to turn it off. It reconciles when that changes.
+/obj/machinery/exonet_node/proc/emp_state_changed(datum/act/A)
 	update_power()
 
 // Proc: process()
