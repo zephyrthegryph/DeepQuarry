@@ -2892,13 +2892,13 @@
 	into += entry_line(10)
 	into += list(global.owns_one(nameof(active_vote), /datum/vote))
 
-/// CAPABILITIES(/datum/techweb) at code/modules/research/tg/techwebs/_techweb.dm:85
+/// CAPABILITIES(/datum/techweb) at code/modules/research/tg/techwebs/_techweb.dm:83
 /datum/techweb/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/research/tg/techwebs/_techweb.dm", 85, /datum/techweb)
-	into += entry_line(86)
+	into += entry_block("code/modules/research/tg/techwebs/_techweb.dm", 83, /datum/techweb)
+	into += entry_line(84)
 	into += list(global.owns_many(nameof(available_experiments), /datum/experiment))
-	into += entry_line(87)
+	into += entry_line(85)
 	into += list(global.owns_many(nameof(completed_experiments), /datum/experiment))
 
 /// CAPABILITIES(/datum/tgs_api) at code/modules/tgs/core/datum.dm:9
@@ -7233,13 +7233,13 @@
 	into += entry_line(589)
 	into += list(global.owns_many(nameof(pockets)))
 
-/// CAPABILITIES(/obj/item/gun) at code/modules/projectiles/gun.dm:117
+/// CAPABILITIES(/obj/item/gun) at code/modules/projectiles/gun.dm:115
 /obj/item/gun/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/gun.dm", 117, /obj/item/gun)
-	into += entry_line(118)
+	into += entry_block("code/modules/projectiles/gun.dm", 115, /obj/item/gun)
+	into += entry_line(116)
 	into += list(global.owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes)))
-	into += entry_line(119)
+	into += entry_line(117)
 	into += list(global.owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector))
 
 /// CAPABILITIES(/obj/item/gun/energy) at code/modules/projectiles/guns/energy.dm:184
@@ -8284,11 +8284,11 @@
 	into += entry_line(24)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/poster/custom) at code/game/objects/effects/decals/posters/postersubtypes.dm:50
+/// CAPABILITIES(/obj/item/poster/custom) at code/game/objects/effects/decals/posters/postersubtypes.dm:53
 /obj/item/poster/custom/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/effects/decals/posters/postersubtypes.dm", 50, /obj/item/poster/custom)
-	into += entry_line(51)
+	into += entry_block("code/game/objects/effects/decals/posters/postersubtypes.dm", 53, /obj/item/poster/custom)
+	into += entry_line(54)
 	into += list(global.op("select_poster_effect", global.menu(), global.label("Set Poster type"), global.needs(global.carried()), global.then(PROC_REF(select_poster_effect))))
 
 /// CAPABILITIES(/obj/item/powersink) at code/game/objects/items/devices/powersink.dm:62
