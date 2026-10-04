@@ -84,34 +84,36 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 	// User requests service
 	act_message(user, src, MSG_SELF("You wake %T%."), MSG_OTHERS(span_bold("%U%") + " wakes %T%."))
-	om_ask(user, /datum/om/prompt/choice/kiosk_service, PROC_REF(service_chosen), title = "[src]")
+	open_request(src, /datum/prompt/choice/kiosk_service, PROC_REF(service_chosen), answerer = user, title = "[src]")
 	return TRUE
 
 /// A cancel, a timeout or a failed re-check (moved away, kiosk broken or opened) suspends the kiosk.
-/datum/om/prompt/choice/kiosk_service
-	message = "What service would you like?"
-	choices = list("Health Scan", "Backup Scan", "Cancel")
+/datum/prompt/choice/kiosk_service
+	question = "What service would you like?"
 	buttons = TRUE
 	timeout = 10 SECONDS
-	requires = PROMPT_ADJACENT
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-/datum/om/prompt/choice/kiosk_service/valid()
-	var/obj/machinery/medical_kiosk/K = subject
-	if(choice == "Cancel" || !K.operable() || K.panel_open)
+/datum/prompt/choice/kiosk_service/prepare(datum/act/A)
+	..()
+	var/static/list/services = list("Health Scan", "Backup Scan", "Cancel")
+	choices = services
+
+/datum/prompt/choice/kiosk_service/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/obj/machinery/medical_kiosk/K = owner
+	if(answer_value == "Cancel" || !K.operable() || K.panel_open)
 		return "cancelled"
 	return null
 
-/datum/om/prompt/choice/kiosk_service/cancelled()
-	var/obj/machinery/medical_kiosk/K = subject
-	K?.suspend()
-
-/datum/om/prompt/choice/kiosk_service/refused(reason)
-	var/obj/machinery/medical_kiosk/K = subject
-	K?.suspend()
-
-/obj/machinery/medical_kiosk/proc/service_chosen(datum/om/prompt/choice/kiosk_service/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
+/obj/machinery/medical_kiosk/proc/service_chosen(datum/act/request/A)
+	if(!A.answer)
+		suspend()
+		return
+	var/mob/living/user = A.request.answerer
+	var/choice = A.answer.answer_value
 
 	// Service begins, delay
 	act_message(src, user, others = span_bold("%U%") + " scans %T% thoroughly!")
