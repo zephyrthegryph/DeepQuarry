@@ -317,21 +317,39 @@ TOPIC_ACTION(/mob/living, "set_lang_key", PROC_REF(topic_set_lang_key), TOPIC_RE
 		return
 	var/datum/language/L = args["set_lang_key"]
 	var/old_key = get_custom_prefix_by_lang(src, L)
-	om_ask(src, /datum/om/prompt/text/language_key, PROC_REF(language_key_entered), message = "Input a new key for [L.name]", default = old_key, language = L)
+	open_request(src, /datum/prompt/text/language_key, PROC_REF(language_key_entered), answerer = src, question = "Input a new key for [L.name]", default = old_key, language = L)
 	return TRUE
 
 /// Re-checked on the answer: the answerer still knows the language.
-/datum/om/prompt/text/language_key
+/datum/prompt/text/language_key
 	title = "Language Key"
+	timeout = 0
 	var/datum/language/language
 
-/datum/om/prompt/text/language_key/valid()
+CAPABILITIES(/datum/prompt/text/language_key)
+	ref_one(nameof(language), /datum/language)
+
+/datum/prompt/text/language_key/prepare(datum/act/A)
+	..()
+	var/datum/language/captured_language = language
+	rel_clear(src, nameof(language))
+	rel_set(src, nameof(language), captured_language)
+
+/datum/prompt/text/language_key/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
+	if(QDELETED(language))
+		return "gone"
 	return (language in answerer.languages) ? null : "language lost"
 
-/mob/living/proc/language_key_entered(datum/om/prompt/text/language_key/ask)
+/mob/living/proc/language_key_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/language_key/ask = A.answer
 	var/datum/language/L = ask.language
 	var/old_key = ask.default
-	var/custom_key = ask.text
+	var/custom_key = ask.value
 	if(custom_key && length(custom_key) == 1)
 		if(contains_az09(custom_key))
 			language_keys[custom_key] = L
