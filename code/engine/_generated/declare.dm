@@ -6138,6 +6138,13 @@
 	into += entry_line(280)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(psy_crown_step)), when = nameof(crown_worn)))
 
+/// CAPABILITIES(/obj/item/clothing/head/radiation) at code/modules/clothing/suits/utility.dm:97
+/obj/item/clothing/head/radiation/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/suits/utility.dm", 97, /obj/item/clothing/head/radiation)
+	into += entry_line(98)
+	into += list(global.trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE))
+
 /// CAPABILITIES(/obj/item/clothing/head/soft) at code/modules/clothing/head/soft_caps.dm:18
 /obj/item/clothing/head/soft/declared_entries(list/into)
 	..(into)
@@ -6322,6 +6329,13 @@
 	into += list(global.op("lasertag_adjust_heal_time_verb", global.menu(), global.label("Adjust Healing Timer"), global.needs(global.carried()), global.then(PROC_REF(lasertag_adjust_heal_time_verb))))
 	into += entry_line(51)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(lasertag_step)), when = nameof(tag_worn)))
+
+/// CAPABILITIES(/obj/item/clothing/suit/radiation) at code/modules/clothing/suits/utility.dm:115
+/obj/item/clothing/suit/radiation/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/suits/utility.dm", 115, /obj/item/clothing/suit/radiation)
+	into += entry_line(116)
+	into += list(global.trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE))
 
 /// CAPABILITIES(/obj/item/clothing/suit/space) at code/modules/clothing/spacesuits/breaches.dm:24
 /obj/item/clothing/suit/space/declared_entries(list/into)
