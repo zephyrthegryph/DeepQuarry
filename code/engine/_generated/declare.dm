@@ -50,12 +50,13 @@
 	var/at = null
 	var/accepts = /obj/item/cell
 	var/starts = null
+	var/starts_args = null
 	var/fits = null
-/proc/cell_bay(slot_var, at, accepts, starts, fits)
+/proc/cell_bay(slot_var, at, accepts, starts, starts_args, fits)
 	RETURN_TYPE(/datum/capability/lib/cell_bay)
-	return cap_construct(CAP_CELL_BAY, /datum/capability/lib/cell_bay, list(slot_var, at, accepts, starts, fits), "slot_var, at, accepts, starts, fits")
+	return cap_construct(CAP_CELL_BAY, /datum/capability/lib/cell_bay, list(slot_var, at, accepts, starts, starts_args, fits), "slot_var, at, accepts, starts, starts_args, fits")
 /datum/capdef_decl/c_cell_bay/spec()
-	return list(CAP_CELL_BAY, /datum/capability/lib/cell_bay, "slot_var", STACK, "cell_bay", "slot_var, at, accepts, starts, fits")
+	return list(CAP_CELL_BAY, /datum/capability/lib/cell_bay, "slot_var", STACK, "cell_bay", "slot_var, at, accepts, starts, starts_args, fits")
 
 /// CAPABILITY_TYPE(climb, CAP_CLIMB) at code/library/structures/climb.dm:38
 /datum/capability/lib/climb
@@ -434,7 +435,7 @@
 /datum/capdef_decl/c_synthesizer/spec()
 	return list(CAP_SYNTHESIZER, /datum/capability/lib/synthesizer, NONE, STACK, "synthesizer", "containers")
 
-/// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/spaces.dm:512
+/// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/spaces.dm:511
 /proc/telekinesis()
 	RETURN_TYPE(/datum/capability/def/telekinesis)
 	return cap_construct(CAP_TELEKINESIS, /datum/capability/def/telekinesis, list(), "")
@@ -20470,7 +20471,7 @@
 /proc/e0_door_open(datum/holder, selector)
 	return cap_key_get(holder, E0_DOOR_OPEN, selector)
 
-/// STATE_GRAPH(GRAPH_DOOR_ASSEMBLY) at code/tests/engine/e1_fixtures.dm:182
+/// STATE_GRAPH(GRAPH_DOOR_ASSEMBLY) at code/tests/engine/e1_fixtures.dm:205
 /datum/graph_decl/g_graph_door_assembly/spec()
 	return list(GRAPH_DOOR_ASSEMBLY, global.start(STAGE_DOOR_FRAME), global.stage(STAGE_DOOR_WIRED, global.stack(/obj/item/stack/cable_coil, 5)), global.stage(STAGE_DOOR_BOARDED, global.item(/obj/item/e0_fixture/board), global.put_in(SLOT_CONSTRUCTION)), global.stage(STAGE_DOOR_FINISHED, global.tool(TOOL_SCREWDRIVER), global.wait(0), from = STAGE_DOOR_BOARDED), global.stage(STAGE_DOOR_FINISHED, global.item(/obj/item/e0_fixture/door_kit), global.consumes(), from = STAGE_DOOR_WIRED, key = "kit", undo = list(global.tool(TOOL_CROWBAR), global.wait(0))), global.dismantle(global.tool(TOOL_WELDER)))
 
@@ -20702,6 +20703,13 @@
 	into += entry_line(136)
 	into += list(global.while_slotted(BELLY_SLOT_INTERIOR, global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 5)), on = ON_CONTENTS))
 
+/// CAPABILITIES(/obj/dq_settle_lamp) at code/modules/unit_tests/dq_init_settle_tests.dm:15
+/obj/dq_settle_lamp/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_init_settle_tests.dm", 15, /obj/dq_settle_lamp)
+	into += entry_line(16)
+	into += list(global.on_change(nameof(lit), ENTER, global.then(PROC_REF(on_lit))))
+
 /// CAPABILITIES(/obj/e0_fixture/cabinet) at code/tests/engine/fixtures.dm:258
 /obj/e0_fixture/cabinet/declared_entries(list/into)
 	..(into)
@@ -20799,18 +20807,18 @@
 	into += entry_line(389)
 	into += list(global.op("set_pressure", global.ui_act(global.arg("pressure", from = nameof(target_pressure))), global.then(PROC_REF(set_pressure))))
 
-/// CAPABILITIES(/obj/e1_assembly) at code/tests/engine/e1_fixtures.dm:193
+/// CAPABILITIES(/obj/e1_assembly) at code/tests/engine/e1_fixtures.dm:216
 /obj/e1_assembly/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e1_fixtures.dm", 193, /obj/e1_assembly)
-	into += entry_line(194)
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 216, /obj/e1_assembly)
+	into += entry_line(217)
 	into += list(global.construction(GRAPH_DOOR_ASSEMBLY))
 
-/// CAPABILITIES(/obj/e1_assembly/finished) at code/tests/engine/e1_fixtures.dm:200
+/// CAPABILITIES(/obj/e1_assembly/finished) at code/tests/engine/e1_fixtures.dm:223
 /obj/e1_assembly/finished/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e1_fixtures.dm", 200, /obj/e1_assembly/finished)
-	into += entry_line(201)
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 223, /obj/e1_assembly/finished)
+	into += entry_line(224)
 	into += list(global.configure(global.construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED))))
 
 /// CAPABILITIES(/obj/e1_fixture) at code/tests/engine/e1_fixtures.dm:96
@@ -20852,6 +20860,19 @@
 	into += list(global.configure(global.e1_widget("a", power = 9)))
 	into += entry_line(120)
 	into += list(global.without(CAP_E1_SOLO))
+
+/// CAPABILITIES(/obj/e1_slot_starts) at code/tests/engine/e1_fixtures.dm:163
+/obj/e1_slot_starts/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 163, /obj/e1_slot_starts)
+	into += entry_line(164)
+	into += list(global.slot("e1_pair", accepts = list(/obj/item/e1_part), capacity = 2, starts = list(/obj/item/e1_part = 2)))
+	into += entry_line(165)
+	into += list(global.slot("e1_pick", accepts = list(/obj/item/e1_part), capacity = 1, starts = global.pick_one(list(/obj/item/e1_part/tarnished = 1))))
+	into += entry_line(166)
+	into += list(global.slot("e1_cond", accepts = list(/obj/item/e1_part), capacity = 1, starts = global.when(nameof(flag), /obj/item/e1_part/labelled), starts_args = list("conditional")))
+	into += entry_line(167)
+	into += list(global.cell_bay(nameof(cell), accepts = /obj/item/e0_fixture/cell, starts = PROC_REF(pick_cell)))
 
 /// CAPABILITIES(/obj/e1_starts) at code/tests/engine/e1_fixtures.dm:146
 /obj/e1_starts/declared_entries(list/into)

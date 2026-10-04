@@ -99,6 +99,8 @@
 #define ENGINE_HOOK_STATS (1<<3)
 /// The type has after_init() entries: they are armed when the instance's init is complete (after_init.dm).
 #define ENGINE_HOOK_AFTER_INIT (1<<4)
+/// A slot() entry of the type has starts =: its contents are made in the engine init (slot_starts_init()).
+#define ENGINE_HOOK_SLOT_STARTS (1<<5)
 
 
 #define ALLOC_LAZY 1

@@ -7,6 +7,8 @@
 /// Called from the lifecycle's init step for a type whose table has any (own_table.engine_init).
 /proc/engine_holder_init(datum/holder, mapload)
 	var/datum/type_table/T = table_of(holder)
+	if(T.hook_flags & ENGINE_HOOK_SLOT_STARTS)
+		slot_starts_init(holder, T) // starting contents first: on_holder_init sees them
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
 		var/datum/capability/def = C.item
 		if(def.holder_hooks & HOLDER_HOOK_INIT)

@@ -41,6 +41,8 @@ SYSTEM_DEF(atoms)
 	var/list/deferred_resolvers
 	/// InitializeAtoms() nesting depth; deferred resolvers flush when it returns to 0.
 	var/initialize_depth = 0
+	/// TRUE while the boot map loads (initialize()): its settling drain is the first kernel tick's.
+	var/booting = FALSE
 
 	EXPIRY_DECLARE(init_start_time)
 
@@ -54,7 +56,9 @@ SYSTEM_DEF(atoms)
 	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
+	booting = TRUE
 	InitializeAtoms()
+	booting = FALSE
 	atom_initialized = INITIALIZATION_INNEW_REGULAR
 
 	// Services that set up on the initialized map declare needs = list(/datum/system/atoms) (pai, xenoarch,
@@ -156,6 +160,10 @@ SYSTEM_DEF(atoms)
 		atoms_to_return += created
 
 	initialize_depth--
+	// The load is complete: one settling drain runs the hooks and marked stats its atoms' init owes (doc section 7, "Initial evaluation is
+	// silent"). At boot the first kernel tick's drain is that drain: the systems that boot after the atoms must exist before a hook runs.
+	if(!initialize_depth && !booting)
+		stat_drain_point()
 
 	testing("[length(queued_deletions)] atoms were queued for deletion.")
 	for (var/atom/queued as anything in queued_deletions?.Copy())
@@ -336,3 +344,8 @@ SYSTEM_DEF(atoms)
 	for(var/atom/A as anything in armed)
 		if(!QDELETED(A))
 			after_init_arm(A, TRUE)
+
+/// TRUE while a map load is in progress: a load frame is open (InitializeAtoms(), or a chunked load suspended between its steps). The engine's
+/// drains wait for the load to complete (stat_drain_point()).
+/datum/system/atoms/proc/map_loading()
+	return initialize_depth > 0

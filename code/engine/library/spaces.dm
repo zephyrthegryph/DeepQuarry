@@ -394,13 +394,13 @@ MSG_DEF_SELF(slot/too_small, "That is too small to fit.")
 
 // ---- cell bay ----
 
-CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY, /datum/capability/lib/cell_bay, key = slot_var, slot_var = null, at = null, accepts = /obj/item/cell, starts = null, fits = null)
+CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY, /datum/capability/lib/cell_bay, key = slot_var, slot_var = null, at = null, accepts = /obj/item/cell, starts = null, starts_args = null, fits = null)
 
 /// A power cell slot over a holder var (`slot_var`, nameof(cell)), in space `at` when given: cell_bay.<var>.insert (a cell in hand goes in, when
 /// it `fits`: size_is(ITEMSIZE_NORMAL)) and cell_bay.<var>.take (an empty hand takes it out). Both are placed at(at), so the path decides: a
 /// closed door sets them aside for whatever else the click means, and refuses with its reason when nothing else does. The cell shows through
-/// an open cover (a look layer), examine says what it holds, and cell_charge_percent() reads its charge through the bay. `starts` (a type, or
-/// nameof(var) of a holder var holding one) fills the bay when the holder initializes.
+/// an open cover (a look layer), examine says what it holds, and cell_charge_percent() reads its charge through the bay. `starts` (any starts =
+/// form of section 6, with starts_args) fills the bay when the holder initializes.
 /datum/capability/lib/cell_bay
 	holder_hooks = HOLDER_HOOK_INIT
 
@@ -429,18 +429,17 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 		return (!isnull(at) && istype(holder) && isnull(holder.space_reason(at, AUTH_PHYSICAL))) ? "The power cell is missing." : null
 	return "The charge meter reads [round(C.percent())]%."
 
-/// The bay starts with a thing when its holder initializes: `starts` is a type, or nameof(var) of a holder var holding one.
+/// The bay starts with a thing when its holder initializes: any starts = form (starts_make(): a type, nameof(var) of a holder var holding one,
+/// pick_one(), when(cond, T), PROC_REF(x)) with starts_args. A var a mapper already filled keeps what it holds.
 /datum/capability/lib/cell_bay/on_holder_init(datum/act/eval/A)
 	var/atom/holder = A.holder
 	if(isnull(starts) || !istype(holder) || !isnull(holder.vars[slot_var]))
 		return
-	var/start_type = starts
-	if(istext(starts) && (starts in holder.vars))
-		start_type = holder.vars[starts]
-	if(!ispath(start_type, /atom/movable))
-		return
-	var/atom/movable/thing = new start_type(holder)
-	varslot_set(holder, slot_var, thing)
+	for(var/atom/movable/thing in starts_make(holder, starts, starts_args, holder))
+		if(isnull(holder.vars[slot_var]))
+			varslot_set(holder, slot_var, thing)
+		else
+			qdel(thing) // ALLOW(lifecycle): a one-item bay keeps the first thing a list-valued starts made; the rest were never placed
 
 /datum/capability/lib/cell_bay/output_reads(hook)
 	return list(slot_var)

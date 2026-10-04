@@ -125,11 +125,11 @@ list_init_exempt_files = ["code/__defines/tgs.dm"]
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
 
 [lint.init]
-# init_lint.py EXEMPT_PREFIXES: unit tests and benchmarks build worlds on purpose. This only exempts the
+# init_lint.py EXEMPT_PREFIXES: unit tests, the engine's test fixtures and benchmarks build worlds on purpose. This only exempts the
 # per-file rules (initialize, late_initialize, world_reads, turf_on_materialize): table_init_overrides
 # reads every file (cx.all_files()), as init_lint.py's table pass did. (No TGS exemption: init_lint.py never
 # read exempt_path().)
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/", "code/modules/benchmarks/"]
 
 [lint.instance_list]
 # instance_list_lint.py: allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES): unit tests and
