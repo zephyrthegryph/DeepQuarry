@@ -4455,6 +4455,17 @@
 	into += entry_line(42)
 	into += list(global.owns_one(nameof(tooltip_window), /datum/tgui_window))
 
+/// CAPABILITIES(/datum/trader_review) at code/modules/economy/trader.dm:88
+/datum/trader_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/trader.dm", 88, /datum/trader_review)
+	into += entry_line(89)
+	into += list(global.ref_one(nameof(actor), /mob/living))
+	into += entry_line(90)
+	into += list(global.ref_one(nameof(trader), /obj/trader))
+	into += entry_line(91)
+	into += list(global.ref_one(nameof(product), /obj))
+
 /// CAPABILITIES(/datum/trait_state/radiation_effects) at code/datums/entity_state/traits/radiation_effects.dm:266
 /datum/trait_state/radiation_effects/declared_entries(list/into)
 	..(into)
@@ -6805,11 +6816,11 @@
 	into += entry_line(322)
 	into += list(global.op("tome", global.in_hand(), global.label("Read"), global.then(PROC_REF(interaction_tome))))
 
-/// CAPABILITIES(/obj/item/book/tome/imbued) at code/game/gamemodes/cult/ritual.dm:470
+/// CAPABILITIES(/obj/item/book/tome/imbued) at code/game/gamemodes/cult/ritual.dm:473
 /obj/item/book/tome/imbued/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/gamemodes/cult/ritual.dm", 470, /obj/item/book/tome/imbued)
-	into += entry_line(471)
+	into += entry_block("code/game/gamemodes/cult/ritual.dm", 473, /obj/item/book/tome/imbued)
+	into += entry_line(474)
 	into += list(global.op("imbued", global.in_hand(), global.label("Scribe a rune"), global.then(PROC_REF(interaction_imbued))))
 
 /// CAPABILITIES(/obj/item/boop_module) at code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:13
