@@ -572,6 +572,9 @@ CAPABILITIES(/datum/shred_limb_review)
 	. = ..()
 	if(.)
 		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
 	var/datum/shred_limb_review/review = owner
 	return review.why_not()
 
@@ -650,6 +653,9 @@ CAPABILITIES(/datum/shred_limb_review)
 		consume(src)
 		return
 	rel_set(src, nameof(T_int), A.answer ? A.request.answer_value : null)
+	if(A.answer && QDELETED(T_int))
+		consume(src)
+		return
 	internal_selected = !isnull(T_int)
 	if(T_int?.vital)
 		open_request(src, /datum/prompt/yes_no/shred_limb, PROC_REF(internal_confirmed), answerer = actor, asker = actor, question = "Are you sure you wish to severely damage their [T_int]? It will likely kill [target]...", title = "Shred Limb")
@@ -677,6 +683,9 @@ CAPABILITIES(/datum/shred_limb_review)
 		consume(src)
 		return
 	rel_set(src, nameof(B), A.answer ? A.request.answer_value : null)
+	if(A.answer && QDELETED(B))
+		consume(src)
+		return
 	actor.shred_limb_answered(target, T_ext, T_int, B)
 	consume(src)
 
@@ -935,6 +944,15 @@ CAPABILITIES(/datum/shred_limb_review)
 	question = "Please select a target."
 	ask_flags = ASK_CONSCIOUS
 
+/datum/prompt/choice/victim/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	return null
+
 /// Also re-checked: still stealthed underwater, and the target is still next to us.
 /datum/prompt/choice/victim/underwater
 
@@ -951,6 +969,8 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(!A.answer)
 		return
 	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
 	var/starting_loc = target.loc
 
@@ -1036,6 +1056,8 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(!A.answer)
 		return
 	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
@@ -1241,6 +1263,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		return
 	var/datum/prompt/choice/victim/lunge/ask = A.request
 	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
@@ -1388,6 +1412,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	if(!A.answer)
 		return
 	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !Adjacent(target))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
@@ -1654,6 +1680,9 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	. = ..()
 	if(.)
 		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
 	var/mob/living/L = answerer
 	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(answer_value))
 		return "can't reach"
@@ -1663,6 +1692,8 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	if(!A.answer)
 		return
 	var/mob/living/carbon/T = A.answer.answer_value
+	if(T && QDELETED(T))
+		return
 	if(HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
@@ -1727,6 +1758,8 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 	if(!A.answer)
 		return
 	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	var/mob/living/pred = loc.loc
 	var/obj/belly/belly = loc
 	if(!isliving(target)) //Safety.

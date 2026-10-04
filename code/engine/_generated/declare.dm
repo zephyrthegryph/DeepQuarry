@@ -2341,6 +2341,15 @@
 	into += entry_line(238)
 	into += list(global.owns_many(nameof(other_important)))
 
+/// CAPABILITIES(/datum/inbelly_spawn_review) at code/modules/vore/eating/inbelly_spawn.dm:24
+/datum/inbelly_spawn_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/eating/inbelly_spawn.dm", 24, /datum/inbelly_spawn_review)
+	into += entry_line(25)
+	into += list(global.ref_one(nameof(actor), /mob/living))
+	into += entry_line(26)
+	into += list(global.ref_one(nameof(belly), /obj/belly))
+
 /// CAPABILITIES(/datum/instrument) at code/modules/instruments/instrument_data/_instrument_data.dm:49
 /datum/instrument/declared_entries(list/into)
 	..(into)
@@ -2876,11 +2885,11 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1076
+/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1095
 /datum/prompt/choice/admin_drop_pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1076, /datum/prompt/choice/admin_drop_pod)
-	into += entry_line(1077)
+	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1095, /datum/prompt/choice/admin_drop_pod)
+	into += entry_line(1096)
 	into += list(global.ref_one(nameof(drop_mob), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:197
@@ -3062,20 +3071,20 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
-/// CAPABILITIES(/datum/prompt/choice/succubus_bite) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1482
+/// CAPABILITIES(/datum/prompt/choice/succubus_bite) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1508
 /datum/prompt/choice/succubus_bite/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1482, /datum/prompt/choice/succubus_bite)
-	into += entry_line(1483)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1508, /datum/prompt/choice/succubus_bite)
+	into += entry_line(1509)
 	into += list(global.ref_one(nameof(grab), /obj/item/grab))
-	into += entry_line(1484)
+	into += entry_line(1510)
 	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/choice/victim/absorbed) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1702
+/// CAPABILITIES(/datum/prompt/choice/victim/absorbed) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1733
 /datum/prompt/choice/victim/absorbed/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1702, /datum/prompt/choice/victim/absorbed)
-	into += entry_line(1703)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1733, /datum/prompt/choice/victim/absorbed)
+	into += entry_line(1734)
 	into += list(global.ref_one(nameof(belly), /obj/belly))
 
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351

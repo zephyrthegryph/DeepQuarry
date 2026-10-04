@@ -419,6 +419,9 @@ CAPABILITIES(/datum/lleill_contact_review)
 	. = ..()
 	if(.)
 		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
 	var/datum/lleill_contact_review/contact = owner
 	return contact.why_not()
 

@@ -97,6 +97,9 @@ CAPABILITIES(/datum/trader_review)
 	. = ..()
 	if(.)
 		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
 	var/datum/trader_review/review = owner
 	return review.why_not()
 
@@ -181,6 +184,9 @@ CAPABILITIES(/datum/trader_review)
 		failed_answer(A.request)
 		return
 	rel_set(src, nameof(product), A.request.answer_value)
+	if(QDELETED(product))
+		stopped("gone")
+		return
 	product_selected = TRUE
 	if(!istype(product) || !(product in trader.products))
 		to_chat(actor, span_notice("You decided not to get anything."))
