@@ -29,6 +29,23 @@
 
 CAPABILITIES(/obj/machinery/computer/med_data)
 	owns_one(nameof(scan), /obj/item/card/id)
+	interface("MedicalRecords", title = "Medical Records")
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
+	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
+	op("screen", ui_act("screen", arg("screen", num())), then(PROC_REF(ui_act_screen)))
+	op("vir", ui_act("vir", arg("vir")), then(PROC_REF(ui_act_vir)))
+	op("del_all", ui_act("del_all"), then(PROC_REF(ui_act_del_all)))
+	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
+	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
+	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
+	op("edit_notes", ui_act("edit_notes"), needs(req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default)))), then(PROC_REF(ui_act_edit_notes)))
+	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
+	op("del_c", ui_act("del_c", arg("del_c", num())), then(PROC_REF(ui_act_del_c)))
+	op("search", ui_act("search", arg("t1", schema_text(4096))), then(PROC_REF(ui_act_search)))
+	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
+	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 
 /obj/machinery/computer/med_data/Initialize(mapload)
 	. = ..()
@@ -82,13 +99,14 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	if(user)
 		holder.tgui_interact(user)
 
-DECLARE_UI(/obj/machinery/computer/med_data, "MedicalRecords", UI_TITLE("Medical Records"))
-
-UI_DATA_REPLACE(/obj/machinery/computer/med_data, "temp:text", "authenticated", "rank", "screen:num", "printing:num", "merge:ui_data_obj_machinery_computer_med_data{scan:text,isAI:num,isRobot:num,records:list,general:list,medical:list,virus:list,medbots:list,modal:unknown}")
-
-/// The computed part of /obj/machinery/computer/med_data's window data (declared on its UI_DATA row).
-/obj/machinery/computer/med_data/proc/ui_data_obj_machinery_computer_med_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/med_data/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
+	data["temp"] = temp
+	data["authenticated"] = authenticated
+	data["rank"] = rank
+	data["screen"] = screen
+	data["printing"] = printing
 	data["scan"] = scan ? scan.name : null
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
@@ -152,9 +170,9 @@ UI_DATA_REPLACE(/obj/machinery/computer/med_data, "temp:text", "authenticated", 
 					var/turf/T = get_turf(M)
 					if(T)
 						var/medbot = list()
-						var/area/A = get_area(T)
+						var/area/bot_area = get_area(T)
 						medbot["name"] = M.name
-						medbot["area"] = A.name
+						medbot["area"] = bot_area.name
 						medbot["x"] = T.x
 						medbot["y"] = T.y
 						medbot["on"] = M.on
@@ -169,92 +187,84 @@ UI_DATA_REPLACE(/obj/machinery/computer/med_data, "temp:text", "authenticated", 
 	data["modal"] = tgui_modal_data(src)
 	return data
 
-/obj/machinery/computer/med_data/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/// Every button first drops a record the data core no longer holds (the old window guard's side effects).
+/obj/machinery/computer/med_data/proc/ui_records_fresh(datum/act/op/A)
 	if(!(active1() in GLOB.data_core.general))
 		rel_clear(src, nameof(active1))
 	if(!(active2() in GLOB.data_core.medical))
 		rel_clear(src, nameof(active2))
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/med_data, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_cleartemp)
+/obj/machinery/computer/med_data/proc/ui_act_cleartemp(datum/act/op/A)
 	. = TRUE
 	temp = null
 
-UI_ACT(/obj/machinery/computer/med_data, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_scan)
+/obj/machinery/computer/med_data/proc/ui_act_scan(datum/act/op/A)
 	. = TRUE
 	if(scan)
 		scan.forceMove(loc)
-		if(ishuman(ui.user) && !ui.user.get_active_hand())
-			ui.user.put_in_hands(scan)
+		if(ishuman(A.actor) && !A.actor.get_active_hand())
+			A.actor.put_in_hands(scan)
 		own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
-		var/obj/item/I = ui.user.get_active_hand()
+		var/obj/item/I = A.actor.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			move_into(src, nameof(src.scan), I, ui.user)
+			move_into(src, nameof(src.scan), I, A.actor)
 
-UI_ACT(/obj/machinery/computer/med_data, "login", ui_act_login, UI_ARG_NUM("login_type"))
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_login)
+/obj/machinery/computer/med_data/proc/ui_act_login(datum/act/op/A, login_type_arg)
 	. = TRUE
-	var/login_type = params["login_type"]
+	var/login_type = login_type_arg
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
 			authenticated = scan.registered_name
 			rank = scan.assignment
-	else if(login_type == LOGIN_TYPE_AI && isAI(ui.user))
-		authenticated = ui.user.name
+	else if(login_type == LOGIN_TYPE_AI && isAI(A.actor))
+		authenticated = A.actor.name
 		rank = JOB_AI
-	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(ui.user))
-		authenticated = ui.user.name
-		var/mob/living/silicon/robot/R = ui.user
+	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(A.actor))
+		authenticated = A.actor.name
+		var/mob/living/silicon/robot/R = A.actor
 		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
 		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 		rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 		screen = MED_DATA_R_LIST
 
-UI_ACT(/obj/machinery/computer/med_data, "logout", ui_act_logout)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_logout)
+/obj/machinery/computer/med_data/proc/ui_act_logout(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
 	if(scan)
 		scan.forceMove(loc)
-		if(ishuman(ui.user) && !ui.user.get_active_hand())
-			ui.user.put_in_hands(scan)
+		if(ishuman(A.actor) && !A.actor.get_active_hand())
+			A.actor.put_in_hands(scan)
 		own_take(src, nameof(/obj/item/extrapolator::scan))
 	authenticated = null
 	screen = null
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 
-UI_ACT(/obj/machinery/computer/med_data, "screen", ui_act_screen, UI_ARG_NUM("screen"))
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_screen)
+/obj/machinery/computer/med_data/proc/ui_act_screen(datum/act/op/A, screen_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	screen = clamp(params["screen"] || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT)
+	screen = clamp(screen_arg || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT)
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 
-UI_ACT(/obj/machinery/computer/med_data, "vir", ui_act_vir, UI_ARG_REF("vir", null, /datum/data/record))
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_vir)
+/obj/machinery/computer/med_data/proc/ui_act_vir(datum/act/op/A, vir)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/data/record/v = params["vir"]
+	var/datum/data/record/v = ui_ref(vir, null, /datum/data/record)
 	if(!istype(v))
 		return FALSE
 	tgui_modal_message(src, "virus", "", null, v.fields["tgui_description"])
 
-UI_ACT(/obj/machinery/computer/med_data, "del_all", ui_act_del_all)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_all)
+/obj/machinery/computer/med_data/proc/ui_act_del_all(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
@@ -263,8 +273,7 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_all)
 		qdel(R)
 	set_temp("All medical records deleted.")
 
-UI_ACT(/obj/machinery/computer/med_data, "del_r", ui_act_del_r)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_r)
+/obj/machinery/computer/med_data/proc/ui_act_del_r(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
@@ -273,13 +282,12 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_r)
 		set_temp("Medical record deleted.")
 		qdel(active2())
 
-UI_ACT(/obj/machinery/computer/med_data, "d_rec", ui_act_d_rec, UI_ARG_REF("d_rec", null, /datum/data/record))
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_d_rec)
+/obj/machinery/computer/med_data/proc/ui_act_d_rec(datum/act/op/A, d_rec)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/data/record/general_record = params["d_rec"]
+	var/datum/data/record/general_record = ui_ref(d_rec, null, /datum/data/record)
 	if(!(general_record in GLOB.data_core.general))
 		set_temp("Record not found.", "danger")
 		return
@@ -294,26 +302,35 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_d_rec)
 	rel_set(src, nameof(/obj/machinery/computer/med_data::active2), medical_record)
 	screen = MED_DATA_RECORD
 
-UI_ACT(/obj/machinery/computer/med_data, "sync_r", ui_act_sync_r)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_sync_r)
+/obj/machinery/computer/med_data/proc/ui_act_sync_r(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
 	if(active2())
-		set_temp(client_update_record(src,ui.user))
+		set_temp(client_update_record(src,A.actor))
 
-UI_ACT(/obj/machinery/computer/med_data, "edit_notes", ui_act_edit_notes)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_edit_notes)
-	. = TRUE
-	if(!(authenticated))
-		return FALSE
-	. = TRUE
-		// The modal input in tgui is busted for this sadly...
-	om_ask(ui.user, /datum/om/prompt/text/record_notes, PROC_REF(record_notes_entered), default = html_decode(active2().fields["notes"]), record = active2())
+/obj/machinery/computer/med_data/proc/ui_act_edit_notes(datum/act/op/A)
+	var/datum/data/record/target = active2()
+	var/datum/prompt/R = A.answer
+	if(!target || !R)
+		return OP_OK
+	var/new_notes = strip_html_simple(R.value, MAX_RECORD_LENGTH)
+	if(new_notes != "")
+		set_record_notes(target, new_notes)
+		return OP_OK
+	open_request(src, /datum/prompt/yes_no/record_notes_delete, PROC_REF(record_notes_confirmed), valid = PROC_REF(record_notes_valid), answerer = A.actor, record = target, timeout = 0)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/med_data, "new", ui_act_new)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_new)
+/// The notes the editor starts with.
+/obj/machinery/computer/med_data/proc/notes_default(datum/act/A)
+	return html_decode(active2()?.fields["notes"])
+
+/// The operator is logged in (the old handlers each refused without it).
+/obj/machinery/computer/med_data/proc/records_authenticated(datum/act/op/A)
+	return !!authenticated // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
+
+/obj/machinery/computer/med_data/proc/ui_act_new(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
@@ -340,13 +357,12 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_new)
 		screen = MED_DATA_RECORD
 		set_temp("Medical record created.", "success")
 
-UI_ACT(/obj/machinery/computer/med_data, "del_c", ui_act_del_c, UI_ARG_NUM("del_c"))
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_c)
+/obj/machinery/computer/med_data/proc/ui_act_del_c(datum/act/op/A, del_c)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/index = params["del_c"]
+	var/index = del_c
 	if(!index || !istype(active2(), /datum/data/record))
 		return
 
@@ -355,15 +371,14 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_c)
 	if(comments[index])
 		comments.Cut(index, index + 1)
 
-UI_ACT(/obj/machinery/computer/med_data, "search", ui_act_search, UI_ARG_TEXT("t1"))
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_search)
+/obj/machinery/computer/med_data/proc/ui_act_search(datum/act/op/A, t1_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
-	var/t1 = lowertext(params["t1"] || "")
+	var/t1 = lowertext(t1_arg || "")
 	if(!length(t1))
 		return
 
@@ -380,8 +395,7 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_search)
 			break
 	screen = MED_DATA_RECORD
 
-UI_ACT(/obj/machinery/computer/med_data, "print_p", ui_act_print_p)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_print_p)
+/obj/machinery/computer/med_data/proc/ui_act_print_p(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
@@ -391,38 +405,32 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_print_p)
 		SStgui.update_uis(src)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
 
-/obj/machinery/computer/med_data/proc/record_notes_entered(datum/om/prompt/text/record_notes/ask)
-	var/new_notes = strip_html_simple(ask.text, MAX_RECORD_LENGTH)
-	if(new_notes != "")
-		set_record_notes(ask.record, new_notes)
+/obj/machinery/computer/med_data/proc/record_notes_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/record_notes_delete, PROC_REF(record_notes_confirmed), record = ask.record)
+	var/datum/prompt/yes_no/record_notes_delete/R = A.request
+	set_record_notes(R.record, "")
 
-/obj/machinery/computer/med_data/proc/record_notes_confirmed(datum/om/prompt/confirm/record_notes_delete/ask)
-	set_record_notes(ask.record, "")
+/// The operator is still next to the console when the answer arrives.
+/obj/machinery/computer/med_data/proc/record_notes_valid(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && in_range(src, M)
 
 /obj/machinery/computer/med_data/proc/set_record_notes(datum/data/record/R, notes)
 	if(R == active2())
 		active2().fields["notes"] = notes
 		SStgui.update_uis(src)
 
-/// A records console's notes editor (medical, security and employment records).
-/datum/om/prompt/text/record_notes
-	title = "Character Preference"
-	message = "Enter new information here."
-	max_length = MAX_RECORD_LENGTH
-	multiline = TRUE
-	requires = PROMPT_ADJACENT
-	var/datum/data/record/record
-
-/// Empty notes: confirm clearing the record's notes.
-/datum/om/prompt/confirm/record_notes_delete
+/// Empty notes: confirm clearing the record's notes (medical, security and employment records).
+/datum/prompt/yes_no/record_notes_delete
 	title = "Confirm Delete"
-	message = "Are you sure you want to delete the current record's notes?"
-	yes_text = "Delete"
-	requires = PROMPT_ADJACENT
+	question = "Are you sure you want to delete the current record's notes?"
 	var/datum/data/record/record
 
+CAPABILITIES(/datum/prompt/yes_no/record_notes_delete)
+	ref_one(nameof(record), /datum/data/record)
+
+MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 
 /obj/machinery/computer/med_data/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE
