@@ -1511,22 +1511,24 @@
 	..(into)
 	into += entry_block("code/modules/expedition/expedition_site.dm", 55, /datum/expedition_site)
 	into += entry_line(56)
-	into += list(global.owns_one(nameof(landing_waypoint), /obj/effect/shuttle_landmark/automatic/clearing/expedition))
+	into += list(global.entry_link("/datum/expedition_site::origin_console", "/obj/machinery/computer/shuttle_control/explore::active_expedition"))
 	into += entry_line(57)
-	into += list(global.owns_one(nameof(mission), /datum/expedition_mission))
+	into += list(global.owns_one(nameof(landing_waypoint), /obj/effect/shuttle_landmark/automatic/clearing/expedition))
 	into += entry_line(58)
-	into += list(global.owns_one(nameof(station_defense), /datum/generated_station_defense_runtime))
+	into += list(global.owns_one(nameof(mission), /datum/expedition_mission))
 	into += entry_line(59)
-	into += list(global.owns_one(nameof(station_director), /datum/generated_station_director))
+	into += list(global.owns_one(nameof(station_defense), /datum/generated_station_defense_runtime))
 	into += entry_line(60)
-	into += list(global.owns_one(nameof(station_materialization), /datum/generated_station_materialization))
+	into += list(global.owns_one(nameof(station_director), /datum/generated_station_director))
 	into += entry_line(61)
-	into += list(global.owns_one(nameof(station_simulation), /datum/generated_station_simulation))
+	into += list(global.owns_one(nameof(station_materialization), /datum/generated_station_materialization))
 	into += entry_line(62)
-	into += list(global.owns_one(nameof(station_spec), /datum/generated_station_spec))
+	into += list(global.owns_one(nameof(station_simulation), /datum/generated_station_simulation))
 	into += entry_line(63)
-	into += list(global.owns_one(nameof(station_utilities), /datum/generated_station_utility_topology))
+	into += list(global.owns_one(nameof(station_spec), /datum/generated_station_spec))
 	into += entry_line(64)
+	into += list(global.owns_one(nameof(station_utilities), /datum/generated_station_utility_topology))
+	into += entry_line(65)
 	into += list(global.owns_many(nameof(station_controls)))
 
 /// CAPABILITIES(/datum/feed_channel) at code/game/machinery/newscaster.dm:32
@@ -2207,11 +2209,13 @@
 	into += entry_line(90)
 	into += list(global.owns_many(nameof(bands), /datum/om_watch_band))
 
-/// CAPABILITIES(/datum/omni_port) at code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm:123
+/// CAPABILITIES(/datum/omni_port) at code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm:120
 /datum/omni_port/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm", 123, /datum/omni_port)
-	into += entry_line(124)
+	into += entry_block("code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm", 120, /datum/omni_port)
+	into += entry_line(121)
+	into += list(global.owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(122)
 	into += list(global.ref_one(nameof(master)))
 
 /// CAPABILITIES(/datum/overlay_lighting) at code/datums/entity_state/overlay_lighting.dm:80
@@ -2535,6 +2539,13 @@
 	into += list(global.owns_many(nameof(functions)))
 	into += entry_line(13)
 	into += list(global.owns_many(nameof(variables)))
+
+/// CAPABILITIES(/datum/seed_pile) at code/modules/hydroponics/seed_storage.dm:9
+/datum/seed_pile/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/seed_storage.dm", 9, /datum/seed_pile)
+	into += entry_line(10)
+	into += list(global.owns_one(nameof(seed_type_static), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/datum/shuttle/autodock/ferry/specops) at code/modules/shuttles/shuttle_specops.dm:24
 /datum/shuttle/autodock/ferry/specops/declared_entries(list/into)
@@ -4974,6 +4985,13 @@
 	into += entry_line(40)
 	into += list(global.owns_many(nameof(cam_plane_masters)))
 
+/// CAPABILITIES(/obj/effect/overmap/visitable/sector/expedition) at code/modules/expedition/expedition_transport.dm:85
+/obj/effect/overmap/visitable/sector/expedition/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/expedition/expedition_transport.dm", 85, /obj/effect/overmap/visitable/sector/expedition)
+	into += entry_line(86)
+	into += list(global.ref_one(nameof(site)))
+
 /// CAPABILITIES(/obj/effect/overmap/visitable/ship) at code/modules/overmap/ships/ship.dm:92
 /obj/effect/overmap/visitable/ship/declared_entries(list/into)
 	..(into)
@@ -4993,7 +5011,16 @@
 	..(into)
 	into += entry_block("code/modules/hydroponics/spreading/spreading.dm", 61, /obj/effect/plant)
 	into += entry_line(62)
+	into += list(global.owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(63)
 	into += list(global.owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
+
+/// CAPABILITIES(/obj/effect/shuttle_landmark/automatic/clearing/expedition) at code/modules/expedition/expedition_transport.dm:87
+/obj/effect/shuttle_landmark/automatic/clearing/expedition/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/expedition/expedition_transport.dm", 87, /obj/effect/shuttle_landmark/automatic/clearing/expedition)
+	into += entry_line(88)
+	into += list(global.ref_one(nameof(site)))
 
 /// CAPABILITIES(/obj/effect/step_trigger/autostrip) at code/game/objects/effects/step_triggers.dm:257
 /obj/effect/step_trigger/autostrip/declared_entries(list/into)
@@ -5125,6 +5152,13 @@
 	into += entry_block("code/modules/projectiles/ammunition.dm", 172, /obj/item/ammo_magazine)
 	into += entry_line(173)
 	into += list(global.owns_many(nameof(stored_ammo)))
+
+/// CAPABILITIES(/obj/item/analyzer/plant_analyzer) at code/modules/hydroponics/trays/tray_tools.dm:306
+/obj/item/analyzer/plant_analyzer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/trays/tray_tools.dm", 306, /obj/item/analyzer/plant_analyzer)
+	into += entry_line(307)
+	into += list(global.owns_one(nameof(last_seed), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/obj/item/ano_scanner) at code/modules/xenoarcheaology/tools/tools.dm:49
 /obj/item/ano_scanner/declared_entries(list/into)
@@ -6062,18 +6096,20 @@
 	..(into)
 	into += entry_block("code/game/objects/items/devices/communicator/UI_tgui.dm", 12, /obj/item/communicator)
 	into += entry_line(13)
-	into += list(global.owns_one(nameof(cam_background), /atom/movable/screen/background))
+	into += list(global.owns_one(nameof(id), on_destroy = ON_DESTROY_SPILL))
 	into += entry_line(14)
-	into += list(global.owns_one(nameof(cam_screen), /atom/movable/screen/map_view))
+	into += list(global.owns_one(nameof(cam_background), /atom/movable/screen/background))
 	into += entry_line(15)
-	into += list(global.owns_one(nameof(exonet), /datum/exonet_protocol))
+	into += list(global.owns_one(nameof(cam_screen), /atom/movable/screen/map_view))
 	into += entry_line(16)
-	into += list(global.owns_one(nameof(local_skybox), /atom/movable/screen/skybox))
+	into += list(global.owns_one(nameof(exonet), /datum/exonet_protocol))
 	into += entry_line(17)
-	into += list(global.owns_many(nameof(cam_plane_masters)))
+	into += list(global.owns_one(nameof(local_skybox), /atom/movable/screen/skybox))
 	into += entry_line(18)
-	into += list(global.owns_many(nameof(voice_mobs)))
+	into += list(global.owns_many(nameof(cam_plane_masters)))
 	into += entry_line(19)
+	into += list(global.owns_many(nameof(voice_mobs)))
+	into += entry_line(20)
 	into += list(global.owns_one(nameof(camera), starts = /obj/machinery/camera/communicator))
 
 /// CAPABILITIES(/obj/item/computer_hardware/battery_module) at code/modules/modular_computers/hardware/battery_module.dm:12
@@ -7233,18 +7269,18 @@
 	into += entry_line(24)
 	into += list(global.owns_one(nameof(hack_state), starts = /datum/tgui_state/default/must_hack))
 
-/// CAPABILITIES(/obj/item/nailpolish) at code/modules/makeup/nailpolish.dm:31
+/// CAPABILITIES(/obj/item/nailpolish) at code/modules/makeup/nailpolish.dm:32
 /obj/item/nailpolish/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/makeup/nailpolish.dm", 31, /obj/item/nailpolish)
-	into += entry_line(32)
+	into += entry_block("code/modules/makeup/nailpolish.dm", 32, /obj/item/nailpolish)
+	into += entry_line(33)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/nailpolish_remover) at code/modules/makeup/nailpolish.dm:130
+/// CAPABILITIES(/obj/item/nailpolish_remover) at code/modules/makeup/nailpolish.dm:131
 /obj/item/nailpolish_remover/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/makeup/nailpolish.dm", 130, /obj/item/nailpolish_remover)
-	into += entry_line(131)
+	into += entry_block("code/modules/makeup/nailpolish.dm", 131, /obj/item/nailpolish_remover)
+	into += entry_line(132)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/newspaper) at code/modules/news/newspaper.dm:38
@@ -7306,6 +7342,8 @@
 	..(into)
 	into += entry_block("code/modules/makeup/nailpolish.dm", 3, /obj/item/organ/external)
 	into += entry_line(4)
+	into += list(global.owns_one(nameof(tourniquet)))
+	into += entry_line(5)
 	into += list(global.owns_one(nameof(nail_polish), /datum/nail_polish))
 
 /// CAPABILITIES(/obj/item/organ/internal/augment) at code/modules/organs/internal/augment.dm:35
@@ -8329,6 +8367,13 @@
 	into += entry_block("code/game/gamemodes/technomancer/equipment.dm", 192, /obj/item/scepter)
 	into += entry_line(193)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+
+/// CAPABILITIES(/obj/item/seeds) at code/modules/hydroponics/seed_packets.dm:387
+/obj/item/seeds/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/seed_packets.dm", 387, /obj/item/seeds)
+	into += entry_line(388)
+	into += list(global.owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/obj/item/selectable_item) at code/game/objects/items/selectable_item.dm:14
 /obj/item/selectable_item/declared_entries(list/into)
@@ -10309,6 +10354,13 @@
 	into += entry_line(86)
 	into += list(global.owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge))
 
+/// CAPABILITIES(/obj/machinery/clonepod) at code/game/machinery/cloning.dm:69
+/obj/machinery/clonepod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/cloning.dm", 69, /obj/machinery/clonepod)
+	into += entry_line(70)
+	into += list(global.owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL))
+
 /// CAPABILITIES(/obj/machinery/compressor) at code/modules/power/turbine.dm:45
 /obj/machinery/compressor/declared_entries(list/into)
 	..(into)
@@ -11296,6 +11348,13 @@
 	into += entry_line(161)
 	into += list(global.owns_one(nameof(one_setting), /datum/gear_disp))
 
+/// CAPABILITIES(/obj/machinery/gear_painter) at code/game/machinery/painter.dm:51
+/obj/machinery/gear_painter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/painter.dm", 51, /obj/machinery/gear_painter)
+	into += entry_line(52)
+	into += list(global.owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL))
+
 /// CAPABILITIES(/obj/machinery/gravity_generator/main) at code/modules/power/gravitygenerator.dm:149
 /obj/machinery/gravity_generator/main/declared_entries(list/into)
 	..(into)
@@ -11663,6 +11722,8 @@
 	..(into)
 	into += entry_block("code/modules/hydroponics/trays/tray.dm", 141, /obj/machinery/portable_atmospherics/hydroponics)
 	into += entry_line(142)
+	into += list(global.owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(143)
 	into += list(global.owns_one(nameof(temp_chem_holder), /obj))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump) at code/game/machinery/atmoalter/pump.dm:23
@@ -12100,19 +12161,19 @@
 	into += entry_line(41)
 	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print))
 
-/// CAPABILITIES(/obj/machinery/seed_storage) at code/modules/hydroponics/seed_storage.dm:50
+/// CAPABILITIES(/obj/machinery/seed_storage) at code/modules/hydroponics/seed_storage.dm:52
 /obj/machinery/seed_storage/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/hydroponics/seed_storage.dm", 50, /obj/machinery/seed_storage)
-	into += entry_line(51)
-	into += list(global.owns_many(nameof(piles), /datum/seed_pile))
-	into += entry_line(52)
-	into += list(global.owns_many(nameof(piles_contra), /datum/seed_pile))
+	into += entry_block("code/modules/hydroponics/seed_storage.dm", 52, /obj/machinery/seed_storage)
 	into += entry_line(53)
-	into += list(global.interface("SeedStorage"))
+	into += list(global.owns_many(nameof(piles), /datum/seed_pile))
 	into += entry_line(54)
-	into += list(global.op("vend", global.ui_act("vend", global.arg("id", global.num())), global.then(PROC_REF(ui_act_vend))))
+	into += list(global.owns_many(nameof(piles_contra), /datum/seed_pile))
 	into += entry_line(55)
+	into += list(global.interface("SeedStorage"))
+	into += entry_line(56)
+	into += list(global.op("vend", global.ui_act("vend", global.arg("id", global.num())), global.then(PROC_REF(ui_act_vend))))
+	into += entry_line(57)
 	into += list(global.op("purge", global.ui_act("purge", global.arg("id", global.num())), global.then(PROC_REF(ui_act_purge))))
 
 /// CAPABILITIES(/obj/machinery/shield_capacitor) at code/modules/shieldgen/shield_capacitor.dm:26
@@ -12338,6 +12399,8 @@
 	..(into)
 	into += entry_block("code/game/machinery/washing_machine.dm", 33, /obj/machinery/washing_machine)
 	into += entry_line(34)
+	into += list(global.owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(35)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/wheel_of_fortune) at code/modules/casino/casino.dm:405
@@ -12352,44 +12415,46 @@
 	..(into)
 	into += entry_block("code/game/mecha/mecha.dm", 176, /obj/mecha)
 	into += entry_line(177)
-	into += list(global.owns_one(nameof(cell), /obj/item/cell))
+	into += list(global.owns_one(nameof(cabin_air), on_destroy = ON_DESTROY_PRIVATE_COPY))
 	into += entry_line(178)
-	into += list(global.owns_one(nameof(internal_tank), /obj/item/tank))
+	into += list(global.owns_one(nameof(cell), /obj/item/cell))
 	into += entry_line(179)
-	into += list(global.owns_one(nameof(minihud), /datum/mini_hud/mech))
+	into += list(global.owns_one(nameof(internal_tank), /obj/item/tank))
 	into += entry_line(180)
-	into += list(global.owns_many(nameof(internal_components)))
+	into += list(global.owns_one(nameof(minihud), /datum/mini_hud/mech))
 	into += entry_line(181)
-	into += list(global.owns_one(nameof(radio), /obj/item/radio))
+	into += list(global.owns_many(nameof(internal_components)))
 	into += entry_line(182)
-	into += list(global.owns_one(nameof(eject_action), starts = /datum/action/innate/mecha/mech_eject))
+	into += list(global.owns_one(nameof(radio), /obj/item/radio))
 	into += entry_line(183)
-	into += list(global.owns_one(nameof(internals_action), starts = /datum/action/innate/mecha/mech_toggle_internals))
+	into += list(global.owns_one(nameof(eject_action), starts = /datum/action/innate/mecha/mech_eject))
 	into += entry_line(184)
-	into += list(global.owns_one(nameof(lights_action), starts = /datum/action/innate/mecha/mech_toggle_lights))
+	into += list(global.owns_one(nameof(internals_action), starts = /datum/action/innate/mecha/mech_toggle_internals))
 	into += entry_line(185)
-	into += list(global.owns_one(nameof(stats_action), starts = /datum/action/innate/mecha/mech_view_stats))
+	into += list(global.owns_one(nameof(lights_action), starts = /datum/action/innate/mecha/mech_toggle_lights))
 	into += entry_line(186)
-	into += list(global.owns_one(nameof(strafing_action), starts = /datum/action/innate/mecha/strafe))
+	into += list(global.owns_one(nameof(stats_action), starts = /datum/action/innate/mecha/mech_view_stats))
 	into += entry_line(187)
-	into += list(global.owns_one(nameof(defence_action), starts = /datum/action/innate/mecha/mech_defence_mode))
+	into += list(global.owns_one(nameof(strafing_action), starts = /datum/action/innate/mecha/strafe))
 	into += entry_line(188)
-	into += list(global.owns_one(nameof(overload_action), starts = /datum/action/innate/mecha/mech_overload_mode))
+	into += list(global.owns_one(nameof(defence_action), starts = /datum/action/innate/mecha/mech_defence_mode))
 	into += entry_line(189)
-	into += list(global.owns_one(nameof(smoke_action), starts = /datum/action/innate/mecha/mech_smoke))
+	into += list(global.owns_one(nameof(overload_action), starts = /datum/action/innate/mecha/mech_overload_mode))
 	into += entry_line(190)
-	into += list(global.owns_one(nameof(zoom_action), starts = /datum/action/innate/mecha/mech_zoom))
+	into += list(global.owns_one(nameof(smoke_action), starts = /datum/action/innate/mecha/mech_smoke))
 	into += entry_line(191)
-	into += list(global.owns_one(nameof(thrusters_action), starts = /datum/action/innate/mecha/mech_toggle_thrusters))
+	into += list(global.owns_one(nameof(zoom_action), starts = /datum/action/innate/mecha/mech_zoom))
 	into += entry_line(192)
-	into += list(global.owns_one(nameof(cycle_action), starts = /datum/action/innate/mecha/mech_cycle_equip))
+	into += list(global.owns_one(nameof(thrusters_action), starts = /datum/action/innate/mecha/mech_toggle_thrusters))
 	into += entry_line(193)
-	into += list(global.owns_one(nameof(switch_damtype_action), starts = /datum/action/innate/mecha/mech_switch_damtype))
+	into += list(global.owns_one(nameof(cycle_action), starts = /datum/action/innate/mecha/mech_cycle_equip))
 	into += entry_line(194)
-	into += list(global.owns_one(nameof(phasing_action), starts = /datum/action/innate/mecha/mech_toggle_phasing))
+	into += list(global.owns_one(nameof(switch_damtype_action), starts = /datum/action/innate/mecha/mech_switch_damtype))
 	into += entry_line(195)
-	into += list(global.owns_one(nameof(cloak_action), starts = /datum/action/innate/mecha/mech_toggle_cloaking))
+	into += list(global.owns_one(nameof(phasing_action), starts = /datum/action/innate/mecha/mech_toggle_phasing))
 	into += entry_line(196)
+	into += list(global.owns_one(nameof(cloak_action), starts = /datum/action/innate/mecha/mech_toggle_cloaking))
+	into += entry_line(197)
 	into += list(global.owns_one(nameof(smoke_system), starts = /datum/effect/effect/system/smoke_spread))
 
 /// CAPABILITIES(/obj/mecha/combat/fighter) at code/game/mecha/combat/fighter.dm:53

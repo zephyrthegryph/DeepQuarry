@@ -53,6 +53,7 @@
 	var/rewarded = FALSE
 
 CAPABILITIES(/datum/expedition_site)
+	links(/datum/expedition_site::origin_console, /obj/machinery/computer/shuttle_control/explore::active_expedition)
 	owns_one(nameof(landing_waypoint), /obj/effect/shuttle_landmark/automatic/clearing/expedition)
 	owns_one(nameof(mission), /datum/expedition_mission)
 	owns_one(nameof(station_defense), /datum/generated_station_defense_runtime)

@@ -31,15 +31,13 @@
 		)
 
 CAPABILITIES(/obj/machinery/washing_machine)
+	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
 	climb()
 
 /obj/machinery/washing_machine/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/washing_machine/ownership()
-	. = ..()
-	. += owns(nameof(washing), policy = OWN_SPILL, is_list = TRUE)
 
 /obj/machinery/washing_machine/declare_interactions(list/into)
 	into += list(

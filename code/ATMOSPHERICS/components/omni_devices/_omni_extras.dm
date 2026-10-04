@@ -116,10 +116,8 @@
 			return null
 
 // The omni device owns its ports (rel_add in omni/Initialize()); a port names its device back.
-/datum/omni_port/ownership()
-	. = ..()
-	. += rel_one(nameof(air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 CAPABILITIES(/datum/omni_port)
+	owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	ref_one(nameof(master))
 

@@ -10,6 +10,7 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	owns_one(nameof(id), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(cam_background), /atom/movable/screen/background)
 	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
 	owns_one(nameof(exonet), /datum/exonet_protocol)

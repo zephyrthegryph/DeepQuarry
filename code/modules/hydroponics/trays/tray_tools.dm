@@ -303,6 +303,5 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 
 	return data
 
-/obj/item/analyzer/plant_analyzer/ownership()
-	. = ..()
-	. += rel_one(nameof(last_seed), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+CAPABILITIES(/obj/item/analyzer/plant_analyzer)
+	owns_one(nameof(last_seed), on_destroy = ON_DESTROY_PRIVATE_COPY)

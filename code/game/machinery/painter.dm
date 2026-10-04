@@ -48,9 +48,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/gear_painter, "colormate{inserted?_active:}")
 DECLARE_APPEARANCE(/obj/machinery/gear_painter, "operable", list("0" = list(APPEARANCE_ICON_STATE = "colormate_off")))
 DECLARE_APPEARANCE(/obj/machinery/gear_painter, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "colormate_open")))
 
-/obj/machinery/gear_painter/ownership()
-	. = ..()
-	. += owns(nameof(inserted), policy = OWN_SPILL)
+CAPABILITIES(/obj/machinery/gear_painter)
+	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 
 /obj/machinery/gear_painter/declare_interactions(list/into)
 	into += list(

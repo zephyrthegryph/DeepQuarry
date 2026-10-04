@@ -383,9 +383,6 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
-/obj/item/communicator/ownership()
-	. = ..()
-	. += owns(nameof(id), policy = OWN_SPILL)
 
 // its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/on_destroy(force)

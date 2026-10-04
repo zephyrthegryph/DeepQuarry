@@ -174,6 +174,7 @@
 	var/list/micro_weapon_equipment
 
 CAPABILITIES(/obj/mecha)
+	owns_one(nameof(cabin_air), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(internal_tank), /obj/item/tank)
 	owns_one(nameof(minihud), /datum/mini_hud/mech)
@@ -2775,9 +2776,6 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 // cell and internal_tank are implicit owns(policy = OWN_DELETE): a wreck takes them as salvage in Destroy()
 // (own_take); otherwise the ownership policy deletes them with the mech.
 // cabin_air may be rebound to a connected port's network mixture (set_port_network_air()): PROTO.
-/obj/mecha/ownership()
-	. = ..()
-	. += rel_one(nameof(cabin_air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /// Detaches the component in `slot` (returned unowned; the caller moves or deletes it) and keeps
 /// the empty slot key, since `internal_components` keys double as the mech's slot layout.

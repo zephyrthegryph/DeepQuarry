@@ -66,9 +66,8 @@
 	update_icon()
 
 // its containers drop out and the growing clone is ejected.
-/obj/machinery/clonepod/ownership()
-	. = ..()
-	. += owns(nameof(containers), policy = OWN_SPILL, is_list = TRUE)
+CAPABILITIES(/obj/machinery/clonepod)
+	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
 
 /obj/machinery/clonepod/relations()
 	. = ..()
