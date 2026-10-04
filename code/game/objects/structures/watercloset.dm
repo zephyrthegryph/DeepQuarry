@@ -73,9 +73,11 @@ CAPABILITIES(/obj/structure/toilet)
 
 APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}")
 
-/obj/structure/toilet/proc/crystal_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/user = ask.answerer
-	if(!ask.yes || !teleplumb_crystal || !cistern)
+/obj/structure/toilet/proc/crystal_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	if(!A.answer.answer_value || !teleplumb_crystal || !cistern)
 		to_chat(user, span_notice("You decide to leave it."))
 		return
 	user.put_in_hands(teleplumb_crystal)
@@ -124,7 +126,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 		if(!length(cistern_loot))
 			//You can take the bluespace crystal out if there's nothing else in the cistern.
 			if(teleplumb_crystal && ishuman(user)) //Only humans can grief the toilets
-				om_ask(user, /datum/om/prompt/confirm, PROC_REF(crystal_answered), title = "Toilet Crystal", message = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", yes_text = "Take it!", no_text = "Leave it.", answer_on_no = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+				open_request(src, /datum/prompt/yes_no, PROC_REF(crystal_answered), answerer = user, title = "Toilet Crystal", question = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 			to_chat(user, span_notice("The cistern is empty."))
 			return TRUE
 		var/obj/item/I = pick(cistern_loot)

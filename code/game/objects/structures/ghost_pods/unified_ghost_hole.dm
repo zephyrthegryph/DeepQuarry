@@ -26,30 +26,21 @@
 // Overrides the standard ghost pod observer use for custom messages.
 /obj/structure/ghost_pod/ghost_activated/unified_hole/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(redgate_restricted)
-		om_ask(user, /datum/om/prompt/choice/critter_hole/redgate, PROC_REF(critter_type_chosen))
+		open_request(src, /datum/prompt/choice, PROC_REF(critter_type_chosen), valid = PROC_REF(critter_hole_valid), answerer = user, title = "Redgate Critter Spawner", question = "Which type of critter do you wish to spawn as? Note that this is a Redgate Spawner: if you choose the Lurker role you will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?", choices = list("Mob", "Morph", "Lurker", "Cancel"), buttons = TRUE, timeout = 0)
 	else
-		om_ask(user, /datum/om/prompt/choice/critter_hole, PROC_REF(critter_type_chosen))
+		open_request(src, /datum/prompt/choice, PROC_REF(critter_type_chosen), valid = PROC_REF(critter_hole_valid), answerer = user, title = "Critter Spawner", question = "Which type of critter do you wish to spawn as?", choices = list("Mob", "Morph", "Lurker", "Cancel"), buttons = TRUE, timeout = 0)
 	return TRUE
 
 /// Re-checked: the ghost still has a client and the hole is unused.
-/datum/om/prompt/choice/critter_hole
-	title = "Critter Spawner"
-	message = "Which type of critter do you wish to spawn as?"
-	choices = list("Mob", "Morph", "Lurker", "Cancel")
-	buttons = TRUE
-	requires = list(/datum/om/check/has_client)
+/obj/structure/ghost_pod/ghost_activated/unified_hole/proc/critter_hole_valid(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && M.client && !used
 
-/datum/om/prompt/choice/critter_hole/valid()
-	var/obj/structure/ghost_pod/pod = subject
-	return pod.used ? "already used" : null
-
-/datum/om/prompt/choice/critter_hole/redgate
-	title = "Redgate Critter Spawner"
-	message = "Which type of critter do you wish to spawn as? Note that this is a Redgate Spawner: if you choose the Lurker role you will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?"
-
-/obj/structure/ghost_pod/ghost_activated/unified_hole/proc/critter_type_chosen(datum/om/prompt/choice/critter_hole/ask)
-	var/mob/observer/dead/user = ask.answerer
-	switch(ask.choice)
+/obj/structure/ghost_pod/ghost_activated/unified_hole/proc/critter_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/observer/dead/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("Cancel")
 			return
 		if("Mob")

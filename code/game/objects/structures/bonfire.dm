@@ -68,7 +68,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 
 /obj/structure/bonfire/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/rods) && !can_buckle && !grill)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(construction_chosen), subject = W, title = "Bonfire", message = "What would you like to construct?", choices = list("Stake","Grill"), ask_flags = ASK_HELD | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(construction_chosen), answerer = user, subject = W, title = "Bonfire", question = "What would you like to construct?", choices = list("Stake","Grill"), ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	else if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
@@ -77,12 +77,14 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 		ignite()
 	return TRUE
 
-/obj/structure/bonfire/proc/construction_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/stack/rods/R = ask.subject
+/obj/structure/bonfire/proc/construction_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/stack/rods/R = A.request.subject
 	if(can_buckle || grill)
 		return
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("Stake")
 			R.use(1)
 			can_buckle = TRUE

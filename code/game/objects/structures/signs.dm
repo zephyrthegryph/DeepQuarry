@@ -35,27 +35,23 @@
 
 /obj/item/sign/screwdriver_act(mob/user, obj/item/tool)
 	if(isturf(user.loc))
-		om_ask(user, /datum/om/prompt/choice/sign_direction, PROC_REF(direction_chosen), subject = tool)
+		open_request(src, /datum/prompt/choice, PROC_REF(direction_chosen), valid = PROC_REF(direction_valid), answerer = user, subject = tool, title = "Select direction.", question = "In which direction?", choices = list("North", "East", "South", "West", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	return ..()
 
 /// Fastening a sign: the screwdriver (the subject) stays in hand, the fastener on a turf.
-/datum/om/prompt/choice/sign_direction
-	title = "Select direction."
-	message = "In which direction?"
-	choices = list("North", "East", "South", "West", "Cancel")
-	ask_flags = ASK_HELD | ASK_CAPABLE
+/obj/item/sign/proc/direction_valid(datum/request/R)
+	var/mob/M = R.answerer
+	if(!istype(M) || !isturf(M.loc))
+		return FALSE
+	return isnull(loc?.release_refusal(src, M))
 
-/datum/om/prompt/choice/sign_direction/valid()
-	if(!isturf(answerer.loc))
-		return "not on a turf"
-	var/obj/item/sign/sign = receiver
-	return sign?.loc?.release_refusal(sign, answerer)
-
-/obj/item/sign/proc/direction_chosen(datum/om/prompt/choice/sign_direction/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/tool = ask.subject
-	var/direction = ask.choice
+/obj/item/sign/proc/direction_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/tool = A.request.subject
+	var/direction = A.answer.answer_value
 	var/offset_x = 0
 	var/offset_y = 0
 	switch(direction)

@@ -2382,6 +2382,13 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:121
+/datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/medical_stand.dm", 121, /datum/prompt/choice/medical_stand_attach)
+	into += entry_line(122)
+	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/prompt/choice/pai_access) at code/modules/mob/living/silicon/pai/pai.dm:336
 /datum/prompt/choice/pai_access/declared_entries(list/into)
 	..(into)
@@ -2411,6 +2418,20 @@
 	into += entry_block("code/game/machinery/computer/shuttle.dm", 59, /datum/prompt/choice/shuttle_authorization)
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
+
+/// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
+/datum/prompt/color/paint_palette/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/artstuff.dm", 351, /datum/prompt/color/paint_palette)
+	into += entry_line(352)
+	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
+
+/// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
+/datum/prompt/text/grave_carving/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/gravemarker.dm", 23, /datum/prompt/text/grave_carving)
+	into += entry_line(24)
+	into += list(global.ref_one(nameof(tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
@@ -5495,67 +5516,67 @@
 	into += entry_line(371)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/blue) at code/game/objects/structures/watercloset.dm:812
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/blue) at code/game/objects/structures/watercloset.dm:814
 /obj/item/bikehorn/rubberducky/blue/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 812, /obj/item/bikehorn/rubberducky/blue)
-	into += entry_line(813)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 814, /obj/item/bikehorn/rubberducky/blue)
+	into += entry_line(815)
 	into += list(global.op("squeeze_blue", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_blue_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy) at code/game/objects/structures/watercloset.dm:1034
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy) at code/game/objects/structures/watercloset.dm:1036
 /obj/item/bikehorn/rubberducky/galaxy/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 1034, /obj/item/bikehorn/rubberducky/galaxy)
-	into += entry_line(1035)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 1036, /obj/item/bikehorn/rubberducky/galaxy)
+	into += entry_line(1037)
 	into += list(global.op("squeeze_galaxy", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_galaxy_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/gold) at code/game/objects/structures/watercloset.dm:980
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/gold) at code/game/objects/structures/watercloset.dm:982
 /obj/item/bikehorn/rubberducky/gold/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 980, /obj/item/bikehorn/rubberducky/gold)
-	into += entry_line(981)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 982, /obj/item/bikehorn/rubberducky/gold)
+	into += entry_line(983)
 	into += list(global.op("squeeze_gold", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_gold_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/green) at code/game/objects/structures/watercloset.dm:920
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/green) at code/game/objects/structures/watercloset.dm:922
 /obj/item/bikehorn/rubberducky/green/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 920, /obj/item/bikehorn/rubberducky/green)
-	into += entry_line(921)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 922, /obj/item/bikehorn/rubberducky/green)
+	into += entry_line(923)
 	into += list(global.op("squeeze_green", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_green_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/grey) at code/game/objects/structures/watercloset.dm:873
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/grey) at code/game/objects/structures/watercloset.dm:875
 /obj/item/bikehorn/rubberducky/grey/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 873, /obj/item/bikehorn/rubberducky/grey)
-	into += entry_line(874)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 875, /obj/item/bikehorn/rubberducky/grey)
+	into += entry_line(876)
 	into += list(global.op("squeeze_grey", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_grey_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/pink) at code/game/objects/structures/watercloset.dm:837
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/pink) at code/game/objects/structures/watercloset.dm:839
 /obj/item/bikehorn/rubberducky/pink/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 837, /obj/item/bikehorn/rubberducky/pink)
-	into += entry_line(838)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 839, /obj/item/bikehorn/rubberducky/pink)
+	into += entry_line(840)
 	into += list(global.op("squeeze_pink", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_pink_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/red) at code/game/objects/structures/watercloset.dm:783
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/red) at code/game/objects/structures/watercloset.dm:785
 /obj/item/bikehorn/rubberducky/red/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 783, /obj/item/bikehorn/rubberducky/red)
-	into += entry_line(784)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 785, /obj/item/bikehorn/rubberducky/red)
+	into += entry_line(786)
 	into += list(global.op("squeeze_red", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_red_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/viking) at code/game/objects/structures/watercloset.dm:1009
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/viking) at code/game/objects/structures/watercloset.dm:1011
 /obj/item/bikehorn/rubberducky/viking/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 1009, /obj/item/bikehorn/rubberducky/viking)
-	into += entry_line(1010)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 1011, /obj/item/bikehorn/rubberducky/viking)
+	into += entry_line(1012)
 	into += list(global.op("squeeze_viking", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_viking_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/white) at code/game/objects/structures/watercloset.dm:946
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/white) at code/game/objects/structures/watercloset.dm:948
 /obj/item/bikehorn/rubberducky/white/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 946, /obj/item/bikehorn/rubberducky/white)
-	into += entry_line(947)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 948, /obj/item/bikehorn/rubberducky/white)
+	into += entry_line(949)
 	into += list(global.op("squeeze_white", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_white_self))))
 
 /// CAPABILITIES(/obj/item/bikehorn/topturf_testing) at code/datums/topturfcrossed.dm:69
@@ -5718,6 +5739,19 @@
 	into += entry_block("code/game/objects/items/weapons/canes.dm", 98, /obj/item/cane/white/collapsible)
 	into += entry_line(99)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+
+/// CAPABILITIES(/obj/item/canvas) at code/game/objects/structures/artstuff.dm:111
+/obj/item/canvas/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/artstuff.dm", 111, /obj/item/canvas)
+	into += entry_line(112)
+	into += list(global.interface("Canvas"))
+	into += entry_line(113)
+	into += list(global.op("paint", global.ui_act("paint", global.arg("x", global.num()), global.arg("y", global.num())), global.then(PROC_REF(ui_act_paint))))
+	into += entry_line(114)
+	into += list(global.op("finalize", global.ui_act("finalize"), global.then(PROC_REF(ui_act_finalize))))
+	into += entry_line(115)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(canvas_open), because = MSG(canvas/finished)))))
 
 /// CAPABILITIES(/obj/item/card/id/syndicate) at code/game/objects/items/weapons/id cards/syndicate_ids.dm:23
 /obj/item/card/id/syndicate/declared_entries(list/into)
@@ -12750,11 +12784,11 @@
 	into += entry_line(34)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:524
+/// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:526
 /obj/machinery/shower/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 524, /obj/machinery/shower)
-	into += entry_line(525)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 526, /obj/machinery/shower)
+	into += entry_line(527)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/showering))
 
 /// CAPABILITIES(/obj/machinery/sleep_console) at code/game/machinery/Sleeper.dm:22
@@ -13170,11 +13204,11 @@
 	into += entry_line(251)
 	into += list(global.op("collapse", global.item(/obj/item/roller_holder), global.label("Collapse"), global.then(PROC_REF(collapse_with_rack))))
 
-/// CAPABILITIES(/obj/structure/biowaste_tank) at code/game/objects/structures/watercloset.dm:1375
+/// CAPABILITIES(/obj/structure/biowaste_tank) at code/game/objects/structures/watercloset.dm:1377
 /obj/structure/biowaste_tank/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 1375, /obj/structure/biowaste_tank)
-	into += entry_line(1376)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 1377, /obj/structure/biowaste_tank)
+	into += entry_line(1378)
 	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
 
 /// CAPABILITIES(/obj/structure/blob/core) at code/modules/blob2/blobs/core.dm:23
@@ -13825,6 +13859,10 @@
 	into += list(global.owns_one(nameof(beaker), /obj/item/reagent_containers))
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type)))
+	into += entry_line(26)
+	into += list(global.op("toggle_iv_mode", global.menu(), global.label("Toggle IV Mode"), global.needs(global.req(PROC_REF(actor_is_living), because = MSG(medical_stand/cannot))), global.then(PROC_REF(medical_stand_toggle_mode_effect))))
+	into += entry_line(27)
+	into += list(global.op("set_iv_transfer", global.menu(), global.label("Set IV transfer amount"), global.then(PROC_REF(set_APTFT_effect))))
 
 /// CAPABILITIES(/obj/structure/meteorite) at code/modules/events/meteor_strike.dm:81
 /obj/structure/meteorite/declared_entries(list/into)
@@ -14032,13 +14070,13 @@
 	into += entry_line(94)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(user_is_human), because = MSG(safe/not_human)))))
 
-/// CAPABILITIES(/obj/structure/sign/flag) at code/game/objects/structures/signs.dm:1644
+/// CAPABILITIES(/obj/structure/sign/flag) at code/game/objects/structures/signs.dm:1640
 /obj/structure/sign/flag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/signs.dm", 1644, /obj/structure/sign/flag)
-	into += entry_line(1645)
+	into += entry_block("code/game/objects/structures/signs.dm", 1640, /obj/structure/sign/flag)
+	into += entry_line(1641)
 	into += list(global.entry_link("/obj/structure/sign/flag::linked_flag", "/obj/structure/sign/flag::linked_flag"))
-	into += entry_line(1646)
+	into += entry_line(1642)
 	into += list(global.on_notice(/datum/notice/hit/explosion, global.then(PROC_REF(flag_blast))))
 
 /// CAPABILITIES(/obj/structure/stairs/bottom) at code/modules/multiz/stairs.dm:77

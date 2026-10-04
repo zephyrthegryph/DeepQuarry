@@ -23,6 +23,14 @@ CAPABILITIES(/obj/structure/medical_stand)
 	owns_one(nameof(contained), /obj/item/clothing/mask/breath, starts = nameof(mask_type))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
+	op("toggle_iv_mode", menu(), label("Toggle IV Mode"), needs(req(PROC_REF(actor_is_living), because = MSG(medical_stand/cannot))), then(PROC_REF(medical_stand_toggle_mode_effect)))
+	op("set_iv_transfer", menu(), label("Set IV transfer amount"), then(PROC_REF(set_APTFT_effect)))
+
+MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
+
+/// Only a living thing works the stand's menu.
+/obj/structure/medical_stand/proc/actor_is_living(datum/act/op/A)
+	return isliving(A.actor)
 
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
 OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
@@ -102,26 +110,22 @@ DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appea
 			available_options += "Drip needle"
 
 		if(available_options.len > 1)
-			om_ask(user, /datum/om/prompt/choice/medical_stand_attach, PROC_REF(attach_choice_made), choices = available_options, patient = target)
+			open_request(src, /datum/prompt/choice/medical_stand_attach, PROC_REF(attach_choice_made), answerer = user, title = "Attach/Detach Choice", question = "What do you want to attach/detach?", choices = available_options, patient = target, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 		else if(available_options.len)
 			attach_action(user, available_options[1], target)
 
-/datum/om/prompt/choice/medical_stand_attach
-	title = "Attach/Detach Choice"
-	message = "What do you want to attach/detach?"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+/// The choice of what to attach to or take off a patient: the patient is kept on the question.
+/datum/prompt/choice/medical_stand_attach
 	var/mob/living/carbon/human/patient
 
-/datum/om/prompt/choice/medical_stand_transfer
-	message = "Amount per transfer from this:"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
+	ref_one(nameof(patient), /mob/living/carbon/human)
 
-/datum/om/prompt/choice/medical_stand_transfer/prepare()
-	title = "[subject]"
-	return TRUE
-
-/obj/structure/medical_stand/proc/attach_choice_made(datum/om/prompt/choice/medical_stand_attach/ask)
-	attach_action(ask.answerer, ask.choice, ask.patient)
+/obj/structure/medical_stand/proc/attach_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/medical_stand_attach/R = A.request
+	attach_action(R.answerer, A.answer.answer_value, R.patient)
 
 /obj/structure/medical_stand/proc/attach_action(mob/user, action_type, mob/living/carbon/human/target)
 	if(!user || user.stat == DEAD || !CanMouseDrop(target, user))
@@ -272,19 +276,23 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				own_take(src, nameof(beaker))
 				update_icon()
 
-/obj/structure/medical_stand/proc/medical_stand_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/obj/structure/medical_stand/proc/medical_stand_toggle_mode_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.incapacitated())
-		return
+		return OP_OK
 
 	mode = !mode
 	to_chat(user, "The IV drip is now [mode ? "injecting" : "taking blood"].")
+	return OP_OK
 
-/obj/structure/medical_stand/proc/set_APTFT_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice/medical_stand_transfer, PROC_REF(transfer_amount_chosen), choices = transfer_amounts)
+/obj/structure/medical_stand/proc/set_APTFT_effect(datum/act/op/A)
+	open_request(src, /datum/prompt/choice, PROC_REF(transfer_amount_chosen), answerer = A.actor, title = "[src]", question = "Amount per transfer from this:", choices = transfer_amounts, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+	return OP_OK
 
-/obj/structure/medical_stand/proc/transfer_amount_chosen(datum/om/prompt/choice/medical_stand_transfer/ask)
-	var/N = ask.choice
+/obj/structure/medical_stand/proc/transfer_amount_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/N = A.answer.answer_value
 	if(N)
 		transfer_amount = N
 
@@ -486,8 +494,4 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 /obj/structure/medical_stand/proc/attached() as /mob/living/carbon
 	return attached
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/structure/medical_stand, \
-	INTERACT_VERB("Toggle IV Mode", PROC_REF(medical_stand_toggle_mode_effect), REQ_BECAUSE(REQ_TYPE(PRED_ACTOR, list(/mob/living)), "you can't do that")), \
-	INTERACT_VERB("Set IV transfer amount", PROC_REF(set_APTFT_effect)), \
-)
+

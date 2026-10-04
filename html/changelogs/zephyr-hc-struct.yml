@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "Converted structure hit reactions, emags, windows (janitorial cart, safe, tank dispenser, underwear dresser) and in-hand uses (rubber duckies, torn inflatables) to the final op and hook forms."
+  - refactor: "Converted structure hit reactions, emags, windows (janitorial cart, safe, tank dispenser, underwear dresser, canvas) and in-hand uses, and the questions structures ask (ghost pods, prisms, grave markers, morgues, signs, bonfires and more) to the final op, hook and request forms."

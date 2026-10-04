@@ -29,6 +29,15 @@
 	H.enable_godmode()
 	return H
 
+/// A question is open for `actor`: an engine request, or a legacy prompt not yet answered.
+/datum/unit_test/dq_hc_struct/proc/asked(mob/actor)
+	if(SSrequests.open_for(actor))
+		return TRUE
+	for(var/datum/om/prompt/P as anything in om_scheduler().test_prompts)
+		if(!P.answered && P.peek("answerer") == actor)
+			return TRUE
+	return FALSE
+
 /// A window button pressed as `actor`, and time passes.
 /datum/unit_test/dq_hc_struct/proc/press(mob/actor, datum/host, action, list/args)
 	. = hc_ui(actor, host, action, args)
@@ -267,3 +276,284 @@
 	hci_click(H, B, B)
 	settle()
 	TEST_ASSERT(!QDELETED(B), "the blue duck survives a squeeze")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Questions a structure asks (answered through hci_answer: the engine's request first, else the legacy prompt)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/bonfire_rods_ask_what_to_build
+/datum/unit_test/dq_hc_struct/bonfire_rods_ask_what_to_build/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/bonfire/B = allocate(/obj/structure/bonfire, tile(3, 2))
+	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, tile(2, 2))
+	R.amount = 3
+	hci_click(H, B, R)
+	hci_answer(H, "Grill")
+	settle()
+	TEST_ASSERT(B.grill, "choosing the grill adds one")
+	TEST_ASSERT_EQUAL(R.get_amount(), 2, "and costs a rod")
+	hci_click(H, B, R)
+	TEST_ASSERT(!asked(H), "a bonfire with a grill asks nothing more")
+	TEST_ASSERT_EQUAL(R.get_amount(), 2, "and no rod is spent")
+
+/datum/unit_test/dq_hc_struct/bonfire_choice_is_dropped_when_the_rods_are_gone
+/datum/unit_test/dq_hc_struct/bonfire_choice_is_dropped_when_the_rods_are_gone/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/bonfire/B = allocate(/obj/structure/bonfire, tile(3, 2))
+	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, tile(2, 2))
+	R.amount = 3
+	hci_click(H, B, R)
+	H.drop_item()
+	hci_answer(H, "Grill")
+	settle()
+	TEST_ASSERT(!B.grill, "an answer given after the rods left the hand is dropped")
+	TEST_ASSERT_EQUAL(R.get_amount(), 3, "and no rod is spent")
+
+/datum/unit_test/dq_hc_struct/gravemarker_name_is_carved
+/datum/unit_test/dq_hc_struct/gravemarker_name_is_carved/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/gravemarker/G = allocate(/obj/structure/gravemarker, tile(3, 2))
+	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, tile(2, 2))
+	hci_click(H, G, S)
+	hci_answer(H, "Bob")
+	hci_answer(H, "Rest well")
+	test_time(60 SECONDS)
+	TEST_ASSERT_EQUAL(G.grave_name, "Bob", "the first answer is the name, carved")
+
+/datum/unit_test/dq_hc_struct/gravemarker_carving_is_dropped_when_the_tool_leaves_the_hand
+/datum/unit_test/dq_hc_struct/gravemarker_carving_is_dropped_when_the_tool_leaves_the_hand/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/gravemarker/G = allocate(/obj/structure/gravemarker, tile(3, 2))
+	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, tile(2, 2))
+	hci_click(H, G, S)
+	H.drop_item()
+	hci_answer(H, "Bob")
+	hci_answer(H, "Rest well")
+	test_time(60 SECONDS)
+	TEST_ASSERT_EQUAL(G.grave_name, "", "nothing is carved with a tool that is no longer held")
+
+/datum/unit_test/dq_hc_struct/morgue_and_crematorium_are_labelled_with_a_pen
+/datum/unit_test/dq_hc_struct/morgue_and_crematorium_are_labelled_with_a_pen/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/morgue/M = allocate(/obj/structure/morgue, tile(3, 2))
+	var/obj/structure/morgue/crematorium/C = allocate(/obj/structure/morgue/crematorium, tile(3, 3))
+	var/obj/item/pen/P = allocate(/obj/item/pen, tile(2, 2))
+	hci_click(H, M, P)
+	hci_answer(H, "Doe")
+	settle()
+	TEST_ASSERT_EQUAL(M.name, "Morgue- 'Doe'", "the morgue takes the label")
+	hci_click(H, M, P)
+	hci_answer(H, "")
+	settle()
+	TEST_ASSERT_EQUAL(M.name, "Morgue", "an empty label clears it")
+	hci_click(H, C, P)
+	hci_answer(H, "Roe")
+	settle()
+	TEST_ASSERT_EQUAL(C.name, "Crematorium- 'Roe'", "the crematorium takes its own label")
+
+/datum/unit_test/dq_hc_struct/locked_reflector_asks_nothing
+/datum/unit_test/dq_hc_struct/locked_reflector_asks_nothing/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/reflector/R = allocate(/obj/structure/reflector, tile(3, 2))
+	R.finished = TRUE
+	var/angle = R.rotation_angle
+	R.can_rotate = FALSE
+	R.rotate(H)
+	TEST_ASSERT(!asked(H), "a locked reflector asks nothing")
+	TEST_ASSERT_EQUAL(R.rotation_angle, angle, "and keeps its angle")
+
+/datum/unit_test/dq_hc_struct/sign_is_fastened_in_the_chosen_direction
+/datum/unit_test/dq_hc_struct/sign_is_fastened_in_the_chosen_direction/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = tile(2, 2)
+	var/obj/item/sign/S = allocate(/obj/item/sign, T)
+	var/obj/item/tool/screwdriver/D = allocate(/obj/item/tool/screwdriver, T)
+	hci_click(H, S, D)
+	hci_answer(H, "North")
+	settle()
+	TEST_ASSERT(QDELETED(S), "the sign item is used up")
+	var/obj/structure/sign/placed = locate(/obj/structure/sign) in T
+	TEST_ASSERT_NOTNULL(placed, "and the sign stands on the person's tile")
+	TEST_ASSERT_EQUAL(placed.pixel_y, 32, "a north sign sits on the north edge")
+
+/datum/unit_test/dq_hc_struct/sign_cancel_places_nothing
+/datum/unit_test/dq_hc_struct/sign_cancel_places_nothing/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = tile(2, 2)
+	var/obj/item/sign/S = allocate(/obj/item/sign, T)
+	var/obj/item/tool/screwdriver/D = allocate(/obj/item/tool/screwdriver, T)
+	hci_click(H, S, D)
+	hci_answer(H, "Cancel")
+	settle()
+	TEST_ASSERT(!QDELETED(S), "the sign item is kept")
+	TEST_ASSERT_NULL(locate(/obj/structure/sign) in T, "and nothing is placed")
+
+/datum/unit_test/dq_hc_struct/tyr_keypad_opens_for_the_right_code
+/datum/unit_test/dq_hc_struct/tyr_keypad_opens_for_the_right_code/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/door/blast/puzzle/tyrdoor/keypad/D = allocate(/obj/machinery/door/blast/puzzle/tyrdoor/keypad, tile(3, 2))
+	D.code = list("1", "2", "3", "4", "5", "6")
+	D.stat_remove(NOPOWER | BROKEN)
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, tile(2, 2))
+	// The multitool tool-use is reached by its own proc: the puzzle door's click table takes held items first.
+	D.multitool_act(H, M)
+	TEST_ASSERT(asked(H), "the multitool asks for a code")
+	hci_answer(H, "654321")
+	settle()
+	TEST_ASSERT(D.density, "a wrong code leaves the door shut")
+	D.multitool_act(H, M)
+	hci_answer(H, "112345")
+	settle()
+	TEST_ASSERT(D.density, "a code with repeated digits is refused")
+	D.multitool_act(H, M)
+	hci_answer(H, "123456")
+	test_time(3 SECONDS)
+	TEST_ASSERT(!D.density, "the right code opens it")
+
+/datum/unit_test/dq_hc_struct/window_tint_button_takes_an_id
+/datum/unit_test/dq_hc_struct/window_tint_button_takes_an_id/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/button/windowtint/B = allocate(/obj/machinery/button/windowtint, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, tile(2, 2))
+	B.id = null
+	hci_click(H, B, M)
+	hci_answer(H, "tintA")
+	settle()
+	TEST_ASSERT_EQUAL(B.id, "tintA", "the multitool sets the button's id")
+	hci_click(H, B, M)
+	TEST_ASSERT(!asked(H), "a button with an id asks nothing")
+	TEST_ASSERT_EQUAL(B.id, "tintA", "and keeps it")
+
+/datum/unit_test/dq_hc_struct/prism_is_rotated_by_hand
+/datum/unit_test/dq_hc_struct/prism_is_rotated_by_hand/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/prop/prism/P = allocate(/obj/structure/prop/prism, tile(3, 2))
+	hci_click(H, P, null)
+	hci_answer(H, TRUE)
+	hci_answer(H, 90)
+	settle()
+	TEST_ASSERT_EQUAL(P.degrees_from_north, 90, "a confirmed bearing turns the prism")
+	hci_click(H, P, null)
+	hci_answer(H, FALSE)
+	TEST_ASSERT(!asked(H), "a no asks for no bearing")
+	TEST_ASSERT_EQUAL(P.degrees_from_north, 90, "and leaves it")
+	P.rotation_lock = 1
+	hci_click(H, P, null)
+	TEST_ASSERT(!asked(H), "a locked prism asks nothing")
+
+/datum/unit_test/dq_hc_struct/incremental_prism_is_turned_to_a_compass_point
+/datum/unit_test/dq_hc_struct/incremental_prism_is_turned_to_a_compass_point/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/prop/prism/incremental/P = allocate(/obj/structure/prop/prism/incremental, tile(3, 2))
+	hci_click(H, P, null)
+	hci_answer(H, TRUE)
+	hci_answer(H, "East")
+	settle()
+	TEST_ASSERT_EQUAL(P.degrees_from_north, 90, "a compass point sets its bearing")
+
+/datum/unit_test/dq_hc_struct/prism_dial_turns_every_linked_prism
+/datum/unit_test/dq_hc_struct/prism_dial_turns_every_linked_prism/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/prop/prismcontrol/C = allocate(/obj/structure/prop/prismcontrol, tile(3, 2))
+	var/obj/structure/prop/prism/P = allocate(/obj/structure/prop/prism, tile(3, 3))
+	rel_add(C, nameof(C.my_turrets), P)
+	hci_click(H, C, null)
+	hci_answer(H, TRUE)
+	hci_answer(H, 45)
+	hci_answer(H, TRUE)
+	settle()
+	TEST_ASSERT_EQUAL(P.degrees_from_north, 45, "the confirmed bearing turns the linked prism")
+	hci_click(H, C, null)
+	hci_answer(H, TRUE)
+	hci_answer(H, 120)
+	hci_answer(H, FALSE)
+	settle()
+	TEST_ASSERT_EQUAL(P.degrees_from_north, 45, "a final no turns nothing")
+
+/datum/unit_test/dq_hc_struct/teleplumbed_toilet_offers_its_crystal
+/datum/unit_test/dq_hc_struct/teleplumbed_toilet_offers_its_crystal/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/toilet/teleplumbed/T = allocate(/obj/structure/toilet/teleplumbed, tile(3, 2))
+	T.cistern = TRUE
+	T.open = FALSE
+	var/obj/item/bluespace_crystal/crystal = T.teleplumb_crystal
+	TEST_ASSERT_NOTNULL(crystal, "it has a crystal")
+	hci_click(H, T, null)
+	hci_answer(H, FALSE)
+	settle()
+	TEST_ASSERT_EQUAL(T.teleplumb_crystal, crystal, "a no leaves the crystal")
+	hci_click(H, T, null)
+	hci_answer(H, TRUE)
+	settle()
+	TEST_ASSERT_NULL(T.teleplumb_crystal, "a yes takes it out")
+	TEST_ASSERT_EQUAL(crystal.loc, H, "into the hand")
+
+/datum/unit_test/dq_hc_struct/trash_pile_hides_and_releases_an_animal
+/datum/unit_test/dq_hc_struct/trash_pile_hides_and_releases_an_animal/run_gate()
+	var/obj/structure/trash_pile/P = allocate(/obj/structure/trash_pile, tile(3, 2))
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, tile(2, 2))
+	P.attack_generic(M)
+	hci_answer(M, FALSE)
+	settle()
+	TEST_ASSERT_NULL(P.hider, "a no stays outside")
+	P.attack_generic(M)
+	hci_answer(M, TRUE)
+	settle()
+	TEST_ASSERT_EQUAL(M.loc, P, "a yes hides in the pile")
+	TEST_ASSERT_EQUAL(P.hider, M, "as its hider")
+	P.attack_generic(M)
+	hci_answer(M, TRUE)
+	settle()
+	TEST_ASSERT_NOTEQUAL(M.loc, P, "a second yes comes out")
+	TEST_ASSERT_NULL(P.hider, "and nobody hides there")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Added with the conversion (the legacy forms could not be driven by a player-less test)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/reflector_angle_is_asked_and_set
+/datum/unit_test/dq_hc_struct/reflector_angle_is_asked_and_set/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/reflector/R = allocate(/obj/structure/reflector, tile(3, 2))
+	R.finished = TRUE
+	R.rotate(H)
+	TEST_ASSERT(asked(H), "an unlocked reflector asks for an angle")
+	hci_answer(H, 90)
+	settle()
+	TEST_ASSERT_EQUAL(R.rotation_angle, 90, "the answered angle is set")
+	R.rotate(H)
+	R.can_rotate = FALSE
+	hci_answer(H, 180)
+	settle()
+	TEST_ASSERT_EQUAL(R.rotation_angle, 90, "an answer that arrives after the rotation was locked is dropped")
+
+/datum/unit_test/dq_hc_struct/medical_stand_menu_toggles_mode_and_sets_transfer
+/datum/unit_test/dq_hc_struct/medical_stand_menu_toggles_mode_and_sets_transfer/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/medical_stand/S = allocate(/obj/structure/medical_stand, tile(3, 2))
+	var/mode = S.mode
+	test_menu(H, S, "toggle_iv_mode")
+	settle()
+	TEST_ASSERT_NOTEQUAL(S.mode, mode, "the menu entry flips the IV mode")
+	test_menu(H, S, "set_iv_transfer")
+	TEST_ASSERT(asked(H), "the transfer entry asks for an amount")
+	hci_answer(H, 2)
+	settle()
+	TEST_ASSERT_EQUAL(S.transfer_amount, 2, "the answered amount is the new transfer amount")
+
+/datum/unit_test/dq_hc_struct/canvas_takes_strokes_until_it_is_finished
+/datum/unit_test/dq_hc_struct/canvas_takes_strokes_until_it_is_finished/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/canvas/C = allocate(/obj/item/canvas, tile(2, 2))
+	var/obj/item/paint_brush/B = allocate(/obj/item/paint_brush, tile(2, 2))
+	B.selected_color = "#123456"
+	H.put_in_active_hand(B)
+	press(H, C, "paint", list("x" = 2, "y" = 3))
+	TEST_ASSERT_EQUAL(C.grid[2][3], "#123456", "a stroke paints the cell under the held brush")
+	TEST_ASSERT(C.used, "and marks the canvas as used")
+	var/list/data = hc_data(C, H)
+	TEST_ASSERT_EQUAL(data["grid"], C.grid, "the window shows the grid")
+	C.finalized = TRUE
+	B.selected_color = "#654321"
+	press(H, C, "paint", list("x" = 4, "y" = 4))
+	TEST_ASSERT_NOTEQUAL(C.grid[4][4], "#654321", "a finished painting takes no more strokes")
