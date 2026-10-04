@@ -11,7 +11,6 @@
 
 	var/list/internal_devices // Devices that can be toggled on to trigger on attack()
 	var/list/active_devices   // Devices that will be triggered on attack()
-	var/list/ui_templates     // List of ui templates the commcard can access
 	// ALLOW(instance_list): d: per-card UI state keyed by dynamic strings; few communicators
 	var/list/internal_data = list()	   // Data that shouldn't be updated every time nanoUI updates, or needs to persist between updates
 
@@ -56,7 +55,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/engineering
 	name = "\improper Power-ON cartridge"
 	icon_state = "cart-e"
-	ui_templates = list(list("name" = "Power Monitor", "template" = "comm_power_monitor.tmpl"))
 
 /obj/item/commcard/engineering/Initialize(mapload)
 	..()
@@ -94,7 +92,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/medical
 	name = "\improper Med-U cartridge"
 	icon_state = "cart-m"
-	ui_templates = list(list("name" = "Medical Records", "template" = "med_records.tmpl"))
 
 /obj/item/commcard/medical/Initialize(mapload)
 	. = ..()
@@ -129,10 +126,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/medical/detective
 	name = "\improper D.E.T.E.C.T. cartridge"
 	icon_state = "cart-s"
-	ui_templates = list(
-			list("name" = "Medical Records", "template" = "med_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl")
-		)
 
 /obj/item/commcard/medical/detective/get_data()
 	var/list/data = ..()
@@ -146,10 +139,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/int_aff
 	name = "\improper P.R.O.V.E. cartridge"
 	icon_state = "cart-s"
-	ui_templates = list(
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl")
-		)
 
 /obj/item/commcard/int_aff/get_data()
 	return list(
@@ -164,10 +153,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/security
 	name = "\improper R.O.B.U.S.T. cartridge"
 	icon_state = "cart-s"
-	ui_templates = list(
-			list("name" = "Security Records", "template" = "sec_records.tmpl"),
-			list("name" = "Security Bot Control", "template" = "sec_bot_access.tmpl")
-		)
 
 /obj/item/commcard/security/get_data()
 	return list(
@@ -181,9 +166,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/janitor
 	name = "\improper CustodiPRO cartridge"
 	desc = "The ultimate in clean-room design."
-	ui_templates = list(
-			list("name" = "Janitorial Supply Locator", "template" = "janitorialLocator.tmpl")
-		)
 
 /obj/item/commcard/janitor/get_data()
 	return list(
@@ -198,9 +180,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/signal
 	name = "generic signaler cartridge"
 	desc = "A data cartridge with an integrated radio signaler module."
-	ui_templates = list(
-			list("name" = "Integrated Signaler Control", "template" = "signaler_access.tmpl")
-		)
 
 /obj/item/commcard/signal/Initialize(mapload)
 	. = ..()
@@ -236,9 +215,6 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper Space Parts & Space Vendors cartridge"
 	desc = "Perfect for the Quartermaster on the go!"
 	icon_state = "cart-q"
-	ui_templates = list(
-			list("name" = "Supply Records", "template" = "supply_records.tmpl")
-		)
 
 /obj/item/commcard/supply/Initialize(mapload)
 	. = ..()
@@ -278,10 +254,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/head
 	name = "\improper Easy-Record DELUXE"
 	icon_state = "cart-h"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl")
-		)
 
 /obj/item/commcard/head/Initialize(mapload)
 	// Have to register the commcard with the Radio controller to receive updates to the status displays
@@ -310,13 +282,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/head/hop
 	name = "\improper HumanResources9001 cartridge"
 	icon_state = "cart-h"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl"),
-			list("name" = "Supply Records", "template" = "supply_records.tmpl"),
-			list("name" = "Janitorial Supply Locator", "template" = "janitorialLocator.tmpl")
-		)
 
 /obj/item/commcard/head/hop/get_data()
 	var/list/data = ..()
@@ -359,12 +324,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/head/hos
 	name = "\improper R.O.B.U.S.T. DELUXE"
 	icon_state = "cart-hos"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl"),
-			list("name" = "Security Bot Control", "template" = "sec_bot_access.tmpl")
-		)
 
 /obj/item/commcard/head/hos/get_data()
 	var/list/data = ..()
@@ -386,11 +345,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/head/rd
 	name = "\improper Signal Ace DELUXE"
 	icon_state = "cart-rd"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Integrated Signaler Control", "template" = "signaler_access.tmpl")
-		)
 
 /obj/item/commcard/head/rd/Initialize(mapload)
 	. = ..()
@@ -416,11 +370,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/head/cmo
 	name = "\improper Med-U DELUXE"
 	icon_state = "cart-cmo"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Medical Records", "template" = "med_records.tmpl")
-		)
 
 /obj/item/commcard/head/cmo/Initialize(mapload)
 	. = ..()
@@ -445,11 +394,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/head/ce
 	name = "\improper Power-On DELUXE"
 	icon_state = "cart-ce"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Power Monitor", "template" = "comm_power_monitor.tmpl")
-		)
 
 /obj/item/commcard/head/ce/Initialize(mapload)
 	..()
@@ -493,17 +437,6 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper Value-PAK cartridge"
 	desc = "Now with 200% more value!"
 	icon_state = "cart-c"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Medical Records", "template" = "med_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl"),
-			list("name" = "Security Bot Control", "template" = "sec_bot_access.tmpl"),
-			list("name" = "Power Monitor", "template" = "comm_power_monitor.tmpl"),
-			list("name" = "Supply Records", "template" = "supply_records.tmpl"),
-			list("name" = "Janitorial Supply Locator", "template" = "janitorialLocator.tmpl"),
-			list("name" = "Integrated Signaler Control", "template" = "signaler_access.tmpl")
-		)
 
 /obj/item/commcard/head/captain/Initialize(mapload)
 	. = ..()
@@ -563,9 +496,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/mercenary
 	name = "\improper Detomatix cartridge"
 	icon_state = "cart"
-	ui_templates = list(
-			list("name" = "Shuttle Blast Door Control", "template" = "merc_blast_door_control.tmpl")
-		)
 
 /obj/item/commcard/mercenary/Initialize(mapload)
 	. = ..()
@@ -597,9 +527,6 @@ CAPABILITIES(/obj/item/commcard)
 /obj/item/commcard/explorer
 	name = "\improper Explorator cartridge"
 	icon_state = "cart-tox"
-	ui_templates = list(
-			list("name" = "Integrated GPS", "template" = "gps_access.tmpl")
-		)
 
 /obj/item/commcard/explorer/Initialize(mapload)
 	. = ..()
