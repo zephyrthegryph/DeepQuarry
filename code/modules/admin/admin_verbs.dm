@@ -396,14 +396,36 @@ ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows 
 	feedback_add_details("admin_verb","MSL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets the station security level.", ADMIN_CATEGORY_EVENTS)
-	var/sec_level = verb_ask(user, "a14", args, /datum/om/prompt/choice, message = "It's currently code [get_security_level()].", title = "Select Security Level", choices = (list("green","yellow","violet","orange","blue","red","delta")-get_security_level()))
-	if(isnull(sec_level))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_security_level, PROC_REF(level_selected), answerer = answerer, question = "It's currently code [get_security_level()].", title = "Select Security Level", choices = (list("green", "yellow", "violet", "orange", "blue", "red", "delta") - get_security_level()))
+
+/datum/admin_verb/change_security_level/proc/level_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(confirm_level), A)
+	if(!result.ok)
+		stack_trace("om flow change_security_level answer level_selected: [result.error]")
+
+/datum/admin_verb/change_security_level/proc/confirm_level(datum/act/request/A)
+	var/sec_level = A.request.answer_value
 	if(!sec_level)
 		return
-	var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice/alert, message = "Switch from code [get_security_level()] to code [sec_level]?", title = "Change security level?", choices = list("Yes","No"))
-	if(isnull(_answer_a15))
+	open_request(src, /datum/prompt/choice/admin_security_level/confirmation, PROC_REF(level_confirmed), answerer = A.request.answerer, question = "Switch from code [get_security_level()] to code [sec_level]?", selected_level = sec_level)
+
+/datum/admin_verb/change_security_level/proc/level_confirmed(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_level), A)
+	if(!result.ok)
+		stack_trace("om flow change_security_level answer level_confirmed: [result.error]")
+
+/datum/admin_verb/change_security_level/proc/apply_level(datum/act/request/A)
+	var/datum/prompt/choice/admin_security_level/confirmation/ask = A.request
+	var/client/user = ask.answerer.client
+	var/sec_level = ask.selected_level
+	var/_answer_a15 = ask.answer_value
 	if(_answer_a15 == "Yes")
 		set_security_level(sec_level)
 		log_admin("[key_name(user)] changed the security level to code [sec_level].")
@@ -761,3 +783,19 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 		request_end(src, REQ_CANCELLED, null)
 		return
 	return ..()
+
+/datum/prompt/choice/admin_security_level
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+
+/datum/prompt/choice/admin_security_level/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_security_level/confirmation
+	title = "Change security level?"
+	buttons = TRUE
+	choices = list("Yes", "No")
+	var/selected_level
