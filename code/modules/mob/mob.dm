@@ -334,10 +334,18 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set src in usr
 	if(usr != src)
 		to_chat(src, "No.")
-	om_ask(src, /datum/om/prompt/text, PROC_REF(flavor_text_entered), title = "Flavor Text", message = "Set the flavor text in your 'examine' verb.", default = html_decode(flavor_text), max_length = MAX_MESSAGE_LEN, multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(flavor_text_entered), answerer = src, timeout = 0, title = "Flavor Text", question = "Set the flavor text in your 'examine' verb.", default = html_decode(flavor_text), max_len = MAX_MESSAGE_LEN, multiline = TRUE)
 
-/mob/proc/flavor_text_entered(datum/om/prompt/text/ask)
-	flavor_text = ask.text
+/mob/proc/flavor_text_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(flavor_text_apply), A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("flavor text update: [result.error]")
+	return result.value
+
+/mob/proc/flavor_text_apply(new_text)
+	flavor_text = new_text
 
 /mob/proc/warn_flavor_changed()
 	if(flavor_text && flavor_text != "") // don't spam people that don't use it!
@@ -1559,9 +1567,6 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..()
 
-// === merged from items_chomp.dm during hard-fork de-suffix. Placed in this file because it
-// is the highest-positioned definer in the override chain for the members it
-// sets, so every override stays after its base definition (resolution preserved). ===
 /obj/item
 	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
 	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later

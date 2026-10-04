@@ -79,7 +79,7 @@
 				charges += 1
 				play_sfx(holder, SFX_EFFECTS_SPLAT, extrarange = -3)
 
-			qdel(B)
+			consume(B)
 
 	if(charges >= 10) //Listen, if you have INTENTIONALLY FED THE SPOOKY, SCARY ARTIFACT THAT IS DRAINING YOUR BLOOD, then go ahead and have your spooky reward.
 		charges -= 10

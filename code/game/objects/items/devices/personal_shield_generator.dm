@@ -167,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		to_chat(user, span_notice("You cannot remove the cell from this device."))
 		return ITEM_INTERACT_BLOCKING
 	if(istype(bcell, /obj/item/cell/device/shield_generator))
-		om_ask(user, /datum/om/prompt/confirm/shield_cell_destroy, PROC_REF(destroy_cell_answered))
+		open_request(src, /datum/prompt/choice/shield_cell_destroy, PROC_REF(destroy_cell_answered), answerer = user, subject = src)
 		return ITEM_INTERACT_BLOCKING
 	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
@@ -180,21 +180,33 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	return ITEM_INTERACT_SUCCESS
 
 /// Removing a built-in cell destroys it. Re-checked on the answer: still next to it, and the cell is still a removable built-in one.
-/datum/om/prompt/confirm/shield_cell_destroy
+/datum/prompt/choice/shield_cell_destroy
 	title = "Selection List"
-	message = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?"
-	yes_text = "Remove"
-	no_text = "Cancel"
-	no_first = TRUE
+	question = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?"
+	choices = list("Cancel", "Remove")
+	buttons = TRUE
+	timeout = 0
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/datum/om/prompt/confirm/shield_cell_destroy/valid()
+/datum/prompt/choice/shield_cell_destroy/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/obj/item/personal_shield_generator/gen = subject
 	if(!istype(gen.bcell, /obj/item/cell/device/shield_generator) || istype(gen.bcell, /obj/item/cell/device/shield_generator/parry))
 		return "no removable cell"
 	return null
 
-/obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/om/prompt/confirm/shield_cell_destroy/ask)
+/obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/act/request/context)
+	if(!context.answer || context.answer.answer_value != "Remove")
+		return
+	var/datum/result/result = safe_call(PROC_REF(destroy_cell_apply), context)
+	if(!result.ok)
+		stack_trace("shield generator cell removal: [result.error]")
+	return result.value
+
+/obj/item/personal_shield_generator/proc/destroy_cell_apply(datum/act/request/context)
+	var/datum/prompt/choice/shield_cell_destroy/ask = context.answer
 	var/mob/user = ask.answerer
 	fx_sparks(src, 5)
 	own_clear(src, nameof(bcell), OWN_DELETE)

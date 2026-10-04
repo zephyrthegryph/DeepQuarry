@@ -204,10 +204,13 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 /// To add to the list: Add-Item, Multi-line text (Front-facing name), Associated value = yes, Atom Typepath = whatever you want.
 /// This should appear something like " Paper = /obj/item/paper " if you did it right, and will let them summon paper!
 /obj/item/melee/artifact_blade/proc/summon_item(mob/user as mob, selected_item)
+	return summon_item_stage(user, selected_item, null)
+
+/obj/item/melee/artifact_blade/proc/summon_item_stage(mob/user, selected_item, decision2)
 	if(selected_item)
 		if(selected_item == "Soulstone")
-			var/decision2 = rerun_ask(user, "k209", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create a redspace gem? This will take 200 lifeforce from the sword.", title = "Generate Gem", choices = list("YES", "NO"))
 			if(isnull(decision2))
+				open_request(src, /datum/prompt/choice/artifact_blade_summon, PROC_REF(summon_item_answered), answerer = user, selected_item = selected_item, question = "Do you wish to create a redspace gem? This will take 200 lifeforce from the sword.", title = "Generate Gem")
 				return
 			if(stored_blood < 200)
 				to_chat(user, span_cult("The blade does not have enough lifeforce!"))
@@ -222,8 +225,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 			else
 				return
 		if(selected_item == "Shell")
-			var/decision2 = rerun_ask(user, "k223", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create a shell? This will take 500 lifeforce from the sword.", title = "Generate Shell", choices = list("YES", "NO"))
 			if(isnull(decision2))
+				open_request(src, /datum/prompt/choice/artifact_blade_summon, PROC_REF(summon_item_answered), answerer = user, selected_item = selected_item, question = "Do you wish to create a shell? This will take 500 lifeforce from the sword.", title = "Generate Shell")
 				return
 			if(stored_blood < 500)
 				to_chat(user, span_cult("The blade does not have enough lifeforce!"))
@@ -239,8 +242,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 		/// In some cases, if a xenoarch was REALLY unlucky, they could only find 3-4 large artifacts in the (readily) available Z levels without scouring the entire universe.
 		/// So this acts as a "You sacrifice a LOT to get a random artifact"
 		if(selected_item == "Cultic Artifact")
-			var/decision2 = rerun_ask(user, "k238", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create an artifact? This will take 1000 lifeforce from the sword.", title = "Generate Artifact", choices = list("YES", "NO"))
 			if(isnull(decision2))
+				open_request(src, /datum/prompt/choice/artifact_blade_summon, PROC_REF(summon_item_answered), answerer = user, selected_item = selected_item, question = "Do you wish to create an artifact? This will take 1000 lifeforce from the sword.", title = "Generate Artifact")
 				return
 			if(stored_blood < 1000)
 				to_chat(user, span_cult("The blade does not have enough lifeforce!"))
@@ -265,6 +268,25 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 			return
 	else
 		return
+
+/datum/prompt/choice/artifact_blade_summon
+	timeout = 0
+	choices = list("YES", "NO")
+	buttons = TRUE
+	var/selected_item
+
+/obj/item/melee/artifact_blade/proc/summon_item_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(summon_item_apply), context)
+	if(!result.ok)
+		stack_trace("artifact blade summon: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/item/melee/artifact_blade/proc/summon_item_apply(datum/act/request/context)
+	var/datum/prompt/choice/artifact_blade_summon/request = context.answer
+	return summon_item_stage(request.answerer, request.selected_item, request.answer_value)
 
 /// While this COULD just use the cultify() proc ultimately, I decided against that as this isn't meant to be
 /// Some sort of weapon of mass destruction. It's supposed to be a funny, spooky artifact that you find.

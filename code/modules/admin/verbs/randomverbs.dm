@@ -1032,12 +1032,21 @@ ADMIN_VERB(cmd_admin_check_contents, R_HOLDER, "Check Contents", "Check the cont
 
 ADMIN_VERB(toggle_view_range, R_HOLDER, "Change View Range", "Switches between 1x and custom views.", ADMIN_CATEGORY_GAME)
 	if(user.view == world.view)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(view_chosen), title = "FUCK YE", message = "Select view range:", choices = list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,128), requires = PROMPT_ADMIN(permissions))
+		if(QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/admin_view_range, PROC_REF(view_chosen), answerer = user.mob)
 		return
 	set_view(user, world.view)
 
-/datum/admin_verb/toggle_view_range/proc/view_chosen(datum/om/prompt/choice/ask)
-	set_view(ask.answerer.client, ask.choice)
+/datum/admin_verb/toggle_view_range/proc/view_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(view_chosen_apply), context)
+	if(!result.ok)
+		stack_trace("om prompt callback view_chosen: [result.error]")
+
+/datum/admin_verb/toggle_view_range/proc/view_chosen_apply(datum/act/request/context)
+	set_view(context.request.answerer.client, context.request.answer_value)
 
 /datum/admin_verb/toggle_view_range/proc/set_view(client/user, view)
 	user.mob.set_viewsize(view)
@@ -1540,3 +1549,17 @@ ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/R
 		to_chat(user, "You gave the event HUD to [key_name(target)].")
 		to_chat(target, "You now have the event HUD.  Icons will appear next to characters indicating if they prefer to be killed(red crosshairs), devoured(belly), or kidnapped(blue crosshairs) by event characters.")
 	feedback_add_details("admin_verb","GREHud") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_view_range
+	rights = R_HOLDER
+	timeout = 0
+	title = "FUCK YE"
+	question = "Select view range:"
+	choices = list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,128)
+	buttons = FALSE
+
+/datum/prompt/choice/admin_view_range/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()

@@ -880,6 +880,15 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(landing), /atom/movable/screen/action_landing))
 
+/// CAPABILITIES(/datum/admin_edit_appearance_review) at code/modules/admin/verbs/change_appearance.dm:49
+/datum/admin_edit_appearance_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/change_appearance.dm", 49, /datum/admin_edit_appearance_review)
+	into += entry_line(50)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(51)
+	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/admin_emp_review) at code/modules/admin/verbs/adminfun.dm:141
 /datum/admin_emp_review/declared_entries(list/into)
 	..(into)
@@ -2819,11 +2828,11 @@
 	into += entry_line(45)
 	into += list(global.owns_many(nameof(transaction_log)))
 
-/// CAPABILITIES(/datum/morph_review) at code/modules/mob/living/carbon/human/human.dm:859
+/// CAPABILITIES(/datum/morph_review) at code/modules/mob/living/carbon/human/human.dm:931
 /datum/morph_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 859, /datum/morph_review)
-	into += entry_line(860)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 931, /datum/morph_review)
+	into += entry_line(932)
 	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/n_Interpreter) at code/modules/scripting/Interpreter/Interpreter.dm:59
@@ -3359,11 +3368,11 @@
 	into += entry_line(880)
 	into += list(global.ref_one(nameof(controlled_mob), /mob))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1270
+/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1279
 /datum/prompt/choice/admin_drop_pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1270, /datum/prompt/choice/admin_drop_pod)
-	into += entry_line(1271)
+	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1279, /datum/prompt/choice/admin_drop_pod)
+	into += entry_line(1280)
 	into += list(global.ref_one(nameof(drop_mob), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_gib_target) at code/modules/admin/verbs/adminfun.dm:95
@@ -3581,6 +3590,13 @@
 	into += entry_line(565)
 	into += list(global.ref_one(nameof(partner), /mob/living/carbon/human))
 
+/// CAPABILITIES(/datum/prompt/choice/hud_status) at code/modules/mob/living/carbon/human/human.dm:655
+/datum/prompt/choice/hud_status/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 655, /datum/prompt/choice/hud_status)
+	into += entry_line(656)
+	into += list(global.ref_one(nameof(record), /datum/data/record))
+
 /// CAPABILITIES(/datum/prompt/choice/implant_emote) at code/game/objects/items/weapons/implants/implant.dm:687
 /datum/prompt/choice/implant_emote/declared_entries(list/into)
 	..(into)
@@ -3700,6 +3716,17 @@
 	into += list(global.ref_one(nameof(power), /datum/protean_power))
 	into += entry_line(271)
 	into += list(global.ref_one(nameof(form), /datum/forms/protean))
+
+/// CAPABILITIES(/datum/prompt/choice/replicator_consent) at code/modules/xenoarcheaology/artifacts/replicator.dm:766
+/datum/prompt/choice/replicator_consent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/artifacts/replicator.dm", 766, /datum/prompt/choice/replicator_consent)
+	into += entry_line(767)
+	into += list(global.ref_one(nameof(instigator), /mob))
+	into += entry_line(768)
+	into += list(global.ref_one(nameof(source_item), /obj/item))
+	into += entry_line(769)
+	into += list(global.ref_one(nameof(insertion), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/choice/research_anomaly) at code/modules/anomalies/anomaly.dm:281
 /datum/prompt/choice/research_anomaly/declared_entries(list/into)
@@ -4015,6 +4042,13 @@
 	into += entry_line(24)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/text/hud_comment) at code/modules/mob/living/carbon/human/human.dm:683
+/datum/prompt/text/hud_comment/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 683, /datum/prompt/text/hud_comment)
+	into += entry_line(684)
+	into += list(global.ref_one(nameof(record), /datum/data/record))
+
 /// CAPABILITIES(/datum/prompt/text/language_key) at code/modules/mob/language/language.dm:329
 /datum/prompt/text/language_key/declared_entries(list/into)
 	..(into)
@@ -4042,6 +4076,13 @@
 	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 186, /datum/prompt/text/protean_style)
 	into += entry_line(187)
 	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
+/// CAPABILITIES(/datum/prompt/text/remotesay) at code/modules/mob/living/carbon/human/human.dm:1110
+/datum/prompt/text/remotesay/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 1110, /datum/prompt/text/remotesay)
+	into += entry_line(1111)
+	into += list(global.ref_one(nameof(recipient), /mob))
 
 /// CAPABILITIES(/datum/prompt/text/telepathy) at code/modules/mob/living/carbon/human/human_powers_YW.dm:15
 /datum/prompt/text/telepathy/declared_entries(list/into)
@@ -9653,11 +9694,11 @@
 	into += entry_line(188)
 	into += list(global.op("interaction_hand", global.hand(), global.then(PROC_REF(interaction_hand))))
 
-/// CAPABILITIES(/obj/item/gun/energy/gun/generator) at code/game/objects/items/devices/personal_shield_generator.dm:581
+/// CAPABILITIES(/obj/item/gun/energy/gun/generator) at code/game/objects/items/devices/personal_shield_generator.dm:593
 /obj/item/gun/energy/gun/generator/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/personal_shield_generator.dm", 581, /obj/item/gun/energy/gun/generator)
-	into += entry_line(582)
+	into += entry_block("code/game/objects/items/devices/personal_shield_generator.dm", 593, /obj/item/gun/energy/gun/generator)
+	into += entry_line(594)
 	into += list(global.ref_one(nameof(power_supply)))
 
 /// CAPABILITIES(/obj/item/gun/energy/particle) at code/modules/projectiles/guns/energy/particle.dm:25
