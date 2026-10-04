@@ -141,7 +141,3 @@ TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list
 	if(E.is_broken() && E.apply_splint(src))
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
 		rel_add(src, nameof(supporting_limbs), E)
-
-/obj/item/clothing/suit/space/relations()
-	. = ..()
-	. += rel_many(nameof(supporting_limbs))

@@ -900,6 +900,7 @@
 #include "interim_assembly_holder_sticky_disassembly.dm"
 #include "interim_native_reference_lifetime.dm"
 #include "interim_robot_reclassification_request.dm"
+#include "interim_bluespace_crystal_sticky_self.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

@@ -219,6 +219,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/obj/item/airlock_electronics::ui_user_ok" = list(0,
 		list(2, 0, 12)),
 	"/obj/item/airlock_electronics::user_may_open" = list(0),
+	"/obj/item/bluespace_crystal::crystal_releasable" = list(0),
 	"/obj/item/bodybag::can_unfold" = list(0,
 		list(1, 0, 13)),
 	"/obj/item/flame/candle::offers_flame" = list(0,
