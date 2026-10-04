@@ -331,14 +331,43 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 
 	var/list/possible_modifiers = subtypesof(/datum/body_effect)
 
-	var/new_modifier_type = verb_ask(user, "a8", args, /datum/om/prompt/choice, message = "What modifier should we add to [living_target]?", title = "Modifier Type", choices = possible_modifiers)
-	if(isnull(new_modifier_type))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!new_modifier_type)
+	open_request(src, /datum/prompt/choice/admin_body_effect, PROC_REF(modifier_answered), answerer = answerer, question = "What modifier should we add to [living_target]?", title = "Modifier Type", choices = possible_modifiers, living_target = living_target)
+
+/datum/admin_verb/admin_give_modifier/proc/modifier_answered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(modifier_chosen), A)
+	if(!result.ok)
+		stack_trace("om flow admin_give_modifier answer modifier_chosen: [result.error]")
+
+/datum/admin_verb/admin_give_modifier/proc/modifier_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/duration = verb_ask(user, "a9", args, /datum/om/prompt/number, message = "How long should the new modifier last, in seconds.  To make it last forever, write '0'.", title = "Modifier Duration")
-	if(isnull(duration))
+	var/datum/prompt/choice/admin_body_effect/ask = A.request
+	var/client/user = ask.answerer?.client
+	if(!user)
 		return
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/number/admin_body_effect, PROC_REF(modifier_duration_answered), answerer = answerer, living_target = ask.living_target, modifier_type = ask.answer_value)
+
+/datum/admin_verb/admin_give_modifier/proc/modifier_duration_answered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(modifier_duration_chosen), A)
+	if(!result.ok)
+		stack_trace("om flow admin_give_modifier answer modifier_duration_chosen: [result.error]")
+
+/datum/admin_verb/admin_give_modifier/proc/modifier_duration_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/admin_body_effect/ask = A.request
+	var/client/user = ask.answerer?.client
+	if(!user)
+		return
+	var/mob/living/living_target = ask.living_target
+	var/new_modifier_type = ask.modifier_type
+	var/duration = ask.answer_value
 	if(duration == 0)
 		duration = null
 	else
@@ -346,6 +375,70 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 
 	living_target.apply_body_effect(new_modifier_type, duration)
 	log_and_message_admins("has given [key_name(living_target)] the modifer [new_modifier_type], with a duration of [duration ? "[duration / 600] minutes" : "forever"].", user)
+
+/datum/prompt/choice/admin_body_effect
+	rights = R_EVENT
+	timeout = 0
+	var/mob/living/living_target
+
+CAPABILITIES(/datum/prompt/choice/admin_body_effect)
+	ref_one(nameof(living_target), /mob/living)
+
+/datum/prompt/choice/admin_body_effect/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/captured = living_target
+	rel_clear(src, nameof(living_target))
+	rel_set(src, nameof(living_target), captured)
+
+/datum/prompt/choice/admin_body_effect/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(living_target) ? "target is gone" : null
+
+/datum/prompt/choice/admin_body_effect/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/number/admin_body_effect
+	rights = R_EVENT
+	timeout = 0
+	var/mob/living/living_target
+	question = "How long should the new modifier last, in seconds.  To make it last forever, write '0'."
+	title = "Modifier Duration"
+	min_value = 0
+	max_value = INFINITY
+	step = 1
+	var/modifier_type
+
+CAPABILITIES(/datum/prompt/number/admin_body_effect)
+	ref_one(nameof(living_target), /mob/living)
+
+/datum/prompt/number/admin_body_effect/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/captured = living_target
+	rel_clear(src, nameof(living_target))
+	rel_set(src, nameof(living_target), captured)
+
+/datum/prompt/number/admin_body_effect/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(living_target) ? "target is gone" : null
+
+/datum/prompt/number/admin_body_effect/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/number/admin_body_effect/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
 
 ADMIN_VERB_AND_CONTEXT_MENU(make_sound, R_FUN, "Make Sound", "Display a message to everyone who can hear the target.", ADMIN_CATEGORY_FUN_SOUNDS, obj/target_object in world)
 	if(!target_object)
