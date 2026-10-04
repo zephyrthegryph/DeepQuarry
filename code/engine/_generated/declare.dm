@@ -3111,6 +3111,13 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/admin_mail) at code/game/objects/mail.dm:327
+/datum/prompt/choice/admin_mail/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/mail.dm", 327, /datum/prompt/choice/admin_mail)
+	into += entry_line(328)
+	into += list(global.ref_one(nameof(recipient), /mob/living))
+
 /// CAPABILITIES(/datum/prompt/choice/air_control_menu) at code/game/machinery/atmo_control.dm:285
 /datum/prompt/choice/air_control_menu/declared_entries(list/into)
 	..(into)
@@ -10727,11 +10734,11 @@
 	into += entry_line(21)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/fossil), max_size = ITEMSIZE_NORMAL)))
 
-/// CAPABILITIES(/obj/item/storage/bag/mail) at code/game/objects/mail.dm:398
+/// CAPABILITIES(/obj/item/storage/bag/mail) at code/game/objects/mail.dm:453
 /obj/item/storage/bag/mail/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/mail.dm", 398, /obj/item/storage/bag/mail)
-	into += entry_line(399)
+	into += entry_block("code/game/objects/mail.dm", 453, /obj/item/storage/bag/mail)
+	into += entry_line(454)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/mail, /obj/item/smallDelivery, /obj/item/paper, /obj/item/stolenpackage, /obj/item/contraband, /obj/item/mail_scanner, /obj/item/pen), max_size = ITEMSIZE_NORMAL)))
 
 /// CAPABILITIES(/obj/item/storage/bag/plants) at code/game/objects/items/weapons/storage/bags.dm:113
