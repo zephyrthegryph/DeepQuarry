@@ -38,12 +38,15 @@ UI_DATA(/datum/tgui_module/agentcard, "merge:ui_data_datum_tgui_module_agentcard
 		return STATUS_CLOSE
 	return ..()
 
-UI_ACT(/datum/tgui_module/agentcard, "electronic_warfare", ui_act_electronic_warfare)
-UI_ACT_PROC(/datum/tgui_module/agentcard, ui_act_electronic_warfare)
+CAPABILITIES(/datum/tgui_module/agentcard)
+	op("electronic_warfare", ui_act(), then(PROC_REF(native_ui_act_electronic_warfare)))
+	op("photo", ui_act(), then(PROC_REF(native_ui_act_photo)))
+
+/datum/tgui_module/agentcard/proc/native_ui_act_electronic_warfare(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	S.electronic_warfare = !S.electronic_warfare
-	to_chat(ui.user, span_notice("Electronic warfare [S.electronic_warfare ? "enabled" : "disabled"]."))
-	. = TRUE
+	to_chat(A.actor, span_notice("Electronic warfare [S.electronic_warfare ? "enabled" : "disabled"]."))
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/agentcard, "age", ui_act_age)
 UI_ACT_PROC(/datum/tgui_module/agentcard, ui_act_age)
@@ -146,12 +149,11 @@ UI_ACT_PROC(/datum/tgui_module/agentcard, ui_act_name)
 		to_chat(ui.user, span_notice("Name changed to '[new_name]'."))
 		. = TRUE
 
-UI_ACT(/datum/tgui_module/agentcard, "photo", ui_act_photo)
-UI_ACT_PROC(/datum/tgui_module/agentcard, ui_act_photo)
+/datum/tgui_module/agentcard/proc/native_ui_act_photo(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()
-	S.set_id_photo(ui.user)
-	to_chat(ui.user, span_notice("Photo changed."))
-	. = TRUE
+	S.set_id_photo(A.actor)
+	to_chat(A.actor, span_notice("Photo changed."))
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/agentcard, "sex", ui_act_sex)
 UI_ACT_PROC(/datum/tgui_module/agentcard, ui_act_sex)

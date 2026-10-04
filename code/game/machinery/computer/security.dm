@@ -196,6 +196,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/secure_data, "temp:text", "authenticated
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/secure_data)
+	op("scan", ui_act(), then(PROC_REF(native_ui_act_scan)))
 	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
 
 /obj/machinery/computer/secure_data/proc/native_ui_act_cleartemp(datum/act/op/A)
@@ -206,18 +207,22 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	temp = null
 	return OP_OK
 
-UI_ACT(/obj/machinery/computer/secure_data, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_scan)
-	. = TRUE
+/obj/machinery/computer/secure_data/proc/native_ui_act_scan(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!(active1() in GLOB.data_core.general))
+		rel_clear(src, nameof(active1))
+	if(!(active2() in GLOB.data_core.security))
+		rel_clear(src, nameof(active2))
 	if(scan)
 		scan.forceMove(loc)
-		if(ishuman(ui.user) && !ui.user.get_active_hand())
-			ui.user.put_in_hands(scan)
+		if(ishuman(user) && !user.get_active_hand())
+			user.put_in_hands(scan)
 		own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
-		var/obj/item/I = ui.user.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			move_into(src, nameof(src.scan), I, ui.user)
+			move_into(src, nameof(src.scan), I, user)
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/secure_data, "login", ui_act_login, UI_ARG_NUM("login_type"))
 UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_login)

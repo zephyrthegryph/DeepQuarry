@@ -19,6 +19,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/tmp/obj/item/robotic_multibelt/multibelt_holder	//Currently selected multibelt.
 
 CAPABILITIES(/datum/eventkit/modify_robot)
+	op("add_zeroth_law", ui_act(), then(PROC_REF(native_ui_act_add_zeroth_law)))
+	op("add_ion_law", ui_act(), then(PROC_REF(native_ui_act_add_ion_law)))
+	op("add_inherent_law", ui_act(), then(PROC_REF(native_ui_act_add_inherent_law)))
+	op("add_supplied_law", ui_act(), then(PROC_REF(native_ui_act_add_supplied_law)))
 	op("toggle_crisis", ui_act(), then(PROC_REF(native_ui_act_toggle_crisis)))
 	op("reset_module", ui_act(), then(PROC_REF(native_ui_act_reset_module)))
 	op("ert_toggle", ui_act(), then(PROC_REF(native_ui_act_ert_toggle)))
@@ -514,33 +518,29 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_state_law)
 		target().laws.set_state_law(AL, state_law)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_zeroth_law", ui_act_add_zeroth_law)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_zeroth_law)
+/datum/eventkit/modify_robot/proc/native_ui_act_add_zeroth_law(datum/act/op/A)
 	if(zeroth_law && !target().laws.zeroth_law)
 		target().set_zeroth_law(zeroth_law)
 		target().lawsync()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/eventkit/modify_robot, "add_ion_law", ui_act_add_ion_law)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_ion_law)
+/datum/eventkit/modify_robot/proc/native_ui_act_add_ion_law(datum/act/op/A)
 	if(ion_law)
 		target().add_ion_law(ion_law)
 		target().lawsync()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/eventkit/modify_robot, "add_inherent_law", ui_act_add_inherent_law)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_inherent_law)
+/datum/eventkit/modify_robot/proc/native_ui_act_add_inherent_law(datum/act/op/A)
 	if(inherent_law)
 		target().add_inherent_law(inherent_law)
 		target().lawsync()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/eventkit/modify_robot, "add_supplied_law", ui_act_add_supplied_law)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_supplied_law)
+/datum/eventkit/modify_robot/proc/native_ui_act_add_supplied_law(datum/act/op/A)
 	if(supplied_law && supplied_law_position >= 1 && MIN_SUPPLIED_LAW_NUMBER <= MAX_SUPPLIED_LAW_NUMBER)
 		target().add_supplied_law(supplied_law_position, supplied_law)
 		target().lawsync()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/eventkit/modify_robot, "change_zeroth_law", ui_act_change_zeroth_law, UI_ARG_TEXT("val"))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_change_zeroth_law)

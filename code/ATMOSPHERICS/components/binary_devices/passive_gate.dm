@@ -206,7 +206,6 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/passive_gate, "merge:ui_data_
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 	op("toggle_valve", ui_act("toggle_valve"), then(PROC_REF(valve_switched)))
-	op("regulate_mode", ui_act("regulate_mode", arg("mode", schema_text())), then(PROC_REF(regulation_selected)))
 
 /obj/machinery/atmospherics/binary/passive_gate/proc/valve_switched(datum/act/op/A)
 	set_unlocked(!unlocked)
@@ -214,14 +213,15 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 	add_fingerprint(A.actor)
 	return OP_OK
 
-/obj/machinery/atmospherics/binary/passive_gate/proc/regulation_selected(datum/act/op/A, mode)
-	switch(mode)
+UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "regulate_mode", ui_act_regulate_mode, UI_ARG_TEXT("mode"))
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_regulate_mode)
+	. = TRUE
+	switch(params["mode"])
 		if("off") set_regulate_mode(REGULATE_NONE)
 		if("input") set_regulate_mode(REGULATE_INPUT)
 		if("output") set_regulate_mode(REGULATE_OUTPUT)
 	update_icon()
-	add_fingerprint(A.actor)
-	return OP_OK
+	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
 UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_press)

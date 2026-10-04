@@ -452,20 +452,24 @@ UI_DATA_REPLACE(/obj/machinery/computer/skills, "temp:text", "authenticated", "r
 		rel_clear(src, nameof(active1))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/skills, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_scan)
-	. = TRUE
+/obj/machinery/computer/skills/proc/native_ui_act_scan(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	if(!(active1() in GLOB.data_core.general))
+		rel_clear(src, nameof(active1))
 	if(scan)
 		scan.forceMove(loc)
-		if(ishuman(ui.user) && !ui.user.get_active_hand())
-			ui.user.put_in_hands(scan)
+		if(ishuman(user) && !user.get_active_hand())
+			user.put_in_hands(scan)
 		own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
-		var/obj/item/I = ui.user.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			move_into(src, nameof(src.scan), I, ui.user)
+			move_into(src, nameof(src.scan), I, user)
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/computer/skills)
+	op("scan", ui_act(), then(PROC_REF(native_ui_act_scan)))
 	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
 
 /obj/machinery/computer/skills/proc/native_ui_act_cleartemp(datum/act/op/A)

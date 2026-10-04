@@ -196,15 +196,17 @@ UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_lock)
 	toggle()
 	SStgui.close_uis(src)
 
+CAPABILITIES(/obj/item/uplink/hidden)
+	op("compact_toggle", ui_act(), then(PROC_REF(native_ui_act_compact_toggle)))
+
 UI_ACT(/obj/item/uplink/hidden, "select", ui_act_select, UI_ARG_VALUE("category"))
 UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_select)
 	selected_cat = params["category"]
 	return TRUE
 
-UI_ACT(/obj/item/uplink/hidden, "compact_toggle", ui_act_compact_toggle)
-UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_compact_toggle)
+/obj/item/uplink/hidden/proc/native_ui_act_compact_toggle(datum/act/op/A)
 	compact_mode = !compact_mode
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/uplink/hidden, "view_exploits", ui_act_view_exploits, UI_ARG_NUM("id"))
 UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
