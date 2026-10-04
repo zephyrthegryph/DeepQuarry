@@ -7,6 +7,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/chemical_synthesizer/synth = allocate(/obj/machinery/chemical_synthesizer, T)
+	own_turf_contents(T)
 	var/original_count = length(synth.recipes)
 	synth.synth_import_recipe_stage(user, list())
 	TEST_ASSERT(istype(SSrequests.open_for(user), /datum/prompt/text/synth_recipe_review), "Actual import opens native recipe naming")
