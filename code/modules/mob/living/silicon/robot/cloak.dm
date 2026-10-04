@@ -12,16 +12,18 @@ OM_FIELD(/obj/item/borg/cloak, active, FALSE, CHANGE_EXPLICIT)
 /// Draws power while cloaked at a non-zero strength.
 DECLARE_PERIODIC_WHILE_ALL(/obj/item/borg/cloak, PERIODIC_SLOW, list("active", "cloak_strength"))
 
-DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_VERB("Toggle Cloak Strength", PROC_REF(cloak_verb_set_level), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Cloak", PROC_REF(cloak_verb_toggle), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/borg/cloak)
+	op("set_level", in_hand(), then(PROC_REF(cloak_ask_level)))
+	op("strength", menu(), label("Toggle Cloak Strength"), needs(carried()), then(PROC_REF(cloak_ask_level)))
+	op("toggle", menu(), label("Toggle Cloak"), needs(carried()), then(PROC_REF(cloak_toggled)))
 
-/// Old attack_self.
-/obj/item/borg/cloak/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	cloak_verb_set_level(user)
-	return TRUE
+/// Using the cloak in hand, or its menu entry: ask the strength.
+/obj/item/borg/cloak/proc/cloak_ask_level(datum/act/op/A)
+	set_cloaking_level(A.actor)
+
+/// The menu entry: switch the cloak on or off.
+/obj/item/borg/cloak/proc/cloak_toggled(datum/act/op/A)
+	toggle_cloak(A.actor)
 
 /obj/item/borg/cloak/item_ctrl_click(mob/user)
 	toggle_cloak(user)
@@ -53,10 +55,6 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 		robot.remove_body_effect(/datum/body_effect/robot_cloak)
 		set_active(FALSE)
 
-/// Old Toggle Cloak Strength verb.
-/obj/item/borg/cloak/proc/cloak_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
-	set_cloaking_level(user)
-
 /obj/item/borg/cloak/proc/set_cloaking_level(mob/living/silicon/robot/R)
 	if(!isrobot(R)) //sod off
 		return
@@ -77,10 +75,6 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	else
 		to_chat(R, span_warning("Invalid cloak level. Must be between 0 and 100."))
 		return
-
-/// Old Toggle Cloak verb.
-/obj/item/borg/cloak/proc/cloak_verb_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_cloak(user)
 
 /obj/item/borg/cloak/proc/toggle_cloak(mob/living/silicon/robot/R)
 	if(!isrobot(R)) //sod off

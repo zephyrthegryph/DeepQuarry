@@ -2313,13 +2313,13 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
-/// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:962
+/// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/ai/ai.dm", 962, /datum/prompt/yes_no/ai_door_request)
-	into += entry_line(963)
-	into += list(global.ref_one(nameof(door), /obj/machinery/door/airlock))
+	into += entry_block("code/modules/mob/living/silicon/ai/ai.dm", 963, /datum/prompt/yes_no/ai_door_request)
 	into += entry_line(964)
+	into += list(global.ref_one(nameof(door), /obj/machinery/door/airlock))
+	into += entry_line(965)
 	into += list(global.ref_one(nameof(requester), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:83
@@ -3454,6 +3454,8 @@
 	into += list(global.owns_one(nameof(aiMulti), starts = /obj/item/multitool))
 	into += entry_line(118)
 	into += list(global.owns_one(nameof(aiCamera), /obj/item/camera/siliconcam, starts = /obj/item/camera/siliconcam/ai_camera))
+	into += entry_line(119)
+	into += list(global.op("ai_interaction_card", global.item(/obj/item/aicard), global.label("Transfer to card"), global.then(PROC_REF(ai_interaction_card))))
 
 /// CAPABILITIES(/mob/living/silicon/pai) at code/modules/mob/living/silicon/pai/pai.dm:107
 /mob/living/silicon/pai/declared_entries(list/into)
@@ -3502,6 +3504,13 @@
 	into += list(global.owns_many(nameof(components)))
 	into += entry_line(28)
 	into += list(global.owns_one(nameof(robotact), starts = /datum/tgui_module/robot_ui))
+
+/// CAPABILITIES(/mob/living/silicon/robot/drone) at code/modules/mob/living/silicon/robot/drone/drone.dm:255
+/mob/living/silicon/robot/drone/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/drone/drone.dm", 255, /mob/living/silicon/robot/drone)
+	into += entry_line(256)
+	into += list(global.op("hat", global.item(/obj/item/clothing/head), global.stance(I_HELP), global.when(PROC_REF(hatless)), global.label("Put on hat"), global.then(PROC_REF(hat_put_on))))
 
 /// CAPABILITIES(/mob/living/simple_mob) at code/modules/mob/living/simple_mob/simple_mob.dm:175
 /mob/living/simple_mob/declared_entries(list/into)
@@ -4455,6 +4464,26 @@
 	into += entry_line(14)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
+/// CAPABILITIES(/obj/item/borg/cloak) at code/modules/mob/living/silicon/robot/cloak.dm:15
+/obj/item/borg/cloak/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/cloak.dm", 15, /obj/item/borg/cloak)
+	into += entry_line(16)
+	into += list(global.op("set_level", global.in_hand(), global.then(PROC_REF(cloak_ask_level))))
+	into += entry_line(17)
+	into += list(global.op("strength", global.menu(), global.label("Toggle Cloak Strength"), global.needs(global.carried()), global.then(PROC_REF(cloak_ask_level))))
+	into += entry_line(18)
+	into += list(global.op("toggle", global.menu(), global.label("Toggle Cloak"), global.needs(global.carried()), global.then(PROC_REF(cloak_toggled))))
+
+/// CAPABILITIES(/obj/item/borg/combat/shield) at code/modules/mob/living/silicon/robot/robot_items.dm:477
+/obj/item/borg/combat/shield/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_items.dm", 477, /obj/item/borg/combat/shield)
+	into += entry_line(478)
+	into += list(global.op("level", global.in_hand(), global.then(PROC_REF(shield_ask_level))))
+	into += entry_line(479)
+	into += list(global.op("set_level", global.menu(), global.label("Set shield level"), global.needs(global.carried()), global.then(PROC_REF(shield_ask_level))))
+
 /// CAPABILITIES(/obj/item/borg/upgrade/utility/rename) at code/game/objects/items/robot/robot_upgrades.dm:69
 /obj/item/borg/upgrade/utility/rename/declared_entries(list/into)
 	..(into)
@@ -5371,11 +5400,11 @@
 	into += entry_line(786)
 	into += list(global.op("dragor_dot_self", global.in_hand(), global.then(PROC_REF(dragor_dot_self))))
 
-/// CAPABILITIES(/obj/item/form_printer) at code/modules/mob/living/silicon/robot/robot_items.dm:214
+/// CAPABILITIES(/obj/item/form_printer) at code/modules/mob/living/silicon/robot/robot_items.dm:216
 /obj/item/form_printer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/robot_items.dm", 214, /obj/item/form_printer)
-	into += entry_line(215)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_items.dm", 216, /obj/item/form_printer)
+	into += entry_line(217)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/frame) at code/game/machinery/wall_frames.dm:24
@@ -5538,11 +5567,11 @@
 	into += entry_line(19)
 	into += list(global.owns_one(nameof(smoke), starts = /datum/effect/effect/system/smoke_spread/bad))
 
-/// CAPABILITIES(/obj/item/gripper) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:587
+/// CAPABILITIES(/obj/item/gripper) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:589
 /obj/item/gripper/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/robot_simple_items.dm", 587, /obj/item/gripper)
-	into += entry_line(588)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_simple_items.dm", 589, /obj/item/gripper)
+	into += entry_line(590)
 	into += list(global.owns_many(nameof(pockets)))
 
 /// CAPABILITIES(/obj/item/gun) at code/modules/projectiles/gun.dm:117
@@ -5733,11 +5762,11 @@
 	into += entry_line(28)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(user_conscious), because = MSG(implantpad/unconscious)))))
 
-/// CAPABILITIES(/obj/item/inflatable_dispenser) at code/modules/mob/living/silicon/robot/robot_items.dm:557
+/// CAPABILITIES(/obj/item/inflatable_dispenser) at code/modules/mob/living/silicon/robot/robot_items.dm:553
 /obj/item/inflatable_dispenser/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/robot_items.dm", 557, /obj/item/inflatable_dispenser)
-	into += entry_line(558)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_items.dm", 553, /obj/item/inflatable_dispenser)
+	into += entry_line(554)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/instrument) at code/modules/instruments/items.dm:18
@@ -6125,6 +6154,13 @@
 	into += entry_line(43)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
+/// CAPABILITIES(/obj/item/mining_scanner/robot) at code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:501
+/obj/item/mining_scanner/robot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm", 501, /obj/item/mining_scanner/robot)
+	into += entry_line(502)
+	into += list(global.op("range", global.hand(), global.gesture(GESTURE_ALT), global.then(PROC_REF(range_asked))))
+
 /// CAPABILITIES(/obj/item/miscdisc) at code/game/objects/items/contraband.dm:223
 /obj/item/miscdisc/declared_entries(list/into)
 	..(into)
@@ -6351,6 +6387,13 @@
 	into += list(global.owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge)))
 	into += entry_line(68)
 	into += list(global.owns_one(nameof(pai), /obj/item/paicard))
+
+/// CAPABILITIES(/obj/item/pen/robopen) at code/modules/mob/living/silicon/robot/robot_items.dm:139
+/obj/item/pen/robopen/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_items.dm", 139, /obj/item/pen/robopen)
+	into += entry_line(140)
+	into += list(global.op("robopen", global.in_hand(), global.label("Change colour or mode"), global.then(PROC_REF(interaction_robopen))))
 
 /// CAPABILITIES(/obj/item/perfect_tele) at code/game/objects/items/devices/translocator.dm:39
 /obj/item/perfect_tele/declared_entries(list/into)
@@ -7165,11 +7208,11 @@
 	into += entry_line(265)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/robo_dice) at code/modules/mob/living/silicon/robot/robot_items.dm:644
+/// CAPABILITIES(/obj/item/robo_dice) at code/modules/mob/living/silicon/robot/robot_items.dm:640
 /obj/item/robo_dice/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/robot_items.dm", 644, /obj/item/robo_dice)
-	into += entry_line(645)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_items.dm", 640, /obj/item/robo_dice)
+	into += entry_line(641)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/robot_module) at code/modules/mob/living/silicon/robot/robot_modules/station.dm:51
@@ -7191,6 +7234,13 @@
 	into += entry_block("code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm", 116, /obj/item/robot_tongue)
 	into += entry_line(117)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+
+/// CAPABILITIES(/obj/item/robotanalyzer) at code/modules/mob/living/silicon/robot/analyzer.dm:24
+/obj/item/robotanalyzer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/analyzer.dm", 24, /obj/item/robotanalyzer)
+	into += entry_line(25)
+	into += list(global.op("mode", global.hand(), global.gesture(GESTURE_ALT), global.then(PROC_REF(mode_toggled))))
 
 /// CAPABILITIES(/obj/item/robotic_multibelt) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:30
 /obj/item/robotic_multibelt/declared_entries(list/into)
@@ -7316,6 +7366,13 @@
 	into += entry_block("code/game/gamemodes/technomancer/spells/illusion.dm", 19, /obj/item/spell/illusion)
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(illusion), /mob/living/simple_mob/illusion))
+
+/// CAPABILITIES(/obj/item/stack/cable_coil/cyborg) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:242
+/obj/item/stack/cable_coil/cyborg/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_simple_items.dm", 242, /obj/item/stack/cable_coil/cyborg)
+	into += entry_line(243)
+	into += list(global.op("cyborg_coil_self", global.in_hand(), global.label("Change colour"), global.then(PROC_REF(cyborg_coil_self))))
 
 /// CAPABILITIES(/obj/item/stack/material/processed_alloy) at code/modules/materials/engineering/processed_material.dm:295
 /obj/item/stack/material/processed_alloy/declared_entries(list/into)
@@ -8148,11 +8205,11 @@
 	into += entry_line(69)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/surgical/bone_clamp, /obj/item/surgical/bonesetter, /obj/item/surgical/cautery, /obj/item/surgical/circular_saw, /obj/item/surgical/hemostat, /obj/item/surgical/retractor, /obj/item/surgical/scalpel, /obj/item/surgical/surgicaldrill, /obj/item/surgical/bonegel, /obj/item/surgical/FixOVein, /obj/item/stack/medical/advanced/bruise_pack, /obj/item/stack/nanopaste, /obj/item/healthanalyzer, /obj/item/autopsy_scanner, /obj/item/surgical/bioregen), max_size = ITEMSIZE_NORMAL)))
 
-/// CAPABILITIES(/obj/item/storage/internal/gripper) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:600
+/// CAPABILITIES(/obj/item/storage/internal/gripper) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:602
 /obj/item/storage/internal/gripper/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/robot_simple_items.dm", 600, /obj/item/storage/internal/gripper)
-	into += entry_line(601)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_simple_items.dm", 602, /obj/item/storage/internal/gripper)
+	into += entry_line(603)
 	into += list(global.configure(global.storage(max_size = ITEMSIZE_HUGE)))
 
 /// CAPABILITIES(/obj/item/storage/laundry_basket) at code/game/objects/items/weapons/storage/laundry_basket.dm:26

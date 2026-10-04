@@ -351,7 +351,7 @@
 	var/mob/living/silicon/robot/R = make_borg()
 	var/obj/item/borg/combat/shield/shield = allocate(/obj/item/borg/combat/shield, test_floor())
 	shield.forceMove(R)
-	shield.borg_shield_verb_set_level(R, null, null)
+	hcs_menu(R, shield, "set_level", "borg_shield_verb_set_level")
 	hci_answer(R, "75")
 	settle()
 	TEST_ASSERT_EQUAL(shield.shield_level, 0.75, "the chosen level is the shield's")
@@ -505,9 +505,9 @@
 // Click and menu entries of cyborg gear
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// A pick from `target`'s menu by op key: today the verb handler of the item (the entry is an interaction, not an op, so it has no key).
+/// A pick from `target`'s menu by op key.
 /proc/hcs_menu(mob/actor, atom/target, op_key, legacy_proc)
-	return call(target, legacy_proc)(actor, null, null)
+	return test_menu(actor, target, op_key)
 
 /datum/unit_test/dq_hc_silicon/shield_in_hand_asks_the_level
 

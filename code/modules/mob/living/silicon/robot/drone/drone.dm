@@ -252,14 +252,20 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 /mob/living/silicon/robot/drone/pick_module()
 	return
 
-EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, /obj/item/clothing/head, PROC_REF(drone_interaction_hat), "Put on hat", REQ_FIELD_NOT("hat")))
+CAPABILITIES(/mob/living/silicon/robot/drone)
+	op("hat", item(/obj/item/clothing/head), stance(I_HELP), when(PROC_REF(hatless)), label("Put on hat"), then(PROC_REF(hat_put_on)))
 
-/// Old attackby, in help: a hat goes on the drone, before the cyborg item handling.
-/mob/living/silicon/robot/drone/proc/drone_interaction_hat(mob/user, obj/item/held, datum/interaction/interaction)
+/// A drone with no hat takes one.
+/mob/living/silicon/robot/drone/proc/hatless(datum/act/op/A)
+	return !hat
+
+/// In help stance, a hat goes on the drone, before the cyborg item handling.
+/mob/living/silicon/robot/drone/proc/hat_put_on(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	user.unEquip(held)
 	place_on_head(held)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% on %T%."), item = held)
-	return TRUE
 
 /// Drones' wiring is always reachable.
 /mob/living/silicon/robot/drone/can_rewire()

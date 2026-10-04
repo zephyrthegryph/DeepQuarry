@@ -498,12 +498,12 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 	scan_time = 0.5 SECONDS
 	exact = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+CAPABILITIES(/obj/item/mining_scanner/robot)
+	op("range", hand(), gesture(GESTURE_ALT), then(PROC_REF(range_asked)))
 
-/// Old click_alt.
-/obj/item/mining_scanner/robot/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	change_size(user)
-	return TRUE
+/// Alt-click: ask the scan range.
+/obj/item/mining_scanner/robot/proc/range_asked(datum/act/op/A)
+	change_size(A.actor)
 
 /obj/item/mining_scanner/robot/proc/change_size(mob/user)
 	if(!exact)

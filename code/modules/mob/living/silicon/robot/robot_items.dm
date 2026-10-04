@@ -474,15 +474,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/borg/combat/shield, PERIODIC_SLOW, "recovering"
 /obj/item/borg/combat/shield/proc/recovering()
 	return !active || flash_count
 
-DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_VERB("Set shield level", PROC_REF(borg_shield_verb_set_level), REQ_IN_INVENTORY), \
-)
-
-/// Old attack_self.
-/obj/item/borg/combat/shield/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	borg_shield_verb_set_level(user)
-	return TRUE
+CAPABILITIES(/obj/item/borg/combat/shield)
+	op("level", in_hand(), then(PROC_REF(shield_ask_level)))
+	op("set_level", menu(), label("Set shield level"), needs(carried()), then(PROC_REF(shield_ask_level)))
 
 /// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
 /// or an overload starts it); otherwise it sleeps.
@@ -516,9 +510,9 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	user.update_icon()
 	COOLDOWN_START(src, overload_cooldown, shield_refresh)
 
-/// Old Set shield level verb.
-/obj/item/borg/combat/shield/proc/borg_shield_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(shield_level_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Shield Level", question = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), timeout = 0)
+/// Using the shield in hand, or its menu entry: ask the level.
+/obj/item/borg/combat/shield/proc/shield_ask_level(datum/act/op/A)
+	open_request(src, /datum/prompt/choice, PROC_REF(shield_level_chosen), answerer = A.actor, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Shield Level", question = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), timeout = 0)
 
 /obj/item/borg/combat/shield/proc/shield_level_chosen(datum/act/request/A)
 	if(!A.answer)
