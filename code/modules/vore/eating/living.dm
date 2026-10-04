@@ -772,9 +772,15 @@
 // proc with the answer), and the attack that asked counts as handled.
 
 /mob/living/proc/eat_held_mob(mob/living/user, mob/living/prey, mob/living/pred)
+	return vore_held_feed_stage(user, prey, pred)
+
+/mob/living/proc/vore_held_feed_stage(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
 	var/belly
 	if(user != pred)
-		belly = rerun_ask(user, "belly", PROC_REF(eat_held_mob), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		if(!prompted)
+			open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_held_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, feed_prey = prey, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+			return TRUE
+		belly = selected_belly
 		if(isnull(belly))
 			return TRUE
 	else
@@ -782,13 +788,25 @@
 	return perform_the_nom(user, prey, pred, belly)
 
 /mob/living/proc/feed_self_to_grabbed(mob/living/user, mob/living/pred)
-	var/belly = rerun_ask(user, "belly", PROC_REF(feed_self_to_grabbed), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+	return vore_self_feed_stage(user, pred)
+
+/mob/living/proc/vore_self_feed_stage(mob/living/user, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_self_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		return TRUE
+	var/belly = selected_belly
 	if(isnull(belly))
 		return TRUE
 	return perform_the_nom(user, user, pred, belly)
 
 /mob/living/proc/feed_grabbed_to_other(mob/living/user, mob/living/prey, mob/living/pred)
-	var/belly = rerun_ask(user, "belly", PROC_REF(feed_grabbed_to_other), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+	return vore_other_feed_stage(user, prey, pred)
+
+/mob/living/proc/vore_other_feed_stage(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_other_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, feed_prey = prey, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		return TRUE
+	var/belly = selected_belly
 	if(isnull(belly))
 		return TRUE
 	return perform_the_nom(user, prey, pred, belly)
@@ -1822,3 +1840,82 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	. = 0
 	for(var/category in INJURY_CATEGORY_PHYSICAL to INJURY_CATEGORY_NEURAL)
 		. += injury_load(category)
+
+/mob/living/proc/vore_held_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_held_feed_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore vore_held_feed replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/proc/vore_held_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_held_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.answer_value, TRUE)
+
+/mob/living/proc/vore_self_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_self_feed_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore vore_self_feed replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/proc/vore_self_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_self_feed_stage(ask.feed_operator, ask.feed_predator, ask.answer_value, TRUE)
+
+/mob/living/proc/vore_other_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_other_feed_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore vore_other_feed replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/proc/vore_other_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_other_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.answer_value, TRUE)
+
+/datum/prompt/choice/vore_feed_review
+	timeout = 0
+	var/mob/feed_operator
+	var/feed_operator_expected = FALSE
+	var/mob/feed_prey
+	var/feed_prey_expected = FALSE
+	var/mob/feed_predator
+	var/feed_predator_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/vore_feed_review)
+	ref_one(nameof(feed_operator), /mob)
+	ref_one(nameof(feed_prey), /mob)
+	ref_one(nameof(feed_predator), /mob)
+
+/datum/prompt/choice/vore_feed_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_feed_operator = feed_operator
+	feed_operator_expected = !isnull(captured_feed_operator)
+	rel_clear(src, nameof(feed_operator))
+	if(captured_feed_operator && !QDELETED(captured_feed_operator))
+		rel_set(src, nameof(feed_operator), captured_feed_operator)
+	var/mob/captured_feed_prey = feed_prey
+	feed_prey_expected = !isnull(captured_feed_prey)
+	rel_clear(src, nameof(feed_prey))
+	if(captured_feed_prey && !QDELETED(captured_feed_prey))
+		rel_set(src, nameof(feed_prey), captured_feed_prey)
+	var/mob/captured_feed_predator = feed_predator
+	feed_predator_expected = !isnull(captured_feed_predator)
+	rel_clear(src, nameof(feed_predator))
+	if(captured_feed_predator && !QDELETED(captured_feed_predator))
+		rel_set(src, nameof(feed_predator), captured_feed_predator)
+
+/datum/prompt/choice/vore_feed_review/recheck_extra()
+	if((feed_operator_expected && QDELETED(feed_operator)) || (feed_prey_expected && QDELETED(feed_prey)) || (feed_predator_expected && QDELETED(feed_predator)))
+		return "gone"
+	if(!isnull(answer_value))
+		var/obj/belly/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
