@@ -2340,6 +2340,17 @@
 	into += entry_line(206)
 	into += list(global.ref_one(nameof(bound), /mob/living/simple_mob))
 
+/// CAPABILITIES(/datum/prompt/choice/extract_foreign_body) at code/modules/surgery/cavity.dm:186
+/datum/prompt/choice/extract_foreign_body/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/surgery/cavity.dm", 186, /datum/prompt/choice/extract_foreign_body)
+	into += entry_line(187)
+	into += list(global.ref_one(nameof(subject), /mob/living/carbon/human))
+	into += entry_line(188)
+	into += list(global.ref_one(nameof(part), /obj/item/organ/external))
+	into += entry_line(189)
+	into += list(global.ref_one(nameof(tool), /obj/item))
+
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:121
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
 	..(into)
