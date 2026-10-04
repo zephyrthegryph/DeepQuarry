@@ -2377,6 +2377,20 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
+/// CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal) at code/game/objects/items/devices/scanners/sleevemate.dm:415
+/datum/prompt/choice/sleevemate_mindsteal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/sleevemate.dm", 415, /datum/prompt/choice/sleevemate_mindsteal)
+	into += entry_line(416)
+	into += list(global.ref_one(nameof(victim), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/choice/sleevemate_target) at code/game/objects/items/devices/scanners/sleevemate.dm:72
+/datum/prompt/choice/sleevemate_target/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/sleevemate.dm", 72, /datum/prompt/choice/sleevemate_target)
+	into += entry_line(73)
+	into += list(global.ref_one(nameof(sleevemate), /obj/item/sleevemate))
+
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
 /datum/prompt/color/paint_palette/declared_entries(list/into)
 	..(into)
