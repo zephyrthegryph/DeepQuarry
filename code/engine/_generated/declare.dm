@@ -2393,6 +2393,13 @@
 	into += entry_line(24)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/text/language_key) at code/modules/mob/language/language.dm:329
+/datum/prompt/text/language_key/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/language/language.dm", 329, /datum/prompt/text/language_key)
+	into += entry_line(330)
+	into += list(global.ref_one(nameof(language), /datum/language))
+
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
 	..(into)
@@ -4534,29 +4541,29 @@
 	into += entry_line(1143)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/bigdragon) at code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm:964
+/// CAPABILITIES(/mob/living/simple_mob/vore/bigdragon) at code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm:977
 /mob/living/simple_mob/vore/bigdragon/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm", 964, /mob/living/simple_mob/vore/bigdragon)
-	into += entry_line(965)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm", 977, /mob/living/simple_mob/vore/bigdragon)
+	into += entry_line(978)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
-	into += entry_line(966)
+	into += entry_line(979)
 	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
-	into += entry_line(967)
+	into += entry_line(980)
 	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
-	into += entry_line(968)
+	into += entry_line(981)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/set_style, login = TRUE))
-	into += entry_line(969)
+	into += entry_line(982)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/toggle_glow, login = TRUE))
-	into += entry_line(970)
+	into += entry_line(983)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle, login = TRUE))
-	into += entry_line(971)
+	into += entry_line(984)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/flame_toggle, login = TRUE))
-	into += entry_line(972)
+	into += entry_line(985)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/special_toggle, login = TRUE))
-	into += entry_line(973)
+	into += entry_line(986)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/export_style, login = TRUE))
-	into += entry_line(974)
+	into += entry_line(987)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/import_style, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk) at code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm:632
@@ -9122,11 +9129,11 @@
 	into += entry_line(310)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/slime_extract, /obj/item/slimepotion, /obj/item/reagent_containers/food/snacks/monkeycube), max_size = ITEMSIZE_NORMAL)))
 
-/// CAPABILITIES(/obj/item/storage/bagoplanets) at code/modules/vore/smoleworld/smoleworld.dm:414
+/// CAPABILITIES(/obj/item/storage/bagoplanets) at code/modules/vore/smoleworld/smoleworld.dm:415
 /obj/item/storage/bagoplanets/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/smoleworld/smoleworld.dm", 414, /obj/item/storage/bagoplanets)
-	into += entry_line(415)
+	into += entry_block("code/modules/vore/smoleworld/smoleworld.dm", 415, /obj/item/storage/bagoplanets)
+	into += entry_line(416)
 	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
 
 /// CAPABILITIES(/obj/item/storage/belt) at code/game/objects/items/weapons/storage/belt.dm:25
