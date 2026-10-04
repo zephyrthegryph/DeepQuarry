@@ -3,16 +3,19 @@
 	name = "color pin"
 
 /datum/integrated_io/color/ask_for_pin_data(mob/user)
-	om_ask(user, /datum/om/prompt/color/circuit, PROC_REF(color_chosen), title = "[src] color writing", message = "Please select a color.", default = data ? data : "#000000", subject = holder())
+	open_request(src, /datum/prompt/color/circuit, PROC_REF(color_chosen), answerer = user, title = "[src] color writing", question = "Please select a color.", default = data ? data : "#000000", subject = holder())
 
 /// A colour typed into a circuit (subject). Re-checked on the answer: the circuit can still be
 /// worked by hand (tgui physical state).
-/datum/om/prompt/color/circuit
-	requires = PROMPT_USABLE_BY("physical")
+/datum/prompt/color/circuit
+	usable_state = "physical"
+	timeout = 0
 
-/datum/integrated_io/color/proc/color_chosen(datum/om/prompt/color/circuit/ask)
-	to_chat(ask.answerer, span_notice("You input a <font color='[ask.picked_color]'>new color</font> into the pin."))
-	write_data_to_pin(ask.picked_color)
+/datum/integrated_io/color/proc/color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	to_chat(A.request.answerer, span_notice("You input a <font color='[A.answer.answer_value]'>new color</font> into the pin."))
+	write_data_to_pin(A.answer.answer_value)
 
 /datum/integrated_io/color/write_data_to_pin(new_data)
 	// Since this is storing the color as a string hex color code, we need to make sure it's actually one.
