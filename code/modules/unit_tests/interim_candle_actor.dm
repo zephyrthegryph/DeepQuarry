@@ -26,10 +26,13 @@
 		TEST_ASSERT(candle.lit, "a lit source ignites the actual candle")
 		TEST_ASSERT_EQUAL(candle.light_range, CANDLE_LUM, "ignition enables the candle's actual light")
 		TEST_ASSERT_EQUAL(candle.light_actor_ref, REF(user), "the ignition helper receives the explicit actor")
-		TEST_ASSERT_EQUAL(candle.wax, wax_before, "ignition preserves the remaining wax")
+		// A lit candle burns a unit of wax per flame step (every 2 s) during the 10 s wait: ignition keeps the wax it had, less that burn.
+		var/max_burn = (10 SECONDS) / (2 SECONDS) + 1
+		TEST_ASSERT(candle.wax <= wax_before && candle.wax >= wax_before - max_burn, "ignition preserves the remaining wax (less its burn): [wax_before] -> [candle.wax]")
+		var/wax_lit = candle.wax
 		hci_click(user, candle, source)
 		test_time(10 SECONDS)
-		TEST_ASSERT_EQUAL(candle.wax, wax_before, "lighting an already lit candle preserves its wax")
+		TEST_ASSERT(candle.wax <= wax_lit && candle.wax >= wax_lit - max_burn, "lighting an already lit candle preserves its wax (less its burn): [wax_lit] -> [candle.wax]")
 		hci_click(user, candle, candle)
 		test_time(10 SECONDS)
 		TEST_ASSERT(!candle.lit, "self interaction extinguishes the actual candle")
