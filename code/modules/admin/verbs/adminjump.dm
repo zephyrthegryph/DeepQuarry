@@ -89,19 +89,40 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 		to_chat(A, span_filter_adminlog("This mob is not located in the game world."))
 
 ADMIN_VERB(jumptocoord, R_ADMIN|R_MOD|R_DEBUG|R_EVENT,"Jump to Coordinate", "Jump to the target coordinates.", ADMIN_CATEGORY_GAME, tx as num|null, ty as num|null, tz as num|null)
+	return coordinate_jump_stage(user, list(tx, ty, tz), list())
+
+/datum/admin_verb/jumptocoord/proc/coordinate_jump_stage(client/user, list/original_coordinates, list/coordinate_answers)
+	var/tx = original_coordinates[1]
+	var/ty = original_coordinates[2]
+	var/tz = original_coordinates[3]
 	if(!CONFIG_GET(flag/allow_admin_jump))
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
 	if(!tx || !ty || !tz)
-		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/number, message = "Select the target x coordinate", title = "X Loc", default = 1, max = world.maxx, min = 1)
+		if(!("a2" in coordinate_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/number/coordinate_jump, PROC_REF(coordinate_jump_answered), answerer = user.mob, original_coordinates = original_coordinates, coordinate_answers = coordinate_answers, coordinate_key = "a2", question = "Select the target x coordinate", title = "X Loc", default = 1, window_max = world.maxx)
+			return
+		var/_answer_a2 = coordinate_answers["a2"]
 		if(isnull(_answer_a2))
 			return
 		tx = _answer_a2
-		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/number, message = "Select the target y coordinate", title = "Y Loc", default = 1, max = world.maxy, min = 1)
+		if(!("a3" in coordinate_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/number/coordinate_jump, PROC_REF(coordinate_jump_answered), answerer = user.mob, original_coordinates = original_coordinates, coordinate_answers = coordinate_answers, coordinate_key = "a3", question = "Select the target y coordinate", title = "Y Loc", default = 1, window_max = world.maxy)
+			return
+		var/_answer_a3 = coordinate_answers["a3"]
 		if(isnull(_answer_a3))
 			return
 		ty = _answer_a3
-		var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/number, message = "Select the target z coordinate", title = "Z Loc", default = 1, max = world.maxz, min = 1)
+		if(!("a4" in coordinate_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/number/coordinate_jump, PROC_REF(coordinate_jump_answered), answerer = user.mob, original_coordinates = original_coordinates, coordinate_answers = coordinate_answers, coordinate_key = "a4", question = "Select the target z coordinate", title = "Z Loc", default = 1, window_max = world.maxz)
+			return
+		var/_answer_a4 = coordinate_answers["a4"]
 		if(isnull(_answer_a4))
 			return
 		tz = _answer_a4
@@ -329,3 +350,49 @@ CAPABILITIES(/datum/prompt/number/move_atom_coord)
 		message_admins("[key_name_admin(user)] jumped [AM] to coordinates [tx], [ty], [tz]")
 	else
 		tgui_alert_async(user, "Admin jumping disabled")
+
+/datum/prompt/number/coordinate_jump
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+	var/list/original_coordinates
+	var/list/coordinate_answers
+	var/coordinate_key
+	var/window_max = INFINITY
+
+/datum/prompt/number/coordinate_jump/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/number/coordinate_jump/present(mob/user)
+	var/datum/tgui_input_number/prompt/window = new(user, question, title || "Number Input", default || 0, isnull(window_max) ? INFINITY : window_max, 1, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(window, nameof(window.prompt), src)
+	window.tgui_interact(user)
+	return window
+
+/proc/coordinate_jump_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/jumptocoord/proc/coordinate_jump_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(coordinate_jump_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(!admin_can(user, permissions))
+		admin_log_denial(user, "verb:[src.type]", permissions)
+		to_chat(user, span_adminnotice("You lack the permissions to do this."))
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/datum/prompt/number/coordinate_jump/ask = context.answer
+	var/list/coordinate_answers = ask.coordinate_answers.Copy()
+	coordinate_answers[ask.coordinate_key] = ask.answer_value
+	return coordinate_jump_stage(user, ask.original_coordinates, coordinate_answers)

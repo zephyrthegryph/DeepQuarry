@@ -15,5 +15,5 @@
 	TEST_ASSERT(light.on && light.flickering, "Randomized continuation cannot run before its half-second minimum")
 	test_time(1.2 SECONDS)
 	own_turf_contents(surface)
-	TEST_ASSERT(!light.on, "Continuation restores the original off state within its one-and-a-half-second maximum")
+	TEST_ASSERT(!light.on, "Continuation restores the original off state after its one-and-a-half-second upper bound")
 	TEST_ASSERT(!light.flickering, "Production continuation finishes the actual flicker cycle")

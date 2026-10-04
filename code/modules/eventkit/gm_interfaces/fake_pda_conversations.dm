@@ -18,13 +18,13 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 		return
 
 	if(choice == "Delete holder")
-		QDEL_NULL(user.fakeConversations)
+		QDEL_NULL(user.fakeConversations) // ALLOW(ownership): /client is not a datum; its session disposes this directly held conversation model on disconnect
 		return
 	if(choice == "Cancel")
 		return
 
 	if(!user.fakeConversations || !istype(user.fakeConversations, /datum/eventkit/fake_pdaconvos))
-		user.fakeConversations = new /datum/eventkit/fake_pdaconvos
+		user.fakeConversations = new /datum/eventkit/fake_pdaconvos // ALLOW(ownership): /client is not a datum; its session disposes this directly held conversation model on disconnect
 
 	var/datum/eventkit/fake_pdaconvos/FPC = user.fakeConversations
 
