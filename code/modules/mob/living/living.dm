@@ -89,22 +89,28 @@
 	set name = "Succumb to death"
 	set category = VERB_CAT_IC_GAME
 	set desc = "Press this button if you are in crit and wish to die. Use this sparingly (ending a scene, no medical, etc.)"
-	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_ask_again), title = "Confirm wish to succumb", message = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?", no_first = TRUE)
+	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_ask_again), answerer = src, choices = list("No", "Yes"), title = "Confirm wish to succumb", question = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?")
 
 /// One of the two succumb confirmations. A no or a cancel keeps the mob alive.
-/datum/om/prompt/confirm/succumb
+/datum/prompt/choice/succumb
+	timeout = 0
+	buttons = TRUE
 
-/datum/om/prompt/confirm/succumb/declined()
-	to_chat(answerer, span_blue("You chose to live another day."))
-
-/datum/om/prompt/confirm/succumb/cancelled()
-	to_chat(answerer, span_blue("You chose to live another day."))
-
-/mob/living/proc/succumb_ask_again(datum/om/prompt/confirm/succumb/ask)
+/mob/living/proc/succumb_ask_again(datum/act/request/A)
+	var/datum/prompt/choice/succumb/ask = A.request
+	if(!A.answer || ask.value != "Yes")
+		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+			to_chat(src, span_blue("You chose to live another day."))
+		return
 	//Swapped answers to protect from accidental double clicks.
-	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_answered), title = "Are you sure?", message = "Pressing this buttom will really kill you, no going back")
+	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_answered), answerer = src, choices = list("Yes", "No"), title = "Are you sure?", question = "Pressing this buttom will really kill you, no going back")
 
-/mob/living/proc/succumb_answered(datum/om/prompt/confirm/succumb/ask)
+/mob/living/proc/succumb_answered(datum/act/request/A)
+	var/datum/prompt/choice/succumb/ask = A.request
+	if(!A.answer || ask.value != "Yes")
+		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+			to_chat(src, span_blue("You chose to live another day."))
+		return
 	if (is_critical() && stat != DEAD)
 		src.death()
 		to_chat(src, span_blue("You have given up life and succumbed to death."))
@@ -1278,24 +1284,26 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/ask_metainfo(mob/user, field, reopen = TRUE, list/chain)
 	var/list/F = metainfo_field(field)
 	var/message = F[3] ? "Enter any information you'd like others to see relating to your [F[3]] roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty." : "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!"
-	om_ask(src, /datum/om/prompt/text/metainfo, PROC_REF(metainfo_entered), message = message, default = html_decode(identity().vars[F[1]]), field = field, reopen = reopen, chain = chain)
+	open_request(src, /datum/prompt/text/metainfo, PROC_REF(metainfo_entered), answerer = src, question = message, default = html_decode(identity().vars[F[1]]), field = field, reopen = reopen, chain = chain)
 
 /// One OOC note field. A cancel skips to the next field of the chain.
-/datum/om/prompt/text/metainfo
+/datum/prompt/text/metainfo
+	timeout = 0
 	title = "Game Preference"
 	multiline = TRUE
 	var/field
 	var/reopen = TRUE
 	var/list/chain
 
-/datum/om/prompt/text/metainfo/cancelled()
-	var/mob/living/L = answerer
-	L?.metainfo_skipped(src)
-
-/mob/living/proc/metainfo_entered(datum/om/prompt/text/metainfo/ask)
+/mob/living/proc/metainfo_entered(datum/act/request/A)
+	var/datum/prompt/text/metainfo/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value))
+			metainfo_skipped(ask)
+		return
 	var/field = ask.field
 	var/list/F = metainfo_field(field)
-	var/new_metadata = strip_html_simple(ask.text)
+	var/new_metadata = strip_html_simple(ask.value)
 	if(new_metadata && CanUseTopic(src))
 		if(F[3] && new_metadata == "!clear")
 			new_metadata = ""
@@ -1308,7 +1316,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	metainfo_skipped(ask)
 
 /// Asks the next field of the chain, if any.
-/mob/living/proc/metainfo_skipped(datum/om/prompt/text/metainfo/ask)
+/mob/living/proc/metainfo_skipped(datum/prompt/text/metainfo/ask)
 	var/list/chain = ask.chain
 	if(!length(chain))
 		return
