@@ -122,9 +122,9 @@
 
 /datum/trait_state/radiation_effects/attach()
 	..()
-	om_hook(owner, /datum/om/event/before/handle_radiation, src, PROC_REF(on_handle_radiation))
-	om_hook(owner, /datum/om/event/before/living_irradiate_effect, src, PROC_REF(on_irradiate_effect))
-	om_hook(owner, /datum/om/event/before/geiger_counter_scan, src, PROC_REF(on_geiger_counter_scan))
+	observe(owner, /datum/act/live_radiation, src, instead(then(PROC_REF(on_handle_radiation))))
+	observe(owner, /datum/act/irradiate, src, instead(then(PROC_REF(on_irradiate_effect))))
+	observe(owner, /datum/act/geiger_scan, src, instead(then(PROC_REF(on_geiger_counter_scan))))
 
 /// Removes the control-panel verb and the radiation glow filter.
 /datum/trait_state/radiation_effects/detach()
@@ -166,9 +166,9 @@
 			if(!filter)
 				create_toony_glow()
 
-/datum/trait_state/radiation_effects/proc/on_handle_radiation(datum/source, datum/om/event/before/handle_radiation/event)
+/datum/trait_state/radiation_effects/proc/on_handle_radiation(datum/act/live_radiation/tick)
 	EVENT_HANDLER
-	return process_component()
+	return process_component() ? TRUE : HOOK_DECLINE
 
 ///Handles the radiation removal, immunity, and healing effects.
 /datum/trait_state/radiation_effects/proc/process_component()
@@ -238,9 +238,9 @@
 
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
-/datum/trait_state/radiation_effects/proc/on_irradiate_effect(mob/living/living_guy, datum/om/event/before/living_irradiate_effect/event)
+/datum/trait_state/radiation_effects/proc/on_irradiate_effect(datum/act/irradiate/dose)
 	EVENT_HANDLER
-	return handle_irradiate_effect(living_guy, event.effect, event.stun, event.blocked, event.check_protection, event.rad_protection)
+	return handle_irradiate_effect(dose.target, dose.effect, IRRADIATE, dose.blocked, dose.check_protection, dose.rad_protection) ? TRUE : HOOK_DECLINE
 
 /datum/trait_state/radiation_effects/proc/handle_irradiate_effect(mob/living/living_guy, effect, effecttype, blocked, check_protection, rad_protection)
 	///If we're not contaminating, don't worry about this. Proceed like normal.
@@ -332,16 +332,18 @@ UI_ACT_PROC(/datum/trait_state/radiation_effects, ui_act_toggle_nutrition)
 	animate(filter, alpha = 110, time = 1.5 SECONDS, loop = -1)
 	animate(alpha = 40, time = 2.5 SECONDS)
 
-/datum/trait_state/radiation_effects/proc/on_geiger_counter_scan(mob/living/living_source, datum/om/event/before/geiger_counter_scan/event)
+/datum/trait_state/radiation_effects/proc/on_geiger_counter_scan(datum/act/geiger_scan/scan)
 	EVENT_HANDLER
-	var/mob/user = event.user
-	var/obj/item/geiger/geiger_counter = event.geiger_counter
+	var/mob/living/living_source = scan.target
+	var/mob/user = scan.user
+	var/obj/item/geiger/geiger_counter = scan.counter
 	if(living_source.radiation > 0)
 		if(contamination && living_source.radiation > contamination_threshold) //Are we spreading radiation?
 			to_chat(user, span_bolddanger("[icon2html(geiger_counter, user)] Subject is irradiated and offputting radiation."))
 		else
 			to_chat(user, span_bolddanger("[icon2html(geiger_counter, user)] Subject is irradiated."))
-		return GEIGER_COUNTER_SCAN_SUCCESSFUL
+		return TRUE
+	return HOOK_DECLINE
 
 /mob/living/proc/get_radiation_state()
 	RETURN_TYPE(/datum/trait_state/radiation_effects)

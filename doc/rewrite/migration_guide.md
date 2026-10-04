@@ -1086,7 +1086,7 @@ About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. 
 	target_single = TRUE
 	on_target_delete = OM_END_DELETE_OTHER
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
-	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
+	unobserve(target, /datum/notice/living_turf_collision, source)
 	if(target.throwing == source)
 		rel_clear(target, "throwing")
 ... om_link(src, thrownthing, /datum/om/relation/throw_of)

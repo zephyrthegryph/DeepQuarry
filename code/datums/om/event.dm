@@ -126,36 +126,13 @@
 				i = (at ? at : i - 1) + 1
 			else
 				i++
-	if(rec.hooks_in)
-		// Hooks honour event ancestry, as behaviours do: a hook on /datum/om/event/x
-		// also hears x's subtypes. Most-derived first.
-		for(var/path in (e ? reg.event_lineage[e] : list(etype)))
-			var/list/hooks = rec.hooks_in?[path]
-			if(!hooks)
-				continue
-			// A handler may hook or unhook while we deliver.
-			hooks = hooks.Copy()
-			for(var/i in 1 to length(hooks) step 2)
-				var/datum/listener = hooks[i]
-				// A listener whose OM state is torn down never hears anything: a batched destroy
-				// leaves its hooks on a doomed source for that source's own teardown to drop.
-				if(!listener?.om_rec)
-					continue
-				var/result = call(listener, hooks[i + 1])(E, event)
-				if(isnum(result) && result)
-					event.result |= result
-					if(veto && result == EVENT_VETO)
-						return EVENT_VETO
-				if(rec.torn_down)
-					return null
 	if(rec.task_interrupts?[etype])
 		for(var/datum/om/task/T as anything in rec.tasks.Copy())
 			if(T.spec.compiled_interrupts?[etype])
 				om_task_cancel(T, "interrupted")
 	return null
 
-/// TRUE when a started behaviour on E handles `path`, something hooked it (or an
-/// ancestor event) on E (om_hook), or a task on E is interrupted by it. Senders on
+/// TRUE when a started behaviour on E handles `path`, or a task on E is interrupted by it. Senders on
 /// hot paths (movement, examine) test this before allocating the event, so entities
 /// with no interested behaviour pay a lookup.
 /proc/om_wants(datum/E, path)
@@ -165,7 +142,7 @@
 		if(twins && twins[path])
 			. = event_twin_wanted(E, path)
 
-/// om_wants() without the notice twin: does an om_hook, a behaviour or a task interrupt of E take this event?
+/// om_wants() without the notice twin: does a behaviour or a task interrupt of E take this event?
 /proc/om_wants_direct(datum/E, path)
 	if(shared_cache_event_types && E == GLOB.om_world && shared_cache_event_types[path])
 		return TRUE
@@ -176,10 +153,6 @@
 		return TRUE
 	var/datum/om/registry/reg = om_registry()
 	var/e = reg.event_idx[path]
-	if(rec.hooks_in)
-		for(var/p in (e ? reg.event_lineage[e] : list(path)))
-			if(rec.hooks_in[p])
-				return TRUE
 	var/list/flags = e ? reg.event_handlers[e] : null
 	if(!flags)
 		return FALSE

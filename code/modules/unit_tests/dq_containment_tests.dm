@@ -55,25 +55,25 @@
 	var/list/events
 
 /datum/dq_containment_listener/proc/watch(atom/holder)
-	om_hook(holder, /datum/om/event/before/slot_pre_insert, src, PROC_REF(on_pre_insert))
-	om_hook(holder, /datum/om/event/before/slot_pre_remove, src, PROC_REF(on_pre_remove))
-	om_hook(holder, /datum/om/event/slot_inserted, src, PROC_REF(on_inserted))
-	om_hook(holder, /datum/om/event/slot_removed, src, PROC_REF(on_removed))
+	observe(holder, /datum/act/check_insert, src, instead(when(PROC_REF(blocks_insert))))
+	observe(holder, /datum/act/check_remove, src, instead(when(PROC_REF(blocks_remove))))
+	observe(holder, /datum/notice/slot_inserted, src, then(PROC_REF(on_inserted)))
+	observe(holder, /datum/notice/slot_removed, src, then(PROC_REF(on_removed)))
 
-/datum/dq_containment_listener/proc/on_pre_insert(atom/source, datum/om/event/before/slot_pre_insert/event)
-	EVENT_HANDLER
-	return block_insert ? COMPONENT_SLOT_BLOCK : NONE
+/datum/dq_containment_listener/proc/blocks_insert(datum/act/check_insert/check)
+	return block_insert
 
-/datum/dq_containment_listener/proc/on_pre_remove(atom/source, datum/om/event/before/slot_pre_remove/event)
-	EVENT_HANDLER
-	return block_remove ? COMPONENT_SLOT_BLOCK : NONE
+/datum/dq_containment_listener/proc/blocks_remove(datum/act/check_remove/check)
+	return block_remove
 
-/datum/dq_containment_listener/proc/on_inserted(atom/source, datum/om/event/slot_inserted/event)
+/datum/dq_containment_listener/proc/on_inserted(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/slot_inserted/event = N
 	LAZYADD(events, "in:[event.slot_id]")
 
-/datum/dq_containment_listener/proc/on_removed(atom/source, datum/om/event/slot_removed/event)
+/datum/dq_containment_listener/proc/on_removed(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/slot_removed/event = N
 	LAZYADD(events, "out:[event.slot_id]")
 
 /// An open floor turf with open floor to its east (the test map has no

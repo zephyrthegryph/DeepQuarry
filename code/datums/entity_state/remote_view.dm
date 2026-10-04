@@ -83,13 +83,13 @@ CAPABILITIES(/datum/remote_view)
 		observe(host_mob, /datum/notice/mob_death, src, then(PROC_REF(handle_endview)))
 	// Handle relayed movement
 	if(settings.relay_movement)
-		om_hook(host_mob, /datum/om/event/before/mob_relay_movement, src, PROC_REF(handle_relay_movement))
+		observe(host_mob, /datum/act/relay_movement, src, instead(then(PROC_REF(handle_relay_movement))))
 	observe(host_mob, /datum/notice/mob_handle_vision, src, then(PROC_REF(handle_mob_vision_update)))
 	// Hud overrides
 	if(settings.override_entire_hud)
-		om_hook(host_mob, /datum/om/event/before/mob_handle_hud, src, PROC_REF(handle_hud_override))
+		observe(host_mob, /datum/act/draw_hud, src, instead(then(PROC_REF(handle_hud_override))))
 	if(settings.override_health_hud)
-		om_hook(host_mob, /datum/om/event/before/mob_handle_hud_health_icon, src, PROC_REF(handle_hud_health))
+		observe(host_mob, /datum/act/draw_health_icon, src, instead(then(PROC_REF(handle_hud_health))))
 	if(settings.override_darkvision_hud)
 		observe(host_mob, /datum/notice/mob_handle_hud_darksight, src, then(PROC_REF(handle_hud_darkvision)))
 	// Recursive move fires this, we only want it to handle stuff like being inside a paicard when releasing turf lock
@@ -120,7 +120,7 @@ CAPABILITIES(/datum/remote_view)
 	. = ..()
 	if(!host_mob)
 		return
-	om_unhook_all(src)
+	unobserve_all(src)
 	// Phase 2 then takes us out of host_mob.remote_view (the mob owns its view).
 	// Reset to default size
 	host_mob.set_viewsize()
@@ -276,29 +276,29 @@ CAPABILITIES(/datum/remote_view)
 
 // Optional event handlers for more advanced remote views
 
-/datum/remote_view/proc/handle_relay_movement(datum/source, datum/om/event/before/mob_relay_movement/event)
+/datum/remote_view/proc/handle_relay_movement(datum/act/relay_movement/move)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
-		return FALSE
-	return settings.handle_relay_movement(src, host_mob, event.direction)
+		return HOOK_DECLINE
+	return settings.handle_relay_movement(src, host_mob, move.direction) ? TRUE : HOOK_DECLINE
 
-/datum/remote_view/proc/handle_hud_override(datum/source, datum/om/event/before/mob_handle_hud/event)
+/datum/remote_view/proc/handle_hud_override(datum/act/draw_hud/draw)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
-		return
-	return settings.handle_hud_override(src, host_mob)
+		return HOOK_DECLINE
+	return settings.handle_hud_override(src, host_mob) ? TRUE : HOOK_DECLINE
 
-/datum/remote_view/proc/handle_hud_health(datum/source, datum/om/event/before/mob_handle_hud_health_icon/event)
+/datum/remote_view/proc/handle_hud_health(datum/act/draw_health_icon/draw)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
-		return
-	return settings.handle_hud_health(src, host_mob)
+		return HOOK_DECLINE
+	return settings.handle_hud_health(src, host_mob) ? TRUE : HOOK_DECLINE
 
 /datum/remote_view/proc/handle_hud_darkvision(datum/act/notice/A)
 	EVENT_HANDLER

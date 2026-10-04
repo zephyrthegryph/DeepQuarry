@@ -64,11 +64,12 @@
 		return 0
 	if(om_has(src, EFFECT_GODMODE))
 		return 0
-	if(om_wants(src, /datum/om/event/before/living_injure))
-		var/list/amount_ref = list(amount)
-		if(OM_EMIT(src, /datum/om/event/before/living_injure, kind, amount_ref, zone, source, flags) & COMPONENT_CANCEL_INJURY)
-			return 0
-		amount = amount_ref[1]
+	// A hook on the mob refuses the injury (a stasis field) or changes its amount in flight (a cluster that soaks it): doc section 8.
+	var/datum/act/injure/hit = ACT_TRY(src, injure, kind, amount, zone, source, flags)
+	if(!hit)
+		return 0
+	amount = ACT_FINAL(hit, amount, amount)
+	act_done(hit)
 	var/list/explain = (injury_trace || om_wants(src, /datum/om/event/living_injury_explained)) ? list() : null
 	var/incoming_kind = kind
 	var/before = amount

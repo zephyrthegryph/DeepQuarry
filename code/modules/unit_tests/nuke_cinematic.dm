@@ -35,7 +35,7 @@
 	var/old_paused = SSticker.roundend_check_paused
 	SSticker.roundend_check_paused = TRUE
 
-	om_hook(OM_WORLD, /datum/om/event/before/world_play_cinematic, src, PROC_REF(check_cinematic))
+	observe(OM_WORLD, /datum/act/play_cinematic, src, adjusts_with(PROC_REF(check_cinematic)))
 
 	// Drive the exact production entry point the nuke self-destruct uses. Empty
 	// watcher list => no client show_to path is exercised (that path is NOT
@@ -44,7 +44,7 @@
 	// play_cinematic() returns.
 	var/datum/cinematic/nuke/self_destruct/playing = play_cinematic(/datum/cinematic/nuke/self_destruct, list())
 
-	om_unhook(OM_WORLD, /datum/om/event/before/world_play_cinematic, src)
+	unobserve(OM_WORLD, /datum/act/play_cinematic, src)
 	SSticker.roundend_check_paused = old_paused
 
 	TEST_ASSERT_NOTNULL(playing, "play_cinematic() did not return a cinematic datum.")
@@ -64,9 +64,9 @@
 	// would fire clean_up_cinematic on an already-deleted cinematic.
 
 /// Used to track whenever a cinematic starts playing, so we can check if it's the right one.
-/datum/unit_test/nuke_cinematic/proc/check_cinematic(datum/source, datum/om/event/before/world_play_cinematic/event)
+/datum/unit_test/nuke_cinematic/proc/check_cinematic(datum/act/play_cinematic/play)
 	EVENT_HANDLER
-	var/datum/cinematic/playing = event.new_cinematic
+	var/datum/cinematic/playing = play.cinematic
 
 	cinematic_playing_type = playing.type
 	if(istype(playing, /datum/cinematic/nuke/self_destruct))

@@ -14,23 +14,25 @@
 	var/stat_at_death
 
 /datum/dq_vital_listener/proc/watch(mob/living/L)
-	om_hook(L, /datum/om/event/mob_death, src, PROC_REF(on_death))
-	om_hook(L, /datum/om/event/living_death_final, src, PROC_REF(on_final))
-	om_hook(L, /datum/om/event/living_revived, src, PROC_REF(on_revived))
+	observe(L, /datum/notice/mob_death, src, then(PROC_REF(on_death)))
+	observe(L, /datum/notice/living_death_final, src, then(PROC_REF(on_final)))
+	observe(L, /datum/notice/living_revived, src, then(PROC_REF(on_revived)))
 
-/datum/dq_vital_listener/proc/on_death(mob/living/source, datum/om/event/mob_death/event)
+/datum/dq_vital_listener/proc/on_death(datum/act/notice/N)
 	EVENT_HANDLER
+	var/mob/living/source = N.target
 	deaths++
 	stat_at_death = source.stat
 
-/datum/dq_vital_listener/proc/on_final(mob/living/source, datum/om/event/living_death_final/event)
+/datum/dq_vital_listener/proc/on_final(datum/act/notice/N)
 	EVENT_HANDLER
 	finals++
 
-/datum/dq_vital_listener/proc/on_revived(mob/living/source, datum/om/event/living_revived/event)
+/datum/dq_vital_listener/proc/on_revived(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/living_revived/event = N
 	revivals++
-	rel_set(src, nameof(last_revive_source), event.source)
+	rel_set(src, nameof(last_revive_source), event.source_)
 	last_revive_reason = event.reason
 
 // --- Death pipeline ------------------------------------------------------------------------
@@ -282,16 +284,12 @@
 
 /datum/unit_test/dq_vital_predicates_dying/Run()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
-	om_hook(M, /datum/om/event/before/living_body_status, src, PROC_REF(keep_alive))
+	observe(M, /datum/act/body_status, src, instead())
 	M.injure(INJURY_BLUNT, M.get_endurance() * 3, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	TEST_ASSERT(M.is_alive(), "the keep-alive should hold off death while lethally hurt")
 	TEST_ASSERT(M.body.is_lethal(), "the injuries are lethal")
 	TEST_ASSERT(M.is_dying(), "alive with lethal injuries is dying")
 	TEST_ASSERT_EQUAL(M.vital_band(), VITAL_BAND_DYING, "the dying band")
-	om_unhook(M, /datum/om/event/before/living_body_status, src)
-
-/datum/unit_test/dq_vital_predicates_dying/proc/keep_alive(mob/living/source, datum/om/event/before/living_body_status/event)
-	EVENT_HANDLER
-	return COMPONENT_BODY_KEEP_ALIVE
+	unobserve(M, /datum/act/body_status, src)
 
 #endif

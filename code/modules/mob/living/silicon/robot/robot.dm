@@ -395,7 +395,8 @@
 		return
 	var/obj/item/cell/old_cell = cell
 	if(old_cell)
-		om_unhook(old_cell, list(/datum/om/event/before/atom_pre_emp_act, /datum/om/event/qdeleting), src)
+		unobserve(old_cell, /datum/act/emp, src)
+		unobserve(old_cell, /datum/notice/qdeleting, src)
 	if(new_cell && new_cell.loc != src)
 		new_cell.forceMove(src)
 	rel_set(src, nameof(cell), new_cell)
@@ -406,7 +407,7 @@
 	if(old_cell && new_cell && mount?.wrapped == old_cell)
 		consume(mount.uninstall())
 	if(new_cell)
-		om_hook(new_cell, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(shield_cell_from_emp))
+		observe(new_cell, /datum/act/emp, src, adjusts_with(PROC_REF(shield_cell_from_emp)))
 		global.observe(new_cell, /datum/notice/qdeleting, src, then(PROC_REF(on_cell_deleted)))
 		if(mount && mount.wrapped != new_cell)
 			mount.install(new_cell)
@@ -424,9 +425,9 @@
 	set_cell(null)
 	return old_cell
 
-/mob/living/silicon/robot/proc/shield_cell_from_emp(datum/source, datum/om/event/before/atom_pre_emp_act/event)
+/mob/living/silicon/robot/proc/shield_cell_from_emp(datum/act/emp/pulse)
 	EVENT_HANDLER
-	return EMP_PROTECT_SELF
+	pulse.protection |= EMP_PROTECT_SELF
 
 /mob/living/silicon/robot/proc/on_cell_deleted(datum/act/notice/A)
 	EVENT_HANDLER

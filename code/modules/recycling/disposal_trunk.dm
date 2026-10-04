@@ -42,8 +42,10 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/trunk, INTERACT_ITEM(null, PROC
 		return ..()		// so do base transfer proc
 
 	if(linked())
-		if(OM_EMIT(src, /datum/om/event/before/disposal_send, H))
+		var/datum/act/send_disposal/send = ACT_TRY(src, send_disposal, H)
+		if(!send)
 			return //Sent, and handled. Our job is done.
+		act_cancel(send)
 
 	pipe_expel(H, get_turf(src), 0) // expel at turf if nothing handled it
 

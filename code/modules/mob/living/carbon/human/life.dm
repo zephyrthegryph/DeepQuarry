@@ -385,7 +385,7 @@
 
 /// MED-6: no dose and nothing accumulated to dissipate.
 /datum/om/stage/life/radiation/carbon/human/idle(mob/living/carbon/human/self)
-	return !self.radiation && !self.accumulated_rads && !om_wants(self, /datum/om/event/before/handle_radiation)
+	return !self.radiation && !self.accumulated_rads && !act_wanted(self, /datum/act/live_radiation)
 
 /datum/om/stage/life/radiation/carbon/human/rewake_delay(mob/living/carbon/human/self)
 	return 5 SECONDS
@@ -1511,7 +1511,7 @@
 /// A24: nothing for others to see (no hud_updateflag) and nothing on our own screen that moves
 /// on its own: no client, or a settled conscious body with no fading overlay.
 /mob/living/carbon/human/life_hud_idle()
-	if(src.hud_updateflag || om_wants(src, /datum/om/event/before/mob_handle_hud))
+	if(src.hud_updateflag || act_wanted(src, /datum/act/draw_hud))
 		return FALSE
 	if(!src.client)
 		return TRUE

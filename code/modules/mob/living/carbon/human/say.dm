@@ -1,7 +1,8 @@
 /mob/living/carbon/human/GetAltName()
-	var/list/name_data = list(null)
-	if(OM_EMIT(src, /datum/om/event/before/human_get_alt_name, name_data) & COMPONENT_ALT_NAME_CHANGED)
-		return name_data[1]
+	var/datum/act/name_alt/alt = ACT_TRY(src, name_alt)
+	if(!alt)
+		return ACT_REPLY
+	act_cancel(alt)
 
 	if(absorbed && isbelly(loc))
 		var/obj/belly/B = loc
@@ -94,13 +95,11 @@
 	return ..()
 
 /mob/living/carbon/human/GetVoice()
-	// Allow components to override voice (e.g., shadekin phase hiding).
-	// Only allocate the signal payload list when a handler is actually registered
-	// (GetVoice runs every Life() tick per human; the list(null) alloc is otherwise wasted).
-	if(om_wants(src, /datum/om/event/before/human_get_voice))
-		var/list/voice_data = list(null)
-		if(OM_EMIT(src, /datum/om/event/before/human_get_voice, voice_data) & COMPONENT_VOICE_CHANGED)
-			return voice_data[1]
+	// A hook on the mob may speak for it (shadekin phase hiding): the voice it answers replaces the rest. Nothing is allocated when nothing hooks it.
+	var/datum/act/name_voice/voice = ACT_TRY(src, name_voice)
+	if(!voice)
+		return ACT_REPLY
+	act_cancel(voice)
 
 	// Normal voice determination logic
 	var/voice_sub

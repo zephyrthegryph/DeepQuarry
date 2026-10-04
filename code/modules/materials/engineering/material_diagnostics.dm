@@ -27,21 +27,22 @@
 	var/monitor_stored_energy = 0
 
 /datum/material_service/proc/register_diagnostics()
-	om_hook(owner(), /datum/om/event/before/atom_tool_act, src, PROC_REF(on_tool_act))
-	om_hook(owner(), /datum/om/event/before/attackby, src, PROC_REF(replace_with_stock))
+	observe(owner(), /datum/act/tool_act, src, instead(then(PROC_REF(on_tool_act))))
+	observe(owner(), /datum/act/attackby, src, instead(then(PROC_REF(replace_with_stock))))
 	observe(owner(), /datum/notice/examine, src, then(PROC_REF(examine_service)))
 
 /// Secondary multitool / screwdriver use on the owner.
-/datum/material_service/proc/on_tool_act(datum/source, datum/om/event/before/atom_tool_act/event)
+/datum/material_service/proc/on_tool_act(datum/act/tool_act/use)
 	EVENT_HANDLER
-	if(!event.secondary)
-		return NONE
-	switch(event.tool_quality)
+	if(!use.secondary)
+		return HOOK_DECLINE
+	var/result = NONE
+	switch(use.tool_quality)
 		if(TOOL_MULTITOOL)
-			return inspect_with_tool(source, event.user, event.tool)
+			result = inspect_with_tool(use.target, use.user, use.tool)
 		if(TOOL_SCREWDRIVER)
-			return open_service_cover(source, event.user, event.tool)
-	return NONE
+			result = open_service_cover(use.target, use.user, use.tool)
+	return result ? result : HOOK_DECLINE
 
 /obj/proc/material_diagnostics_tool_act(mob/user, obj/item/tool)
 	if(!has_functional_construction() || !tool?.has_tool_quality(TOOL_MULTITOOL))
@@ -52,7 +53,9 @@
 	return service.inspect_with_tool(src, user, tool)
 
 /datum/material_service/proc/unregister_diagnostics()
-	om_unhook(owner(), list(/datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby, /datum/om/event/examine), src)
+	unobserve(owner(), /datum/act/tool_act, src)
+	unobserve(owner(), /datum/act/attackby, src)
+	unobserve(owner(), /datum/notice/examine, src)
 	rel_clear(src, nameof(monitor_tool))
 	rel_clear(src, nameof(monitor_user))
 	last_reading = null
@@ -103,14 +106,14 @@
 	act_message(user, owner(), others = span_notice("%U% [maintenance_open ? "opens" : "closes"] [owner()]'s service cover."))
 	return ITEM_INTERACT_SUCCESS
 
-/datum/material_service/proc/replace_with_stock(datum/source, datum/om/event/before/attackby/event)
+/datum/material_service/proc/replace_with_stock(datum/act/attackby/use)
 	EVENT_HANDLER
-	var/obj/item/item = event.item
-	var/mob/user = event.user
+	var/obj/item/item = use.item
+	var/mob/user = use.user
 	if(!maintenance_open || !istype(item, /obj/item/stack/material))
-		return NONE
+		return HOOK_DECLINE
 	INVOKE_ASYNC(src, PROC_REF(fit_stock), item, user) // ALLOW(scheduler): callee prompts (tgui_input_list)
-	return COMPONENT_CANCEL_ATTACK_CHAIN
+	return TRUE
 
 /datum/material_service/proc/fit_stock(obj/item/stack/material/stock, mob/user)
 	if(!can_service(user) || !stock || stock.loc != user)

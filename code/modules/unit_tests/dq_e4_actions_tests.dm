@@ -236,21 +236,11 @@
 
 /datum/unit_test/om/dq_e4_twins_deliver_both_ways/run_om(list/made)
 	var/datum/om_test_entity/e4_twin/listener = entity(made, /datum/om_test_entity/e4_twin)
-	var/datum/om_test_entity/hooked = entity(made)
-	var/datum/om_test_entity/watcher = entity(made)
 	var/obj/e4_fixture/plain/bumped_thing = new
 	made += bumped_thing
 	// OM_EMIT of the event reaches the on_notice listener through the twin notice.
 	OM_EMIT(listener, /datum/om/event/atom_bumped, bumped_thing)
 	TEST_ASSERT_EQUAL(listener.notices_heard, 1, "OM_EMIT of the event published its twin notice to the on_notice listener")
 	TEST_ASSERT_EQUAL(listener.last_bumped, bumped_thing, "with the payload")
-	// A notice published on an entity an om_hook listens to reaches the hook as the twin event.
-	om_hook(hooked, /datum/om/event/atom_bumped, watcher, TYPE_PROC_REF(/datum/om_test_entity, cf_hooked))
-	TEST_ASSERT(WANTS(hooked, /datum/notice/atom_bumped), "an om_hook counts as a listener for the notice")
-	var/datum/notice/atom_bumped/N = notice_take(/datum/notice/atom_bumped)
-	N.bumped = bumped_thing
-	notice_publish(hooked, N)
-	TEST_ASSERT_EQUAL(watcher.log.Join(","), "hook:/datum/om/event/atom_bumped", "the notice emitted its twin event to the om_hook listener")
-	// And it does not bounce: the listener heard the first one once, the watcher the second once.
+	// It does not bounce: the notice the event published is not emitted back as an event.
 	TEST_ASSERT_EQUAL(listener.notices_heard, 1, "the twin did not bounce back")
-	TEST_ASSERT_EQUAL(length(watcher.log), 1, "nor did the event")

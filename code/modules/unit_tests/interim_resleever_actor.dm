@@ -3,11 +3,11 @@
 	var/last_actor_ref
 	var/insert_count = 0
 
-/datum/interim_resleever_actor_probe/proc/on_insert(atom/source, datum/om/event/before/slot_pre_insert/event)
+/datum/interim_resleever_actor_probe/proc/on_insert(datum/act/check_insert/check)
 	EVENT_HANDLER
-	last_actor_ref = event.actor ? REF(event.actor) : null
+	last_actor_ref = check.actor ? REF(check.actor) : null
 	insert_count++
-	return NONE
+	return HOOK_DECLINE
 
 /datum/unit_test/interim_resleever_actor_roundtrip/Run()
 	var/turf/T = test_floor()
@@ -15,7 +15,7 @@
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/transhuman/resleever/pod = allocate(/obj/machinery/transhuman/resleever, T)
 	var/datum/interim_resleever_actor_probe/probe = allocate(/datum/interim_resleever_actor_probe)
-	om_hook(pod, /datum/om/event/before/slot_pre_insert, probe, TYPE_PROC_REF(/datum/interim_resleever_actor_probe, on_insert))
+	observe(pod, /datum/act/check_insert, probe, instead(then(TYPE_PROC_REF(/datum/interim_resleever_actor_probe, on_insert))))
 	TEST_ASSERT(pod.resleever_interaction_drag(actor, patient, null), "Dragging the patient through the public interaction must succeed")
 	TEST_ASSERT_EQUAL(probe.last_actor_ref, REF(actor), "The drag initiator must reach the real insertion boundary")
 	TEST_ASSERT_EQUAL(probe.insert_count, 1, "The successful drag must attempt exactly one insertion")

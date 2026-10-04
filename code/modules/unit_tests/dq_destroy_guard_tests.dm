@@ -45,7 +45,7 @@
 
 	// name -> the accessor to try; each runs on a fresh holder and a fresh target.
 	var/list/attempts = list("own_set", "own_add", "own_put", "own_move", "own_transfer", "rel_set",
-		"rel_add", "proto_set", "proto_private", "shared_set", "om_after", "after_slot", "om_hook",
+		"rel_add", "proto_set", "proto_private", "shared_set", "om_after", "after_slot", "observe",
 		"om_link")
 	for(var/name in attempts)
 		var/datum/guard_test_holder/H = new
@@ -105,8 +105,8 @@
 			if("after_slot")
 				after_slot(H, "guard_slot", 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
 				done = om_timer_slot_pending(H, "guard_slot")
-			if("om_hook")
-				done = om_hook(C, /datum/om/event/qdeleting, H, TYPE_PROC_REF(/datum/guard_test_holder, on_event)) ? TRUE : FALSE
+			if("observe")
+				done = observe(C, /datum/notice/qdeleting, H, then(TYPE_PROC_REF(/datum/guard_test_holder, on_event))) ? TRUE : FALSE
 			if("om_link")
 				var/result = om_link(H, C, /datum/om/relation/test_link)
 				done = istype(result, /datum/om/edge)

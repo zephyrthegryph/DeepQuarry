@@ -379,11 +379,14 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 				flushed.forceMove(teleplumb_dest)
 
 	var/datum/gas_mixture/air_contents = new(1) //1 liter of nothing, ig.
-	if(OM_EMIT(src, /datum/om/event/before/disposal_flush, to_send, air_contents))
+	var/datum/act/flush_disposal/flush = ACT_TRY(src, flush_disposal, to_send, air_contents)
+	if(!flush)
 		for(var/atom/movable/flushed in to_send)
 			if(isliving(flushed))
 				var/mob/living/m = flushed
 				to_chat(m, span_warning("You're flushed away by \the [src]!"))
+	else
+		act_cancel(flush) // nothing took the flush over: the toilet drops the contents itself, below
 
 	var/flush_failed = FALSE
 	for(var/atom/movable/flushed in to_send)

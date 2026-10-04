@@ -49,9 +49,6 @@
 /// A subtype of the event test_task is interrupted by.
 /datum/om/event/test/other/cf_child
 
-/datum/om_test_entity/proc/cf_hooked(datum/source, datum/om/event/event)
-	LAZYADD(log, "hook:[event.type]")
-
 /proc/om_cf_global_hit(datum/om_test_entity/L)
 	LAZYADD(L.log, "global")
 
@@ -110,19 +107,6 @@
 	TEST_ASSERT_EQUAL(T.state, OM_TASK_CANCELLED, "a subtype of interrupted_by cancels it")
 	TEST_ASSERT_NULL(actor.om_rec.task_interrupts, "the interrupt set empties with the last task")
 	TEST_ASSERT(!om_wants(actor, /datum/om/event/test/other), "nothing is wanted afterwards")
-
-/// Hooks honour event ancestry, as behaviours do.
-/datum/unit_test/om/core_fix_hook_ancestry
-
-/datum/unit_test/om/core_fix_hook_ancestry/run_om(list/made)
-	var/datum/om_test_entity/source = entity(made)
-	var/datum/om_test_entity/listener = entity(made)
-	om_hook(source, /datum/om/event/test, listener, TYPE_PROC_REF(/datum/om_test_entity, cf_hooked))
-	TEST_ASSERT(om_wants(source, /datum/om/event/test/sub), "a hook on an ancestor makes the subtype wanted")
-	om_emit(source, new /datum/om/event/test/sub)
-	TEST_ASSERT(("hook:[/datum/om/event/test/sub]" in listener.log), "a hook on /event/test hears /event/test/sub")
-	om_unhook(source, /datum/om/event/test, listener)
-	TEST_ASSERT(!om_wants(source, /datum/om/event/test/sub), "unhooked")
 
 // ---------------------------------------------------------------- timers
 

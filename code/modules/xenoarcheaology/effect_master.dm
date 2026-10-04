@@ -92,10 +92,10 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 
 /datum/artifact_master/proc/DoRegistry()
 	var/atom/H = holder()
-	observe(H, /datum/notice/attackby, src, then(PROC_REF(on_attackby)))
-	om_hook(H, /datum/om/event/before/atom_ex_act, src, PROC_REF(on_exact))
-	om_hook(H, /datum/om/event/before/atom_bullet_act, src, PROC_REF(on_bullet))
-	observe(H, /datum/notice/attack_hand, src, then(PROC_REF(on_attack_hand)))
+	observe(H, /datum/notice/attacked_by, src, then(PROC_REF(on_attackby)))
+	observe(H, /datum/act/explode, src, instead(then(PROC_REF(on_exact))))
+	observe(H, /datum/act/shoot, src, instead(then(PROC_REF(on_bullet))))
+	observe(H, /datum/notice/hand_attacked, src, then(PROC_REF(on_attack_hand)))
 	observe(H, /datum/notice/movable_bump, src, then(PROC_REF(on_bump)))
 	observe(H, /datum/notice/atom_bumped, src, then(PROC_REF(on_bumped)))
 	observe(H, /datum/notice/moved, src, then(PROC_REF(on_moved)))
@@ -105,7 +105,6 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	var/atom/H = holder()
 	if(H)
 		unobserve(H, null, src)
-		om_unhook(H, null, src)
 
 /datum/artifact_master/proc/get_active_effects()
 	var/list/active_effects = list()
@@ -219,9 +218,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
  * Trigger code.
  */
 
-/datum/artifact_master/proc/on_exact(datum/source, datum/om/event/before/atom_ex_act/event)
+/datum/artifact_master/proc/on_exact(datum/act/explode/blast)
 	EVENT_HANDLER
-	var/severity = event.severity
+	var/severity = blast.severity
 	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		switch(severity)
@@ -239,13 +238,13 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 					triggered = TRUE
 
 	if(triggered)
-		return COMPONENT_IGNORE_EXPLOSION
+		return TRUE
 
-	return
+	return HOOK_DECLINE
 
-/datum/artifact_master/proc/on_bullet(datum/source, datum/om/event/before/atom_bullet_act/event)
+/datum/artifact_master/proc/on_bullet(datum/act/shoot/round)
 	EVENT_HANDLER
-	var/obj/item/projectile/P = event.projectile
+	var/obj/item/projectile/P = round.projectile
 	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(istype(P,/obj/item/projectile/bullet))
@@ -261,9 +260,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 				triggered = TRUE
 
 	if(triggered)
-		return COMPONENT_CANCEL_ATTACK_CHAIN
+		return TRUE
 
-	return
+	return HOOK_DECLINE
 
 /datum/artifact_master/proc/on_bump(datum/act/notice/N)
 	EVENT_HANDLER
@@ -321,7 +320,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 
 /datum/artifact_master/proc/on_attack_hand(datum/act/notice/N)
 	EVENT_HANDLER
-	var/datum/notice/attack_hand/event = N
+	var/datum/notice/hand_attacked/event = N
 	var/mob/living/user = event.user
 	if(!istype(user))
 		return
@@ -351,7 +350,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 
 /datum/artifact_master/proc/on_attackby(datum/act/notice/N)
 	EVENT_HANDLER
-	var/datum/notice/attackby/event = N
+	var/datum/notice/attacked_by/event = N
 	var/obj/item/W = event.item
 
 	for(var/datum/artifact_effect/my_effect in my_effects)

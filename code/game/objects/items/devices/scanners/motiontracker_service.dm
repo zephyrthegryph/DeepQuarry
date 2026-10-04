@@ -17,9 +17,7 @@ SYSTEM_DEF(motiontracker)
 
 /datum/system/motiontracker/stat_entry(msg)
 	var/count = 0
-	var/list/track_hooks = om_rec?.hooks_in?[/datum/om/event/movable_motiontracker]
-	if(track_hooks)
-		count = length(track_hooks) / 2 // listener, proc pairs
+	count = observer_count(src, /datum/notice/movable_motiontracker)
 	if(hide_all)
 		msg = "HIDE AND SEEK"
 	else

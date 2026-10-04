@@ -9,10 +9,10 @@
 //   dq_ledger_refusal(thing, holder, slot_id, actor)  why a move would fail, or null
 //
 // Each move checks both sides first: the thing can leave its current slot
-// (the slot's removal_refusal() and /datum/om/event/before/slot_pre_remove), and it can enter
+// (the slot's removal_refusal() and /datum/act/check_remove), and it can enter
 // the new one (the slot's acceptance predicate, capacity, a keyed slot's
-// duplicate-key check, and /datum/om/event/before/slot_pre_insert). Nothing that can sleep
-// runs in between: the check procs and the pre events' handlers are
+// duplicate-key check, and /datum/act/check_insert). Nothing that can sleep
+// runs in between: the check procs and the check hooks' handlers are
 // EVENT_HANDLERs. Then the move commits with one forceMove, whose
 // bookkeeping (ledger.dm) fires /datum/om/event/slot_removed and /datum/om/event/slot_inserted and
 // the thing's on_unslotted()/on_slotted() hooks. A refused move changes
@@ -67,8 +67,13 @@
 		var/cost = def.cost(holder, thing)
 		if(dest.used[id] + def.latent_used(holder) + cost > def.capacity_for(holder))
 			return "there's no room for it"
-	if(OM_EMIT(holder, /datum/om/event/before/slot_pre_insert, thing, id, actor) & COMPONENT_SLOT_BLOCK)
+	// A hook on the holder (observe(holder, /datum/act/check_insert, ...)) may refuse the move: the question, not the move, so it never commits.
+	GLOB.act_next_actor = actor
+	var/datum/act/check_insert/check = ACT_TRY(holder, check_insert, thing, id)
+	GLOB.act_next_actor = null
+	if(!check)
 		return "it won't go in"
+	act_cancel(check)
 	return null
 
 /// Why `thing` can't leave the slot it is in now, or null. Things not in a
@@ -83,8 +88,12 @@
 	. = def.removal_refusal(source, thing, actor)
 	if(.)
 		return .
-	if(OM_EMIT(source, /datum/om/event/before/slot_pre_remove, thing, entry[LEDGER_E_SLOT], actor) & COMPONENT_SLOT_BLOCK)
+	GLOB.act_next_actor = actor
+	var/datum/act/check_remove/check = ACT_TRY(source, check_remove, thing, entry[LEDGER_E_SLOT])
+	GLOB.act_next_actor = null
+	if(!check)
 		return "it won't come out"
+	act_cancel(check)
 	return null
 
 /// Commits a checked move. Returns TRUE if the thing ended up in the slot.

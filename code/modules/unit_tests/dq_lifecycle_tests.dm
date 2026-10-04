@@ -122,11 +122,9 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 			dynamic["radio [frequency_text] [radio_filter]"] = length(devices)
 	for(var/id in GLOB.registries)
 		dynamic["registry [id]"] = REGISTRY_COUNT(id)
-	var/datum/om_world/om_world_holder = OM_WORLD
-	var/list/world_hooks = om_world_holder?.om_rec?.hooks_in
-	for(var/event_path in world_hooks)
-		var/list/hooks = world_hooks[event_path]
-		dynamic["world hook [event_path]"] = length(hooks) / 2
+	var/list/world_observers = observer_counts(OM_WORLD)
+	for(var/trigger in world_observers)
+		dynamic["world observer [trigger]"] = world_observers[trigger]
 	return list(sizes, dynamic)
 
 /// The keys whose sizes differ between two snapshots, as readable lines.

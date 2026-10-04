@@ -421,13 +421,15 @@
 	var/last_old_severity
 	var/removals = 0
 
-/datum/dq_test_signal_counter/proc/on_severity_changed(datum/source, datum/om/event/affliction_severity_changed/event)
+/datum/dq_test_signal_counter/proc/on_severity_changed(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/affliction_severity_changed/event = N
 	severity_changes++
 	last_old_severity = event.old_severity
 
-/datum/dq_test_signal_counter/proc/on_afflictions_changed(datum/source, datum/om/event/body_afflictions_changed/event)
+/datum/dq_test_signal_counter/proc/on_afflictions_changed(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/body_afflictions_changed/event = N
 	if(!event.added)
 		removals++
 
@@ -491,7 +493,7 @@
 /datum/unit_test/dq_body_severity_signal/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/dq_test_signal_counter/counter = new
-	om_hook(H, /datum/om/event/affliction_severity_changed, counter, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_severity_changed))
+	observe(H, /datum/notice/affliction_severity_changed, counter, then(TYPE_PROC_REF(/datum/dq_test_signal_counter, on_severity_changed)))
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 40)
 	TEST_ASSERT(counter.severity_changes >= 1, "setting severity should signal")
 	A.adjust_severity(-10)
@@ -506,7 +508,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 30)
 	var/datum/dq_test_signal_counter/counter = new
-	om_hook(H, /datum/om/event/body_afflictions_changed, counter, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_afflictions_changed))
+	observe(H, /datum/notice/body_afflictions_changed, counter, then(TYPE_PROC_REF(/datum/dq_test_signal_counter, on_afflictions_changed)))
 	var/datum/body/B = H.body
 	own_take(H, nameof(H.body))
 	qdel(B)

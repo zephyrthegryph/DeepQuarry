@@ -140,8 +140,10 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 /mob/proc/hud_available()
 	if(!client)
 		return FALSE
-	if(OM_EMIT(src, /datum/om/event/before/mob_handle_hud) & HUD_EVENT_HANDLED)
+	var/datum/act/draw_hud/draw = ACT_TRY(src, draw_hud)
+	if(!draw)
 		return FALSE
+	act_cancel(draw)
 	return TRUE
 
 // --- Producers ----------------------------------------------------------------------------

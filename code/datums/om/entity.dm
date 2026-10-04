@@ -62,10 +62,6 @@
 	var/list/named_verbs
 	/// Entities whose hold_log names this entity as a target.
 	var/list/hook_holders
-	/// om_hook(): event path -> flat list (listener, proc, ...) of hooks on this entity.
-	var/list/hooks_in
-	/// om_hook(): entities this one has hooks on, one entry per hook.
-	var/list/hooks_out
 	/// UI sessions: time (ds) of the last push (ui.dm).
 	var/ui_last_push = 0
 	/// As ui_last_push, for the window's status re-check (ui_status).
@@ -558,7 +554,6 @@
 				LAZYREMOVE(wrec.watching, E)
 		rec.watches_in = null
 	om_relay_clear(E, rec)
-	om_teardown_hooks(rec)
 	om_clear_fwd_out(rec)
 	for(var/i in 1 to length(rec.fwd_in) step 4)
 		var/datum/origin = rec.fwd_in[i]

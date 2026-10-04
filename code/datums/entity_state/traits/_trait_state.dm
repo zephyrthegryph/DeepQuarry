@@ -39,7 +39,7 @@
 /// Called when the state leaves its mob (was UnregisterFromParent). Undo attach().
 /datum/trait_state/proc/detach()
 	SHOULD_CALL_PARENT(TRUE)
-	om_unhook_all(src)
+	unobserve_all(src)
 	if(life_stage && owner)
 		om_stage_remove(owner, life_stage)
 

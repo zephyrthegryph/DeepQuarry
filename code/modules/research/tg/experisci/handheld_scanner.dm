@@ -21,7 +21,7 @@
 
 /obj/item/experi_scanner/LateInitialize()
 	var/static/list/handheld_events = list(
-		/datum/om/event/before/item_pre_attack = TYPE_PROC_REF(/datum/experiment_handler, try_run_handheld_experiment),
+		/datum/act/pre_attack = TYPE_PROC_REF(/datum/experiment_handler, try_run_handheld_experiment),
 	)
 	new /datum/experiment_handler(src, \
 		allowed_experiments = list(/datum/experiment/scanning, /datum/experiment/physical), \

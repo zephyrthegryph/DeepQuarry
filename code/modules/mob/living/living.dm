@@ -1,10 +1,9 @@
 /mob/living/proc/get_visible_name()
-	// Only allocate the event payload list when a handler is actually hooked.
-	// This proc runs every Life() tick per human; the list(null) alloc is otherwise wasted.
-	if(om_wants(src, /datum/om/event/before/human_get_visible_name))
-		var/list/name_data = list(null)
-		if(OM_EMIT(src, /datum/om/event/before/human_get_visible_name, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
-			return name_data[1]
+	// A hook on the mob may name it (shadekin phase hiding); nothing is allocated when nothing hooks it.
+	var/datum/act/name_visible/shown = ACT_TRY(src, name_visible)
+	if(!shown)
+		return ACT_REPLY
+	act_cancel(shown)
 
 	if(real_name)
 		return real_name

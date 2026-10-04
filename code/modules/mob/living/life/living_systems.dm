@@ -212,12 +212,14 @@
 /datum/om/stage/life/radiation/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
-	if(OM_EMIT(self, /datum/om/event/before/handle_radiation) & COMPONENT_BLOCK_LIVING_RADIATION)
+	var/datum/act/live_radiation/tick = ACT_TRY(self, live_radiation)
+	if(!tick)
 		return COMPONENT_BLOCK_LIVING_RADIATION
+	act_cancel(tick)
 
 /// The root only feeds its signal's listeners (the radiation effects component).
 /datum/om/stage/life/radiation/idle(mob/living/self)
-	return type == /datum/om/stage/life/radiation && !om_wants(self, /datum/om/event/before/handle_radiation)
+	return type == /datum/om/stage/life/radiation && !act_wanted(self, /datum/act/live_radiation)
 
 /// Blood volume and bleeding.
 /datum/om/stage/life/blood
@@ -617,7 +619,7 @@
 /// The root's health icon is event-driven; darksight re-adapts on a timer for players.
 /// Mob types with their own HUD (life_hud() overrides) keep it awake unless they say otherwise.
 /mob/living/proc/life_hud_idle()
-	return !om_wants(src, /datum/om/event/before/mob_handle_hud)
+	return !act_wanted(src, /datum/act/draw_hud)
 
 /mob/living/proc/life_hud_rewake_delay()
 	return src.client ? 5 SECONDS : 0
@@ -625,8 +627,10 @@
 /// Health doll / health icon. Returns FALSE when a component draws it instead.
 /mob/living/proc/life_hud_health_icons()
 	SHOULD_CALL_PARENT(TRUE)
-	if(OM_EMIT(src, /datum/om/event/before/mob_handle_hud_health_icon) & HEALTH_ICON_EVENT_HANDLED)
+	var/datum/act/draw_health_icon/draw = ACT_TRY(src, draw_health_icon)
+	if(!draw)
 		return FALSE
+	act_cancel(draw)
 	return TRUE
 
 /// Adapts the darkness overlay to the light level and the mob's darksight.

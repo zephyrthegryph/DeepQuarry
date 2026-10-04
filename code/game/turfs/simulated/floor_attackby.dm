@@ -28,7 +28,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 	// The turf's own handling (dig, bag pickup) and signal listeners, as the old ..() ran them first.
 	if(turf_item(user, C, interaction))
 		return TRUE
-	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(C, user, click_parameters)) == EVENT_VETO)
+	if(attackby_stopped(src, C, user, click_parameters))
 		return TRUE
 
 	if(isliving(user) && istype(C, /obj/item))

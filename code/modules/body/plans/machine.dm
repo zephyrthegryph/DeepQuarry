@@ -41,7 +41,7 @@
 	evaluate_status()
 
 /datum/body/simple/machine/is_unconscious()
-	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
+	if(status_held())
 		return FALSE
 	ensure_vitals()
 	if(consciousness <= CONSCIOUSNESS_THRESHOLD)

@@ -175,8 +175,10 @@
 	if(!loc || !newloc)
 		return FALSE
 
-	if(OM_EMIT(src, /datum/om/event/before/movable_pre_move, newloc, direct, movetime) & COMPONENT_MOVABLE_BLOCK_PRE_MOVE)
+	var/datum/act/pre_move/step = ACT_TRY(src, pre_move, direct, newloc)
+	if(!step)
 		return FALSE
+	act_cancel(step)
 
 	// Store this early before we might move, it's used several places
 	var/atom/oldloc = loc

@@ -30,10 +30,10 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 
 /obj/item/dq_destroy_transaction_phase_probe/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
+	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
 	own_set(src, nameof(child), new /datum/dq_destroy_transaction_owned_child(src))
 
-/obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
+/obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/act/notice/N)
 	EVENT_HANDLER
 	dq_destroy_transaction_log("guard")
 
@@ -301,9 +301,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_reentrant_pair::partner))
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
-	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
+	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
 
-/datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
+/datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/act/notice/N)
 	EVENT_HANDLER
 	if(qdel_partner_on_signal && partner && !QDELETED(partner))
 		qdel(partner)

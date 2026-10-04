@@ -16,9 +16,7 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/affliction_severity_changed",
-  "tests": [
-   "code/modules/unit_tests/dq_medical_damage_model_tests.dm"
-  ]
+  "tests": []
  },
  "/datum/om/event/arcade_prizevend": {
   "emits": [
@@ -46,7 +44,6 @@
    "mapload"
   ],
   "listeners": [
-   "code/datums/proximity_monitor/proximity_monitor.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -85,7 +82,6 @@
    "new_dir"
   ],
   "listeners": [
-   "code/datums/entity_state/squeak.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -124,7 +120,6 @@
    "old_loc"
   ],
   "listeners": [
-   "code/datums/proximity_monitor/proximity_monitor.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -163,7 +158,6 @@
    "new_loc"
   ],
   "listeners": [
-   "code/datums/proximity_monitor/proximity_monitor.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -313,36 +307,6 @@
   "target": "/datum/notice/atom_used_in_craft",
   "tests": []
  },
- "/datum/om/event/before/atom_bullet_act": {
-  "emits": [
-   "code/game/atom/_atom.dm"
-  ],
-  "fields": [
-   "projectile",
-   "def_zone"
-  ],
-  "listeners": [
-   "code/modules/xenoarcheaology/effect_master.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
- "/datum/om/event/before/atom_ex_act": {
-  "emits": [
-   "code/game/atom/_atom.dm"
-  ],
-  "fields": [
-   "severity",
-   "target"
-  ],
-  "listeners": [
-   "code/modules/xenoarcheaology/effect_master.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
  "/datum/om/event/before/atom_extinguish": {
   "emits": [
    "code/game/atom/_atom.dm"
@@ -355,21 +319,6 @@
   "notice_fields": [],
   "reads_result": true,
   "target": "/datum/notice/atom_extinguish",
-  "tests": []
- },
- "/datum/om/event/before/atom_pre_emp_act": {
-  "emits": [
-   "code/game/atom/_atom.dm"
-  ],
-  "fields": [
-   "severity"
-  ],
-  "listeners": [
-   "code/modules/materials/engineering/material_responses.dm",
-   "code/modules/mob/living/silicon/robot/robot.dm"
-  ],
-  "reads_result": false,
-  "target": "review",
   "tests": []
  },
  "/datum/om/event/before/atom_take_damage": {
@@ -396,24 +345,6 @@
   ],
   "reads_result": true,
   "target": "/datum/notice/atom_take_damage",
-  "tests": []
- },
- "/datum/om/event/before/atom_tool_act": {
-  "emits": [
-   "code/_onclick/item_attack.dm"
-  ],
-  "fields": [
-   "tool_quality",
-   "secondary",
-   "user",
-   "tool"
-  ],
-  "listeners": [
-   "code/modules/body/plans/nanoform.dm",
-   "code/modules/materials/engineering/material_diagnostics.dm"
-  ],
-  "reads_result": true,
-  "target": "GUARD_TOOL_ACT",
   "tests": []
  },
  "/datum/om/event/before/attack_hand": {
@@ -454,8 +385,7 @@
  },
  "/datum/om/event/before/attackby": {
   "emits": [
-   "code/_onclick/item_attack.dm",
-   "code/game/turfs/simulated/floor_attackby.dm"
+   "code/_onclick/item_attack.dm"
   ],
   "fields": [
    "item",
@@ -463,11 +393,7 @@
    "params"
   ],
   "listeners": [
-   "code/datums/behaviours/tethered_item.dm",
-   "code/datums/entity_state/materials/material_container.dm",
-   "code/datums/entity_state/materials/remote_materials.dm",
-   "code/modules/body/plans/nanoform.dm",
-   "code/modules/materials/engineering/material_diagnostics.dm"
+   "code/datums/behaviours/tethered_item.dm"
   ],
   "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
   "notice_fields": [
@@ -544,51 +470,6 @@
   "target": "review",
   "tests": []
  },
- "/datum/om/event/before/disposal_flush": {
-  "emits": [
-   "code/game/objects/structures/watercloset.dm",
-   "code/modules/recycling/disposal_machines.dm"
-  ],
-  "fields": [
-   "items",
-   "gas"
-  ],
-  "listeners": [
-   "code/datums/entity_state/machinery/disposal_connection.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
- "/datum/om/event/before/disposal_send": {
-  "emits": [
-   "code/modules/recycling/disposal_trunk.dm"
-  ],
-  "fields": [
-   "holder"
-  ],
-  "listeners": [
-   "code/datums/entity_state/machinery/disposal_connection.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
- "/datum/om/event/before/geiger_counter_scan": {
-  "emits": [
-   "code/game/objects/items/devices/geiger.dm"
-  ],
-  "fields": [
-   "user",
-   "geiger_counter"
-  ],
-  "listeners": [
-   "code/datums/entity_state/traits/radiation_effects.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
  "/datum/om/event/before/handle_mutations": {
   "emits": [
    "code/modules/mob/living/life/living_systems.dm"
@@ -597,62 +478,6 @@
   "listeners": [],
   "reads_result": true,
   "target": "delete",
-  "tests": []
- },
- "/datum/om/event/before/handle_radiation": {
-  "emits": [
-   "code/modules/mob/living/carbon/human/life.dm",
-   "code/modules/mob/living/life/living_systems.dm"
-  ],
-  "fields": [],
-  "listeners": [
-   "code/datums/entity_state/traits/radiation_effects.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
- "/datum/om/event/before/human_get_alt_name": {
-  "emits": [
-   "code/modules/mob/living/carbon/human/say.dm"
-  ],
-  "fields": [
-   "name_data"
-  ],
-  "listeners": [
-   "code/datums/entity_state/species/shadekin/shadekin.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
- "/datum/om/event/before/human_get_visible_name": {
-  "emits": [
-   "code/modules/mob/living/carbon/human/human.dm",
-   "code/modules/mob/living/living.dm"
-  ],
-  "fields": [
-   "identity"
-  ],
-  "listeners": [
-   "code/datums/entity_state/species/shadekin/shadekin.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
- "/datum/om/event/before/human_get_voice": {
-  "emits": [
-   "code/modules/mob/living/carbon/human/say.dm"
-  ],
-  "fields": [
-   "voice_data"
-  ],
-  "listeners": [
-   "code/datums/entity_state/species/shadekin/shadekin.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
   "tests": []
  },
  "/datum/om/event/before/in_range_of_irradiation": {
@@ -676,82 +501,6 @@
   "tests": [
    "code/modules/unit_tests/dq_hook_hand_tests.dm"
   ]
- },
- "/datum/om/event/before/item_pre_attack": {
-  "emits": [
-   "code/_onclick/item_attack.dm"
-  ],
-  "fields": [
-   "target",
-   "user",
-   "params"
-  ],
-  "listeners": [
-   "code/modules/research/tg/experisci/handheld_scanner.dm"
-  ],
-  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
-  "notice_fields": [
-   "target_",
-   "user",
-   "params"
-  ],
-  "reads_result": true,
-  "target": "/datum/notice/item_pre_attack",
-  "tests": []
- },
- "/datum/om/event/before/living_body_status": {
-  "emits": [
-   "code/modules/body/body.dm",
-   "code/modules/body/plans/machine.dm"
-  ],
-  "fields": [],
-  "listeners": [
-   "code/modules/body/plans/nanoform.dm"
-  ],
-  "reads_result": true,
-  "target": "GUARD_BODY_STATUS",
-  "tests": [
-   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm"
-  ]
- },
- "/datum/om/event/before/living_injure": {
-  "emits": [
-   "code/modules/body/injury.dm"
-  ],
-  "fields": [
-   "kind",
-   "amount_ref",
-   "zone",
-   "source",
-   "flags"
-  ],
-  "listeners": [
-   "code/game/objects/structures/crates_lockers/closets/statue.dm",
-   "code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm"
-  ],
-  "reads_result": true,
-  "target": "GUARD_INJURE",
-  "tests": [
-   "code/modules/unit_tests/dq_damage_packet_tests.dm"
-  ]
- },
- "/datum/om/event/before/living_irradiate_effect": {
-  "emits": [
-   "code/modules/mob/living/damage_procs.dm"
-  ],
-  "fields": [
-   "effect",
-   "stun",
-   "blocked",
-   "check_protection",
-   "rad_protection"
-  ],
-  "listeners": [
-   "code/datums/entity_state/traits/radiation_effects.dm"
-  ],
-  "reads_result": true,
-  "target": "GUARD_IRRADIATE",
-  "tests": []
  },
  "/datum/om/event/before/living_status_sleep": {
   "emits": [],
@@ -788,46 +537,6 @@
   "target": "/datum/notice/living_turf_collision",
   "tests": []
  },
- "/datum/om/event/before/mob_handle_hud": {
-  "emits": [
-   "code/modules/mob/living/carbon/human/life.dm",
-   "code/modules/mob/living/life/life_om.dm",
-   "code/modules/mob/living/life/living_systems.dm"
-  ],
-  "fields": [],
-  "listeners": [
-   "code/datums/entity_state/remote_view.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
- "/datum/om/event/before/mob_handle_hud_health_icon": {
-  "emits": [
-   "code/modules/mob/living/life/living_systems.dm"
-  ],
-  "fields": [],
-  "listeners": [
-   "code/datums/entity_state/remote_view.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
- "/datum/om/event/before/mob_relay_movement": {
-  "emits": [
-   "code/modules/mob/mob_movement.dm"
-  ],
-  "fields": [
-   "direction"
-  ],
-  "listeners": [
-   "code/datums/entity_state/remote_view.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": []
- },
  "/datum/om/event/before/movable_bump": {
   "emits": [
    "code/game/atoms_movable.dm"
@@ -844,22 +553,6 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/movable_bump",
-  "tests": []
- },
- "/datum/om/event/before/movable_pre_move": {
-  "emits": [
-   "code/game/atoms_movable.dm"
-  ],
-  "fields": [
-   "new_loc",
-   "direction",
-   "movetime"
-  ],
-  "listeners": [
-   "code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm"
-  ],
-  "reads_result": true,
-  "target": "GUARD_MOVE",
   "tests": []
  },
  "/datum/om/event/before/movable_z_changed": {
@@ -904,40 +597,6 @@
   "target": "/datum/notice/robot_item_attack",
   "tests": []
  },
- "/datum/om/event/before/slot_pre_insert": {
-  "emits": [
-   "code/datums/containment/api.dm"
-  ],
-  "fields": [
-   "thing",
-   "slot_id",
-   "actor"
-  ],
-  "listeners": [],
-  "reads_result": true,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_containment_tests.dm",
-   "code/modules/unit_tests/interim_implantchair_actor.dm",
-   "code/modules/unit_tests/interim_resleever_actor.dm"
-  ]
- },
- "/datum/om/event/before/slot_pre_remove": {
-  "emits": [
-   "code/datums/containment/api.dm"
-  ],
-  "fields": [
-   "thing",
-   "slot_id",
-   "actor"
-  ],
-  "listeners": [],
-  "reads_result": true,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_containment_tests.dm"
-  ]
- },
  "/datum/om/event/before/turf_prepare_step_sound": {
   "emits": [
    "code/datums/behaviours/footstep.dm"
@@ -949,22 +608,6 @@
   "reads_result": true,
   "target": "delete",
   "tests": []
- },
- "/datum/om/event/before/world_play_cinematic": {
-  "emits": [
-   "code/datums/cinematics/_cinematic.dm"
-  ],
-  "fields": [
-   "new_cinematic"
-  ],
-  "listeners": [
-   "code/datums/cinematics/_cinematic.dm"
-  ],
-  "reads_result": true,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/nuke_cinematic.dm"
-  ]
  },
  "/datum/om/event/body_afflictions_changed": {
   "emits": [
@@ -983,9 +626,7 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/body_afflictions_changed",
-  "tests": [
-   "code/modules/unit_tests/dq_medical_damage_model_tests.dm"
-  ]
+  "tests": []
  },
  "/datum/om/event/body_part_attached": {
   "emits": [
@@ -994,12 +635,15 @@
   "fields": [
    "part"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "part"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_part_lifecycle_tests.dm"
-  ]
+  "target": "/datum/notice/body_part_attached",
+  "tests": []
  },
  "/datum/om/event/body_part_detached": {
   "emits": [
@@ -1008,12 +652,15 @@
   "fields": [
    "part"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "part"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_part_lifecycle_tests.dm"
-  ]
+  "target": "/datum/notice/body_part_detached",
+  "tests": []
  },
  "/datum/om/event/carbon_slip": {
   "emits": [
@@ -1235,8 +882,7 @@
   ],
   "listeners": [
    "code/datums/behaviours/burning.dm",
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/materials/engineering/material_diagnostics.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "user",
@@ -1462,12 +1108,18 @@
    "tool_quality",
    "modifiers"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "target_",
+   "user",
+   "tool_quality",
+   "modifiers"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/interaction_tests.dm"
-  ]
+  "target": "/datum/notice/item_tool_acted",
+  "tests": []
  },
  "/datum/om/event/living_aheal": {
   "emits": [
@@ -1489,12 +1141,15 @@
   "fields": [
    "gibbed"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "gibbed"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm"
-  ]
+  "target": "/datum/notice/living_death_final",
+  "tests": []
  },
  "/datum/om/event/living_injured": {
   "emits": [
@@ -1533,13 +1188,20 @@
    "source",
    "flags"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "incoming_kind",
+   "landed_kind",
+   "stages",
+   "zone",
+   "source_",
+   "flags"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_armor_tests.dm",
-   "code/modules/unit_tests/dq_harm_mitigation_tests.dm"
-  ]
+  "target": "/datum/notice/living_injury_explained",
+  "tests": []
  },
  "/datum/om/event/living_revived": {
   "emits": [
@@ -1558,10 +1220,7 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/living_revived",
-  "tests": [
-   "code/modules/unit_tests/dq_denecrotizer_tests.dm",
-   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm"
-  ]
+  "tests": []
  },
  "/datum/om/event/living_shield_injury": {
   "emits": [
@@ -1634,9 +1293,7 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/living_status_stun",
-  "tests": [
-   "code/modules/unit_tests/dq_life_om_tests.dm"
-  ]
+  "tests": []
  },
  "/datum/om/event/living_status_weaken": {
   "emits": [],
@@ -1661,12 +1318,15 @@
   "fields": [
    "damage_flag"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "damage_flag"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_breakpoint_tests.dm"
-  ]
+  "target": "/datum/notice/machinery_broken",
+  "tests": []
  },
  "/datum/om/event/machinery_destructive_scan": {
   "emits": [
@@ -1723,8 +1383,7 @@
   "reads_result": false,
   "target": "/datum/notice/machinery_power_lost",
   "tests": [
-   "code/modules/benchmarks/apc_flip.dm",
-   "code/modules/unit_tests/dq_power_tests.dm"
+   "code/modules/benchmarks/apc_flip.dm"
   ]
  },
  "/datum/om/event/machinery_power_restored": {
@@ -1739,8 +1398,7 @@
   "reads_result": false,
   "target": "/datum/notice/machinery_power_restored",
   "tests": [
-   "code/modules/benchmarks/apc_flip.dm",
-   "code/modules/unit_tests/dq_power_tests.dm"
+   "code/modules/benchmarks/apc_flip.dm"
   ]
  },
  "/datum/om/event/matcontainer_item_consumed": {
@@ -1890,10 +1548,7 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/mob_death",
-  "tests": [
-   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm",
-   "code/modules/unit_tests/interim_pai_card_lifecycle.dm"
-  ]
+  "tests": []
  },
  "/datum/om/event/mob_dna_mutation": {
   "emits": [
@@ -2165,8 +1820,7 @@
    "echo_turf_location"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/game/objects/items/devices/scanners/motiontracker_service.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "source_",
@@ -2387,8 +2041,7 @@
    "force"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/mob/living/silicon/robot/robot.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "note": "most hooks only clear a reference: declare the relation and delete the hook",
   "notice_fields": [
@@ -2396,11 +2049,7 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/qdeleting",
-  "tests": [
-   "code/modules/unit_tests/dq_destroy_guard_tests.dm",
-   "code/modules/unit_tests/dq_destroy_transaction_tests.dm",
-   "code/modules/unit_tests/dq_state_tests.dm"
-  ]
+  "tests": []
  },
  "/datum/om/event/reagent_expose_obj": {
   "emits": [
@@ -2428,12 +2077,15 @@
   "fields": [
    "chemical_reaction"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "chemical_reaction"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/reagent_tests.dm"
-  ]
+  "target": "/datum/notice/reagents_holder_reacted",
+  "tests": []
  },
  "/datum/om/event/remote_view_clear": {
   "emits": [
@@ -2507,12 +2159,16 @@
    "thing",
    "slot_id"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "thing",
+   "slot_id"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_containment_tests.dm"
-  ]
+  "target": "/datum/notice/slot_inserted",
+  "tests": []
  },
  "/datum/om/event/slot_removed": {
   "emits": [
@@ -2522,12 +2178,16 @@
    "thing",
    "slot_id"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "thing",
+   "slot_id"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/dq_containment_tests.dm"
-  ]
+  "target": "/datum/notice/slot_removed",
+  "tests": []
  },
  "/datum/om/event/stun_effect": {
   "emits": [
@@ -2642,12 +2302,19 @@
    "user",
    "modifiers"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "tool_quality",
+   "secondary",
+   "target_",
+   "user",
+   "modifiers"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/interaction_tests.dm"
-  ]
+  "target": "/datum/notice/tool_atom_acted",
+  "tests": []
  },
  "/datum/om/event/trait_gained": {
   "emits": [
@@ -2732,12 +2399,15 @@
   "fields": [
    "data"
   ],
-  "listeners": [],
+  "listeners": [
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "notice_fields": [
+   "data_"
+  ],
   "reads_result": false,
-  "target": "review",
-  "tests": [
-   "code/modules/unit_tests/clothing_tests.dm"
-  ]
+  "target": "/datum/notice/unittest_data",
+  "tests": []
  },
  "/datum/om/event/world_explosion": {
   "emits": [
