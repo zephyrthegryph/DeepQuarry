@@ -325,3 +325,137 @@
 		var/obj/machinery/M = allocate(type, tile(3, 2))
 		M.stat_remove(NOPOWER | BROKEN)
 		TEST_ASSERT_EQUAL(hcs_window_keys(M, H), expected[type], "[type] sends the window data it always did")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Medical machines, exonet node, turrets, fabricator, requests console, suit cycler
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/cryo_cell_is_switched_through_the_window
+/datum/unit_test/dq_hc_struct/cryo_cell_is_switched_through_the_window/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/atmospherics/unary/cryo_cell/C = mach(/obj/machinery/atmospherics/unary/cryo_cell, tile(3, 2))
+	TEST_ASSERT(!C.on, "starts off")
+	press(H, C, "switchOn")
+	TEST_ASSERT(C.on, "the on button switches it on")
+	var/list/data = hc_data(C, H)
+	TEST_ASSERT(data["isOperating"], "the window shows it")
+	press(H, C, "switchOff")
+	TEST_ASSERT(!C.on, "and the off button switches it off")
+
+/datum/unit_test/dq_hc_struct/body_scanner_prints_a_sheet
+/datum/unit_test/dq_hc_struct/body_scanner_prints_a_sheet/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = tile(3, 2)
+	var/obj/machinery/bodyscanner/S = mach(/obj/machinery/bodyscanner, T)
+	press(H, S, "print_p")
+	TEST_ASSERT_NOTNULL(locate(/obj/item/paper) in T, "the print button prints a scan sheet")
+
+/datum/unit_test/dq_hc_struct/exonet_node_ports_are_toggled
+/datum/unit_test/dq_hc_struct/exonet_node_ports_are_toggled/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/exonet_node/E = mach(/obj/machinery/exonet_node, tile(3, 2))
+	E.toggle = 0
+	press(H, E, "toggle_power")
+	TEST_ASSERT(E.toggle, "the power button switches the node on")
+	TEST_ASSERT(E.allow_external_PDAs, "its PDA port starts open")
+	press(H, E, "toggle_PDA_port")
+	TEST_ASSERT(!E.allow_external_PDAs, "the PDA port button closes it")
+	var/list/data = hc_data(E, H)
+	TEST_ASSERT_EQUAL(data["allowPDAs"], 0, "the window shows it")
+	TEST_ASSERT_EQUAL(data["on"], 1, "and the power")
+
+/datum/unit_test/dq_hc_struct/portable_turret_window_obeys_its_lock
+/datum/unit_test/dq_hc_struct/portable_turret_window_obeys_its_lock/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/porta_turret/T = mach(/obj/machinery/porta_turret, tile(3, 2))
+	var/all = T.check_all
+	press(H, T, "authall")
+	TEST_ASSERT_EQUAL(T.check_all, all, "a locked turret takes no presses from a human")
+	T.set_locked(FALSE)
+	press(H, T, "authall")
+	TEST_ASSERT_NOTEQUAL(T.check_all, all, "an unlocked one toggles the setting")
+	var/enabled = T.enabled
+	press(H, T, "power")
+	TEST_ASSERT_NOTEQUAL(T.enabled, enabled, "and its power")
+
+/datum/unit_test/dq_hc_struct/portable_turret_is_emagged_and_scrambled_by_an_emp
+/datum/unit_test/dq_hc_struct/portable_turret_is_emagged_and_scrambled_by_an_emp/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/porta_turret/T = mach(/obj/machinery/porta_turret, tile(3, 2))
+	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
+	T.enabled = TRUE
+	hci_click(H, T, E)
+	settle()
+	TEST_ASSERT(T.emagged, "an emag subverts it")
+	T.enabled = TRUE
+	T.emp_act(1)
+	TEST_ASSERT(!T.enabled, "an EMP on a running turret switches it off")
+
+/datum/unit_test/dq_hc_struct/turret_controller_window_and_emag
+/datum/unit_test/dq_hc_struct/turret_controller_window_and_emag/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/turretid/C = mach(/obj/machinery/turretid, tile(3, 2))
+	var/all = C.check_all
+	press(H, C, "authall")
+	TEST_ASSERT_EQUAL(C.check_all, all, "a locked panel takes no presses from a human")
+	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
+	hci_click(H, C, E)
+	settle()
+	TEST_ASSERT(C.emagged, "an emag subverts it")
+	TEST_ASSERT(!C.locked, "and unlocks it")
+	press(H, C, "authall")
+	TEST_ASSERT_NOTEQUAL(C.check_all, all, "an unlocked panel toggles the setting")
+
+/datum/unit_test/dq_hc_struct/robotic_fabricator_builds_when_idle
+/datum/unit_test/dq_hc_struct/robotic_fabricator_builds_when_idle/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/robotic_fabricator/F = mach(/obj/machinery/robotic_fabricator, tile(3, 2))
+	F.metal_amount = 100000
+	F.operating = TRUE
+	press(H, F, "build_l_arm")
+	TEST_ASSERT_EQUAL(F.metal_amount, 100000, "a busy fabricator takes no order")
+	F.operating = FALSE
+	press(H, F, "build_l_arm")
+	TEST_ASSERT_EQUAL(F.metal_amount, 75000, "an idle one spends the metal")
+	var/list/data = hc_data(F, H)
+	TEST_ASSERT_EQUAL(data["metal_amount"], 75000, "the window shows what is left")
+
+/datum/unit_test/dq_hc_struct/requests_console_window
+/datum/unit_test/dq_hc_struct/requests_console_window/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/requests_console/R = mach(/obj/machinery/requests_console, tile(3, 2))
+	var/silent = R.silent
+	press(H, R, "toggleSilent")
+	TEST_ASSERT_NOTEQUAL(R.silent, silent, "the silence button flips it")
+	press(H, R, "setScreen", list("setScreen" = 1))
+	TEST_ASSERT_EQUAL(R.screen, 1, "the screen button shows a screen")
+	press(H, R, "write", list("priority" = 1, "write" = "Cargo"))
+	TEST_ASSERT(asked(H), "writing a message asks for its text")
+	TEST_ASSERT_EQUAL(R.recipient, "Cargo", "for the chosen recipient")
+
+/datum/unit_test/dq_hc_struct/suit_cycler_is_emagged_and_dials_its_radiation
+/datum/unit_test/dq_hc_struct/suit_cycler_is_emagged_and_dials_its_radiation/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/suit_cycler/S = mach(/obj/machinery/suit_cycler, tile(3, 2))
+	press(H, S, "radlevel", list("radlevel" = 5))
+	TEST_ASSERT_EQUAL(S.radiation_level, 3, "an ordinary cycler stops at level 3")
+	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
+	hci_click(H, S, E)
+	settle()
+	TEST_ASSERT(S.emagged, "an emag subverts it")
+	TEST_ASSERT(!S.safeties, "and takes the safeties off")
+	press(H, S, "radlevel", list("radlevel" = 5))
+	TEST_ASSERT_EQUAL(S.radiation_level, 5, "an emagged one goes to 5")
+
+// Added with the conversion: the legacy text question needed a window state no player-less test can meet.
+/datum/unit_test/dq_hc_struct/requests_console_message_is_written
+/datum/unit_test/dq_hc_struct/requests_console_message_is_written/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/requests_console/R = mach(/obj/machinery/requests_console, tile(3, 2))
+	press(H, R, "write", list("priority" = 1, "write" = "Cargo"))
+	hci_answer(H, "Send crates")
+	settle()
+	TEST_ASSERT_EQUAL(R.message, "Send crates", "the text is the message")
+	TEST_ASSERT_EQUAL(R.priority, 1, "at the chosen priority")
+	var/list/data = hc_data(R, H)
+	TEST_ASSERT_EQUAL(data["message"], "Send crates", "the window shows it")
