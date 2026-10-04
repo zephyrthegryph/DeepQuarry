@@ -234,11 +234,11 @@
 			var/why_hand = gated.op_hand_refusal(A)
 			if(why_hand)
 				return why_hand
-	if(P.bay)
+	if(P.space)
 		var/atom/T = A.target
-		var/why_bay = istype(T) ? T.bay_reason(P.bay, A.authority) : null
-		if(why_bay)
-			return why_bay
+		var/why_space = istype(T) ? T.space_reason(P.space, A.authority, A.actor) : null
+		if(why_space)
+			return why_space
 	for(var/requirement in P.needs)
 		if(!op_req_holds(A, requirement))
 			return op_req_refusal(A, requirement)
@@ -281,15 +281,6 @@
 		. += RES_ITEM
 	if(!isnull(P.cooldown_t))
 		. += RES_COOLDOWN
-
-/// Does the atom's bay refuse the actor's reach now? (at(BAY_X): a requirement that a bay is open.) The compartment library answers
-/// (code/engine/library/bays.dm).
-/atom/proc/bay_reason(bay, authority)
-	return null
-
-/// The state reads bay `bay`'s openness depends on: list(list(entity, key), ...) for read_keys(). The compartment library answers.
-/atom/proc/bay_read_keys(bay)
-	return list()
 
 /// Part-level pre-check of an effect (the insert action's pre-check, the resource's availability): a reason, or null.
 /datum/entry/part/effect/proc/precheck(datum/act/op/A)

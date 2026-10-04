@@ -124,7 +124,7 @@ CAPABILITIES(/obj/machinery/vending)
 	wires(/datum/wires/vending)
 	emag(say = MSG(vending/shorted), repeatable = TRUE)
 	anchor()
-	extend("anchor.toggle", wait(2 SECONDS), needs(req_panel_closed()))
+	extend("anchor.toggle", wait(2 SECONDS), needs(req_closed(SPACE_PANEL)))
 	owns_one(nameof(coin), /obj/item/coin)
 	owns_many(nameof(product_records), /datum/stored_item/vending_product)
 	ref_one(nameof(currently_vending), /datum/stored_item/vending_product)
@@ -135,11 +135,11 @@ CAPABILITIES(/obj/machinery/vending)
 		then(PROC_REF(vend_access), early = TRUE),
 		then(PROC_REF(ui_vend)), logs(LOG_GAME))
 	op("remove_coin", ui_act(), needs(req_full(nameof(coin), because = MSG(vending/no_coin)), req(PROC_REF(actor_is_no_silicon), because = MSG(op/failed))), take_out(nameof(coin)))
-	op("toggle_voice", ui_act(), when(PANEL_OPEN), toggles(nameof(shut_up)))
+	op("toggle_voice", ui_act(), at(SPACE_PANEL), toggles(nameof(shut_up)))
 	op("insert_coin", item(/obj/item/coin), when(nameof(has_premium)), needs(req_operable(), req_empty(nameof(coin), because = MSG(bay/full))), put_in(nameof(coin)))
 	op("reject_fake_coin", item(/obj/item/fake_coin), when(nameof(has_premium)), then(PROC_REF(fake_coin_rejected)))
 	op("refill", item(/obj/item/refill_cartridge),
-		needs(req_panel_closed(), req_operable(), req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))),
+		needs(req_closed(SPACE_PANEL), req_operable(), req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))),
 		then(PROC_REF(refilled)), consumes())
 	op("stock", item(/obj/item), when(PROC_REF(stockable)), then(PROC_REF(stocked)))
 	op("open_with_item", item(/obj/item), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_operable()), opens_ui())

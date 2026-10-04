@@ -25,10 +25,6 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 /proc/req_operable()
 	return req_is(STAT_OPERABLE, because = MSG(machine/inoperable))
 
-/// The maintenance panel is closed, else "Close the maintenance panel first."
-/proc/req_panel_closed()
-	return req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel))
-
 /// The machine is broken (the BROKEN bit atom_break() sets): what breakable() draws and says.
 /obj/machinery/proc/stat_is_broken(datum/act/A)
 	return has_stat(BROKEN)
@@ -140,12 +136,13 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 
 // ---- the maintenance hatch ----
 
-CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, key = NONE, cover = null, wires = null, emag = null, lock = TRUE, panel_needs_cover_closed = FALSE, starts_locked = FALSE, emag_say = null, wires_by_hand = FALSE)
+CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, key = NONE, cover = null, wires = null, emag = null, lock = TRUE, panel_needs_cover_closed = FALSE, starts_locked = FALSE, emag_say = null, wires_by_hand = FALSE, lock_wire = null)
 
-/// compartment(BAY_HATCH, door = CAP_COVER), the cover you pass (a crowbar's by default), the panel, the wires when given, the ID lock and the emag
-/// when given, and the rules between them: the ID lock and the emag work only with the cover and the panel closed, and the panel opens only with
-/// the cover closed when panel_needs_cover_closed. A machine passes its wire set and its emag effect here instead of declaring wires and emag again.
-/// What sits behind the cover (a cell bay, a build ladder) works at(BAY_HATCH). `wires_by_hand` = TRUE: an empty hand opens the wires window too.
+/// space(SPACE_HATCH, door = CAP_COVER), the cover you pass (a crowbar's by default), the panel (and its space SPACE_PANEL), the wires when given,
+/// the ID lock (`lock_wire`: the wire it needs intact) and the emag when given, and the rules between them: the ID lock and the emag work only
+/// with the cover and the panel closed (req_closed()), and the panel is latched shut while the cover is open when panel_needs_cover_closed. A
+/// machine passes its wire set and its emag effect here instead of declaring wires and emag again. What sits behind the cover (a cell bay, a
+/// build ladder) works at(SPACE_HATCH). `wires_by_hand` = TRUE: an empty hand opens the wires window too.
 ///
 /// The hatch is where every tool on a wall machine meets something, so it says ONCE which answers a click when several could: a construction step
 /// before the panel (screwdriver) and the wires (wirecutters), the subversion reset before the wires (multitool), and for an empty hand the
@@ -155,11 +152,9 @@ CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/
 	output_hooks = OUTPUT_HOOK_DRAW
 
 /datum/capability/lib/maintenance_hatch/entries()
-	var/list/closed_up = list(
-		req_is(COVER_OPEN, FALSE, because = MSG(hatch/close_cover)),
-		req_panel_closed())
+	var/list/closed_up = list(req_closed(SPACE_HATCH), req_closed(SPACE_PANEL))
 	var/list/entries = list(
-		compartment(BAY_HATCH, door = CAP_COVER),
+		space(SPACE_HATCH, door = CAP_COVER),
 		cover || cover(),
 		panel())
 	if(wires)
@@ -168,11 +163,13 @@ CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/
 		entries += lock(starts_locked = starts_locked)
 		entries += extend("lock.toggle", needs(closed_up))
 		entries += extend("lock.toggle_worn", needs(closed_up))
+		if(lock_wire)
+			entries += extend(CAP_LOCK, needs(req_wire(lock_wire)))
 	if(emag)
 		entries += emag(emag, say = emag_say)
 		entries += extend("emag.use", needs(closed_up))
 	if(panel_needs_cover_closed)
-		entries += extend("panel.open", needs(req_is(COVER_OPEN, FALSE, because = MSG(hatch/close_cover))))
+		entries += latch(SPACE_PANEL, COVER_OPEN, because = MSG(hatch/close_cover))
 	// the canonical click order of the hatch's tools (click_order(), code/engine/parts/plan.dm)
 	entries += click_order(TOOL_SCREWDRIVER, list("construction.build:*", "construction.undo:*"), "panel.open")
 	entries += click_order(TOOL_WIRECUTTER, "construction.undo:*", "wires.cut")
