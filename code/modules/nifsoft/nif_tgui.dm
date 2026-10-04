@@ -19,6 +19,7 @@
 	var/datum/nif_menu/menu_ref
 
 CAPABILITIES(/obj/item/nif)
+	links(/obj/item/nif::human, /mob/living/carbon/human::nif)
 	owns_many(nameof(nifsofts), /datum/nifsoft)
 	owns_one(nameof(menu_ref), /datum/nif_menu)
 

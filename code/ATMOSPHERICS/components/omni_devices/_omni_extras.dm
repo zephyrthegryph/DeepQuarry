@@ -120,7 +120,6 @@
 	. = ..()
 	. += rel_one(nameof(air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
-/datum/omni_port/relations()
-	. = ..()
-	. += rel_one(nameof(master))
+CAPABILITIES(/datum/omni_port)
+	ref_one(nameof(master))
 

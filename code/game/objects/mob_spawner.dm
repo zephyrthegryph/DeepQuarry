@@ -30,9 +30,8 @@ TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
 DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
 
 // Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
-/obj/structure/mob_spawner/relations()
-	. = ..()
-	. += rel_many(nameof(spawned_mobs))
+CAPABILITIES(/obj/structure/mob_spawner)
+	ref_many(nameof(spawned_mobs))
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()

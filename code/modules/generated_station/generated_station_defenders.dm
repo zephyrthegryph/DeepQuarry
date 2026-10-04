@@ -73,6 +73,7 @@
 	var/suppress_sensor_events = FALSE
 
 CAPABILITIES(/datum/generated_station_defense_runtime)
+	links(/datum/generated_station_defense_runtime::director, /datum/generated_station_director::defense_runtime)
 	owns_many(nameof(agents))
 
 /// Area entry is only an event trigger. A report requires a real powered camera
@@ -412,10 +413,3 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 		if(defender && !QDELETED(defender))
 			qdel(defender)
 	return ..()
-
-/datum/generated_station_defense_runtime/relations()
-	. = ..()
-	. += rel_one(nameof(director), back = nameof(/datum/generated_station_director::defense_runtime))
-/datum/generated_station_director/relations()
-	. = ..()
-	. += rel_one(nameof(defense_runtime), back = nameof(/datum/generated_station_defense_runtime::director))

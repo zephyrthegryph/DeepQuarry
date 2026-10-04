@@ -360,7 +360,3 @@ UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_pan
 		data["accessory"] = TRUE
 
 	return data
-
-/mob/living/relations()
-	. = ..()
-	. += rel_one(nameof(internal)) // the equipped (or pump-supplied) tank we breathe from; the slot owns it
