@@ -16,12 +16,18 @@ ADMIN_VERB(dq_spawn_medical_dummy, R_DEBUG, "DQ Spawn Medical Dummy", "Spawn a d
 
 
 ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /datum/affliction subtype to a target's organ.", ADMIN_CATEGORY_DEBUG)
+	advance_condition(user)
+
+/datum/admin_verb/dq_apply_condition/proc/advance_condition(client/user, stage = 0, picked_target_key = null, picked_key = null, organ_key = null)
 	var/list/candidates = _dq_list_living_humans_in_view(user.mob)
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = verb_ask(user.mob, "k23", args, /datum/om/prompt/choice, message = "Target patient:", title = "DQ Medical", choices = candidates)
-	if(isnull(picked_target_key))
+	if(stage <= 0)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/medical_debug_apply, PROC_REF(condition_choice_made), answerer = answerer, question = "Target patient:", choices = candidates, stage = 0, target_key = picked_target_key, condition_key = picked_key)
 		return
 	if(!picked_target_key)
 		return
@@ -35,8 +41,11 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 	if(!length(options))
 		to_chat(user.mob, span_warning("No /datum/affliction subtypes defined."))
 		return
-	var/picked_key = verb_ask(user.mob, "k36", args, /datum/om/prompt/choice, message = "Which condition?", title = "DQ Medical", choices = options)
-	if(isnull(picked_key))
+	if(stage <= 1)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/medical_debug_apply, PROC_REF(condition_choice_made), answerer = answerer, question = "Which condition?", choices = options, stage = 1, target_key = picked_target_key, condition_key = picked_key)
 		return
 	if(!picked_key)
 		return
@@ -46,8 +55,11 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 		organ_options["[O.name] (external)"] = O
 	for(var/obj/item/organ/O as anything in target.internal_organ_list())
 		organ_options["[O.name] (internal)"] = O
-	var/organ_key = verb_ask(user.mob, "k45", args, /datum/om/prompt/choice, message = "Which organ?", title = "DQ Medical", choices = organ_options)
-	if(isnull(organ_key))
+	if(stage <= 2)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/medical_debug_apply, PROC_REF(condition_choice_made), answerer = answerer, question = "Which organ?", choices = organ_options, stage = 2, target_key = picked_target_key, condition_key = picked_key)
 		return
 	if(!organ_key)
 		return
@@ -65,6 +77,28 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 		return
 	to_chat(user.mob, span_notice("Applied [C.name] to [target]'s [picked_organ.name]."))
 	log_admin("[key_name(user)] applied condition [condition_type] to [target] / [picked_organ.name].")
+
+/datum/prompt/choice/medical_debug_apply
+	parent_type = /datum/prompt/choice/medical_debug_target
+	var/stage
+	var/target_key
+	var/condition_key
+
+/datum/admin_verb/dq_apply_condition/proc/condition_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/medical_debug_apply/ask = A.answer
+	var/client/user = ask.answerer?.client
+	if(!user)
+		return
+	switch(ask.stage)
+		if(0)
+			advance_condition(user, 1, ask.answer_value)
+		if(1)
+			advance_condition(user, 2, ask.target_key, ask.answer_value)
+		if(2)
+			advance_condition(user, 3, ask.target_key, ask.condition_key, ask.answer_value)
+
 
 
 ADMIN_VERB(dq_clear_conditions, R_DEBUG, "DQ Clear Medical Conditions", "Remove every affliction from a target.", ADMIN_CATEGORY_DEBUG)
