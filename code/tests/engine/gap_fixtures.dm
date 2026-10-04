@@ -140,7 +140,7 @@ CAPABILITIES(/obj/gap_window_base/plain)
 /// The input kinds of the old compact interactions as op bindings: a drag, an alt-click, telekinesis, a use in hand, a stance, a pass-through.
 /obj/gap_inputs
 	name = "gap inputs target"
-	var/list/ran = list()
+	var/list/ran
 	var/powered = TRUE
 	var/dragged_what
 
@@ -151,40 +151,50 @@ CAPABILITIES(/obj/gap_inputs)
 	op("pet", hand(), stance(I_HELP), label("Pet"), then(PROC_REF(petted)))
 	op("bite", hand(), stance(I_HURT), label("Bite"), then(PROC_REF(bitten)))
 
+/// What ran, in order, as text; forget_ran() clears it.
+/obj/gap_inputs/proc/ran_text()
+	return jointext(ran, ",")
+
+/obj/gap_inputs/proc/forget_ran()
+	ran = null
+
 /obj/gap_inputs/proc/dragged_in(datum/act/op/A)
 	var/mob/living/who = A.held
 	if(!powered)
 		return OP_DECLINE
 	dragged_what = who
-	ran += "drag"
+	LAZYADD(ran, "drag")
 	return OP_OK
 
 /obj/gap_inputs/proc/alt_flipped(datum/act/op/A)
-	ran += "alt"
+	LAZYADD(ran, "alt")
 	return OP_OK
 
 /obj/gap_inputs/proc/tk_nudged(datum/act/op/A)
-	ran += "tk"
+	LAZYADD(ran, "tk")
 	return OP_OK
 
 /obj/gap_inputs/proc/petted(datum/act/op/A)
-	ran += "pet"
+	LAZYADD(ran, "pet")
 	return OP_OK
 
 /obj/gap_inputs/proc/bitten(datum/act/op/A)
-	ran += "bite"
+	LAZYADD(ran, "bite")
 	return OP_OK
 
 /// A hand op and no tk() op: out of reach a telekinetic actor does it through its provider.
 /obj/gap_touch
 	name = "gap touch target"
-	var/list/ran = list()
+	var/list/ran
 
 CAPABILITIES(/obj/gap_touch)
 	op("touch", hand(), label("Touch"), then(PROC_REF(touched)))
 
+/obj/gap_touch/proc/ran_text()
+	return jointext(ran, ",")
+
 /obj/gap_touch/proc/touched(datum/act/op/A)
-	ran += "touch"
+	LAZYADD(ran, "touch")
 	return OP_OK
 
 /// An op that answers OP_PASS beneath another that takes the input: the pass hands the click on, the next op runs, and a result that does not pass stops there.

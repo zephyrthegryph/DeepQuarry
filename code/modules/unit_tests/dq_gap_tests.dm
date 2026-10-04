@@ -203,9 +203,9 @@
 	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
 	var/datum/op_result/R = test_drag(H, victim, target)
 	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the drag committed")
-	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "drag", "only the drag op ran (the hand ops are not a drag's)")
+	TEST_ASSERT_EQUAL(target.ran_text(), "drag", "only the drag op ran (the hand ops are not a drag's)")
 	TEST_ASSERT_EQUAL(target.dragged_what, victim, "the dragged mob was A.held")
-	target.ran.Cut()
+	target.forget_ran()
 	target.powered = FALSE
 	R = test_drag(H, victim, target)
 	TEST_ASSERT_EQUAL(R?.outcome, ACT_DECLINED, "an op that declines is not handled")
@@ -218,13 +218,13 @@
 	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
 	var/datum/op_result/R = test_click(H, target, null, GESTURE_ALT)
 	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the alt-click committed")
-	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "alt", "the alt op ran")
-	target.ran.Cut()
+	TEST_ASSERT_EQUAL(target.ran_text(), "alt", "the alt op ran")
+	target.forget_ran()
 	test_click(H, target, null, GESTURE_CLICK)
-	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "pet", "a plain click is the hand's Use, not the alt-click")
+	TEST_ASSERT_EQUAL(target.ran_text(), "pet", "a plain click is the hand's Use, not the alt-click")
 	// an unconscious actor is refused by the actor half of the hand gate, ungated() or not
-	target.ran.Cut()
-	H.stat = UNCONSCIOUS
+	target.forget_ran()
+	H.set_stat(UNCONSCIOUS)
 	test_click(H, target, null, GESTURE_ALT)
 	TEST_ASSERT(!length(target.ran), "an unconscious actor alt-clicks nothing")
 
@@ -234,11 +234,11 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
 	test_click(H, target, null)
-	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "pet", "peaceful: the stance(I_HELP) op")
-	target.ran.Cut()
+	TEST_ASSERT_EQUAL(target.ran_text(), "pet", "peaceful: the stance(I_HELP) op")
+	target.forget_ran()
 	H.set_combat_mode(TRUE)
 	test_click(H, target, null)
-	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "bite", "hostile: the stance(I_HURT) op")
+	TEST_ASSERT_EQUAL(target.ran_text(), "bite", "hostile: the stance(I_HURT) op")
 
 /// tk(): a telekinetic actor does a tk() op on what its hands do not reach, and only then; a hand op is reached at range through the same provider.
 /datum/unit_test/dq_gap/input_tk_is_a_provider_for_what_no_hand_reaches
@@ -255,21 +255,21 @@
 	TEST_ASSERT(H.tk_ready(), "the mutation makes the actor tk_ready()")
 	var/datum/op_result/R = test_click(H, far, null)
 	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "with it the click committed")
-	TEST_ASSERT_EQUAL(jointext(far.ran, ","), "tk", "the tk op went first, ahead of the hand ops the same provider reaches")
+	TEST_ASSERT_EQUAL(far.ran_text(), "tk", "the tk op went first, ahead of the hand ops the same provider reaches")
 	test_click(H, far_both, null)
-	TEST_ASSERT_EQUAL(jointext(far_both.ran, ","), "touch", "with no tk op, the hand op is done through the telekinesis provider")
+	TEST_ASSERT_EQUAL(far_both.ran_text(), "touch", "with no tk op, the hand op is done through the telekinesis provider")
 	// next to the actor the hand's op answers and the tk op is not offered
 	var/obj/gap_inputs/near = allocate(/obj/gap_inputs, home)
 	test_click(H, near, null)
-	TEST_ASSERT_EQUAL(jointext(near.ran, ","), "pet", "adjacent: the hand's op, not the tk one")
+	TEST_ASSERT_EQUAL(near.ran_text(), "pet", "adjacent: the hand's op, not the tk one")
 	H.remove_mutation(TK)
-	far.ran.Cut()
+	far.forget_ran()
 	test_click(H, far, null)
 	TEST_ASSERT(!length(far.ran), "without the mutation it is out of reach again")
 	// an unconscious telekinetic actor does nothing: the actor half of the hand gate holds for tk()
 	H.add_mutation(TK)
-	far.ran.Cut()
-	H.stat = UNCONSCIOUS
+	far.forget_ran()
+	H.set_stat(UNCONSCIOUS)
 	test_click(H, far, null)
 	TEST_ASSERT(!length(far.ran), "an unconscious actor reaches with nothing")
 
