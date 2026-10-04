@@ -944,18 +944,34 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 			to_chat(U, span_filter_notice("[src] has nothing stuck in their wounds that is large enough to remove."))
 		return
 
-	om_ask(U, /datum/om/prompt/choice/yank_object, PROC_REF(yank_object_chosen), choices = valid_objects, self = self)
+	open_request(src, /datum/prompt/choice/yank_object, PROC_REF(yank_object_chosen), answerer = U, choices = valid_objects, self = self)
 
 /// Which embedded object to pull out: the answerer must still be next to the body.
-/datum/om/prompt/choice/yank_object
+/datum/prompt/choice/yank_object
 	title = "Embedded objects"
-	message = "What do you want to yank out?"
-	requires = PROMPT_ADJACENT
+	question = "What do you want to yank out?"
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 	var/self
 
-/mob/proc/yank_object_chosen(datum/om/prompt/choice/yank_object/ask)
+/datum/prompt/choice/yank_object/recheck_extra()
+	if(!isnull(answer_value))
+		var/obj/item/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+
+/mob/proc/yank_object_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(yank_object_apply), A)
+	if(!result.ok)
+		stack_trace("embedded object selection: [result.error]")
+	return result.value
+
+/mob/proc/yank_object_apply(datum/act/request/A)
+	var/datum/prompt/choice/yank_object/ask = A.answer
 	var/mob/U = ask.answerer
-	var/obj/item/selection = ask.choice
+	var/obj/item/selection = ask.answer_value
 	var/self = ask.self
 	var/mob/S = src
 	if(!(selection in get_visible_implants(0)))
