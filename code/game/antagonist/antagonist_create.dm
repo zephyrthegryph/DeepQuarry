@@ -119,11 +119,17 @@
 
 /datum/antagonist/proc/set_antag_name(mob/living/player)
 	// Choose a name, if any.
-	om_ask(player, /datum/om/prompt/text, PROC_REF(antag_name_chosen), message = "You are a [role_text]. Would you like to change your name to something else?", title = "Name change", max_length = MAX_NAME_LEN, cancel_answer = "")
+	open_request(src, /datum/prompt/text, PROC_REF(antag_name_chosen), answerer = player, question = "You are a [role_text]. Would you like to change your name to something else?", title = "Name change", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
 
-/datum/antagonist/proc/antag_name_chosen(datum/om/prompt/text/ask)
-	var/mob/living/player = ask.answerer
-	var/newname = ask.text
+/datum/antagonist/proc/antag_name_chosen(datum/act/request/A)
+	var/datum/request/R = A.request
+	if(!A.answer && R.outcome != REQ_CANCELLED)
+		return
+	var/mob/living/player = R.answerer
+	if(QDELETED(player))
+		return
+	// Closing the original name prompt supplied a blank answer and still refreshed access.
+	var/newname = A.answer ? A.answer.answer_value : ""
 	if (newname)
 		player.real_name = newname
 		player.name = player.real_name
