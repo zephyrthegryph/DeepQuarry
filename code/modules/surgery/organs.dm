@@ -239,49 +239,48 @@
 		if(required && !QDELETED(src))
 			new_form_name_chosen(real_name)
 		return
-	om_ask(src, /datum/om/prompt/text/new_form_name, PROC_REF(new_form_name_entered), default = name, required = required, attempt = attempt)
+	open_request(src, /datum/prompt/text/new_form_name, PROC_REF(new_form_name_entered), answerer = src, default = name, required = required, attempt = attempt)
 
 /// The name a synthetic body's new occupant picks. A cancel is another go (see new_form_name_declined()).
-/datum/om/prompt/text/new_form_name
+/datum/prompt/text/new_form_name
 	name_text = TRUE
+	timeout = 0
 	title = "New Name"
-	message = "Pick a name for your new form!"
+	question = "Pick a name for your new form!"
 	var/required = FALSE
 	var/attempt = 1
 
-/datum/om/prompt/text/new_form_name/cancelled()
-	var/mob/living/carbon/human/H = answerer
-	if(istype(H))
-		H.new_form_name_declined(required, attempt)
-
 /// Confirms the sanitised name. No or a cancel is another go.
-/datum/om/prompt/confirm/new_form_name
+/datum/prompt/choice/new_form_name
 	title = "Confirmation"
-	yes_text = "Ok"
-	no_text = "Cancel"
-	no_first = TRUE
-	answer_on_no = TRUE
+	buttons = TRUE
+	timeout = 0
 	var/clean_name
 	var/required = FALSE
 	var/attempt = 1
 
-/datum/om/prompt/confirm/new_form_name/prepare()
-	message = "New name will be '[clean_name]', ok?"
-	return TRUE
+/datum/prompt/choice/new_form_name/prepare(datum/act/A)
+	..()
+	var/static/list/confirmation = list("Cancel", "Ok")
+	choices = confirmation
+	question = "New name will be '[clean_name]', ok?"
 
-/datum/om/prompt/confirm/new_form_name/cancelled()
-	var/mob/living/carbon/human/H = answerer
-	if(istype(H))
-		H.new_form_name_declined(required, attempt)
-
-/mob/living/carbon/human/proc/new_form_name_entered(datum/om/prompt/text/new_form_name/ask)
-	var/clean_name = sanitizeName(ask.text, allow_numbers = TRUE)
+/mob/living/carbon/human/proc/new_form_name_entered(datum/act/request/A)
+	var/datum/prompt/text/new_form_name/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value))
+			new_form_name_declined(ask.required, ask.attempt)
+		return
+	var/clean_name = sanitizeName(ask.value, allow_numbers = TRUE)
 	if(!clean_name)
 		return
-	om_ask(src, /datum/om/prompt/confirm/new_form_name, PROC_REF(new_form_name_answered), clean_name = clean_name, required = ask.required, attempt = ask.attempt)
+	open_request(src, /datum/prompt/choice/new_form_name, PROC_REF(new_form_name_answered), answerer = src, clean_name = clean_name, required = ask.required, attempt = ask.attempt)
 
-/mob/living/carbon/human/proc/new_form_name_answered(datum/om/prompt/confirm/new_form_name/ask)
-	if(ask.yes)
+/mob/living/carbon/human/proc/new_form_name_answered(datum/act/request/A)
+	var/datum/prompt/choice/new_form_name/ask = A.request
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		return
+	if(A.answer && ask.value == "Ok")
 		new_form_name_chosen(ask.clean_name)
 		return
 	new_form_name_declined(ask.required, ask.attempt)

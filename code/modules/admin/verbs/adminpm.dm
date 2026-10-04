@@ -67,8 +67,9 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	answerer?.client?.ahelp_reply_cancelled(whom)
 
 /// A popup admin PM's reply, on the recipient; the sender is looked up by ckey when it arrives.
-/datum/om/prompt/text/admin_pm_popup
+/datum/prompt/text/admin_pm_popup
 	multiline = TRUE
+	timeout = 0
 	var/sender_ckey
 
 /client/proc/ahelp_reply_cancelled(client/whom)
@@ -83,8 +84,11 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 //takes input from cmd_admin_pm_context, cmd_admin_pm_panel or /client/Topic and sends them a PM.
 //Fetching a message if needed. src is the sender and C is the target client
 /// A popup PM's reply (on the recipient): to the sender, or an adminhelp if they left.
-/client/proc/admin_pm_popup_replied(datum/om/prompt/text/admin_pm_popup/ask)
-	var/reply = ask.text
+/client/proc/admin_pm_popup_replied(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_pm_popup/ask = A.answer
+	var/reply = ask.answer_value
 	if(!reply)
 		return
 	var/client/sender = GLOB.directory[ask.sender_ckey]
@@ -99,7 +103,10 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 /// Shows this client a popup admin PM they can reply to (the answer runs on this client).
 /client/proc/ask_admin_pm_popup(msg, sender_key, sender_ckey)
-	om_ask(src, /datum/om/prompt/text/admin_pm_popup, PROC_REF(admin_pm_popup_replied), message = msg, title = "Admin PM from-[sender_key]", sender_ckey = sender_ckey)
+	var/mob/answering_user = mob
+	if(!answering_user)
+		return
+	open_request(src, /datum/prompt/text/admin_pm_popup, PROC_REF(admin_pm_popup_replied), answerer = answering_user, question = msg, title = "Admin PM from-[sender_key]", sender_ckey = sender_ckey)
 
 /client/proc/cmd_admin_pm(whom, msg, datum/ticket/T)
 	if(prefs.muted & MUTE_ADMINHELP)

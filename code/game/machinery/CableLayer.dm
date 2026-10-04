@@ -66,24 +66,38 @@
 	if(!cable || !cable.get_amount())
 		to_chat(user, span_warning("There's no more cable on the reel."))
 		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/number/cablelayer_cut, PROC_REF(cable_length_entered), answerer = user, title = "Cut cable", question = "Please specify the length of cable to cut", default = min(cable.get_amount(), 30), tool = tool, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+	open_request(src, /datum/prompt/number/cablelayer_cut, PROC_REF(cable_length_entered), answerer = user, default = min(cable.get_amount(), 30), tool = tool)
 	return ITEM_INTERACT_SUCCESS
 
-/// How much cable to cut off the layer's reel: the tool is kept on the question.
+/// How much cable to cut off the layer's reel. Re-checked: next to the layer and able.
 /datum/prompt/number/cablelayer_cut
+	title = "Cut cable"
+	question = "Please specify the length of cable to cut"
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+	timeout = 0
+	step = 1
 	var/obj/item/tool
 
 CAPABILITIES(/datum/prompt/number/cablelayer_cut)
 	ref_one(nameof(tool), /obj/item)
 
+/datum/prompt/number/cablelayer_cut/prepare(datum/act/A)
+	..()
+	var/obj/item/captured_tool = tool
+	rel_clear(src, nameof(tool))
+	rel_set(src, nameof(tool), captured_tool)
+
+/datum/prompt/number/cablelayer_cut/recheck_extra()
+	return QDELETED(tool) ? "gone" : null
+
 /obj/machinery/cablelayer/proc/cable_length_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/prompt/number/cablelayer_cut/R = A.request
-	var/obj/item/tool = R.tool
+	var/datum/prompt/number/cablelayer_cut/ask = A.answer
+	var/obj/item/tool = ask.tool
 	if(!cable)
 		return
-	var/amount = min(A.answer.answer_value, cable.get_amount(), 30)
+	var/amount = min(ask.answer_value, cable.get_amount(), 30)
 	if(amount)
 		playsound(src, tool.usesound, 50, TRUE)
 		use_cable(amount)

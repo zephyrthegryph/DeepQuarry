@@ -875,7 +875,7 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_temperature)
 	var/list/selected = TLV["temperature"]
 	var/max_temperature = min(selected[3] - T0C, MAX_TEMPERATURE)
 	var/min_temperature = max(selected[2] - T0C, MIN_TEMPERATURE)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(thermostat_entered), message = "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", default = target_temperature - T0C, max = max_temperature, min = min_temperature, title = "Thermostat Controls", round_entry = FALSE, requires = PROMPT_USABLE_BY("default"))
+	open_request(src, /datum/prompt/number, PROC_REF(thermostat_entered), answerer = user, timeout = 0, question = "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", default = target_temperature - T0C, max_value = max_temperature, min_value = min_temperature, title = "Thermostat Controls", usable_state = "default")
 	return TRUE
 
 /// Whether `user` may use the lockable controls (every action but rcon and temperature).
@@ -954,7 +954,7 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_threshold)
 	var/name = params["var"]
 	if(!(env in TLV))
 		return
-	om_ask(user, /datum/om/prompt/number/machine_ui, PROC_REF(threshold_entered), title = name, message = "New [name] for [env]:", default = TLV[env][name], min = -1, round_entry = FALSE, env = env, setting = name)
+	open_request(src, /datum/prompt/number/air_alarm_threshold, PROC_REF(threshold_entered), answerer = user, title = name, question = "New [name] for [env]:", default = TLV[env][name], min_value = -1, env = env, setting = name)
 	refresh_area_alarms()
 	return TRUE
 
@@ -984,11 +984,14 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset)
 	refresh_area_alarms()
 	return TRUE
 
-/obj/machinery/alarm/proc/thermostat_entered(datum/om/prompt/number/ask)
+/obj/machinery/alarm/proc/thermostat_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/ask = A.request
 	var/mob/user = ask.answerer
-	var/input_temperature = ask.number
-	var/max_temperature = ask.max
-	var/min_temperature = ask.min
+	var/input_temperature = ask.answer_value
+	var/max_temperature = ask.max_value
+	var/min_temperature = ask.min_value
 	if(isnum(input_temperature))
 		if(input_temperature > max_temperature || input_temperature < min_temperature)
 			to_chat(user, "Temperature must be between [min_temperature]C and [max_temperature]C")
@@ -998,8 +1001,17 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset)
 				AA.invalidate_gas_dependencies()
 	return TRUE
 
-/obj/machinery/alarm/proc/threshold_entered(datum/om/prompt/number/machine_ui/ask)
-	var/value = ask.number
+/datum/prompt/number/air_alarm_threshold
+	timeout = 0
+	usable_state = "default"
+	var/env
+	var/setting
+
+/obj/machinery/alarm/proc/threshold_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/air_alarm_threshold/ask = A.request
+	var/value = ask.answer_value
 	var/env = ask.env
 	var/name = ask.setting
 	if(!isnull(value))

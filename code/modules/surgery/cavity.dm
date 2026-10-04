@@ -172,31 +172,55 @@
 	..()
 	if(!length(part.implants))
 		return
-	om_ask(user, /datum/om/prompt/choice/extract_foreign_body, PROC_REF(foreign_body_chosen), title = name, choices = part.implants, subject = target, part = part, tool = tool)
+	open_request(src, /datum/prompt/choice/extract_foreign_body, PROC_REF(foreign_body_chosen), answerer = user, title = name, choices = part.implants, subject = target, part = part, tool = tool)
 
 /// Which embedded object to pull out. Re-checked on the answer: the surgeon is still next to the
 /// patient and able, the part is still theirs, the pick is still in it and the tool still in hand.
-/datum/om/prompt/choice/extract_foreign_body
-	message = "Which embedded object do you wish to remove?"
+/datum/prompt/choice/extract_foreign_body
+	question = "Which embedded object do you wish to remove?"
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	timeout = 0
 	var/obj/item/organ/external/part
 	var/obj/item/tool
 
-/datum/om/prompt/choice/extract_foreign_body/valid()
-	if(!choice || !(choice in part.implants) || part.owner != subject || answerer.get_active_hand() != tool)
+CAPABILITIES(/datum/prompt/choice/extract_foreign_body)
+	ref_one(nameof(subject), /mob/living/carbon/human)
+	ref_one(nameof(part), /obj/item/organ/external)
+	ref_one(nameof(tool), /obj/item)
+
+/datum/prompt/choice/extract_foreign_body/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured_patient = subject
+	var/obj/item/organ/external/captured_part = part
+	var/obj/item/captured_tool = tool
+	var/datum/request/request = src
+	rel_clear(request, nameof(request.subject))
+	rel_clear(src, nameof(part))
+	rel_clear(src, nameof(tool))
+	rel_set(request, nameof(request.subject), captured_patient)
+	rel_set(src, nameof(part), captured_part)
+	rel_set(src, nameof(tool), captured_tool)
+
+/datum/prompt/choice/extract_foreign_body/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/atom/movable/selected = answer_value
+	if(QDELETED(subject) || QDELETED(part) || QDELETED(tool) || !istype(selected) || QDELETED(selected) || !(selected in part.implants) || part.owner != subject || answerer.get_active_hand() != tool)
 		return "lost the grip"
 	return null
 
-/datum/om/prompt/choice/extract_foreign_body/refused(reason)
-	if(answerer && tool && subject && part)
-		to_chat(answerer, span_notice("You draw \the [tool] back out of [subject]'s [part.name]."))
-
-/datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(datum/om/prompt/choice/extract_foreign_body/ask)
+/datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(datum/act/request/A)
+	var/datum/prompt/choice/extract_foreign_body/ask = A.request
+	if(!A.answer)
+		if(!isnull(ask.answer_value) && !QDELETED(ask.answerer) && !QDELETED(ask.tool) && !QDELETED(ask.subject) && !QDELETED(ask.part))
+			to_chat(ask.answerer, span_notice("You draw \the [ask.tool] back out of [ask.subject]'s [ask.part.name]."))
+		return
 	var/mob/living/user = ask.answerer
 	var/mob/living/carbon/human/target = ask.subject
 	var/obj/item/organ/external/part = ask.part
 	var/obj/item/tool = ask.tool
-	var/atom/movable/removed = ask.choice
+	var/atom/movable/removed = ask.answer_value
 	var/wait = 0
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed

@@ -126,25 +126,31 @@
 	wear = 0.5
 
 /datum/nifsoft/sizechange
-	var/tmp/datum/om/prompt/number/size_prompt
+	var/tmp/datum/prompt/number/size_prompt
+
+CAPABILITIES(/datum/nifsoft/sizechange)
+	ref_one(nameof(size_prompt), /datum/prompt/number)
 
 /datum/nifsoft/sizechange/activate()
 	if((. = ..()))
 		var/obj/item/nif/implant = nif()
-		var/datum/om/prompt/number/ask = om_ask(implant?.human, /datum/om/prompt/number, PROC_REF(size_chosen), message = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", title = "Set Size", default = 200, max = 600, min = 1, subject = implant, optional = TRUE)
+		var/datum/prompt/number/ask
+		if(implant?.human && !QDELETED(implant.human))
+			ask = open_request(src, /datum/prompt/number, PROC_REF(size_chosen), answerer = implant.human, timeout = 0, step = 1, question = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", title = "Set Size", default = 200, max_value = 600, min_value = 1, subject = implant)
 		rel_set(src, nameof(size_prompt), ask)
 		// This is a pulse: the answer can outlive its original implanted owner.
 		after(src, 0, PROC_REF(deactivate))
 
-/datum/nifsoft/sizechange/proc/size_chosen(datum/om/prompt/number/ask)
+/datum/nifsoft/sizechange/proc/size_chosen(datum/act/request/A)
+	var/datum/prompt/number/ask = A.request
 	if(ask != size_prompt)
 		return
 	rel_clear(src, nameof(size_prompt))
 	var/obj/item/nif/implant = nif()
 	var/mob/living/carbon/human/human = implant?.human
-	if(!human || ask.subject != implant || ask.answerer != human || human.nif != implant || implant.stat != NIF_WORKING || isnull(ask.number))
+	if(!human || ask.subject != implant || ask.answerer != human || human.nif != implant || implant.stat != NIF_WORKING || !A.answer)
 		return
-	var/new_size = ask.number
+	var/new_size = ask.answer_value
 	if(!human.size_range_check(new_size))
 		if(new_size)
 			to_chat(human, span_notice("The safety features of the NIF Program prevent you from choosing this size."))

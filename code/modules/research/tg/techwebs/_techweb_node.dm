@@ -26,8 +26,6 @@
 	var/list/unlock_ids // Lazy: leaf nodes unlock nothing.
 	/// List of items you need to deconstruct to unlock this node.
 	var/list/required_items_to_unlock // Lazy
-	/// Boosting this will autounlock this node
-	var/autounlock_by_boost = TRUE
 	/// The points cost to research the node, type = amount
 	var/list/research_costs
 	/// The category of the node
@@ -40,8 +38,6 @@
 	var/list/experiments_to_unlock // Lazy
 	/// Whether or not this node should show on the wiki
 	var/show_on_wiki = TRUE
-	/// Hidden Mech nodes unlocked when mech fabricator emaged.
-	var/illegal_mech_node = FALSE
 	/**
 	 * If set, the researched node will be announced on these channels by an announcement system
 	 * with 'announce_research_node' set to TRUE when researched by the station.

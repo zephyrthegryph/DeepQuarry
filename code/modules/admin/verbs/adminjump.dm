@@ -52,8 +52,17 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 	/// Send Mob: the area picked first.
 	var/area/area
 
-/client/proc/jump_mob_picked(datum/om/prompt/choice/admin_jump/ask)
-	do_jumptomob(ask.choice)
+/datum/prompt/choice/admin_jump_mob
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+
+/client/proc/jump_mob_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/selected = A.answer.answer_value
+	if(!istype(selected) || QDELETED(selected))
+		return
+	do_jumptomob(selected)
 
 /// Performs the jumps, also called from admin Topic() for JMP links
 /client/proc/do_jumptomob(mob/M)
@@ -64,7 +73,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 		return
 
 	if(!M)
-		om_ask(mob, /datum/om/prompt/choice/admin_jump, PROC_REF(jump_mob_picked), title = "Jump to Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
+		open_request(src, /datum/prompt/choice/admin_jump_mob, PROC_REF(jump_mob_picked), answerer = mob, title = "Jump to Mob", question = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 		return
 
 	var/mob/A = src.mob // Impossible to be unset, enforced by byond

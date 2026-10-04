@@ -1464,11 +1464,7 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 	overlay_state = "casinoslave"
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/accessory/mob_ch_teshari.dmi')
 
-	var/slavename = null	//Name for system to put on collar description
 	var/ownername = null	//Name for system to put on collar description
-	var/slaveckey = null	//Ckey for system to check who is the person and ensure no abuse of system or errors
-	var/slaveflavor = null	//Description to show on the SPASM
-	var/slaveooc = null		//OOC text to show on the SPASM
 	special_collar = TRUE
 
 /obj/item/clothing/accessory/collar/holo/casinoslave_fake

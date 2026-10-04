@@ -69,7 +69,7 @@
 	var/quantity = rand(5, 15)
 	for(var/i=0, i<quantity, i++)
 		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
+		var/static/list/icons = list(
 			"round" = "circle",
 			"square" = "square",
 			"diamond" = "gem",
@@ -78,7 +78,7 @@
 			"human" = "user",
 		)
 		var/icon = pick(icons)
-		var/list/colors = list(
+		var/static/list/colors = list(
 			"toggle" = "pink",
 			"switch" = "yellow",
 			"lever" = "red",
@@ -244,7 +244,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 
 	for(var/i=0, i<quantity, i++)
 		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
+		var/static/list/icons = list(
 			"round" = "circle",
 			"square" = "square",
 			"diamond" = "gem",
@@ -253,7 +253,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 			"human" = "user",
 		)
 		var/icon = pick(icons)
-		var/list/colors = list(
+		var/static/list/colors = list(
 			"toggle" = "pink",
 			"switch" = "yellow",
 			"lever" = "red",
@@ -521,7 +521,7 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 
 	for(var/i=0, i<quantity, i++)
 		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
+		var/static/list/icons = list(
 			"round" = "circle",
 			"square" = "square",
 			"diamond" = "gem",
@@ -530,7 +530,7 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 			"human" = "user",
 		)
 		var/icon = pick(icons)
-		var/list/colors = list(
+		var/static/list/colors = list(
 			"toggle" = "pink",
 			"switch" = "yellow",
 			"lever" = "red",

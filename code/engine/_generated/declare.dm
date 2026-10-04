@@ -2697,6 +2697,13 @@
 	into += entry_line(11)
 	into += list(global.owns_one(nameof(arscreen), /datum/tgui_module/crew_monitor/nif))
 
+/// CAPABILITIES(/datum/nifsoft/sizechange) at code/modules/nifsoft/software/15_misc.dm:131
+/datum/nifsoft/sizechange/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/nifsoft/software/15_misc.dm", 131, /datum/nifsoft/sizechange)
+	into += entry_line(132)
+	into += list(global.ref_one(nameof(size_prompt), /datum/prompt/number))
+
 /// CAPABILITIES(/datum/nifsoft/soulcatcher) at code/modules/nifsoft/software/13_soulcatcher.dm:16
 /datum/nifsoft/soulcatcher/declared_entries(list/into)
 	..(into)
@@ -3110,12 +3117,30 @@
 	into += entry_line(158)
 	into += list(global.ref_one(nameof(camera), /obj/machinery/camera))
 
+/// CAPABILITIES(/datum/prompt/choice/crystal_ghost_invite) at code/game/objects/items/weapons/capture_crystal.dm:206
+/datum/prompt/choice/crystal_ghost_invite/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/capture_crystal.dm", 206, /datum/prompt/choice/crystal_ghost_invite)
+	into += entry_line(207)
+	into += list(global.ref_one(nameof(bound), /mob/living/simple_mob))
+
 /// CAPABILITIES(/datum/prompt/choice/explosive_implant_level) at code/game/objects/items/weapons/implants/implant.dm:306
 /datum/prompt/choice/explosive_implant_level/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 306, /datum/prompt/choice/explosive_implant_level)
 	into += entry_line(307)
 	into += list(global.ref_one(nameof(source), /mob))
+
+/// CAPABILITIES(/datum/prompt/choice/extract_foreign_body) at code/modules/surgery/cavity.dm:186
+/datum/prompt/choice/extract_foreign_body/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/surgery/cavity.dm", 186, /datum/prompt/choice/extract_foreign_body)
+	into += entry_line(187)
+	into += list(global.ref_one(nameof(subject), /mob/living/carbon/human))
+	into += entry_line(188)
+	into += list(global.ref_one(nameof(part), /obj/item/organ/external))
+	into += entry_line(189)
+	into += list(global.ref_one(nameof(tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/choice/faction_join) at code/game/antagonist/antagonist_factions.dm:46
 /datum/prompt/choice/faction_join/declared_entries(list/into)
@@ -3147,6 +3172,13 @@
 	into += entry_line(124)
 	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
 
+/// CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob) at code/game/objects/items/devices/mind_binder.dm:88
+/datum/prompt/choice/mindbinder/store_mob/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/mind_binder.dm", 88, /datum/prompt/choice/mindbinder/store_mob)
+	into += entry_line(89)
+	into += list(global.ref_one(nameof(victim), /mob/living))
+
 /// CAPABILITIES(/datum/prompt/choice/pai_access) at code/modules/mob/living/silicon/pai/pai.dm:340
 /datum/prompt/choice/pai_access/declared_entries(list/into)
 	..(into)
@@ -3177,12 +3209,49 @@
 	into += entry_line(176)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/choice/protean_layer_state) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:130
+/datum/prompt/choice/protean_layer_state/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 130, /datum/prompt/choice/protean_layer_state)
+	into += entry_line(131)
+	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
+/// CAPABILITIES(/datum/prompt/choice/protean_layers) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:113
+/datum/prompt/choice/protean_layers/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 113, /datum/prompt/choice/protean_layers)
+	into += entry_line(114)
+	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
+/// CAPABILITIES(/datum/prompt/choice/protean_power) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:269
+/datum/prompt/choice/protean_power/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 269, /datum/prompt/choice/protean_power)
+	into += entry_line(270)
+	into += list(global.ref_one(nameof(power), /datum/protean_power))
+	into += entry_line(271)
+	into += list(global.ref_one(nameof(form), /datum/forms/protean))
+
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/computer/shuttle.dm", 59, /datum/prompt/choice/shuttle_authorization)
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
+
+/// CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal) at code/game/objects/items/devices/scanners/sleevemate.dm:415
+/datum/prompt/choice/sleevemate_mindsteal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/sleevemate.dm", 415, /datum/prompt/choice/sleevemate_mindsteal)
+	into += entry_line(416)
+	into += list(global.ref_one(nameof(victim), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/choice/sleevemate_target) at code/game/objects/items/devices/scanners/sleevemate.dm:72
+/datum/prompt/choice/sleevemate_target/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/sleevemate.dm", 72, /datum/prompt/choice/sleevemate_target)
+	into += entry_line(73)
+	into += list(global.ref_one(nameof(sleevemate), /obj/item/sleevemate))
 
 /// CAPABILITIES(/datum/prompt/choice/weave_confirmation) at code/datums/entity_state/traits/weaver.dm:65
 /datum/prompt/choice/weave_confirmation/declared_entries(list/into)
@@ -3198,12 +3267,33 @@
 	into += entry_line(352)
 	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
 
-/// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:76
+/// CAPABILITIES(/datum/prompt/color/prefs) at code/modules/client/preferences/editors/body_markings.dm:163
+/datum/prompt/color/prefs/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/client/preferences/editors/body_markings.dm", 163, /datum/prompt/color/prefs)
+	into += entry_line(164)
+	into += list(global.ref_one(nameof(preferences), /datum/preferences))
+
+/// CAPABILITIES(/datum/prompt/color/protean_layer) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:167
+/datum/prompt/color/protean_layer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 167, /datum/prompt/color/protean_layer)
+	into += entry_line(168)
+	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
+/// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:81
 /datum/prompt/number/cablelayer_cut/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/CableLayer.dm", 76, /datum/prompt/number/cablelayer_cut)
-	into += entry_line(77)
+	into += entry_block("code/game/machinery/CableLayer.dm", 81, /datum/prompt/number/cablelayer_cut)
+	into += entry_line(82)
 	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/number/protean_store) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:606
+/datum/prompt/number/protean_store/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 606, /datum/prompt/number/protean_store)
+	into += entry_line(607)
+	into += list(global.ref_one(nameof(stack), /obj/item/stack/material))
 
 /// CAPABILITIES(/datum/prompt/text/air_control_sensor_name) at code/game/machinery/atmo_control.dm:308
 /datum/prompt/text/air_control_sensor_name/declared_entries(list/into)
@@ -3261,6 +3351,13 @@
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
 
+/// CAPABILITIES(/datum/prompt/text/protean_style) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:186
+/datum/prompt/text/protean_style/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 186, /datum/prompt/text/protean_style)
+	into += entry_line(187)
+	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:965
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
 	..(into)
@@ -3284,6 +3381,15 @@
 	into += entry_line(717)
 	into += list(global.ref_one(nameof(loader), /mob))
 
+/// CAPABILITIES(/datum/prompt/yes_no/holowarrant_authorize) at code/game/objects/items/devices/holowarrant.dm:51
+/datum/prompt/yes_no/holowarrant_authorize/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/holowarrant.dm", 51, /datum/prompt/yes_no/holowarrant_authorize)
+	into += entry_line(52)
+	into += list(global.ref_one(nameof(card), /obj/item/card/id))
+	into += entry_line(53)
+	into += list(global.ref_one(nameof(warrant), /datum/data/record/warrant))
+
 /// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:82
 /datum/prompt/yes_no/pai_dna_sample/declared_entries(list/into)
 	..(into)
@@ -3297,6 +3403,15 @@
 	into += entry_block("code/game/machinery/pandemic.dm", 107, /datum/prompt/yes_no/pandemic_release_sign)
 	into += entry_line(108)
 	into += list(global.ref_one(nameof(disease), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/yes_no/protean_power) at code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm:294
+/datum/prompt/yes_no/protean_power/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm", 294, /datum/prompt/yes_no/protean_power)
+	into += entry_line(295)
+	into += list(global.ref_one(nameof(power), /datum/protean_power))
+	into += entry_line(296)
+	into += list(global.ref_one(nameof(form), /datum/forms/protean))
 
 /// CAPABILITIES(/datum/prompt/yes_no/record_notes_delete) at code/game/machinery/computer/medical.dm:430
 /datum/prompt/yes_no/record_notes_delete/declared_entries(list/into)
@@ -3810,17 +3925,17 @@
 	into += entry_line(10)
 	into += list(global.owns_one(nameof(active_vote), /datum/vote))
 
-/// CAPABILITIES(/datum/techweb) at code/modules/research/tg/techwebs/_techweb.dm:85
+/// CAPABILITIES(/datum/techweb) at code/modules/research/tg/techwebs/_techweb.dm:83
 /datum/techweb/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/research/tg/techwebs/_techweb.dm", 85, /datum/techweb)
-	into += entry_line(86)
+	into += entry_block("code/modules/research/tg/techwebs/_techweb.dm", 83, /datum/techweb)
+	into += entry_line(84)
 	into += list(global.ref_many(nameof(consoles_accessing)))
-	into += entry_line(87)
+	into += entry_line(85)
 	into += list(global.ref_many(nameof(techweb_servers)))
-	into += entry_line(88)
+	into += entry_line(86)
 	into += list(global.owns_many(nameof(available_experiments), /datum/experiment))
-	into += entry_line(89)
+	into += entry_line(87)
 	into += list(global.owns_many(nameof(completed_experiments), /datum/experiment))
 
 /// CAPABILITIES(/datum/tgs_api) at code/modules/tgs/core/datum.dm:9
@@ -8736,13 +8851,13 @@
 	into += entry_line(589)
 	into += list(global.owns_many(nameof(pockets)))
 
-/// CAPABILITIES(/obj/item/gun) at code/modules/projectiles/gun.dm:117
+/// CAPABILITIES(/obj/item/gun) at code/modules/projectiles/gun.dm:115
 /obj/item/gun/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/gun.dm", 117, /obj/item/gun)
-	into += entry_line(118)
+	into += entry_block("code/modules/projectiles/gun.dm", 115, /obj/item/gun)
+	into += entry_line(116)
 	into += list(global.owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes)))
-	into += entry_line(119)
+	into += entry_line(117)
 	into += list(global.owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector))
 
 /// CAPABILITIES(/obj/item/gun/energy) at code/modules/projectiles/guns/energy.dm:186
@@ -9825,17 +9940,17 @@
 	into += entry_line(75)
 	into += list(global.owns_one(nameof(contract_document), /datum/contract_document))
 
-/// CAPABILITIES(/obj/item/paper/admin) at code/modules/paperwork/adminpaper.dm:89
+/// CAPABILITIES(/obj/item/paper/admin) at code/modules/paperwork/adminpaper.dm:94
 /obj/item/paper/admin/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/paperwork/adminpaper.dm", 89, /obj/item/paper/admin)
-	into += entry_line(90)
+	into += entry_block("code/modules/paperwork/adminpaper.dm", 94, /obj/item/paper/admin)
+	into += entry_line(95)
 	into += list(global.op("penmode", global.ui_act("penmode"), global.then(PROC_REF(admin_paper_penmode))))
-	into += entry_line(91)
+	into += entry_line(96)
 	into += list(global.op("clear", global.ui_act("clear"), global.then(PROC_REF(admin_paper_clear))))
-	into += entry_line(92)
+	into += entry_line(97)
 	into += list(global.op("toggleheader", global.ui_act("toggleheader"), global.then(PROC_REF(admin_paper_toggleheader))))
-	into += entry_line(93)
+	into += entry_line(98)
 	into += list(global.op("togglefooter", global.ui_act("togglefooter"), global.then(PROC_REF(admin_paper_togglefooter))))
 
 /// CAPABILITIES(/obj/item/paper/carbon) at code/modules/paperwork/carbonpaper.dm:30
@@ -10002,11 +10117,11 @@
 	into += entry_line(50)
 	into += list(global.op("timer", global.in_hand(), global.needs(req_self_held(), global.req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), global.req_capable()), global.label("Set explosive timer"), global.asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), global.then(PROC_REF(timer_set))))
 
-/// CAPABILITIES(/obj/item/poster/custom) at code/game/objects/effects/decals/posters/postersubtypes.dm:50
+/// CAPABILITIES(/obj/item/poster/custom) at code/game/objects/effects/decals/posters/postersubtypes.dm:53
 /obj/item/poster/custom/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/effects/decals/posters/postersubtypes.dm", 50, /obj/item/poster/custom)
-	into += entry_line(51)
+	into += entry_block("code/game/objects/effects/decals/posters/postersubtypes.dm", 53, /obj/item/poster/custom)
+	into += entry_line(54)
 	into += list(global.op("select_poster_effect", global.menu(), global.label("Set Poster type"), global.needs(global.carried()), global.then(PROC_REF(select_poster_effect))))
 
 /// CAPABILITIES(/obj/item/powersink) at code/game/objects/items/devices/powersink.dm:62

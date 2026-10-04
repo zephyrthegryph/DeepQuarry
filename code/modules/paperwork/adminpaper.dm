@@ -80,10 +80,15 @@
 	generateFooter()
 	tgui_view = "write"
 	// Closing the logo question opens the fax without a header.
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(header_logo_chosen), title = "Fax Logo", message = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), cancel_answer = "", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT))
+	open_request(src, /datum/prompt/choice, PROC_REF(header_logo_chosen), answerer = user, timeout = 0, title = "Fax Logo", question = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), rights = R_ADMIN|R_EVENT)
 
-/obj/item/paper/admin/proc/header_logo_chosen(datum/om/prompt/choice/ask)
-	generateHeader(ask.choice)
+/obj/item/paper/admin/proc/header_logo_chosen(datum/act/request/A)
+	var/datum/request/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		return
+	generateHeader(A.answer ? ask.answer_value : "")
 	tgui_interact(ask.answerer)
 
 CAPABILITIES(/obj/item/paper/admin)

@@ -219,41 +219,52 @@ VV_TOPIC_ACTION(/obj, VV_HK_MASS_DEL_TYPE, PROC_REF(vv_topic_mass_delete_type), 
 VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), TOPIC_RIGHTS(R_FUN))
 
 /obj/proc/vv_topic_mass_delete_type(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/mass_delete_scope, PROC_REF(mass_delete_scope_chosen))
+	open_request(src, /datum/prompt/choice/mass_delete_scope, PROC_REF(mass_delete_scope_chosen), answerer = user)
 	return TRUE
 
 /obj/item/pda/proc/vv_topic_fake_convo(mob/user, list/args)
 	createPropFakeConversation_admin(user)
 	return TRUE
 
-/datum/om/prompt/choice/mass_delete_scope
+/datum/prompt/choice/mass_delete_scope
 	choices = list("Strict type","Type and subtypes","Cancel")
 	buttons = TRUE
-	requires = PROMPT_ADMIN(R_DEBUG|R_SERVER)
+	rights = R_DEBUG|R_SERVER
+	timeout = 0
 
-/datum/om/prompt/choice/mass_delete_scope/prepare()
-	message = "Strict type ([subject.type]) or type and all subtypes?"
-	return TRUE
+/datum/prompt/choice/mass_delete_scope/prepare(datum/act/A)
+	..()
+	question = "Strict type ([owner.type]) or type and all subtypes?"
 
-/datum/om/prompt/confirm/mass_delete
-	requires = PROMPT_ADMIN(R_DEBUG|R_SERVER)
+/datum/prompt/yes_no/mass_delete
+	rights = R_DEBUG|R_SERVER
+	timeout = 0
 	var/scope
 	/// The second, final confirmation.
 	var/second = FALSE
 
-/datum/om/prompt/confirm/mass_delete/prepare()
-	message = second ? "Second confirmation required. Delete?" : "Are you really sure you want to delete all objects of type [subject.type]?"
-	return TRUE
+/datum/prompt/yes_no/mass_delete/prepare(datum/act/A)
+	..()
+	question = second ? "Second confirmation required. Delete?" : "Are you really sure you want to delete all objects of type [owner.type]?"
 
-/obj/proc/mass_delete_scope_chosen(datum/om/prompt/choice/mass_delete_scope/ask)
-	if(ask.choice == "Cancel")
+/obj/proc/mass_delete_scope_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/mass_delete, PROC_REF(mass_delete_sure), scope = ask.choice)
+	var/datum/prompt/choice/mass_delete_scope/ask = A.answer
+	if(ask.answer_value == "Cancel")
+		return
+	open_request(src, /datum/prompt/yes_no/mass_delete, PROC_REF(mass_delete_sure), answerer = ask.answerer, scope = ask.answer_value)
 
-/obj/proc/mass_delete_sure(datum/om/prompt/confirm/mass_delete/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/mass_delete, PROC_REF(mass_delete_confirmed), scope = ask.scope, second = TRUE)
+/obj/proc/mass_delete_sure(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/yes_no/mass_delete/ask = A.answer
+	open_request(src, /datum/prompt/yes_no/mass_delete, PROC_REF(mass_delete_confirmed), answerer = ask.answerer, scope = ask.scope, second = TRUE)
 
-/obj/proc/mass_delete_confirmed(datum/om/prompt/confirm/mass_delete/ask)
+/obj/proc/mass_delete_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/yes_no/mass_delete/ask = A.answer
 	var/mob/user = ask.answerer
 	var/action_type = ask.scope
 	var/O_type = type

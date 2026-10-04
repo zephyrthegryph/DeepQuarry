@@ -1179,12 +1179,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		trait_injection_selected = reagent_choice
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
-/mob/living/proc/injection_amount_chosen(datum/om/prompt/number/ask)
-	trait_injection_amount = clamp(ask.number, 0, 5)
+/mob/living/proc/injection_amount_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	trait_injection_amount = clamp(A.answer.answer_value, 0, 5)
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
-/mob/living/proc/injection_verb_chosen(datum/om/prompt/text/ask)
-	trait_injection_verb = ask.text
+/mob/living/proc/injection_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	trait_injection_verb = A.answer.answer_value
 	to_chat(src, span_notice("You will [trait_injection_verb] your targets."))
 
 /mob/living/proc/injection_chosen(datum/act/request/A)
@@ -1195,10 +1199,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		open_request(src, /datum/prompt/choice, PROC_REF(injection_reagent_chosen), answerer = src, title = "Select reagent", question = "Choose which reagent to inject!", choices = trait_injection_reagents || list(), timeout = 0)
 		return
 	if(choice == "Change amount")
-		om_ask(src, /datum/om/prompt/number, PROC_REF(injection_amount_chosen), message = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = trait_injection_amount, max = 5, min = 0, round_entry = FALSE)
+		open_request(src, /datum/prompt/number, PROC_REF(injection_amount_chosen), answerer = src, timeout = 0, question = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = trait_injection_amount, max_value = 5, min_value = 0)
 		return
 	if(choice == "Change verb")
-		om_ask(src, /datum/om/prompt/text, PROC_REF(injection_verb_chosen), message = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = trait_injection_verb, max_length = 60) //Whoaa there cowboy don't put a novel in there.
+		open_request(src, /datum/prompt/text, PROC_REF(injection_verb_chosen), answerer = src, timeout = 0, question = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = trait_injection_verb, max_len = 60) //Whoaa there cowboy don't put a novel in there.
 		return
 	if(choice == "Chemical Refresher")
 		var/output = {"<HR>

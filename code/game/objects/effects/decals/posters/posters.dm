@@ -153,20 +153,23 @@ DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PRO
 	if(ruined)
 		return TRUE
 
-	om_ask(user, /datum/om/prompt/confirm/rip_poster, PROC_REF(rip_answered))
+	open_request(src, /datum/prompt/yes_no/rip_poster, PROC_REF(rip_answered), answerer = user)
 
 /// Re-checked on the answer: still next to it, and it isn't ripped already.
-/datum/om/prompt/confirm/rip_poster
+/datum/prompt/yes_no/rip_poster
 	title = "You think..."
-	message = "Do I want to rip the poster from the wall?"
-	requires = PROMPT_ADJACENT
+	question = "Do I want to rip the poster from the wall?"
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+	timeout = 0
 
-/datum/om/prompt/confirm/rip_poster/valid()
-	var/obj/structure/sign/poster/P = subject
+/datum/prompt/yes_no/rip_poster/recheck_extra()
+	var/obj/structure/sign/poster/P = owner
 	return P.is_ruined() ? "already ripped" : null
 
-/obj/structure/sign/poster/proc/rip_answered(datum/om/prompt/confirm/rip_poster/ask)
-	var/mob/user = ask.answerer
+/obj/structure/sign/poster/proc/rip_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/user = A.request.answerer
 	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!"))
 	play_sfx(src, SFX_ITEMS_POSTER_RIPPED)
 	ruined = TRUE

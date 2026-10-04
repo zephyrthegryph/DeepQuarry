@@ -1,6 +1,5 @@
 ///////////////////// Mob Living /////////////////////
 /mob/living
-	var/list/temp_language_sources	//Absorbs add languages to the pred. Lazy.
 	var/list/temp_languages		// Absorbs add languages to the pred. Lazy.
 	var/prey_controlled = FALSE			// If the mob is currently controlled by their prey.
 	var/weight = 137					// Weight for mobs for weightgain system

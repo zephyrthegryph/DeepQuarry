@@ -192,30 +192,43 @@
 		M.ghostjoin = FALSE
 		to_chat(U, span_notice("\The [bound_mob] is no longer eligable to be joined by ghosts."))
 	else
-		om_ask(U, /datum/om/prompt/confirm/crystal_ghost_invite, PROC_REF(ghost_invite_answered), message = "Do you want to offer your [bound_mob] up to ghosts to play as? There is no way undo this once a ghost takes over.", bound = M)
+		open_request(src, /datum/prompt/choice/crystal_ghost_invite, PROC_REF(ghost_invite_answered), answerer = U, question = "Do you want to offer your [bound_mob] up to ghosts to play as? There is no way undo this once a ghost takes over.", bound = M)
 
 /// Offering the bound mob to ghosts. Re-checked on the answer: the crystal is still carried by its owner, still bound to that mob, which has no player.
-/datum/om/prompt/confirm/crystal_ghost_invite
+/datum/prompt/choice/crystal_ghost_invite
 	title = "Invite ghosts?"
-	no_first = TRUE
-	answer_on_no = TRUE
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 	var/mob/living/simple_mob/bound
 
-/datum/om/prompt/confirm/crystal_ghost_invite/valid()
-	var/obj/item/capture_crystal/crystal = subject
+CAPABILITIES(/datum/prompt/choice/crystal_ghost_invite)
+	ref_one(nameof(bound), /mob/living/simple_mob)
+
+/datum/prompt/choice/crystal_ghost_invite/prepare(datum/act/A)
+	..()
+	var/mob/living/simple_mob/captured_bound = bound
+	rel_clear(src, nameof(bound))
+	rel_set(src, nameof(bound), captured_bound)
+
+/datum/prompt/choice/crystal_ghost_invite/recheck_extra()
+	if(QDELETED(bound))
+		return "gone"
+	var/obj/item/capture_crystal/crystal = owner
 	if(bound != crystal.bound_mob || answerer != crystal.owner || bound.client)
 		return "not eligible"
 	return null
 
-/datum/om/prompt/confirm/crystal_ghost_invite/refused(reason)
-	to_chat(answerer, span_notice("You decided against it."))
-	return ..()
-
-/obj/item/capture_crystal/proc/ghost_invite_answered(datum/om/prompt/confirm/crystal_ghost_invite/ask)
+/obj/item/capture_crystal/proc/ghost_invite_answered(datum/act/request/A)
+	var/datum/prompt/choice/crystal_ghost_invite/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && (!isnull(ask.answer_value) || QDELETED(ask.bound)) && !QDELETED(ask.answerer))
+			to_chat(ask.answerer, span_notice("You decided against it."))
+		return
 	var/mob/living/U = ask.answerer
 	var/mob/living/simple_mob/M = ask.bound
-	if(!ask.yes)
+	if(ask.answer_value == "No")
 		to_chat(U, span_notice("You decided against it."))
 		return
 	M.ghostjoin = TRUE
