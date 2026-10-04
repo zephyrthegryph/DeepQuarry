@@ -445,7 +445,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 				host_internal_organs -= O
 
 		if(client)
-			om_ask(src, /datum/om/prompt/choice/leech_feed_organ, PROC_REF(feed_organ_chosen), choices = host_internal_organs)
+			// The old list prompt opened nothing for an empty list, without a cancellation message.
+			if(length(host_internal_organs))
+				open_request(src, /datum/prompt/choice/leech_feed_organ, PROC_REF(feed_organ_chosen), answerer = src, choices = host_internal_organs)
 			return
 
 		if(length(host_internal_organs))
@@ -454,15 +456,20 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	else
 		to_chat(src, span_warning("We cannot feed now."))
 
-/datum/om/prompt/choice/leech_feed_organ
+/datum/prompt/choice/leech_feed_organ
+	timeout = 0
 	title = "Organs"
-	message = "Select an organ to feed on."
+	question = "Select an organ to feed on."
 
-/datum/om/prompt/choice/leech_feed_organ/cancelled()
-	to_chat(answerer, span_alien("We decide not to feed."))
-
-/mob/living/simple_mob/animal/sif/leech/proc/feed_organ_chosen(datum/om/prompt/choice/leech_feed_organ/ask)
-	var/obj/item/organ/internal/target = ask.choice
+/mob/living/simple_mob/animal/sif/leech/proc/feed_organ_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/R = A.request
+		if(R.outcome == REQ_CANCELLED && isnull(R.answer_value))
+			to_chat(src, span_alien("We decide not to feed."))
+		return
+	var/obj/item/organ/internal/target = A.answer.answer_value
+	if(QDELETED(target))
+		return
 	if(host && target.owner == host && !docile && COOLDOWN_FINISHED(src, feeding_cooldown))
 		bite_organ(target)
 
