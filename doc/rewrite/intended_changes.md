@@ -441,7 +441,7 @@ Pinned by `code/modules/unit_tests/dq_hc_tgui_behaviour.dm` (written on the lega
 * **The shuttle controller's destination questions** also re-check `rights = R_ADMIN | R_EVENT | R_DEBUG` when the answer arrives (the old re-run only checked the window); the shuttle being moved is held in a declared view (`moving`) between the question and the answer, and the "Launching shuttle" line comes once an answer launched it.
 * **The camera console's typing sound** is an early `then` on every window op (`ui_typed`), as the `ui_act_allowed()` guard played it; the lobby window's joining is gated silently on being a new player.
 * **A window answer that is "no" to a confirmation** is a false answer to a `/datum/prompt/yes_no` (a legacy alert answered the text "No").
-### hc-struct: machinery (batches M1 to M3)
+## hc-struct machinery (batches M1 to M3)
 
 Pinned by `code/modules/unit_tests/dq_hc_machinery_behaviour.dm` (written on the legacy code first; `machinery_window_shapes` pins the keys of every machine window's data, captured from the legacy forms and still asserted for the windows not yet converted).
 
