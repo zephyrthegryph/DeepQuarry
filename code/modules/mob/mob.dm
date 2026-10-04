@@ -1562,9 +1562,6 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..()
 
-// === merged from items_chomp.dm during hard-fork de-suffix. Placed in this file because it
-// is the highest-positioned definer in the override chain for the members it
-// sets, so every override stays after its base definition (resolution preserved). ===
 /obj/item
 	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
 	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
