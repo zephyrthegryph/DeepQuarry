@@ -1,9 +1,12 @@
 // Robot decal and animation control
 /datum/tgui_module/robot_ui_decals
 	name = "Robot Decal & Animation Control"
-	tgui_id = "RobotDecals"
 
-DECLARE_UI_STATE(/datum/tgui_module/robot_ui_decals, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/robot_ui_decals)
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	interface("RobotDecals", state = nameof(GLOB.tgui_self_state))
+	op("toggle_decal", ui_act("toggle_decal", arg("value", schema_text(4096))), then(PROC_REF(ui_act_toggle_decal)))
+	op("flick_animation", ui_act("flick_animation", arg("value", schema_text(4096))), then(PROC_REF(ui_act_flick_animation)))
 
 /datum/tgui_module/robot_ui_decals/tgui_static_data()
 	var/list/data = ..()
@@ -18,10 +21,7 @@ DECLARE_UI_STATE(/datum/tgui_module/robot_ui_decals, GLOB.tgui_self_state)
 
 	return data
 
-UI_DATA(/datum/tgui_module/robot_ui_decals, "merge:ui_data_datum_tgui_module_robot_ui_decals{active_decals:bool,theme:unknown}")
-
-/// The computed part of /datum/tgui_module/robot_ui_decals's window data (declared on its UI_DATA row).
-/datum/tgui_module/robot_ui_decals/proc/ui_data_datum_tgui_module_robot_ui_decals(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/robot_ui_decals/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/mob/living/silicon/robot/R = host()
@@ -31,20 +31,16 @@ UI_DATA(/datum/tgui_module/robot_ui_decals, "merge:ui_data_datum_tgui_module_rob
 
 	return data
 
-/datum/tgui_module/robot_ui_decals/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/// A robot with no sprite has no decals to work (silently).
+/datum/tgui_module/robot_ui_decals/proc/ui_gate(datum/act/op/A)
 	var/mob/living/silicon/robot/R = host()
-	if(!R.sprite_datum)
-		return FALSE
-	return TRUE
+	return !!R?.sprite_datum
 
-UI_ACT(/datum/tgui_module/robot_ui_decals, "toggle_decal", ui_act_toggle_decal, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/datum/tgui_module/robot_ui_decals, ui_act_toggle_decal)
+/datum/tgui_module/robot_ui_decals/proc/ui_act_toggle_decal(datum/act/op/A, value)
 	var/mob/living/silicon/robot/R = host()
 	if(!LAZYLEN(R.sprite_datum.sprite_decals))
 		return FALSE
-	var/decal_to_toggle = lowertext(params["value"])
+	var/decal_to_toggle = lowertext(value)
 	if(!(decal_to_toggle in R.sprite_datum.sprite_decals))
 		return FALSE
 	if(decal_to_toggle in R.robotdecal_on)
@@ -54,12 +50,11 @@ UI_ACT_PROC(/datum/tgui_module/robot_ui_decals, ui_act_toggle_decal)
 	R.update_icon()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/robot_ui_decals, "flick_animation", ui_act_flick_animation, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/datum/tgui_module/robot_ui_decals, ui_act_flick_animation)
+/datum/tgui_module/robot_ui_decals/proc/ui_act_flick_animation(datum/act/op/A, value)
 	var/mob/living/silicon/robot/R = host()
 	if(!LAZYLEN(R.sprite_datum.sprite_animations))
 		return FALSE
-	var/animation_to_flick = lowertext(params["value"])
+	var/animation_to_flick = lowertext(value)
 	if(!(animation_to_flick in R.sprite_datum.sprite_animations))
 		return FALSE
 	R.cut_overlays()

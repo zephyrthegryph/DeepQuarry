@@ -1,11 +1,14 @@
 // Pai chassis selection
 /datum/tgui_module/pai_chassis
 	name = "PAI Chassis Configurator"
-	tgui_id = "PaiChoose"
 	var/selected_chassis
 	var/selected_color
 
-DECLARE_UI_STATE(/datum/tgui_module/pai_chassis, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/pai_chassis)
+	interface("PaiChoose", state = nameof(GLOB.tgui_self_state))
+	op("pick_icon", ui_act("pick_icon", arg("value", schema_text(4096))), then(PROC_REF(ui_act_pick_icon)))
+	op("confirm", ui_act("confirm"), then(PROC_REF(ui_act_confirm)))
+	op("change_color", ui_act("change_color", arg("color", schema_text(4096))), then(PROC_REF(ui_act_change_color)))
 
 /datum/tgui_module/pai_chassis/ui_assets(mob/user)
 	return list(
@@ -28,10 +31,7 @@ DECLARE_UI_STATE(/datum/tgui_module/pai_chassis, GLOB.tgui_self_state)
 
 	return data
 
-UI_DATA(/datum/tgui_module/pai_chassis, "merge:ui_data_datum_tgui_module_pai_chassis{pai_color:text,pai_chassis:text,selected_chassis:unknown,sprite_datum_class:text,sprite_datum_size:num}")
-
-/// The computed part of /datum/tgui_module/pai_chassis's window data (declared on its UI_DATA row).
-/datum/tgui_module/pai_chassis/proc/ui_data_datum_tgui_module_pai_chassis(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/pai_chassis/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/mob/living/silicon/pai/pai_host = host()
@@ -47,15 +47,13 @@ UI_DATA(/datum/tgui_module/pai_chassis, "merge:ui_data_datum_tgui_module_pai_cha
 
 	return data
 
-UI_ACT(/datum/tgui_module/pai_chassis, "pick_icon", ui_act_pick_icon, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/datum/tgui_module/pai_chassis, ui_act_pick_icon)
-	var/new_chassis = params["value"]
+/datum/tgui_module/pai_chassis/proc/ui_act_pick_icon(datum/act/op/A, value)
+	var/new_chassis = value
 	if(new_chassis && (new_chassis in SSpai.get_chassis_list()))
 		selected_chassis = new_chassis
 	return TRUE
 
-UI_ACT(/datum/tgui_module/pai_chassis, "confirm", ui_act_confirm)
-UI_ACT_PROC(/datum/tgui_module/pai_chassis, ui_act_confirm)
+/datum/tgui_module/pai_chassis/proc/ui_act_confirm(datum/act/op/A)
 	if(!selected_chassis)
 		return FALSE
 	var/mob/living/silicon/pai/pai_host = host()
@@ -64,9 +62,8 @@ UI_ACT_PROC(/datum/tgui_module/pai_chassis, ui_act_confirm)
 	pai_host.change_chassis(selected_chassis)
 	return TRUE
 
-UI_ACT(/datum/tgui_module/pai_chassis, "change_color", ui_act_change_color, UI_ARG_TEXT("color"))
-UI_ACT_PROC(/datum/tgui_module/pai_chassis, ui_act_change_color)
-	var/new_color = sanitize_hexcolor(params["color"])
+/datum/tgui_module/pai_chassis/proc/ui_act_change_color(datum/act/op/A, color)
+	var/new_color = sanitize_hexcolor(color)
 	if(!new_color)
 		return FALSE
 	selected_color = new_color
