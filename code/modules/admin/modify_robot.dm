@@ -625,6 +625,10 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/law_edited(datum/act/request/A)
+	law_edited_apply(A)
+	SStgui.update_uis(src)
+
+/datum/eventkit/modify_robot/proc/law_edited_apply(datum/act/request/A)
 	var/datum/ai_law/AL = editing_law()
 	if(!A.answer || !AL || !(AL in ui_source_target_laws_all_laws()))
 		return
@@ -632,7 +636,6 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(new_law && new_law != AL.law)
 		AL.law = new_law
 		target().lawsync()
-	SStgui.update_uis(src)
 
 /// The law a question about editing is open for.
 /datum/eventkit/modify_robot/proc/editing_law() as /datum/ai_law
