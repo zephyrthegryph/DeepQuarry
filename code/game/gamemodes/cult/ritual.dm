@@ -343,19 +343,22 @@ CAPABILITIES(/obj/item/book/tome)
 			tgui_alert_async(user, "The cloth of reality can't take that much of a strain. Remove some runes first!")
 			return
 		else
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(tome_menu_chosen), title = "Tome", message = "You open the tome", buttons = TRUE, choices = list("Read it", "Scribe a rune", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice, PROC_REF(tome_menu_chosen), answerer = user, title = "Tome", question = "You open the tome", buttons = TRUE, choices = list("Read it", "Scribe a rune", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 			return
 	else
 		to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")
 		return
 
-/obj/item/book/tome/proc/tome_menu_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/obj/item/book/tome/proc/tome_menu_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("Read it")
 			// structured TGUI AdminReport.
-			dq_admin_report_html(ask.asker, "Arcane Tome", "[tomedat]")
+			dq_admin_report_html(user, "Arcane Tome", "[tomedat]")
 		if("Scribe a rune")
-			tome_scribe(ask.asker)
+			tome_scribe(user)
 
 /obj/item/book/tome/proc/tome_scribe(mob/living/user)
 	if(user.get_active_hand() != src)
@@ -481,22 +484,28 @@ CAPABILITIES(/obj/item/book/tome/imbued)
 		if (!istype(user.loc,/turf))
 			to_chat(user, span_notice("You do not have enough space to write a proper rune."))
 		var/static/list/runes = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")
-		om_ask(user, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), message = "Choose a rune to scribe", choices = runes)
+		open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), answerer = user, question = "Choose a rune to scribe", choices = runes)
 
 /// The admin tome's rune pick, then (for a teleport rune) its last word. `rune` carries the first answer.
-/datum/om/prompt/choice/imbued_rune
+/datum/prompt/choice/imbued_rune
 	title = "Rune Scribing"
 	timeout = 30 SECONDS
 	var/rune
 
-/obj/item/book/tome/imbued/proc/imbued_rune_picked(datum/om/prompt/choice/imbued_rune/ask)
-	if(ask.choice == "teleport" || ask.choice == "itemport")
-		om_ask(ask.answerer, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), message = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.choice)
+/obj/item/book/tome/imbued/proc/imbued_rune_picked(datum/act/request/A)
+	if(!A.answer)
 		return
-	imbued_rune_chosen(ask.answerer, ask.choice)
+	var/datum/prompt/choice/imbued_rune/ask = A.answer
+	if(ask.answer_value == "teleport" || ask.answer_value == "itemport")
+		open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), answerer = ask.answerer, question = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.answer_value)
+		return
+	imbued_rune_chosen(ask.answerer, ask.answer_value)
 
-/obj/item/book/tome/imbued/proc/imbued_beacon_picked(datum/om/prompt/choice/imbued_rune/ask)
-	imbued_rune_chosen(ask.answerer, ask.rune, ask.choice)
+/obj/item/book/tome/imbued/proc/imbued_beacon_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/imbued_rune/ask = A.answer
+	imbued_rune_chosen(ask.answerer, ask.rune, ask.answer_value)
 
 /obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, r, beacon)
 	var/obj/effect/rune/R = new /obj/effect/rune
