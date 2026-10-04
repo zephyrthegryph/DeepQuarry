@@ -537,15 +537,25 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	client.perspective = EYE_PERSPECTIVE
 
 	var/ok = "[is_admin ? "Admin Observe" : "Observe"]"
-	om_ask(src, /datum/om/prompt/choice/observe_target, PROC_REF(observe_target_chosen), message = "Select something to [ok]:", choices = targets, is_admin = is_admin)
+	open_request(src, /datum/prompt/choice/observe_target, PROC_REF(observe_target_chosen), answerer = src, question = "Select something to [ok]:", choices = targets, is_admin = is_admin)
 
-/datum/om/prompt/choice/observe_target
+/datum/prompt/choice/observe_target
 	title = "Select Target"
+	timeout = 0
 	var/is_admin = FALSE
 
-/mob/proc/observe_target_chosen(datum/om/prompt/choice/observe_target/ask)
+/mob/proc/observe_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(observe_target_apply), A)
+	if(!result.ok)
+		stack_trace("observer target selection: [result.error]")
+	return result.value
+
+/mob/proc/observe_target_apply(datum/act/request/A)
+	var/datum/prompt/choice/observe_target/ask = A.answer
 	var/is_admin = ask.is_admin
-	var/mob/mob_eye = ask.choices[ask.choice]
+	var/mob/mob_eye = ask.choices[ask.answer_value]
 
 	if(client && mob_eye)
 		begin_remote_view(/datum/remote_view, mob_eye)
