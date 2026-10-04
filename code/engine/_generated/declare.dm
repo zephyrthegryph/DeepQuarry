@@ -3200,6 +3200,13 @@
 	into += entry_line(39)
 	into += list(global.extend("ui_open", global.when(global.req(PROC_REF(user_may_open)))))
 
+/// CAPABILITIES(/obj/item/aliencoin) at code/modules/economy/coins.dm:240
+/obj/item/aliencoin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/coins.dm", 240, /obj/item/aliencoin)
+	into += entry_line(241)
+	into += list(global.op("flip", global.in_hand(), global.label("Flip coin"), global.then(PROC_REF(alien_coin_flip_requested))))
+
 /// CAPABILITIES(/obj/item/ammo_casing) at code/modules/projectiles/ammunition.dm:20
 /obj/item/ammo_casing/declared_entries(list/into)
 	..(into)
@@ -3278,6 +3285,20 @@
 	into += entry_block("code/game/objects/items/devices/traitordevices.dm", 39, /obj/item/batterer)
 	into += entry_line(40)
 	into += list(global.op("batter", global.in_hand(), global.label("Trigger mind batterer"), global.needs(global.req(PROC_REF(batter_available), because = MSG(batterer/burnt))), global.then(PROC_REF(batter_triggered))))
+
+/// CAPABILITIES(/obj/item/beartrap) at code/game/objects/items/weapons/traps.dm:62
+/obj/item/beartrap/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/traps.dm", 62, /obj/item/beartrap)
+	into += entry_line(63)
+	into += list(global.op("deploy", global.in_hand(), global.label("Deploy trap"), global.then(PROC_REF(deploy_trap_input))))
+
+/// CAPABILITIES(/obj/item/bikehorn) at code/defines/obj/weapon.dm:48
+/obj/item/bikehorn/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/defines/obj/weapon.dm", 48, /obj/item/bikehorn)
+	into += entry_line(49)
+	into += list(global.op("honk", global.in_hand(), global.label("Honk"), global.when(global.cond_not(nameof(special_handling))), global.then(PROC_REF(honked))))
 
 /// CAPABILITIES(/obj/item/binoculars) at code/game/objects/items/devices/binoculars.dm:17
 /obj/item/binoculars/declared_entries(list/into)
@@ -3366,6 +3387,13 @@
 	into += entry_block("code/game/objects/items/weapons/id cards/cards.dm", 212, /obj/item/card_fluff)
 	into += entry_line(213)
 	into += list(global.op("customize", global.in_hand(), global.label("Customize card"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice, keeps = 0, step = "element", fields = list("title" = "Customize Card", "question" = "What element would you like to customize?", "choices" = list("Band", "Stamp", "Reset"), "timeout" = 0)), global.asks(/datum/prompt/choice, keeps = 0, step = "band", when = PROC_REF(customizing_band), fields = list("title" = "Band colour", "question" = "Select colour", "choices" = list("red", "orange", "green", "dark green", "medical blue", "dark blue", "purple", "tan", "pink", "gold", "white", "black"), "timeout" = 0)), global.asks(/datum/prompt/choice, keeps = 0, step = "stamp", when = PROC_REF(customizing_stamp), fields = list("title" = "Stamp image", "question" = "Select image", "choices" = list("ship", "cross", "big ears", "shield", "circle-cross", "target", "smile", "frown", "peace", "exclamation"), "timeout" = 0)), global.then(PROC_REF(customize_chosen))))
+
+/// CAPABILITIES(/obj/item/casino_platinum_chip) at code/modules/economy/casinocash.dm:235
+/obj/item/casino_platinum_chip/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/casinocash.dm", 235, /obj/item/casino_platinum_chip)
+	into += entry_line(236)
+	into += list(global.op("flip", global.in_hand(), global.label("Flip chip"), global.then(PROC_REF(platinum_chip_flip_requested))))
 
 /// CAPABILITIES(/obj/item/cataloguer) at code/modules/catalogue/cataloguer.dm:264
 /obj/item/cataloguer/declared_entries(list/into)
@@ -3574,6 +3602,13 @@
 	into += entry_block("code/modules/clothing/spacesuits/breaches.dm", 24, /obj/item/clothing/suit/space)
 	into += entry_line(25)
 	into += list(global.owns_many(nameof(breaches)))
+
+/// CAPABILITIES(/obj/item/coin) at code/modules/economy/coins.dm:183
+/obj/item/coin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/coins.dm", 183, /obj/item/coin)
+	into += entry_line(184)
+	into += list(global.op("flip", global.in_hand(), global.label("Flip coin"), global.then(PROC_REF(coin_flip_requested))))
 
 /// CAPABILITIES(/obj/item/commcard) at code/game/objects/items/devices/communicator/cartridge.dm:18
 /obj/item/commcard/declared_entries(list/into)
@@ -4107,6 +4142,13 @@
 	into += entry_line(49)
 	into += list(global.owns_one(nameof(hud_datum), /datum/mini_hud/mapper))
 
+/// CAPABILITIES(/obj/item/material/barbedwire) at code/game/objects/items/weapons/traps.dm:216
+/obj/item/material/barbedwire/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/traps.dm", 216, /obj/item/material/barbedwire)
+	into += entry_line(217)
+	into += list(global.op("deploy", global.in_hand(), global.label("Deploy trap"), global.then(PROC_REF(deploy_trap_input))))
+
 /// CAPABILITIES(/obj/item/material/butterfly) at code/game/objects/items/weapons/material/knives.dm:49
 /obj/item/material/butterfly/declared_entries(list/into)
 	..(into)
@@ -4465,11 +4507,11 @@
 	into += entry_line(22)
 	into += list(global.owns_one(nameof(shadow), /obj/effect/projectile_shadow))
 
-/// CAPABILITIES(/obj/item/projectile/energy/hook) at code/modules/projectiles/projectile/hook.dm:30
+/// CAPABILITIES(/obj/item/projectile/energy/hook) at code/modules/projectiles/projectile/hook.dm:29
 /obj/item/projectile/energy/hook/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/projectile/hook.dm", 30, /obj/item/projectile/energy/hook)
-	into += entry_line(31)
+	into += entry_block("code/modules/projectiles/projectile/hook.dm", 29, /obj/item/projectile/energy/hook)
+	into += entry_line(30)
 	into += list(global.owns_one(nameof(chain), /datum/beam))
 
 /// CAPABILITIES(/obj/item/projectile/spell_projectile) at code/modules/spells/spell_projectile.dm:19

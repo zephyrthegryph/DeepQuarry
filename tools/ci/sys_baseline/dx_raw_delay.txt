@@ -175,27 +175,9 @@ dx_raw_delay	code/modules/mob/living/carbon/human/species/station/protean/protea
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	after(src, 1, PROC_REF(finish_survival_gear), with = list(H)) //Let their real nif load if they have one
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	after(C, 6, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(FALSE)) //.6 seconds.
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	after(src, 5, PROC_REF(target_lunge_land), with = list(target)) // For the throw to complete.
-dx_raw_delay	code/modules/mob/living/carbon/human/species/virtual_reality/avatar.dm	COOLDOWN_START(src, last_special, 10)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/virtual_reality/avatar.dm	after(src, 3000, PROC_REF(cleanup_vr)) //Delete the body after 5 minutes
-dx_raw_delay	code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm	COOLDOWN_START(src, last_special, 75)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm	after(src, 5, PROC_REF(leap_land), with = list(T))
-dx_raw_delay	code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/update_icons.dm	after(src, 12, PROC_REF(end_belly_struggle_anim))
-dx_raw_delay	code/modules/mob/living/carbon/human/update_icons.dm	after(src, 12, PROC_REF(end_tail_struggle_anim))
 dx_raw_delay	code/modules/mob/living/inventory.dm	after(src, 1, PROC_REF(make_item_drop_sound), with = list(item_dropped))
 dx_raw_delay	code/modules/mob/living/living.dm	after(src, 25, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 25))
-dx_raw_delay	code/modules/mob/living/silicon/pai/pai.dm	COOLDOWN_START(src, last_special, 100) //Let's give get_character_icon time to work
-dx_raw_delay	code/modules/mob/living/silicon/pai/pai.dm	after(src, 1, PROC_REF(close_up_unless_dead))
-dx_raw_delay	code/modules/mob/living/silicon/pai/pai_folding.dm	COOLDOWN_START(src, last_special, 100)
-dx_raw_delay	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	COOLDOWN_START(src, last_special, 10)
-dx_raw_delay	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	after(src, 5, PROC_REF(leap_land), with = list(T))
-dx_raw_delay	code/modules/mob/living/silicon/robot/robot_items.dm	after(src, 22, PROC_REF(dispense_paper))
-dx_raw_delay	code/modules/mob/living/silicon/robot/robot_items.dm	after(src, 22, PROC_REF(dispense_form), with = list(list(select_form(split[1], split[2]), split[1] + ": " + split[2])))
 dx_raw_delay	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_interactions.dm	after(src, 1, PROC_REF(welcome_client))
-dx_raw_delay	code/modules/mob/living/simple_mob/simple_mob.dm	after(src, 3, PROC_REF(chase_target), with = list(++ticker))
-dx_raw_delay	code/modules/mob/living/simple_mob/simple_mob.dm	COOLDOWN_START(src, last_special, 10)
-dx_raw_delay	code/modules/mob/living/simple_mob/simple_mob.dm	after(src, 5, PROC_REF(leap_land), with = list(T))
-dx_raw_delay	code/modules/mob/living/simple_mob/simple_mob_abilities.dm	after(src, 1, PROC_REF(speen_throw), with = list(am))
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	after(src, 8, PROC_REF(open_finish))
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	after(src, 8, PROC_REF(close_finish))
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	after(src, 2, TYPE_PROC_REF(/mob, say), with = list(pick(speak)))

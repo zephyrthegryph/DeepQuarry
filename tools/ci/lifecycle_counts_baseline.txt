@@ -892,7 +892,6 @@ qdel	code/modules/projectiles/projectile.dm	qdel(beam_index())
 qdel	code/modules/projectiles/projectile/change.dm	qdel(Robot.mmi)
 qdel	code/modules/projectiles/projectile/change.dm	qdel(W)
 qdel	code/modules/projectiles/projectile/change.dm	qdel(M)
-qdel	code/modules/projectiles/projectile/hook.dm	qdel(my_tracking_beam)
 qdel	code/modules/projectiles/projectile/special.dm	qdel(B)
 qdel	code/modules/random_map/drop/droppod.dm	qdel(AM)
 qdel	code/modules/random_map/drop/droppod_doors.dm	qdel(O) //crunch

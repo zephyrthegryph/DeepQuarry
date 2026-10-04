@@ -415,7 +415,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 		to_chat(src, span_filter_notice("You cannot leap in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10)
+	COOLDOWN_START(src, last_special, 1 SECOND)
 	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 
@@ -432,7 +432,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 	pixel_y = default_pixel_y
 
 	if(!bluespace)
-		after(src, 5, PROC_REF(leap_land), with = list(T))
+		after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T))
 		return
 	leap_land(T)
 
