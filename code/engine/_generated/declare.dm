@@ -2306,6 +2306,13 @@
 	into += entry_line(84)
 	into += list(global.ref_one(nameof(painting), /obj/item/floor_painter))
 
+/// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
+/datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/shuttle.dm", 59, /datum/prompt/choice/shuttle_authorization)
+	into += entry_line(60)
+	into += list(global.ref_one(nameof(card), /obj/item/card))
+
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:962
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
 	..(into)
@@ -2328,6 +2335,13 @@
 	into += entry_block("code/game/machinery/computer/medical.dm", 430, /datum/prompt/yes_no/record_notes_delete)
 	into += entry_line(431)
 	into += list(global.ref_one(nameof(record), /datum/data/record))
+
+/// CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch) at code/game/machinery/computer/shuttle.dm:104
+/datum/prompt/yes_no/shuttle_emag_launch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/shuttle.dm", 104, /datum/prompt/yes_no/shuttle_emag_launch)
+	into += entry_line(105)
+	into += list(global.ref_one(nameof(card), /obj/item/card))
 
 /// CAPABILITIES(/datum/protean_blob_style/layered) at code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm:328
 /datum/protean_blob_style/layered/declared_entries(list/into)
@@ -6288,11 +6302,11 @@
 	into += entry_line(41)
 	into += list(global.owns_one(nameof(stored_mmi), /obj/item/mmi))
 
-/// CAPABILITIES(/obj/item/orion_ship) at code/game/machinery/computer/arcade.dm:1032
+/// CAPABILITIES(/obj/item/orion_ship) at code/game/machinery/computer/arcade.dm:1046
 /obj/item/orion_ship/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/arcade.dm", 1032, /obj/item/orion_ship)
-	into += entry_line(1033)
+	into += entry_block("code/game/machinery/computer/arcade.dm", 1046, /obj/item/orion_ship)
+	into += entry_line(1047)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/pack) at code/modules/games/cards.dm:404
@@ -9167,6 +9181,34 @@
 	into += entry_line(86)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_typed), early = TRUE)))
 
+/// CAPABILITIES(/obj/machinery/computer/arcade/battle) at code/game/machinery/computer/arcade.dm:146
+/obj/machinery/computer/arcade/battle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/arcade.dm", 146, /obj/machinery/computer/arcade/battle)
+	into += entry_line(147)
+	into += list(global.interface("ArcadeBattle"))
+	into += entry_line(148)
+	into += list(global.op("newgame", global.ui_act("newgame"), global.then(PROC_REF(ui_act_newgame))))
+	into += entry_line(149)
+	into += list(global.op("attack", global.ui_act("attack"), global.then(PROC_REF(ui_act_attack))))
+	into += entry_line(150)
+	into += list(global.op(XENO_CHEM_HEAL, global.ui_act(XENO_CHEM_HEAL), global.then(PROC_REF(ui_act_heal))))
+	into += entry_line(151)
+	into += list(global.op("charge", global.ui_act("charge"), global.then(PROC_REF(ui_act_charge))))
+
+/// CAPABILITIES(/obj/machinery/computer/arcade/clawmachine) at code/game/machinery/computer/arcade.dm:1268
+/obj/machinery/computer/arcade/clawmachine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/arcade.dm", 1268, /obj/machinery/computer/arcade/clawmachine)
+	into += entry_line(1269)
+	into += list(global.interface("ClawMachine"))
+	into += entry_line(1270)
+	into += list(global.op("newgame", global.ui_act("newgame"), global.then(PROC_REF(ui_act_newgame))))
+	into += entry_line(1271)
+	into += list(global.op("return", global.ui_act("return"), global.then(PROC_REF(ui_act_return))))
+	into += entry_line(1272)
+	into += list(global.op("pointless", global.ui_act("pointless"), global.then(PROC_REF(ui_act_pointless))))
+
 /// CAPABILITIES(/obj/machinery/computer/atmos_alert) at code/game/machinery/computer/atmos_alert.dm:27
 /obj/machinery/computer/atmos_alert/declared_entries(list/into)
 	..(into)
@@ -9433,23 +9475,23 @@
 	into += entry_line(54)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_attended), early = TRUE)))
 
-/// CAPABILITIES(/obj/machinery/computer/pod) at code/game/machinery/computer/pod.dm:69
+/// CAPABILITIES(/obj/machinery/computer/pod) at code/game/machinery/computer/pod.dm:71
 /obj/machinery/computer/pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/pod.dm", 69, /obj/machinery/computer/pod)
-	into += entry_line(70)
-	into += list(global.interface("PodComputer"))
-	into += entry_line(71)
-	into += list(global.op("toggle_door", global.ui_act("toggle_door"), global.then(PROC_REF(ui_act_toggle_door))))
+	into += entry_block("code/game/machinery/computer/pod.dm", 71, /obj/machinery/computer/pod)
 	into += entry_line(72)
-	into += list(global.op("start_stop", global.ui_act("start_stop"), global.then(PROC_REF(ui_act_start_stop))))
+	into += list(global.interface("PodComputer"))
 	into += entry_line(73)
-	into += list(global.op("test_alarm", global.ui_act("test_alarm"), global.then(PROC_REF(ui_act_test_alarm))))
+	into += list(global.op("toggle_door", global.ui_act("toggle_door"), global.then(PROC_REF(ui_act_toggle_door))))
 	into += entry_line(74)
-	into += list(global.op("test_drive", global.ui_act("test_drive"), global.then(PROC_REF(ui_act_test_drive))))
+	into += list(global.op("start_stop", global.ui_act("start_stop"), global.then(PROC_REF(ui_act_start_stop))))
 	into += entry_line(75)
-	into += list(global.op("adjust_power", global.ui_act("adjust_power", global.arg("value", global.num())), global.then(PROC_REF(ui_act_adjust_power))))
+	into += list(global.op("test_alarm", global.ui_act("test_alarm"), global.then(PROC_REF(ui_act_test_alarm))))
 	into += entry_line(76)
+	into += list(global.op("test_drive", global.ui_act("test_drive"), global.then(PROC_REF(ui_act_test_drive))))
+	into += entry_line(77)
+	into += list(global.op("adjust_power", global.ui_act("adjust_power", global.arg("value", global.num())), global.then(PROC_REF(ui_act_adjust_power))))
+	into += entry_line(78)
 	into += list(global.op("adjust_time", global.ui_act("adjust_time", global.arg("value", global.num())), global.then(PROC_REF(ui_act_adjust_time))))
 
 /// CAPABILITIES(/obj/machinery/computer/power_monitor) at code/modules/power/sensors/sensor_monitoring.dm:39
@@ -9459,15 +9501,15 @@
 	into += entry_line(40)
 	into += list(global.owns_one(nameof(power_monitor), starts = /datum/tgui_module/power_monitor))
 
-/// CAPABILITIES(/obj/machinery/computer/prison_shuttle) at code/game/machinery/computer/prisonshuttle.dm:63
+/// CAPABILITIES(/obj/machinery/computer/prison_shuttle) at code/game/machinery/computer/prisonshuttle.dm:65
 /obj/machinery/computer/prison_shuttle/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/prisonshuttle.dm", 63, /obj/machinery/computer/prison_shuttle)
-	into += entry_line(64)
-	into += list(global.interface("PrisonShuttleConsole", title = "Prison Shuttle"))
-	into += entry_line(65)
-	into += list(global.op("send_to_dock", global.ui_act("send_to_dock"), global.then(PROC_REF(ui_act_send_to_dock))))
+	into += entry_block("code/game/machinery/computer/prisonshuttle.dm", 65, /obj/machinery/computer/prison_shuttle)
 	into += entry_line(66)
+	into += list(global.interface("PrisonShuttleConsole", title = "Prison Shuttle"))
+	into += entry_line(67)
+	into += list(global.op("send_to_dock", global.ui_act("send_to_dock"), global.then(PROC_REF(ui_act_send_to_dock))))
+	into += entry_line(68)
 	into += list(global.op("send_to_station", global.ui_act("send_to_station"), global.then(PROC_REF(ui_act_send_to_station))))
 
 /// CAPABILITIES(/obj/machinery/computer/prisoner) at code/game/machinery/computer/prisoner.dm:24

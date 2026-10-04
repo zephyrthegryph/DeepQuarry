@@ -42,25 +42,36 @@
 			to_chat(user, "The access level of [W:registered_name]\'s card is not high enough. ")
 			return TRUE
 
-		om_ask(user, /datum/om/prompt/choice/shuttle_authorization, PROC_REF(authorization_chosen), message = text("Would you like to (un)authorize a shortened launch time? [] authorization\s are still needed. Use abort to cancel all authorizations.", src.auth_need - src.authorized.len), subject = W, card = W)
+		open_request(src, /datum/prompt/choice/shuttle_authorization, PROC_REF(authorization_chosen), valid = PROC_REF(authorization_valid), answerer = user, question = text("Would you like to (un)authorize a shortened launch time? [] authorization\s are still needed. Use abort to cancel all authorizations.", src.auth_need - src.authorized.len), card = W, timeout = 0)
 		return TRUE
 
 	else if (istype(W, /obj/item/card/emag) && !emagged)
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(emag_launch_chosen), title = "Shuttle control", message = "Would you like to launch the shuttle?", yes_text = "Launch", no_text = "Cancel", subject = W, ask_flags = ASK_HELD | ASK_CAPABLE)
+		open_request(src, /datum/prompt/yes_no/shuttle_emag_launch, PROC_REF(emag_launch_chosen), valid = PROC_REF(emag_launch_valid), answerer = user, card = W, timeout = 0)
 		return TRUE
 	return TRUE
 
-/datum/om/prompt/choice/shuttle_authorization
+/datum/prompt/choice/shuttle_authorization
 	title = "Shuttle Launch"
 	choices = list("Authorize", "Repeal", "Abort")
 	buttons = TRUE
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/item/card/id/card
+	var/obj/item/card/card
 
-/obj/machinery/computer/shuttle/proc/authorization_chosen(datum/om/prompt/choice/shuttle_authorization/ask)
+CAPABILITIES(/datum/prompt/choice/shuttle_authorization)
+	ref_one(nameof(card), /obj/item/card)
+
+/// The card is still in the hands of whoever was asked, who can still act.
+/obj/machinery/computer/shuttle/proc/authorization_valid(datum/request/R)
+	var/datum/prompt/choice/shuttle_authorization/ask = R
+	var/mob/living/user = R.answerer
+	return istype(user) && ask.card?.loc == user && !user.incapacitated()
+
+/obj/machinery/computer/shuttle/proc/authorization_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/shuttle_authorization/ask = A.request
 	var/obj/item/card/id/W = ask.card
 	var/mob/user = ask.answerer
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("Authorize")
 			src.authorized -= W:registered_name
 			src.authorized += W:registered_name
@@ -84,7 +95,23 @@
 			src.authorized.len = 0
 			src.authorized = list(  )
 
-/obj/machinery/computer/shuttle/proc/emag_launch_chosen(datum/om/prompt/confirm/ask)
+/// Launching on an emag: asked of whoever holds it.
+/datum/prompt/yes_no/shuttle_emag_launch
+	title = "Shuttle control"
+	question = "Would you like to launch the shuttle?"
+	var/obj/item/card/card
+
+CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch)
+	ref_one(nameof(card), /obj/item/card)
+
+/obj/machinery/computer/shuttle/proc/emag_launch_valid(datum/request/R)
+	var/datum/prompt/yes_no/shuttle_emag_launch/ask = R
+	var/mob/living/user = R.answerer
+	return istype(user) && ask.card?.loc == user && !user.incapacitated()
+
+/obj/machinery/computer/shuttle/proc/emag_launch_chosen(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
 	if(!emagged && !SSemergency_shuttle.location())
 		to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
 		SSemergency_shuttle.set_launch_countdown(10)

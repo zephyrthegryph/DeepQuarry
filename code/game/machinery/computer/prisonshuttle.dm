@@ -21,9 +21,11 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	var/hacked = 0
 	var/allowedtocall = 0
 	var/prison_break = 0
+	/// The shuttle this console sent is in flight.
+	var/in_flight = FALSE
 
 /// The shuttle this console sent is in flight: prison_process() counts it down every half second.
-OM_FIELD(/obj/machinery/computer/prison_shuttle, in_flight, FALSE, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHINE_SETTINGS)
 DECLARE_REPEAT(/obj/machinery/computer/prison_shuttle, 0.5 SECONDS, prison_process, "in_flight")
 
 // TGUI migration. Replaces the browse() + Topic dispatch
@@ -65,7 +67,6 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
 
-/// The computed part of /obj/machinery/computer/prison_shuttle's window data (declared on its UI_DATA row).
 /obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["moving"] = GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison
