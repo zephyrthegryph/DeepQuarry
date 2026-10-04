@@ -19,4 +19,6 @@ export type TelecommsMultitoolMenuActions = {
   link: Record<string, never>;
   buffer: Record<string, never>;
   flush: Record<string, never>;
+  toggle: Record<string, never>;
+  cleartemp: Record<string, never>;
 };
