@@ -82,13 +82,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 		expire(5)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/balloon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/toy/balloon/appearance_overlays()
-	. = list()
+/obj/item/toy/balloon/draw(datum/look/look)
+	..()
 	if(src.reagents.total_volume >= 1)
-		icon_state = "waterballoon"
+		look.state("waterballoon")
 	else
-		icon_state = "waterballoon-e"
+		look.state("waterballoon-e")
 
 /obj/item/toy/syndicateballoon
 	name = "criminal balloon"

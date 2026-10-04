@@ -208,10 +208,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, TYPE_PROC
 	icon_state = "toolkit_engiborg_multitool"
 	toolspeed = 0.5
 
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/cyborg, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/multitool/cyborg/appearance_overlays()
-	. = list()
-	icon_state = "toolkit_engiborg_multitool"
+/obj/item/multitool/cyborg/draw(datum/look/look)
+	..()
+	look.state("toolkit_engiborg_multitool")
 
 /obj/item/multitool/ai_detector/cyborg/get_mechanics_info(list/additional_information)
 	return ..(list("This changes colors (and makes sounds that only you can hear if in your active modules) during various events.<br>\

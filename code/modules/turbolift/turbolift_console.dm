@@ -61,6 +61,7 @@ DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hamm
 	var/light_up = FALSE
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
+TRACKED(/obj/structure/lift/button, light_up)
 
 /obj/structure/lift/button/relations()
 	. = ..()
@@ -70,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hamm
 	. += rel_one(nameof(ext_panel), back = nameof(/obj/structure/lift/button::floor))
 
 /obj/structure/lift/button/proc/reset()
-	light_up = FALSE
+	set_light_up(FALSE)
 	update_icon()
 
 // Hit it with a PDA or ID to enable priority call mode
@@ -109,20 +110,19 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	return proximity_flag
 
 /obj/structure/lift/button/proc/light_up()
-	light_up = TRUE
+	set_light_up(TRUE)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/lift/button, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/lift/button/appearance_overlays()
-	. = list()
+/obj/structure/lift/button/draw(datum/look/look)
+	..()
 	if(lift().fire_mode)
-		icon_state = "button_fire"
+		look.state("button_fire")
 	else if(lift().priority_mode)
-		icon_state = "button_pri"
+		look.state("button_pri")
 	else if(light_up)
-		icon_state = "button_lit"
+		look.state("button_lit")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 // End button.
 
@@ -216,13 +216,12 @@ UI_ACT_PROC(/obj/structure/lift/panel, ui_act_emergency_stop)
 	if(.)
 		pressed(ui.user)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/lift/panel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/lift/panel/appearance_overlays()
-	. = list()
+/obj/structure/lift/panel/draw(datum/look/look)
+	..()
 	if(lift().fire_mode)
-		icon_state = "panel_fire"
+		look.state("panel_fire")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 // End panel.
 

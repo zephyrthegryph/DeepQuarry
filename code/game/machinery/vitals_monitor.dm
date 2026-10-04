@@ -94,52 +94,51 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 		set_use_power(USE_POWER_ACTIVE)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/vitals_monitor/appearance_overlays()
-	. = list()
+/obj/machinery/vitals_monitor/draw(datum/look/look)
+	..()
 	if(has_stat(NOPOWER))
-		return .
-	. += "screen"
+		return
+	look.overlay("screen")
 
 	if(!victim())
-		return .
+		return
 
 	switch(victim().pulse)
 		if(PULSE_NONE)
-			. += "pulse_flatline"
-			. += "pulse_warning"
+			look.overlay("pulse_flatline")
+			look.overlay("pulse_warning")
 		if(PULSE_SLOW, PULSE_NORM,)
-			. += "pulse_normal"
+			look.overlay("pulse_normal")
 		if(PULSE_FAST, PULSE_2FAST)
-			. += "pulse_veryfast"
+			look.overlay("pulse_veryfast")
 		if(PULSE_THREADY)
-			. += "pulse_thready"
-			. += "pulse_warning"
+			look.overlay("pulse_thready")
+			look.overlay("pulse_warning")
 
 	var/obj/item/organ/internal/brain/brain = victim().organ_in(O_BRAIN)
 	if(istype(brain) && victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 		if(victim().injury_load(INJURY_CATEGORY_NEURAL))
-			. += "brain_verybad"
-			. += "brain_warning"
+			look.overlay("brain_verybad")
+			look.overlay("brain_warning")
 		else if(victim().stat == UNCONSCIOUS)
-			. += "brain_bad"
+			look.overlay("brain_bad")
 		else
-			. += "brain_ok"
+			look.overlay("brain_ok")
 	else
-		. += "brain_warning"
+		look.overlay("brain_warning")
 
 	var/obj/item/organ/internal/lungs/lungs = victim().organ_in(O_LUNGS)
 	if(istype(lungs) && victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 		switch(breathing_band())
 			if("erratic")
-				. += "breathing_shallow"
-				. += "breathing_warning"
+				look.overlay("breathing_shallow")
+				look.overlay("breathing_warning")
 			if("shallow")
-				. += "breathing_shallow"
+				look.overlay("breathing_shallow")
 			else
-				. += "breathing_normal"
+				look.overlay("breathing_normal")
 	else
-		. += "breathing_warning"
+		look.overlay("breathing_warning")
 
 /// Breathing quality from the patient's oxygen saturation.
 /obj/machinery/vitals_monitor/proc/breathing_band()

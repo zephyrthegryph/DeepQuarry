@@ -60,10 +60,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/portables_connector, MACHINE_
 /obj/machinery/atmospherics/portables_connector/init_dir()
 	initialize_directions = dir
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/portables_connector/appearance_overlays()
-	. = list()
-	icon_state = "connector"
+/obj/machinery/atmospherics/portables_connector/draw(datum/look/look)
+	..()
+	look.state("connector")
 
 /obj/machinery/atmospherics/portables_connector/update_underlays()
 	..()

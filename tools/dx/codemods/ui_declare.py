@@ -168,6 +168,20 @@ def body_range(lines, sig_idx):
     return sig_idx + 1, last
 
 
+def rename_local_a(line, new):
+    """The word A in the code of `line` (not in a string or comment, not a member `.A`) becomes `new`; `var/obj/A` declares it."""
+    masked = strip_code(line)
+    out = []
+    at = 0
+    for m in re.finditer(r"(?<![\w.])A(?![\w])|(?<=\bvar/)(?:[\w]+/)*A(?![\w])", masked):
+        start = m.end() - 1
+        out.append(line[at:start])
+        out.append(new)
+        at = m.end()
+    out.append(line[at:])
+    return "".join(out)
+
+
 def words_in(text, name):
     return [m.start() for m in re.finditer(r"(?<![\w./])" + re.escape(name) + r"(?![\w])", text)]
 
@@ -176,6 +190,12 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     check = "--check" in sys.argv
     sites = "--sites" in sys.argv
+    skip = set()
+    while "--skip" in sys.argv:
+        k = sys.argv.index("--skip")
+        skip.add(sys.argv[k + 1])
+        del sys.argv[k : k + 2]
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
     only = None
     if "--only" in sys.argv:
         only = sys.argv[sys.argv.index("--only") + 1]
@@ -231,17 +251,38 @@ def main():
         first, last = body_range(f.lines, i)
         lines = [strip_code(l).strip() for l in f.lines[first : last + 1]]
         lines = [l for l in lines if l]
-        if lines not in (FP_BODY_A, FP_BODY_B):
+        if lines in (FP_BODY_A, FP_BODY_B):
+            return ("fp", rel, i, first, last)
+        return predicate_guard(t, rel, i, first, last, lines)
+
+    BANNED = ("to_chat", "add_fingerprint", "visible_message", "playsound", "play_sfx", "message", "qdel", "spawn", "sleep", "stoplag", "usr")
+    PRED_HEAD = ["if(!..())", "return FALSE"]
+
+    def predicate_guard(t, rel, i, first, last, lines):
+        """`if(!..()) return FALSE` then a pure test of the actor and the host, ending `return TRUE`: the guard of every window button, as one
+        silent requirement (the op path never calls ui_act_allowed)."""
+        if lines[:2] != PRED_HEAD or lines[-1] != "return TRUE" or len(lines) < 4:
             return None
-        return (rel, i, first, last)
+        body = "\n".join(lines[2:])
+        if re.search(r"\.\.\(|\baction\b|\bstate\b|\bparams\b|\bsrc\.ui\b", body) or re.search(r"\bui\b(?!\.user)", body):
+            return None
+        if any(re.search(r"\b" + w + r"\b", body) for w in BANNED) or re.search(r"\+\+|--|\+=|-=|(?<![=!<>])=(?!=)", re.sub(r"\bvar/[\w/]+\s+\w+\s*=", "", body)):
+            return None
+        for ln in lines[2:]:
+            rm = re.match(r"^return\b\s*(.*)$", ln)
+            if rm and rm.group(1).strip() not in ("TRUE", "FALSE"):
+                return None
+        if re.search(r"^" + re.escape(t) + r"/(?:proc/)?ui_gate\(", tree_text, re.M):
+            return None
+        return ("pred", rel, i, first, last)
 
     for t, rs in sorted(rows.items()):
         if only and t != only:
             continue
-        kinds = [r[0] for r in rs]
-        if not re.match(r"^/(atom|obj|mob|turf|area)(/|$)", t):
-            residue[t] = "ui_not_atom"  # the new output procs (ui_data, present_interface) are on /atom: a /datum window has no new form yet
+        if t in skip:
+            residue[t] = "ui_gate_reads"  # --skip: the reads lint rejects the guard's untracked reads (see codemod_rules.md)
             continue
+        kinds = [r[0] for r in rs]
         decl = [r for r in rs if r[0] == "DECLARE_UI"]
         if len(decl) != 1:
             residue[t] = "ui_forms"  # no declaration here (inherited), or several
@@ -254,11 +295,13 @@ def main():
         if any(k not in ("DECLARE_UI", "DECLARE_UI_STATE", "UI_ACT", "UI_ACT_PROC", "UI_DATA", "UI_DATA_REPLACE") for k in kinds):
             residue[t] = "ui_forms"
             continue
-        if any(related(t, u) for u in types if u != t):
+        if any(related(t, u) for u in types if u != t and u != "/datum"):  # the root /datum row (change_ui_state) is every window's: it stays legacy and conflicts with nothing
             residue[t] = "ui_related"
             continue
         tre = re.escape(t)
         fp = fingerprint_only(t)
+        guard = fp[0] if fp else None
+        fp = fp if guard else None
         ovr = re.compile(r"^" + tre + r"/(?:proc/)?(" + "|".join(o for o in OVERRIDES if not (fp and o == "ui_act_allowed")) + r")\(", re.M)
         if ovr.search(tree_text) or re.search(r"^CAPABILITIES\(" + tre + r"\)[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+interface\(", tree_text, re.M):
             residue[t] = "ui_override"
@@ -353,7 +396,7 @@ def main():
                 residue[t] = "data_rows"
                 continue
             data = {"row": data_rows[0], "fields": fields}
-        plan = {"type": t, "window": window, "title": title, "acts": acts, "data": data, "rows": rs, "handlers": [], "fp": fp, "state": None}
+        plan = {"type": t, "window": window, "title": title, "acts": acts, "data": data, "rows": rs, "handlers": [], "fp": fp if guard == "fp" else None, "pred": fp if guard == "pred" else None, "state": None}
         # DECLARE_UI_STATE(T, GLOB.tgui_x_state) -> interface(.., state = nameof(GLOB.tgui_x_state)); (T, ADMIN_STATE(rights)) -> interface(.., rights = rights):
         # the row goes. Any other expression (an instance's own state) keeps its row, which ui_open() still reads.
         state_rows = [r for r in rs if r[0] == "DECLARE_UI_STATE"]
@@ -392,8 +435,9 @@ def main():
             if occ != 0:
                 bad = "proc_shared"
                 break
+            body_no_user = re.sub(r"(?<![\w.])ui\.user\b", "user", body)  # ui.user is the viewer: the handler's `user`
             for w in ("ui", "state", "action", "update_icon"):
-                if words_in(body, w):
+                if words_in(body_no_user, w):
                     bad = "body_uses"
                     break
             if bad:
@@ -406,11 +450,16 @@ def main():
                     break
             if bad:
                 break
-            for w in words_in(body, "A"):
-                bad = "name_clash"
-                break
-            if bad:
-                break
+            rename_a = None
+            if words_in(body, "A") or re.search(r"\bvar/[\w/]*\bA\b", body):
+                # a local named A: it takes another name (the handler's act is A)
+                for cand in ("A2", "A3", "A4", "A5"):
+                    if not words_in(body, cand) and not re.search(r"\b" + cand + r"\b", body_c):
+                        rename_a = cand
+                        break
+                if not rename_a:
+                    bad = "name_clash"
+                    break
             for d in declared:
                 # a declared name must not already be a word of the body outside params["d"]
                 stripped = re.sub(r"\bparams\s*\[\s*\"" + d + r"\"\s*\]", "", body_c)
@@ -431,7 +480,7 @@ def main():
                     break
             if bad:
                 break
-            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last})
+            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a})
         if bad:
             residue[t] = bad
             continue
@@ -494,7 +543,8 @@ def main():
                     fn = "num" if kind == "NUM" else "int"
                     parts.append('arg("%s", %s(%s))' % (name, fn, ", ".join(bounds)))
             ui = 'ui_act("%s"%s)' % (a["action"], "".join(", " + p for p in parts[1:]))
-            entries.append('op("%s", %s, then(PROC_REF(%s)))' % (a["action"], ui, a["proc"]))
+            need = ", needs(req(PROC_REF(ui_gate), silent = TRUE))" if plan["pred"] else ""
+            entries.append('op("%s", %s%s, then(PROC_REF(%s)))' % (a["action"], ui, need, a["proc"]))
         # handlers
         for h in plan["handlers"]:
             a = h["act"]
@@ -504,6 +554,9 @@ def main():
                 l = f.lines[k]
                 for d in declared:
                     l = re.sub(r"\bparams\s*\[\s*\"" + d + r"\"\s*\]", d, l)
+                l = re.sub(r"(?<![\w.])ui\.user\b", "user", l)
+                if h.get("rename_a"):
+                    l = rename_local_a(l, h["rename_a"])
                 f.lines[k] = l
             body = "\n".join(strip_code(l) for l in f.lines[h["first"] : h["last"] + 1])
             sig = t + "/proc/" + a["proc"] + "(datum/act/op/A" + "".join(", " + d for d in declared) + ")"
@@ -569,10 +622,36 @@ def main():
             files[drow[1]].lines[drow[2]] = "\n".join(out)
             files[drow[1]].dirty = True
         if plan["fp"]:
-            frel, fi, ffirst, flast = plan["fp"]
+            _, frel, fi, ffirst, flast = plan["fp"]
             ff = files[frel]
             for k in range(fi, flast + 1):
                 ff.lines[k] = None
+            ff.dirty = True
+        if plan["pred"]:
+            _, frel, fi, ffirst, flast = plan["pred"]
+            ff = files[frel]
+            # the override becomes the requirement's proc: the head guard goes, `ui.user` is the actor, `user` is read from the act
+            body_lines = ff.lines[ffirst : flast + 1]
+            kept = []
+            skipped = 0
+            for bl in body_lines:
+                st = strip_code(bl).strip()
+                if skipped < 2 and st in ("if(!..())", "return FALSE"):
+                    skipped += 1
+                    continue
+                if st:
+                    kept.append(bl)
+            text = "\n".join(kept)
+            uses_user = bool(words_in("\n".join(strip_code(l) for l in kept), "user")) or "ui.user" in text
+            text = text.replace("ui.user", "user")
+            indent = re.match(r"^[ \t]*", kept[0]).group(0) if kept else "\t"
+            head = t + "/proc/ui_gate(datum/act/op/A)"
+            if uses_user:
+                head += "\n" + indent + "var/mob/user = A.actor"
+            ff.lines[fi] = head
+            for k in range(ffirst, flast + 1):
+                ff.lines[k] = None
+            ff.lines[ffirst] = text
             ff.dirty = True
         # delete the legacy rows; the declaration line becomes the block (or goes, when the type already has one)
         block_file = None

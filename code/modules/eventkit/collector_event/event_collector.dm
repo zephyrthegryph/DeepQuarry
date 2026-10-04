@@ -48,6 +48,7 @@
 	var/list/disabling_sources //what things are disabling us?
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
+TRACKED(/obj/structure/event_collector, current_step)
 
 /// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (DECLARE_PERIODIC_WHILE).
 /obj/structure/event_collector/var/awaiting_next_recipe = FALSE
@@ -98,7 +99,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 	if(type_to_spawn_on_complete)
 		new type_to_spawn_on_complete(get_turf(loc))
 
-	current_step = 0
+	set_current_step(0)
 
 	update_icon()
 
@@ -242,7 +243,7 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		jiggle_animation(0.1)
 		if(active_recipe.len == 0)
 			start_recipe_process()
-		current_step += 1
+		set_current_step(current_step + 1)
 		update_icon()
 		post_recipe_complete(user)
 		EXPIRY_SET(src, next_item_added, wait_between_items, CLOCK_WORLD)

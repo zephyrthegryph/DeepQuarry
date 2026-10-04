@@ -174,3 +174,17 @@
 	TEST_ASSERT_NULL(interface_state(plain), "neither: the default")
 	plain.tgui_window_state = GLOB.tgui_physical_state
 	TEST_ASSERT_NULL(interface_state(plain), "the host's own tgui_window_state is read by ui_open() after it, not shadowed")
+
+/// A converted appearance proc (draw(look) over a TRACKED var): the setter alone redraws; no update_icon() follows the write.
+/datum/unit_test/dq_gap/converted_draw_follows_its_tracked_var
+/datum/unit_test/dq_gap/converted_draw_follows_its_tracked_var/run_gap()
+	var/obj/item/multitool/ai_detector/D = allocate(/obj/item/multitool/ai_detector, run_loc_floor_bottom_left)
+	var/base = initial(D.icon_state)
+	D.update_icon()
+	TEST_ASSERT_EQUAL(D.icon_state, "[base]", "no detection: the base state")
+	D.set_detect_state("_red")
+	test_time(2)
+	TEST_ASSERT_EQUAL(D.icon_state, "[base]_red", "the tracked var changed: the draw showed it with no update_icon() call")
+	D.set_detect_state("")
+	test_time(2)
+	TEST_ASSERT_EQUAL(D.icon_state, "[base]", "and back")

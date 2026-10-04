@@ -65,13 +65,12 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 /obj/structure/girder/get_material()
 	return girder_material
 
-DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/girder/appearance_overlays()
-	. = list()
+/obj/structure/girder/draw(datum/look/look)
+	..()
 	if(anchored)
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 	else
-		icon_state = "displaced"
+		look.state("displaced")
 
 /// Spawned by the random reinforced-girder mapping spawner.
 /obj/structure/girder/reinforced
@@ -344,13 +343,12 @@ CAPABILITIES(/obj/structure/girder)
 	girder_material = "cult"
 	applies_material_colour = 0
 
-DECLARE_APPEARANCE_PROC(/obj/structure/girder/cult, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/girder/cult/appearance_overlays()
-	. = list()
+/obj/structure/girder/cult/draw(datum/look/look)
+	..()
 	if(anchored)
-		icon_state = "cultgirder"
+		look.state("cultgirder")
 	else
-		icon_state = "displaced"
+		look.state("displaced")
 
 /obj/structure/girder/cult/dismantle()
 	replace_with(src, /obj/effect/decal/remains/human)

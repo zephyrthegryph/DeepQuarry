@@ -119,13 +119,12 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 			break
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/simple_portal/linked, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/simple_portal/linked/appearance_overlays()
-	. = list()
+/obj/effect/simple_portal/linked/draw(datum/look/look)
+	..()
 	if(linked_portal() && !QDELETED(linked_portal()))
-		icon_state = "portal"
+		look.state("portal")
 	else
-		icon_state = "portal1"
+		look.state("portal1")
 
 /// Relation view: destination (reads null once it is gone).
 /obj/effect/simple_portal/proc/destination() as /atom

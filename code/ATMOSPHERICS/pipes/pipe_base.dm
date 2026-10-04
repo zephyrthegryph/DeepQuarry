@@ -302,7 +302,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	if(!pipe_color_check(new_color))
 		return
 
-	pipe_color = new_color
+	set_pipe_color(new_color)
 	update_icon()
 
 /obj/machinery/atmospherics/pipe/color_cache_name(obj/machinery/atmospherics/node)

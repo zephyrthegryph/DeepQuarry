@@ -52,6 +52,8 @@ Pipelines + Other Objects -> Pipe network
 	/// Every pipe network whose normal_members roster lists this machine (the two-sided
 	/// partner of /datum/pipe_network.normal_members).
 	var/list/datum/pipe_network/network_memberships
+TRACKED(/obj/machinery/atmospherics, icon_connect_type)
+TRACKED(/obj/machinery/atmospherics, pipe_color)
 
 /obj/machinery/atmospherics/relations()
 	. = ..()
@@ -120,11 +122,11 @@ Pipelines + Other Objects -> Pipe network
 	if(!isnull(newdir))
 		set_dir(newdir)
 	if(!pipe_color)
-		pipe_color = color
+		set_pipe_color(color)
 	color = null
 
 	if(!pipe_color_check(pipe_color))
-		pipe_color = null
+		set_pipe_color(null)
 	init_dir()
 
 /obj/machinery/atmospherics/examine_icon()
@@ -308,7 +310,7 @@ Pipelines + Other Objects -> Pipe network
 // Called on construction (i.e from pipe item) but not on initialization
 /obj/machinery/atmospherics/proc/on_construction(obj_color, set_layer)
 	wake_automatic_shutoff_valves()
-	pipe_color = obj_color
+	set_pipe_color(obj_color)
 	setPipingLayer(set_layer)
 	// TODO - M.connect_types = src.connect_types - Or otherwise copy from item? Or figure it out from piping layer?
 	var/turf/T = get_turf(src)
@@ -332,22 +334,22 @@ Pipelines + Other Objects -> Pipe network
 			icon_state = "[icon_state]-scrubbers"
 			connect_types = CONNECT_TYPE_SCRUBBER
 			layer = PIPES_SCRUBBER_LAYER
-			icon_connect_type = "-scrubbers"
+			set_icon_connect_type("-scrubbers")
 		if(PIPING_LAYER_SUPPLY)
 			icon_state = "[icon_state]-supply"
 			connect_types = CONNECT_TYPE_SUPPLY
 			layer = PIPES_SUPPLY_LAYER
-			icon_connect_type = "-supply"
+			set_icon_connect_type("-supply")
 		if(PIPING_LAYER_FUEL)
 			icon_state = "[icon_state]-fuel"
 			connect_types = CONNECT_TYPE_FUEL
 			layer = PIPES_FUEL_LAYER
-			icon_connect_type = "-fuel"
+			set_icon_connect_type("-fuel")
 		if(PIPING_LAYER_AUX)
 			icon_state = "[icon_state]-aux"
 			connect_types = CONNECT_TYPE_AUX
 			layer = PIPES_AUX_LAYER
-			icon_connect_type = "-aux"
+			set_icon_connect_type("-aux")
 	if(pipe_flags & PIPING_ALL_LAYER)
 		connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY|CONNECT_TYPE_SCRUBBER|CONNECT_TYPE_FUEL|CONNECT_TYPE_AUX
 
