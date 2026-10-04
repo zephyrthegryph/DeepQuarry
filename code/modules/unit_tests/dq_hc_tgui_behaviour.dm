@@ -13,6 +13,7 @@
 		return ui
 	ui = new(actor, host, "HcTest")
 	ui.status = STATUS_INTERACTIVE
+	ui.set_state(GLOB.tgui_always_state) // a test person has no client, which every real state needs for interactive use
 	SStgui.on_open(ui)
 	LAZYADD(T.hct_windows, ui)
 	return ui
@@ -23,7 +24,7 @@
 	var/datum/op_result/result = test_ui(actor, host, action, args)
 	if(result)
 		return result
-	return host.tgui_act(action, args || list(), ui)
+	return host.tgui_act(action, args || list(), ui, ui.state())
 
 /datum/unit_test/dq_hc_tgui
 	abstract_type = /datum/unit_test/dq_hc_tgui
@@ -246,3 +247,130 @@
 	TEST_ASSERT(islist(data["crewmembers"]), "the crew is sent")
 	press(H, M, "track", list("track" = "\ref[H]"))
 	TEST_ASSERT_EQUAL(data["isAI"], FALSE, "only an AI tracks")
+
+// ---- batch 2: agent card, law manager, camera, admin windows ----
+
+/datum/unit_test/dq_hc_tgui/agentcard_buttons
+/datum/unit_test/dq_hc_tgui/agentcard_buttons/run_gate()
+	var/obj/item/card/id/syndicate/S = allocate(/obj/item/card/id/syndicate, hct_spot())
+	var/datum/tgui_module/agentcard/M = hct_track(new /datum/tgui_module/agentcard(S))
+	var/mob/living/carbon/human/H = hct_actor()
+	S.register_user(H)
+	var/warfare = S.electronic_warfare
+	press(H, M, "electronic_warfare")
+	TEST_ASSERT_NOTEQUAL(S.electronic_warfare, warfare, "electronic warfare is toggled")
+	press(H, M, "age")
+	TEST_ASSERT(p2cl_has_question(H), "an age is asked for")
+	p2cl_answer(H, 41)
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(S.age, 41, "the age is set")
+	press(H, M, "assignment")
+	p2cl_answer(H, "Janitor")
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(S.assignment, "Janitor", "the assignment is set")
+	press(H, M, "sex")
+	p2cl_answer(H, "Other")
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(S.sex, "Other", "the sex is set")
+	press(H, M, "species")
+	p2cl_answer(H, "Slime")
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(S.species, "Slime", "the species is set")
+	press(H, M, "age")
+	p2cl_answer(H, 0, TRUE)
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(S.age, 41, "a cancelled question changes nothing")
+	var/list/data = data_of(M, H)
+	TEST_ASSERT_EQUAL(length(data["entries"]), 11, "the entries are sent")
+
+/datum/unit_test/dq_hc_tgui/agentcard_factory_reset
+/datum/unit_test/dq_hc_tgui/agentcard_factory_reset/run_gate()
+	var/obj/item/card/id/syndicate/S = allocate(/obj/item/card/id/syndicate, hct_spot())
+	var/datum/tgui_module/agentcard/M = hct_track(new /datum/tgui_module/agentcard(S))
+	var/mob/living/carbon/human/H = hct_actor()
+	S.register_user(H)
+	S.age = 99
+	S.assignment = "Captain"
+	press(H, M, "factoryreset")
+	TEST_ASSERT(p2cl_has_question(H), "the reset is confirmed first")
+	p2cl_answer(H, "No")
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(S.age, 99, "a no changes nothing")
+	press(H, M, "factoryreset")
+	p2cl_answer(H, "Yes")
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(S.age, initial(S.age), "a yes resets the age")
+	TEST_ASSERT_EQUAL(S.assignment, initial(S.assignment), "and the assignment")
+
+/datum/unit_test/dq_hc_tgui/law_manager_buttons
+/datum/unit_test/dq_hc_tgui/law_manager_buttons/run_gate()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
+	var/datum/tgui_module/law_manager/M = hct_law_manager(R)
+	var/mob/living/carbon/human/H = hct_actor()
+	press(H, M, "change_ion_law", list("val" = "Do the dance"))
+	TEST_ASSERT_EQUAL(M.ion_law, "Do the dance", "the drafted ion law is set")
+	press(H, M, "change_inherent_law", list("val" = "Be kind"))
+	TEST_ASSERT_EQUAL(M.inherent_law, "Be kind", "the drafted inherent law is set")
+	var/ions = length(R.laws.ion_laws)
+	press(H, M, "add_ion_law")
+	TEST_ASSERT_EQUAL(length(R.laws.ion_laws), ions, "a person who is not an antagonist adds no law")
+	press(H, M, "change_supplied_law_position")
+	TEST_ASSERT(p2cl_has_question(H), "a position is asked for")
+	p2cl_answer(H, 3)
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(M.supplied_law_position, 3, "the position is set")
+	press(H, M, "change_supplied_law_position")
+	p2cl_answer(H, 999)
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(M.supplied_law_position, MAX_SUPPLIED_LAW_NUMBER, "a position past the end is clamped")
+	var/list/data = data_of(M, H)
+	TEST_ASSERT_EQUAL(data["isMalf"], FALSE, "the viewer is not an antagonist")
+	TEST_ASSERT(islist(data["law_sets"]), "the law sets are sent")
+
+/// A law manager of a silicon that stands on a thing next to the person (a robot is no place for a window to be reached through).
+/datum/unit_test/dq_hc_tgui/proc/hct_law_manager(mob/living/silicon/S, type = /datum/tgui_module/law_manager)
+	var/datum/tgui_module/law_manager/M = hct_track(new type(S))
+	rel_set(M, nameof(/datum/tgui_module::host), hct_host())
+	return M
+
+/datum/unit_test/dq_hc_tgui/law_manager_refusals
+/datum/unit_test/dq_hc_tgui/law_manager_refusals/run_gate()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
+	var/datum/tgui_module/law_manager/M = hct_law_manager(R)
+	var/mob/living/carbon/human/H = hct_actor()
+	R.laws.add_ion_law("Seed law")
+	var/ions = length(R.laws.ion_laws)
+	var/datum/ai_law/L = R.laws.ion_laws[ions]
+	press(H, M, "delete_law", list("delete_law" = "ef[L]"))
+	TEST_ASSERT_EQUAL(length(R.laws.ion_laws), ions, "a person who is not an antagonist deletes no law")
+	press(H, M, "edit_law", list("edit_law" = "ef[L]"))
+	TEST_ASSERT(!p2cl_has_question(H), "and is not asked for a new text")
+	press(H, M, "state_law", list("ref" = "ef[L]", "state_law" = 1))
+	TEST_ASSERT(R.laws.get_state_law(L), "a law's stated flag is switched by anybody at the window")
+
+/datum/unit_test/dq_hc_tgui/camera_switch
+/datum/unit_test/dq_hc_tgui/camera_switch/run_gate()
+	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, hct_spot())
+	C.network = list("hct_net")
+	C.c_tag = "hct cam"
+	var/datum/tgui_module/camera/M = hct_track(new /datum/tgui_module/camera(hct_host(), list("hct_net")))
+	var/mob/living/carbon/human/H = hct_actor()
+	TEST_ASSERT_NULL(M.active_camera(), "no camera is active at first")
+	press(H, M, "switch_camera", list("name" = "hct cam"))
+	TEST_ASSERT_EQUAL(M.active_camera(), C, "the camera is selected by its tag")
+	press(H, M, "switch_camera", list("name" = "no such camera"))
+	var/list/data = data_of(M, H)
+	TEST_ASSERT(islist(data["activeCamera"]) || isnull(data["activeCamera"]), "the active camera is sent")
+
+/datum/unit_test/dq_hc_tgui/admin_windows_need_rights
+/datum/unit_test/dq_hc_tgui/admin_windows_need_rights/run_gate()
+	var/mob/living/carbon/human/H = hct_actor()
+	var/datum/tgui_module/admin_shuttle_controller/A = hct_track(new /datum/tgui_module/admin_shuttle_controller(hct_host()))
+	var/datum/tgui_state/S = A.tgui_state(H)
+	TEST_ASSERT(S != GLOB.tgui_default_state, "the shuttle controller has an admin state")
+	TEST_ASSERT(A.tgui_status(H, S) < STATUS_INTERACTIVE, "a player cannot work the shuttle controller")
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
+	var/datum/tgui_module/law_manager/admin/L = hct_law_manager(R, /datum/tgui_module/law_manager/admin)
+	var/datum/tgui_state/LS = L.tgui_state(H)
+	TEST_ASSERT(LS != GLOB.tgui_default_state, "the admin law manager has an admin state")
+	TEST_ASSERT(L.tgui_status(H, LS) < STATUS_INTERACTIVE, "a player cannot work the admin law manager")
