@@ -556,9 +556,15 @@ CAPABILITIES(/datum/ticket)
 	metrics_state_event("handled")
 
 /datum/ticket/proc/Retitle(mob/user)
+	return retitle_stage(user, null, FALSE)
+
+/datum/ticket/proc/retitle_stage(mob/user, response, response_ready)
 	if(!admin_require(user?.client, level == 0 ? (R_ADMIN|R_SERVER|R_MOD|R_MENTOR) : (R_ADMIN|R_SERVER|R_MOD), "ticket.retitle"))
 		return
-	var/new_title = rerun_ask(user, "k558", PROC_REF(Retitle), args, /datum/om/prompt/text, message = "Enter a title for the ticket", title = "Rename Ticket", default = name)
+	if(!response_ready)
+		open_request(src, /datum/prompt/text/ticket_title, PROC_REF(title_entered), answerer = user, title = "Rename Ticket", question = "Enter a title for the ticket", default = name)
+		return
+	var/new_title = response
 	if(isnull(new_title))
 		return
 	if(new_title)
@@ -571,11 +577,17 @@ CAPABILITIES(/datum/ticket)
 
 //Kick ticket to next level
 /datum/ticket/proc/Escalate(mob/user)
+	return escalate_stage(user, null, FALSE)
+
+/datum/ticket/proc/escalate_stage(mob/user, response, response_ready)
 	if(level != 0)
 		return
 	if(!admin_require(user?.client, R_ADMIN|R_SERVER|R_MOD|R_MENTOR, "ticket.escalate"))
 		return
-	var/_answer_k569 = rerun_ask(user, "k569", PROC_REF(Escalate), args, /datum/om/prompt/choice/alert, message = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", title = "Escalate", choices = list("Yes","No"))
+	if(!response_ready)
+		open_request(src, /datum/prompt/choice/ticket_escalate, PROC_REF(escalation_chosen), answerer = user, title = "Escalate", question = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", choices = list("Yes","No"))
+		return
+	var/_answer_k569 = response
 	if(isnull(_answer_k569))
 		return
 	if(_answer_k569 != "Yes")
@@ -803,3 +815,34 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /// The handling admin's client, or null while they are disconnected.
 /datum/ticket/proc/handler_client()
 	return handler_ckey ? GLOB.directory[handler_ckey] : null
+
+/datum/prompt/text/ticket_title
+	timeout = 0
+
+/datum/ticket/proc/title_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(title_entered_apply), A)
+	if(!result.ok)
+		stack_trace("Ticket Retitle request replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/datum/ticket/proc/title_entered_apply(datum/act/request/A)
+	return retitle_stage(A.request.answerer, A.request.answer_value, TRUE)
+
+/datum/prompt/choice/ticket_escalate
+	timeout = 0
+	buttons = TRUE
+
+/datum/ticket/proc/escalation_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(escalation_chosen_apply), A)
+	if(!result.ok)
+		stack_trace("Ticket Escalate request replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/datum/ticket/proc/escalation_chosen_apply(datum/act/request/A)
+	return escalate_stage(A.request.answerer, A.request.answer_value, TRUE)
