@@ -3157,21 +3157,16 @@
 	into += entry_line(39)
 	into += list(global.owns_many(nameof(stasis_sources)))
 
-/// CAPABILITIES(/mob/living/bot) at code/modules/mob/living/bot/bot.dm:51
+/// CAPABILITIES(/mob/living/bot) at code/modules/mob/living/bot/bot.dm:627
 /mob/living/bot/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/bot/bot.dm", 51, /mob/living/bot)
-	into += entry_line(52)
-	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint))))
-
-/// CAPABILITIES(/mob/living/bot) at code/modules/mob/living/bot/bot.dm:630
-/mob/living/bot/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/bot/bot.dm", 630, /mob/living/bot)
-	into += entry_line(631)
+	into += entry_block("code/modules/mob/living/bot/bot.dm", 627, /mob/living/bot)
+	into += entry_line(628)
 	into += list(global.owns_one(nameof(botcard), starts = /obj/item/card/id))
-	into += entry_line(632)
+	into += entry_line(629)
 	into += list(global.owns_one(nameof(access_scanner), starts = /obj))
+	into += entry_line(630)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint))))
 
 /// CAPABILITIES(/mob/living/bot/cleanbot) at code/modules/mob/living/bot/cleanbot.dm:210
 /mob/living/bot/cleanbot/declared_entries(list/into)
