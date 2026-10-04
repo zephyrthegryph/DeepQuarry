@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 				target.Move(get_step(target,get_dir(user,target)))
 		if(I_GRAB)
 			var/turf/STurf = get_turf(target)
-			after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 60, 1))
+			after(STurf, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 60, 1))
 			act_message(user, target, others = span_critical("\The [src] yanks %T% towards %U%!"))
 			target.throw_at(get_turf(get_step(user,get_dir(user,target))), 2, 1, src)
 

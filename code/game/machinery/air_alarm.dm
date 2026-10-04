@@ -569,7 +569,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 		LAZYSET(alarm_area_ref().air_scrub_names, m_id, new_name)
 	else
 		return
-	after(src, 10, PROC_REF(send_signal), with = list(m_id, list("init" = new_name)))
+	after(src, 1 SECOND, PROC_REF(send_signal), with = list(m_id, list("init" = new_name)))
 
 /obj/machinery/alarm/proc/refresh_all()
 	for(var/id_tag in alarm_area_ref().air_vent_names)

@@ -61,7 +61,7 @@
 		. = drop_r_hand(Target)
 
 	if (istype(item_dropped) && !QDELETED(item_dropped) && check_sound_preference(/datum/preference/toggle/drop_sounds))
-		after(src, 1, PROC_REF(make_item_drop_sound), with = list(item_dropped))
+		after(src, 0.1 SECONDS, PROC_REF(make_item_drop_sound), with = list(item_dropped))
 
 /mob/proc/make_item_drop_sound(obj/item/I)
 	if(QDELETED(I))

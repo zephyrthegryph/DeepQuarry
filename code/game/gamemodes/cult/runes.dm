@@ -1091,7 +1091,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			to_chat(M, span_danger("Your blood boils!"))
 			victims += M
 			if(prob(5))
-				after(M, 5, TYPE_PROC_REF(/mob, gib))
+				after(M, 0.5 SECONDS, TYPE_PROC_REF(/mob, gib))
 		for(var/obj/effect/rune/R in view(src))
 			if(prob(10))
 				explosion(R.loc, -1, 0, 1, 5)

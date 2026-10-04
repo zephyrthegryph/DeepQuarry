@@ -13,7 +13,6 @@ dx_raw_delay	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	after(src, 2, P
 dx_raw_delay	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	after(src, 2, PROC_REF(broadcast_status))
 dx_raw_delay	code/_onclick/telekinesis.dm	COOLDOWN_START(src, throw_cooldown, 3)
 dx_raw_delay	code/datums/behaviours/allergy.dm	after(H, rand(3,6), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
-dx_raw_delay	code/datums/entity_state/species/shadekin/powers/phase_shift.dm	after(L, rand(5,25), TYPE_PROC_REF(/obj/machinery/light, broken))
 dx_raw_delay	code/datums/entity_state/turfslip.dm	after(src, 1, PROC_REF(next_slip))
 dx_raw_delay	code/datums/entity_state/turfslip.dm	after(src, 1, PROC_REF(next_slip))
 dx_raw_delay	code/datums/lifecycle/declarations.dm	after(A, lifecycle_decl_value(A, timer[1]), timer[2])
@@ -21,23 +20,18 @@ dx_raw_delay	code/game/antagonist/antagonist_create.dm	after(src, 1, PROC_REF(se
 dx_raw_delay	code/game/antagonist/antagonist_factions.dm	COOLDOWN_START(player, rev_cooldown, 100)
 dx_raw_delay	code/game/antagonist/antagonist_update.dm	after(src, 3, PROC_REF(deferred_set_appearance), with = list(player))
 dx_raw_delay	code/game/gamemodes/cult/narsie.dm	after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), with = list(movement_dir))
-dx_raw_delay	code/game/gamemodes/cult/runes.dm	after(M, 5, TYPE_PROC_REF(/mob, gib))
-dx_raw_delay	code/game/gamemodes/events.dm	after(null, rand(5000, 6000), /proc/delayed_command_announcement, with = list("Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS))
-dx_raw_delay	code/game/gamemodes/events.dm	after(null, rand(300, 600), /proc/delayed_command_announcement, with = list("Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", ANNOUNCER_MSG_NEW_COMMAND_REPORT))
 dx_raw_delay	code/game/gamemodes/game_mode.dm	after(src, rand(waittime_l, waittime_h) + rand(100,150), PROC_REF(announce_ert_disabled))
 dx_raw_delay	code/game/gamemodes/technomancer/core_obj.dm	after(L, 1, TYPE_PROC_REF(/mob/living, fade_away))
 dx_raw_delay	code/game/gamemodes/technomancer/instability.dm	after(src, 4, PROC_REF(instability_flash_clear), with = list(instability_flash))
 dx_raw_delay	code/game/gamemodes/technomancer/spells/mark_recall.dm	after(src, 23, PROC_REF(loop_animation)) //That's just how long the animation is
 dx_raw_delay	code/game/gamemodes/technomancer/spells/targeting_matrix.dm	after(user, 5, GLOBAL_PROC_REF(remove_client_image), with = list(user, target_image))
 dx_raw_delay	code/game/machinery/adv_med.dm	after(src, 5, PROC_REF(findscanner_now))
-dx_raw_delay	code/game/machinery/air_alarm.dm	after(src, 10, PROC_REF(send_signal), with = list(m_id, list("init" = new_name)))
 dx_raw_delay	code/game/machinery/biogenerator.dm	after(src, (S + 15) / eat_eff, PROC_REF(finish_processing))
 dx_raw_delay	code/game/machinery/cloning.dm	after(src, 30, PROC_REF(clear_eject_wait), with = list(BR, clonemind))
 dx_raw_delay	code/game/machinery/computer/arcade.dm	after(src, 3.6, PROC_REF(countdown), with = list(3))
 dx_raw_delay	code/game/machinery/fire_alarm.dm	after(src, rand(0,15), PROC_REF(power_change_settle), key = "power_settle")
 dx_raw_delay	code/game/machinery/floodlight.dm	after(src, 20, PROC_REF(flicker_restore))
 dx_raw_delay	code/game/machinery/gear_dispenser.dm	after(src, 10.5, PROC_REF(animate_dispensing_lit))
-dx_raw_delay	code/game/machinery/hologram.dm	COOLDOWN_START(src, request_cooldown, 200)
 dx_raw_delay	code/game/machinery/newscaster.dm	after(src, rand(0, 15), PROC_REF(lose_power))
 dx_raw_delay	code/game/machinery/oxygen_pump.dm	after(src, 1, PROC_REF(attach_mask_finish))
 dx_raw_delay	code/game/machinery/oxygen_pump.dm	after(src, 1, PROC_REF(attach_mask_finish))
@@ -100,9 +94,7 @@ dx_raw_delay	code/game/objects/items/weapons/grenades/flashbang.dm	after(src, ra
 dx_raw_delay	code/game/objects/items/weapons/grenades/flashbang.dm	after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 dx_raw_delay	code/game/objects/items/weapons/handcuffs.dm	COOLDOWN_START(src, chew_cooldown, 26)
 dx_raw_delay	code/game/objects/items/weapons/implants/implantcase.dm	after(src, 5, PROC_REF(inject_from), with = list(I, user))
-dx_raw_delay	code/game/objects/items/weapons/material/misc.dm	after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 60, 1))
 dx_raw_delay	code/game/objects/items/weapons/tools/weldingtool.dm	COOLDOWN_START(src, nextrefueltick, 10)
-dx_raw_delay	code/game/objects/items/weapons/traps.dm	after(src, 2, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/items/Wirecutter.ogg', 40, 1))
 dx_raw_delay	code/game/objects/structures/catwalk.dm	if(istype(loc, /turf/simulated/open)) after(loc, 1, TYPE_PROC_REF(/turf/simulated/open, update)) //We get called in Destroy() and things: the open turf, not us, owns the update.
 dx_raw_delay	code/game/objects/structures/cliff.dm	after(bottom_cliff, 5, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), with = list(L))
 dx_raw_delay	code/game/objects/structures/crates_lockers/__closets.dm	after(src, 1, TYPE_PROC_REF(/datum, om_qdel_self))
@@ -114,13 +106,10 @@ dx_raw_delay	code/game/objects/structures/lattice.dm	after(src, 1, PROC_REF(upda
 dx_raw_delay	code/game/objects/structures/props/beam_prism.dm	after(src, 3, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
 dx_raw_delay	code/game/objects/structures/props/beam_prism.dm	after(src, 3, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
 dx_raw_delay	code/game/objects/structures/transit_tubes.dm	after(src, 5, PROC_REF(launch_close), with = list(pod))
-dx_raw_delay	code/game/objects/structures/transit_tubes.dm	after(src, CLOSE_DURATION + 2, PROC_REF(launch_go), with = list(pod))
 dx_raw_delay	code/game/objects/structures/transit_tubes.dm	after(src, 5, PROC_REF(arrival_open), with = list(pod))
-dx_raw_delay	code/game/objects/structures/transit_tubes.dm	after(src, OPEN_DURATION + 2, PROC_REF(arrival_opened), with = list(pod))
 dx_raw_delay	code/game/objects/structures/transit_tubes.dm	after(src, 1, PROC_REF(init_dirs_automatic))
 dx_raw_delay	code/game/turfs/simulated/wall_attacks.dm	after(src, 1, PROC_REF(dismantle_wall), with = list(1))
 dx_raw_delay	code/game/turfs/simulated/walls.dm	after(src, 2, PROC_REF(burn_collapse), with = list(temperature, girder_material.name))
-dx_raw_delay	code/modules/admin/verbs/secrets.dm	after(AffectedArea, rand(25,50), GLOBAL_PROC_REF(chilling_wind_relight), with = list(AffectedArea))
 dx_raw_delay	code/modules/admin/verbs/smite.dm	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))
 dx_raw_delay	code/modules/blob2/overmind/types/blazing_oil.dm	after(B, 1, TYPE_PROC_REF(/obj/structure/blob, adjust_integrity), with = list(-(amount * 5)))
 dx_raw_delay	code/modules/blob2/overmind/types/volatile_alluvium.dm	after(B, 1, TYPE_PROC_REF(/obj/structure/blob, alluvium_crumble), with = list(amount * 4, name))
@@ -135,8 +124,6 @@ dx_raw_delay	code/modules/clothing/spacesuits/rig/rig.dm	COOLDOWN_START(src, wea
 dx_raw_delay	code/modules/combat_ai/ports/slime_state.dm	after(speaker, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(message))
 dx_raw_delay	code/modules/combat_ai/ports/voice_commands.dm	after(who, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(pick(options)))
 dx_raw_delay	code/modules/contracts/faction_agent_contracts.dm	after(SSsupply, 1, TYPE_PROC_REF(/datum/system/supply, replay_market_audit_evidence), with = list(src))
-dx_raw_delay	code/modules/events/money_spam.dm	COOLDOWN_START(src, spam_cooldown, 3000)
-dx_raw_delay	code/modules/events/money_spam.dm	COOLDOWN_START(src, spam_cooldown, 3000)
 dx_raw_delay	code/modules/flufftext/Hallucination.dm	after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), PROC_REF(trigger))
 dx_raw_delay	code/modules/food/food/snacks.dm	after(user, 5, /proc/food_finished_emote, with = list(user, !reagents?.total_volume))
 dx_raw_delay	code/modules/gamemaster/event2/events/engineering/airlock_failure.dm	after(src, 1, PROC_REF(break_door), with = list(door)) // Emagging proc is actually a blocking proc and that's bad for the ticker.
@@ -178,16 +165,12 @@ dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	
 dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/prometheans.dm	after(H, 1, TYPE_PROC_REF(/mob, gib))
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	after(src, 3, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK))) // ALLOW(decl): conditional, extra args
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	after(src, 1, PROC_REF(finish_survival_gear), with = list(H)) //Let their real nif load if they have one
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 600)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	after(C, 6, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(FALSE)) //.6 seconds.
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 50) //No spamming!
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 50) //No spamming!
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 10) //Anti-spam.
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 100) //Cooldown for successful strike.
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 10) //Anti-spam.
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	after(src, 5, PROC_REF(target_lunge_land), with = list(target)) // For the throw to complete.
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 10) //Anti-spam.
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 600)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 600)
@@ -198,7 +181,6 @@ dx_raw_delay	code/modules/mob/living/carbon/human/species/xenomorphs/alien_power
 dx_raw_delay	code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm	COOLDOWN_START(src, last_special, 50)
 dx_raw_delay	code/modules/mob/living/carbon/human/update_icons.dm	after(src, 12, PROC_REF(end_belly_struggle_anim))
 dx_raw_delay	code/modules/mob/living/carbon/human/update_icons.dm	after(src, 12, PROC_REF(end_tail_struggle_anim))
-dx_raw_delay	code/modules/mob/living/inventory.dm	after(src, 1, PROC_REF(make_item_drop_sound), with = list(item_dropped))
 dx_raw_delay	code/modules/mob/living/living.dm	after(src, 25, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 25))
 dx_raw_delay	code/modules/mob/living/silicon/pai/pai.dm	COOLDOWN_START(src, last_special, 100) //Let's give get_character_icon time to work
 dx_raw_delay	code/modules/mob/living/silicon/pai/pai.dm	after(src, 1, PROC_REF(close_up_unless_dead))
@@ -240,8 +222,6 @@ dx_raw_delay	code/modules/mob/new_player/preferences_setup.dm	om_after_replace(s
 dx_raw_delay	code/modules/mob/transform_procs.dm	after(src, 48, PROC_REF(monkeyize_1), with = list(animation))
 dx_raw_delay	code/modules/nifsoft/nif.dm	after(src, 1, PROC_REF(quick_install), with = list(H))
 dx_raw_delay	code/modules/nifsoft/nif_softshop.dm	after(src, rand(0, 15), PROC_REF(lose_power))
-dx_raw_delay	code/modules/organs/pain.dm	COOLDOWN_START(src, next_pain_time, (100 - power))
-dx_raw_delay	code/modules/organs/pain.dm	COOLDOWN_START(src, multilimb_pain_time, (100 - power))
 dx_raw_delay	code/modules/organs/subtypes/diona.dm	after(target, 1, /proc/diona_nymph_splits_off, with = list(target)) // So it has time to be thrown about by the gib() proc.
 dx_raw_delay	code/modules/organs/subtypes/standard.dm	after(victim, 1, TYPE_PROC_REF(/mob/living/carbon/human, update_hair))
 dx_raw_delay	code/modules/paperwork/handlabeler.dm	after(tray, 1, TYPE_PROC_REF(/atom, update_icon))
@@ -266,17 +246,11 @@ dx_raw_delay	code/modules/power/singularity/field_generator.dm	after(src, 3, PRO
 dx_raw_delay	code/modules/power/singularity/field_generator.dm	after(src, 4, PROC_REF(setup_field), with = list(8))
 dx_raw_delay	code/modules/power/singularity/singularity.dm	after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), with = list(movement_dir))
 dx_raw_delay	code/modules/power/supermatter/supermatter.dm	after(null, 5, /proc/leave_broken_supermatter, with = list(TS))
-dx_raw_delay	code/modules/projectiles/ammunition.dm	after(src, 7, TYPE_PROC_REF(/atom, om_playsound), with = list("casing_sound", 50, 1))
 dx_raw_delay	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	after(src, recipes[r_id][step + 1] * delay_modifier, PROC_REF(perform_reaction), with = list(r_id, step))
 dx_raw_delay	code/modules/recycling/conveyor2.dm	after(src, 1, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
 dx_raw_delay	code/modules/recycling/v_garbosystem.dm	after(src, 1, PROC_REF(grind_affecting))
 dx_raw_delay	code/modules/recycling/v_garbosystem.dm	after(src, 15, PROC_REF(crunch_item), with = list(A))
 dx_raw_delay	code/modules/recycling/v_garbosystem.dm	after(src, 15, PROC_REF(crunch_thing), with = list(A))
-dx_raw_delay	code/modules/shieldgen/energy_field.dm	after(src, 2, PROC_REF(spread_impact), with = list(i, affected_shields))
-dx_raw_delay	code/modules/shieldgen/sheldwallgen.dm	after(src, 1, PROC_REF(setup_field), with = list(1))
-dx_raw_delay	code/modules/shieldgen/sheldwallgen.dm	after(src, 2, PROC_REF(setup_field), with = list(2))
-dx_raw_delay	code/modules/shieldgen/sheldwallgen.dm	after(src, 3, PROC_REF(setup_field), with = list(4))
-dx_raw_delay	code/modules/shieldgen/sheldwallgen.dm	after(src, 4, PROC_REF(setup_field), with = list(8))
 dx_raw_delay	code/modules/spells/aoe_turf/knock.dm	after(door, 1, TYPE_PROC_REF(/obj/machinery/door, knocked_open))
 dx_raw_delay	code/modules/spells/targeted/ethereal_jaunt.dm	after(src, 5, PROC_REF(jaunt_finish), with = list(target, holder, animation))
 dx_raw_delay	code/modules/spells/targeted/ethereal_jaunt.dm	after(src, 2, PROC_REF(allow_move))

@@ -45,8 +45,8 @@
 	else if(force || (message != last_pain_message) || (COOLDOWN_FINISHED(src, next_pain_time)))
 		last_pain_message = message
 		to_chat(src,message)
-		COOLDOWN_START(src, next_pain_time, (100 - power))
-		COOLDOWN_START(src, multilimb_pain_time, (100 - power))
+		COOLDOWN_START(src, next_pain_time, (10 SECONDS - power))
+		COOLDOWN_START(src, multilimb_pain_time, (10 SECONDS - power))
 		// Emote in pain for custom pain, too
 		if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 			emote("pain")

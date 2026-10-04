@@ -80,7 +80,7 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 /obj/machinery/hologram/holopad/proc/ai_request_answered(datum/om/prompt/confirm/ask)
 	var/mob/living/carbon/human/user = ask.answerer
 	if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!
-		COOLDOWN_START(src, request_cooldown, 200)
+		COOLDOWN_START(src, request_cooldown, 20 SECONDS)
 		to_chat(user, span_notice("You request an AI's presence."))
 		var/area/area = get_area(src)
 		for(var/mob/living/silicon/ai/AI in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
