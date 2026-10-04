@@ -63,23 +63,27 @@ UI_DATA_REPLACE(/obj/item/toy/plushie/customizable, "merge:ui_data_obj_item_toy_
 	return data
 
 /// A plushie colour: its base (overlay_state null) or one added overlay. Re-checked on the answer: awake and next to it.
-/datum/om/prompt/color/plushie
-	message = "Choose a color:"
+/datum/prompt/color/plushie
+	question = "Choose a color:"
 	ask_flags = ASK_CONSCIOUS | ASK_NEAR_SUBJECT
+	timeout = 0
 	/// The overlay's icon_state; null recolours the base.
 	var/overlay_state
 
-/obj/item/toy/plushie/customizable/proc/plushie_color_chosen(datum/om/prompt/color/plushie/ask)
-	if(!ask.picked_color)
+/obj/item/toy/plushie/customizable/proc/plushie_color_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	if(ask.overlay_state)
-		var/list/target = added_overlays?[ask.overlay_state]
+	var/datum/prompt/color/plushie/prompt = A.answer
+	if(prompt.overlay_state)
+		var/list/target = added_overlays?[prompt.overlay_state]
 		if(!target)
+			SStgui.update_uis(src)
 			return
-		target["color"] = ask.picked_color
+		target["color"] = A.answer.answer_value
 	else
-		base_color = ask.picked_color
+		base_color = A.answer.answer_value
 	update_icon()
+	SStgui.update_uis(src)
 
 /obj/item/toy/plushie/customizable/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
@@ -122,7 +126,7 @@ UI_ACT_PROC(/obj/item/toy/plushie/customizable, ui_act_change_overlay_color)
 	var/target = added_overlays[selected_icon_state]
 	if(!target)
 		return FALSE
-	om_ask(ui.user, /datum/om/prompt/color/plushie, PROC_REF(plushie_color_chosen), title = possible_overlays[selected_icon_state], default = base_color, overlay_state = selected_icon_state, ui_refresh = src)
+	open_request(src, /datum/prompt/color/plushie, PROC_REF(plushie_color_chosen), answerer = ui.user, title = possible_overlays[selected_icon_state], default = base_color, overlay_state = selected_icon_state)
 
 UI_ACT(/obj/item/toy/plushie/customizable, "move_overlay_up", ui_act_move_overlay_up, UI_ARG_TEXT("icon"))
 UI_ACT_PROC(/obj/item/toy/plushie/customizable, ui_act_move_overlay_up)
@@ -149,7 +153,7 @@ UI_ACT_PROC(/obj/item/toy/plushie/customizable, ui_act_move_overlay_down)
 UI_ACT(/obj/item/toy/plushie/customizable, "change_base_color", ui_act_change_base_color)
 UI_ACT_PROC(/obj/item/toy/plushie/customizable, ui_act_change_base_color)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/color/plushie, PROC_REF(plushie_color_chosen), title = "Plushie base color", default = base_color, ui_refresh = src)
+	open_request(src, /datum/prompt/color/plushie, PROC_REF(plushie_color_chosen), answerer = ui.user, title = "Plushie base color", default = base_color)
 
 UI_ACT(/obj/item/toy/plushie/customizable, "set_overlay_alpha", ui_act_set_overlay_alpha, UI_ARG_NUM("alpha"), UI_ARG_TEXT("icon_state"))
 UI_ACT_PROC(/obj/item/toy/plushie/customizable, ui_act_set_overlay_alpha)
