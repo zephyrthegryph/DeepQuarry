@@ -55,8 +55,14 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 
 /// Old attackby.
 /obj/item/photo/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+	return paperwork_caption_stage(user, P, interaction)
+
+/obj/item/photo/proc/paperwork_caption_stage(mob/user, obj/item/P, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
 	if(istype(P, /obj/item/pen))
-		var/txt = rerun_ask(user, "k53", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to write on the back?", title = "Photo Writing", max_length = 128)
+		if(!paperwork_answer_ready)
+			open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_caption_answered), answerer = user, paperwork_operator = user, paperwork_held = P, paperwork_interaction = interaction, question = "What would you like to write on the back?", title = "Photo Writing", max_len = 128)
+			return TRUE
+		var/txt = paperwork_answer
 		if(isnull(txt))
 			return TRUE
 		if(loc == user && user.stat == 0)
@@ -96,7 +102,13 @@ UI_DATA_REPLACE(/obj/item/photo, "title=name:text", "size=photo_size:num", "merg
 
 /// Old Rename photo verb.
 /obj/item/photo/proc/photo_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k97 = rerun_ask(user, "k97", PROC_REF(photo_verb_rename), args, /datum/om/prompt/text, message = "What would you like to label the photo?", title = "Photo Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+	return paperwork_photo_label_stage(user, held, interaction)
+
+/obj/item/photo/proc/paperwork_photo_label_stage(mob/user, obj/item/held, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
+	if(!paperwork_answer_ready)
+		open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_photo_label_answered), answerer = user, paperwork_operator = user, paperwork_held = held, paperwork_interaction = interaction, question = "What would you like to label the photo?", title = "Photo Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k97 = paperwork_answer
 	if(isnull(_answer_k97))
 		return
 	var/n_name = sanitizeSafe(_answer_k97, MAX_NAME_LEN)
@@ -170,7 +182,13 @@ CAPABILITIES(/obj/item/storage/photo_album)
 
 /// Old Set Photo Focus verb.
 /obj/item/camera/proc/camera_verb_focus(mob/user, obj/item/held, datum/interaction/interaction)
-	var/nsize = rerun_ask(user, "k165", PROC_REF(camera_verb_focus), args, /datum/om/prompt/choice, message = "Photo Size", title = "Pick a size of resulting photo.", choices = list(1,3,5,7))
+	return paperwork_focus_stage(user, held, interaction)
+
+/obj/item/camera/proc/paperwork_focus_stage(mob/user, obj/item/held, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
+	if(!paperwork_answer_ready)
+		open_request(src, /datum/prompt/choice/paperwork_review, PROC_REF(paperwork_focus_answered), answerer = user, paperwork_operator = user, paperwork_held = held, paperwork_interaction = interaction, question = "Photo Size", title = "Pick a size of resulting photo.", choices = list(1,3,5,7))
+		return
+	var/nsize = paperwork_answer
 	if(isnull(nsize))
 		return
 	if(nsize)
@@ -372,3 +390,42 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 	icon_state = icon_on
 	on = 1
 
+
+/obj/item/photo/proc/paperwork_caption_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(paperwork_caption_apply), A)
+	if(!result.ok)
+		stack_trace("Paperwork caption replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/item/photo/proc/paperwork_caption_apply(datum/act/request/A)
+	var/datum/prompt/text/paperwork_review/ask = A.answer
+	return paperwork_caption_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+
+/obj/item/photo/proc/paperwork_photo_label_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(paperwork_photo_label_apply), A)
+	if(!result.ok)
+		stack_trace("Paperwork photo_label replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/item/photo/proc/paperwork_photo_label_apply(datum/act/request/A)
+	var/datum/prompt/text/paperwork_review/ask = A.answer
+	return paperwork_photo_label_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+
+/obj/item/camera/proc/paperwork_focus_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(paperwork_focus_apply), A)
+	if(!result.ok)
+		stack_trace("Paperwork focus replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/item/camera/proc/paperwork_focus_apply(datum/act/request/A)
+	var/datum/prompt/choice/paperwork_review/ask = A.answer
+	return paperwork_focus_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
