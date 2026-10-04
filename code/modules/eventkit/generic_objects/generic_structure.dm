@@ -120,6 +120,11 @@ CAPABILITIES(/obj/structure/generic_structure)
 	return ITEM_INTERACT_SUCCESS
 
 ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a customisable structure with a range of different options.", ADMIN_CATEGORY_FUN_EVENT_KIT)
+	return generic_setup_stage(user, list())
+
+/datum/admin_verb/generic_structure/proc/generic_setup_stage(client/user, list/setup_answers)
+	if(!user || !user.mob || QDELETED(user.mob))
+		return
 	var/s_wrenchable = 0
 	var/s_anchored = 0
 	var/s_density = 0
@@ -235,13 +240,22 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 
 	var/check_togglable
 
-	var/s_name = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Structure Name:", title = "Name")
+	if(!("a1" in setup_answers))
+		open_request(src, /datum/prompt/text/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a1", question = "Structure Name:", title = "Name")
+		return
+	var/s_name = setup_answers["a1"]
 	if(isnull(s_name))
 		return
-	var/s_desc = verb_ask(user, "a2", args, /datum/om/prompt/text, message = "Structure Description:", title = "Description")
+	if(!("a2" in setup_answers))
+		open_request(src, /datum/prompt/text/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a2", question = "Structure Description:", title = "Description")
+		return
+	var/s_desc = setup_answers["a2"]
 	if(isnull(s_desc))
 		return
-	var/check_anchored = verb_ask(user, "a3", args, /datum/om/prompt/choice/alert, message = "Start anchored?", title = "anchored", choices = list("Yes", "No", "Cancel"))
+	if(!("a3" in setup_answers))
+		open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a3", question = "Start anchored?", title = "anchored", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+		return
+	var/check_anchored = setup_answers["a3"]
 	if(isnull(check_anchored))
 		return
 	if(!check_anchored || check_anchored == "Cancel")
@@ -250,7 +264,10 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 		s_anchored = 0
 	if(check_anchored == "Yes")
 		s_anchored = 1
-	var/check_density = verb_ask(user, "a4", args, /datum/om/prompt/choice/alert, message = "Start dense?", title = "density", choices = list("Yes", "No", "Cancel"))
+	if(!("a4" in setup_answers))
+		open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a4", question = "Start dense?", title = "density", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+		return
+	var/check_density = setup_answers["a4"]
 	if(isnull(check_density))
 		return
 	if(!check_density || check_density == "Cancel")
@@ -259,7 +276,10 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 		s_density = 0
 	if(check_density == "Yes")
 		s_density = 1
-	var/check_wrenchable = verb_ask(user, "a5", args, /datum/om/prompt/choice/alert, message = "Allow it to be fastened and unfastened with a wrench?", title = "wrenchable", choices = list("Yes", "No", "Cancel"))
+	if(!("a5" in setup_answers))
+		open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a5", question = "Allow it to be fastened and unfastened with a wrench?", title = "wrenchable", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+		return
+	var/check_wrenchable = setup_answers["a5"]
 	if(isnull(check_wrenchable))
 		return
 	if(!check_wrenchable || check_wrenchable == "Cancel")
@@ -268,11 +288,17 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 		s_wrenchable = 0
 	if(check_wrenchable == "Yes")
 		s_wrenchable = 1
-	var/s_icon_state_off = verb_ask(user, "a6", args, /datum/om/prompt/choice, message = "Choose starting icon state:", title = "icon_state_off", choices = icon_state_options)
+	if(!("a6" in setup_answers))
+		open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a6", question = "Choose starting icon state:", title = "icon_state_off", choices = icon_state_options)
+		return
+	var/s_icon_state_off = setup_answers["a6"]
 	if(isnull(s_icon_state_off))
 		return
 	// Uploads (s_icon) are asked last: a file upload is a native dialog that waits.
-	var/check_activatable = verb_ask(user, "a7", args, /datum/om/prompt/choice/alert, message = "Allow it to be turned on?", title = "activatable", choices = list("Yes", "No", "Cancel"))
+	if(!("a7" in setup_answers))
+		open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a7", question = "Allow it to be turned on?", title = "activatable", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+		return
+	var/check_activatable = setup_answers["a7"]
 	if(isnull(check_activatable))
 		return
 	if(!check_activatable || check_activatable == "Cancel")
@@ -281,11 +307,17 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 		s_activatable = 0
 	if(check_activatable == "Yes")
 		s_activatable = 1
-		var/_answer_a8 = verb_ask(user, "a8", args, /datum/om/prompt/text, message = "Activation text:", title = "Activation Text")
+		if(!("a8" in setup_answers))
+			open_request(src, /datum/prompt/text/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a8", question = "Activation text:", title = "Activation Text")
+			return
+		var/_answer_a8 = setup_answers["a8"]
 		if(isnull(_answer_a8))
 			return
 		s_text_activated = _answer_a8
-		var/_answer_a9 = verb_ask(user, "a9", args, /datum/om/prompt/choice/alert, message = "Allow it to be turned back off again?", title = "togglable", choices = list("Yes", "No", "Cancel"))
+		if(!("a9" in setup_answers))
+			open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a9", question = "Allow it to be turned back off again?", title = "togglable", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+			return
+		var/_answer_a9 = setup_answers["a9"]
 		if(isnull(_answer_a9))
 			return
 		check_togglable = _answer_a9
@@ -294,21 +326,33 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 		if(check_togglable == "No")
 			s_togglable = 0
 		if(check_togglable == "Yes")
-			var/_answer_a10 = verb_ask(user, "a10", args, /datum/om/prompt/text, message = "Deactivation text:", title = "Deactivation Text")
+			if(!("a10" in setup_answers))
+				open_request(src, /datum/prompt/text/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a10", question = "Deactivation text:", title = "Deactivation Text")
+				return
+			var/_answer_a10 = setup_answers["a10"]
 			if(isnull(_answer_a10))
 				return
 			s_text_deactivated = _answer_a10
 			s_togglable = 1
-		var/_answer_a11 = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Choose activated icon state:", title = "icon_state_on", choices = icon_state_options)
+		if(!("a11" in setup_answers))
+			open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a11", question = "Choose activated icon state:", title = "icon_state_on", choices = icon_state_options)
+			return
+		var/_answer_a11 = setup_answers["a11"]
 		if(isnull(_answer_a11))
 			return
 		s_icon_state_on = _answer_a11
 		// Uploads (s_icon2) are asked last: a file upload is a native dialog that waits.
-		var/_answer_a12 = verb_ask(user, "a12", args, /datum/om/prompt/number, message = "Do you want it to take time to put turn on? Choose a number of deciseconds to activate, or 0 for instant.", title = "Delay")
+		if(!("a12" in setup_answers))
+			open_request(src, /datum/prompt/number/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a12", question = "Do you want it to take time to put turn on? Choose a number of deciseconds to activate, or 0 for instant.", title = "Delay")
+			return
+		var/_answer_a12 = setup_answers["a12"]
 		if(isnull(_answer_a12))
 			return
 		s_delay = _answer_a12
-		var/check_effect = verb_ask(user, "a13", args, /datum/om/prompt/choice/alert, message = "Produce an effect on activation?", title = "Effect?", choices = list("No", "Spark", "Flicker Lights", "Flash", "Spawn Item", "Fear", "Cancel"))
+		if(!("a13" in setup_answers))
+			open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a13", question = "Produce an effect on activation?", title = "Effect?", choices = list("No", "Spark", "Flicker Lights", "Flash", "Spawn Item", "Fear", "Cancel"), buttons = TRUE)
+			return
+		var/check_effect = setup_answers["a13"]
 		if(isnull(check_effect))
 			return
 		if(!check_effect || check_effect == "Cancel")
@@ -323,18 +367,27 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 			s_effect = 3
 		if(check_effect == "Spawn Item")
 			s_effect = 4
-			s_object = verb_ask(user, "object", args, /datum/om/prompt/typepath, message = "Enter full or partial typepath.", title = "Typepath")
+			if(!("object" in setup_answers))
+				open_request(src, /datum/prompt/text/generic_spawn_type_query, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "object", question = "Enter full or partial typepath.", title = "Typepath", max_len = MAX_TGUI_INPUT)
+				return
+			s_object = setup_answers["object"]
 			if(isnull(s_object))
 				return
 		if(check_effect == "Fear")
 			s_effect = 5
-		var/check_sound = verb_ask(user, "a14", args, /datum/om/prompt/choice/alert, message = "Play a sound when turning on?", title = "Sound", choices = list("Yes", "No", "Cancel"))
+		if(!("a14" in setup_answers))
+			open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a14", question = "Play a sound when turning on?", title = "Sound", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+			return
+		var/check_sound = setup_answers["a14"]
 		if(isnull(check_sound))
 			return
 		if(!check_sound || check_sound == "Cancel")
 			return
 		if(check_sound == "Yes")
-			var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice, message = "Choose a sound to play on activation:", title = "Sound", choices = sound_options)
+			if(!("a15" in setup_answers))
+				open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = user.mob, setup_answers = setup_answers, setup_key = "a15", question = "Choose a sound to play on activation:", title = "Sound", choices = sound_options)
+				return
+			var/_answer_a15 = setup_answers["a15"]
 			if(isnull(_answer_a15))
 				return
 			s_sound = _answer_a15
@@ -368,3 +421,54 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 	if(s_icon)
 		P.icon = s_icon
 	P.update_icon()
+
+/datum/admin_verb/generic_structure/proc/generic_setup_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/mob/answerer = context.request.answerer
+	var/client/user = answerer?.client
+	if(!user)
+		return
+	var/list/setup_answers
+	var/setup_key
+	if(istype(context.answer, /datum/prompt/text/generic_spawn_setup))
+		var/datum/prompt/text/generic_spawn_setup/text_request = context.answer
+		setup_answers = text_request.setup_answers.Copy()
+		setup_key = text_request.setup_key
+	else if(istype(context.answer, /datum/prompt/choice/generic_spawn_setup))
+		var/datum/prompt/choice/generic_spawn_setup/choice_request = context.answer
+		setup_answers = choice_request.setup_answers.Copy()
+		setup_key = choice_request.setup_key
+	else if(istype(context.answer, /datum/prompt/number/generic_spawn_setup))
+		var/datum/prompt/number/generic_spawn_setup/number_request = context.answer
+		setup_answers = number_request.setup_answers.Copy()
+		setup_key = number_request.setup_key
+	else
+		return
+	var/is_type_query = istype(context.answer, /datum/prompt/text/generic_spawn_type_query)
+	var/selected = context.answer.answer_value
+	if(setup_key == "object" && istext(selected))
+		var/list/matches = list()
+		for(var/path in typesof(/atom))
+			if(findtext("[path]", selected))
+				matches += path
+		if(length(matches) == 1)
+			selected = matches[1]
+		else if(!length(matches))
+			to_chat(answerer, span_warning("No results found.  Sorry."))
+			return
+		else
+			open_request(src, /datum/prompt/choice/generic_spawn_setup, PROC_REF(generic_setup_answered), answerer = answerer, setup_answers = setup_answers, setup_key = "object", question = "Select a type", title = "Typepath", choices = matches)
+			return
+	// Old typepath refinement preceded the permission recheck, including its picker/no-results UI.
+	if(is_type_query && (!admin_can(user, 0) || !check_rights_for(user, R_SPAWN)))
+		return
+	// This is the old dynamic-dispatch boundary, after type refinement and prompt rights checks.
+	if(generic_spawn_advanced_call(answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	setup_answers[setup_key] = selected
+	return generic_setup_stage(user, setup_answers)
