@@ -3116,6 +3116,28 @@
 	into += entry_line(50)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
+/// CAPABILITIES(/datum/tgui_module) at code/modules/tgui/modules/_base.dm:71
+/datum/tgui_module/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/_base.dm", 71, /datum/tgui_module)
+	into += entry_line(73)
+	into += list(global.op("pc_exit", global.ui_act("PC_exit"), global.then(PROC_REF(ui_act_pc_exit))))
+	into += entry_line(74)
+	into += list(global.op("pc_shutdown", global.ui_act("PC_shutdown"), global.then(PROC_REF(ui_act_pc_shutdown))))
+	into += entry_line(75)
+	into += list(global.op("pc_minimize", global.ui_act("PC_minimize"), global.then(PROC_REF(ui_act_pc_minimize))))
+	into += entry_line(77)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_usable), silent = TRUE))))
+
+/// CAPABILITIES(/datum/tgui_module/alarm_monitor) at code/modules/tgui/modules/alarm.dm:94
+/datum/tgui_module/alarm_monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/alarm.dm", 94, /datum/tgui_module/alarm_monitor)
+	into += entry_line(95)
+	into += list(global.interface("StationAlertConsole"))
+	into += entry_line(96)
+	into += list(global.op("switchTo", global.ui_act("switchTo", global.arg("camera", global.schema_ref(/obj/machinery/camera))), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_switchto))))
+
 /// CAPABILITIES(/datum/tgui_module/appearance_changer) at code/modules/tgui/modules/appearance_changer.dm:51
 /datum/tgui_module/appearance_changer/declared_entries(list/into)
 	..(into)
@@ -3131,12 +3153,18 @@
 	into += entry_line(56)
 	into += list(global.owns_many(nameof(cam_plane_masters)))
 
-/// CAPABILITIES(/datum/tgui_module/atmos_control) at code/modules/tgui/modules/atmos_control.dm:11
+/// CAPABILITIES(/datum/tgui_module/atmos_control) at code/modules/tgui/modules/atmos_control.dm:10
 /datum/tgui_module/atmos_control/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/tgui/modules/atmos_control.dm", 11, /datum/tgui_module/atmos_control)
-	into += entry_line(12)
+	into += entry_block("code/modules/tgui/modules/atmos_control.dm", 10, /datum/tgui_module/atmos_control)
+	into += entry_line(11)
 	into += list(global.owns_one(nameof(access), /obj))
+	into += entry_line(12)
+	into += list(global.interface("AtmosControl"))
+	into += entry_line(13)
+	into += list(global.op("alarm", global.ui_act("alarm", global.arg("alarm", global.schema_ref(/obj/machinery/alarm))), global.then(PROC_REF(ui_act_alarm))))
+	into += entry_line(14)
+	into += list(global.op("setZLevel", global.ui_act("setZLevel", global.arg("mapZLevel", global.num())), global.then(PROC_REF(ui_act_setzlevel))))
 
 /// CAPABILITIES(/datum/tgui_module/camera) at code/modules/tgui/modules/camera.dm:83
 /datum/tgui_module/camera/declared_entries(list/into)
@@ -3152,6 +3180,30 @@
 	into += entry_line(43)
 	into += list(global.owns_one(nameof(crew_announcement), /datum/announcement/priority))
 
+/// CAPABILITIES(/datum/tgui_module/crew_manifest) at code/modules/tgui/modules/crew_manifest.dm:4
+/datum/tgui_module/crew_manifest/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/crew_manifest.dm", 4, /datum/tgui_module/crew_manifest)
+	into += entry_line(5)
+	into += list(global.interface("CrewManifest"))
+	into += entry_line(6)
+	into += list(ui_shape(manifest = global.map_of(global.schema_text(), global.list_of(global.map_of(global.schema_text(), global.schema_text())))))
+
+/// CAPABILITIES(/datum/tgui_module/crew_monitor) at code/modules/tgui/modules/crew_monitor.dm:25
+/datum/tgui_module/crew_monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/crew_monitor.dm", 25, /datum/tgui_module/crew_monitor)
+	into += entry_line(26)
+	into += list(global.interface("CrewMonitor"))
+	into += entry_line(27)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_typed), early = TRUE)))
+	into += entry_line(28)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_in_range), because = MSG(crew_monitor/out_of_range)))))
+	into += entry_line(29)
+	into += list(global.op("track", global.ui_act("track", global.arg("track", global.schema_ref(/mob/living/carbon/human))), global.then(PROC_REF(ui_act_track))))
+	into += entry_line(30)
+	into += list(global.op("setZLevel", global.ui_act("setZLevel", global.arg("mapZLevel", global.num())), global.then(PROC_REF(ui_act_setzlevel))))
+
 /// CAPABILITIES(/datum/tgui_module/email_client) at code/modules/tgui/modules/ntos-only/email.dm:27
 /datum/tgui_module/email_client/declared_entries(list/into)
 	..(into)
@@ -3161,12 +3213,131 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(msg_attachment), /datum/computer_file))
 
+/// CAPABILITIES(/datum/tgui_module/gyrotron_control) at code/modules/tgui/modules/gyrotron_control.dm:7
+/datum/tgui_module/gyrotron_control/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/gyrotron_control.dm", 7, /datum/tgui_module/gyrotron_control)
+	into += entry_line(8)
+	into += list(global.interface("GyrotronControl"))
+	into += entry_line(9)
+	into += list(global.op("set_tag", global.ui_act("set_tag"), global.then(PROC_REF(ui_act_set_tag))))
+	into += entry_line(10)
+	into += list(global.op("toggle_active", global.ui_act("toggle_active", global.arg("gyro", global.schema_ref(/obj/machinery/power/emitter/gyrotron))), global.then(PROC_REF(ui_act_toggle_active))))
+	into += entry_line(11)
+	into += list(global.op("set_str", global.ui_act("set_str", global.arg("gyro", global.schema_ref(/obj/machinery/power/emitter/gyrotron)), global.arg("str", global.num())), global.then(PROC_REF(ui_act_set_str))))
+	into += entry_line(12)
+	into += list(global.op("set_rate", global.ui_act("set_rate", global.arg("gyro", global.schema_ref(/obj/machinery/power/emitter/gyrotron)), global.arg("rate", global.num())), global.then(PROC_REF(ui_act_set_rate))))
+
+/// CAPABILITIES(/datum/tgui_module/power_monitor) at code/modules/tgui/modules/power_monitor.dm:10
+/datum/tgui_module/power_monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/power_monitor.dm", 10, /datum/tgui_module/power_monitor)
+	into += entry_line(11)
+	into += list(global.interface("PowerMonitor"))
+	into += entry_line(12)
+	into += list(global.op("clear", global.ui_act("clear"), global.then(PROC_REF(ui_act_clear))))
+	into += entry_line(13)
+	into += list(global.op("refresh", global.ui_act("refresh"), global.then(PROC_REF(ui_act_refresh))))
+	into += entry_line(14)
+	into += list(global.op("setsensor", global.ui_act("setsensor", global.arg("id", global.schema_text(4096))), global.then(PROC_REF(ui_act_setsensor))))
+
+/// CAPABILITIES(/datum/tgui_module/rcon) at code/modules/tgui/modules/rcon.dm:26
+/datum/tgui_module/rcon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/rcon.dm", 26, /datum/tgui_module/rcon)
+	into += entry_line(27)
+	into += list(global.interface("RCON"))
+	into += entry_line(28)
+	into += list(global.op("set_smes_page", global.ui_act("set_smes_page", global.arg("index", global.num())), global.then(PROC_REF(ui_act_set_smes_page))))
+	into += entry_line(29)
+	into += list(global.op("smes_in_toggle", global.ui_act("smes_in_toggle", global.arg("smes")), global.then(PROC_REF(ui_act_smes_in_toggle))))
+	into += entry_line(30)
+	into += list(global.op("smes_out_toggle", global.ui_act("smes_out_toggle", global.arg("smes")), global.then(PROC_REF(ui_act_smes_out_toggle))))
+	into += entry_line(31)
+	into += list(global.op("smes_in_set", global.ui_act("smes_in_set", global.arg("adjust", global.num()), global.arg("smes"), global.arg("target")), global.then(PROC_REF(ui_act_smes_in_set))))
+	into += entry_line(32)
+	into += list(global.op("smes_out_set", global.ui_act("smes_out_set", global.arg("adjust", global.num()), global.arg("smes"), global.arg("target")), global.then(PROC_REF(ui_act_smes_out_set))))
+	into += entry_line(33)
+	into += list(global.op("toggle_breaker", global.ui_act("toggle_breaker", global.arg("breaker", global.schema_text(4096))), global.then(PROC_REF(ui_act_toggle_breaker))))
+
+/// CAPABILITIES(/datum/tgui_module/rustcore_monitor) at code/modules/tgui/modules/rustcore_monitor.dm:6
+/datum/tgui_module/rustcore_monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/rustcore_monitor.dm", 6, /datum/tgui_module/rustcore_monitor)
+	into += entry_line(7)
+	into += list(global.interface("RustCoreMonitor"))
+	into += entry_line(8)
+	into += list(global.op("toggle_active", global.ui_act("toggle_active", global.arg("core", global.schema_ref(/obj/machinery/power/fusion_core))), global.then(PROC_REF(ui_act_toggle_active))))
+	into += entry_line(9)
+	into += list(global.op("toggle_reactantdump", global.ui_act("toggle_reactantdump", global.arg("core", global.schema_ref(/obj/machinery/power/fusion_core))), global.then(PROC_REF(ui_act_toggle_reactantdump))))
+	into += entry_line(10)
+	into += list(global.op("set_tag", global.ui_act("set_tag"), global.then(PROC_REF(ui_act_set_tag))))
+	into += entry_line(11)
+	into += list(global.op("set_fieldstr", global.ui_act("set_fieldstr", global.arg("core", global.schema_ref(/obj/machinery/power/fusion_core)), global.arg("fieldstr", global.num())), global.then(PROC_REF(ui_act_set_fieldstr))))
+
+/// CAPABILITIES(/datum/tgui_module/rustfuel_control) at code/modules/tgui/modules/rustfuel_control.dm:6
+/datum/tgui_module/rustfuel_control/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/rustfuel_control.dm", 6, /datum/tgui_module/rustfuel_control)
+	into += entry_line(7)
+	into += list(global.interface("RustFuelControl"))
+	into += entry_line(8)
+	into += list(global.op("toggle_active", global.ui_act("toggle_active", global.arg("fuel", global.schema_ref(/obj/machinery/fusion_fuel_injector))), global.then(PROC_REF(ui_act_toggle_active))))
+	into += entry_line(9)
+	into += list(global.op("set_tag", global.ui_act("set_tag"), global.then(PROC_REF(ui_act_set_tag))))
+
 /// CAPABILITIES(/datum/tgui_module/ship/fullmonty) at code/modules/tgui/modules/overmap.dm:163
 /datum/tgui_module/ship/fullmonty/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/tgui/modules/overmap.dm", 163, /datum/tgui_module/ship/fullmonty)
 	into += entry_line(164)
 	into += list(global.owns_many(nameof(known_sectors)))
+
+/// CAPABILITIES(/datum/tgui_module/shutoff_monitor) at code/modules/tgui/modules/shutoff_monitor.dm:4
+/datum/tgui_module/shutoff_monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/shutoff_monitor.dm", 4, /datum/tgui_module/shutoff_monitor)
+	into += entry_line(5)
+	into += list(global.interface("ShutoffMonitor"))
+	into += entry_line(6)
+	into += list(global.op("toggle_enable", global.ui_act("toggle_enable", global.arg("valve", global.schema_ref(/obj/machinery/atmospherics/valve/shutoff))), global.then(PROC_REF(ui_act_toggle_enable))))
+	into += entry_line(7)
+	into += list(global.op("toggle_open", global.ui_act("toggle_open", global.arg("valve", global.schema_ref(/obj/machinery/atmospherics/valve/shutoff))), global.then(PROC_REF(ui_act_toggle_open))))
+
+/// CAPABILITIES(/datum/tgui_module/supermatter_monitor) at code/modules/tgui/modules/supermatter_monitor.dm:32
+/datum/tgui_module/supermatter_monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/supermatter_monitor.dm", 32, /datum/tgui_module/supermatter_monitor)
+	into += entry_line(33)
+	into += list(global.interface("SupermatterMonitor"))
+	into += entry_line(34)
+	into += list(global.op("clear", global.ui_act("clear"), global.then(PROC_REF(ui_act_clear))))
+	into += entry_line(35)
+	into += list(global.op("refresh", global.ui_act("refresh"), global.then(PROC_REF(ui_act_refresh))))
+	into += entry_line(36)
+	into += list(global.op("set", global.ui_act("set", global.arg("set", global.num())), global.then(PROC_REF(ui_act_set))))
+
+/// CAPABILITIES(/datum/tgui_module/teleport_control) at code/modules/tgui/modules/teleporter.dm:8
+/datum/tgui_module/teleport_control/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/teleporter.dm", 8, /datum/tgui_module/teleport_control)
+	into += entry_line(9)
+	into += list(global.interface("Teleporter"))
+	into += entry_line(10)
+	into += list(global.op("select_target", global.ui_act("select_target"), global.then(PROC_REF(ui_act_select_target))))
+	into += entry_line(11)
+	into += list(global.op("test_fire", global.ui_act("test_fire"), global.then(PROC_REF(ui_act_test_fire))))
+	into += entry_line(12)
+	into += list(global.op("toggle_on", global.ui_act("toggle_on"), global.then(PROC_REF(ui_act_toggle_on))))
+
+/// CAPABILITIES(/datum/tgui_module/trait_tutorial_tgui) at code/modules/tgui/modules/trait_tutorial_tgui.dm:20
+/datum/tgui_module/trait_tutorial_tgui/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/modules/trait_tutorial_tgui.dm", 20, /datum/tgui_module/trait_tutorial_tgui)
+	into += entry_line(21)
+	into += list(global.interface("TraitTutorial", state = nameof(GLOB.tgui_always_state)))
+	into += entry_line(22)
+	into += list(global.op("select_trait", global.ui_act("select_trait", global.arg("name", global.schema_text(4096))), global.then(PROC_REF(ui_act_select_trait))))
 
 /// CAPABILITIES(/datum/tgui_panel) at code/modules/tgui_panel/tgui_panel.dm:19
 /datum/tgui_panel/declared_entries(list/into)
@@ -14647,7 +14818,7 @@
 	into += entry_line(387)
 	into += list(global.interface("E0Pump", title = "Gas Pump"))
 	into += entry_line(388)
-	into += list(global.ui_shape(target_pressure))
+	into += list(ui_shape(target_pressure))
 	into += entry_line(389)
 	into += list(global.op("set_pressure", global.ui_act(global.arg("pressure", from = nameof(target_pressure))), global.then(PROC_REF(set_pressure))))
 

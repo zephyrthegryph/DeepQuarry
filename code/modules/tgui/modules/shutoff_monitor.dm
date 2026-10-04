@@ -1,18 +1,20 @@
 /datum/tgui_module/shutoff_monitor
 	name = "Shutoff Valve Monitoring"
-	tgui_id = "ShutoffMonitor"
 
-UI_ACT(/datum/tgui_module/shutoff_monitor, "toggle_enable", ui_act_toggle_enable, UI_ARG_REF("valve", null, /obj/machinery/atmospherics/valve/shutoff))
-UI_ACT_PROC(/datum/tgui_module/shutoff_monitor, ui_act_toggle_enable)
-	var/obj/machinery/atmospherics/valve/shutoff/S = params["valve"]
+CAPABILITIES(/datum/tgui_module/shutoff_monitor)
+	interface("ShutoffMonitor")
+	op("toggle_enable", ui_act("toggle_enable", arg("valve", schema_ref(/obj/machinery/atmospherics/valve/shutoff))), then(PROC_REF(ui_act_toggle_enable)))
+	op("toggle_open", ui_act("toggle_open", arg("valve", schema_ref(/obj/machinery/atmospherics/valve/shutoff))), then(PROC_REF(ui_act_toggle_open)))
+
+/datum/tgui_module/shutoff_monitor/proc/ui_act_toggle_enable(datum/act/op/A, valve)
+	var/obj/machinery/atmospherics/valve/shutoff/S = valve
 	if(!istype(S))
 		return FALSE
 	S.close_on_leaks = !S.close_on_leaks
 	return TRUE
 
-UI_ACT(/datum/tgui_module/shutoff_monitor, "toggle_open", ui_act_toggle_open, UI_ARG_REF("valve", null, /obj/machinery/atmospherics/valve/shutoff))
-UI_ACT_PROC(/datum/tgui_module/shutoff_monitor, ui_act_toggle_open)
-	var/obj/machinery/atmospherics/valve/shutoff/S = params["valve"]
+/datum/tgui_module/shutoff_monitor/proc/ui_act_toggle_open(datum/act/op/A, valve)
+	var/obj/machinery/atmospherics/valve/shutoff/S = valve
 	if(!istype(S))
 		return FALSE
 	if(S.open)
@@ -21,10 +23,7 @@ UI_ACT_PROC(/datum/tgui_module/shutoff_monitor, ui_act_toggle_open)
 		S.open()
 	return TRUE
 
-UI_DATA_REPLACE(/datum/tgui_module/shutoff_monitor, "merge:ui_data_datum_tgui_module_shutoff_monitor{valves:list}")
-
-/// The computed part of /datum/tgui_module/shutoff_monitor's window data (declared on its UI_DATA row).
-/datum/tgui_module/shutoff_monitor/proc/ui_data_datum_tgui_module_shutoff_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/shutoff_monitor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/valves = list()
 

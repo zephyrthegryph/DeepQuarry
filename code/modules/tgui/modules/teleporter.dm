@@ -1,15 +1,17 @@
 /datum/tgui_module/teleport_control
 	name = "Teleporter Control"
-	tgui_id = "Teleporter"
 	var/locked_name = "Not Locked"
 	var/tmp/obj/item/locked
 	var/tmp/obj/machinery/teleport/station/station
 	var/tmp/obj/machinery/teleport/hub/hub
 
-UI_DATA(/datum/tgui_module/teleport_control, "merge:ui_data_datum_tgui_module_teleport_control{locked_name:bool,station_connected:bool,hub_connected:bool,calibrated:num,teleporter_on:num}")
+CAPABILITIES(/datum/tgui_module/teleport_control)
+	interface("Teleporter")
+	op("select_target", ui_act("select_target"), then(PROC_REF(ui_act_select_target)))
+	op("test_fire", ui_act("test_fire"), then(PROC_REF(ui_act_test_fire)))
+	op("toggle_on", ui_act("toggle_on"), then(PROC_REF(ui_act_toggle_on)))
 
-/// The computed part of /datum/tgui_module/teleport_control's window data (declared on its UI_DATA row).
-/datum/tgui_module/teleport_control/proc/ui_data_datum_tgui_module_teleport_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/teleport_control/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["locked_name"] = locked_name || "No Target"
@@ -20,8 +22,8 @@ UI_DATA(/datum/tgui_module/teleport_control, "merge:ui_data_datum_tgui_module_te
 
 	return data
 
-UI_ACT(/datum/tgui_module/teleport_control, "select_target", ui_act_select_target)
-UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_select_target)
+/// The places the teleporter can lock onto, by the name the window shows.
+/datum/tgui_module/teleport_control/proc/teleport_targets()
 	var/list/L = list()
 	var/list/areaindex = list()
 
@@ -57,33 +59,37 @@ UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_select_target)
 			else
 				areaindex[tmpname] = 1
 			L[tmpname] = I
+	return L
 
-	var/desc = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice, message = "Please select a location to lock in.", title = "Locking Menu", choices = L)
-	if(isnull(desc))
+/datum/tgui_module/teleport_control/proc/ui_act_select_target(datum/act/op/A)
+	open_request(src, /datum/prompt/choice, PROC_REF(target_chosen), valid = PROC_REF(request_usable), answerer = A.actor, title = "Locking Menu", question = "Please select a location to lock in.", choices = teleport_targets(), timeout = 0)
+
+/datum/tgui_module/teleport_control/proc/target_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/desc = A.answer.answer_value
 	if(!desc)
-		return FALSE
-	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-		return FALSE
-
+		return
+	var/list/L = teleport_targets()
+	if(!L[desc])
+		return
 	rel_set(src, nameof(/datum/cinematic::locked), L[desc])
 	locked_name = desc
-	return TRUE
+	SStgui.update_uis(src)
 
-UI_ACT(/datum/tgui_module/teleport_control, "test_fire", ui_act_test_fire)
-UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_test_fire)
+/datum/tgui_module/teleport_control/proc/ui_act_test_fire(datum/act/op/A)
 	station()?.testfire()
 	return TRUE
 
-UI_ACT(/datum/tgui_module/teleport_control, "toggle_on", ui_act_toggle_on)
-UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_toggle_on)
+/datum/tgui_module/teleport_control/proc/ui_act_toggle_on(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!station())
 		return FALSE
 
 	if(station().engaged)
-		station().disengage(ui.user)
+		station().disengage(user)
 	else
-		station().engage(ui.user)
+		station().engage(user)
 
 	return TRUE
 
