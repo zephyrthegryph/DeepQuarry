@@ -1240,6 +1240,43 @@
 	into += entry_line(343)
 	into += list(global.owns_one(nameof(filter), /datum/contract_event_filter))
 
+/// CAPABILITIES(/datum/control_transfer_review) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:228
+/datum/control_transfer_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 228, /datum/control_transfer_review)
+	into += entry_line(229)
+	into += list(global.ref_one(nameof(actor), /mob))
+
+/// CAPABILITIES(/datum/control_transfer_review/dominate_predator) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:289
+/datum/control_transfer_review/dominate_predator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 289, /datum/control_transfer_review/dominate_predator)
+	into += entry_line(290)
+	into += list(global.ref_one(nameof(pred), /mob/living))
+
+/// CAPABILITIES(/datum/control_transfer_review/dominate_prey) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:440
+/datum/control_transfer_review/dominate_prey/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 440, /datum/control_transfer_review/dominate_prey)
+	into += entry_line(441)
+	into += list(global.ref_one(nameof(prey), /mob/living))
+	into += entry_line(442)
+	into += list(global.ref_one(nameof(grab), /obj/item/grab))
+
+/// CAPABILITIES(/datum/control_transfer_review/lend_prey_control) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:629
+/datum/control_transfer_review/lend_prey_control/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 629, /datum/control_transfer_review/lend_prey_control)
+	into += entry_line(630)
+	into += list(global.ref_one(nameof(prey), /mob/living))
+
+/// CAPABILITIES(/datum/control_transfer_review/morph_takeover) at code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm:283
+/datum/control_transfer_review/morph_takeover/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm", 283, /datum/control_transfer_review/morph_takeover)
+	into += entry_line(284)
+	into += list(global.ref_one(nameof(prey), /mob/living))
+
 /// CAPABILITIES(/datum/controller/kernel) at code/controllers/kernel/loop.dm:16
 /datum/controller/kernel/declared_entries(list/into)
 	..(into)
