@@ -3156,6 +3156,17 @@
 	into += entry_line(158)
 	into += list(global.ref_one(nameof(camera), /obj/machinery/camera))
 
+/// CAPABILITIES(/datum/prompt/choice/custom_medical_review) at code/modules/eventkit/medical_issues.dm:539
+/datum/prompt/choice/custom_medical_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/eventkit/medical_issues.dm", 539, /datum/prompt/choice/custom_medical_review)
+	into += entry_line(540)
+	into += list(global.ref_one(nameof(medical_operator), /mob))
+	into += entry_line(541)
+	into += list(global.ref_one(nameof(medical_organ), /obj/item/organ))
+	into += entry_line(542)
+	into += list(global.ref_one(nameof(medical_issue), /datum/affliction/custom))
+
 /// CAPABILITIES(/datum/prompt/choice/explosive_implant_level) at code/game/objects/items/weapons/implants/implant.dm:302
 /datum/prompt/choice/explosive_implant_level/declared_entries(list/into)
 	..(into)
@@ -3221,6 +3232,28 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
+/// CAPABILITIES(/datum/prompt/choice/weapon_label_review) at code/modules/projectiles/ammunition.dm:461
+/datum/prompt/choice/weapon_label_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/ammunition.dm", 461, /datum/prompt/choice/weapon_label_review)
+	into += entry_line(462)
+	into += list(global.ref_one(nameof(weapon_operator), /mob))
+	into += entry_line(463)
+	into += list(global.ref_one(nameof(weapon_held), /obj/item))
+	into += entry_line(464)
+	into += list(global.ref_one(nameof(weapon_interaction), /datum/interaction))
+
+/// CAPABILITIES(/datum/prompt/choice/wheel_review) at code/modules/casino/casino.dm:1111
+/datum/prompt/choice/wheel_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/casino.dm", 1111, /datum/prompt/choice/wheel_review)
+	into += entry_line(1112)
+	into += list(global.ref_one(nameof(wheel_operator), /mob))
+	into += entry_line(1113)
+	into += list(global.ref_one(nameof(wheel_held), /obj/item))
+	into += entry_line(1114)
+	into += list(global.ref_one(nameof(wheel_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
 /datum/prompt/color/paint_palette/declared_entries(list/into)
 	..(into)
@@ -3234,6 +3267,28 @@
 	into += entry_block("code/game/machinery/CableLayer.dm", 76, /datum/prompt/number/cablelayer_cut)
 	into += entry_line(77)
 	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/number/custom_medical_review) at code/modules/eventkit/medical_issues.dm:505
+/datum/prompt/number/custom_medical_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/eventkit/medical_issues.dm", 505, /datum/prompt/number/custom_medical_review)
+	into += entry_line(506)
+	into += list(global.ref_one(nameof(medical_operator), /mob))
+	into += entry_line(507)
+	into += list(global.ref_one(nameof(medical_organ), /obj/item/organ))
+	into += entry_line(508)
+	into += list(global.ref_one(nameof(medical_issue), /datum/affliction/custom))
+
+/// CAPABILITIES(/datum/prompt/number/wheel_review) at code/modules/casino/casino.dm:1152
+/datum/prompt/number/wheel_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/casino.dm", 1152, /datum/prompt/number/wheel_review)
+	into += entry_line(1153)
+	into += list(global.ref_one(nameof(wheel_operator), /mob))
+	into += entry_line(1154)
+	into += list(global.ref_one(nameof(wheel_held), /obj/item))
+	into += entry_line(1155)
+	into += list(global.ref_one(nameof(wheel_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/text/air_control_sensor_name) at code/game/machinery/atmo_control.dm:308
 /datum/prompt/text/air_control_sensor_name/declared_entries(list/into)
@@ -3255,6 +3310,17 @@
 	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 842, /datum/prompt/text/compliance_laws)
 	into += entry_line(843)
 	into += list(global.ref_one(nameof(implant), /obj/item/implant/compliance))
+
+/// CAPABILITIES(/datum/prompt/text/custom_medical_review) at code/modules/eventkit/medical_issues.dm:468
+/datum/prompt/text/custom_medical_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/eventkit/medical_issues.dm", 468, /datum/prompt/text/custom_medical_review)
+	into += entry_line(469)
+	into += list(global.ref_one(nameof(medical_operator), /mob))
+	into += entry_line(470)
+	into += list(global.ref_one(nameof(medical_organ), /obj/item/organ))
+	into += entry_line(471)
+	into += list(global.ref_one(nameof(medical_issue), /datum/affliction/custom))
 
 /// CAPABILITIES(/datum/prompt/text/explosive_implant_phrase) at code/game/objects/items/weapons/implants/implant.dm:309
 /datum/prompt/text/explosive_implant_phrase/declared_entries(list/into)
@@ -3283,6 +3349,17 @@
 	into += entry_block("code/game/machinery/pandemic.dm", 104, /datum/prompt/text/pandemic_release_reason)
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/text/weapon_label_review) at code/modules/projectiles/ammunition.dm:425
+/datum/prompt/text/weapon_label_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/ammunition.dm", 425, /datum/prompt/text/weapon_label_review)
+	into += entry_line(426)
+	into += list(global.ref_one(nameof(weapon_operator), /mob))
+	into += entry_line(427)
+	into += list(global.ref_one(nameof(weapon_held), /obj/item))
+	into += entry_line(428)
+	into += list(global.ref_one(nameof(weapon_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
@@ -6577,6 +6654,13 @@
 	into += entry_line(20)
 	into += list(global.every(0.2 SECONDS, global.then(PROC_REF(countdown_step)), when = nameof(started)))
 
+/// CAPABILITIES(/obj/effect/dark) at code/game/objects/effects/dark_growth.dm:121
+/obj/effect/dark/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/dark_growth.dm", 121, /obj/effect/dark)
+	into += entry_line(122)
+	into += list(global.entry_link("/obj/effect/dark::linked_node", "/obj/structure/prop/dark_node::children_effects", b_many = TRUE))
+
 /// CAPABILITIES(/obj/effect/decal/cleanable) at code/game/objects/effects/decals/cleanable.dm:22
 /obj/effect/decal/cleanable/declared_entries(list/into)
 	..(into)
@@ -6821,11 +6905,11 @@
 	into += entry_line(21)
 	into += list(global.owns_one(nameof(BB), /obj/item/projectile, starts = nameof(projectile_type)))
 
-/// CAPABILITIES(/obj/item/ammo_magazine) at code/modules/projectiles/ammunition.dm:172
+/// CAPABILITIES(/obj/item/ammo_magazine) at code/modules/projectiles/ammunition.dm:178
 /obj/item/ammo_magazine/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/ammunition.dm", 172, /obj/item/ammo_magazine)
-	into += entry_line(173)
+	into += entry_block("code/modules/projectiles/ammunition.dm", 178, /obj/item/ammo_magazine)
+	into += entry_line(179)
 	into += list(global.owns_many(nameof(stored_ammo)))
 
 /// CAPABILITIES(/obj/item/ano_scanner) at code/modules/xenoarcheaology/tools/tools.dm:49
@@ -8513,15 +8597,15 @@
 	into += entry_line(6)
 	into += list(global.op("collapsible_sniper_verb_take_down", global.menu(), global.label("Disassemble Rifle"), global.needs(global.carried()), global.then(PROC_REF(collapsible_sniper_verb_take_down))))
 
-/// CAPABILITIES(/obj/item/gun/projectile/revolver/lemat) at code/modules/projectiles/guns/projectile/revolver.dm:242
+/// CAPABILITIES(/obj/item/gun/projectile/revolver/lemat) at code/modules/projectiles/guns/projectile/revolver.dm:260
 /obj/item/gun/projectile/revolver/lemat/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/guns/projectile/revolver.dm", 242, /obj/item/gun/projectile/revolver/lemat)
-	into += entry_line(243)
+	into += entry_block("code/modules/projectiles/guns/projectile/revolver.dm", 260, /obj/item/gun/projectile/revolver/lemat)
+	into += entry_line(261)
 	into += list(global.owns_many(nameof(secondary_loaded)))
-	into += entry_line(244)
+	into += entry_line(262)
 	into += list(global.owns_many(nameof(tertiary_loaded)))
-	into += entry_line(245)
+	into += entry_line(263)
 	into += list(global.op("lemat_verb_swap_firing_mode", global.menu(), global.label("Swap Firing Mode"), global.needs(global.carried()), global.then(PROC_REF(lemat_verb_swap_firing_mode))))
 
 /// CAPABILITIES(/obj/item/gun/projectile/shotgun/compact) at code/modules/projectiles/guns/projectile/shotgun.dm:313
@@ -8833,6 +8917,13 @@
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 	into += entry_line(231)
 	into += list(global.every(1 SECOND, global.then(PROC_REF(gauntlets_step)), when = nameof(gauntlets_worn)))
+
+/// CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets/rig) at code/modules/mining/kinetic_crusher.dm:306
+/obj/item/kinetic_crusher/machete/gauntlets/rig/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/kinetic_crusher.dm", 306, /obj/item/kinetic_crusher/machete/gauntlets/rig)
+	into += entry_line(307)
+	into += list(global.ref_one(nameof(storing_module)))
 
 /// CAPABILITIES(/obj/item/laser_pointer) at code/game/objects/items/devices/laserpointer.dm:51
 /obj/item/laser_pointer/declared_entries(list/into)
@@ -9239,6 +9330,13 @@
 	into += entry_line(21)
 	into += list(global.op("item", global.item(/obj/item), global.label("Load"), global.then(PROC_REF(interaction_item))))
 
+/// CAPABILITIES(/obj/item/offhand/crushergauntlets) at code/modules/mining/kinetic_crusher.dm:294
+/obj/item/offhand/crushergauntlets/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/kinetic_crusher.dm", 294, /obj/item/offhand/crushergauntlets)
+	into += entry_line(295)
+	into += list(global.ref_one(nameof(linked)))
+
 /// CAPABILITIES(/obj/item/oldtwohanded) at code/modules/weapons/MadokaSpear.dm:65
 /obj/item/oldtwohanded/declared_entries(list/into)
 	..(into)
@@ -9536,6 +9634,13 @@
 	into += entry_block("code/modules/projectiles/projectile/arc.dm", 21, /obj/item/projectile/arc)
 	into += entry_line(22)
 	into += list(global.owns_one(nameof(shadow), /obj/effect/projectile_shadow))
+
+/// CAPABILITIES(/obj/item/projectile/destabilizer) at code/modules/mining/kinetic_crusher.dm:353
+/obj/item/projectile/destabilizer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/kinetic_crusher.dm", 353, /obj/item/projectile/destabilizer)
+	into += entry_line(354)
+	into += list(global.ref_one(nameof(hammer_synced)))
 
 /// CAPABILITIES(/obj/item/projectile/energy/hook) at code/modules/projectiles/projectile/hook.dm:30
 /obj/item/projectile/energy/hook/declared_entries(list/into)
