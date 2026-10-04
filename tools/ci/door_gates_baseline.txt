@@ -2,4 +2,3 @@
 # `analyze check --lint door_gates` fails on a site not listed here. A site with
 # `// ALLOW(door_gates): <reason>` doesn't count.
 # Shrink-only: after a sweep, `analyze baseline --update --lint door_gates`.
-when_door	code/modules/power/apc.dm	extend("cell_bay.cell.take", when(COVER_OPEN))

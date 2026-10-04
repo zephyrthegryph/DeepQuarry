@@ -4,7 +4,7 @@
 // the place. One op, subversion_reset.use, offered only while the holder is subverted (is_subverted(): emagged, or taken over another way). Its work is
 // the holder's own: reset_subversion(A) (a type overrides it; the default clears the emag), and `says` tells the user it worked.
 //
-//   subversion_reset(list(tool(TOOL_MULTITOOL), at(BAY_HATCH)))
+//   subversion_reset(list(tool(TOOL_MULTITOOL), at(SPACE_HATCH)))
 
 MSG_DEF(subversion/reset, "You reset %T%.", "%U% resets %T%.")
 

@@ -64,8 +64,6 @@
 // ---- physical spaces (code/engine/library/spaces.dm) ----
 /// A maintenance hatch: what sits behind a cover (a cell bay, a frame's board and wiring). Its door is the cover.
 #define SPACE_HATCH "hatch"
-/// The old name of SPACE_HATCH, until the APC moves onto spaces (deleted with its last user).
-#define BAY_HATCH SPACE_HATCH
 /// Behind a maintenance panel: the wires. Its door is the panel.
 #define SPACE_PANEL "panel"
 /// A cell's own bay inside a hatch (an APC's, which exists only once the electronics are fastened).

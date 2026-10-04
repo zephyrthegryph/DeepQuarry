@@ -153,9 +153,6 @@ MSG_DEF_SELF(apc/board_first, "Take the power control board out first.")
 MSG_DEF_SELF(apc/floor_blocks, "You must remove the floor plating in front of the APC first.")
 MSG_DEF_SELF(apc/cell_first, "Remove the power cell first.")
 MSG_DEF_SELF(apc/needs_electronics, "You need to install the wiring and electronics first.")
-MSG_DEF_SELF(apc/cell_too_big, "That power cell is too large to work here.")
-MSG_DEF_SELF(apc/cell_too_small, "That power cell is too small to work here.")
-MSG_DEF_SELF(apc/not_broken, "It isn't broken.")
 MSG_DEF_SELF(apc/cant_use, "You can't use that right now.")
 MSG_DEF_SELF(apc/ai_disabled, "The AI control for this APC has been disabled!")
 MSG_DEF_SELF(apc/silicons_only, "Only a silicon can do that.")
@@ -171,17 +168,19 @@ CAPABILITIES(/obj/machinery/power/apc)
 	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE)
 	configure(construction_graph(start = STAGE_APC_SECURED))
 	maintenance_hatch(
-		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), at(BAY_HATCH))),
+		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
 		wires = /datum/wires/apc,
 		wires_by_hand = TRUE,
+		lock_wire = WIRE_IDSCAN,
 		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
 		emag_say = MSG(apc/emagged),
 		panel_needs_cover_closed = TRUE,
 		starts_locked = nameof(lock_at_start))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type), on_destroy = ON_DESTROY_SPILL)
-	cell_bay(nameof(cell), at = BAY_HATCH)
+	space(SPACE_CELL, inside = SPACE_HATCH, from_stage = STAGE_APC_SECURED, missing = MSG(apc/needs_electronics))
+	cell_bay(nameof(cell), at = SPACE_CELL, fits = size_is(ITEMSIZE_NORMAL))
 	powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
-	subversion_reset(list(tool(TOOL_MULTITOOL), at(BAY_HATCH)), done = MSG(apc/reset_done))
+	subversion_reset(list(tool(TOOL_MULTITOOL), at(SPACE_HATCH)), done = MSG(apc/reset_done))
 	membership(joins = REGISTRY_APCS)
 	emp_disable(PROC_REF(emp_outage), extends = TRUE)
 	contributes(STAT_OPERABLE, PROC_REF(electronics_fastened), reason = MSG(apc/unfinished), reads = list("graph:[CAP_CONSTRUCTION]"))
@@ -191,7 +190,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	links(/obj/machinery/power/apc::area, /area::apc)
 	contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))
 	contributes_to(nameof(area), STAT_LIGHTS_EMERGENCY_OFF, nameof(emergency_lights))
-	op("wires_signaler", item(/obj/item/assembly/signaler), label("Reach the wires"), when(PANEL_OPEN), when(cond_not(COVER_OPEN)), wait(0),
+	op("wires_signaler", item(/obj/item/assembly/signaler), label("Reach the wires"), at(SPACE_PANEL), when(cond_not(COVER_OPEN)), wait(0),
 		then(PROC_REF(signaler_at_the_wires)))
 	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE)))
 	on_notice(/datum/notice/attacked_by, then(PROC_REF(apc_struck)))
@@ -221,18 +220,9 @@ CAPABILITIES(/obj/machinery/power/apc)
 	extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason))))
 	extend("nightshift", drop = "lock")
 
-	/// What the APC's hatch asks of the APC beyond the library's rules: the cover holds while the cover lock keeps a charged cell in (or the board is
-	/// loose), a new cover goes only on a broken APC with no cell, a cell goes in only past the last build step and at the right size, and the ID lock
-	/// and the emag want a working, unsubverted APC (the lock also its ID-scan wire).
-	section(cover_rules, "What the APC's hatch asks of the APC beyond the library's rules")
-	extend(list("cover.open", "cover.remove"), needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason))))
-	extend("cover.replace", needs(req(PROC_REF(cover_replaceable), because = PROC_REF(cover_replace_reason))),
-		then(PROC_REF(cover_replaced)))
-	extend("cell_bay.cell.take", when(COVER_OPEN))
-	extend("cell_bay.cell.insert", needs(req_built(STAGE_APC_SECURED, because = MSG(apc/needs_electronics)),
-		req(PROC_REF(cell_fits), because = PROC_REF(cell_fit_reason))))
-	extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_operable()))
-	extend("emag.use", needs(req_not_subverted(), req_operable()))
+	/// The cover is latched shut while the APC is broken or its cover lock holds a charged cell in.
+	section(cover_rules, "The latch on the APC's cover")
+	latch(SPACE_HATCH, PROC_REF(cover_latched), because = PROC_REF(cover_latch_reason))
 
 /// The angled APC's sprite sits closer to the wall.
 CAPABILITIES(/obj/machinery/power/apc/angled)
@@ -243,11 +233,11 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /proc/apc_frame()
 	return construction(start(STAGE_APC_FRAME),
 		stage(STAGE_APC_BOARD, item(/obj/item/module/power_control), put_in(SLOT_CONSTRUCTION),
-			then(TYPE_PROC_REF(/obj/machinery/power/apc, board_seated))),
+			then(TYPE_PROC_REF(/obj/machinery/power/apc, board_seated)), protrudes(because = MSG(apc/board_first))),
 		stage(STAGE_APC_WIRED, stack(/obj/item/stack/cable_coil, 10),
 			needs(req(TYPE_PROC_REF(/obj/machinery/power/apc, floor_exposed), because = MSG(apc/floor_blocks))),
 			then(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_wired)),
-			undone(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_cut)),
+			undone(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_cut)), protrudes(because = MSG(apc/board_first)),
 			undo = list(tool(TOOL_WIRECUTTER))),
 		stage(STAGE_APC_SECURED, tool(TOOL_SCREWDRIVER),
 			needs(req_empty(nameof(/obj/machinery/power/apc::cell), because = MSG(apc/cell_first))),
@@ -255,7 +245,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		dismantle(tool(TOOL_WELDER), becomes(/obj/item/frame/apc),
 			needs(req_not(req_built(STAGE_APC_BOARD, because = MSG(apc/board_first)), because = MSG(apc/board_first))),
 			ruined(TYPE_PROC_REF(/obj/machinery/power/apc, frame_ruined), becomes(/obj/item/stack/material/steel))),
-		at(BAY_HATCH))
+		at(SPACE_HATCH))
 
 /// The slot the board goes into: the build graph's own (SLOT_CONSTRUCTION). The ladder's put_in(SLOT_CONSTRUCTION) still finds its slot through
 /// the containment ledger's slot relation; the final slot() entry does not back a construction slot yet.
@@ -268,46 +258,24 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	capacity = 1
 	drop_policy = SLOT_DROP_SPILL
 
-// ---- the hatch: what the cover and the cell bay ask of the APC ----
+// ---- the hatch: the latch on the cover ----
 
-/// Why the cover can't move now, or null: with the cover open the board must be fastened; shut, it can't be pried open while the APC is broken or
-/// its cover lock holds a charged cell in.
-/obj/machinery/power/apc/proc/cover_hold_reason(datum/act/A)
-	if(cover_open(src))
-		return board_unfastened() ? /datum/msg/apc/board_first : null
+/// The cover's latch holds: the APC is broken, or the cover lock keeps a charged cell in.
+/obj/machinery/power/apc/proc/cover_latched(datum/act/A)
+	return !isnull(cover_latch_reason(A))
+
+/// Why the latch holds the cover shut, or null: broken, or the cover lock over a charged cell.
+/obj/machinery/power/apc/proc/cover_latch_reason(datum/act/A)
 	if(has_stat(BROKEN))
 		return /datum/msg/apc/cover_broken
 	if(coverlocked && built(src, STAGE_APC_SECURED) && cell_charge_percent(src) > CELL_BAY_LOW_PERCENT)
 		return /datum/msg/apc/cover_locked
 	return null
 
-/obj/machinery/power/apc/proc/cover_free(datum/act/A)
-	return isnull(cover_hold_reason(A))
-
-/// The board is in (the build is past its bare frame) but not secured (its last stage): the cover can't close on it.
-/obj/machinery/power/apc/proc/board_unfastened()
-	return built(src, STAGE_APC_BOARD) && !built(src, STAGE_APC_SECURED)
-
-/// A new cover goes on a broken APC with no cell in it.
-/obj/machinery/power/apc/proc/cover_replaceable(datum/act/A)
-	return has_stat(BROKEN) && !cell
-
-/obj/machinery/power/apc/proc/cover_replace_reason(datum/act/A)
-	return has_stat(BROKEN) ? /datum/msg/apc/cell_first : /datum/msg/apc/not_broken
-
-/// The new cover is on (the component swap has repaired it): the APC boots again.
+/// The new cover is on (the repair step of the cover has made it whole): the APC boots again.
 /obj/machinery/power/apc/proc/cover_replaced(datum/act/op/A)
 	reboot()
 	return OP_OK
-
-/// A power cell fits when it is the size this bay takes.
-/obj/machinery/power/apc/proc/cell_fits(datum/act/op/A)
-	var/obj/item/held = A.held
-	return !istype(held) || held.w_class == ITEMSIZE_NORMAL // ALLOW(reads): an item's size is fixed for its life, so no change can be missed
-
-/obj/machinery/power/apc/proc/cell_fit_reason(datum/act/op/A)
-	var/obj/item/held = A.held
-	return (istype(held) && held.w_class < ITEMSIZE_NORMAL) ? /datum/msg/apc/cell_too_small : /datum/msg/apc/cell_too_big
 
 // ---- the ladder's hooks ----
 

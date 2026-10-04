@@ -2858,15 +2858,17 @@ STAGE_DEF(apc, secured)
 
 CAPABILITIES(/obj/machinery/power/apc)
 	wall_machine(/obj/item/module/power_control, frame = apc_frame(), powered = FALSE)
-	maintenance_hatch(                                        <span class="c">// compartment BAY_HATCH, cover, panel, wires, lock and emag, with the rules between them</span>
-		cover = cover(remove = force_pry(), replace = component_swap(/obj/item/frame/apc)),
+	maintenance_hatch(                                        <span class="c">// space SPACE_HATCH behind the cover, the panel and its SPACE_PANEL, wires, lock and emag</span>
+		cover = cover(remove = force_pry(), replace = component_swap(/obj/item/frame/apc), broken = PROC_REF(stat_is_broken)),
 		wires = /datum/wires/apc,
+		lock_wire = WIRE_IDSCAN,
 		emag = list(wait(0.6 SECONDS), sets(LOCK_LOCKED, FALSE)),
-		panel_needs_cover_closed = TRUE)
-	cell_bay(nameof(cell), at = BAY_HATCH, starts = nameof(cell_type))
+		panel_needs_cover_closed = TRUE)                     <span class="c">// latch(SPACE_PANEL, COVER_OPEN, ...)</span>
+	space(SPACE_CELL, inside = SPACE_HATCH, from_stage = STAGE_APC_SECURED, missing = MSG(apc/needs_electronics))
+	cell_bay(nameof(cell), at = SPACE_CELL, starts = nameof(cell_type), fits = size_is(ITEMSIZE_NORMAL))
 	powered_by(/datum/system/power, role = POWER_ROLE_SOURCE)
 	emp_disable(between(24 SECONDS, 36 SECONDS))
-	subversion_reset(tool(TOOL_MULTITOOL), at(BAY_HATCH))
+	subversion_reset(tool(TOOL_MULTITOOL), at(SPACE_HATCH))
 	links(/obj/machinery/power/apc::terminal, /obj/machinery/power/terminal::master)
 	links(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs)
 	links(/obj/machinery/power/apc::area, /area::apc)
@@ -2881,31 +2883,34 @@ CAPABILITIES(/obj/machinery/power/apc)
 	op("set_channel", ui_act(arg("channel", enum(APC_CHANNELS)), arg("mode", enum(POWERCHAN_MODES))),
 		then(PROC_REF(set_channel_mode)))
 
-	extend("cover.open", needs(req(PROC_REF(cover_unlocked), because = MSG(apc/cover_locked))))
-	extend("cover.replace", needs(req_empty(nameof(cell))))
-	extend("cell_bay.cell.take", when(COVER_OPEN))   <span class="c">// silent while closed, so an empty hand opens the window instead (16.1a)</span>
-	extend("cell_bay.cell.insert", needs(req_built(STAGE_APC_SECURED)))
+	latch(SPACE_HATCH, PROC_REF(cover_latched), because = PROC_REF(cover_latch_reason))   <span class="c">// broken, or the cover lock over a charged cell</span>
 	extend("construction.undo:apc_secured", needs(req_empty(nameof(cell))))
-	extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN)))
 
 	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE), order = ORDER_EARLY))
 	on_notice(/datum/notice/slashed, then(PROC_REF(lights_out)))
 
 /proc/apc_frame()                         <span class="c">// a plain bundle. It is a global proc, so holder procs are named with TYPE_PROC_REF</span>
 	return construction(start(STAGE_APC_FRAME),
-		stage(STAGE_APC_BOARD, item(/obj/item/module/power_control), put_in(SLOT_CONSTRUCTION)),
+		stage(STAGE_APC_BOARD, item(/obj/item/module/power_control), put_in(SLOT_CONSTRUCTION),
+			protrudes(because = MSG(apc/board_first))),      <span class="c">// a loose board keeps the cover from closing</span>
 		stage(STAGE_APC_WIRED, stack(/obj/item/stack/cable_coil, 10),
 			needs(req(TYPE_PROC_REF(/obj/machinery/power/apc, floor_intact), because = MSG(apc/floor_blocks))),
 			then(TYPE_PROC_REF(/obj/machinery/power/apc, make_terminal)),
-			undone(TYPE_PROC_REF(/obj/machinery/power/apc, cut_terminal))),
+			undone(TYPE_PROC_REF(/obj/machinery/power/apc, cut_terminal)), protrudes(because = MSG(apc/board_first))),
 		stage(STAGE_APC_SECURED, tool(TOOL_SCREWDRIVER)),
 		dismantle(tool(TOOL_WELDER), becomes(/obj/item/frame/apc),
 			ruined(TYPE_PROC_REF(/obj/machinery/power/apc, frame_ruined), becomes(/obj/item/stack/material/steel))),
-		at(BAY_HATCH))
+		at(SPACE_HATCH))
 <span class="c">// floor_intact, make_terminal, cut_terminal and frame_ruined are ordinary (datum/act/A) procs, not shown.</span>
 
-/obj/machinery/power/apc/proc/cover_unlocked(datum/act/A)     <span class="c">// a condition: its reads (coverlocked, the cell hop, its charge) are generated</span>
-	return !coverlocked || cell_charge_percent(cell) &lt;= CELL_BAY_LOW_PERCENT
+/obj/machinery/power/apc/proc/cover_latched(datum/act/A)      <span class="c">// a condition: its reads (stat, coverlocked, the cell hop, its charge) are generated</span>
+	return !isnull(cover_latch_reason(A))
+
+/obj/machinery/power/apc/proc/cover_latch_reason(datum/act/A)
+	if(has_stat(BROKEN))
+		return /datum/msg/apc/cover_broken
+	if(coverlocked &amp;&amp; cell_charge_percent(cell) &gt; CELL_BAY_LOW_PERCENT)
+		return /datum/msg/apc/cover_locked
 
 /obj/machinery/power/apc/proc/set_channel_mode(datum/act/A, channel, mode)   <span class="c">// UI args arrive typed and validated</span>
 	switch(channel)
@@ -2939,35 +2944,37 @@ CAPABILITIES(/obj/machinery/power/apc)
       <li>The starting-cell <code>Initialize</code>, and <code>configure(cell_bay(starts =))</code> on subtypes beside the var.</li>
       <li><code>set_nightshift()</code>, called by the night-shift service on every APC (16.11).</li>
       <li>The three damage rows and <code>emag_act()</code>.</li>
+      <li>Every hand-written hatch rule: <code>when(COVER_OPEN)</code> on the cell take, <code>req_built()</code> and a size proc on the cell insert, a cover-hold proc for the lock and the loose board, the replace conditions, and the lock and emag guards. The path (section 8, spaces and doors) says them: a staged <code>SPACE_CELL</code>, <code>fits = size_is(...)</code>, a latch, a protruding stage, the cover's repair step and the library's lock and emag defaults.</li>
     </ul>
   </div>
 
   <h3 id="ex-reach">16.1a Reach: a closed cover and the cell</h3>
-  <pre><code><span class="c">// What the APC above brings for its cell. cell_bay(nameof(cell), at = BAY_HATCH) declares two ops over its slot:
+  <pre><code><span class="c">// What the APC above brings for its cell. cell_bay(nameof(cell), at = SPACE_CELL) declares two ops over its slot, both placed at(SPACE_CELL):
 //   "cell_bay.cell.take"     hand(), when(nameof(cell)), take_out(nameof(cell))     tier TAKE_OUT
-//   "cell_bay.cell.insert"   item(/obj/item/cell), put_in(nameof(cell))             tier PART
-// maintenance_hatch() declares compartment(BAY_HATCH, door = CAP_COVER), so the cover closes the bay.
-// The APC adds one line: extend("cell_bay.cell.take", when(COVER_OPEN)).
+//   "cell_bay.cell.insert"   item(/obj/item/cell), needs(size_is(...)), put_in(nameof(cell))   tier PART
+// SPACE_CELL sits inside SPACE_HATCH, whose door is the cover (maintenance_hatch()), and exists from STAGE_APC_SECURED.
+// The APC writes nothing about the cell's reach.
 //
 // 1. Empty hand, cover closed
-//      cell_bay.cell.take is not matched: when(COVER_OPEN) is false, silently. interface.APC.open (tier DEFAULT)
-//      is the only candidate left, and the window opens.
+//      cell_bay.cell.take matches, but its path (outside -> hatch -> cell) is blocked at the cover: it is set aside.
+//      interface.APC.open (tier DEFAULT) answers the same input, so it wins and the window opens. Silent.
 // 2. Empty hand, cover open, a cell inside
-//      cell_bay.cell.take matches, and wins on tier TAKE_OUT. Require: the implicit "bay is open" requirement passes.
-//      Wait: none. Do: take_out() runs the world action /datum/act/remove on the slot, /datum/notice/removed is
-//      published, and whatever reads the cell (the charge, the look) follows through generated reads.
+//      cell_bay.cell.take matches, its path is open, and it wins on tier TAKE_OUT. Wait: none. Do: take_out() runs the
+//      world action /datum/act/remove on the slot, /datum/notice/removed is published, and whatever reads the cell
+//      (the charge, the look) follows through generated reads.
 // 3. A cell in hand, cover closed
-//      cell_bay.cell.insert matches (tier PART). Require: req_built(STAGE_APC_SECURED) passes, then the implicit bay
-//      requirement refuses with COVER_OPEN's reason, "The cover is closed." The click does not fall through.
+//      cell_bay.cell.insert matches and is set aside at the cover. The window's hand() op ignores what is held, so it
+//      does not answer a held cell: the insert runs and Require refuses with the door's reason, "Its cover is closed."
+//      (On a frame not yet secured, SPACE_CELL does not exist: "You need to install the wiring and electronics first.")
 // 4. Target the cell itself (contents view, drag), cover closed
-//      The reach gate drops every candidate: the cell's own ops, a tool used on it, drag-drop. None survives,
-//      so the engine shows the gate's reason.
+//      The reach gate's walk up the containment ledger asks the APC for the path to the cell's space; it is blocked,
+//      so every candidate is dropped and the engine shows the door's reason.
 // 5. An AI or a borg acting through remote() (authority AUTH_REMOTE_ACCESS)
-//      That authority never sees physical bays (the compartment applies to AUTH_PHYSICAL), and neither cell op has a remote()
-//      binding, so neither is a candidate, whatever the cover.
+//      The cover's space applies to AUTH_PHYSICAL only, and neither cell op has a remote() binding, so neither is a
+//      candidate, whatever the cover.
 //
 // No APC code does any of this.</span></code></pre>
-  <div class="prose"><p>Each case is a different part of the pipeline. Cases 1 and 2 are Match: the take op exists only while the cover is open and there is a cell, so on a closed APC it is silently not a candidate and the click opens the window instead. Case 3 is Require: the cell is going into a slot at <code>BAY_HATCH</code>, whose compartment gate fails while the cover is closed, so the implicit requirement refuses with the cover's reason. Case 4 is the reach gate: the walk up the containment ledger from the cell to the APC fails at that slot, so the cell offers nothing. Because the gate dropped candidates and none survived, the engine shows the compartment's reason rather than doing nothing. The APC has no "is the panel open?" guard anywhere.</p></div>
+  <div class="prose"><p>Each case is the same path asked at a different point of the pipeline. Cases 1 and 3 are the silent-or-refuse rule: a candidate behind a closed door is set aside while another answers the same input (the window, for an empty hand) and refused with the door's reason when nothing does (a held cell). Case 2 is the open path. Case 4 is the reach gate: the walk up the containment ledger from the cell to the APC asks the same path, so the cell offers nothing. Case 5 is the authority mask of the space. The APC has no "is the cover open?" guard anywhere.</p></div>
   <h4 id="ex-explain">What "Explain Interaction" prints for case 1</h4>
   <pre><code>Explain Interaction: Rae (human, empty hand) clicks the Engineering APC, GESTURE_CLICK
   intents      INTENT_USE                (bind profile "default", stance help)
@@ -2978,11 +2985,12 @@ CAPABILITIES(/obj/machinery/power/apc)
   index        (INTENT_USE, nothing held): 3 candidates. Every other op needs something in hand or a UI origin.
 
   #  candidate                       tier       result
-  1  cell_bay.cell.take              TAKE_OUT   dropped at Match: when(COVER_OPEN) is false
-                                                  code/content/machinery/power/apc.dm:52   extend("cell_bay.cell.take", when(COVER_OPEN))
+  1  cell_bay.cell.take              TAKE_OUT   set aside: path outside -&gt; into hatch (door cover: closed) -&gt; into cell
+                                                  "Its cover is closed."; it answers only when nothing else does
+                                                  code/content/machinery/power/apc.dm:52   cell_bay(nameof(cell), at = SPACE_CELL, ...)
   2  construction.undo:apc_board     TAKE_OUT   dropped at Match: the stage is apc_secured, not apc_board
                                                   code/content/machinery/power/apc.dm:71   stage(STAGE_APC_BOARD, ...), undo derived
-  3  interface.APC.open              DEFAULT    WINNER: the only candidate left
+  3  interface.APC.open              DEFAULT    WINNER: answers the same input, so the set-aside take stays silent
                                                   code/content/machinery/power/apc.dm:42   interface("APC", title = ...)
      Require   window access: adjacent, conscious                                   pass
      Do        opens "APC" for Rae
