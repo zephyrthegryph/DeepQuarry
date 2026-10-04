@@ -2370,6 +2370,13 @@
 	into += entry_line(352)
 	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
 
+/// CAPABILITIES(/datum/prompt/color/prefs) at code/modules/client/preferences/editors/body_markings.dm:163
+/datum/prompt/color/prefs/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/client/preferences/editors/body_markings.dm", 163, /datum/prompt/color/prefs)
+	into += entry_line(164)
+	into += list(global.ref_one(nameof(preferences), /datum/preferences))
+
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
 	..(into)

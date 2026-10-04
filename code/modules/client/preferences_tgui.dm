@@ -196,7 +196,7 @@ UI_ACT_PROC(/datum/preferences, ui_act_set_color_preference)
 
 	var/default_value = read_preference(requested_preference.type)
 
-	om_ask(ui.user, /datum/om/prompt/color/prefs/entry, PROC_REF(pref_color_picked), message = "Select new color", default = default_value || COLOR_WHITE, preferences = src, pref_key = requested_preference_key, ui_refresh = src, ui_refresh_if_true = TRUE)
+	open_request(src, /datum/prompt/color/prefs/entry, PROC_REF(pref_color_picked), answerer = ui.user, question = "Select new color", default = default_value || COLOR_WHITE, preferences = src, pref_key = requested_preference_key)
 	return FALSE
 
 
