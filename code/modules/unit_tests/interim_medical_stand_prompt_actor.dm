@@ -1,14 +1,6 @@
-/// Answer the actual patient choice while a different native click actor is current.
-/obj/interim_medical_stand_prompt_actor_click
-	var/datum/om/prompt/choice/medical_stand_attach/ask
-
-/obj/interim_medical_stand_prompt_actor_click/Click(location, control, params)
-	om_prompt_answer(ask, "Drip needle")
-
+/// The patient choice is answered by its own answerer, whoever else is acting at that moment.
 /datum/unit_test/interim_medical_stand_prompt_actor/Run()
 	test_driver_begin()
-	var/datum/om/scheduler/sched = om_scheduler()
-	sched.test_prompts = list()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, T)
@@ -27,14 +19,10 @@
 	TEST_ASSERT(!stand.CanMouseDrop(patient, bystander), "the unrelated native actor cannot satisfy that same requirement")
 	stand.attach_action(null, "Drip needle", patient)
 	TEST_ASSERT_NULL(stand.attached(), "an absent actor cannot begin patient attachment")
-	om_ask_begin(stand, actor, /datum/om/prompt/choice/medical_stand_attach, TYPE_PROC_REF(/obj/structure/medical_stand, attach_choice_made), list("choices" = list("Gas mask", "Drip needle"), "patient" = patient))
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "one actual typed patient choice is opened")
-	var/datum/om/prompt/choice/medical_stand_attach/ask = sched.test_prompts[1]
-	own(ask)
-	TEST_ASSERT_EQUAL(ask.peek("answerer"), actor, "the actual choice retains its explicit initiating actor")
-	var/obj/interim_medical_stand_prompt_actor_click/probe = allocate(/obj/interim_medical_stand_prompt_actor_click, T)
-	rel_set(probe, nameof(probe.ask), ask)
-	km_synthetic_click(bystander, probe)
+	var/datum/request/open = open_request(stand, /datum/prompt/choice/medical_stand_attach, TYPE_PROC_REF(/obj/structure/medical_stand, attach_choice_made), answerer = actor, title = "Attach/Detach Choice", question = "What do you want to attach/detach?", choices = list("Gas mask", "Drip needle"), patient = patient, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+	TEST_ASSERT_NOTNULL(open, "one actual typed patient choice is opened")
+	TEST_ASSERT_EQUAL(open.answerer, actor, "the actual choice retains its explicit initiating actor")
+	test_answer(actor, "Drip needle")
 	TEST_ASSERT_NULL(stand.attached(), "the actual answer starts timed insertion without immediately attaching")
 	test_time(4 SECONDS)
 	TEST_ASSERT_NULL(stand.attached(), "needle insertion remains incomplete before its five second deadline")

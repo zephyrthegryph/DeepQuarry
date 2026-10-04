@@ -65,46 +65,28 @@ CAPABILITIES(/obj/structure/trash_pile)
 		var/mob/living/L = user
 		//They're in it, and want to get out.
 		if(L.loc == src)
-			om_ask(user, /datum/om/prompt/confirm/trash_pile_exit, PROC_REF(exit_answered))
+			open_request(src, /datum/prompt/yes_no, PROC_REF(exit_answered), answerer = user, title = "Un-Hide?", question = "Do you want to exit \the [src]?", ask_flags = ASK_INSIDE, timeout = 0)
 		else if(!hider())
-			om_ask(user, /datum/om/prompt/confirm/trash_pile_hide, PROC_REF(hide_answered))
+			open_request(src, /datum/prompt/yes_no, PROC_REF(hide_answered), valid = PROC_REF(hide_valid), answerer = user, title = "Un-Hide?", question = "Do you want to hide in \the [src]?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	else
 		return ..()
 
-/// Re-checked: still inside the pile.
-/datum/om/prompt/confirm/trash_pile_exit
-	title = "Un-Hide?"
-	yes_text = "Exit"
-	no_text = "Stay"
-	requires = list(/datum/om/check/inside_target)
+/// Re-checked: nobody else hid in the pile meanwhile.
+/obj/structure/trash_pile/proc/hide_valid(datum/request/R)
+	return !hider()
 
-/datum/om/prompt/confirm/trash_pile_exit/prepare()
-	message = "Do you want to exit \the [subject]?"
-	return TRUE
-
-/// Re-checked: still next to the pile, and nobody else hid in it meanwhile.
-/datum/om/prompt/confirm/trash_pile_hide
-	title = "Un-Hide?"
-	yes_text = "Hide"
-	no_text = "Stay"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/datum/om/prompt/confirm/trash_pile_hide/prepare()
-	message = "Do you want to hide in \the [subject]?"
-	return TRUE
-
-/datum/om/prompt/confirm/trash_pile_hide/valid()
-	var/obj/structure/trash_pile/pile = subject
-	return pile.hider() ? "occupied" : null
-
-/obj/structure/trash_pile/proc/exit_answered(datum/om/prompt/confirm/trash_pile_exit/ask)
-	var/mob/living/L = ask.answerer
+/obj/structure/trash_pile/proc/exit_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/living/L = A.request.answerer
 	if(L == hider())
 		rel_clear(src, nameof(hider))
 	L.forceMove(get_turf(src))
 
-/obj/structure/trash_pile/proc/hide_answered(datum/om/prompt/confirm/trash_pile_hide/ask)
-	var/mob/living/L = ask.answerer
+/obj/structure/trash_pile/proc/hide_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/living/L = A.request.answerer
 	L.forceMove(src)
 	rel_set(src, nameof(hider), L)
 
@@ -133,22 +115,18 @@ CAPABILITIES(/obj/structure/trash_pile)
 		to_chat(user, span_warning("You may only spawn again as a mouse more than [CONFIG_GET(number/mouse_respawn_time)] minutes after your death. You have [timedifference_text] left."))
 		return TRUE
 
-	om_ask(user, /datum/om/prompt/confirm/become_mouse, PROC_REF(mouse_confirmed))
+	open_request(src, /datum/prompt/yes_no, PROC_REF(mouse_confirmed), valid = PROC_REF(mouse_valid), answerer = user, title = "Are you sure you want to squeek?", question = "Are you -sure- you want to become a mouse?", timeout = 0)
 	return TRUE
 
 /// Re-checked: still a ghost with a client.
-/datum/om/prompt/confirm/become_mouse
-	title = "Are you sure you want to squeek?"
-	message = "Are you -sure- you want to become a mouse?"
-	yes_text = "Squeek!"
-	no_text = "Nope!"
-	requires = list(/datum/om/check/has_client)
+/obj/structure/trash_pile/proc/mouse_valid(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && M.client && isobserver(M)
 
-/datum/om/prompt/confirm/become_mouse/valid()
-	return isobserver(answerer) ? null : "not a ghost"
-
-/obj/structure/trash_pile/proc/mouse_confirmed(datum/om/prompt/confirm/become_mouse/ask)
-	var/mob/observer/user = ask.answerer
+/obj/structure/trash_pile/proc/mouse_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/observer/user = A.request.answerer
 
 	var/mob/living/simple_mob/animal/passive/mouse/host
 	host = new /mob/living/simple_mob/animal/passive/mouse(get_turf(src))
@@ -160,8 +138,8 @@ CAPABILITIES(/obj/structure/trash_pile)
 		host.ckey = user.ckey
 		to_chat(host, span_info("You are now a mouse. Try to avoid interaction with players, and do not give hints away that you are more than a simple rodent."))
 
-	var/atom/A = get_holder_at_turf_level(src)
-	A.visible_message("[host] crawls out of \the [src].")
+	var/atom/holder = get_holder_at_turf_level(src)
+	holder.visible_message("[host] crawls out of \the [src].")
 	return
 
 /// Old attack_hand: search the pile.

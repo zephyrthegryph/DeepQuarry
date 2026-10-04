@@ -614,31 +614,21 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 /obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
 	if(!id)
-		om_ask(user, /datum/om/prompt/text/windowtint_button_id, PROC_REF(button_id_entered), subject = tool, button = src)
+		open_request(src, /datum/prompt/text, PROC_REF(button_id_entered), valid = PROC_REF(button_id_valid), answerer = user, subject = tool, ask_flags = ASK_HELD | ASK_CAPABLE, title = name, question = "Enter an ID for \the [src].", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, timeout = 0)
 		return ITEM_INTERACT_SUCCESS
 	store_in_multitool(user, multitool)
 	return ITEM_INTERACT_SUCCESS
 
 /// Setting a tint button's ID with a multitool (the subject, held throughout); the button stays next to them and unset.
-/datum/om/prompt/text/windowtint_button_id
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/machinery/button/windowtint/button
+/obj/machinery/button/windowtint/proc/button_id_valid(datum/request/R)
+	var/mob/M = R.answerer
+	return !id && istype(M) && Adjacent(M)
 
-/datum/om/prompt/text/windowtint_button_id/prepare()
-	title = button.name
-	message = "Enter an ID for \the [button]."
-	return TRUE
-
-/datum/om/prompt/text/windowtint_button_id/valid()
-	if(button.id)
-		return "already set"
-	return button.Adjacent(answerer) ? null : "too far away"
-
-/obj/machinery/button/windowtint/proc/button_id_entered(datum/om/prompt/text/windowtint_button_id/ask)
-	var/mob/user = ask.answerer
-	var/new_id = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/obj/machinery/button/windowtint/proc/button_id_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/new_id = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
 	if(new_id)
 		id = new_id
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))

@@ -67,67 +67,33 @@
 		to_chat(user, span_warning("\The [src]'s motors resist your efforts to rotate it. You may need to find some form of controller."))
 		return TRUE
 
-	om_ask(user, /datum/om/prompt/confirm/prism_rotate, PROC_REF(rotate_confirmed))
+	open_request(src, /datum/prompt/yes_no, PROC_REF(rotate_confirmed), answerer = user, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = name, question = "Do you want to try to rotate \the [src]?", timeout = 0)
 	return TRUE
 
-/// Rotating a prism or prism controller (shared by both): standing next to it throughout.
-/datum/om/prompt/confirm/prism_rotate
-	answer_on_no = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+// Rotating a prism or prism controller (shared by both): standing next to it throughout.
 
-/datum/om/prompt/confirm/prism_rotate/prepare()
-	var/atom/A = subject
-	title = "[A.name]"
-	message = "Do you want to try to rotate \the [A]?"
-	return TRUE
-
-/datum/om/prompt/number/prism_bearing
-	max = 360
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/datum/om/prompt/number/prism_bearing/prepare()
-	var/atom/A = subject
-	title = "[A.name]"
-	message = "What bearing do you want to rotate \the [A] to?"
-	return TRUE
-
-/// `choices` is a compass point -> bearing list.
-/datum/om/prompt/choice/prism_point
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/datum/om/prompt/choice/prism_point/prepare()
-	var/atom/A = subject
-	title = "[A.name]"
-	message = "What point do you want to set \the [A] to?"
-	return TRUE
-
-/datum/om/prompt/confirm/prism_rotate_final
-	answer_on_no = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/bearing
-
-/datum/om/prompt/confirm/prism_rotate_final/prepare()
-	var/atom/A = subject
-	title = "[A.name]"
-	message = "Are you certain you want to rotate \the [A]?"
-	return TRUE
-
-/obj/structure/prop/prism/proc/rotate_confirmed(datum/om/prompt/confirm/prism_rotate/ask)
-	var/mob/living/user = ask.answerer
-	if(!ask.yes)
+/obj/structure/prop/prism/proc/rotate_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	if(!A.answer.answer_value)
 		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
 			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return
 	if(free_rotate)
-		om_ask(user, /datum/om/prompt/number/prism_bearing, PROC_REF(bearing_entered))
+		open_request(src, /datum/prompt/number, PROC_REF(bearing_entered), answerer = user, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = name, question = "What bearing do you want to rotate \the [src] to?", min_value = 0, max_value = 360, timeout = 0)
 	else
-		om_ask(user, /datum/om/prompt/choice/prism_point, PROC_REF(rotate_to_point), choices = compass_directions)
+		open_request(src, /datum/prompt/choice, PROC_REF(rotate_to_point), answerer = user, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = name, question = "What point do you want to set \the [src] to?", choices = assoc_to_keys(compass_directions), timeout = 0)
 
-/obj/structure/prop/prism/proc/rotate_to_point(datum/om/prompt/choice/prism_point/ask)
-	rotate_to(ask.answerer, compass_directions[ask.choice])
+/obj/structure/prop/prism/proc/rotate_to_point(datum/act/request/A)
+	if(!A.answer)
+		return
+	rotate_to(A.request.answerer, compass_directions[A.answer.answer_value])
 
-/obj/structure/prop/prism/proc/bearing_entered(datum/om/prompt/number/prism_bearing/ask)
-	rotate_to(ask.answerer, ask.number)
+/obj/structure/prop/prism/proc/bearing_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	rotate_to(A.request.answerer, A.answer.answer_value)
 
 /obj/structure/prop/prism/proc/rotate_to(mob/living/user, new_bearing)
 	if(rotation_lock || external_control_lock)
@@ -234,12 +200,24 @@
 /obj/structure/prop/prismcontrol/proc/interaction_rotate(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(interaction_message)
 		to_chat(user, interaction_message)
-	om_ask(user, /datum/om/prompt/confirm/prism_rotate, PROC_REF(rotate_confirmed))
+	open_request(src, /datum/prompt/yes_no, PROC_REF(rotate_confirmed), answerer = user, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = name, question = "Do you want to try to rotate \the [src]?", timeout = 0)
 	return TRUE
 
-/obj/structure/prop/prismcontrol/proc/rotate_confirmed(datum/om/prompt/confirm/prism_rotate/ask)
-	var/mob/living/user = ask.answerer
-	if(!ask.yes)
+/// The compass points the linked prisms share out when any of them turns only by points; null when all of them take any bearing.
+/obj/structure/prop/prismcontrol/proc/compass_points()
+	var/list/compass_directions
+	for(var/obj/structure/prop/prism/PR in my_turrets)
+		if(!PR.free_rotate) //Doesn't use bearing, it uses compass points.
+			if(!compass_directions)
+				compass_directions = list()
+			compass_directions |= PR.compass_directions
+	return compass_directions
+
+/obj/structure/prop/prismcontrol/proc/rotate_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	if(!A.answer.answer_value)
 		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
 			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return TRUE
@@ -248,38 +226,44 @@
 		to_chat(user, span_notice("\The [src] doesn't seem to do anything."))
 		return TRUE
 
-	var/free_rotate = 1
-	var/list/compass_directions = list()
-	for(var/obj/structure/prop/prism/PR in my_turrets)
-		if(!PR.free_rotate) //Doesn't use bearing, it uses compass points.
-			free_rotate = 0
-			compass_directions |= PR.compass_directions
-
-	if(free_rotate)
-		om_ask(user, /datum/om/prompt/number/prism_bearing, PROC_REF(bearing_entered))
+	var/list/compass_directions = compass_points()
+	if(!compass_directions)
+		open_request(src, /datum/prompt/number, PROC_REF(bearing_entered), answerer = user, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = name, question = "What bearing do you want to rotate \the [src] to?", min_value = 0, max_value = 360, timeout = 0)
 	else
-		om_ask(user, /datum/om/prompt/choice/prism_point, PROC_REF(point_chosen), choices = compass_directions)
+		open_request(src, /datum/prompt/choice, PROC_REF(point_chosen), answerer = user, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = name, question = "What point do you want to set \the [src] to?", choices = assoc_to_keys(compass_directions), timeout = 0)
 
-/obj/structure/prop/prismcontrol/proc/point_chosen(datum/om/prompt/choice/prism_point/ask)
-	bearing_chosen(ask.answerer, ask.choices[ask.choice])
+/obj/structure/prop/prismcontrol/proc/point_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/compass_directions = compass_points()
+	bearing_chosen(A.request.answerer, compass_directions?[A.answer.answer_value])
 
-/obj/structure/prop/prismcontrol/proc/bearing_entered(datum/om/prompt/number/prism_bearing/ask)
-	bearing_chosen(ask.answerer, ask.number)
+/obj/structure/prop/prismcontrol/proc/bearing_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	bearing_chosen(A.request.answerer, A.answer.answer_value)
 
 /obj/structure/prop/prismcontrol/proc/bearing_chosen(mob/living/user, new_bearing)
 	new_bearing = round(new_bearing)
 	if(new_bearing <= -1 || new_bearing > 360)
 		to_chat(user, span_warning("Rotating \the [src] [new_bearing] degrees would be a waste of time."))
 		return
-	om_ask(user, /datum/om/prompt/confirm/prism_rotate_final, PROC_REF(rotate_final), bearing = new_bearing)
+	open_request(src, /datum/prompt/yes_no/prism_rotate_final, PROC_REF(rotate_final), answerer = user, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = name, question = "Are you certain you want to rotate \the [src]?", bearing = new_bearing, timeout = 0)
 
-/obj/structure/prop/prismcontrol/proc/rotate_final(datum/om/prompt/confirm/prism_rotate_final/ask)
-	var/mob/living/user = ask.answerer
-	if(!ask.yes)
+/// The last question before the dial turns every linked prism: the bearing is kept on it.
+/datum/prompt/yes_no/prism_rotate_final
+	var/bearing
+
+/obj/structure/prop/prismcontrol/proc/rotate_final(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/yes_no/prism_rotate_final/R = A.request
+	var/mob/living/user = R.answerer
+	if(!A.answer.answer_value)
 		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
 			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return
-	var/new_bearing = ask.bearing
+	var/new_bearing = R.bearing
 
 	to_chat(user, span_notice("\The [src] clicks into place."))
 	for(var/obj/structure/prop/prism/PR in my_turrets)

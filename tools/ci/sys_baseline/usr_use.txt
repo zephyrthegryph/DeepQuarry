@@ -118,10 +118,6 @@ usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(ov
 usr_outside_verb	code/game/objects/items/weapons/storage/ore_bag.dm	W.dropped(usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/secure.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	usr.ClickOn(I)
-usr_outside_verb	code/game/objects/structures/artstuff.dm	if(!check_rights_for(usr.client, R_HOLDER))
-usr_outside_verb	code/game/objects/structures/artstuff.dm	to_chat(usr, span_notice("The chosen painting is the following \n\n \
-usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/prompt/confirm/painting_lateload, PROC_REF(lateload_confirmed), which = which_painting)
-usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/prompt/confirm/painting_list, PROC_REF(lateload_list_confirmed))
 usr_outside_verb	code/game/objects/structures/medical_stand.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/structures/stasis_cage.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm	var/mob/user = usr

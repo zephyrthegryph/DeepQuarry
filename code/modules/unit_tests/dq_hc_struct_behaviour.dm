@@ -506,3 +506,54 @@
 	settle()
 	TEST_ASSERT_NOTEQUAL(M.loc, P, "a second yes comes out")
 	TEST_ASSERT_NULL(P.hider, "and nobody hides there")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Added with the conversion (the legacy forms could not be driven by a player-less test)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/reflector_angle_is_asked_and_set
+/datum/unit_test/dq_hc_struct/reflector_angle_is_asked_and_set/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/reflector/R = allocate(/obj/structure/reflector, tile(3, 2))
+	R.finished = TRUE
+	R.rotate(H)
+	TEST_ASSERT(asked(H), "an unlocked reflector asks for an angle")
+	hci_answer(H, 90)
+	settle()
+	TEST_ASSERT_EQUAL(R.rotation_angle, 90, "the answered angle is set")
+	R.rotate(H)
+	R.can_rotate = FALSE
+	hci_answer(H, 180)
+	settle()
+	TEST_ASSERT_EQUAL(R.rotation_angle, 90, "an answer that arrives after the rotation was locked is dropped")
+
+/datum/unit_test/dq_hc_struct/medical_stand_menu_toggles_mode_and_sets_transfer
+/datum/unit_test/dq_hc_struct/medical_stand_menu_toggles_mode_and_sets_transfer/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/medical_stand/S = allocate(/obj/structure/medical_stand, tile(3, 2))
+	var/mode = S.mode
+	test_menu(H, S, "toggle_iv_mode")
+	settle()
+	TEST_ASSERT_NOTEQUAL(S.mode, mode, "the menu entry flips the IV mode")
+	test_menu(H, S, "set_iv_transfer")
+	TEST_ASSERT(asked(H), "the transfer entry asks for an amount")
+	hci_answer(H, 2)
+	settle()
+	TEST_ASSERT_EQUAL(S.transfer_amount, 2, "the answered amount is the new transfer amount")
+
+/datum/unit_test/dq_hc_struct/canvas_takes_strokes_until_it_is_finished
+/datum/unit_test/dq_hc_struct/canvas_takes_strokes_until_it_is_finished/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/canvas/C = allocate(/obj/item/canvas, tile(2, 2))
+	var/obj/item/paint_brush/B = allocate(/obj/item/paint_brush, tile(2, 2))
+	B.selected_color = "#123456"
+	H.put_in_active_hand(B)
+	press(H, C, "paint", list("x" = 2, "y" = 3))
+	TEST_ASSERT_EQUAL(C.grid[2][3], "#123456", "a stroke paints the cell under the held brush")
+	TEST_ASSERT(C.used, "and marks the canvas as used")
+	var/list/data = hc_data(C, H)
+	TEST_ASSERT_EQUAL(data["grid"], C.grid, "the window shows the grid")
+	C.finalized = TRUE
+	B.selected_color = "#654321"
+	press(H, C, "paint", list("x" = 4, "y" = 4))
+	TEST_ASSERT_NOTEQUAL(C.grid[4][4], "#654321", "a finished painting takes no more strokes")

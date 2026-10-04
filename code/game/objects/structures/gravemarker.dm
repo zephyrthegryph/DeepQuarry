@@ -20,6 +20,9 @@
 CAPABILITIES(/obj/structure/gravemarker)
 	climb()
 
+CAPABILITIES(/datum/prompt/text/grave_carving)
+	ref_one(nameof(tool), /obj/item)
+
 /obj/structure/gravemarker/Initialize(mapload, material_name)
 	. = ..()
 	if(!material_name)
@@ -53,39 +56,35 @@ CAPABILITIES(/obj/structure/gravemarker)
 	return TRUE
 
 /obj/structure/gravemarker/screwdriver_act(mob/user, obj/item/W)
-	om_ask(user, /datum/om/prompt/text/grave_carving, PROC_REF(grave_name_chosen), tool = W)
+	open_request(src, /datum/prompt/text/grave_carving, PROC_REF(grave_name_chosen), valid = PROC_REF(carving_valid), answerer = user, tool = W, title = "Gravestone Naming", question = "Who is \the [src] for?", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
 /// Carving a gravemarker: the name, then the epitaph. Re-checked: next to the marker, the tool still in the active hand.
-/datum/om/prompt/text/grave_carving
-	title = "Gravestone Naming"
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/tool
+/datum/prompt/text/grave_carving
 	/// Set on the epitaph step: the name answered first.
 	var/carved_name
-	var/epitaph_step = FALSE
+	var/obj/item/tool
 
-/datum/om/prompt/text/grave_carving/prepare()
-	if(epitaph_step)
-		title = "Epitaph Carving"
-		message = "What message should \the [subject] have?"
-	else
-		message = "Who is \the [subject] for?"
-	return TRUE
+/// The carver still holds the tool.
+/obj/structure/gravemarker/proc/carving_valid(datum/request/R)
+	var/datum/prompt/text/grave_carving/C = R
+	var/mob/M = R.answerer
+	return istype(M) && M.get_active_hand() == C.tool
 
-/datum/om/prompt/text/grave_carving/valid()
-	return answerer.get_active_hand() == tool ? null : "not holding the tool"
+/obj/structure/gravemarker/proc/grave_name_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/grave_carving/C = A.request
+	open_request(src, /datum/prompt/text/grave_carving, PROC_REF(carvings_chosen), valid = PROC_REF(carving_valid), answerer = C.answerer, tool = C.tool, carved_name = A.answer.answer_value, title = "Epitaph Carving", question = "What message should \the [src] have?", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 
-/obj/structure/gravemarker/proc/grave_name_chosen(datum/om/prompt/text/grave_carving/ask)
-	om_ask(ask.answerer, /datum/om/prompt/text/grave_carving, PROC_REF(carvings_chosen), tool = ask.tool, carved_name = ask.text, epitaph_step = TRUE)
-
-/obj/structure/gravemarker/proc/carvings_chosen(datum/om/prompt/text/grave_carving/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/W = ask.tool
-	var/carving_1 = sanitizeSafe(ask.carved_name, MAX_NAME_LEN)
-	var/carving_2 = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/obj/structure/gravemarker/proc/carvings_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/grave_carving/C = A.request
+	var/mob/user = C.answerer
+	var/obj/item/W = C.tool
+	var/carving_1 = sanitizeSafe(C.carved_name, MAX_NAME_LEN)
+	var/carving_2 = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
 	if(carving_1)
 		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
 	if(carving_2)
