@@ -1026,7 +1026,6 @@ qdel	code/modules/xenoarcheaology/artifacts/replicator.dm	qdel(source_material)
 qdel	code/modules/xenoarcheaology/effect_master.dm	qdel(my_effect)
 qdel	code/modules/xenoarcheaology/effect_master.dm	qdel(AE)
 qdel	code/modules/xenoarcheaology/effects/forcefield.dm	qdel(F)
-qdel	code/modules/xenoarcheaology/effects/vampire.dm	qdel(B)
 qdel	code/modules/xenoarcheaology/finds/Weapons/archeo_guns.dm	qdel(C) //And begone!
 qdel	code/modules/xenoarcheaology/tools/artifact_harvester.dm	qdel(inserted_battery().battery_effect)
 qdel	code/modules/xenobio/items/extracts.dm	qdel(extract)
