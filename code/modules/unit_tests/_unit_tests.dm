@@ -902,6 +902,7 @@
 #include "interim_living_inventory_drag_actor.dm"
 #include "interim_assembly_holder_sticky_disassembly.dm"
 #include "interim_admin_virus_creation_progress.dm"
+#include "interim_tourniquet_late_choice.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

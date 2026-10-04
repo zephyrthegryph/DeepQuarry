@@ -3,3 +3,4 @@ delete-after: true
 changes:
   - code_imp: "Migrated circuit, file browser and medical debug prompts and made request actors explicit."
   - bugfix: "Advanced virus creation keeps one draft across questions and handles duplicate symptoms without hanging."
+  - bugfix: "Loosening tourniquets safely rejects a removed selection when other tourniquets remain."

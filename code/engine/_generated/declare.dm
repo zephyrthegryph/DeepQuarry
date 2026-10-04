@@ -7509,11 +7509,11 @@
 	into += entry_line(131)
 	into += list(global.op("vox_mask_port_self", global.in_hand(), global.label("Feeding port"), global.then(PROC_REF(vox_mask_port_self))))
 
-/// CAPABILITIES(/obj/item/clothing/mask/gas/voice) at code/modules/clothing/masks/voice.dm:38
+/// CAPABILITIES(/obj/item/clothing/mask/gas/voice) at code/modules/clothing/masks/voice.dm:44
 /obj/item/clothing/mask/gas/voice/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/masks/voice.dm", 38, /obj/item/clothing/mask/gas/voice)
-	into += entry_line(39)
+	into += entry_block("code/modules/clothing/masks/voice.dm", 44, /obj/item/clothing/mask/gas/voice)
+	into += entry_line(45)
 	into += list(global.owns_one(nameof(changer), starts = /obj/item/voice_changer))
 
 /// CAPABILITIES(/obj/item/clothing/mask/muzzle) at code/modules/clothing/masks/miscellaneous.dm:21
