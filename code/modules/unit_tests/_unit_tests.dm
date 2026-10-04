@@ -223,6 +223,7 @@
 #include "dq_generated_station_objective_tests.dm"
 #include "dq_focus.dm"
 #include "dq_gc_tests.dm"
+#include "dq_hc_bots_behaviour.dm"
 #include "dq_hc_mobs_behaviour.dm"
 #include "dq_rust_memory_tests.dm"
 #include "dq_medical_tests.dm"
