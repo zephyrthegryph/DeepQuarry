@@ -2041,18 +2041,28 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 
 /// Asks the admin to confirm turning us into `into` ("monkey", "alien", "ai" or "robot").
 /mob/living/carbon/human/proc/vv_confirm_transform(mob/user, into)
-	om_ask(user, /datum/om/prompt/confirm/vv_transform, PROC_REF(vv_transform_confirmed), into = into)
+	open_request(src, /datum/prompt/choice/vv_transform, PROC_REF(vv_transform_confirmed), answerer = user, into = into)
 
 /// An admin confirming a mob type change into `into`. Re-checked on the answer: still has R_SPAWN.
-/datum/om/prompt/confirm/vv_transform
+/datum/prompt/choice/vv_transform
 	title = "Confirm"
-	message = "Confirm mob type change?"
-	yes_text = "Transform"
-	no_text = "Cancel"
-	requires = PROMPT_ADMIN(R_SPAWN)
+	question = "Confirm mob type change?"
+	choices = list("Transform", "Cancel")
+	buttons = TRUE
+	timeout = 0
+	rights = R_SPAWN
 	var/into
 
-/mob/living/carbon/human/proc/vv_transform_confirmed(datum/om/prompt/confirm/vv_transform/ask)
+/mob/living/carbon/human/proc/vv_transform_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Transform")
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_transform_apply), A)
+	if(!result.ok)
+		stack_trace("VV mob transformation confirmation: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/vv_transform_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_transform/ask = A.answer
 	var/mob/user = ask.answerer
 	switch(ask.into)
 		if("monkey")
