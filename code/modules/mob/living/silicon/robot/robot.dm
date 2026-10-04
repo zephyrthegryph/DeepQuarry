@@ -407,7 +407,7 @@
 	if(old_cell && new_cell && mount?.wrapped == old_cell)
 		consume(mount.uninstall())
 	if(new_cell)
-		observe(new_cell, /datum/act/emp, src, adjusts_with(PROC_REF(shield_cell_from_emp)))
+		global.observe(new_cell, /datum/act/emp, src, adjusts_with(PROC_REF(shield_cell_from_emp)))
 		global.observe(new_cell, /datum/notice/qdeleting, src, then(PROC_REF(on_cell_deleted)))
 		if(mount && mount.wrapped != new_cell)
 			mount.install(new_cell)
