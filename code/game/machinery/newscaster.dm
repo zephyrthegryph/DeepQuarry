@@ -162,8 +162,6 @@ CAPABILITIES(/obj/machinery/newscaster)
 	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
 	op("set_channel_lock", ui_act(), then(PROC_REF(native_ui_act_set_channel_lock)))
 	op("set_attachment", ui_act(), then(PROC_REF(native_ui_act_set_attachment)))
-	op("submit_new_message", ui_act(), then(PROC_REF(native_ui_act_submit_new_message)))
-	op("print_paper", ui_act(), then(PROC_REF(native_ui_act_print_paper)))
 	owns_one(nameof(photo_data), /datum/news_photo)
 
 /obj/machinery/newscaster/security_unit                   //Security unit
@@ -435,35 +433,37 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_new_title)
 	AttachPhoto(A.actor)
 	return OP_OK
 
-/obj/machinery/newscaster/proc/native_ui_act_submit_new_message(datum/act/op/A)
-	var/our_user = tgui_user_name(A.actor)
+UI_ACT(/obj/machinery/newscaster, "submit_new_message", ui_act_submit_new_message)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_submit_new_message)
+	var/our_user = tgui_user_name(ui.user)
 	if(msg == "" || msg == "\[REDACTED\]")
 		set_temp("Error: Could not submit feed message to network: Invalid Message.", "danger", FALSE)
-		return OP_OK
+		return TRUE
 	if(our_user == "Unknown")
 		set_temp("Error: Could not submit feed message to network: Channel author unverified.", "danger", FALSE)
-		return OP_OK
+		return TRUE
 	if(channel_name == "")
 		set_temp("Error: Could not submit feed message to network: No feed channel selected.", "danger", FALSE)
-		return OP_OK
+		return TRUE
 	if(title == "")
 		set_temp("Error: Invalid Title.", "danger", FALSE)
-		return OP_OK
+		return TRUE
 
 	var/image = photo_data ? photo_data.photo() : null
 	feedback_inc("newscaster_stories",1)
 	GLOB.news_network.SubmitArticle(msg, our_user, channel_name, image, 0, "", title)
 	set_temp("Feed message created successfully.", "success", FALSE)
-	return OP_OK
+	return TRUE
 
-/obj/machinery/newscaster/proc/native_ui_act_print_paper(datum/act/op/A)
+UI_ACT(/obj/machinery/newscaster, "print_paper", ui_act_print_paper)
+UI_ACT_PROC(/obj/machinery/newscaster, ui_act_print_paper)
 	if(!paper_remaining)
 		set_temp("Unable to print newspaper. Insufficient paper. Please notify maintenance personnel to refill machine storage.", "danger", FALSE)
-		return OP_OK
+		return TRUE
 
 	print_paper()
 	set_temp("Printing successful. Please receive your newspaper from the bottom of the machine.", "success", FALSE)
-	return OP_OK
+	return TRUE
 
 UI_ACT(/obj/machinery/newscaster, "set_wanted_desc", ui_act_set_wanted_desc, UI_ARG_TEXT("val"))
 UI_ACT_PROC(/obj/machinery/newscaster, ui_act_set_wanted_desc)

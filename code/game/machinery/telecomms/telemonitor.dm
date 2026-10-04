@@ -23,7 +23,6 @@
 CAPABILITIES(/obj/machinery/computer/telecomms/monitor)
 	op("mainmenu", ui_act(), then(PROC_REF(native_ui_act_mainmenu)))
 	op("release", ui_act(), then(PROC_REF(native_ui_act_release)))
-	op("scan", ui_act(), then(PROC_REF(native_ui_act_scan)))
 	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
 
 UI_DATA_REPLACE(/obj/machinery/computer/telecomms/monitor, "network", "temp:text", "merge:ui_data_obj_machinery_computer_telecomms_monitor{machinelist:list,selectedMachine:list}")
@@ -101,11 +100,11 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_view)
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/monitor::SelectedMachine))
 	return OP_OK
 
-/obj/machinery/computer/telecomms/monitor/proc/native_ui_act_scan(datum/act/op/A)
-	add_fingerprint(A.actor)
+UI_ACT(/obj/machinery/computer/telecomms/monitor, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_scan)
 	if(length(machinelist) > 0)
 		set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
-		return OP_OK
+		return TRUE
 
 	for(var/obj/machinery/telecomms/T in range(25, src))
 		if(T.network == network)
@@ -115,7 +114,7 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_view)
 		set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
 	else
 		set_temp("[length(machinelist)] ENTITIES LOCATED & BUFFERED", "good")
-	return OP_OK
+	. = TRUE
 
 UI_ACT(/obj/machinery/computer/telecomms/monitor, "network", ui_act_network)
 UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_network)

@@ -78,7 +78,6 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	op("PRG_closebrowser", ui_act(), then(PROC_REF(native_ui_act_prg_closebrowser)))
 	op("PRG_backtomenu", ui_act(), then(PROC_REF(native_ui_act_prg_backtomenu)))
 	op("PRG_loadmenu", ui_act(), then(PROC_REF(native_ui_act_prg_loadmenu)))
-	op("PRG_printfile", ui_act(), then(PROC_REF(native_ui_act_prg_printfile)))
 
 /datum/computer_file/program/wordprocessor/proc/native_ui_act_prg_txtrpeview(datum/act/op/A)
 	// structured TGUI AdminReport.
@@ -206,14 +205,15 @@ UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_editfile)
 	is_edited = 1
 	return TRUE
 
-/datum/computer_file/program/wordprocessor/proc/native_ui_act_prg_printfile(datum/act/op/A)
+UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_printfile", ui_act_prg_printfile)
+UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_printfile)
 	if(!computer().nano_printer)
 		error = "Missing Hardware: Your computer does not have the required hardware to complete this operation."
-		return OP_OK
+		return TRUE
 	if(!computer().nano_printer.print_text(pencode2html(loaded_data)))
 		error = "Hardware error: Printer was unable to print the file. It may be out of paper."
-		return OP_OK
-	return OP_OK
+		return TRUE
+	return TRUE
 
 UI_DATA_REPLACE(/datum/computer_file/program/wordprocessor, "merge:ui_data_datum_computer_file_program_wordprocessor{error:text,browsing:num,files:list,usbconnected:num,usbfiles:list,filedata:unknown,filename:unknown}")
 

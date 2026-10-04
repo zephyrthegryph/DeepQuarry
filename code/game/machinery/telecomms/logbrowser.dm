@@ -22,7 +22,6 @@
 CAPABILITIES(/obj/machinery/computer/telecomms/server)
 	op("mainmenu", ui_act(), then(PROC_REF(native_ui_act_mainmenu)))
 	op("release", ui_act(), then(PROC_REF(native_ui_act_release)))
-	op("scan", ui_act(), then(PROC_REF(native_ui_act_scan)))
 	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
 
 UI_DATA_REPLACE(/obj/machinery/computer/telecomms/server, "universal_translate:num", "network", "temp:text", "merge:ui_data_obj_machinery_computer_telecomms_server{servers:list,selectedServer:list}")
@@ -115,11 +114,11 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_view)
 	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
 	return OP_OK
 
-/obj/machinery/computer/telecomms/server/proc/native_ui_act_scan(datum/act/op/A)
-	add_fingerprint(A.actor)
+UI_ACT(/obj/machinery/computer/telecomms/server, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_scan)
 	if(length(servers) > 0)
 		set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
-		return OP_OK
+		return TRUE
 
 	for(var/obj/machinery/telecomms/server/T in range(25, src))
 		if(T.network == network)
@@ -129,7 +128,7 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_view)
 		set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
 	else
 		set_temp("[length(servers)] SERVERS PROBED & BUFFERED", "good")
-	return OP_OK
+	. = TRUE
 
 UI_ACT(/obj/machinery/computer/telecomms/server, "delete", ui_act_delete, UI_ARG_NUM("id"))
 UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_delete)
