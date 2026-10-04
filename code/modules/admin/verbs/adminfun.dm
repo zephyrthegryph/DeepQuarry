@@ -45,9 +45,23 @@ ADMIN_VERB(admin_emp, R_ADMIN|R_FUN, "EM Pulse", ADMIN_VERB_NO_DESCRIPTION, ADMI
 	review.ask_next()
 
 ADMIN_VERB(gib_them, (R_ADMIN|R_FUN), "Gib", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/victim in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	var/confirm = verb_ask(user, "a10", args, /datum/om/prompt/choice/alert, message = "You sure?", title = "Confirm", choices = list("Yes", "No"))
-	if(isnull(confirm))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_gib_target, PROC_REF(gib_confirmed), answerer = answerer, victim = victim, victim_expected = !isnull(victim))
+
+/datum/admin_verb/gib_them/proc/gib_confirmed(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_gib), context)
+	if(!result.ok)
+		stack_trace("om flow gib_them answer gib_confirmed: [result.error]")
+
+/datum/admin_verb/gib_them/proc/apply_gib(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	var/confirm = context.request.answer_value
+	var/datum/prompt/choice/admin_gib_target/request = context.request
+	var/mob/victim = request.victim
 	if(confirm != "Yes")
 		return
 	//Due to the delay here its easy for something to have happened to the mob
@@ -65,9 +79,21 @@ ADMIN_VERB(gib_them, (R_ADMIN|R_FUN), "Gib", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CA
 	feedback_add_details("admin_verb","GIB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(gib_self, R_HOLDER, "Gibself", "Give yourself the same treatment you give others.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/confirm = verb_ask(user, "a11", args, /datum/om/prompt/choice/alert, message = "You sure?", title = "Confirm", choices = list("Yes", "No"))
-	if(isnull(confirm))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_gib_self, PROC_REF(gib_confirmed), answerer = answerer)
+
+/datum/admin_verb/gib_self/proc/gib_confirmed(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_gib), context)
+	if(!result.ok)
+		stack_trace("om flow gib_self answer gib_confirmed: [result.error]")
+
+/datum/admin_verb/gib_self/proc/apply_gib(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	var/confirm = context.request.answer_value
 	if(!confirm)
 		return
 	if(confirm == "Yes")
@@ -79,6 +105,51 @@ ADMIN_VERB(gib_self, R_HOLDER, "Gibself", "Give yourself the same treatment you 
 		log_admin("[key_name(user)] used gibself.")
 		message_admins(span_blue("[key_name_admin(user)] used gibself."), 1)
 		feedback_add_details("admin_verb","GIBS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_gib_target
+	rights = R_ADMIN|R_FUN
+	timeout = 0
+	question = "You sure?"
+	title = "Confirm"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	var/mob/victim
+	var/victim_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/admin_gib_target)
+	ref_one(nameof(victim), /mob)
+
+/datum/prompt/choice/admin_gib_target/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured = victim
+	rel_clear(src, nameof(victim))
+	rel_set(src, nameof(victim), captured)
+
+/datum/prompt/choice/admin_gib_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return victim_expected && QDELETED(victim) ? "target is gone" : null
+
+/datum/prompt/choice/admin_gib_target/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_gib_self
+	rights = R_HOLDER
+	timeout = 0
+	question = "You sure?"
+	title = "Confirm"
+	choices = list("Yes", "No")
+	buttons = TRUE
+
+/datum/prompt/choice/admin_gib_self/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 /datum/admin_emp_review
 	var/mob/actor
