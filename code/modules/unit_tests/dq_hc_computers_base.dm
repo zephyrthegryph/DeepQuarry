@@ -32,6 +32,12 @@
 	test_rng(1)
 	p2cl_capture_prompts()
 	run_gate()
+	// What the consoles made on their tiles (printouts, passes).
+	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
+		for(var/obj/item/paper/P in T)
+			qdel(P)
+		for(var/obj/item/card/id/guest/G in T)
+			qdel(G)
 	for(var/atom/movable/AM as anything in hc_made)
 		if(!QDELETED(AM))
 			qdel(AM)
