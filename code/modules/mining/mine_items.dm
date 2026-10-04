@@ -217,7 +217,9 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 	icon = 'icons/obj/mining.dmi'
 	var/upright = 0
 	var/base_state
-	custom_handling = TRUE
+
+CAPABILITIES(/obj/item/stack/flag)
+	without("ui_open")
 
 /obj/item/stack/flag/Initialize(mapload)
 	. = ..()
@@ -282,7 +284,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 /obj/item/stack/flag/proc/flag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = get_turf(src)
 	var/obj/item/stack/flag/newflag = new src.type(T)
-	newflag.amount = 1
+	newflag.set_amount(1, TRUE)
 	newflag.upright = 1
 	newflag.set_anchored(TRUE)
 	newflag.name = newflag.singular_name
@@ -299,8 +301,10 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	amount = 10
 	max_amount = 10
 	icon = 'icons/obj/mining.dmi'
-	custom_handling = TRUE
 	var/blazer_type = /obj/structure/trailblazer
+
+CAPABILITIES(/obj/item/stack/lightpole)
+	without("ui_open")
 
 /obj/item/stack/lightpole/red
 	name = "red flags"

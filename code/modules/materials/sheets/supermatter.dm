@@ -45,14 +45,12 @@ DECLARE_PERIODIC(/obj/item/stack/material/supermatter, PERIODIC_SLOW)
 	update_mass()
 	return
 
-EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_UNGATED("Split", PROC_REF(supermatter_hand)))
-
-/// Old attack_hand's split branch: the stack's split, then the touch burns as after any touch.
-/obj/item/stack/material/supermatter/proc/supermatter_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!stack_hand(user, held, interaction))
-		return FALSE
-	supermatter_touched(user)
-	return TRUE
+/// The stack's split question, then the touch burns as after any touch.
+/obj/item/stack/material/supermatter/split_asked(datum/act/op/A)
+	. = ..()
+	if(. == OP_DECLINE)
+		return
+	supermatter_touched(A.actor)
 
 EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(supermatter_pick_up)))
 

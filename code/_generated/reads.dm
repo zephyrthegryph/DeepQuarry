@@ -237,6 +237,10 @@
 	. = ..()
 	. += drawn_from(nameof(light_up))
 
+/obj/structure/marker_beacon/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(light_power), nameof(light_range), nameof(picked_color))
+
 /// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).
 /proc/rx_boot_types()
 	RETURN_TYPE(/list)

@@ -31,14 +31,25 @@
 	var/pass_color = FALSE // Will the item pass its own color var to the created item? Dyed cloth, wood, etc.
 	var/strict_color_stacking = FALSE // Will the stack merge with other stacks that are different colors? (Dyed cloth, wood, etc)
 
-	var/custom_handling = FALSE
 	var/beacons = FALSE
 	var/sandbags = FALSE
+
+SETTER(/obj/item/stack, amount)
+
+CAPABILITIES(/obj/item/stack)
+	ref_many(nameof(synths), /datum/matter_synth)
+	interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = in_hand())
+	op("make", ui_act("make", arg("multiplier", num()), arg("ref", schema_ref(/datum/stack_recipe))), then(PROC_REF(ui_act_make)))
+	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
+	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
+	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
 
 /obj/item/stack/Initialize(mapload, starting_amount)
 	. = ..()
 	if(!stacktype)
 		stacktype = type
+	if(!no_variants)
+		item_state = initial(icon_state) // the in-hand sprite of a stack with variants is the plain one, whatever the pile shows
 	if(!isnull(starting_amount)) // Could be 0
 		// Negative numbers are 'give full stack', like -1
 		if(starting_amount < 0)
@@ -56,19 +67,17 @@
 	for(var/M in .)
 		.[M] *= amount
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/appearance_overlays()
-	. = list()
-	if(no_variants)
-		icon_state = initial(icon_state)
-	else
-		if(amount <= (max_amount * (1/3)))
-			icon_state = initial(icon_state)
-		else if (amount <= (max_amount * (2/3)))
-			icon_state = "[initial(icon_state)]_2"
-		else
-			icon_state = "[initial(icon_state)]_3"
-		item_state = initial(icon_state)
+/obj/item/stack/draw(datum/look/look)
+	..()
+	look.state(look_state())
+
+/// The icon state the pile shows: by how full it is (a stack with no variants keeps its own).
+/obj/item/stack/proc/look_state()
+	if(no_variants || amount <= (max_amount * (1/3)))
+		return initial(icon_state)
+	if(amount <= (max_amount * (2/3)))
+		return "[initial(icon_state)]_2"
+	return "[initial(icon_state)]_3"
 
 /obj/item/stack/proc/get_examine_string()
 	if(!uses_charge)
@@ -82,19 +91,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack, TYPE_PROC_REF(/atom, appearance_overlay
 	if(Adjacent(user))
 		. += get_examine_string()
 
-/// Old attack_self: the stack's recipe window. Subtypes with custom_handling fall through.
-/obj/item/stack/proc/stack_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(custom_handling)
-		return FALSE
-	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/item/stack, "MaterialStack")
-
-UI_DATA(/obj/item/stack, "merge:ui_data_obj_item_stack{amount:unknown}")
-
-/// The computed part of /obj/item/stack's window data (declared on its UI_DATA row).
-/obj/item/stack/proc/ui_data_obj_item_stack(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The stack's recipe window data.
+/obj/item/stack/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["amount"] = get_amount()
@@ -128,21 +126,19 @@ UI_DATA(/obj/item/stack, "merge:ui_data_obj_item_stack{amount:unknown}")
 		"ref" = "\ref[R]",
 	)
 
-DECLARE_UI_STATE(/obj/item/stack, GLOB.tgui_hands_state)
-
-UI_ACT(/obj/item/stack, "make", ui_act_make, UI_ARG_NUM("multiplier"), UI_ARG_REF("ref", null, /datum/stack_recipe))
-UI_ACT_PROC(/obj/item/stack, ui_act_make)
+/// The window's build button: `ref` is the recipe, `multiplier` how many batches.
+/obj/item/stack/proc/ui_act_make(datum/act/op/A, multiplier, datum/stack_recipe/ref)
+	var/mob/user = A.actor
 	if(get_amount() < 1)
 		qdel(src)
 		return
 
-	var/datum/stack_recipe/R = params["ref"]
+	var/datum/stack_recipe/R = ref
 	if(!is_valid_recipe(R, recipes)) //href exploit protection
 		return FALSE
-	var/multiplier = params["multiplier"]
 	if(!multiplier || (multiplier <= 0)) //href exploit protection
 		return
-	produce_recipe(R, multiplier, ui.user)
+	produce_recipe(R, multiplier, user)
 	return TRUE
 
 /obj/item/stack/proc/is_valid_recipe(datum/stack_recipe/R, list/recipe_list)
@@ -223,7 +219,7 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 		O.add_fingerprint(user)
 		if (istype(O, /obj/item/stack))
 			var/obj/item/stack/S = O
-			S.amount = produced
+			S.set_amount(produced, TRUE)
 			S.add_to_stacks(user)
 		if (isitem(O))
 			var/obj/item/P = O
@@ -257,14 +253,13 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 	if(!can_use(used))
 		return 0
 	if(!uses_charge)
-		amount -= used
+		set_amount(amount - used, TRUE)
 		if (amount <= 0)
 			// Tell container that we used up a stack
 			if(istype( loc, /obj/item/storage))
 				var/obj/item/storage/holder = loc
 				holder.remove_from_storage( src, null)
 			qdel(src) //should be safe to qdel immediately since if someone is still using this stack it will persist for a little while longer
-		update_icon()
 		return 1
 	else
 		if(get_amount() < used)
@@ -282,8 +277,7 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 		if(amount + extra > get_max_amount())
 			return 0
 		else
-			amount += extra
-		update_icon()
+			set_amount(amount + extra, TRUE)
 		return 1
 	else if(!synths || synths.len < uses_charge)
 		return 0
@@ -304,7 +298,9 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 	if(new_amount > max_amount && !no_limits)
 		new_amount = max_amount
 
-	amount = new_amount
+	if(amount != new_amount)
+		amount = new_amount
+		tracked_changed(src, nameof(amount))
 
 	// Can set it to 0 without qdel if you really want
 	if(amount == 0 && !no_limits)
@@ -412,16 +408,19 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 		if(!amount)
 			break
 
-/// Old attack_hand: touching the stack in the other hand splits it; otherwise falls through to pickup.
-/obj/item/stack/proc/stack_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Touching the stack in the other hand asks how many to split off; otherwise the touch goes on to the pickup.
+/obj/item/stack/proc/split_asked(datum/act/op/A)
+	var/mob/user = A.actor
 	if (user.get_inactive_hand() != src)
-		return FALSE
-	om_ask(user, /datum/om/prompt/number, PROC_REF(split_amount_chosen), title = "Split stacks", message = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max = amount, min = 1, round_entry = FALSE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-	return TRUE
+		return OP_DECLINE
+	open_request(src, /datum/prompt/number, PROC_REF(split_amount_chosen), answerer = user, title = "Split stacks", question = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max_value = amount, min_value = 1, step = 0.01, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+	return OP_OK
 
-/obj/item/stack/proc/split_amount_chosen(datum/om/prompt/number/ask)
-	var/mob/user = ask.answerer
-	var/N = ask.number
+/obj/item/stack/proc/split_amount_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/N = A.answer.answer_value
 	if(N != round(N))
 		to_chat(user, span_warning("You cannot separate a non-whole number of stacks!"))
 		return
@@ -434,33 +433,29 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 			if (!QDELETED(src) && user.check_current_machine(src))
 				src.interact(user)
 
-DECLARE_INTERACTIONS(/obj/item/stack, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SELF(null, PROC_REF(stack_self)), \
-	INTERACT_HAND_UNGATED("Split", PROC_REF(stack_hand)), \
-)
+/// A cyborg's gripper gathers the stacks around it into this one.
+/obj/item/stack/proc/consolidated(datum/act/op/A)
+	var/obj/item/gripper/G = A.held
+	G.consolidate_stacks(src)
+	return OP_OK
 
-/// Old attackby.
-/obj/item/stack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/gripper))
-		var/obj/item/gripper/G = W
-		G.consolidate_stacks(src)
-		if(QDELETED(src))
-			return INTERACTION_HANDLED_PASS
+/// A stack clicked with itself in the hand is the in-hand use, not a stack held against another.
+/obj/item/stack/proc/held_is_another(datum/act/op/A)
+	return A.held != src
 
-	else if(istype(W, /obj/item/stack))
-		var/obj/item/stack/S = W
-		src.transfer_to(S)
-		if(QDELETED(src))
-			return INTERACTION_HANDLED_PASS
+/// A stack held against this one: this one pours into it.
+/obj/item/stack/proc/combined(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/S = A.held
+	src.transfer_to(S)
+	if(QDELETED(src))
+		return OP_OK
 
-		if (S && user.check_current_machine(S))
-			S.interact(user)
-		if (src && user.check_current_machine(src))
-			src.interact(user)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+	if (S && user.check_current_machine(S))
+		S.interact(user)
+	if (src && user.check_current_machine(src))
+		src.interact(user)
+	return OP_OK
 
 /obj/item/stack/proc/combine_in_loc()
 	return //STUBBED for now, as it seems to randomly delete stacks
@@ -561,7 +556,3 @@ DECLARE_INTERACTIONS(/obj/item/stack, \
 			merge(AM)
 	return ..()
 
-
-/obj/item/stack/relations()
-	. = ..()
-	. += rel_many(nameof(synths))

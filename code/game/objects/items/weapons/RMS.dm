@@ -235,7 +235,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 			user.dust()
 	final_product = new new_metal
 	if(overcharge && (charge_cost_random > 0)) //We use ALL our energy in one go while overcharged! Also has a charge_cost_random sanity check in case of badmins.
-		final_product.amount = max(1, 1+round(stored_charge/charge_cost_random))
+		final_product.set_amount(max(1, 1+round(stored_charge/charge_cost_random)), TRUE)
 		consume_resources(stored_charge)
 	return final_product
 

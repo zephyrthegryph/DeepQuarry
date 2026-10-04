@@ -25,7 +25,16 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 	w_class = ITEMSIZE_SMALL
 	var/icon_base = "marker"
 	var/picked_color = "random"
-	custom_handling = TRUE
+
+TRACKED(/obj/item/stack/marker_beacon, picked_color)
+
+CAPABILITIES(/obj/item/stack/marker_beacon)
+	without("ui_open")
+	op("place", in_hand(), label("Place"), needs(req(PROC_REF(can_place), because = PROC_REF(place_refusal))), then(PROC_REF(marker_beacon_self)))
+	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
+
+MSG_DEF_SELF(marker_beacon/no_space, "You need more space to place a marker beacon here.")
+MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here.")
 
 /obj/item/stack/marker_beacon/ten
 	amount = 10
@@ -45,52 +54,60 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 	. += span_notice("Use in-hand to place a [singular_name].")
 	. += span_notice("Alt-click to select a color. Current color is [picked_color].")
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/marker_beacon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/marker_beacon/appearance_overlays()
-	. = list()
-	icon_state = "[icon_base][lowertext(picked_color)]"
+/obj/item/stack/marker_beacon/draw(datum/look/look)
+	..()
+	look.state(look_state())
 
-/// Requirement for placing: open floor with no beacon on it already.
-/obj/item/stack/marker_beacon/proc/can_place(mob/user, atom/target, obj/item/held)
+/// The pile shows its colour.
+/obj/item/stack/marker_beacon/look_state()
+	return "[icon_base][lowertext(picked_color)]"
+
+/// Placing needs open floor with no beacon on it already.
+/obj/item/stack/marker_beacon/proc/can_place(datum/act/op/A)
+	var/mob/user = A.actor
+	// ALLOW(reads): where the user stands is read when the beacon is placed, never from a cached menu
 	if(!isturf(user.loc))
-		return "you need more space to place a [singular_name] here"
-	if(locate_within(user.loc, /obj/structure/marker_beacon))
-		return "there is already a [singular_name] here"
-	return TRUE
+		return FALSE
+	// ALLOW(reads): the same read of where the user stands, for the beacons already on that tile
+	return !locate_within(user.loc, /obj/structure/marker_beacon)
 
-/// Requirement for picking a colour (shared by the stack and the placed beacon).
-/proc/dq_marker_beacon_can_recolor(mob/living/user, atom/target, obj/item/held)
-	if(user.incapacitated() || !istype(user))
-		return "you can't do that right now"
-	return TRUE
+/// Why it cannot be placed: no floor to stand on, or a beacon already there.
+/obj/item/stack/marker_beacon/proc/place_refusal(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!isturf(user.loc))
+		return /datum/msg/marker_beacon/no_space
+	return /datum/msg/marker_beacon/already_there
 
-/// Old attack_self: place a beacon.
-/obj/item/stack/marker_beacon/proc/marker_beacon_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using the stack in the hand places a beacon.
+/obj/item/stack/marker_beacon/proc/marker_beacon_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(use(1))
 		to_chat(user, span_notice("You activate and anchor [amount ? "a":"the"] [singular_name] in place."))
 		play_sfx(src, SFX_MACHINES_CLICK)
 		var/obj/structure/marker_beacon/M = new(user.loc, picked_color)
 		transfer_fingerprints_to(M)
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, \
-	INTERACT_USE("Place", PROC_REF(marker_beacon_self), REQ_TARGET_STATE(/obj/item/stack/marker_beacon/proc/can_place)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_PROC(/proc/dq_marker_beacon_can_recolor, "you can't do that right now")), \
-)
+/// The colours a beacon can take, and "Random", which is not a true colour and picks one.
+/proc/marker_beacon_color_choices()
+	var/list/options = list()
+	for(var/color_name in GLOB.marker_beacon_colors)
+		options += color_name
+	options += "Random"
+	return options
 
-/// Old click_alt.
-/obj/item/stack/marker_beacon/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// The alt-click: ask which colour the beacons should be.
+/obj/item/stack/marker_beacon/proc/recolor_asked(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!in_range(src, user))
-		return TRUE
+		return OP_OK
+	open_request(src, /datum/prompt/choice, PROC_REF(color_chosen), answerer = user, title = "Beacon Color", question = "Choose a color.", choices = marker_beacon_color_choices(), ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+	return OP_OK
 
-	var/options = GLOB.marker_beacon_colors.Copy()
-	options += list("Random" = FALSE) //not a true color, will pick a random color
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(color_chosen), choices = options, title = "Beacon Color", message = "Choose a color.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return TRUE
-
-/obj/item/stack/marker_beacon/proc/color_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice)
-		picked_color = ask.choice
-		update_icon()
+/obj/item/stack/marker_beacon/proc/color_chosen(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	set_picked_color(A.answer.answer_value)
 
 /obj/structure/marker_beacon
 	name = "marker beacon"
@@ -106,44 +123,49 @@ EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, \
 	var/perma = FALSE
 	var/mapped_in_color
 
+TRACKED(/obj/structure/marker_beacon, picked_color)
+
+CAPABILITIES(/obj/structure/marker_beacon)
+	op("pick_up", hand(), ungated(), then(PROC_REF(picked_up_by_hand)))
+	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), then(PROC_REF(picked_up_into_stack)))
+	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
+
 /obj/structure/marker_beacon/Initialize(mapload, set_color)
 	. = ..()
 	if(set_color)
-		picked_color = set_color
+		set_picked_color(set_color)
 	else if(mapped_in_color)
-		picked_color = mapped_in_color
+		set_picked_color(mapped_in_color)
 	update_icon()
+
+/// A beacon with no colour (or one the table does not know) picks one when it enters the world.
+/obj/structure/marker_beacon/on_materialize()
+	. = ..()
+	if(!picked_color || !GLOB.marker_beacon_colors[picked_color])
+		set_picked_color(pick(GLOB.marker_beacon_colors))
 
 /obj/structure/marker_beacon/examine(mob/user)
 	. = ..()
 	if(!perma)
 		. += span_notice("Alt-click to select a color. Current color is [picked_color].")
 
-DECLARE_APPEARANCE_PROC(/obj/structure/marker_beacon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/marker_beacon/appearance_overlays()
-	. = list()
-	if(!picked_color || !GLOB.marker_beacon_colors[picked_color])
-		picked_color = pick(GLOB.marker_beacon_colors)
-	icon_state = "[icon_base][lowertext(picked_color)]-on"
-	set_light(light_range, light_power, GLOB.marker_beacon_colors[picked_color])
+/obj/structure/marker_beacon/draw(datum/look/look)
+	..()
+	look.state("[icon_base][lowertext(picked_color)]-on")
+	look.light(light_range, light_power, GLOB.marker_beacon_colors[picked_color])
 
-DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/structure/marker_beacon/proc/can_recolor)), \
-)
-
-/// Old attack_hand.
-/obj/structure/marker_beacon/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// An empty hand takes the beacon up after a wait (a permanent one stays).
+/obj/structure/marker_beacon/proc/picked_up_by_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(perma)
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("You start picking [src] up..."))
 	om_task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/marker_beacon/proc/attack_hand_timed_done(mob/living/user)
 	var/obj/item/stack/marker_beacon/M = new(loc)
-	M.picked_color = picked_color
+	M.set_picked_color(picked_color)
 	M.update_icon()
 	transfer_fingerprints_to(M)
 	if(user.put_in_hands(M))
@@ -152,17 +174,15 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	else
 		consume(M, user)
 
-/// Old attackby.
-/obj/structure/marker_beacon/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// A beacon stack held against a placed beacon takes it back into the stack after a wait (a permanent one stays).
+/obj/structure/marker_beacon/proc/picked_up_into_stack(datum/act/op/A)
+	var/mob/user = A.actor
 	if(perma)
-		return INTERACTION_HANDLED_PASS
-	if(istype(I, /obj/item/stack/marker_beacon))
-		var/obj/item/stack/marker_beacon/M = I
-		to_chat(user, span_notice("You start picking [src] up..."))
-		om_task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(M))
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_OK
+	var/obj/item/stack/marker_beacon/M = A.held
+	to_chat(user, span_notice("You start picking [src] up..."))
+	om_task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(M))
+	return OP_OK
 
 /obj/structure/marker_beacon/proc/attackby_timed_done(obj/item/stack/marker_beacon/M)
 	if(!(M.get_amount() + 1 <= M.max_amount))
@@ -171,25 +191,20 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	consume(src)
 
-/// Requirement for picking a colour (a permanent beacon ignores it silently).
-/obj/structure/marker_beacon/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
+/// The alt-click: ask which colour the beacon should be (a permanent one ignores it silently).
+/obj/structure/marker_beacon/proc/recolor_asked(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(perma)
-		return TRUE
-	return dq_marker_beacon_can_recolor(user, target, held)
-
-/// Old click_alt.
-/obj/structure/marker_beacon/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(perma)
-		return TRUE
+		return OP_OK
 	if(!in_range(src, user))
-		return TRUE
+		return OP_OK
+	open_request(src, /datum/prompt/choice, PROC_REF(color_chosen), answerer = user, title = "Beacon Color", question = "Choose a color.", choices = marker_beacon_color_choices(), ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+	return OP_OK
 
-	var/options = GLOB.marker_beacon_colors.Copy()
-	options += list("Random" = FALSE) //not a true color, will pick a random color
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(color_chosen), choices = options, title = "Beacon Color", message = "Choose a color.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return TRUE
-
-/obj/structure/marker_beacon/proc/color_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice)
-		picked_color = ask.choice
-		update_icon()
+/obj/structure/marker_beacon/proc/color_chosen(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/chosen = A.answer.answer_value
+	if(!GLOB.marker_beacon_colors[chosen]) // "Random" is not a true colour: it picks one
+		chosen = pick(GLOB.marker_beacon_colors)
+	set_picked_color(chosen)

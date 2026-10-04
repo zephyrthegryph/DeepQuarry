@@ -10142,26 +10142,79 @@
 	into += entry_line(28)
 	into += list(global.every(0.5 SECONDS, global.then(PROC_REF(track)), when = nameof(tracking)))
 
-/// CAPABILITIES(/obj/item/stack/cable_coil) at code/modules/power/cable.dm:568
+/// CAPABILITIES(/obj/item/stack) at code/game/objects/items/stacks/stack.dm:39
+/obj/item/stack/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/stacks/stack.dm", 39, /obj/item/stack)
+	into += entry_line(40)
+	into += list(global.ref_many(nameof(synths), /datum/matter_synth))
+	into += entry_line(41)
+	into += list(global.interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = global.in_hand()))
+	into += entry_line(42)
+	into += list(global.op("make", global.ui_act("make", global.arg("multiplier", global.num()), global.arg("ref", global.schema_ref(/datum/stack_recipe))), global.then(PROC_REF(ui_act_make))))
+	into += entry_line(43)
+	into += list(global.op("consolidate", global.item(/obj/item/gripper), global.passes(), global.then(PROC_REF(consolidated))))
+	into += entry_line(44)
+	into += list(global.op("combine", global.item(/obj/item/stack), global.passes(), global.when(global.req(PROC_REF(held_is_another))), global.then(PROC_REF(combined))))
+	into += entry_line(45)
+	into += list(global.op("split", global.hand(), global.ungated(), global.label("Split"), global.then(PROC_REF(split_asked))))
+
+/// CAPABILITIES(/obj/item/stack/cable_coil) at code/modules/power/cable.dm:575
 /obj/item/stack/cable_coil/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/cable.dm", 568, /obj/item/stack/cable_coil)
-	into += entry_line(569)
+	into += entry_block("code/modules/power/cable.dm", 575, /obj/item/stack/cable_coil)
+	into += entry_line(576)
 	into += list(global.op("cable_coil_make_restraint", global.menu(), global.label("Make Cable Restraints"), global.needs(global.carried()), global.then(PROC_REF(cable_coil_make_restraint))))
 
-/// CAPABILITIES(/obj/item/stack/cable_coil/cyborg) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:241
+/// CAPABILITIES(/obj/item/stack/cable_coil/cyborg) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:240
 /obj/item/stack/cable_coil/cyborg/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/robot_simple_items.dm", 241, /obj/item/stack/cable_coil/cyborg)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_simple_items.dm", 240, /obj/item/stack/cable_coil/cyborg)
+	into += entry_line(241)
+	into += list(global.without("ui_open"))
 	into += entry_line(242)
 	into += list(global.op("cyborg_coil_self", global.in_hand(), global.label("Change colour"), global.then(PROC_REF(cyborg_coil_self))))
 
-/// CAPABILITIES(/obj/item/stack/emptysandbag) at code/game/objects/items/stacks/sandbags.dm:148
+/// CAPABILITIES(/obj/item/stack/emptysandbag) at code/game/objects/items/stacks/sandbags.dm:150
 /obj/item/stack/emptysandbag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/stacks/sandbags.dm", 148, /obj/item/stack/emptysandbag)
-	into += entry_line(149)
+	into += entry_block("code/game/objects/items/stacks/sandbags.dm", 150, /obj/item/stack/emptysandbag)
+	into += entry_line(151)
+	into += list(global.without("ui_open"))
+	into += entry_line(152)
 	into += list(global.op("emptysandbag_self", global.in_hand(), global.label("Fill"), global.then(PROC_REF(emptysandbag_self))))
+
+/// CAPABILITIES(/obj/item/stack/flag) at code/modules/mining/mine_items.dm:221
+/obj/item/stack/flag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/mine_items.dm", 221, /obj/item/stack/flag)
+	into += entry_line(222)
+	into += list(global.without("ui_open"))
+
+/// CAPABILITIES(/obj/item/stack/lightpole) at code/modules/mining/mine_items.dm:306
+/obj/item/stack/lightpole/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/mine_items.dm", 306, /obj/item/stack/lightpole)
+	into += entry_line(307)
+	into += list(global.without("ui_open"))
+
+/// CAPABILITIES(/obj/item/stack/marker_beacon) at code/game/objects/items/stacks/marker_beacons.dm:31
+/obj/item/stack/marker_beacon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/stacks/marker_beacons.dm", 31, /obj/item/stack/marker_beacon)
+	into += entry_line(32)
+	into += list(global.without("ui_open"))
+	into += entry_line(33)
+	into += list(global.op("place", global.in_hand(), global.label("Place"), global.needs(global.req(PROC_REF(can_place), because = PROC_REF(place_refusal))), global.then(PROC_REF(marker_beacon_self))))
+	into += entry_line(34)
+	into += list(global.op("recolor", global.hand(), global.gesture(GESTURE_ALT), global.label("Color"), global.then(PROC_REF(recolor_asked))))
+
+/// CAPABILITIES(/obj/item/stack/material) at code/modules/materials/sheets/_sheets.dm:29
+/obj/item/stack/material/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/materials/sheets/_sheets.dm", 29, /obj/item/stack/material)
+	into += entry_line(30)
+	into += list(global.without("ui_open"))
 
 /// CAPABILITIES(/obj/item/stack/material/processed_alloy) at code/modules/materials/engineering/processed_material.dm:295
 /obj/item/stack/material/processed_alloy/declared_entries(list/into)
@@ -10170,12 +10223,28 @@
 	into += entry_line(296)
 	into += list(global.owns_one(nameof(batch_state), /datum/material_batch))
 
-/// CAPABILITIES(/obj/item/stack/telecrystal) at code/game/objects/items/stacks/telecrystal.dm:21
+/// CAPABILITIES(/obj/item/stack/rods) at code/modules/materials/sheets/metals/rods.dm:41
+/obj/item/stack/rods/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/materials/sheets/metals/rods.dm", 41, /obj/item/stack/rods)
+	into += entry_line(42)
+	into += list(global.op("splint", global.item(/obj/item/tape_roll), global.passes(), global.then(PROC_REF(taped_into_splint))))
+
+/// CAPABILITIES(/obj/item/stack/telecrystal) at code/game/objects/items/stacks/telecrystal.dm:20
 /obj/item/stack/telecrystal/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/stacks/telecrystal.dm", 21, /obj/item/stack/telecrystal)
+	into += entry_block("code/game/objects/items/stacks/telecrystal.dm", 20, /obj/item/stack/telecrystal)
+	into += entry_line(21)
+	into += list(global.without("ui_open"))
 	into += entry_line(22)
 	into += list(global.op("redeem", global.in_hand(), global.then(PROC_REF(redeemed))))
+
+/// CAPABILITIES(/obj/item/stack/tile/maintenance_panel) at code/modules/maintenance_panels/maintpanel_stack.dm:15
+/obj/item/stack/tile/maintenance_panel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/maintenance_panels/maintpanel_stack.dm", 15, /obj/item/stack/tile/maintenance_panel)
+	into += entry_line(16)
+	into += list(global.without("ui_open"))
 
 /// CAPABILITIES(/obj/item/starcaster_news) at code/game/objects/items/devices/starcaster.dm:19
 /obj/item/starcaster_news/declared_entries(list/into)
@@ -15852,6 +15921,17 @@
 	into += entry_line(32)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/structure/marker_beacon) at code/game/objects/items/stacks/marker_beacons.dm:128
+/obj/structure/marker_beacon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/stacks/marker_beacons.dm", 128, /obj/structure/marker_beacon)
+	into += entry_line(129)
+	into += list(global.op("pick_up", global.hand(), global.ungated(), global.then(PROC_REF(picked_up_by_hand))))
+	into += entry_line(130)
+	into += list(global.op("pick_up_into", global.item(/obj/item/stack/marker_beacon), global.passes(), global.then(PROC_REF(picked_up_into_stack))))
+	into += entry_line(131)
+	into += list(global.op("recolor", global.hand(), global.gesture(GESTURE_ALT), global.label("Color"), global.then(PROC_REF(recolor_asked))))
+
 /// CAPABILITIES(/obj/structure/medical_stand) at code/game/objects/structures/medical_stand.dm:22
 /obj/structure/medical_stand/declared_entries(list/into)
 	..(into)
@@ -16144,11 +16224,11 @@
 	into += entry_line(37)
 	into += list(global.owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin)))
 
-/// CAPABILITIES(/obj/structure/trailblazer) at code/modules/mining/mine_items.dm:364
+/// CAPABILITIES(/obj/structure/trailblazer) at code/modules/mining/mine_items.dm:368
 /obj/structure/trailblazer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mining/mine_items.dm", 364, /obj/structure/trailblazer)
-	into += entry_line(365)
+	into += entry_block("code/modules/mining/mine_items.dm", 368, /obj/structure/trailblazer)
+	into += entry_line(369)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/trash_pile) at code/game/objects/structures/trash_pile.dm:15

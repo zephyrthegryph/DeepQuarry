@@ -242,3 +242,62 @@
 	hci_click(H, perm, null)
 	test_time(10 SECONDS)
 	TEST_ASSERT(!QDELETED(perm), "a permanent beacon stays")
+
+// ---- Stack subtypes outside code/game/objects/items ----
+
+/datum/unit_test/dq_hc_items/stack_cable_piece_is_named_and_drawn_by_length
+
+/datum/unit_test/dq_hc_items/stack_cable_piece_is_named_and_drawn_by_length/run_gate()
+	var/obj/item/stack/cable_coil/C = allocate(/obj/item/stack/cable_coil, tile(2, 2))
+	TEST_ASSERT_EQUAL(C.amount, 30, "a coil starts full")
+	hci2_set_amount(C, 2)
+	TEST_ASSERT_EQUAL(C.icon_state, "coil2", "two lengths show the short piece")
+	TEST_ASSERT_EQUAL(C.name, "cable piece", "and are called a piece")
+	hci2_set_amount(C, 1)
+	TEST_ASSERT_EQUAL(C.icon_state, "coil1", "one length shows the shortest piece")
+	hci2_set_amount(C, 10)
+	TEST_ASSERT_EQUAL(C.icon_state, "coil", "a longer length shows the coil")
+	TEST_ASSERT_EQUAL(C.name, initial(C.name), "and is called a coil")
+	var/obj/item/stack/cable_coil/cut/piece = allocate(/obj/item/stack/cable_coil/cut, tile(3, 3))
+	test_time(2 SECONDS)
+	TEST_ASSERT(piece.amount <= 2, "a cut piece is one or two lengths")
+	TEST_ASSERT_EQUAL(piece.name, "cable piece", "and is called a piece")
+
+/datum/unit_test/dq_hc_items/stack_processed_alloy_export_value_follows_amount
+
+/datum/unit_test/dq_hc_items/stack_processed_alloy_export_value_follows_amount/run_gate()
+	var/obj/item/stack/material/processed_alloy/S = allocate(/obj/item/stack/material/processed_alloy, tile(2, 2), 10)
+	S.export_value_per_sheet = 7
+	S.set_amount(4, TRUE)
+	TEST_ASSERT_EQUAL(S.economic_export_value, 28, "the value is per sheet times the sheets")
+	TEST_ASSERT(S.use(1), "uses one")
+	TEST_ASSERT_EQUAL(S.economic_export_value, 21, "using a sheet takes its value with it")
+	TEST_ASSERT(S.add(2), "adds two")
+	TEST_ASSERT_EQUAL(S.economic_export_value, 35, "adding sheets adds their value")
+
+/datum/unit_test/dq_hc_items/stack_supermatter_split_asks_through_the_other_hand
+
+/datum/unit_test/dq_hc_items/stack_supermatter_split_asks_through_the_other_hand/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/stack/material/supermatter/S = allocate(/obj/item/stack/material/supermatter, tile(2, 2))
+	S.set_amount(20, TRUE)
+	var/obj/item/clothing/gloves/gauntlets/G = allocate(/obj/item/clothing/gloves/gauntlets, tile(2, 2)) // the touch scorches a bare hand and drops the stack
+	H.equip_to_slot_if_possible(G, SLOT_ID_GLOVES)
+	H.put_in_inactive_hand(S)
+	hci_click(H, S, null)
+	test_time(5 SECONDS)
+	hci_answer(H, 5)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(S.amount, 15, "five came off")
+	TEST_ASSERT_EQUAL(S.slowdown, 1.5, "the stack re-weighs itself")
+	for(var/obj/item/I in H.contents)
+		if(I != S && istype(I, /obj/item/stack/material/supermatter))
+			qdel(I)
+
+/datum/unit_test/dq_hc_items/stack_flag_plants_one_and_keeps_the_rest
+
+/datum/unit_test/dq_hc_items/stack_flag_plants_one_and_keeps_the_rest/run_gate()
+	var/obj/item/stack/flag/F = allocate(/obj/item/stack/flag, tile(2, 2))
+	TEST_ASSERT_EQUAL(F.amount, 10, "a flag stack starts with ten")
+	TEST_ASSERT(F.use(1), "uses one")
+	TEST_ASSERT_EQUAL(F.amount, 9, "nine are left")

@@ -540,22 +540,20 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/medical/advanced, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/medical/advanced/appearance_overlays()
-	. = list()
+/// The pack shows how many are left in steps.
+/obj/item/stack/medical/advanced/look_state()
 	switch(amount)
 		if(1 to 2)
-			icon_state = initial(icon_state)
+			return initial(icon_state)
 		if(3 to 4)
-			icon_state = "[initial(icon_state)]_4"
+			return "[initial(icon_state)]_4"
 		if(5 to 6)
-			icon_state = "[initial(icon_state)]_6"
+			return "[initial(icon_state)]_6"
 		if(7 to 8)
-			icon_state = "[initial(icon_state)]_8"
+			return "[initial(icon_state)]_8"
 		if(9)
-			icon_state = "[initial(icon_state)]_9"
-		else
-			icon_state = "[initial(icon_state)]_10"
+			return "[initial(icon_state)]_9"
+	return "[initial(icon_state)]_10"
 
 
 /obj/item/stack/medical/advanced/clotting
@@ -608,7 +606,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/medical/advanced, TYPE_PROC_REF(/atom, a
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/medical/advanced/clotting, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/medical/advanced/clotting/appearance_overlays()
-	. = list()
-	icon_state = "[initial(icon_state)]_[amount]"
+/// The kit shows its count.
+/obj/item/stack/medical/advanced/clotting/look_state()
+	return "[initial(icon_state)]_[amount]"
