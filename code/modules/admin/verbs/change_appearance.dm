@@ -397,11 +397,16 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	title = "Change Mob Appearance - Admin"
 	question = "Select mob."
 
-/datum/prompt/choice/admin_appearance_target/refusal(given)
+/datum/prompt/choice/admin_appearance_target/recheck_extra()
 	. = ..()
 	if(.)
 		return
-	if(!istype(given, /mob/living/carbon/human) || QDELETED(given))
+	if(isnull(answer_value))
+		return
+	if(!istype(answer_value, /mob/living/carbon/human))
+		return "The selected human is no longer available."
+	var/mob/living/carbon/human/picked = answer_value
+	if(QDELETED(picked))
 		return "The selected human is no longer available."
 
 /datum/prompt/choice/admin_appearance_target/begin()
