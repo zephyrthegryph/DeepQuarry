@@ -728,7 +728,7 @@
 	H.put_in_active_hand(M)
 	D.multitool_act(H, M)
 	TEST_ASSERT_EQUAL(asked(H), FALSE, "a closed driver asks nothing")
-	D.panel_open = TRUE
+	D.panel_open = TRUE // ALLOW(api): the test opens the maintenance panel as a screwdriver would, and the machine has no setter for it
 	D.multitool_act(H, M)
 	TEST_ASSERT(asked(H), "an open driver asks for an id")
 	hci_answer(H, 42)
