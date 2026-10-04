@@ -95,7 +95,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 
 /// Is there an emag stage left to break (emagged 0: the access lock, 1: the anchoring)?
 /obj/machinery/deployable/barrier/proc/emag_stage_left(datum/act/A)
-	return emagged < 2 // ALLOW(reads): the stage is read when the sequencer is tried
+	return emagged < 2
 
 /// An EMP may flip the barrier's lock and anchors.
 /obj/machinery/deployable/barrier/proc/barrier_emp(datum/act/hit/emp/A)
