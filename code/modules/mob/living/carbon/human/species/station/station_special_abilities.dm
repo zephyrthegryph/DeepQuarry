@@ -1454,26 +1454,53 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		return
 
 	COOLDOWN_START(src, last_special, 600)
-	om_ask(src, /datum/om/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), grab = G, target = T)
+	open_request(src, /datum/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), answerer = src, grab = G, target = T)
 
 /// Re-checked on the answer: conscious, and still holding the target by the neck.
-/datum/om/prompt/choice/succubus_bite
+/datum/prompt/choice/succubus_bite
+	timeout = 0
 	title = "Reagent"
-	message = "What do you wish to inject?"
+	question = "What do you wish to inject?"
 	choices = list(REAGENT_APHRODISIAC, "Numbing", "Paralyzing")
 	ask_flags = ASK_CONSCIOUS
 	var/obj/item/grab/grab
 	var/mob/living/carbon/human/target
 
-/datum/om/prompt/choice/succubus_bite/valid()
-	if(answerer.get_active_hand() != grab || grab.grab_target() != target || grab.state != GRAB_NECK)
-		to_chat(answerer, span_warning("You must have a tighter grip to bite this creature."))
-		return "lost grip"
-	return null
+CAPABILITIES(/datum/prompt/choice/succubus_bite)
+	ref_one(nameof(grab), /obj/item/grab)
+	ref_one(nameof(target), /mob/living/carbon/human)
 
-/mob/living/proc/succubus_bite_chosen(datum/om/prompt/choice/succubus_bite/ask)
+/datum/prompt/choice/succubus_bite/prepare(datum/act/A)
+	..()
+	var/obj/item/grab/captured_grab = grab
+	var/mob/living/carbon/human/captured_target = target
+	rel_clear(src, nameof(grab))
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(grab), captured_grab)
+	rel_set(src, nameof(target), captured_target)
+
+/datum/prompt/choice/succubus_bite/begin()
+	if(QDELETED(grab) || QDELETED(target))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/succubus_bite/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(grab) || QDELETED(target))
+		return "gone"
+	return answerer.get_active_hand() != grab || grab.grab_target() != target || grab.state != GRAB_NECK ? "lost grip" : null
+
+/mob/living/proc/succubus_bite_chosen(datum/act/request/A)
+	var/datum/prompt/choice/succubus_bite/ask = A.request
+	if(!A.answer)
+		if(!isnull(ask.answer_value) && ask.last_error == "lost grip")
+			to_chat(src, span_warning("You must have a tighter grip to bite this creature."))
+		return
 	var/mob/living/carbon/human/T = ask.target
-	var/choice = ask.choice
+	var/choice = A.answer.answer_value
 	act_message(src, T, others = span_bolddanger("%U% moves their head next to %T%'s neck, seemingly looking for something!"))
 
 	om_task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))

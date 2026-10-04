@@ -2963,6 +2963,15 @@
 	into += entry_line(60)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
 
+/// CAPABILITIES(/datum/prompt/choice/succubus_bite) at code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:1469
+/datum/prompt/choice/succubus_bite/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm", 1469, /datum/prompt/choice/succubus_bite)
+	into += entry_line(1470)
+	into += list(global.ref_one(nameof(grab), /obj/item/grab))
+	into += entry_line(1471)
+	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
 /datum/prompt/color/paint_palette/declared_entries(list/into)
 	..(into)
