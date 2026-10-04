@@ -175,6 +175,10 @@ fn judge(text: &str, node: &scan::CallNode, owner: &str) -> (Option<Kind>, Guard
     if owner.is_empty() || owner == "/" {
         return (Some(kind), guard, Some("handler_expr"));
     }
+    // A flow's prompt is parked with the flow and stops it on a cancel: the request has none of that.
+    if owner == "/datum/om/flow" || owner.starts_with("/datum/om/flow/") {
+        return (Some(kind), guard, Some("flow_receiver"));
+    }
     let params = match named_params(text, node) {
         Ok(p) => p,
         Err(why) => return (Some(kind), guard, Some(why)),

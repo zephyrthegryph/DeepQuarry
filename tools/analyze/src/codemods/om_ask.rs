@@ -32,6 +32,7 @@ impl Codemod for OmAsk {
             ("no_message", "no message: the old window showed nothing, the new kind has a default question"),
             ("name_text_unknown", "max_length is not MAX_NAME_LEN and name_text is not given, so whether the answer is name-stripped is not known"),
             ("handler_expr", "the handler is not PROC_REF(name) / TYPE_PROC_REF(/type, name), or the call is outside a type's proc (no src)"),
+            ("flow_receiver", "the call is in a /datum/om/flow: the prompt is parked with the flow and a cancel stops it, which a request does not do"),
             ("comment_in_call", "a comment inside the call would be lost"),
             ("value_used", "the call is not a statement of its own"),
             ("handler_blocked", "the handler cannot change shape: another site or caller uses it, its sites differ in kind, it does not take the one prompt parameter, or its body reads more of the prompt than the answer and answerer"),

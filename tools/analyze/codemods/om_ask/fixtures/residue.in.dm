@@ -33,3 +33,9 @@
 
 /datum/holder/proc/mixed(datum/om/prompt/text/ask)
 	return TRUE
+
+/datum/om/flow
+	var/actor
+
+/datum/om/flow/demo/proc/go(mob/user)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(fine), message = "In a flow?")
