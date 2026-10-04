@@ -174,13 +174,19 @@
 			choices["radial"] = get_turf(src)
 
 		// A cancel (optional) flashes everyone around, as the tails flare either way.
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(tail_flash_chosen), title = "Target Choice", message = "What do we wish to flash?", choices = choices, ask_flags = ASK_CONSCIOUS, optional = TRUE)
+		open_request(src, /datum/prompt/choice, PROC_REF(tail_flash_chosen), answerer = src, title = "Target Choice", question = "What do we wish to flash?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 	tail_flash_now(A)
 
-/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_chosen(datum/om/prompt/choice/ask)
-	var/atom/A = ask.choice
-	tail_flash_now(isatom(A) ? A : null)
+/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_chosen(datum/act/request/A)
+	var/datum/request/R = A.request
+	// An explicit close still flares the tails; a failed conscious recheck does not.
+	if(!A.answer && (R.outcome != REQ_CANCELLED || !isnull(R.answer_value)))
+		return
+	var/target = A.answer ? A.answer.answer_value : null
+	if(isdatum(target) && QDELETED(target))
+		return
+	tail_flash_now(isatom(target) ? target : null)
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_now(atom/A)
 	act_message(src, null, null, MSG_OTHERS(span_alien("%U% flares its tails!")))
@@ -246,9 +252,13 @@
 	COOLDOWN_START(src, strike_cooldown, special_attack_cooldown)
 	rending_strike()
 
-/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(datum/om/prompt/choice/ask)
-	var/atom/A = ask.choice
-	rending_strike(A)
+/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/atom/target = A.answer.answer_value
+	if(QDELETED(target))
+		return
+	rending_strike(target)
 
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike(atom/A)
 	if(stat)
@@ -269,7 +279,7 @@
 			to_chat(src, span_warning("There are no viable targets within range..."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(rending_strike_chosen), title = "Target Choice", message = "What do we wish to strike?", choices = choices, ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/choice, PROC_REF(rending_strike_chosen), answerer = src, title = "Target Choice", question = "What do we wish to strike?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 
 	if(!A) return

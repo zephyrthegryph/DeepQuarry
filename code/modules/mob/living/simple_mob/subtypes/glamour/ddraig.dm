@@ -318,10 +318,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 									"Goose" = /mob/living/simple_mob/animal/space/goose
 									)
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(polymorph_chosen), title = "Choose Beast Form", message = "Which form would you like to take?", choices = beast_options, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(polymorph_chosen), answerer = src, title = "Choose Beast Form", question = "Which form would you like to take?", choices = beast_options, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/proc/polymorph_chosen(datum/om/prompt/choice/ask)
-	var/chosen_beast = ask.choice
+/mob/living/proc/polymorph_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	var/chosen_beast = ask.value
 	var/list/beast_options = ask.choices
 
 	var/mob/living/M = src
