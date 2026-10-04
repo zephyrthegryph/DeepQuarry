@@ -561,6 +561,8 @@
 #include "interim_gravemarker_lifecycle.dm"
 #include "interim_barricade_dismantle.dm"
 #include "interim_floor_dismantle.dm"
+#include "interim_bola_thick_clothing.dm"
+#include "interim_mining_mixed_chunk_accounting.dm"
 #include "interim_telecrystal_release_validation.dm"
 #include "interim_syringe_container_doses.dm"
 #include "interim_cell_gradual_charge.dm"

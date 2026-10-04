@@ -268,14 +268,14 @@
 /obj/item/projectile/bola/on_hit(atom/target, blocked = 0)
 	if(ishuman(target))
 		var/mob/living/carbon/human/human_target = target
-		var/obj/item/handcuffs/legcuffs/bola/B = new(src.loc)
 		for(var/obj/item/clothing/cloth in list(human_target.get_equipped_item(SLOT_ID_SUIT), human_target.get_equipped_item(SLOT_ID_UNIFORM), human_target.get_equipped_item(SLOT_ID_SHOES))) //Check if we have a thick material covering our feet.
 			if((cloth.body_parts_covered & FEET) && (cloth.item_flags & THICKMATERIAL))
 				..()
 				return
+		var/obj/item/handcuffs/legcuffs/bola/B = new(src.loc)
 		if(!B.place_legcuffs(human_target,firer))
 			if(B)
-				qdel(B)
+				consume(B)
 	..()
 
 /obj/item/projectile/bola/energy

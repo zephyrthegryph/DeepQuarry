@@ -2,3 +2,5 @@ author: "Codex"
 delete-after: true
 changes:
   - code_imp: "Replaced raw delays with equivalent time defines and migrated machine controls, material constructor facts, and ownership declarations."
+  - bugfix: "Cryopod departure and cyborg client cleanup now delete their owned objectives correctly."
+  - bugfix: "Bola impacts rejected by thick clothing no longer create loose cuffs."

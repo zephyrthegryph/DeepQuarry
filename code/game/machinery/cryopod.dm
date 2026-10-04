@@ -465,7 +465,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 		to_despawn.mind.assigned_role = null
 
 		if(to_despawn.mind.objectives.len)
-			qdel(to_despawn.mind.objectives)
+			own_clear(to_despawn.mind, nameof(/datum/mind::objectives), OWN_DELETE)
 			to_despawn.mind.special_role = null
 
 

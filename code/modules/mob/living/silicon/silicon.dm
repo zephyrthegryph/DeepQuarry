@@ -427,7 +427,7 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 	SSjob.free_role(job)
 
 	if(mind.objectives.len)
-		qdel(mind.objectives)
+		own_clear(mind, nameof(/datum/mind::objectives), OWN_DELETE)
 		mind.special_role = null
 
 	SSantag.clear_antag_roles(mind)
