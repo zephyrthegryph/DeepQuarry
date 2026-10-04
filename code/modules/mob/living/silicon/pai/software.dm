@@ -10,15 +10,9 @@
 
 	tgui_interact(src)
 
-DECLARE_UI_STATE(/mob/living/silicon/pai, GLOB.tgui_self_state)
-
-DECLARE_UI(/mob/living/silicon/pai, "pAIInterface", UI_TITLE("pAI Software Interface"))
-
-UI_DATA(/mob/living/silicon/pai, "available_ram=ram:num", "merge:ui_data_mob_living_silicon_pai{bought:list,not_bought:list,emotions:list,current_emotion:num}")
-
-/// The computed part of /mob/living/silicon/pai's window data (declared on its UI_DATA row).
-/mob/living/silicon/pai/proc/ui_data_mob_living_silicon_pai(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/mob/living/silicon/pai/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["available_ram"] = ram
 
 	// Software we have bought
 	var/list/bought_software = list()
@@ -54,28 +48,25 @@ UI_DATA(/mob/living/silicon/pai, "available_ram=ram:num", "merge:ui_data_mob_liv
 
 	return data
 
-UI_ACT(/mob/living/silicon/pai, "software", ui_act_software, UI_ARG_TEXT("software"))
-UI_ACT_PROC(/mob/living/silicon/pai, ui_act_software)
-	var/soft = params["software"]
+/mob/living/silicon/pai/proc/ui_act_software(datum/act/op/A, software_id)
+	var/soft = software_id
 	var/datum/pai_software/S = software[soft] ? GLOB.pai_software_by_key[soft] : null
 	if(S.toggle)
 		S.toggle(src)
 	else
-		S.tgui_interact(src, parent_ui = ui)
+		S.tgui_interact(src, parent_ui = SStgui.get_open_ui(src, src))
 	return TRUE
 
-UI_ACT(/mob/living/silicon/pai, "purchase", ui_act_purchase, UI_ARG_TEXT("purchase"))
-UI_ACT_PROC(/mob/living/silicon/pai, ui_act_purchase)
-	var/soft = params["purchase"]
+/mob/living/silicon/pai/proc/ui_act_purchase(datum/act/op/A, purchase)
+	var/soft = purchase
 	var/datum/pai_software/S = GLOB.pai_software_by_key[soft]
 	if(S && (ram >= S.ram_cost))
 		ram -= S.ram_cost
 		software[S.id] = TRUE
 	return TRUE
 
-UI_ACT(/mob/living/silicon/pai, "image", ui_act_image, UI_ARG_NUM("image"))
-UI_ACT_PROC(/mob/living/silicon/pai, ui_act_image)
-	var/img = params["image"]
+/mob/living/silicon/pai/proc/ui_act_image(datum/act/op/A, image)
+	var/img = image
 	if(1 <= img && img <= length(GLOB.pai_emotions))
 		card.setEmotion(img)
 	return TRUE
