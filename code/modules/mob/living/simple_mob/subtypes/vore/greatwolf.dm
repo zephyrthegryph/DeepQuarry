@@ -90,10 +90,6 @@
 	The great wolves have been hunted to near extinction by poachers due to its extremely valuable hide. They are very rare, as one would expect, and generally cautious around people."
 	value = CATALOGUER_REWARD_HARD
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob/proc/pick_color)
-
 /mob/living/simple_mob/vore/greatwolf/Login()
 	. = ..()
 	if(!riding_datum)
@@ -102,6 +98,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob
 
 CAPABILITIES(/mob/living/simple_mob/vore/greatwolf)
 	op("greatwolf_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(greatwolf_interaction_feed)))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
 
 /// Old attackby: trade food for people!
 /mob/living/simple_mob/vore/greatwolf/proc/greatwolf_interaction_feed(datum/act/op/A)

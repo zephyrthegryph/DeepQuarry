@@ -177,6 +177,8 @@ GLOBAL_VAR(declare_report_capture)
 				. |= ENGINE_HOOK_INIT
 			else if(istype(E) && E.kind == ENTRY_ON_CHANGE)
 				. |= ENGINE_HOOK_INIT // the baseline of an on_change hook is taken when the holder initializes
+			else if(istype(E) && E.kind == ENTRY_VERB)
+				. |= ENGINE_HOOK_INIT // a type's verb entries are put on the instance when it initializes
 			else if(istype(E) && E.kind == ENTRY_EVERY && isnull(C.owner))
 				. |= ENGINE_HOOK_INIT // a type-level every() is armed when the holder initializes
 	if(stat_table_needs_init(T))

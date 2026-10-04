@@ -54,8 +54,9 @@
 	// ALLOW(instance_list): d: per-mob weather_areas, sized at creation and filled in place; mobs are few
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
-DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/overmap/stardog, /mob/living/simple_mob/proc/set_name)
-DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/overmap/stardog, /mob/living/simple_mob/proc/set_desc)
+CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE)
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(mob/living/user, mob/living/that_one)
 	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))

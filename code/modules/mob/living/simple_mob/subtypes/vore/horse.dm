@@ -67,8 +67,9 @@
 /mob/living/simple_mob/vore/horse/big
 	vore_capacity = 2
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/horse, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/horse, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/horse)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/horse/Login()
 	. = ..()

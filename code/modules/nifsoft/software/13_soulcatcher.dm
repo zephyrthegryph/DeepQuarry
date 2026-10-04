@@ -37,14 +37,14 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	if((. = ..()))
 		//nif.set_flag(NIF_O_SCOTHERS,NIF_FLAGS_OTHER)	//Only required on install if the flag is in the default setting_flags list defined few lines above.
 		if(nif()?.human)
-			om_grant(nif().human, GRANT_VERB, /mob/proc/nsay, src)
-			om_grant(nif().human, GRANT_VERB, /mob/proc/nme, src)
+			grant(nif().human, granted_verb(/mob/proc/nsay), src)
+			grant(nif().human, granted_verb(/mob/proc/nme), src)
 
 /datum/nifsoft/soulcatcher/uninstall()
 	own_clear(src, nameof(brainmobs), OWN_DELETE)
 	if((. = ..()) && nif()?.human) //Sometimes NIFs are deleted outside of a human
-		om_revoke(nif().human, GRANT_VERB, /mob/proc/nsay, src)
-		om_revoke(nif().human, GRANT_VERB, /mob/proc/nme, src)
+		revoke(nif().human, granted_verb(/mob/proc/nsay), src)
+		revoke(nif().human, granted_verb(/mob/proc/nme), src)
 
 /datum/nifsoft/soulcatcher/proc/save_settings()
 	if(!nif())

@@ -4,6 +4,8 @@
 CAPABILITIES(/mob/living/simple_mob/animal/borer)
 	owns_one(nameof(ghost_check), /datum/ghost_query)
 	owns_one(nameof(host_brain), /mob/living/captive_brain)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/borer/proc/request_player()
 	rel_set(src, nameof(ghost_check), new /datum/ghost_query/borer())

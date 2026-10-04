@@ -53,8 +53,9 @@
 	vore_pounce_chance = 10
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/panther, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/panther, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/aggressive/panther/Login()
 	. = ..()

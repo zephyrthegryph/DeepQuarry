@@ -64,7 +64,6 @@
 
 // A turf's verbs are declared, never granted per turf: no store entry on any turf, so a
 // ChangeTurf() leaves nothing behind for the new turf (the old one's verbs go with its type).
-DECLARE_VERB_IF(/turf/simulated, /turf/simulated/proc/climb_wall, "climbable")
 
 /turf/simulated/Initialize(mapload)
 	. = ..()

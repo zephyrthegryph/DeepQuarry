@@ -75,7 +75,7 @@
 	. = ..() //if not vaccable, just do what it normally does
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/load_default_bellies()
-	om_grant(src, GRANT_VERB, /mob/living/proc/restrict_trasheater, src)
+	grant(src, granted_verb(/mob/living/proc/restrict_trasheater), src)
 	var/obj/belly/B = new /obj/belly(src)
 	B.affects_vore_sprites = TRUE
 	B.belly_sprite_to_affect = "stomach"

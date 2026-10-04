@@ -111,18 +111,18 @@ CAPABILITIES(/mob/living/silicon/pai)
 	owns_one(nameof(pai_ui_chassis), starts = /datum/tgui_module/pai_chassis)
 	owns_one(nameof(pda), starts = /obj/item/pda/ai/pai)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_scramble)))
+	verb_entry(/mob/living/silicon/pai/proc/choose_chassis)
+	verb_entry(/mob/living/silicon/pai/proc/choose_verbs)
+	verb_entry(/mob/proc/dominate_predator)
+	verb_entry(/mob/living/proc/dominate_prey)
+	verb_entry(/mob/living/proc/set_size)
+	verb_entry(/mob/living/proc/shred_limb)
+	verb_entry(/mob/living/proc/toggle_trash_catching)
+	verb_entry(/mob/verb/toggle_gun_mode, hidden = TRUE) // no gun support, and it shouldn't use guns anyway
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
 //////////////////////////////////////////////////////////////////////////////////////////////////
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/silicon/pai/proc/choose_chassis)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/silicon/pai/proc/choose_verbs)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/proc/dominate_predator)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/dominate_prey)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/set_size)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/shred_limb)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/toggle_trash_catching)
-DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun support, and it shouldn't use guns anyway
 
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()

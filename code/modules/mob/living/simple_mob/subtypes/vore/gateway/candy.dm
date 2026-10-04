@@ -44,8 +44,9 @@
 	can_be_drop_prey = TRUE
 
 //bluenom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/bluecabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/bluecabold/Login()
 	. = ..()
@@ -68,8 +69,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/pro
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //rednom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/redcabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/redcabold/Login()
 	. = ..()
@@ -92,8 +94,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/proc
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //yellow
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/yellowcabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/yellowcabold/Login()
 	. = ..()
@@ -116,8 +119,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/p
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //orange
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/orangecabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/orangecabold/Login()
 	. = ..()
@@ -140,8 +144,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/p
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //purplenom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/purplecabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/purplecabold/Login()
 	. = ..()
@@ -164,8 +169,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/p
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //marshmellownom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/Login()
 	. = ..()
@@ -621,6 +627,8 @@ DECLARE_LOOT(/obj/random/mob/candycritter, LOOT_TABLE(\
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
 	op("peppermint_interaction_item", item(/obj/item), then(PROC_REF(peppermint_interaction_item)))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /// Old attackby: the shell deflects most hits; forceless items only tap it. FALSE = the hit lands (hit_with_item).
 /mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(datum/act/op/A)
@@ -659,8 +667,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
 	new /obj/random/mob/candycritter (src.loc)
 
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/worm)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/worm/Login()
 	. = ..()
@@ -682,9 +691,6 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/proc/togg
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 */
-
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/peppermint, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/peppermint, /mob/living/proc/toggle_rider_reins) // TGPanel
 
 /mob/living/simple_mob/vore/candy/peppermint/Login()
 	. = ..()

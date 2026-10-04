@@ -84,11 +84,12 @@
 	leap_warmup = 1 SECOND
 	movement_cooldown = -3
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/set_size)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/polymorph)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_invisibility)
+CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/proc/set_size, login = TRUE)
+	verb_entry(/mob/living/proc/polymorph, login = TRUE)
+	verb_entry(/mob/living/proc/glamour_invisibility, login = TRUE)
 
 /mob/living/simple_mob/vore/ddraig/Login()
 	. = ..()
@@ -388,7 +389,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	var/mob/living/new_mob = spawn_polymorph_mob(beast_type)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction
-		om_grant(new_mob, GRANT_VERB, /mob/living/proc/revert_beast_form, new_mob)
-		om_grant(new_mob, GRANT_VERB, /mob/living/proc/set_size, new_mob)
+		grant(new_mob, granted_verb(/mob/living/proc/revert_beast_form), new_mob)
+		grant(new_mob, granted_verb(/mob/living/proc/set_size), new_mob)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message("<b>\The [src]</b> has transformed into \the [chosen_beast]!")

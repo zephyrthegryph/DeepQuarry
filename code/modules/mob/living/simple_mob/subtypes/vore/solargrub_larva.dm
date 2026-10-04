@@ -47,8 +47,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	glow_override = TRUE
 
-DECLARE_VERB(/mob/living/simple_mob/animal/solargrub_larva, /mob/living/proc/ventcrawl)
-
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
 	powermachine.set_draining(0)
 	set_light(0)
@@ -246,4 +244,5 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "
 
 CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
 	owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine)
+	verb_entry(/mob/living/proc/ventcrawl)
 

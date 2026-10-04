@@ -9,7 +9,7 @@
 /datum/trait_state/waddle_trait/setup()
 	if(!isliving(owner))
 		return FALSE
-	om_grant(owner, GRANT_VERB, /mob/living/proc/waddle_adjust, src)
+	grant(owner, granted_verb(/mob/living/proc/waddle_adjust), src)
 	return TRUE
 
 /datum/trait_state/waddle_trait/attach()
@@ -30,7 +30,7 @@
 /// The owner loses the waddle verb.
 /datum/trait_state/waddle_trait/detach()
 	if(living_owner())
-		om_revoke(living_owner(), GRANT_VERB, /mob/living/proc/waddle_adjust, src)
+		revoke(living_owner(), granted_verb(/mob/living/proc/waddle_adjust), src)
 	..()
 
 /mob/living/verb/toggle_waddle()

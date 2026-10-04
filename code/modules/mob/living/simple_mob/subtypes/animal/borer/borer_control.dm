@@ -66,10 +66,10 @@
 		host.lastKnownIP = s2h_ip
 	controlling = TRUE
 
-	om_grant(host, GRANT_VERB, /mob/living/carbon/proc/release_control, src)
-	om_grant(host, GRANT_VERB, /mob/living/carbon/proc/punish_host, src)
+	grant(host, granted_verb(/mob/living/carbon/proc/release_control), src)
+	grant(host, granted_verb(/mob/living/carbon/proc/punish_host), src)
 	if(antag)
-		om_grant(host, GRANT_VERB, /mob/living/carbon/proc/spawn_larvae, src)
+		grant(host, granted_verb(/mob/living/carbon/proc/spawn_larvae), src)
 // End horrible ip swapping code for bans
 
 /**

@@ -60,11 +60,13 @@
 	/mob/living/simple_mob/vore/morph,
 	/obj/effect))
 
-DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/simple_mob/vore/morph/proc/take_over_prey)
+CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/simple_mob/vore/morph/proc/take_over_prey)
+	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color)
 
-DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/simple_mob/vore/morph/proc/morph_color)
-DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/simple_mob/vore/morph/proc/morph_color)
+CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
+	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color, hidden = TRUE)
 
 /mob/living/simple_mob/vore/morph/proc/allowed(atom/movable/A)
 	return !is_type_in_typecache(A, blacklist_typecache) && (isobj(A) || ismob(A))

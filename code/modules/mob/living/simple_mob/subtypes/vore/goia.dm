@@ -213,11 +213,14 @@
 		if("Belly")
 			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick belly color:", title = "Belly Color", default = goia_overlays["zorgoia_belly"], overlay = "zorgoia_belly", style_key = "belly", style = choice)
 
-DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/vore/zorgoia/proc/appearance_switch)
-DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/vore/zorgoia/proc/recolor)
-DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/proc/injection) //Poison sting c:
-DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/vore/zorgoia/proc/export_style)
-DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/vore/zorgoia/proc/import_style)
+CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
+	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/appearance_switch)
+	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/recolor)
+	verb_entry(/mob/living/proc/injection) //Poison sting c:
+	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/export_style)
+	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/import_style)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/zorgoia/Initialize(mapload)
 	. = ..()
@@ -390,9 +393,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 			return FALSE
 
 	return FALSE
-
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/proc/toggle_rider_reins)
 
 /mob/living/simple_mob/vore/zorgoia/Login()
 	. = ..()

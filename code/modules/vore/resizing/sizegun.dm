@@ -22,8 +22,9 @@
 			fire_sound		= SFX_WEAPONS_PULSE3
 		))
 
-DECLARE_VERB(/obj/item/gun/energy/sizegun, /obj/item/gun/energy/sizegun/proc/select_size)
-DECLARE_VERB(/obj/item/gun/energy/sizegun, /obj/item/gun/energy/sizegun/proc/spin_dial)
+CAPABILITIES(/obj/item/gun/energy/sizegun)
+	verb_entry(/obj/item/gun/energy/sizegun/proc/select_size)
+	verb_entry(/obj/item/gun/energy/sizegun/proc/spin_dial)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): set the size.
 /obj/item/gun/energy/sizegun/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)

@@ -98,7 +98,7 @@ CAPABILITIES(/datum/mind)
 		changeling_comp = is_changeling(current)			//remove ourself from our old body's mind variable
 		if(changeling_comp)
 			current.remove_changeling_powers()
-			om_revoke(current, GRANT_VERB, /mob/proc/EvolutionMenu, changeling_comp)
+			revoke(current, granted_verb(/mob/proc/EvolutionMenu), changeling_comp)
 		rel_clear(current, nameof(current.mind))
 
 	if(new_character.mind)		//remove any mind currently in our new body's mind variable
@@ -433,7 +433,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	else
 		rel_set(mind, nameof(mind.identity), identity())
 	if(SSantag.player_is_antag(mind))
-		om_grant(src.client, GRANT_VERB, /client/proc/aooc, mind) // the mind grants its player aooc while it is an antag
+		grant(src.client, granted_verb(/client/proc/aooc), mind) // the mind grants its player aooc while it is an antag
 	if (client?.prefs)
 		// directory tags migrated from legacy /datum/preferences vars
 		// to /datum/preference subtypes.

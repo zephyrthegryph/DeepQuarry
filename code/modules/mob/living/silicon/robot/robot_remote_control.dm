@@ -9,7 +9,7 @@
 
 // Premade AI shell, for roundstart shells.
 /mob/living/silicon/robot/ai_shell/Initialize(mapload)
-	om_grant(src, GRANT_VERB, /mob/living/silicon/robot/proc/transfer_shell_act, src) // TGPanel // add sideloader
+	grant(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // TGPanel // add sideloader
 	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src)) // ALLOW(decl): set up by post_mmi_setup() before parent init
 	post_mmi_setup()
 	return ..()
@@ -26,7 +26,7 @@
 REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 /mob/living/silicon/robot/proc/make_shell()
-	om_grant(src, GRANT_VERB, /mob/living/silicon/robot/proc/transfer_shell_act, src) // TGPanel // add sideloader
+	grant(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // TGPanel // add sideloader
 	shell = TRUE
 	braintype = "AI Shell"
 	SetName("[modtype] AI Shell [num2text(ident)]")
@@ -140,7 +140,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 /mob/living/silicon/robot/proc/revert_shell()
 	if(!shell)
 		return
-	om_revoke(src, GRANT_VERB, /mob/living/silicon/robot/proc/transfer_shell_act, src) // remove sideloader //
+	revoke(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // remove sideloader //
 	undeploy()
 	shell = FALSE
 	registry_leave(REGISTRY_AI_SHELLS, src)
@@ -173,7 +173,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	lawupdate = org_lu
 
 	// Give button to leave.
-	om_grant(src, GRANT_VERB, /mob/living/silicon/robot/proc/undeploy_act, src)
+	grant(src, granted_verb(/mob/living/silicon/robot/proc/undeploy_act), src)
 	to_chat(AI, span_notice("You have connected to an AI Shell remotely, and are now in control of it.<br>\
 	To return to your core, use the <b>Release Control</b> verb."))
 

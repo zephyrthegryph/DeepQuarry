@@ -194,7 +194,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 		comp.transformed = FALSE
 	else
 		if(was_rayed)
-			om_revoke(gargoyle, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, src)
+			revoke(gargoyle, granted_verb(/mob/living/carbon/human/proc/gargoyle_transformation), src)
 	if(gargoyle.loc == src)
 		gargoyle.forceMove(loc)
 		gargoyle.transform = transform

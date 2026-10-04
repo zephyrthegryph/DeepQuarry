@@ -113,7 +113,7 @@
 	set_eye_energy() //Sets the energy values based on our eye color.
 
 	//Misc stuff we need to do
-	om_grant(owner, GRANT_VERB, /mob/living/proc/shadekin_control_panel, src)
+	grant(owner, granted_verb(/mob/living/proc/shadekin_control_panel), src)
 
 	if(manual)
 		lateload_pref_data()
@@ -144,7 +144,7 @@
 		owner.revoke_ability(ability_id, src)
 	if(!ishuman(owner))
 		om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
-	om_revoke(owner, GRANT_VERB, /mob/living/proc/shadekin_control_panel, src)
+	revoke(owner, granted_verb(/mob/living/proc/shadekin_control_panel), src)
 	if(!QDELING(owner) && owner.shadekin_display)
 		owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT
 

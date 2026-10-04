@@ -107,9 +107,6 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	can_pick_shell = FALSE
 	shell_accessories = list("eyes-miningdrone")
 
-DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
-
 /mob/living/silicon/robot/drone/Initialize(mapload, is_decoy)
 	. = ..(mapload, FALSE)
 	remove_language(LANGUAGE_ROBOT_TALK)
@@ -254,6 +251,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
 	op("hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), then(PROC_REF(hat_put_on)))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /// In help stance, a hat goes on a drone that has none, before the cyborg item handling; one that wears a hat declines.
 /mob/living/silicon/robot/drone/proc/hat_put_on(datum/act/op/A)

@@ -50,7 +50,7 @@
 
 	var/mob/living/new_form = transform_into_mob(tf, TRUE, TRUE)
 	if(isliving(new_form)) // Sanity check
-		om_grant(new_form, GRANT_VERB, /mob/living/proc/vr_revert_mob_tf, new_form)
+		grant(new_form, granted_verb(/mob/living/proc/vr_revert_mob_tf), new_form)
 		new_form.set_virtual_reality_mob(TRUE)
 
 /mob/living/proc/vr_revert_mob_tf()
@@ -100,9 +100,9 @@
 	avatar.regenerate_icons()
 	avatar.update_transform()
 	SSjob.equip_rank(avatar,JOB_VR, 1, FALSE)
-	om_grant(avatar, GRANT_VERB, /mob/living/carbon/human/proc/fake_exit_vr, avatar)
-	om_grant(avatar, GRANT_VERB, /mob/living/carbon/human/proc/vr_transform_into_mob, avatar)
-	om_grant(avatar, GRANT_VERB, /mob/living/proc/set_size, avatar)
+	grant(avatar, granted_verb(/mob/living/carbon/human/proc/fake_exit_vr), avatar)
+	grant(avatar, granted_verb(/mob/living/carbon/human/proc/vr_transform_into_mob), avatar)
+	grant(avatar, granted_verb(/mob/living/proc/set_size), avatar)
 	avatar.set_virtual_reality_mob(TRUE)
 	log_and_message_admins("[key_name_admin(avatar)] joined virtual reality from the ghost menu.")
 

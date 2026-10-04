@@ -75,7 +75,7 @@ CAPABILITIES(/obj/item/nif)
 	screen_icon.alpha = HUD.ui_alpha
 	user.client?.screen += screen_icon
 
-	om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/nif_menu, src)
+	grant(user, granted_verb(/mob/living/carbon/human/proc/nif_menu), src)
 
 /datum/nif_menu/proc/nif_menu_click(datum/act/notice/A)
 	EVENT_HANDLER

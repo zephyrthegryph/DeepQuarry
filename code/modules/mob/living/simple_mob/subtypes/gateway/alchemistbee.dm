@@ -50,8 +50,9 @@
 	vore_icons = null
 
 //bluenom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vr/alchemistbee/Login()
 	. = ..()

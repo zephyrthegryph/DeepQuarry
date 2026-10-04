@@ -41,8 +41,9 @@
 	vore_active = 1
 	vore_icons = SA_ICON_LIVING
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sheep, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sheep, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/sheep)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/sheep/Login()
 	. = ..()

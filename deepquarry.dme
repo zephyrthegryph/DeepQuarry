@@ -5738,6 +5738,7 @@
 #include "code\engine\stats\status.dm"
 #include "code\engine\stats\vars_write.dm"
 #include "code\engine\present\examine.dm"
+#include "code\engine\present\verbs.dm"
 #include "code\engine\present\look.dm"
 #include "code\library\reagents\reagent_flow.dm"
 #include "code\library\reagents\reagent_container.dm"

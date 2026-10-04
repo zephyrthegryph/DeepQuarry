@@ -77,9 +77,6 @@
 	if(antag && mind)
 		GLOB.borers.add_antagonist(mind)
 
-DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
-
 /mob/living/simple_mob/animal/borer/Initialize(mapload)
 	add_language("Cortical Link")
 	motiontracker_subscribe()
@@ -250,9 +247,9 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	controlling = FALSE
 
 	host.remove_language("Cortical Link")
-	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/release_control, src)
-	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/punish_host, src)
-	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/spawn_larvae, src)
+	revoke(host, granted_verb(/mob/living/carbon/proc/release_control), src)
+	revoke(host, granted_verb(/mob/living/carbon/proc/punish_host), src)
+	revoke(host, granted_verb(/mob/living/carbon/proc/spawn_larvae), src)
 
 	// This entire section is awful and a relic of ancient times. It needs to be replaced
 	if(host_brain)

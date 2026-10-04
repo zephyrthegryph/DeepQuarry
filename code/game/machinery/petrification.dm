@@ -131,7 +131,7 @@ CAPABILITIES(/obj/machinery/petrification)
 	G.was_rayed = TRUE
 
 	if (can_unpetrify)
-		om_grant(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, G)
+		grant(statue, granted_verb(/mob/living/carbon/human/proc/gargoyle_transformation), G)
 		comp?.cooldown = 0
 	else
 		// A permanent statue: the structure hides the gargoyle verbs for as long as it stands, whoever grants them.

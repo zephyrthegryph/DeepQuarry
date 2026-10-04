@@ -26,11 +26,11 @@
 
 /datum/trait/positive/superpower_remoteview/apply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/remoteobserve, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/remoteobserve), src)
 
 /datum/trait/positive/superpower_remoteview/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/remoteobserve, src)
+	revoke(H, granted_verb(/mob/living/carbon/human/proc/remoteobserve), src)
 
 /datum/trait/positive/superpower_regenerate
 	name = "Regenerate"
@@ -62,11 +62,11 @@
 
 /datum/trait/positive/superpower_remotetalk/apply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/remotesay, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/remotesay), src)
 
 /datum/trait/positive/superpower_remotetalk/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/remotesay, src)
+	revoke(H, granted_verb(/mob/living/carbon/human/proc/remotesay), src)
 
 /datum/trait/positive/superpower_noprints
 	name = "No Prints"
@@ -174,11 +174,11 @@
 
 /datum/trait/positive/superpower_morph/apply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/shapeshfit_form, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/shapeshfit_form), src)
 
 /datum/trait/positive/superpower_morph/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/shapeshfit_form, src)
+	revoke(H, granted_verb(/mob/living/carbon/human/proc/shapeshfit_form), src)
 
 /mob/living/carbon/human/proc/shapeshfit_form()
 	set name = "Transform Shape"

@@ -12,9 +12,9 @@
 	if (!isliving(owner))
 		return FALSE
 
-	om_grant(owner, GRANT_VERB, /mob/living/proc/weaver_control_panel, src)
+	grant(owner, granted_verb(/mob/living/proc/weaver_control_panel), src)
 	if(ishuman(owner))
-		om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/enter_cocoon, src)
+		grant(owner, granted_verb(/mob/living/carbon/human/proc/enter_cocoon), src)
 	return TRUE
 
 	//Processing
@@ -25,9 +25,9 @@
 
 /// The owner loses the weaver verbs.
 /datum/trait_state/weaver/detach()
-	om_revoke(owner, GRANT_VERB, /mob/living/proc/weaver_control_panel, src)
+	revoke(owner, granted_verb(/mob/living/proc/weaver_control_panel), src)
 	if(ishuman(owner))
-		om_revoke(owner, GRANT_VERB, /mob/living/carbon/human/proc/enter_cocoon, src)
+		revoke(owner, granted_verb(/mob/living/carbon/human/proc/enter_cocoon), src)
 	..()
 
 /datum/trait_state/weaver/proc/process_weaver_silk()

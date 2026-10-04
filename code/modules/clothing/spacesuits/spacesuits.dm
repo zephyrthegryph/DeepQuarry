@@ -33,10 +33,9 @@
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
 	owns_one(nameof(camera), /obj/machinery/camera)
+	verb_entry(/obj/item/clothing/head/helmet/space/proc/toggle_camera, when = nameof(camera_networks))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
-
-DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/helmet/space/proc/toggle_camera, "camera_networks")
 
 /obj/item/clothing/head/helmet/space/Initialize(mapload)
 	. = ..()

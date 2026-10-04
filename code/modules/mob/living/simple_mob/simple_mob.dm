@@ -178,14 +178,19 @@ CAPABILITIES(/mob/living/simple_mob)
 	owns_one(nameof(mob_radio), /obj/item/radio/headset)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(synthetic_emp_surge)))
 	on_notice(/datum/notice/hit, then(PROC_REF(thrown_reaction_sound)))
+	verb_entry(/mob/verb/observe, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/animal_nom, when = nameof(vore_active)) // useable before the vorgans initialise
+	verb_entry(/mob/living/proc/shred_limb, when = nameof(vore_active))
+	verb_entry(/mob/living/simple_mob/proc/nutrition_heal)
+	verb_entry(/mob/living/simple_mob/proc/use_headset) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/use_pda) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/pick_size, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/set_name, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/set_desc, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/set_gender, login = TRUE)
 
 // Verbs every simple mob has, or doesn't, by what it is (code/datums/om/grant_verbs.dm).
-DECLARE_VERB_HIDE(/mob/living/simple_mob, /mob/verb/observe)
-DECLARE_VERB_IF(/mob/living/simple_mob, /mob/living/simple_mob/proc/animal_nom, "vore_active") // useable before the vorgans initialise
-DECLARE_VERB_IF(/mob/living/simple_mob, /mob/living/proc/shred_limb, "vore_active")
-DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/nutrition_heal)
-DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_headset) // TGPanel
-DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_pda) // TGPanel
 
 /mob/living/simple_mob/Initialize(mapload)
 	// Per-subtype constant tables: share one list across every instance of
@@ -217,7 +222,7 @@ DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_pda) // TGP
 		organ_names = GET_DECL(organ_names)
 
 	if(CONFIG_GET(flag/allow_simple_mob_recolor))
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, verb_source(VERB_SOURCE_CONFIG))
+		grant(src, granted_verb(/mob/living/simple_mob/proc/ColorMate), verb_source(VERB_SOURCE_CONFIG))
 
 	enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
 
@@ -232,8 +237,6 @@ DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_pda) // TGP
 	..()
 
 //Client attached
-DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_size)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_color)
 
 /mob/living/simple_mob/Login()
 	. = ..()
@@ -241,7 +244,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	if(vore_active && !voremob_loaded)
 		init_vore(TRUE)
 	if(hasthermals)
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/hunting_vision, src) //So that maint preds can see prey through walls, to make it easier to find them.
+		grant(src, granted_verb(/mob/living/simple_mob/proc/hunting_vision), src) //So that maint preds can see prey through walls, to make it easier to find them.
 
 /mob/living/simple_mob/proc/pick_size()
 	set name = "Pick Size"
@@ -690,14 +693,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 
 	// Since they have bellies, add verbs to toggle settings on them.
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/toggle_digestion, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/toggle_fancygurgle, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/vertical_nom, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_nom, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/nutrition_heal, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/eat_trash, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
+	grant(src, granted_verb(/mob/living/simple_mob/proc/toggle_digestion), src)
+	grant(src, granted_verb(/mob/living/simple_mob/proc/toggle_fancygurgle), src)
+	grant(src, granted_verb(/mob/living/proc/vertical_nom), src)
+	grant(src, granted_verb(/mob/living/simple_mob/proc/animal_nom), src)
+	grant(src, granted_verb(/mob/living/proc/shred_limb), src)
+	grant(src, granted_verb(/mob/living/simple_mob/proc/nutrition_heal), src)
+	grant(src, granted_verb(/mob/living/proc/eat_trash), src)
+	grant(src, granted_verb(/mob/living/proc/toggle_trash_catching), src)
 
 	if(LAZYLEN(vore_organs))
 		return

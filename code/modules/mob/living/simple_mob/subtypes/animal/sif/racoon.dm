@@ -134,8 +134,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(
 		I.appearance_flags = RESET_COLOR
 		. += I
 
-DECLARE_VERB(/mob/living/simple_mob/animal/sif/sakimm, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/sif/sakimm, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/sif/sakimm/Initialize(mapload)
 	. = ..()

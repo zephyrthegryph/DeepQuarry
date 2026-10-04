@@ -17,7 +17,8 @@
 	/// The predator had no mind: this back seat is kept even while empty.
 	var/was_mob
 
-DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resist_control)
+CAPABILITIES(/mob/living/dominated_brain)
+	verb_entry(/mob/living/dominated_brain/proc/resist_control)
 
 /mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
 	prey_name = preyname
@@ -122,7 +123,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 		prey_goes_here.real_name = src.prey_name
 		src.languages -= src.temp_languages
 		prey_goes_here.languages |= src.prey_langs
-		om_grant(prey_goes_here, GRANT_VERB, /mob/living/dominated_brain/proc/cease_this_foolishness, prey_goes_here)
+		grant(prey_goes_here, granted_verb(/mob/living/dominated_brain/proc/cease_this_foolishness), prey_goes_here)
 
 	else		//The prey body does not exist, let's put them in the back seat instead!
 		var/mob/living/dominated_brain/ndb = new /mob/living/dominated_brain(pred_body, pred_body, prey_name)
@@ -138,7 +139,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 	///////////////////
 
 	// Handle Pred
-	om_revoke(pred_body, GRANT_VERB, /mob/proc/release_predator, pred_body)
+	revoke(pred_body, granted_verb(/mob/proc/release_predator), pred_body)
 
 	//Now actually put the people in the mobs. The prey wears its own identity
 	//in a back seat and binds it again in its own body; the predator gets its
@@ -170,7 +171,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 		langlist -= languages
 		for(var/datum/language/L in langlist)
 			if(L.flags & HIVEMIND)
-				om_grant(src, GRANT_VERB, /mob/proc/adjust_hive_range, src)
+				grant(src, granted_verb(/mob/proc/adjust_hive_range), src)
 		LAZYOR(temp_languages, langlist)
 		languages |= langlist
 
@@ -299,7 +300,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 			else
 				continue
 	to_chat(src, span_danger("You haven't been taken over, and shouldn't have this verb. I'll clean that up for you. Report this on the github, it is a bug."))
-	om_revoke(src, GRANT_VERB, /mob/proc/release_predator, src)
+	revoke(src, granted_verb(/mob/proc/release_predator), src)
 
 /mob/living/dominated_brain/proc/resist_control()
 	set category = VERB_CAT_ABILITIES_VORE
@@ -436,7 +437,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 		to_chat(src, span_warning("You can sense your body... but it is not contained within [pred_body]... You cannot return to it at this time."))
 	else
 		to_chat(src, span_warning("Your body seems to no longer exist, so, you cannot return to it."))
-		om_revoke(src, GRANT_VERB, /mob/living/dominated_brain/proc/cease_this_foolishness, src)
+		revoke(src, granted_verb(/mob/living/dominated_brain/proc/cease_this_foolishness), src)
 
 /mob/living/dominated_brain/proc/cease_this_foolishness_dominated_brain_done()
 	if(prey_body && prey_body.loc.loc == pred_body)
@@ -559,7 +560,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 	pred_brain.prey_langs |= preylangs
 	pred_brain.pred_body.absorb_langs()
 
-	om_grant(pred, GRANT_VERB, /mob/proc/release_predator, pred)
+	grant(pred, granted_verb(/mob/proc/release_predator), pred)
 
 	move_player_mind(pred_brain.pred_mind, pred_brain, "pushed back by [prey] ([method])", share = TRUE)
 	move_player_mind(pred_brain.prey_mind, pred, "took control of [pred] ([method])", share = TRUE)
@@ -580,7 +581,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 
 	M.languages -= M.temp_languages
 	db.languages |= M.languages
-	om_grant(db, GRANT_VERB, /mob/living/dominated_brain/proc/cease_this_foolishness, db)
+	grant(db, granted_verb(/mob/living/dominated_brain/proc/cease_this_foolishness), db)
 
 	absorb_langs()
 

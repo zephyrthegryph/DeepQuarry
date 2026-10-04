@@ -233,6 +233,12 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	if(E.kind == ENTRY_ON_CHANGE)
 		. += hook_make(HOOK_CHANGE, null, E, E, C, A, serial)
 		return
+	if(E.kind == ENTRY_VERB)
+		// A type-level verb_entry with a when = re-evaluates when its condition changes (verbs.dm).
+		if(!A && !isnull(E.args["when"]) && !E.args["login"] && !E.args["hidden"])
+			var/datum/entry/verb_hook = verb_entry_hook_entry(E)
+			. += hook_make(HOOK_CHANGE, null, verb_hook, verb_hook, C, A, serial)
+		return
 	if(E.kind == ENTRY_EVERY)
 		// A type-level every() held by its own when = parks while the condition is false; this hook wakes it (every.dm).
 		if(!A && !isnull(E.args["when"]) && !length(C.whens))
@@ -272,7 +278,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	var/list/hooks = list()
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
-		if(!istype(E) || (E.kind != ENTRY_EXTEND && E.kind != ENTRY_ON_NOTICE && E.kind != ENTRY_ON_CHANGE && E.kind != ENTRY_EVERY))
+		if(!istype(E) || (E.kind != ENTRY_EXTEND && E.kind != ENTRY_ON_NOTICE && E.kind != ENTRY_ON_CHANGE && E.kind != ENTRY_EVERY && E.kind != ENTRY_VERB))
 			continue
 		hooks += hooks_from_entry(E, C, null)
 	GLOB.hook_tables[T] = hooks

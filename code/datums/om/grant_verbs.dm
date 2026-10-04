@@ -130,6 +130,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 		var/atom/hider = owner
 		if(hider.refresh_hidden_verbs && (key in hider.refresh_hidden_verbs))
 			return FALSE
+	if(isatom(owner) && verb_entries_want(owner, key) == FALSE)
+		return FALSE // verb_entry(path, hidden = TRUE)
 	var/list/grants = E?.om_rec ? om_value_of(E, GRANT_VERB) : null
 	if(grants?[key] > 0)
 		return TRUE
@@ -151,6 +153,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 		if(ismob(owner) && (key in type_verbs_login(owner)))
 			var/mob/player = owner
 			return !!player.key
+	if(isatom(owner) && verb_entries_want(owner, key))
+		return TRUE // verb_entry(path, ...) of the type (code/engine/present/verbs.dm)
 	if(!decls || !(decls.work & DECL_WORK_VERBS))
 		return FALSE
 	if(decls.verbs_always && (key in decls.verbs_always))
@@ -279,6 +283,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 /// Login: the type's login verbs (type_verb(..., login = TRUE) in type_verbs(), which DECLARE_LOGIN_VERB expands
 /// to; the old declaration-table list while any type still fills it).
 /proc/verb_store_login(mob/M)
+	verb_entries_login(M)
 	if(type_derive_flags(M) & TYPE_DERIVES_TYPE_VERBS)
 		var/list/login = type_verbs_login(M)
 		if(length(login))

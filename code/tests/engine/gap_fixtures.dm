@@ -70,4 +70,43 @@ CAPABILITIES(/obj/gap_every_proc)
 /obj/gap_every_proc/proc/tick(datum/act/timer/A)
 	ticks++
 
+/// A mob with every verb_entry form: always, login, a condition, a hide of a verb its type declares, and verbs for runtime grants.
+/mob/gap_verb_mob
+	name = "gap verb mob"
+	var/flag = FALSE
+
+TRACKED(/mob/gap_verb_mob, flag)
+
+CAPABILITIES(/mob/gap_verb_mob)
+	verb_entry(/mob/gap_verb_mob/proc/gv_always)
+	verb_entry(/mob/gap_verb_mob/proc/gv_login, login = TRUE)
+	verb_entry(/mob/gap_verb_mob/proc/gv_when, when = nameof(flag))
+	verb_entry(/mob/gap_verb_mob/verb/gv_inherited, hidden = TRUE)
+
+/mob/gap_verb_mob/proc/gv_always()
+	set name = "Gap Always"
+	set category = VERB_CAT_ABILITIES
+
+/mob/gap_verb_mob/proc/gv_login()
+	set name = "Gap Login"
+	set category = VERB_CAT_ABILITIES
+
+/mob/gap_verb_mob/proc/gv_when()
+	set name = "Gap When"
+	set category = VERB_CAT_ABILITIES
+
+/mob/gap_verb_mob/verb/gv_inherited()
+	set name = "Gap Inherited"
+	set category = VERB_CAT_ABILITIES
+
+/mob/gap_verb_mob/proc/gv_runtime()
+	set name = "Gap Runtime"
+	set category = VERB_CAT_ABILITIES
+
+/// A capability that carries a verb entry: the verb is there while the capability is granted.
+CAPABILITY_DEF(gap_verb_cap, CAP_GAP_VERB_CAP, key = NONE)
+
+/datum/capability/def/gap_verb_cap/entries()
+	return list(verb_entry(/mob/gap_verb_mob/proc/gv_runtime))
+
 #endif
