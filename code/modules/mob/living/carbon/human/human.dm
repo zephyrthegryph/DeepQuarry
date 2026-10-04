@@ -1395,8 +1395,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	open_request(src, /datum/prompt/choice, PROC_REF(bloody_doodle_direction_chosen), answerer = src, title = "Tile selection", question = "Which way?", choices = list("Here","North","South","East","West"), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// The blood writing's message; carries the direction picked.
-/datum/om/prompt/text/bloody_doodle
+/datum/prompt/text/bloody_doodle
 	title = "Blood writing"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 	var/direction
 
@@ -1426,10 +1427,19 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	if(!bloody_doodle_turf(direction))
 		return
 	var/max_length = bloody_hands * 30 //tweeter style
-	om_ask(src, /datum/om/prompt/text/bloody_doodle, PROC_REF(bloody_doodle_written), message = "Write a message. It cannot be longer than [max_length] characters.", direction = direction)
+	open_request(src, /datum/prompt/text/bloody_doodle, PROC_REF(bloody_doodle_written), answerer = src, question = "Write a message. It cannot be longer than [max_length] characters.", direction = direction)
 
-/mob/living/carbon/human/proc/bloody_doodle_written(datum/om/prompt/text/bloody_doodle/ask)
-	var/message = ask.text
+/mob/living/carbon/human/proc/bloody_doodle_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(bloody_doodle_apply), A)
+	if(!result.ok)
+		stack_trace("blood writing message: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/bloody_doodle_apply(datum/act/request/A)
+	var/datum/prompt/text/bloody_doodle/ask = A.answer
+	var/message = ask.answer_value
 	var/turf/simulated/T = bloody_doodle_turf(ask.direction)
 	if(!T)
 		return
