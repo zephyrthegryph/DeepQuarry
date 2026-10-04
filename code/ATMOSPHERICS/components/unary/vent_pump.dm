@@ -449,21 +449,33 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 		invalidate_gas_dependencies()
 
 /obj/machinery/atmospherics/unary/vent_pump/multitool_act(mob/user, obj/item/W)
+	return vent_config_stage(user, W, list())
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/vent_config_stage(mob/user, obj/item/W, list/config_answers)
 	var/static/list/options = list(
 		"ID Tag", "Frequency", "Direction", "-SAVE TO BUFFER-")
-	var/choice = rerun_ask(user, "k471", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", title = "[src] Config", choices = options)
+	if(!("k471" in config_answers))
+		open_request(src, /datum/prompt/choice/atmos_config_review, PROC_REF(vent_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k471", question = "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", title = "[src] Config", choices = options)
+		return ITEM_INTERACT_BLOCKING
+	var/choice = config_answers["k471"]
 	if(isnull(choice))
 		return ITEM_INTERACT_BLOCKING
 	switch(choice)
 		if("ID Tag")
-			var/new_id = rerun_ask(user, "k474", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "[src] has an ID of \"[id_tag]\". What would you like it to be?", title = "[src] ID", default = id_tag, max_length = 30)
+			if(!("k474" in config_answers))
+				open_request(src, /datum/prompt/text/atmos_config_review, PROC_REF(vent_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k474", question = "[src] has an ID of \"[id_tag]\". What would you like it to be?", title = "[src] ID", default = id_tag, max_len = 30, name_text = TRUE)
+				return ITEM_INTERACT_BLOCKING
+			var/new_id = config_answers["k474"]
 			if(isnull(new_id))
 				return ITEM_INTERACT_BLOCKING
 			if(new_id)
 				id_tag = new_id
 
 		if("Frequency")
-			var/new_frequency = rerun_ask(user, "k479", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "[src] has a frequency of [frequency]. What would you like it to be? Note, 1439 will only hail Air Alarms for this device.", title = "[src] frequency", default = frequency, max = RADIO_HIGH_FREQ, min = RADIO_LOW_FREQ)
+			if(!("k479" in config_answers))
+				open_request(src, /datum/prompt/number/atmos_config_review, PROC_REF(vent_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k479", question = "[src] has a frequency of [frequency]. What would you like it to be? Note, 1439 will only hail Air Alarms for this device.", title = "[src] frequency", default = frequency, config_max = RADIO_HIGH_FREQ, config_min = RADIO_LOW_FREQ)
+				return ITEM_INTERACT_BLOCKING
+			var/new_frequency = config_answers["k479"]
 			if(isnull(new_frequency))
 				return ITEM_INTERACT_BLOCKING
 			if(new_frequency)
@@ -500,3 +512,36 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, pressure_checks, CH
 /obj/machinery/atmospherics/unary/vent_pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(pressure_checks), nameof(welded))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/vent_config_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/list/config_answers
+	var/mob/config_operator
+	var/obj/item/config_tool
+	if(istype(context.answer, /datum/prompt/choice/atmos_config_review))
+		var/datum/prompt/choice/atmos_config_review/choice_request = context.answer
+		config_answers = choice_request.config_answers.Copy()
+		config_answers[choice_request.config_key] = choice_request.answer_value
+		config_operator = choice_request.config_operator
+		config_tool = choice_request.config_tool
+	else if(istype(context.answer, /datum/prompt/text/atmos_config_review))
+		var/datum/prompt/text/atmos_config_review/text_request = context.answer
+		config_answers = text_request.config_answers.Copy()
+		config_answers[text_request.config_key] = text_request.answer_value
+		config_operator = text_request.config_operator
+		config_tool = text_request.config_tool
+	else if(istype(context.answer, /datum/prompt/number/atmos_config_review))
+		var/datum/prompt/number/atmos_config_review/number_request = context.answer
+		config_answers = number_request.config_answers.Copy()
+		config_answers[number_request.config_key] = number_request.answer_value
+		config_operator = number_request.config_operator
+		config_tool = number_request.config_tool
+	else
+		return
+	// Recovery: old kept.finished refreshed the target even if replay failed.
+	var/datum/result/replay = safe_call(PROC_REF(vent_config_stage), config_operator, config_tool, config_answers)
+	if(!replay.ok)
+		stack_trace("Atmos configuration replay: [replay.error]")
+	SStgui.update_uis(src)
+	return replay.value

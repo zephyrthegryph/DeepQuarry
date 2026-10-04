@@ -185,8 +185,14 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 	return TRUE
 
 /obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)
+	return injector_config_stage(user, W, list())
+
+/obj/machinery/atmospherics/unary/outlet_injector/proc/injector_config_stage(mob/user, obj/item/W, list/config_answers)
 	var/static/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
-	var/answer = rerun_ask(user, "k197", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice/alert, message = "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", title = "Options!", choices = options)
+	if(!("k197" in config_answers))
+		open_request(src, /datum/prompt/choice/atmos_config_review, PROC_REF(injector_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k197", question = "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", title = "Options!", choices = options, buttons = TRUE)
+		return ITEM_INTERACT_BLOCKING
+	var/answer = config_answers["k197"]
 	if(isnull(answer))
 		return ITEM_INTERACT_BLOCKING
 	if(!answer || answer == "Cancel" || !Adjacent(user))
@@ -194,7 +200,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 
 	switch(answer)
 		if("Frequency")
-			var/new_frequency = rerun_ask(user, "k203", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "[src] has a frequency of [frequency]. What would you like it to be?", title = "[src] frequency", default = frequency, max = RADIO_HIGH_FREQ, min = RADIO_LOW_FREQ)
+			if(!("k203" in config_answers))
+				open_request(src, /datum/prompt/number/atmos_config_review, PROC_REF(injector_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k203", question = "[src] has a frequency of [frequency]. What would you like it to be?", title = "[src] frequency", default = frequency, config_max = RADIO_HIGH_FREQ, config_min = RADIO_LOW_FREQ)
+				return ITEM_INTERACT_BLOCKING
+			var/new_frequency = config_answers["k203"]
 			if(isnull(new_frequency))
 				return ITEM_INTERACT_BLOCKING
 			if(new_frequency)
@@ -203,7 +212,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 				to_chat(user, span_notice("You set the [src]'s frequency to [frequency]."))
 
 		if("ID Tag")
-			var/_answer_k210 = rerun_ask(user, "k210", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "Please insert an ID tag for [src], example 'exhaust_port'.", title = "Set ID Tag", default = id, max_length = MAX_NAME_LEN)
+			if(!("k210" in config_answers))
+				open_request(src, /datum/prompt/text/atmos_config_review, PROC_REF(injector_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k210", question = "Please insert an ID tag for [src], example 'exhaust_port'.", title = "Set ID Tag", default = id, max_len = MAX_NAME_LEN, name_text = TRUE)
+				return ITEM_INTERACT_BLOCKING
+			var/_answer_k210 = config_answers["k210"]
 			if(isnull(_answer_k210))
 				return ITEM_INTERACT_BLOCKING
 			id = _answer_k210
@@ -235,3 +247,140 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 	to_chat(user, span_notice("You have set \the [src] to [volume_rate]"))
 	update_icon()
 
+
+/obj/machinery/atmospherics/unary/outlet_injector/proc/injector_config_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/list/config_answers
+	var/mob/config_operator
+	var/obj/item/config_tool
+	if(istype(context.answer, /datum/prompt/choice/atmos_config_review))
+		var/datum/prompt/choice/atmos_config_review/choice_request = context.answer
+		config_answers = choice_request.config_answers.Copy()
+		config_answers[choice_request.config_key] = choice_request.answer_value
+		config_operator = choice_request.config_operator
+		config_tool = choice_request.config_tool
+	else if(istype(context.answer, /datum/prompt/text/atmos_config_review))
+		var/datum/prompt/text/atmos_config_review/text_request = context.answer
+		config_answers = text_request.config_answers.Copy()
+		config_answers[text_request.config_key] = text_request.answer_value
+		config_operator = text_request.config_operator
+		config_tool = text_request.config_tool
+	else if(istype(context.answer, /datum/prompt/number/atmos_config_review))
+		var/datum/prompt/number/atmos_config_review/number_request = context.answer
+		config_answers = number_request.config_answers.Copy()
+		config_answers[number_request.config_key] = number_request.answer_value
+		config_operator = number_request.config_operator
+		config_tool = number_request.config_tool
+	else
+		return
+	// Recovery: old kept.finished refreshed the target even if replay failed.
+	var/datum/result/replay = safe_call(PROC_REF(injector_config_stage), config_operator, config_tool, config_answers)
+	if(!replay.ok)
+		stack_trace("Atmos configuration replay: [replay.error]")
+	SStgui.update_uis(src)
+	return replay.value
+
+/datum/prompt/choice/atmos_config_review
+	timeout = 0
+	var/list/config_answers
+	var/config_key
+	var/config_port
+	var/mob/config_operator
+	var/config_operator_expected = FALSE
+	var/obj/item/config_tool
+	var/config_tool_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/atmos_config_review)
+	ref_one(nameof(config_operator), /mob)
+	ref_one(nameof(config_tool), /obj/item)
+
+/datum/prompt/choice/atmos_config_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = config_operator
+	config_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(config_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(config_operator), captured_operator)
+	var/obj/item/captured_tool = config_tool
+	config_tool_expected = !isnull(captured_tool)
+	rel_clear(src, nameof(config_tool))
+	if(captured_tool && !QDELETED(captured_tool))
+		rel_set(src, nameof(config_tool), captured_tool)
+
+/datum/prompt/choice/atmos_config_review/recheck_extra()
+	if((config_operator_expected && QDELETED(config_operator)) || (config_tool_expected && QDELETED(config_tool)))
+		return "gone"
+
+/datum/prompt/text/atmos_config_review
+	timeout = 0
+	var/list/config_answers
+	var/config_key
+	var/config_port
+	var/mob/config_operator
+	var/config_operator_expected = FALSE
+	var/obj/item/config_tool
+	var/config_tool_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/atmos_config_review)
+	ref_one(nameof(config_operator), /mob)
+	ref_one(nameof(config_tool), /obj/item)
+
+/datum/prompt/text/atmos_config_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = config_operator
+	config_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(config_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(config_operator), captured_operator)
+	var/obj/item/captured_tool = config_tool
+	config_tool_expected = !isnull(captured_tool)
+	rel_clear(src, nameof(config_tool))
+	if(captured_tool && !QDELETED(captured_tool))
+		rel_set(src, nameof(config_tool), captured_tool)
+
+/datum/prompt/text/atmos_config_review/recheck_extra()
+	if((config_operator_expected && QDELETED(config_operator)) || (config_tool_expected && QDELETED(config_tool)))
+		return "gone"
+
+/datum/prompt/number/atmos_config_review
+	timeout = 0
+	var/list/config_answers
+	var/config_key
+	var/config_port
+	var/mob/config_operator
+	var/config_operator_expected = FALSE
+	var/obj/item/config_tool
+	var/config_tool_expected = FALSE
+	var/config_max = INFINITY
+	var/config_min = 0
+
+CAPABILITIES(/datum/prompt/number/atmos_config_review)
+	ref_one(nameof(config_operator), /mob)
+	ref_one(nameof(config_tool), /obj/item)
+
+/datum/prompt/number/atmos_config_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = config_operator
+	config_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(config_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(config_operator), captured_operator)
+	var/obj/item/captured_tool = config_tool
+	config_tool_expected = !isnull(captured_tool)
+	rel_clear(src, nameof(config_tool))
+	if(captured_tool && !QDELETED(captured_tool))
+		rel_set(src, nameof(config_tool), captured_tool)
+
+/datum/prompt/number/atmos_config_review/recheck_extra()
+	if((config_operator_expected && QDELETED(config_operator)) || (config_tool_expected && QDELETED(config_tool)))
+		return "gone"
+
+/datum/prompt/number/atmos_config_review/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default || 0, config_max, config_min, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/text/atmos_config_review/normalize(given)
+	return strip_name_tokens(given)

@@ -270,6 +270,9 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
 	update_ports()
 
 /obj/machinery/atmospherics/omni/mixer/proc/change_concentration(port = NORTH, mob/user)
+	return mixer_concentration_stage(port, user, list())
+
+/obj/machinery/atmospherics/omni/mixer/proc/mixer_concentration_stage(port, mob/user, list/config_answers)
 	tag_north_con = null
 	tag_south_con = null
 	tag_east_con = null
@@ -290,7 +293,10 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
 	if(non_locked < 1)
 		return
 
-	var/_answer_k321 = rerun_ask(user, "k321", PROC_REF(change_concentration), args, /datum/om/prompt/number, message = "Enter a new concentration (0-[round(remain_con * 100, 0.5)])%", title = "Concentration control", default = min(remain_con, old_con)*100, max = round(remain_con * 100, 0.5))
+	if(!("k321" in config_answers))
+		open_request(src, /datum/prompt/number/atmos_config_review, PROC_REF(mixer_concentration_answered), answerer = user, config_operator = user, config_port = port, config_answers = config_answers, config_key = "k321", question = "Enter a new concentration (0-[round(remain_con * 100, 0.5)])%", title = "Concentration control", default = min(remain_con, old_con)*100, config_max = round(remain_con * 100, 0.5))
+		return
+	var/_answer_k321 = config_answers["k321"]
 	if(isnull(_answer_k321))
 		return
 	var/new_con = (_answer_k321) / 100
@@ -321,3 +327,16 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
 CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	ref_one(nameof(output))
 	ref_many(nameof(inputs))
+
+/obj/machinery/atmospherics/omni/mixer/proc/mixer_concentration_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/atmos_config_review/ask = context.answer
+	var/list/config_answers = ask.config_answers.Copy()
+	config_answers[ask.config_key] = ask.answer_value
+	// Recovery: old kept.finished refreshed the target even if replay failed.
+	var/datum/result/replay = safe_call(PROC_REF(mixer_concentration_stage), ask.config_port, ask.config_operator, config_answers)
+	if(!replay.ok)
+		stack_trace("Atmos configuration replay: [replay.error]")
+	SStgui.update_uis(src)
+	return replay.value
