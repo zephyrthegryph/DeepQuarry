@@ -42,7 +42,7 @@
 			L.updateOverlays(src.loc)
 	if(istype(loc, /turf/simulated/open))
 		var/turf/simulated/open/O = loc
-		after(O, 1, TYPE_PROC_REF(/turf/simulated/open, update)) // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
+		after(O, 0.1 SECONDS, TYPE_PROC_REF(/turf/simulated/open, update)) // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
 	..()
 
 /obj/structure/lattice/declare_interactions(list/into)

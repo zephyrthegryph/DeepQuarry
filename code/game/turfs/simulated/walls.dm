@@ -343,7 +343,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/burn(temperature)
 	if(material.combustion_effect(src, temperature, 0.7))
-		after(src, 2, PROC_REF(burn_collapse), with = list(temperature, girder_material.name))
+		after(src, 0.2 SECONDS, PROC_REF(burn_collapse), with = list(temperature, girder_material.name))
 
 /turf/simulated/wall/proc/burn_collapse(temperature, girder_mat_name)
 	new /obj/structure/girder(src, girder_mat_name)

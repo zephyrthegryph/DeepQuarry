@@ -363,8 +363,8 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_after_drift(smoke, direction, steps, 10)
-	after(src, steps * 10 + smoke.time_to_live*0.75+rand(10,30), PROC_REF(expire_smoke), with = list(smoke))
+	om_after_drift(smoke, direction, steps, 1 SECOND)
+	after(src, steps * 1 SECOND + smoke.time_to_live*0.75+rand(1 SECOND, 3 SECONDS), PROC_REF(expire_smoke), with = list(smoke))
 
 /datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
 	if(smoke)
@@ -639,8 +639,8 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_after_drift(confetti, direction, steps, 10)
-	after(src, steps * 10 + confetti.time_to_live*0.75+rand(10,30), PROC_REF(expire_confetti), with = list(confetti))
+	om_after_drift(confetti, direction, steps, 1 SECOND)
+	after(src, steps * 1 SECOND + confetti.time_to_live*0.75+rand(1 SECOND, 3 SECONDS), PROC_REF(expire_confetti), with = list(confetti))
 
 /datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)
 	if(confetti)

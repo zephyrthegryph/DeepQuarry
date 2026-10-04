@@ -79,7 +79,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("You short out [src]'s plant identifier circuits."))
-		after(src, rand(30, 50), PROC_REF(emag_takes))
+		after(src, rand(3 SECONDS, 5 SECONDS), PROC_REF(emag_takes))
 		return 1
 
 /mob/living/bot/farmbot/proc/ui_act_power(datum/act/op/A)

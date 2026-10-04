@@ -835,7 +835,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return
 
 	if(plane == PLANE_WORLD)
-		COOLDOWN_START(src, invisible_toggle_cooldown, 600)
+		COOLDOWN_START(src, invisible_toggle_cooldown, 60 SECONDS)
 		act_message(src, null, MSG_SELF(span_info("You are now invisible.")), MSG_OTHERS(span_emote("It fades from sight...")))
 	else
 		to_chat(src, span_info("You are now visible!"))
