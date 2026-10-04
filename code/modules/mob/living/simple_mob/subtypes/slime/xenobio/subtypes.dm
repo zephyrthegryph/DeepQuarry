@@ -189,12 +189,13 @@
 		target_turf.hotspot_expose(1500+T0C, 400)
 	qdel(src)
 
-DAMAGE_REACTION(/mob/living/simple_mob/slime/xenobio/dark_purple, DAMAGE_EXPLOSION, PROC_REF(blast_ignite))
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
 
-/mob/living/simple_mob/slime/xenobio/dark_purple/proc/blast_ignite(datum/damage_packet/packet)
+/mob/living/simple_mob/slime/xenobio/dark_purple/proc/blast_ignite(datum/act/A)
 	log_and_message_admins("ignited due to a chain reaction with an explosion.", src)
 	ignite()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/bullet_act(obj/item/projectile/P, def_zone)
 	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
@@ -681,12 +682,13 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 
 	return ..()
 
-DAMAGE_REACTION(/mob/living/simple_mob/slime/xenobio/oil, DAMAGE_EXPLOSION, PROC_REF(blast_explode))
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_explode))))
 
-/mob/living/simple_mob/slime/xenobio/oil/proc/blast_explode(datum/damage_packet/packet)
+/mob/living/simple_mob/slime/xenobio/oil/proc/blast_explode(datum/act/A)
 	log_and_message_admins("exploded due to a chain reaction with another explosion.", src)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/oil/bullet_act(obj/item/projectile/P, def_zone)
 	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.

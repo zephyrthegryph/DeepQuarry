@@ -52,6 +52,7 @@ CAPABILITIES(/obj/item/robot_module)
 	owns_many(nameof(emag))
 	owns_many(nameof(modules))
 	owns_many(nameof(synths), /datum/matter_synth)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_synths)))
 
 /obj/item/robot_module/proc/hide_on_manifest()
 	. = hide_on_manifest
@@ -126,11 +127,10 @@ CAPABILITIES(/obj/item/robot_module)
 /// Module items are pulsed once by content recursion: stowed ones inside the
 /// module, equipped ones inside the robot. Only the matter synths (datums)
 /// need pulsing here.
-DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
-
-/obj/item/robot_module/proc/emp_synths(datum/damage_packet/packet)
+/obj/item/robot_module/proc/emp_synths(datum/act/A)
+	var/datum/notice/hit/emp/N = A
 	for(var/datum/matter_synth/S in synths)
-		S.emp_act(packet.severity)
+		S.emp_act(N.packet.severity)
 
 /obj/item/robot_module/proc/respawn_consumable(mob/living/silicon/robot/R, rate)
 	SHOULD_CALL_PARENT(TRUE)

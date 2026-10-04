@@ -175,6 +175,8 @@
 CAPABILITIES(/mob/living/simple_mob)
 	owns_one(nameof(myid), /obj/item/card/id)
 	owns_one(nameof(mob_radio), /obj/item/radio/headset)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(synthetic_emp_surge)))
+	on_notice(/datum/notice/hit, then(PROC_REF(thrown_reaction_sound)))
 
 // Verbs every simple mob has, or doesn't, by what it is (code/datums/om/grant_verbs.dm).
 DECLARE_VERB_HIDE(/mob/living/simple_mob, /mob/verb/observe)

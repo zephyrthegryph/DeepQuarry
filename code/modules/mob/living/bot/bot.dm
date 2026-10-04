@@ -48,6 +48,10 @@
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 	allow_mind_transfer = TRUE
 
+/// Whoever presses a button of the bot's window leaves their prints on it.
+/mob/living/bot/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+
 /mob/living/bot/Initialize(mapload)
 	. = ..()
 
@@ -623,6 +627,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 CAPABILITIES(/mob/living/bot)
 	owns_one(nameof(botcard), starts = /obj/item/card/id)
 	owns_one(nameof(access_scanner), starts = /obj)
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
 
 /mob/living/bot/ownership()
 	. = ..()

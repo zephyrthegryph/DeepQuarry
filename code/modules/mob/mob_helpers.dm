@@ -50,6 +50,10 @@
 /mob/proc/break_cloak()
 	return
 
+/// A round hit the mob: a cloak it wears breaks (the hit notice's handler of every cloaked mob type).
+/mob/proc/hit_breaks_cloak(datum/act/A)
+	break_cloak()
+
 /mob/proc/is_cloaked()
 	return FALSE
 

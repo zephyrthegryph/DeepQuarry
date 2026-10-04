@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 		L.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
 
 /datum/body_effect/robot_cloak/proc/damage_inflicted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/source = A.target
 	var/datum/notice/mob_apply_damage/event = A
 	var/damage = event.damage
@@ -177,7 +177,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	after(L, 0.5 SECONDS, GLOBAL_PROC_REF(robot_cloak_remove_wibble), with = list(L, FALSE))
 
 /datum/body_effect/robot_cloak/proc/attacked_in_cloak(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/source = N.target
 	if(!source.get_filter("wibbly-[1]")) //We're not wibbled at the moment.
 		var/alpha_to_show = CLAMP((source.alpha+(rand(50,200))), source.alpha, 255) //Become more visible by a significant margin, randomly.

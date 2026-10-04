@@ -72,95 +72,106 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	load(C)
 	return TRUE
 
-DECLARE_UI(/mob/living/bot/mulebot, "MuleBot")
+// The hand entry above opens the controls, so the window's own open op answers the menu and a remote user only.
+CAPABILITIES(/mob/living/bot/mulebot)
+	interface("MuleBot", input = menu())
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("stop", ui_act("stop"), then(PROC_REF(ui_act_stop)))
+	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
+	op("home", ui_act("home"), then(PROC_REF(ui_act_home)))
+	op("destination", ui_act("destination"), then(PROC_REF(ui_act_destination)))
+	op("sethome", ui_act("sethome"), then(PROC_REF(ui_act_sethome)))
+	op("unload", ui_act("unload"), then(PROC_REF(ui_act_unload)))
+	op("autoret", ui_act("autoret"), then(PROC_REF(ui_act_autoret)))
+	op("cargotypes", ui_act("cargotypes"), then(PROC_REF(ui_act_cargotypes)))
+	op("safety", ui_act("safety"), then(PROC_REF(ui_act_safety)))
 
 /mob/living/bot/mulebot/ui_title(mob/user)
 	return "Mulebot [suffix ? "([suffix])" : ""]"
 
-UI_DATA(/mob/living/bot/mulebot, "suffix", "power=on:num", "load:num", "locked:num", "auto_return:num", "crates_only:num", "hatch=open:num", "safety:num", "merge:ui_data_mob_living_bot_mulebot{issillicon:num}")
-
-/// The computed part of /mob/living/bot/mulebot's window data (declared on its UI_DATA row).
-/mob/living/bot/mulebot/proc/ui_data_mob_living_bot_mulebot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state and settings, and whether a silicon is looking.
+/mob/living/bot/mulebot/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["issillicon"] = issilicon(user)
+	data["suffix"] = suffix
+	data["power"] = on
+	data["load"] = load
+	data["locked"] = locked
+	data["auto_return"] = auto_return
+	data["crates_only"] = crates_only
+	data["hatch"] = open
+	data["safety"] = safety
+	data["issillicon"] = issilicon(A.actor)
 	return data
 
-/mob/living/bot/mulebot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/mulebot, "power", ui_act_power)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_power)
+/mob/living/bot/mulebot/proc/ui_act_power(datum/act/op/A)
 	if(on)
 		turn_off()
 	else
 		turn_on()
-	act_message(src, null, others = "[ui.user] switches [on ? "on" : "off"] %U%.")
+	act_message(src, null, others = "[A.actor] switches [on ? "on" : "off"] %U%.")
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "stop", ui_act_stop)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_stop)
-	obeyCommand(ui.user, "Stop")
+/mob/living/bot/mulebot/proc/ui_act_stop(datum/act/op/A)
+	obeyCommand(A.actor, "Stop")
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "go", ui_act_go)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_go)
-	obeyCommand(ui.user, "GoTD")
+/mob/living/bot/mulebot/proc/ui_act_go(datum/act/op/A)
+	obeyCommand(A.actor, "GoTD")
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "home", ui_act_home)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_home)
-	obeyCommand(ui.user, "Home")
+/mob/living/bot/mulebot/proc/ui_act_home(datum/act/op/A)
+	obeyCommand(A.actor, "Home")
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "destination", ui_act_destination)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_destination)
-	obeyCommand(ui.user, "SetD")
+/mob/living/bot/mulebot/proc/ui_act_destination(datum/act/op/A)
+	obeyCommand(A.actor, "SetD")
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "sethome", ui_act_sethome)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_sethome)
+/mob/living/bot/mulebot/proc/ui_act_sethome(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/beaconlist = GetBeaconList()
 	if(beaconlist.len)
-		om_ask(ui.user, /datum/om/prompt/choice/mulebot_beacon, PROC_REF(home_tag_chosen), message = "Select new home tag", choices = beaconlist)
+		open_request(src, /datum/prompt/choice, PROC_REF(home_tag_chosen), answerer = user, valid = PROC_REF(beacon_prompt_usable), title = beacon_prompt_title(), question = "Select new home tag", choices = beaconlist, timeout = 0)
 	else
-		tgui_alert_async(ui.user, "No destination beacons available.")
+		tgui_alert_async(user, "No destination beacons available.")
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "unload", ui_act_unload)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_unload)
+/mob/living/bot/mulebot/proc/ui_act_unload(datum/act/op/A)
 	unload()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "autoret", ui_act_autoret)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_autoret)
+/mob/living/bot/mulebot/proc/ui_act_autoret(datum/act/op/A)
 	auto_return = !auto_return
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "cargotypes", ui_act_cargotypes)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_cargotypes)
+/mob/living/bot/mulebot/proc/ui_act_cargotypes(datum/act/op/A)
 	crates_only = !crates_only
 	. = TRUE
 
-UI_ACT(/mob/living/bot/mulebot, "safety", ui_act_safety)
-UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
+/mob/living/bot/mulebot/proc/ui_act_safety(datum/act/op/A)
 	safety = !safety
 	. = TRUE
 
-/// Picking a beacon for the mulebot (the subject). Re-checked on the answer: its UI is still usable.
-/datum/om/prompt/choice/mulebot_beacon
-	requires = PROMPT_USABLE
+/// The title of a beacon question: the bot's own.
+/mob/living/bot/mulebot/proc/beacon_prompt_title()
+	return "Mulebot [suffix ? "([suffix])" : ""]"
 
-/datum/om/prompt/choice/mulebot_beacon/prepare()
-	var/mob/living/bot/mulebot/bot = subject
-	title = "Mulebot [bot.suffix ? "([bot.suffix])" : ""]"
-	return TRUE
+/// Re-checked on the answer of a beacon question: the asker can still work the bot's window.
+/mob/living/bot/mulebot/proc/beacon_prompt_usable(datum/request/R)
+	return GLOB.tgui_default_state.can_use_topic(src, R.answerer) >= STATUS_INTERACTIVE
 
-/mob/living/bot/mulebot/proc/home_tag_chosen(datum/om/prompt/choice/mulebot_beacon/ask)
-	rel_set(src, nameof(home), get_turf(ask.choices[ask.choice]))
-	homeName = ask.choice
+/// The beacon a beacon question's answer names, or null when it is gone.
+/mob/living/bot/mulebot/proc/beacon_of_answer(datum/act/request/A)
+	if(!A.answer)
+		return null
+	return GetBeaconList()[A.answer.answer_value]
+
+/mob/living/bot/mulebot/proc/home_tag_chosen(datum/act/request/A)
+	var/obj/machinery/navbeacon/beacon = beacon_of_answer(A)
+	if(!beacon)
+		return
+	rel_set(src, nameof(home), get_turf(beacon))
+	homeName = A.answer.answer_value
 
 /// Old attackby: the bot's item handling (old ..()), then an icon refresh. A FALSE result still reaches the attack.
 /mob/living/bot/mulebot/proc/mulebot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -182,7 +193,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 		if("SetD")
 			var/list/beaconlist = GetBeaconList()
 			if(beaconlist.len)
-				om_ask(user, /datum/om/prompt/choice/mulebot_beacon, PROC_REF(destination_tag_chosen), message = "Select new destination tag", choices = beaconlist)
+				open_request(src, /datum/prompt/choice, PROC_REF(destination_tag_chosen), answerer = user, valid = PROC_REF(beacon_prompt_usable), title = beacon_prompt_title(), question = "Select new destination tag", choices = beaconlist, timeout = 0)
 			else
 				tgui_alert_async(user, "No destination beacons available.")
 		if("GoTD")
@@ -190,10 +201,13 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 		if("Stop")
 			paused = 1
 
-/mob/living/bot/mulebot/proc/destination_tag_chosen(datum/om/prompt/choice/mulebot_beacon/ask)
+/mob/living/bot/mulebot/proc/destination_tag_chosen(datum/act/request/A)
+	var/obj/machinery/navbeacon/beacon = beacon_of_answer(A)
+	if(!beacon)
+		return
 	resetTarget()
-	rel_set(src, nameof(target), get_turf(ask.choices[ask.choice]))
-	targetName = ask.choice
+	rel_set(src, nameof(target), get_turf(beacon))
+	targetName = A.answer.answer_value
 
 /mob/living/bot/mulebot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	locked = !locked

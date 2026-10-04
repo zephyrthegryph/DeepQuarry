@@ -361,11 +361,12 @@
 		kaboom()
 	return ..()
 
-DAMAGE_REACTION(/mob/living/simple_mob/animal/space/carp/puffer, DAMAGE_EXPLOSION, PROC_REF(blast_kaboom)) // explode? YOU BETTER BELIEVE THAT'S AN EXPLODE
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_kaboom)))) // explode? YOU BETTER BELIEVE THAT'S AN EXPLODE
 
-/mob/living/simple_mob/animal/space/carp/puffer/proc/blast_kaboom(datum/damage_packet/packet)
+/mob/living/simple_mob/animal/space/carp/puffer/proc/blast_kaboom(datum/act/A)
 	kaboom()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 
 // === merged from carp_vr.dm during hard-fork de-suffix (verified no override-order change) ===

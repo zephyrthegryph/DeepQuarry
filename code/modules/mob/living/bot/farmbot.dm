@@ -30,14 +30,21 @@
 	W.forceMove(src)
 	own_move(W, src, nameof(tank)) // handed over from the arm assembly, when built from one
 
-DECLARE_UI(/mob/living/bot/farmbot, "Farmbot")
+// The controls open on a touch in help intent (the hand op below), so the window's own open op answers the menu and a remote user only.
+CAPABILITIES(/mob/living/bot/farmbot)
+	interface("Farmbot", input = menu())
+	op("touch", hand(), stance(I_HELP), label("Open controls"), then(PROC_REF(farmbot_touched)))
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("water", ui_act("water"), then(PROC_REF(ui_act_water)))
+	op("refill", ui_act("refill"), then(PROC_REF(ui_act_refill)))
+	op("weed", ui_act("weed"), then(PROC_REF(ui_act_weed)))
+	op("replacenutri", ui_act("replacenutri"), then(PROC_REF(ui_act_replacenutri)))
 
-UI_DATA(/mob/living/bot/farmbot, "on:num", "locked:num", "merge:ui_data_mob_living_bot_farmbot{tank:bool,tankVolume:num,tankMaxVolume:num,waters_trays:num,refills_water:num,uproots_weeds:num,replaces_nutriment:num,collects_produce:num,removes_dead:num}")
-
-/// The computed part of /mob/living/bot/farmbot's window data (declared on its UI_DATA row).
-/mob/living/bot/farmbot/proc/ui_data_mob_living_bot_farmbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state, its tank, and the settings while the panel is unlocked.
+/mob/living/bot/farmbot/ui_data(datum/act/eval/A)
 	var/list/data = list()
-
+	data["on"] = on
+	data["locked"] = locked
 	data["tank"] = !!tank
 	if(tank)
 		data["tankVolume"] = tank.reagents.total_volume
@@ -61,13 +68,11 @@ UI_DATA(/mob/living/bot/farmbot, "on:num", "locked:num", "merge:ui_data_mob_livi
 	return data
 
 
-EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open controls", PROC_REF(farmbot_interaction_hand)))
-
-/// Old attack_hand, in help (other stances fall to the living defaults): the help touch first (old ..()); if that did nothing, open the controls.
-/mob/living/bot/farmbot/proc/farmbot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// A touch in help intent (other stances fall to the living defaults): the help touch first; if that did nothing, open the controls.
+/mob/living/bot/farmbot/proc/farmbot_touched(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!unarmed_touch(user, I_HELP))
 		tgui_interact(user)
-	return TRUE
 
 /mob/living/bot/farmbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
@@ -77,15 +82,8 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 		after(src, rand(30, 50), PROC_REF(emag_takes))
 		return 1
 
-/mob/living/bot/farmbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/farmbot, "power", ui_act_power)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_power)
-	if(!access_scanner.allowed(ui.user))
+/mob/living/bot/farmbot/proc/ui_act_power(datum/act/op/A)
+	if(!access_scanner.allowed(A.actor))
 		return FALSE
 	if(on)
 		turn_off()
@@ -93,29 +91,25 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_power)
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/farmbot, "water", ui_act_water)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_water)
+/mob/living/bot/farmbot/proc/ui_act_water(datum/act/op/A)
 	if(locked)
 		return TRUE
 	waters_trays = !waters_trays
 	. = TRUE
 
-UI_ACT(/mob/living/bot/farmbot, "refill", ui_act_refill)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_refill)
+/mob/living/bot/farmbot/proc/ui_act_refill(datum/act/op/A)
 	if(locked)
 		return TRUE
 	refills_water = !refills_water
 	. = TRUE
 
-UI_ACT(/mob/living/bot/farmbot, "weed", ui_act_weed)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_weed)
+/mob/living/bot/farmbot/proc/ui_act_weed(datum/act/op/A)
 	if(locked)
 		return TRUE
 	uproots_weeds = !uproots_weeds
 	. = TRUE
 
-UI_ACT(/mob/living/bot/farmbot, "replacenutri", ui_act_replacenutri)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
+/mob/living/bot/farmbot/proc/ui_act_replacenutri(datum/act/op/A)
 	if(locked)
 		return TRUE
 	replaces_nutriment = !replaces_nutriment

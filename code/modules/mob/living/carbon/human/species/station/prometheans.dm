@@ -264,7 +264,7 @@
 	still = TRUE
 
 /datum/trait_state/promethean_biology/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = A.target
 	restart_stillness()
 	if(isturf(source.loc))
@@ -302,7 +302,7 @@
 
 /// Whatever a bare-handed promethean picks up gets cleaned too.
 /datum/trait_state/promethean_biology/proc/on_equipped(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = A.target
 	var/datum/notice/mob_equipped_item/event = A
 	var/obj/item/equipped_item = event.equipped_item

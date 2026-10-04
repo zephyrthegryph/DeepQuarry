@@ -1053,9 +1053,10 @@ GLOBAL_LIST_INIT(common_tools, list(
 
 //Returns 1 if the given item is capable of popping things like balloons, inflatable barriers, or cutting police tape.
 /proc/can_puncture(obj/item/W as obj)		// For the record, WHAT THE HELL IS THIS METHOD OF DOING IT?
+	READS_FROM(W)
 	if(!W)
 		return FALSE
-	if(W.sharp)
+	if(W.sharp) // ALLOW(reads): a helper a balloon condition asks about the held thing; the click asks again
 		return TRUE
 	return ( \
 		W.has_tool_quality(TOOL_SCREWDRIVER)		     				              || \

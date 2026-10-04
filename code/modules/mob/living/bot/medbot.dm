@@ -8,12 +8,6 @@
 #define MEDBOT_PANIC_ENDING	90
 #define MEDBOT_PANIC_END	100
 
-#define MEDBOT_MIN_INJECTION 5
-#define MEDBOT_MAX_INJECTION 15
-/// Urgency ranks (_dq_band_rank) the treatment threshold can be set to.
-#define MEDBOT_MIN_URGENCY 1
-#define MEDBOT_MAX_URGENCY 4
-
 /mob/living/bot/medbot
 	name = "Medibot"
 	desc = "A little medical robot. He looks somewhat underwhelmed."
@@ -237,11 +231,24 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 /mob/living/bot/medbot/proc/attack_hand_medbot_done2(mob/living/carbon/human/H)
 	set_right(H)
 
-UI_DATA(/mob/living/bot/medbot, "on:num", "open:num", "locked:num", "merge:ui_data_mob_living_bot_medbot{beaker:bool,beaker_total:num,beaker_max:num,min_urgency:num,urgency_bands:list,injection_amount_min:num,injection_amount:num,injection_amount_max:num,use_beaker:num,declare_treatment:num,vocal:num}")
+// The hand ops above open the controls (or tip the bot), so the window's own open op answers the menu and a remote user only.
+CAPABILITIES(/mob/living/bot/medbot)
+	interface("Medbot", input = menu())
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("adj_urgency", ui_act("adj_urgency", arg("val", num())), then(PROC_REF(ui_act_adj_urgency)))
+	op("adj_inject", ui_act("adj_inject", arg("val", num(MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION))), then(PROC_REF(ui_act_adj_inject)))
+	op("use_beaker", ui_act("use_beaker"), then(PROC_REF(ui_act_use_beaker)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("togglevoice", ui_act("togglevoice"), then(PROC_REF(ui_act_togglevoice)))
+	op("declaretreatment", ui_act("declaretreatment"), then(PROC_REF(ui_act_declaretreatment)))
 
-/// The computed part of /mob/living/bot/medbot's window data (declared on its UI_DATA row).
-/mob/living/bot/medbot/proc/ui_data_mob_living_bot_medbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state, the beaker, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
+/mob/living/bot/medbot/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
 	data["beaker"] = FALSE
 	if(reagent_glass)
 		data["beaker"] = TRUE
@@ -263,8 +270,6 @@ UI_DATA(/mob/living/bot/medbot, "on:num", "open:num", "locked:num", "merge:ui_da
 		data["vocal"] = vocal
 	return data
 
-DECLARE_UI(/mob/living/bot/medbot, "Medbot")
-
 /// Old attackby: load a beaker; anything else falls to the bot's item handling.
 /mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 
@@ -273,71 +278,58 @@ DECLARE_UI(/mob/living/bot/medbot, "Medbot")
 	to_chat(user, span_notice("You insert [O]."))
 	return TRUE
 
-/mob/living/bot/medbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/medbot, "power", ui_act_power)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_power)
+/mob/living/bot/medbot/proc/ui_act_power(datum/act/op/A)
 	. = TRUE
-	if(!access_scanner.allowed(ui.user))
+	if(!access_scanner.allowed(A.actor))
 		return FALSE
 	if(on)
 		turn_off()
 	else
 		turn_on()
 
-UI_ACT(/mob/living/bot/medbot, "adj_urgency", ui_act_adj_urgency, UI_ARG_NUM("val"))
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_adj_urgency)
+/mob/living/bot/medbot/proc/ui_act_adj_urgency(datum/act/op/A, val)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
+	if(locked && !issilicon(A.actor))
 		return TRUE
-	var/rank = params["val"]
+	var/rank = val
 	if(isnull(rank))
 		return FALSE
 	min_urgency = clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY)
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "adj_inject", ui_act_adj_inject, UI_ARG_NUM("val", MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION))
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_adj_inject)
+/mob/living/bot/medbot/proc/ui_act_adj_inject(datum/act/op/A, val)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
+	if(locked && !issilicon(A.actor))
 		return TRUE
-	injection_amount = params["val"]
+	injection_amount = val
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "use_beaker", ui_act_use_beaker)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_use_beaker)
+/mob/living/bot/medbot/proc/ui_act_use_beaker(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	use_beaker = !use_beaker
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "eject", ui_act_eject)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_eject)
+/mob/living/bot/medbot/proc/ui_act_eject(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	if(reagent_glass)
 		reagent_glass.forceMove(get_turf(src))
 		own_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "togglevoice", ui_act_togglevoice)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_togglevoice)
+/mob/living/bot/medbot/proc/ui_act_togglevoice(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	vocal = !vocal
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "declaretreatment", ui_act_declaretreatment)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
+/mob/living/bot/medbot/proc/ui_act_declaretreatment(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
+	if(locked && !issilicon(A.actor))
 		return TRUE
 	declare_treatment = !declare_treatment
 	. = TRUE
@@ -573,11 +565,6 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 #undef MEDBOT_PANIC_FUCK
 #undef MEDBOT_PANIC_ENDING
 #undef MEDBOT_PANIC_END
-
-#undef MEDBOT_MIN_INJECTION
-#undef MEDBOT_MAX_INJECTION
-#undef MEDBOT_MIN_URGENCY
-#undef MEDBOT_MAX_URGENCY
 
 /mob/living/bot/medbot/ownership()
 	. = ..()

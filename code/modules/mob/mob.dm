@@ -115,13 +115,14 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 // used for petrification machines
 /proc/get_ultimate_mob(atom/source)
+	READS_FROM(source)
 	var/mob/ultimate_mob
-	var/atom/to_check = source.loc
+	var/atom/to_check = source.loc // ALLOW(reads): a helper a use condition asks about where the thing is held; the click asks again
 	var/n = 0
 	while (to_check && !isturf(to_check) && n++ < 16)
 		if (ismob(to_check))
 			ultimate_mob = to_check
-			to_check = to_check.loc
+			to_check = to_check.loc // ALLOW(reads): a helper a use condition asks about where the thing is held; the click asks again
 	return ultimate_mob
 
 // Show a message to all mobs and objects in earshot of this one

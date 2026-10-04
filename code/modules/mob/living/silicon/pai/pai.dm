@@ -110,6 +110,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	owns_one(nameof(communicator), starts = /obj/item/communicator/integrated)
 	owns_one(nameof(pai_ui_chassis), starts = /datum/tgui_module/pai_chassis)
 	owns_one(nameof(pda), starts = /obj/item/pda/ai/pai)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_scramble)))
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
@@ -451,7 +452,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 /// Something's probably attacking us! The more damage it is doing, the more
 /// likely it is to damage something important in the card.
 /mob/living/silicon/pai/proc/on_injured(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_injured/event = A
 	var/kind = event.kind
 	var/amount = event.applied
@@ -466,10 +467,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 		return 0
 	..()
 
-DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
-
-/mob/living/silicon/pai/proc/emp_scramble(datum/damage_packet/packet)
-	var/severity = packet.severity
+/mob/living/silicon/pai/proc/emp_scramble(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/severity = N.packet.severity
 	// Silence for 2 minutes
 	// 20% chance to damage critical components
 	// 50% chance to damage a non critical component

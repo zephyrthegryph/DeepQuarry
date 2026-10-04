@@ -352,3 +352,14 @@ Pinned by `code/modules/unit_tests/dq_hc_computers_*.dm` (written against the le
 * **Prisoner management "warn"** asks its text with `asks(/datum/prompt/text)`; the fingerprints are left when the effect runs (after the answer), not when the button is pressed.
 * **Robotics "hackbot"** asks "Really hack this cyborg?" with `asks(/datum/prompt/yes_no)` after the requirement (the console shows the cyborg, the operator may hack) holds; the cyborg's name is no longer in the question (a field cannot read the op's argument), and a console the operator may not hack with now says "You cannot hack that." where it did nothing. The hack is re-checked when the answer arrives.
 * **TimeClock window: the on-duty payload keys are `rank` and `assignment`** (they were `switch-to-onduty-rank` and `switch-to-onduty-assignment`): the TypeScript generator does not quote a hyphenated argument name. `TimeClock.tsx` is changed to send them; the PDA timeclock app (a separate host) is unchanged.
+
+## Hand-converted items (code/game/objects/items)
+
+Pinned by `code/modules/unit_tests/dq_hc_items_behaviour.dm` (written and green on the legacy code first, except where a line below says otherwise). Gun boxes also by `interim_gunbox_lifecycle.dm`, whose prompt step now goes through the click and the answer.
+
+* **Gun boxes are one op.** The base box's `open` op asks for the kit with a choice prompt; the five variants no longer replace the op, they override `kit_options()`, `kit_question()`, `kit_title()` and `kit_greeting()`. The `variant_gunbox` var and the `/datum/om/prompt/choice/gunbox` kind are gone. A cancelled question keeps the box (as before).
+* **Geiger counter.** The alt-click reset on a counter that is off is refused with the reason "It must be on to reset its radiation level." (the old text, now a message). The wall counter's empty-hand and silicon toggles are one `inputs(hand(), remote())` op. `scanning` and `last_perceived_radiation_danger` are tracked and the look is a `draw()`: the icon follows them after the next frame rather than inside the call that changed them.
+* **Latex balloon.** The blast and projectile reactions are hooks on `/datum/act/hit/explosion` and `/datum/act/hit/projectile` (a blast bursts it and still lands, a round bursts it and is taken over); a pointed held thing bursts it through an op that passes the click on to the ordinary attack.
+* **Petrifier.** The refusal "the device beeps but does nothing" is a message of the op's requirement.
+* **Shooting target.** Taking a pinned target off its stake is an op of an empty hand, only a candidate while a stake near it holds it pinned (so a free target is picked up like any item). Written after the conversion: `target_pinned_is_taken_off_stake` was not run on the legacy code; it follows the legacy handler line by line.
+* `can_puncture()` and `get_ultimate_mob()` carry `READS_FROM` so a condition may call them.

@@ -446,9 +446,10 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 	special_attack_max_range = 15
 	special_attack_cooldown = 7 SECONDS
 
-DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, PROC_REF(shed_critter))
+CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shed_critter)))
 
-/mob/living/simple_mob/vore/candy/ouroboros/proc/shed_critter(datum/damage_packet/packet)
+/mob/living/simple_mob/vore/candy/ouroboros/proc/shed_critter(datum/act/A)
 	if(prob(50))
 		new /obj/random/mob/candycritter (src.loc)
 

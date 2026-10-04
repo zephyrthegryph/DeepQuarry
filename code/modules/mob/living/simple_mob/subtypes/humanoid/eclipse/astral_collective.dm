@@ -370,9 +370,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/body/dagge
 		teleport_attack(src)
 	return FALSE
 
-DAMAGE_REACTION(/mob/living/simple_mob/humanoid/astral_collective/body/dagger, DAMAGE_PROJECTILE, PROC_REF(blink_when_shot))
+CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/body/dagger)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(blink_when_shot)))
 
-/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/blink_when_shot(datum/damage_packet/packet)
+/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/blink_when_shot(datum/act/A)
 	if(prob(50))
 		teleport_attack(src)
 

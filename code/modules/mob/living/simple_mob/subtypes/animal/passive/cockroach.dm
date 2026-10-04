@@ -76,7 +76,8 @@
 			else
 				act_message(src, null, null, MSG_OTHERS(span_notice("%U% avoids getting crushed.")))
 
-DAMAGE_REACTION(/mob/living/simple_mob/animal/passive/cockroach, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_block)) // Explosions are a terrible way to handle a cockroach.
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cockroach)
+	extend(/datum/act/hit/explosion, instead()) // Explosions are a terrible way to handle a cockroach.
 
 //Custom stain so it's not "spiderling remains"
 /obj/effect/decal/cleanable/bug_remains

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Mob and creature damage reactions (EMP, blast, projectile and thrown hits) are now declared as hit hooks and notices instead of DAMAGE_REACTION rows."
+  - code_imp: "Mob event handlers keep their no-sleep check as SHOULD_NOT_SLEEP(TRUE) instead of the EVENT_HANDLER macro."

@@ -180,6 +180,7 @@
 #include "code\__defines\matrices.dm"
 #include "code\__defines\kernel_timing.dm"
 #include "code\__defines\mecha.dm"
+#include "code\__defines\medbot.dm"
 #include "code\__defines\medigun.dm"
 #include "code\__defines\messages.dm"
 #include "code\__defines\misc.dm"

@@ -214,9 +214,10 @@
 	endurance = 1200
 	special_attack_cooldown = 3 SECONDS
 
-DAMAGE_REACTION(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime, DAMAGE_PROJECTILE, PROC_REF(spawn_antlings))
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(spawn_antlings)))
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/proc/spawn_antlings(datum/damage_packet/packet)
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/proc/spawn_antlings(datum/act/A)
 	for(var/i =1 to 4)
 		new /obj/effect/spider/spiderling/antling/created(src.loc)
 

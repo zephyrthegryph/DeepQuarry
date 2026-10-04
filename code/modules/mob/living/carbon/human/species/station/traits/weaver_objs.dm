@@ -7,7 +7,13 @@
 	anchored = TRUE
 	density = FALSE
 
-DAMAGE_REACTION(/obj/effect/weaversilk, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_qdel))
+CAPABILITIES(/obj/effect/weaversilk)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
+
+/// Any blast destroys the silk outright.
+/obj/effect/weaversilk/proc/blasted_away(datum/act/A)
+	qdel(src) // ALLOW(lifecycle): a blast destroys the silk outright, there is nothing to hand its contents to
+	return TRUE
 
 EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	INTERACT_ITEM(null, PROC_REF(interaction_hit_weaversilk)), \

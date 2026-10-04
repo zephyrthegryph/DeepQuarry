@@ -25,6 +25,7 @@ CAPABILITIES(/obj/item/mmi)
 	ref_one(nameof(mecha)) // the mech we are installed in
 	owns_one(nameof(body_backup), /mob/living)
 	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_interference)))
 
 /obj/item/mmi/Initialize(mapload)
 	. = ..()
@@ -186,13 +187,12 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	name = "radio-enabled man-machine interface"
 	desc = "The Warrior's bland acronym, MMI, obscures the true horror of this monstrosity. This one comes with a built-in radio. Wait, don't they all?"
 
-DAMAGE_REACTION(/obj/item/mmi, DAMAGE_EMP, PROC_REF(emp_interference))
-
-/obj/item/mmi/proc/emp_interference(datum/damage_packet/packet)
+/obj/item/mmi/proc/emp_interference(datum/act/A)
+	var/datum/notice/hit/emp/N = A
 	var/mob/living/carbon/brain/occupant = get_occupant()
 	if(!occupant)
 		return
-	switch(packet.severity)
+	switch(N.packet.severity)
 		if(EMP_HEAVY)
 			occupant.emp_damage += rand(20,30)
 		if(EMP_MEDIUM)
@@ -282,7 +282,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	Q.query()
 
 /obj/item/mmi/digital/proc/get_winner(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(Q && Q.candidates.len) //Q should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = Q.candidates[1]
 		transfer_personality(D)

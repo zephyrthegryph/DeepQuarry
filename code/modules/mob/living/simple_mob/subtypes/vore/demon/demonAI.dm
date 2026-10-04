@@ -159,10 +159,11 @@
 	return ..()
 
 // Force uncloaking if attacked.
-DAMAGE_REACTION(/mob/living/simple_mob/vore/demonAI, DAMAGE_PROJECTILE, PROC_REF(laugh_at_hit))
-DAMAGE_REACTION_AFTER(/mob/living/simple_mob/vore/demonAI, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
+CAPABILITIES(/mob/living/simple_mob/vore/demonAI)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
-/mob/living/simple_mob/vore/demonAI/proc/laugh_at_hit(datum/damage_packet/packet)
+/mob/living/simple_mob/vore/demonAI/proc/laugh_at_hit(datum/act/A)
 	play_sfx(src, SFX_MISC_DEMONLAUGH)
 
 /mob/living/simple_mob/vore/demonAI/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)

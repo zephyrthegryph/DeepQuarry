@@ -762,7 +762,7 @@ EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripp
 	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
 /obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == R || old_loc == R.module)
