@@ -16,7 +16,7 @@
 	smoke.attach(src)
 
 CAPABILITIES(/obj/item/grenade/smokebomb)
-	owns_one(nameof(smoke), starts = /datum/effect/effect/system/smoke_spread/bad)
+	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad, starts = /datum/effect/effect/system/smoke_spread/bad)
 
 /obj/item/grenade/smokebomb/detonate()
 	start_effect_sprayer(smoke, smoke_strength, 'sound/effects/smoke.ogg', smoke_color)

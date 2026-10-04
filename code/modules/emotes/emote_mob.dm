@@ -116,7 +116,8 @@
 	use_emote.do_emote(src, message)
 	for (var/obj/item/implant/I in contents_of(src))
 		if (I.implanted)
-			I.trigger(act, src)
+			// Preserve the initiating classification across emote effect callbacks.
+			I.trigger(act, src, involuntary ? null : src)
 
 #undef EMOTE_REFRESH_SPAM_COOLDOWN
 

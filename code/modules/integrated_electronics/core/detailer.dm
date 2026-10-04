@@ -51,11 +51,9 @@ UI_ACT_PROC(/obj/item/integrated_electronics/detailer, ui_act_change_color)
 	return TRUE
 
 CAPABILITIES(/obj/item/integrated_electronics/detailer)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("controls", in_hand(), label("Open assembly detailer"), then(PROC_REF(detailer_controls_requested)))
 
-/// Old attack_self.
-/obj/item/integrated_electronics/detailer/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
-	return TRUE
+/obj/item/integrated_electronics/detailer/proc/detailer_controls_requested(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 

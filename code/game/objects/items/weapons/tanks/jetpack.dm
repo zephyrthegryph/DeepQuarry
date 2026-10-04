@@ -29,7 +29,7 @@
 	ion_trail.set_up(src)
 
 CAPABILITIES(/obj/item/tank/jetpack)
-	owns_one(nameof(ion_trail), starts = /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/tank/jetpack/examine(mob/user)
 	. = ..()

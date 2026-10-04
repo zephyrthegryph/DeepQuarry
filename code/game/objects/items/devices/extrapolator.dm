@@ -38,8 +38,8 @@
 	refresh_parts()
 
 CAPABILITIES(/obj/item/extrapolator)
+	op("mode", in_hand(), label("Toggle extrapolator mode"), then(PROC_REF(extrapolator_mode_selected)))
 	op("item", item(/obj/item/stock_parts/scanning_module), label("Install"), then(PROC_REF(interaction_item)))
-	op("self", in_hand(), label("Toggle mode"), then(PROC_REF(interaction_self)))
 
 /obj/item/extrapolator/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/item/extrapolator)
 	playsound(src, tool.usesound, 50, 1)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/extrapolator/proc/interaction_self(datum/act/op/A)
+/obj/item/extrapolator/proc/extrapolator_mode_selected(datum/act/op/A)
 	var/mob/user = A.actor
 	play_sfx(src, SFX_MACHINES_CLICK)
 	if(scan)
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/item/extrapolator)
 		icon_state = "extrapolator_scan"
 		scan = TRUE
 		to_chat(user, span_notice("You put the probe back into the device and set it to SCAN."))
-	return TRUE
+	return OP_OK
 
 /obj/item/extrapolator/examine(mob/user)
 	. = ..()

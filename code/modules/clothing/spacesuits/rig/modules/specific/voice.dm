@@ -26,12 +26,12 @@ CAPABILITIES(/obj/item/rig_module/voice)
 	..()
 	rel_set(holder, nameof(holder.speech), src)
 
-/obj/item/rig_module/voice/engage()
+/obj/item/rig_module/voice/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0
 
-	om_ask(usr, /datum/om/prompt/choice/rig_voice, PROC_REF(voice_choice_made))
+	om_ask(user, /datum/om/prompt/choice/rig_voice, PROC_REF(voice_choice_made))
 	return 1
 
 /// Toggling the voice synthesiser or naming it. Re-checked on the answer: conscious, and still

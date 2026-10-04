@@ -608,29 +608,41 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
 	cell = PP_FUNCTIONAL
 /obj/item/paicard/proc/attackby_timed_done3(obj/item/I, mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
+	var/part_name = "\the [I]"
+	if(!consume(I, user))
+		return
+	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
 	processor = PP_FUNCTIONAL
-	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done4(obj/item/I, mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
+	var/part_name = "\the [I]"
+	if(!consume(I, user))
+		return
+	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
 	board = PP_FUNCTIONAL
-	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done5(obj/item/I, mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
+	var/part_name = "\the [I]"
+	if(!consume(I, user))
+		return
+	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
 	capacitor = PP_FUNCTIONAL
-	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done6(obj/item/I, mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
+	var/part_name = "\the [I]"
+	if(!consume(I, user))
+		return
+	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
 	projector = PP_FUNCTIONAL
-	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done7(obj/item/I, mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
+	var/part_name = "\the [I]"
+	if(!consume(I, user))
+		return
+	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
 	emitter = PP_FUNCTIONAL
-	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done8(obj/item/I, mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
+	var/part_name = "\the [I]"
+	if(!consume(I, user))
+		return
+	act_message(user, src, MSG_SELF(span_notice("You install [part_name] into %T%.")), MSG_OTHERS(span_notice("%U% installs [part_name] into %T%.")))
 	speech_synthesizer = PP_FUNCTIONAL
-	consume(I, user)
 
 DECLARE_INTERACTIONS(/obj/item/paicard, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \

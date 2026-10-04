@@ -395,8 +395,8 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	if(!A)
 		return
 	A.examine_icon_snapshot = I
-	if(expiry)
-		om_after_unique(A, expiry, TYPE_PROC_REF(/atom, uncache_examine_icon))
+	if(expiry && !after_pending(A, "examine_icon_expiry"))
+		after(A, expiry, TYPE_PROC_REF(/atom, uncache_examine_icon), key = "examine_icon_expiry")
 
 /proc/get_cached_examine_icon(atom/A)
 	return A?.examine_icon_snapshot

@@ -6,49 +6,41 @@
 	w_class = ITEMSIZE_SMALL
 	var/named
 
-DECLARE_INTERACTIONS(/obj/item/text_to_speech, \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/text_to_speech/proc/can_activate)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
+TRACKED(/obj/item/text_to_speech, named)
 
-/// Requirement: the user has to be able to work the device.
-/obj/item/text_to_speech/proc/can_activate(mob/user, atom/target, obj/item/held)
-	if(user.incapacitated(INCAPACITATION_DISABLED))
-		return "you cannot activate the device in your state"
-	return TRUE
+CAPABILITIES(/obj/item/text_to_speech)
+	op("speak", inputs(in_hand(), hand()), answers(INTENT_USE, INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT), label("Speak a message"),
+		needs(carried(), req_capable()), then(PROC_REF(speech_started), early = TRUE),
+		asks(/datum/prompt/text/tts_message, keeps = 0, fields = list("timeout" = 0, "question" = "Choose a message to relay to those around you.", "default" = "")), then(PROC_REF(message_spoken)))
 
-/obj/item/text_to_speech/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/text_to_speech/proc/speech_started(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!named)
 		to_chat(user, "You input your name into the device.")
 		name = "[initial(name)] ([user.real_name])"
 		desc = "[initial(desc)] This one is assigned to [user.real_name]."
-		named = 1
-
+		set_named(TRUE)
 	user.client?.start_thinking()
 	user.client?.start_typing()
-	om_ask(user, /datum/om/prompt/text/tts_message, PROC_REF(message_entered))
+	return OP_OK
 
-/// The message to speak. Re-checked on the answer: the device is still carried. A cancel stops the typing indicator.
-/datum/om/prompt/text/tts_message
-	message = "Choose a message to relay to those around you."
-	default = ""
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/datum/om/prompt/text/tts_message/cancelled()
-	answerer?.client?.stop_thinking()
+/datum/prompt/text/tts_message/refusal(given)
+	if(!istext(given))
+		return "That is not text."
 	return ..()
 
-/obj/item/text_to_speech/proc/message_entered(datum/om/prompt/text/tts_message/ask)
-	var/mob/user = ask.answerer
-	var/message = ask.text
-	user.client?.stop_thinking()
+/// request_end dismisses native prompts on every outcome, including cancellation and timeout.
+/datum/prompt/text/tts_message/dismiss()
+	var/mob/user = answerer
+	user?.client?.stop_thinking()
+	return ..()
 
+/obj/item/text_to_speech/proc/message_spoken(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/text/ask = A.answer
+	var/message = ask.value
 	if(message)
 		audible_message("[icon2html(src, user.client)] \The [src.name] states, \"[message]\"", runemessage = "synthesized speech")
 		if(ismob(loc))
 			loc.runechat_message("\[TTS Voice\] [message]")
-
-/// QOL change: alt-click does the same thing as self-use.
-/obj/item/text_to_speech/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_self(user, held, interaction)
-	return TRUE
+	return OP_OK

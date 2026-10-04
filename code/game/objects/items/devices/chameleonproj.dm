@@ -20,6 +20,7 @@
 
 CAPABILITIES(/obj/item/chameleon)
 	owns_one(nameof(active_dummy), /obj/effect/dummy/chameleon)
+	op("disguise", in_hand(), label("Toggle chameleon disguise"), then(PROC_REF(projector_activation_requested)))
 
 /obj/item/chameleon/dropped(mob/user, equipping, slot)
 	if(equipping)
@@ -32,7 +33,9 @@ CAPABILITIES(/obj/item/chameleon)
 	disrupt()
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
+/obj/item/chameleon/proc/projector_activation_requested(datum/act/op/A)
+	toggle(A.actor)
+	return OP_OK
 
 /obj/item/chameleon/afterattack(atom/target, mob/user, proximity)
 	if(!proximity) return

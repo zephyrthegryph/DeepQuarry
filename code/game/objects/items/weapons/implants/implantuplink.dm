@@ -29,6 +29,6 @@
 	source.mind?.store_memory("Uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.", 0, 0)
 	to_chat(source, "The implanted uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.")
 
-/obj/item/implant/uplink/trigger(emote, mob/source as mob)
-	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
+/obj/item/implant/uplink/trigger(emote, mob/source as mob, mob/actor)
+	if(item_hidden_uplink(src) && actor == source) // Let's not have another people activate our uplink
 		item_hidden_uplink(src).check_trigger(source, emote, activation_emote)

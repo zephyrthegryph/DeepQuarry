@@ -119,7 +119,7 @@
 	return TRUE
 
 /mob/living/carbon/human/proc/bloodsuck_begin(mob/living/carbon/human/B, noise, bleed)
-	COOLDOWN_START(src, last_special, 600)
+	COOLDOWN_START(src, last_special, 60 SECONDS)
 	if(noise)
 		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% moves their head next to %T%'s neck, seemingly looking for something!"))))
 	else
@@ -746,7 +746,7 @@
 
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 50) //No spamming!
+	COOLDOWN_START(src, last_special, 5 SECONDS) //No spamming!
 
 	if(has_body_effect(/datum/body_effect/underwater_stealth))
 		to_chat(src, "You resurface!")
@@ -778,7 +778,7 @@
 
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 50) //No spamming!
+	COOLDOWN_START(src, last_special, 5 SECONDS) //No spamming!
 
 	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
 		to_chat(src, span_notice("You cannot do that while in your current state."))
@@ -869,7 +869,7 @@
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10) //Anti-spam.
+	COOLDOWN_START(src, last_special, 1 SECONDS) //Anti-spam.
 
 	if (!isliving(src))
 		to_chat(src, span_warning("It doesn't work that way."))
@@ -925,7 +925,7 @@
 	//Code to shoot the beam here.
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 	appendage_attack.launch_projectile(target, BP_TORSO, src) //Send it.
-	COOLDOWN_START(src, last_special, 100) //Cooldown for successful strike.
+	COOLDOWN_START(src, last_special, 10 SECONDS) //Cooldown for successful strike.
 
 /obj/item/projectile/beam/appendage //The tongue projecitle.
 	name = "appendage"
@@ -1081,7 +1081,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10) //Anti-spam.
+	COOLDOWN_START(src, last_special, 1 SECONDS) //Anti-spam.
 
 	if (!isliving(src))
 		to_chat(src, span_warning("It doesn't work that way."))
@@ -1156,7 +1156,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10) //Anti-spam.
+	COOLDOWN_START(src, last_special, 1 SECONDS) //Anti-spam.
 
 	var/list/choices = list("Inject")
 
@@ -1334,7 +1334,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		to_chat(C, span_warning("You must have a tighter grip to bite this creature."))
 		return
 
-	COOLDOWN_START(src, last_special, 600)
+	COOLDOWN_START(src, last_special, 60 SECONDS)
 	om_ask(src, /datum/om/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), grab = G, target = T)
 
 /// Re-checked on the answer: conscious, and still holding the target by the neck.
@@ -1440,7 +1440,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 600)
+	COOLDOWN_START(src, last_special, 60 SECONDS)
 	open_request(src, /datum/prompt/choice, PROC_REF(mobegglaying_chosen), answerer = src, title = "Egg Option", question = "What do you want to do?", choices = list("Make a Egg", "lay your Eggs"), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/proc/mobegglaying_chosen(datum/act/request/A)

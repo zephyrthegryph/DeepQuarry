@@ -88,6 +88,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 
 CAPABILITIES(/obj/item/gps)
 	owns_one(nameof(compass), starts = /obj/compass_holder)
+	op("toggle_tracking", hand(), gesture(GESTURE_ALT), needs(req_adjacent()), then(PROC_REF(tracking_toggled)))
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)
@@ -134,9 +135,9 @@ CAPABILITIES(/obj/item/gps)
 			compass.show_waypoint("\ref[gps]")
 	compass.rebuild_overlay_lists(update_compass_icon)
 
-/obj/item/gps/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	toggletracking(user)
-	return TRUE
+/obj/item/gps/proc/tracking_toggled(datum/act/op/A)
+	toggletracking(A.actor)
+	return OP_OK
 
 /obj/item/gps/proc/toggletracking(mob/living/user)
 	if(!istype(user))
@@ -147,9 +148,9 @@ CAPABILITIES(/obj/item/gps)
 
 	toggle_tracking()
 	if(tracking)
-		to_chat(user, "[src] is now tracking, and visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
-	else // purdev Fixed an issue where the if/else argument was written backwards
-		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
+		to_chat(user, "[src] is now tracking, and visible to other GPS devices.")
+	else
+		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.")
 
 /obj/item/gps/proc/toggle_tracking()
 	set_tracking(!tracking)
@@ -182,7 +183,6 @@ DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
 
 DECLARE_INTERACTIONS(/obj/item/gps, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 )
 
 /obj/item/gps/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

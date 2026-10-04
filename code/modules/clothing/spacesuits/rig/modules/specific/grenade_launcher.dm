@@ -36,12 +36,14 @@
 		to_chat(user, span_danger("Another grenade of that type will not fit into the module."))
 		return 0
 
-	to_chat(user, span_boldnotice("You slot \the [input_device] into the suit module."))
-	consume(input_device, user)
+	var/grenade_name = "\the [input_device]"
+	if(!consume(input_device, user))
+		return 0
+	to_chat(user, span_boldnotice("You slot [grenade_name] into the suit module."))
 	accepted_item.charges++
 	return 1
 
-/obj/item/rig_module/grenade_launcher/engage(atom/target)
+/obj/item/rig_module/grenade_launcher/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0

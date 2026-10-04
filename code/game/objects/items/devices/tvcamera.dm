@@ -19,11 +19,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/tvcamera, PERIODIC_SLOW, "showing")
 CAPABILITIES(/obj/item/tvcamera)
 	owns_one(nameof(camera), starts = /obj/machinery/camera/network/thunder)
 	owns_one(nameof(radio), starts = /obj/item/radio)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("EyeBuddy", title = "Eye Buddy")
 	op("set_channel", ui_act("set_channel"), then(PROC_REF(ui_act_set_channel)))
 	op("toggle_video", ui_act("toggle_video"), then(PROC_REF(ui_act_toggle_video)))
 	op("toggle_audio", ui_act("toggle_audio"), then(PROC_REF(ui_act_toggle_audio)))
+	op("controls", in_hand(), label("Open broadcast controls"), then(PROC_REF(broadcast_controls_opened)))
 
 DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 
@@ -46,11 +46,12 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	radio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-/obj/item/tvcamera/proc/interaction_self(datum/act/op/A)
+/obj/item/tvcamera/proc/broadcast_controls_opened(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
 	user.set_machine(src)
 	show_ui(user)
+	return OP_OK
 
 // show_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
@@ -155,6 +156,7 @@ CAPABILITIES(/obj/item/clothing/accessory/bodycam)
 	op("set_channel", ui_act("set_channel"), then(PROC_REF(ui_act_set_channel)))
 	op("toggle_video", ui_act("toggle_video"), then(PROC_REF(ui_act_toggle_video)))
 	op("toggle_audio", ui_act("toggle_audio"), then(PROC_REF(ui_act_toggle_audio)))
+	op("configure_bodycam", in_hand(), then(PROC_REF(configure_bodycam)))
 
 DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)
 
@@ -177,11 +179,11 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	bradio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/obj/item/clothing/accessory/bodycam/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/bodycam/proc/configure_bodycam(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	show_bodycam_ui(user)
+	return OP_OK
 
 // show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 

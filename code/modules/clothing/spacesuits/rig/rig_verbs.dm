@@ -19,9 +19,9 @@
 		return
 
 	if(!visor.active)
-		visor.activate()
+		visor.activate(FALSE, user)
 	else
-		visor.deactivate()
+		visor.deactivate(FALSE, user)
 
 /// Old verb "Toggle Helmet" (offered while the suit has that piece).
 /obj/item/rig/proc/rig_toggle_helmet_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -77,20 +77,20 @@
 		return
 
 	if(!visor.active)
-		visor.activate()
+		visor.activate(FALSE, user)
 
 	if(!visor.active)
 		to_chat(user, span_warning("The visor is suffering a hardware fault and cannot be configured."))
 		return
 
-	visor.engage()
+	visor.engage(null, FALSE, user)
 
 /// Old verb "Configure Voice Synthesiser".
 /obj/item/rig/proc/rig_alter_voice_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(malfunction_check(user))
 		return
 
-	speech.engage()
+	speech.engage(null, FALSE, user)
 
 /// Old verb "Select Module".
 /obj/item/rig/proc/rig_select_module_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -139,10 +139,10 @@
 
 	if(module.active)
 		to_chat(user, span_boldnotice("You attempt to deactivate \the [module.interface_name]."))
-		module.deactivate()
+		module.deactivate(FALSE, user)
 	else
 		to_chat(user, span_boldnotice("You attempt to activate \the [module.interface_name]."))
-		module.activate()
+		module.activate(FALSE, user)
 
 /// Old verb "Engage Module".
 /obj/item/rig/proc/rig_engage_module_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -165,7 +165,7 @@
 		return
 
 	to_chat(user, span_boldnotice("You attempt to engage the [module.interface_name]."))
-	module.engage()
+	module.engage(null, FALSE, user)
 
 /// Requirement: the suit has this piece (replaces adding the toggle verbs when the piece was built).
 /obj/item/rig/proc/pred_has_helmet(mob/actor, atom/target, obj/item/held)

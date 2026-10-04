@@ -233,10 +233,9 @@ DECLARE_INTERACTIONS(/obj/item/spacecasinocash, \
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/casino_platinum_chip)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("flip", in_hand(), label("Flip chip"), then(PROC_REF(platinum_chip_flip_requested)))
 
-/// Old attack_self.
-/obj/item/casino_platinum_chip/proc/interaction_self(datum/act/op/A)
+/obj/item/casino_platinum_chip/proc/platinum_chip_flip_requested(datum/act/op/A)
 	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
@@ -246,7 +245,7 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 		comment = "Joker"
 	act_message(user, src, MSG_SELF(span_notice("You throw %T%. It lands on [comment]! ")), \
 		MSG_OTHERS(span_notice("%U% has thrown %T%. It lands on [comment]! ")))
-	return TRUE
+	return OP_OK
 
 
 //Fake casino chips that can be ordered at any time

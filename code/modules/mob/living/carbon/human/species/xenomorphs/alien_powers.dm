@@ -325,13 +325,13 @@
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	COOLDOWN_START(src, last_special, 75)
+	COOLDOWN_START(src, last_special, 7.5 SECONDS)
 	set_status_flags(status_flags | LEAPING)
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_VOICE_HISS5)
-	after(src, 5, PROC_REF(leap_land), with = list(T))
+	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T))
 
 /mob/living/carbon/human/proc/leap_land(mob/living/T)
 
@@ -383,7 +383,7 @@
 		to_chat(src, span_danger("You must have an aggressive grab to slaughter your prey!"))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	act_message(src, null, others = span_warning(span_bold("%U%") + " rips viciously at \the [G?.grab_target()]'s body with its claws!"))
 

@@ -51,7 +51,7 @@ TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
 
 
 CAPABILITIES(/obj/mecha/combat/fighter)
-	owns_one(nameof(ion_trail), starts = /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 
 /obj/mecha/combat/fighter/Initialize(mapload)
 	. = ..()

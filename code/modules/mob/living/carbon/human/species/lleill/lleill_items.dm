@@ -203,7 +203,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	icon_state = "translator"
 
 /obj/item/universal_translator/glamour/hear_talk(mob/M, list/message_pieces, verb)
-	if(!listening || !istype(M))
+	if(!translation_enabled || !istype(M))
 		return
 
 	//Show the "I heard something" animation.
@@ -504,4 +504,3 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 	if(dq_get_cloaked(src))
 		uncloak()
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " appears as if from thin air."))
-

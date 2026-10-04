@@ -49,7 +49,7 @@
 /obj/item/rig/protean/proc/host_click(mob/living/carbon/human/user, atom/A)
 	if(offline || !selected_module || !ai_can_move_suit(user))
 		return FALSE
-	selected_module.engage(A, FALSE)
+	selected_module.engage(A, FALSE, user)
 	if(ismob(A))
 		user.setClickCooldown(user.get_attack_speed())
 	return TRUE

@@ -3,7 +3,7 @@
 	set category = VERB_CAT_ADMIN_GAME
 	set name = "Set CKey"
 	set desc = "Mob to teleport"
-	if(!src.holder)
+	if(!admin_can(src, 0))
 		to_chat(src, "Only administrators may use this command.")
 		return
 

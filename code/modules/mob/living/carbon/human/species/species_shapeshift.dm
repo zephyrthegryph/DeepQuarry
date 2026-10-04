@@ -80,7 +80,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 10)
+	COOLDOWN_START(src, last_special, 1 SECONDS)
 
 	var/list/valid_hairstyles = list()
 	var/list/valid_facialhairstyles = list()
@@ -182,7 +182,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	open_request(src, /datum/prompt/choice, PROC_REF(shapeshifter_gender_picked), answerer = src, title = "Shapeshifter Gender", question = "Please select a gender.", choices = list(FEMALE, MALE, NEUTER, PLURAL), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
@@ -212,7 +212,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	om_ask(src, /datum/om/prompt/choice/shapeshifter_form, PROC_REF(shapeshifter_shape_chosen), choices = species.get_valid_shapeshifter_forms(src))
 
@@ -249,7 +249,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
@@ -281,7 +281,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	// Each colour applies as soon as it is picked; a cancel stops there.
 	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_hair_color_step), answerer = src, title = "Hair Colour", question = "Please select a new hair color.", ask_flags = ASK_CONSCIOUS, timeout = 0)
@@ -370,7 +370,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	var/current_color = rgb(r_eyes,g_eyes,b_eyes)
 	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_eye_colour_chosen), answerer = src, title = "Eye Color", question = "Pick a new color for your eyes.", default = current_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
@@ -402,7 +402,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 10)
+	COOLDOWN_START(src, last_special, 1 SECONDS)
 	shapeshifter_select_accessory("ears")
 
 // Ears, tail and wings share one flow: a style, up to three colours (the second and third only
@@ -585,7 +585,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 10)
+	COOLDOWN_START(src, last_special, 1 SECONDS)
 	shapeshifter_select_accessory("tail")
 
 /mob/living/carbon/human/proc/shapeshifter_select_wings()
@@ -595,7 +595,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 10)
+	COOLDOWN_START(src, last_special, 1 SECONDS)
 	shapeshifter_select_accessory("wings")
 
 /mob/living/carbon/human/proc/promethean_select_opaqueness()
@@ -606,7 +606,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	for(var/obj/item/organ/external/L as anything in src.organs)
 		L.transparent = !L.transparent
@@ -782,7 +782,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	om_flow_start(/datum/om/flow/shapeshift_reform, src, src, confirm_title = "Reform", confirm_message = "Are you sure you want to reform yourself? This will reset you to what you look like in your current preferences slot.", confirm_yes = "Yes", finish_proc = PROC_REF(shapeshifter_reassemble_answered))
 

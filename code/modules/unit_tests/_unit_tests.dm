@@ -903,6 +903,31 @@
 #include "interim_autopsy_snapshot_ownership.dm"
 #include "interim_living_inventory_drag_actor.dm"
 #include "interim_assembly_holder_sticky_disassembly.dm"
+#include "interim2_space_breach_owned_repair.dm"
+#include "interim2_detached_wound_owned_expiry.dm"
+#include "interim2_macrobattery_empty_projectile_disposal.dm"
+#include "round2_paicard_hardware_repair.dm"
+#include "round2_changeling_id_click_actor.dm"
+#include "interim2_rig_owned_module_teardown.dm"
+#include "round2_modkit_piece_quota.dm"
+#include "round2_spell_button_actor.dm"
+#include "interim2_organ_splint_containment_teardown.dm"
+#include "round2_drill_cell_delivery.dm"
+#include "round2_technomancer_ability_actor.dm"
+#include "round2_rig_grenade_checked_load.dm"
+#include "round2_translator_native_choice.dm"
+#include "round2_camera_board_native.dm"
+#include "round2_folding_blades_native.dm"
+#include "round2_floor_painter_config_native.dm"
+#include "round2_transforming_tools_native.dm"
+#include "round2_towel_native.dm"
+#include "round2_plastique_timer_native.dm"
+#include "round2_shield_recolor_request.dm"
+#include "round2_ai_module_configuration.dm"
+#include "round2_supply_board_native.dm"
+#include "round2_decorative_card_native.dm"
+#include "interim2_caseless_chamber_disposal.dm"
+#include "interim2_weapon_lazy_ammo_appearance.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
@@ -923,6 +948,18 @@
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"
 #endif
+
+#include "interim2_artifact_configured_effect_rejection.dm"
+
+#include "round2_robot_fabricator_consumption.dm"
+
+#include "round2_reactive_shell_core_consumption.dm"
+
+#include "round2_taskmanager_department_native.dm"
+
+#include "round2_eyepatch_native_controls.dm"
+
+#include "round2_rms_material_choice_native.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

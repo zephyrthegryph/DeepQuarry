@@ -37,9 +37,43 @@
 	scan_mob(M, user) //default surgery behaviour is just to scan as usual
 	return 1
 
-/obj/item/healthanalyzer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	scan_mob(M, user)
-	return ITEM_INTERACT_SUCCESS
+TRACKED(/obj/item/healthanalyzer, showadvscan)
+TRACKED(/obj/item/healthanalyzer, guide)
+
+CAPABILITIES(/obj/item/healthanalyzer)
+	held_verb(/obj/item/healthanalyzer/proc/toggle_guidance, SLOT_ANY_CARRIED)
+	op("scan_patient", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan vitals"),
+		needs(req_adjacent(), req(PROC_REF(scanner_dexterity), because = PROC_REF(dexterity_refusal))), then(PROC_REF(patient_scanned)))
+	op("toggle_advanced", menu(), label("Toggle Advanced Scan"), when(PROC_REF(advanced_profile)), needs(carried()), then(PROC_REF(advanced_toggled)))
+	op("toggle_guidance", menu(), label("Toggle Guidance"), needs(carried()), then(PROC_REF(guidance_toggled)))
+
+/// Requirements read current dexterity without the legacy tool-user helper's refusal messages.
+/obj/item/healthanalyzer/proc/scanner_dexterity(datum/act/op/A)
+	if(ishuman(A.actor))
+		var/mob/living/carbon/human/H = A.actor
+		var/datum/xenochimera/state = H.xenochimera
+		return !state?.feral && H.species?.has_fine_manipulation // ALLOW(reads): current dexterity is queried before instant scanning; advisory menu state cannot authorize an effect because the requirement is checked again
+	if(issilicon(A.actor))
+		return TRUE
+	if(istype(A.actor, /mob/living/simple_mob))
+		var/mob/living/simple_mob/S = A.actor
+		return S.has_hands // ALLOW(reads): this simple mob's hand policy is fixed type data, queried before instant scanning rather than used as a cached permission
+	return FALSE
+
+/obj/item/healthanalyzer/proc/dexterity_refusal(datum/act/op/A)
+	return span_warning("You don't have the dexterity to do this!")
+
+/obj/item/healthanalyzer/proc/patient_scanned(datum/act/op/A)
+	scan_mob(A.target, A.actor)
+	return OP_OK
+
+/obj/item/healthanalyzer/proc/advanced_profile(datum/act/op/A)
+	return initial(profile_type) != /datum/diagnostic_profile/health_analyzer
+
+/obj/item/healthanalyzer/proc/advanced_toggled(datum/act/op/A)
+	set_showadvscan(!showadvscan)
+	to_chat(A.actor, "The scanner will now perform [showadvscan ? "an advanced" : "a basic"] analysis.")
+	return OP_OK
 
 /// The profile the next scan uses.
 /obj/item/healthanalyzer/proc/active_profile()
@@ -148,8 +182,7 @@
 	set category = VERB_CAT_OBJECT
 	set src in usr
 
-	showadvscan = !showadvscan
-	to_chat(usr, "The scanner will now perform [showadvscan ? "an advanced" : "a basic"] analysis.")
+	perform_op(usr, src, "toggle_advanced", null, ORIGIN_VERB)
 
 /// Only a scanner better than the basic profile has a basic report to switch to (a per-type fact).
 /obj/item/healthanalyzer/type_verbs()
@@ -174,4 +207,3 @@
 	desc = "Possibly the most advanced health analyzer to ever have existed, utilising bluespace technology to determine almost everything worth knowing about a patient."
 	profile_type = /datum/diagnostic_profile/health_analyzer/phasic
 	icon_state = "health3"
-

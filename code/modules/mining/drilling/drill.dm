@@ -442,10 +442,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 
 /obj/machinery/mining/drill/proc/use_cell_power()
 	if(!cell) return 0
-	if(cell.charge >= charge_use)
-		cell.use(charge_use)
-		return 1
-	return 0
+	return cell.checked_use(charge_use)
 
 /datum/interaction/machine_verb/drill_unload
 	id = "drill_unload"

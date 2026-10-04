@@ -10,9 +10,27 @@
 	var/locked = 1
 	var/emagged = 0
 
-/obj/item/circuitboard/security/Initialize(mapload)
+TRACKED(/obj/item/circuitboard/security, network)
+TRACKED(/obj/item/circuitboard/security, locked)
+TRACKED(/obj/item/circuitboard/security, emagged)
+
+MSG_DEF_SELF(camera_board/broken, "Circuit lock does not respond.")
+MSG_DEF_SELF(camera_board/denied, "Access denied.")
+MSG_DEF_SELF(camera_board/locked, "Circuit controls are locked.")
+MSG_DEF_SELF(camera_board/already, "Circuit lock is already removed.")
+MSG_DEF_SELF(camera_board/emagged, "You override the circuit lock and open controls.")
+
+CAPABILITIES(/obj/item/circuitboard/security)
+	op("lock", item(/obj/item/card/id), needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/broken)), req_credential_in_hand(list(/obj/item/card/id), because = MSG(camera_board/denied))), label("Lock or unlock circuit controls"), then(PROC_REF(lock_toggled)), passes())
+	op("networks", tool(TOOL_MULTITOOL), needs(req_adjacent(), req_is(nameof(locked), FALSE, because = MSG(camera_board/locked))), label("Configure camera networks"), wait(0),
+		asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = computed(PROC_REF(networks_default)))), then(PROC_REF(networks_entered)), passes())
+	emag(then(PROC_REF(on_emag)), say = MSG(camera_board/emagged))
+	extend("emag.use", needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/already))))
+	extend("emag.subvert", needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/already))))
+
+/obj/item/circuitboard/security/on_materialize()
 	. = ..()
-	network = using_map.station_networks
+	set_network(using_map.station_networks)
 
 /obj/item/circuitboard/security/tv
 	name = T_BOARD("security camera monitor - television")
@@ -24,9 +42,9 @@
 	build_path = /obj/machinery/computer/security/engineering
 	req_access = list()
 
-/obj/item/circuitboard/security/engineering/Initialize(mapload)
+/obj/item/circuitboard/security/engineering/on_materialize()
 	. = ..()
-	network = GLOB.engineering_networks
+	set_network(GLOB.engineering_networks)
 
 /obj/item/circuitboard/security/mining
 	name = T_BOARD("mining camera monitor")
@@ -40,9 +58,9 @@ MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/entertainment, list(MAT_
 	build_path = /obj/machinery/computer/security/telescreen/entertainment
 	board_type = new /datum/frame/frame_types/display
 
-/obj/item/circuitboard/security/telescreen/entertainment/Initialize(mapload)
+/obj/item/circuitboard/security/telescreen/entertainment/on_materialize()
 	. = ..()
-	network = list(NETWORK_THUNDER)
+	set_network(list(NETWORK_THUNDER))
 
 MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/bodycamera, list(MAT_STEEL = 50, MAT_GLASS = 50))
 // Bodycam
@@ -51,9 +69,9 @@ MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/bodycamera, list(MAT_STE
 	build_path = /obj/machinery/computer/security/telescreen/bodycamera
 	board_type = new /datum/frame/frame_types/display
 
-/obj/item/circuitboard/security/telescreen/bodycamera/Initialize(mapload)
+/obj/item/circuitboard/security/telescreen/bodycamera/on_materialize()
 	. = ..()
-	network = list(NETWORK_BODYCAM)
+	set_network(list(NETWORK_BODYCAM))
 
 /obj/item/circuitboard/security/construct(obj/machinery/computer/security/C)
 	if (..(C))
@@ -61,53 +79,31 @@ MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/bodycamera, list(MAT_STE
 
 /obj/item/circuitboard/security/atom_deconstruct(disassembled = TRUE, obj/machinery/computer/security/C)
 	if (..(C))
-		network = C.network.Copy()
+		set_network(C.network.Copy())
 
-DECLARE_EMAG(/obj/item/circuitboard/security, PROC_REF(on_emag), null, "Circuit lock is already removed.")
+/obj/item/circuitboard/security/proc/on_emag(datum/act/op/A)
+	set_emagged(TRUE)
+	set_locked(FALSE)
+	return OP_OK
 
-/obj/item/circuitboard/security/mark_emagged()
-	emagged = TRUE
-/obj/item/circuitboard/security/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(user, span_notice("You override the circuit lock and open controls."))
-	emagged = 1
-	locked = 0
-	return 1
+/obj/item/circuitboard/security/proc/lock_toggled(datum/act/op/A)
+	set_locked(!locked)
+	to_chat(A.actor, span_notice("You [locked ? "" : "un"]lock the circuit controls."))
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/circuitboard/security, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+/obj/item/circuitboard/security/proc/networks_default(datum/act/op/A)
+	return jointext(network, ",")
 
-/// Old attackby.
-/obj/item/circuitboard/security/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I,/obj/item/card/id))
-		if(emagged)
-			to_chat(user, span_warning("Circuit lock does not respond."))
-			return INTERACTION_HANDLED_PASS
-		if(check_access(I))
-			locked = !locked
-			to_chat(user, span_notice("You [locked ? "" : "un"]lock the circuit controls."))
-		else
-			to_chat(user, span_warning("Access denied."))
-	else if(I.has_tool_quality(TOOL_MULTITOOL))
-		if(locked)
-			to_chat(user, span_warning("Circuit controls are locked."))
-			return INTERACTION_HANDLED_PASS
-		var/existing_networks = jointext(network,",")
-		open_request(src, /datum/prompt/text, PROC_REF(networks_entered), answerer = user, title = "Multitool-Circuitboard interface", question = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", default = existing_networks, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return INTERACTION_HANDLED_PASS
-
-/obj/item/circuitboard/security/proc/networks_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(locked)
-		return
-	var/mob/user = A.request.answerer
-	var/input = A.answer.answer_value
+/obj/item/circuitboard/security/proc/networks_entered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/input = R?.value
 	if(!input)
-		to_chat(user, "No input found please hang up and try your call again.")
-		return
+		to_chat(A.actor, "No input found please hang up and try your call again.")
+		return OP_REFUSED
 	var/list/tempnetwork = splittext(input, ",")
 	tempnetwork = difflist(tempnetwork, GLOB.restricted_camera_networks, 1)
 	if(tempnetwork.len < 1)
-		to_chat(user, "No network found please hang up and try your call again.")
-		return
-	network = tempnetwork
-	return
+		to_chat(A.actor, "No network found please hang up and try your call again.")
+		return OP_REFUSED
+	set_network(tempnetwork)
+	return OP_OK

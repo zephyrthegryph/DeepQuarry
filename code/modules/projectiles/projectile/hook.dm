@@ -17,7 +17,6 @@
 	fire_sound = SFX_EFFECTS_ZZZT
 
 	var/target_distance = null	// Shamelessly stolen from arcing projectiles.
-	var/my_tracking_beam = null	// Beam made by the launcher. Tracked here to destroy it in time with the impact.
 	var/launcher_intent = null	// The stance the firer pulled the trigger in (receive_firer_stance()).
 
 	var/disarm_chance = 60		// Chance for a successful disarm hit. The inverse is a throw away from the firer.
@@ -193,7 +192,6 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 		if(!S.anchored)
 			S.throw_at(get_turf(get_step(firer,get_dir(firer,S))), 4, 1, src)
 			success = TRUE
-	qdel(my_tracking_beam)
 	return success
 
 /*

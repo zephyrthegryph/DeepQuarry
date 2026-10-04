@@ -11,7 +11,7 @@
 	var/datum/tgui_module/crew_monitor/crew_monitor
 
 CAPABILITIES(/obj/machinery/computer/crew)
-	owns_one(nameof(crew_monitor), starts = /datum/tgui_module/crew_monitor)
+	owns_one(nameof(crew_monitor), /datum/tgui_module/crew_monitor, starts = /datum/tgui_module/crew_monitor)
 
 
 /obj/machinery/computer/crew/declare_interactions(list/into)

@@ -1092,7 +1092,7 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset)
 	. = ..()
 	// Settles after a random short delay; a burst of power changes (every grid binding at boot)
 	// shares the one pending settle instead of stacking a timer per change.
-	if(om_timer_slot_pending(src, "power_settle"))
+	if(after_pending(src, "power_settle"))
 		return
 	var/delay_time = rand(0,15)
 	if(delay_time)

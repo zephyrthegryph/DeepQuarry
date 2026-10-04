@@ -113,7 +113,9 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		return NONE
 
 	act_message(user, src, MSG_SELF(span_notice("You scan [interacting_with]'s radiation levels with %T%...")), MSG_OTHERS(span_notice("%U% scans [interacting_with] with %T%.")))
-	om_after_unique(src, 20, PROC_REF(scan), interacting_with, user) // Let's not have spamming GetAllContents
+	var/scan_key = "geiger_scan:[interacting_with ? SHARED_CACHE_UID(interacting_with) : "-"]:[user ? SHARED_CACHE_UID(user) : "-"]"
+	if(!after_pending(src, scan_key))
+		after(src, 2 SECONDS, PROC_REF(scan), key = scan_key, with = list(interacting_with, user)) // Let's not have spamming GetAllContents
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/geiger/equipped(mob/user, slot, initial)
@@ -138,7 +140,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		insulation_deficit = round(insulation_to_target - pulse_information.threshold, 0.1)
 	else
 		insulation_deficit = null
-	om_after_replace(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger))
+	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "geiger_perceived_danger_reset")
 
 	if (scanning)
 		update_icon()

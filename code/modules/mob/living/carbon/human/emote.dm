@@ -531,7 +531,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 						right_leg.fracture()
 			break // Only fall down the first stairs in the turf... If somehow more than one exists
 
-	after(src, 7, PROC_REF(flip_end), with = list(original_density, added_passtable))
+	after(src, 0.7 SECONDS, PROC_REF(flip_end), with = list(original_density, added_passtable))
 
 /mob/living/carbon/human/proc/flip_end(original_density, added_passtable)
 	if(!lying)

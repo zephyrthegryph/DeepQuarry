@@ -31,7 +31,7 @@
 	play_sfx(T, SFX_SPARKS)
 	anim(T,M,'icons/mob/mob.dmi',,"phaseout",,M.dir)
 
-/obj/item/rig_module/teleporter/engage(atom/target, notify_ai)
+/obj/item/rig_module/teleporter/engage(atom/target, notify_ai, mob/user)
 
 	var/mob/living/carbon/human/H = holder.wearer()
 

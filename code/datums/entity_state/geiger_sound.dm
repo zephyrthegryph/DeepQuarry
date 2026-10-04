@@ -61,7 +61,7 @@ CAPABILITIES(/datum/geiger_sound)
 	rel_set(sound, nameof(sound.last_radiation_pulse_ref), pulse_information)
 	sound.start(source)
 
-	om_after_replace(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound,stop))
+	after(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound, stop), key = "geiger_sound_stop")
 
 /datum/geiger_sound/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
@@ -145,4 +145,3 @@ CAPABILITIES(/datum/geiger_sound)
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/looping_sound/geiger/proc/last_radiation_pulse() as /datum/radiation_pulse_information
 	return last_radiation_pulse_ref
-

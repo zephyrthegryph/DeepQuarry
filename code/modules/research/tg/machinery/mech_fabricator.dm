@@ -111,7 +111,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 
 	// We're probably going to get more than one update (design) at a time, so batch
 	// them together.
-	om_after_replace(src, 2 SECONDS, PROC_REF(update_menu_tech))
+	after(src, 2 SECONDS, PROC_REF(update_menu_tech), key = "mecha_fabricator_tech_menu")
 
 /obj/machinery/mecha_part_fabricator_tg/RefreshParts()
 	. = ..()

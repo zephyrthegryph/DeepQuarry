@@ -425,7 +425,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 		to_chat(src, span_filter_notice("You cannot leap in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10)
+	COOLDOWN_START(src, last_special, 1 SECOND)
 	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 
@@ -442,7 +442,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 	pixel_y = default_pixel_y
 
 	if(!bluespace)
-		after(src, 5, PROC_REF(leap_land), with = list(T))
+		after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T))
 		return
 	leap_land(T)
 
@@ -495,28 +495,21 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 
 /obj/item/mining_scanner/robot/proc/upgrade(mob/user)
 	desc = "An advanced device used to locate ore deep underground."
-	scan_time = 0.5 SECONDS
-	exact = TRUE
+	set_scan_time(0.5 SECONDS)
+	set_exact(TRUE)
 
 CAPABILITIES(/obj/item/mining_scanner/robot)
-	op("range", hand(), gesture(GESTURE_ALT), then(PROC_REF(range_asked)))
+	op("set_range", hand(), gesture(GESTURE_ALT), label("Set Scanner Range"), when(nameof(exact)), needs(carried()),
+		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked)))
 
-/// Alt-click: ask the scan range.
-/obj/item/mining_scanner/robot/proc/range_asked(datum/act/op/A)
-	change_size(A.actor)
+/obj/item/mining_scanner/robot/proc/range_picked(datum/act/op/A)
+	var/datum/prompt/choice/picked = A.answer
+	// Unlike the advanced handheld, the integrated scanner accepts zero.
+	set_range(picked.value)
+	to_chat(A.actor, span_notice("Scanner will now look up to [range] tile(s) away."))
+	return OP_OK
 
-/obj/item/mining_scanner/robot/proc/change_size(mob/user)
-	if(!exact)
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(range_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Pick a range to scan. ", question = "Scanner Range", choices = list(0,1,2,3,4,5,6,7), timeout = 0)
 
-/obj/item/mining_scanner/robot/proc/range_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	range = A.answer.answer_value
-	to_chat(A.request.answerer, span_notice("Scanner will now look up to [range] tile(s) away."))
-
-//CHOMPEnable Start
 /obj/item/robot_tongue/examine(user)
 	. = ..()
 	if(Adjacent(user))
@@ -524,6 +517,6 @@ CAPABILITIES(/obj/item/mining_scanner/robot)
 			. += span_notice("[src] is wet. Just like it should be.")
 		if(water.energy < 5)
 			. += span_notice("[src] is dry.")
-// CHOMPEnable End
+
 
 // Matter synths belong to the robot module (the owned "synths" list); tools draw on them.

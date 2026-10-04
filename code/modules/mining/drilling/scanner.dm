@@ -10,26 +10,38 @@
 	var/exact = FALSE
 	var/sediment_scan = TRUE
 
-DECLARE_INTERACTIONS(/obj/item/mining_scanner, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_VERB("Toggle Sediment Scan", PROC_REF(mining_scanner_verb_toggle_sediment)), \
-)
+TRACKED(/obj/item/mining_scanner, sediment_scan)
+TRACKED(/obj/item/mining_scanner, range)
+TRACKED(/obj/item/mining_scanner, scan_time)
+TRACKED(/obj/item/mining_scanner, exact)
 
-/// Old attack_self.
-/obj/item/mining_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("You begin sweeping \the [src] about, scanning for metal deposits."))
+CAPABILITIES(/obj/item/mining_scanner)
+	held_verb(/obj/item/mining_scanner/proc/toggle_sediment_scan, SLOT_ANY_CARRIED)
+	op("scan", in_hand(), label("Scan deposits"), then(PROC_REF(scan_started), early = TRUE), wait(PROC_REF(scan_delay)), then(PROC_REF(scanned)))
+	op("toggle_sediment", menu(), label("Toggle Sediment Scan"), needs(carried()), then(PROC_REF(sediment_toggled)))
+
+/obj/item/mining_scanner/proc/scan_started(datum/act/op/A)
+	to_chat(A.actor, span_notice("You begin sweeping \the [src] about, scanning for metal deposits."))
 	play_sfx(src, SFX_ITEMS_GOGGLES_CHARGE)
+	return OP_OK
 
-	om_task_timed(user, scan_time, src, src, PROC_REF(sweep_done), list(user))
-	return TRUE
+/obj/item/mining_scanner/proc/scan_delay(datum/act/op/A)
+	return scan_time
 
-/obj/item/mining_scanner/proc/sweep_done(mob/user)
-	ScanTurf(get_turf(user), user)
+/obj/item/mining_scanner/proc/scanned(datum/act/op/A)
+	ScanTurf(get_turf(A.actor), A.actor)
+	return OP_OK
 
-/// Old Toggle Sediment Scan verb.
-/obj/item/mining_scanner/proc/mining_scanner_verb_toggle_sediment(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("\The [src] will [sediment_scan ? "no longer" : "now"] scan for reagents."))
-	sediment_scan = !sediment_scan
+/obj/item/mining_scanner/proc/toggle_sediment_scan()
+	set name = "Toggle Sediment Scan"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "toggle_sediment", null, ORIGIN_VERB)
+
+/obj/item/mining_scanner/proc/sediment_toggled(datum/act/op/A)
+	to_chat(A.actor, span_notice("\The [src] will [sediment_scan ? "no longer" : "now"] scan for reagents."))
+	set_sediment_scan(!sediment_scan)
+	return OP_OK
 
 /obj/item/mining_scanner/proc/ScanTurf(atom/target, mob/user)
 	var/list/metals = list(
@@ -114,21 +126,22 @@ DECLARE_INTERACTIONS(/obj/item/mining_scanner, \
 	scan_time = 0.5 SECONDS
 	exact = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/mining_scanner/advanced, \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_VERB("Set Scanner Range", PROC_REF(adv_mining_scanner_verb_range), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/mining_scanner/advanced)
+	held_verb(/obj/item/mining_scanner/advanced/proc/set_scanner_range, SLOT_ANY_CARRIED)
+	op("set_range", inputs(hand(), menu()), gesture(GESTURE_ALT), label("Set Scanner Range"),
+		needs(req_adjacent(), req_on_origin(ORIGIN_VERB | ORIGIN_MENU, carried())),
+		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked)))
 
-/// Old click_alt.
-/obj/item/mining_scanner/advanced/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	adv_mining_scanner_verb_range(user)
-	return TRUE
+/obj/item/mining_scanner/advanced/proc/set_scanner_range()
+	set name = "Set Scanner Range"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "set_range", null, ORIGIN_VERB)
 
-/// Old Set Scanner Range verb.
-/obj/item/mining_scanner/advanced/proc/adv_mining_scanner_verb_range(mob/user, obj/item/held, datum/interaction/interaction)
-	var/custom_range = rerun_ask(user, "k120", PROC_REF(adv_mining_scanner_verb_range), args, /datum/om/prompt/choice, message = "Scanner Range", title = "Pick a range to scan. ", choices = list(0,1,2,3,4,5,6,7))
-	if(isnull(custom_range))
-		return
-	if(custom_range)
-		range = custom_range
-		to_chat(user, span_notice("Scanner will now look up to [range] tile(s) away."))
+/obj/item/mining_scanner/advanced/proc/range_picked(datum/act/op/A)
+	var/datum/prompt/choice/picked = A.answer
+	// The advanced handheld's original zero choice leaves its range unchanged.
+	if(picked.value)
+		set_range(picked.value)
+		to_chat(A.actor, span_notice("Scanner will now look up to [range] tile(s) away."))
+	return OP_OK

@@ -108,7 +108,7 @@ UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_confirmban)
 		message_admins("Ban process: A mob matching [playermob.ckey] was found at location [playermob.x], [playermob.y], [playermob.z]. Custom ip and computer id fields replaced with the ip and computer id from the located mob")
 	notes_add(banckey, banreason, ui.user)
 
-	admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid )
+	admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid, FALSE, ui.user)
 	if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob?.client)
 		qdel(playermob.client)
 

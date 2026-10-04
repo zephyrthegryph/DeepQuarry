@@ -1130,7 +1130,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/c20r/proc/appearance_mag_state()
-	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
+	return ammo_magazine ? "-[round(length(ammo_magazine.stored_ammo), 4)]" : ""
 APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r{appearance_mag_state}")
 
 /obj/item/gun/projectile/automatic/c20r/Initialize(mapload)
@@ -1193,7 +1193,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	. = list()
 	. += ..()
 	if(ammo_magazine)
-		icon_state = "carbine-[round(CLAMP(ammo_magazine.stored_ammo.len/2,0,10),2)]"
+		icon_state = "carbine-[round(CLAMP(length(ammo_magazine.stored_ammo)/2,0,10),2)]"
 	else
 		icon_state = "carbine-e"
 	return .
@@ -1462,7 +1462,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 		if(sawn_off) //Don't do anything if we were already sawed off.
 			return
 		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
-		if(loaded.len)
+		if(length(loaded))
 			var/burstsetting = burst
 			burst = 2
 			act_message(user, null, MSG_SELF(span_danger("The shotgun goes off in your face!")), MSG_OTHERS(span_danger("The shotgun goes off!")))

@@ -16,7 +16,6 @@
 	into += list(
 		/datum/interaction/machine_item/fabricator_insert_steel,
 		/datum/interaction/machine_item/fabricator_reject,
-		/datum/interaction/machine_hand/open_ui,
 	)
 	..()
 
@@ -40,7 +39,7 @@
 		if(!supplied_stack.get_amount())
 			return TRUE
 		add_overlay("fab-load-metal")
-		inserting = TRUE
+		set_inserting(TRUE)
 		after(src, 0.9 SECONDS, PROC_REF(complete_insertion), with = list(user, supplied_stack))
 		return TRUE
 	to_chat(user, "The robot part maker is full. Please remove metal from the robot part maker in order to insert more.")
@@ -58,77 +57,78 @@
 
 /obj/machinery/robotic_fabricator/proc/complete_insertion(mob/user, obj/item/stack/supplied_stack)
 	var/count = 0
-	while(metal_amount < 150000 && supplied_stack.get_amount())
-		metal_amount += supplied_stack.material_totals()[MAT_STEEL]
-		supplied_stack.use(1)
+	while(metal_amount < 150000 && !QDELETED(supplied_stack) && supplied_stack.get_amount() > 0)
+		var/steel_amount = supplied_stack.material_totals()[MAT_STEEL]
+		if(!supplied_stack.use(1))
+			break
+		set_metal_amount(metal_amount + steel_amount)
 		count++
 
 	to_chat(user, "You insert [count] metal sheet\s into the fabricator.")
 	cut_overlay("fab-load-metal")
-	inserting = FALSE
+	set_inserting(FALSE)
+
+TRACKED(/obj/machinery/robotic_fabricator, metal_amount)
+TRACKED(/obj/machinery/robotic_fabricator, operating)
+TRACKED(/obj/machinery/robotic_fabricator, inserting)
+
+MSG_DEF_SELF(robot_fabricator/busy, "The fabricator is already building a part.")
+MSG_DEF_SELF(robot_fabricator/metal, "The fabricator does not have enough metal.")
 
 CAPABILITIES(/obj/machinery/robotic_fabricator)
+	contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reads = list("stat"))
 	interface("AncientDroneFab")
-	op("build_l_arm", ui_act("build_l_arm"), then(PROC_REF(ui_act_build_l_arm)))
-	op("build_r_arm", ui_act("build_r_arm"), then(PROC_REF(ui_act_build_r_arm)))
-	op("build_l_leg", ui_act("build_l_leg"), then(PROC_REF(ui_act_build_l_leg)))
-	op("build_r_leg", ui_act("build_r_leg"), then(PROC_REF(ui_act_build_r_leg)))
-	op("build_chest", ui_act("build_chest"), then(PROC_REF(ui_act_build_chest)))
-	op("build_head", ui_act("build_head"), then(PROC_REF(ui_act_build_head)))
-	op("build_frame", ui_act("build_frame"), then(PROC_REF(ui_act_build_frame)))
-	extend(TAG_UI, needs(req(PROC_REF(fabricator_idle), because = MSG(robotic_fabricator/busy))))
-	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
-
-MSG_DEF_SELF(robotic_fabricator/busy, "It is busy building something.")
-
-/// A fabricator that is building something takes no new order.
-/obj/machinery/robotic_fabricator/proc/fabricator_idle(datum/act/op/A)
-	return !operating // ALLOW(reads): the fabricator's work is read when a button is pressed, never from a cached menu
-
-/// Whoever presses a button leaves their prints on the fabricator.
-/obj/machinery/robotic_fabricator/proc/ui_fingerprint(datum/act/op/A)
-	add_fingerprint(A.actor)
-	return OP_OK
+	extend("ui_open", needs(req_operable()))
+	op("build_l_arm", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 25000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_l_arm)))
+	op("build_r_arm", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 25000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_r_arm)))
+	op("build_l_leg", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 25000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_l_leg)))
+	op("build_r_leg", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 25000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_r_leg)))
+	op("build_chest", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 50000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_chest)))
+	op("build_head", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 50000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_head)))
+	op("build_frame", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 75000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_frame)))
 
 /obj/machinery/robotic_fabricator/ui_data(datum/act/eval/A)
-	return list(
-		"operating" = operating,
-		"metal_amount" = metal_amount
-	)
+	return list("operating" = operating, "metal_amount" = metal_amount)
 
+/obj/machinery/robotic_fabricator/proc/build_l_arm(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return try_start_building(/obj/item/robot_parts/l_arm, 20 SECONDS, 25000)
 
-/obj/machinery/robotic_fabricator/proc/ui_act_build_l_arm(datum/act/op/A)
-	return try_start_building("/obj/item/robot_parts/l_arm", 20 SECONDS, 25000)
+/obj/machinery/robotic_fabricator/proc/build_r_arm(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return try_start_building(/obj/item/robot_parts/r_arm, 20 SECONDS, 25000)
 
-/obj/machinery/robotic_fabricator/proc/ui_act_build_r_arm(datum/act/op/A)
-	return try_start_building("/obj/item/robot_parts/r_arm", 20 SECONDS, 25000)
+/obj/machinery/robotic_fabricator/proc/build_l_leg(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return try_start_building(/obj/item/robot_parts/l_leg, 20 SECONDS, 25000)
 
-/obj/machinery/robotic_fabricator/proc/ui_act_build_l_leg(datum/act/op/A)
-	return try_start_building("/obj/item/robot_parts/l_leg", 20 SECONDS, 25000)
+/obj/machinery/robotic_fabricator/proc/build_r_leg(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return try_start_building(/obj/item/robot_parts/r_leg, 20 SECONDS, 25000)
 
-/obj/machinery/robotic_fabricator/proc/ui_act_build_r_leg(datum/act/op/A)
-	return try_start_building("/obj/item/robot_parts/r_leg", 20 SECONDS, 25000)
+/obj/machinery/robotic_fabricator/proc/build_chest(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return try_start_building(/obj/item/robot_parts/chest, 35 SECONDS, 50000)
 
-/obj/machinery/robotic_fabricator/proc/ui_act_build_chest(datum/act/op/A)
-	return try_start_building("/obj/item/robot_parts/chest", 35 SECONDS, 50000)
+/obj/machinery/robotic_fabricator/proc/build_head(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return try_start_building(/obj/item/robot_parts/head, 35 SECONDS, 50000)
 
-/obj/machinery/robotic_fabricator/proc/ui_act_build_head(datum/act/op/A)
-	return try_start_building("/obj/item/robot_parts/head", 35 SECONDS, 50000)
-
-/obj/machinery/robotic_fabricator/proc/ui_act_build_frame(datum/act/op/A)
-	return try_start_building("/obj/item/robot_parts/robot_suit", 60 SECONDS, 75000)
+/obj/machinery/robotic_fabricator/proc/build_frame(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return try_start_building(/obj/item/robot_parts/robot_suit, 60 SECONDS, 75000)
 
 /obj/machinery/robotic_fabricator/proc/try_start_building(build_type, build_time, build_cost)
-	var/building = text2path(build_type)
+	var/building = build_type
 	if(isnull(building))
 		return FALSE
 
 	if(metal_amount < build_cost)
 		return FALSE
 
-	operating = TRUE
+	set_operating(TRUE)
 	set_use_power(USE_POWER_ACTIVE)
-	metal_amount = max(0, metal_amount - build_cost)
+	set_metal_amount(max(0, metal_amount - build_cost))
 	add_overlay("fab-active")
 
 	after(src, build_time, PROC_REF(complete_building), with = list(building))
@@ -139,7 +139,7 @@ MSG_DEF_SELF(robotic_fabricator/busy, "It is busy building something.")
 	being_built.forceMove(get_turf(src))
 	own_take(src, nameof(being_built))
 	set_use_power(USE_POWER_IDLE)
-	operating = FALSE
+	set_operating(FALSE)
 	cut_overlay("fab-active")
 
 /obj/machinery/robotic_fabricator/ownership()

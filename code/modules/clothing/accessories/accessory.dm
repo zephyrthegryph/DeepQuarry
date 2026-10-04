@@ -613,9 +613,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 	var/icon_previous_override
 
 //Forces different sprite sheet on equip
-/obj/item/clothing/accessory/choker/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/choker/on_materialize()
 	icon_previous_override = icon_override
+	. = ..()
 
 /obj/item/clothing/accessory/choker/equipped() //Solution for race-specific sprites for an accessory which is also a suit. Suit icons break if you don't use icon override which then also overrides race-specific sprites.
 	..()
@@ -651,9 +651,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 	default_worn_icon = INV_ACCESSORIES_DEF_ICON
 
 //Forces different sprite sheet on equip
-/obj/item/clothing/accessory/collar/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/collar/on_materialize()
 	icon_previous_override = icon_override
+	. = ..()
 
 /obj/item/clothing/accessory/collar/equipped() //Solution for race-specific sprites for an accessory which is also a suit. Suit icons break if you don't use icon override which then also overrides race-specific sprites.
 	..()
@@ -741,14 +741,13 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/bell)
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
-	op("shock_collar_ui_self", in_hand(), then(PROC_REF(shock_collar_ui_self)))
+	op("controls", in_hand(), label("Open shock collar controls"), then(PROC_REF(shock_collar_controls_opened)))
 
-/// Old attack_self: open the collar's interface.
-/obj/item/clothing/accessory/collar/shock/proc/shock_collar_ui_self(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!ishuman(user))
-		return
-	tgui_interact(user)
+/obj/item/clothing/accessory/collar/shock/proc/shock_collar_controls_opened(datum/act/op/A)
+	if(!ishuman(A.actor))
+		return OP_OK
+	tgui_interact(A.actor)
+	return OP_OK
 
 DECLARE_UI(/obj/item/clothing/accessory/collar/shock, "ShockCollar")
 

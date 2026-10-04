@@ -244,7 +244,7 @@
 /mob/living/silicon/robot/proc/activate_module(obj/item/O)
 	if(!(locate_in_list(src.module.modules, O)) && !(locate_in_list(src.module.emag, O)))
 		return
-	if(om_timer_slot_pending(src, "weapon_lock"))
+	if(after_pending(src, "weapon_lock"))
 		to_chat(src, span_danger("Error: Modules locked."))
 		return
 	if(activated(O))

@@ -147,7 +147,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 		return
 
 	if(M != user)																//we can jobban ourselves
-		if(M.client && M.client.holder && (check_rights_for(M.client, R_BAN)))		//they can ban too. So we can't ban them
+		if(admin_can(M.client, R_BAN))		//they can ban too. So we can't ban them
 			tgui_alert_async(user, "You cannot perform this action. You must be of a higher administrative rank!")
 			return
 
@@ -189,7 +189,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 					ban_unban_log_save("[key_name(user)] temp-jobbanned [key_name(M)] from [job] for [mins] minutes. reason: [reason]")
 					log_admin("[key_name(user)] temp-jobbanned [key_name(M)] from [job] for [mins] minutes")
 					feedback_inc("ban_job_tmp",1)
-					DB_ban_record(BANTYPE_JOB_TEMP, M, mins, reason, job)
+					DB_ban_record(BANTYPE_JOB_TEMP, M, mins, reason, job, 0, null, null, null, FALSE, user)
 					feedback_add_details("ban_job_tmp","- [job]")
 					jobban_fullban(M, job, "[reason]; By [user.ckey] on [time2text(world.realtime)]") //Legacy banning does not support temporary jobbans.
 					if(!msg)
@@ -212,7 +212,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 						ban_unban_log_save("[key_name(user)] perma-jobbanned [key_name(M)] from [job]. reason: [reason]")
 						log_admin("[key_name(user)] perma-banned [key_name(M)] from [job]")
 						feedback_inc("ban_job",1)
-						DB_ban_record(BANTYPE_JOB_PERMA, M, -1, reason, job)
+						DB_ban_record(BANTYPE_JOB_PERMA, M, -1, reason, job, 0, null, null, null, FALSE, user)
 						feedback_add_details("ban_job","- [job]")
 						jobban_fullban(M, job, "[reason]; By [user.ckey] on [time2text(world.realtime)]")
 						if(!msg)
@@ -248,7 +248,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 				continue
 			ban_unban_log_save("[key_name(user)] unjobbanned [key_name(M)] from [job]")
 			log_admin("[key_name(user)] unbanned [key_name(M)] from [job]")
-			DB_ban_unban(M.ckey, BANTYPE_JOB_PERMA, job)
+			DB_ban_unban(M.ckey, BANTYPE_JOB_PERMA, job, user)
 			feedback_inc("ban_job_unban",1)
 			feedback_add_details("ban_job_unban","- [job]")
 			jobban_unban(M, job)
@@ -289,7 +289,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	var/t_split = splittext(t, " - ")
 	var/key = t_split[1]
 	var/job = t_split[2]
-	DB_ban_unban(ckey(key), BANTYPE_JOB_PERMA, job)
+	DB_ban_unban(ckey(key), BANTYPE_JOB_PERMA, job, user)
 
 /datum/admins/proc/topic_newban(mob/user, list/args)
 	if(!check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN))
@@ -325,7 +325,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			to_chat(M, span_filter_system(span_critical("You have been banned by [user.client.ckey].\nReason: [reason].")))
 			to_chat(M, span_filter_system(span_warning("This is a temporary ban, it will be removed in [mins] minutes.")))
 			feedback_inc("ban_tmp",1)
-			DB_ban_record(BANTYPE_TEMP, M, mins, reason)
+			DB_ban_record(BANTYPE_TEMP, M, mins, reason, "", 0, null, null, null, FALSE, user)
 			feedback_inc("ban_tmp_mins",mins)
 			if(CONFIG_GET(string/banappeals))
 				to_chat(M, span_filter_system(span_warning("To try to resolve this matter head to [CONFIG_GET(string/banappeals)]")))
@@ -362,7 +362,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			log_admin("[user.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis is a permanent ban.")
 			message_admins(span_blue("[user.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis is a permanent ban."))
 			feedback_inc("ban_perma",1)
-			DB_ban_record(BANTYPE_PERMA, M, -1, reason)
+			DB_ban_record(BANTYPE_PERMA, M, -1, reason, "", 0, null, null, null, FALSE, user)
 			var/datum/ticket/T = M.client ? M.client.current_ticket() : null
 			if(T)
 				T.Resolve(user)

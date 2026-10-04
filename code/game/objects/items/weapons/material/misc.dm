@@ -198,14 +198,14 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 						return
 
 CAPABILITIES(/obj/item/material/whip)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("crack", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/material/whip/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, others = span_warning("%U% cracks %T%!"))
 	play_sfx(src, SFX_EFFECTS_SNAP)
-	return TRUE
+	return OP_OK
 
 
 /obj/item/material/knife/machete/hatchet/stone

@@ -267,7 +267,7 @@
 	if(updating_preview_icon)
 		return
 	update_preview_icon(south_only = TRUE)
-	om_after_replace(src, 1, TYPE_PROC_REF(/datum/preferences, update_preview_icon))
+	after(src, 0.1 SECONDS, TYPE_PROC_REF(/datum/preferences, update_preview_icon), key = "preferences_preview_full")
 
 /datum/preferences/proc/dq_preference_affects_preview(datum/preference/preference)
 	if(!preference || preference.savefile_identifier != PREFERENCE_CHARACTER)
@@ -306,7 +306,7 @@
 	if(dq_data_push_pending)
 		return
 	dq_data_push_pending = TRUE
-	om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_data_push))
+	after(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_data_push), key = "preferences_data_push")
 
 /datum/preferences/proc/dq_flush_data_push()
 	dq_data_push_pending = FALSE
@@ -319,7 +319,7 @@
 	if(dq_preview_pending)
 		return
 	dq_preview_pending = TRUE
-	om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_static_push))
+	after(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_static_push), key = "preferences_static_push")
 
 /datum/preferences/proc/dq_flush_static_push()
 	dq_preview_pending = FALSE

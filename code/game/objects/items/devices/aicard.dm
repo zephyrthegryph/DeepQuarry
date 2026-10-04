@@ -23,13 +23,7 @@
 		return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/aicard)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
-
-/// tgui_interact()'s own signature doesn't match the (actor, held, interaction) effect
-/// contract (its 2nd/3rd args are the UI and its state), so this stays a thin wrapper.
-/obj/item/aicard/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
+	op("view_ai", in_hand(), opens_ui())
 
 DECLARE_UI(/obj/item/aicard, "AICard")
 

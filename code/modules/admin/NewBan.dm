@@ -143,7 +143,7 @@ GLOBAL_DATUM(banlist, /savefile)
 		log_admin("[key_name_admin(user)] unbanned [key]")
 		message_admins("[key_name_admin(user)] unbanned: [key]")
 		feedback_inc("ban_unban",1)
-		user.client.holder.DB_ban_unban( ckey(key), BANTYPE_ANY_FULLBAN)
+		user.client.holder.DB_ban_unban(ckey(key), BANTYPE_ANY_FULLBAN, "", user)
 	for (var/A in GLOB.banlist.dir)
 		GLOB.banlist.cd = "/base/[A]"
 		if (key == GLOB.banlist["key"] /*|| id == GLOB.banlist["id"]*/)

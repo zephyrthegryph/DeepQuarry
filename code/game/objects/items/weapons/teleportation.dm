@@ -31,13 +31,11 @@
 // TGUI migration. attack_self opens Locator.tsx; Topic
 // frequency/refresh/clear actions move to tgui_act.
 CAPABILITIES(/obj/item/locator)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("controls", in_hand(), label("Open locator"), then(PROC_REF(locator_controls_opened)))
 
-/// Old attack_self.
-/obj/item/locator/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
-	return TRUE
+/obj/item/locator/proc/locator_controls_opened(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 DECLARE_UI(/obj/item/locator, "Locator", UI_TITLE("Persistent Signal Locator"))
 

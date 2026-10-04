@@ -1400,7 +1400,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(!struggle_anim_stomach)
 		struggle_anim_stomach = TRUE
 		update_vore_belly_sprite()
-		after(src, 12, PROC_REF(end_belly_struggle_anim))
+		after(src, 1.2 SECONDS, PROC_REF(end_belly_struggle_anim))
 
 /mob/living/carbon/human/proc/update_vore_tail_sprite()
 	if(QDESTROYING(src))
@@ -1435,7 +1435,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(tail_style.struggle_anim && !struggle_anim_taur)
 		struggle_anim_taur = TRUE
 		update_vore_tail_sprite()
-		after(src, 12, PROC_REF(end_tail_struggle_anim))
+		after(src, 1.2 SECONDS, PROC_REF(end_tail_struggle_anim))
 
 /mob/living/carbon/human/proc/GetAppearanceFromPrefs(flavourtext, oocnotes)
 	/* Jank code that effectively creates the client's mob from save, then copies its appearance to our current mob.

@@ -21,7 +21,8 @@
 /obj/item/implant/slot_key()
 	return type
 
-/obj/item/implant/proc/trigger(emote, source as mob)
+/// Self-initiated emotes pass the host as actor; involuntary emotes pass null.
+/obj/item/implant/proc/trigger(emote, source as mob, mob/actor)
 	return
 
 /obj/item/implant/proc/activate()
@@ -197,7 +198,7 @@ Implant Specifics:<BR>"}
 "} + span_bold("Integrity:") + {"Implant will occasionally be degraded by the body's immune system and thus will occasionally malfunction."}
 	return dat
 
-/obj/item/implant/dexplosive/trigger(emote, source as mob)
+/obj/item/implant/dexplosive/trigger(emote, source as mob, mob/actor)
 	if(emote == "deathgasp")
 		src.activate("death")
 	return
@@ -408,7 +409,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	rel_set(src, nameof(reagents), R)
 	rel_set(R, nameof(R.my_atom), src)
 
-/obj/item/implant/chem/trigger(emote, source as mob)
+/obj/item/implant/chem/trigger(emote, source as mob, mob/actor)
 	if(emote == "deathgasp")
 		src.activate(src.reagents.total_volume)
 	return
@@ -509,7 +510,7 @@ CAPABILITIES(/obj/item/implant/chem)
 "} + span_bold("Integrity:") + {"Implant can only be used three times before the nanobots are depleted."}
 	return dat
 
-/obj/item/implant/adrenalin/trigger(emote, mob/source as mob)
+/obj/item/implant/adrenalin/trigger(emote, mob/source as mob, mob/actor)
 	if (src.uses < 1)	return 0
 	if (emote == "pale")
 		src.uses--
@@ -576,17 +577,17 @@ CAPABILITIES(/obj/item/implant/death_alarm)
 				a.autosay("[mobname] has died in Space!", "[mobname]'s Death Alarm")
 			else
 				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 			set_alarm_armed(FALSE)
 		if ("emp")
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			var/name = prob(50) ? t.name : pick(GLOB.teleportlocs)
 			a.autosay("[mobname] has died in [name]!", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 		else
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 			set_alarm_armed(FALSE)
 
 /// For some reason alarms stop going off in case they are emp'd, even without this.
@@ -634,7 +635,7 @@ CAPABILITIES(/obj/item/implant/death_alarm)
 "} + span_bold("Integrity:") + {"Implant will occasionally be degraded by the body's immune system and thus will occasionally malfunction."}
 	return dat
 
-/obj/item/implant/compressed/trigger(emote, mob/source as mob)
+/obj/item/implant/compressed/trigger(emote, mob/source as mob, mob/actor)
 	if (src.scanned() == null)
 		return 0
 
@@ -699,7 +700,7 @@ CAPABILITIES(/datum/prompt/choice/implant_emote)
 		<b>Integrity:</b> Implant can only be used once before the nanobots are depleted."}
 	return dat
 
-/obj/item/implant/vrlanguage/trigger(emote, mob/source as mob)
+/obj/item/implant/vrlanguage/trigger(emote, mob/source as mob, mob/actor)
 	if (src.uses < 1)
 		return 0
 	if (emote == "smile")

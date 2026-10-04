@@ -328,7 +328,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 CAPABILITIES(/obj/item/clothing/gloves)
 	owns_one(nameof(gloves), /obj/item/clothing/gloves)
 	owns_one(nameof(ring), /obj/item/clothing/accessory)
-	owns_one(nameof(special_attack), starts = nameof(special_attack_type))
+	owns_one(nameof(special_attack), /datum/unarmed_attack, starts = nameof(special_attack_type))
 
 /obj/item/clothing/gloves/ownership()
 	. = ..()
@@ -398,6 +398,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 /obj/item/clothing/gloves
 	var/tmp/datum/unarmed_attack/special_attack = null //do the gloves have a special unarmed attack?
 	var/special_attack_type = null
+
 
 /////////////////////////////////////////////////////////////////////
 //Rings

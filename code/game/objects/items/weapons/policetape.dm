@@ -138,7 +138,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/taperoll, TYPE_PROC_REF(/atom, appearance_over
 
 DECLARE_INTERACTIONS(/obj/item/taperoll, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 )
 
 /// Old attack_hand.
@@ -146,8 +145,11 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 	update_icon()
 	return FALSE
 
-/// Old attack_self.
-/obj/item/taperoll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/taperoll)
+	op("lay_tape", in_hand(), label("Lay tape"), then(PROC_REF(tape_laying_requested)))
+
+/obj/item/taperoll/proc/tape_laying_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!get_start())
 		rel_set(src, nameof(start), get_turf(src))
 		to_chat(user, span_notice("You place the first end of \the [src]."))
@@ -158,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			rel_clear(src, nameof(start))
 			update_icon()
 			to_chat(user, span_notice("\The [src] can only be laid horizontally or vertically."))
-			return TRUE
+			return OP_OK
 
 		if(get_start() == get_end())
 			// spread tape in all directions, provided there is a wall/window
@@ -179,7 +181,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 				rel_clear(src, nameof(start))
 				update_icon()
 				to_chat(user, span_notice("You can't place \the [src] here."))
-				return TRUE
+				return OP_OK
 			if(possible_dirs & (NORTH|SOUTH))
 				var/obj/item/tape/TP = new tape_type(get_start())
 				for(var/dir in list(NORTH, SOUTH))
@@ -195,7 +197,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			rel_clear(src, nameof(start))
 			update_icon()
 			to_chat(user, span_notice("You finish placing \the [src]."))
-			return TRUE
+			return OP_OK
 
 		var/turf/cur = get_start()
 		var/orientation = get_dir(get_start(), get_end())
@@ -244,7 +246,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			rel_clear(src, nameof(start))
 			update_icon()
 			to_chat(user, span_warning("You can't run \the [src] through that!"))
-			return TRUE
+			return OP_OK
 
 		cur = get_start()
 		var/tapetest
@@ -288,8 +290,8 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 		rel_clear(src, nameof(start))
 		update_icon()
 		to_chat(user, span_notice("You finish placing \the [src]."))
-		return TRUE
-	return TRUE
+		return OP_OK
+	return OP_OK
 
 /obj/item/taperoll/afterattack(atom/A, mob/user as mob, proximity)
 	if(!proximity)

@@ -523,7 +523,7 @@
 	return 0
 
 CAPABILITIES(/obj/item/integrated_circuit/input/EPv2)
-	owns_one(nameof(exonet), starts = /datum/exonet_protocol)
+	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
 /obj/item/integrated_circuit/input/EPv2/Initialize(mapload)
 	. = ..()

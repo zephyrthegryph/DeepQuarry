@@ -778,13 +778,33 @@
 
 /datum/unit_test/dq_medical_scenarios_apply_cleanly/Run()
 	for(var/T in subtypesof(/datum/dq_medical_scenario))
-		var/datum/dq_medical_scenario/S = new T()
+		var/datum/dq_medical_scenario/S = dq_proto(T)
+		var/template_name = S.name
+		var/template_description = S.description
 		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 		S.apply(H)
-		// A scenario should leave at least one condition on the patient.
+		// A scenario should leave at least one condition on each independent patient.
 		var/list/conds = H.get_afflictions()
+		conds = conds.Copy()
 		TEST_ASSERT(length(conds) > 0, "[T] applied no conditions")
-		qdel(S)
+		var/list/original_severity = list()
+		for(var/datum/affliction/A as anything in conds)
+			original_severity[A] = A.severity
+		var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human)
+		TEST_ASSERT_EQUAL(dq_proto(T), S, "[T] must reuse the exact shared template")
+		S.apply(second)
+		var/list/second_conds = second.get_afflictions()
+		TEST_ASSERT(length(second_conds) > 0, "[T] applied no conditions to its second patient")
+		TEST_ASSERT_EQUAL(length(H.get_afflictions()), length(conds), "[T] must not change its first patient's condition count")
+		for(var/datum/affliction/A as anything in conds)
+			TEST_ASSERT(!QDELETED(A) && (A in H.get_afflictions()), "[T] must preserve each exact first-patient record")
+			TEST_ASSERT_EQUAL(owner_of(A), H.body, "[T] must not move first-patient records to its second patient")
+			TEST_ASSERT_EQUAL(A.severity, original_severity[A], "[T] must not alter first-patient severity")
+		for(var/datum/affliction/A as anything in second_conds)
+			TEST_ASSERT(!(A in conds), "[T] must construct independent second-patient records")
+			TEST_ASSERT_EQUAL(owner_of(A), second.body, "[T] must keep second-patient records owned by that body")
+		TEST_ASSERT_EQUAL(S.name, template_name, "[T] must preserve the shared template name")
+		TEST_ASSERT_EQUAL(S.description, template_description, "[T] must preserve the shared template description")
 
 
 // --- metric-driven conditions: radiation ------------------------------

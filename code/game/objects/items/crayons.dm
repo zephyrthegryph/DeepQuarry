@@ -7,10 +7,9 @@
 	uses = 0
 
 CAPABILITIES(/obj/item/pen/crayon/mime)
-	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(interaction_invert)))
+	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(mime_crayon_inverted)))
 
-/// Old attack_self.
-/obj/item/pen/crayon/mime/proc/interaction_invert(datum/act/op/A)
+/obj/item/pen/crayon/mime/proc/mime_crayon_inverted(datum/act/op/A)
 	var/mob/living/user = A.actor
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
@@ -20,7 +19,7 @@ CAPABILITIES(/obj/item/pen/crayon/mime)
 		colour = "#000000"
 		shadeColour = "#FFFFFF"
 		to_chat(user, "You will now draw in black and white with this crayon.")
-	return
+	return OP_OK
 
 /obj/item/pen/crayon/rainbow
 	icon_state = "crayonrainbow"
@@ -186,10 +185,9 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 	uses = 0
 
 CAPABILITIES(/obj/item/pen/crayon/marker/mime)
-	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(interaction_invert)))
+	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(mime_marker_inverted)))
 
-/// Old attack_self.
-/obj/item/pen/crayon/marker/mime/proc/interaction_invert(datum/act/op/A)
+/obj/item/pen/crayon/marker/mime/proc/mime_marker_inverted(datum/act/op/A)
 	var/mob/living/user = A.actor
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
@@ -199,7 +197,7 @@ CAPABILITIES(/obj/item/pen/crayon/marker/mime)
 		colour = "#000000"
 		shadeColour = "#FFFFFF"
 		to_chat(user, "You will now draw in black and white with this marker.")
-	return
+	return OP_OK
 
 /obj/item/pen/crayon/marker/rainbow
 	icon_state = "markerrainbow"

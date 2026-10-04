@@ -182,13 +182,13 @@ UI_ACT_PROC(/obj/item/rig, ui_act_interact_module)
 				rel_set(src, nameof(/datum/tgui_module/robot_ui_module::selected_module), module)
 				. = TRUE
 			if("engage")
-				module.engage()
+				module.engage(null, FALSE, ui.user)
 				. = TRUE
 			if("toggle")
 				if(module.active)
-					module.deactivate()
+					module.deactivate(FALSE, ui.user)
 				else
-					module.activate()
+					module.activate(FALSE, ui.user)
 				. = TRUE
 			if("select_charge_type")
 				module.charge_selected = params["charge_type"]

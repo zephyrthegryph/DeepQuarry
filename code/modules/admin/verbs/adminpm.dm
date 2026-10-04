@@ -152,7 +152,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	var/keywordparsedmsg = keywords_lookup(msg)
 
-	if(recipient.holder)
+	if(admin_can(recipient, 0))
 		if(holder)	//both are admins
 			to_chat(recipient, span_admin_pm_warning("Admin PM from-" + span_bold("[key_name(src, recipient, 1)]") + ": [keywordparsedmsg]"))
 			to_chat(src, span_admin_pm_notice("Admin PM to-" + span_bold("[key_name(recipient, src, 1)]") + ": [keywordparsedmsg]"))

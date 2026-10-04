@@ -177,12 +177,14 @@ DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_INTERACTIONS(/obj/item/coin, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
-/// Old attack_self.
-/obj/item/coin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/coin)
+	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(coin_flip_requested)))
+
+/obj/item/coin/proc/coin_flip_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)
@@ -192,7 +194,7 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 	act_message(user, src, MSG_SELF(span_notice("You throw %T%. It lands on [comment]!")), \
 		MSG_OTHERS(span_notice("%U% has thrown %T%. It lands on [comment]!")))
 	balloon_alert_visible("\the [src] lands on [comment]!", "\the [src] lands on [comment]!")
-	return TRUE
+	return OP_OK
 
 //Weird coins that I would prefer didn't work with normal vending machines. Might use them to make weird vending machines later.
 
@@ -236,10 +238,9 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 	value = 20
 
 CAPABILITIES(/obj/item/aliencoin)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(alien_coin_flip_requested)))
 
-/// Old attack_self.
-/obj/item/aliencoin/proc/interaction_self(datum/act/op/A)
+/obj/item/aliencoin/proc/alien_coin_flip_requested(datum/act/op/A)
 	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
@@ -251,7 +252,7 @@ CAPABILITIES(/obj/item/aliencoin)
 	if(rand(1,20) == 1)
 		act_message(user, src, others = span_notice("%U% fumbled %T%!"), runemessage = "fumbles [src]")
 		user.remove_from_mob(src)
-	return TRUE
+	return OP_OK
 
 /obj/item/aliencoin/examine(mob/user)
 	. = ..()

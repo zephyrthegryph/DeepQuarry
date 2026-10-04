@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/projectile)
 			if(loc)
 				Bump(loc)
 			if(!QDELETED(src))
-				qdel(src)
+				consume(src)
 			return	//Kill!
 		pixel_move(1, TRUE)
 
@@ -230,7 +230,7 @@ CAPABILITIES(/obj/item/projectile)
 		trajectory.increment(trajectory_multiplier)
 		var/turf/T = trajectory.return_turf()
 		if(!istype(T))
-			qdel(src)
+			consume(src)
 			return
 		if(T.z != loc.z)
 			var/old = loc
@@ -368,7 +368,7 @@ CAPABILITIES(/obj/item/projectile)
 	if(isnull(Angle))	//Try to resolve through offsets if there's no angle set.
 		if(isnull(xo) || isnull(yo))
 			stack_trace("WARNING: Projectile [type] deleted due to being unable to resolve a target after angle was null!")
-			qdel(src)
+			consume(src)
 			return
 		var/turf/target = locate(CLAMP(starting.x + xo, 1, world.maxx), CLAMP(starting.y + yo, 1, world.maxy), starting.z)
 		setAngle(Get_Angle(src, target))
@@ -444,7 +444,7 @@ CAPABILITIES(/obj/item/projectile)
 		setAngle(Get_Angle(src, targloc) + spread)
 	else
 		stack_trace("WARNING: Projectile [type] fired without either mouse parameters, or a target atom to aim at!")
-		qdel(src)
+		consume(src)
 
 /proc/calculate_projectile_angle_and_pixel_offsets(mob/user, params)
 	var/list/mouse_control = params2list(params)
@@ -818,7 +818,7 @@ CAPABILITIES(/obj/item/projectile)
 /obj/item/projectile/proc/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 
 	if(!get_turf(user) && !get_turf(src)) // if both the user of the projectile AND the projectile itself are in nullspace, don't fire, just remove ourselves
-		om_qdel_after(src, 1)
+		expire(0.1 SECONDS)
 		return //fire returns nothing, so neither do we need to
 
 	rel_set(src, nameof(original), target)

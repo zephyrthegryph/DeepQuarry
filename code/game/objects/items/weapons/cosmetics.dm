@@ -31,50 +31,49 @@
 	colour = pick("red","purple","jade","black")
 	name = "[colour] lipstick"
 
+TRACKED(/obj/item/lipstick, open)
+
 CAPABILITIES(/obj/item/lipstick)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("twist", in_hand(), label("Twist lipstick"), then(PROC_REF(twisted)))
+	op("apply", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply lipstick"),
+		needs(req_adjacent(), req_is(nameof(open), TRUE), req(PROC_REF(clean_lips), because = PROC_REF(lip_refusal))),
+		then(PROC_REF(application_started), early = TRUE), wait(PROC_REF(application_delay)), then(PROC_REF(lipstick_applied)))
 
-/// Old attack_self.
-/obj/item/lipstick/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	to_chat(user, span_notice("You twist \the [src] [open ? "closed" : "open"]."))
-	open = !open
-	if(open)
-		icon_state = "[initial(icon_state)]_[colour]"
+/obj/item/lipstick/proc/twisted(datum/act/op/A)
+	to_chat(A.actor, span_notice("You twist \the [src] [open ? "closed" : "open"]."))
+	set_open(!open)
+	icon_state = open ? "[initial(icon_state)]_[colour]" : initial(icon_state)
+	return OP_OK
+
+/obj/item/lipstick/proc/clean_lips(datum/act/op/A)
+	if(!ishuman(A.target))
+		return FALSE
+	var/mob/living/carbon/human/H = A.target
+	return !H.lip_style
+
+/obj/item/lipstick/proc/lip_refusal(datum/act/op/A)
+	return span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
+
+/obj/item/lipstick/proc/application_delay(datum/act/op/A)
+	return A.target == A.actor ? 0 : 2 SECONDS
+
+/obj/item/lipstick/proc/application_started(datum/act/op/A)
+	if(A.target != A.actor)
+		act_message(A.actor, src, MSG_SELF(span_notice("You begin to apply %T%.")), \
+			MSG_OTHERS(span_warning("%U% begins to do [A.target]'s lips with %T%.")))
+	return OP_OK
+
+/obj/item/lipstick/proc/lipstick_applied(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	if(H == A.actor)
+		act_message(A.actor, src, MSG_SELF(span_notice("You take a moment to apply %T%. Perfect!")), \
+			MSG_OTHERS(span_notice("%U% does their lips with %T%.")))
 	else
-		icon_state = initial(icon_state)
-	return TRUE
-
-/obj/item/lipstick/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!open)
-		return ITEM_INTERACT_FAILURE
-
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		if(H.lip_style)	//if they already have lipstick on
-			to_chat(user, span_notice("You need to wipe off the old lipstick first!"))
-			return ITEM_INTERACT_FAILURE
-		if(H == user)
-			act_message(user, src, MSG_SELF(span_notice("You take a moment to apply %T%. Perfect!")), \
-				MSG_OTHERS(span_notice("%U% does their lips with %T%.")))
-			H.lip_style = colour
-			H.update_icons_body()
-			return ITEM_INTERACT_SUCCESS
-		else
-			act_message(user, src, MSG_SELF(span_notice("You begin to apply %T%.")), \
-				MSG_OTHERS(span_warning("%U% begins to do [H]'s lips with %T%.")))
-			om_task_timed(user, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, H))
-			return ITEM_INTERACT_SUCCESS
-	else
-		to_chat(user, span_notice("Where are the lips on that?"))
-		return ITEM_INTERACT_FAILURE
-
-/obj/item/lipstick/proc/attack_timed_done(mob/living/user, mob/living/carbon/human/H)
-	act_message(user, src, MSG_SELF(span_notice("You apply %T%.")), \
-		MSG_OTHERS(span_notice("%U% does [H]'s lips with %T%.")))
-	H.lip_style = colour
+		act_message(A.actor, src, MSG_SELF(span_notice("You apply %T%.")), \
+			MSG_OTHERS(span_notice("%U% does [H]'s lips with %T%.")))
+	H.set_lip_style(colour)
 	H.update_icons_body()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 //you can wipe off lipstick with paper! see code/modules/paperwork/paper.dm, paper/attack()
 
@@ -87,11 +86,10 @@ CAPABILITIES(/obj/item/lipstick)
 	icon_state = "purplecomb"
 
 CAPABILITIES(/obj/item/haircomb)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("comb", in_hand(), label("Comb hair"), then(PROC_REF(hair_combed)))
 
-/// Old attack_self.
-/obj/item/haircomb/proc/interaction_self(datum/act/op/A)
-	var/mob/living/user = A.actor
+/obj/item/haircomb/proc/hair_combed(datum/act/op/A)
+	var/mob/user = A.actor
 	var/text = "person"
 	if(ishuman(user))
 		var/mob/living/carbon/human/U = user
@@ -107,7 +105,7 @@ CAPABILITIES(/obj/item/haircomb)
 			if(FEMALE)
 				text = "lady"
 	act_message(user, src, others = span_notice("%U% uses %T% to comb their hair with incredible style and sophistication. What a [text]."))
-	return TRUE
+	return OP_OK
 
 /obj/item/makeover
 	name = "makeover kit"
@@ -119,11 +117,10 @@ CAPABILITIES(/obj/item/haircomb)
 
 
 CAPABILITIES(/obj/item/makeover)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	owns_one(nameof(M), starts = /datum/tgui_module/appearance_changer/mirror/coskit)
+	op("makeover", in_hand(), label("Adjust appearance"), needs(req(/mob/living/carbon/human, of = ON_ACTOR)), then(PROC_REF(appearance_adjusted)))
 
-/// Old attack_self.
-/obj/item/makeover/proc/interaction_self(datum/act/op/A)
+/obj/item/makeover/proc/appearance_adjusted(datum/act/op/A)
 	var/mob/user = A.actor
 	if(ishuman(user))
 		to_chat(user, span_notice("You flip open \the [src] and begin to adjust your appearance."))
@@ -132,5 +129,4 @@ CAPABILITIES(/obj/item/makeover)
 		var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 		if(istype(E))
 			E.change_eye_color()
-	return TRUE
-
+	return OP_OK

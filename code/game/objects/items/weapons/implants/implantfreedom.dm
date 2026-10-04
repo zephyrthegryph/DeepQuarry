@@ -14,7 +14,7 @@
 	uses = rand(1, 5)
 
 
-/obj/item/implant/freedom/trigger(emote, mob/living/carbon/source as mob)
+/obj/item/implant/freedom/trigger(emote, mob/living/carbon/source as mob, mob/actor)
 	if (src.uses < 1)
 		return 0
 

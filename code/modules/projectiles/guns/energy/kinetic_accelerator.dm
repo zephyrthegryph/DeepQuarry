@@ -200,7 +200,7 @@
 
 	var/carried = max(1, loc.ConflictElementCount(CONFLICT_ELEMENT_KA))
 
-	om_cancel_timer_slot(src, "recharge_timerid")
+	cancel_after(src, "recharge_timerid")
 	after(src, recharge_time * carried, PROC_REF(reload), key = "recharge_timerid")
 
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()

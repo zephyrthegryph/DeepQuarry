@@ -27,7 +27,7 @@
 		if(src in C.screen)
 			C.screen -= src
 
-/atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params)
+/atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	return
 
 /atom/movable/screen/text
@@ -743,7 +743,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom
 
 /atom/movable/screen/component_button/Click(params)
 	if(parent())
-		parent().component_click(src, params)
+		parent().component_click(src, params, usr) // ALLOW(sys_usr_outside_verb): native HUD component Click supplies the initiating actor to its parent callback
 
 // Character setup stuff
 /atom/movable/screen/setup_preview
@@ -925,15 +925,18 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	mouse_opacity = 1
 
 /atom/movable/screen/mapper/powbutton/Click()
-	if(!usr.checkClickCooldown())
+	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native mapper control captures its clicking actor without adding parent input routing.
+
+/atom/movable/screen/mapper/powbutton/click_with_actor(mob/user, location, control, params)
+	if(!user.checkClickCooldown())
 		return TRUE
-	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED))
 		return TRUE
-	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
 	parent().powerClick()
 	flick("powClick",src)
-	usr << get_sfx(SFX_BUTTON)
+	user << get_sfx(SFX_BUTTON)
 	return TRUE
 
 /atom/movable/screen/mapper/mapbutton
@@ -943,15 +946,18 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	mouse_opacity = 1
 
 /atom/movable/screen/mapper/mapbutton/Click()
-	if(!usr.checkClickCooldown())
+	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native mapper control captures its clicking actor without adding parent input routing.
+
+/atom/movable/screen/mapper/mapbutton/click_with_actor(mob/user, location, control, params)
+	if(!user.checkClickCooldown())
 		return TRUE
-	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED))
 		return TRUE
-	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
 	parent().mapClick()
 	flick("mapClick",src)
-	usr << get_sfx(SFX_BUTTON)
+	user << get_sfx(SFX_BUTTON)
 	return TRUE
 
 // Markers are 16x16, people have apparently settled on centering them on the 8,8 pixel

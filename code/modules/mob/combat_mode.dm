@@ -167,7 +167,11 @@
 	var/on_state = "intent_harm"
 
 /atom/movable/screen/combat_mode/Click(location, control, params)
-	usr.set_combat_mode(!usr.combat_mode)
+	return toggle_combat_mode_with_actor(usr) // ALLOW(sys_usr_outside_verb): native HUD Click supplies the initiating mob for the combat toggle
+
+/atom/movable/screen/combat_mode/proc/toggle_combat_mode_with_actor(mob/user)
+	if(user)
+		user.set_combat_mode(!user.combat_mode)
 	return TRUE
 
 /atom/movable/screen/combat_mode/proc/update_for(mob/owner)

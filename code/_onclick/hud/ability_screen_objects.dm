@@ -182,10 +182,11 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 
 
 /atom/movable/screen/ability/Click()
-	if(!usr)
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native ability clicking supplies the initiating actor before its unchanged no-parent dispatch.
+	if(!user)
 		return
 
-	activate()
+	activate_with_actor(user)
 
 /atom/movable/screen/ability/MouseDrop(atom/A)
 	if(!A || A == src)
@@ -200,6 +201,10 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 /atom/movable/screen/ability/proc/activate()
 	to_chat(world, "[src] had activate() called.")
 	return
+
+/// Generic abilities keep their existing activation; actor-aware subtypes thread their caller explicitly.
+/atom/movable/screen/ability/proc/activate_with_actor(mob/user)
+	return activate()
 
 // This checks if the ability can be used.
 /atom/movable/screen/ability/proc/can_activate()
@@ -218,7 +223,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	if(slot > length(mob.ability_master.ability_objects) || slot <= 0)
 		return // Out of bounds.
 	var/atom/movable/screen/ability/A = LAZYACCESS(mob.ability_master.ability_objects, slot)
-	A.activate()
+	A.activate_with_actor(mob)
 
 //////////Verb Abilities//////////
 //Buttons to trigger verbs/procs//
@@ -291,6 +296,13 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 /atom/movable/screen/ability/obj_based/technomancer
 	icon_state = "wiz_spell_base"
 	background_base_state = "wiz"
+
+/atom/movable/screen/ability/obj_based/technomancer/activate_with_actor(mob/user)
+	var/obj/target = object()
+	if(istype(target, /obj/spellbutton) && target.type == /obj/spellbutton)
+		var/obj/spellbutton/button = target
+		return button.create_spell_with_actor(user)
+	return ..()
 
 /atom/movable/screen/movable/ability_master/proc/add_technomancer_ability(obj/object_given, ability_icon_given)
 	if(!object_given)

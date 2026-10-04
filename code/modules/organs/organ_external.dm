@@ -109,7 +109,7 @@
 	if(splinted && splinted.loc == src)
 		var/atom/movable/splint = splinted
 		splint.moveToNullspace()
-		qdel(splint)
+		consume(splint)
 
 	// The detach hook (body/parts/attach.dm) keeps the owner's organ caches; the
 	// implant site slot's own teardown (destroy transaction phase 5, before
@@ -333,8 +333,8 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	for(var/datum/affliction/tissue_necrosis/N in afflictions_here())
 		if(N.body)
 			N.body.remove_affliction(N)
-		own_take_member(src, nameof(detached_afflictions), N)
-		qdel(N)
+		if(!own_remove(src, nameof(detached_afflictions), N))
+			qdel(N)
 	integrity_dirty = TRUE
 
 /obj/item/organ/external/proc/is_dislocated()
@@ -1528,7 +1528,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		explosion(get_turf(victim),-1,-1,2,3)
 		fx_sparks(victim, 5, FALSE)
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
-		om_qdel_after(src, 1)
+		expire(0.1 SECONDS)
 
 	victim.update_icons_body()
 	return TRUE

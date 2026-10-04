@@ -8,7 +8,7 @@
 	var/datum/tgui_module/shutoff_monitor/monitor
 
 CAPABILITIES(/obj/machinery/computer/shutoff_monitor)
-	owns_one(nameof(monitor), starts = /datum/tgui_module/shutoff_monitor)
+	owns_one(nameof(monitor), /datum/tgui_module/shutoff_monitor, starts = /datum/tgui_module/shutoff_monitor)
 
 
 /obj/machinery/computer/shutoff_monitor/declare_interactions(list/into)

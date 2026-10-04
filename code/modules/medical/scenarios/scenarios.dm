@@ -212,14 +212,13 @@
 	dummy.real_name = "Scenario Patient #[rand(1000, 9999)]"
 	dummy.name = dummy.real_name
 	dummy.status_at_least(EFFECT_SLEEPING, 60 SECONDS)
-	var/datum/dq_medical_scenario/S = new scenario_path()
+	var/datum/dq_medical_scenario/S = dq_proto(scenario_path)
 	S.apply(dummy)
 	if(silent)
 		to_chat(admin_mob, span_notice("Spawned [dummy] with a random scenario — diagnose the patient yourself."))
 	else
 		to_chat(admin_mob, span_notice("Spawned [dummy] with scenario: <b>[S.name]</b> — [S.description]"))
 	log_admin("[key_name(admin_mob)] ran medical scenario '[S.name]' on [dummy] at [T].")
-	qdel(S)
 
 
 ADMIN_VERB(dq_run_medical_scenario, R_DEBUG, "DQ Run Medical Scenario", "Spawn a test patient pre-loaded with a curated cascading-condition scenario.", ADMIN_CATEGORY_DEBUG)

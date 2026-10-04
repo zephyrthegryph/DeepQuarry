@@ -82,20 +82,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_ALT_FARMANIMALS)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
-// organs are deleted from a snapshot; the nif (DECLARE_REF(..., OWNED)) and blood vessel go with the body.
-/mob/living/carbon/human/on_destroy(force)
-	// Each organ's Destroy() removes itself (and qdels its children/internals)
-	// out of src.organs, so iterating the live list skips entries — skipped
-	// organs never run Destroy() and their lingering `owner` ref pins this mob
-	// (and their medical issues) against GC. Snapshot first. Each organ also
-	// scrubs itself out of the *_by_name lookup tables, so those end up empty
-	// here — do NOT null them: the parent Destroy chain (equipment drops →
-	// update_icons, should_have_organ) still indexes them.
-	if(organs)
-		for(var/o in organs.Copy())
-			qdel(o)
-	..()
-
 /mob/living/carbon/human/get_status_tab_items()
 	. = ..()
 	. += ""

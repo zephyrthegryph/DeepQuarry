@@ -220,8 +220,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 	return was_on != on
 
 /obj/machinery/telecomms/machine_step()
-	if(om_timer_slot_pending(src, "thermal_timer"))
-		om_cancel_timer_slot(src, "thermal_timer")
+	if(after_pending(src, "thermal_timer"))
+		cancel_after(src, "thermal_timer")
 	var/power_changed = update_power()
 
 	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(MACHINE_SERVICE_INTERVAL, 1)), 1) : 1
@@ -240,7 +240,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 	return PROCESS_KILL
 
 /obj/machinery/telecomms/proc/schedule_thermal_check()
-	if(om_timer_slot_pending(src, "thermal_timer") || QDELETED(src))
+	if(after_pending(src, "thermal_timer") || QDELETED(src))
 		return
 	after(src, max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due), key = "thermal_timer")
 

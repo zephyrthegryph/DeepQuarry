@@ -6,9 +6,11 @@
 	var/obj/item/weldingtool/welder // owned: the internal welder the tool transforms into, kept in its contents
 	var/weldertype = /obj/item/weldingtool/dummy
 
+TRACKED(/obj/item/tool/transforming, current_tooltype)
+
 CAPABILITIES(/obj/item/tool/transforming)
 	owns_one(nameof(welder), /obj/item/weldingtool)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("switch", in_hand(), label("Change tool mode"), then(PROC_REF(mode_switched)))
 
 /obj/item/tool/transforming/Initialize(mapload, no_counterpart = TRUE)
 	. = ..()
@@ -20,18 +22,17 @@ CAPABILITIES(/obj/item/tool/transforming)
 /obj/item/tool/transforming/get_welder()
 	return welder
 
-/// Old attack_self.
-/obj/item/tool/transforming/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
+/// The subtype owns its complete equipment change; retain the original actor.
+/obj/item/tool/transforming/proc/mode_switched(datum/act/op/A)
 	if(!length(possible_tooltypes) || length(possible_tooltypes) < 2)
-		return TRUE
+		return OP_OK
 	if(current_tooltype == length(possible_tooltypes))
-		current_tooltype = 1
+		set_current_tooltype(1)
 	else
-		current_tooltype++
+		set_current_tooltype(current_tooltype + 1)
 
-	on_tool_switch(user)
-	return TRUE
+	on_tool_switch(A.actor)
+	return OP_OK
 
 /obj/item/tool/transforming/proc/on_tool_switch(mob/user)
 	return

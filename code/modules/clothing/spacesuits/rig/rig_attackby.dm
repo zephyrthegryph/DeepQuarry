@@ -159,7 +159,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 	if(to_remove == "cell")
 		to_chat(user, "You detach \the [cell] from \the [src]'s battery mount.")
 		for(var/obj/item/rig_module/module in installed_modules)
-			module.deactivate()
+			module.deactivate(FALSE, user)
 		user.put_in_hands(cell)
 		own_take(src, nameof(cell))
 		return ITEM_INTERACT_SUCCESS

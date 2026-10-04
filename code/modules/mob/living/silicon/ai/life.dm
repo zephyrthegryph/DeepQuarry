@@ -130,8 +130,8 @@
 	after(src, delay, PROC_REF(power_restore_step), key = "power_restore_timer", with = list(step))
 
 /mob/living/silicon/ai/proc/cancel_power_restore()
-	if(om_timer_slot_pending(src, "power_restore_timer"))
-		om_cancel_timer_slot(src, "power_restore_timer")
+	if(after_pending(src, "power_restore_timer"))
+		cancel_after(src, "power_restore_timer")
 
 /// One step of the restore routine. Each step reschedules the next.
 /mob/living/silicon/ai/proc/power_restore_step(step)
