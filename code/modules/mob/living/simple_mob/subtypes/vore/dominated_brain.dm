@@ -56,14 +56,14 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 
 /// Also called directly with no args (lets_unregister_our_signals).
 /mob/living/dominated_brain/proc/prey_was_deleted(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(prey_body)
 		unobserve(prey_body, /datum/notice/qdeleting, src)
 		rel_clear(src, nameof(prey_body))
 
 /// Also called directly with no args (lets_unregister_our_signals).
 /mob/living/dominated_brain/proc/pred_was_deleted(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(pred_body)
 		unobserve(pred_body, /datum/notice/qdeleting, src)
 		rel_clear(src, nameof(pred_body))

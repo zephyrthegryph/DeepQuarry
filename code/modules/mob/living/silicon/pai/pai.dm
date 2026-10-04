@@ -451,7 +451,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 /// Something's probably attacking us! The more damage it is doing, the more
 /// likely it is to damage something important in the card.
 /mob/living/silicon/pai/proc/on_injured(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_injured/event = A
 	var/kind = event.kind
 	var/amount = event.applied

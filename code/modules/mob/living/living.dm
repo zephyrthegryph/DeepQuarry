@@ -1087,7 +1087,7 @@ SETTER(/mob/living, nutrition)
 	return character_setup_button
 
 /datum/character_setup_button/proc/on_client_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	create_mob_button(source)
 
@@ -1112,7 +1112,7 @@ SETTER(/mob/living, nutrition)
 	user.client?.screen += screen_icon
 
 /datum/character_setup_button/proc/character_setup_click(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/click/event = A
 	var/mob/clicker = event.user
 	if(clicker?.client?.prefs)

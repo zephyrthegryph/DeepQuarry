@@ -34,7 +34,7 @@
 /// Combat shielding absorbs a percentage of physical and thermal injury
 /// directly into the cell.
 /mob/living/silicon/robot/proc/absorb_injury_with_shield(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_shield_injury/event = A
 	var/kind = event.kind
 	var/list/amount_ref = event.amount_ref

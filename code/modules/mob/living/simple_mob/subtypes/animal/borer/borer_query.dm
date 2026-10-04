@@ -11,7 +11,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/borer)
 	ghost_check.query() // This will sleep the proc for awhile.
 
 /mob/living/simple_mob/animal/borer/proc/get_winner(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(ghost_check && ghost_check.candidates.len) //ghost_check should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = ghost_check.candidates[1]
 		transfer_personality(D)

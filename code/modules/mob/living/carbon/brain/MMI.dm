@@ -281,7 +281,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	Q.query()
 
 /obj/item/mmi/digital/proc/get_winner(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(Q && Q.candidates.len) //Q should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = Q.candidates[1]
 		transfer_personality(D)

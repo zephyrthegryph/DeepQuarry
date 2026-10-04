@@ -426,11 +426,11 @@
 	return old_cell
 
 /mob/living/silicon/robot/proc/shield_cell_from_emp(datum/act/emp/pulse)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	pulse.protection |= EMP_PROTECT_SELF
 
 /mob/living/silicon/robot/proc/on_cell_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
@@ -1592,12 +1592,12 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	return TRUE
 
 /mob/living/silicon/robot/proc/on_master_laws_changed(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(lawupdate)
 		sync()
 
 /mob/living/silicon/robot/proc/on_master_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	set_master_ai(null, TRUE)
 
 /mob/living/silicon/robot/proc/disconnect_from_ai(silent)

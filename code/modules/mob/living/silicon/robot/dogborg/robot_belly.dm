@@ -71,14 +71,14 @@
 		. |= S
 
 /datum/robot_belly/proc/on_death(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	for(var/obj/item/dogborg/sleeper/S as anything in get_sleepers())
 		S.go_out()
 
 /// Ore bags autoload only while their compactor is equipped; the pounce turns
 /// bluespace while anomalous sight is active.
 /datum/robot_belly/proc/on_equipment_changed(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/silicon/robot/R = owner
 	var/list/held = R.get_all_held_items()
 	for(var/obj/item/dogborg/sleeper/S as anything in get_sleepers())
@@ -107,7 +107,7 @@
 /// The "sleeper" belly class shows the sleeper's contents per the owner's
 /// overlay preference.
 /datum/robot_belly/proc/on_belly_fullness(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/robot_belly_fullness/event = A
 	var/belly_class = event.belly_class
 	var/list/fullness_ref = event.fullness_ref

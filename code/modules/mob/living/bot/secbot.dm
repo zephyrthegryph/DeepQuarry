@@ -197,7 +197,7 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 
 /// Anything that actually hurt us is an attack: find who did it and retaliate.
 /mob/living/bot/secbot/proc/on_injured(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_injured/event = A
 	var/amount = event.applied
 	var/atom/injury_source = event.source_
@@ -247,7 +247,7 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 
 // Callback invoked if the registered target moves
 /mob/living/bot/secbot/proc/target_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/moving_instance = A.target
 	if(get_dist(get_turf(src), get_turf(target)) >= 1)
 		awaiting_surrender = INFINITY	// Done waiting!

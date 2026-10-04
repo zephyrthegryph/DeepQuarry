@@ -461,7 +461,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	rel_clear(src, nameof(soaking_wearer))
 
 /obj/item/rig/protean/proc/soak_wearer_injury(datum/act/injure/hit)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = hit.target
 	var/kind = hit.kind
 	var/zone = hit.zone

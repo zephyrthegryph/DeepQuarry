@@ -69,7 +69,7 @@
 	return dat
 
 /obj/effect/overmap/visitable/simplemob/proc/on_parent_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	forceMove(parent.loc)
 	set_dir(parent.dir)
 
@@ -206,6 +206,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	return dat
 
 /obj/effect/overmap/visitable/ship/simplemob/proc/on_parent_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	forceMove(parent.loc)
 	set_dir(parent.dir)
