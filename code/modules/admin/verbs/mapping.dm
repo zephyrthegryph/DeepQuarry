@@ -198,8 +198,8 @@ ADMIN_VERB(count_objects_all, R_DEBUG, "Count Objects All", "Count all objects b
 	if(!result.ok)
 		stack_trace("om flow count_objects_all answer count_type_answered: [result.error]")
 
-/datum/admin_verb/count_objects_all/proc/count_selected_type(datum/act/request/A)
-	var/type_text = A.request.answer_value
+/datum/admin_verb/count_objects_all/proc/count_selected_type(datum/act/request/answer)
+	var/type_text = answer.request.answer_value
 	if(!type_text)
 		return
 	var/type_path = text2path(type_text)
