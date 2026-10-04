@@ -1,6 +1,7 @@
 CAPABILITIES(/obj/machinery/telecomms/relay)
 	op("receive", ui_act(), then(PROC_REF(ui_act_receive)))
 	op("broadcast", ui_act(), then(PROC_REF(ui_act_broadcast)))
+	op("change_listening", ui_act("change_listening"), then(PROC_REF(ui_act_change_listening)))
 
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 

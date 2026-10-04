@@ -51,6 +51,8 @@
 
 CAPABILITIES(/datum/computer_file/program/access_decrypter)
 	op("PRG_reset", ui_act(), then(PROC_REF(ui_act_prg_reset)))
+	interface("NtosAccessDecrypter")
+	op("PRG_execute", ui_act("PRG_execute", arg("access_target", schema_text(4096)), arg("allowed", num())), then(PROC_REF(ui_act_prg_execute)))
 
 /datum/computer_file/program/access_decrypter/proc/ui_act_prg_reset(datum/act/op/A)
 	reset()

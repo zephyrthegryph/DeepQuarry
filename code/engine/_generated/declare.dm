@@ -898,13 +898,13 @@
 	into += entry_line(129)
 	into += list(global.ref_one(nameof(originator), /atom))
 
-/// CAPABILITIES(/datum/admin_explosion_review) at code/modules/admin/verbs/adminfun.dm:220
+/// CAPABILITIES(/datum/admin_explosion_review) at code/modules/admin/verbs/adminfun.dm:222
 /datum/admin_explosion_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/adminfun.dm", 220, /datum/admin_explosion_review)
-	into += entry_line(221)
+	into += entry_block("code/modules/admin/verbs/adminfun.dm", 222, /datum/admin_explosion_review)
+	into += entry_line(223)
 	into += list(global.ref_one(nameof(actor), /mob))
-	into += entry_line(222)
+	into += entry_line(224)
 	into += list(global.ref_one(nameof(originator), /atom))
 
 /// CAPABILITIES(/datum/admin_memo_review) at code/modules/admin/admin_memo.dm:126
@@ -1275,6 +1275,10 @@
 	into += entry_block("code/modules/modular_computers/file_system/programs/antagonist/access_decrypter.dm", 52, /datum/computer_file/program/access_decrypter)
 	into += entry_line(53)
 	into += list(global.op("PRG_reset", global.ui_act(), global.then(PROC_REF(ui_act_prg_reset))))
+	into += entry_line(54)
+	into += list(global.interface("NtosAccessDecrypter"))
+	into += entry_line(55)
+	into += list(global.op("PRG_execute", global.ui_act("PRG_execute", global.arg("access_target", global.schema_text(4096)), global.arg("allowed", global.num())), global.then(PROC_REF(ui_act_prg_execute))))
 
 /// CAPABILITIES(/datum/computer_file/program/bytecrawl) at code/modules/modular_computers/file_system/programs/generic/bytecrawl.dm:11
 /datum/computer_file/program/bytecrawl/declared_entries(list/into)
@@ -1402,6 +1406,8 @@
 	into += list(global.op("lose", global.ui_act(), global.then(PROC_REF(ui_act_lose))))
 	into += entry_line(13)
 	into += list(global.op("win", global.ui_act(), global.then(PROC_REF(ui_act_win))))
+	into += entry_line(14)
+	into += list(global.interface("NtosFishing"))
 
 /// CAPABILITIES(/datum/computer_file/program/game) at code/modules/modular_computers/file_system/programs/generic/game.dm:106
 /datum/computer_file/program/game/declared_entries(list/into)
@@ -1515,6 +1521,10 @@
 	into += list(global.op("PRG_arm", global.ui_act(), global.then(PROC_REF(ui_act_prg_arm))))
 	into += entry_line(41)
 	into += list(global.op("PRG_activate", global.ui_act(), global.then(PROC_REF(ui_act_prg_activate))))
+	into += entry_line(42)
+	into += list(global.interface("NtosRevelation"))
+	into += entry_line(43)
+	into += list(global.op("PRG_obfuscate", global.ui_act("PRG_obfuscate", global.arg("new_name", global.schema_text(4096))), global.then(PROC_REF(ui_act_prg_obfuscate))))
 
 /// CAPABILITIES(/datum/computer_file/program/wordprocessor) at code/modules/modular_computers/file_system/programs/generic/wordprocessor.dm:78
 /datum/computer_file/program/wordprocessor/declared_entries(list/into)
@@ -7550,6 +7560,8 @@
 	into += list(global.owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel))
 	into += entry_line(8)
 	into += list(global.owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol))
+	into += entry_line(9)
+	into += list(global.op("observer_tome_manifest", global.item(/obj/item/book/tome), global.label("Manifest"), global.then(PROC_REF(observer_tome_manifest))))
 
 /// CAPABILITIES(/mob/observer/eye/aiEye/pic_in_pic) at code/modules/mob/living/silicon/ai/multicam.dm:200
 /mob/observer/eye/aiEye/pic_in_pic/declared_entries(list/into)
@@ -8402,6 +8414,8 @@
 	into += entry_block("code/game/objects/items/weapons/id cards/syndicate_ids.dm", 23, /obj/item/card/id/syndicate)
 	into += entry_line(24)
 	into += list(global.owns_one(nameof(agentcard_module), /datum/tgui_module/agentcard, starts = /datum/tgui_module/agentcard))
+	into += entry_line(25)
+	into += list(global.op("agent_card", global.in_hand(), global.label("Edit or show"), global.then(PROC_REF(interaction_agent_card))))
 
 /// CAPABILITIES(/obj/item/card/id/syndicate/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:258
 /obj/item/card/id/syndicate/changeling/declared_entries(list/into)
@@ -8544,18 +8558,22 @@
 	into += entry_line(215)
 	into += list(global.op("display", global.in_hand(), global.label("Flash sheriff badge"), global.then(PROC_REF(sheriff_badge_displayed))))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/bodycam) at code/game/objects/items/devices/tvcamera.dm:151
+/// CAPABILITIES(/obj/item/clothing/accessory/bodycam) at code/game/objects/items/devices/tvcamera.dm:153
 /obj/item/clothing/accessory/bodycam/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/tvcamera.dm", 151, /obj/item/clothing/accessory/bodycam)
-	into += entry_line(152)
-	into += list(global.owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera))
-	into += entry_line(153)
-	into += list(global.owns_one(nameof(bradio), starts = /obj/item/radio))
+	into += entry_block("code/game/objects/items/devices/tvcamera.dm", 153, /obj/item/clothing/accessory/bodycam)
 	into += entry_line(154)
-	into += list(global.op("toggle_video", global.ui_act(), global.then(PROC_REF(ui_act_toggle_video))))
+	into += list(global.owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera))
 	into += entry_line(155)
+	into += list(global.owns_one(nameof(bradio), starts = /obj/item/radio))
+	into += entry_line(156)
+	into += list(global.op("toggle_video", global.ui_act(), global.then(PROC_REF(ui_act_toggle_video))))
+	into += entry_line(157)
 	into += list(global.op("toggle_audio", global.ui_act(), global.then(PROC_REF(ui_act_toggle_audio))))
+	into += entry_line(158)
+	into += list(global.interface("EyeBuddy", title = "Eye Buddy"))
+	into += entry_line(159)
+	into += list(global.op("set_channel", global.ui_act("set_channel"), global.then(PROC_REF(ui_act_set_channel))))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/collar/bell) at code/modules/clothing/accessories/accessory.dm:703
 /obj/item/clothing/accessory/collar/bell/declared_entries(list/into)
@@ -12157,6 +12175,14 @@
 	into += list(global.owns_one(nameof(loaded_article_owned), /datum/computer_file/data/news_article))
 	into += entry_line(21)
 	into += list(global.op("read_news", global.in_hand(), global.then(PROC_REF(reader_selected)), global.opens_ui()))
+	into += entry_line(22)
+	into += list(global.interface("StarcasterCh"))
+	into += entry_line(23)
+	into += list(global.op("PRG_openarticle", global.ui_act("PRG_openarticle", global.arg("uid", global.num())), global.then(PROC_REF(ui_act_prg_openarticle))))
+	into += entry_line(24)
+	into += list(global.op("PRG_reset", global.ui_act("PRG_reset"), global.then(PROC_REF(ui_act_prg_reset))))
+	into += entry_line(25)
+	into += list(global.op("PRG_toggle_archived", global.ui_act("PRG_toggle_archived"), global.then(PROC_REF(ui_act_prg_toggle_archived))))
 
 /// CAPABILITIES(/obj/item/stolenpackage) at code/game/objects/items/contraband.dm:123
 /obj/item/stolenpackage/declared_entries(list/into)
@@ -13630,6 +13656,10 @@
 	into += list(global.op("toggle_audio", global.ui_act(), global.then(PROC_REF(ui_act_toggle_audio))))
 	into += entry_line(24)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+	into += entry_line(25)
+	into += list(global.interface("EyeBuddy", title = "Eye Buddy"))
+	into += entry_line(26)
+	into += list(global.op("set_channel", global.ui_act("set_channel"), global.then(PROC_REF(ui_act_set_channel))))
 
 /// CAPABILITIES(/obj/item/uav) at code/game/objects/items/uav.dm:45
 /obj/item/uav/declared_entries(list/into)
@@ -17003,26 +17033,30 @@
 	into += list(global.op("flush", global.ui_act("flush"), global.then(PROC_REF(ui_act_flush))))
 	into += entry_line(69)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint), early = TRUE)))
+	into += entry_line(70)
+	into += list(global.op("toggle", global.ui_act("toggle"), global.then(PROC_REF(ui_act_toggle))))
+	into += entry_line(71)
+	into += list(global.op("cleartemp", global.ui_act("cleartemp"), global.then(PROC_REF(ui_act_cleartemp))))
 
-/// CAPABILITIES(/obj/machinery/telecomms/broadcaster) at code/game/machinery/telecomms/machine_interactions.dm:232
+/// CAPABILITIES(/obj/machinery/telecomms/broadcaster) at code/game/machinery/telecomms/machine_interactions.dm:233
 /obj/machinery/telecomms/broadcaster/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 232, /obj/machinery/telecomms/broadcaster)
-	into += entry_line(233)
+	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 233, /obj/machinery/telecomms/broadcaster)
+	into += entry_line(234)
 	into += list(global.op("range", global.ui_act("range", global.arg("range", global.num())), global.then(PROC_REF(ui_act_range))))
 
-/// CAPABILITIES(/obj/machinery/telecomms/bus) at code/game/machinery/telecomms/machine_interactions.dm:194
+/// CAPABILITIES(/obj/machinery/telecomms/bus) at code/game/machinery/telecomms/machine_interactions.dm:195
 /obj/machinery/telecomms/bus/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 194, /obj/machinery/telecomms/bus)
-	into += entry_line(195)
+	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 195, /obj/machinery/telecomms/bus)
+	into += entry_line(196)
 	into += list(global.op("change_freq", global.ui_act("change_freq"), global.then(PROC_REF(ui_act_change_freq))))
 
-/// CAPABILITIES(/obj/machinery/telecomms/receiver) at code/game/machinery/telecomms/machine_interactions.dm:252
+/// CAPABILITIES(/obj/machinery/telecomms/receiver) at code/game/machinery/telecomms/machine_interactions.dm:253
 /obj/machinery/telecomms/receiver/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 252, /obj/machinery/telecomms/receiver)
-	into += entry_line(253)
+	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 253, /obj/machinery/telecomms/receiver)
+	into += entry_line(254)
 	into += list(global.op("range", global.ui_act("range", global.arg("range", global.num())), global.then(PROC_REF(ui_act_range))))
 
 /// CAPABILITIES(/obj/machinery/telecomms/relay) at code/game/machinery/telecomms/machine_interactions.dm:1
@@ -17033,16 +17067,18 @@
 	into += list(global.op("receive", global.ui_act(), global.then(PROC_REF(ui_act_receive))))
 	into += entry_line(3)
 	into += list(global.op("broadcast", global.ui_act(), global.then(PROC_REF(ui_act_broadcast))))
+	into += entry_line(4)
+	into += list(global.op("change_listening", global.ui_act("change_listening"), global.then(PROC_REF(ui_act_change_listening))))
 
-/// CAPABILITIES(/obj/machinery/telecomms/server) at code/game/machinery/telecomms/telecomunications.dm:555
+/// CAPABILITIES(/obj/machinery/telecomms/server) at code/game/machinery/telecomms/telecomunications.dm:557
 /obj/machinery/telecomms/server/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 555, /obj/machinery/telecomms/server)
-	into += entry_line(556)
-	into += list(global.owns_one(nameof(Compiler), /datum/TCS_Compiler))
-	into += entry_line(557)
-	into += list(global.owns_one(nameof(server_radio), /obj/item/radio/headset))
+	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 557, /obj/machinery/telecomms/server)
 	into += entry_line(558)
+	into += list(global.owns_one(nameof(Compiler), /datum/TCS_Compiler))
+	into += entry_line(559)
+	into += list(global.owns_one(nameof(server_radio), /obj/item/radio/headset))
+	into += entry_line(560)
 	into += list(global.owns_many(nameof(log_entries)))
 
 /// CAPABILITIES(/obj/machinery/turretid) at code/game/machinery/turret_control.dm:144

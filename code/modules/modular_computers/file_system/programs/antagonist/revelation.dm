@@ -39,6 +39,8 @@
 CAPABILITIES(/datum/computer_file/program/revelation)
 	op("PRG_arm", ui_act(), then(PROC_REF(ui_act_prg_arm)))
 	op("PRG_activate", ui_act(), then(PROC_REF(ui_act_prg_activate)))
+	interface("NtosRevelation")
+	op("PRG_obfuscate", ui_act("PRG_obfuscate", arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_prg_obfuscate)))
 
 /datum/computer_file/program/revelation/proc/ui_act_prg_arm(datum/act/op/A)
 	armed = !armed

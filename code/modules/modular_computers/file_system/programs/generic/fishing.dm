@@ -11,6 +11,7 @@
 CAPABILITIES(/datum/computer_file/program/fishing)
 	op("lose", ui_act(), then(PROC_REF(ui_act_lose)))
 	op("win", ui_act(), then(PROC_REF(ui_act_win)))
+	interface("NtosFishing")
 
 UI_DATA_REPLACE(/datum/computer_file/program/fishing, "merge:ui_data_datum_computer_file_program_fishing{}")
 

@@ -22,6 +22,8 @@ CAPABILITIES(/obj/item/tvcamera)
 	op("toggle_video", ui_act(), then(PROC_REF(ui_act_toggle_video)))
 	op("toggle_audio", ui_act(), then(PROC_REF(ui_act_toggle_audio)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	interface("EyeBuddy", title = "Eye Buddy")
+	op("set_channel", ui_act("set_channel"), then(PROC_REF(ui_act_set_channel)))
 
 DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 
@@ -153,6 +155,8 @@ CAPABILITIES(/obj/item/clothing/accessory/bodycam)
 	owns_one(nameof(bradio), starts = /obj/item/radio)
 	op("toggle_video", ui_act(), then(PROC_REF(ui_act_toggle_video)))
 	op("toggle_audio", ui_act(), then(PROC_REF(ui_act_toggle_audio)))
+	interface("EyeBuddy", title = "Eye Buddy")
+	op("set_channel", ui_act("set_channel"), then(PROC_REF(ui_act_set_channel)))
 
 DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)
 

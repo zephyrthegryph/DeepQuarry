@@ -67,6 +67,8 @@ CAPABILITIES(/obj/machinery/telecomms)
 	op("buffer", ui_act("buffer"), then(PROC_REF(ui_act_buffer)))
 	op("flush", ui_act("flush"), then(PROC_REF(ui_act_flush)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending
