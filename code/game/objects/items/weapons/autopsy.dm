@@ -18,6 +18,7 @@
 
 CAPABILITIES(/obj/item/autopsy_scanner)
 	owns_many(nameof(chemtraces))
+	owns_many(nameof(wdata))
 
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used
@@ -164,7 +165,7 @@ CAPABILITIES(/obj/item/autopsy_scanner)
 
 	if(target_name != M.name)
 		target_name = M.name
-		own_set(src, nameof(wdata), list())
+		rel_clear(src, nameof(wdata))
 		rel_set(src, nameof(chemtraces), list())
 		src.timeofdeath = null
 		to_chat(user, span_notice("A new patient has been registered. Purging data for previous patient."))

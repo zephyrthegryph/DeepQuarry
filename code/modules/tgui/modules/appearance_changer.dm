@@ -725,7 +725,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_savetodisk)
 		owner().update_dna()
 		var/datum/transhuman/body_record/record = new /datum/transhuman/body_record(owner(), FALSE, FALSE) // Saves a COPY! The old record is deleted
 		record.locked = FALSE // remove lock
-		own_set(DC.disk, nameof(/datum/stored_item::stored), record)
+		rel_set(DC.disk, nameof(DC.disk.stored), record)
 		DC.disk.name = "[initial(DC.disk.name)] ([owner().real_name])"
 	return TRUE
 

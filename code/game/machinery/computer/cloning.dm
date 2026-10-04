@@ -316,7 +316,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_disk)
 				set_temp("Error: The data could not be saved.", "danger")
 				return
 
-			own_set(diskette, nameof(/datum/stored_item::stored), new /datum/transhuman/body_record(active_BR())) // Traitgenes Storing the entire body record
+			rel_set(diskette, nameof(diskette.stored), new /datum/transhuman/body_record(active_BR())) // Traitgenes Storing the entire body record
 			diskette.name = "data disk - '[active_BR().mydna.dna.real_name]'"
 			set_temp("Successfully saved to disk.", "success")
 		if("eject")

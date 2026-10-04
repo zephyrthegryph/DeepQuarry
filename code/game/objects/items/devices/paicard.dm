@@ -926,7 +926,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 	if(!istype(loc,/obj/item/paicard))
 		return
 	var/obj/item/paicard/card = loc
-	own_set(src, nameof(secure_radio_connections), list())
+	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	channels = list()
 
 	for(var/internal_chan in internal_channels)
@@ -934,7 +934,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 		if(has_channel_access(card.pai, internal_chan))
 			channels += ch_name
 			channels[ch_name] = 1
-			own_put(src, nameof(secure_radio_connections), ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
+			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/paicard/typeb
 	name = "personal AI device"

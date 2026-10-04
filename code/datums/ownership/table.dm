@@ -88,13 +88,14 @@
  * - Annotations: `keep_after_destroy` (the leak check skips the var), `pool_reset`
  *   (pool_release() resets it to its initial value), `forward` (replace_with() carries it to the
  *   successor: an owned value moves, a relation re-links, anything else is copied).
+ * - `is_list`: the var is a list (owns_many); own_move()/own_transfer() then add to it even while it is null.
  * - `starts`: the starting occupant, made at init (own_init_starts()): a type path, a list of paths or
  *   list(path = count) for a list var, or nameof() a var holding either (`starts = nameof(cell_type)`,
  *   so a map or subtype override of that var picks the type). The var itself wins: a mapped path in it
  *   is made instead, an instance in it makes nothing. `policy = OWN_NONE` with `starts` gives the var no
  *   kind (the first own_set() learns OWN_DELETE): that is what DECLARE_DEFAULT_CHILD expands to.
  */
-/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null)
+/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null, is_list = FALSE)
 	if(policy == OWN_PRIVATE_COPY)
 		if(!isnull(starts))
 			CRASH("owns([var_name]): OWN_PRIVATE_COPY holds a prototype or a private copy of one; it has no starting occupant")
@@ -108,6 +109,8 @@
 		entry = list(OWNK_OWN, policy, null, null, FALSE, null, CLEAR, null, null)
 	if(entry && type)
 		entry[OWNE_TYPE] = type
+	if(entry && is_list) // owns_many: own_move()/own_transfer() add to a list that is still null instead of storing the value as a scalar
+		entry[OWNE_LIST] = TRUE
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward, starts)
 
 // There is no shares(): a var holding a registered singleton, a DEF or another flyweight is declared by its type

@@ -16,9 +16,9 @@
 			io_type_override = io_list_copy[io_entry]
 
 		if(io_type_override)
-			own_add(src, io_var, new io_type_override(src, io_entry, default_data))
+			rel_add(src, io_var, new io_type_override(src, io_entry, default_data))
 		else
-			own_add(src, io_var, new io_type(src, io_entry, default_data))
+			rel_add(src, io_var, new io_type(src, io_entry, default_data))
 		i++
 
 /// Prefix of an IC ref. Pin text is sanitized (html-encoded), so no string a

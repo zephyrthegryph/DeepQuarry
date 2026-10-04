@@ -568,7 +568,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 			var/found = FALSE
 
 			message.text = ""
-			own_set(message, nameof(message.embed), embed)
+			rel_set(message, nameof(message.embed), embed)
 			embed.title = "Whitelists for [ckey]"
 
 			var/list/whitelist_rows = flow_select(
@@ -611,3 +611,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 #undef VALID_USAGE
 #undef VALID_KINDS
 #undef VALID_ACTIONS
+
+/// The embed a status or whitelist reply carries is the message content's own (the TGS API type is vendored, so its owned var is declared here).
+CAPABILITIES(/datum/tgs_message_content)
+	owns_one(nameof(embed), /datum/tgs_chat_embed/structure)

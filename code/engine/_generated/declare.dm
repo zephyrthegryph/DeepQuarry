@@ -754,6 +754,13 @@
 	into += entry_line(12)
 	into += list(global.owns_one(nameof(dna), /datum/dna))
 
+/// CAPABILITIES(/datum/accessory_slot_registry) at code/modules/clothing/accessory_slot_registry.dm:80
+/datum/accessory_slot_registry/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessory_slot_registry.dm", 80, /datum/accessory_slot_registry)
+	into += entry_line(81)
+	into += list(global.owns_many(nameof(active_modifiers)))
+
 /// CAPABILITIES(/datum/action) at code/_onclick/hud/action/action.dm:50
 /datum/action/declared_entries(list/into)
 	..(into)
@@ -894,6 +901,13 @@
 	into += entry_block("code/modules/xenoarcheaology/effect_master.dm", 57, /datum/artifact_master)
 	into += entry_line(58)
 	into += list(global.owns_many(nameof(my_effects)))
+
+/// CAPABILITIES(/datum/balance_scenario) at code/modules/balance/_balance_harness.dm:45
+/datum/balance_scenario/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/balance/_balance_harness.dm", 45, /datum/balance_scenario)
+	into += entry_line(46)
+	into += list(global.owns_many(nameof(spawned)))
 
 /// CAPABILITIES(/datum/beam) at code/datums/beam.dm:19
 /datum/beam/declared_entries(list/into)
@@ -1252,6 +1266,13 @@
 	into += entry_line(64)
 	into += list(global.owns_many(nameof(errors)))
 
+/// CAPABILITIES(/datum/error_viewer/error_entry) at code/modules/error_handler/error_viewer.dm:141
+/datum/error_viewer/error_entry/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/error_handler/error_viewer.dm", 141, /datum/error_viewer/error_entry)
+	into += entry_line(142)
+	into += list(global.owns_one(nameof(exc), /exception))
+
 /// CAPABILITIES(/datum/event/carp_migration) at code/modules/events/carp_migration.dm:8
 /datum/event/carp_migration/declared_entries(list/into)
 	..(into)
@@ -1356,6 +1377,8 @@
 	into += entry_block("code/modules/admin/modify_robot.dm", 21, /datum/eventkit/modify_robot)
 	into += entry_line(22)
 	into += list(global.owns_many(nameof(law_list), /datum/ai_laws))
+	into += entry_line(23)
+	into += list(global.owns_one(nameof(source), /mob/living/silicon/robot))
 
 /// CAPABILITIES(/datum/expedition_mission) at code/modules/expedition/expedition_mission.dm:37
 /datum/expedition_mission/declared_entries(list/into)
@@ -2409,6 +2432,13 @@
 	into += entry_line(86)
 	into += list(global.owns_many(nameof(available_experiments), /datum/experiment))
 
+/// CAPABILITIES(/datum/tgs_message_content) at code/modules/tgs_commands/vorestation.dm:616
+/datum/tgs_message_content/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgs_commands/vorestation.dm", 616, /datum/tgs_message_content)
+	into += entry_line(617)
+	into += list(global.owns_one(nameof(embed), /datum/tgs_chat_embed/structure))
+
 /// CAPABILITIES(/datum/tgui_alert/prompt) at code/engine/present/prompt_windows.dm:27
 /datum/tgui_alert/prompt/declared_entries(list/into)
 	..(into)
@@ -3232,6 +3262,8 @@
 	into += entry_block("code/game/objects/items/weapons/autopsy.dm", 19, /obj/item/autopsy_scanner)
 	into += entry_line(20)
 	into += list(global.owns_many(nameof(chemtraces)))
+	into += entry_line(21)
+	into += list(global.owns_many(nameof(wdata)))
 
 /// CAPABILITIES(/obj/item/backup_implanter) at code/modules/resleeving/implant.dm:61
 /obj/item/backup_implanter/declared_entries(list/into)
@@ -3567,6 +3599,13 @@
 	into += entry_line(13)
 	into += list(global.owns_one(nameof(battery), /obj/item/cell))
 
+/// CAPABILITIES(/obj/item/computer_hardware/hard_drive) at code/modules/modular_computers/hardware/hard_drive.dm:16
+/obj/item/computer_hardware/hard_drive/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/modular_computers/hardware/hard_drive.dm", 16, /obj/item/computer_hardware/hard_drive)
+	into += entry_line(17)
+	into += list(global.owns_many(nameof(stored_files)))
+
 /// CAPABILITIES(/obj/item/core_sampler) at code/modules/xenoarcheaology/sampling.dm:117
 /obj/item/core_sampler/declared_entries(list/into)
 	..(into)
@@ -3589,6 +3628,13 @@
 	into += list(global.owns_many(nameof(positive_locations)))
 	into += entry_line(117)
 	into += list(global.op("view_depth_scans", global.in_hand(), global.opens_ui()))
+
+/// CAPABILITIES(/obj/item/disk/body_record) at code/modules/resleeving/designer.dm:83
+/obj/item/disk/body_record/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/resleeving/designer.dm", 83, /obj/item/disk/body_record)
+	into += entry_line(84)
+	into += list(global.owns_one(nameof(stored), /datum/transhuman/body_record))
 
 /// CAPABILITIES(/obj/item/disk/botany) at code/modules/hydroponics/seed_machines.dm:11
 /obj/item/disk/botany/declared_entries(list/into)
@@ -3793,6 +3839,8 @@
 	into += entry_block("code/modules/projectiles/guns/projectile/revolver.dm", 242, /obj/item/gun/projectile/revolver/lemat)
 	into += entry_line(243)
 	into += list(global.owns_many(nameof(secondary_loaded)))
+	into += entry_line(244)
+	into += list(global.owns_many(nameof(tertiary_loaded)))
 
 /// CAPABILITIES(/obj/item/gun/projectile/smartgun) at code/modules/projectiles/guns/projectile/smartgun.dm:68
 /obj/item/gun/projectile/smartgun/declared_entries(list/into)
@@ -3856,6 +3904,17 @@
 	into += list(global.owns_one(nameof(song), /datum/song/handheld))
 	into += entry_line(20)
 	into += list(global.op("controls", global.in_hand(), global.label("Open instrument controls"), global.then(PROC_REF(instrument_controls_opened))))
+
+/// CAPABILITIES(/obj/item/integrated_circuit) at code/modules/integrated_electronics/_defines.dm:77
+/obj/item/integrated_circuit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/integrated_electronics/_defines.dm", 77, /obj/item/integrated_circuit)
+	into += entry_line(78)
+	into += list(global.owns_many(nameof(inputs)))
+	into += entry_line(79)
+	into += list(global.owns_many(nameof(outputs)))
+	into += entry_line(80)
+	into += list(global.owns_many(nameof(activators)))
 
 /// CAPABILITIES(/obj/item/integrated_circuit/illegal/EPv2_Discoverer) at code/modules/integrated_electronics/subtypes/illegal.dm:28
 /obj/item/integrated_circuit/illegal/EPv2_Discoverer/declared_entries(list/into)
@@ -4182,6 +4241,27 @@
 	into += list(global.op("refit", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Refit hardsuit"), global.when(PROC_REF(has_refit_parts)), global.needs(global.req_adjacent(), global.req(PROC_REF(refit_allowed), because = PROC_REF(refit_refusal))), global.then(PROC_REF(refitted))))
 	into += entry_line(26)
 	into += list(global.op("discard_spent", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Discard spent kit"), global.when(global.cond_not(PROC_REF(has_refit_parts))), global.needs(global.req_adjacent()), global.then(PROC_REF(spent_discarded))))
+
+/// CAPABILITIES(/obj/item/modular_computer) at code/modules/modular_computers/computers/modular_computer/variables.dm:79
+/obj/item/modular_computer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/modular_computers/computers/modular_computer/variables.dm", 79, /obj/item/modular_computer)
+	into += entry_line(80)
+	into += list(global.owns_one(nameof(processor_unit), /obj/item/computer_hardware/processor_unit))
+	into += entry_line(81)
+	into += list(global.owns_one(nameof(network_card), /obj/item/computer_hardware/network_card))
+	into += entry_line(82)
+	into += list(global.owns_one(nameof(hard_drive), /obj/item/computer_hardware/hard_drive))
+	into += entry_line(83)
+	into += list(global.owns_one(nameof(battery_module), /obj/item/computer_hardware/battery_module))
+	into += entry_line(84)
+	into += list(global.owns_one(nameof(card_slot), /obj/item/computer_hardware/card_slot))
+	into += entry_line(85)
+	into += list(global.owns_one(nameof(nano_printer), /obj/item/computer_hardware/nano_printer))
+	into += entry_line(86)
+	into += list(global.owns_one(nameof(portable_drive), /obj/item/computer_hardware/hard_drive/portable))
+	into += entry_line(87)
+	into += list(global.owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link))
 
 /// CAPABILITIES(/obj/item/nif) at code/modules/nifsoft/nif_tgui.dm:21
 /obj/item/nif/declared_entries(list/into)

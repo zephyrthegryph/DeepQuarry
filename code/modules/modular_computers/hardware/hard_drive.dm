@@ -13,6 +13,9 @@
 	/// Whether drive is protected against changes
 	var/read_only = FALSE
 
+CAPABILITIES(/obj/item/computer_hardware/hard_drive)
+	owns_many(nameof(stored_files))
+
 /obj/item/computer_hardware/hard_drive/advanced
 	name = "advanced hard drive"
 	desc = "A small hybrid hard drive with 256GQ of storage capacity for use in higher grade computers where balance between power efficiency and capacity is desired."
@@ -83,9 +86,6 @@
 	if(F in stored_files)
 		return 0
 
-	// The first file must enter an owned list, rather than a scalar slot.
-	if(!stored_files)
-		own_set(src, nameof(stored_files), list())
 	var/datum/previous_owner = owner_of(F)
 	if(!own_move(F, src, nameof(/obj/item/computer_hardware/hard_drive/::stored_files)))
 		return 0

@@ -77,6 +77,9 @@
 	/// registry_key ("[accessory]:[clothing]" ref strings) so remove_modifiers() can find its set.
 	var/list/active_modifiers
 
+CAPABILITIES(/datum/accessory_slot_registry)
+	owns_many(nameof(active_modifiers))
+
 /*
  * proc/register_slot(slot_flag, slot_name)
  *
@@ -145,8 +148,6 @@
 	modifier.apply(clothing)
 
 	modifier.registry_key = "[REF(accessory)]:[REF(clothing)]"
-	if(isnull(active_modifiers))
-		own_set(src, nameof(active_modifiers), list())
 	own_move(modifier, src, nameof(active_modifiers))
 
 /*

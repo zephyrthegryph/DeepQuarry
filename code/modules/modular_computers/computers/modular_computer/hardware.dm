@@ -39,7 +39,7 @@
 	var/slot = H.get_slot_var()
 	if(!slot)
 		return
-	own_set(src, slot, H)
+	rel_set(src, slot, H)
 	rel_set(H, nameof(/obj/item/computer_hardware/::holder2), src)
 
 // Uninstalls a component. Found and Critical vars may be passed by parent types

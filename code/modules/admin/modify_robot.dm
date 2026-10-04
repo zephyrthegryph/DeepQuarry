@@ -20,6 +20,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 
 CAPABILITIES(/datum/eventkit/modify_robot)
 	owns_many(nameof(law_list), /datum/ai_laws)
+	owns_one(nameof(source), /mob/living/silicon/robot)
 
 /datum/eventkit/modify_robot/New()
 	. = ..()
@@ -196,11 +197,11 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_source)
 		qdel(source)
 	var/module_type = GLOB.robot_modules[params["new_source"]]
 	if(ispath(module_type, /obj/item/robot_module/robot/syndicate))
-		own_set(src, nameof(/datum/admin_rank::source), new /mob/living/silicon/robot/syndicate(null))
+		rel_set(src, nameof(source), new /mob/living/silicon/robot/syndicate(null))
 	else if(ispath(module_type, /obj/item/robot_module/robot/malf))
-		own_set(src, nameof(/datum/admin_rank::source), new /mob/living/silicon/robot/malf(null))
+		rel_set(src, nameof(source), new /mob/living/silicon/robot/malf(null))
 	else
-		own_set(src, nameof(/datum/admin_rank::source), new /mob/living/silicon/robot(null))
+		rel_set(src, nameof(source), new /mob/living/silicon/robot(null))
 	source.modtype = params["new_source"]
 	var/obj/item/robot_module/robot/robot_type = new module_type(source)
 	proto_set(source, nameof(/datum/tgui_module/robot_ui_module::sprite_datum), pick(SSrobot_sprites.get_module_sprites(source.modtype, source)))

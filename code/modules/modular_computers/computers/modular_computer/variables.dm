@@ -76,6 +76,17 @@
 /obj/item/modular_computer/proc/stored_pen() as /obj/item/pen
 	return stored_pen
 
+CAPABILITIES(/obj/item/modular_computer)
+	owns_one(nameof(processor_unit), /obj/item/computer_hardware/processor_unit)
+	owns_one(nameof(network_card), /obj/item/computer_hardware/network_card)
+	owns_one(nameof(hard_drive), /obj/item/computer_hardware/hard_drive)
+	owns_one(nameof(battery_module), /obj/item/computer_hardware/battery_module)
+	owns_one(nameof(card_slot), /obj/item/computer_hardware/card_slot)
+	owns_one(nameof(nano_printer), /obj/item/computer_hardware/nano_printer)
+	owns_one(nameof(portable_drive), /obj/item/computer_hardware/hard_drive/portable)
+	owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link)
+
+
 /// Whether the computer is turned on. periodic_step() runs its programs while it is (DECLARE_PERIODIC_WHILE).
 OM_FIELD(/obj/item/modular_computer, enabled, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/modular_computer, PERIODIC_SLOW, "enabled")

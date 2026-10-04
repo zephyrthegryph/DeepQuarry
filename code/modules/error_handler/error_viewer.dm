@@ -138,6 +138,9 @@ CAPABILITIES(/datum/error_viewer/error_cache)
 	var/tmp/turf/usr_loc
 	var/is_skip_count
 
+CAPABILITIES(/datum/error_viewer/error_entry)
+	owns_one(nameof(exc), /exception)
+
 /datum/error_viewer/error_entry/New(exception/e, list/desclines, skip_count)
 	if (!istype(e))
 		name = "<b>\[[time_stamp()]]</b> Uncaught exception: <b>[html_encode(e.name)]</b>"
@@ -149,7 +152,7 @@ CAPABILITIES(/datum/error_viewer/error_cache)
 		return
 
 	name = "<b>\[[time_stamp()]]</b> Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b>"
-	own_set(src, nameof(exc), e)
+	rel_set(src, nameof(exc), e)
 	if (istype(desclines))
 		for (var/line in desclines)
 			// There's probably a better way to do this than non-breaking spaces...

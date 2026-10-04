@@ -80,6 +80,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 	w_class = ITEMSIZE_SMALL
 	var/datum/transhuman/body_record/stored = null
 
+CAPABILITIES(/obj/item/disk/body_record)
+	owns_one(nameof(stored), /datum/transhuman/body_record)
+
 /*
  *	Diskette Box
  */
