@@ -842,7 +842,10 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	var/client/recipient = owner()
 	if((!isnull(P) && QDELETED(P)) || (!isnull(destination) && QDELETED(destination)))
 		return
-	open_request(src, /datum/prompt/text/fax_title, PROC_REF(fax_titled), answerer = recipient?.mob, paper = P, destination = destination)
+	var/mob/answerer = recipient?.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/fax_title, PROC_REF(fax_titled), answerer = answerer, paper = P, destination = destination)
 
 /// An admin fax reply: its title, then (admin-initiated) whether to stamp it. A cancel skips either.
 /datum/prompt/text/fax_title

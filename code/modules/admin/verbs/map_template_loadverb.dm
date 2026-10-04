@@ -15,10 +15,11 @@ ADMIN_VERB(map_template_load, R_SPAWN, "Map template - Place At Loc", "Spawns a 
 	for(var/S in template.get_affected_turfs(T,centered = TRUE))
 		preview += image('icons/misc/debug_group.dmi',S ,"red")
 	user.images += preview
-	if(!check_rights_for(user, R_SPAWN) || QDELETED(T))
+	var/mob/answerer = user.mob
+	if(!check_rights_for(user, R_SPAWN) || QDELETED(T) || QDELETED(answerer))
 		user.images -= preview
 		return
-	open_request(src, /datum/prompt/choice/map_template_place, PROC_REF(location_confirmed), answerer = user.mob, template_name = map, place_at = T, preview = preview, question = "Confirm location.")
+	open_request(src, /datum/prompt/choice/map_template_place, PROC_REF(location_confirmed), answerer = answerer, template_name = map, place_at = T, preview = preview, question = "Confirm location.")
 
 /// Placing a map template at a turf: confirm the location (and, for an annihilating template,
 /// confirm again). The red preview stays up until the flow ends either way.

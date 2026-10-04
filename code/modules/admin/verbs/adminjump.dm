@@ -185,7 +185,10 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))
-		open_request(src, /datum/prompt/choice/admin_sendmob, PROC_REF(sendmob_area_picked), answerer = usr, title = "Send Mob", question = "Pick an area:", choices = return_sorted_areas())
+		var/mob/answerer = usr
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/admin_sendmob, PROC_REF(sendmob_area_picked), answerer = answerer, title = "Send Mob", question = "Pick an area:", choices = return_sorted_areas())
 	else
 		tgui_alert_async(usr, "Admin jumping disabled")
 

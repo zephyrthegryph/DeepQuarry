@@ -44,7 +44,10 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 
 //Allows staff to determine who the newer players are.
 ADMIN_VERB(cmd_check_new_players, R_HOLDER, "Check new Players", "Check the account age.", ADMIN_CATEGORY_INVESTIGATE)
-	open_request(src, /datum/prompt/choice, PROC_REF(age_chosen), answerer = user.mob, buttons = TRUE, title = "Show accounts yonger then _____ days", question = "Age check", choices = list("7","30","All"), rights = permissions, timeout = 0)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice, PROC_REF(age_chosen), answerer = answerer, buttons = TRUE, title = "Show accounts yonger then _____ days", question = "Age check", choices = list("7","30","All"), rights = permissions, timeout = 0)
 
 /datum/admin_verb/cmd_check_new_players/proc/age_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -78,7 +81,10 @@ ADMIN_VERB(cmd_check_new_players, R_HOLDER, "Check new Players", "Check the acco
 	to_chat(user, "No matches for that age range found.")
 
 ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_subtle_message, R_HOLDER, "Subtle Message", mob/targat_mob in get_mob_with_client_list())
-	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Subtle PM to [targat_mob.key]", answerer = user.mob, rights = permissions, subject = targat_mob)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Subtle PM to [targat_mob.key]", answerer = answerer, rights = permissions, subject = targat_mob)
 
 /// An admin's narration or message text (HTML allowed when the whole text is HTML, so not encoded).
 /datum/prompt/text/admin_narrate
@@ -120,7 +126,10 @@ CAPABILITIES(/datum/prompt/text/admin_narrate)
 	feedback_add_details("admin_verb","SMS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_world_narrate, R_FUN|R_EVENT, "Global Narrate", "Globally narrate.", ADMIN_CATEGORY_FUN_NARRATE) // Allows administrators to fluff events a little easier -- TLE
-	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone:", answerer = user.mob, rights = permissions)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone:", answerer = answerer, rights = permissions)
 
 /datum/admin_verb/cmd_admin_world_narrate/proc/message_entered(datum/act/request/A)
 	if(!A.answer)
@@ -139,7 +148,10 @@ ADMIN_VERB(cmd_admin_world_narrate, R_FUN|R_EVENT, "Global Narrate", "Globally n
 	feedback_add_details("admin_verb","GLN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_local_narrate, R_FUN|R_EVENT, "Local Narrate", "Locally narrate.", ADMIN_CATEGORY_FUN_NARRATE)
-	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone within view range:", answerer = user.mob, rights = permissions)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone within view range:", answerer = answerer, rights = permissions)
 
 /datum/admin_verb/cmd_admin_local_narrate/proc/message_entered(datum/act/request/A)
 	if(!A.answer)
@@ -163,7 +175,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Nar
 	if(target_mob)
 		ask_message(user, target_mob)
 		return
-	open_request(src, /datum/prompt/choice, PROC_REF(target_picked), answerer = user.mob, title = "Active Players", question = "Direct narrate to who?", choices = get_mob_with_client_list(), rights = permissions, timeout = 0)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice, PROC_REF(target_picked), answerer = answerer, title = "Active Players", question = "Direct narrate to who?", choices = get_mob_with_client_list(), rights = permissions, timeout = 0)
 
 /datum/admin_verb/cmd_admin_direct_narrate/proc/target_picked(datum/act/request/A)
 	if(!A.answer)
@@ -275,10 +290,15 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_godmode, R_HOLDER, "Toggle Godmode", "Togg
 	feedback_add_details("admin_verb","MUTE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_add_random_ai_law, R_ADMIN|R_FUN, "Add Random AI Law", "Adds a random law to the station ai.", ADMIN_CATEGORY_FUN_SILICON)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(law_confirmed), title = "Confirm", message = "You sure?", requires = PROMPT_ADMIN(permissions))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/yes_no, PROC_REF(law_confirmed), answerer = answerer, title = "Confirm", question = "You sure?", rights = permissions, timeout = 0)
 
-/datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_confirmed(datum/om/prompt/confirm/ask)
-	open_request(src, /datum/prompt/yes_no, PROC_REF(law_answered), answerer = ask.answerer, title = "Message", question = "Show ion message?", rights = permissions, timeout = 0)
+/datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	open_request(src, /datum/prompt/yes_no, PROC_REF(law_answered), answerer = A.request.answerer, title = "Message", question = "Show ion message?", rights = permissions, timeout = 0)
 
 /datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_answered(datum/act/request/A)
 	if(!A.answer)
@@ -941,10 +961,15 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 	message_admins(span_blue("[key_name_admin(user)] admin-called the emergency shuttle."))
 
 ADMIN_VERB(admin_cancel_shuttle, R_ADMIN|R_FUN, "Cancel Shuttle", "Cancels the emergency shuttel.", ADMIN_CATEGORY_EVENTS)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(cancel_confirmed), title = "Confirm", message = "You sure?", requires = PROMPT_ADMIN(permissions))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/yes_no, PROC_REF(cancel_confirmed), answerer = answerer, title = "Confirm", question = "You sure?", rights = permissions, timeout = 0)
 
-/datum/admin_verb/admin_cancel_shuttle/proc/cancel_confirmed(datum/om/prompt/confirm/ask)
-	var/client/user = ask.answerer.client
+/datum/admin_verb/admin_cancel_shuttle/proc/cancel_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/client/user = A.request.answerer.client
 	if(!SSticker || !SSemergency_shuttle.can_recall())
 		return
 

@@ -14,7 +14,10 @@ ADMIN_VERB(get_current_logs, (R_ADMIN | R_SERVER), "Get Current Logs", "View or 
 	message_admins("[key_name_admin(src)] accessed file: [path]")
 	feedback_add_details("admin_verb","VTL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-	open_request(src, /datum/prompt/choice/serverlog_action, PROC_REF(serverlog_action_chosen), answerer = mob, title = path, path = path)
+	var/mob/answerer = mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/serverlog_action, PROC_REF(serverlog_action_chosen), answerer = answerer, title = path, path = path)
 
 /// What to do with a picked log file. Re-checked on the answer: still an admin with server rights.
 /datum/prompt/choice/serverlog_action
