@@ -1532,13 +1532,19 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set desc = "Transfer liquid from an organ to another or stomach, or into another person or container."
 	set popup_menu = FALSE
 
+	return vore_liquid_stage(list())
+
+/mob/living/proc/vore_liquid_stage(list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
 	if(!checkClickCooldown() || incapacitated(INCAPACITATION_KNOCKOUT) || is_paralyzed())
 		return FALSE
 
 	var/mob/living/user = src
 
 	var/list/transfer_from = vore_transfer_candidates()
-	var/mob/living/TG = rerun_ask(user, "a1", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer from", title = "Transfer From", choices = transfer_from)
+	if(!("a1" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a1", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose who to transfer from", title = "Transfer From", choices = transfer_from)
+		return
+	var/mob/living/TG = captures?.liquid_source_mob
 	if(isnull(TG))
 		return
 	if(!TG)
@@ -1550,30 +1556,39 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	if(!LAZYLEN(TG.vore_organs))
 		return FALSE
 
-	var/obj/belly/RTB = rerun_ask(user, "a2", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose which vore belly to transfer from", title = "Select Belly", choices = TG.vore_organs)
+	if(!("a2" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a2", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose which vore belly to transfer from", title = "Select Belly", choices = TG.vore_organs)
+		return
+	var/obj/belly/RTB = captures?.liquid_source_belly
 	if(isnull(RTB))
 		return
 	if(!RTB)
 		return FALSE
 
-	var/transfer_amount = rerun_ask(user, "a3", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "How much to transfer?", title = "Transfer Amount", choices = list(5,10,25,50,100))
+	if(!("a3" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a3", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "How much to transfer?", title = "Transfer Amount", choices = list(5,10,25,50,100))
+		return
+	var/transfer_amount = liquid_answers["a3"]
 	if(isnull(transfer_amount))
 		return
 	if(!transfer_amount)
 		return FALSE
 
-	var/_answer_a4 = rerun_ask(user, "a4", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose what to transfer to", title = "Select Target", choices = list("Vore belly", "Stomach", "Container", "Floor", "Cancel"))
+	if(!("a4" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a4", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose what to transfer to", title = "Select Target", choices = list("Vore belly", "Stomach", "Container", "Floor", "Cancel"))
+		return
+	var/_answer_a4 = liquid_answers["a4"]
 	if(isnull(_answer_a4))
 		return
 	switch(_answer_a4)
 		if("Cancel")
 			return FALSE
 		if("Vore belly")
-			return vore_transfer_to_belly(TG, RTB, transfer_amount)
+			return vore_transfer_to_belly(TG, RTB, transfer_amount, liquid_answers, captures)
 		if("Stomach")
-			return vore_transfer_to_stomach(TG, RTB, transfer_amount)
+			return vore_transfer_to_stomach(TG, RTB, transfer_amount, liquid_answers, captures)
 		if("Container")
-			return vore_transfer_to_container(TG, RTB, transfer_amount)
+			return vore_transfer_to_container(TG, RTB, transfer_amount, liquid_answers, captures)
 		if("Floor")
 			return vore_transfer_to_floor(TG, RTB, transfer_amount)
 
@@ -1585,16 +1600,22 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 			. |= L
 
 /// Transfer into a vore belly of the user or an adjacent mob. Its prompts belong to the vore_transfer_reagents verb re-run.
-/mob/living/proc/vore_transfer_to_belly(mob/living/TG, obj/belly/RTB, transfer_amount)
+/mob/living/proc/vore_transfer_to_belly(mob/living/TG, obj/belly/RTB, transfer_amount, list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
 	var/mob/living/user = src
 	var/list/transfer_to = vore_transfer_candidates()
-	var/mob/living/TR = rerun_ask(user, "a5", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+	if(!("a5" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a5", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+		return
+	var/mob/living/TR = captures?.liquid_target_mob
 	if(isnull(TR))
 		return
 	if(!TR)  return FALSE
 
 	if(TR == user) //Proceed, we dont need to have prefs enabled for transfer within user
-		var/obj/belly/TB = rerun_ask(user, "a6", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = user.vore_organs)
+		if(!("a6" in liquid_answers))
+			open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a6", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose which organ to transfer to", title = "Select Belly", choices = user.vore_organs)
+			return
+		var/obj/belly/TB = captures?.liquid_own_belly
 		if(isnull(TB))
 			return
 		if(!TB)
@@ -1619,7 +1640,10 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		return FALSE
 
 	else
-		var/obj/belly/TB = rerun_ask(user, "a7", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = TR.vore_organs)
+		if(!("a7" in liquid_answers))
+			open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a7", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose which organ to transfer to", title = "Select Belly", choices = TR.vore_organs)
+			return
+		var/obj/belly/TB = captures?.liquid_other_belly
 		if(isnull(TB))
 			return
 		if(!TB)
@@ -1643,10 +1667,13 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 			TR.handle_belly_update()
 
 /// Transfer into the stomach (ingested) of the user or an adjacent mob. Its prompts belong to the vore_transfer_reagents verb re-run.
-/mob/living/proc/vore_transfer_to_stomach(mob/living/TG, obj/belly/RTB, transfer_amount)
+/mob/living/proc/vore_transfer_to_stomach(mob/living/TG, obj/belly/RTB, transfer_amount, list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
 	var/mob/living/user = src
 	var/list/transfer_to = vore_transfer_candidates()
-	var/mob/living/TR = rerun_ask(user, "a8", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+	if(!("a8" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a8", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+		return
+	var/mob/living/TR = captures?.liquid_stomach_mob
 	if(isnull(TR))
 		return
 	if(!TR)  return
@@ -1679,7 +1706,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 			handle_belly_update()
 
 /// Transfer into an adjacent or held reagent container. Its prompts belong to the vore_transfer_reagents verb re-run.
-/mob/living/proc/vore_transfer_to_container(mob/living/TG, obj/belly/RTB, transfer_amount)
+/mob/living/proc/vore_transfer_to_container(mob/living/TG, obj/belly/RTB, transfer_amount, list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
 	var/mob/living/user = src
 	if(RTB.reagentid == REAGENT_ID_STOMACID)
 		return
@@ -1693,7 +1720,10 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	if(istype(irc,/obj/item/reagent_containers))
 		choices += irc
 
-	var/obj/item/reagent_containers/T = rerun_ask(user, "a9", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose what to transfer to", title = "Select Target", choices = choices)
+	if(!("a9" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a9", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose what to transfer to", title = "Select Target", choices = choices)
+		return
+	var/obj/item/reagent_containers/T = captures?.liquid_container
 	if(isnull(T))
 		return
 	if(!T)
@@ -1822,3 +1852,105 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	. = 0
 	for(var/category in INJURY_CATEGORY_PHYSICAL to INJURY_CATEGORY_NEURAL)
 		. += injury_load(category)
+
+/mob/living/proc/vore_liquid_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_liquid_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore liquid transfer replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/proc/vore_liquid_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_liquid_transfer/ask = A.answer
+	switch(ask.liquid_key)
+		if("a1")
+			var/mob/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.liquid_source_mob), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a2")
+			var/obj/belly/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.liquid_source_belly), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a5")
+			var/mob/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.liquid_target_mob), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a6")
+			var/obj/belly/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.liquid_own_belly), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a7")
+			var/obj/belly/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.liquid_other_belly), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a8")
+			var/mob/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.liquid_stomach_mob), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a9")
+			var/obj/item/reagent_containers/chosen = ask.answer_value
+			rel_set(ask, nameof(ask.liquid_container), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		else
+			ask.liquid_answers[ask.liquid_key] = ask.answer_value
+	return vore_liquid_stage(ask.liquid_answers, ask)
+
+/datum/prompt/choice/vore_liquid_transfer
+	timeout = 0
+	var/list/liquid_answers
+	var/liquid_key
+	var/mob/liquid_source_mob
+	var/obj/belly/liquid_source_belly
+	var/mob/liquid_target_mob
+	var/obj/belly/liquid_own_belly
+	var/obj/belly/liquid_other_belly
+	var/mob/liquid_stomach_mob
+	var/obj/item/reagent_containers/liquid_container
+
+CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer)
+	ref_one(nameof(liquid_source_mob), /mob)
+	ref_one(nameof(liquid_source_belly), /obj/belly)
+	ref_one(nameof(liquid_target_mob), /mob)
+	ref_one(nameof(liquid_own_belly), /obj/belly)
+	ref_one(nameof(liquid_other_belly), /obj/belly)
+	ref_one(nameof(liquid_stomach_mob), /mob)
+	ref_one(nameof(liquid_container), /obj/item/reagent_containers)
+
+/datum/prompt/choice/vore_liquid_transfer/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_liquid_source_mob = liquid_source_mob
+	rel_clear(src, nameof(liquid_source_mob))
+	if(captured_liquid_source_mob && !QDELETED(captured_liquid_source_mob))
+		rel_set(src, nameof(liquid_source_mob), captured_liquid_source_mob)
+	var/obj/belly/captured_liquid_source_belly = liquid_source_belly
+	rel_clear(src, nameof(liquid_source_belly))
+	if(captured_liquid_source_belly && !QDELETED(captured_liquid_source_belly))
+		rel_set(src, nameof(liquid_source_belly), captured_liquid_source_belly)
+	var/mob/captured_liquid_target_mob = liquid_target_mob
+	rel_clear(src, nameof(liquid_target_mob))
+	if(captured_liquid_target_mob && !QDELETED(captured_liquid_target_mob))
+		rel_set(src, nameof(liquid_target_mob), captured_liquid_target_mob)
+	var/obj/belly/captured_liquid_own_belly = liquid_own_belly
+	rel_clear(src, nameof(liquid_own_belly))
+	if(captured_liquid_own_belly && !QDELETED(captured_liquid_own_belly))
+		rel_set(src, nameof(liquid_own_belly), captured_liquid_own_belly)
+	var/obj/belly/captured_liquid_other_belly = liquid_other_belly
+	rel_clear(src, nameof(liquid_other_belly))
+	if(captured_liquid_other_belly && !QDELETED(captured_liquid_other_belly))
+		rel_set(src, nameof(liquid_other_belly), captured_liquid_other_belly)
+	var/mob/captured_liquid_stomach_mob = liquid_stomach_mob
+	rel_clear(src, nameof(liquid_stomach_mob))
+	if(captured_liquid_stomach_mob && !QDELETED(captured_liquid_stomach_mob))
+		rel_set(src, nameof(liquid_stomach_mob), captured_liquid_stomach_mob)
+	var/obj/item/reagent_containers/captured_liquid_container = liquid_container
+	rel_clear(src, nameof(liquid_container))
+	if(captured_liquid_container && !QDELETED(captured_liquid_container))
+		rel_set(src, nameof(liquid_container), captured_liquid_container)
+
+/datum/prompt/choice/vore_liquid_transfer/recheck_extra()
+	if(!isnull(answer_value) && istype(answer_value, /datum))
+		var/datum/selected = answer_value
+		if(QDELETED(selected))
+			return "gone"
