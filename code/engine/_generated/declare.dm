@@ -1067,6 +1067,19 @@
 	into += entry_line(54)
 	into += list(global.owns_one(nameof(special_callback), /datum/callback))
 
+/// CAPABILITIES(/datum/circuit_memory_review) at code/modules/integrated_electronics/core/tools.dm:597
+/datum/circuit_memory_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/integrated_electronics/core/tools.dm", 597, /datum/circuit_memory_review)
+	into += entry_line(598)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(599)
+	into += list(global.ref_one(nameof(source_item), /obj/item))
+	into += entry_line(600)
+	into += list(global.ref_one(nameof(original_held), /obj/item))
+	into += entry_line(601)
+	into += list(global.ref_one(nameof(original_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/codex_tree) at code/modules/lore_codex/codex_tree.dm:11
 /datum/codex_tree/declared_entries(list/into)
 	..(into)
@@ -10400,18 +10413,18 @@
 	into += entry_line(290)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/pill, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/hypospray/autoinjector))))
 
-/// CAPABILITIES(/obj/item/storage/bag/circuits) at code/modules/integrated_electronics/core/tools.dm:277
+/// CAPABILITIES(/obj/item/storage/bag/circuits) at code/modules/integrated_electronics/core/tools.dm:278
 /obj/item/storage/bag/circuits/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/integrated_electronics/core/tools.dm", 277, /obj/item/storage/bag/circuits)
-	into += entry_line(278)
+	into += entry_block("code/modules/integrated_electronics/core/tools.dm", 278, /obj/item/storage/bag/circuits)
+	into += entry_line(279)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/integrated_circuit, /obj/item/storage/bag/circuits/mini, /obj/item/electronic_assembly, /obj/item/integrated_electronics, /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/multitool, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/integrated_electronics/detailer))))
 
-/// CAPABILITIES(/obj/item/storage/bag/circuits/mini) at code/modules/integrated_electronics/core/tools.dm:352
+/// CAPABILITIES(/obj/item/storage/bag/circuits/mini) at code/modules/integrated_electronics/core/tools.dm:353
 /obj/item/storage/bag/circuits/mini/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/integrated_electronics/core/tools.dm", 352, /obj/item/storage/bag/circuits/mini)
-	into += entry_line(353)
+	into += entry_block("code/modules/integrated_electronics/core/tools.dm", 353, /obj/item/storage/bag/circuits/mini)
+	into += entry_line(354)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/integrated_circuit))))
 
 /// CAPABILITIES(/obj/item/storage/bag/detective) at code/game/objects/items/weapons/storage/bags.dm:388
