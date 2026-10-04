@@ -177,19 +177,19 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
 
 		else
-			open_request(src, /datum/prompt/choice/cult_convert, PROC_REF(convert_answered), answerer = target, waiting = waiting_for_input)
+			open_request(src, /datum/prompt/choice/cult_convert, PROC_REF(convert_answered), answerer = target, waiting_list = waiting_for_input)
 
 	if(target in converting)
 		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1)) //proc once every 10 seconds
 
-/// The convert rune's offer. Closing it is resisting; `waiting` is the rune's asked-already list.
+/// The convert rune's offer. Closing it is resisting; `waiting_list` is the rune's asked-already list.
 /datum/prompt/choice/cult_convert
 	title = "Submit to Nar'Sie"
 	question = "Do you want to join the cult?"
 	choices = list("Resist", "Submit")
 	buttons = TRUE
 	timeout = 0
-	var/list/waiting
+	var/list/waiting_list
 
 /obj/effect/rune/proc/convert_answered(datum/act/request/A)
 	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value)))
@@ -204,7 +204,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 /obj/effect/rune/proc/apply_convert_answered(datum/act/request/A)
 	var/datum/prompt/choice/cult_convert/ask = A.request
 	var/mob/living/carbon/target = ask.answerer
-	var/list/waiting_for_input = ask.waiting
+	var/list/waiting_for_input = ask.waiting_list
 	waiting_for_input[target] = 0
 	if(A.answer && A.answer.answer_value == "Submit") //choosing 'Resist' does nothing of course.
 		GLOB.cult.add_antagonist(target.mind)
