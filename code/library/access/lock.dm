@@ -17,7 +17,7 @@ MSG_DEF_SELF(lock/is_unlocked, "It is unlocked.")
 MSG_DEF_SELF(lock/denied, "Access denied.")
 MSG_DEF_SELF(lock/engaged, "It is locked.")
 
-CAPABILITY_TYPE(lock, CAP_LOCK, /datum/capability/lib/lock, key = NONE, id_types = null, starts_locked = FALSE, alt = TRUE)
+CAPABILITY_TYPE(lock, CAP_LOCK, /datum/capability/lib/lock, key = NONE, id_types = null, starts_locked = FALSE, alt = TRUE, powered = TRUE, guarded = TRUE)
 cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 
 /datum/capability/lib/lock
@@ -28,11 +28,14 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 	var/list/swipe = list()
 	for(var/card_type in cards)
 		swipe += item(card_type)
+	// The library default: an electronic lock works only on a holder that has power and nobody subverted (powered = FALSE, guarded = FALSE: a
+	// mechanical one, or one whose subversion leaves it working).
+	var/list/guards = list(powered ? req_operable() : null, guarded ? req_not_subverted() : null)
 	return list(
 		// A card (or PDA) on the holder: the card in hand is the credential.
-		op("toggle", inputs(swipe), needs(req_credential_in_hand(cards, because = MSG(lock/denied))), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
+		op("toggle", inputs(swipe), needs(guards, req_credential_in_hand(cards, because = MSG(lock/denied))), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
 		// An alt-click, with or without something in hand: what the actor carries is the credential.
-		alt ? op("toggle_worn", inputs(hand()), priority(OP_PRIORITY_PART), when(CAP_PROC(worn_credential_offered)), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)) : null,
+		alt ? op("toggle_worn", inputs(hand()), priority(OP_PRIORITY_PART), when(CAP_PROC(worn_credential_offered)), needs(guards), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)) : null,
 		extend(TAG_UI, needs(req_unlocked_for_actor(id = "lock"))),
 		extend(TAG_CONTROL, needs(req_unlocked_for_actor(id = "lock"))),
 		examine_line(MSG(lock/is_locked), when = LOCK_LOCKED),

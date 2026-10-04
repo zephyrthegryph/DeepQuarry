@@ -40,9 +40,10 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 /proc/start(stage_id)
 	return entry_make("graph_start", null, list("stage" = stage_id))
 
-/// at(BAY_X): which compartment's bay the graph works inside.
-/proc/at(bay)
-	return entry_make("graph_at", null, list("bay" = bay))
+/// at(SPACE_X): the space of the holder an op, or a whole graph, works inside (code/engine/library/spaces.dm). The path from the actor to that
+/// space must be open: a blocked op is set aside for another candidate, and refused with the blocking door's reason when nothing else answers.
+/proc/at(space_id)
+	return entry_make("graph_at", null, list("space" = space_id))
 
 /// dismantle(parts..., ruined(...)): what taking the whole thing apart does; the op compiler (code/engine/parts/graph_ops.dm) reads its parts.
 /proc/dismantle(ENTRY_SLOTS)
@@ -79,7 +80,8 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 /datum/state_graph
 	var/id
 	var/start
-	var/bay
+	/// The space the graph works inside (at(SPACE_X)), or null.
+	var/space
 	/// list of /datum/graph_edge, in declaration order.
 	var/list/edges
 	/// The dismantle entry, or null.
@@ -100,6 +102,8 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 	/// TRUE when the graph names an undo for this edge (undo = list(...) or undo = null).
 	var/has_undo = FALSE
 	var/list/undo_parts
+	/// protrudes(...) among the stage's parts: list("space", "because"): while the instance is at this stage its space's door can't close.
+	var/list/protrudes
 
 /// Registration rows of STATE_GRAPH: list(graph_id, entries...).
 /datum/graph_decl/proc/spec()
@@ -148,7 +152,7 @@ GLOBAL_VAR_INIT(state_graphs_built, FALSE)
 				if(isnull(stage_key(G.start)))
 					declare_report("[origin]: [declare_rule(RULE_GRAPH)] graph [id]: start names undeclared stage [G.start] -- declare it with STAGE_DEF")
 			if("graph_at")
-				G.bay = E.args["bay"]
+				G.space = E.args["space"]
 			if("graph_dismantle")
 				G.dismantle_entry = E // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 			if("graph_stage")
@@ -164,7 +168,13 @@ GLOBAL_VAR_INIT(state_graphs_built, FALSE)
 				else
 					edge.from = list(from)
 				edge.key = E.args["key"]
-				edge.parts = E.children
+				edge.parts = list()
+				for(var/child in entry_flatten(E.children))
+					var/datum/entry/marker = child
+					if(istype(marker) && marker.kind == ENTRY_PROTRUSION)
+						edge.protrudes = marker.args
+					else
+						edge.parts += child
 				edge.has_undo = !!E.args["has_undo"]
 				edge.undo_parts = E.args["undo"]
 				edge.op_key = "[prefix].build:[stage_key(edge.into)]" + (edge.key ? ".[edge.key]" : "")

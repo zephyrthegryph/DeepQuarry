@@ -40,23 +40,6 @@
 /datum/entry/part/req/graph_at/read_keys(datum/act/op/A)
 	return list(list(A.holder, "graph:[src.args["cap"]]"))
 
-/// A condition and requirement: bay `bay` of the holder is open to the act's authority (its compartment's door says so; a holder with no
-/// compartment of that bay is open). What a graph placed at(BAY_X) gates its undo steps with.
-/datum/entry/part/req/bay_open
-	part_name = "req_bay_open"
-	default_reason = /datum/msg/bay/closed
-
-/proc/req_bay_open(bay)
-	return part_make(/datum/entry/part/req/bay_open, list("bay" = bay))
-
-/datum/entry/part/req/bay_open/holds(datum/act/op/A)
-	var/atom/holder = A.holder
-	return !istype(holder) || isnull(holder.bay_reason(src.args["bay"], A.authority || AUTH_PHYSICAL))
-
-/datum/entry/part/req/bay_open/read_keys(datum/act/op/A)
-	var/atom/holder = A.holder
-	return istype(holder) ? holder.bay_read_keys(src.args["bay"]) : list()
-
 /// Two graph conditions that cannot hold together: disjoint stage sets, or two undos for different transitions.
 /proc/graph_at_exclusive(datum/entry/part/req/graph_at/a, datum/entry/part/req/graph_at/b)
 	var/list/sa = a.args["stages"]
@@ -113,8 +96,8 @@
 	for(var/part in entry_flatten(edge.parts))
 		if(!istype(part, /datum/entry/part/undone))
 			parts += part
-	if(!isnull(G.bay))
-		parts += at(G.bay)
+	if(!isnull(G.space))
+		parts += at(G.space)
 	parts += ungated() // building and taking apart a machine is not using it: no power or posture gate of the hand
 	parts += part_make(/datum/entry/part/effect/graph_advance, list("into" = edge.into, "key" = edge.key, "cap" = cap_id))
 	return entry_make(ENTRY_OP, graph_edge_base_key(edge, "build"), null, parts)
@@ -144,11 +127,8 @@
 	for(var/part in entry_flatten(edge.parts))
 		if(istype(part, /datum/entry/part/undone))
 			parts += part
-	if(!isnull(G.bay))
-		parts += at(G.bay)
-		// a step back is offered only while the bay is open: with it shut the tool falls through to what it does outside (a screwdriver on a shut
-		// APC works its panel), instead of every undo naming the door in a when() of its own
-		parts += when(req_bay_open(G.bay))
+	if(!isnull(G.space))
+		parts += at(G.space) // with the space shut the step is set aside, so the tool falls through to what it does outside (a screwdriver on a shut APC works its panel)
 	parts += ungated()
 	parts += part_make(/datum/entry/part/effect/graph_undo, list("cap" = cap_id))
 	return entry_make(ENTRY_OP, graph_edge_base_key(edge, "undo"), null, parts)
@@ -195,8 +175,8 @@
 					declare_report("dismantle: [child] is not an effect part (a ruined() holds effects only)")
 			choice += list(list(R.args["cond"], effects))
 		parts += part_make(/datum/entry/part/effect/graph_ruled, list("ruled" = choice), ordinary)
-	if(!isnull(G.bay))
-		parts += at(G.bay)
+	if(!isnull(G.space))
+		parts += at(G.space)
 	parts += part_make(/datum/entry/part/effect/graph_dismantle, list("cap" = cap_id, "phase" = "end"))
 	return entry_make(ENTRY_OP, "dismantle", null, parts)
 

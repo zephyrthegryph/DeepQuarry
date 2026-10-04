@@ -2,8 +2,8 @@
 //
 // A cryptographic sequencer used on the holder subverts it. State key EMAG_EMAGGED. One op, emag.use, bound to the card, at the highest tier
 // (OP_PRIORITY_SUBVERT: subverting comes before anything else a card could do). The parts the type passes are the effect: a wait before it,
-// a sets(), a then(PROC_REF(on_emag)); the library adds what every emag shares around them: the card must have a use left, the holder must not
-// be subverted already (one-shot, the default; repeatable = TRUE drops that gate), and when the parts went through the key is set, the user is
+// a sets(), a then(PROC_REF(on_emag)); the library adds what every emag shares around them: the card must have a use left, the holder must have
+// power (powered = FALSE drops that gate) and must not be subverted already (one-shot, the default; repeatable = TRUE drops that gate), and when the parts went through the key is set, the user is
 // told `say`, and the card pays its use.
 //
 //   emag(then(PROC_REF(on_emag)))                              one-shot
@@ -17,7 +17,7 @@ MSG_DEF_SELF(emag/already, "It is already subverted.")
 MSG_DEF(emag/done, "You subvert %T% with %I%.", "%U% subverts %T% with %I%.")
 MSG_DEF_SELF(emag/emagged_examine, "Its circuits look scorched.")
 
-CAPABILITY_TYPE(emag, CAP_EMAG, /datum/capability/lib/emag, key = NONE, parts = null, say = null, disables_for = null, repeatable = FALSE)
+CAPABILITY_TYPE(emag, CAP_EMAG, /datum/capability/lib/emag, key = NONE, parts = null, say = null, disables_for = null, repeatable = FALSE, powered = TRUE)
 cap_keys(CAP_EMAG, EMAGGED = MSG(emag/already))
 
 /datum/capability/lib/emag
@@ -27,9 +27,13 @@ cap_keys(CAP_EMAG, EMAGGED = MSG(emag/already))
 		needs(req_emag_card()), parts, then(CAP_PROC(finish)), logs(LOG_ADMIN)))
 	// The same subversion with no card in hand: what emag_target() (an event, a changeling's pick, a spirit) reaches by key.
 	use += op("subvert", ai(), parts, then(CAP_PROC(finish)), logs(LOG_ADMIN))
+	// The library default: the card works on a holder that has power (powered = FALSE: one that needs none) and that nobody subverted yet
+	// (emagged, or hacked another way: is_subverted()); repeatable = TRUE drops the second.
+	if(powered)
+		use += extend("emag.use", needs(req_operable()))
 	if(!repeatable)
-		use += extend("emag.use", needs(req_is(EMAG_EMAGGED, FALSE, because = MSG(emag/already))))
-		use += extend("emag.subvert", needs(req_is(EMAG_EMAGGED, FALSE, because = MSG(emag/already))))
+		use += extend("emag.use", needs(req_not_subverted(because = MSG(emag/already))))
+		use += extend("emag.subvert", needs(req_not_subverted(because = MSG(emag/already))))
 	return use
 
 /// The part of an emag every holder shares, after the type's parts went through: subverted, told, the card paid.

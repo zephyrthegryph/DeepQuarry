@@ -60,8 +60,23 @@
 #define BAY_INTERIOR "interior"
 #define BAY_CARGO "cargo"
 #define BAY_ENGINE "engine"
-/// A maintenance hatch: what sits behind a cover (a cell bay, a frame's board and wiring). Its door is the open cover.
-#define BAY_HATCH "hatch"
+
+// ---- physical spaces (code/engine/library/spaces.dm) ----
+/// A maintenance hatch: what sits behind a cover (a cell bay, a frame's board and wiring). Its door is the cover.
+#define SPACE_HATCH "hatch"
+/// The old name of SPACE_HATCH, until the APC moves onto spaces (deleted with its last user).
+#define BAY_HATCH SPACE_HATCH
+/// Behind a maintenance panel: the wires. Its door is the panel.
+#define SPACE_PANEL "panel"
+/// A cell's own bay inside a hatch (an APC's, which exists only once the electronics are fastened).
+#define SPACE_CELL "cell"
+/// The inside of a container with a door (a locker).
+#define SPACE_INTERIOR "interior"
+/// The entry kinds of the space library.
+#define ENTRY_SPACE "space"
+#define ENTRY_SPACE_SLOT "space_slot"
+#define ENTRY_LATCH "latch"
+#define ENTRY_PROTRUSION "protrusion"
 
 // ---- op keys of the library's lock and emag ops (refine() and cap_require() name them) ----
 /// The emag op of a hatch: refine(CAP_EMAG, ...) edits its wait and effect.
