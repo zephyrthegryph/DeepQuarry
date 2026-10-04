@@ -839,34 +839,89 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 /datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in (owned)
 
 /datum/admins/proc/faxCallback(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination)
-	om_ask(owner(), /datum/om/prompt/text/fax_title, PROC_REF(fax_titled), paper = P, destination = destination)
+	var/client/recipient = owner()
+	if((!isnull(P) && QDELETED(P)) || (!isnull(destination) && QDELETED(destination)))
+		return
+	open_request(src, /datum/prompt/text/fax_title, PROC_REF(fax_titled), answerer = recipient?.mob, paper = P, destination = destination)
 
 /// An admin fax reply: its title, then (admin-initiated) whether to stamp it. A cancel skips either.
-/datum/om/prompt/text/fax_title
+/datum/prompt/text/fax_title
 	name_text = TRUE
 	title = "Title"
-	message = "Pick a title for the report"
-	cancel_answer = ""
+	question = "Pick a title for the report"
+	timeout = 0
 	var/obj/item/paper/admin/paper
 	var/obj/machinery/photocopier/faxmachine/destination
+	var/paper_required = FALSE
+	var/destination_required = FALSE
 
-/datum/om/prompt/confirm/fax_stamp
+CAPABILITIES(/datum/prompt/text/fax_title)
+	ref_one(nameof(paper), /obj/item/paper/admin)
+	ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine)
+
+/datum/prompt/text/fax_title/prepare(datum/act/A)
+	..()
+	var/obj/item/paper/admin/captured_paper = paper
+	var/obj/machinery/photocopier/faxmachine/captured_destination = destination
+	paper_required = !isnull(captured_paper)
+	destination_required = !isnull(captured_destination)
+	rel_clear(src, nameof(paper))
+	rel_clear(src, nameof(destination))
+	rel_set(src, nameof(paper), captured_paper)
+	rel_set(src, nameof(destination), captured_destination)
+
+/datum/prompt/text/fax_title/recheck_extra()
+	return (paper_required && QDELETED(paper)) || (destination_required && QDELETED(destination)) ? "gone" : null
+
+/datum/prompt/choice/fax_stamp
 	title = "Stamped?"
-	message = "Would you like the fax stamped?"
-	answer_on_no = TRUE
-	cancel_answer = "No"
+	question = "Would you like the fax stamped?"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
 	var/obj/item/paper/admin/paper
 	var/obj/machinery/photocopier/faxmachine/destination
+	var/paper_required = FALSE
+	var/destination_required = FALSE
 	var/custom_title
 
-/datum/admins/proc/fax_titled(datum/om/prompt/text/fax_title/ask)
-	if(ask.paper.sender())
-		fax_answered(ask.paper, ask.destination, ask.text, FALSE)
-		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/fax_stamp, PROC_REF(fax_stamp_answered), paper = ask.paper, destination = ask.destination, custom_title = ask.text)
+CAPABILITIES(/datum/prompt/choice/fax_stamp)
+	ref_one(nameof(paper), /obj/item/paper/admin)
+	ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine)
 
-/datum/admins/proc/fax_stamp_answered(datum/om/prompt/confirm/fax_stamp/ask)
-	fax_answered(ask.paper, ask.destination, ask.custom_title, ask.yes)
+/datum/prompt/choice/fax_stamp/prepare(datum/act/A)
+	..()
+	var/obj/item/paper/admin/captured_paper = paper
+	var/obj/machinery/photocopier/faxmachine/captured_destination = destination
+	paper_required = !isnull(captured_paper)
+	destination_required = !isnull(captured_destination)
+	rel_clear(src, nameof(paper))
+	rel_clear(src, nameof(destination))
+	rel_set(src, nameof(paper), captured_paper)
+	rel_set(src, nameof(destination), captured_destination)
+
+/datum/prompt/choice/fax_stamp/recheck_extra()
+	return (paper_required && QDELETED(paper)) || (destination_required && QDELETED(destination)) ? "gone" : null
+
+/datum/admins/proc/fax_titled(datum/act/request/A)
+	var/datum/prompt/text/fax_title/ask = A.request
+	if(QDELETED(ask.answerer) || (ask.paper_required && QDELETED(ask.paper)) || (ask.destination_required && QDELETED(ask.destination)))
+		return
+	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value)))
+		return
+	var/custom_title = isnull(ask.answer_value) ? "" : ask.answer_value
+	if(ask.paper.sender())
+		fax_answered(ask.paper, ask.destination, custom_title, FALSE)
+		return
+	open_request(src, /datum/prompt/choice/fax_stamp, PROC_REF(fax_stamp_answered), answerer = ask.answerer, paper = ask.paper, destination = ask.destination, custom_title = custom_title)
+
+/datum/admins/proc/fax_stamp_answered(datum/act/request/A)
+	var/datum/prompt/choice/fax_stamp/ask = A.request
+	if(QDELETED(ask.answerer) || (ask.paper_required && QDELETED(ask.paper)) || (ask.destination_required && QDELETED(ask.destination)))
+		return
+	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value)))
+		return
+	fax_answered(ask.paper, ask.destination, ask.custom_title, ask.answer_value == "Yes")
 
 /datum/admins/proc/fax_answered(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination, customname, stamp)
 	P.name = "[P.origin] - [customname]"

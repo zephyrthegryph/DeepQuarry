@@ -2355,6 +2355,15 @@
 	into += entry_line(405)
 	into += list(global.ref_one(nameof(capturer), /mob/living))
 
+/// CAPABILITIES(/datum/prompt/choice/fax_stamp) at code/modules/admin/admin.dm:888
+/datum/prompt/choice/fax_stamp/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin.dm", 888, /datum/prompt/choice/fax_stamp)
+	into += entry_line(889)
+	into += list(global.ref_one(nameof(paper), /obj/item/paper/admin))
+	into += entry_line(890)
+	into += list(global.ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine))
+
 /// CAPABILITIES(/datum/prompt/choice/fruit_gland) at code/modules/mob/living/carbon/human/species/station/alraune.dm:211
 /datum/prompt/choice/fruit_gland/declared_entries(list/into)
 	..(into)
@@ -2433,6 +2442,15 @@
 	into += entry_block("code/game/objects/items/blueprints.dm", 356, /datum/prompt/text/blueprint_rename_area)
 	into += entry_line(357)
 	into += list(global.ref_one(nameof(area_to_rename), /area))
+
+/// CAPABILITIES(/datum/prompt/text/fax_title) at code/modules/admin/admin.dm:858
+/datum/prompt/text/fax_title/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin.dm", 858, /datum/prompt/text/fax_title)
+	into += entry_line(859)
+	into += list(global.ref_one(nameof(paper), /obj/item/paper/admin))
+	into += entry_line(860)
+	into += list(global.ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine))
 
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
