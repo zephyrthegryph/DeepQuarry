@@ -209,9 +209,6 @@ usr_outside_verb	code/modules/admin/view_variables_panel.dm	if(!usr.client || !c
 usr_outside_verb	code/modules/admin/view_variables_panel.dm	to_chat(usr, span_danger("You need to be an administrator to access this."), confidential = TRUE)
 usr_outside_verb	code/modules/admin/view_variables_panel.dm	dq_vv_panel.tgui_interact(usr)
 usr_outside_verb	code/modules/client/client procs.dm	if(!usr || usr != mob) //stops us calling Topic for somebody else's client. Also helps prevent usr=null
-usr_outside_verb	code/modules/client/client procs.dm	message_admins("[ADMIN_LOOKUPFLW(usr)] [ADMIN_KICK(usr)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
-usr_outside_verb	code/modules/client/client procs.dm	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
-usr_outside_verb	code/modules/client/client procs.dm	if(!hsrc && topic_dispatch(src, usr, href_list))
 usr_outside_verb	code/modules/client/client procs.dm	OM_EMIT(mob, /datum/om/event/client_click, object, location, control, params, usr)
 usr_outside_verb	code/modules/clothing/accessories/rings.dm	add_attack_logs(usr, H, "Injected with [name] containing [contained] transferred [trans] units")
 usr_outside_verb	code/modules/clothing/accessories/storage.dm	if (hold.handle_mousedrop(usr, over_object))
