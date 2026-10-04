@@ -186,11 +186,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 	if(usr.stat || usr.restrained() || usr.incapacitated())
 		return
 
-	om_ask(usr, /datum/om/prompt/color, PROC_REF(recolor_picked), title = "Color", message = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color, PROC_REF(recolor_picked), answerer = usr, title = "Color", question = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/clothing/proc/recolor_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color && (ask.picked_color != color))
-		color = ask.picked_color
+/obj/item/clothing/proc/recolor_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value && (A.answer.answer_value != color))
+		color = A.answer.answer_value
 	update_icon()
 	update_clothing_icon()
 // end

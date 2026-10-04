@@ -50,9 +50,11 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 
 // show_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
-/obj/item/tvcamera/proc/channel_named(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/nc = ask.text
+/obj/item/tvcamera/proc/channel_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/nc = A.answer.answer_value
 	if(nc)
 		channel = nc
 		camera.c_tag = channel
@@ -175,9 +177,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 
 // show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
-/obj/item/clothing/accessory/bodycam/proc/channel_named(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/nc = sanitize(ask.text, MAX_NAME_LEN)
+/obj/item/clothing/accessory/bodycam/proc/channel_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/nc = sanitize(A.answer.answer_value, MAX_NAME_LEN)
 	if(nc)
 		channel = nc
 		bcamera.c_tag = channel
@@ -312,7 +316,7 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 	return FALSE
 
 /obj/item/tvcamera/proc/camera_set_channel(mob/user)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
+	open_request(src, /datum/prompt/text, PROC_REF(channel_named), answerer = user, title = "Select new channel name", question = "Channel name", default = channel, max_len = MAX_NAME_LEN, usable_state = "physical", name_text = TRUE, timeout = 0)
 
 /obj/item/tvcamera/proc/camera_toggle_video(mob/user)
 	camera.set_status(!camera.status)
@@ -334,7 +338,7 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 		to_chat(user,span_notice("Audio streaming deactivated."))
 
 /obj/item/clothing/accessory/bodycam/proc/camera_set_channel(mob/user)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
+	open_request(src, /datum/prompt/text, PROC_REF(channel_named), answerer = user, title = "Select new channel name", question = "Channel name", default = channel, max_len = MAX_NAME_LEN, usable_state = "physical", name_text = TRUE, timeout = 0)
 
 /obj/item/clothing/accessory/bodycam/proc/camera_toggle_video(mob/user)
 	bcamera.set_status(!bcamera.status)

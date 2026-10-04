@@ -415,11 +415,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	var/list/options = list("Underbelly","Body","Ears","Mane","Horns","Eyes")
 	for(var/option in options)
 		LAZYSET(options, option, image('icons/effects/bigdragon_labels.dmi', option))
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_part_chosen), choices = options, anchor = src, radius = 60)
+	open_request(src, /datum/prompt/choice, PROC_REF(style_part_chosen), answerer = src, choices = options, anchor = src, radius = 60, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// First radial answer: offer the styles of the picked part.
-/mob/living/simple_mob/vore/bigdragon/proc/style_part_chosen(datum/om/prompt/choice/radial/ask)
-	var/part = ask.choice
+/mob/living/simple_mob/vore/bigdragon/proc/style_part_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/part = A.answer.answer_value
 	if(!part || QDELETED(src) || src.incapacitated())
 		return
 	var/list/options

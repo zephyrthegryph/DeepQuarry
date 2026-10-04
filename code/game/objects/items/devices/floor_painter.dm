@@ -161,12 +161,14 @@ DECLARE_INTERACTIONS(/obj/item/floor_painter, INTERACT_USE(null, PROC_REF(intera
 	to_chat(ask.answerer, span_notice("You set \the [src] direction to '[paint_dir]'."))
 
 /obj/item/floor_painter/proc/ask_colour(mob/user)
-	om_ask(user, /datum/om/prompt/color, PROC_REF(colour_chosen), title = name, default = paint_colour, message = "Choose a colour.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color, PROC_REF(colour_chosen), answerer = user, title = name, question = "Choose a colour.", default = paint_colour, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/floor_painter/proc/colour_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color && ask.picked_color != paint_colour)
-		paint_colour = ask.picked_color
-		to_chat(ask.answerer, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))
+/obj/item/floor_painter/proc/colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value && A.answer.answer_value != paint_colour)
+		paint_colour = A.answer.answer_value
+		to_chat(A.request.answerer, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))
 
 /obj/item/floor_painter/examine(mob/user)
 	. = ..()

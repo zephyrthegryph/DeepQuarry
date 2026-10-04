@@ -49,12 +49,14 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 
 /// Old attack_self.
 /obj/item/plastique/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(timer_set), title = "Timer", message = "Please set the timer.", default = 10, max = 60000, min = 10, ask_flags = ASK_HELD | ASK_CAPABLE)
+	open_request(src, /datum/prompt/number, PROC_REF(timer_set), answerer = user, title = "Timer", question = "Please set the timer.", default = 10, max_value = 60000, min_value = 10, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/plastique/proc/timer_set(datum/om/prompt/number/ask)
-	var/mob/user = ask.answerer
-	var/newtime = CLAMP(ask.number, 10, 60000)
+/obj/item/plastique/proc/timer_set(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/newtime = CLAMP(A.answer.answer_value, 10, 60000)
 	timer = newtime
 	to_chat(user, "Timer set for [timer] seconds.")
 

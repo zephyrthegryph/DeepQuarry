@@ -147,15 +147,17 @@ CAPABILITIES(/obj/item/glamour_face)
 			to_chat(user, span_warning("There are no appropriate targets in range."))
 			return TRUE
 
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(homunculus_target_chosen), message = "Which target do you wish to create a homunculus of?", title = "homunculus", choices = targets, ask_flags = ASK_HELD | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(homunculus_target_chosen), answerer = user, title = "homunculus", question = "Which target do you wish to create a homunculus of?", choices = targets, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	if(homunculus)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(homunculus_action_chosen), message = "What would you like to do with your homunculus?", title = "Actions", choices = list("Recall", "Speak Through", "Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(homunculus_action_chosen), answerer = user, title = "Actions", question = "What would you like to do with your homunculus?", choices = list("Recall", "Speak Through", "Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/glamour_face/proc/homunculus_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/mob/living/carbon/human/chosen_target = ask.choice
+/obj/item/glamour_face/proc/homunculus_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/mob/living/carbon/human/chosen_target = A.answer.answer_value
 	if(homunculus)
 		return
 	if(chosen_target)
@@ -170,9 +172,11 @@ CAPABILITIES(/obj/item/glamour_face)
 		rel_set(src, nameof(homunculus), H)
 		rel_set(H, nameof(H.owner), src)
 
-/obj/item/glamour_face/proc/homunculus_action_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/h_action = ask.choice
+/obj/item/glamour_face/proc/homunculus_action_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/h_action = A.answer.answer_value
 	var/mob/living/simple_mob/homunculus/H = homunculus
 	if(!H)
 		return
@@ -181,11 +185,13 @@ CAPABILITIES(/obj/item/glamour_face)
 		qdel(H) // the framework clears our homunculus view
 		return
 	if(h_action == "Speak Through")
-		om_ask(user, /datum/om/prompt/text, PROC_REF(homunculus_words_entered), message = "What should the homunculus say:", title = "Speak Through", ask_flags = ASK_HELD | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(homunculus_words_entered), answerer = user, title = "Speak Through", question = "What should the homunculus say:", ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 
-/obj/item/glamour_face/proc/homunculus_words_entered(datum/om/prompt/text/ask)
+/obj/item/glamour_face/proc/homunculus_words_entered(datum/act/request/A)
+	if(!A.answer)
+		return
 	var/mob/living/simple_mob/homunculus/H = homunculus
-	H?.say(ask.text)
+	H?.say(A.answer.answer_value)
 
 
 //Speaking Glamour (universal translator)
@@ -277,14 +283,16 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 		return TRUE
 
 	if(M == L)
-		om_ask(M, /datum/om/prompt/choice, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, or restore energy?", choices = list("Yes", "No", "Restore Energy"), title = "Destroy ring", buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(ring_action_chosen), answerer = M, title = "Destroy ring", question = "Do you want to destroy the ring, or restore energy?", choices = list("Yes", "No", "Restore Energy"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	else
-		om_ask(M, /datum/om/prompt/choice, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", choices = list("Yes", "No"), title = "Destroy ring", buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(ring_action_chosen), answerer = M, title = "Destroy ring", question = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", choices = list("Yes", "No"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/structure/glamour_ring/proc/ring_action_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/M = ask.answerer
-	var/m_action = ask.choice
+/obj/structure/glamour_ring/proc/ring_action_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/M = A.request.answerer
+	var/m_action = A.answer.answer_value
 	var/mob/living/carbon/human/L = connected_mob
 	if(!istype(L) || m_action == "No")
 		return

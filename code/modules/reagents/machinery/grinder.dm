@@ -182,15 +182,17 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 	if(length(holdingitems))
 		options["grind"] = radial_grind
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(radial_option_chosen), choices = options, anchor = src, require_near = !issilicon(user), autopick_single_option = FALSE)
+	open_request(src, /datum/prompt/choice, PROC_REF(radial_option_chosen), answerer = user, choices = options, anchor = src, require_near = !issilicon(user), autopick_single_option = FALSE, radial = TRUE, timeout = 0)
 
-/obj/machinery/reagentgrinder/proc/radial_option_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
+/obj/machinery/reagentgrinder/proc/radial_option_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
 	// post choice verification
 	if(!user || om_busy(src) || (isAI(user) && has_stat(NOPOWER)) || user.incapacitated())
 		return
 
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("eject")
 			eject(user)
 		if("grind")

@@ -195,13 +195,15 @@ CAPABILITIES(/datum/protean_power)
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
 		return
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(nano_fitting_chosen), message = "Please select a species to emulate.", title = "Shapeshifter Body", choices = list(species?.vanity_base_fit) | species?.get_valid_shapeshifter_forms(), ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(nano_fitting_chosen), answerer = src, title = "Shapeshifter Body", question = "Please select a species to emulate.", choices = list(species?.vanity_base_fit) | species?.get_valid_shapeshifter_forms(), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/nano_fitting_chosen(datum/om/prompt/choice/ask)
+/mob/living/carbon/human/proc/nano_fitting_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(!species)
 		return
 	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
-	species.base_species = ask.choice
+	species.base_species = A.answer.answer_value
 	regenerate_icons()
 
 /datum/protean_power/hide_self

@@ -41,10 +41,12 @@
 	set category = VERB_CAT_ABILITIES_VR
 	set desc = "Become a different creature"
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(vr_creature_chosen), choices = GLOB.vr_mob_tf_options, ask_flags = ASK_CONSCIOUS, title = "Mob list", message = "Please select a creature:")
+	open_request(src, /datum/prompt/choice, PROC_REF(vr_creature_chosen), answerer = src, title = "Mob list", question = "Please select a creature:", choices = GLOB.vr_mob_tf_options, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/vr_creature_chosen(datum/om/prompt/choice/ask)
-	var/tf = GLOB.vr_mob_tf_options[ask.choice]
+/mob/living/carbon/human/proc/vr_creature_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/tf = GLOB.vr_mob_tf_options[A.answer.answer_value]
 
 	var/mob/living/new_form = transform_into_mob(tf, TRUE, TRUE)
 	if(isliving(new_form)) // Sanity check

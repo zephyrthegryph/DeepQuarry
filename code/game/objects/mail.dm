@@ -124,10 +124,12 @@
 		if(!SSantag.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player
 
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(recipient_chosen), title = "Recipients", message = "Choose recipient", choices = recipients, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(recipient_chosen), answerer = user, title = "Recipients", question = "Choose recipient", choices = recipients, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/mail/proc/recipient_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/recipient_mob = ask.choice
+/obj/item/mail/proc/recipient_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/recipient_mob = A.answer.answer_value
 	if(istype(recipient_mob) && recipient_mob?.mind)
 		initialize_for_recipient(recipient_mob.mind, preset_goodies = TRUE)
 		if(istype(src, /obj/item/mail/blank))
@@ -157,11 +159,13 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 /obj/item/mail/blank/inspected_by(mob/user)
 	..()
 	if(!sealed)
-		om_ask(user, /datum/om/prompt/text, PROC_REF(sender_named), title = "Name", message = "Write name", default = user.name, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(sender_named), answerer = user, title = "Name", question = "Write name", default = user.name, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/mail/blank/proc/sender_named(datum/om/prompt/text/ask)
-	if(ask.text && !sealed)
-		desc = "A signed envelope, from [ask.text]."
+/obj/item/mail/blank/proc/sender_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value && !sealed)
+		desc = "A signed envelope, from [A.answer.answer_value]."
 
 /// Old attack_self: seal an open envelope, or open a sealed one.
 /obj/item/mail/blank/proc/interaction_seal(mob/user, obj/item/held, datum/interaction/interaction)

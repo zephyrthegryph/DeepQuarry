@@ -91,14 +91,16 @@ DECLARE_INTERACTIONS(/obj/item/circuitboard/security, INTERACT_ITEM(null, PROC_R
 			to_chat(user, span_warning("Circuit controls are locked."))
 			return INTERACTION_HANDLED_PASS
 		var/existing_networks = jointext(network,",")
-		om_ask(user, /datum/om/prompt/text, PROC_REF(networks_entered), message = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", title = "Multitool-Circuitboard interface", default = existing_networks, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(networks_entered), answerer = user, title = "Multitool-Circuitboard interface", question = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", default = existing_networks, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/circuitboard/security/proc/networks_entered(datum/om/prompt/text/ask)
+/obj/item/circuitboard/security/proc/networks_entered(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(locked)
 		return
-	var/mob/user = ask.answerer
-	var/input = ask.text
+	var/mob/user = A.request.answerer
+	var/input = A.answer.answer_value
 	if(!input)
 		to_chat(user, "No input found please hang up and try your call again.")
 		return

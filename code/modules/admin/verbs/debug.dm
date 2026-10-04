@@ -719,11 +719,13 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
 		return
 
-	om_ask(usr, /datum/om/prompt/choice, PROC_REF(quick_authentic_nif_chosen), choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS), title = "Quick Authentic NIF", message = "Pick a mob with a player", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_DEBUG))
+	open_request(src, /datum/prompt/choice, PROC_REF(quick_authentic_nif_chosen), answerer = usr, title = "Quick Authentic NIF", question = "Pick a mob with a player", choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS), rights = R_ADMIN|R_EVENT|R_DEBUG, timeout = 0)
 
-/datum/admins/proc/quick_authentic_nif_chosen(datum/om/prompt/choice/ask)
-	var/mob/admin = ask.answerer
-	var/mob/living/carbon/human/H = ask.choice
+/datum/admins/proc/quick_authentic_nif_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/admin = A.request.answerer
+	var/mob/living/carbon/human/H = A.answer.answer_value
 	if(!istype(H))
 		to_chat(admin,span_warning("That mob type ([H.type]) doesn't support NIFs, sorry."))
 		return

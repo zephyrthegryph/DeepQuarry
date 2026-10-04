@@ -60,11 +60,13 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 		balloon_alert(user,"you are too far away.")
 		return
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(glass_chosen), choices = GLOB.robot_glass_options, anchor = user, radius = 40)
+	open_request(src, /datum/prompt/choice, PROC_REF(glass_chosen), answerer = user, choices = GLOB.robot_glass_options, anchor = user, radius = 40, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/item/rsf/proc/glass_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/glass_choice = ask.choice
+/obj/item/rsf/proc/glass_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/glass_choice = A.answer.answer_value
 	if(glass_choice)
 		balloon_alert(user, "container chosen: [glass_choice]")
 		glasstype_name = glass_choice
@@ -86,12 +88,14 @@ DECLARE_INTERACTIONS(/obj/item/rsf, \
 		"dice pack (gaming)" = image(icon = 'icons/obj/dice.dmi', icon_state = "magicdicebag"),
 		"paper" = image(icon = 'icons/obj/bureaucracy.dmi', icon_state = "paper"),
 		"pen" = image(icon = 'icons/obj/bureaucracy.dmi', icon_state = "pen"))
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(product_chosen), choices = options, anchor = user, radius = 40)
+	open_request(src, /datum/prompt/choice, PROC_REF(product_chosen), answerer = user, choices = options, anchor = user, radius = 40, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 	return TRUE
 
-/obj/item/rsf/proc/product_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/rsf/proc/product_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(choice)
 		mode = choice
 		play_sfx(src, SFX_EFFECTS_POP)

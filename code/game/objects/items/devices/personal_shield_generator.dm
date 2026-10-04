@@ -205,12 +205,14 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/personal_shield_generator/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/color, PROC_REF(shield_color_chosen), message = "Choose a color to set the shield to!", default = effect_color, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color, PROC_REF(shield_color_chosen), answerer = user, question = "Choose a color to set the shield to!", default = effect_color, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/personal_shield_generator/proc/shield_color_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		effect_color = ask.picked_color
+/obj/item/personal_shield_generator/proc/shield_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		effect_color = A.answer.answer_value
 
 // TODO: EMAG ACT
 // Perhaps make it so emagging the generator gives two options: One to rig the cell (stealthily) and one to disable the safeties (supercharge it)

@@ -263,13 +263,15 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cat, INTERACT_ITEM(nul
 		if(named)
 			to_chat(user, span_notice("\The [name] already has a name!"))
 		else
-			om_ask(user, /datum/om/prompt/text, PROC_REF(cat_name_entered), title = "Name", message = "Give \the [name] a name", max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE)
+			open_request(src, /datum/prompt/text, PROC_REF(cat_name_entered), answerer = user, title = "Name", question = "Give \the [name] a name", max_len = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
 	else
 		return FALSE
 
-/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/tmp_name = ask.text
+/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/tmp_name = A.answer.answer_value
 	tmp_name = sanitizeSafe(tmp_name, MAX_NAME_LEN)
 	if(named || !length(tmp_name))
 		return

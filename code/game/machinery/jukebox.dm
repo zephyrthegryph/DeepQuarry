@@ -440,11 +440,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	if(!admin_require(user?.client, R_FUN|R_ADMIN, "check_rights in [callee?.proc]"))
 		return
 
-	om_ask(user, /datum/om/prompt/text, PROC_REF(manual_track_removal_entered), message = "Input track title or URL to remove (must be exact)", title = "Remove Track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+	open_request(src, /datum/prompt/text, PROC_REF(manual_track_removal_entered), answerer = user, title = "Remove Track", question = "Input track title or URL to remove (must be exact)", rights = R_FUN|R_ADMIN, timeout = 0)
 
-/obj/machinery/media/jukebox/ghost/proc/manual_track_removal_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/track = ask.text
+/obj/machinery/media/jukebox/ghost/proc/manual_track_removal_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/track = A.answer.answer_value
 	var/client/C = user.client
 	if(!track)
 		return

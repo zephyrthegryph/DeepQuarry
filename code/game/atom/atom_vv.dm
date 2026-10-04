@@ -107,12 +107,16 @@
 	var/atom/A = target
 	A.SpinAnimation(1 SECONDS / spins_per_sec, num_spins, ask.choice == "Clockwise" ? 1 : 0)
 
-/atom/proc/vv_stop_animations_answered(datum/om/prompt/confirm/ask)
+/atom/proc/vv_stop_animations_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
 	animate(src, transform = null, flags = ANIMATION_END_NOW) // Literally just fucking stop animating entirely because admin said so
 
-/atom/proc/vv_auto_rename_entered(datum/om/prompt/text/ask)
-	if(ask.text)
-		vv_auto_rename(src, ask.text)
+/atom/proc/vv_auto_rename_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		vv_auto_rename(src, A.answer.answer_value)
 
 VV_TOPIC_ACTION(/atom, VV_HK_TRIGGER_EXPLOSION, PROC_REF(vv_topic_explosion))
 VV_TOPIC_ACTION(/atom, VV_HK_TRIGGER_EMP, PROC_REF(vv_topic_emp))
@@ -138,11 +142,11 @@ VV_TOPIC_ACTION(/atom, VV_HK_TEST_MATRIXES, PROC_REF(vv_topic_test_matrixes), TO
 	return TRUE
 
 /atom/proc/vv_topic_stop_animations(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/confirm, TYPE_PROC_REF(/atom, vv_stop_animations_answered), title = "Stop Animating", message = "Are you sure?", requires = PROMPT_ADMIN(R_VAREDIT))
+	open_request(src, /datum/prompt/yes_no, TYPE_PROC_REF(/atom, vv_stop_animations_answered), answerer = user, title = "Stop Animating", question = "Are you sure?", rights = R_VAREDIT, timeout = 0)
 	return TRUE
 
 /atom/proc/vv_topic_auto_rename(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/text, TYPE_PROC_REF(/atom, vv_auto_rename_entered), title = "Automatic Rename", message = "What do you want to rename this to?", requires = PROMPT_ADMIN(R_VAREDIT))
+	open_request(src, /datum/prompt/text, TYPE_PROC_REF(/atom, vv_auto_rename_entered), answerer = user, title = "Automatic Rename", question = "What do you want to rename this to?", rights = R_VAREDIT, timeout = 0)
 	return TRUE
 
 /atom/proc/vv_topic_edit_filters(mob/user, list/args)

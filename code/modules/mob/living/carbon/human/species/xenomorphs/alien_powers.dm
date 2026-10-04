@@ -245,11 +245,13 @@
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/mob/alien.dmi', option)) // based off 'icons/effects/thinktank_labels.dmi'
 
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(resin_chosen), choices = options, anchor = src, radius = 42, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(resin_chosen), answerer = src, choices = options, anchor = src, radius = 42, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// Radial answer: secrete the picked resin structure in front of us.
-/mob/living/carbon/human/proc/resin_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/mob/living/carbon/human/proc/resin_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.answer_value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
 
@@ -307,10 +309,12 @@
 			choices += M
 	choices -= src
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(alien_leap_target_chosen), title = "Target Choice", message = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(alien_leap_target_chosen), answerer = src, title = "Target Choice", question = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/alien_leap_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/T = ask.choice
+/mob/living/carbon/human/proc/alien_leap_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/T = A.answer.answer_value
 
 	if(get_dist(get_turf(T), get_turf(src)) > 4) return
 

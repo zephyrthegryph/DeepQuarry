@@ -160,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 				itemlist = new
 			om_ask(ask.answerer, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_item_chosen), title = "Item Mode Select", message = "Select item to search for.", choices = itemlist.possible_items)
 		if("DNA")
-			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(pinpointer_dna_entered), title = "Please Enter String.", message = "Input DNA string to search for.", default = "", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			open_request(src, /datum/prompt/text, PROC_REF(pinpointer_dna_entered), answerer = ask.answerer, title = "Please Enter String.", question = "Input DNA string to search for.", default = "", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
 /obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(datum/om/prompt/choice/carried_item/ask)
 	var/mob/user = ask.answerer
@@ -174,9 +174,11 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	to_chat(user, "You set the pinpointer to locate [targetitem]")
 	attack_self(user)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/DNAstring = ask.text
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/DNAstring = A.answer.answer_value
 	if(!DNAstring)
 		return
 	for(var/mob/living/carbon/M in REGISTRY_MEMBERS(REGISTRY_MOBS))

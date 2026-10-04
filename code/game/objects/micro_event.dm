@@ -24,10 +24,12 @@
 	return TRUE
 
 /obj/structure/portal_event/resize/proc/ask_size_mode(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(ask_size_limit), title = "Change portal size settings", message = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", choices = list("Shrink","Grow"), buttons = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
+	open_request(src, /datum/prompt/choice, PROC_REF(ask_size_limit), answerer = ask.answerer, title = "Change portal size settings", question = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", choices = list("Shrink","Grow"), buttons = TRUE, rights = R_HOLDER, timeout = 0)
 
-/obj/structure/portal_event/resize/proc/ask_size_limit(datum/om/prompt/choice/ask)
-	om_ask(ask.answerer, /datum/om/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), shrinking = (ask.choice == "Shrink"))
+/obj/structure/portal_event/resize/proc/ask_size_limit(datum/act/request/A)
+	if(!A.answer)
+		return
+	om_ask(A.request.answerer, /datum/om/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), shrinking = (A.answer.answer_value == "Shrink"))
 
 /obj/structure/portal_event/resize/proc/size_settings_chosen(datum/om/prompt/number/portal_size_limit/ask)
 	if(isnull(ask.number))

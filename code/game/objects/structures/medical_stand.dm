@@ -218,14 +218,16 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		available_options += "Remove vessel"
 
 	if(available_options.len > 1)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(stand_action_chosen), choices = available_options, title = "Stand Choice", message = "What do you want to do?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(stand_action_chosen), answerer = user, title = "Stand Choice", question = "What do you want to do?", choices = available_options, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	if(available_options.len)
 		stand_action(user, available_options[1])
 	return TRUE
 
-/obj/structure/medical_stand/proc/stand_action_chosen(datum/om/prompt/choice/ask)
-	stand_action(ask.answerer, ask.choice)
+/obj/structure/medical_stand/proc/stand_action_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	stand_action(A.request.answerer, A.answer.answer_value)
 
 /obj/structure/medical_stand/proc/stand_action(mob/user, action_type)
 	switch (action_type)

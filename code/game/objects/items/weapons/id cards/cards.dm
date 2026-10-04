@@ -213,20 +213,24 @@ CAPABILITIES(/obj/item/card_fluff)
 /// Old attack_self.
 /obj/item/card_fluff/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(customize_chosen), title = "Customize Card", message = "What element would you like to customize?", choices = list("Band","Stamp","Reset"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(customize_chosen), answerer = user, title = "Customize Card", question = "What element would you like to customize?", choices = list("Band","Stamp","Reset"), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/card_fluff/proc/customize_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/obj/item/card_fluff/proc/customize_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.answer_value)
 		if("Band")
-			om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(band_chosen), title = "Band colour", message = "Select colour", choices = list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice, PROC_REF(band_chosen), answerer = A.request.answerer, title = "Band colour", question = "Select colour", choices = list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black"), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		if("Stamp")
-			om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(stamp_chosen), title = "Stamp image", message = "Select image", choices = list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice, PROC_REF(stamp_chosen), answerer = A.request.answerer, title = "Stamp image", question = "Select image", choices = list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation"), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		if("Reset")
 			reset_icon()
 
-/obj/item/card_fluff/proc/band_chosen(datum/om/prompt/choice/ask)
-	var/bandchoice = ask.choice
+/obj/item/card_fluff/proc/band_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/bandchoice = A.answer.answer_value
 	if(bandchoice == "red")
 		sprite_stack.Add("bar-red")
 	else if(bandchoice == "orange")
@@ -254,8 +258,10 @@ CAPABILITIES(/obj/item/card_fluff)
 
 	update_icon()
 
-/obj/item/card_fluff/proc/stamp_chosen(datum/om/prompt/choice/ask)
-	var/stampchoice = ask.choice
+/obj/item/card_fluff/proc/stamp_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/stampchoice = A.answer.answer_value
 	if(stampchoice == "ship")
 		sprite_stack.Add("stamp-starship")
 	else if(stampchoice == "cross")

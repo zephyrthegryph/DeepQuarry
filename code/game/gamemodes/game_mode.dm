@@ -94,7 +94,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	refresh_game_mode_panel(user)
 
 /datum/game_mode/proc/topic_add_antag_type(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(antag_type_added), choices = SSantag.all_antag_types, title = "Select Antag Type", message = "Which type do you wish to add?", requires = PROMPT_ADMIN(R_ADMIN|R_SERVER))
+	open_request(src, /datum/prompt/choice, PROC_REF(antag_type_added), answerer = user, title = "Select Antag Type", question = "Which type do you wish to add?", choices = SSantag.all_antag_types, rights = R_ADMIN|R_SERVER, timeout = 0)
 
 /datum/game_mode/proc/game_mode_option_prompt(option)
 	switch(option)
@@ -134,9 +134,11 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 			refresh_event_modifiers()
 	message_admins("Admin [key_name_admin(user)] set game mode option '[ask.option]' to [choice].")
 
-/datum/game_mode/proc/antag_type_added(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/datum/antagonist/antag = SSantag.all_antag_types[ask.choice]
+/datum/game_mode/proc/antag_type_added(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/datum/antagonist/antag = SSantag.all_antag_types[A.answer.answer_value]
 	if(antag)
 		if(!(antag in SSticker.mode.antag_templates))
 			rel_add(SSticker.mode, nameof(/datum/game_mode::antag_templates), antag)

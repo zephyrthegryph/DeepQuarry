@@ -465,11 +465,13 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 
 /obj/item/perfect_tele_beacon/proc/ask_belly(datum/om/prompt/confirm/ask)
 	var/mob/living/user = ask.answerer
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(belly_chosen), choices = user.vore_organs, title = "Select A Belly", message = "Which belly?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(belly_chosen), answerer = user, title = "Select A Belly", question = "Which belly?", choices = user.vore_organs, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/perfect_tele_beacon/proc/belly_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/user = ask.answerer
-	var/obj/belly/bellychoice = ask.choice
+/obj/item/perfect_tele_beacon/proc/belly_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	var/obj/belly/bellychoice = A.answer.answer_value
 	if(istype(bellychoice) && bellychoice.owner == user)
 		act_message(user, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice.name]!")), MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!")))
 		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))

@@ -30,10 +30,12 @@ CAPABILITIES(/obj/item/pipe_painter)
 
 /obj/item/pipe_painter/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(mode_chosen), title = "Pipe painter", message = "Which colour do you want to use?", choices = modes, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(mode_chosen), answerer = user, title = "Pipe painter", question = "Which colour do you want to use?", choices = modes, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/pipe_painter/proc/mode_chosen(datum/om/prompt/choice/ask)
-	mode = ask.choice
+/obj/item/pipe_painter/proc/mode_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	mode = A.answer.answer_value
 
 /obj/item/pipe_painter/examine(mob/user)
 	. = ..()

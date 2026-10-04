@@ -4,7 +4,7 @@
 //   SStransfer.get_hard_end()          the shift's hard end, in deciseconds of round time
 
 /datum/system/transfer/proc/modify_hard_end(client/user)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(hard_end_entered), default = shift_hard_end / 600, title = "Shift End", message = "Modify the shift end timer (Input in Minutes)", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_SERVER))
+	open_request(src, /datum/prompt/number, PROC_REF(hard_end_entered), answerer = user, title = "Shift End", question = "Modify the shift end timer (Input in Minutes)", default = shift_hard_end / 600, rights = R_ADMIN|R_EVENT|R_SERVER, timeout = 0)
 
 ///Accessor proc for getting the shift hard end.
 /datum/system/transfer/proc/get_hard_end()

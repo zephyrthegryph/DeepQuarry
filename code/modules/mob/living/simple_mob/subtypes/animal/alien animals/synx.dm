@@ -665,11 +665,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	var/list/options = list("Body","Horns","Marks","Eyes")
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/effects/synx_labels.dmi', option))
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_part_chosen), choices = options, anchor = src, radius = 60)
+	open_request(src, /datum/prompt/choice, PROC_REF(style_part_chosen), answerer = src, choices = options, anchor = src, radius = 60, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// First radial answer: offer the styles of the picked part.
-/mob/living/simple_mob/animal/synx/proc/style_part_chosen(datum/om/prompt/choice/radial/ask)
-	var/part = ask.choice
+/mob/living/simple_mob/animal/synx/proc/style_part_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/part = A.answer.answer_value
 	if(!part || QDELETED(src) || src.incapacitated())
 		return
 	var/list/options

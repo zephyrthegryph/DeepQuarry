@@ -618,12 +618,14 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shower, MACHINE_PIPELINE, "on")
 
 /obj/machinery/shower/proc/interaction_set_temperature(mob/user, obj/item/held, datum/interaction/interaction)
 	var/static/list/temperature_settings = list(SHOWER_NORMAL, SHOWER_BOILING, SHOWER_FREEZING)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(temperature_chosen), choices = temperature_settings, title = "Water Temperature Valve", message = "What setting would you like to set the temperature valve to?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(temperature_chosen), answerer = user, title = "Water Temperature Valve", question = "What setting would you like to set the temperature valve to?", choices = temperature_settings, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/machinery/shower/proc/temperature_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/newtemp = ask.choice
+/obj/machinery/shower/proc/temperature_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/newtemp = A.answer.answer_value
 	to_chat(user, span_notice("You begin to adjust the temperature..."))
 	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
 	handle_mist()
@@ -1325,12 +1327,14 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 
 /obj/structure/biowaste_tank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents_count(src))
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(eject_chosen), choices = contents, title = "Item Retrieval Console", message = "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(eject_chosen), answerer = user, title = "Item Retrieval Console", question = "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", choices = contents, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/structure/biowaste_tank/proc/eject_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/atom/movable/choice = ask.choice
+/obj/structure/biowaste_tank/proc/eject_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/atom/movable/choice = A.answer.answer_value
 	if(choice.loc == src)
 		if(!user.canmove)
 			return

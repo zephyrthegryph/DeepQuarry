@@ -90,12 +90,14 @@ UI_DATA_REPLACE(/obj/machinery/pointdefense_control, "merge:ui_data_obj_machiner
 	return data
 
 /obj/machinery/pointdefense_control/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(ident_entered), message = "Enter a new ident tag.", title = "[src]", default = id_tag, max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
+	open_request(src, /datum/prompt/text, PROC_REF(ident_entered), answerer = user, title = "[src]", question = "Enter a new ident tag.", default = id_tag, max_len = MAX_NAME_LEN, usable_state = "physical", name_text = TRUE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/pointdefense_control/proc/ident_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_ident = ask.text
+/obj/machinery/pointdefense_control/proc/ident_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/new_ident = A.answer.answer_value
 	if(new_ident && new_ident != id_tag && user.Adjacent(src))
 		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == new_ident)

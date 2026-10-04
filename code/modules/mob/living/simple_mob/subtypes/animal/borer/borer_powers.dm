@@ -30,12 +30,14 @@
 		to_chat(src, span_notice("There are no viable targets within range..."))
 		return
 	if(choices.len > 1)
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(knockout_target_chosen), title = "Target Choice", message = "Who do you wish to dominate?", choices = choices, ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/choice, PROC_REF(knockout_target_chosen), answerer = src, title = "Target Choice", question = "Who do you wish to dominate?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 	psychic_knockout(choices[1])
 
-/mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(datum/om/prompt/choice/ask)
-	psychic_knockout(ask.choice)
+/mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	psychic_knockout(A.answer.answer_value)
 
 /mob/living/simple_mob/animal/borer/proc/psychic_knockout(mob/living/carbon/human/attack_target)
 	var/attack_range = 5

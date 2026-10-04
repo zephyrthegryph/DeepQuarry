@@ -487,7 +487,7 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 			if(speech_synthesizer != PP_MISSING)
 				parts |= "speech synthesizer"
 
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(check_part), title = "Check part", message = "Which part would you like to check?", choices = parts, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice, PROC_REF(check_part), answerer = user, title = "Check part", question = "Which part would you like to check?", choices = parts, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	if(istype(I,/obj/item/paiparts/cell))
 		if(cell == PP_MISSING)
 			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
@@ -534,9 +534,11 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 			return TRUE
 	return TRUE
 
-/obj/item/paicard/proc/check_part(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/paicard/proc/check_part(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	switch(choice)
 		if("cell")
 			if(cell == PP_FUNCTIONAL)
@@ -660,15 +662,17 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	if(speech_synthesizer != PP_MISSING)
 		parts |= "speech synthesizer"
 
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(part_to_remove_chosen), title = "Remove part", message = "Which part would you like to remove?", choices = parts, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(part_to_remove_chosen), answerer = user, title = "Remove part", question = "Which part would you like to remove?", choices = parts, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/paicard/proc/part_to_remove_chosen(datum/om/prompt/choice/ask)
+/obj/item/paicard/proc/part_to_remove_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(!panel_open)
 		return
-	var/mob/user = ask.answerer
+	var/mob/user = A.request.answerer
 	play_sfx(src, SFX_ITEMS_PICKUP_COMPONENT, volume = 0)
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, ask.choice))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, A.answer.answer_value))
 
 /// Adding or removing an ID's access. Re-checked on the answer: the ID is still in hand, the pAI still accepts it.
 /datum/om/prompt/choice/pai_id_access

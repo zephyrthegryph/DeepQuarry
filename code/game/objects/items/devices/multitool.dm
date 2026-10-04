@@ -45,11 +45,13 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 		return
 
 	update_icon()
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(menu_chosen), message = "What do you want to do with \the [src]?", title = "Multitool Menu", choices = list("Switch Mode", "Clear Buffers", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(menu_chosen), answerer = user, title = "Multitool Menu", question = "What do you want to do with \the [src]?", choices = list("Switch Mode", "Clear Buffers", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/multitool/proc/menu_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/user = ask.answerer
-	switch(ask.choice)
+/obj/item/multitool/proc/menu_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))
 			rel_clear(src, nameof(buffer))

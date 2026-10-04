@@ -36,11 +36,13 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 
 
 /obj/item/teleportation_scroll/proc/teleportscroll(mob/user)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(area_chosen), title = "Teleportation Scroll", message = "Area to jump to:", choices = GLOB.teleportlocs, ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(area_chosen), answerer = user, title = "Teleportation Scroll", question = "Area to jump to:", choices = GLOB.teleportlocs, ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS, timeout = 0)
 
-/obj/item/teleportation_scroll/proc/area_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/area/thearea = GLOB.teleportlocs[ask.choice]
+/obj/item/teleportation_scroll/proc/area_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/area/thearea = GLOB.teleportlocs[A.answer.answer_value]
 	if(!thearea || uses < 1)
 		return
 

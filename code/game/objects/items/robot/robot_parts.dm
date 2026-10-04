@@ -93,9 +93,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/robot_parts/robot_suit, TYPE_PROC_REF(/atom, a
 				return 1
 	return 0
 
-/obj/item/robot_parts/robot_suit/proc/robot_named(datum/om/prompt/text/ask)
-	if (ask.text)
-		src.created_name = ask.text
+/obj/item/robot_parts/robot_suit/proc/robot_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	if (A.answer.answer_value)
+		src.created_name = A.answer.answer_value
 
 DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -220,7 +222,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			to_chat(user, span_warning("The MMI must go in after everything else!"))
 
 	if (istype(W, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/text, PROC_REF(robot_named), title = src.name, message = "Enter new robot name", default = src.created_name, max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(robot_named), answerer = user, title = src.name, question = "Enter new robot name", default = src.created_name, max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
 
 	return INTERACTION_HANDLED_PASS
 

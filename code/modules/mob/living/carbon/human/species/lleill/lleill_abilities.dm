@@ -73,10 +73,12 @@
 
 	COOLDOWN_START(src, last_special, 50)
 
-	om_ask(src, /datum/om/prompt/color, PROC_REF(lleill_colour_chosen), title = "Shapeshifter Colour", message = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/color, PROC_REF(lleill_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/lleill_colour_chosen(datum/om/prompt/color/ask)
-	lleill_set_colour(ask.picked_color)
+/mob/living/carbon/human/proc/lleill_colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	lleill_set_colour(A.answer.answer_value)
 
 /mob/living/carbon/human/proc/lleill_set_colour(new_skin)
 

@@ -37,7 +37,7 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 	if(warrants.len == 0)
 		to_chat(user,span_notice("There are no warrants available"))
 		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(warrant_chosen), choices = warrants, title = "Warrant Selection", message = "Which warrant would you like to load?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(warrant_chosen), answerer = user, title = "Warrant Selection", question = "Which warrant would you like to load?", choices = warrants, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
 /// Swiping an ID (the subject, still in hand) to authorize the loaded warrant.
 /datum/om/prompt/confirm/holowarrant_authorize
@@ -48,9 +48,11 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 	var/obj/item/card/id/card
 	var/datum/data/record/warrant/warrant
 
-/obj/item/holowarrant/proc/warrant_chosen(datum/om/prompt/choice/ask)
+/obj/item/holowarrant/proc/warrant_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-		if(W.fields["namewarrant"] == ask.choice)
+		if(W.fields["namewarrant"] == A.answer.answer_value)
 			rel_set(src, nameof(active), W)
 	update_icon()
 

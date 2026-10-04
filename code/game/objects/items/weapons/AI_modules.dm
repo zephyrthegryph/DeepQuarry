@@ -283,14 +283,16 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 /// Old attack_self.
 /obj/item/aiModule/freeform/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/number, PROC_REF(law_position_entered), title = "Law Priority (15+)", message = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", default = lawpos, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/number, PROC_REF(law_position_entered), answerer = user, title = "Law Priority (15+)", question = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", default = lawpos, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/aiModule/freeform/proc/law_position_entered(datum/om/prompt/number/ask)
-	if(ask.number < MIN_SUPPLIED_LAW_NUMBER)
+/obj/item/aiModule/freeform/proc/law_position_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	lawpos = min(ask.number, MAX_SUPPLIED_LAW_NUMBER)
-	om_ask(ask.answerer, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new law for the AI.")
+	if(A.answer.answer_value < MIN_SUPPLIED_LAW_NUMBER)
+		return
+	lawpos = min(A.answer.answer_value, MAX_SUPPLIED_LAW_NUMBER)
+	om_ask(A.request.answerer, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new law for the AI.")
 
 /obj/item/aiModule/freeform/proc/law_entered(datum/om/prompt/text/ai_law/ask)
 	newFreeFormLaw = ask.text
