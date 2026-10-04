@@ -28,7 +28,7 @@
 
 		activate(user)
 		add_fingerprint(user)
-		after(src, 5, PROC_REF(detonate))
+		after(src, 0.5 SECONDS, PROC_REF(detonate))
 		return 0
 	return 1
 

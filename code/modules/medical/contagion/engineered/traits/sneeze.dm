@@ -57,7 +57,7 @@ Bonus
 		else
 			M.emote("sneeze")
 			if(infective && !(A.spread_flags & DISEASE_SPREAD_FALTERED))
-				after(A, 20, TYPE_PROC_REF(/datum/affliction/contagion, spread), with = list(4))
+				after(A, 2 SECONDS, TYPE_PROC_REF(/datum/affliction/contagion, spread), with = list(4))
 
 /*
 //////////////////////////////////////

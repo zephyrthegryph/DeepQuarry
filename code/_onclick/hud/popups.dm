@@ -27,7 +27,7 @@
 
 /atom/movable/screen/popup/proc/close_popup()
 	holder()?.screen -= src
-	qdel(src)
+	consume(src)
 
 /atom/movable/screen/popup/proc/check_click_spot(click_x, click_y)
 	if((click_x <= close_button_x_end) && (click_x >= close_button_x_start))

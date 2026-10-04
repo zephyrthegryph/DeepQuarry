@@ -177,7 +177,7 @@
 	if(!QDELING(src) && !holds_charge)
 		// Put it on a delay because moving item from slot to hand
 		// calls dropped().
-		after(src, 2, PROC_REF(empty_if_not_held))
+		after(src, 0.2 SECONDS, PROC_REF(empty_if_not_held))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/empty_if_not_held()
 	if(!ismob(loc) && !istype(loc, /obj/item/integrated_circuit))

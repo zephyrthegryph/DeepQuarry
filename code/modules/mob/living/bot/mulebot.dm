@@ -353,7 +353,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	if(istext(om_hold_busy(src, 2)))
 		return
 	C.forceMove(loc)
-	after(src, 2, PROC_REF(load_finish), with = list(C))
+	after(src, 0.2 SECONDS, PROC_REF(load_finish), with = list(C))
 
 /mob/living/bot/mulebot/proc/load_finish(atom/movable/C)
 	if(C.loc != loc) //To prevent you from going onto more than one bot.

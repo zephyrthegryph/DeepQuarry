@@ -251,7 +251,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 	update_icon()
 
 	if(gun_unreliable && prob(gun_unreliable))
-		after(src, 3, PROC_REF(unreliable_explode)) // So that it will still fire - considered modifying Fire() to return a value but burst fire makes that annoying.
+		after(src, 0.3 SECONDS, PROC_REF(unreliable_explode)) // So that it will still fire - considered modifying Fire() to return a value but burst fire makes that annoying.
 
 	return new projectile_type(src)
 
@@ -294,7 +294,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 				if(MAT_SUPERMATTER)
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod/supermatter
 					visible_message(span_danger("The barrel of \the [src] glows a blinding white!"))
-					after(src, 5, PROC_REF(fuelrod_collapse))
+					after(src, 0.5 SECONDS, PROC_REF(fuelrod_collapse))
 				if("blitz")
 					var/max_range = 6																// -- Polymorph
 					var/banglet = 0
@@ -410,14 +410,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_collapse()
 	visible_message(span_danger("\The [src] begins to rattle, its acceleration chamber collapsing in on itself!"))
 	removable_components = FALSE
-	after(src, 15, PROC_REF(fuelrod_overload))
+	after(src, 1.5 SECONDS, PROC_REF(fuelrod_overload))
 
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_overload()
 	audible_message(span_critical("\The [src]'s power supply begins to overload as the device crumples!"), runemessage = "VWRRRRRRRR")
 	play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.2)
 	var/turf/T = get_turf(src)
 	fx_sparks(T, 2)
-	after(src, 15, PROC_REF(fuelrod_blows))
+	after(src, 1.5 SECONDS, PROC_REF(fuelrod_blows))
 
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_blows()
 	visible_message(span_critical("\The [src] explodes in a blinding white light!"))
