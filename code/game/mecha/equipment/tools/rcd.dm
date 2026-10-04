@@ -9,7 +9,8 @@
 	equip_type = EQUIP_SPECIAL
 	var/obj/item/rcd/electric/mounted/mecha/my_rcd = null
 
-DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd", /obj/item/rcd/electric/mounted/mecha)
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/rcd)
+	owns_one(nameof(my_rcd), starts = /obj/item/rcd/electric/mounted/mecha)
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/action(atom/target)

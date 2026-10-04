@@ -19,12 +19,12 @@
 	item_state_slots = list(slot_r_hand_str = "headphones", slot_l_hand_str = "headphones")
 	slot_flags = SLOT_EARS | SLOT_TWOEARS
 
-EXTEND_INTERACTIONS(/obj/item/clothing/ears/earmuffs/headphones, \
-	INTERACT_VERB("Toggle Headphone Music", PROC_REF(headphones_togglemusic_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones)
+	op("headphones_togglemusic_verb", menu(), label("Toggle Headphone Music"), needs(carried()), then(PROC_REF(headphones_togglemusic_verb)))
 
 /// Old verb "Toggle Headphone Music".
-/obj/item/clothing/ears/earmuffs/headphones/proc/headphones_togglemusic_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/ears/earmuffs/headphones/proc/headphones_togglemusic_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 

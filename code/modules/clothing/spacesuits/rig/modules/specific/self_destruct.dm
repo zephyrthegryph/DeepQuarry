@@ -14,7 +14,8 @@
 	interface_name = "dead man's switch"
 	interface_desc = "An integrated self-destruct module. When the wearer dies, they vanish in smoke. Do not press this button."
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig_module/self_destruct, "smoke", /datum/effect/effect/system/smoke_spread/bad)
+CAPABILITIES(/obj/item/rig_module/self_destruct)
+	owns_one(nameof(smoke), starts = /datum/effect/effect/system/smoke_spread/bad)
 
 /obj/item/rig_module/self_destruct/Initialize(mapload)
 	. = ..()

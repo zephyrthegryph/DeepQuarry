@@ -15,7 +15,8 @@
 
 	var/obj/item/voice_changer/voice_holder
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig_module/voice, "voice_holder", /obj/item/voice_changer)
+CAPABILITIES(/obj/item/rig_module/voice)
+	owns_one(nameof(voice_holder), starts = /obj/item/voice_changer)
 
 /obj/item/rig_module/voice/Initialize(mapload)
 	. = ..()

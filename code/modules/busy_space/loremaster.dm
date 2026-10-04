@@ -3,10 +3,8 @@
 /datum/lore/loremaster
 	var/list/organizations
 
-/// A global datum: its New() writes this var before the engine tables exist (a CAPABILITIES entry is not readable yet), so the legacy table proc declares it.
-/datum/lore/loremaster/ownership()
-	. = ..()
-	. += owns(nameof(organizations), is_list = TRUE)
+CAPABILITIES(/datum/lore/loremaster)
+	owns_many(nameof(organizations))
 
 /datum/lore/loremaster/New()
 

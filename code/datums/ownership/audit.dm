@@ -42,7 +42,7 @@
 		else if(QDELETED(H))
 			. += "orphan: [D.type] is still owned by [H.type].[D.own_slot], which was destroyed[own_audit_owner_note(D, H)]"
 		else if(!own_names(H, D.own_slot, D))
-			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without own_set/own_take)[own_audit_owner_note(D, H)]"
+			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without _own_set/own_take)[own_audit_owner_note(D, H)]"
 			own_unstamp(D)
 	stamped = null
 	for(var/datum/om/rec/rec as anything in recs)

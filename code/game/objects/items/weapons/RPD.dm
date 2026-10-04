@@ -51,9 +51,8 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 		recipe_static = first_atmos
 
 // RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
-DECLARE_DEFAULT_CHILD(/obj/item/pipe_dispenser, "tool", /obj/item/tool/wrench/cyborg)
-
 CAPABILITIES(/obj/item/pipe_dispenser)
+	owns_one(nameof(tool), starts = /obj/item/tool/wrench/cyborg)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

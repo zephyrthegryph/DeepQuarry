@@ -57,7 +57,7 @@ GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
 			else
 				to_chat(traitor_mob, "Your radio systems has had a special encryption key installed, which allows you to talk to your team privately, by using \
 				<b>:t</b>")
-			move_into(borg.radio, nameof(borg.radio.keyslot), encrypt_key) // Might replace an already existing key (own_set deletes it), but oh well.
+			move_into(borg.radio, nameof(borg.radio.keyslot), encrypt_key) // Might replace an already existing key (rel_set deletes it), but oh well.
 			borg.radio.recalculateChannels()
 		else // Something bugged.
 			to_chat(traitor_mob, "You do not appear to have a radio installed.  This is probably a bug and you should adminhelp.")

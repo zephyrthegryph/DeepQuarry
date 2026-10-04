@@ -213,12 +213,10 @@ GLOBAL_LIST_INIT(reputation_affiliation_choices, list(AFFILIATION_HOSTILE, AFFIL
 	/// One exclusive, opt-in faction principal per account for this round.
 	var/list/agent_records
 
-/// A global datum: its New() writes this var before the engine tables exist (a CAPABILITIES entry is not readable yet), so the legacy table proc declares it.
-/datum/station_faction_relations/ownership()
-	. = ..()
-	. += owns(nameof(agent_records), is_list = TRUE)
-	. += owns(nameof(department_ledgers), is_list = TRUE)
-	. += owns(nameof(personal_ledgers), is_list = TRUE)
+CAPABILITIES(/datum/station_faction_relations)
+	owns_many(nameof(agent_records))
+	owns_many(nameof(department_ledgers))
+	owns_many(nameof(personal_ledgers))
 
 /datum/station_faction_relations/New()
 	var/list/defaults = list(

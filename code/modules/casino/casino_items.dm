@@ -45,8 +45,9 @@ CAPABILITIES(/obj/item/storage/wallet/casino)
 		/obj/item/storage/pill_bottle/dice,
 		/obj/item/storage/pill_bottle/dice_nerd,
 		/obj/item/storage/dicecup/loaded)))
+	op("casino_toggle_design_effect", menu(), label("Toggle design"), needs(carried()), then(PROC_REF(casino_toggle_design_effect)))
 
-/obj/item/storage/wallet/casino/proc/casino_toggle_design_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/storage/wallet/casino/proc/casino_toggle_design_effect(datum/act/op/A)
 
 	if (icon_state == "casinowallet_black")
 		icon_state = "casinowallet_brown"
@@ -80,6 +81,3 @@ DECLARE_INTERACTIONS(/obj/structure/stripper_pole, INTERACT_HAND(null, PROC_REF(
 		layer = BELOW_MOB_LAYER
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/storage/wallet/casino, \
-	INTERACT_VERB("Toggle design", PROC_REF(casino_toggle_design_effect), REQ_IN_INVENTORY), \
-)

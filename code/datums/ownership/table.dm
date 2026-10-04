@@ -92,8 +92,8 @@
  * - `starts`: the starting occupant, made at init (own_init_starts()): a type path, a list of paths or
  *   list(path = count) for a list var, or nameof() a var holding either (`starts = nameof(cell_type)`,
  *   so a map or subtype override of that var picks the type). The var itself wins: a mapped path in it
- *   is made instead, an instance in it makes nothing. `policy = OWN_NONE` with `starts` gives the var no
- *   kind (the first own_set() learns OWN_DELETE): that is what DECLARE_DEFAULT_CHILD expands to.
+ *   is made instead, an instance in it makes nothing. A PROC_REF decides everything: it is called with the var's current value and
+ *   returns what the var starts with (a type, a list of types, instances it made, or key = instance for an associative owns_many).
  */
 /proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null, is_list = FALSE)
 	if(policy == OWN_PRIVATE_COPY)
@@ -105,6 +105,8 @@
 		entry = list(OWNK_OWN, policy_proc, null, null, FALSE, null, CLEAR, null, null)
 	else if(if_var)
 		entry = list(OWNK_OWN, isnull(policy) ? OWN_DELETE : policy, if_var, isnull(else_policy) ? OWN_DELETE : else_policy, FALSE, null, CLEAR, null, null)
+	else if(policy == OWN_NONE && !isnull(starts))
+		CRASH("owns([var_name]): a starting occupant needs a kind (owns_one / owns_many), not policy = OWN_NONE")
 	else if(policy != OWN_NONE)
 		entry = list(OWNK_OWN, policy, null, null, FALSE, null, CLEAR, null, null)
 	if(entry && type)
@@ -409,9 +411,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /proc/own_entry(datum/holder, var_name)
 	return own_table_of(holder).entries[var_name]
 
-/// The entry for holder.var_name, which must be of `kind`. An undeclared var is learned: the
-/// first own_set()/own_add() on it records an implicit owns(policy = OWN_DELETE), the first
-/// rel_set()/rel_add() an implicit rel(), in the type's table (ownership.md §7: declarations are only for exceptions).
+/// The entry for holder.var_name, which must be of `kind`. An undeclared owned var is reported and null returned: an owned var is
+/// declared (owns_one / owns_many, with `starts =` for a starting occupant). An undeclared relation is learned: the first
+/// rel_set()/rel_add() records an implicit rel() in the type's table (ownership.md §7: declarations are only for exceptions).
 /// A var of another kind is reported and null is returned.
 /proc/own_entry_of_kind(datum/holder, var_name, kind, is_list = FALSE)
 	var/datum/own_table/T = own_table_of(holder)
@@ -421,12 +423,12 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			OWN_REPORT("[holder.type] has no var '[var_name]'")
 			return null
 		switch(kind)
-			if(OWNK_OWN)
-				entry = list(OWNK_OWN, OWN_DELETE, null, null, is_list, null, CLEAR, null, null)
-				LAZYADD(T.own_vars, var_name)
 			if(OWNK_REL)
 				entry = list(OWNK_REL, RELS_PLAIN, null, null, is_list, null, CLEAR, null, null)
 				LAZYADD(T.ref_vars, var_name)
+			if(OWNK_OWN)
+				OWN_REPORT("[holder.type].[var_name] is written as an owned var but not declared: add owns_one / owns_many to the type's CAPABILITIES list")
+				return null
 			else
 				OWN_REPORT("[holder.type].[var_name] is not declared [own_kind_name(kind)]")
 				return null

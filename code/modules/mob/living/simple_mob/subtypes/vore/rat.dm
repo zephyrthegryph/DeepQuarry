@@ -181,10 +181,12 @@
 			hunger = 0
 			food = null
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_INSERT(/obj/item/reagent_containers/food/snacks, PROC_REF(tame_rat_interaction_feed), "Feed"))
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
+	op("tame_rat_interaction_feed", item(/obj/item/reagent_containers/food/snacks), label("Feed"), then(PROC_REF(tame_rat_interaction_feed)))
 
 /// Feed the rat your food to satisfy it.
-/mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(datum/act/op/A)
+	var/obj/item/O = A.held
 	qdel(O)
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 	hunger = 0

@@ -193,7 +193,7 @@ CAPABILITIES(/datum/pipe_network)
 		network_air.merge(member_air)
 	network_air.set_volume(max(total_volume, 1))
 	// A previous authoritative mixture is among old_gases (merged above): detach it so
-	// own_set() doesn't dispose of it while members still name it; it goes below.
+	// rel_set() doesn't dispose of it while members still name it; it goes below.
 	if(air)
 		own_take(src, nameof(air))
 	rel_set(src, nameof(air), network_air)

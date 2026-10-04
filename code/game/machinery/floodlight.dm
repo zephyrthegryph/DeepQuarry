@@ -13,7 +13,6 @@
 	var/open = 0
 	var/brightness_on = 8		//can't remember what the maxed out value is
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
 
 CAPABILITIES(/obj/machinery/floodlight)
@@ -179,4 +178,4 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 
 /obj/machinery/floodlight/ownership()
 	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell)

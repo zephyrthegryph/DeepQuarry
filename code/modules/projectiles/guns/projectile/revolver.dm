@@ -242,6 +242,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-{appeara
 CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 	owns_many(nameof(secondary_loaded))
 	owns_many(nameof(tertiary_loaded))
+	op("lemat_verb_swap_firing_mode", menu(), label("Swap Firing Mode"), needs(carried()), then(PROC_REF(lemat_verb_swap_firing_mode)))
 
 
 /obj/item/gun/projectile/revolver/lemat/Initialize(mapload)
@@ -249,10 +250,9 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 	for(var/i in 1 to secondary_max_shells)
 		rel_add(src, nameof(secondary_loaded), new secondary_ammo_type(src))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap Firing Mode", PROC_REF(lemat_verb_swap_firing_mode), REQ_IN_INVENTORY))
-
 /// Old Swap Firing Mode verb: Click to swap from one method of firing to another.
-/obj/item/gun/projectile/revolver/lemat/proc/lemat_verb_swap_firing_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/revolver/lemat/proc/lemat_verb_swap_firing_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/M = user
 	if(!M.mind)
 		return 0

@@ -16,6 +16,7 @@ CAPABILITIES(/obj/item/communicator)
 	owns_one(nameof(local_skybox), /atom/movable/screen/skybox)
 	owns_many(nameof(cam_plane_masters))
 	owns_many(nameof(voice_mobs))
+	owns_one(nameof(camera), starts = /obj/machinery/camera/communicator)
 
 
 // Proc: setup_tgui_camera()

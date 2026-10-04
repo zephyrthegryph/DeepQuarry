@@ -10,10 +10,12 @@
 	var/owner = 0	//To prevent people from just renaming the thing if they steal it
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/permit, INTERACT_USE("Register", PROC_REF(permit_register_self)))
+CAPABILITIES(/obj/item/clothing/accessory/permit)
+	op("permit_register_self", in_hand(), label("Register"), then(PROC_REF(permit_register_self)))
 
 /// Old attack_self: register the owner.
-/obj/item/clothing/accessory/permit/proc/permit_register_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/permit/proc/permit_register_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		if(!owner)
 			set_name(user.name)

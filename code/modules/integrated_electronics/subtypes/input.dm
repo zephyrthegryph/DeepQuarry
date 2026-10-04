@@ -522,7 +522,8 @@
 		return can_telecomm(src,node)
 	return 0
 
-DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/EPv2, "exonet", /datum/exonet_protocol)
+CAPABILITIES(/obj/item/integrated_circuit/input/EPv2)
+	owns_one(nameof(exonet), starts = /datum/exonet_protocol)
 
 /obj/item/integrated_circuit/input/EPv2/Initialize(mapload)
 	. = ..()

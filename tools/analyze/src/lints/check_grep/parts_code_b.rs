@@ -67,6 +67,12 @@ pub fn parts() -> Vec<Part> {
             Flt::DropLit("proc/check_rights"),
             drop(r"ALLOW\([^)]*check_grep"),
             drop(r"nameof\([^)]*\.holder|\.holder\("),
+            // receivers that are never a /client: brain/module/io/pin/wire/reagent holders and op/act/ledger contexts
+            Flt::DropLit("code/game/objects/effects/effect_system.dm"),
+            Flt::DropLit("code/datums/containment/ledger.dm"),
+            Flt::DropLit("C.holder.trans_to_holder"),
+            Flt::DropLit("// holder.holder is"),
+            drop(r"\b(?:brain|ai_brain|module|io|selected_io|linked_pin|wires|reagent|ask|act|op|ctx|reagents|ledger|A|O|D|S|R|W|P|P1|P2|L|holder)\??\.holder\b"),
         ]),
         Part::new(
             "admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and",

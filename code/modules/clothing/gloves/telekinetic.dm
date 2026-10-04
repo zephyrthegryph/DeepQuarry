@@ -6,7 +6,9 @@
 	var/use_power_amount = 12
 
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/telekinetic, "cell", /obj/item/cell/device)
+/obj/item/clothing/gloves/telekinetic/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/device)
 
 /obj/item/clothing/gloves/telekinetic/proc/has_grip_power()
 	if(cell && cell.charge >= use_power_amount)

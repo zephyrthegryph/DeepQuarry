@@ -11,7 +11,7 @@
 	vessel.name = "Unit Test Vessel"
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
 	var/datum/flight_plan/plan = new(vessel, null, destination)
-	own_set(vessel, nameof(vessel.active_plan), plan)
+	rel_set(vessel, nameof(vessel.active_plan), plan)
 	TEST_ASSERT(plan in destination.active_plans, "A new flight plan did not lease its destination")
 	TEST_ASSERT(plan.start(), "A compatible strategic flight plan refused to start")
 	TEST_ASSERT_EQUAL(plan.state, FLIGHT_PLAN_PREPARING, "Starting a flight plan did not enter PREPARING")
@@ -262,7 +262,7 @@
 	var/datum/flight_vessel/vessel = new
 	var/datum/flight_port/port = new
 	var/datum/flight_plan/plan = new(vessel, null, destination)
-	own_set(vessel, nameof(vessel.active_plan), plan)
+	rel_set(vessel, nameof(vessel.active_plan), plan)
 	rel_set(plan, nameof(plan.arrival_port), port)
 	rel_set(port, nameof(port.reserved_by), plan)
 	plan.fail("Intentional unit-test failure")

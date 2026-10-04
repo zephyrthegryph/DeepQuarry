@@ -156,7 +156,7 @@ Residue codes: `ui_options`, `ui_state`, `ui_forms` (a form outside the list), `
 
 ## DECLARE_INTERACTIONS -> op()
 
-Unit: one host type `T` with one `DECLARE_INTERACTIONS(T, specs...)`.
+Unit: one host type `T` with exactly one `DECLARE_INTERACTIONS(T, specs...)` or one `EXTEND_INTERACTIONS(T, specs...)`. An `EXTEND` converts the same way as a `DECLARE`: ops accumulate down the tree, which is what an extension meant; a type with two declaration rows stays residue.
 
 | Old spec (what the old resolver did: code/datums/interactions/compact.dm) | New entry in `CAPABILITIES(T)` |
 |---|---|
@@ -164,6 +164,8 @@ Unit: one host type `T` with one `DECLARE_INTERACTIONS(T, specs...)`.
 | `INTERACT_HAND(name, PROC_REF(h))` (an empty hand; base requirement `REQ_INTERACTION_REACH`) | `op("key", hand(), label(name), then(PROC_REF(h)))` |
 | `INTERACT_INSERT(/held/type, PROC_REF(h), name)` (an item of that type) | `op("key", item(/held/type), label(name), then(PROC_REF(h)))` |
 | `INTERACT_ITEM(name, PROC_REF(h))` (any item) | `op("key", item(/obj/item), label(name), then(PROC_REF(h)))` |
+| `INTERACT_VERB(name, PROC_REF(h))` (an object verb: the Menu only, no click) | `op("key", menu(), label(name), then(PROC_REF(h)))` |
+| `INTERACT_VERB(name, PROC_REF(h), REQ_IN_INVENTORY)` (the old `set src in usr`) | `op("key", menu(), label(name), needs(carried()), then(PROC_REF(h)))` |
 | a `null` name | no `label()` (the old name was derived from the proc name) |
 | handler `h(mob/a, obj/item/w, datum/interaction/i)` | `h(datum/act/op/A)`; `var/mob/a = A.actor` and `var/<w's type>/w = A.held` as the first body lines (after the leading settings) when used |
 
@@ -173,6 +175,8 @@ The op key is the handler's name without `interaction_` (the whole name when tha
 Evidence: the roller and the roller rack (`6234356964`): `INTERACT_USE(null, PROC_REF(interaction_self))` -> `op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))` with the handler on `(datum/act/op/A)`,
 `var/mob/user = A.actor`, `return OP_OK`; `INTERACT_ITEM` -> `op("loose", item(/obj/item), label("Use"), ...)`; the touch -> `op("touch", hand(), label("Use"), ...)`. Departures on purpose: those conversions chose their own keys and labels and split one handler
 into several ops (a `when()` for each branch); the codemod never splits a handler, so a handler that branches stays a candidate only when it can always answer.
+
+Evidence for the verb: the duffelbag tilt (`241131f467`), `INTERACT_VERB("Adjust Duffelbag Angle", ..., REQ_IN_INVENTORY)` -> `op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried()), then(...))`. A verb's `held` parameter is not the actor's held item in a menu input, so a verb handler that reads it stays residue (`body_uses`); a verb's return is ignored like a USE.
 
 Why the returns matter: an old HAND, INSERT or ITEM effect that returned falsy let the next candidate (or the type's default) have the input, and an op cannot decline once its handler runs. So these three convert only when the
 handler never returns anything but `TRUE` and ends with `return TRUE`; an `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` is the `passes()` part and stays residue.

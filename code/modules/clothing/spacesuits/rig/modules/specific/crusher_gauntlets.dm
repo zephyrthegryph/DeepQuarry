@@ -17,8 +17,6 @@
 	passive_power_cost = 0
 	var/obj/item/kinetic_crusher/machete/gauntlets/rig/stored_gauntlets
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/item/kinetic_crusher/machete/gauntlets/rig)
-
 /obj/item/rig_module/gauntlets/Initialize(mapload)
 	. = ..()
 	rel_set(stored_gauntlets, nameof(stored_gauntlets.storing_module), src)
@@ -56,4 +54,4 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/i
 
 /obj/item/rig_module/gauntlets/ownership()
 	. = ..()
-	. += owns(nameof(stored_gauntlets), policy = OWN_CONTAINED)
+	. += owns(nameof(stored_gauntlets), policy = OWN_CONTAINED, starts = /obj/item/kinetic_crusher/machete/gauntlets/rig)

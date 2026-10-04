@@ -78,7 +78,8 @@
 	specialty_goggles = TRUE
 	var/hud_goggles = FALSE
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/glasses/omnihud, "tgarscreen", "tgarscreen_path")
+CAPABILITIES(/obj/item/clothing/glasses/omnihud)
+	owns_one(nameof(tgarscreen), starts = nameof(tgarscreen_path))
 
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)
@@ -344,12 +345,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, \
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/security/eyepatch, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(security_eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
+	op("security_eyepatch_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(security_eyepatch_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/security/eyepatch/proc/security_eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/hud/security/eyepatch/proc/security_eyepatch_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -369,12 +370,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/security/eyepatch, \
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/security/eyepatch2, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatch2_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
+	op("eyepatch2_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatch2_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eyepatch2_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eyepatch2_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -394,12 +395,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/security/eyepatch2, \
 	enables_planes =  list(VIS_CH_STATUS,VIS_CH_HEALTH)
 	var/eye = null
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/health/eyepatch, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(health_eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
+	op("health_eyepatch_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(health_eyepatch_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/health/eyepatch/proc/health_eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/hud/health/eyepatch/proc/health_eyepatch_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -467,12 +468,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/health/eyepatch, \
 		tgarscreen.tgui_interact(user)
 	return 1
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/mantle, \
-	INTERACT_VERB("Toggle Autocorrective Vision", PROC_REF(mantle_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle)
+	op("mantle_switcheye_verb", menu(), label("Toggle Autocorrective Vision"), needs(carried()), then(PROC_REF(mantle_switcheye_verb)))
 
 /// Old verb "Toggle Autocorrective Vision".
-/obj/item/clothing/glasses/omnihud/mantle/proc/mantle_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/mantle/proc/mantle_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 

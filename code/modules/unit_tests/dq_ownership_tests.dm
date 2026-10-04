@@ -11,6 +11,11 @@
 	var/datum/species/species
 	var/released = 0
 
+CAPABILITIES(/datum/own_test_holder)
+	owns_one(nameof(child))
+	owns_many(nameof(children))
+	owns_many(nameof(values))
+
 /datum/own_test_holder/ownership()
 	. = ..()
 	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
@@ -34,6 +39,9 @@
 /datum/own_test_child
 	var/label = "child"
 	var/datum/own_test_child/grandchild
+
+CAPABILITIES(/datum/own_test_child)
+	owns_one(nameof(grandchild))
 
 /datum/own_test_partner
 	var/datum/own_test_holder/holder
@@ -63,20 +71,20 @@
 	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
-	own_set(H, nameof(H.child), A)
-	TEST_ASSERT_EQUAL(H.child, A, "own_set writes the var")
+	rel_set(H, nameof(H.child), A)
+	TEST_ASSERT_EQUAL(H.child, A, "rel_set writes the var")
 	TEST_ASSERT_EQUAL(owner_of(A), H, "the owner is stamped on the child")
 	TEST_ASSERT_EQUAL(owner_slot_of(A), "child", "the owner's var is stamped on the child")
 	var/datum/own_test_child/B = new
-	own_set(H, nameof(H.child), B)
-	TEST_ASSERT(QDELETED(A), "own_set destroys the value it replaces (DELETE policy)")
+	rel_set(H, nameof(H.child), B)
+	TEST_ASSERT(QDELETED(A), "rel_set destroys the value it replaces (DELETE policy)")
 	TEST_ASSERT(H.released >= 1, "the owned-child release hook ran")
 	var/datum/own_test_child/taken = own_take(H, nameof(H.child))
 	TEST_ASSERT_EQUAL(taken, B, "own_take returns the value")
 	TEST_ASSERT(isnull(H.child) && isnull(owner_of(B)), "own_take detaches and unstamps")
-	own_add(H, nameof(H.children), B)
+	rel_add(H, nameof(H.children), B)
 	rel_add(H, nameof(H.values), new /datum/own_test_child, "a")
-	TEST_ASSERT(B in H.children, "own_add adds to the owned list")
+	TEST_ASSERT(B in H.children, "rel_add adds to the owned list")
 	var/datum/own_test_holder/H2 = new
 	own_transfer(H, nameof(H.children), H2, nameof(H2.child), B)
 	TEST_ASSERT_EQUAL(H2.child, B, "own_transfer moves a list member into another owner's var")
@@ -84,7 +92,7 @@
 	TEST_ASSERT(!length(H.children), "the source list no longer holds it")
 	TEST_ASSERT(!length(capture), "no reports for legal moves: [json_encode(capture)]")
 	// Double ownership is refused.
-	own_set(H, nameof(H.child), B)
+	rel_set(H, nameof(H.child), B)
 	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "already owned"), "adopting a value another holder owns is reported: [json_encode(capture)]")
 	TEST_ASSERT_EQUAL(owner_of(B), H2, "the refused adoption leaves the owner alone")
 	capture.Cut()
@@ -104,7 +112,7 @@
 	var/list/capture = list()
 	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
-	own_set(H, nameof(H.child), new /datum/own_test_child)
+	rel_set(H, nameof(H.child), new /datum/own_test_child)
 	dq_lifecycle_clear_links(H) // phase 4
 	var/datum/own_test_child/late = new
 	H.child = late
@@ -119,14 +127,14 @@
 /datum/unit_test/ownership_orphan_audit/Run()
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
-	own_set(H, nameof(H.child), A)
+	rel_set(H, nameof(H.child), A)
 	H.child = null
 	var/list/lines = own_audit(quiet = TRUE)
 	var/found = FALSE
 	for(var/line in lines)
 		if(findtext(line, "orphan") && findtext(line, "/datum/own_test_child"))
 			found = TRUE
-	TEST_ASSERT(found, "the audit finds a value dropped without own_take/own_set: [json_encode(lines)]")
+	TEST_ASSERT(found, "the audit finds a value dropped without own_take/rel_set: [json_encode(lines)]")
 	qdel(A)
 	qdel(H)
 
@@ -250,8 +258,8 @@
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
 	A.label = "original"
-	own_set(A, nameof(A.grandchild), new /datum/own_test_child)
-	own_set(H, nameof(H.child), A)
+	rel_set(A, nameof(A.grandchild), new /datum/own_test_child)
+	rel_set(H, nameof(H.child), A)
 	var/datum/own_test_holder/H2 = new
 	var/datum/own_test_child/C = entity_clone(A, H2, "child")
 	TEST_ASSERT(C && C != A, "entity_clone makes a new entity")
@@ -530,7 +538,7 @@ TRACKED_BRIDGED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
 /datum/unit_test/ownership_keep_policy/Run()
 	var/datum/own_test_keep_holder/H = new
 	var/datum/own_test_child/C = new
-	own_set(H, nameof(H.kept), C)
+	rel_set(H, nameof(H.kept), C)
 	TEST_ASSERT_EQUAL(owner_of(C), H, "an OWN_KEEP value is owned while its holder lives")
 	qdel(H)
 	TEST_ASSERT(!QDELETED(C), "OWN_KEEP: the value outlives its holder")

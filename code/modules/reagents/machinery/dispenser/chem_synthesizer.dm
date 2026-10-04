@@ -81,7 +81,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/chemical_synthesizer, MACHINE_PIPELINE, "_
 
 // The reagents datum acts as the machine's reaction vessel.
 DECLARE_REAGENTS(/obj/machinery/chemical_synthesizer, 600, null)
-DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item/reagent_containers/glass/beaker)
 
 CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
@@ -840,5 +839,5 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 
 /obj/machinery/chemical_synthesizer/ownership()
 	. = ..()
-	. += owns(nameof(catalyst), policy = OWN_CONTAINED)
+	. += owns(nameof(catalyst), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/beaker)
 // Label -> installed cartridge (in contents); they go with the machine.

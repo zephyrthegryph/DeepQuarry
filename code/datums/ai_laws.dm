@@ -170,7 +170,7 @@ CAPABILITIES(/datum/ai_laws)
 	if(!islist(supplied_laws))
 		supplied_laws = list() // ALLOW(ownership): an empty owned list, padded below
 	while (length(src.supplied_laws) < number)
-		supplied_laws += "" // ALLOW(ownership): empty law slots (not entities); own_add() would dedup them
+		supplied_laws += "" // ALLOW(ownership): empty law slots (not entities); rel_add() would dedup them
 		if(state_supplied.len < length(supplied_laws))
 			state_supplied += 1
 

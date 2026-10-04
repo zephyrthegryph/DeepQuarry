@@ -380,10 +380,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /// Phase 4 of a datum's destruction (own_teardown): every listener record it is an end of goes, it leaves
 /// every system it joined, and its ledger is dropped. Both ends are cleaned, so nothing keeps it alive.
 /proc/rx_teardown(datum/D)
-	if(islist(GLOB?.type_table_of_type))
-		var/datum/type_table/engine_table = GLOB.type_table_of_type[D.type]
-		if(engine_table?.hook_flags & ENGINE_HOOK_DESTROY)
-			engine_holder_destroy(D)
+	var/datum/type_table/engine_table = type_table_cache()[D.type]
+	if(engine_table?.hook_flags & ENGINE_HOOK_DESTROY)
+		engine_holder_destroy(D)
 	if(D.rx?.activations || D.rx?.sourced)
 		activations_teardown(D)
 	if(D.rx?.stats)

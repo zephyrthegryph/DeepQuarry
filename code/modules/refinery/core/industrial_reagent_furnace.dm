@@ -18,10 +18,9 @@
 	filter_side = 1 // R
 	icon_state = "furnace_r"
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/reagent_refinery/furnace, "beaker", /obj/item/reagent_containers/glass/beaker/bluespace)
-
 CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 	climb()
+	owns_one(nameof(beaker), starts = /obj/item/reagent_containers/glass/beaker/bluespace)
 
 /obj/machinery/reagent_refinery/furnace/Initialize(mapload)
 	. = ..()

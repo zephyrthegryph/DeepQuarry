@@ -1049,12 +1049,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_e
 	icon_state = "nose"
 	anchored = TRUE
 
-EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
-	INTERACT_HAND("Boop", PROC_REF(interaction_boop_snoot)), \
-)
+CAPABILITIES(/obj/effect/dog_nose)
+	op("boop_snoot", hand(), label("Boop"), then(PROC_REF(interaction_boop_snoot)))
 
 /// Old attack_hand.
-/obj/effect/dog_nose/proc/interaction_boop_snoot(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dog_nose/proc/interaction_boop_snoot(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You boop the snoot.")), MSG_OTHERS(span_notice("%U% boops the snoot.")), runemessage = "boop")
 	return TRUE
 
@@ -1117,12 +1117,12 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	. = ..()
 	lets_go(AM)
 
-EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
-	INTERACT_HAND(null, PROC_REF(interaction_dog_teleport)), \
-)
+CAPABILITIES(/obj/effect/dog_teleporter)
+	op("dog_teleport", hand(), then(PROC_REF(interaction_dog_teleport)))
 
 /// Old attack_hand: touching it sends you through.
-/obj/effect/dog_teleporter/proc/interaction_dog_teleport(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dog_teleporter/proc/interaction_dog_teleport(datum/act/op/A)
+	var/mob/living/user = A.actor
 	lets_go(user)
 	return TRUE
 

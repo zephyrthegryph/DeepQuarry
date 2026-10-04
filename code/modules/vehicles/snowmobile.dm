@@ -29,7 +29,8 @@
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()
 
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/quadbike/snowmobile, "riding_datum", "riding_datum_type")
+CAPABILITIES(/obj/vehicle/train/engine/quadbike/snowmobile)
+	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
 
 /obj/vehicle/train/engine/quadbike/snowmobile/built/Initialize(mapload)
 	dir = 2 //To match the under construction frame

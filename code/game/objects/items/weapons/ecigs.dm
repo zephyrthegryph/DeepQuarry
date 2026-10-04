@@ -17,9 +17,7 @@
 	var/ecig_colors = list(null, COLOR_DARK_GRAY, COLOR_RED_GRAY, COLOR_BLUE_GRAY, COLOR_GREEN_GRAY, COLOR_PURPLE_GRAY)
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
-	owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge)
-
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", "cartridge_type")
+	owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge, starts = nameof(cartridge_type))
 
 /// Vapes (periodic_step) every 2 s while switched on (replaces the smokable's "lit").
 OM_FIELD(/obj/item/clothing/mask/smokable/ecig, active, 0, CHANGE_EXPLICIT)

@@ -1708,12 +1708,12 @@
 			Hides any bulges on your body, as well as conceals your true weight."
 	hides_bulges = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber, \
-	INTERACT_VERB("Adjust Bluespace Fibers", PROC_REF(hyperfiber_toggle_fibers_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/under/hyperfiber)
+	op("hyperfiber_toggle_fibers_verb", menu(), label("Adjust Bluespace Fibers"), needs(carried()), then(PROC_REF(hyperfiber_toggle_fibers_verb)))
 
 /// Old verb "Adjust Bluespace Fibers".
-/obj/item/clothing/under/hyperfiber/proc/hyperfiber_toggle_fibers_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/hyperfiber/proc/hyperfiber_toggle_fibers_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	adjust_fibers(user)
 
 /obj/item/clothing/under/hyperfiber/proc/adjust_fibers(mob/user)
@@ -1733,12 +1733,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber, \
 			Allows one to resize themselves at will, and conceals their true weight as well as any bulges or protrusions on their body."
 	var/original_size
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
-	INTERACT_VERB("Adjust Bluespace Fibers", PROC_REF(bluespace_resize_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
+	op("bluespace_resize_verb", menu(), label("Adjust Bluespace Fibers"), needs(carried()), then(PROC_REF(bluespace_resize_verb)))
 
 /// Old verb "Adjust Bluespace Fibers".
-/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_resize_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_resize_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	bluespace_size(user)
 
 /obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_size(mob/user)
@@ -1890,12 +1890,12 @@ DECLARE_EMAG(/obj/item/clothing/gloves/bluespace, PROC_REF(on_emag), null, null)
 	if(Adjacent(user))
 		. += "The dial seems to be set to [target_size*100]%"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
-	INTERACT_VERB("Adjust Bluespace Dial", PROC_REF(deluxe_turn_dial_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
+	op("deluxe_turn_dial_verb", menu(), label("Adjust Bluespace Dial"), needs(carried()), then(PROC_REF(deluxe_turn_dial_verb)))
 
 /// Old verb "Adjust Bluespace Dial".
-/obj/item/clothing/gloves/bluespace/deluxe/proc/deluxe_turn_dial_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/gloves/bluespace/deluxe/proc/deluxe_turn_dial_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	bluespace_size(user)
 
 /obj/item/clothing/gloves/bluespace/deluxe/proc/bluespace_size(mob/user) //Taken from HYPER suit

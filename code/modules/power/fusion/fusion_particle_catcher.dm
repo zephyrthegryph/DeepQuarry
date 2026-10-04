@@ -8,7 +8,7 @@
 
 	light_color = COLOR_BLUE
 
-// The field owns its catchers (own_add in fusion_em_field/Initialize()); a catcher names its field.
+// The field owns its catchers (rel_add in fusion_em_field/Initialize()); a catcher names its field.
 /obj/effect/fusion_particle_catcher/relations()
 	. = ..()
 	. += rel_one(nameof(parent))

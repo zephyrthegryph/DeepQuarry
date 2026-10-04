@@ -11,7 +11,7 @@
 //   3. own_release_previous(): another holder's owned var naming it lets it go;
 //   4. own_transfer_record(): with an actor, changed(holder) and dispatch_record(actor, holder, "insert", log).
 //
-// The accessors rel_set / rel_add (own_set / own_add underneath) never move a thing for a caller, except where
+// The accessors rel_set / rel_add (_own_set / _own_add underneath) never move a thing for a caller, except where
 // own_wants_transfer() says the var's own contents are meant: an OWN_CONTAINED var always takes its value into the
 // holder (off a turf too), and a value inside something else (a mob, a storage, a machine) is moved in; a value on a
 // turf or already inside the holder stays (a beam, a projector's field, a pAI cable). `into = FALSE` (own_transfer /
@@ -64,7 +64,7 @@
 		return dq_ledger_refusal(thing, holder, slot, user, check_removal = FALSE)
 	return null
 
-/// The transfer half of own_set / own_add / own_put: TRUE when `value` may be adopted (it is in the
+/// The transfer half of _own_set / _own_add / _own_put: TRUE when `value` may be adopted (it is in the
 /// holder now, or needs no move), FALSE when refused (and `user` was told why).
 /proc/own_bring_in(datum/holder, var_name, datum/value, list/entry, mob/user, into, slot, force)
 	if(!own_wants_transfer(holder, var_name, value, entry, user, into, slot))

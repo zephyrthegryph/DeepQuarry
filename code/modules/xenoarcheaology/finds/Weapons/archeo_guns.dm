@@ -39,7 +39,7 @@
 
 /obj/item/ammo_casing/artifact/Initialize(mapload) //These should ONLY ever be in artifact weapons. If you spawn outside of artifact weapons, it'll have a riot foam dart inside of it as the bullet.
 	. = ..()
-	// The casing owns BB: replace the default bullet (own_set deletes it).
+	// The casing owns BB: replace the default bullet (rel_set deletes it).
 	if(istype(loc, /obj/item/gun/projectile/artifact)) //If we are IN an artifact gun
 		var/obj/item/gun/projectile/artifact/our_gun = loc
 		if(ispath(our_gun.projectile_type))

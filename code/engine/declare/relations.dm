@@ -130,16 +130,26 @@
 
 // ---- link: a pair declared once for both types ----
 
-GLOBAL_LIST_EMPTY(link_decls) // signature -> the link entry
-GLOBAL_LIST_EMPTY(keyed_targets) // target type -> the id var holders key on
-GLOBAL_LIST_INIT(keyed_targets_declared, declared_keyed_targets())
+/// Statics, not GLOB lists: tables are built while the globals are still being made (a global datum's New()), so what a build reads
+/// must not depend on the global init order.
+/// signature -> the link entry
+/proc/link_decls_cache()
+	RETURN_TYPE(/list)
+	var/static/list/cache = list() // ALLOW(cache,sys_static_getter): a mutable static, not a GLOB list, because the declaration tables are built while the globals are still being made
+	return cache
+
+/// target type -> the id var holders key on
+/proc/keyed_targets_cache()
+	RETURN_TYPE(/list)
+	var/static/list/cache = list() // ALLOW(cache,sys_static_getter): a mutable static, not a GLOB list, because the declaration tables are built while the globals are still being made
+	return cache
 
 /// Registers a paired relation. Both ends become declarations of their types' ownership tables: tables already built are patched,
-/// tables built later read GLOB.link_decls.
+/// tables built later read link_decls_cache().
 /proc/link_register(datum/entry/E)
-	if(GLOB.link_decls[E.sig])
+	if(link_decls_cache()[E.sig])
 		return
-	GLOB.link_decls[E.sig] = E
+	link_decls_cache()[E.sig] = E
 	if(E.args["hot"])
 		return // an engine hot-path pair: direct lists, no index, nothing published; the engine owns both sides
 	var/list/cache = _scs_own_table
@@ -170,13 +180,16 @@ GLOBAL_LIST_INIT(keyed_targets_declared, declared_keyed_targets())
 
 /// Remembers that instances of `type` are found by keyed relations through var `id_var` (ref_one(by =)).
 /proc/keyed_target_register(type, id_var)
-	GLOB.keyed_targets[type] = id_var
+	keyed_targets_cache()[type] = id_var
 
 /// The keyed targets every CAPABILITIES list declares (generated: declared_keyed_targets()), read once. A target type is keyed whichever side builds its
 /// table first (a door placed on the map before its button), so a table asks this list, not only the holders' tables built so far. A static, not a
 /// global: tables are built while the globals are still being made.
 /proc/keyed_targets_declared()
-	return GLOB.keyed_targets_declared
+	var/static/list/declared // ALLOW(sys_static_getter): the generated keyed-target table, read once on the first table build, which can come during global init
+	if(isnull(declared))
+		declared = declared_keyed_targets()
+	return declared
 
 /// The link ends and keyed-target declaration that apply to D's type: what build_own_table() adds after the type's own entries.
 /proc/link_entries_for(datum/own_decls/decl, datum/D, datum/own_table/T)
@@ -184,11 +197,11 @@ GLOBAL_LIST_INIT(keyed_targets_declared, declared_keyed_targets())
 	for(var/target_type in declared)
 		if(istype(D, target_type) && !decl.keyed_key)
 			decl.keyed_key = declared[target_type]
-	for(var/sig in GLOB.link_decls)
-		link_patch_table(T, GLOB.link_decls[sig])
-	for(var/target_type in GLOB.keyed_targets)
+	for(var/sig in link_decls_cache())
+		link_patch_table(T, link_decls_cache()[sig])
+	for(var/target_type in keyed_targets_cache())
 		if(istype(D, target_type) && !decl.keyed_key)
-			decl.keyed_key = GLOB.keyed_targets[target_type]
+			decl.keyed_key = keyed_targets_cache()[target_type]
 
 // ---- the write verbs: one set, dispatching on the declared kind ----
 
@@ -204,7 +217,7 @@ GLOBAL_LIST_INIT(keyed_targets_declared, declared_keyed_targets())
 		return value
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
-			return own_set(E, var_name, value)
+			return _own_set(E, var_name, value)
 		if(OWNK_PROTO)
 			return proto_set(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
@@ -217,7 +230,7 @@ GLOBAL_LIST_INIT(keyed_targets_declared, declared_keyed_targets())
 /proc/rel_add(datum/E, var_name, datum/value, key = null)
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
-			return isnull(key) ? own_add(E, var_name, value) : own_put(E, var_name, key, value)
+			return isnull(key) ? _own_add(E, var_name, value) : _own_put(E, var_name, key, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_add(E, var_name, value, key, list_state)

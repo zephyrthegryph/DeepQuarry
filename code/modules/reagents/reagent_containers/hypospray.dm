@@ -81,9 +81,8 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray)
 
 /obj/item/reagent_containers/hypospray/vial/ownership()
 	. = ..()
-	. += owns(nameof(loaded_vial), policy = OWN_CONTAINED)
+	. += owns(nameof(loaded_vial), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/beaker/vial)
 // Comes with an empty vial.
-DECLARE_DEFAULT_CHILD(/obj/item/reagent_containers/hypospray/vial, "loaded_vial", /obj/item/reagent_containers/glass/beaker/vial)
 
 /obj/item/reagent_containers/hypospray/vial/Initialize(mapload)
 	. = ..()

@@ -120,6 +120,7 @@ CAPABILITIES(/obj/item/haircomb)
 
 CAPABILITIES(/obj/item/makeover)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	owns_one(nameof(M), starts = /datum/tgui_module/appearance_changer/mirror/coskit)
 
 /// Old attack_self.
 /obj/item/makeover/proc/interaction_self(datum/act/op/A)
@@ -133,4 +134,3 @@ CAPABILITIES(/obj/item/makeover)
 			E.change_eye_color()
 	return TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/makeover, "M", /datum/tgui_module/appearance_changer/mirror/coskit)

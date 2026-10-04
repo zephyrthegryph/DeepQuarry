@@ -991,4 +991,6 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 /mob/living/simple_mob/animal/synx/proc/end_mimic()
 	name = realname
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/synx, "mob_radio", /obj/item/radio/headset/mob_headset)
+CAPABILITIES(/mob/living/simple_mob/animal/synx)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+

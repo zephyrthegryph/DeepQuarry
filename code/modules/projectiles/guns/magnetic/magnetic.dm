@@ -32,20 +32,17 @@ OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/stock_parts/capacitor, capacitor,
 
 CAPABILITIES(/obj/item/gun/magnetic)
 	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor)
-	owns_one(nameof(loaded), /obj/item)
-	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(loaded), /obj/item, starts = nameof(loaded))
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 
 /// The capacitor still has somewhere to go: charging from the cell, or bleeding without one.
-/// Swapping parts goes through own_set()/own_take() (and a destroyed part is cleared by the
+/// Swapping parts goes through rel_set()/own_take() (and a destroyed part is cleared by the
 /// ownership framework), all of which raise the part fields; the capacitor's charge is a cross-entity
 /// input (max_charge is fixed at the part's Initialize).
 OM_DERIVE_FIELD(/obj/item/gun/magnetic, capacitor_unsettled, list("cell", "capacitor", "capacitor.charge"))
 /obj/item/gun/magnetic/proc/capacitor_unsettled()
 	return capacitor && (cell ? capacitor.charge < capacitor.max_charge : capacitor.charge)
 DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic, PERIODIC_SLOW, "capacitor_unsettled")
-
-DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "cell", "cell")
-DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 
 /obj/item/gun/magnetic/Initialize(mapload)
 	. = ..()
@@ -260,7 +257,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 /obj/item/gun/magnetic/fuelrod
 	name = "Fuel-Rod Cannon"
-	cell = /obj/item/cell/high // the declared default child (DECLARE_DEFAULT_CHILD on /obj/item/gun/magnetic)
+	cell = /obj/item/cell/high // the declared default child (owns_one starts on /obj/item/gun/magnetic)
 	capacitor = /obj/item/stock_parts/capacitor
 	desc = "A bulky weapon designed to fire reactor core fuel rods at absurd velocities... who thought this was a good idea?!"
 	description_antag = "This device is capable of firing reactor fuel assemblies, acquired from a R-UST fuel compressor and an appropriate fueltype. Be warned, Supermatter rods may have unforseen consequences."

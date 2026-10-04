@@ -89,7 +89,7 @@
 /datum/unit_test/interim_email_broadcast_missing_recipient/Run()
 	var/datum/computer_file/data/email_account/service/broadcaster/broadcaster = allocate(/datum/computer_file/data/email_account/service/broadcaster, TRUE)
 	var/datum/computer_file/data/email_message/message = allocate(/datum/computer_file/data/email_message)
-	TEST_ASSERT(own_add(broadcaster, nameof(broadcaster.pending_messages), message), "the broadcaster owns the actual queued clone")
+	TEST_ASSERT(rel_add(broadcaster, nameof(broadcaster.pending_messages), message), "the broadcaster owns the actual queued clone")
 	TEST_ASSERT_EQUAL(owner_of(message), broadcaster, "the queued clone is strongly owned by its broadcaster")
 	TEST_ASSERT(!broadcaster.deliver_broadcast("interim-missing-[REF(broadcaster)]", message, null), "a nonexistent mailbox rejects the real send")
 	TEST_ASSERT(QDELETED(message), "failed delivery deletes the undelivered clone")

@@ -114,11 +114,14 @@
 	var/obj/instant_beaker = null // For distilling only
 	var/list/result_reactions
 
+CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
+	owns_one(nameof(instant_beaker))
+
 /datum/unit_test/chemical_reactions_shall_not_conflict/Run()
 	var/failed = FALSE
 
 	// need to test for instant reactions blocking distillation!
-	own_set(src, nameof(instant_beaker), new /obj/item/reagent_containers/glass/beaker())
+	rel_set(src, nameof(instant_beaker), new /obj/item/reagent_containers/glass/beaker())
 	instant_beaker.reagents.maximum_volume = 5000
 	observe(instant_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
 

@@ -27,7 +27,7 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	//TODO: make it heat up the surroundings when not in space
 
 CAPABILITIES(/obj/item/suit_cooling_unit)
-	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/cell), label("Insert cell"), then(PROC_REF(interaction_item)))
 
@@ -38,7 +38,6 @@ CAPABILITIES(/obj/item/suit_cooling_unit)
 /// Is it turned on?
 OM_FIELD(/obj/item/suit_cooling_unit, on, 0, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/suit_cooling_unit, PERIODIC_SLOW, "on")
-DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
 
 /obj/item/suit_cooling_unit/periodic_step()
 	if (!cell)

@@ -36,7 +36,8 @@
 		sleep_until_keys(keys)
 		return PROCESS_KILL
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/power_monitor, "power_monitor", /datum/tgui_module/power_monitor)
+CAPABILITIES(/obj/machinery/computer/power_monitor)
+	owns_one(nameof(power_monitor), starts = /datum/tgui_module/power_monitor)
 
 
 // On user click opens the UI of this computer.

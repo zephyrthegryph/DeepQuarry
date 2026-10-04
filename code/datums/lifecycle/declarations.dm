@@ -9,7 +9,7 @@
 // instance except what the declarations create.
 //
 // Order (also in the define file's header and the doc, keep all three in step):
-//   init:          starting occupants (owns()/rel_one(starts =), which DECLARE_DEFAULT_CHILD expands to),
+//   init:          starting occupants (owns_one / owns_many with starts =),
 //                  gas, reagents, appearance
 //   materialize:   registries, service members, binds, behaviours, periodic, timers, declared periodic work (sys_periodic)
 //   dematerialize: periodic stop, declared periodic stop, service leave, bind release
@@ -282,11 +282,10 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		verb_store_apply_declared(D, decls)
 
 /**
- * Makes D's starting occupants (owns() / rel_one() / rel_many() with `starts =`, and DECLARE_DEFAULT_CHILD,
- * which expands to them): for each declared var, the var itself wins (a path in it, a map edit, is made; an
+ * Makes D's starting occupants (owns_one() / owns_many() with `starts =`): for each declared var, the var itself wins (a path in it, a map edit, is made; an
  * instance in it makes nothing), else the declared spec is made (a var name reads the instance's var, so
  * `starts = nameof(cell_type)` follows a map or subtype override). A list var takes a list of paths or
- * list(path = count). Children are created with `new type(D)` and adopted through own_adopt_start().
+ * list(path = count). Children are created with `new type(D)` and adopted through rel_set() / rel_add().
  */
 /proc/own_init_starts(datum/D, datum/own_table/T)
 	if(!T)
@@ -303,7 +302,13 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			default = resolved[1]
 			start_args = resolved[2]
 		else if(istext(default))
-			default = (default in D.vars) ? D.vars[default] : call(D, default)(null) // a var holding the type, or a PROC_REF that returns it
+			if(default in D.vars)
+				default = D.vars[default] // a var holding the type
+			else
+				// A PROC_REF decides everything: it is called with the var's current value and returns what the var starts with (a type, a
+				// list of types, instances it made, or key = instance for an associative owns_many), which replaces that value.
+				own_start_from_proc(D, var_name, call(D, default)(current))
+				continue
 		if(islist(current) || (isnull(current) && islist(default)))
 			var/list/spec = islist(current) ? current : default
 			D.vars[var_name] = null // ALLOW(api): starting-occupant plumbing replaces the spec with owned children
@@ -316,6 +321,27 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		if(ispath(path))
 			D.vars[var_name] = null // ALLOW(api): the type path placeholder is replaced by the owned child
 			lifecycle_decl_adopt_child(D, var_name, start_args ? new path(arglist(list(D) + start_args)) : new path(D), FALSE)
+
+/// Adopts what a starts = PROC_REF returned: one value (a type or an instance) for a one var; for a many var a list of types and instances,
+/// or an associative list of key = instance, adopted under the keys.
+/proc/own_start_from_proc(datum/D, var_name, result)
+	D.vars[var_name] = null // ALLOW(api): starting-occupant plumbing replaces the spec with owned children
+	if(isnull(result))
+		return
+	if(!islist(result))
+		var/datum/child = ispath(result) ? new result(D) : result
+		if(isdatum(child))
+			lifecycle_decl_adopt_child(D, var_name, child, FALSE)
+		return
+	for(var/entry in result)
+		var/value = result[entry]
+		if(isdatum(value)) // key = instance
+			lifecycle_decl_adopt_child(D, var_name, value, TRUE, entry)
+			continue
+		var/list/one = list()
+		one[entry] = value
+		for(var/datum/child as anything in lifecycle_decl_child_list(D, one))
+			lifecycle_decl_adopt_child(D, var_name, child, TRUE)
 
 /// A list of children from `spec`: paths become new instances (a `path = count` entry makes
 /// count of them), instances already in it are kept.
@@ -332,11 +358,14 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			made += entry
 	return made
 
-/// Adopts a starting occupant through the ownership accessors (the var is OWN, declared or learned on
-/// this first write; a movable child in contents may be CONTAINED), then wires the child's back relation
-/// when its type names one (default_child_backref()).
-/proc/lifecycle_decl_adopt_child(datum/D, var_name, datum/child, as_list)
-	own_adopt_start(D, var_name, child, as_list)
+/// Adopts a starting occupant through the declared write verbs (the var is declared owns_one / owns_many; a movable child in contents
+/// may be CONTAINED), then wires the child's back relation when its type names one (default_child_backref()). `key` adopts it under
+/// that key in an associative owns_many.
+/proc/lifecycle_decl_adopt_child(datum/D, var_name, datum/child, as_list, key = null)
+	if(as_list)
+		rel_add(D, var_name, child, key)
+	else
+		rel_set(D, var_name, child)
 	var/back = child.default_child_backref()
 	if(back)
 		rel_set(child, back, D)
@@ -356,7 +385,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/gases = gas[4]
 	for(var/gas_id in gases)
 		mix.adjust_gas(gas_id, gases[gas_id] * volume / (R_IDEAL_GAS_EQUATION * temperature))
-	own_adopt_start(D, var_name, mix, FALSE) // the holder owns its mixture (its arena slot goes with it)
+	rel_set(D, var_name, mix) // the holder owns its mixture (its arena slot goes with it)
 
 /datum/lifecycle_decls/proc/create_reagents_on(atom/A)
 	var/volume = lifecycle_decl_value(A, reagent_volume)

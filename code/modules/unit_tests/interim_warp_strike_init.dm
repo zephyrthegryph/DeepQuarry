@@ -31,7 +31,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, start)
 	var/mob/living/carbon/human/opponent = allocate(/mob/living/carbon/human, destination)
 	var/atom/movable/screen/movable/ability_master/master = allocate(/atom/movable/screen/movable/ability_master, actor)
-	own_set(actor, nameof(actor.ability_master), master)
+	rel_set(actor, nameof(actor.ability_master), master)
 	var/obj/item/technomancer_core/core = allocate(/obj/item/technomancer_core, start)
 	TEST_ASSERT(actor.equip_to_slot_if_possible(core, SLOT_ID_BACK), "The actual actor wears its real core")
 	TEST_ASSERT_EQUAL(core.energy, 10000, "The original standard core starts with ten thousand energy")

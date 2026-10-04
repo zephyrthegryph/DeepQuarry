@@ -62,6 +62,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/mechanical/combat_drone/melee
 	icon_state = "droneM"
@@ -72,8 +73,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
 	ion_trail.set_up(src)
 	ion_trail.start()
 	return ..()
-
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/combat_drone, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
 
 
 /mob/living/simple_mob/mechanical/combat_drone

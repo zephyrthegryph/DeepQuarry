@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /obj/item/dq_destroy_transaction_phase_probe/Initialize(mapload)
 	. = ..()
 	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
-	own_set(src, nameof(child), new /datum/dq_destroy_transaction_owned_child(src))
+	rel_set(src, nameof(child), new /datum/dq_destroy_transaction_owned_child(src))
 
 /obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/act/notice/N)
 	EVENT_HANDLER

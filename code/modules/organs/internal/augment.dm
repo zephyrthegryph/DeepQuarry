@@ -32,7 +32,8 @@
 	description_fluff = "If attempting to implant a compatible augment into a synthetic limb, the limb must be screwdrivered open and then the augment port opened with a crowbar before insertion can begin."
 
 
-DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/augment, "integrated_object", "integrated_object_type")
+CAPABILITIES(/obj/item/organ/internal/augment)
+	owns_one(nameof(integrated_object), starts = nameof(integrated_object_type))
 
 /obj/item/organ/internal/augment/Initialize(mapload)
 	. = ..()

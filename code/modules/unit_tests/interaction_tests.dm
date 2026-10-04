@@ -153,8 +153,8 @@
 	var/obj/item/part = allocate(/obj/item, machine)
 	var/obj/item/circuitboard/board = allocate(/obj/item/circuitboard, machine)
 	own_clear(machine, nameof(machine.component_parts), OWN_DELETE)
-	own_add(machine, nameof(machine.component_parts), part)
-	own_set(machine, nameof(machine.circuit), board)
+	rel_add(machine, nameof(machine.component_parts), part)
+	rel_set(machine, nameof(machine.circuit), board)
 
 	machine.deconstruct(FALSE)
 
@@ -170,7 +170,7 @@
 	var/obj/machinery/machine = allocate(/obj/machinery, test_turf)
 	var/obj/item/stock_parts/capacitor/part = new(machine)
 	own_clear(machine, nameof(machine.component_parts), OWN_DELETE)
-	own_add(machine, nameof(machine.component_parts), part)
+	rel_add(machine, nameof(machine.component_parts), part)
 	qdel(part)
 	TEST_ASSERT(!(part in machine.component_parts), "A deleted stock part remained strongly retained by machine.component_parts.")
 	qdel(machine)

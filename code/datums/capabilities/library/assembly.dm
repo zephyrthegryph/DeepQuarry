@@ -1,6 +1,6 @@
 // cap_assembly(): the holder takes one /obj/item/assembly (a signaler, timer, igniter, sensor, ...) as
 // its trigger. Attaching needs the assembly unsecured, as the tank transfer valve does; it is
-// secured once inside. The holder owns it in `attached_assembly` (own_set()). "Trigger" activates
+// secured once inside. The holder owns it in `attached_assembly` (rel_set()). "Trigger" activates
 // it (activate(), with its own cooldown); when the attached assembly pulses (its timer ran out, its
 // signal arrived, its sensor tripped) the capability's on_pulse proc runs on the holder.
 //
@@ -9,7 +9,7 @@
 //		. += cap_assembly(attach_types = list(/obj/item/assembly/timer, /obj/item/assembly/signaler), on_pulse = PROC_REF(detonate))
 
 /obj
-	/// The assembly attached by the assembly capability (owned: own_set()).
+	/// The assembly attached by the assembly capability (owned: rel_set()).
 	var/obj/item/assembly/attached_assembly
 
 /datum/capability/assembly

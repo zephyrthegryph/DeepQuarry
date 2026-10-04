@@ -8,7 +8,7 @@
 	var/obj/effect/anomaly/anomaly = allocate(/obj/effect/anomaly, field_turf)
 	anomaly.stabilize(TRUE, TRUE, TRUE)
 	var/datum/anomaly_modifiers/move/modifier = allocate(/datum/anomaly_modifiers/move)
-	own_set(anomaly.stats, nameof(anomaly.stats.modifier), modifier)
+	rel_set(anomaly.stats, nameof(anomaly.stats.modifier), modifier)
 	modifier.on_add(anomaly)
 	TEST_ASSERT_EQUAL(anomaly.move_chance, ANOMALY_MOVECHANCE, "The actual movement modifier must make the stabilized anomaly mobile")
 	generator.activate()

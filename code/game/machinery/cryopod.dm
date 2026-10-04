@@ -276,8 +276,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 	name = "cryopod"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/intercom)
-
 /obj/machinery/cryopod/Initialize(mapload)
 	. = ..()
 
@@ -854,7 +852,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 
 /obj/machinery/cryopod/ownership()
 	. = ..()
-	. += owns(nameof(announce), policy = OWN_CONTAINED)
+	. += owns(nameof(announce), policy = OWN_CONTAINED, starts = /obj/item/radio/intercom)
 
 /// control computer (a relation view: it reads null once the target is deleted).
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod

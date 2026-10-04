@@ -211,7 +211,7 @@ CAPABILITIES(/datum/contract_requirement/paired_facts)
 	second_fact_times = list()
 	event_types = list(first_event_type, second_event_type)
 
-// A contract owns its requirements (`requirements`, own_add); the typed vars (observation_requirement, ...)
+// A contract owns its requirements (`requirements`, rel_add); the typed vars (observation_requirement, ...)
 // are relation views onto them, and `contract` is the requirement's one-sided view back.
 
 

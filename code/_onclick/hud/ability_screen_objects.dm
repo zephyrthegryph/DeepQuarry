@@ -148,8 +148,6 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 	if(ability_master)
 		ability_master.toggle_open(2) //Force it to open on login.
 
-DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/ability_master)
-
 ///////////ACTUAL ABILITIES////////////
 //This is what you click to do things//
 ///////////////////////////////////////

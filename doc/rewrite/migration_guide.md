@@ -612,7 +612,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	if(!diode)
 		user.drop_item()
 		W.forceMove(src)
-		own_set(src, "diode", W)
+		rel_set(src, "diode", W)
 		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else
 		to_chat(user, span_notice("[src] already has a diode."))

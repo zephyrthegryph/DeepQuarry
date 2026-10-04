@@ -107,7 +107,8 @@ TYPE_TABLE(/obj/mecha/combat/gygax/serenity, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/electrical \
 		))
 
-DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothing/glasses/hud/health/mech)
+CAPABILITIES(/obj/mecha/combat/gygax/serenity)
+	owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/health/mech)
 
 /obj/mecha/combat/gygax/serenity/moved_inside(mob/living/carbon/human/H as mob)
 	if(..())

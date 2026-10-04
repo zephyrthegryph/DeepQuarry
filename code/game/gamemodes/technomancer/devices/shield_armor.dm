@@ -62,10 +62,12 @@
 	play_sfx(src, SFX_WEAPONS_BLADE1)
 	return 0 // This shield does not block all damage, so returning 0 is needed to tell the game to apply the new damage.
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/shield, INTERACT_USE("Toggle", PROC_REF(shield_armor_toggle_self)))
+CAPABILITIES(/obj/item/clothing/suit/armor/shield)
+	op("shield_armor_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(shield_armor_toggle_self)))
 
 /// Old attack_self.
-/obj/item/clothing/suit/armor/shield/proc/shield_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/armor/shield/proc/shield_armor_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	active = !active
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
 	update_icon()

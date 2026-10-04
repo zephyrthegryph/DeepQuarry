@@ -20,9 +20,9 @@
 	var/transfer_amount = 1
 
 CAPABILITIES(/obj/structure/medical_stand)
-	owns_one(nameof(contained), /obj/item/clothing/mask/breath)
+	owns_one(nameof(contained), /obj/item/clothing/mask/breath, starts = nameof(mask_type))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
-	owns_one(nameof(tank), /obj/item/tank)
+	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
 OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
@@ -475,9 +475,6 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 	spawn_type = /obj/item/tank/anesthetic
 	mask_type = /obj/item/clothing/mask/breath/medical
 	is_loosen = FALSE
-
-DECLARE_DEFAULT_CHILD(/obj/structure/medical_stand, "tank", "spawn_type")
-DECLARE_DEFAULT_CHILD(/obj/structure/medical_stand, "contained", "mask_type")
 
 /// Relation view: breather (reads null once it is gone).
 /obj/structure/medical_stand/proc/breather() as /mob/living/carbon/human

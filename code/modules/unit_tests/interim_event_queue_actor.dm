@@ -7,8 +7,8 @@
 	container.severity = EVENT_LEVEL_MUNDANE
 	var/datum/event_meta/first = allocate(/datum/event_meta, EVENT_LEVEL_MUNDANE, "First actual queue fixture", /datum/event/nothing, 1)
 	var/datum/event_meta/second = allocate(/datum/event_meta, EVENT_LEVEL_MUNDANE, "Second actual queue fixture", /datum/event/nothing, 1)
-	own_add(container, nameof(container.event_pool), first)
-	own_add(container, nameof(container.event_pool), second)
+	rel_add(container, nameof(container.event_pool), first)
+	rel_add(container, nameof(container.event_pool), second)
 	rel_add(container, nameof(container.available_events), first)
 	rel_add(container, nameof(container.available_events), second)
 	TEST_ASSERT(panel.ui_act_select_event(actor, list("ref" = container), null, null, "select_event"), "the actual panel action requests event selection")
@@ -39,7 +39,7 @@
 	var/datum/event_container/container = allocate(/datum/event_container)
 	container.severity = EVENT_LEVEL_MUNDANE
 	var/datum/event_meta/event = allocate(/datum/event_meta, EVENT_LEVEL_MUNDANE, "Actual stale queue fixture", /datum/event/nothing, 1)
-	own_add(container, nameof(container.event_pool), event)
+	rel_add(container, nameof(container.event_pool), event)
 	rel_add(container, nameof(container.available_events), event)
 	container.SelectEvent(actor)
 	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the real container opens its initial event choice")

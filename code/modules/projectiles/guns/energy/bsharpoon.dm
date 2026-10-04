@@ -19,8 +19,6 @@
 	var/obj/item/stock_parts/scanning_module/scanmod
 	var/dropnoms_active = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/bluespace_harpoon, "scanmod", /obj/item/stock_parts/scanning_module)
-
 /obj/item/bluespace_harpoon/Initialize(mapload)
 	. = ..()
 	update_fail_chance()
@@ -241,4 +239,4 @@ DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon, TYPE_PROC_REF(/atom, appear
 
 /obj/item/bluespace_harpoon/ownership()
 	. = ..()
-	. += owns(nameof(scanmod), policy = OWN_CONTAINED)
+	. += owns(nameof(scanmod), policy = OWN_CONTAINED, starts = /obj/item/stock_parts/scanning_module)

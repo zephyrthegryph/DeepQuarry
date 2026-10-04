@@ -33,7 +33,8 @@ MATERIAL_MIX(/obj/item/gun/energy/freezegun, list(MAT_DURASTEEL = 1000, MAT_MORP
 	stage = 2
 	sealed = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/frost/Initialize(mapload)
 	. = ..()

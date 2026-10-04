@@ -16,7 +16,8 @@
 
 	equip_type = EQUIP_UTILITY
 
-DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/generator, "fuel", "fuel_type")
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
+	owns_one(nameof(fuel), starts = nameof(fuel_type))
 
 
 OM_FIELD(/obj/item/mecha_parts/mecha_equipment/generator, generating, FALSE, CHANGE_EXPLICIT)

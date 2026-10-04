@@ -925,14 +925,14 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/track, suit_storage_spec, list
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/flannel, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
-	INTERACT_VERB("Roll Sleeves", PROC_REF(flannel_roll_sleeves_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Shirt Tucking", PROC_REF(flannel_tuck_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Shirt Buttons", PROC_REF(flannel_button_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
+	op("flannel_roll_sleeves_verb", menu(), label("Roll Sleeves"), needs(carried()), then(PROC_REF(flannel_roll_sleeves_verb)))
+	op("flannel_tuck_verb", menu(), label("Toggle Shirt Tucking"), needs(carried()), then(PROC_REF(flannel_tuck_verb)))
+	op("flannel_button_verb", menu(), label("Toggle Shirt Buttons"), needs(carried()), then(PROC_REF(flannel_button_verb)))
 
 /// Old verb "Roll Sleeves".
-/obj/item/clothing/suit/storage/flannel/proc/flannel_roll_sleeves_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/flannel/proc/flannel_roll_sleeves_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user))
 		return
 	if(user.stat)
@@ -950,7 +950,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
 	worn_protection_changed()
 
 /// Old verb "Toggle Shirt Tucking".
-/obj/item/clothing/suit/storage/flannel/proc/flannel_tuck_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/flannel/proc/flannel_tuck_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)||user.stat)
 		return
 
@@ -963,7 +964,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
 	update_icon()
 
 /// Old verb "Toggle Shirt Buttons".
-/obj/item/clothing/suit/storage/flannel/proc/flannel_button_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/flannel/proc/flannel_button_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)||user.stat)
 		return
 

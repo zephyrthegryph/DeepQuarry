@@ -211,7 +211,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 /datum/unit_test/dx_core_changed_owner_chain/Run()
 	var/obj/cap_fixture/dx_core/F = allocate(/obj/cap_fixture/dx_core)
 	var/datum/dx_core_child/K = new
-	own_set(F, nameof(/obj/cap_fixture/dx_core::child), K)
+	rel_set(F, nameof(/obj/cap_fixture/dx_core::child), K)
 	refresh_flush()
 	TEST_ASSERT(owner_of(K) == F, "the child is owned")
 	TEST_ASSERT(K.set_level(2), "the child's setter changed it")
@@ -221,7 +221,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 
 	var/obj/cap_fixture/dx_core/drawer/D = allocate(/obj/cap_fixture/dx_core/drawer)
 	var/datum/dx_core_child/DK = new
-	own_set(D, nameof(/obj/cap_fixture/dx_core::child), DK)
+	rel_set(D, nameof(/obj/cap_fixture/dx_core::child), DK)
 	refresh_flush()
 	var/before = D.state_changes
 	TEST_ASSERT(DK.set_level(4), "the drawn child's setter changed it")

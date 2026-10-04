@@ -613,7 +613,7 @@ GLOBAL_LIST_EMPTY(reagents_empty_list)
 /datum/reagents/proc/own_reagent_lists()
 	var/list/empty = GLOB.reagents_empty_list
 	if(reagent_list == empty || !reagent_list)
-		reagent_list = list() // ALLOW(ownership): a private empty list before own_add() (never the shared sentinel)
+		reagent_list = list() // ALLOW(ownership): a private empty list before rel_add() (never the shared sentinel)
 	if(reagent_by_id == empty || !reagent_by_id)
 		reagent_by_id = list()
 

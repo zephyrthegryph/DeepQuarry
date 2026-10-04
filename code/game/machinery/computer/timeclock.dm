@@ -22,12 +22,10 @@
 	var/obj/item/card/id/card // Inserted Id card
 	var/obj/item/radio/intercom/announce	// Integreated announcer
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/radio/intercom)
-
 /obj/machinery/computer/timeclock/ownership()
 	. = ..()
 	. += owns(nameof(card), policy = OWN_SPILL)
-	. += owns(nameof(announce), policy = OWN_CONTAINED)
+	. += owns(nameof(announce), policy = OWN_CONTAINED, starts = /obj/item/radio/intercom)
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/computer/timeclock, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/timeclock/appearance_overlays()

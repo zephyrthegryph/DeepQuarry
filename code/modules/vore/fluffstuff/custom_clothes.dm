@@ -339,12 +339,12 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat, suit_stora
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/fluff/fedcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/fedcoat, \
-	INTERACT_VERB("Toggle coat buttons", PROC_REF(fedcoat_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
+	op("fedcoat_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(fedcoat_toggle_verb)))
 
 /// Old verb "Toggle coat buttons".
-/obj/item/clothing/suit/storage/fluff/fedcoat/proc/fedcoat_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/fluff/fedcoat/proc/fedcoat_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return FALSE
 
@@ -1386,12 +1386,12 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, equip_spec, dq_spec_
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	var/unbuttoned = FALSE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/jacket, \
-	INTERACT_VERB("Toggle coat buttons", PROC_REF(jacket_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
+	op("jacket_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(jacket_toggle_verb)))
 
 /// Old verb "Toggle coat buttons".
-/obj/item/clothing/suit/storage/fluff/jacket/proc/jacket_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/fluff/jacket/proc/jacket_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return FALSE
 
@@ -2219,12 +2219,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/purple_robes, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/hooded/purple_robes, \
-	INTERACT_VERB("Toggle Eyes", PROC_REF(purple_robes_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
+	op("purple_robes_toggle_verb", menu(), label("Toggle Eyes"), needs(carried()), then(PROC_REF(purple_robes_toggle_verb)))
 
 /// Old verb "Toggle Eyes".
-/obj/item/clothing/suit/storage/hooded/purple_robes/proc/purple_robes_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/hooded/purple_robes/proc/purple_robes_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_eyes(user)
 
 /obj/item/clothing/suit/storage/hooded/purple_robes/proc/toggle_eyes(mob/user)

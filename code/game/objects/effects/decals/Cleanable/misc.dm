@@ -15,12 +15,12 @@
 	icon_state = "ash"
 	anchored = TRUE
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/ash, \
-	INTERACT_HAND("Sift", PROC_REF(interaction_sift_ash)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/ash)
+	op("sift_ash", hand(), label("Sift"), then(PROC_REF(interaction_sift_ash)))
 
 /// Old attack_hand: the ash crumbles away into floor dirt.
-/obj/effect/decal/cleanable/ash/proc/interaction_sift_ash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/decal/cleanable/ash/proc/interaction_sift_ash(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("[src] sifts through your fingers."))
 	var/turf/simulated/floor/F = get_turf(src)
 	if (istype(F))
@@ -233,12 +233,12 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "confetti"
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/confetti, \
-	INTERACT_HAND("Pick up", PROC_REF(interaction_pick_confetti)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/confetti)
+	op("pick_confetti", hand(), label("Pick up"), then(PROC_REF(interaction_pick_confetti)))
 
 /// Old attack_hand: slowly pick the confetti up.
-/obj/effect/decal/cleanable/confetti/proc/interaction_pick_confetti(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/decal/cleanable/confetti/proc/interaction_pick_confetti(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to meticulously pick up the confetti."))
 	om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
 	return TRUE

@@ -711,8 +711,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 
 /obj/item/weldingtool/electric/ownership()
 	. = ..()
-	. += owns(nameof(power_supply), policy = OWN_CONTAINED)
-DECLARE_DEFAULT_CHILD(/obj/item/weldingtool/electric, "power_supply", "cell_type")
+	. += owns(nameof(power_supply), policy = OWN_CONTAINED, starts = nameof(cell_type))
 
 /// Relation view: equip mount (reads null once it is gone).
 /obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment

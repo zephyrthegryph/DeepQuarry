@@ -620,8 +620,10 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	feeding = FALSE
 	can_be_drop_pred = FALSE
 
-DECLARE_DEFAULT_CHILD(/mob/living/bot, "botcard", /obj/item/card/id)
-DECLARE_DEFAULT_CHILD(/mob/living/bot, "access_scanner", /obj)
+CAPABILITIES(/mob/living/bot)
+	owns_one(nameof(botcard), starts = /obj/item/card/id)
+	owns_one(nameof(access_scanner), starts = /obj)
+
 /mob/living/bot/ownership()
 	. = ..()
 	. += owns(nameof(paicard), policy = OWN_CONTAINED)

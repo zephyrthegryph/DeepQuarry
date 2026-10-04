@@ -55,7 +55,7 @@
 /// Test mobs have no HUD; unarmed attacks read the targeted zone from one.
 /datum/unit_test/proc/dq_give_zone_sel(mob/M)
 	if(!M.zone_sel)
-		own_set(M, nameof(/mob::zone_sel), new /atom/movable/screen/zone_sel())
+		rel_set(M, nameof(/mob::zone_sel), new /atom/movable/screen/zone_sel())
 		M.zone_sel.selecting = BP_TORSO
 
 /// An attacker and a target on adjacent open tiles, the attacker facing it.

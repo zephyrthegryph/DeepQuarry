@@ -25,7 +25,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	unset_machine()
 	clear_fullscreen()
-	// The screen objects are ours (own_set by the HUD setup) and go in teardown.
+	// The screen objects are ours (rel_set by the HUD setup) and go in teardown.
 	if(client)
 		client.screen = list()
 	if(mind && mind.current == src)

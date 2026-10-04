@@ -177,7 +177,15 @@
 
 CAPABILITIES(/obj/item/organ/internal/augment/armmounted/shoulder/multiple)
 	owns_many(nameof(synths))
-	owns_many(nameof(integrated_tools))
+	owns_many(nameof(integrated_tools), starts = PROC_REF(starting_tools))
+
+/// The stowed tools: tool path -> its instance, for every carried tool the deployed object is not already.
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/starting_tools()
+	. = list()
+	for(var/path in TYPE_TABLE_GET(src, tool_types))
+		if(integrated_object_type && ispath(integrated_object_type, path))
+			continue
+		.[path] = new path(src)
 
 /// The tools this augment carries (constant per type).
 TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, tool_types, list( \
@@ -195,11 +203,6 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/Initialize(mapload)
 	. = ..()
-
-	for(var/path in TYPE_TABLE_GET(src, tool_types))
-		if(integrated_object && istype(integrated_object, path))
-			continue
-		own_put(src, nameof(integrated_tools), path, new path(src))
 
 	var/list/tools = all_integrated_tools()
 	if(!length(tools))

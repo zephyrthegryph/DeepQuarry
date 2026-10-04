@@ -1,4 +1,5 @@
-/obj/item/healthanalyzer/proc/toggle_guide_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/healthanalyzer/proc/toggle_guide_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	guide = !guide
 	to_chat(user, span_notice("You toggle \the [src]'s guidance system [guide ? "on" : "off"]."))
 
@@ -54,6 +55,5 @@
 	user.show_message(span_notice(span_bold("GUIDANCE SYSTEM BEGIN")) + "<br>" + lines.Join("<br>") + "<br>" + span_notice("For more detailed information on the patient's condition, utilize a body scanner at the closest medical bay."), 1)
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/healthanalyzer, \
-	INTERACT_VERB("Toggle Guidance", PROC_REF(toggle_guide_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/healthanalyzer)
+	op("toggle_guide_effect", menu(), label("Toggle Guidance"), needs(carried()), then(PROC_REF(toggle_guide_effect)))

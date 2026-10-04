@@ -29,10 +29,12 @@
 	icon_state = "diamond"
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/engagement, INTERACT_USE("Present", PROC_REF(engagement_ring_present_self)))
+CAPABILITIES(/obj/item/clothing/accessory/ring/engagement)
+	op("engagement_ring_present_self", in_hand(), label("Present"), then(PROC_REF(engagement_ring_present_self)))
 
 /// Old attack_self.
-/obj/item/clothing/accessory/ring/engagement/proc/engagement_ring_present_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/ring/engagement/proc/engagement_ring_present_self(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_warning("You get down on one knee, presenting %T%.")), \
 		MSG_OTHERS(span_warning("%U% gets down on one knee, presenting %T%.")))
 

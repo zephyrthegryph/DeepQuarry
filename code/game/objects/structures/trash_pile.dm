@@ -14,6 +14,7 @@
 
 CAPABILITIES(/obj/structure/trash_pile)
 	climb()
+	owns_one(nameof(mouse_nest), starts = /obj/structure/mob_spawner/mouse_nest)
 
 /obj/structure/trash_pile/Initialize(mapload)
 	. = ..()
@@ -29,8 +30,6 @@ CAPABILITIES(/obj/structure/trash_pile)
 		"boxfort",
 		"trashbag",
 		"brokecomp")
-
-DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mob_spawner/mouse_nest)
 
 /obj/structure/trash_pile/declare_interactions(list/into)
 	var/static/list/actor_specs = list(

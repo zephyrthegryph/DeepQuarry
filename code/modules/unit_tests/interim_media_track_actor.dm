@@ -66,7 +66,7 @@
 	TEST_ASSERT_NULL(actor.client, "the actual jukebox fixture cannot claim native admin rights")
 	var/obj/machinery/media/jukebox/ghost/interim_actor_probe/jukebox = allocate(/obj/machinery/media/jukebox/ghost/interim_actor_probe, run_loc_floor_bottom_left)
 	var/datum/track/retained = allocate(/datum/track, "interim://local", "Retained test track", 30 SECONDS)
-	own_add(jukebox, nameof(jukebox.custom_tracks), retained)
+	rel_add(jukebox, nameof(jukebox.custom_tracks), retained)
 	TEST_ASSERT_EQUAL(jukebox.custom_tracks[1], retained, "the actual jukebox owns its exact custom track before denial")
 	TEST_ASSERT_EQUAL(jukebox.vv_topic_add_track(actor, list()), TRUE, "the actual jukebox VV add wrapper preserves its handled return")
 	TEST_ASSERT_EQUAL(jukebox.add_actor, actor, "the actual jukebox add wrapper forwards its explicit actor")

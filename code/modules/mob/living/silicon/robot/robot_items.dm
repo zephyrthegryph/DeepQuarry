@@ -9,7 +9,8 @@
 	var/dummy_card_type = /obj/item/card/id/science/roboticist/dummy_cyborg
 
 
-DECLARE_DEFAULT_CHILD(/obj/item/card/robot, "dummy_card", "dummy_card_type")
+CAPABILITIES(/obj/item/card/robot)
+	owns_one(nameof(dummy_card), starts = nameof(dummy_card_type))
 
 /obj/item/card/robot/GetID()
 	return dummy_card

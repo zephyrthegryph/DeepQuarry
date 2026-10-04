@@ -20,7 +20,7 @@
 		board = allocate(/obj/item/airlock_electronics, door)
 		board.conf_access = list(ACCESS_SECURITY)
 		board.set_one_access(TRUE)
-		own_set(door, nameof(door.electronics), board)
+		rel_set(door, nameof(door.electronics), board)
 	else
 		TEST_ASSERT_NULL(door.electronics, "The generated-electronics fixture must have no installed board")
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey, T)

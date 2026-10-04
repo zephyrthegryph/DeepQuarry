@@ -57,12 +57,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/muzzle, INTERACT_HAND_UNGATED(null, 
 		update_clothing_icon()
 		worn_protection_changed()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/surgical, \
-	INTERACT_VERB("Adjust mask", PROC_REF(surgical_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/mask/surgical)
+	op("surgical_toggle_verb", menu(), label("Adjust mask"), needs(carried()), then(PROC_REF(surgical_toggle_verb)))
 
 /// Old verb "Adjust mask".
-/obj/item/clothing/mask/surgical/proc/surgical_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/surgical/proc/surgical_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	adjust_mask(user)
 
 /obj/item/clothing/mask/surgical/white
@@ -231,7 +231,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/surgical, \
 	body_parts_covered = 0
 	var/mob/observer/eye/aiEye/eye
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/ai, "eye", /mob/observer/eye/aiEye)
+CAPABILITIES(/obj/item/clothing/mask/ai)
+	owns_one(nameof(eye), starts = /mob/observer/eye/aiEye)
 
 /obj/item/clothing/mask/ai/equipped(mob/user, slot)
 	..(user, slot)
@@ -351,10 +352,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/ai, "eye", /mob/observer/eye/aiEye
 		"Sad" = image(icon = src.icon, icon_state = "sadmask")
 		)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/paper, INTERACT_USE("Change design", PROC_REF(paper_mask_design_self)))
+CAPABILITIES(/obj/item/clothing/mask/paper)
+	op("paper_mask_design_self", in_hand(), label("Change design"), then(PROC_REF(paper_mask_design_self)))
 
 /// Old attack_self.
-/obj/item/clothing/mask/paper/proc/paper_mask_design_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/paper/proc/paper_mask_design_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!istype(user) || user.incapacitated())
 		return
 
@@ -399,10 +402,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/paper, INTERACT_USE("Change design",
 		"Angry" = image(icon = src.icon, icon_state = "angry"),
 		)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/emotions, INTERACT_USE("Change emotion", PROC_REF(emotion_mask_design_self)))
+CAPABILITIES(/obj/item/clothing/mask/emotions)
+	op("emotion_mask_design_self", in_hand(), label("Change emotion"), then(PROC_REF(emotion_mask_design_self)))
 
 /// Old attack_self.
-/obj/item/clothing/mask/emotions/proc/emotion_mask_design_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/emotions/proc/emotion_mask_design_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!istype(user) || user.incapacitated())
 		return
 

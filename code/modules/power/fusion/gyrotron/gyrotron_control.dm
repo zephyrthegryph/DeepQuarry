@@ -11,7 +11,8 @@
 	var/scan_range = 25
 	var/datum/tgui_module/gyrotron_control/monitor
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/gyrotron_control, "monitor", /datum/tgui_module/gyrotron_control)
+CAPABILITIES(/obj/machinery/computer/gyrotron_control)
+	owns_one(nameof(monitor), starts = /datum/tgui_module/gyrotron_control)
 
 /obj/machinery/computer/gyrotron_control/Initialize(mapload)
 	. = ..()

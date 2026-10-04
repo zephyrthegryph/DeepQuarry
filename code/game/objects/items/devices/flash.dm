@@ -46,7 +46,9 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
-DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
+CAPABILITIES(/obj/item/flash)
+	owns_one(nameof(power_supply), starts = nameof(cell_type))
+	op("self", in_hand(), label("Flash"), then(PROC_REF(interaction_self)))
 
 /obj/item/flash/screwdriver_act(mob/user, obj/item/tool)
 	if(!broken)
@@ -260,9 +262,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 		target.injure(INJURY_BURN, flash_burn * (flash_strength/5), BP_HEAD, src)
 	return TRUE
 
-
-CAPABILITIES(/obj/item/flash)
-	op("self", in_hand(), label("Flash"), then(PROC_REF(interaction_self)))
 
 /obj/item/flash/proc/interaction_self(datum/act/op/A)
 	var/mob/living/carbon/user = A.actor

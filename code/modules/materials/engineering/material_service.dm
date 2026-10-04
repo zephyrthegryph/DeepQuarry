@@ -657,4 +657,4 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /datum/material_service/proc/owner() as /obj
 	return owner
 
-// An obj owns its material service (own_set); `owner` is the service's one-sided view back.
+// An obj owns its material service (rel_set); `owner` is the service's one-sided view back.

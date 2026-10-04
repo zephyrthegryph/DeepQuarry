@@ -26,6 +26,7 @@
 CAPABILITIES(/obj/effect/anomaly)
 	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly)
 	owns_one(nameof(stats), /datum/anomaly_stats)
+	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
 
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
@@ -71,7 +72,6 @@ CAPABILITIES(/obj/effect/anomaly)
 	anomalyEffect(delta / (1 SECONDS)) // the periodic lane passes deciseconds
 	anomalyPulse()
 
-DECLARE_DEFAULT_CHILD(/obj/effect/anomaly, "countdown", /obj/effect/countdown/anomaly)
 DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 
 /obj/effect/anomaly/proc/anomalyEffect(seconds_per_tick)

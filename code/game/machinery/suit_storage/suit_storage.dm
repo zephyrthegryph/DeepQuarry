@@ -26,13 +26,9 @@
 	var/cycletime_left = 0
 
 CAPABILITIES(/obj/machinery/suit_storage_unit)
-	owns_one(nameof(HELMET), /obj/item/clothing/head/helmet/space)
-	owns_one(nameof(MASK), /obj/item/clothing/mask)
-	owns_one(nameof(SUIT), /obj/item/clothing/suit/space)
-
-DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "SUIT", "suit_type")
-DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "HELMET", "helmet_type")
-DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
+	owns_one(nameof(HELMET), /obj/item/clothing/head/helmet/space, starts = nameof(helmet_type))
+	owns_one(nameof(MASK), /obj/item/clothing/mask, starts = nameof(mask_type))
+	owns_one(nameof(SUIT), /obj/item/clothing/suit/space, starts = nameof(suit_type))
 
 /obj/machinery/suit_storage_unit/Initialize(mapload)
 	. = ..()

@@ -134,4 +134,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 	emote_hear = list("churrs","rumbles","chirrs")
 	emote_see = list("rolls in place", "shuffles", "scritches at something")
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/armadillo/torta, "hat", /obj/item/clothing/head/sombrero)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo/torta)
+	owns_one(nameof(hat), starts = /obj/item/clothing/head/sombrero, on_destroy = ON_DESTROY_SPILL)
+

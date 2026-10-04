@@ -128,10 +128,9 @@ TOPIC_ACTION(/mob/observer/dead, "reenter", PROC_REF(topic_reenter))
 	reenter_corpse()
 	return TRUE
 
-EXTEND_INTERACTIONS(/mob/observer/dead, INTERACT_INSERT(/obj/item/book/tome, PROC_REF(observer_tome_manifest), "Manifest"))
-
 /// Old attackby: a tome makes the ghost manifest.
-/mob/observer/dead/proc/observer_tome_manifest(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/observer/dead/proc/observer_tome_manifest(datum/act/op/A)
+	var/mob/user = A.actor
 	manifest(user)
 	return TRUE
 

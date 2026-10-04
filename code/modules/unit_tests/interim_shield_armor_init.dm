@@ -5,7 +5,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clothing/suit/armor/shield/shield = allocate(/obj/item/clothing/suit/armor/shield, T)
 	var/atom/movable/screen/movable/ability_master/master = allocate(/atom/movable/screen/movable/ability_master, user)
-	own_set(user, nameof(user.ability_master), master)
+	rel_set(user, nameof(user.ability_master), master)
 	var/obj/item/technomancer_core/core = allocate(/obj/item/technomancer_core, T)
 	var/obj/item/projectile/bullet/pistol/strong/projectile = allocate(/obj/item/projectile/bullet/pistol/strong, T)
 	TEST_ASSERT(!issmall(user), "actual human shield fixture uses normal-size protection")

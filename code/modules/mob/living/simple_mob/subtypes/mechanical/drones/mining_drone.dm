@@ -69,15 +69,14 @@
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(my_storage), starts = /obj/item/ore_bag)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/mechanical/mining_drone/Initialize(mapload)
 	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
 	ion_trail.set_up(src)
 	ion_trail.start()
 	return ..()
-
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", /obj/item/ore_bag)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
 
 
 /mob/living/simple_mob/mechanical/mining_drone

@@ -11,6 +11,11 @@
 	var/datum/species/shared_species
 	var/fired = 0
 
+CAPABILITIES(/datum/guard_test_holder)
+	owns_one(nameof(child))
+	owns_many(nameof(kids))
+	owns_many(nameof(values))
+
 /datum/guard_test_holder/ownership()
 	. = ..()
 	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
@@ -44,7 +49,7 @@
 	var/label = "[dying_end] dying, [inside ? "inside" : "outside"] a destroy transaction"
 
 	// name -> the accessor to try; each runs on a fresh holder and a fresh target.
-	var/list/attempts = list("own_set", "own_add", "own_put", "own_move", "own_transfer", "rel_set",
+	var/list/attempts = list("rel_set", "rel_add", "own_put", "own_move", "own_transfer", "rel_set",
 		"rel_add", "proto_set", "proto_private", "shared_set", "om_after", "after_slot", "observe",
 		"om_link")
 	for(var/name in attempts)
@@ -52,7 +57,7 @@
 		var/datum/guard_test_child/C = new
 		var/datum/guard_test_holder/donor = new
 		var/datum/guard_test_child/donated = new
-		own_set(donor, nameof(donor.child), donated)
+		rel_set(donor, nameof(donor.child), donated)
 		if(name == "proto_private")
 			proto_set(H, nameof(H.species), registered)
 		var/datum/dying = dying_end == "holder" ? H : C
@@ -70,11 +75,11 @@
 			GLOB.destroy_transaction_depth++
 		var/done
 		switch(name)
-			if("own_set")
-				own_set(H, nameof(H.child), C)
+			if("rel_set")
+				rel_set(H, nameof(H.child), C)
 				done = H.child == C
-			if("own_add")
-				own_add(H, nameof(H.kids), C)
+			if("rel_add")
+				rel_add(H, nameof(H.kids), C)
 				done = (C in H.kids)
 			if("own_put")
 				rel_add(H, nameof(H.values), C, "k")

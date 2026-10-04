@@ -44,7 +44,8 @@
 	var/burn_cost = 7500
 	var/generated_thrust = 2.5
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/ion_engine, "controller", /datum/ship_engine/ion)
+CAPABILITIES(/obj/machinery/ion_engine)
+	owns_one(nameof(controller), starts = /datum/ship_engine/ion)
 
 /obj/machinery/ion_engine/Initialize(mapload)
 	. = ..()

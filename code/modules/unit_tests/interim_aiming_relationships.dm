@@ -7,7 +7,7 @@
 	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, T)
 	var/obj/item/binoculars/tool = allocate(/obj/item/binoculars, T)
 	TEST_ASSERT(actor.put_in_active_hand(tool), "the actor holds the actual aiming tool")
-	own_set(actor, nameof(actor.aiming), new /obj/aiming_overlay(actor))
+	rel_set(actor, nameof(actor.aiming), new /obj/aiming_overlay(actor))
 	var/obj/aiming_overlay/aim = actor.aiming
 	TEST_ASSERT_NOTNULL(aim, "the actor owns a real aiming overlay")
 	TEST_ASSERT_EQUAL(aim.owner(), actor, "the overlay retains its actual owner")

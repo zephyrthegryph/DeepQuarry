@@ -28,7 +28,8 @@
 	EVENT_HANDLER
 	update_icon()
 
-DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
+CAPABILITIES(/obj/item/radio/intercom)
+	owns_one(nameof(circuit), starts = nameof(circuit))
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"

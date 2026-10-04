@@ -178,7 +178,10 @@ DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
 /obj/item/implanter/reagent_generator
 	var/implant_type = /obj/item/implant/reagent_generator
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/reagent_generator, "imp", "implant_type")
+/obj/item/implanter/reagent_generator/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = nameof(implant_type))
+
 /obj/item/implanter/reagent_generator
 	icon_state = "implanter1_1" // loaded: what update() would show
 

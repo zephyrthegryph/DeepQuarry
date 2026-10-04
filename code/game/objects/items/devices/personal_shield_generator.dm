@@ -39,7 +39,7 @@
 
 CAPABILITIES(/obj/item/personal_shield_generator)
 	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
-	owns_one(nameof(bcell), /obj/item/cell/device)
+	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
 
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
@@ -58,7 +58,6 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 /// If the shield gen is active; it drains power while it is.
 OM_FIELD(/obj/item/personal_shield_generator, shield_active, 0, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/personal_shield_generator, PERIODIC_SLOW, "shield_active")
-DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack

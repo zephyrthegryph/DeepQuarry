@@ -4,7 +4,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/atom/movable/screen/movable/ability_master/master = allocate(/atom/movable/screen/movable/ability_master, actor)
-	own_set(actor, nameof(actor.ability_master), master)
+	rel_set(actor, nameof(actor.ability_master), master)
 	TEST_ASSERT_EQUAL(master.my_mob(), actor, "The actual ability screen records its original owning actor")
 	var/obj/item/technomancer_core/core = allocate(/obj/item/technomancer_core, T)
 	TEST_ASSERT_NULL(core.wearer, "The actual floor core has no prior wearer")

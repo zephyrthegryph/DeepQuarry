@@ -11,7 +11,8 @@
 	var/tmp/obj/machinery/power/fusion_core/cur_viewed_device
 	var/datum/tgui_module/rustcore_monitor/monitor
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_core_control, "monitor", /datum/tgui_module/rustcore_monitor)
+CAPABILITIES(/obj/machinery/computer/fusion_core_control)
+	owns_one(nameof(monitor), starts = /datum/tgui_module/rustcore_monitor)
 
 /obj/machinery/computer/fusion_core_control/Initialize(mapload)
 	. = ..()

@@ -804,12 +804,13 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom
 	var/obj/item/mapping_unit/owner
 	var/atom/movable/screen/mapper/extras_holder/extras_holder
 
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_full", /atom/movable/screen/mapper/mask_full)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_ping", /atom/movable/screen/mapper/mask_ping)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "bg", /atom/movable/screen/mapper/bg)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "frame", /atom/movable/screen/mapper/frame)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "powbutton", /atom/movable/screen/mapper/powbutton)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /atom/movable/screen/mapper/mapbutton)
+CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
+	owns_one(nameof(mask_full), starts = /atom/movable/screen/mapper/mask_full)
+	owns_one(nameof(mask_ping), starts = /atom/movable/screen/mapper/mask_ping)
+	owns_one(nameof(bg), starts = /atom/movable/screen/mapper/bg)
+	owns_one(nameof(frame), starts = /atom/movable/screen/mapper/frame)
+	owns_one(nameof(powbutton), starts = /atom/movable/screen/mapper/powbutton)
+	owns_one(nameof(mapbutton), starts = /atom/movable/screen/mapper/mapbutton)
 
 /atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
 	. = ..()

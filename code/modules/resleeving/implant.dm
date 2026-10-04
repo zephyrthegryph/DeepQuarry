@@ -146,7 +146,9 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 	desc = "A case containing a backup implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/backup, "imp", /obj/item/implant/backup)
+/obj/item/implantcase/backup/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/backup)
 
 //The box of backup implants
 /obj/item/storage/box/backup_kit

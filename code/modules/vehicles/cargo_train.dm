@@ -41,8 +41,6 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine, "cell", /obj/item/cell/high)
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine, "key", "key_type")
 
 /obj/vehicle/train/engine/Initialize(mapload)
 	. = ..()
@@ -526,7 +524,8 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley_tank, TYPE_PROC_REF(/atom, ap
 
 /obj/vehicle/train/engine/ownership()
 	. = ..()
-	. += owns(nameof(key), policy = OWN_CONTAINED)
+	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/engine/proc/pred_engine_running(mob/actor, atom/target, obj/item/held)

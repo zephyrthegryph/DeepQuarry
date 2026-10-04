@@ -375,7 +375,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mutatedmeat, null, lis
 		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
 		)
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/tyr_chainsaw, "bcell", /obj/item/cell/device/weapon/recharge/alien/tyr)
+/obj/item/melee/energy/tyr_chainsaw/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon/recharge/alien/tyr)
 
 /obj/item/shield/tyr_shield
 	name = "tyrian portable energy barrier"

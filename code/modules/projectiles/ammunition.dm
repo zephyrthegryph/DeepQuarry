@@ -18,9 +18,7 @@
 	var/caseless = null					//Caseless ammo deletes its self once the projectile is fired.
 
 CAPABILITIES(/obj/item/ammo_casing)
-	owns_one(nameof(BB), /obj/item/projectile)
-
-DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
+	owns_one(nameof(BB), /obj/item/projectile, starts = nameof(projectile_type))
 
 /obj/item/ammo_casing/Initialize(mapload)
 	. = ..()

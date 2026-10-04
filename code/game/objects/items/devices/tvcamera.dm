@@ -16,8 +16,13 @@
 /// Relation view: the atom being broadcast; the feed follows it while set.
 OM_FIELD_VIEW(/obj/item/tvcamera, atom, showing, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/tvcamera, PERIODIC_SLOW, "showing")
-DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "camera", /obj/machinery/camera/network/thunder)
-DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "radio", /obj/item/radio)
+CAPABILITIES(/obj/item/tvcamera)
+	owns_one(nameof(camera), starts = /obj/machinery/camera/network/thunder)
+	owns_one(nameof(radio), starts = /obj/item/radio)
+	op("toggle_video", ui_act(), then(PROC_REF(native_ui_act_toggle_video)))
+	op("toggle_audio", ui_act(), then(PROC_REF(native_ui_act_toggle_audio)))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+
 DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 
 /obj/item/tvcamera/examine()
@@ -39,10 +44,6 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	radio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-CAPABILITIES(/obj/item/tvcamera)
-	op("toggle_video", ui_act(), then(PROC_REF(native_ui_act_toggle_video)))
-	op("toggle_audio", ui_act(), then(PROC_REF(native_ui_act_toggle_audio)))
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /obj/item/tvcamera/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
@@ -144,8 +145,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/tvcamera, TYPE_PROC_REF(/atom, appearance_over
 OM_FIELD_VIEW(/obj/item/clothing/accessory/bodycam, atom, showing, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/bodycam, PERIODIC_SLOW, "showing")
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/bodycam, "bcamera", /obj/machinery/camera/network/bodycamera)
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/bodycam, "bradio", /obj/item/radio)
+CAPABILITIES(/obj/item/clothing/accessory/bodycam)
+	owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera)
+	owns_one(nameof(bradio), starts = /obj/item/radio)
+
 DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)
 
 /obj/item/clothing/accessory/bodycam/examine()

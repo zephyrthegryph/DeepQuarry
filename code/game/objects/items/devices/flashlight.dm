@@ -40,7 +40,7 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/flashlight)
-	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 
 /obj/item/flashlight/Initialize(mapload)
 	. = ..()
@@ -50,7 +50,6 @@ OM_FIELD(/obj/item/flashlight, on, 0, CHANGE_EXPLICIT)
 OM_FIELD(/obj/item/flashlight, power_use, 1, CHANGE_EXPLICIT)
 // Battery drain runs while a powered light is on.
 DECLARE_PERIODIC_WHILE_ALL(/obj/item/flashlight, PERIODIC_SLOW, list("on", "power_use"))
-DECLARE_DEFAULT_CHILD(/obj/item/flashlight, "cell", "cell_type") // unpowered subtypes clear cell_type
 
 /obj/item/flashlight/get_cell()
 	return cell

@@ -11,7 +11,6 @@
 	locked = 1
 	var/power_use = 15
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high)
 /// The field it projects while active (activate() .. deactivate()).
 OM_FIELD_VIEW(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspension_field, CHANGE_MACHINE_SETTINGS)
 
@@ -259,7 +258,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appe
 
 /obj/machinery/suspension_gen/ownership()
 	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Accessor for the auth_card var.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id

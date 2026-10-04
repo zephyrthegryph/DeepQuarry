@@ -11,6 +11,9 @@
 	var/datum/ref_value
 	var/tmp/runtime_only = 0
 
+CAPABILITIES(/datum/dq_state_probe)
+	owns_one(nameof(ref_value))
+
 /datum/dq_state_probe/state_codecs()
 	return ..() + list("ref_value" = /datum/state_codec/owned)
 
@@ -153,7 +156,7 @@
 	owned.text = "owned"
 	probe.path_value = /obj/item/paper
 	probe.values = list("plain", 3, /obj/item/pen, "#hash" = "escaped", "#path" = "not a wrapper")
-	own_set(probe, nameof(probe.ref_value), owned) // the owned codec: the probe owns it
+	rel_set(probe, nameof(probe.ref_value), owned) // the owned codec: the probe owns it
 	var/list/blob = state_serialize(probe)
 	TEST_ASSERT_NOTNULL(blob, "the probe should serialize")
 	var/datum/dq_state_probe/copy = state_materialize(json_decode(json_encode(blob)), null)

@@ -233,7 +233,7 @@
 /proc/cap_use_on(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE, delay, cooldown)
 	return cap_op(name, handler, using = held_type, by = NONE, needs = needs, delay = delay, log = log, shape = OP_SHAPE_USE_ON, legacy = TRUE, behind = behind, blocked_by = blocked_by, locked_by = locked_by, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, form = form, priority = priority, stance = stance, name_proc = name_proc, applies = applies, cooldown = cooldown)
 
-/// Putting a held item of `held_type` into the holder (the handler adopts it: own_set moves it).
+/// Putting a held item of `held_type` into the holder (the handler adopts it: rel_set moves it).
 /proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay, cooldown)
 	return cap_op(name, handler, using = held_type, by = NONE, needs = needs, delay = delay, log = log, shape = OP_SHAPE_INSERT, legacy = TRUE, behind = behind, blocked_by = blocked_by, locked_by = locked_by, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, form = form, priority = priority, name_proc = name_proc, applies = applies, cooldown = cooldown)
 

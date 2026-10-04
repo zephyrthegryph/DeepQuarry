@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_declare import File, SETTINGS, body_range, related, split_args, strip_code, words_in  # noqa: E402
 
 SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/interactions/")
-KINDS = {"INTERACT_USE": "in_hand()", "INTERACT_HAND": "hand()", "INTERACT_ITEM": "item(/obj/item)", "INTERACT_INSERT": None}
+KINDS = {"INTERACT_USE": "in_hand()", "INTERACT_HAND": "hand()", "INTERACT_ITEM": "item(/obj/item)", "INTERACT_INSERT": None, "INTERACT_VERB": "menu()"}
 HEAD = re.compile(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\((/[\w/]+)\s*,")
 
 
@@ -128,7 +128,7 @@ def main():
     for t, rs in sorted(decls.items()):
         if only and t != only:
             continue
-        if len(rs) != 1 or rs[0][0] != "DECLARE_INTERACTIONS":
+        if len(rs) != 1:
             residue[t] = "interaction_forms"
             continue
         if any(related(t, u) for u in replacers if u != t):
@@ -158,6 +158,10 @@ def main():
                     break
                 held_type, effect, name = a
             else:
+                carried = False
+                if kind == "INTERACT_VERB" and len(a) == 3 and a[2] == "REQ_IN_INVENTORY":
+                    a = a[:2]
+                    carried = True
                 if len(a) != 2:
                     bad = "requires" if len(a) > 2 else "interaction_forms"
                     break
@@ -173,7 +177,7 @@ def main():
             if held_type is not None and not re.match(r"^/[\w/]+$", held_type):
                 bad = "interaction_forms"
                 break
-            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type})
+            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": kind != "INTERACT_INSERT" and carried})
         if bad:
             residue[t] = bad
             continue
@@ -207,7 +211,10 @@ def main():
             if words_in(body, n_inter) or "INTERACTION_HANDLED_PASS" in body or re.search(r"\.\.\(", body) or words_in(body, "A"):
                 bad = "body_uses"
                 break
-            if s["kind"] != "INTERACT_USE":
+            if s["kind"] == "INTERACT_VERB" and words_in(body, n_held):
+                bad = "body_uses"
+                break
+            if s["kind"] not in ("INTERACT_USE", "INTERACT_VERB"):
                 # the old resolver let a falsy return fall through to the next candidate: only a handler that always returns TRUE keeps that
                 ret_ok = True
                 last_stmt = None
@@ -261,6 +268,8 @@ def main():
                 parts = ['op("%s"' % h["key"], binding]
                 if s["name"]:
                     parts.append("label(%s)" % s["name"])
+                if s.get("carried"):
+                    parts.append("needs(carried())")
                 parts.append("then(PROC_REF(%s))" % s["proc"])
                 entries.append(", ".join(parts) + ")")
                 f = files[h["rel"]]
@@ -321,6 +330,9 @@ def main():
     for t, why in residue.items():
         by[why].append(t)
     print("interact_declare: %d types converted (%d ops)%s; residue %d types" % (len(plans), converted_ops, " (check)" if check else "", len(residue)))
+    if "--why" in sys.argv:
+        for t, why in sorted(residue.items()):
+            print("WHY	%s	%s	%s" % (why, t, " ; ".join(r[0][:3] + ":" + r[4][:110] for r in decls[t])))
     for why, ts in sorted(by.items(), key=lambda kv: -len(kv[1])):
         print("    %-20s %4d" % (why, len(ts)))
         if sites:

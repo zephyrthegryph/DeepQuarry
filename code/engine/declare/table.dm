@@ -39,8 +39,19 @@
 	/// ENGINE_HOOK_*: the lifecycle work an instance of the type needs.
 	var/hook_flags = 0
 
-GLOBAL_LIST_EMPTY(type_tables) // block type -> /datum/type_table
-GLOBAL_LIST_EMPTY(type_table_of_type) // instance type -> /datum/type_table
+/// block type -> /datum/type_table. A static, not a GLOB list: global datums are made while the globals are still being built, and their
+/// declarations (a rel_add(..., key) in a global's New()) must already be readable. The table builds lazily on the first lookup.
+/proc/type_blocks_cache()
+	RETURN_TYPE(/list)
+	var/static/list/cache = list() // ALLOW(cache,sys_static_getter): a mutable static, not a GLOB list, because the declaration tables are built while the globals are still being made
+	return cache
+
+/// instance type -> /datum/type_table (see type_blocks_cache()).
+/proc/type_table_cache()
+	RETURN_TYPE(/list)
+	var/static/list/cache = list() // ALLOW(cache,sys_static_getter): a mutable static, not a GLOB list, because the declaration tables are built while the globals are still being made
+	return cache
+
 GLOBAL_VAR(declare_report_capture)
 
 /// Reports a declaration error. A test that expects them sets GLOB.declare_report_capture to a list and reads it after.
@@ -64,9 +75,7 @@ GLOBAL_VAR(declare_report_capture)
 /// The compiled table of D's type, built once per type from its parent's.
 /proc/table_of(datum/D)
 	RETURN_TYPE(/datum/type_table)
-	if(!islist(GLOB?.type_table_of_type))
-		return table_empty() // the globals are still being built (a global datum's New()): nothing is declared yet, nothing is cached
-	var/datum/type_table/T = GLOB.type_table_of_type[D.type]
+	var/datum/type_table/T = type_table_cache()[D.type]
 	if(T)
 		return T
 	return table_build(D)
@@ -84,7 +93,7 @@ GLOBAL_VAR(declare_report_capture)
 /// The compiled table of `type` without an instance in hand (explain tools, tests): a probe instance is made, asked and deleted.
 /proc/table_of_type(type)
 	RETURN_TYPE(/datum/type_table)
-	var/datum/type_table/T = GLOB.type_table_of_type[type]
+	var/datum/type_table/T = type_table_cache()[type]
 	if(T)
 		return T
 	var/datum/probe = isatom(type) ? null : null
@@ -105,14 +114,14 @@ GLOBAL_VAR(declare_report_capture)
 	var/datum/type_table/T = null
 	for(var/list/block in blocks)
 		var/datum/entry/block/B = block[1]
-		var/datum/type_table/built = GLOB.type_tables[B.block_type]
+		var/datum/type_table/built = type_blocks_cache()[B.block_type]
 		if(!built)
 			built = table_compile(B.block_type, T, block[2], entry_origin_text(B.file, B.line), B.file)
-			GLOB.type_tables[B.block_type] = built
+			type_blocks_cache()[B.block_type] = built
 		T = built
 	if(!T)
 		T = table_compile(D.type, null, null, null)
-	GLOB.type_table_of_type[D.type] = T
+	type_table_cache()[D.type] = T
 	return T
 
 /// A declared_entries() chain split at its blocks: list(list(block, entries), ...) in order.

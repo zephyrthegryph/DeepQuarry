@@ -517,7 +517,7 @@
 /// A declared field whose var holds an entity under the ownership model (doc/rewrite/ownership.md):
 /// an owned child, a relation view, a proto or a shared singleton. Declares `T/var/VT/F = null` and
 /// registers it raising C, with NO generated setter: its only writers are the ownership accessors
-/// (own_set/own_take/own_clear, rel_set/rel_clear/rel_add/rel_remove, proto_set, shared_set), which
+/// (rel_set/own_take/own_clear, rel_set/rel_clear/rel_add/rel_remove, proto_set, shared_set), which
 /// raise C through own_field_changed(), and so do the framework's automatic clears (a view whose
 /// target died, an owned child that left or was disposed of). A periodic declaration or stage gated
 /// on F therefore re-evaluates when the related entity is destroyed, with no guard in the body.

@@ -55,8 +55,6 @@
 	src.reagent_amt = amt
 	src.cost = cost
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_containers/glass/bottle)
-
 /obj/machinery/biogenerator/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(1000)
@@ -328,4 +326,4 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 
 /obj/machinery/biogenerator/ownership()
 	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+	. += owns(nameof(beaker), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/bottle)

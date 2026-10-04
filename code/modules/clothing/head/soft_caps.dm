@@ -15,10 +15,12 @@
 	flipped = FALSE
 	..()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/soft, INTERACT_USE("Flip", PROC_REF(soft_cap_flip_self)))
+CAPABILITIES(/obj/item/clothing/head/soft)
+	op("soft_cap_flip_self", in_hand(), label("Flip"), then(PROC_REF(soft_cap_flip_self)))
 
 /// Old attack_self.
-/obj/item/clothing/head/soft/proc/soft_cap_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/soft/proc/soft_cap_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	flipped = !flipped
 	if(flipped)
 		icon_state = "[icon_state]_flipped"

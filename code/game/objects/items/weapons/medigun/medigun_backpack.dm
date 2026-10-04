@@ -38,10 +38,11 @@
 	var/chargecap = 1000
 
 CAPABILITIES(/obj/item/medigun_backpack)
-	owns_one(nameof(scapacitor), /obj/item/stock_parts/capacitor)
-	owns_one(nameof(slaser), /obj/item/stock_parts/micro_laser)
-	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator)
-	owns_one(nameof(smodule), /obj/item/stock_parts/scanning_module)
+	owns_one(nameof(scapacitor), /obj/item/stock_parts/capacitor, starts = nameof(scapacitor))
+	owns_one(nameof(slaser), /obj/item/stock_parts/micro_laser, starts = nameof(slaser))
+	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator, starts = nameof(smanipulator))
+	owns_one(nameof(smodule), /obj/item/stock_parts/scanning_module, starts = nameof(smodule))
+	owns_one(nameof(bcell), starts = nameof(bcell))
 
 //backpack item
 /obj/item/medigun_backpack/cmo
@@ -305,12 +306,6 @@ OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, smanipulator, CHANGE_EXPLICIT)
 OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, scapacitor, CHANGE_EXPLICIT)
 /// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
 DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("smanipulator", "scapacitor", "sbin"))
-
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "bcell", null)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smodule", null)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smanipulator", null)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "scapacitor", null)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "slaser", null)
 
 /obj/item/medigun_backpack/proc/get_medigun()
 	return tethered_handheld()
@@ -579,5 +574,4 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 /obj/item/medigun_backpack/ownership()
 	. = ..()
 	. += owns(nameof(ccell), policy = OWN_CONTAINED)
-	. += owns(nameof(sbin), policy = OWN_CONTAINED)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "sbin", null)
+	. += owns(nameof(sbin), policy = OWN_CONTAINED, starts = nameof(sbin))

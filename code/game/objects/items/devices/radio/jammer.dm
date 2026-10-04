@@ -32,7 +32,7 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/radio_jammer)
-	owns_one(nameof(power_source), /obj/item/cell/device/weapon)
+	owns_one(nameof(power_source), /obj/item/cell/device/weapon, starts = /obj/item/cell/device/weapon)
 
 OM_FIELD(/obj/item/radio_jammer, on, FALSE, CHANGE_EXPLICIT)
 /// Drains its cell while switched on.
@@ -41,8 +41,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/radio_jammer, PERIODIC_SLOW, "on")
 /obj/item/radio_jammer/Initialize(mapload)
 	. = ..()
 	update_icon() // So it starts with the full overlay.
-
-DECLARE_DEFAULT_CHILD(/obj/item/radio_jammer, "power_source", /obj/item/cell/device/weapon)
 
 // a running jammer stops jamming.
 /obj/item/radio_jammer/on_destroy(force)

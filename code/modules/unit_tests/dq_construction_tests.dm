@@ -309,7 +309,7 @@
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	TEST_ASSERT(!length(construction_edges_for(mech)), "an operating exosuit offers no steps")
 	if(!mech.cell)
-		own_set(mech, nameof(mech.cell), new /obj/item/cell/high(mech))
+		rel_set(mech, nameof(mech.cell), new /obj/item/cell/high(mech))
 	var/obj/item/cell/cell = mech.cell
 	mech.state = MECHA_BOLTS_SECURED
 
@@ -324,7 +324,7 @@
 	TEST_ASSERT_EQUAL(cell.loc, mech.loc, "on the floor")
 
 	cell.forceMove(mech)
-	own_set(mech, nameof(mech.cell), cell)
+	rel_set(mech, nameof(mech.cell), cell)
 	var/list/back = list(list(screwdriver, MECHA_CELL_OPEN), list(crowbar, MECHA_PANEL_LOOSE), list(wrench, MECHA_BOLTS_SECURED))
 	for(var/list/step in back)
 		var/obj/item/tool = step[1]

@@ -35,8 +35,11 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/janicart, "cell", /obj/item/cell/high)
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/janicart, "key", "key_type")
+/obj/vehicle/train/engine/janicart/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
+	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
+
 DECLARE_REAGENTS(/obj/vehicle/train/engine/janicart, 600, null)
 
 /obj/vehicle/train/engine/janicart/Initialize(mapload)

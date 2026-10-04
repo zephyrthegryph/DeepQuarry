@@ -129,12 +129,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_IT
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/responseteam, \
-	INTERACT_VERB("Toggle Mark 7 Suit HUD", PROC_REF(responseteam_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
+	op("responseteam_toggle_verb", menu(), label("Toggle Mark 7 Suit HUD"), needs(carried()), then(PROC_REF(responseteam_toggle_verb)))
 
 /// Old verb "Toggle Mark 7 Suit HUD".
-/obj/item/clothing/head/helmet/space/void/responseteam/proc/responseteam_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/space/void/responseteam/proc/responseteam_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.hud_active)
 			away_planes = enables_planes

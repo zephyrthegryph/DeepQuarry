@@ -404,7 +404,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 		LAZYADD(purchased_powers_history, "[Pname] ([Thepower.genomecost] points)")
 
 	if(Thepower.make_hud_button && Thepower.isVerb)
-		// A fresh master (own_set deletes the old one); a mob without one gets its first.
+		// A fresh master (rel_set deletes the old one); a mob without one gets its first.
 		rel_set(owner, nameof(owner.ability_master), new /atom/movable/screen/movable/ability_master(owner))
 		owner.ability_master.add_ling_ability(
 			object_given = owner,

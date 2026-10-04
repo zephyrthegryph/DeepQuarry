@@ -445,7 +445,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 
 	var/obj/item/shield_projector/shields = null
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/pirate/captain, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/humanoid/pirate/captain/Process_Spacemove(check_drift = 0)
 	return TRUE

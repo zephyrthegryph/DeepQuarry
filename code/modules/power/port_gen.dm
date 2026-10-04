@@ -823,7 +823,9 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 /obj/machinery/power/rtg/abductor/built
 	icon_state = "core"
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/built, "cell", /obj/item/cell/void)
+/obj/machinery/power/rtg/abductor/built/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/void)
 
 /obj/machinery/power/rtg/abductor/built/Initialize(mapload)
 	. = ..()
@@ -838,7 +840,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/built, "cell", /obj/item
 /obj/machinery/power/rtg/abductor/hybrid/built
 	icon_state = "coreb"
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /obj/item/cell/void/hybrid)
+/obj/machinery/power/rtg/abductor/hybrid/built/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/void/hybrid)
 
 /obj/machinery/power/rtg/abductor/hybrid/built/Initialize(mapload)
 	. = ..()

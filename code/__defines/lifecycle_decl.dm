@@ -7,16 +7,16 @@
 //
 //   init         (end of /atom/Initialize(), and table_initialize()): instance state that
 //                subtype Initialize() code may read right after `. = ..()`:
-//                  1. owned children   DECLARE_DEFAULT_CHILD (now owns(starts =): code/datums/ownership/table.dm)
-//                  2. gas contents     DECLARE_GAS
-//                  3. reagents         DECLARE_REAGENTS
-//                  4. appearance       DECLARE_APPEARANCE
+//                  (starting occupants: owns_one / owns_many with starts =, made first)
+//                  1. gas contents     DECLARE_GAS
+//                  2. reagents         DECLARE_REAGENTS
+//                  3. appearance       DECLARE_APPEARANCE
 //   materialize  (/atom/on_materialize(), after registries, rules and OM start):
-//                  5. registries       DECLARE_REGISTRY (conditional ones are joined here)
-//                  6. service members  DECLARE_SERVICE_MEMBER
-//                  7. binds            DECLARE_BIND (batched per SSatoms batch)
-//                  8. behaviours       DECLARE_BEHAVIOUR, DECLARE_PERIODIC, DECLARE_START_TIMER
-//   dematerialize (/atom/on_dematerialize()): 8..5 in reverse (periodic stop, service leave;
+//                  4. registries       DECLARE_REGISTRY (conditional ones are joined here)
+//                  5. service members  DECLARE_SERVICE_MEMBER
+//                  6. binds            DECLARE_BIND (batched per SSatoms batch)
+//                  7. behaviours       DECLARE_BEHAVIOUR, DECLARE_PERIODIC, DECLARE_START_TIMER
+//   dematerialize (/atom/on_dematerialize()): 7..4 in reverse (periodic stop, service leave;
 //                registries, behaviours and timers are already left by the core).
 //   destroy      phase 1 (unbind): DECLARE_BIND release. Phase 4 deletes the children
 //                (their DECLARE_REF kind). Phase 6: DESTROY_EFFECTS data, including
@@ -29,24 +29,13 @@
 /// Adds one entry to PATH's declaration table. Internal: use the named macros below.
 #define _LIFECYCLE_DECL(PATH, CALL) ##PATH/declare_lifecycle(datum/lifecycle_decls/decls) { ..(); decls.##CALL; }
 
-/// 1. Owned child created at init. LEGACY: the foundation form is the relation's starting occupant,
-///	rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))
-/// in relations() (doc/rewrite/state_and_relations.md section 2); this macro is a thin wrapper over it
-/// that adds only the `starts` annotation (the var keeps whatever kind/policy ownership() or relations()
-/// give it, else the first own_set() learns OWN_DELETE). DEFAULT is a type path, a list of type paths (or
-/// `list(type = count)`) for a list var, or the name of a var holding the type (e.g. "cell_type"). The var
-/// itself wins: holding a path (`var/obj/item/cell/cell = /obj/item/cell/high`) creates that path; holding
-/// an instance creates nothing (a null DEFAULT names the var itself: whatever path it holds is made). Children
-/// are created with `new type(src)`.
-#define DECLARE_DEFAULT_CHILD(PATH, VAR, DEFAULT) ##PATH/relations() { . = ..(); . += owns(VAR, policy = OWN_NONE, starts = (isnull(DEFAULT) ? VAR : DEFAULT)); }
-
-/// 2. LEGACY: the foundation form is `gas_store(nameof(var), volume, temp, gases)` in capabilities()
+/// 1. LEGACY: the foundation form is `gas_store(nameof(var), volume, temp, gases)` in capabilities()
 /// (code/datums/capabilities/library/gas_store.dm; doc/rewrite/lifecycle.md section 9).
 /// A gas mixture created at init in VAR (declare VAR OWNED). VOLUME: litres, or a var name.
 /// GASES: list(GAS_O2 = kPa, ...) at TEMP kelvin (moles = P*V / (R*T)).
 #define DECLARE_GAS(PATH, VAR, VOLUME, TEMP, GASES) _LIFECYCLE_DECL(PATH, set_gas(VAR, VOLUME, TEMP, GASES))
 
-/// 3. LEGACY: the foundation form is `reagents(volume, starts = list(...))` in capabilities(), with
+/// 2. LEGACY: the foundation form is `reagents(volume, starts = list(...))` in capabilities(), with
 /// `refine(CAP_REAGENTS, starts = ...)` on subtypes and `without(., CAP_REAGENTS)` for DECLARE_NO_REAGENTS
 /// (code/datums/capabilities/library/reagents.dm; doc/rewrite/lifecycle.md section 9). Never mix the forms in a chain.
 /// Starting reagents at init: create_reagents(VOLUME) then add CONTENTS

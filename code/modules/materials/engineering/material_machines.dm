@@ -65,6 +65,9 @@
 	. += owns(nameof(feedstock), policy = OWN_CONTAINED, is_list = TRUE)
 	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED, is_list = TRUE)
 
+CAPABILITIES(/obj/machinery/material_furnace)
+	owns_one(nameof(chamber_air), /datum/gas_mixture)
+
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 

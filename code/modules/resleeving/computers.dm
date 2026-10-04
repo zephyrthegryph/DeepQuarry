@@ -498,10 +498,12 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 	icon_state = "cmoemergency"
 	item_state = "card-id"
 
-EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_REF(cmo_disk_holder_interaction_tear)))
+CAPABILITIES(/obj/item/cmo_disk_holder)
+	op("cmo_disk_holder_interaction_tear", in_hand(), label("Tear open"), then(PROC_REF(cmo_disk_holder_interaction_tear)))
 
 /// Old attack_self.
-/obj/item/cmo_disk_holder/proc/cmo_disk_holder_interaction_tear(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cmo_disk_holder/proc/cmo_disk_holder_interaction_tear(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_ITEMS_POSTER_RIPPED, 0.5, vary = FALSE)
 	to_chat(user, span_warning("You tear open \the [name]."))
 	user.unEquip(src)
