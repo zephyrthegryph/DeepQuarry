@@ -172,6 +172,9 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 
 
 /obj/machinery/artifact_harvester/proc/harvest(mob/user)
+	return harvest_stage(user)
+
+/obj/machinery/artifact_harvester/proc/harvest_stage(mob/user, selected, selection_ready = FALSE)
 	if(!inserted_battery())
 		atom_say("Cannot harvest. No battery inserted.")
 		return
@@ -220,7 +223,10 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 			atom_say("Cannot harvest. No harvestable energy emitting from source.")
 			return
 
-		var/artifact_selection = rerun_ask(user, "k225", PROC_REF(harvest), args, /datum/om/prompt/choice, message = "Which effect do you wish to harvest?", title = "Effect Selection", choices = effects_to_show)
+		var/artifact_selection = selected
+		if(!selection_ready)
+			open_request(src, /datum/prompt/choice/artifact_harvest_effect, PROC_REF(harvest_effect_chosen), answerer = user, choices = effects_to_show)
+			return
 		if(isnull(artifact_selection))
 			return
 		var/datum/artifact_effect/selected_effect
@@ -274,6 +280,30 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 				inserted_battery().battery_effect = E
 				inserted_battery().stored_charge = 0
 
+
+/datum/prompt/choice/artifact_harvest_effect
+	title = "Effect Selection"
+	question = "Which effect do you wish to harvest?"
+	timeout = 0
+
+/datum/prompt/choice/artifact_harvest_effect/recheck_extra()
+	if(isnull(answer_value))
+		return
+	var/datum/artifact_effect/selected_effect = answer_value
+	if(!istype(selected_effect) || QDELETED(selected_effect))
+		return "gone"
+
+/obj/machinery/artifact_harvester/proc/harvest_effect_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(harvest_effect_apply), A)
+	if(!result.ok)
+		stack_trace("artifact harvest selection: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/machinery/artifact_harvester/proc/harvest_effect_apply(datum/act/request/A)
+	return harvest_stage(A.request.answerer, A.request.answer_value, TRUE)
 
 /// Charges or dumps a battery while harvesting (started from its UI); otherwise it sleeps.
 /obj/machinery/artifact_harvester/machine_step()
