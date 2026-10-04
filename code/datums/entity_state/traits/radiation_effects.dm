@@ -296,14 +296,17 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 
 	return data
 
-/datum/trait_state/radiation_effects/proc/radiation_color_picked(datum/om/prompt/color/ask)
-	if(!ask.picked_color)
+/datum/trait_state/radiation_effects/proc/radiation_color_picked(datum/act/request/A)
+	if(!A.answer)
 		return
-	radiation_color = ask.picked_color
+	var/datum/prompt/color/ask = A.answer
+	if(ask.value)
+		radiation_color = ask.value
+	SStgui.update_uis(src)
 
 /datum/trait_state/radiation_effects/proc/ui_act_toggle_color(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/color, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src, title = "Color Selector")
+	open_request(src, /datum/prompt/color, PROC_REF(radiation_color_picked), answerer = user, question = "Select a color you wish your radioactive glow to be!", default = radiation_color, title = "Color Selector", timeout = 0)
 	return FALSE
 
 /datum/trait_state/radiation_effects/proc/ui_act_toggle_glow(datum/act/op/A)
