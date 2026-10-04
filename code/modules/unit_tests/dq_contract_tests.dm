@@ -1867,12 +1867,24 @@
 
 	var/list/fact_a = list("fact_id" = "guardrail-a", "fact_revision" = 1, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 100))
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", fact_a, "guardrail-a:1"), "first broker fact was rejected")
+	var/datum/contract_opportunity_window/window = SScontracts.opportunity_windows[window_key]
+	TEST_ASSERT_NOTNULL(window, "real first event created its window")
+	var/datum/contract_opportunity_signal/first_signal = rule.signals[1]
+	var/list/first_lane = window.facts_by_signal[first_signal.id]
+	var/datum/contract_opportunity_observation/first_record = first_lane["dq_opportunity_test|guardrail-a"]
+	TEST_ASSERT_NOTNULL(first_record, "first authoritative fact has its original record")
+	TEST_ASSERT_EQUAL(owner_of(first_record), window, "the real window owns its first observation")
 	TEST_ASSERT(!emit_contract_event("dq_opportunity_test", fact_a, "guardrail-a:1"), "global occurrence deduplication accepted the same broker event twice")
 	TEST_ASSERT(!SScontracts.find_live_offer(offer_key) && !SScontracts.find_candidate(offer_key), "one capped fact generated an opportunity")
 
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-a", "fact_revision" = 2, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 40)), "guardrail-a:2"), "new fact revision was rejected")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-a", "fact_revision" = 1, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 100)), "guardrail-a:stale"), "stale revision did not reach the broker for its own rejection")
-	var/datum/contract_opportunity_window/window = SScontracts.opportunity_windows[window_key]
+	TEST_ASSERT_EQUAL(SScontracts.opportunity_windows[window_key], window, "revision kept the original window")
+	TEST_ASSERT(QDELETED(first_record), "real replacement retired the exact prior record")
+	var/datum/contract_opportunity_observation/current_record = first_lane["dq_opportunity_test|guardrail-a"]
+	TEST_ASSERT_NOTNULL(current_record, "replacement leaves a current authoritative record")
+	TEST_ASSERT(current_record != first_record, "replacement created a distinct record")
+	TEST_ASSERT_EQUAL(owner_of(current_record), window, "replacement remains owned after the stale-revision control")
 	var/list/snapshot = window.signal_snapshot(rule.signals[1])
 	TEST_ASSERT_EQUAL(snapshot["facts"], 1, "revision replacement duplicated one authoritative fact")
 	TEST_ASSERT_EQUAL(snapshot["value"], 40, "stale revision replaced the newer broker fact")
@@ -1897,6 +1909,7 @@
 	window.latched = TRUE
 
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-a", "fact_revision" = 3, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-a:3"), "inactive fact revision was rejected")
+	TEST_ASSERT(QDELETED(current_record), "inactive revision retired the exact replacement record")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-b", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-b:2"), "second inactive fact revision was rejected")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-c", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-c:2"), "third inactive fact revision was rejected")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-d", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-d:2"), "fourth inactive fact revision was rejected")

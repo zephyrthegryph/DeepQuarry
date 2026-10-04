@@ -1432,11 +1432,11 @@
 	into += entry_line(63)
 	into += list(global.owns_many(nameof(options)))
 
-/// CAPABILITIES(/datum/contract_opportunity_rule) at code/modules/contracts/opportunity_broker.dm:234
+/// CAPABILITIES(/datum/contract_opportunity_rule) at code/modules/contracts/opportunity_broker.dm:239
 /datum/contract_opportunity_rule/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/contracts/opportunity_broker.dm", 234, /datum/contract_opportunity_rule)
-	into += entry_line(235)
+	into += entry_block("code/modules/contracts/opportunity_broker.dm", 239, /datum/contract_opportunity_rule)
+	into += entry_line(240)
 	into += list(global.owns_many(nameof(signals)))
 
 /// CAPABILITIES(/datum/contract_opportunity_signal) at code/modules/contracts/opportunity_broker.dm:47
@@ -1445,6 +1445,13 @@
 	into += entry_block("code/modules/contracts/opportunity_broker.dm", 47, /datum/contract_opportunity_signal)
 	into += entry_line(48)
 	into += list(global.owns_one(nameof(filter), /datum/contract_event_filter))
+
+/// CAPABILITIES(/datum/contract_opportunity_window) at code/modules/contracts/opportunity_broker.dm:117
+/datum/contract_opportunity_window/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/contracts/opportunity_broker.dm", 117, /datum/contract_opportunity_window)
+	into += entry_line(118)
+	into += list(global.owns_many(nameof(observations), /datum/contract_opportunity_observation))
 
 /// CAPABILITIES(/datum/contract_requirement/event_count) at code/modules/contracts/contract_requirement.dm:267
 /datum/contract_requirement/event_count/declared_entries(list/into)
