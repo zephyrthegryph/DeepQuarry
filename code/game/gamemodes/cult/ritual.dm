@@ -95,13 +95,13 @@ EXTEND_INTERACTIONS(/obj/effect/rune, \
 	if(!iscultist(user))
 		return INTERACTION_HANDLED_PASS
 	to_chat(user, "You retrace your steps, carefully undoing the lines of the rune.")
-	qdel(src)
+	consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
 /// Old attackby: a null rod disrupts the rune.
 /obj/effect/rune/proc/interaction_nullrod_rune(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You disrupt the vile magic with the deadening field of the null rod!"))
-	qdel(src)
+	consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
 /// Old attack_hand: speak the rune's words.
@@ -650,5 +650,5 @@ EXTEND_INTERACTIONS(/obj/item/book/tome/imbued, INTERACT_USE("Scribe a rune", PR
 /obj/effect/rune/wash(clean_types)
 	. = ..()
 	if (. || (clean_types & CLEAN_TYPE_RUNES))
-		qdel(src)
+		consume(src)
 		return TRUE
