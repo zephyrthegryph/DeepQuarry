@@ -983,7 +983,6 @@ base_var	code/modules/vore/resizing/resize.dm	var/holder_default
 base_var	code/modules/vore/resizing/resize.dm	var/pickup_active = TRUE // Toggle whether your help (combat mode off) touch picks up micros or pets them
 base_var	code/modules/xenoarcheaology/effect_master.dm	/atom/var/datum/artifact_master/artifact_master
 base_var	code/modules/xenoarcheaology/finds/talking.dm	/obj/var/datum/talking_atom/talking_atom // owned: xenoarch speech state
-list_init	code/_onclick/hud/ability_screen_objects.dm	var/arguments_to_use = list()
 list_init	code/datums/om/bundle.dm	var/list/behaviours = list()
 list_init	code/datums/om/bundle.dm	var/list/stages = list()
 list_init	code/datums/om/bundle.dm	var/list/tasks = list()
