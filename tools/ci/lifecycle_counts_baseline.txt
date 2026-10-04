@@ -917,8 +917,6 @@ qdel	code/modules/projectiles/projectile/special.dm	qdel(B)
 qdel	code/modules/random_map/drop/droppod.dm	qdel(AM)
 qdel	code/modules/random_map/drop/droppod_doors.dm	qdel(O) //crunch
 qdel	code/modules/random_map/drop/droppod_doors.dm	qdel(O) //crunch
-qdel	code/modules/random_map/drop/supply.dm	qdel(order)
-qdel	code/modules/random_map/drop/supply.dm	qdel(order)
 qdel	code/modules/random_map/random_map_verbs.dm	qdel(selected_map)
 qdel	code/modules/reagents/holder/holder.dm	qdel(current)
 qdel	code/modules/reagents/holder/holder.dm	qdel(R)
