@@ -347,7 +347,8 @@ MSG_DEF_SELF(communications/arrays_recycling, "Arrays recycling. Please stand by
 	setMenuState(user, COMM_SCREEN_MESSAGES)
 
 /// The delete button names the message before it asks, so the window shows which one is in question.
-/datum/tgui_module/communications/proc/ui_select_message(datum/act/op/A, msgid)
+/datum/tgui_module/communications/proc/ui_select_message(datum/act/op/A)
+	var/msgid = A.args["msgid"]
 	if(msgid)
 		setCurrentMessage(A.actor, msgid)
 	return OP_OK
