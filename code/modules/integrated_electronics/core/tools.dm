@@ -123,41 +123,42 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 
 /// Old attack_self.
 /obj/item/integrated_electronics/debugger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/type_to_use = rerun_ask(user, "k123", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Please choose a type to use.", title = "[src] type setting", choices = list("string","number","ref", "null"))
-	if(isnull(type_to_use))
-		return TRUE
-	if(!CanInteract(user, GLOB.tgui_physical_state))
-		return TRUE
+	var/datum/circuit_memory_review/review = new
+	review.start(user, src, held, interaction, FALSE)
+	return TRUE
 
-	var/new_data = null
-	switch(type_to_use)
-		if("string")
-			accepting_refs = 0
-			var/_answer_k131 = rerun_ask(user, "k131", PROC_REF(interaction_self), args, /datum/om/prompt/text, message = "Now type in a string.", title = "[src] string writing", encode = FALSE)
-			if(isnull(_answer_k131))
-				return TRUE
-			new_data = _answer_k131
-			new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
-			if(istext(new_data) && CanInteract(user, GLOB.tgui_physical_state))
-				data_to_write = new_data
-				to_chat(user, span_notice("You set \the [src]'s memory to \"[new_data]\"."))
-		if("number")
-			accepting_refs = 0
-			var/_answer_k138 = rerun_ask(user, "k138", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "Now type in a number.", title = "[src] number writing", min = -INFINITY, round_entry = FALSE)
-			if(isnull(_answer_k138))
-				return TRUE
-			new_data = _answer_k138
-			if(isnum(new_data) && CanInteract(user, GLOB.tgui_physical_state))
-				data_to_write = new_data
-				to_chat(user, span_notice("You set \the [src]'s memory to [new_data]."))
+/obj/item/integrated_electronics/debugger/proc/memory_type_selected(datum/circuit_memory_review/review)
+	var/mob/user = review.user_value()
+	switch(review.type_name)
+		if("string", "number")
+			stop_memory_ref_scan()
+			review.open_value()
+			return
 		if("ref")
 			accepting_refs = 1
 			to_chat(user, span_notice("You turn \the [src]'s ref scanner on. Slide it across \
-			an object for a ref of that object to save it in memory."))
+				an object for a ref of that object to save it in memory."))
 		if("null")
 			data_to_write = null
 			to_chat(user, span_notice("You set \the [src]'s memory to absolutely nothing."))
-	return TRUE
+	review.retire()
+
+/obj/item/integrated_electronics/debugger/proc/stop_memory_ref_scan()
+	accepting_refs = 0
+
+/obj/item/integrated_electronics/debugger/proc/memory_value_selected(datum/circuit_memory_review/review, new_data)
+	var/mob/user = review.user_value()
+	stop_memory_ref_scan()
+	switch(review.type_name)
+		if("string")
+			new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
+			if(istext(new_data))
+				data_to_write = new_data
+				to_chat(user, span_notice("You set \the [src]'s memory to \"[new_data]\"."))
+		if("number")
+			if(isnum(new_data))
+				data_to_write = new_data
+				to_chat(user, span_notice("You set \the [src]'s memory to [new_data]."))
 
 /obj/item/integrated_electronics/debugger/afterattack(atom/target, mob/living/user, proximity)
 	if(accepting_refs && proximity)
@@ -578,3 +579,171 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 /// The selected_io this refers to (a relation view: null once that is deleted).
 /obj/item/multitool/proc/selected_io() as /datum/integrated_io
 	return selected_io
+
+#define CIRCUIT_MEMORY_ACCESS_DENIED "circuit memory access denied"
+#define CIRCUIT_MEMORY_UNSUPPORTED_ACTOR "circuit memory unsupported actor"
+
+/// Nonspatial state for a debugger or constant-chip type/value question chain.
+/datum/circuit_memory_review
+	var/mob/actor
+	var/obj/item/source_item
+	var/obj/item/original_held
+	var/datum/interaction/original_interaction
+	var/held_expected = FALSE
+	var/interaction_expected = FALSE
+	var/original_client_ckey
+	var/constant_chip = FALSE
+	var/type_name
+
+CAPABILITIES(/datum/circuit_memory_review)
+	ref_one(nameof(actor), /mob)
+	ref_one(nameof(source_item), /obj/item)
+	ref_one(nameof(original_held), /obj/item)
+	ref_one(nameof(original_interaction), /datum/interaction)
+
+/datum/prompt/choice/circuit_memory_type
+	timeout = 0
+
+/datum/prompt/choice/circuit_memory_type/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/circuit_memory_review/review = owner
+	return review.prompt_refusal()
+
+/datum/prompt/text/circuit_memory_text
+	timeout = 0
+
+/datum/prompt/text/circuit_memory_text/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/circuit_memory_review/review = owner
+	return review.prompt_refusal()
+
+/datum/prompt/number/circuit_memory_number
+	timeout = 0
+
+/datum/prompt/number/circuit_memory_number/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/circuit_memory_number/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/circuit_memory_review/review = owner
+	return review.prompt_refusal()
+
+/datum/circuit_memory_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial circuit configuration has no inventory release contract.
+
+/datum/circuit_memory_review/proc/user_value()
+	return original_client_ckey ? GLOB.directory[original_client_ckey] : actor
+
+/datum/circuit_memory_review/proc/why_not()
+	if(QDELETED(actor) || QDELETED(source_item))
+		return "gone"
+	if(constant_chip ? !istype(source_item, /obj/item/integrated_circuit/memory/constant) : !istype(source_item, /obj/item/integrated_electronics/debugger))
+		return "gone"
+	if(held_expected && QDELETED(original_held))
+		return "gone"
+	if(interaction_expected && QDELETED(original_interaction))
+		return "gone"
+	if(original_client_ckey && !user_value())
+		return "gone"
+
+/// The read-only branches of CanUseTopic; its access-denied message is delivered after refusal.
+/datum/circuit_memory_review/proc/prompt_refusal()
+	. = why_not()
+	if(.)
+		return
+	var/mob/user = user_value()
+	if(!ismob(user))
+		return CIRCUIT_MEMORY_UNSUPPORTED_ACTOR
+	if(!user.CanUseObjTopic(source_item))
+		return CIRCUIT_MEMORY_ACCESS_DENIED
+	if(source_item.tgui_status(user, GLOB.tgui_physical_state) != STATUS_INTERACTIVE)
+		return "can't use it"
+
+/datum/circuit_memory_review/proc/start(mob/user, obj/item/source_item, obj/item/held, datum/interaction/interaction, constant_chip)
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		retire()
+		return
+	rel_set(src, nameof(actor), user)
+	rel_set(src, nameof(src.source_item), source_item)
+	held_expected = !isnull(held)
+	interaction_expected = !isnull(interaction)
+	rel_set(src, nameof(original_held), held)
+	rel_set(src, nameof(original_interaction), interaction)
+	src.constant_chip = constant_chip
+	if(why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		stack_trace("Circuit memory start: [result.error]")
+		retire()
+
+/datum/circuit_memory_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/circuit_memory_type, PROC_REF(type_entered), answerer = actor, question = "Please choose a type to use.", title = "[source_item] type setting", choices = list("string", "number", "ref", "null"))
+
+/datum/circuit_memory_review/proc/run_step(step, datum/act/request/A)
+	var/obj/item/refreshed_item = source_item
+	var/refresh = !why_not() && (A.answer || (A.request.outcome == REQ_CANCELLED && !isnull(A.request.answer_value)))
+	if(!A.answer || why_not())
+		if(!why_not() && A.request.outcome == REQ_CANCELLED && !isnull(A.request.answer_value))
+			if(A.request.last_error == CIRCUIT_MEMORY_ACCESS_DENIED)
+				var/mob/user = actor
+				to_chat(user, span_danger("[icon2html(source_item, user.client)]Access Denied!"))
+			else if(A.request.last_error == CIRCUIT_MEMORY_UNSUPPORTED_ACTOR)
+				stack_trace("Circuit memory configuration requires a mob for CanUseObjTopic; original client argument [original_client_ckey] cannot use the topic.")
+		retire()
+		if(refresh && !QDELETED(refreshed_item))
+			SStgui.update_uis(refreshed_item)
+		return
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("Circuit memory step [step]: [result.error]")
+		retire()
+	if(refresh && !QDELETED(refreshed_item))
+		SStgui.update_uis(refreshed_item)
+
+/datum/circuit_memory_review/proc/type_entered(datum/act/request/A)
+	run_step(PROC_REF(type_step), A)
+
+/datum/circuit_memory_review/proc/type_step(datum/act/request/A)
+	type_name = A.answer.answer_value
+	if(istype(source_item, /obj/item/integrated_circuit/memory/constant))
+		var/obj/item/integrated_circuit/memory/constant/chip = source_item
+		chip.memory_type_selected(src)
+	else if(istype(source_item, /obj/item/integrated_electronics/debugger))
+		var/obj/item/integrated_electronics/debugger/debugger = source_item
+		debugger.memory_type_selected(src)
+
+/datum/circuit_memory_review/proc/open_value()
+	if(type_name == "string")
+		open_request(src, /datum/prompt/text/circuit_memory_text, PROC_REF(value_entered), answerer = actor, question = "Now type in a string.", title = "[source_item] string writing", max_len = constant_chip ? MAX_NAME_LEN : MAX_MESSAGE_LEN, name_text = constant_chip, encode = FALSE, multiline = FALSE)
+	else
+		open_request(src, /datum/prompt/number/circuit_memory_number, PROC_REF(value_entered), answerer = actor, question = "Now type in a number.", title = "[source_item] number writing", default = 0, min_value = constant_chip ? 0 : -INFINITY, max_value = INFINITY, step = constant_chip ? 1 : null)
+
+/datum/circuit_memory_review/proc/value_entered(datum/act/request/A)
+	run_step(PROC_REF(value_step), A)
+
+/datum/circuit_memory_review/proc/value_step(datum/act/request/A)
+	if(istype(source_item, /obj/item/integrated_circuit/memory/constant))
+		var/obj/item/integrated_circuit/memory/constant/chip = source_item
+		chip.memory_value_selected(src, A.answer.answer_value)
+	else if(istype(source_item, /obj/item/integrated_electronics/debugger))
+		var/obj/item/integrated_electronics/debugger/debugger = source_item
+		debugger.memory_value_selected(src, A.answer.answer_value)
+	retire()
+
+#undef CIRCUIT_MEMORY_ACCESS_DENIED
+#undef CIRCUIT_MEMORY_UNSUPPORTED_ACTOR

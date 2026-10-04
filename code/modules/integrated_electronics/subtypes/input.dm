@@ -1,8 +1,3 @@
-// LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
-// Bracketed at file-header rather than per-hunk because the
-// edits are mechanical and span the whole file; the commit SHA
-// is the source of truth for per-line diff context.
-
 /obj/item/integrated_circuit/input
 	var/can_be_asked_input = 0
 	category_text = "Input"
@@ -88,10 +83,39 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 4
 
+/datum/prompt/number/circuit_numberpad
+	var/original_client_ckey
+
+/datum/prompt/number/circuit_numberpad/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
 /obj/item/integrated_circuit/input/numberpad/ask_for_input(mob/user)
-	var/new_input = rerun_ask(user, "k92", PROC_REF(ask_for_input), args, /datum/om/prompt/number, message = "Enter a number, please.", title = "Number pad", default = get_pin_data(IC_OUTPUT, 1))
-	if(isnull(new_input))
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
 		return
+	open_request(src, /datum/prompt/number/circuit_numberpad, PROC_REF(input_entered), answerer = user, original_client_ckey = original_client_ckey, question = "Enter a number, please.", title = "Number pad", default = get_pin_data(IC_OUTPUT, 1), timeout = 0, min_value = 0, max_value = INFINITY, step = 1)
+
+/obj/item/integrated_circuit/input/numberpad/proc/input_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_input), A)
+	if(!result.ok)
+		stack_trace("Native request input_entered: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/integrated_circuit/input/numberpad/proc/apply_input(datum/act/request/A)
+	var/datum/prompt/number/circuit_numberpad/request = A.request
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	if(!user)
+		return
+	var/new_input = A.answer.answer_value
 	if(isnum(new_input) && CanInteract(user, GLOB.tgui_physical_state))
 		set_pin_data(IC_OUTPUT, 1, new_input)
 		push_data()
@@ -109,11 +133,33 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 4
 
+/datum/prompt/text/circuit_textpad
+	var/original_client_ckey
+
 /obj/item/integrated_circuit/input/textpad/ask_for_input(mob/user)
-	var/_answer_k111 = rerun_ask(user, "k111", PROC_REF(ask_for_input), args, /datum/om/prompt/text, message = "Enter some words, please.", title = "Text pad", default = get_pin_data(IC_OUTPUT, 1), max_length = MAX_KEYPAD_INPUT_LEN, encode = FALSE)
-	if(isnull(_answer_k111))
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
 		return
-	var/new_input = sanitizeSafe(_answer_k111, MAX_KEYPAD_INPUT_LEN, 0, 0)
+	open_request(src, /datum/prompt/text/circuit_textpad, PROC_REF(input_entered), answerer = user, original_client_ckey = original_client_ckey, question = "Enter some words, please.", title = "Text pad", default = get_pin_data(IC_OUTPUT, 1), timeout = 0, max_len = MAX_KEYPAD_INPUT_LEN, name_text = FALSE, encode = FALSE, multiline = FALSE)
+
+/obj/item/integrated_circuit/input/textpad/proc/input_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_input), A)
+	if(!result.ok)
+		stack_trace("Native request input_entered: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/integrated_circuit/input/textpad/proc/apply_input(datum/act/request/A)
+	var/datum/prompt/text/circuit_textpad/request = A.request
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	if(!user)
+		return
+	var/new_input = sanitizeSafe(A.answer.answer_value, MAX_KEYPAD_INPUT_LEN, 0, 0)
 	if(istext(new_input) && CanInteract(user, GLOB.tgui_physical_state))
 		set_pin_data(IC_OUTPUT, 1, new_input)
 		push_data()

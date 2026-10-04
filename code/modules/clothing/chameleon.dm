@@ -64,7 +64,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon, \
 
 /// Old verb "Change Jumpsuit Appearance".
 /obj/item/clothing/under/chameleon/proc/chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_jumpsuit_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_jumpsuit_choices, timeout = 0)
+
+/obj/item/clothing/under/chameleon/proc/chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/under/chameleon/proc/chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_jumpsuit_choices[picked]))
@@ -105,7 +116,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon, \
 
 /// Old verb "Change Hat/Helmet Appearance".
 /obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(head_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_head_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(head_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_head_choices, timeout = 0)
+
+/obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(head_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_head_choices[picked]))
@@ -145,7 +167,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon, \
 
 /// Old verb "Change Oversuit Appearance".
 /obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(suit_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_suit_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(suit_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_suit_choices, timeout = 0)
+
+/obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(suit_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_suit_choices[picked]))
@@ -184,7 +217,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon, \
 
 /// Old verb "Change Footwear Appearance".
 /obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(shoes_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_shoe_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(shoes_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_shoe_choices, timeout = 0)
+
+/obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(shoes_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_shoe_choices[picked]))
@@ -280,7 +324,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon, \
 
 /// Old verb "Change Gloves Appearance".
 /obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(gloves_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_glove_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(gloves_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_glove_choices, timeout = 0)
+
+/obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(gloves_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_glove_choices[picked]))
@@ -319,7 +374,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon, \
 
 /// Old verb "Change Mask Appearance".
 /obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(mask_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_mask_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(mask_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_mask_choices, timeout = 0)
+
+/obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(mask_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_mask_choices[picked]))
@@ -360,7 +426,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon, \
 
 /// Old verb "Change Glasses Appearance".
 /obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(glasses_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = clothing_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(glasses_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = clothing_choices, timeout = 0)
+
+/obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(glasses_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(clothing_choices[picked]))
@@ -445,7 +522,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/chameleon, \
 
 /// Old verb "Change Accessory Appearance".
 /obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(accessory_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_accessory_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(accessory_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_accessory_choices, timeout = 0)
+
+/obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(accessory_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_accessory_choices[picked]))
@@ -531,7 +619,18 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/chameleon, \
 
 /// Old verb "Change Gun Appearance".
 /obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(energy_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.gun_choices)
+	open_request(src, /datum/prompt/choice, PROC_REF(energy_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.gun_choices, timeout = 0)
+
+/obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(energy_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb_apply(mob/user, picked)
 	if(isnull(picked) || get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.gun_choices[picked]))

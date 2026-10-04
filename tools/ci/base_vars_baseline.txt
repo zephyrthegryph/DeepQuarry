@@ -437,7 +437,6 @@ base_var	code/modules/mob/living/carbon/carbon.dm	var/synth_reag_processing = TR
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/species/species //Contains icon generation and language information, set during New().
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/antibodies = list() // ALLOW(instance_list): d: per-mob antibodies, filled at runtime; mobs are few
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/life_tick = 0 // The amount of life ticks that have processed on this mob.
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/number_wounds = 0
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/surgery_zones_in_progress
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pose = null
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pose_move = FALSE
@@ -754,7 +753,6 @@ base_var	code/modules/mob/mob_defines.dm	var/faction = FACTION_NEUTRAL //Used fo
 base_var	code/modules/mob/mob_defines.dm	var/can_be_antagged = FALSE // To prevent pAIs/mice/etc from getting antag in autotraitor and future auto- modes. Uses inheritance instead of a bunch of typechecks.
 base_var	code/modules/mob/mob_defines.dm	var/away_from_keyboard = FALSE //are we at, or away, from our keyboard?
 base_var	code/modules/mob/mob_defines.dm	var/manual_afk = FALSE //did we set afk manually or was it automatic?
-base_var	code/modules/mob/mob_defines.dm	var/proc_holder_list[] = list()//Right now unused.
 base_var	code/modules/mob/mob_defines.dm	var/tmp/mob/living/carbon/LAssailant = null
 base_var	code/modules/mob/mob_defines.dm	var/list/datum/spell/spell_list = list() // ALLOW(instance_list): d: per-mob spell_list, filled at runtime; mobs are few
 base_var	code/modules/mob/mob_defines.dm	var/update_icon = 1 //Set to 1 to trigger update_icons() at the next life() call
@@ -1000,7 +998,6 @@ list_init	code/game/area/Space Station 13 areas.dm	var/mob_spawns = list()
 list_init	code/game/machinery/telecomms/telecomunications.dm	var/parameters = list() // carbon-copy to signal.data[]
 list_init	code/game/skincmd.dm	/mob/var/skincmds = list()
 list_init	code/modules/asset_cache/asset_list.dm	var/assets = list()
-list_init	code/modules/mob/mob_defines.dm	var/proc_holder_list[] = list()//Right now unused.
 list_init	code/modules/mob/new_player/sprite_accessories_markings.dm	var/body_parts = list() //A list of bodyparts this covers, in organ_tag defines
 list_init	code/modules/modular_computers/NTNet/emails/email_account.dm	var/connected_clients = list()
 list_init	code/modules/planet/sun.dm	var/turfs_providing_spreads = list()

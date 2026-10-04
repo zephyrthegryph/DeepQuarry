@@ -39,7 +39,25 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 
 /// Old Set Valve Pressure verb.
 /obj/item/gun/launcher/pneumatic/proc/pneumatic_verb_set_pressure(mob/user, obj/item/held, datum/interaction/interaction)
-	var/N = rerun_ask(user, "k42", PROC_REF(pneumatic_verb_set_pressure), args, /datum/om/prompt/choice, message = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts)
+	open_request(src, /datum/prompt/choice/pneumatic_pressure, PROC_REF(pneumatic_pressure_chosen), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts, timeout = 0)
+
+/obj/item/gun/launcher/pneumatic/proc/pneumatic_pressure_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/pneumatic_pressure/request = A.request
+	if(request.captures_gone())
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_pneumatic_pressure), A)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/gun/launcher/pneumatic/proc/apply_pneumatic_pressure(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/N = A.answer.answer_value
 	if(isnull(N))
 		return
 	if (N)
@@ -249,3 +267,33 @@ DECLARE_INTERACTIONS(/obj/item/cannonframe, INTERACT_ITEM(null, PROC_REF(interac
 /obj/item/gun/launcher/pneumatic/proc/tank() as /obj/item/tank
 	return tank
 
+
+/datum/prompt/choice/pneumatic_pressure
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/pneumatic_pressure)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/choice/pneumatic_pressure/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/choice/pneumatic_pressure/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/choice/pneumatic_pressure/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null

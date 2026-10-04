@@ -43,7 +43,24 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 	if(!M.mind)
 		return 0
 
-	var/_answer_a1 = rerun_ask(M, "a1", PROC_REF(friendship_dedicate_bracelet_verb), list(user), /datum/om/prompt/text, message = "Who do you want to dedicate the bracelet to?", title = "Friendship Bracelet", max_length = MAX_NAME_LEN, encode = FALSE)
+	open_request(src, /datum/prompt/text, PROC_REF(friendship_dedication_entered), answerer = M, question = "Who do you want to dedicate the bracelet to?", title = "Friendship Bracelet", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE, timeout = 0)
+
+/obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedication_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_friendship_dedication), A)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/clothing/accessory/bracelet/friendship/proc/apply_friendship_dedication(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/M = A.request.answerer
+	if(!M.mind)
+		return 0
+	var/_answer_a1 = A.answer.answer_value
 	if(isnull(_answer_a1))
 		return
 	var/input = sanitizeSafe(_answer_a1, MAX_NAME_LEN)

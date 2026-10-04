@@ -428,6 +428,7 @@
 #include "interim_hud_actor.dm"
 #include "interim_mindbinder_actor.dm"
 #include "interim_mecha_extinguisher_actor.dm"
+#include "interim_pneumatic_pressure_capture.dm"
 #include "interim_power_reagents.dm"
 #include "interim_pull_actor.dm"
 #include "interim_resleever_actor.dm"
@@ -949,6 +950,9 @@
 #include "interim_observer_native_sprite_chain.dm"
 #include "interim_bluespace_crystal_sticky_self.dm"
 #include "interim_shield_telecom_reference_pairs.dm"
+#include "interim_admin_virus_creation_progress.dm"
+#include "interim_tourniquet_late_choice.dm"
+#include "interim_native_number_window_rounding.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

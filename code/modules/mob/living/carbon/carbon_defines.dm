@@ -6,8 +6,6 @@
 
 	var/life_tick = 0      // The amount of life ticks that have processed on this mob.
 
-	// total amount of wounds on mob, used to spread out healing and the like over all wounds
-	var/number_wounds = 0
 	/// Zones a surgical step is currently being performed on (lazy).
 	var/list/surgery_zones_in_progress
 	//Active emote/pose

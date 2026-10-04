@@ -88,41 +88,44 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/memory/constant, INTERACT_USE(
 
 /// Old attack_self.
 /obj/item/integrated_circuit/memory/constant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/datum/integrated_io/O = outputs[1]
-	var/type_to_use = rerun_ask(user, "k96", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Please choose a type to use.", title = "[src] type setting", choices = list("string","number","ref", "null"))
-	if(isnull(type_to_use))
-		return TRUE
-	if(!CanInteract(user, GLOB.tgui_physical_state))
-		return TRUE
+	var/datum/circuit_memory_review/review = new
+	review.start(user, src, held, interaction, TRUE)
+	return TRUE
 
-	var/new_data = null
-	switch(type_to_use)
-		if("string")
-			accepting_refs = 0
-			var/_answer_k104 = rerun_ask(user, "k104", PROC_REF(interaction_self), args, /datum/om/prompt/text, message = "Now type in a string.", title = "[src] string writing", max_length = MAX_NAME_LEN, encode = FALSE)
-			if(isnull(_answer_k104))
-				return TRUE
-			new_data = sanitizeSafe(_answer_k104, MAX_NAME_LEN, 0, 0)
-			if(istext(new_data) && CanInteract(user, GLOB.tgui_physical_state))
-				O.data = new_data
-				to_chat(user, span_notice("You set \the [src]'s memory to [O.display_data(O.data)]."))
-		if("number")
-			accepting_refs = 0
-			var/_answer_k110 = rerun_ask(user, "k110", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "Now type in a number.", title = "[src] number writing", default = 0)
-			if(isnull(_answer_k110))
-				return TRUE
-			new_data = _answer_k110
-			if(isnum(new_data) && CanInteract(user, GLOB.tgui_physical_state))
-				O.data = new_data
-				to_chat(user, span_notice("You set \the [src]'s memory to [O.display_data(O.data)]."))
+/obj/item/integrated_circuit/memory/constant/proc/memory_type_selected(datum/circuit_memory_review/review)
+	var/mob/user = review.user_value()
+	var/datum/integrated_io/O = outputs[1]
+	switch(review.type_name)
+		if("string", "number")
+			stop_memory_ref_scan()
+			review.open_value()
+			return
 		if("ref")
 			accepting_refs = 1
 			to_chat(user, span_notice("You turn \the [src]'s ref scanner on. Slide it across \
-			an object for a ref of that object to save it in memory."))
+				an object for a ref of that object to save it in memory."))
 		if("null")
 			O.data = null
 			to_chat(user, span_notice("You set \the [src]'s memory to absolutely nothing."))
-	return TRUE
+	review.retire()
+
+/obj/item/integrated_circuit/memory/constant/proc/stop_memory_ref_scan()
+	accepting_refs = 0
+
+/obj/item/integrated_circuit/memory/constant/proc/memory_value_selected(datum/circuit_memory_review/review, new_data)
+	var/mob/user = review.user_value()
+	var/datum/integrated_io/O = outputs[1]
+	stop_memory_ref_scan()
+	switch(review.type_name)
+		if("string")
+			new_data = sanitizeSafe(new_data, MAX_NAME_LEN, 0, 0)
+			if(istext(new_data))
+				O.data = new_data
+				to_chat(user, span_notice("You set \the [src]'s memory to [O.display_data(O.data)]."))
+		if("number")
+			if(isnum(new_data))
+				O.data = new_data
+				to_chat(user, span_notice("You set \the [src]'s memory to [O.display_data(O.data)]."))
 
 /obj/item/integrated_circuit/memory/constant/afterattack(atom/target, mob/living/user, proximity)
 	if(accepting_refs && proximity)

@@ -1234,10 +1234,14 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 	return TRUE
 
 /mob/MouseEntered(location, control, params)
-	if(usr != src && will_show_tooltip())
-		if(usr?.read_preference(/datum/preference/toggle/mob_tooltips))
-			openToolTip(usr, src, params, title = get_nametag_name(usr), content = get_nametag_desc(usr))
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): BYOND supplies the hovering player only through usr at this native mouse entry.
+	show_mob_hover_tip(user, params)
 	. = ..()
+
+/mob/proc/show_mob_hover_tip(mob/user, params)
+	if(user != src && will_show_tooltip())
+		if(user?.read_preference(/datum/preference/toggle/mob_tooltips))
+			openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
 
 /mob/MouseDown()
 	closeToolTip(usr, src) //No reason not to, really

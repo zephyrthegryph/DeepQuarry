@@ -429,24 +429,35 @@ Works kind of like entering the game with a new character. Character receives a 
 Traitors and the like can also be revived with the previous role mostly intact.
 /N */
 ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Spawn a client's loaded character.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	om_ask(user, /datum/om/prompt/choice, TYPE_PROC_REF(/client, respawn_client_picked), title = "Client", message = "Please specify which client's character to spawn.", choices = GLOB.clients, requires = PROMPT_ADMIN(R_ADMIN|R_REJUVINATE))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/respawn_client, PROC_REF(respawn_client_answered), answerer = answerer, choices = GLOB.clients)
 
-/client/proc/respawn_client_picked(datum/om/prompt/choice/ask)
-	respawn_character_proper(ask.choice)
+/datum/admin_verb/respawn_character/proc/respawn_client_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	user?.respawn_character_proper(A.request.answer_value)
 
 /client/proc/respawn_character_proper(client/picked_client)
 	if(!istype(picked_client))
 		return
 
 	//I frontload all the questions so we don't have a half-done process while you're reading.
-	om_flow_start(/datum/om/flow/respawn_character, mob, null, picked = picked_client)
+	var/mob/answerer = mob
+	if(QDELETED(answerer))
+		return
+	var/datum/respawn_review/review = new
+	rel_set(review, nameof(review.actor), answerer)
+	review.picked_ckey = picked_client.ckey
+	review.start()
 
 /// The questions of Spawn Character, all asked before anything is spawned. A "Cancel" at any
 /// step stops it; the answers land on the flow, and the admin's client spawns from them.
-/datum/om/flow/respawn_character
-	name = "respawn character"
-	requires = PROMPT_ADMIN(R_ADMIN|R_REJUVINATE)
-	var/client/picked
+/datum/respawn_review
+	var/mob/actor
+	var/picked_ckey
 	var/location
 	var/announce = FALSE
 	var/inhabit = FALSE
@@ -460,29 +471,31 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 	var/showy
 
 /// Asks a Yes/No/Cancel style question: `next` gets the prompt unless the answer was "Cancel".
-/datum/om/flow/respawn_character/proc/ask_buttons(title, message, list/choices, next)
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, next, title = title, message = message, choices = choices)
+/datum/respawn_review/proc/ask_buttons(title, message, list/choices, next)
+	open_request(src, /datum/prompt/choice/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = next, title = title, question = message, choices = choices, buttons = TRUE, stop_on_cancel = TRUE)
 
-/// One button question of the respawn flow; "Cancel" stops the flow.
-/datum/om/prompt/choice/respawn_step
-	buttons = TRUE
-
-/datum/om/prompt/choice/respawn_step/valid()
-	return choice == "Cancel" ? "cancelled" : null
-
-/datum/om/flow/respawn_character/start()
+/datum/respawn_review/proc/begin_questions()
 	ask_buttons("Location", "Please specify where to spawn them.", list("Right Here", "Arrivals", "Cancel"), PROC_REF(location_picked))
 
-/datum/om/flow/respawn_character/proc/location_picked(datum/om/prompt/choice/ask)
-	location = ask.choice
+/datum/respawn_review/proc/location_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	location = A.request.answer_value
 	ask_buttons("Announce", "Announce as if they had just arrived?", list("No", "Yes", "Cancel"), PROC_REF(announce_picked))
 
-/datum/om/flow/respawn_character/proc/announce_picked(datum/om/prompt/choice/ask)
-	announce = ask.choice == "Yes"
+/datum/respawn_review/proc/announce_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	announce = A.request.answer_value == "Yes"
 	ask_buttons("Inhabit", "Put the person into the spawned mob?", list("Yes", "No", "Cancel"), PROC_REF(inhabit_picked))
 
-/datum/om/flow/respawn_character/proc/inhabit_picked(datum/om/prompt/choice/ask)
-	inhabit = ask.choice == "Yes"
+/datum/respawn_review/proc/inhabit_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	inhabit = A.request.answer_value == "Yes"
 	var/datum/data/record/record_found = record()
 	//Found their record, they were spawned previously
 	if(record_found)
@@ -490,20 +503,27 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		return
 	ask_buttons("Records", "No data core entry detected. Would you like add them to the manifest, and sec/med/HR records?", list("No", "Yes", "Cancel"), PROC_REF(records_picked))
 
-/datum/om/flow/respawn_character/proc/samejob_picked(datum/om/prompt/choice/ask)
-	samejob = ask.choice
+/datum/respawn_review/proc/samejob_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	samejob = A.request.answer_value
 	ask_job()
 
-/datum/om/flow/respawn_character/proc/records_picked(datum/om/prompt/choice/ask)
-	records = ask.choice == "Yes"
+/datum/respawn_review/proc/records_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	records = A.request.answer_value == "Yes"
 	ask_job()
 
 /// Their data core record, when they were spawned before (name matching is ugly but mind doesn't persist to look at).
-/datum/om/flow/respawn_character/proc/record()
+/datum/respawn_review/proc/record()
+	var/client/picked = picked_client()
 	return find_general_record("name", picked.prefs.read_preference(/datum/preference/name/real_name))
 
 /// The job the answers so far give them, or null.
-/datum/om/flow/respawn_character/proc/charjob()
+/datum/respawn_review/proc/charjob()
 	var/datum/data/record/record_found = record()
 	if(record_found)
 		if(samejob == "Yes")
@@ -514,61 +534,191 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		return pickjob
 
 //Well you're not reloading their job or they never had one.
-/datum/om/flow/respawn_character/proc/ask_job()
+/datum/respawn_review/proc/ask_job()
 	if(charjob())
 		ask_equipment()
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(job_picked), title = "Job Select", message = "Pick a job to assign them (or none).", choices = SSjob.occupations_by_name.Copy() + "-No Job-", default = "-No Job-")
+	open_request(src, /datum/prompt/choice/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = PROC_REF(job_picked), title = "Job Select", question = "Pick a job to assign them (or none).", choices = SSjob.occupations_by_name.Copy() + "-No Job-", default = "-No Job-")
 
-/datum/om/flow/respawn_character/proc/job_picked(datum/om/prompt/choice/ask)
-	pickjob = ask.choice
+/datum/respawn_review/proc/job_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	pickjob = A.request.answer_value
 	ask_equipment()
 
 //If you've picked a job by now, you can equip them.
-/datum/om/flow/respawn_character/proc/ask_equipment()
+/datum/respawn_review/proc/ask_equipment()
 	if(!charjob())
 		ask_showy()
 		return
 	ask_buttons("Equipment", "Spawn them with equipment?", list("Yes", "No", "Cancel"), PROC_REF(equipment_picked))
 
-/datum/om/flow/respawn_character/proc/equipment_picked(datum/om/prompt/choice/ask)
-	equipment = ask.choice == "Yes"
+/datum/respawn_review/proc/equipment_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	equipment = A.request.answer_value == "Yes"
 	ask_buttons("Custom Job", "Customise Job Title?", list("No", "Yes", "Cancel"), PROC_REF(custom_job_picked))
 
-/datum/om/flow/respawn_character/proc/custom_job_picked(datum/om/prompt/choice/ask)
-	custom_job = ask.choice == "Yes"
+/datum/respawn_review/proc/custom_job_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	custom_job = A.request.answer_value == "Yes"
 	if(!custom_job)
 		ask_showy()
 		return
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(custom_title_entered), title = "Job Title", message = "Choose a Job Title for the character.", cancel_answer = "")
+	open_request(src, /datum/prompt/text/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = PROC_REF(custom_title_entered), title = "Job Title", question = "Choose a Job Title for the character.")
 
-/datum/om/flow/respawn_character/proc/custom_title_entered(datum/om/prompt/text/ask)
-	custom_title = ask.text
+/datum/respawn_review/proc/custom_title_entered(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value) || request_recheck(A.request))
+			retire()
+			return
+		custom_title = ""
+	else
+		custom_title = A.request.answer_value
 	ask_showy()
 
-/datum/om/flow/respawn_character/proc/ask_showy()
+/datum/respawn_review/proc/ask_showy()
 	if(location != "Right Here")
 		finish()
 		return
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(showy_picked), buttons = FALSE, title = "Showy", message = "Showy entrance?", choices = list("No", "Telesparks", "Drop Pod", "Fall", "Cancel"), cancel_answer = "No")
+	open_request(src, /datum/prompt/choice/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = PROC_REF(showy_picked), buttons = FALSE, title = "Showy", question = "Showy entrance?", choices = list("No", "Telesparks", "Drop Pod", "Fall", "Cancel"), stop_on_cancel = TRUE)
 
-/datum/om/flow/respawn_character/proc/showy_picked(datum/om/prompt/choice/ask)
-	showy = ask.choice
+/datum/respawn_review/proc/showy_picked(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value) || request_recheck(A.request))
+			retire()
+			return
+		showy = "No"
+	else
+		showy = A.request.answer_value
 	if(showy != "Drop Pod")
 		finish()
 		return
 	ask_buttons("Drop Pod", "Destructive drop pods cause damage in a 3x3 and may break turfs. Polite drop pods lightly damage the turfs but won't break through.", list("Polite", "Destructive", "Cancel"), PROC_REF(pod_picked))
 
-/datum/om/flow/respawn_character/proc/pod_picked(datum/om/prompt/choice/ask)
-	showy = ask.choice
+/datum/respawn_review/proc/pod_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	showy = A.request.answer_value
 	finish()
 
-/datum/om/flow/respawn_character/proc/finish()
+/datum/respawn_review/proc/finish()
 	var/mob/admin_mob = actor
 	admin_mob.client?.respawn_character_answered(src)
+	retire()
 
-/client/proc/respawn_character_answered(datum/om/flow/respawn_character/answers)
-	var/client/picked_client = answers.picked
+CAPABILITIES(/datum/respawn_review)
+	ref_one(nameof(actor), /mob)
+
+/datum/respawn_review/proc/picked_client()
+	return GLOB.directory[picked_ckey]
+
+/datum/respawn_review/proc/refusal()
+	return QDELETED(actor) || !picked_client() ? "participant is gone" : null
+
+/datum/respawn_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+
+/datum/prompt/choice/respawn_client
+	title = "Client"
+	question = "Please specify which client's character to spawn."
+	rights = R_ADMIN|R_REJUVINATE
+	timeout = 0
+
+/datum/prompt/choice/respawn_client/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		if(!istype(answer_value, /client))
+			return "client is gone"
+		var/client/picked_client = answer_value
+		if(GLOB.directory[picked_client.ckey] != picked_client)
+			return "client is gone"
+
+/datum/prompt/choice/respawn_client/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/respawn_review
+	rights = R_ADMIN|R_REJUVINATE
+	timeout = 0
+	var/stop_on_cancel = FALSE
+	var/next_step
+
+/datum/prompt/choice/respawn_review/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/respawn_review/review = owner
+	. = review.refusal()
+	if(!. && stop_on_cancel && answer_value == "Cancel")
+		return "cancelled"
+
+/datum/prompt/choice/respawn_review/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/respawn_review
+	var/next_step
+	rights = R_ADMIN|R_REJUVINATE
+	timeout = 0
+
+/datum/prompt/text/respawn_review/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/respawn_review/review = owner
+	return review.refusal()
+
+/datum/prompt/text/respawn_review/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/admin_verb/respawn_character/proc/respawn_client_answered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(respawn_client_picked), A)
+	if(!result.ok)
+		stack_trace("om prompt /datum/prompt/choice/respawn_client answer respawn_client_picked: [result.error]")
+
+/datum/respawn_review/proc/start()
+	run_step(PROC_REF(begin_questions), null)
+
+/datum/respawn_review/proc/request_finished(datum/act/request/A)
+	var/next
+	if(istype(A.request, /datum/prompt/choice/respawn_review))
+		var/datum/prompt/choice/respawn_review/ask = A.request
+		next = ask.next_step
+	else
+		var/datum/prompt/text/respawn_review/ask = A.request
+		next = ask.next_step
+	run_step(next, A)
+
+/datum/respawn_review/proc/run_step(next, datum/act/request/A)
+	var/datum/result/result = safe_call(next, A)
+	if(!result.ok)
+		stack_trace("om flow [type] step [next]: [result.error]")
+		retire()
+
+/// One button question of the respawn flow; "Cancel" stops the flow.
+/datum/om/prompt/choice/respawn_step
+	buttons = TRUE
+
+/datum/om/prompt/choice/respawn_step/valid()
+	return choice == "Cancel" ? "cancelled" : null
+
+/client/proc/respawn_character_answered(datum/respawn_review/answers)
+	var/client/picked_client = answers.picked_client()
 	var/location = answers.location
 	var/announce = answers.announce
 	var/inhabit = answers.inhabit

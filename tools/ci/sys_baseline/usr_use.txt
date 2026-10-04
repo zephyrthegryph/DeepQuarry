@@ -135,9 +135,6 @@ usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(usr?
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(rerun_ask(usr, "sure", PROC_REF(find_references), args, /datum/om/prompt/choice/alert, message = "Running this will lock everything up for about 5 minutes. Would you like to begin the search?", title = "Find References", choices = list("Yes", "No")) != "Yes")
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(!usr?.client && !dq_refsearch_allowed(src))
 usr_outside_verb	code/modules/client/client procs.dm	if(!usr || usr != mob) //stops us calling Topic for somebody else's client. Also helps prevent usr=null
-usr_outside_verb	code/modules/client/client procs.dm	message_admins("[ADMIN_LOOKUPFLW(usr)] [ADMIN_KICK(usr)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
-usr_outside_verb	code/modules/client/client procs.dm	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
-usr_outside_verb	code/modules/client/client procs.dm	if(!hsrc && topic_dispatch(src, usr, href_list))
 usr_outside_verb	code/modules/client/client procs.dm	OM_EMIT(mob, /datum/om/event/client_click, object, location, control, params, usr)
 usr_outside_verb	code/modules/clothing/accessories/rings.dm	add_attack_logs(usr, H, "Injected with [name] containing [contained] transferred [trans] units")
 usr_outside_verb	code/modules/clothing/accessories/storage.dm	if (hold.handle_mousedrop(usr, over_object))
@@ -165,9 +162,6 @@ usr_outside_verb	code/modules/keybindings/router.dm	GLOB.input_router.route_drag
 usr_outside_verb	code/modules/mob/holder.dm	get_scooped(H, (usr == src))
 usr_outside_verb	code/modules/mob/living/carbon/human/species/outsider/event.dm	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/modules/mob/mob.dm	if(usr != src && will_show_tooltip())
-usr_outside_verb	code/modules/mob/mob.dm	if(usr?.read_preference(/datum/preference/toggle/mob_tooltips))
-usr_outside_verb	code/modules/mob/mob.dm	openToolTip(usr, src, params, title = get_nametag_name(usr), content = get_nametag_desc(usr))
 usr_outside_verb	code/modules/mob/mob.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/mob/mob.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/mob/new_player/new_player.dm	if (src != usr)

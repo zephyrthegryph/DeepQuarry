@@ -52,6 +52,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	if(!usr || usr != mob)	//stops us calling Topic for somebody else's client. Also helps prevent usr=null
 		return
+	var/mob/user = mob
 
 	#if defined(TOPIC_DEBUGGING)
 	to_world("[src]'s Topic: [href] destined for [hsrc].")
@@ -81,7 +82,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 					topiclimiter[ADMINSWARNED_AT] = minute
 					msg += " Administrators have been informed."
 					log_game("[key_name(src)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
-					message_admins("[ADMIN_LOOKUPFLW(usr)] [ADMIN_KICK(usr)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
+					message_admins("[ADMIN_LOOKUPFLW(user)] [ADMIN_KICK(user)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
 				to_chat(src, span_danger("[msg]"))
 				return
 
@@ -109,7 +110,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return
 
 	//Logs all hrefs
-	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
+	log_href("[src] (usr:[user]\[[COORD(user)]\]) : [hsrc ? "[hsrc] " : ""][href]")
 
 	//byond bug ID:2256651
 	if (asset_cache_job && session && (asset_cache_job in session.completed_asset_jobs))
@@ -117,7 +118,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		src << browse("...", "window=asset_cache_browser")
 		return
 	// The client's own href actions (TOPIC_ACTION rows on /client, below).
-	if(!hsrc && topic_dispatch(src, usr, href_list))
+	if(!hsrc && topic_dispatch(src, user, href_list))
 		return
 
 	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
@@ -134,7 +135,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	//fun fact: Topic() acts like a verb and is executed at the end of the tick like other verbs. So it goes through the input
 	//inbox, which resolves it on the spot while the tick has room and queues it for phase K if the server is overloaded
 	if(hsrc && hsrc != holder)
-		input_submit(new /datum/input_event/topic(usr, hsrc, href, href_list)) // ALLOW(sys_usr_outside_verb): client/Topic is BYOND's entry point: usr is the sending mob here
+		input_submit(new /datum/input_event/topic(user, hsrc, href, href_list))
 		return
 	..() //redirect to hsrc.Topic()
 
