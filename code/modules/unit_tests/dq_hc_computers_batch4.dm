@@ -110,3 +110,27 @@
 	press(H, C, "disk", list("option" = "save"))
 	press(H, C, "disk", list("option" = "load"))
 	TEST_ASSERT(!QDELETED(C), "buttons that have nothing to work on do nothing")
+
+// ---- added with the conversion: the answers (a test mob has no client, so a legacy prompt could not be answered) ----
+
+/datum/unit_test/dq_hc_computers/monitor_answers
+/datum/unit_test/dq_hc_computers/monitor_answers/run_gate()
+	var/obj/machinery/computer/message_monitor/C = hc_monitor()
+	var/mob/living/carbon/human/H = hc_actor()
+	press(H, C, "auth", list("key" = "sesame"))
+	press(H, C, "addtoken")
+	p2cl_answer(H, "free money")
+	test_time(1 SECONDS)
+	TEST_ASSERT("free money" in C.linkedServer().spamfilter, "the token joins the filter")
+	press(H, C, "pass")
+	p2cl_answer(H, "not the key")
+	test_time(1 SECONDS)
+	TEST_ASSERT_EQUAL(C.linkedServer().decryptkey, "sesame", "a wrong current key changes nothing")
+	TEST_ASSERT(!p2cl_has_question(H), "and asks nothing more")
+	press(H, C, "pass")
+	p2cl_answer(H, "sesame")
+	test_time(1 SECONDS)
+	TEST_ASSERT(p2cl_has_question(H), "the right key asks for the new one")
+	p2cl_answer(H, "opensesame")
+	test_time(1 SECONDS)
+	TEST_ASSERT_EQUAL(C.linkedServer().decryptkey, "opensesame", "which is set")

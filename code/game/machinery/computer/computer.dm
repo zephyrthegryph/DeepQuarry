@@ -90,6 +90,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer, TYPE_PROC_REF(/atom, appearance
 	else
 		set_light(light_range_on, light_power_on)
 
+/// A question a console asked is still worth answering: the console stands and the person is next to it (a silicon works from anywhere).
+/obj/machinery/computer/proc/request_usable(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && !QDELETED(src) && (issilicon(M) || in_range(src, M))
+
 /obj/machinery/computer/proc/decode(text)
 	// Adds line breaks
 	text = replacetext(text, "\n", "<BR>")
