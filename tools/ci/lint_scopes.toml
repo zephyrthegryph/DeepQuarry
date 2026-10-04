@@ -304,6 +304,10 @@ damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 2
 
+[lint.op_order]
+# fixtures and tests pin the relative-priority mechanism itself
+exempt_prefixes = ["code/tests/", "code/modules/unit_tests/"]
+
 [lint.legacy_forms]
 # The engine's own accessors (_own_set / _own_add / _own_put) are called only by the declaration engine and the ownership store.
 exempt_prefixes = ["code/engine/", "code/datums/ownership/"]

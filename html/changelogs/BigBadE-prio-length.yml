@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "The maintenance hatch declares one click order per tool (click_order()); the APC needs no priority(above(...)) lines."
+  - code_imp: "A construction ladder behind a hatch offers its undo steps only with the hatch open."
+  - code_imp: "Named BUNDLE blocks shorten the APC, airlock and admin panel declarations; analyze gains the op_order lint."

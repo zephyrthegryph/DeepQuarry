@@ -1,0 +1,22 @@
+# op_order ceilings: `relative_priority` counts hand-written priority(above/below(...)), `unordered_clash` the ops a type composes that
+# answer one input at one tier with no order. Shrink-only: `analyze baseline --update --lint op_order` lowers them.
+relative_priority 27
+unordered_clash:/obj/item/reagent_containers/blood 1
+unordered_clash:/obj/item/reagent_containers/borghypo 1
+unordered_clash:/obj/item/reagent_containers/dropper 1
+unordered_clash:/obj/item/reagent_containers/food/drinks 1
+unordered_clash:/obj/item/reagent_containers/glass 1
+unordered_clash:/obj/item/reagent_containers/glass/rag 2
+unordered_clash:/obj/item/reagent_containers/rollingpaper 1
+unordered_clash:/obj/item/reagent_containers/spray/pepper 1
+unordered_clash:/obj/item/reagent_containers/syringe 1
+unordered_clash:/obj/machinery/door 2
+unordered_clash:/obj/machinery/door/airlock 9
+unordered_clash:/obj/machinery/door/blast 1
+unordered_clash:/obj/machinery/light 3
+unordered_clash:/obj/machinery/recharger 5
+unordered_clash:/obj/machinery/vending 15
+unordered_clash:/obj/structure/closet/grave 1
+unordered_clash:/obj/structure/dirtybed 2
+unordered_clash:/obj/structure/marker_beacon 1
+unordered_clash:/obj/structure/table 8
