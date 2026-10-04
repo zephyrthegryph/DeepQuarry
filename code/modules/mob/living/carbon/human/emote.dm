@@ -370,41 +370,46 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set category = VERB_CAT_IC_SETTINGS
 
 	// An empty pose (or a cancel) clears it.
-	om_ask(src, /datum/om/prompt/text/pose, PROC_REF(pose_entered), message = "This is [src]. [p_they()]...")
+	open_request(src, /datum/prompt/text/pose, PROC_REF(pose_entered), answerer = src, question = "This is [src]. [p_they()]...")
 
 /// Entering a pose; a cancel clears it.
-/datum/om/prompt/text/pose
+/datum/prompt/text/pose
 	title = "Pose"
-
-/datum/om/prompt/text/pose/cancelled()
-	var/mob/living/carbon/human/H = subject
-	H?.pose_cleared()
+	timeout = 0
 
 /// The pose's options, carrying the entered pose.
-/datum/om/prompt/checklist/pose_options
+/datum/prompt/checklist/pose_options
 	title = "Pose Options"
-	message = "Which options would you like to enable for your poses?"
+	question = "Which options would you like to enable for your poses?"
 	choices = list("Cancel Pose on Movement", "Disable Pose Icon", "Quiet Pose")
 	min_picks = 0
+	timeout = 0
 	var/pose
 
 /mob/living/carbon/human/proc/pose_cleared()
 	pose = null
 	remove_pose_indicator()
 
-/mob/living/carbon/human/proc/pose_entered(datum/om/prompt/text/pose/ask)
-	var/new_pose = strip_html_simple(ask.text)
+/mob/living/carbon/human/proc/pose_entered(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			pose_cleared()
+		return
+	var/new_pose = strip_html_simple(A.answer.answer_value)
 	if(!new_pose)
 		pose_cleared()
 		return
-	om_ask(src, /datum/om/prompt/checklist/pose_options, PROC_REF(pose_options_chosen), pose = new_pose)
+	open_request(src, /datum/prompt/checklist/pose_options, PROC_REF(pose_options_chosen), answerer = src, pose = new_pose)
 
-/mob/living/carbon/human/proc/pose_options_chosen(datum/om/prompt/checklist/pose_options/ask)
-	var/new_pose = ask.pose
+/mob/living/carbon/human/proc/pose_options_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/checklist/pose_options/prompt = A.answer
+	var/new_pose = prompt.pose
 	var/quiet_pose = FALSE
 	var/include_icon = TRUE
 	pose_move = FALSE
-	for(var/o in ask.picked)
+	for(var/o in A.answer.answer_value)
 		if(o == "Cancel Pose on Movement")
 			pose_move = TRUE
 		if(o == "Disable Pose Icon")

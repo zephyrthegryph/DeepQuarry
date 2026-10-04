@@ -498,6 +498,8 @@
 #include "dq_p2_reagent_misc_behaviour.dm"
 #include "dq_p2_reagent_rag_behaviour.dm"
 #include "dq_eg2_gap_tests.dm"
+#include "interim_faction_request_refs.dm"
+#include "interim_human_native_pose_chain.dm"
 #include "dq_p2_reagent_drink_behaviour.dm"
 #include "dq_p2_food_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
