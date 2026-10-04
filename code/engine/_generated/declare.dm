@@ -3760,6 +3760,17 @@
 	into += entry_line(87)
 	into += list(global.owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link))
 
+/// CAPABILITIES(/obj/item/newspaper) at code/modules/news/newspaper.dm:38
+/obj/item/newspaper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/news/newspaper.dm", 38, /obj/item/newspaper)
+	into += entry_line(39)
+	into += list(global.interface("Newspaper", title = "The Griffon"))
+	into += entry_line(40)
+	into += list(global.op("next_page", global.ui_act("next_page"), global.then(PROC_REF(ui_act_next_page))))
+	into += entry_line(41)
+	into += list(global.op("prev_page", global.ui_act("prev_page"), global.then(PROC_REF(ui_act_prev_page))))
+
 /// CAPABILITIES(/obj/item/nif) at code/modules/nifsoft/nif_tgui.dm:21
 /obj/item/nif/declared_entries(list/into)
 	..(into)
@@ -4604,6 +4615,14 @@
 	into += entry_block("code/game/objects/items/devices/starcaster.dm", 19, /obj/item/starcaster_news)
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(loaded_article_owned), /datum/computer_file/data/news_article))
+	into += entry_line(21)
+	into += list(global.interface("StarcasterCh"))
+	into += entry_line(22)
+	into += list(global.op("PRG_openarticle", global.ui_act("PRG_openarticle", global.arg("uid", global.num())), global.then(PROC_REF(ui_act_prg_openarticle))))
+	into += entry_line(23)
+	into += list(global.op("PRG_reset", global.ui_act("PRG_reset"), global.then(PROC_REF(ui_act_prg_reset))))
+	into += entry_line(24)
+	into += list(global.op("PRG_toggle_archived", global.ui_act("PRG_toggle_archived"), global.then(PROC_REF(ui_act_prg_toggle_archived))))
 
 /// CAPABILITIES(/obj/item/stool) at code/game/objects/structures/stool_bed_chair_nest/stools.dm:103
 /obj/item/stool/declared_entries(list/into)
@@ -6185,12 +6204,55 @@
 	into += entry_line(31)
 	into += list(global.owns_many(nameof(records)))
 
+/// CAPABILITIES(/obj/machinery/computer/looking_glass) at code/modules/looking_glass/lg_console.dm:56
+/obj/machinery/computer/looking_glass/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/looking_glass/lg_console.dm", 56, /obj/machinery/computer/looking_glass)
+	into += entry_line(57)
+	into += list(global.interface("LookingGlass"))
+	into += entry_line(58)
+	into += list(global.op("program", global.ui_act("program", global.arg("program", global.schema_text(4096))), global.then(PROC_REF(ui_act_program))))
+	into += entry_line(59)
+	into += list(global.op("gravity", global.ui_act("gravity"), global.then(PROC_REF(ui_act_gravity))))
+	into += entry_line(60)
+	into += list(global.op("immersion", global.ui_act("immersion"), global.then(PROC_REF(ui_act_immersion))))
+
 /// CAPABILITIES(/obj/machinery/computer/med_data) at code/game/machinery/computer/medical.dm:30
 /obj/machinery/computer/med_data/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/computer/medical.dm", 30, /obj/machinery/computer/med_data)
 	into += entry_line(31)
 	into += list(global.owns_one(nameof(scan), /obj/item/card/id))
+
+/// CAPABILITIES(/obj/machinery/computer/pod) at code/game/machinery/computer/pod.dm:69
+/obj/machinery/computer/pod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/pod.dm", 69, /obj/machinery/computer/pod)
+	into += entry_line(70)
+	into += list(global.interface("PodComputer"))
+	into += entry_line(71)
+	into += list(global.op("toggle_door", global.ui_act("toggle_door"), global.then(PROC_REF(ui_act_toggle_door))))
+	into += entry_line(72)
+	into += list(global.op("start_stop", global.ui_act("start_stop"), global.then(PROC_REF(ui_act_start_stop))))
+	into += entry_line(73)
+	into += list(global.op("test_alarm", global.ui_act("test_alarm"), global.then(PROC_REF(ui_act_test_alarm))))
+	into += entry_line(74)
+	into += list(global.op("test_drive", global.ui_act("test_drive"), global.then(PROC_REF(ui_act_test_drive))))
+	into += entry_line(75)
+	into += list(global.op("adjust_power", global.ui_act("adjust_power", global.arg("value", global.num())), global.then(PROC_REF(ui_act_adjust_power))))
+	into += entry_line(76)
+	into += list(global.op("adjust_time", global.ui_act("adjust_time", global.arg("value", global.num())), global.then(PROC_REF(ui_act_adjust_time))))
+
+/// CAPABILITIES(/obj/machinery/computer/prison_shuttle) at code/game/machinery/computer/prisonshuttle.dm:63
+/obj/machinery/computer/prison_shuttle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/prisonshuttle.dm", 63, /obj/machinery/computer/prison_shuttle)
+	into += entry_line(64)
+	into += list(global.interface("PrisonShuttleConsole", title = "Prison Shuttle"))
+	into += entry_line(65)
+	into += list(global.op("send_to_dock", global.ui_act("send_to_dock"), global.then(PROC_REF(ui_act_send_to_dock))))
+	into += entry_line(66)
+	into += list(global.op("send_to_station", global.ui_act("send_to_station"), global.then(PROC_REF(ui_act_send_to_station))))
 
 /// CAPABILITIES(/obj/machinery/computer/security) at code/game/machinery/computer/camera.dm:18
 /obj/machinery/computer/security/declared_entries(list/into)
@@ -6233,6 +6295,21 @@
 	into += entry_block("code/modules/resleeving/designer.dm", 26, /obj/machinery/computer/transhuman/designer)
 	into += entry_line(27)
 	into += list(global.owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer))
+
+/// CAPABILITIES(/obj/machinery/computer/turbine_computer) at code/modules/power/turbine.dm:400
+/obj/machinery/computer/turbine_computer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/turbine.dm", 400, /obj/machinery/computer/turbine_computer)
+	into += entry_line(401)
+	into += list(global.interface("TurbineControl"))
+	into += entry_line(402)
+	into += list(global.op("power-on", global.ui_act("power-on"), global.then(PROC_REF(ui_act_power_on))))
+	into += entry_line(403)
+	into += list(global.op("power-off", global.ui_act("power-off"), global.then(PROC_REF(ui_act_power_off))))
+	into += entry_line(404)
+	into += list(global.op("reconnect", global.ui_act("reconnect"), global.then(PROC_REF(ui_act_reconnect))))
+	into += entry_line(405)
+	into += list(global.op("doors", global.ui_act("doors"), global.then(PROC_REF(ui_act_doors))))
 
 /// CAPABILITIES(/obj/machinery/disposal) at code/modules/recycling/disposal_machines.dm:40
 /obj/machinery/disposal/declared_entries(list/into)
@@ -6618,6 +6695,19 @@
 	into += entry_block("code/modules/library/lib_machines.dm", 179, /obj/machinery/librarycomp)
 	into += entry_line(180)
 	into += list(global.owns_many(nameof(checkouts)))
+
+/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:628
+/obj/machinery/libraryscanner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/library/lib_machines.dm", 628, /obj/machinery/libraryscanner)
+	into += entry_line(629)
+	into += list(global.interface("LibraryScanner", title = "Scanner"))
+	into += entry_line(630)
+	into += list(global.op("scan", global.ui_act("scan"), global.then(PROC_REF(ui_act_scan))))
+	into += entry_line(631)
+	into += list(global.op("clear", global.ui_act("clear"), global.then(PROC_REF(ui_act_clear))))
+	into += entry_line(632)
+	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
 
 /// CAPABILITIES(/obj/machinery/light) at code/modules/power/lighting.dm:106
 /obj/machinery/light/declared_entries(list/into)
@@ -7172,6 +7262,15 @@
 	into += entry_line(156)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/machinery/power/turbine) at code/modules/power/turbine.dm:321
+/obj/machinery/power/turbine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/turbine.dm", 321, /obj/machinery/power/turbine)
+	into += entry_line(322)
+	into += list(global.interface("Turbine"))
+	into += entry_line(323)
+	into += list(global.op("start_stop", global.ui_act("start_stop"), global.then(PROC_REF(ui_act_start_stop))))
+
 /// CAPABILITIES(/obj/machinery/power/turbinemotor) at code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm:236
 /obj/machinery/power/turbinemotor/declared_entries(list/into)
 	..(into)
@@ -7293,6 +7392,12 @@
 	into += entry_block("code/modules/research/tg/machinery/destructive_analyzer.dm", 21, /obj/machinery/rnd/destructive_analyzer)
 	into += entry_line(22)
 	into += list(global.owns_one(nameof(rmat), /datum/remote_materials))
+	into += entry_line(23)
+	into += list(global.interface("DestructiveAnalyzer"))
+	into += entry_line(24)
+	into += list(global.op("eject_item", global.ui_act("eject_item"), global.then(PROC_REF(ui_act_eject_item))))
+	into += entry_line(25)
+	into += list(global.op("deconstruct", global.ui_act("deconstruct", global.arg("deconstruct_id", global.schema_text(4096))), global.then(PROC_REF(ui_act_deconstruct))))
 
 /// CAPABILITIES(/obj/machinery/rnd/production) at code/modules/research/tg/machinery/_production.dm:39
 /obj/machinery/rnd/production/declared_entries(list/into)
@@ -7311,6 +7416,12 @@
 	into += list(global.owns_many(nameof(piles), /datum/seed_pile))
 	into += entry_line(52)
 	into += list(global.owns_many(nameof(piles_contra), /datum/seed_pile))
+	into += entry_line(53)
+	into += list(global.interface("SeedStorage"))
+	into += entry_line(54)
+	into += list(global.op("vend", global.ui_act("vend", global.arg("id", global.num())), global.then(PROC_REF(ui_act_vend))))
+	into += entry_line(55)
+	into += list(global.op("purge", global.ui_act("purge", global.arg("id", global.num())), global.then(PROC_REF(ui_act_purge))))
 
 /// CAPABILITIES(/obj/machinery/shield_capacitor) at code/modules/shieldgen/shield_capacitor.dm:26
 /obj/machinery/shield_capacitor/declared_entries(list/into)

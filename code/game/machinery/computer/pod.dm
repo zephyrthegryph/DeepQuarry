@@ -66,15 +66,20 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/pod, "PodComputer")
+CAPABILITIES(/obj/machinery/computer/pod)
+	interface("PodComputer")
+	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
+	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
+	op("test_alarm", ui_act("test_alarm"), then(PROC_REF(ui_act_test_alarm)))
+	op("test_drive", ui_act("test_drive"), then(PROC_REF(ui_act_test_drive)))
+	op("adjust_power", ui_act("adjust_power", arg("value", num())), then(PROC_REF(ui_act_adjust_power)))
+	op("adjust_time", ui_act("adjust_time", arg("value", num())), then(PROC_REF(ui_act_adjust_time)))
 
 /obj/machinery/computer/pod/ui_title(mob/user)
 	return title
 
-UI_DATA_REPLACE(/obj/machinery/computer/pod, "merge:ui_data_obj_machinery_computer_pod{connected:unknown,timing:num,time:num,power_level:num}")
-
 /// The computed part of /obj/machinery/computer/pod's window data (declared on its UI_DATA row).
-/obj/machinery/computer/pod/proc/ui_data_obj_machinery_computer_pod(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/pod/ui_data(datum/act/eval/A)
 
 	return list(
 		"connected" = connected(),
@@ -83,8 +88,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/pod, "merge:ui_data_obj_machinery_comput
 		"power_level" = connected()?.power
 	)
 
-UI_ACT(/obj/machinery/computer/pod, "toggle_door", ui_act_toggle_door)
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_toggle_door)
+/obj/machinery/computer/pod/proc/ui_act_toggle_door(datum/act/op/A)
 	for(var/obj/machinery/door/blast/M as anything in pod_doors)
 		if(M.density)
 			M.open()
@@ -92,33 +96,28 @@ UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_toggle_door)
 			M.close()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "start_stop", ui_act_start_stop)
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_start_stop)
+/obj/machinery/computer/pod/proc/ui_act_start_stop(datum/act/op/A)
 	set_timing(!timing)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "test_alarm", ui_act_test_alarm)
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_test_alarm)
+/obj/machinery/computer/pod/proc/ui_act_test_alarm(datum/act/op/A)
 	alarm()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "test_drive", ui_act_test_drive)
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_test_drive)
+/obj/machinery/computer/pod/proc/ui_act_test_drive(datum/act/op/A)
 	for(var/obj/machinery/mass_driver/M as anything in pod_drivers)
 		M.power = connected()?.power
 		M.drive()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "adjust_power", ui_act_adjust_power, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_adjust_power)
+/obj/machinery/computer/pod/proc/ui_act_adjust_power(datum/act/op/A, value)
 	if(!connected())
 		return FALSE
-	connected().power = CLAMP(params["value"], 0.25, 16)
+	connected().power = CLAMP(value, 0.25, 16)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "adjust_time", ui_act_adjust_time, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_adjust_time)
-	time = CLAMP(round(params["value"]), 0, 120)
+/obj/machinery/computer/pod/proc/ui_act_adjust_time(datum/act/op/A, value)
+	time = CLAMP(round(value), 0, 120)
 	return TRUE
 
 /obj/machinery/computer/pod/machine_step()

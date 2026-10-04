@@ -50,6 +50,9 @@
 CAPABILITIES(/obj/machinery/seed_storage)
 	owns_many(nameof(piles), /datum/seed_pile)
 	owns_many(nameof(piles_contra), /datum/seed_pile)
+	interface("SeedStorage")
+	op("vend", ui_act("vend", arg("id", num())), then(PROC_REF(ui_act_vend)))
+	op("purge", ui_act("purge", arg("id", num())), then(PROC_REF(ui_act_purge)))
 
 /obj/machinery/seed_storage/Initialize(mapload)
 	. = ..()
@@ -283,8 +286,6 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/seed_storage, "SeedStorage")
-
 /obj/machinery/seed_storage/ui_prepare(mob/user, datum/tgui/ui)
 	if(!seeds_initialized)
 		for(var/typepath in starting_seeds)
@@ -305,10 +306,8 @@ DECLARE_UI(/obj/machinery/seed_storage, "SeedStorage")
 
 	return TRUE
 
-UI_DATA(/obj/machinery/seed_storage, "merge:ui_data_obj_machinery_seed_storage{scanner:bool,seeds:list}")
-
 /// The computed part of /obj/machinery/seed_storage's window data (declared on its UI_DATA row).
-/obj/machinery/seed_storage/proc/ui_data_obj_machinery_seed_storage(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/seed_storage/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	if(smart)
@@ -429,9 +428,8 @@ UI_DATA(/obj/machinery/seed_storage, "merge:ui_data_obj_machinery_seed_storage{s
 			return N
 	return null
 
-UI_ACT(/obj/machinery/seed_storage, "vend", ui_act_vend, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_vend)
-	var/datum/seed_pile/N = pile_by_id(params["id"])
+/obj/machinery/seed_storage/proc/ui_act_vend(datum/act/op/A, id)
+	var/datum/seed_pile/N = pile_by_id(id)
 	if(!N)
 		return
 	var/obj/O = pick(N.seeds)
@@ -449,9 +447,8 @@ UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_vend)
 		qdel(N)
 	return TRUE
 
-UI_ACT(/obj/machinery/seed_storage, "purge", ui_act_purge, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_purge)
-	var/datum/seed_pile/N = pile_by_id(params["id"])
+/obj/machinery/seed_storage/proc/ui_act_purge(datum/act/op/A, id)
+	var/datum/seed_pile/N = pile_by_id(id)
 	if(!N)
 		return
 	for(var/obj/O in N.seeds)

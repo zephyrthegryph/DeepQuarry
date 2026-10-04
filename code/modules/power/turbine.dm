@@ -318,7 +318,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/power/turbine, "Turbine")
+CAPABILITIES(/obj/machinery/power/turbine)
+	interface("Turbine")
+	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
 
 /obj/machinery/power/turbine/ui_prepare(mob/user, datum/tgui/ui)
 	if(!Adjacent(user) && !issilicon(user))
@@ -327,18 +329,15 @@ DECLARE_UI(/obj/machinery/power/turbine, "Turbine")
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/power/turbine, "merge:ui_data_obj_machinery_power_turbine{display_power:unknown,turbine_rpm:num,starter:num}")
-
 /// The computed part of /obj/machinery/power/turbine's window data (declared on its UI_DATA row).
-/obj/machinery/power/turbine/proc/ui_data_obj_machinery_power_turbine(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/power/turbine/ui_data(datum/act/eval/A)
 	return list(
 		"display_power" = lastgen,
 		"turbine_rpm" = compressor()?.rpm,
 		"starter" = compressor()?.starter
 	)
 
-UI_ACT(/obj/machinery/power/turbine, "start_stop", ui_act_start_stop)
-UI_ACT_PROC(/obj/machinery/power/turbine, ui_act_start_stop)
+/obj/machinery/power/turbine/proc/ui_act_start_stop(datum/act/op/A)
 	if(!compressor())
 		return FALSE
 	compressor().set_starter(!compressor().starter)
@@ -398,12 +397,15 @@ UI_ACT_PROC(/obj/machinery/power/turbine, ui_act_start_stop)
 	held_type = /obj/item
 	effect = /atom/proc/interaction_swallow
 
-DECLARE_UI(/obj/machinery/computer/turbine_computer, "TurbineControl")
-
-UI_DATA_REPLACE(/obj/machinery/computer/turbine_computer, "merge:ui_data_obj_machinery_computer_turbine_computer{connected:bool,compressor_broke:bool,turbine_broke:bool,broken:bool,door_status:bool,online:num,power:unknown,rpm:num,temp:unknown}")
+CAPABILITIES(/obj/machinery/computer/turbine_computer)
+	interface("TurbineControl")
+	op("power-on", ui_act("power-on"), then(PROC_REF(ui_act_power_on)))
+	op("power-off", ui_act("power-off"), then(PROC_REF(ui_act_power_off)))
+	op("reconnect", ui_act("reconnect"), then(PROC_REF(ui_act_reconnect)))
+	op("doors", ui_act("doors"), then(PROC_REF(ui_act_doors)))
 
 /// The computed part of /obj/machinery/computer/turbine_computer's window data (declared on its UI_DATA row).
-/obj/machinery/computer/turbine_computer/proc/ui_data_obj_machinery_computer_turbine_computer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/turbine_computer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["connected"] = (compressor() && compressor().turbine()) ? TRUE : FALSE
 	data["compressor_broke"] = (!compressor() || (compressor().stat & BROKEN)) ? TRUE : FALSE
@@ -424,25 +426,21 @@ UI_DATA_REPLACE(/obj/machinery/computer/turbine_computer, "merge:ui_data_obj_mac
 
 	return data
 
-UI_ACT(/obj/machinery/computer/turbine_computer, "power-on", ui_act_power_on)
-UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_power_on)
+/obj/machinery/computer/turbine_computer/proc/ui_act_power_on(datum/act/op/A)
 	if(compressor() && compressor().turbine())
 		compressor().set_starter(TRUE)
 		. = TRUE
 
-UI_ACT(/obj/machinery/computer/turbine_computer, "power-off", ui_act_power_off)
-UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_power_off)
+/obj/machinery/computer/turbine_computer/proc/ui_act_power_off(datum/act/op/A)
 	if(compressor() && compressor().turbine())
 		compressor().set_starter(FALSE)
 		. = TRUE
 
-UI_ACT(/obj/machinery/computer/turbine_computer, "reconnect", ui_act_reconnect)
-UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_reconnect)
+/obj/machinery/computer/turbine_computer/proc/ui_act_reconnect(datum/act/op/A)
 	locate_machinery()
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/turbine_computer, "doors", ui_act_doors)
-UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_doors)
+/obj/machinery/computer/turbine_computer/proc/ui_act_doors(datum/act/op/A)
 	door_status = !door_status
 	for(var/obj/machinery/door/blast/D as anything in doors?.Copy())
 		if (door_status)
