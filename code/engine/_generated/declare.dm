@@ -3510,7 +3510,7 @@
 	..(into)
 	into += entry_block("code/modules/mob/living/silicon/robot/drone/drone.dm", 255, /mob/living/silicon/robot/drone)
 	into += entry_line(256)
-	into += list(global.op("hat", global.item(/obj/item/clothing/head), global.stance(I_HELP), global.when(PROC_REF(hatless)), global.label("Put on hat"), global.then(PROC_REF(hat_put_on))))
+	into += list(global.op("hat", global.item(/obj/item/clothing/head), global.stance(I_HELP), global.label("Put on hat"), global.then(PROC_REF(hat_put_on))))
 
 /// CAPABILITIES(/mob/living/simple_mob) at code/modules/mob/living/simple_mob/simple_mob.dm:175
 /mob/living/simple_mob/declared_entries(list/into)

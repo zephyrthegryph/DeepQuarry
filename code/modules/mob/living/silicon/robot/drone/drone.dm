@@ -253,14 +253,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 	return
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
-	op("hat", item(/obj/item/clothing/head), stance(I_HELP), when(PROC_REF(hatless)), label("Put on hat"), then(PROC_REF(hat_put_on)))
+	op("hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), then(PROC_REF(hat_put_on)))
 
-/// A drone with no hat takes one.
-/mob/living/silicon/robot/drone/proc/hatless(datum/act/op/A)
-	return !hat
-
-/// In help stance, a hat goes on the drone, before the cyborg item handling.
+/// In help stance, a hat goes on a drone that has none, before the cyborg item handling; one that wears a hat declines.
 /mob/living/silicon/robot/drone/proc/hat_put_on(datum/act/op/A)
+	if(hat)
+		return OP_DECLINE
 	var/mob/user = A.actor
 	var/obj/item/held = A.held
 	user.unEquip(held)
