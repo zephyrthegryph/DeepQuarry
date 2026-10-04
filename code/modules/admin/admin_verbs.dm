@@ -340,18 +340,37 @@ ADMIN_VERB(check_ai_laws, R_ADMIN|R_FUN|R_EVENT, "Check AI Laws", "Display the c
 	user.holder.output_ai_laws(user.mob)
 
 ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a silicon mob.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/silicon_target = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Select silicon.", title = "Rename Silicon.", choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
-	if(isnull(silicon_target))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!silicon_target)
-		return
+	open_request(src, /datum/prompt/choice/admin_silicon_rename, PROC_REF(silicon_selected), answerer = answerer, choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
 
-	var/_answer_a12 = verb_ask(user, "a12", args, /datum/om/prompt/text, message = "Enter new name. Leave blank or as is to cancel.", title = "[silicon_target.real_name] - Enter new silicon name", default = silicon_target.real_name, encode = FALSE)
-	if(isnull(_answer_a12))
+/datum/admin_verb/rename_silicon/proc/silicon_selected(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(ask_silicon_name), A)
+	if(!result.ok)
+		stack_trace("om flow rename_silicon answer silicon_selected: [result.error]")
+
+/datum/admin_verb/rename_silicon/proc/ask_silicon_name(datum/act/request/A)
+	var/mob/living/silicon/silicon_target = A.request.answer_value
+	open_request(src, /datum/prompt/text/admin_silicon_name, PROC_REF(silicon_named), answerer = A.request.answerer, title = "[silicon_target.real_name] - Enter new silicon name", default = silicon_target.real_name, target = silicon_target)
+
+/datum/admin_verb/rename_silicon/proc/silicon_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(rename_answered), A)
+	if(!result.ok)
+		stack_trace("om flow rename_silicon answer silicon_named: [result.error]")
+
+/datum/admin_verb/rename_silicon/proc/rename_answered(datum/act/request/A)
+	var/datum/prompt/text/admin_silicon_name/ask = A.request
+	var/mob/living/silicon/silicon_target = ask.target
+	var/client/user = ask.answerer.client
+	var/_answer_a12 = ask.answer_value
 	var/new_name = sanitizeSafe(_answer_a12)
 	if(new_name && new_name != silicon_target.real_name)
-		log_and_message_admins("has renamed the silicon '[silicon_target.real_name]' to '[new_name]'")
+		log_and_message_admins("has renamed the silicon '[silicon_target.real_name]' to '[new_name]'", user)
 		silicon_target.SetName(new_name)
 	feedback_add_details("admin_verb","RAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -665,3 +684,51 @@ ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/
 
 ADMIN_VERB(modify_shift_end, (R_ADMIN|R_EVENT|R_SERVER), "Modify Shift End", "Modifies the hard shift end time.", ADMIN_CATEGORY_SERVER_GAME)
 	SStransfer.modify_hard_end(user)
+
+/datum/prompt/choice/admin_silicon_rename
+	rights = R_ADMIN|R_FUN|R_EVENT
+	timeout = 0
+	question = "Select silicon."
+	title = "Rename Silicon."
+
+/datum/prompt/choice/admin_silicon_rename/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/living/silicon/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_silicon_rename/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_silicon_name
+	rights = R_ADMIN|R_FUN|R_EVENT
+	timeout = 0
+	question = "Enter new name. Leave blank or as is to cancel."
+	encode = FALSE
+	var/mob/living/silicon/target
+
+CAPABILITIES(/datum/prompt/text/admin_silicon_name)
+	ref_one(nameof(target), /mob/living/silicon)
+
+/datum/prompt/text/admin_silicon_name/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/silicon/captured = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured)
+
+/datum/prompt/text/admin_silicon_name/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(target) ? "target is gone" : null
+
+/datum/prompt/text/admin_silicon_name/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
