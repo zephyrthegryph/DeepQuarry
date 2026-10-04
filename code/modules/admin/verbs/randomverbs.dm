@@ -1152,11 +1152,20 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 	return new_mob
 
 ADMIN_VERB(cmd_admin_z_narrate, (R_ADMIN|R_MOD|R_EVENT), "Z Narrate", "Narrates to your Z level.", ADMIN_CATEGORY_FUN_NARRATE) // Allows administrators to fluff events a little easier -- TLE
-	om_ask(user, /datum/om/prompt/text, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone:", message = "Message:", requires = PROMPT_ADMIN(permissions))
+	if(QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/text/admin_z_narration, PROC_REF(message_entered), answerer = user.mob)
 
-/datum/admin_verb/cmd_admin_z_narrate/proc/message_entered(datum/om/prompt/text/ask)
-	var/client/user = ask.answerer.client
-	var/msg = ask.text
+/datum/admin_verb/cmd_admin_z_narrate/proc/message_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(narration_apply), context)
+	if(!result.ok)
+		stack_trace("om prompt callback message_entered: [result.error]")
+
+/datum/admin_verb/cmd_admin_z_narrate/proc/narration_apply(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	var/msg = context.request.answer_value
 	if(!(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 
@@ -1185,3 +1194,15 @@ ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/R
 		to_chat(user, "You gave the event HUD to [key_name(target)].")
 		to_chat(target, "You now have the event HUD.  Icons will appear next to characters indicating if they prefer to be killed(red crosshairs), devoured(belly), or kidnapped(blue crosshairs) by event characters.")
 	feedback_add_details("admin_verb","GREHud") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/text/admin_z_narration
+	rights = R_ADMIN|R_MOD|R_EVENT
+	timeout = 0
+	title = "Enter the text you wish to appear to everyone:"
+	question = "Message:"
+
+/datum/prompt/text/admin_z_narration/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
