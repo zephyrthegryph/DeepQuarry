@@ -2791,6 +2791,13 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1044
+/datum/prompt/choice/admin_drop_pod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1044, /datum/prompt/choice/admin_drop_pod)
+	into += entry_line(1045)
+	into += list(global.ref_one(nameof(drop_mob), /mob/living))
+
 /// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:197
 /datum/prompt/choice/admin_sendmob/declared_entries(list/into)
 	..(into)

@@ -1030,60 +1030,95 @@ ADMIN_VERB(cmd_admin_droppod_spawn, R_SPAWN, "Drop Pod Atom", "Spawn a new atom/
 	if(!matches.len)
 		return
 
-	om_flow_start(/datum/om/flow/admin_drop_pod, user.mob, null, requires = PROMPT_ADMIN(permissions), matches = matches, feedback = "DPA")
+	user.mob?.ask_admin_drop_pod(matches, permissions, "DPA")
 
-/// Drop Pod Atom / Drop Pod Deploy: pick what to drop (a new movable of a matched type, or an
-/// existing mob), then the pod type and whether it opens by itself. "Cancel" stops it.
-/datum/om/flow/admin_drop_pod
-	name = "admin drop pod"
-	/// Types to spawn from (Drop Pod Atom); null picks an existing mob instead.
-	var/list/matches
+/// The original admin mob and captured rights carry the entire drop-pod selection chain.
+/datum/prompt/choice/admin_drop_pod
+	timeout = 0
 	var/chosen_type
 	var/mob/living/drop_mob
+	var/needs_drop_mob = FALSE
 	var/podtype
 	var/feedback
 
-/datum/om/flow/admin_drop_pod/start()
+CAPABILITIES(/datum/prompt/choice/admin_drop_pod)
+	ref_one(nameof(drop_mob), /mob/living)
+
+/datum/prompt/choice/admin_drop_pod/prepare(datum/act/A)
+	..()
+	var/mob/living/captured_mob = drop_mob
+	needs_drop_mob = !isnull(captured_mob)
+	rel_clear(src, nameof(drop_mob))
+	rel_set(src, nameof(drop_mob), captured_mob)
+
+/datum/prompt/choice/admin_drop_pod/recheck_extra()
+	return needs_drop_mob && QDELETED(drop_mob) ? "gone" : null
+
+/datum/prompt/choice/admin_drop_pod/begin()
+	// Flow startup checks rights and captured lifetimes before displaying the first question.
+	var/reason = request_recheck(src)
+	if(reason)
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/mob/proc/ask_admin_drop_pod(list/matches, rights, feedback)
 	if(!matches)
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(mob_picked), title = "Mob Picker", message = "Select the mob to drop:", choices = REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
+		open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(admin_drop_pod_mob_picked), answerer = src, rights = rights, feedback = feedback, title = "Mob Picker", question = "Select the mob to drop:", choices = REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		return
 	if(length(matches) == 1)
-		chosen_type = matches[1]
-		ask_podtype()
+		ask_admin_drop_pod_type(matches[1], null, rights, feedback)
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_picked), title = "Spawn in Drop Pod", message = "Select a movable type:", choices = matches)
+	open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(admin_drop_pod_type_picked), answerer = src, rights = rights, feedback = feedback, title = "Spawn in Drop Pod", question = "Select a movable type:", choices = matches)
 
-/datum/om/flow/admin_drop_pod/proc/type_picked(datum/om/prompt/choice/ask)
-	chosen_type = ask.choice
-	ask_podtype()
+/mob/proc/admin_drop_pod_type_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_drop_pod/ask = A.answer
+	ask_admin_drop_pod_type(ask.answer_value, null, ask.rights, ask.feedback)
 
-/datum/om/flow/admin_drop_pod/proc/mob_picked(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(drop_mob), ask.choice)
-	ask_podtype()
+/mob/proc/admin_drop_pod_mob_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_drop_pod/ask = A.answer
+	var/mob/living/chosen = ask.answer_value
+	if(!istype(chosen) || QDELETED(chosen))
+		return
+	ask_admin_drop_pod_type(null, chosen, ask.rights, ask.feedback)
 
-/datum/om/flow/admin_drop_pod/proc/ask_podtype()
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(podtype_picked), title = "Drop Pod", message = "Destructive drop pods cause damage in a 3x3 and may break turfs. Polite drop pods lightly damage the turfs but won't break through.", choices = list("Polite", "Destructive", "Cancel"))
+/mob/proc/ask_admin_drop_pod_type(chosen_type, mob/living/drop_mob, rights, feedback)
+	open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(admin_drop_pod_kind_picked), answerer = src, rights = rights, chosen_type = chosen_type, drop_mob = drop_mob, feedback = feedback, buttons = TRUE, title = "Drop Pod", question = "Destructive drop pods cause damage in a 3x3 and may break turfs. Polite drop pods lightly damage the turfs but won't break through.", choices = list("Polite", "Destructive", "Cancel"))
 
-/datum/om/flow/admin_drop_pod/proc/podtype_picked(datum/om/prompt/choice/ask)
-	podtype = ask.choice
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(autoopen_picked), title = "Drop Pod", message = "Should the pod open automatically?", choices = list("Yes", "No", "Cancel"))
+/mob/proc/admin_drop_pod_kind_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_drop_pod/ask = A.answer
+	if(ask.answer_value == "Cancel")
+		return
+	open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(admin_drop_pod_autoopen_picked), answerer = src, rights = ask.rights, chosen_type = ask.chosen_type, drop_mob = ask.drop_mob, feedback = ask.feedback, podtype = ask.answer_value, buttons = TRUE, title = "Drop Pod", question = "Should the pod open automatically?", choices = list("Yes", "No", "Cancel"))
 
-/datum/om/flow/admin_drop_pod/proc/autoopen_picked(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	var/autoopen = ask.choice == "Yes"
-	var/atom/movable/cargo = drop_mob
+/mob/proc/admin_drop_pod_autoopen_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_drop_pod/ask = A.answer
+	if(ask.answer_value == "Cancel")
+		return
+	var/mob/user = src
+	var/autoopen = ask.answer_value == "Yes"
+	var/chosen_type = ask.chosen_type
+	var/atom/movable/cargo = ask.drop_mob
 	if(!cargo)
 		cargo = new chosen_type(user.loc)
-	switch(podtype)
+	switch(ask.podtype)
 		if("Destructive")
 			new /obj/structure/drop_pod(get_turf(user), cargo, autoopen)
 		if("Polite")
 			new /obj/structure/drop_pod/polite(get_turf(user), cargo, autoopen)
 
-	feedback_add_details("admin_verb", feedback) //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	feedback_add_details("admin_verb", ask.feedback) //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_droppod_deploy, R_SPAWN, "Drop Pod Deploy", "Drop an existing mob where you are in a drop pod.", ADMIN_CATEGORY_FUN_DROP_POD, object as text)
-	om_flow_start(/datum/om/flow/admin_drop_pod, user.mob, null, requires = PROMPT_ADMIN(permissions), feedback = "DPD")
+	user.mob?.ask_admin_drop_pod(null, permissions, "DPD")
 
 ADMIN_VERB(toggle_vantag_hud_global, R_EVENT|R_SERVER|R_ADMIN, "Toggle Global Event HUD", "Give everyone the Event HUD.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	GLOB.global_vantag_hud = !GLOB.global_vantag_hud
