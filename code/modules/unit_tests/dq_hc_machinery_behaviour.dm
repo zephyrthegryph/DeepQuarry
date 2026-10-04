@@ -179,3 +179,91 @@
 	hci_answer(H, "collect")
 	settle()
 	TEST_ASSERT(!F.work_modes["collect"], "an answer from someone no longer next to it is dropped")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Portable atmospherics (canister, pump, scrubber)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/canister_window
+/datum/unit_test/dq_hc_struct/canister_window/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/portable_atmospherics/canister/C = mach(/obj/machinery/portable_atmospherics/canister, tile(3, 2))
+	TEST_ASSERT(!C.valve_open, "starts closed")
+	press(H, C, "valve")
+	TEST_ASSERT(C.valve_open, "the valve button opens the valve")
+	TEST_ASSERT(length(C.release_log) > 0, "and the log says who did it")
+	press(H, C, "valve")
+	TEST_ASSERT(!C.valve_open, "and closes it again")
+	press(H, C, "pressure", list("pressure" = 500))
+	TEST_ASSERT_EQUAL(C.release_pressure, 500, "a number sets the release pressure")
+	press(H, C, "pressure", list("pressure" = 100000))
+	TEST_ASSERT_EQUAL(C.release_pressure, 10 * ONE_ATMOSPHERE, "up to a ceiling")
+	var/list/data = hc_data(C, H)
+	TEST_ASSERT_EQUAL(data["valveOpen"], 0, "the window shows the valve")
+	TEST_ASSERT_EQUAL(data["releasePressure"], round(C.release_pressure), "and the release pressure")
+
+/datum/unit_test/dq_hc_struct/pump_window_and_emp
+/datum/unit_test/dq_hc_struct/pump_window_and_emp/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/portable_atmospherics/powered/pump/P = mach(/obj/machinery/portable_atmospherics/powered/pump, tile(3, 2))
+	TEST_ASSERT(!P.on, "starts off")
+	press(H, P, "power")
+	TEST_ASSERT(P.on, "the power button switches it on")
+	var/dir_out = P.direction_out
+	press(H, P, "direction")
+	TEST_ASSERT_NOTEQUAL(P.direction_out, dir_out, "the direction button flips the direction")
+	press(H, P, "pressure", list("pressure" = 2000))
+	TEST_ASSERT_EQUAL(P.target_pressure, 2000, "a number sets the target pressure")
+	var/list/data = hc_data(P, H)
+	TEST_ASSERT_EQUAL(data["target_pressure"], 2000, "the window shows it")
+	TEST_ASSERT_EQUAL(data["on"], TRUE, "and the power")
+	dir_out = P.direction_out
+	P.emp_act(1)
+	TEST_ASSERT_NOTEQUAL(P.direction_out, dir_out, "a direct EMP always flips the direction")
+
+/datum/unit_test/dq_hc_struct/scrubber_window_and_emp
+/datum/unit_test/dq_hc_struct/scrubber_window_and_emp/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/portable_atmospherics/powered/scrubber/S = mach(/obj/machinery/portable_atmospherics/powered/scrubber, tile(3, 2))
+	TEST_ASSERT(!S.on, "starts off")
+	press(H, S, "power")
+	TEST_ASSERT(S.on, "the power button switches it on")
+	press(H, S, "volume_adj", list("vol" = 100))
+	TEST_ASSERT_EQUAL(S.volume_rate, clamp(100, S.minrate, S.maxrate), "the rate button sets the rate within its limits")
+	var/list/data = hc_data(S, H)
+	TEST_ASSERT_EQUAL(data["on"], 1, "the window shows the power")
+	var/was = S.on
+	for(var/i in 1 to 30)
+		S.emp_act(1)
+		if(S.on != was)
+			break
+	TEST_ASSERT_NOTEQUAL(S.on, was, "a few EMPs toggle it")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Biogenerator
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/biogenerator_sells_for_biomass
+/datum/unit_test/dq_hc_struct/biogenerator_sells_for_biomass/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = tile(3, 2)
+	var/obj/machinery/biogenerator/B = mach(/obj/machinery/biogenerator, T)
+	B.points = 1000
+	press(H, B, "purchase", list("amount" = 1, "cat" = "Leather Products", "name" = "Wallet"))
+	TEST_ASSERT_NOTNULL(locate(/obj/item/storage/wallet) in T, "a wallet is made")
+	TEST_ASSERT(B.points < 1000, "and costs biomass")
+	var/points = B.points
+	press(H, B, "purchase", list("amount" = 1, "cat" = "Leather Products", "name" = "No Such Thing"))
+	TEST_ASSERT_EQUAL(B.points, points, "something that is not for sale costs nothing")
+	B.points = 0
+	var/count = 0
+	for(var/obj/item/storage/wallet/W in T)
+		count++
+	press(H, B, "purchase", list("amount" = 1, "cat" = "Leather Products", "name" = "Wallet"))
+	var/after = 0
+	for(var/obj/item/storage/wallet/W in T)
+		after++
+	TEST_ASSERT_EQUAL(after, count, "with no biomass nothing is made")
+	var/list/data = hc_data(B, H)
+	TEST_ASSERT_EQUAL(data["points"], 0, "the window shows the biomass")
+	TEST_ASSERT_EQUAL(data["beaker"], !!B.beaker, "and whether a beaker is loaded")
