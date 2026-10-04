@@ -175,7 +175,7 @@
 	cell_type = null
 
 /// maintenance_hatch() declares once which op a tool picks when several could (click_order(), code/engine/parts/plan.dm), and a construction placed
-/// at(BAY_HATCH) offers its undo steps only with the hatch open: the APC writes no priority(above(...)) or when(COVER_OPEN) of its own.
+/// at(SPACE_HATCH) offers its undo steps only with the hatch open (a step behind a shut cover is set aside): the APC writes no priority(above(...)) or when(COVER_OPEN) of its own.
 ///   screwdriver: a construction step, then the panel; wirecutters: the construction undo, then the wires; multitool: the subversion reset, then
 ///   the wires; empty hand: the construction undo, then the wires window, then the APC's own window.
 /datum/unit_test/dx_apc_click_order

@@ -63,6 +63,7 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
+	space(SPACE_INTERIOR, door = nameof(opened))
 	owns_one(nameof(door_obj), /obj/effect/overlay/closet_door)
 	anchor()
 	extend("anchor.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), because = MSG(closet/bolts_unreachable))))
@@ -70,15 +71,15 @@ CAPABILITIES(/obj/structure/closet)
 	extend("weld_shut.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge))))
 	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(req(PROC_REF(bare_hand_or_menu))),
 		needs(req(PROC_REF(door_ready), because = MSG(closet/wont_budge))), then(PROC_REF(door_toggled)))
-	op("cut_apart", tool(TOOL_WELDER), label("Cut apart"), when(nameof(opened)), priority(above("weld_shut.toggle")), wait(0), costs(RES_FUEL, 0),
+	op("cut_apart", tool(TOOL_WELDER), label("Cut apart"), at(SPACE_INTERIOR), priority(above("weld_shut.toggle")), wait(0), costs(RES_FUEL, 0),
 		needs(req(PROC_REF(welder_lit), because = MSG(weld/needs_lit))), then(PROC_REF(cut_apart)), says(MSG(closet/cut_apart)))
-	op("empty_basket", item(/obj/item/storage/laundry_basket), label("Empty into"), when(nameof(opened)), priority(OP_PRIORITY_PART),
+	op("empty_basket", item(/obj/item/storage/laundry_basket), label("Empty into"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
 		then(PROC_REF(basket_emptied)), says(MSG(closet/emptied_basket)))
-	op("stuff_grab", item(/obj/item/grab), label("Stuff inside"), when(nameof(opened)), priority(OP_PRIORITY_PART),
+	op("stuff_grab", item(/obj/item/grab), label("Stuff inside"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
 		needs(req(PROC_REF(grab_fits), because = PROC_REF(grab_refusal))), then(PROC_REF(stuff_grabbed)))
-	op("set_down", item(/obj/item), label("Put down"), when(nameof(opened)), priority(OP_PRIORITY_DEFAULT),
+	op("set_down", item(/obj/item), label("Put down"), at(SPACE_INTERIOR), priority(OP_PRIORITY_DEFAULT),
 		needs(req(PROC_REF(can_set_down), because = MSG(closet/cant_put_down))), then(PROC_REF(set_down)))
-	op("stuff", item(/atom/movable), gesture(GESTURE_DRAG), label("Stuff inside"), when(nameof(opened)), then(PROC_REF(stuff_dragged)))
+	op("stuff", item(/atom/movable), gesture(GESTURE_DRAG), label("Stuff inside"), at(SPACE_INTERIOR), then(PROC_REF(stuff_dragged)))
 	op("strike", item(/obj/item), hostile(), label("Strike"), priority(OP_PRIORITY_ATTACK), then(PROC_REF(struck_with)))
 	op("break_out", ai(), label("Break out"), wait(PROC_REF(breakout_wait), keeps = TARGET_PRESENT | ALIVE),
 		needs(req_capable(), req(PROC_REF(can_break_out), because = MSG(closet/cant_break_out))),

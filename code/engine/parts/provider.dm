@@ -320,19 +320,16 @@
 		return TRUE
 	return !!can_see(actor, surface, TK_MAXRANGE)
 
-/// Is every bay between target and the touched surface exposed for `authority`? (A closed cover is part of reach: bay_exposed() is the compartment's reason.)
+/// Is the path from the actor to `target` open for `authority` at every container on the way? (A closed cover is part of reach: each container
+/// answers space_blocked(), the path through its spaces and doors, code/engine/library/spaces.dm.)
 /proc/reach_exposure(mob/actor, atom/target, authority)
 	var/atom/at = target
 	while(at.loc && !isturf(at) && !isturf(at.loc) && at.loc != actor)
 		var/atom/container = at.loc
-		var/why = container.bay_blocked(at, authority)
+		var/why = container.space_blocked(at, authority, actor)
 		if(why)
 			return why
 		at = container
-	return null
-
-/// The reason a thing inside this container is not reachable through its bay now (a closed cover), or null. Compartments override it.
-/atom/proc/bay_blocked(atom/inside, authority)
 	return null
 
 /// The reach policy an op's binding gives: the select reach(), else the binding's own.

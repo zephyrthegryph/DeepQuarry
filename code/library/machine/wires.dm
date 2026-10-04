@@ -1,7 +1,7 @@
 // The wires capability (doc/rewrite/final_api.html, section 11 "The library": wires(type); section 16.1, 16.2).
 //
 // One /datum/wires (the wire system of code/datums/wires/) per holder, made on first use and kept in the capability's typed data
-// (/datum/cap_data/wires). A multitool or wirecutters on the wires, with the maintenance panel open, opens the wires window; the wires datum
+// (/datum/cap_data/wires). A multitool or wirecutters on the wires, which sit in space `at` (behind the panel, SPACE_PANEL), opens the wires window; the wires datum
 // does the rest (cut, mend, pulse, signalers) and tells the holder when a wire changed, so what reads the wires follows.
 //
 //   wires(/datum/wires/apc)                      the wire set, behind the panel
@@ -19,7 +19,7 @@ MSG_DEF_SELF(wires/intact, "That wire is not cut.")
 /// The key a holder publishes when one of its wires is cut, mended or the set is rebuilt.
 #define WIRES_KEY "wires"
 
-CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind = null, by_hand = FALSE)
+CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind = null, by_hand = FALSE, at = SPACE_PANEL)
 
 /// The typed data of the wires capability: the holder's wire set.
 /datum/cap_data/wires
@@ -32,13 +32,13 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	return /datum/cap_data/wires
 
 /datum/capability/lib/wires/entries()
-	var/list/at_the_wires = list(when(PANEL_OPEN), wait(0), then(CAP_PROC(open_window)))
+	var/list/at_the_wires = list(global.at(at), wait(0), then(CAP_PROC(open_window)))
 	. = list(
 		op("pulse", tool(TOOL_MULTITOOL), label("Pulse wires"), at_the_wires),
 		op("cut", tool(TOOL_WIRECUTTER), label("Cut wires"), at_the_wires),
 		look_layer(LOOK_WIRES, when = PANEL_OPEN))
 	if(by_hand)
-		. += op("open", hand(), when(PANEL_OPEN), then(CAP_PROC(open_window_by_hand)))
+		. += op("open", hand(), global.at(at), then(CAP_PROC(open_window_by_hand)))
 
 /// The wires window: the wire set's own (its interactable() says whether this person can use it now).
 /datum/capability/lib/wires/proc/open_window(datum/act/op/A)

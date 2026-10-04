@@ -39,8 +39,8 @@
 	var/list/conds
 	/// Requirements, in order (new /datum/entry/part/req, or a legacy /datum/req that has a new form).
 	var/list/needs
-	/// The BAY_X an at() names, or null.
-	var/bay
+	/// The space an at(SPACE_X) places the op in, or null (code/engine/library/spaces.dm).
+	var/space
 	/// The Wait workflow in declaration order: /datum/entry/part/wait and /datum/entry/part/asks.
 	var/list/steps
 	/// resource id -> amount, from costs(); cost_order keeps declaration order.
@@ -367,7 +367,7 @@
 				else
 					LAZYADD(P.conds, list(E.args["cond"]))
 			else if(E.kind == "graph_at")
-				P.bay = E.args["bay"]
+				P.space = E.args["space"]
 			else
 				op_problem(T, P, report, RULE_OP_PART, "[E.kind] is not an op part", "an op holds the constructors of code/engine/parts/part.dm")
 		else if(!isnull(part))

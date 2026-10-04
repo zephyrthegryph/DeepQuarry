@@ -22,7 +22,7 @@
 /datum/capdef_decl/c_bolts/spec()
 	return list(CAP_BOLTS, /datum/capability/lib/bolts, NONE, STACK, "bolts", "drop, raise, starts")
 
-/// CAPABILITY_TYPE(breakable, CAP_BREAKABLE) at code/library/machine/machine.dm:38
+/// CAPABILITY_TYPE(breakable, CAP_BREAKABLE) at code/library/machine/machine.dm:34
 /datum/capability/lib/breakable
 	var/repair = TOOL_WELDER
 /proc/breakable(repair)
@@ -44,17 +44,18 @@
 /datum/capdef_decl/c_buckle/spec()
 	return list(CAP_BUCKLE, /datum/capability/lib/buckle, NONE, STACK, "buckle", "slots, delay, restrained, smallest, largest")
 
-/// CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY) at code/engine/library/bays.dm:86
+/// CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY) at code/engine/library/spaces.dm:397
 /datum/capability/lib/cell_bay
 	var/slot_var = null
 	var/at = null
 	var/accepts = /obj/item/cell
 	var/starts = null
-/proc/cell_bay(slot_var, at, accepts, starts)
+	var/fits = null
+/proc/cell_bay(slot_var, at, accepts, starts, fits)
 	RETURN_TYPE(/datum/capability/lib/cell_bay)
-	return cap_construct(CAP_CELL_BAY, /datum/capability/lib/cell_bay, list(slot_var, at, accepts, starts), "slot_var, at, accepts, starts")
+	return cap_construct(CAP_CELL_BAY, /datum/capability/lib/cell_bay, list(slot_var, at, accepts, starts, fits), "slot_var, at, accepts, starts, fits")
 /datum/capdef_decl/c_cell_bay/spec()
-	return list(CAP_CELL_BAY, /datum/capability/lib/cell_bay, "slot_var", STACK, "cell_bay", "slot_var, at, accepts, starts")
+	return list(CAP_CELL_BAY, /datum/capability/lib/cell_bay, "slot_var", STACK, "cell_bay", "slot_var, at, accepts, starts, fits")
 
 /// CAPABILITY_TYPE(climb, CAP_CLIMB) at code/library/structures/climb.dm:38
 /datum/capability/lib/climb
@@ -70,18 +71,7 @@
 /datum/capdef_decl/c_climb/spec()
 	return list(CAP_CLIMB, /datum/capability/lib/climb, NONE, STACK, "climb", "delay, vaulting, landing, delay_by, gate, climbed")
 
-/// CAPABILITY_TYPE(compartment, CAP_COMPARTMENT) at code/engine/library/bays.dm:38
-/datum/capability/lib/compartment
-	var/bay = null
-	var/door = null
-	var/applies_to = AUTH_PHYSICAL
-/proc/compartment(bay, door, applies_to)
-	RETURN_TYPE(/datum/capability/lib/compartment)
-	return cap_construct(CAP_COMPARTMENT, /datum/capability/lib/compartment, list(bay, door, applies_to), "bay, door, applies_to")
-/datum/capdef_decl/c_compartment/spec()
-	return list(CAP_COMPARTMENT, /datum/capability/lib/compartment, "bay", STACK, "compartment", "bay, door, applies_to")
-
-/// CAPABILITY_TYPE(construction_graph, CAP_CONSTRUCTION) at code/engine/declare/graph.dm:224
+/// CAPABILITY_TYPE(construction_graph, CAP_CONSTRUCTION) at code/engine/declare/graph.dm:234
 /datum/capability/construction
 /proc/construction_graph(start, via)
 	RETURN_TYPE(/datum/capability/construction)
@@ -89,20 +79,22 @@
 /datum/capdef_decl/c_construction_graph/spec()
 	return list(CAP_CONSTRUCTION, /datum/capability/construction, NONE, STACK, "construction", "start, via")
 
-/// CAPABILITY_TYPE(cover, CAP_COVER) at code/library/machine/cover.dm:20
+/// CAPABILITY_TYPE(cover, CAP_COVER) at code/library/machine/cover.dm:25
 /datum/capability/lib/cover
 	var/name = "cover"
 	var/open = null
 	var/remove = null
 	var/replace = null
 	var/starts_open = FALSE
-/proc/cover(name, open, remove, replace, starts_open)
+	var/broken = null
+	var/space = SPACE_HATCH
+/proc/cover(name, open, remove, replace, starts_open, broken, space)
 	RETURN_TYPE(/datum/capability/lib/cover)
-	return cap_construct(CAP_COVER, /datum/capability/lib/cover, list(name, open, remove, replace, starts_open), "name, open, remove, replace, starts_open")
+	return cap_construct(CAP_COVER, /datum/capability/lib/cover, list(name, open, remove, replace, starts_open, broken, space), "name, open, remove, replace, starts_open, broken, space")
 /datum/capdef_decl/c_cover/spec()
-	return list(CAP_COVER, /datum/capability/lib/cover, "name", STACK, "cover", "name, open, remove, replace, starts_open")
+	return list(CAP_COVER, /datum/capability/lib/cover, "name", STACK, "cover", "name, open, remove, replace, starts_open, broken, space")
 
-/// CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT) at code/engine/declare/graph.dm:225
+/// CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT) at code/engine/declare/graph.dm:235
 /datum/capability/construction/deployment
 /proc/deployment_graph(start, via)
 	RETURN_TYPE(/datum/capability/construction/deployment)
@@ -162,11 +154,12 @@
 	var/say = null
 	var/disables_for = null
 	var/repeatable = FALSE
-/proc/emag(parts, say, disables_for, repeatable)
+	var/powered = TRUE
+/proc/emag(parts, say, disables_for, repeatable, powered)
 	RETURN_TYPE(/datum/capability/lib/emag)
-	return cap_construct(CAP_EMAG, /datum/capability/lib/emag, list(parts, say, disables_for, repeatable), "parts, say, disables_for, repeatable")
+	return cap_construct(CAP_EMAG, /datum/capability/lib/emag, list(parts, say, disables_for, repeatable, powered), "parts, say, disables_for, repeatable, powered")
 /datum/capdef_decl/c_emag/spec()
-	return list(CAP_EMAG, /datum/capability/lib/emag, NONE, STACK, "emag", "parts, say, disables_for, repeatable")
+	return list(CAP_EMAG, /datum/capability/lib/emag, NONE, STACK, "emag", "parts, say, disables_for, repeatable, powered")
 
 /// CAPABILITY_TYPE(emp_disable, CAP_EMP_DISABLE) at code/library/machine/emp_disable.dm:21
 /datum/capability/lib/emp_disable
@@ -232,13 +225,15 @@
 	var/id_types = null
 	var/starts_locked = FALSE
 	var/alt = TRUE
-/proc/lock(id_types, starts_locked, alt)
+	var/powered = TRUE
+	var/guarded = TRUE
+/proc/lock(id_types, starts_locked, alt, powered, guarded)
 	RETURN_TYPE(/datum/capability/lib/lock)
-	return cap_construct(CAP_LOCK, /datum/capability/lib/lock, list(id_types, starts_locked, alt), "id_types, starts_locked, alt")
+	return cap_construct(CAP_LOCK, /datum/capability/lib/lock, list(id_types, starts_locked, alt, powered, guarded), "id_types, starts_locked, alt, powered, guarded")
 /datum/capdef_decl/c_lock/spec()
-	return list(CAP_LOCK, /datum/capability/lib/lock, NONE, STACK, "lock", "id_types, starts_locked, alt")
+	return list(CAP_LOCK, /datum/capability/lib/lock, NONE, STACK, "lock", "id_types, starts_locked, alt, powered, guarded")
 
-/// CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS) at code/library/machine/machine.dm:90
+/// CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS) at code/library/machine/machine.dm:86
 /datum/capability/def/machine_basics
 	var/board = null
 	var/repair = TOOL_WELDER
@@ -250,7 +245,7 @@
 /datum/capdef_decl/c_machine_basics/spec()
 	return list(CAP_MACHINE_BASICS, /datum/capability/def/machine_basics, NONE, STACK, "machine_basics", "board, repair, frame, powered")
 
-/// CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH) at code/library/machine/machine.dm:143
+/// CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH) at code/library/machine/machine.dm:139
 /datum/capability/lib/maintenance_hatch
 	var/cover = null
 	var/wires = null
@@ -260,11 +255,12 @@
 	var/starts_locked = FALSE
 	var/emag_say = null
 	var/wires_by_hand = FALSE
-/proc/maintenance_hatch(cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, wires_by_hand)
+	var/lock_wire = null
+/proc/maintenance_hatch(cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, wires_by_hand, lock_wire)
 	RETURN_TYPE(/datum/capability/lib/maintenance_hatch)
-	return cap_construct(CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, list(cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, wires_by_hand), "cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, wires_by_hand")
+	return cap_construct(CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, list(cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, wires_by_hand, lock_wire), "cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, wires_by_hand, lock_wire")
 /datum/capdef_decl/c_maintenance_hatch/spec()
-	return list(CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, NONE, STACK, "maintenance_hatch", "cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, wires_by_hand")
+	return list(CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, NONE, STACK, "maintenance_hatch", "cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, wires_by_hand, lock_wire")
 
 /// CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS) at code/library/machine/multitool_settings.dm:13
 /datum/capability/lib/multitool_settings
@@ -299,14 +295,15 @@
 /datum/capdef_decl/c_needle/spec()
 	return list(CAP_NEEDLE, /datum/capability/lib/needle, NONE, STACK, "needle", "modes, needle_time, draws_from, fills")
 
-/// CAPABILITY_TYPE(panel, CAP_PANEL) at code/library/machine/panel.dm:12
+/// CAPABILITY_TYPE(panel, CAP_PANEL) at code/library/machine/panel.dm:13
 /datum/capability/lib/panel
 	var/tool = TOOL_SCREWDRIVER
-/proc/panel(tool)
+	var/space = SPACE_PANEL
+/proc/panel(tool, space)
 	RETURN_TYPE(/datum/capability/lib/panel)
-	return cap_construct(CAP_PANEL, /datum/capability/lib/panel, list(tool), "tool")
+	return cap_construct(CAP_PANEL, /datum/capability/lib/panel, list(tool, space), "tool, space")
 /datum/capdef_decl/c_panel/spec()
-	return list(CAP_PANEL, /datum/capability/lib/panel, NONE, STACK, "panel", "tool")
+	return list(CAP_PANEL, /datum/capability/lib/panel, NONE, STACK, "panel", "tool, space")
 
 /// CAPABILITY_TYPE(part_replacement, CAP_PART_REPLACEMENT) at code/library/machine/parts.dm:8
 /proc/part_replacement()
@@ -374,6 +371,23 @@
 /datum/capdef_decl/c_reagent_container/spec()
 	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile")
 
+/// CAPABILITY_TYPE(space, CAP_SPACE) at code/engine/library/spaces.dm:112
+/datum/capability/lib/space
+	var/id = null
+	var/inside = null
+	var/door = null
+	var/applies_to = AUTH_PHYSICAL
+	var/latched_while = null
+	var/because = null
+	var/from_stage = null
+	var/missing = null
+	var/closed = null
+/proc/space(id, inside, door, applies_to, latched_while, because, from_stage, missing, closed)
+	RETURN_TYPE(/datum/capability/lib/space)
+	return cap_construct(CAP_SPACE, /datum/capability/lib/space, list(id, inside, door, applies_to, latched_while, because, from_stage, missing, closed), "id, inside, door, applies_to, latched_while, because, from_stage, missing, closed")
+/datum/capdef_decl/c_space/spec()
+	return list(CAP_SPACE, /datum/capability/lib/space, "id", STACK, "space", "id, inside, door, applies_to, latched_while, because, from_stage, missing, closed")
+
 /// CAPABILITY_TYPE(stackable, CAP_STACKABLE) at code/library/items/stackable.dm:12
 /datum/capability/lib/stackable
 	var/max_amount = 50
@@ -420,7 +434,7 @@
 /datum/capdef_decl/c_synthesizer/spec()
 	return list(CAP_SYNTHESIZER, /datum/capability/lib/synthesizer, NONE, STACK, "synthesizer", "containers")
 
-/// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/bays.dm:199
+/// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/spaces.dm:512
 /proc/telekinesis()
 	RETURN_TYPE(/datum/capability/def/telekinesis)
 	return cap_construct(CAP_TELEKINESIS, /datum/capability/def/telekinesis, list(), "")
@@ -444,7 +458,7 @@
 /datum/capdef_decl/c_two_hands/spec()
 	return list(CAP_TWO_HANDS, /datum/capability/lib/two_hands, NONE, STACK, "two_hands", "")
 
-/// CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE) at code/library/machine/machine.dm:109
+/// CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE) at code/library/machine/machine.dm:105
 /datum/capability/def/wall_machine
 	var/board = null
 	var/repair = TOOL_WELDER
@@ -458,7 +472,7 @@
 /datum/capdef_decl/c_wall_machine/spec()
 	return list(CAP_WALL_MACHINE, /datum/capability/def/wall_machine, NONE, STACK, "wall_machine", "board, repair, frame, powered, offset, offset_ns")
 
-/// CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT) at code/library/machine/machine.dm:56
+/// CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT) at code/library/machine/machine.dm:52
 /datum/capability/lib/wall_mount
 	var/offset = 26
 	var/offset_ns = null
@@ -494,11 +508,12 @@
 /datum/capability/lib/wires
 	var/kind = null
 	var/by_hand = FALSE
-/proc/wires(kind, by_hand)
+	var/at = SPACE_PANEL
+/proc/wires(kind, by_hand, at)
 	RETURN_TYPE(/datum/capability/lib/wires)
-	return cap_construct(CAP_WIRES, /datum/capability/lib/wires, list(kind, by_hand), "kind, by_hand")
+	return cap_construct(CAP_WIRES, /datum/capability/lib/wires, list(kind, by_hand, at), "kind, by_hand, at")
 /datum/capdef_decl/c_wires/spec()
-	return list(CAP_WIRES, /datum/capability/lib/wires, NONE, STACK, "wires", "kind, by_hand")
+	return list(CAP_WIRES, /datum/capability/lib/wires, NONE, STACK, "wires", "kind, by_hand, at")
 
 /// cap_keys(CAP_EMAG) at code/library/access/emag.dm:21
 /datum/cap_keys_decl/k_emag/spec()
@@ -521,7 +536,7 @@
 /proc/quickdraw_draws(datum/holder, selector)
 	return cap_key_get(holder, QUICKDRAW_DRAWS, selector)
 
-/// cap_keys(CAP_COVER) at code/library/machine/cover.dm:21
+/// cap_keys(CAP_COVER) at code/library/machine/cover.dm:26
 /datum/cap_keys_decl/k_cover/spec()
 	return list(CAP_COVER, list(OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on)))
 /// The state key OPEN of cover, read on a holder (a granted capability with several selectors names the selector).
@@ -552,7 +567,7 @@
 /proc/door_emergency_engaged(datum/holder, selector)
 	return cap_key_get(holder, DOOR_EMERGENCY_ENGAGED, selector)
 
-/// cap_keys(CAP_PANEL) at code/library/machine/panel.dm:13
+/// cap_keys(CAP_PANEL) at code/library/machine/panel.dm:14
 /datum/cap_keys_decl/k_panel/spec()
 	return list(CAP_PANEL, list(OPEN = MSG(panel/closed)))
 /// The state key OPEN of panel, read on a holder (a granted capability with several selectors names the selector).
@@ -3459,21 +3474,21 @@
 	into += entry_line(175)
 	into += list(global.owns_many(nameof(gridSets)))
 
-/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:343
+/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:334
 /datum/pending_op/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/run.dm", 343, /datum/pending_op)
-	into += entry_line(344)
+	into += entry_block("code/engine/parts/run.dm", 334, /datum/pending_op)
+	into += entry_line(335)
 	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(345)
+	into += entry_line(336)
 	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(346)
+	into += entry_line(337)
 	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(347)
+	into += entry_line(338)
 	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(348)
+	into += entry_line(339)
 	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
-	into += entry_line(349)
+	into += entry_line(340)
 	into += list(global.owns_one(nameof(cog), /datum/cogbar))
 
 /// CAPABILITIES(/datum/perk_tree) at code/modules/mind_body/_perk_tree.dm:35
@@ -15530,7 +15545,7 @@
 	into += entry_line(70)
 	into += list(global.doors())
 	into += entry_line(71)
-	into += list(global.emag(list(global.needs(global.req_is(nameof(density), because = MSG(door/close_first)), req_operable()), global.then(PROC_REF(door_emag))), repeatable = TRUE))
+	into += list(global.emag(list(global.needs(global.req_is(nameof(density), because = MSG(door/close_first))), global.then(PROC_REF(door_emag))), repeatable = TRUE))
 	into += entry_line(72)
 	into += list(global.op("strike", global.item(/obj/item), global.hostile(), global.when(nameof(density)), global.when(global.cond_not(global.req(/obj/item/card))), global.when(global.cond_not(global.req(/obj/item/stack/material/plasteel))), global.then(PROC_REF(strike_with))))
 	into += entry_line(73)
@@ -15569,7 +15584,7 @@
 	into += entry_line(457)
 	into += list(global.op("remove_electronics", global.tool(TOOL_CROWBAR), global.label("Remove electronics"), global.when(PROC_REF(can_remove_electronics)), global.priority(global.above("pry")), global.wait(4 SECONDS), global.then(PROC_REF(crowbar_act_tool_done))))
 	into += entry_line(459)
-	into += list(global.op("wires_window", global.hand(), global.when(PANEL_OPEN), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), global.then(PROC_REF(show_wires))))
+	into += list(global.op("wires_window", global.hand(), global.at(SPACE_PANEL), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), global.then(PROC_REF(show_wires))))
 	into += entry_line(461)
 	into += list(global.op("tear", global.hand(), global.label("Tear"), global.when(global.req(PROC_REF(claws_tear))), global.priority(OP_PRIORITY_TAKE_OUT), global.wait(PROC_REF(tear_wait)), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), global.then(PROC_REF(tear_done))))
 	into += entry_line(463)
@@ -16676,102 +16691,94 @@
 	into += entry_line(186)
 	into += list(global.without(CAP_CLIMB))
 
-/// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:170
+/// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:167
 /obj/machinery/power/apc/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/apc.dm", 170, /obj/machinery/power/apc)
-	into += entry_line(171)
+	into += entry_block("code/modules/power/apc.dm", 167, /obj/machinery/power/apc)
+	into += entry_line(168)
 	into += list(global.wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE))
-	into += entry_line(172)
+	into += entry_line(169)
 	into += list(global.configure(global.construction_graph(start = STAGE_APC_SECURED)))
-	into += entry_line(173)
-	into += list(global.maintenance_hatch( cover = global.cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), global.at(BAY_HATCH))), wires = /datum/wires/apc, wires_by_hand = TRUE, emag = list(global.wait(0.6 SECONDS), global.then(PROC_REF(emag_sparks)), global.sets(LOCK_LOCKED, FALSE)), emag_say = MSG(apc/emagged), panel_needs_cover_closed = TRUE, starts_locked = nameof(lock_at_start)))
-	into += entry_line(181)
+	into += entry_line(170)
+	into += list(global.maintenance_hatch( cover = global.cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), global.then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)), wires = /datum/wires/apc, wires_by_hand = TRUE, lock_wire = WIRE_IDSCAN, emag = list(global.wait(0.6 SECONDS), global.then(PROC_REF(emag_sparks)), global.sets(LOCK_LOCKED, FALSE)), emag_say = MSG(apc/emagged), panel_needs_cover_closed = TRUE, starts_locked = nameof(lock_at_start)))
+	into += entry_line(179)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type), on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(180)
+	into += list(global.space(SPACE_CELL, inside = SPACE_HATCH, from_stage = STAGE_APC_SECURED, missing = MSG(apc/needs_electronics)))
+	into += entry_line(181)
+	into += list(global.cell_bay(nameof(cell), at = SPACE_CELL, fits = global.size_is(ITEMSIZE_NORMAL)))
 	into += entry_line(182)
-	into += list(global.cell_bay(nameof(cell), at = BAY_HATCH))
-	into += entry_line(183)
 	into += list(global.powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY))
+	into += entry_line(183)
+	into += list(global.subversion_reset(list(global.tool(TOOL_MULTITOOL), global.at(SPACE_HATCH)), done = MSG(apc/reset_done)))
 	into += entry_line(184)
-	into += list(global.subversion_reset(list(global.tool(TOOL_MULTITOOL), global.at(BAY_HATCH)), done = MSG(apc/reset_done)))
-	into += entry_line(185)
 	into += list(membership(joins = REGISTRY_APCS))
-	into += entry_line(186)
+	into += entry_line(185)
 	into += list(global.emp_disable(PROC_REF(emp_outage), extends = TRUE))
-	into += entry_line(187)
+	into += entry_line(186)
 	into += list(global.contributes(STAT_OPERABLE, PROC_REF(electronics_fastened), reason = MSG(apc/unfinished), reads = list("graph:[CAP_CONSTRUCTION]")))
-	into += entry_line(188)
+	into += entry_line(187)
 	into += list(global.contributes(STAT_SUPPLYING, STAT_OPERABLE))
-	into += entry_line(189)
+	into += entry_line(188)
 	into += list(global.entry_link("/obj/machinery/power/apc::terminal", "/obj/machinery/power/terminal::master"))
-	into += entry_line(190)
+	into += entry_line(189)
 	into += list(global.entry_link("/obj/machinery/power/apc::hacker", "/mob/living/silicon/ai::hacked_apcs"))
-	into += entry_line(191)
+	into += entry_line(190)
 	into += list(global.entry_link("/obj/machinery/power/apc::area", "/area::apc"))
-	into += entry_line(192)
+	into += entry_line(191)
 	into += list(global.contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights)))
-	into += entry_line(193)
+	into += entry_line(192)
 	into += list(global.contributes_to(nameof(area), STAT_LIGHTS_EMERGENCY_OFF, nameof(emergency_lights)))
-	into += entry_line(194)
-	into += list(global.op("wires_signaler", global.item(/obj/item/assembly/signaler), global.label("Reach the wires"), global.when(PANEL_OPEN), global.when(global.cond_not(COVER_OPEN)), global.wait(0), global.then(PROC_REF(signaler_at_the_wires))))
-	into += entry_line(196)
+	into += entry_line(193)
+	into += list(global.op("wires_signaler", global.item(/obj/item/assembly/signaler), global.label("Reach the wires"), global.at(SPACE_PANEL), global.when(global.cond_not(COVER_OPEN)), global.wait(0), global.then(PROC_REF(signaler_at_the_wires))))
+	into += entry_line(195)
 	into += list(global.extend(/datum/act/hit/blob, global.instead(cuts_all_wires(), global.sets(PANEL_OPEN, TRUE))))
-	into += entry_line(197)
+	into += entry_line(196)
 	into += list(global.on_notice(/datum/notice/attacked_by, global.then(PROC_REF(apc_struck))))
-	into += entry_line(198)
+	into += entry_line(197)
 	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(apc_slashed))))
-	into += entry_line(199)
+	into += entry_line(198)
 	into += list(global.on_change(nameof(cell), ANY, global.then(PROC_REF(cell_changed))))
-	into += entry_line(200)
+	into += entry_line(199)
 	into += list(global.on_change(nameof(supplying), ANY, global.then(PROC_REF(supply_changed))))
-	into += entry_line(201)
+	into += entry_line(200)
 	into += list(global.examine_line(PROC_REF(fault_lights_text)))
 	// section controls: The APC's window and the buttons in it
-	into += entry_line(206, "controls")
+	into += entry_line(205, "controls")
 	into += list(global.interface("APC"))
-	into += entry_line(207, "controls")
+	into += entry_line(206, "controls")
 	into += list(global.op("breaker", global.ui_act(), global.toggles(nameof(operating)), global.then(PROC_REF(settings_applied)), global.logs(LOG_GAME)))
-	into += entry_line(208, "controls")
+	into += entry_line(207, "controls")
 	into += list(global.op("chargemode", global.ui_act("charge"), global.toggles(nameof(chargemode)), global.then(PROC_REF(chargemode_applied)), global.logs(LOG_GAME)))
-	into += entry_line(209, "controls")
+	into += entry_line(208, "controls")
 	into += list(global.op("coverlock", global.ui_act("cover"), global.toggles(nameof(coverlocked)), global.logs(LOG_GAME)))
-	into += entry_line(210, "controls")
+	into += entry_line(209, "controls")
 	into += list(global.op("set_channel", global.ui_act("channel", global.arg("channel", global.int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), global.arg("mode", global.int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))), global.then(PROC_REF(ui_set_channel))))
-	into += entry_line(212, "controls")
+	into += entry_line(211, "controls")
 	into += list(global.op("nightshift", global.ui_act(global.arg("nightshift", global.int(NIGHTSHIFT_AUTO, NIGHTSHIFT_ALWAYS))), global.cooldown(1 SECOND), global.then(PROC_REF(ui_set_nightshift)), global.logs(LOG_GAME)))
-	into += entry_line(214, "controls")
+	into += entry_line(213, "controls")
 	into += list(global.op("emergency_lighting", global.ui_act(), global.toggles(nameof(emergency_lights)), global.logs(LOG_GAME)))
-	into += entry_line(215, "controls")
+	into += entry_line(214, "controls")
 	into += list(global.op("reboot", global.ui_act(), global.then(PROC_REF(ui_reboot)), global.logs(LOG_GAME)))
-	into += entry_line(216, "controls")
+	into += entry_line(215, "controls")
 	into += list(global.op("overload", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only))), global.then(PROC_REF(ui_overload)), global.logs(LOG_GAME)))
-	into += entry_line(218, "controls")
+	into += entry_line(217, "controls")
 	into += list(global.op("lock", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), req_operable()), global.toggles(LOCK_LOCKED), global.logs(LOG_GAME)))
-	into += entry_line(220, "controls")
+	into += entry_line(219, "controls")
 	into += list(global.extend("ui_open", global.needs(req_operable())))
-	into += entry_line(221, "controls")
+	into += entry_line(220, "controls")
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))))
-	into += entry_line(222, "controls")
+	into += entry_line(221, "controls")
 	into += list(global.extend("nightshift", drop = "lock"))
-	// section cover_rules: What the APC's hatch asks of the APC beyond the library's rules
-	into += entry_line(228, "cover_rules")
-	into += list(global.extend(list("cover.open", "cover.remove"), global.needs(global.req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))))
-	into += entry_line(229, "cover_rules")
-	into += list(global.extend("cover.replace", global.needs(global.req(PROC_REF(cover_replaceable), because = PROC_REF(cover_replace_reason))), global.then(PROC_REF(cover_replaced))))
-	into += entry_line(231, "cover_rules")
-	into += list(global.extend("cell_bay.cell.take", global.when(COVER_OPEN)))
-	into += entry_line(232, "cover_rules")
-	into += list(global.extend("cell_bay.cell.insert", global.needs(global.req_built(STAGE_APC_SECURED, because = MSG(apc/needs_electronics)), global.req(PROC_REF(cell_fits), because = PROC_REF(cell_fit_reason)))))
-	into += entry_line(234, "cover_rules")
-	into += list(global.extend(CAP_LOCK, global.needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_operable())))
-	into += entry_line(235, "cover_rules")
-	into += list(global.extend("emag.use", global.needs(req_not_subverted(), req_operable())))
+	// section cover_rules: The latch on the APC's cover
+	into += entry_line(225, "cover_rules")
+	into += list(global.latch(SPACE_HATCH, PROC_REF(cover_latched), because = PROC_REF(cover_latch_reason)))
 
-/// CAPABILITIES(/obj/machinery/power/apc/angled) at code/modules/power/apc.dm:238
+/// CAPABILITIES(/obj/machinery/power/apc/angled) at code/modules/power/apc.dm:228
 /obj/machinery/power/apc/angled/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/apc.dm", 238, /obj/machinery/power/apc/angled)
-	into += entry_line(239)
+	into += entry_block("code/modules/power/apc.dm", 228, /obj/machinery/power/apc/angled)
+	into += entry_line(229)
 	into += list(global.configure(global.wall_mount(offset = 24, offset_ns = 20)))
 
 /// CAPABILITIES(/obj/machinery/power/emitter) at code/modules/power/singularity/emitter.dm:364
@@ -16834,32 +16841,34 @@
 	into += entry_line(102)
 	into += list(global.machine_basics(repair = NONE, powered = FALSE))
 	into += entry_line(103)
-	into += list(global.entry_link("/obj/machinery/power/smes::terminals", "/obj/machinery/power/terminal/smes_input::unit", a_many = TRUE))
+	into += list(global.space(SPACE_PANEL, door = nameof(panel_open), closed = MSG(smes/hatch_shut)))
 	into += entry_line(104)
-	into += list(global.interface("Smes"))
+	into += list(global.entry_link("/obj/machinery/power/smes::terminals", "/obj/machinery/power/terminal/smes_input::unit", a_many = TRUE))
 	into += entry_line(105)
-	into += list(global.op("tryinput", global.ui_act("tryinput"), global.then(PROC_REF(ui_toggle_input))))
+	into += list(global.interface("Smes"))
 	into += entry_line(106)
-	into += list(global.op("tryoutput", global.ui_act("tryoutput"), global.then(PROC_REF(ui_toggle_output))))
+	into += list(global.op("tryinput", global.ui_act("tryinput"), global.then(PROC_REF(ui_toggle_input))))
 	into += entry_line(107)
-	into += list(global.op("input", global.ui_act("input", global.arg("adjust"), global.arg("target")), global.then(PROC_REF(ui_set_input))))
+	into += list(global.op("tryoutput", global.ui_act("tryoutput"), global.then(PROC_REF(ui_toggle_output))))
 	into += entry_line(108)
-	into += list(global.op("output", global.ui_act("output", global.arg("adjust"), global.arg("target")), global.then(PROC_REF(ui_set_output))))
+	into += list(global.op("input", global.ui_act("input", global.arg("adjust"), global.arg("target")), global.then(PROC_REF(ui_set_input))))
 	into += entry_line(109)
-	into += list(global.op("add_cable", global.stack(/obj/item/stack/cable_coil, 10), global.when(nameof(panel_open)), global.needs(global.req(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))), global.wait(5 SECONDS), global.then(PROC_REF(terminal_built)), global.says(MSG(smes/terminal_built))))
-	into += entry_line(112)
-	into += list(global.op("cut_terminal", global.tool(TOOL_WIRECUTTER), global.when(nameof(panel_open)), global.needs(global.req(PROC_REF(terminal_cuttable), because = PROC_REF(terminal_cut_refusal))), global.wait(5 SECONDS), global.then(PROC_REF(terminal_taken_down)), global.says(MSG(smes/terminal_cut))))
-	into += entry_line(115)
-	into += list(global.op("weld", global.tool(TOOL_WELDER), global.costs(RES_FUEL, 0), global.needs(global.req_is(nameof(panel_open), TRUE, because = MSG(smes/hatch_shut)), global.req(PROC_REF(welder_lit), because = MSG(smes/welder_off))), global.wait(PROC_REF(repair_time)), global.then(PROC_REF(casing_repaired)), global.says(MSG(smes/repaired))))
-	into += entry_line(118)
-	into += list(global.op("swallow", global.item(/obj/item), global.when(nameof(panel_open)), global.priority(OP_PRIORITY_DEFAULT), global.then(PROC_REF(swallowed))))
+	into += list(global.op("output", global.ui_act("output", global.arg("adjust"), global.arg("target")), global.then(PROC_REF(ui_set_output))))
+	into += entry_line(110)
+	into += list(global.op("add_cable", global.stack(/obj/item/stack/cable_coil, 10), global.at(SPACE_PANEL), global.needs(global.req(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))), global.wait(5 SECONDS), global.then(PROC_REF(terminal_built)), global.says(MSG(smes/terminal_built))))
+	into += entry_line(113)
+	into += list(global.op("cut_terminal", global.tool(TOOL_WIRECUTTER), global.at(SPACE_PANEL), global.needs(global.req(PROC_REF(terminal_cuttable), because = PROC_REF(terminal_cut_refusal))), global.wait(5 SECONDS), global.then(PROC_REF(terminal_taken_down)), global.says(MSG(smes/terminal_cut))))
+	into += entry_line(116)
+	into += list(global.op("weld", global.tool(TOOL_WELDER), global.at(SPACE_PANEL), global.costs(RES_FUEL, 0), global.needs(global.req(PROC_REF(welder_lit), because = MSG(smes/welder_off))), global.wait(PROC_REF(repair_time)), global.then(PROC_REF(casing_repaired)), global.says(MSG(smes/repaired))))
 	into += entry_line(119)
-	into += list(global.examine_line(PROC_REF(examine_state)))
+	into += list(global.op("swallow", global.item(/obj/item), global.at(SPACE_PANEL), global.priority(OP_PRIORITY_DEFAULT), global.then(PROC_REF(swallowed))))
 	into += entry_line(120)
-	into += list(global.on_change(nameof(stat), ANY, global.then(PROC_REF(stat_changed))))
+	into += list(global.examine_line(PROC_REF(examine_state)))
 	into += entry_line(121)
-	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(emp_scramble))))
+	into += list(global.on_change(nameof(stat), ANY, global.then(PROC_REF(stat_changed))))
 	into += entry_line(122)
+	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(emp_scramble))))
+	into += entry_line(123)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/generator))
 
 /// CAPABILITIES(/obj/machinery/power/smes/batteryrack) at code/modules/power/batteryrack.dm:54
@@ -16904,21 +16913,21 @@
 	into += entry_line(123)
 	into += list(global.op("failing", global.item(/obj/item), global.when(nameof(failing)), global.priority(OP_PRIORITY_PART + 2), global.then(PROC_REF(failing_refusal))))
 	into += entry_line(124)
-	into += list(global.op("install_coil", global.item(/obj/item/smes_coil), global.when(nameof(panel_open)), global.then(PROC_REF(coil_installed))))
+	into += list(global.op("install_coil", global.item(/obj/item/smes_coil), global.at(SPACE_PANEL), global.then(PROC_REF(coil_installed))))
 	into += entry_line(125)
-	into += list(global.op("rcon_tag", global.tool(TOOL_MULTITOOL), global.wait(0), global.when(nameof(panel_open)), global.needs(global.req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))), global.asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.")), global.then(PROC_REF(rcon_tag_answered))))
+	into += list(global.op("rcon_tag", global.tool(TOOL_MULTITOOL), global.wait(0), global.at(SPACE_PANEL), global.needs(global.req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))), global.asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.")), global.then(PROC_REF(rcon_tag_answered))))
 	into += entry_line(129)
 	into += list(global.extend("ui_open", global.needs(global.req_on_authority(AUTH_REMOTE_ACCESS, global.req_is(nameof(RCon), TRUE, because = MSG(smes/rcon_cut)))), global.then(PROC_REF(open_wires_beside_the_window))))
 	into += entry_line(130)
 	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(grounding_frame)), when = global.cond_not(nameof(grounding))))
 
-/// CAPABILITIES(/obj/machinery/power/smes/buildable/hybrid) at code/modules/power/smes.dm:617
+/// CAPABILITIES(/obj/machinery/power/smes/buildable/hybrid) at code/modules/power/smes.dm:618
 /obj/machinery/power/smes/buildable/hybrid/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/smes.dm", 617, /obj/machinery/power/smes/buildable/hybrid)
-	into += entry_line(618)
-	into += list(global.without("cut_terminal"))
+	into += entry_block("code/modules/power/smes.dm", 618, /obj/machinery/power/smes/buildable/hybrid)
 	into += entry_line(619)
+	into += list(global.without("cut_terminal"))
+	into += entry_line(620)
 	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(hybrid_charge))))
 
 /// CAPABILITIES(/obj/machinery/power/solar) at code/modules/power/solar.dm:38
@@ -17494,7 +17503,7 @@
 	into += entry_line(126)
 	into += list(global.anchor())
 	into += entry_line(127)
-	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(req_panel_closed())))
+	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(global.req_closed(SPACE_PANEL))))
 	into += entry_line(128)
 	into += list(global.owns_one(nameof(coin), /obj/item/coin))
 	into += entry_line(129)
@@ -17508,13 +17517,13 @@
 	into += entry_line(137)
 	into += list(global.op("remove_coin", global.ui_act(), global.needs(global.req_full(nameof(coin), because = MSG(vending/no_coin)), global.req(PROC_REF(actor_is_no_silicon), because = MSG(op/failed))), global.take_out(nameof(coin))))
 	into += entry_line(138)
-	into += list(global.op("toggle_voice", global.ui_act(), global.when(PANEL_OPEN), global.toggles(nameof(shut_up))))
+	into += list(global.op("toggle_voice", global.ui_act(), global.at(SPACE_PANEL), global.toggles(nameof(shut_up))))
 	into += entry_line(139)
 	into += list(global.op("insert_coin", global.item(/obj/item/coin), global.when(nameof(has_premium)), global.needs(req_operable(), global.req_empty(nameof(coin), because = MSG(bay/full))), global.put_in(nameof(coin))))
 	into += entry_line(140)
 	into += list(global.op("reject_fake_coin", global.item(/obj/item/fake_coin), global.when(nameof(has_premium)), global.then(PROC_REF(fake_coin_rejected))))
 	into += entry_line(141)
-	into += list(global.op("refill", global.item(/obj/item/refill_cartridge), global.needs(req_panel_closed(), req_operable(), global.req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), global.req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), global.req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))), global.then(PROC_REF(refilled)), global.consumes()))
+	into += list(global.op("refill", global.item(/obj/item/refill_cartridge), global.needs(global.req_closed(SPACE_PANEL), req_operable(), global.req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), global.req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), global.req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))), global.then(PROC_REF(refilled)), global.consumes()))
 	into += entry_line(144)
 	into += list(global.op("stock", global.item(/obj/item), global.when(PROC_REF(stockable)), global.then(PROC_REF(stocked))))
 	into += entry_line(145)
@@ -17865,32 +17874,34 @@
 	..(into)
 	into += entry_block("code/game/objects/structures/crates_lockers/__closets.dm", 65, /obj/structure/closet)
 	into += entry_line(66)
-	into += list(global.owns_one(nameof(door_obj), /obj/effect/overlay/closet_door))
+	into += list(global.space(SPACE_INTERIOR, door = nameof(opened)))
 	into += entry_line(67)
-	into += list(global.anchor())
+	into += list(global.owns_one(nameof(door_obj), /obj/effect/overlay/closet_door))
 	into += entry_line(68)
-	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(global.req_is(nameof(opened), because = MSG(closet/bolts_unreachable)))))
+	into += list(global.anchor())
 	into += entry_line(69)
-	into += list(global.weld_shut(offered = PROC_REF(can_seal)))
+	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(global.req_is(nameof(opened), because = MSG(closet/bolts_unreachable)))))
 	into += entry_line(70)
-	into += list(global.extend("weld_shut.toggle", global.wait(2 SECONDS), global.needs(global.req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge)))))
+	into += list(global.weld_shut(offered = PROC_REF(can_seal)))
 	into += entry_line(71)
+	into += list(global.extend("weld_shut.toggle", global.wait(2 SECONDS), global.needs(global.req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge)))))
+	into += entry_line(72)
 	into += list(global.op("door", global.inputs(global.hand(), global.menu()), global.answers(INTENT_USE), global.label("Toggle Open"), global.when(global.req(PROC_REF(bare_hand_or_menu))), global.needs(global.req(PROC_REF(door_ready), because = MSG(closet/wont_budge))), global.then(PROC_REF(door_toggled))))
-	into += entry_line(73)
-	into += list(global.op("cut_apart", global.tool(TOOL_WELDER), global.label("Cut apart"), global.when(nameof(opened)), global.priority(global.above("weld_shut.toggle")), global.wait(0), global.costs(RES_FUEL, 0), global.needs(global.req(PROC_REF(welder_lit), because = MSG(weld/needs_lit))), global.then(PROC_REF(cut_apart)), global.says(MSG(closet/cut_apart))))
-	into += entry_line(75)
-	into += list(global.op("empty_basket", global.item(/obj/item/storage/laundry_basket), global.label("Empty into"), global.when(nameof(opened)), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(basket_emptied)), global.says(MSG(closet/emptied_basket))))
-	into += entry_line(77)
-	into += list(global.op("stuff_grab", global.item(/obj/item/grab), global.label("Stuff inside"), global.when(nameof(opened)), global.priority(OP_PRIORITY_PART), global.needs(global.req(PROC_REF(grab_fits), because = PROC_REF(grab_refusal))), global.then(PROC_REF(stuff_grabbed))))
-	into += entry_line(79)
-	into += list(global.op("set_down", global.item(/obj/item), global.label("Put down"), global.when(nameof(opened)), global.priority(OP_PRIORITY_DEFAULT), global.needs(global.req(PROC_REF(can_set_down), because = MSG(closet/cant_put_down))), global.then(PROC_REF(set_down))))
-	into += entry_line(81)
-	into += list(global.op("stuff", global.item(/atom/movable), global.gesture(GESTURE_DRAG), global.label("Stuff inside"), global.when(nameof(opened)), global.then(PROC_REF(stuff_dragged))))
+	into += entry_line(74)
+	into += list(global.op("cut_apart", global.tool(TOOL_WELDER), global.label("Cut apart"), global.at(SPACE_INTERIOR), global.priority(global.above("weld_shut.toggle")), global.wait(0), global.costs(RES_FUEL, 0), global.needs(global.req(PROC_REF(welder_lit), because = MSG(weld/needs_lit))), global.then(PROC_REF(cut_apart)), global.says(MSG(closet/cut_apart))))
+	into += entry_line(76)
+	into += list(global.op("empty_basket", global.item(/obj/item/storage/laundry_basket), global.label("Empty into"), global.at(SPACE_INTERIOR), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(basket_emptied)), global.says(MSG(closet/emptied_basket))))
+	into += entry_line(78)
+	into += list(global.op("stuff_grab", global.item(/obj/item/grab), global.label("Stuff inside"), global.at(SPACE_INTERIOR), global.priority(OP_PRIORITY_PART), global.needs(global.req(PROC_REF(grab_fits), because = PROC_REF(grab_refusal))), global.then(PROC_REF(stuff_grabbed))))
+	into += entry_line(80)
+	into += list(global.op("set_down", global.item(/obj/item), global.label("Put down"), global.at(SPACE_INTERIOR), global.priority(OP_PRIORITY_DEFAULT), global.needs(global.req(PROC_REF(can_set_down), because = MSG(closet/cant_put_down))), global.then(PROC_REF(set_down))))
 	into += entry_line(82)
-	into += list(global.op("strike", global.item(/obj/item), global.hostile(), global.label("Strike"), global.priority(OP_PRIORITY_ATTACK), global.then(PROC_REF(struck_with))))
+	into += list(global.op("stuff", global.item(/atom/movable), global.gesture(GESTURE_DRAG), global.label("Stuff inside"), global.at(SPACE_INTERIOR), global.then(PROC_REF(stuff_dragged))))
 	into += entry_line(83)
+	into += list(global.op("strike", global.item(/obj/item), global.hostile(), global.label("Strike"), global.priority(OP_PRIORITY_ATTACK), global.then(PROC_REF(struck_with))))
+	into += entry_line(84)
 	into += list(global.op("break_out", global.ai(), global.label("Break out"), global.wait(PROC_REF(breakout_wait), keeps = TARGET_PRESENT | ALIVE), global.needs(global.req_capable(), global.req(PROC_REF(can_break_out), because = MSG(closet/cant_break_out))), global.begins(MSG(closet/break_begin)), global.then(PROC_REF(broke_out)), global.logs(LOG_GAME)))
-	into += entry_line(86)
+	into += entry_line(87)
 	into += list(global.op("devour", global.menu(), global.label("Devour Occupants"), global.when(global.req(PROC_REF(actor_shut_in))), global.needs(global.req(PROC_REF(has_prey), because = MSG(closet/no_targets))), global.asks(/datum/prompt/choice/prey), global.then(PROC_REF(devoured))))
 
 /// CAPABILITIES(/obj/structure/closet/body_bag) at code/game/objects/items/bodybag.dm:90
@@ -18078,12 +18089,12 @@
 	into += entry_line(45)
 	into += list(global.without("strike"))
 	into += entry_line(46)
-	into += list(global.op("climb_in", global.hand(), global.label("Climb in"), global.when(nameof(opened)), global.wait(5 SECONDS), global.begins(MSG(grave/climb_start)), global.then(PROC_REF(climbed_in)), global.says(MSG(grave/climbed)), global.on_interrupt(PROC_REF(climb_interrupted))))
-	into += entry_line(48)
+	into += list(global.op("climb_in", global.hand(), global.label("Climb in"), global.at(SPACE_INTERIOR), global.wait(5 SECONDS), global.begins(MSG(grave/climb_start)), global.then(PROC_REF(climbed_in)), global.says(MSG(grave/climbed)), global.on_interrupt(PROC_REF(climb_interrupted))))
+	into += entry_line(49)
 	into += list(global.op("fill", global.item(/obj/item/shovel), global.label("Fill in"), global.when(nameof(opened)), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.begins(MSG(grave/fill_start)), global.then(PROC_REF(filled_in)), global.says(MSG(grave/filled)), global.on_interrupt(PROC_REF(fill_interrupted))))
-	into += entry_line(50)
+	into += entry_line(51)
 	into += list(global.op("smooth_over", global.item(/obj/item/shovel), global.label("Smooth over"), global.when(global.cond_not(nameof(opened))), global.hostile(), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.begins(MSG(grave/smooth_start)), global.then(PROC_REF(smoothed_over)), global.says(MSG(grave/smoothed)), global.on_interrupt(PROC_REF(smooth_interrupted))))
-	into += entry_line(52)
+	into += entry_line(53)
 	into += list(global.op("unearth", global.item(/obj/item/shovel), global.label("Unearth"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.begins(MSG(grave/dig_start)), global.then(PROC_REF(dug_out)), global.says(MSG(grave/dug)), global.on_interrupt(PROC_REF(dig_interrupted))))
 
 /// CAPABILITIES(/obj/structure/closet/secure_closet) at code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm:27
@@ -19303,7 +19314,7 @@
 	into += entry_line(259)
 	into += list(global.cover(open = global.hand(), starts_open = TRUE))
 	into += entry_line(260)
-	into += list(global.compartment(BAY_CABINET, door = CAP_COVER))
+	into += list(global.space(BAY_CABINET, door = CAP_COVER))
 	into += entry_line(261)
 	into += list(global.cell_bay(nameof(cell), at = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell))
 	into += entry_line(262)
@@ -20039,7 +20050,7 @@
 	into += entry_line(132)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL))
 	into += entry_line(133)
-	into += list(global.cell_bay(nameof(cell), at = BAY_HATCH))
+	into += list(global.cell_bay(nameof(cell), at = SPACE_HATCH))
 	into += entry_line(134)
 	into += list(global.interface("P2Box"))
 	into += entry_line(135)

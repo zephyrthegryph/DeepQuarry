@@ -1,8 +1,13 @@
 // The cover capability (doc/rewrite/final_api.html, section 11 "The library": cover(name, open, remove, replace)).
 //
-// A cover over the holder's insides: the door of a bay (BAY_HATCH, compartment()). State keys COVER_OPEN and COVER_REMOVED (a removed cover is
-// open for good); ops cover.open (toggles COVER_OPEN, by the `open` parts: a crowbar by default), cover.remove (the `remove` parts, when given)
-// and cover.replace (the `replace` parts, when given: it fits a cover back on). Look layer and examine lines come with it.
+// A cover over the holder's insides: the door of a space (space(SPACE_HATCH, door = CAP_COVER), code/engine/library/spaces.dm). State keys
+// COVER_OPEN and COVER_REMOVED (a removed cover is open for good); ops cover.open (toggles COVER_OPEN, by the `open` parts: a crowbar by
+// default), cover.remove (the `remove` parts, when given) and cover.replace (the `replace` parts, when given). Look layer and examine lines come
+// with it. Being a door, its open and remove ops need req_door_free(CAP_COVER): a latch of its space holds it shut, a protrusion holds it open.
+//
+// Repair is a construction step over the cover's own stages: whole, then broken (`broken`: knocked off, or the holder not working, by default;
+// a type names its own, the APC its BROKEN bit). replace = the step from broken back to whole, offered only on a broken cover (silent
+// otherwise), and refused while the space it closes still holds something ("Remove the power cell first.").
 //
 //   cover()                                                       a crowbar opens and closes it
 //   cover(open = hand())                                          an empty hand does
@@ -17,7 +22,7 @@ MSG_DEF(cover/refitted, "You fit a new cover on %T%.", "%U% fits a new cover on 
 MSG_DEF_SELF(cover/open_examine, "Its cover is open.")
 MSG_DEF_SELF(cover/removed_examine, "Its cover has been removed.")
 
-CAPABILITY_TYPE(cover, CAP_COVER, /datum/capability/lib/cover, key = name, name = "cover", open = null, remove = null, replace = null, starts_open = FALSE)
+CAPABILITY_TYPE(cover, CAP_COVER, /datum/capability/lib/cover, key = name, name = "cover", open = null, remove = null, replace = null, starts_open = FALSE, broken = null, space = SPACE_HATCH)
 cap_keys(CAP_COVER, OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on))
 
 /// Base of the library's capability datums (a CAPABILITY_TYPE with code of its own). The legacy library owns the plain names
@@ -30,15 +35,16 @@ cap_keys(CAP_COVER, OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on))
 /datum/capability/lib/cover/entries()
 	var/list/entries = list()
 	entries += op("open", open || tool(TOOL_CROWBAR), \
-		needs(req_is(COVER_REMOVED, FALSE, because = MSG(cover/removed))), \
+		needs(req_is(COVER_REMOVED, FALSE, because = MSG(cover/removed)), req_door_free(CAP_COVER)), \
 		toggles(COVER_OPEN), says(CAP_PROC(open_message)))
 	if(remove)
 		entries += op("remove", remove, label("Remove cover"), \
-			needs(req_is(COVER_REMOVED, FALSE, because = MSG(cover/removed))), \
+			needs(req_is(COVER_REMOVED, FALSE, because = MSG(cover/removed)), req_door_free(CAP_COVER)), \
 			sets(COVER_REMOVED, TRUE), sets(COVER_OPEN, TRUE), says(MSG(cover/pried_off)))
 	if(replace)
 		entries += op("replace", replace, label("Replace cover"), \
-			when(cond_any(COVER_REMOVED, cond_not(STAT_OPERABLE))), \
+			when(broken || cond_any(COVER_REMOVED, cond_not(STAT_OPERABLE))), \
+			space ? needs(req_space_empty(space)) : null, \
 			sets(COVER_REMOVED, FALSE), sets(COVER_OPEN, FALSE), says(MSG(cover/refitted)))
 	entries += look_layer(LOOK_COVER_OPEN, when = cond_all(COVER_OPEN, cond_not(COVER_REMOVED)))
 	entries += examine_line(MSG(cover/removed_examine), when = COVER_REMOVED)
@@ -54,18 +60,21 @@ cap_keys(CAP_COVER, OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on))
 	if(starts_open)
 		cap_key_set(A.holder, COVER_OPEN, TRUE, selector)
 
-/// An open or removed cover leaves its bay exposed.
-/datum/capability/lib/cover/bay_exposed(datum/holder)
+/// An open or removed cover leaves its space open.
+/datum/capability/lib/cover/door_open(datum/holder)
 	return cover_open(holder, null) || cover_removed(holder, null)
 
 GLOBAL_LIST_INIT(cover_door_keys, list(COVER_OPEN, COVER_REMOVED))
 
-/datum/capability/lib/cover/bay_door_keys(datum/holder)
+/datum/capability/lib/cover/door_keys(datum/holder)
 	return GLOB.cover_door_keys
 
-/// The reason shown while the cover keeps its bay closed.
-/datum/capability/lib/cover/bay_closed_reason()
+/// The reason shown while the cover keeps its space closed.
+/datum/capability/lib/cover/door_closed_reason()
 	return /datum/msg/cover/closed
+
+/datum/capability/lib/cover/door_close_first_reason()
+	return /datum/msg/hatch/close_cover
 
 // ---- the bundles a cover's params are made of ----
 

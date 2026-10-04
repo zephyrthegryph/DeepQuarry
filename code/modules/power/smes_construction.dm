@@ -121,8 +121,8 @@ MSG_DEF_SELF(smes/tag_taken, "That RCON tag already exists.")
 
 CAPABILITIES(/obj/machinery/power/smes/buildable)
 	op("failing", item(/obj/item), when(nameof(failing)), priority(OP_PRIORITY_PART + 2), then(PROC_REF(failing_refusal)))
-	op("install_coil", item(/obj/item/smes_coil), when(nameof(panel_open)), then(PROC_REF(coil_installed)))
-	op("rcon_tag", tool(TOOL_MULTITOOL), wait(0), when(nameof(panel_open)),
+	op("install_coil", item(/obj/item/smes_coil), at(SPACE_PANEL), then(PROC_REF(coil_installed)))
+	op("rcon_tag", tool(TOOL_MULTITOOL), wait(0), at(SPACE_PANEL),
 		needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))),
 		asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.")),
 		then(PROC_REF(rcon_tag_answered)))

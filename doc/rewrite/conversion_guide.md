@@ -66,7 +66,7 @@ examples, section 17 and `doc/rewrite/api_mapping.tsv` map old forms to new ones
 | `wires(WiresType)` | `.../wires.dm` | `wires.pulse/cut` behind the panel; `wire_set_of(E)`, `wire_is_cut(E, W)`; `req_wire()`, `req_wire_cut()`, `cuts_all_wires()` |
 | `lock(...)`, `emag(parts, say =, repeatable =)`, `subversion_reset(parts)` | `code/library/access/` | ID lock (gates every UI and `TAG_CONTROL` op), emag, reset |
 | `breakable`, `wall_mount`, `machine_basics`, `wall_machine`, `maintenance_hatch` | `code/library/machine/machine.dm` | the machine core bundles |
-| `compartment`, `cell_bay`, `telekinesis` | `code/engine/library/bays.dm` | bays and the cell slot |
+| `space`, `latch`, `protrudes`, `req_closed`, `req_space_empty`, `size_is`, `cell_bay`, `telekinesis` | `code/engine/library/spaces.dm` | physical paths (spaces and doors, final_api section 8) and the cell slot |
 | `powered`, `powered_by` | `code/domains/power/powered.dm` | the power adapters |
 | `look_layer`, `examine_line`, `interface` + `ui_data`, `present_*` | `code/engine/present/outputs.dm` | the presentation bridge |
 

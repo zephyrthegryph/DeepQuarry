@@ -74,7 +74,17 @@
 	var/key = C.oplan ? C.oplan.key : "legacy:[C.legacy?.type]"
 	var/origin_text = C.oplan ? C.oplan.origin : "legacy"
 	var/line = "[index ? "[index]. " : ""][key] [binding_text] tier=[op_tier_name(C.tier)] side=[C.side == CAND_TARGET ? "target" : (C.side == CAND_HELD ? "held" : "actor")] @ [origin_text]"
-	if(C.dropped_by)
+	var/path_why = (!C.dropped_by && C.oplan?.space) ? op_cand_path_reason(R, C) : null
+	if(C.oplan?.space)
+		var/atom/T = (C.side == CAND_TARGET) ? R.target : C.holder
+		line += " [istype(T) ? "path [space_path_text(T, C.oplan.space, R.actor, R.authority || AUTH_PHYSICAL)]" : ""]"
+	if(path_why && C != winner && op_cand_catch_all(C))
+		line += " -> dropped: a catch-all behind a closed door ([reason_text(path_why)])"
+	else if(path_why && C != winner)
+		line += " -> set aside: the path is blocked ([reason_text(path_why)]); it answers only when nothing else does"
+	else if(path_why && C == winner)
+		line += " -> WINNER but blocked: nothing else answers, so Require refuses with the blocking door's reason ([reason_text(path_why)])"
+	else if(C.dropped_by)
 		line += " -> dropped by [C.dropped_by]"
 		if(C.dropped_reason)
 			line += " ([reason_text(C.dropped_reason)])"
@@ -102,11 +112,7 @@
 /// The explain text of a resolution: one line per candidate in the order they were considered, then the winner.
 /proc/op_explain_lines(datum/op_resolution/R)
 	. = list()
-	var/datum/op_cand/winner = null
-	for(var/datum/op_cand/C as anything in R.ordered)
-		if(op_cand_when(R, C))
-			winner = C
-			break
+	var/datum/op_cand/winner = op_resolution_winner(R)
 	. += "explain: actor [R.actor?.type] target [R.target?.type] held [R.held ? R.held.type : "nothing"] origin [op_origin_name(R.origin)][R.gesture ? " gesture [R.gesture]" : ""]"
 	if(R.gate_reason)
 		. += "  actor gate: [reason_text(R.gate_reason)]"
