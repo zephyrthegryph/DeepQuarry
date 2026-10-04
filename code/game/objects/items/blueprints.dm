@@ -73,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, \
 			to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
 			return INTERACTION_HANDLED_PASS
 		else if(blueprint.uses_charges && blueprint.charges) //Getting from another with limited charges.
-			om_ask(user, /datum/om/prompt/number/blueprint_charges, PROC_REF(add_charges), subject = blueprint, title = "[blueprint]", message = "How many charges do you want to add to the [src]?", default = missing_charges, max = blueprint.charges)
+			open_request(src, /datum/prompt/number/blueprint_charge_review, PROC_REF(blueprint_charges_answered), answerer = user, subject = blueprint, title = "[blueprint]", question = "How many charges do you want to add to the [src]?", default = missing_charges, charge_limit = blueprint.charges)
 			return INTERACTION_HANDLED_PASS
 		else if(!blueprint.uses_charges || !blueprint.charges) // The item it's being hit by doesn't use charges OR doesn't have any charges.
 			to_chat(user, span_warning("You can't add find any suitable material to add from the [blueprint]!"))
@@ -318,17 +318,45 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			return message
 	return ""
 
-/// Moving charges from another blueprint (the subject, still in hand). A cancel says so.
-/datum/om/prompt/number/blueprint_charges
-	requires = PROMPT_IN_HAND
+/// Moving charges from another blueprint; only an actual answer checks its hand/capability gates.
+/datum/prompt/number/blueprint_charge_review
+	timeout = 0
+	var/charge_limit
 
-/datum/om/prompt/number/blueprint_charges/cancelled()
-	to_chat(answerer, span_notice("You decide not to add any more material."))
+/datum/prompt/number/blueprint_charge_review/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, charge_limit, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
 
-/obj/item/areaeditor/proc/add_charges(datum/om/prompt/number/blueprint_charges/ask)
+/datum/prompt/number/blueprint_charge_review/recheck_extra()
+	if(isnull(answer_value))
+		return null
+	var/mob/user = answerer
+	if(!istype(user) || !subject || (user.get_active_hand() != subject && user.get_inactive_hand() != subject))
+		return "not holding it"
+	if(user.incapacitated())
+		return "not able to"
+
+/obj/item/areaeditor/proc/blueprint_charges_answered(datum/act/request/context)
+	if(!context.answer)
+		var/obj/item/areaeditor/donor = context.request.subject
+		var/mob/user = context.request.answerer
+		if(QDELETED(donor) || QDELETED(user))
+			return
+		if(isnull(context.request.answer_value) && (context.request.outcome == REQ_CANCELLED || context.request.outcome == REQ_TIMED_OUT))
+			to_chat(context.request.answerer, span_notice("You decide not to add any more material."))
+		return
+	var/datum/result/caught = safe_call(PROC_REF(blueprint_charges_apply), context)
+	if(!caught.ok)
+		stack_trace("Blueprint charges answer: [caught.error]")
+	return caught.value
+
+/obj/item/areaeditor/proc/blueprint_charges_apply(datum/act/request/context)
+	var/datum/prompt/number/blueprint_charge_review/ask = context.answer
 	var/mob/user = ask.answerer
 	var/obj/item/areaeditor/blueprint = ask.subject
-	var/to_add = min(ask.number, initial_charges - charges)
+	var/to_add = min(ask.answer_value, initial_charges - charges)
 	if(blueprint.charges >= to_add)
 		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
 		blueprint.charges -= to_add
