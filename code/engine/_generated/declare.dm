@@ -3272,6 +3272,15 @@
 	into += entry_line(1013)
 	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
+/// CAPABILITIES(/datum/prompt/text/electronics_rename) at code/modules/integrated_electronics/core/integrated_circuit.dm:104
+/datum/prompt/text/electronics_rename/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/integrated_electronics/core/integrated_circuit.dm", 104, /datum/prompt/text/electronics_rename)
+	into += entry_line(105)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(106)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
 	..(into)

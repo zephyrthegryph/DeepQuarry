@@ -293,9 +293,28 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k272 = rerun_ask(user, "k272", PROC_REF(electronic_assembly_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name this?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k272))
+	if(!ismob(M) || QDELETED(M))
 		return
+	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "What do you want to name this?", default = name)
+
+/obj/item/electronic_assembly/proc/rename_entered(datum/act/request/A)
+	var/datum/prompt/text/electronics_rename/request = A.request
+	if(request.captures_gone())
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+			SStgui.update_uis(src)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_rename), A)
+	if(!result.ok)
+		stack_trace("Electronics rename request: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/electronic_assembly/proc/apply_rename(datum/act/request/A)
+	var/mob/M = A.request.answerer
+	if(!check_interactivity(M))
+		return
+	var/_answer_k272 = A.answer.answer_value
 	var/input = sanitizeSafe(_answer_k272, MAX_NAME_LEN)
 	if(src && input)
 		to_chat(M, span_notice("The machine now has a label reading '[input]'."))
