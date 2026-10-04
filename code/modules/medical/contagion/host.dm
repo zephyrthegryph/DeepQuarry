@@ -209,16 +209,44 @@ ADMIN_VERB(ReleaseVirus, R_SPAWN|R_EVENT, "Release Virus", "Release a pre-set vi
 		if(!initial(proto.max_stages))
 			continue
 		choices += path
-	var/disease = verb_ask(user, "k247", args, /datum/om/prompt/choice, message = "Choose virus", title = "Viruses", choices = choices)
-
-	if(isnull(disease))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return FALSE
+	open_request(src, /datum/prompt/choice/admin_release_virus, PROC_REF(disease_chosen), answerer = answerer, question = "Choose virus", title = "Viruses", choices = choices)
 
-	var/mob/living/carbon/human/H = verb_ask(user, "k252", args, /datum/om/prompt/choice, message = "Choose infectee", title = "Characters", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
+/datum/prompt/choice/admin_release_virus
+	rights = R_SPAWN|R_EVENT
+	timeout = 0
+	var/disease_type
 
-	if(isnull(H))
+/datum/prompt/choice/admin_release_virus/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/admin_verb/ReleaseVirus/proc/disease_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/admin_release_virus, PROC_REF(infectee_chosen), answerer = answerer, question = "Choose infectee", title = "Characters", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS), disease_type = A.request.answer_value)
+
+/datum/admin_verb/ReleaseVirus/proc/infectee_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_release_virus/ask = A.answer
+	var/client/user = ask.answerer?.client
+	if(!user)
+		return
+	var/mob/living/carbon/human/H = ask.answer_value
+	if(!istype(H) || QDELETED(H))
 		return FALSE
-
+	var/disease = ask.disease_type
 	var/datum/affliction/contagion/D = new disease
 
 	if(!H.has_contagion(D) && H.force_contagion(D))
