@@ -72,12 +72,14 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 /// Old attack_self.
 /obj/item/borg/upgrade/utility/rename/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/text, PROC_REF(name_entered), title = "Robot Reclassification", message = "Enter new robot name", default = heldname, max_length = MAX_NAME_LEN, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(name_entered), answerer = user, title = "Robot Reclassification", question = "Enter new robot name", default = heldname, max_len = MAX_NAME_LEN, name_text = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/borg/upgrade/utility/rename/proc/name_entered(datum/om/prompt/text/ask)
-	if(ask.text)
-		heldname = ask.text
+/obj/item/borg/upgrade/utility/rename/proc/name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		heldname = A.answer.answer_value
 
 /obj/item/borg/upgrade/utility/rename/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
