@@ -154,15 +154,24 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_togglefooter)
 // Admin variant uses no pen/range checks (admins fax from anywhere) and
 // always pencode-parses with the chosen crayon flag.
 /obj/item/paper/admin/proc/admin_write(id, mob/user)
+	return admin_write_stage(id, user, list())
+
+/obj/item/paper/admin/proc/admin_write_stage(id, mob/user, list/write_answers)
 	if(free_space <= 0)
 		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
 		return
 	// The answers re-run this write.
-	var/t = rerun_ask(user, "text", PROC_REF(admin_write), args, /datum/om/prompt/text, message = "Enter what you want to write:", title = "Write", max_length = free_space, multiline = TRUE)
+	if(!("text" in write_answers))
+		open_request(src, /datum/prompt/text/admin_paper_write_review, PROC_REF(admin_write_answered), answerer = user, write_operator = user, write_id = id, write_answers = write_answers, write_key = "text", question = "Enter what you want to write:", title = "Write", max_len = free_space, multiline = TRUE, name_text = (free_space <= MAX_NAME_LEN))
+		return
+	var/t = write_answers["text"]
 	if(!t)
 		return
 	if(findtext(t, "\[sign\]"))
-		var/signature = rerun_ask(user, "signature", PROC_REF(admin_write), args, /datum/om/prompt/text, message = "Enter the name you wish to sign the paper with", title = "Signature")
+		if(!("signature" in write_answers))
+			open_request(src, /datum/prompt/text/admin_paper_write_review, PROC_REF(admin_write_answered), answerer = user, write_operator = user, write_id = id, write_answers = write_answers, write_key = "signature", question = "Enter the name you wish to sign the paper with", title = "Signature")
+			return
+		var/signature = write_answers["signature"]
 		if(isnull(signature))
 			return
 		admin_signature = signature
@@ -199,3 +208,40 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_togglefooter)
 /// The destination this refers to (a relation view: null once that is deleted).
 /obj/item/paper/admin/proc/destination() as /obj/machinery/photocopier/faxmachine
 	return destination
+
+/obj/item/paper/admin/proc/admin_write_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(admin_write_apply), A)
+	if(!result.ok)
+		stack_trace("Admin paper write replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/item/paper/admin/proc/admin_write_apply(datum/act/request/A)
+	var/datum/prompt/text/admin_paper_write_review/ask = A.answer
+	ask.write_answers[ask.write_key] = ask.answer_value
+	return admin_write_stage(ask.write_id, ask.write_operator, ask.write_answers)
+
+/datum/prompt/text/admin_paper_write_review
+	timeout = 0
+	var/mob/write_operator
+	var/write_operator_expected = FALSE
+	var/write_id
+	var/list/write_answers
+	var/write_key
+
+CAPABILITIES(/datum/prompt/text/admin_paper_write_review)
+	ref_one(nameof(write_operator), /mob)
+
+/datum/prompt/text/admin_paper_write_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = write_operator
+	write_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(write_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(write_operator), captured_operator)
+
+/datum/prompt/text/admin_paper_write_review/recheck_extra()
+	if(write_operator_expected && QDELETED(write_operator))
+		return "gone"
