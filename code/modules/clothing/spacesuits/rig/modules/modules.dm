@@ -44,7 +44,6 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 	var/suit_overlay_icon = 'icons/mob/rig_modules.dmi'
 	var/suit_overlay_active             // If set, drawn over icon and mob when effect is active.
 	var/suit_overlay_inactive           // As above, inactive.
-	var/suit_overlay_used               // As above, when engaged.
 
 	//Display fluff
 	var/interface_name = "hardsuit upgrade"

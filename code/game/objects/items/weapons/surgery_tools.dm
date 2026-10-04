@@ -20,7 +20,6 @@
 	w_class = ITEMSIZE_SMALL
 	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
 	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
-	var/helpforce = 0	//For help intent things
 
 /obj/item/surgical/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(stance == I_HELP)	//A tad messy, but this should stop people from smacking their patients in surgery
@@ -200,7 +199,6 @@
 	icon_state = "fixovein"
 	force = 0
 	throwforce = 1.0
-	var/usage_amount = 10
 	drop_sound = SFX_ITEMS_DROP_BOTTLE
 
 /obj/item/surgical/bonesetter
