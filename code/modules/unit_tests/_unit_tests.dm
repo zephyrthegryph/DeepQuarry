@@ -469,6 +469,7 @@
 #include "dq_p2_table_behaviour.dm"
 #include "dq_p2_seating_behaviour.dm"
 #include "dq_climb_conversion_tests.dm"
+#include "dq_p2_closet_behaviour.dm"
 #include "dq_p2_reagent_behaviour.dm"
 #include "dq_p2_reagent_spray_behaviour.dm"
 #include "dq_p2_lights_behaviour.dm"

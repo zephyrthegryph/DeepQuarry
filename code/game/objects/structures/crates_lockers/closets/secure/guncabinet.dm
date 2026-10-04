@@ -42,12 +42,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/secure_closet/guncabinet, TYPE_PRO
 
 		. += "door"
 
-		if(sealed)
+		if(is_welded(src))
 			. += "sealed"
 
 		if(broken)
 			. += "broken"
-		else if (locked)
+		else if (lock_locked(src))
 			. += "locked"
 		else
 			. += "open"

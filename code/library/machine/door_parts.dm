@@ -3,9 +3,10 @@
 //   bolts(drop = "lock", raise = "unlock", starts = nameof(bolted_at_start))
 //        State key BOLTS_BOLTED. The bolts are the door's own mechanism: `drop` and `raise` name procs of the holder taking (forced) that move them and
 //        answer TRUE when they did. A map says a door starts bolted with the holder var `starts` names. The look shows them as the layer "bolts".
-//   weld_shut(offered = PROC_REF(can_weld), starts = nameof(welded_at_start))
+//   weld_shut(offered = PROC_REF(can_weld), starts = nameof(welded_at_start), tool = TOOL_WELDER)
 //        State key WELD_SHUT_WELDED and op weld_shut.toggle: a lit welder welds the closed door shut and frees it again where `offered` (a proc of the
-//        holder, x(datum/act/A)) says welding is on offer. Look layer and examine line.
+//        holder, x(datum/act/A)) says welding is on offer. Look layer and examine line. `tool` is the quality that seals it where it is not a welder
+//        (a coffin is screwed shut): no flame is needed and no fuel is burned then.
 //   door_emergency()
 //        State key DOOR_EMERGENCY_ENGAGED: while engaged the door lets anyone through (the door's own check_access_list() reads it). The look shows
 //        it as the layer "emergency".
@@ -55,15 +56,20 @@ MSG_DEF_SELF(weld/not_welded, "It is not welded shut.")
 MSG_DEF_SELF(weld/needs_lit, "The welding tool needs to be lit.")
 MSG_DEF_SELF(weld/examine, "It has been welded shut.")
 
-CAPABILITY_TYPE(weld_shut, CAP_WELD_SHUT, /datum/capability/lib/weld_shut, key = NONE, offered = null, starts = null)
+CAPABILITY_TYPE(weld_shut, CAP_WELD_SHUT, /datum/capability/lib/weld_shut, key = NONE, offered = null, starts = null, tool = TOOL_WELDER)
 cap_keys(CAP_WELD_SHUT, WELDED = MSG(weld/not_welded))
 
 /datum/capability/lib/weld_shut
 	holder_hooks = HOLDER_HOOK_INIT
 
 /datum/capability/lib/weld_shut/entries()
+	if(tool != TOOL_WELDER)
+		return list(
+			op("toggle", tool(tool), label("Seal"), when(offered), wait(0), toggles(WELD_SHUT_WELDED), says(CAP_PROC(toggled_message))),
+			look_layer(LOOK_WELDED, when = WELD_SHUT_WELDED),
+			examine_line(MSG(weld/examine), when = WELD_SHUT_WELDED))
 	return list(
-		op("toggle", tool(TOOL_WELDER), label("Weld shut"), when(offered), wait(0), costs(RES_FUEL, 0), toggles(WELD_SHUT_WELDED), says(CAP_PROC(toggled_message)), \
+		op("toggle", tool(tool), label("Weld shut"), when(offered), wait(0), costs(RES_FUEL, 0), toggles(WELD_SHUT_WELDED), says(CAP_PROC(toggled_message)), \
 			needs(req(CAP_PROC(welder_lit), because = MSG(weld/needs_lit)))),
 		look_layer(LOOK_WELDED, when = WELD_SHUT_WELDED),
 		examine_line(MSG(weld/examine), when = WELD_SHUT_WELDED))

@@ -118,8 +118,7 @@ CAPABILITIES(/obj/machinery/door_timer)
 			continue
 		if(C.opened && !C.close())
 			continue
-		C.locked = TRUE
-		C.icon_state = "closed_locked"
+		C.force_lock(TRUE)
 	return 1
 
 /// Opens and unlocks doors, power check
@@ -142,8 +141,7 @@ CAPABILITIES(/obj/machinery/door_timer)
 			continue
 		if(C.opened)
 			continue
-		C.locked = FALSE
-		C.icon_state = "closed_unlocked"
+		C.force_lock(FALSE)
 
 	return 1
 

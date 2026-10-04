@@ -68,7 +68,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 
 	if(istype(target, /obj/structure/closet/crate/secure))
 		var/obj/structure/closet/crate/secure/A = target
-		if(A.locked)
+		if(lock_locked(A))
 			to_chat(user, span_notice("Overriding access. Stand by."))
 			om_task_timed(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done), done_args = list(user, A), claims = TRUE)
 		else
@@ -76,7 +76,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 
 	if(istype(target, /obj/structure/closet/secure_closet))
 		var/obj/structure/closet/secure_closet/A = target
-		if(A.locked)
+		if(lock_locked(A))
 			to_chat(user, span_notice("Overriding access. Stand by."))
 			om_task_timed(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done2), done_args = list(user, A), claims = TRUE)
 		else
@@ -119,12 +119,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 
 /obj/item/multitool/hacktool/proc/attempt_hack_timed_done(mob/user, obj/structure/closet/crate/secure/A)
 	to_chat(user, span_notice("Override successful!"))
-	A.locked = FALSE
+	A.force_lock(FALSE)
 	A.update_icon()
 	play_sfx(A, SFX_MACHINES_CLICK, 0.3, extrarange = -3)
-/obj/item/multitool/hacktool/proc/attempt_hack_timed_done2(mob/user, obj/structure/closet/crate/secure/A)
+/obj/item/multitool/hacktool/proc/attempt_hack_timed_done2(mob/user, obj/structure/closet/secure_closet/A)
 	to_chat(user, span_notice("Override successful!"))
-	A.locked = FALSE
+	A.force_lock(FALSE)
 	A.update_icon()
 	play_sfx(A, SFX_MACHINES_CLICK, 0.3, extrarange = -3)
 

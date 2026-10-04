@@ -41,22 +41,28 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag/robobag, TYPE_PRO
 
 		. += corptag_icon_state
 
-EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_ITEM(null, PROC_REF(robobag_interaction_item)), \
-)
+MSG_DEF(robobag/tag_removed, "You remove %I% from %T%.", "%U% removes the tag from %T%.")
 
-/// Old click_alt.
-/obj/structure/closet/body_bag/cryobag/robobag/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!Adjacent(user))
-		return FALSE
-	if(corptag)
-		corptag.forceMove(get_turf(user))
-		to_chat(user, span_notice("You remove \the [corptag] from \the [src]."))
-		own_take(src, nameof(corptag))
-		update_icon()
-		return TRUE
-	return FALSE
+// A synthmorph bag is a stasis bag for machines: a shut one is scanned with a cyborg analyzer, takes a corporate tag (a badge) in exchange for the one it has,
+// and gives the tag back to an alt-click.
+CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
+	owns_one(nameof(corptag), /obj/item/clothing/accessory/badge)
+	op("scan_robot", item(/obj/item/robotanalyzer), label("Scan"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(robot_analyser_used)))
+	op("swap_tag", item(/obj/item/clothing/accessory/badge), label("Attach tag"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(tag_swapped)))
+	op("remove_tag", hand(), gesture(GESTURE_ALT), label("Remove tag"), when(req(PROC_REF(has_tag))), then(PROC_REF(tag_removed)))
+
+/// There is a tag on the bag.
+/obj/structure/closet/body_bag/cryobag/robobag/proc/has_tag(datum/act/op/A)
+	return !!corptag
+
+/// The tag comes off onto the floor at the one taking it.
+/obj/structure/closet/body_bag/cryobag/robobag/proc/tag_removed(datum/act/op/A)
+	var/obj/item/clothing/accessory/badge/old_tag = corptag
+	old_tag.forceMove(get_turf(A.actor))
+	to_chat(A.actor, span_notice("You remove \the [old_tag] from \the [src]."))
+	own_take(src, nameof(corptag))
+	update_icon()
+	return OP_OK
 
 // its corpse tag drops to the floor.
 // The tag is kept in nullspace, not in contents: owned, so phase 4 deletes it
@@ -75,43 +81,40 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 		var/mob/living/carbon/human/H = AM
 		if(HAS_SYNTHETIC_BIOLOGY(H))
 			if(!H.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])	// We don't exactly care about the bag being 'used' when containing a synth, unless it's got work.
-				used = FALSE
+				set_used(FALSE)
 			else
 				H.apply_body_effect(/datum/body_effect/fbp_debug/robobag)
 
-/// Old attackby: while closed, scan the occupant or swap its corporate tag.
-/obj/structure/closet/body_bag/cryobag/robobag/proc/robobag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(opened)
-		return FALSE
-	else //Allows the bag to respond to a cyborg analyzer and tag.
-		if(istype(W,/obj/item/robotanalyzer))
-			var/obj/item/robotanalyzer/analyzer = W
-			for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
-				analyzer.attack(L,user)
+/// A cyborg analyzer reads every one inside, through the skin.
+/obj/structure/closet/body_bag/cryobag/robobag/proc/robot_analyser_used(datum/act/op/A)
+	var/obj/item/robotanalyzer/analyzer = A.held
+	for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
+		analyzer.attack(L, A.actor)
+	return OP_OK
 
-		else if(istype(W, /obj/item/clothing/accessory/badge))
-			if(corptag)
-				var/old_tag = corptag
-				corptag.forceMove(get_turf(src))
-				own_take(src, nameof(src.corptag))
-				if(!user.unEquip(W))
-					return FALSE
-				W.moveToNullspace()
-				// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
-				own_set(src, nameof(src.corptag), W, into = FALSE)
-				to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
-			else
-				if(!user.unEquip(W))
-					return FALSE
-				W.moveToNullspace()
-				// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
-				own_set(src, nameof(src.corptag), W, into = FALSE)
-				to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
-			update_icon()
-
-		else
-			return FALSE
-	return INTERACTION_HANDLED_PASS
+/// A badge is attached as the bag's tag; the tag it had falls to the floor.
+/obj/structure/closet/body_bag/cryobag/robobag/proc/tag_swapped(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(corptag)
+		var/old_tag = corptag
+		corptag.forceMove(get_turf(src))
+		own_take(src, nameof(src.corptag))
+		if(!user.unEquip(W))
+			return OP_REFUSED
+		W.moveToNullspace()
+		// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
+		own_set(src, nameof(src.corptag), W, into = FALSE)
+		to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
+	else
+		if(!user.unEquip(W))
+			return OP_REFUSED
+		W.moveToNullspace()
+		// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
+		own_set(src, nameof(src.corptag), W, into = FALSE)
+		to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
+	update_icon()
+	return OP_OK
 
 /datum/body_effect/fbp_debug
 	tick_interval = 2 SECONDS

@@ -13,46 +13,38 @@
 	var/robotic = FALSE
 	var/mass_grave = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag_self), REQ_TARGET_STATE(/obj/item/bodybag/proc/can_unfold)))
+// A folded bag used in hand is unfolded onto the floor (a refused folded bag keeps its owned injector).
+CAPABILITIES(/obj/item/bodybag)
+	owns_one(nameof(syringe), /obj/item/reagent_containers/syringe)
+	op("unfold", in_hand(), label("Unfold"), needs(req(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(unfolded)))
 
-/// Unfolding must leave a refused folded bag and its owned injector intact.
-/obj/item/bodybag/proc/can_unfold(mob/user, atom/target, obj/item/held)
-	var/reason = loc?.release_refusal(src, user)
-	if(reason)
-		return reason
-	return TRUE
+/// Unfolding must leave a refused folded bag and its owned injector intact: where it is carried must let it go.
+/obj/item/bodybag/proc/can_unfold(datum/act/op/A)
+	return isnull(loc?.release_refusal(src, A.actor)) // ALLOW(reads): where the bag is carried and whether that lets it go are read when it is unfolded
 
-/// Release the folded item before creating the floor structure or transferring its injector.
-/obj/item/bodybag/proc/release_for_unfold(mob/user)
-	if(can_unfold(user, src, src) != TRUE)
-		return FALSE
-	return loc.release_to(src, user.loc, null, user)
+/obj/item/bodybag/proc/unfold_refusal(datum/act/op/A)
+	return loc?.release_refusal(src, A.actor) || /datum/msg/op/not_available
 
-/// Old attack_self: unfold the bag. Mass-grave bags fall through (their subtype unfolds them).
-/obj/item/bodybag/proc/bodybag_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(mass_grave) // TODO, upport this.
-		return FALSE // TODO, upport this.
-	if(!release_for_unfold(user))
-		return FALSE
-
+/// The floor structure this folded bag makes.
+/obj/item/bodybag/proc/unfolded_type()
 	if(cryogenic)
-		var/obj/structure/closet/body_bag/cryobag/R = new /obj/structure/closet/body_bag/cryobag(user.loc)
-		R.add_fingerprint(user)
-		if(syringe)
-			own_transfer(src, nameof(syringe), R, nameof(/obj/structure/closet/body_bag/cryobag::syringe)) // stays in nullspace, now the unfolded bag's
-		consume(src, user)
-		return TRUE
+		return /obj/structure/closet/body_bag/cryobag
 	if(robotic)
-		var/obj/structure/closet/body_bag/cryobag/robobag/R = new /obj/structure/closet/body_bag/cryobag/robobag(user.loc)
-		R.add_fingerprint(user)
-		if(syringe)
-			own_transfer(src, nameof(syringe), R, nameof(/obj/structure/closet/body_bag/cryobag::syringe)) // stays in nullspace, now the unfolded bag's
-		consume(src, user)
-		return TRUE
-	var/obj/structure/closet/body_bag/R = new /obj/structure/closet/body_bag(user.loc)
+		return /obj/structure/closet/body_bag/cryobag/robobag
+	return /obj/structure/closet/body_bag
+
+/// The folded item is released from where it is carried, the floor structure is made (and takes the injector the folded bag owned), and the folded bag is used up.
+/obj/item/bodybag/proc/unfolded(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!loc.release_to(src, user.loc, null, user))
+		return OP_REFUSED
+	var/made_type = unfolded_type()
+	var/obj/structure/closet/body_bag/R = new made_type(user.loc)
 	R.add_fingerprint(user)
+	if(syringe && istype(R, /obj/structure/closet/body_bag/cryobag))
+		own_transfer(src, nameof(syringe), R, nameof(/obj/structure/closet/body_bag/cryobag::syringe)) // stays in nullspace, now the unfolded bag's
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/storage/box/bodybags
 	name = "body bags"
@@ -80,15 +72,8 @@ DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag
 	w_class = ITEMSIZE_LARGE
 	mass_grave = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bodybag/large, INTERACT_USE("Unfold", PROC_REF(large_bodybag_self), REQ_TARGET_STATE(/obj/item/bodybag/proc/can_unfold)))
-
-/// Old attack_self.
-/obj/item/bodybag/large/proc/large_bodybag_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!release_for_unfold(user))
-		return FALSE
-	var/obj/structure/closet/body_bag/large/R = new /obj/structure/closet/body_bag/large(user.loc)
-	R.add_fingerprint(user)
-	consume(src, user)
+/obj/item/bodybag/large/unfolded_type()
+	return /obj/structure/closet/body_bag/large
 
 /obj/structure/closet/body_bag/large
 	name = "mass grave body bag"
@@ -97,34 +82,38 @@ EXTEND_INTERACTIONS(/obj/item/bodybag/large, INTERACT_USE("Unfold", PROC_REF(lar
 	storage_capacity = (MOB_MEDIUM * 12) - 1 //Holds 12 bodys
 	item_path = /obj/item/bodybag/large
 
-/// Labelling a body bag with a pen (the subject, still in hand). Re-checked on the answer: the bag is still in reach.
-/datum/om/prompt/text/body_bag_label
-	message = "What would you like the label to be?"
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_IN_HAND
-	var/obj/structure/closet/body_bag/bag
+MSG_DEF(bodybag/folded, "You fold up %T%.", "%U% folds up %T%.")
+MSG_DEF(bodybag/cut_label, "You cut the tag off %T%.", "%U% cuts the tag off %T%.")
 
-/datum/om/prompt/text/body_bag_label/valid()
-	return (in_range(bag, answerer) || bag.loc == answerer) ? null : "too far away"
+// A body bag is a closet that never blocks the tile, is never sealed, holds one person (a mass grave bag a dozen less one), is labelled with a pen (the
+// label is asked for, and cut off with wirecutters) and folds up when somebody drags it onto themselves while it is shut and empty.
+CAPABILITIES(/obj/structure/closet/body_bag)
+	op("label", item(/obj/item/pen), label("Label"), priority(OP_PRIORITY_PART),
+		asks(/datum/prompt/text, fields = list("question" = "What would you like the label to be?", "max_len" = MAX_NAME_LEN)), then(PROC_REF(labelled)))
+	op("cut_label", tool(TOOL_WIRECUTTER), label("Cut the tag off"), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(label_cut)), says(MSG(bodybag/cut_label)))
+	op("fold", at_target(/mob/living), gesture(GESTURE_DRAG), label("Fold up"), when(req(PROC_REF(dragged_onto_self))), then(PROC_REF(folded_up)))
 
-/obj/structure/closet/body_bag/proc/label_entered(datum/om/prompt/text/body_bag_label/ask)
-	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
-	if (t)
-		src.name = "body bag - "
-		src.name += t
+/// The label the pen was asked for is put on the bag (an empty one leaves the bag as it was).
+/obj/structure/closet/body_bag/proc/labelled(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!(in_range(src, user) || loc == user))
+		return OP_REFUSED
+	var/datum/prompt/R = A.answer
+	var/t = sanitizeSafe(R?.value, MAX_NAME_LEN)
+	if(t)
+		name = "body bag - [t]"
 		has_label = TRUE
 		add_overlay("bodybag_label")
 	else
-		src.name = "body bag"
+		name = "body bag"
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF(body_bag_interaction_item)))
-
-/// Old attackby: label it with a pen. Nothing else reaches the closet's item handling
-/// (a body bag can't be welded or have things stuffed in by hand).
-/obj/structure/closet/body_bag/proc/body_bag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if (istype(W, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/text/body_bag_label, PROC_REF(label_entered), subject = W, bag = src, title = "[src.name]")
-	return INTERACTION_HANDLED_PASS
+/// The tag comes off.
+/obj/structure/closet/body_bag/proc/label_cut(datum/act/op/A)
+	name = "body bag"
+	has_label = FALSE
+	cut_overlays()
+	return OP_OK
 
 /obj/structure/closet/body_bag/store_mobs()
 	contains_body = ..()
@@ -136,19 +125,27 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 		return 1
 	return 0
 
-/obj/structure/closet/body_bag/MouseDrop(over_object, src_location, over_location)
-	..()
-	return fold_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native body bag drag supplies the actor after unchanged parent input routing.
+/// The bag is dragged onto the one dragging it.
+/obj/structure/closet/body_bag/proc/dragged_onto_self(datum/act/op/A)
+	return A.target == A.actor
 
-/obj/structure/closet/body_bag/proc/fold_with_actor(mob/user, atom/over_object)
-	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))
-		if(!ishuman(user))	return 0
-		if(opened)	return 0
-		if(contents_count(src) || has_latent())	return 0 // ALLOW(latent): latent entries checked
-		act_message(user, src, others = "%U% folds up %T%")
-		var/folded = new item_path(get_turf(src))
-		expire(0)
-		return folded
+/// The bag folds back into its item where it lay (a human only, and only while it is shut and empty). A cryo bag keeps its injector.
+/obj/structure/closet/body_bag/proc/folded_up(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!(in_range(src, user) || user.contents.Find(src)))
+		return OP_OK
+	if(!ishuman(user) || opened)
+		return OP_OK
+	if(contents_count(src) || has_latent()) // ALLOW(latent): latent entries checked
+		return OP_OK
+	act_message(user, src, others = "%U% folds up %T%")
+	fold_into_item(new item_path(get_turf(src)))
+	expire(0)
+	return OP_OK
+
+/// What the folded item takes from the bag it comes from (a stasis bag hands its injector on).
+/obj/structure/closet/body_bag/proc/fold_into_item(obj/item/bodybag/folded)
+	return folded
 
 /obj/structure/closet/body_bag/relaymove(mob/user,direction)
 	if(src.loc != get_turf(src))
@@ -204,30 +201,32 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag, TYPE_PROC_REF(/atom, app
 	var/stasis_level = /datum/body_effect/stasis/deep
 	var/obj/item/reagent_containers/syringe/syringe
 
+TRACKED(/obj/structure/closet/body_bag/cryobag, used)
+
+MSG_DEF_SELF(cryobag/has_injector, "It already has an injector! Remove it first.")
+MSG_DEF_SELF(cryobag/no_injector, "It has no injector in it.")
+MSG_DEF_SELF(cryobag/injector_stuck, "The injector cannot be removed now that the stasis bag has been used!")
+MSG_DEF(cryobag/injector_in, "You insert %I% into %T%, and it locks into place.", "%U% inserts %I% into %T%.")
+MSG_DEF(cryobag/injector_out, "You pry the injector out of %T%.", "%U% pries the injector out of %T%.")
+
+// A stasis bag takes only people (the first one zips it up for good), keeps its own air, and has an injector slot for a syringe. A shut one is scanned through
+// its skin (a health analyzer), takes a syringe with an item and gives it back to a screwdriver until somebody has been zipped in. Opening a used one asks first.
 CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 	owns_one(nameof(tank), /obj/item/tank)
+	owns_one(nameof(syringe), /obj/item/reagent_containers/syringe)
+	extend("door", when(cond_not(nameof(used))))
+	op("door_used", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(nameof(used)), when(req(PROC_REF(bare_hand_or_menu))),
+		confirms("Are you sure you want to open it? It will expire upon opening it."),
+		needs(req(PROC_REF(door_ready), because = MSG(closet/wont_budge))), then(PROC_REF(door_toggled)))
+	op("scan", item(/obj/item/healthanalyzer), label("Scan"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(analyser_used)))
+	op("insert_injector", item(/obj/item/reagent_containers/syringe), label("Insert injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART),
+		needs(req(PROC_REF(can_insert_injector), because = PROC_REF(injector_refusal))), then(PROC_REF(injector_inserted)), says(MSG(cryobag/injector_in)))
+	op("remove_injector", tool(TOOL_SCREWDRIVER), label("Remove injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), wait(0),
+		needs(req(PROC_REF(injector_removable), because = PROC_REF(remove_refusal))), then(PROC_REF(injector_removed)), says(MSG(cryobag/injector_out)))
 
 /obj/structure/closet/body_bag/cryobag/Initialize(mapload)
 	rel_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
 	..()
-
-
-EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
-	INTERACT_HAND(null, PROC_REF(cryobag_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(cryobag_interaction_item), REQ_TARGET_STATE(/obj/structure/closet/body_bag/cryobag/proc/can_insert_injector)), \
-)
-
-/// Old attack_hand.
-/obj/structure/closet/body_bag/cryobag/proc/cryobag_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(used)
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(open_confirmed), message = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.", title = "Confirm Opening", no_first = TRUE, requires = PROMPT_ADJACENT)
-	else
-		return FALSE
-	return TRUE
-
-/obj/structure/closet/body_bag/cryobag/proc/open_confirmed(datum/om/prompt/confirm/ask)
-	add_fingerprint(ask.answerer)
-	toggle(ask.answerer) // What the parent attack_hand does: opens the bag.
 
 /obj/structure/closet/body_bag/cryobag/open()
 	. = ..()
@@ -243,11 +242,10 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 	I.color = COLOR_LIME
 	. += I
 
-/obj/structure/closet/body_bag/cryobag/fold_with_actor(mob/user, atom/over_object)
-	. = ..(user, over_object)
-	if(. && syringe)
-		var/obj/item/bodybag/cryobag/folded = .
+/obj/structure/closet/body_bag/cryobag/fold_into_item(obj/item/bodybag/folded)
+	if(syringe)
 		own_transfer(src, nameof(syringe), folded, nameof(folded.syringe))
+	return folded
 
 /obj/structure/closet/body_bag/cryobag/Entered(atom/movable/AM)
 	if(isliving(AM))
@@ -255,7 +253,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 		L.set_stasis(stasis_level, src)
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
-		src.used = 1
+		set_used(TRUE)
 		inject_occupant(H)
 
 	if(istype(AM, /obj/item/organ))
@@ -298,66 +296,49 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 		FOR_REAL_CONTENTS(var/mob/living/L, src)
 			. += L.examine(user)
 
-/// Loading an injector must respect its current holder's release rules.
-/obj/structure/closet/body_bag/cryobag/proc/can_insert_injector(mob/user, atom/target, obj/item/held)
-	if(opened || !istype(held, /obj/item/reagent_containers/syringe))
-		return TRUE
+/// Loading an injector must respect its current holder's release rules, and the bag takes one.
+/obj/structure/closet/body_bag/cryobag/proc/can_insert_injector(datum/act/op/A)
 	if(syringe)
-		return "the bag already has an injector"
-	var/reason = held.loc?.release_refusal(held, user)
-	if(reason)
-		return reason
-	return TRUE
-
-/// Old attackby: while closed, scan the occupant or load an injector.
-/obj/structure/closet/body_bag/cryobag/proc/cryobag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(opened)
 		return FALSE
-	else //Allows the bag to respond to a health analyzer by analyzing the mob inside without needing to open it.
-		if(istype(W,/obj/item/healthanalyzer))
-			var/obj/item/healthanalyzer/analyzer = W
-			for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
-				analyzer.attack(L,user)
+	return isnull(A.held.loc?.release_refusal(A.held, A.actor)) // ALLOW(reads): where the injector is carried and whether that lets it go are read when it is put in
 
-		else if(istype(W,/obj/item/reagent_containers/syringe))
-			if(syringe)
-				to_chat(user,span_warning("\The [src] already has an injector! Remove it first."))
-			else
-				var/obj/item/reagent_containers/syringe/syringe = W
-				if(can_insert_injector(user, src, syringe) != TRUE)
-					return INTERACTION_HANDLED_PASS
-				if(!syringe.loc.release_to(syringe, get_turf(src), null, user))
-					return INTERACTION_HANDLED_PASS
-				if(!own_move(syringe, src, nameof(src.syringe)))
-					return INTERACTION_HANDLED_PASS
-				syringe.moveToNullspace()
-				to_chat(user,span_info("You insert \the [syringe] into \the [src], and it locks into place."))
-				for(var/mob/living/carbon/human/H in contents) // ALLOW(latent): mobs are never latent
-					inject_occupant(H)
-					break
-
-		else
-			return FALSE
-	return INTERACTION_HANDLED_PASS
-
-/obj/structure/closet/body_bag/wirecutter_act(mob/user, obj/item/W)
-	to_chat(user, "You cut the tag off the bodybag")
-	src.name = "body bag"
-	has_label = FALSE
-	cut_overlays()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/closet/body_bag/cryobag/screwdriver_act(mob/user, obj/item/W)
-	if(opened)
-		return NONE
+/obj/structure/closet/body_bag/cryobag/proc/injector_refusal(datum/act/op/A)
 	if(syringe)
-		if(used)
-			to_chat(user,span_warning("The injector cannot be removed now that the stasis bag has been used!"))
-		else
-			syringe.forceMove(src.loc)
-			to_chat(user,span_info("You pry \the [syringe] out of \the [src]."))
-			own_take(src, nameof(syringe))
-	return ITEM_INTERACT_SUCCESS
+		return /datum/msg/cryobag/has_injector
+	return A.held.loc?.release_refusal(A.held, A.actor) || /datum/msg/op/not_available
+
+/// A shut stasis bag is scanned through its skin: every one inside is read by the analyzer.
+/obj/structure/closet/body_bag/cryobag/proc/analyser_used(datum/act/op/A)
+	var/obj/item/healthanalyzer/analyzer = A.held
+	for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
+		analyzer.attack(L, A.actor)
+	return OP_OK
+
+/// The injector goes into the bag's slot, out of the hand, and into whoever is already zipped in.
+/obj/structure/closet/body_bag/cryobag/proc/injector_inserted(datum/act/op/A)
+	var/obj/item/reagent_containers/syringe/loaded = A.held
+	if(!loaded.loc.release_to(loaded, get_turf(src), null, A.actor))
+		return OP_REFUSED
+	if(!own_move(loaded, src, nameof(src.syringe)))
+		return OP_REFUSED
+	loaded.moveToNullspace()
+	for(var/mob/living/carbon/human/H in contents) // ALLOW(latent): mobs are never latent
+		inject_occupant(H)
+		break
+	return OP_OK
+
+/// There is an injector to take out, and the bag has not been used.
+/obj/structure/closet/body_bag/cryobag/proc/injector_removable(datum/act/op/A)
+	return !!syringe && !used
+
+/obj/structure/closet/body_bag/cryobag/proc/remove_refusal(datum/act/op/A)
+	return used ? /datum/msg/cryobag/injector_stuck : /datum/msg/cryobag/no_injector
+
+/// The injector is pried out onto the floor.
+/obj/structure/closet/body_bag/cryobag/proc/injector_removed(datum/act/op/A)
+	syringe.forceMove(src.loc)
+	own_take(src, nameof(syringe))
+	return OP_OK
 
 /obj/item/usedcryobag
 	name = "used stasis bag"

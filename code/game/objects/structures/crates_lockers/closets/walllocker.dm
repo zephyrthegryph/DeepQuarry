@@ -23,29 +23,32 @@
 	var/amount = 2 // spawns each items X times.
 	closet_appearance = /datum/decl/closet_appearance/wall/emergency
 
-/obj/structure/closet/walllocker/emerglocker/toggle(mob/user as mob)
-	src.attack_hand(user)
-	return
+MSG_DEF_SELF(emerglocker/empty, "It's empty.")
+MSG_DEF(emerglocker/taken, "You take out some items from %T%.", "%U% takes some items out of %T%.")
 
-/// Overrides closet's interaction_item(): no items stored in the emergency locker.
-/obj/structure/closet/walllocker/emerglocker/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return TRUE
+// An emergency locker hands out its supplies (twice) instead of opening: a hand takes them, and nothing is put in or stuffed in.
+CAPABILITIES(/obj/structure/closet/walllocker/emerglocker)
+	without("door")
+	without("stuff")
+	without("stuff_grab")
+	without("set_down")
+	without("empty_basket")
+	op("take_supplies", hand(), label("Take supplies"), when(req(PROC_REF(actor_is_no_ai))), needs(req(PROC_REF(has_supplies), because = MSG(emerglocker/empty))),
+		then(PROC_REF(supplies_taken)), says(MSG(emerglocker/taken)))
 
-/obj/structure/closet/walllocker/emerglocker/can_use_by_hand(mob/user, atom/target, obj/item/held)
-	if(!isAI(user) && !amount)
-		return "it's empty"
-	return ..()
+/// The AI cannot reach in.
+/obj/structure/closet/walllocker/emerglocker/proc/actor_is_no_ai(datum/act/op/A)
+	return !isAI(A.actor)
 
-/// Overrides closet's interaction_hand(): dispense emergency supplies instead of toggling.
-/obj/structure/closet/walllocker/emerglocker/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (isAI(user))	//Added by Strumpetplaya - AI shouldn't be able to
-		return TRUE								//activate emergency lockers.  This fixes that.  (Does this make sense, the AI can't call attack_hand, can it? --Mloc)
-	if(amount)
-		to_chat(user, "<spawn class='notice'>You take out some items from \the [src].")
-		for(var/path in spawnitems)
-			new path(src.loc)
-		amount--
-	return TRUE
+/obj/structure/closet/walllocker/emerglocker/proc/has_supplies(datum/act/A)
+	return amount > 0 // ALLOW(reads): how many sets are left is read when the entry is offered and when it is picked
+
+/// A set of supplies comes out onto the tile.
+/obj/structure/closet/walllocker/emerglocker/proc/supplies_taken(datum/act/op/A)
+	for(var/path in spawnitems)
+		new path(src.loc)
+	amount--
+	return OP_OK
 
 /obj/structure/closet/walllocker/emerglocker/north
 	pixel_y = 32

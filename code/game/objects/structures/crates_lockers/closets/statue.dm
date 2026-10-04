@@ -5,6 +5,7 @@
 	icon_state = "human_male"
 	density = TRUE
 	anchored = TRUE
+	sealable = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	closet_appearance = null
 	// The statue starts at the encased mob's remaining wellness (vitality * endurance) + 100
@@ -105,26 +106,27 @@
 /obj/structure/closet/statue/explosion_contents_severity(severity)
 	return severity
 
-/// Overrides closet's interaction_item(): a statue takes weapon hits instead of storing items.
-/obj/structure/closet/statue/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	user.do_attack_animation(src)
-	act_message(user, src, others = span_danger("%U% strikes %T% with [I]."))
-	receive_weapon_hit(I, user)
-	return TRUE
-
-/// Overrides closet's interaction_drag(): nothing goes into a statue.
-/obj/structure/closet/statue/interaction_drag(mob/user, atom/movable/O, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
-
 /obj/structure/closet/statue/relaymove()
 	return
 
-/// Overrides closet's interaction_hand(): a statue doesn't open.
-/obj/structure/closet/statue/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+// A statue is a closet that never opens: nothing goes into it, the hand does nothing, and anything held strikes it (it takes weapon hits instead of storing items).
+CAPABILITIES(/obj/structure/closet/statue)
+	without("door")
+	without("stuff")
+	without("stuff_grab")
+	without("set_down")
+	without("empty_basket")
+	without("strike")
+	op("statue_strike", item(/obj/item), label("Strike"), priority(OP_PRIORITY_PART + 20), then(PROC_REF(statue_struck)))
 
-/obj/structure/closet/statue/verb_toggleopen_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	return
+/// A held thing strikes the statue.
+/obj/structure/closet/statue/proc/statue_struck(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	user.do_attack_animation(src)
+	act_message(user, src, others = span_danger("%U% strikes %T% with [I]."))
+	receive_weapon_hit(I, user)
+	return OP_OK
 
 APPEARANCE_NONE(/obj/structure/closet/statue)
 

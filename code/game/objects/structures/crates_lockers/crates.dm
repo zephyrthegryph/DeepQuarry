@@ -1,4 +1,3 @@
-
 /obj/structure/closet/crate
 	name = "crate"
 	desc = "A rectangular steel crate."
@@ -6,6 +5,7 @@
 	closet_appearance = /datum/decl/closet_appearance/crate
 	dir = 4 //Spawn facing 'forward' by default.
 	var/points_per_crate = 5
+	/// A cable runs from the lid to an electropack inside: whoever opens it is shocked. Written through set_rigged().
 	var/rigged = 0
 	/// Ordinary paper carrying the currently sealed freight ledger.
 	var/obj/item/paper/shipping_ledger
@@ -15,8 +15,30 @@
 	open_sound = SFX_EFFECTS_CRATE_OPEN
 	close_sound = SFX_EFFECTS_CRATE_CLOSE
 
+TRACKED(/obj/structure/closet/crate, rigged)
+
+MSG_DEF_SELF(crate/already_rigged, "It is already rigged!")
+MSG_DEF_SELF(crate/no_grabs, "You can't stuff anyone into that.")
+MSG_DEF(crate/rigged, "You rig %T%.", "%U% rigs %T%.")
+MSG_DEF(crate/unrigged, "You cut away the wiring.", "%U% cuts away the wiring.")
+MSG_DEF(crate/pack_attached, "You attach %I% to %T%.", "%U% attaches %I% to %T%.")
+
+// A crate is a closet that takes objects but never people (each object costs one unit), is climbed onto by a mob that drags itself on it while it is shut, can be
+// rigged with a cable and an electropack so that whoever opens it is shocked, and has the closet's door, weld and bolts. It is opened and closed by hand even with
+// something in the way, and wirecutters work it as a hand does (they cut the rigging first).
 CAPABILITIES(/obj/structure/closet/crate)
 	climb()
+	extend("climb.climb", when(cond_not(nameof(opened))))
+	extend("climb.climb_menu", when(cond_not(nameof(opened))))
+	without("empty_basket")
+	op("rig", item(/obj/item/stack/cable_coil), label("Rig"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART),
+		needs(req_is(nameof(rigged), FALSE, because = MSG(crate/already_rigged))), then(PROC_REF(rig_with_cable)), says(MSG(crate/rigged)))
+	op("attach_pack", item(/obj/item/radio/electropack), label("Attach"), when(cond_not(nameof(opened))), when(nameof(rigged)), priority(OP_PRIORITY_PART),
+		then(PROC_REF(pack_attached)), says(MSG(crate/pack_attached)))
+	op("cut_rigging", tool(TOOL_WIRECUTTER), label("Cut the rigging"), when(nameof(rigged)), priority(OP_PRIORITY_PART), wait(0),
+		then(PROC_REF(rigging_cut)), says(MSG(crate/unrigged)))
+	op("cutters_touch", tool(TOOL_WIRECUTTER), label("Open"), when(cond_not(nameof(rigged))), priority(OP_PRIORITY_PART), wait(0),
+		then(PROC_REF(touched_with_cutters)))
 
 /obj/structure/closet/crate/Initialize(mapload)
 	. = ..()
@@ -47,7 +69,7 @@ CAPABILITIES(/obj/structure/closet/crate)
 
 	playsound(src, open_sound, 50, 1, -3)
 	slot_empty(CONTAINER_SLOT_INTERIOR, get_turf(src))
-	src.opened = 1
+	set_opened(TRUE)
 
 	climb_shake_off(src, null)
 	update_icon()
@@ -70,7 +92,7 @@ CAPABILITIES(/obj/structure/closet/crate)
 				continue
 		O.move_into(src)
 
-	src.opened = 0
+	set_opened(FALSE)
 	update_icon()
 	return 1
 
@@ -78,168 +100,122 @@ CAPABILITIES(/obj/structure/closet/crate)
 /obj/structure/closet/crate/storage_cost_of(atom/movable/thing)
 	return 1
 
-/// Overrides closet's interaction_item(): crates rig with cable/electropack instead of sealing.
-/obj/structure/closet/crate/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(opened)
-		if(isrobot(user))
-			return TRUE
-		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return TRUE
-		if(istype(W, /obj/item/grab)) // Grabs are not dropped into the crate.
-			return TRUE
-		user.drop_item()
-		if(W)
-			W.forceMove(src.loc)
-	else if(istype(W, /obj/item/packageWrap))
-		return TRUE
-	else if(istype(W, /obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/C = W
-		if(rigged)
-			to_chat(user, span_notice("[src] is already rigged!"))
-			return TRUE
-		if (C.use(1))
-			to_chat(user , span_notice("You rig [src]."))
-			rigged = 1
-			return TRUE
-	else if(istype(W, /obj/item/radio/electropack))
-		if(rigged)
-			if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
-				return TRUE
-			to_chat(user , span_notice("You attach [W] to [src]."))
-			return TRUE
-	else
-		return ..()
-	return TRUE
+/// A crate takes no person a grab holds.
+/obj/structure/closet/crate/grab_fits(datum/act/op/A)
+	return FALSE
 
-/obj/structure/closet/crate/wirecutter_act(mob/user, obj/item/W)
-	if(rigged)
-		to_chat(user , span_notice("You cut away the wiring."))
-		playsound(src, W.usesound, 100, 1)
-		rigged = FALSE
-		return TRUE
-	attack_hand(user)
-	return TRUE
+/obj/structure/closet/crate/grab_refusal(datum/act/op/A)
+	return /datum/msg/crate/no_grabs
 
-/obj/structure/closet/req_breakout()
-	if(opened || !sealed)
-		return FALSE
-	return TRUE
+/// A length of cable rigs it.
+/obj/structure/closet/crate/proc/rig_with_cable(datum/act/op/A)
+	var/obj/item/stack/cable_coil/C = A.held
+	if(!C.use(1))
+		return OP_REFUSED
+	set_rigged(TRUE)
+	return OP_OK
+
+/// An electropack goes in beside the cable.
+/obj/structure/closet/crate/proc/pack_attached(datum/act/op/A)
+	if(!own_bring_in(src, nameof(contents), A.held, null, A.actor, TRUE, null, FALSE))
+		return OP_REFUSED
+	return OP_OK
+
+/obj/structure/closet/crate/proc/rigging_cut(datum/act/op/A)
+	playsound(src, A.held.usesound, 100, 1)
+	set_rigged(FALSE)
+	return OP_OK
+
+/// Wirecutters on a crate with nothing to cut work it as a hand does.
+/obj/structure/closet/crate/proc/touched_with_cutters(datum/act/op/A)
+	perform_op(A.actor, src, "door", origin = ORIGIN_SYSTEM)
+	return OP_OK
 
 /obj/structure/closet/crate/secure
 	desc = "A secure crate."
 	name = "Secure crate"
 	closet_appearance = /datum/decl/closet_appearance/crate/secure
 	var/broken = 0
+	/// Whether it starts locked (a map says `locked = 0` for one that does not). The lock itself is the lock() capability's key: read it with lock_locked().
 	var/locked = 1
 
+TRACKED(/obj/structure/closet/crate/secure, broken)
+
+MSG_DEF_SELF(crate/close_first, "Close the crate first.")
+MSG_DEF_SELF(crate/broken, "The crate appears to be broken.")
+MSG_DEF_SELF(crate/inside, "You can't reach the lock from inside.")
+
+// A secure crate is a crate with the same ID lock and breakable lock as a locker. A blade or an emag breaks it for good; any item in the hand of somebody whose own ID
+// has the access works the lock of a shut one, as a card does. It holds somebody in only while it is both locked and sealed.
+CAPABILITIES(/obj/structure/closet/crate/secure)
+	lock(starts_locked = nameof(locked))
+	extend(CAP_LOCK, needs(req_is(nameof(opened), FALSE, because = MSG(crate/close_first)), req_is(nameof(broken), FALSE, because = MSG(crate/broken)), req(PROC_REF(actor_outside), because = MSG(crate/inside))))
+	extend("lock.toggle_worn", binds(menu()), label("Toggle Lock"))
+	extend("door", when(cond_not(LOCK_LOCKED)), priority(above("lock.toggle_worn")))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+	extend("emag.use", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
+	extend("emag.subvert", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
+	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_SUBVERT - 1), then(PROC_REF(blade_emagged)))
+	op("lock_with_item", item(/obj/item), label("Toggle Lock"), when(cond_not(nameof(opened))), when(req_credential_worn(null)), priority(OP_PRIORITY_DEFAULT + 1),
+		needs(req_is(nameof(broken), FALSE, because = MSG(crate/broken)), req(PROC_REF(actor_outside), because = MSG(crate/inside))), toggles(LOCK_LOCKED), says(PROC_REF(lock_toggled_message)))
+	on_change(LOCK_LOCKED, ANY, then(PROC_REF(lock_changed)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(secure_crate_emp)))
+
+/// Whoever works the lock is not shut in with it.
+/obj/structure/closet/crate/secure/proc/actor_outside(datum/act/op/A)
+	return A.actor?.loc != src // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
+
+/// A locked or unlocked crate is drawn again.
+/obj/structure/closet/crate/secure/proc/lock_changed(datum/act/A)
+	update_icon()
+
+/// A hand's work on a locked crate is its lock; on an unlocked one, its door.
+/obj/structure/closet/crate/secure/touched_with_cutters(datum/act/op/A)
+	perform_op(A.actor, src, lock_locked(src) ? "lock.toggle_worn" : "door", origin = ORIGIN_SYSTEM)
+	return OP_OK
+
 /obj/structure/closet/crate/secure/req_breakout()
-	if(opened || !locked || !sealed)
+	if(opened || !lock_locked(src) || !is_welded(src))
 		return FALSE
 	return TRUE
 
 /obj/structure/closet/crate/secure/can_open()
-	return !locked
+	return !lock_locked(src)
 
 /obj/structure/closet/crate/secure/proc/appearance_lock_state()
 	if(broken)
 		return "emagged"
-	return locked ? "locked" : "unlocked"
+	return lock_locked(src) ? "locked" : "unlocked"
 
-APPEARANCE_TEMPLATE(/obj/structure/closet/crate/secure, "closed_{appearance_lock_state}{sealed?_welded:}")
+APPEARANCE_TEMPLATE(/obj/structure/closet/crate/secure, "closed_{appearance_lock_state}{appearance_sealed?_welded:}")
 
-/obj/structure/closet/crate/secure/proc/togglelock(mob/user as mob)
-	if(src.opened)
-		to_chat(user, span_notice("Close the crate first."))
-		return
-	if(src.broken)
-		to_chat(user, span_warning("The crate appears to be broken."))
-		return
-	if(src.allowed(user))
-		set_locked(!locked, user)
-	else
-		to_chat(user, span_notice("Access Denied"))
+/// An energy blade emags it.
+/obj/structure/closet/crate/secure/proc/blade_emagged(datum/act/op/A)
+	emag_target(src, INFINITY, A.actor)
+	return OP_OK
 
-/obj/structure/closet/crate/secure/proc/set_locked(newlocked, mob/user = null)
-	if(locked == newlocked) return
-
-	locked = newlocked
-	if(user)
-		for(var/mob/O in viewers(user, 3))
-			O.show_message( span_notice("The crate has been [locked ? null : "un"]locked by [user]."), 1)
-	update_icon()
-
-/obj/structure/closet/crate/secure/proc/secure_verb_togglelock_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(!user.canmove || user.stat || user.restrained()) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
-		return
-
-	if(ishuman(user) || isrobot(user))
-		src.add_fingerprint(user)
-		src.togglelock(user)
-	else
-		to_chat(user, span_warning("This mob type can't use this verb."))
-
-// Secure crate's Use fully replaces closet's (the original override never called ..() into
-// it either), so it declares its own interaction.
-// Secure crate's Use fully replaces closet's (the original override never called ..() into
-// it either), so it swaps out closet_hand for its own interaction, while still inheriting
-// crate_item (whose effect it overrides above, polymorphically).
-/obj/structure/closet/crate/secure/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/secure_crate_hand,
-	)
-	var/static/list/lock_spec = INTERACT_VERB("Toggle Lock", PROC_REF(secure_verb_togglelock_effect))
-	into += dq_interaction_from_spec(/obj/structure/closet/crate/secure, lock_spec)
-	..()
-	into -= /datum/interaction/entry_hand/closet_hand
-
-/// Old attack_hand: toggle the lock, or open/close if unlocked.
-/datum/interaction/entry_hand/secure_crate_hand
-	id = "secure_crate_hand"
-	name = "Use"
-	effect = /obj/structure/closet/crate/secure/proc/interaction_secure_hand
-
-/obj/structure/closet/crate/secure/proc/interaction_secure_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	if(locked)
-		src.togglelock(user)
-	else
-		src.toggle(user)
-	return TRUE
-
-/// Overrides crate's interaction_item(): a blade emags it, and it stays locked until unlocked.
-/obj/structure/closet/crate/secure/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(is_type_in_list(W, list(/obj/item/packageWrap, /obj/item/stack/cable_coil, /obj/item/radio/electropack, /obj/item/tool/wirecutters)))
-		return ..()
-	if(istype(W, /obj/item/melee/energy/blade))
-		emag_target(src, INFINITY, user)
-	if(!opened)
-		src.togglelock(user)
-		return TRUE
-	return ..()
-
-DECLARE_EMAG_REPEATABLE(/obj/structure/closet/crate/secure, PROC_REF(on_emag), null)
-/obj/structure/closet/crate/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// An emag breaks the lock for good (a second does nothing).
+/obj/structure/closet/crate/secure/proc/on_emag(datum/act/op/A)
 	if(!broken)
 		play_sfx(src, SFX_SPARKS, 1.2)
-		locked = 0
-		broken = 1
-		to_chat(user, span_notice("You unlock \the [src]."))
+		force_lock(FALSE)
+		set_broken(TRUE)
+		to_chat(A.actor, span_notice("You unlock \the [src]."))
 		update_icon()
-		return 1
+	return OP_OK
 
-DAMAGE_REACTION(/obj/structure/closet/crate/secure, DAMAGE_EMP, PROC_REF(secure_crate_emp))
 /// An EMP may toggle the lock, pop the crate or scramble its access.
-/obj/structure/closet/crate/secure/proc/secure_crate_emp(datum/damage_packet/packet)
-	var/severity = packet.severity
-	if(!broken && !opened  && prob(50/severity))
-		if(!locked)
-			locked = TRUE
+/obj/structure/closet/crate/secure/proc/secure_crate_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/severity = max(N.packet?.severity, 1)
+	if(!broken && !opened && prob(50/severity))
+		if(!lock_locked(src))
+			force_lock(TRUE)
 		else
 			play_sfx(src, SFX_EFFECTS_SPARKS4)
-			locked = FALSE
+			force_lock(FALSE)
 	if(!opened && prob(20/severity))
-		if(!locked)
+		if(!lock_locked(src))
 			open()
 		else
 			req_access = list()
@@ -774,7 +750,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/secure, DAMAGE_EMP, PROC_REF(secure_
 	if(!(Proj.obj_damage_type() == BRUTE || Proj.obj_damage_type() == BURN))
 		return
 
-	if(locked && tamper_proof && get_integrity() <= Proj.damage)
+	if(lock_locked(src) && tamper_proof && get_integrity() <= Proj.damage)
 		if(loc?.release_refusal(src))
 			return
 		if(tamper_proof == 2) // Mainly used for events to prevent any chance of opening the box improperly.

@@ -133,8 +133,8 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 		return
 
 	var/obj/structure/closet/secure_closet/brig/locker = new /obj/structure/closet/secure_closet/brig(prison_cell)
-	locker.opened = 0
-	locker.locked = 1
+	locker.set_opened(FALSE)
+	locker.force_lock(TRUE)
 
 	//strip their stuff and stick it in the crate
 	for(var/obj/item/I in contents_of(M))

@@ -32,6 +32,7 @@
 	occupied = TRUE
 
 /datum/unit_test/interim_grave_smoothing/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/adjacent = locate(T.x + 1, T.y, T.z)
 	TEST_ASSERT(adjacent, "the actual grave fixture has an adjacent actor floor")
@@ -48,7 +49,11 @@
 		TEST_ASSERT(book in grave.slot_contents(CONTAINER_SLOT_INTERIOR), "the original book occupies the actual grave interior slot")
 	else
 		TEST_ASSERT_EQUAL(length(grave.slot_contents()), 0, "the actual closed grave starts empty")
-	grave.attackby_tool_done2(user)
+	var/obj/item/shovel/shovel = allocate(/obj/item/shovel, adjacent)
+	TEST_ASSERT(user.put_in_active_hand(shovel), "the actor holds the actual shovel")
+	user.set_use_stance(I_HURT)
+	test_click(user, grave, shovel)
+	test_time(10 SECONDS)
 	own_turf_contents(T)
 	if(occupied)
 		TEST_ASSERT(!QDELETED(grave), "actual smoothing preserves a grave containing the original book")
@@ -58,3 +63,4 @@
 	else
 		TEST_ASSERT(QDELETED(grave), "actual smoothing consumes an empty grave")
 		TEST_ASSERT_NULL(locate_within(T, /obj/structure/closet/grave), "smoothing leaves no duplicate empty grave")
+	test_driver_end()

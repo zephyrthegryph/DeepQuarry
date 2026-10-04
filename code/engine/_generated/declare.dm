@@ -11,7 +11,7 @@
 /datum/capdef_decl/c_anchor/spec()
 	return list(CAP_ANCHOR, /datum/capability/lib/anchor, NONE, STACK, "anchor", "tool, empty")
 
-/// CAPABILITY_TYPE(bolts, CAP_BOLTS) at code/library/machine/door_parts.dm:20
+/// CAPABILITY_TYPE(bolts, CAP_BOLTS) at code/library/machine/door_parts.dm:21
 /datum/capability/lib/bolts
 	var/drop = "lock"
 	var/raise = "unlock"
@@ -110,7 +110,7 @@
 /datum/capdef_decl/c_deployment_graph/spec()
 	return list(CAP_DEPLOYMENT, /datum/capability/construction/deployment, NONE, STACK, "deployment", "start, via")
 
-/// CAPABILITY_TYPE(door_emergency, CAP_DOOR_EMERGENCY) at code/library/machine/door_parts.dm:105
+/// CAPABILITY_TYPE(door_emergency, CAP_DOOR_EMERGENCY) at code/library/machine/door_parts.dm:111
 /proc/door_emergency()
 	RETURN_TYPE(/datum/capability/lib/door_emergency)
 	return cap_construct(CAP_DOOR_EMERGENCY, /datum/capability/lib/door_emergency, list(), "")
@@ -452,15 +452,16 @@
 /datum/capdef_decl/c_wall_mount/spec()
 	return list(CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, NONE, STACK, "wall_mount", "offset, offset_ns")
 
-/// CAPABILITY_TYPE(weld_shut, CAP_WELD_SHUT) at code/library/machine/door_parts.dm:58
+/// CAPABILITY_TYPE(weld_shut, CAP_WELD_SHUT) at code/library/machine/door_parts.dm:59
 /datum/capability/lib/weld_shut
 	var/offered = null
 	var/starts = null
-/proc/weld_shut(offered, starts)
+	var/tool = TOOL_WELDER
+/proc/weld_shut(offered, starts, tool)
 	RETURN_TYPE(/datum/capability/lib/weld_shut)
-	return cap_construct(CAP_WELD_SHUT, /datum/capability/lib/weld_shut, list(offered, starts), "offered, starts")
+	return cap_construct(CAP_WELD_SHUT, /datum/capability/lib/weld_shut, list(offered, starts, tool), "offered, starts, tool")
 /datum/capdef_decl/c_weld_shut/spec()
-	return list(CAP_WELD_SHUT, /datum/capability/lib/weld_shut, NONE, STACK, "weld_shut", "offered, starts")
+	return list(CAP_WELD_SHUT, /datum/capability/lib/weld_shut, NONE, STACK, "weld_shut", "offered, starts, tool")
 
 /// CAPABILITY_TYPE(wiper, CAP_WIPER) at code/library/reagents/wiper.dm:17
 /datum/capability/lib/wiper
@@ -513,21 +514,21 @@
 /proc/cover_removed(datum/holder, selector)
 	return cap_key_get(holder, COVER_REMOVED, selector)
 
-/// cap_keys(CAP_BOLTS) at code/library/machine/door_parts.dm:21
+/// cap_keys(CAP_BOLTS) at code/library/machine/door_parts.dm:22
 /datum/cap_keys_decl/k_bolts/spec()
 	return list(CAP_BOLTS, list(BOLTED = MSG(bolts/not_bolted)))
 /// The state key BOLTED of bolts, read on a holder (a granted capability with several selectors names the selector).
 /proc/bolts_bolted(datum/holder, selector)
 	return cap_key_get(holder, BOLTS_BOLTED, selector)
 
-/// cap_keys(CAP_WELD_SHUT) at code/library/machine/door_parts.dm:59
+/// cap_keys(CAP_WELD_SHUT) at code/library/machine/door_parts.dm:60
 /datum/cap_keys_decl/k_weld_shut/spec()
 	return list(CAP_WELD_SHUT, list(WELDED = MSG(weld/not_welded)))
 /// The state key WELDED of weld_shut, read on a holder (a granted capability with several selectors names the selector).
 /proc/weld_shut_welded(datum/holder, selector)
 	return cap_key_get(holder, WELD_SHUT_WELDED, selector)
 
-/// cap_keys(CAP_DOOR_EMERGENCY) at code/library/machine/door_parts.dm:106
+/// cap_keys(CAP_DOOR_EMERGENCY) at code/library/machine/door_parts.dm:112
 /datum/cap_keys_decl/k_door_emergency/spec()
 	return list(CAP_DOOR_EMERGENCY, list(ENGAGED = MSG(emergency/off)))
 /// The state key ENGAGED of door_emergency, read on a holder (a granted capability with several selectors names the selector).
@@ -3197,6 +3198,15 @@
 	into += entry_block("code/modules/blob2/core_chunk.dm", 22, /obj/item/blobcore_chunk)
 	into += entry_line(23)
 	into += list(global.owns_one(nameof(blob_type), /datum/blob_type))
+
+/// CAPABILITIES(/obj/item/bodybag) at code/game/objects/items/bodybag.dm:17
+/obj/item/bodybag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/bodybag.dm", 17, /obj/item/bodybag)
+	into += entry_line(18)
+	into += list(global.owns_one(nameof(syringe), /obj/item/reagent_containers/syringe))
+	into += entry_line(19)
+	into += list(global.op("unfold", global.in_hand(), global.label("Unfold"), global.needs(global.req(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), global.then(PROC_REF(unfolded))))
 
 /// CAPABILITIES(/obj/item/camera_assembly) at code/game/machinery/camera/camera_assembly.dm:25
 /obj/item/camera_assembly/declared_entries(list/into)
@@ -7463,26 +7473,109 @@
 	into += entry_line(56)
 	into += list(global.climb(delay = CLIFF_CLIMB_TIME, delay_by = PROC_REF(climb_delay), gate = PROC_REF(climbing_gear_needed)))
 
-/// CAPABILITIES(/obj/structure/closet) at code/game/objects/structures/crates_lockers/__closets.dm:49
+/// CAPABILITIES(/obj/structure/closet) at code/game/objects/structures/crates_lockers/__closets.dm:65
 /obj/structure/closet/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/crates_lockers/__closets.dm", 49, /obj/structure/closet)
-	into += entry_line(50)
+	into += entry_block("code/game/objects/structures/crates_lockers/__closets.dm", 65, /obj/structure/closet)
+	into += entry_line(66)
 	into += list(global.owns_one(nameof(door_obj), /obj/effect/overlay/closet_door))
+	into += entry_line(67)
+	into += list(global.anchor())
+	into += entry_line(68)
+	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(global.req_is(nameof(opened), because = MSG(closet/bolts_unreachable)))))
+	into += entry_line(69)
+	into += list(global.weld_shut(offered = PROC_REF(can_seal)))
+	into += entry_line(70)
+	into += list(global.extend("weld_shut.toggle", global.wait(2 SECONDS), global.needs(global.req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge)))))
+	into += entry_line(71)
+	into += list(global.op("door", global.inputs(global.hand(), global.menu()), global.answers(INTENT_USE), global.label("Toggle Open"), global.when(global.req(PROC_REF(bare_hand_or_menu))), global.needs(global.req(PROC_REF(door_ready), because = MSG(closet/wont_budge))), global.then(PROC_REF(door_toggled))))
+	into += entry_line(73)
+	into += list(global.op("cut_apart", global.tool(TOOL_WELDER), global.label("Cut apart"), global.when(nameof(opened)), global.priority(global.above("weld_shut.toggle")), global.wait(0), global.costs(RES_FUEL, 0), global.needs(global.req(PROC_REF(welder_lit), because = MSG(weld/needs_lit))), global.then(PROC_REF(cut_apart)), global.says(MSG(closet/cut_apart))))
+	into += entry_line(75)
+	into += list(global.op("empty_basket", global.item(/obj/item/storage/laundry_basket), global.label("Empty into"), global.when(nameof(opened)), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(basket_emptied)), global.says(MSG(closet/emptied_basket))))
+	into += entry_line(77)
+	into += list(global.op("stuff_grab", global.item(/obj/item/grab), global.label("Stuff inside"), global.when(nameof(opened)), global.priority(OP_PRIORITY_PART), global.needs(global.req(PROC_REF(grab_fits), because = PROC_REF(grab_refusal))), global.then(PROC_REF(stuff_grabbed))))
+	into += entry_line(79)
+	into += list(global.op("set_down", global.item(/obj/item), global.label("Put down"), global.when(nameof(opened)), global.priority(OP_PRIORITY_DEFAULT), global.needs(global.req(PROC_REF(can_set_down), because = MSG(closet/cant_put_down))), global.then(PROC_REF(set_down))))
+	into += entry_line(81)
+	into += list(global.op("stuff", global.item(/atom/movable), global.gesture(GESTURE_DRAG), global.label("Stuff inside"), global.when(nameof(opened)), global.then(PROC_REF(stuff_dragged))))
+	into += entry_line(82)
+	into += list(global.op("strike", global.item(/obj/item), global.hostile(), global.label("Strike"), global.priority(OP_PRIORITY_ATTACK), global.then(PROC_REF(struck_with))))
+	into += entry_line(83)
+	into += list(global.op("break_out", global.ai(), global.label("Break out"), global.wait(PROC_REF(breakout_wait), keeps = TARGET_PRESENT | ALIVE), global.needs(global.req_capable(), global.req(PROC_REF(can_break_out), because = MSG(closet/cant_break_out))), global.begins(MSG(closet/break_begin)), global.then(PROC_REF(broke_out)), global.logs(LOG_GAME)))
+	into += entry_line(86)
+	into += list(global.op("devour", global.menu(), global.label("Devour Occupants"), global.when(global.req(PROC_REF(actor_shut_in))), global.needs(global.req(PROC_REF(has_prey), because = MSG(closet/no_targets))), global.asks(/datum/prompt/choice/prey), global.then(PROC_REF(devoured))))
 
-/// CAPABILITIES(/obj/structure/closet/body_bag/cryobag) at code/game/objects/items/bodybag.dm:207
+/// CAPABILITIES(/obj/structure/closet/body_bag) at code/game/objects/items/bodybag.dm:90
+/obj/structure/closet/body_bag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/bodybag.dm", 90, /obj/structure/closet/body_bag)
+	into += entry_line(91)
+	into += list(global.op("label", global.item(/obj/item/pen), global.label("Label"), global.priority(OP_PRIORITY_PART), global.asks(/datum/prompt/text, fields = list("question" = "What would you like the label to be?", "max_len" = MAX_NAME_LEN)), global.then(PROC_REF(labelled))))
+	into += entry_line(93)
+	into += list(global.op("cut_label", global.tool(TOOL_WIRECUTTER), global.label("Cut the tag off"), global.priority(OP_PRIORITY_PART), global.wait(0), global.then(PROC_REF(label_cut)), global.says(MSG(bodybag/cut_label))))
+	into += entry_line(94)
+	into += list(global.op("fold", global.at_target(/mob/living), global.gesture(GESTURE_DRAG), global.label("Fold up"), global.when(global.req(PROC_REF(dragged_onto_self))), global.then(PROC_REF(folded_up))))
+
+/// CAPABILITIES(/obj/structure/closet/body_bag/cryobag) at code/game/objects/items/bodybag.dm:214
 /obj/structure/closet/body_bag/cryobag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/bodybag.dm", 207, /obj/structure/closet/body_bag/cryobag)
-	into += entry_line(208)
+	into += entry_block("code/game/objects/items/bodybag.dm", 214, /obj/structure/closet/body_bag/cryobag)
+	into += entry_line(215)
 	into += list(global.owns_one(nameof(tank), /obj/item/tank))
+	into += entry_line(216)
+	into += list(global.owns_one(nameof(syringe), /obj/item/reagent_containers/syringe))
+	into += entry_line(217)
+	into += list(global.extend("door", global.when(global.cond_not(nameof(used)))))
+	into += entry_line(218)
+	into += list(global.op("door_used", global.inputs(global.hand(), global.menu()), global.answers(INTENT_USE), global.label("Toggle Open"), global.when(nameof(used)), global.when(global.req(PROC_REF(bare_hand_or_menu))), global.confirms("Are you sure you want to open it? It will expire upon opening it."), global.needs(global.req(PROC_REF(door_ready), because = MSG(closet/wont_budge))), global.then(PROC_REF(door_toggled))))
+	into += entry_line(221)
+	into += list(global.op("scan", global.item(/obj/item/healthanalyzer), global.label("Scan"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(analyser_used))))
+	into += entry_line(222)
+	into += list(global.op("insert_injector", global.item(/obj/item/reagent_containers/syringe), global.label("Insert injector"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.needs(global.req(PROC_REF(can_insert_injector), because = PROC_REF(injector_refusal))), global.then(PROC_REF(injector_inserted)), global.says(MSG(cryobag/injector_in))))
+	into += entry_line(224)
+	into += list(global.op("remove_injector", global.tool(TOOL_SCREWDRIVER), global.label("Remove injector"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req(PROC_REF(injector_removable), because = PROC_REF(remove_refusal))), global.then(PROC_REF(injector_removed)), global.says(MSG(cryobag/injector_out))))
 
-/// CAPABILITIES(/obj/structure/closet/crate) at code/game/objects/structures/crates_lockers/crates.dm:18
+/// CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag) at code/game/objects/items/robobag.dm:48
+/obj/structure/closet/body_bag/cryobag/robobag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/robobag.dm", 48, /obj/structure/closet/body_bag/cryobag/robobag)
+	into += entry_line(49)
+	into += list(global.owns_one(nameof(corptag), /obj/item/clothing/accessory/badge))
+	into += entry_line(50)
+	into += list(global.op("scan_robot", global.item(/obj/item/robotanalyzer), global.label("Scan"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(robot_analyser_used))))
+	into += entry_line(51)
+	into += list(global.op("swap_tag", global.item(/obj/item/clothing/accessory/badge), global.label("Attach tag"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(tag_swapped))))
+	into += entry_line(52)
+	into += list(global.op("remove_tag", global.hand(), global.gesture(GESTURE_ALT), global.label("Remove tag"), global.when(global.req(PROC_REF(has_tag))), global.then(PROC_REF(tag_removed))))
+
+/// CAPABILITIES(/obj/structure/closet/coffin) at code/game/objects/structures/crates_lockers/closets/coffin.dm:11
+/obj/structure/closet/coffin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/coffin.dm", 11, /obj/structure/closet/coffin)
+	into += entry_line(12)
+	into += list(global.configure(global.weld_shut(tool = TOOL_SCREWDRIVER)))
+
+/// CAPABILITIES(/obj/structure/closet/crate) at code/game/objects/structures/crates_lockers/crates.dm:29
 /obj/structure/closet/crate/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/crates_lockers/crates.dm", 18, /obj/structure/closet/crate)
-	into += entry_line(19)
+	into += entry_block("code/game/objects/structures/crates_lockers/crates.dm", 29, /obj/structure/closet/crate)
+	into += entry_line(30)
 	into += list(global.climb())
+	into += entry_line(31)
+	into += list(global.extend("climb.climb", global.when(global.cond_not(nameof(opened)))))
+	into += entry_line(32)
+	into += list(global.extend("climb.climb_menu", global.when(global.cond_not(nameof(opened)))))
+	into += entry_line(33)
+	into += list(global.without("empty_basket"))
+	into += entry_line(34)
+	into += list(global.op("rig", global.item(/obj/item/stack/cable_coil), global.label("Rig"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.needs(global.req_is(nameof(rigged), FALSE, because = MSG(crate/already_rigged))), global.then(PROC_REF(rig_with_cable)), global.says(MSG(crate/rigged))))
+	into += entry_line(36)
+	into += list(global.op("attach_pack", global.item(/obj/item/radio/electropack), global.label("Attach"), global.when(global.cond_not(nameof(opened))), global.when(nameof(rigged)), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(pack_attached)), global.says(MSG(crate/pack_attached))))
+	into += entry_line(38)
+	into += list(global.op("cut_rigging", global.tool(TOOL_WIRECUTTER), global.label("Cut the rigging"), global.when(nameof(rigged)), global.priority(OP_PRIORITY_PART), global.wait(0), global.then(PROC_REF(rigging_cut)), global.says(MSG(crate/unrigged))))
+	into += entry_line(40)
+	into += list(global.op("cutters_touch", global.tool(TOOL_WIRECUTTER), global.label("Open"), global.when(global.cond_not(nameof(rigged))), global.priority(OP_PRIORITY_PART), global.wait(0), global.then(PROC_REF(touched_with_cutters))))
 
 /// CAPABILITIES(/obj/structure/closet/crate/oldreactor) at code/game/objects/items/poi_items.dm:107
 /obj/structure/closet/crate/oldreactor/declared_entries(list/into)
@@ -7491,12 +7584,210 @@
 	into += entry_line(108)
 	into += list(global.without(CAP_CLIMB))
 
+/// CAPABILITIES(/obj/structure/closet/crate/secure) at code/game/objects/structures/crates_lockers/crates.dm:150
+/obj/structure/closet/crate/secure/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/crates.dm", 150, /obj/structure/closet/crate/secure)
+	into += entry_line(151)
+	into += list(global.lock(starts_locked = nameof(locked)))
+	into += entry_line(152)
+	into += list(global.extend(CAP_LOCK, global.needs(global.req_is(nameof(opened), FALSE, because = MSG(crate/close_first)), global.req_is(nameof(broken), FALSE, because = MSG(crate/broken)), global.req(PROC_REF(actor_outside), because = MSG(crate/inside)))))
+	into += entry_line(153)
+	into += list(global.extend("lock.toggle_worn", global.binds(global.menu()), global.label("Toggle Lock")))
+	into += entry_line(154)
+	into += list(global.extend("door", global.when(global.cond_not(LOCK_LOCKED)), global.priority(global.above("lock.toggle_worn"))))
+	into += entry_line(155)
+	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
+	into += entry_line(156)
+	into += list(global.extend("emag.use", global.needs(global.req_is(nameof(broken), FALSE, because = MSG(emag/already)))))
+	into += entry_line(157)
+	into += list(global.extend("emag.subvert", global.needs(global.req_is(nameof(broken), FALSE, because = MSG(emag/already)))))
+	into += entry_line(158)
+	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.label("Slice open"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_SUBVERT - 1), global.then(PROC_REF(blade_emagged))))
+	into += entry_line(159)
+	into += list(global.op("lock_with_item", global.item(/obj/item), global.label("Toggle Lock"), global.when(global.cond_not(nameof(opened))), global.when(req_credential_worn(null)), global.priority(OP_PRIORITY_DEFAULT + 1), global.needs(global.req_is(nameof(broken), FALSE, because = MSG(crate/broken)), global.req(PROC_REF(actor_outside), because = MSG(crate/inside))), global.toggles(LOCK_LOCKED), global.says(PROC_REF(lock_toggled_message))))
+	into += entry_line(161)
+	into += list(global.on_change(LOCK_LOCKED, ANY, global.then(PROC_REF(lock_changed))))
+	into += entry_line(162)
+	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(secure_crate_emp))))
+
+/// CAPABILITIES(/obj/structure/closet/crate/secure/loot) at code/modules/mining/abandonedcrates.dm:154
+/obj/structure/closet/crate/secure/loot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/abandonedcrates.dm", 154, /obj/structure/closet/crate/secure/loot)
+	into += entry_line(155)
+	into += list(global.without("lock.toggle"))
+	into += entry_line(156)
+	into += list(global.without("lock.toggle_worn"))
+	into += entry_line(157)
+	into += list(global.without("lock_with_item"))
+	into += entry_line(158)
+	into += list(global.extend("emag.use", global.needs(global.req_is(LOCK_LOCKED, because = MSG(emag/already)))))
+	into += entry_line(159)
+	into += list(global.extend("emag.subvert", global.needs(global.req_is(LOCK_LOCKED, because = MSG(emag/already)))))
+	into += entry_line(160)
+	into += list(global.op("enter_code", global.inputs(global.hand(), global.item(/obj/item)), global.label("Enter code"), global.when(LOCK_LOCKED), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_NORMAL + 1), global.begins(MSG(loot_crate/locked_with_code)), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(code_question)), "title" = "Deca-Code Lock", "max_len" = "codelen")), global.then(PROC_REF(code_entered))))
+	into += entry_line(162)
+	into += list(global.op("analyse", global.tool(TOOL_MULTITOOL), global.label("Analyse the lock"), global.when(LOCK_LOCKED), global.priority(OP_PRIORITY_PART + 5), global.wait(0), global.then(PROC_REF(code_analysed))))
+
+/// CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe) at code/modules/exploration/lootsafe.dm:13
+/obj/structure/closet/crate/secure/lootsafe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/exploration/lootsafe.dm", 13, /obj/structure/closet/crate/secure/lootsafe)
+	into += entry_line(14)
+	into += list(global.extend("emag.use", global.needs(global.req_is(LOCK_LOCKED, because = MSG(emag/already)))))
+	into += entry_line(15)
+	into += list(global.extend("emag.subvert", global.needs(global.req_is(LOCK_LOCKED, because = MSG(emag/already)))))
+
+/// CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/devillock) at code/modules/exploration/lootsafe.dm:217
+/obj/structure/closet/crate/secure/lootsafe/devillock/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/exploration/lootsafe.dm", 217, /obj/structure/closet/crate/secure/lootsafe/devillock)
+	into += entry_line(218)
+	into += list(global.without("lock.toggle"))
+	into += entry_line(219)
+	into += list(global.without("lock.toggle_worn"))
+	into += entry_line(220)
+	into += list(global.without("lock_with_item"))
+	into += entry_line(221)
+	into += list(global.op("enter_code", global.inputs(global.hand(), global.item(/obj/item)), global.label("Enter code"), global.when(LOCK_LOCKED), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_NORMAL + 1), global.begins(MSG(lootsafe/locked_with_code)), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(code_question)), "title" = "Deca-Code Lock")), global.then(PROC_REF(code_entered))))
+	into += entry_line(223)
+	into += list(global.op("analyse", global.tool(TOOL_MULTITOOL), global.label("Analyse the lock"), global.when(LOCK_LOCKED), global.priority(OP_PRIORITY_PART + 5), global.wait(0), global.then(PROC_REF(code_analysed))))
+
+/// CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/numberlock) at code/modules/exploration/lootsafe.dm:188
+/obj/structure/closet/crate/secure/lootsafe/numberlock/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/exploration/lootsafe.dm", 188, /obj/structure/closet/crate/secure/lootsafe/numberlock)
+	into += entry_line(189)
+	into += list(global.without("lock.toggle"))
+	into += entry_line(190)
+	into += list(global.without("lock.toggle_worn"))
+	into += entry_line(191)
+	into += list(global.without("lock_with_item"))
+	into += entry_line(192)
+	into += list(global.op("enter_code", global.inputs(global.hand(), global.item(/obj/item)), global.label("Enter code"), global.when(LOCK_LOCKED), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_NORMAL + 1), global.begins(MSG(lootsafe/locked_with_code)), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(code_question)), "title" = "Deca-Code Lock")), global.then(PROC_REF(code_entered))))
+	into += entry_line(194)
+	into += list(global.op("analyse", global.tool(TOOL_MULTITOOL), global.label("Analyse the lock"), global.when(LOCK_LOCKED), global.priority(OP_PRIORITY_PART + 5), global.wait(0), global.then(PROC_REF(code_analysed))))
+
+/// CAPABILITIES(/obj/structure/closet/grave) at code/game/objects/structures/crates_lockers/closets/coffin.dm:40
+/obj/structure/closet/grave/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/coffin.dm", 40, /obj/structure/closet/grave)
+	into += entry_line(41)
+	into += list(global.without(CAP_WELD_SHUT))
+	into += entry_line(42)
+	into += list(global.without("door"))
+	into += entry_line(43)
+	into += list(global.without("stuff"))
+	into += entry_line(44)
+	into += list(global.without("devour"))
+	into += entry_line(45)
+	into += list(global.without("strike"))
+	into += entry_line(46)
+	into += list(global.op("climb_in", global.hand(), global.label("Climb in"), global.when(nameof(opened)), global.wait(5 SECONDS), global.begins(MSG(grave/climb_start)), global.then(PROC_REF(climbed_in)), global.says(MSG(grave/climbed)), global.on_interrupt(PROC_REF(climb_interrupted))))
+	into += entry_line(48)
+	into += list(global.op("fill", global.item(/obj/item/shovel), global.label("Fill in"), global.when(nameof(opened)), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.begins(MSG(grave/fill_start)), global.then(PROC_REF(filled_in)), global.says(MSG(grave/filled)), global.on_interrupt(PROC_REF(fill_interrupted))))
+	into += entry_line(50)
+	into += list(global.op("smooth_over", global.item(/obj/item/shovel), global.label("Smooth over"), global.when(global.cond_not(nameof(opened))), global.hostile(), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.begins(MSG(grave/smooth_start)), global.then(PROC_REF(smoothed_over)), global.says(MSG(grave/smoothed)), global.on_interrupt(PROC_REF(smooth_interrupted))))
+	into += entry_line(52)
+	into += list(global.op("unearth", global.item(/obj/item/shovel), global.label("Unearth"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.begins(MSG(grave/dig_start)), global.then(PROC_REF(dug_out)), global.says(MSG(grave/dug)), global.on_interrupt(PROC_REF(dig_interrupted))))
+
+/// CAPABILITIES(/obj/structure/closet/secure_closet) at code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm:27
+/obj/structure/closet/secure_closet/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm", 27, /obj/structure/closet/secure_closet)
+	into += entry_line(28)
+	into += list(global.lock(starts_locked = nameof(locked)))
+	into += entry_line(29)
+	into += list(global.extend(CAP_LOCK, global.needs(global.req_is(nameof(opened), FALSE, because = MSG(secure_closet/close_first)), global.req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), global.req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), global.plays(SFX_MACHINES_CLICK)))
+	into += entry_line(30)
+	into += list(global.extend("lock.toggle_worn", global.binds(global.menu()), global.label("Toggle Lock")))
+	into += entry_line(31)
+	into += list(global.extend("door", global.when(global.cond_not(LOCK_LOCKED)), global.priority(global.above("lock.toggle_worn"))))
+	into += entry_line(32)
+	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
+	into += entry_line(33)
+	into += list(global.extend("emag.use", global.needs(global.req_is(nameof(broken), FALSE, because = MSG(emag/already)))))
+	into += entry_line(34)
+	into += list(global.extend("emag.subvert", global.needs(global.req_is(nameof(broken), FALSE, because = MSG(emag/already)))))
+	into += entry_line(35)
+	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.label("Slice open"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(blade_sliced))))
+	into += entry_line(36)
+	into += list(global.op("lock_with_item", global.item(/obj/item), global.label("Toggle Lock"), global.when(global.cond_not(nameof(opened))), global.when(req_credential_worn(null)), global.priority(OP_PRIORITY_DEFAULT + 1), global.needs(global.req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), global.req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), global.toggles(LOCK_LOCKED), global.says(PROC_REF(lock_toggled_message)), global.plays(SFX_MACHINES_CLICK)))
+	into += entry_line(38)
+	into += list(global.on_change(LOCK_LOCKED, ANY, global.then(PROC_REF(lock_changed))))
+	into += entry_line(39)
+	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(secure_closet_emp))))
+
+/// CAPABILITIES(/obj/structure/closet/secure_closet/egg) at code/game/objects/structures/crates_lockers/closets/egg.dm:27
+/obj/structure/closet/secure_closet/egg/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/egg.dm", 27, /obj/structure/closet/secure_closet/egg)
+	into += entry_line(28)
+	into += list(global.without(CAP_ANCHOR))
+	into += entry_line(29)
+	into += list(global.op("cut_open", global.item(/obj/item/weldingtool), global.label("Cut open"), global.priority(OP_PRIORITY_PART + 1), global.wait(0), global.then(PROC_REF(cut_open))))
+
 /// CAPABILITIES(/obj/structure/closet/secure_closet/freezer) at code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:1
 /obj/structure/closet/secure_closet/freezer/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/structures/crates_lockers/closets/secure/freezer.dm", 1, /obj/structure/closet/secure_closet/freezer)
 	into += entry_line(2)
 	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/closet/secure_closet/mind) at code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm:133
+/obj/structure/closet/secure_closet/mind/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm", 133, /obj/structure/closet/secure_closet/mind)
+	into += entry_line(134)
+	into += list(global.extend(CAP_LOCK, global.needs(global.req(PROC_REF(owner_present), because = MSG(lock/denied)))))
+	into += entry_line(135)
+	into += list(global.extend("lock_with_item", global.needs(global.req(PROC_REF(owner_present), because = MSG(lock/denied)))))
+
+/// CAPABILITIES(/obj/structure/closet/secure_closet/personal) at code/game/objects/structures/crates_lockers/closets/secure/personal.dm:33
+/obj/structure/closet/secure_closet/personal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/secure/personal.dm", 33, /obj/structure/closet/secure_closet/personal)
+	into += entry_line(34)
+	into += list(global.op("swipe", global.item(/obj/item), global.label("Swipe ID"), global.when(global.cond_not(nameof(opened))), global.when(global.req(PROC_REF(carries_id))), global.priority(global.above("lock.toggle")), global.needs(global.req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), global.req(PROC_REF(card_has_name), because = MSG(personal/blank_card))), global.then(PROC_REF(card_swiped))))
+	into += entry_line(36)
+	into += list(global.op("reset_lock", global.menu(), global.label("Reset Lock"), global.needs(global.req_capable(), global.req(PROC_REF(can_reset), because = PROC_REF(reset_refusal))), global.then(PROC_REF(lock_reset))))
+
+/// CAPABILITIES(/obj/structure/closet/statue) at code/game/objects/structures/crates_lockers/closets/statue.dm:113
+/obj/structure/closet/statue/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/statue.dm", 113, /obj/structure/closet/statue)
+	into += entry_line(114)
+	into += list(global.without("door"))
+	into += entry_line(115)
+	into += list(global.without("stuff"))
+	into += entry_line(116)
+	into += list(global.without("stuff_grab"))
+	into += entry_line(117)
+	into += list(global.without("set_down"))
+	into += entry_line(118)
+	into += list(global.without("empty_basket"))
+	into += entry_line(119)
+	into += list(global.without("strike"))
+	into += entry_line(120)
+	into += list(global.op("statue_strike", global.item(/obj/item), global.label("Strike"), global.priority(OP_PRIORITY_PART + 20), global.then(PROC_REF(statue_struck))))
+
+/// CAPABILITIES(/obj/structure/closet/walllocker/emerglocker) at code/game/objects/structures/crates_lockers/closets/walllocker.dm:30
+/obj/structure/closet/walllocker/emerglocker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/walllocker.dm", 30, /obj/structure/closet/walllocker/emerglocker)
+	into += entry_line(31)
+	into += list(global.without("door"))
+	into += entry_line(32)
+	into += list(global.without("stuff"))
+	into += entry_line(33)
+	into += list(global.without("stuff_grab"))
+	into += entry_line(34)
+	into += list(global.without("set_down"))
+	into += entry_line(35)
+	into += list(global.without("empty_basket"))
+	into += entry_line(36)
+	into += list(global.op("take_supplies", global.hand(), global.label("Take supplies"), global.when(global.req(PROC_REF(actor_is_no_ai))), global.needs(global.req(PROC_REF(has_supplies), because = MSG(emerglocker/empty))), global.then(PROC_REF(supplies_taken)), global.says(MSG(emerglocker/taken))))
 
 /// CAPABILITIES(/obj/structure/construction/lightswitch) at code/modules/power/lightswitch.dm:74
 /obj/structure/construction/lightswitch/declared_entries(list/into)

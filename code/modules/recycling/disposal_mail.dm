@@ -144,7 +144,7 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 		wrapped().forceMove(get_turf(src))
 		if(istype(wrapped(), /obj/structure/closet))
 			var/obj/structure/closet/O = wrapped()
-			O.sealed = 0
+			set_welded(O, FALSE)
 		rel_clear(src, nameof(wrapped))
 	..()
 

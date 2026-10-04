@@ -905,8 +905,8 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	if(!(cultist?.buckled_to() || \
 		cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || \
 		istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle) || \
-		(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded) || \
-		(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked) || \
+		(istype(cultist.loc, /obj/structure/closet) && is_welded(cultist.loc)) || \
+		(istype(cultist.loc, /obj/structure/closet/secure_closet) && lock_locked(cultist.loc)) || \
 		(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked) \
 	))
 		to_chat(user, span_warning("The [cultist] is already free."))
@@ -920,10 +920,11 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 		cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
 	if (istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle))
 		cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_MASK))
-	if(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded)
-		cultist.loc:welded = 0
-	if(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked)
-		cultist.loc:locked = 0
+	if(istype(cultist.loc, /obj/structure/closet) && is_welded(cultist.loc))
+		set_welded(cultist.loc, FALSE)
+	if(istype(cultist.loc, /obj/structure/closet/secure_closet) && lock_locked(cultist.loc))
+		var/obj/structure/closet/secure_closet/freed = cultist.loc
+		freed.force_lock(FALSE)
 	if(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked)
 		cultist.loc:locked = 0
 	for(var/mob/living/carbon/C in users)

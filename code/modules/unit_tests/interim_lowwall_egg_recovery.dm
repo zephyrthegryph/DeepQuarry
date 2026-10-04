@@ -31,6 +31,7 @@
 
 /// Actual egg welding releases its stored cargo before consuming the egg shell.
 /datum/unit_test/interim_egg_weld_recovery/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/closet/secure_closet/egg/egg = allocate(/obj/structure/closet/secure_closet/egg, T)
@@ -40,7 +41,8 @@
 	TEST_ASSERT(book in egg.slot_contents(CONTAINER_SLOT_INTERIOR), "the original book occupies the actual interior slot")
 	var/obj/item/weldingtool/tool = allocate(/obj/item/weldingtool, T)
 	TEST_ASSERT(user.put_in_active_hand(tool), "the actor holds the actual welder")
-	TEST_ASSERT(egg.welder_act(user, tool), "actual egg welding reports success")
+	test_click(user, egg, tool)
+	test_time(5 SECONDS)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(egg), "actual welding consumes the original egg shell")
 	TEST_ASSERT(!QDELETED(book), "the actual stored book survives welding")
@@ -48,3 +50,4 @@
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/book)), 1, "welding preserves exactly the original book")
 	TEST_ASSERT_NULL(locate_within(T, /obj/structure/closet/secure_closet/egg), "welding leaves no duplicate egg")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), tool, "welding keeps the original tool held")
+	test_driver_end()

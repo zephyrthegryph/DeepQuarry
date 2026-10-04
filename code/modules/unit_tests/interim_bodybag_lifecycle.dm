@@ -1,5 +1,6 @@
 /// Unfolding transfers the actual owned cryobag injector before shell consumption and leaves the structure on the floor.
 /datum/unit_test/interim_bodybag_unfold_payload/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/bodybag/cryobag/bag = allocate(/obj/item/bodybag/cryobag, T)
@@ -7,7 +8,8 @@
 	injector.moveToNullspace()
 	TEST_ASSERT(own_set(bag, nameof(bag.syringe), injector), "the folded bag owns the real injector")
 	TEST_ASSERT(user.put_in_active_hand(bag), "the folded bag occupies a real hand slot")
-	TEST_ASSERT_EQUAL(bag.bodybag_self(user, bag, null), TRUE, "unfolding succeeds")
+	test_click(user, bag, bag, GESTURE_SELF)
+	test_time(5 SECONDS)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(bag), "unfolding consumes the folded shell")
 	var/obj/structure/closet/body_bag/cryobag/product = locate_within(T, /obj/structure/closet/body_bag/cryobag)
@@ -17,9 +19,11 @@
 	TEST_ASSERT_EQUAL(product.syringe, injector, "the unfolded bag owns the same injector")
 	TEST_ASSERT(!QDELETED(injector), "the transferred injector survives folded-shell teardown")
 	TEST_ASSERT_NULL(injector.loc, "the injector retains its original nullspace storage")
+	test_driver_end()
 
 /// Source refusal prevents any structure creation or owned payload transfer.
 /datum/unit_test/interim_bodybag_unfold_refusal/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/bodybag/cryobag/bag = allocate(/obj/item/bodybag/cryobag, T)
@@ -31,8 +35,8 @@
 	refusal.watch(user)
 	refusal.block_remove = TRUE
 	TEST_ASSERT(bag.loc.release_refusal(bag, user), "the actual bag refuses release")
-	TEST_ASSERT(bag.can_unfold(user, bag, bag) != TRUE, "the unfolding requirement rejects the refused source")
-	TEST_ASSERT_EQUAL(bag.bodybag_self(user, bag, null), FALSE, "the actual callback also respects source refusal")
+	test_click(user, bag, bag, GESTURE_SELF)
+	test_time(5 SECONDS)
 	own_turf_contents(T)
 	TEST_ASSERT(!QDELETED(bag), "refusal preserves the folded shell")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), bag, "refusal preserves the source's inventory slot")
@@ -40,3 +44,4 @@
 	TEST_ASSERT(!QDELETED(injector), "refusal preserves the actual injector")
 	TEST_ASSERT_NULL(injector.loc, "refusal preserves the injector's original nullspace storage")
 	TEST_ASSERT_NULL(locate_within(T, /obj/structure/closet/body_bag), "refusal creates no unfolded structure")
+	test_driver_end()

@@ -2,7 +2,7 @@
 	name = "abandoned crate"
 	desc = "What could be inside?"
 	closet_appearance = /datum/decl/closet_appearance/crate/secure
-	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
+	var/list/code
 	var/list/lastattempt
 	var/attempts = 10
 	var/codelen = 4
@@ -13,8 +13,8 @@
 	var/list/digits = list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
 
 	for(var/i in 1 to codelen)
-		code += pick(digits)
-		digits -= code[code.len]
+		LAZYADD(code, pick(digits))
+		digits -= code[length(code)]
 
 	generate_loot()
 
@@ -148,19 +148,30 @@
 vorestation edit end */
 
 
-/obj/structure/closet/crate/secure/loot/togglelock(mob/user)
-	if(!locked)
-		return
+MSG_DEF_SELF(loot_crate/locked_with_code, "The crate is locked with a Deca-code lock.")
 
-	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = rerun_ask(user, "k156", PROC_REF(togglelock), args, /datum/om/prompt/text, message = "Enter [codelen] digits. All digits must be unique.", title = "Deca-Code Lock", max_length = codelen)
-	if(isnull(input))
-		return
-	if(!Adjacent(user))
-		return
+// An abandoned crate has no ID lock: a hand or any held thing asks for the code, an emag opens it, and a multitool reads how close the last guess was.
+CAPABILITIES(/obj/structure/closet/crate/secure/loot)
+	without("lock.toggle")
+	without("lock.toggle_worn")
+	without("lock_with_item")
+	extend("emag.use", needs(req_is(LOCK_LOCKED, because = MSG(emag/already))))
+	extend("emag.subvert", needs(req_is(LOCK_LOCKED, because = MSG(emag/already))))
+	op("enter_code", inputs(hand(), item(/obj/item)), label("Enter code"), when(LOCK_LOCKED), when(cond_not(nameof(opened))), priority(OP_PRIORITY_NORMAL + 1),
+		begins(MSG(loot_crate/locked_with_code)), asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(code_question)), "title" = "Deca-Code Lock", "max_len" = "codelen")), then(PROC_REF(code_entered)))
+	op("analyse", tool(TOOL_MULTITOOL), label("Analyse the lock"), when(LOCK_LOCKED), priority(OP_PRIORITY_PART + 5), wait(0), then(PROC_REF(code_analysed)))
+
+/obj/structure/closet/crate/secure/loot/proc/code_question(datum/act/A)
+	return "Enter [codelen] digits. All digits must be unique."
+
+/// A guess was typed in: bad ones are left alone, a right one unlocks, a wrong one costs an attempt (the last one blows the crate up).
+/obj/structure/closet/crate/secure/loot/proc/code_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	var/input = R?.value
 	if(input == null)
 		to_chat(user, span_notice("You leave the crate alone."))
-		return
+		return OP_OK
 	var/list/sanitised = list()
 	var/sanitycheck = 1
 	for(var/i=1,i<=length(input),i++) //put the guess into a list
@@ -172,12 +183,12 @@ vorestation edit end */
 
 	if(sanitycheck == null || length(input) != codelen)
 		to_chat(user, span_notice("You aren't sure this input is a good idea."))
-		return
+		return OP_OK
 
 	if(check_input(input))
 		to_chat(user, span_notice("The crate unlocks!"))
 		play_sfx(src, SFX_MACHINES_LOCKRESET)
-		set_locked(0)
+		force_lock(FALSE)
 	else
 		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
 		attempts--
@@ -186,11 +197,13 @@ vorestation edit end */
 			var/turf/T = get_turf(src.loc)
 			explosion(T, 0, 0, 1, 2)
 			qdel(src)
+	return OP_OK
 
-/obj/structure/closet/crate/secure/loot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if (locked)
-		to_chat(user, span_notice("The crate unlocks!"))
-		locked = 0
+/// The emag opens the crate.
+/obj/structure/closet/crate/secure/loot/on_emag(datum/act/op/A)
+	to_chat(A.actor, span_notice("The crate unlocks!"))
+	force_lock(FALSE)
+	return OP_OK
 
 /obj/structure/closet/crate/secure/loot/proc/check_input(input)
 	if(length(input) != codelen)
@@ -204,30 +217,30 @@ vorestation edit end */
 		if(guesschar != code[i])
 			. = 0
 
-/obj/structure/closet/crate/secure/loot/multitool_act(mob/user, obj/item/tool)
-	if(locked)
-		to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
-		if(attempts == 1)
-			to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
-		else
-			to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
-		if(length(lastattempt))
-			var/bulls = 0
-			var/cows = 0
+/// A multitool reads the lock.
+/obj/structure/closet/crate/secure/loot/proc/code_analysed(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
+	if(attempts == 1)
+		to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
+	else
+		to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
+	if(length(lastattempt))
+		var/bulls = 0
+		var/cows = 0
 
-			var/list/code_contents = code.Copy()
-			for(var/i in 1 to codelen)
-				if(LAZYACCESS(lastattempt, i) == code[i])
-					++bulls
-				else if(LAZYACCESS(lastattempt, i) in code_contents)
-					++cows
-				code_contents -= LAZYACCESS(lastattempt, i)
-			var/previousattempt = null //convert back to string for readback
-			for(var/i in 1 to codelen)
-				previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
-			to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
-		return ITEM_INTERACT_SUCCESS
-	return ..()
+		var/list/code_contents = code.Copy()
+		for(var/i in 1 to codelen)
+			if(LAZYACCESS(lastattempt, i) == code[i])
+				++bulls
+			else if(LAZYACCESS(lastattempt, i) in code_contents)
+				++cows
+			code_contents -= LAZYACCESS(lastattempt, i)
+		var/previousattempt = null //convert back to string for readback
+		for(var/i in 1 to codelen)
+			previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
+		to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
+	return OP_OK
 
 
 /obj/structure/closet/crate/secure/loot

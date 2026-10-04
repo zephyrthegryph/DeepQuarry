@@ -11,25 +11,27 @@
 	open_sound = SFX_VORE_SCHLORP
 	close_sound = SFX_VORE_SCHLORP
 	opened = 0
-	sealed = 0 //Don't touch this.
+	sealable = FALSE //Don't touch this.
 	max_integrity = 100
 
 /obj/structure/closet/secure_closet/egg/proc/appearance_egg_state()
 	if(opened)
 		return icon_opened
-	return sealed ? icon_locked : icon_closed
+	return is_welded(src) ? icon_locked : icon_closed
 
 APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet/egg, "{appearance_egg_state}")
 // Replaces the inherited "opened" -> "open" layer: the egg's open state is icon_opened.
 DECLARE_APPEARANCE(/obj/structure/closet/secure_closet/egg, "opened", list())
 
-/obj/structure/closet/secure_closet/egg/welder_act(mob/user, obj/item/W)
-	dump_contents()
-	consume(src, user)
-	return TRUE
+// An egg is cut open by a welder (lit or not: what is in it is let out, and the shell goes), and has no bolts.
+CAPABILITIES(/obj/structure/closet/secure_closet/egg)
+	without(CAP_ANCHOR)
+	op("cut_open", item(/obj/item/weldingtool), label("Cut open"), priority(OP_PRIORITY_PART + 1), wait(0), then(PROC_REF(cut_open)))
 
-/obj/structure/closet/secure_closet/egg/wrench_act(mob/user, obj/item/W)
-	return TRUE
+/obj/structure/closet/secure_closet/egg/proc/cut_open(datum/act/op/A)
+	dump_contents()
+	consume(src, A.actor)
+	return OP_OK
 
 /obj/structure/closet/secure_closet/egg/unathi
 	name = "unathi egg"

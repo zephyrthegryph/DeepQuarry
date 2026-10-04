@@ -84,7 +84,7 @@
 			return
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
 		rel_set(P, nameof(P.wrapped), O)
-		O.sealed = 1
+		set_welded(O, TRUE)
 		O.forceMove(P)
 		src.amount -= 3
 		wrap_used()

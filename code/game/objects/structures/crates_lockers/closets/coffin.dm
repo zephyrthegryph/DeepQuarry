@@ -4,9 +4,12 @@
 	icon = 'icons/obj/closets/coffin.dmi'
 
 	icon_state = "closed_unlocked"
-	seal_tool = /obj/item/tool/screwdriver
 	breakout_sound = SFX_WEAPONS_TABLEHIT1
 	closet_appearance = null // Special icon for us
+
+// A coffin is screwed shut, not welded.
+CAPABILITIES(/obj/structure/closet/coffin)
+	configure(weld_shut(tool = TOOL_SCREWDRIVER))
 
 /* Graves */
 /obj/structure/closet/grave
@@ -14,7 +17,7 @@
 	desc = "Dirt."
 	icon = 'icons/obj/closets/grave.dmi'
 	icon_state = ""
-	seal_tool = null
+	sealable = FALSE
 	breakout_sound = SFX_WEAPONS_THUDSWOOSH
 	anchored = TRUE
 	max_closets = 1
@@ -23,35 +26,31 @@
 	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
 	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 
-// Grave's Use and item overrides fully replace closet's (the original overrides never
-// called ..() into it either), so it declares its own interactions.
-/obj/structure/closet/grave/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/grave_hand,
-		/datum/interaction/entry_item/grave_item/harm,
-		/datum/interaction/entry_item/grave_item,
-	)
+MSG_DEF(grave/climb_start, "You start to lower yourself into %T%.", "%U% starts to climb into %T%.")
+MSG_DEF(grave/climbed, "You climb into %T%.", "%U% climbs into %T%.")
+MSG_DEF(grave/fill_start, "You start to pile dirt into %T%.", "%U% piles dirt into %T%.")
+MSG_DEF(grave/filled, "You finish filling in %T%.", "%U% pats down the dirt on top of %T%.")
+MSG_DEF(grave/smooth_start, "You start to smoothe out the dirt of %T%.", "%U% begins to smoothe out the dirt of %T%.")
+MSG_DEF(grave/smoothed, "You finish smoothing out %T%.", "%U% finishes smoothing out %T%.")
+MSG_DEF(grave/dig_start, "You start to unearth %T%.", "%U% begins to unearth %T%.")
+MSG_DEF(grave/dug, "You finish digging out %T%.", "%U% reaches the bottom of %T%.")
 
-/// Old attack_hand: climb into the open grave.
-/datum/interaction/entry_hand/grave_hand
-	id = "grave_hand"
-	name = "Use"
-	effect = /obj/structure/closet/grave/proc/interaction_grave_hand
-
-/obj/structure/closet/grave/proc/interaction_grave_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(opened)
-		act_message(user, null, others = span_notice("%U% starts to climb into \the [src.name]."), \
-			blind = span_notice("You start to lower yourself into \the [src.name]."))
-		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
-	return TRUE
-
-/obj/structure/closet/grave/proc/attack_hand_timed_done(mob/user)
-	user.forceMove(src.loc)
-	act_message(user, null, others = span_notice("%U% climbs into \the [src.name]."), blind = span_notice("You climb into \the [src.name]."))
-
-/obj/structure/closet/grave/proc/attack_hand_timed_failed(mob/user)
-	act_message(user, null, others = span_notice("%U% decides not to climb into \the [src.name]."), \
-		blind = span_notice("You stop climbing into \the [src.name]."))
+// A grave has no door to work and nothing is stuffed into it by a drag: a hand climbs into an open one (five seconds), a shovel fills one in and, on a filled one,
+// unearths it (or, in combat mode, smooths it over). It holds like a sealed closet once it is filled.
+CAPABILITIES(/obj/structure/closet/grave)
+	without(CAP_WELD_SHUT)
+	without("door")
+	without("stuff")
+	without("devour")
+	without("strike")
+	op("climb_in", hand(), label("Climb in"), when(nameof(opened)), wait(5 SECONDS), begins(MSG(grave/climb_start)), then(PROC_REF(climbed_in)), says(MSG(grave/climbed)),
+		on_interrupt(PROC_REF(climb_interrupted)))
+	op("fill", item(/obj/item/shovel), label("Fill in"), when(nameof(opened)), priority(OP_PRIORITY_PART), wait(4 SECONDS), begins(MSG(grave/fill_start)),
+		then(PROC_REF(filled_in)), says(MSG(grave/filled)), on_interrupt(PROC_REF(fill_interrupted)))
+	op("smooth_over", item(/obj/item/shovel), label("Smooth over"), when(cond_not(nameof(opened))), hostile(), priority(OP_PRIORITY_PART), wait(4 SECONDS),
+		begins(MSG(grave/smooth_start)), then(PROC_REF(smoothed_over)), says(MSG(grave/smoothed)), on_interrupt(PROC_REF(smooth_interrupted)))
+	op("unearth", item(/obj/item/shovel), label("Unearth"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), wait(4 SECONDS),
+		begins(MSG(grave/dig_start)), then(PROC_REF(dug_out)), says(MSG(grave/dug)), on_interrupt(PROC_REF(dig_interrupted)))
 
 /obj/structure/closet/grave/CanPass(atom/movable/mover, turf/target)
 	if(opened && ismob(mover))
@@ -83,98 +82,45 @@
 		var/limb_damage = rand(5,25)
 		H.injure(INJURY_BLUNT, limb_damage, null, src)
 
-/// Old attackby: fill in with a shovel, smooth over/dig out, or drop items in.
-/datum/interaction/entry_item/grave_item
-	id = "grave_item"
-	name = "Use"
-	effect = /obj/structure/closet/grave/proc/interaction_grave_item
+/// The climber is let down into the grave.
+/obj/structure/closet/grave/proc/climbed_in(datum/act/op/A)
+	A.actor.forceMove(src.loc)
+	return OP_OK
 
-/// Combat mode: a shovel smooths over a filled grave instead of unearthing it.
-/datum/interaction/entry_item/grave_item/harm
-	id = "grave_item_harm"
-	name = "Smooth over"
-	stance = I_HURT
+/obj/structure/closet/grave/proc/climb_interrupted(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You stop climbing into %T%.")), MSG_OTHERS(span_notice("%U% decides not to climb into %T%.")))
 
-/obj/structure/closet/grave/proc/interaction_grave_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(src.opened)
-		if(istype(W, /obj/item/shovel))
-			act_message(user, null, MSG_SELF(span_notice("You start to pile dirt into \the [src.name].")), \
-				MSG_OTHERS(span_notice("%U% piles dirt into \the [src.name].")), \
-				MSG_BLIND(span_notice("You hear dirt being moved.")))
-			use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done_coffin), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed_coffin), fail_args = list(user))
-		if(istype(W, /obj/item/grab))
-			var/obj/item/grab/G = W
-			src.MouseDrop_T(G?.grab_target(), user)      //act like they were dragged onto the closet
-			return TRUE
-		if(istype(W,/obj/item/tk_grab))
-			return TRUE
-		if(istype(W, /obj/item/storage/laundry_basket) && length(W.slot_contents()))
-			var/obj/item/storage/laundry_basket/LB = W
-			var/turf/T = get_turf(src)
-			for(var/obj/item/I in LB.slot_contents())
-				LB.remove_from_storage(I, T)
-			act_message(user, src, MSG_SELF(span_notice("You empty %I% into %T%.")), \
-				MSG_OTHERS(span_notice("%U% empties %I% into %T%.")), \
-				MSG_BLIND(span_notice("You hear rustling of clothes.")), \
-				item = LB)
-			return TRUE
-		if(isrobot(user))
-			return TRUE
-		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return TRUE
-		user.drop_item()
-		if(W)
-			W.forceMove(src.loc)
-	else
-		if(istype(W, /obj/item/shovel))
-			if(interaction.stance == I_HURT)	// Combat mode means you're trying to kill someone, or just get rid of the grave
-				act_message(user, null, MSG_SELF(span_notice("You start to smoothe out the dirt of \the [src.name].")), \
-					MSG_OTHERS(span_notice("%U% begins to smoothe out the dirt of \the [src.name].")), \
-					MSG_BLIND(span_notice("You hear dirt being moved.")))
-				use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done2), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed2), fail_args = list(user))
-				return TRUE
-			else
-				act_message(user, null, MSG_SELF(span_notice("You start to unearth \the [src.name].")), \
-					MSG_OTHERS(span_notice("%U% begins to unearth \the [src.name].")), \
-					MSG_BLIND(span_notice("You hear dirt being moved.")))
-				use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done3), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed3), fail_args = list(user))
-	return TRUE
-
-/obj/structure/closet/grave/proc/attackby_tool_done_coffin(mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You finish filling in \the [src.name].")), \
-		MSG_OTHERS(span_notice("%U% pats down the dirt on top of \the [src.name].")))
+/// The grave is closed over what is in it.
+/obj/structure/closet/grave/proc/filled_in(datum/act/op/A)
 	close()
-	return
+	return OP_OK
 
-/obj/structure/closet/grave/proc/attackby_tool_failed_coffin(mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You change your mind and stop filling in \the [src.name].")), \
-		MSG_OTHERS(span_notice("%U% stops filling in \the [src.name].")))
-	return
-/obj/structure/closet/grave/proc/attackby_tool_done2(mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You finish smoothing out \the [src.name].")), \
-		MSG_OTHERS(span_notice("%U% finishes smoothing out \the [src.name].")))
+/obj/structure/closet/grave/proc/fill_interrupted(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You change your mind and stop filling in %T%.")), MSG_OTHERS(span_notice("%U% stops filling in %T%.")))
+
+/// A grave with something in it is only hidden a little; an empty one goes away.
+/obj/structure/closet/grave/proc/smoothed_over(datum/act/op/A)
 	if(LAZYLEN(contents) || has_latent())
 		alpha = 40	// If we've got stuff inside, like maybe a person, just make it hard to see us
 	else
-		consume(src, user)	// Else, go away
-	return
+		consume(src, A.actor)	// Else, go away
+	return OP_OK
 
-/obj/structure/closet/grave/proc/attackby_tool_failed2(mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You stop concealing \the [src.name].")), MSG_OTHERS(span_notice("%U% stops concealing \the [src.name].")))
-	return
-/obj/structure/closet/grave/proc/attackby_tool_done3(mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You finish digging out \the [src.name].")), \
-		MSG_OTHERS(span_notice("%U% reaches the bottom of \the [src.name].")))
+/obj/structure/closet/grave/proc/smooth_interrupted(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You stop concealing %T%.")), MSG_OTHERS(span_notice("%U% stops concealing %T%.")))
+
+/// The grave is dug out to the bottom: what lies in it is let out.
+/obj/structure/closet/grave/proc/dug_out(datum/act/op/A)
 	break_open()
-	return
+	return OP_OK
 
-/obj/structure/closet/grave/proc/attackby_tool_failed3(mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You stop digging out \the [src.name].")), MSG_OTHERS(span_notice("%U% stops digging out \the [src.name].")))
+/obj/structure/closet/grave/proc/dig_interrupted(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You stop digging out %T%.")), MSG_OTHERS(span_notice("%U% stops digging out %T%.")))
 
 /obj/structure/closet/grave/close()
 	..()
 	if(!opened)
-		sealed = TRUE
+		set_welded(src, TRUE)
 
 /obj/structure/closet/grave/open()
 	.=..()

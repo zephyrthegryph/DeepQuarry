@@ -9,19 +9,22 @@
 	locked = 1
 	var/hackguard = 10
 
-/obj/structure/closet/crate/secure/lootsafe/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if (locked)
-		if(prob(60 - hackguard))
-			to_chat(user, span_notice("The safe unlocks!"))
-			locked = 0
-			return 1
-		if(prob(15 + hackguard))
-			to_chat(user, span_notice("The safe buzzes as a security drone is teleported in!"))
-			new /mob/living/simple_mob/mechanical/combat_drone (src.loc) //if I ever make security stun drones remind me to replace this with those
-			return 1
-		else
-			to_chat(user, span_notice("The safe buzzes but the security systems don't trigger."))
-			return 1
+// A safe takes the emag only while it is locked: one that is open spends no charge. The sequencer may open it, call a drone, or do nothing.
+CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe)
+	extend("emag.use", needs(req_is(LOCK_LOCKED, because = MSG(emag/already))))
+	extend("emag.subvert", needs(req_is(LOCK_LOCKED, because = MSG(emag/already))))
+
+/obj/structure/closet/crate/secure/lootsafe/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	if(prob(60 - hackguard))
+		to_chat(user, span_notice("The safe unlocks!"))
+		force_lock(FALSE)
+	else if(prob(15 + hackguard))
+		to_chat(user, span_notice("The safe buzzes as a security drone is teleported in!"))
+		new /mob/living/simple_mob/mechanical/combat_drone (src.loc) //if I ever make security stun drones remind me to replace this with those
+	else
+		to_chat(user, span_notice("The safe buzzes but the security systems don't trigger."))
+	return OP_OK
 
 //Loot for lootsafes
 /obj/structure/closet/crate/secure/lootsafe/proc/generate_loot()
@@ -87,12 +90,108 @@
 		new path(src)
 		lootvalue += value
 
-/obj/structure/closet/crate/secure/lootsafe/numberlock
-	desc = "A huge chunk of metal with a keypad embedded in it. Fine print above the keypad reads, Guaranteed thermite resistant, explosion resistant, and assistant resistant.\""
-	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
+// The Deca-code lock of the coded safes (numberlock, devillock): the code is `codelen` unique characters, `attempts` wrong guesses blow the safe up, and a
+// multitool reads how close the last guess was (bulls and cows). A coded safe has no ID lock: a hand or any held thing asks for the code.
+/obj/structure/closet/crate/secure/lootsafe
+	var/list/code
 	var/list/lastattempt
 	var/attempts = 10
 	var/codelen = 5
+
+MSG_DEF_SELF(lootsafe/locked_with_code, "The crate is locked with a Deca-code lock.")
+
+/// The characters a code is made of, each used once.
+TYPE_TABLE_DECLARE(/obj/structure/closet/crate/secure/lootsafe, code_alphabet, list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"))
+TYPE_TABLE(/obj/structure/closet/crate/secure/lootsafe/devillock, code_alphabet, list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"))
+
+/// Makes the code.
+/obj/structure/closet/crate/secure/lootsafe/proc/make_code()
+	var/list/digits = TYPE_TABLE_COPY(src, code_alphabet)
+	for(var/i in 1 to codelen)
+		LAZYADD(code, pick(digits))
+		digits -= code[length(code)]
+
+/obj/structure/closet/crate/secure/lootsafe/proc/code_question(datum/act/A)
+	return "Enter [codelen] digits. All digits must be unique."
+
+/// A guess was typed in: bad ones are left alone, a right one unlocks, a wrong one costs an attempt (the last one blows the safe up).
+/obj/structure/closet/crate/secure/lootsafe/proc/code_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	var/input = R?.value
+	var/list/sanitised = list()
+	var/sanitycheck = 1
+	for(var/i=1,i<=length(input),i++) //put the guess into a list
+		sanitised += text2num(copytext(input,i,i+1))
+	for(var/i=1,i<=(length(input)-1),i++) //compare each digit in the guess to all those following it
+		for(var/j=(i+1),j<=length(input),j++)
+			if(sanitised[i] == sanitised[j])
+				sanitycheck = null //if a digit is repeated, reject the input
+
+	if(input == null || sanitycheck == null || length(input) != codelen)
+		to_chat(user, span_notice("You leave the crate alone."))
+	else if(check_input(input))
+		to_chat(user, span_notice("The crate unlocks!"))
+		play_sfx(src, SFX_MACHINES_LOCKRESET)
+		force_lock(FALSE)
+	else
+		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
+		attempts--
+		if (attempts == 0)
+			to_chat(user, span_danger("The crate's anti-tamper system activates!"))
+			var/turf/T = get_turf(src.loc)
+			explosion(T, 0, 0, 1, 2)
+			qdel(src)
+	return OP_OK
+
+/obj/structure/closet/crate/secure/lootsafe/proc/check_input(input)
+	if(length(input) != codelen)
+		return 0
+
+	. = 1
+	LAZYCLEARLIST(lastattempt)
+	for(var/i in 1 to codelen)
+		var/guesschar = copytext(input, i, i+1)
+		LAZYADD(lastattempt, guesschar)
+		if(guesschar != code[i])
+			. = 0
+
+/// A multitool reads the lock.
+/obj/structure/closet/crate/secure/lootsafe/proc/code_analysed(datum/act/op/A)
+	var/mob/user = A.actor
+	// Greetings Urist McProfessor, how about a nice game of cows and bulls?
+	to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
+	if (attempts == 1)
+		to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
+	else
+		to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
+	if(length(lastattempt))
+		var/bulls = 0
+		var/cows = 0
+
+		var/list/code_contents = code.Copy()
+		for(var/i in 1 to codelen)
+			if(LAZYACCESS(lastattempt, i) == code[i])
+				++bulls
+			else if(LAZYACCESS(lastattempt, i) in code_contents)
+				++cows
+			code_contents -= LAZYACCESS(lastattempt, i)
+		var/previousattempt = null //convert back to string for readback
+		for(var/i in 1 to codelen)
+			previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
+		to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
+	return OP_OK
+
+/obj/structure/closet/crate/secure/lootsafe/numberlock
+	desc = "A huge chunk of metal with a keypad embedded in it. Fine print above the keypad reads, Guaranteed thermite resistant, explosion resistant, and assistant resistant.\""
+
+CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/numberlock)
+	without("lock.toggle")
+	without("lock.toggle_worn")
+	without("lock_with_item")
+	op("enter_code", inputs(hand(), item(/obj/item)), label("Enter code"), when(LOCK_LOCKED), when(cond_not(nameof(opened))), priority(OP_PRIORITY_NORMAL + 1),
+		begins(MSG(lootsafe/locked_with_code)), asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(code_question)), "title" = "Deca-Code Lock")), then(PROC_REF(code_entered)))
+	op("analyse", tool(TOOL_MULTITOOL), label("Analyse the lock"), when(LOCK_LOCKED), priority(OP_PRIORITY_PART + 5), wait(0), then(PROC_REF(code_analysed)))
 
 /obj/structure/closet/crate/secure/lootsafe/numberlock/extraguard
 	hackguard = 20
@@ -103,90 +202,8 @@
 
 /obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)
 	. = ..()
-	var/list/digits = list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
-
-	for(var/i in 1 to codelen)
-		code += pick(digits)
-		digits -= code[code.len]
-
+	make_code()
 	generate_loot()
-
-
-/obj/structure/closet/crate/secure/lootsafe/numberlock/togglelock(mob/user as mob)
-	if(!locked)
-		return
-
-	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = rerun_ask(user, "k121", PROC_REF(togglelock), args, /datum/om/prompt/text, message = "Enter [codelen] digits. All digits must be unique.", title = "Deca-Code Lock")
-	if(isnull(input))
-		return
-	if(!Adjacent(user))
-		return
-	var/list/sanitised = list()
-	var/sanitycheck = 1
-	for(var/i=1,i<=length(input),i++) //put the guess into a list
-		sanitised += text2num(copytext(input,i,i+1))
-	for(var/i=1,i<=(length(input)-1),i++) //compare each digit in the guess to all those following it
-		for(var/j=(i+1),j<=length(input),j++)
-			if(sanitised[i] == sanitised[j])
-				sanitycheck = null //if a digit is repeated, reject the input
-
-	if(input == null || sanitycheck == null || length(input) != codelen)
-		to_chat(user, span_notice("You leave the crate alone."))
-	else if(check_input(input))
-		to_chat(user, span_notice("The crate unlocks!"))
-		play_sfx(src, SFX_MACHINES_LOCKRESET)
-		set_locked(0)
-	else
-		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
-		attempts--
-		if (attempts == 0)
-			to_chat(user, span_danger("The crate's anti-tamper system activates!"))
-			var/turf/T = get_turf(src.loc)
-			explosion(T, 0, 0, 1, 2)
-			qdel(src)
-
-/obj/structure/closet/crate/secure/lootsafe/numberlock/proc/check_input(input)
-	if(length(input) != codelen)
-		return 0
-
-	. = 1
-	LAZYCLEARLIST(lastattempt)
-	for(var/i in 1 to codelen)
-		var/guesschar = copytext(input, i, i+1)
-		LAZYADD(lastattempt, guesschar)
-		if(guesschar != code[i])
-			. = 0
-
-EXTEND_INTERACTIONS(/obj/structure/closet/crate/secure/lootsafe/numberlock, INTERACT_ITEM(null, PROC_REF(numberlock_interaction_item)))
-
-/// Old attackby.
-/obj/structure/closet/crate/secure/lootsafe/numberlock/proc/numberlock_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(locked)
-		if (W.has_tool_quality(TOOL_MULTITOOL)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
-			to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
-			if (attempts == 1)
-				to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
-			else
-				to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
-			if(length(lastattempt))
-				var/bulls = 0
-				var/cows = 0
-
-				var/list/code_contents = code.Copy()
-				for(var/i in 1 to codelen)
-					if(LAZYACCESS(lastattempt, i) == code[i])
-						++bulls
-					else if(LAZYACCESS(lastattempt, i) in code_contents)
-						++cows
-					code_contents -= LAZYACCESS(lastattempt, i)
-				var/previousattempt = null //convert back to string for readback
-				for(var/i in 1 to codelen)
-					previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
-				to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
-			return INTERACTION_HANDLED_PASS
-	return FALSE
-
 
 //Currently Admeme things but due to chatter I have ideas on how to expand this later
 //Concept is you either A) go and get the keycard, or B) brute force.
@@ -194,10 +211,16 @@ EXTEND_INTERACTIONS(/obj/structure/closet/crate/secure/lootsafe/numberlock, INTE
 	desc = "A huge chunk of metal with a keyboard imprinted in it.\""
 	hackguard = 45
 	req_access = list(150)
-	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
-	var/list/lastattempt
-	var/attempts = 100
-	var/codelen = 10
+	attempts = 100
+	codelen = 10
+
+CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/devillock)
+	without("lock.toggle")
+	without("lock.toggle_worn")
+	without("lock_with_item")
+	op("enter_code", inputs(hand(), item(/obj/item)), label("Enter code"), when(LOCK_LOCKED), when(cond_not(nameof(opened))), priority(OP_PRIORITY_NORMAL + 1),
+		begins(MSG(lootsafe/locked_with_code)), asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(code_question)), "title" = "Deca-Code Lock")), then(PROC_REF(code_entered)))
+	op("analyse", tool(TOOL_MULTITOOL), label("Analyse the lock"), when(LOCK_LOCKED), priority(OP_PRIORITY_PART + 5), wait(0), then(PROC_REF(code_analysed)))
 
 /obj/item/card/id/bosskey
 	name = "Strange ID"
@@ -206,90 +229,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/crate/secure/lootsafe/numberlock, INTE
 	item_state = "gold_id"
 	access = list(150)
 
-
 /obj/structure/closet/crate/secure/lootsafe/devillock/Initialize(mapload)
 	. = ..()
-	var/list/digits = list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z")
-
-	for(var/i in 1 to codelen)
-		code += pick(digits)
-		digits -= code[code.len]
-
+	make_code()
 	generate_loot()
-
-
-
-/obj/structure/closet/crate/secure/lootsafe/devillock/togglelock(mob/user as mob)
-	if(!locked)
-		return
-
-	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = rerun_ask(user, "k223", PROC_REF(togglelock), args, /datum/om/prompt/text, message = "Enter [codelen] digits. All digits must be unique.", title = "Deca-Code Lock")
-	if(isnull(input))
-		return
-	if(!Adjacent(user))
-		return
-	var/list/sanitised = list()
-	var/sanitycheck = 1
-	for(var/i=1,i<=length(input),i++) //put the guess into a list
-		sanitised += text2num(copytext(input,i,i+1))
-	for(var/i=1,i<=(length(input)-1),i++) //compare each digit in the guess to all those following it
-		for(var/j=(i+1),j<=length(input),j++)
-			if(sanitised[i] == sanitised[j])
-				sanitycheck = null //if a digit is repeated, reject the input
-
-	if(input == null || sanitycheck == null || length(input) != codelen)
-		to_chat(user, span_notice("You leave the crate alone."))
-	else if(check_input(input))
-		to_chat(user, span_notice("The crate unlocks!"))
-		play_sfx(src, SFX_MACHINES_LOCKRESET)
-		set_locked(0)
-	else
-		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
-		attempts--
-		if (attempts == 0)
-			to_chat(user, span_danger("The crate's anti-tamper system activates!"))
-			var/turf/T = get_turf(src.loc)
-			explosion(T, 0, 0, 1, 2)
-			qdel(src)
-
-/obj/structure/closet/crate/secure/lootsafe/devillock/proc/check_input(input)
-	if(length(input) != codelen)
-		return 0
-
-	. = 1
-	LAZYCLEARLIST(lastattempt)
-	for(var/i in 1 to codelen)
-		var/guesschar = copytext(input, i, i+1)
-		LAZYADD(lastattempt, guesschar)
-		if(guesschar != code[i])
-			. = 0
-
-EXTEND_INTERACTIONS(/obj/structure/closet/crate/secure/lootsafe/devillock, INTERACT_ITEM(null, PROC_REF(devillock_interaction_item)))
-
-/// Old attackby.
-/obj/structure/closet/crate/secure/lootsafe/devillock/proc/devillock_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(locked)
-		if (W.has_tool_quality(TOOL_MULTITOOL)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
-			to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
-			if (attempts == 1)
-				to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
-			else
-				to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
-			if(length(lastattempt))
-				var/bulls = 0
-				var/cows = 0
-
-				var/list/code_contents = code.Copy()
-				for(var/i in 1 to codelen)
-					if(LAZYACCESS(lastattempt, i) == code[i])
-						++bulls
-					else if(LAZYACCESS(lastattempt, i) in code_contents)
-						++cows
-					code_contents -= LAZYACCESS(lastattempt, i)
-				var/previousattempt = null //convert back to string for readback
-				for(var/i in 1 to codelen)
-					previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
-				to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
-			return INTERACTION_HANDLED_PASS
-	return FALSE

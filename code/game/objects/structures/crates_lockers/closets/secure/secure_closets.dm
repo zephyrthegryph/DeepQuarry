@@ -5,6 +5,7 @@
 	icon_state = "secure1"
 	density = TRUE
 	opened = 0
+	/// Whether it starts locked (a map says `locked = 0` for one that does not). The lock itself is the lock() capability's key: read it with lock_locked().
 	var/locked = 1
 	var/broken = 0
 	var/large = 1
@@ -14,84 +15,86 @@
 
 	closet_appearance = /datum/decl/closet_appearance/secure_closet
 
+TRACKED(/obj/structure/closet/secure_closet, broken)
+
+MSG_DEF_SELF(secure_closet/close_first, "Close the locker first.")
+MSG_DEF_SELF(secure_closet/broken, "The locker appears to be broken.")
+MSG_DEF_SELF(secure_closet/inside, "You can't reach the lock from inside.")
+
+// A secure locker is a closet with an ID lock (the library's lock(): a card in hand, an alt-click, the "Toggle Lock" entry, and the hand of somebody whose own
+// ID has the access) and a lock that can be broken for good (an emag, a blade, a break-out): a broken lock stays open. The hand opens a locker that is unlocked,
+// and works the lock of one that is locked; only a shut locker has a lock to reach, and not from inside.
+CAPABILITIES(/obj/structure/closet/secure_closet)
+	lock(starts_locked = nameof(locked))
+	extend(CAP_LOCK, needs(req_is(nameof(opened), FALSE, because = MSG(secure_closet/close_first)), req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), plays(SFX_MACHINES_CLICK))
+	extend("lock.toggle_worn", binds(menu()), label("Toggle Lock"))
+	extend("door", when(cond_not(LOCK_LOCKED)), priority(above("lock.toggle_worn")))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+	extend("emag.use", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
+	extend("emag.subvert", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
+	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(blade_sliced)))
+	op("lock_with_item", item(/obj/item), label("Toggle Lock"), when(cond_not(nameof(opened))), when(req_credential_worn(null)), priority(OP_PRIORITY_DEFAULT + 1),
+		needs(req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), toggles(LOCK_LOCKED), says(PROC_REF(lock_toggled_message)), plays(SFX_MACHINES_CLICK))
+	on_change(LOCK_LOCKED, ANY, then(PROC_REF(lock_changed)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(secure_closet_emp)))
+
+/// Whoever works the lock is not shut in with it.
+/obj/structure/closet/secure_closet/proc/actor_outside(datum/act/op/A)
+	return A.actor?.loc != src // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
+
+/// A locked or unlocked locker is drawn again.
+/obj/structure/closet/secure_closet/proc/lock_changed(datum/act/A)
+	update_icon()
+
+/// A locked locker is shut for good until unlocked: it opens only unlocked.
 /obj/structure/closet/secure_closet/can_open()
-	if(locked)
+	if(lock_locked(src))
 		return 0
 	return ..()
 
-DAMAGE_REACTION(/obj/structure/closet/secure_closet, DAMAGE_EMP, PROC_REF(secure_closet_emp))
+/// Locks or unlocks it outright (an EMP, a code, a break-out): the lock's key is the one state there is.
+/obj/structure/closet/proc/force_lock(on)
+	return cap_key_set(src, LOCK_LOCKED, !!on, null)
+
 /// An EMP may toggle the lock, pop the closet or scramble its access.
-/obj/structure/closet/secure_closet/proc/secure_closet_emp(datum/damage_packet/packet)
-	var/severity = packet.severity
+/obj/structure/closet/secure_closet/proc/secure_closet_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/severity = max(N.packet?.severity, 1)
 	if(!broken)
 		if(prob(50/severity))
-			locked = !locked
+			force_lock(!lock_locked(src))
 			update_icon()
 		if(prob(20/severity) && !opened)
-			if(!locked)
+			if(!lock_locked(src))
 				open()
 			else
 				req_access = list()
 				req_access += pick(SSaccess.get_all_station_access())
 
-/obj/structure/closet/secure_closet/proc/togglelock(mob/user as mob)
-	if(opened)
-		to_chat(user, span_notice("Close the locker first."))
-		return
-	if(broken)
-		to_chat(user, span_warning("The locker appears to be broken."))
-		return
-	if(user.loc == src)
-		to_chat(user, span_notice("You can't reach the lock from inside."))
-		return
-	if(allowed(user))
-		locked = !locked
-		play_sfx(src, SFX_MACHINES_CLICK, 0.3, extrarange = -3)
-		for(var/mob/O in viewers(user, 3))
-			if((O.client && !( O.blinded )))
-				to_chat(O, span_notice("The locker has been [locked ? null : "un"]locked by [user]."))
-		update_icon()
-	else
-		to_chat(user, span_notice("Access Denied"))
+/// An energy blade slices the lock of a shut locker open.
+/obj/structure/closet/secure_closet/proc/blade_sliced(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(break_lock(user, null, span_danger("The locker has been sliced open by [user] with \an [W]!"), span_danger("You hear metal being sliced and sparks flying.")))
+		fx_sparks(loc, 5, FALSE)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
+		play_sfx(src, SFX_SPARKS)
+	return OP_OK
 
-/// Overrides closet's interaction_item(): secure closets check grab size and can be sliced open.
-/obj/structure/closet/secure_closet/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(opened)
-		if(istype(W, /obj/item/storage/laundry_basket))
-			return ..()
-		if(istype(W, /obj/item/grab))
-			var/obj/item/grab/G = W
-			if(large)
-				MouseDrop_T(G?.grab_target(), user)	//act like they were dragged onto the closet
-			else
-				to_chat(user, span_notice("The locker is too small to stuff [G?.grab_target()] into!"))
-		if(isrobot(user))
-			return TRUE
-		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return TRUE
-		user.drop_item()
-		if(W)
-			W.forceMove(loc)
-	else if(istype(W, /obj/item/melee/energy/blade))
-		if(break_lock(user, null, span_danger("The locker has been sliced open by [user] with \an [W]!"), span_danger("You hear metal being sliced and sparks flying.")))
-			fx_sparks(loc, 5, FALSE)
-			play_sfx(src, SFX_WEAPONS_BLADE1)
-			play_sfx(src, SFX_SPARKS)
-	else if(istype(W,/obj/item/packageWrap))
-		return ..()
-	else
-		togglelock(user)
-	return TRUE
+/// An emag breaks the lock.
+/obj/structure/closet/secure_closet/proc/on_emag(datum/act/op/A)
+	break_lock(A.actor, A.held)
+	return OP_OK
 
-DECLARE_EMAG_REPEATABLE(/obj/structure/closet/secure_closet, PROC_REF(on_emag), null)
-/obj/structure/closet/secure_closet/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	return break_lock(user, emag_source)
+/// A locker too small to stuff a person into (large = 0) refuses a grab.
+/obj/structure/closet/secure_closet/grab_fits(datum/act/op/A)
+	return large
 
 /// Breaks the lock open (an emag, or a blade slicing it). Returns 1 if it was still intact.
 /obj/structure/closet/secure_closet/proc/break_lock(mob/user, obj/item/emag_source, visual_feedback, audible_feedback)
 	if(!broken)
-		broken = 1
-		locked = 0
+		set_broken(TRUE)
+		force_lock(FALSE)
 		desc = "It appears to be broken."
 
 		if(visual_feedback)
@@ -103,69 +106,21 @@ DECLARE_EMAG_REPEATABLE(/obj/structure/closet/secure_closet, PROC_REF(on_emag), 
 		update_icon()
 		return 1
 
-// Secure closet's Use fully replaces closet's (the original override never called ..()
-// into it either), so it swaps out closet_hand for its own interaction, while still
-// inheriting closet_item (whose effect it overrides above, polymorphically).
-/obj/structure/closet/secure_closet/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/secure_closet_hand,
-		/datum/interaction/entry_alt/secure_closet_alt,
-	)
-	var/static/list/lock_spec = INTERACT_VERB("Toggle Lock", PROC_REF(secure_closet_verb_togglelock_effect))
-	into += dq_interaction_from_spec(/obj/structure/closet/secure_closet, lock_spec)
-	..()
-	into -= /datum/interaction/entry_hand/closet_hand
-
-/// Old attack_hand: toggle the lock, or open/close if unlocked.
-/datum/interaction/entry_hand/secure_closet_hand
-	id = "secure_closet_hand"
-	name = "Use"
-	effect = /obj/structure/closet/secure_closet/proc/interaction_secure_hand
-
-/obj/structure/closet/secure_closet/proc/interaction_secure_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(locked)
-		togglelock(user)
-	else
-		toggle(user)
-	return TRUE
-
-/// Old click_alt: toggle the lock.
-/datum/interaction/entry_alt/secure_closet_alt
-	id = "secure_closet_alt"
-	name = "Toggle lock"
-	effect = /obj/structure/closet/secure_closet/proc/interaction_alt
-
-/obj/structure/closet/secure_closet/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	secure_closet_verb_togglelock_effect(user)
-	return TRUE
-
-/obj/structure/closet/secure_closet/proc/secure_closet_verb_togglelock_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(!user.canmove || user.stat || user.restrained() || !Adjacent(user)) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
-		return
-
-	if(ishuman(user) || isrobot(user))
-		add_fingerprint(user)
-		togglelock(user)
-	else
-		to_chat(user, span_warning("This mob type can't use this verb."))
-
 /obj/structure/closet/secure_closet/proc/appearance_lock_state()
 	if(broken)
 		return "emagged"
-	return locked ? "locked" : "unlocked"
+	return lock_locked(src) ? "locked" : "unlocked"
 
-APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_lock_state}{sealed?_welded:}")
+APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_lock_state}{appearance_sealed?_welded:}")
 
 /obj/structure/closet/secure_closet/req_breakout()
-	if(!opened && locked) return 1
+	if(!opened && lock_locked(src)) return 1
 	return ..() //It's a secure closet, but isn't locked.
 
 /obj/structure/closet/secure_closet/break_open()
 	desc += " It appears to be broken."
-	broken = 1
-	locked = 0
+	set_broken(TRUE)
+	force_lock(FALSE)
 	..()
 
 /obj/structure/closet/secure_closet/mind
@@ -173,6 +128,14 @@ APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_loc
 	var/datum/mind/owner
 	var/self_del = 1
 	anchored = 0
+
+// Only the mind it was made for works the lock.
+CAPABILITIES(/obj/structure/closet/secure_closet/mind)
+	extend(CAP_LOCK, needs(req(PROC_REF(owner_present), because = MSG(lock/denied))))
+	extend("lock_with_item", needs(req(PROC_REF(owner_present), because = MSG(lock/denied))))
+
+/obj/structure/closet/secure_closet/mind/proc/owner_present(datum/act/op/A)
+	return allowed(A.actor)
 
 /obj/structure/closet/secure_closet/mind/Initialize(mapload, datum/mind/mind_target, del_self = 1)
 	. = ..()
@@ -187,7 +150,7 @@ APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_loc
 			qdel(I)
 
 /obj/structure/closet/secure_closet/mind/allowed(mob/user)
-	if(user.mind == owner_ref())
+	if(user.mind == owner_ref()) // ALLOW(reads): whose mind it is is read at the click; the locker is made for one mind and never changes it
 		return TRUE
 	else
 		return FALSE
@@ -207,4 +170,4 @@ APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_loc
 
 /// Relation view: owner (reads null once it is gone).
 /obj/structure/closet/secure_closet/mind/proc/owner_ref() as /datum/mind
-	return owner
+	return owner // ALLOW(reads): the owner is set once when the locker is made
