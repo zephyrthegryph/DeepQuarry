@@ -487,6 +487,7 @@
 #include "dq_hc_items_behaviour.dm"
 #include "dq_hc_struct_behaviour.dm"
 #include "dq_hc_tgui_behaviour.dm"
+#include "dq_hc_machinery_behaviour.dm"
 #include "dq_silicon_provider_tests.dm"
 #include "dq_p2_reagent_needle_behaviour.dm"
 #include "dq_p2_storage_behaviour.dm"

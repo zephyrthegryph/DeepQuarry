@@ -29,6 +29,12 @@
 	H.enable_godmode()
 	return H
 
+/// A machine of `type` with power and in one piece.
+/datum/unit_test/dq_hc_struct/proc/mach(type, turf/T)
+	var/obj/machinery/M = allocate(type, T)
+	M.stat_remove(NOPOWER | BROKEN)
+	return M
+
 /// A question is open for `actor`: an engine request, or a legacy prompt not yet answered.
 /datum/unit_test/dq_hc_struct/proc/asked(mob/actor)
 	if(SSrequests.open_for(actor))
@@ -557,3 +563,16 @@
 	B.selected_color = "#654321"
 	press(H, C, "paint", list("x" = 4, "y" = 4))
 	TEST_ASSERT_NOTEQUAL(C.grid[4][4], "#654321", "a finished painting takes no more strokes")
+
+/datum/unit_test/dq_hc_struct/flag_is_ripped_down_when_confirmed
+/datum/unit_test/dq_hc_struct/flag_is_ripped_down_when_confirmed/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/sign/flag/F = allocate(/obj/structure/sign/flag, tile(3, 2))
+	hci_click(H, F, null)
+	hci_answer(H, FALSE)
+	settle()
+	TEST_ASSERT(!F.ripped, "a no leaves the flag whole")
+	hci_click(H, F, null)
+	hci_answer(H, TRUE)
+	settle()
+	TEST_ASSERT(F.ripped, "a yes rips it")
