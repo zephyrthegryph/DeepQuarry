@@ -2,16 +2,21 @@
 
 /datum/tgui_module/admin_shuttle_controller
 	name = "Admin Shuttle Controller"
-	tgui_id = "AdminShuttleController"
+	/// The shuttle a destination question was asked about (a view: the shuttles own themselves).
+	var/tmp/datum/shuttle/moving
 
 /datum/tgui_module/admin_shuttle_controller/tgui_close(mob/user)
 	. = ..()
 	qdel(src)
 
-UI_DATA(/datum/tgui_module/admin_shuttle_controller, "merge:ui_data_datum_tgui_module_admin_shuttle_controller{shuttles:list,overmap_ships:list}")
+CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
+	ref_one(nameof(moving), /datum/shuttle)
+	interface("AdminShuttleController", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	op("adminobserve", ui_act("adminobserve", arg("ref", schema_ref(/datum/shuttle))), then(PROC_REF(ui_act_adminobserve)))
+	op("classicmove", ui_act("classicmove", arg("ref", schema_ref(/datum/shuttle))), then(PROC_REF(ui_act_classicmove)))
+	op("overmap_control", ui_act("overmap_control", arg("ref", schema_ref(/obj/effect/overmap/visitable/ship))), then(PROC_REF(ui_act_overmap_control)))
 
-/// The computed part of /datum/tgui_module/admin_shuttle_controller's window data (declared on its UI_DATA row).
-/datum/tgui_module/admin_shuttle_controller/proc/ui_data_datum_tgui_module_admin_shuttle_controller(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/admin_shuttle_controller/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/shuttles = list()
@@ -35,20 +40,18 @@ UI_DATA(/datum/tgui_module/admin_shuttle_controller, "merge:ui_data_datum_tgui_m
 
 	return data
 
-DECLARE_UI_STATE(/datum/tgui_module/admin_shuttle_controller, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
-
-UI_ACT(/datum/tgui_module/admin_shuttle_controller, "adminobserve", ui_act_adminobserve, UI_ARG_REF("ref", null, /datum/shuttle))
-UI_ACT_PROC(/datum/tgui_module/admin_shuttle_controller, ui_act_adminobserve)
-	var/datum/shuttle/S = params["ref"]
+/datum/tgui_module/admin_shuttle_controller/proc/ui_act_adminobserve(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	var/datum/shuttle/S = ref
 	if(istype(S))
-		var/client/C = ui.user.client
-		if(!isobserver(ui.user))
+		var/client/C = user.client
+		if(!isobserver(user))
 			SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/admin_ghost)
 			SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/jumptoturf, get_turf(S.current_location()))
 	else if(istype(S, /obj/effect/overmap/visitable))
 		var/obj/effect/overmap/visitable/V = S
-		var/client/C = ui.user.client
-		if(!isobserver(ui.user))
+		var/client/C = user.client
+		if(!isobserver(user))
 			SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/admin_ghost)
 			var/atom/target
 			if(LAZYLEN(V.generic_waypoints))
@@ -65,50 +68,74 @@ UI_ACT_PROC(/datum/tgui_module/admin_shuttle_controller, ui_act_adminobserve)
 			SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/jumptoturf, T)
 	return TRUE
 
-UI_ACT(/datum/tgui_module/admin_shuttle_controller, "classicmove", ui_act_classicmove, UI_ARG_REF("ref", null, /datum/shuttle))
-UI_ACT_PROC(/datum/tgui_module/admin_shuttle_controller, ui_act_classicmove)
-	var/datum/shuttle/S = params["ref"]
+/datum/tgui_module/admin_shuttle_controller/proc/ui_act_classicmove(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	var/datum/shuttle/S = ref
 	if(istype(S, /datum/shuttle/autodock/multi))
 		var/datum/shuttle/autodock/multi/shuttle = S
-		var/dest_key = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = shuttle.get_destinations())
-		if(isnull(dest_key))
-			return
-		if(dest_key)
-			shuttle.set_destination(dest_key, ui.user)
-			shuttle.launch(src, ui.user)
+		rel_set(src, nameof(moving), shuttle)
+		open_request(src, /datum/prompt/choice, PROC_REF(multi_destination_chosen), valid = PROC_REF(request_usable), rights = R_ADMIN | R_EVENT | R_DEBUG, answerer = user, question = "Choose shuttle destination", title = "Shuttle Destination", choices = shuttle.get_destinations(), timeout = 0)
 	else if(istype(S, /datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/shuttle = S
 		var/list/possible_d = shuttle.get_possible_destinations()
-		var/D
 		if(!LAZYLEN(possible_d))
-			to_chat(ui.user, span_warning("There are no possible destinations for [shuttle] ([shuttle.type])"))
+			to_chat(user, span_warning("There are no possible destinations for [shuttle] ([shuttle.type])"))
 			return FALSE
-		var/_answer_a2 = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = possible_d)
-		if(isnull(_answer_a2))
-			return
-		D = _answer_a2
-		if(D)
-			shuttle.set_destination(possible_d[D])
-			shuttle.launch()
+		rel_set(src, nameof(moving), shuttle)
+		open_request(src, /datum/prompt/choice, PROC_REF(overmap_destination_chosen), valid = PROC_REF(request_usable), rights = R_ADMIN | R_EVENT | R_DEBUG, answerer = user, question = "Choose shuttle destination", title = "Shuttle Destination", choices = possible_d, timeout = 0)
 	else if(istype(S, /datum/shuttle/autodock))
-		var/datum/shuttle/autodock/shuttle = S
-		var/_answer_a3 = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Are you sure you want to launch [shuttle]?", title = "Launching Shuttle", choices = list("Yes", "No"))
-		if(isnull(_answer_a3))
-			return
-		if(_answer_a3 == "Yes")
-			shuttle.launch(src)
+		rel_set(src, nameof(moving), S)
+		open_request(src, /datum/prompt/yes_no, PROC_REF(launch_confirmed), valid = PROC_REF(request_usable), rights = R_ADMIN | R_EVENT | R_DEBUG, answerer = user, question = "Are you sure you want to launch [S]?", title = "Launching Shuttle", timeout = 0)
 	else
-		to_chat(ui.user, span_notice("The shuttle control panel isn't quite sure how to move [S] ([S?.type])."))
+		to_chat(user, span_notice("The shuttle control panel isn't quite sure how to move [S] ([S?.type])."))
 		return FALSE
-	to_chat(ui.user, span_notice("Launching shuttle [S]."))
 	return TRUE
 
-UI_ACT(/datum/tgui_module/admin_shuttle_controller, "overmap_control", ui_act_overmap_control, UI_ARG_REF("ref", null, /obj/effect/overmap/visitable/ship))
-UI_ACT_PROC(/datum/tgui_module/admin_shuttle_controller, ui_act_overmap_control)
-	var/obj/effect/overmap/visitable/ship/V = params["ref"]
+/datum/tgui_module/admin_shuttle_controller/proc/multi_destination_chosen(datum/act/request/A)
+	var/datum/shuttle/autodock/multi/shuttle = moving()
+	if(!A.answer || !istype(shuttle))
+		return
+	var/mob/user = A.request.answerer
+	var/dest_key = A.answer.answer_value
+	if(dest_key)
+		shuttle.set_destination(dest_key, user)
+		shuttle.launch(src, user)
+	to_chat(user, span_notice("Launching shuttle [shuttle]."))
+	SStgui.update_uis(src)
+
+/datum/tgui_module/admin_shuttle_controller/proc/overmap_destination_chosen(datum/act/request/A)
+	var/datum/shuttle/autodock/overmap/shuttle = moving()
+	if(!A.answer || !istype(shuttle))
+		return
+	var/mob/user = A.request.answerer
+	var/list/possible_d = shuttle.get_possible_destinations()
+	var/D = A.answer.answer_value
+	if(D)
+		shuttle.set_destination(possible_d[D])
+		shuttle.launch()
+	to_chat(user, span_notice("Launching shuttle [shuttle]."))
+	SStgui.update_uis(src)
+
+/datum/tgui_module/admin_shuttle_controller/proc/launch_confirmed(datum/act/request/A)
+	var/datum/shuttle/autodock/shuttle = moving()
+	if(!A.answer || !istype(shuttle))
+		return
+	var/mob/user = A.request.answerer
+	if(A.answer.answer_value)
+		shuttle.launch(src)
+	to_chat(user, span_notice("Launching shuttle [shuttle]."))
+	SStgui.update_uis(src)
+
+/// The shuttle the pending destination question is about.
+/datum/tgui_module/admin_shuttle_controller/proc/moving() as /datum/shuttle
+	return moving
+
+/datum/tgui_module/admin_shuttle_controller/proc/ui_act_overmap_control(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	var/obj/effect/overmap/visitable/ship/V = ref
 	if(istype(V))
 		var/datum/flight_vessel/vessel = SSflight.vessel_for_ship(V) || SSflight.register_vessel(V)
 		var/datum/flight_operations_ui/flight_ui = new(src, vessel)
-		flight_ui.tgui_interact(ui.user)
+		flight_ui.tgui_interact(user)
 
 	return TRUE

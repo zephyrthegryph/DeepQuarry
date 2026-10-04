@@ -1,6 +1,5 @@
 /datum/tgui_module/late_choices
 	name = "Late Join"
-	tgui_id = "LateChoices"
 
 /datum/tgui_module/late_choices/tgui_status(mob/user, datum/tgui_state/state)
 	if(!isnewplayer(user))
@@ -54,10 +53,12 @@
 		return TRUE
 	return FALSE
 
-UI_DATA(/datum/tgui_module/late_choices, "merge:ui_data_datum_tgui_module_late_choices{name:unknown,duration:text,evac:text,jobs:list}")
+CAPABILITIES(/datum/tgui_module/late_choices)
+	interface("LateChoices")
+	op("join", ui_act("join", arg("job", schema_text(4096))), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_join)))
 
-/// The computed part of /datum/tgui_module/late_choices's window data (declared on its UI_DATA row).
-/datum/tgui_module/late_choices/proc/ui_data_datum_tgui_module_late_choices(mob/new_player/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/late_choices/ui_data(datum/act/eval/A)
+	var/mob/new_player/user = A.actor
 	var/list/data = list()
 
 	var/name = user.client.prefs.read_preference(/datum/preference/toggle/human/name_is_always_random) ? "friend" : user.client.prefs.read_preference(/datum/preference/name/real_name)
@@ -112,17 +113,14 @@ UI_DATA(/datum/tgui_module/late_choices, "merge:ui_data_datum_tgui_module_late_c
 
 	return data
 
-/datum/tgui_module/late_choices/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!isnewplayer(ui.user))
-		return FALSE
-	return TRUE
+/// Only somebody still in the lobby joins (silently: anyone else is just not answered).
+/datum/tgui_module/late_choices/proc/ui_gate(datum/act/op/A)
+	return isnewplayer(A.actor)
 
-UI_ACT(/datum/tgui_module/late_choices, "join", ui_act_join, UI_ARG_TEXT("job"))
-UI_ACT_PROC(/datum/tgui_module/late_choices, ui_act_join)
-	var/mob/new_player/new_user = ui.user
-	var/job = params["job"]
+/datum/tgui_module/late_choices/proc/ui_act_join(datum/act/op/A, job_arg)
+	var/mob/user = A.actor
+	var/mob/new_player/new_user = user
+	var/job = job_arg
 
 	if(!CONFIG_GET(flag/enter_allowed))
 		to_chat(new_user, span_notice("There is an administrative lock on entering the game!"))
