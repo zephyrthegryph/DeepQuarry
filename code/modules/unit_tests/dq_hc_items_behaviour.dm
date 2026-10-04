@@ -297,7 +297,7 @@
 	C.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(C.icon_state, "candelabra_lit", "lit")
-	C.wax = 0
+	C.set_wax(0) // adapter: the legacy candle read the wax var directly (C.wax = 0); the converted one tracks it
 	C.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(C.icon_state, "candelabra_melted", "melted")

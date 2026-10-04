@@ -10,6 +10,8 @@
 	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
 	var/icon_type = "candle"
 
+TRACKED(/obj/item/flame/candle, wax)
+
 /// 1 (fresh) to 3 (nearly gone) by remaining wax.
 /obj/item/flame/candle/proc/appearance_wax_stage()
 	if(wax > 3600) // Icon update to match 4 hour burn
@@ -18,24 +20,31 @@
 		return 2
 	return 3
 
-APPEARANCE_TEMPLATE(/obj/item/flame/candle, "{icon_type}{appearance_wax_stage}{lit?_lit:}")
+/obj/item/flame/candle/draw(datum/look/look)
+	..()
+	look.state(look_state())
+
+/// The icon state of the candle as it burns.
+/obj/item/flame/candle/proc/look_state()
+	return "[icon_type][appearance_wax_stage()][lit ? "_lit" : ""]"
+
+CAPABILITIES(/obj/item/flame/candle)
+	op("snuff", in_hand(), then(PROC_REF(snuffed)))
+	op("light_from", item(/obj/item), passes(), when(req(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
 
 
-/// Old attackby.
-/obj/item/flame/candle/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/flame/lighter))
-		var/obj/item/flame/lighter/L = W
-		if(L.lit)
-			light(user = user)
-	else if(istype(W, /obj/item/flame/match))
-		var/obj/item/flame/match/M = W
-		if(M.lit)
-			light(user = user)
-	else if(istype(W, /obj/item/flame/candle))
-		var/obj/item/flame/candle/C = W
-		if(C.lit)
-			light(user = user)
-	return INTERACTION_HANDLED_PASS
+/// The held thing is a flame that burns: a lit lighter, match or candle.
+/obj/item/flame/candle/proc/offers_flame(datum/act/op/A)
+	var/obj/item/W = A.held
+	if(istype(W, /obj/item/flame/lighter) || istype(W, /obj/item/flame/match) || istype(W, /obj/item/flame/candle))
+		var/obj/item/flame/F = W
+		return !!F.lit
+	return FALSE
+
+/// A burning flame lights the candle, and the click goes on to the ordinary attack.
+/obj/item/flame/candle/proc/lit_from(datum/act/op/A)
+	light(user = A.actor)
+	return OP_OK
 
 /obj/item/flame/candle/welder_act(mob/user, obj/item/W)
 	var/obj/item/weldingtool/WT = W.get_welder()
@@ -53,7 +62,7 @@ APPEARANCE_TEMPLATE(/obj/item/flame/candle, "{icon_type}{appearance_wax_stage}{l
 		set_light(CANDLE_LUM)
 
 /obj/item/flame/candle/periodic_step()
-	wax--
+	set_wax(wax - 1)
 	if(!wax)
 		if(istype(src.loc, /mob))
 			src.dropped(src.loc)
@@ -64,17 +73,12 @@ APPEARANCE_TEMPLATE(/obj/item/flame/candle, "{icon_type}{appearance_wax_stage}{l
 		var/turf/T = loc
 		T.hotspot_expose(700, 5)
 
-DECLARE_INTERACTIONS(/obj/item/flame/candle, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/// Old attack_self.
-/obj/item/flame/candle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using a lit candle in the hand snuffs it.
+/obj/item/flame/candle/proc/snuffed(datum/act/op/A)
 	if(lit)
 		set_lit(FALSE)
 		set_light(0)
-	return TRUE
+	return OP_OK
 
 /obj/item/flame/candle/small
 	name = "small red candle"
@@ -113,9 +117,8 @@ DECLARE_INTERACTIONS(/obj/item/flame/candle, \
 		return "_melted"
 	return lit ? "_lit" : ""
 
-APPEARANCE_TEMPLATE(/obj/item/flame/candle/candelabra, "candelabra{appearance_candelabra_suffix}")
-// Its template reads lit through a proc, so watch it: set_lit() redraws the candelabra too.
-APPEARANCE_WATCH(/obj/item/flame/candle/candelabra, list("lit"))
+/obj/item/flame/candle/candelabra/look_state()
+	return "candelabra[appearance_candelabra_suffix()]"
 
 /obj/item/flame/candle/everburn
 	wax = 99999

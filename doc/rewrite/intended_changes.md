@@ -380,3 +380,12 @@ Pinned by `code/modules/unit_tests/dq_hc_mobs_behaviour.dm` and `dq_hc_bots_beha
 * **Mulebot beacon questions** (set home, set destination) are requests: the answer is re-resolved to its beacon when it arrives (a beacon that was removed meanwhile ends the question without effect instead of reading a deleted one), and the "can still work its window" check is the default tgui state's.
 * **`EVENT_HANDLER` is `SHOULD_NOT_SLEEP(TRUE)`** on the 28 mob handlers that carried it (the macro expanded to exactly that).
 * `answerer_holds()` (code/library/prompts/answer_checks.dm) is the one `valid()` helper for the old `ask_flags`.
+
+### Hand-converted items, batch 2 (candles, contraband package, telecrystal, implant pad)
+
+Pinned by `dq_hc_items_behaviour.dm` (green on the legacy code first) and the interim candle and contraband tests, which now drive the click instead of calling the old handlers.
+
+* **Candles.** `wax` is tracked (`set_wax()`), the look is a `draw()` (`look_state()` per type: the candelabra overrides it) and no longer an `APPEARANCE_TEMPLATE`/`APPEARANCE_WATCH`. A lit lighter, match or candle clicked on a candle lights it through an op that passes the click on, as before.
+* **Implant pad.** The window answers only a conscious actor (a requirement on every UI op, with the reason "You can't do that right now."); the `ui_act_allowed()` override is gone. An empty hand takes the case out of a pad that is carried anywhere on the actor (`carried()`), where the old check was a hand; a pad lying or inside another's bag is picked up as any item.
+* **Contraband package, telecrystal.** Plain ops; a package whose release is refused stays whole (pinned).
+* **Residue of this batch:** `code/game/objects/items/weapons/wiki_manuals.dm` (its parent `/obj/item/book` in code/modules/library declares a UI of its own), the stack family (`stacks/*`: `/obj/item/stack` is a hub for dozens of types and its `INTERACT_SELF` entry, UI and state convert as one step), and every `OM_FIELD` that feeds a `DECLARE_PERIODIC_WHILE` (the periodic declaration resolves its fields from the `OM_FIELD` registry, so the field and the periodic form convert together).

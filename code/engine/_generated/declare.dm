@@ -5031,6 +5031,13 @@
 	into += entry_line(17)
 	into += list(global.owns_many(nameof(stored_files)))
 
+/// CAPABILITIES(/obj/item/contraband) at code/game/objects/items/contraband.dm:241
+/obj/item/contraband/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/contraband.dm", 241, /obj/item/contraband)
+	into += entry_line(242)
+	into += list(global.op("unwrap", global.in_hand(), global.label("Unwrap"), global.then(PROC_REF(unwrapped))))
+
 /// CAPABILITIES(/obj/item/core_sampler) at code/modules/xenoarcheaology/sampling.dm:117
 /obj/item/core_sampler/declared_entries(list/into)
 	..(into)
@@ -5202,6 +5209,15 @@
 	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 302, /obj/item/flag)
 	into += entry_line(303)
 	into += list(global.op("flag_wave_self", global.in_hand(), global.label("Wave"), global.then(PROC_REF(flag_wave_self))))
+
+/// CAPABILITIES(/obj/item/flame/candle) at code/game/objects/items/weapons/candle.dm:31
+/obj/item/flame/candle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/candle.dm", 31, /obj/item/flame/candle)
+	into += entry_line(32)
+	into += list(global.op("snuff", global.in_hand(), global.then(PROC_REF(snuffed))))
+	into += entry_line(33)
+	into += list(global.op("light_from", global.item(/obj/item), global.passes(), global.when(global.req(PROC_REF(offers_flame))), global.then(PROC_REF(lit_from))))
 
 /// CAPABILITIES(/obj/item/flamethrower) at code/game/objects/items/weapons/flamethrower.dm:34
 /obj/item/flamethrower/declared_entries(list/into)
@@ -5560,6 +5576,21 @@
 	into += entry_block("code/game/objects/items/weapons/implants/implantcircuits.dm", 15, /obj/item/implant/integrated_circuit)
 	into += entry_line(16)
 	into += list(global.owns_one(nameof(IC), starts = /obj/item/electronic_assembly/implant))
+
+/// CAPABILITIES(/obj/item/implantpad) at code/game/objects/items/weapons/implants/implantpad.dm:23
+/obj/item/implantpad/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implantpad.dm", 23, /obj/item/implantpad)
+	into += entry_line(24)
+	into += list(global.interface("ImplantPad", title = "Implant Mini-Computer", input = global.in_hand()))
+	into += entry_line(25)
+	into += list(global.op("take_case", global.hand(), global.when(global.cond_all(PROC_REF(has_case), global.carried())), global.then(PROC_REF(case_taken))))
+	into += entry_line(26)
+	into += list(global.op("insert_case", global.item(/obj/item/implantcase), global.passes(), global.when(global.req(PROC_REF(has_no_case))), global.then(PROC_REF(case_inserted))))
+	into += entry_line(27)
+	into += list(global.op("tracking_id", global.ui_act("tracking_id", global.arg("delta", global.num())), global.then(PROC_REF(ui_act_tracking_id))))
+	into += entry_line(28)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(user_conscious), because = MSG(implantpad/unconscious)))))
 
 /// CAPABILITIES(/obj/item/inflatable_dispenser) at code/modules/mob/living/silicon/robot/robot_items.dm:540
 /obj/item/inflatable_dispenser/declared_entries(list/into)
@@ -7128,6 +7159,13 @@
 	into += entry_block("code/modules/materials/engineering/processed_material.dm", 295, /obj/item/stack/material/processed_alloy)
 	into += entry_line(296)
 	into += list(global.owns_one(nameof(batch_state), /datum/material_batch))
+
+/// CAPABILITIES(/obj/item/stack/telecrystal) at code/game/objects/items/stacks/telecrystal.dm:21
+/obj/item/stack/telecrystal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/stacks/telecrystal.dm", 21, /obj/item/stack/telecrystal)
+	into += entry_line(22)
+	into += list(global.op("redeem", global.in_hand(), global.then(PROC_REF(redeemed))))
 
 /// CAPABILITIES(/obj/item/starcaster_news) at code/game/objects/items/devices/starcaster.dm:19
 /obj/item/starcaster_news/declared_entries(list/into)
