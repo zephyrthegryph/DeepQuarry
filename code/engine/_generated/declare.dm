@@ -4155,11 +4155,11 @@
 	into += entry_line(14)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/holomap_beacon) at code/modules/holomap/mapper.dm:428
+/// CAPABILITIES(/obj/item/holomap_beacon) at code/modules/holomap/mapper.dm:430
 /obj/item/holomap_beacon/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/holomap/mapper.dm", 428, /obj/item/holomap_beacon)
-	into += entry_line(429)
+	into += entry_block("code/modules/holomap/mapper.dm", 430, /obj/item/holomap_beacon)
+	into += entry_line(431)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/holosign_creator) at code/game/objects/items/holosign_creator.dm:48
