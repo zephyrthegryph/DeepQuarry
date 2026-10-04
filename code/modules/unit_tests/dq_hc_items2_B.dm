@@ -245,3 +245,219 @@
 	settle()
 	TEST_ASSERT_EQUAL(E.icon_state, E.icon_empty, "without a cartridge it shows the empty state")
 	TEST_ASSERT_EQUAL(E.item_state, E.icon_empty, "and is held that way")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Welding tools, flashlights, power sinks, detectors
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// One step of the periodic work of a tool or light (an adapter: the legacy lane is not driven by the test clock).
+/proc/hci2b_tool_step(obj/item/I)
+	I.periodic_step()
+
+/datum/unit_test/dq_hc_items/b_welder_toggles_burns_fuel_and_is_secured_with_a_screwdriver
+
+/datum/unit_test/dq_hc_items/b_welder_toggles_burns_fuel_and_is_secured_with_a_screwdriver/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = tile(2, 2)
+	var/obj/item/weldingtool/W = allocate(/obj/item/weldingtool, T)
+	TEST_ASSERT(!W.welding, "starts off")
+	hci_click(H, W, W)
+	settle()
+	TEST_ASSERT(W.welding, "using it in the hand switches it on")
+	TEST_ASSERT(W.isOn(), "it is on")
+	TEST_ASSERT_EQUAL(W.force, 15, "a lit welder hits hard")
+	W.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(W.item_state, "welder1", "and is held lit")
+	var/fuel = W.get_fuel()
+	for(var/i in 1 to 13) // the welder burns a unit of fuel every 13 steps
+		hci2b_tool_step(W)
+	TEST_ASSERT(W.get_fuel() < fuel, "a lit welder burns fuel")
+	var/obj/item/tool/screwdriver/driver = allocate(/obj/item/tool/screwdriver, T)
+	hci_click(H, W, driver)
+	settle()
+	TEST_ASSERT(W.status, "a lit welder is not unsecured")
+	hci_click(H, W, W)
+	settle()
+	TEST_ASSERT(!W.welding, "using it again switches it off")
+	TEST_ASSERT_EQUAL(W.force, 3, "and it hits soft again")
+	hci_click(H, W, driver)
+	settle()
+	TEST_ASSERT(!W.status, "a screwdriver unsecures a welder that is off")
+	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, T)
+	hci_click(H, W, R)
+	settle()
+	var/found = FALSE
+	for(var/obj/item/flamethrower/F in get_turf(H))
+		found = TRUE
+		qdel(F)
+	for(var/obj/item/flamethrower/F in H)
+		found = TRUE
+		qdel(F)
+	TEST_ASSERT(found, "rods on an unsecured welder make a flamethrower")
+
+/datum/unit_test/dq_hc_items/b_self_refuelling_welders_regain_fuel_without_being_lit
+
+/datum/unit_test/dq_hc_items/b_self_refuelling_welders_regain_fuel_without_being_lit/run_gate()
+	var/obj/item/weldingtool/alien/A = allocate(/obj/item/weldingtool/alien, tile(2, 2))
+	A.reagents.remove_reagent(REAGENT_ID_FUEL, 10)
+	var/before = A.get_fuel()
+	hci2b_tool_step(A)
+	TEST_ASSERT(A.get_fuel() > before, "an alien welder makes fuel while off")
+	var/obj/item/weldingtool/experimental/E = allocate(/obj/item/weldingtool/experimental, tile(3, 3))
+	E.reagents.remove_reagent(REAGENT_ID_FUEL, 10)
+	before = E.get_fuel()
+	hci2b_tool_step(E)
+	TEST_ASSERT(E.get_fuel() > before, "an experimental welder makes fuel while off")
+
+/datum/unit_test/dq_hc_items/b_electric_welder_takes_and_gives_its_cell
+
+/datum/unit_test/dq_hc_items/b_electric_welder_takes_and_gives_its_cell/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = tile(2, 2)
+	var/obj/item/weldingtool/electric/W = allocate(/obj/item/weldingtool/electric, T)
+	var/obj/item/cell/cell = W.power_supply
+	TEST_ASSERT(cell, "it starts with a cell")
+	H.put_in_inactive_hand(W)
+	hci_click(H, W, null)
+	settle()
+	TEST_ASSERT_NULL(W.power_supply, "an empty hand on the held welder takes the cell out")
+	H.drop_item()
+	hci_click(H, W, cell)
+	settle()
+	TEST_ASSERT_EQUAL(W.power_supply, cell, "a device cell used on it goes in")
+
+/datum/unit_test/dq_hc_items/b_weld_pack_hands_out_and_takes_back_its_nozzle
+
+/datum/unit_test/dq_hc_items/b_weld_pack_hands_out_and_takes_back_its_nozzle/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/weldpack/P = allocate(/obj/item/weldpack, tile(2, 2))
+	TEST_ASSERT(H.equip_to_slot_if_possible(P, SLOT_ID_BACK), "the pack is worn")
+	var/obj/item/weldingtool/tubefed/N = P.nozzle
+	TEST_ASSERT(N, "the pack has a nozzle")
+	hci_click(H, P, null)
+	settle()
+	TEST_ASSERT_EQUAL(N.loc, H, "an empty hand on the worn pack hands out the nozzle")
+	TEST_ASSERT(!P.nozzle_attached, "which is no longer attached")
+	hci_click(H, P, N)
+	settle()
+	TEST_ASSERT_EQUAL(N.loc, P, "the nozzle used on the pack goes back")
+	TEST_ASSERT(P.nozzle_attached, "attached again")
+	var/obj/item/weldingtool/W = allocate(/obj/item/weldingtool, tile(3, 3))
+	W.reagents.remove_reagent(REAGENT_ID_FUEL, 10)
+	hci_click(H, P, W)
+	settle()
+	TEST_ASSERT_EQUAL(W.get_fuel(), W.max_fuel, "a welder used on the pack is refilled")
+
+/datum/unit_test/dq_hc_items/b_flashlight_switches_with_a_cell_and_runs_it_down
+
+/datum/unit_test/dq_hc_items/b_flashlight_switches_with_a_cell_and_runs_it_down/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = tile(2, 2)
+	var/obj/item/flashlight/F = allocate(/obj/item/flashlight, T)
+	TEST_ASSERT(F.cell, "it has a cell")
+	TEST_ASSERT(!F.on, "off")
+	hci_click(H, F, F)
+	settle()
+	TEST_ASSERT(F.on, "using it switches it on")
+	TEST_ASSERT_EQUAL(F.icon_state, "flashlight-on", "it looks on")
+	var/charge = F.cell.charge
+	hci2b_tool_step(F)
+	TEST_ASSERT(F.cell.charge < charge, "a lit flashlight uses its cell")
+	hci_click(H, F, F)
+	settle()
+	TEST_ASSERT(!F.on, "using it again switches it off")
+	H.put_in_inactive_hand(F)
+	var/obj/item/cell/cell = F.cell
+	hci_click(H, F, null)
+	settle()
+	TEST_ASSERT_NULL(F.cell, "an empty hand on the held flashlight takes the cell out")
+	H.drop_item()
+	hci_click(H, F, cell)
+	settle()
+	TEST_ASSERT_EQUAL(F.cell, cell, "a device cell goes back in")
+	var/obj/item/flashlight/F2 = allocate(/obj/item/flashlight, tile(3, 3))
+	F2.cell.charge = 0
+	hci_click(H, F2, F2)
+	settle()
+	TEST_ASSERT(!F2.on, "a flashlight with a dead cell does not light")
+
+/datum/unit_test/dq_hc_items/b_penlight_flare_and_glowstick_light_without_a_cell
+
+/datum/unit_test/dq_hc_items/b_penlight_flare_and_glowstick_light_without_a_cell/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/flashlight/pen/P = allocate(/obj/item/flashlight/pen, tile(2, 2))
+	hci_click(H, P, P)
+	settle()
+	TEST_ASSERT(P.on, "a penlight switches on without a cell")
+	var/obj/item/flashlight/flare/F = allocate(/obj/item/flashlight/flare, tile(3, 3))
+	hci_click(H, F, F)
+	settle()
+	TEST_ASSERT(F.on, "a flare lights")
+	var/fuel = F.fuel
+	hci2b_tool_step(F)
+	TEST_ASSERT(F.fuel < fuel, "a lit flare burns")
+	hci_click(H, F, F)
+	settle()
+	TEST_ASSERT(F.on, "a lit flare cannot be put out")
+	var/obj/item/flashlight/glowstick/G = allocate(/obj/item/flashlight/glowstick, tile(1, 1))
+	hci_click(H, G, G)
+	settle()
+	TEST_ASSERT(G.on, "a glowstick lights")
+	fuel = G.fuel
+	hci2b_tool_step(G)
+	TEST_ASSERT(G.fuel < fuel, "a lit glowstick burns")
+
+/datum/unit_test/dq_hc_items/b_power_sink_is_worked_by_hand_and_dissipates
+
+/datum/unit_test/dq_hc_items/b_power_sink_is_worked_by_hand_and_dissipates/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/powersink/S = allocate(/obj/item/powersink, tile(2, 2))
+	hci_click(H, S, null)
+	settle()
+	TEST_ASSERT_EQUAL(S.mode, 0, "a loose sink ignores a hand")
+	S.set_mode(1)
+	hci_click(H, S, null)
+	settle()
+	TEST_ASSERT_EQUAL(S.mode, 2, "a clamped sink starts when touched")
+	S.power_drained = 50000
+	hci2b_tool_step(S)
+	TEST_ASSERT_EQUAL(S.power_drained, 50000 - S.dissipation_rate, "an operating sink dissipates what it drained")
+	hci_click(H, S, null)
+	settle()
+	TEST_ASSERT_EQUAL(S.mode, 1, "touched again it stops")
+
+/datum/unit_test/dq_hc_items/b_ai_detector_senses_while_carried
+
+/datum/unit_test/dq_hc_items/b_ai_detector_senses_while_carried/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/multitool/ai_detector/D = allocate(/obj/item/multitool/ai_detector, tile(2, 2))
+	TEST_ASSERT(H.put_in_active_hand(D), "carried")
+	hci2b_tool_step(D)
+	TEST_ASSERT_EQUAL(D.detect_state, "_no_camera", "off the camera network it says so")
+
+/datum/unit_test/dq_hc_items/b_suit_cooler_t_scanner_and_nif_repairer_looks
+
+/datum/unit_test/dq_hc_items/b_suit_cooler_t_scanner_and_nif_repairer_looks/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/turf/T = tile(2, 2)
+	var/obj/item/suit_cooling_unit/U = allocate(/obj/item/suit_cooling_unit, T)
+	U.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(U.icon_state, "suitcooler0", "a closed cooler shows its plain state")
+	U.cover_open = TRUE
+	U.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(U.icon_state, "suitcooler1", "an open cooler with a cell shows the cell")
+	var/obj/item/t_scanner/S = allocate(/obj/item/t_scanner, tile(3, 3))
+	hci_click(H, S, S)
+	settle()
+	TEST_ASSERT_EQUAL(S.icon_state, "t-ray1", "a switched on T-ray scanner shows it")
+	var/obj/item/nifrepairer/N = allocate(/obj/item/nifrepairer, tile(1, 1))
+	N.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(N.icon_state, initial(N.icon_state), "an empty repairer shows its plain state")
+	N.supply.add_reagent(REAGENT_ID_NIFREPAIRNANITES, 10)
+	N.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(N.icon_state, "[initial(N.icon_state)]2", "a loaded repairer shows its filled state")
