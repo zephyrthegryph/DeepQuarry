@@ -2396,6 +2396,13 @@
 	into += entry_line(77)
 	into += list(global.ref_one(nameof(asker), /mob))
 
+/// CAPABILITIES(/datum/prompt/choice/map_template_place) at code/modules/admin/verbs/map_template_loadverb.dm:36
+/datum/prompt/choice/map_template_place/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/map_template_loadverb.dm", 36, /datum/prompt/choice/map_template_place)
+	into += entry_line(37)
+	into += list(global.ref_one(nameof(place_at), /turf))
+
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:121
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
 	..(into)
@@ -2588,13 +2595,13 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(heat_set_watch), /datum/native_watch/heat))
 
-/// CAPABILITIES(/datum/record_update_review) at code/modules/client/record_updater.dm:113
+/// CAPABILITIES(/datum/record_update_review) at code/modules/client/record_updater.dm:112
 /datum/record_update_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/client/record_updater.dm", 113, /datum/record_update_review)
-	into += entry_line(114)
+	into += entry_block("code/modules/client/record_updater.dm", 112, /datum/record_update_review)
+	into += entry_line(113)
 	into += list(global.ref_one(nameof(actor), /mob))
-	into += entry_line(115)
+	into += entry_line(114)
 	into += list(global.ref_one(nameof(record), /datum/data/record))
 
 /// CAPABILITIES(/datum/remote_materials) at code/datums/entity_state/materials/remote_materials.dm:31
@@ -6673,6 +6680,13 @@
 	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 105, /obj/item/clothing/shoes/chameleon/changeling)
 	into += entry_line(106)
 	into += list(global.op("changeling_shoes_shred_verb", global.menu(), global.label("Shred Shoes"), global.needs(global.carried()), global.then(PROC_REF(changeling_shoes_shred_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes) at code/modules/clothing/shoes/miscellaneous.dm:444
+/obj/item/clothing/shoes/dry_galoshes/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/shoes/miscellaneous.dm", 444, /obj/item/clothing/shoes/dry_galoshes)
+	into += entry_line(445)
+	into += list(global.on_notice(/datum/notice/shoes_step, global.then(PROC_REF(dry_step))))
 
 /// CAPABILITIES(/obj/item/clothing/suit) at code/modules/clothing/clothing.dm:936
 /obj/item/clothing/suit/declared_entries(list/into)

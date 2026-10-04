@@ -98,7 +98,6 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 /// A record pushed from a records console: the owner (actor) chooses to review it, edits the
 /// notes, and confirming saves their current slot. A no, a cancel or bad text refuses it.
 /datum/record_update_review
-	name = "client record update"
 	var/mob/actor
 	/// REF() of the console, looked up again for its beeps.
 	var/console

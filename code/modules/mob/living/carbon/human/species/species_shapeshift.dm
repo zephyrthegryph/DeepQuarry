@@ -117,10 +117,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	// A cancel picks none (bald, no gradient, shaved).
 	shapeshifter_ask_hair(valid_hairstyles, valid_gradstyles, valid_facialhairstyles)
 
-/datum/om/prompt/color/shapeshift_optional
-	ask_flags = ASK_CONSCIOUS
-	cancel_answer = ""
-
 /// Hair, gradient and facial hair styles in turn (each only if there are any to pick).
 /datum/prompt/choice/shapeshift_hair
 	title = "Shapeshifter Hair"
@@ -601,44 +597,59 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 			pretty_ear_styles[instance.name] = path
 
 	// Handle style pick
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(shapeshifter_secondary_ears_chosen), title = "Character Preference", message = "Pick some ears!", choices = pretty_ear_styles, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(shapeshifter_secondary_ears_chosen), answerer = src, title = "Character Preference", question = "Pick some ears!", choices = pretty_ear_styles, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// Sets the style, then asks one colour per channel of it (a cancel keeps that channel) and the alpha.
-/mob/living/carbon/human/proc/shapeshifter_secondary_ears_chosen(datum/om/prompt/choice/ask)
-	ear_secondary_style = GLOB.ear_styles_list[ask.choices[ask.choice]]
+/mob/living/carbon/human/proc/shapeshifter_secondary_ears_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.request
+	ear_secondary_style = GLOB.ear_styles_list[ask.choices[ask.answer_value]]
 	var/list/defaults = list()
 	if(ear_secondary_style)
 		for(var/channel in 1 to ear_secondary_style.get_color_channel_count())
 			defaults += LAZYACCESS(ear_secondary_colors, channel) || "#ffffff"
-	om_flow_start(/datum/om/flow/shapeshift_ear_colors, src, src, defaults = defaults)
+	shapeshifter_next_secondary_ear_channel(defaults, list(), 0)
 
-/// One colour per channel of the secondary ears (a cancel keeps that channel), then the alpha.
-/datum/om/flow/shapeshift_ear_colors
-	requires = PROMPT_CONSCIOUS
+/datum/prompt/color/shapeshift_secondary_ears
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
 	var/list/defaults
 	var/list/new_colors
-	var/channel = 0
+	var/channel
 
-/datum/om/flow/shapeshift_ear_colors/start()
-	new_colors = list()
-	next_channel()
+/datum/prompt/number/shapeshift_secondary_ears
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	min_value = 0
+	max_value = 255
+	step = 1
+	var/list/new_colors
 
-/datum/om/flow/shapeshift_ear_colors/proc/next_channel()
+/mob/living/carbon/human/proc/shapeshifter_next_secondary_ear_channel(list/defaults, list/new_colors, channel)
 	channel++
 	if(channel > length(defaults))
-		var/mob/living/carbon/human/H = actor
-		om_ask(actor, /datum/om/prompt/number, PROC_REF(alpha_chosen), message = "Set ear alpha (0-255):", title = "Ear Alpha", default = H.a_ears2, ask_flags = ASK_CONSCIOUS, cancel_answer = "", min = 0, max = 255)
+		open_request(src, /datum/prompt/number/shapeshift_secondary_ears, PROC_REF(shapeshifter_secondary_ear_alpha_picked), answerer = src, question = "Set ear alpha (0-255):", title = "Ear Alpha", default = a_ears2, new_colors = new_colors)
 		return
 	var/channel_name = GLOB.fancy_sprite_accessory_color_channel_names[channel]
-	om_ask(actor, /datum/om/prompt/color/shapeshift_optional, PROC_REF(channel_chosen), message = "Pick [channel_name]", title = "Ear Color ([channel_name])", default = defaults[channel])
+	open_request(src, /datum/prompt/color/shapeshift_secondary_ears, PROC_REF(shapeshifter_secondary_ear_channel_picked), answerer = src, question = "Pick [channel_name]", title = "Ear Color ([channel_name])", default = defaults[channel], defaults = defaults, new_colors = new_colors, channel = channel)
 
-/datum/om/flow/shapeshift_ear_colors/proc/channel_chosen(datum/om/prompt/color/ask)
-	new_colors += ask.picked_color || defaults[channel]
-	next_channel()
+/mob/living/carbon/human/proc/shapeshifter_secondary_ear_channel_picked(datum/act/request/A)
+	var/datum/prompt/color/shapeshift_secondary_ears/ask = A.request
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+			return
+	var/color = A.answer ? ask.answer_value : ""
+	var/list/new_colors = ask.new_colors
+	new_colors += color || ask.defaults[ask.channel]
+	shapeshifter_next_secondary_ear_channel(ask.defaults, new_colors, ask.channel)
 
-/datum/om/flow/shapeshift_ear_colors/proc/alpha_chosen(datum/om/prompt/number/ask)
-	var/mob/living/carbon/human/H = actor
-	H.shapeshifter_secondary_ear_colors_chosen(new_colors, ask.number)
+/mob/living/carbon/human/proc/shapeshifter_secondary_ear_alpha_picked(datum/act/request/A)
+	var/datum/prompt/number/shapeshift_secondary_ears/ask = A.request
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+			return
+	shapeshifter_secondary_ear_colors_chosen(ask.new_colors, A.answer ? ask.answer_value : "")
 
 /mob/living/carbon/human/proc/shapeshifter_secondary_ear_colors_chosen(list/new_colors, alpha)
 	if(length(new_colors))
@@ -703,34 +714,33 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set name = "Fully Reform"
 	set desc = "Reload your appearance from whatever character slot you have loaded."
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
-	om_flow_start(/datum/om/flow/shapeshift_reform, src, src, confirm_title = "Reformation", confirm_message = "Do you want to copy the appearance data of your currently loaded save slot?", confirm_yes = "Reform", finish_proc = PROC_REF(shapeshifter_regenerate_answered))
+	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_confirmed), answerer = src, title = "Reformation", question = "Do you want to copy the appearance data of your currently loaded save slot?", choices = list("Reform", "Cancel"), finish_proc = PROC_REF(shapeshifter_regenerate_answered))
 
-/// "Are you sure?", then whether to include flavour text and OOC notes; finish_proc runs on the
-/// actor with (flavour, oocnotes).
-/datum/om/flow/shapeshift_reform
-	requires = PROMPT_CONSCIOUS
-	var/confirm_title
-	var/confirm_message
-	var/confirm_yes
+/// "Are you sure?", then whether to include flavour text and OOC notes.
+/datum/prompt/choice/shapeshift_reform
+	timeout = 0
+	buttons = TRUE
+	ask_flags = ASK_CONSCIOUS
 	var/finish_proc
 	var/flavour
 
-/datum/om/flow/shapeshift_reform/start()
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(confirmed), title = confirm_title, message = confirm_message, yes_text = confirm_yes, no_text = "Cancel", ask_flags = ASK_CONSCIOUS)
-
-/datum/om/flow/shapeshift_reform/proc/confirmed(datum/om/prompt/confirm/ask)
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(flavour_chosen), message = "Include Flavourtext?", title = "Reformation", choices = list("Yes","No","Cancel"), buttons = TRUE, ask_flags = ASK_CONSCIOUS)
-
-/datum/om/flow/shapeshift_reform/proc/flavour_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/mob/living/carbon/human/proc/shapeshifter_reform_confirmed(datum/act/request/A)
+	if(!A.answer || A.request.answer_value == "Cancel")
 		return
-	flavour = (ask.choice == "Yes")
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(ooc_chosen), message = "Include OOC notes?", title = "Reformation", choices = list("Yes","No","Cancel"), buttons = TRUE, ask_flags = ASK_CONSCIOUS)
+	var/datum/prompt/choice/shapeshift_reform/ask = A.request
+	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_flavour_picked), answerer = src, question = "Include Flavourtext?", title = "Reformation", choices = list("Yes", "No", "Cancel"), finish_proc = ask.finish_proc)
 
-/datum/om/flow/shapeshift_reform/proc/ooc_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/mob/living/carbon/human/proc/shapeshifter_reform_flavour_picked(datum/act/request/A)
+	if(!A.answer || A.request.answer_value == "Cancel")
 		return
-	call(actor, finish_proc)(flavour, ask.choice == "Yes")
+	var/datum/prompt/choice/shapeshift_reform/ask = A.request
+	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_ooc_picked), answerer = src, question = "Include OOC notes?", title = "Reformation", choices = list("Yes", "No", "Cancel"), finish_proc = ask.finish_proc, flavour = ask.answer_value == "Yes")
+
+/mob/living/carbon/human/proc/shapeshifter_reform_ooc_picked(datum/act/request/A)
+	if(!A.answer || A.request.answer_value == "Cancel")
+		return
+	var/datum/prompt/choice/shapeshift_reform/ask = A.request
+	call(src, ask.finish_proc)(ask.flavour, ask.answer_value == "Yes")
 
 /mob/living/carbon/human/proc/shapeshifter_regenerate_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
@@ -853,7 +863,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	COOLDOWN_START(src, last_special, 50)
 
-	om_flow_start(/datum/om/flow/shapeshift_reform, src, src, confirm_title = "Reform", confirm_message = "Are you sure you want to reform yourself? This will reset you to what you look like in your current preferences slot.", confirm_yes = "Yes", finish_proc = PROC_REF(shapeshifter_reassemble_answered))
+	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_confirmed), answerer = src, title = "Reform", question = "Are you sure you want to reform yourself? This will reset you to what you look like in your current preferences slot.", choices = list("Yes", "Cancel"), finish_proc = PROC_REF(shapeshifter_reassemble_answered))
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))

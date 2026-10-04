@@ -15,43 +15,68 @@ ADMIN_VERB(map_template_load, R_SPAWN, "Map template - Place At Loc", "Spawns a 
 	for(var/S in template.get_affected_turfs(T,centered = TRUE))
 		preview += image('icons/misc/debug_group.dmi',S ,"red")
 	user.images += preview
-	om_flow_start(/datum/om/flow/map_template_place, user.mob, null, template_name = map, place_at = T, preview = preview)
+	if(!check_rights_for(user, R_SPAWN) || QDELETED(T))
+		user.images -= preview
+		return
+	open_request(src, /datum/prompt/choice/map_template_place, PROC_REF(location_confirmed), answerer = user.mob, template_name = map, place_at = T, preview = preview, question = "Confirm location.")
 
 /// Placing a map template at a turf: confirm the location (and, for an annihilating template,
 /// confirm again). The red preview stays up until the flow ends either way.
-/datum/om/flow/map_template_place
-	name = "place map template"
-	requires = PROMPT_ADMIN(R_SPAWN)
+/datum/prompt/choice/map_template_place
+	title = "Template Confirm"
+	choices = list("No", "Yes")
+	buttons = TRUE
+	rights = R_SPAWN
+	timeout = 0
 	var/template_name
 	var/turf/place_at
-	/// The preview images shown to the admin.
 	var/list/preview
+	var/preview_transferred = FALSE
 
-/datum/om/flow/map_template_place/start()
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(location_confirmed), title = "Template Confirm", message = "Confirm location.", no_first = TRUE)
+CAPABILITIES(/datum/prompt/choice/map_template_place)
+	ref_one(nameof(place_at), /turf)
 
-/datum/om/flow/map_template_place/proc/location_confirmed()
-	var/datum/map_template/template = SSmapping.map_templates[template_name]
-	if(template?.annihilate)
-		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(place), title = "Template Confirm", message = "This template is set to annihilate everything in the red square. EVERYTHING IN THE RED SQUARE WILL BE DELETED, ARE YOU ABSOLUTELY SURE?", no_first = TRUE)
+/datum/prompt/choice/map_template_place/prepare(datum/act/A)
+	..()
+	var/turf/captured_place = place_at
+	rel_clear(src, nameof(place_at))
+	rel_set(src, nameof(place_at), captured_place)
+
+/datum/prompt/choice/map_template_place/recheck_extra()
+	return QDELETED(place_at) ? "gone" : null
+
+/datum/prompt/choice/map_template_place/proc/end_preview()
+	var/mob/user = answerer
+	user?.client?.images -= preview
+
+/datum/prompt/choice/map_template_place/on_destroy(force)
+	if(!preview_transferred)
+		end_preview()
+	return ..()
+
+/datum/admin_verb/map_template_load/proc/location_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
 		return
-	place()
+	var/datum/prompt/choice/map_template_place/ask = A.answer
+	var/datum/map_template/template = SSmapping.map_templates[ask.template_name]
+	if(template?.annihilate)
+		var/datum/request/next_request = open_request(src, /datum/prompt/choice/map_template_place, PROC_REF(place_confirmed), answerer = ask.answerer, template_name = ask.template_name, place_at = ask.place_at, preview = ask.preview, question = "This template is set to annihilate everything in the red square. EVERYTHING IN THE RED SQUARE WILL BE DELETED, ARE YOU ABSOLUTELY SURE?")
+		ask.preview_transferred = !isnull(next_request)
+		return
+	place_confirmed(A)
 
-/datum/om/flow/map_template_place/proc/place()
-	var/mob/user = actor
-	end_preview()
-	var/datum/map_template/template = SSmapping.map_templates[template_name]
+/datum/admin_verb/map_template_load/proc/place_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
+	var/datum/prompt/choice/map_template_place/ask = A.answer
+	var/mob/user = ask.answerer
+	ask.end_preview()
+	var/datum/map_template/template = SSmapping.map_templates[ask.template_name]
 	if(!template)
 		to_chat(user, "Failed to place map")
 		return
+	var/turf/place_at = ask.place_at
 	template.load_async(place_at, TRUE, om_callable(template, TYPE_PROC_REF(/datum/map_template, admin_placed), user))
-
-/datum/om/flow/map_template_place/proc/end_preview()
-	var/mob/user = actor
-	user?.client?.images -= preview
-
-/datum/om/flow/map_template_place/ended(reason)
-	end_preview()
 
 ADMIN_VERB(map_template_load_on_new_z, R_SPAWN, "Map template - New Z", "Spawns a new map template at the selected z level.", ADMIN_CATEGORY_DEBUG_EVENTS)
 	var/map = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Choose a Map Template to place on a new Z-level.", title = "Place Map Template", choices = SSmapping.map_templates)
