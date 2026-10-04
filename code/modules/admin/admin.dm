@@ -176,9 +176,21 @@ ADMIN_VERB(cancel_reboot, R_SERVER, "Cancel Reboot", "Cancels a pending world re
 	message_admins("[key_name_admin(user)] cancelled the pending world reboot.")
 
 ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desires to the world.", ADMIN_CATEGORY_CHAT)
-	var/message = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Global message to send:", title = "Admin Announce", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-	if(isnull(message))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/text/admin_announcement, PROC_REF(announcement_answered), answerer = answerer)
+
+/datum/admin_verb/announce/proc/announcement_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(send_announcement), A)
+	if(!result.ok)
+		stack_trace("om flow announce answer announcement_answered: [result.error]")
+
+/datum/admin_verb/announce/proc/send_announcement(datum/act/request/A)
+	var/client/user = A.request.answerer.client
+	var/message = A.request.answer_value
 	if(!message)
 		return
 
@@ -938,3 +950,17 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(user)] has given [traitor_human.ckey] an uplink.")
+
+/datum/prompt/text/admin_announcement
+	rights = R_SERVER|R_ADMIN|R_EVENT
+	timeout = 0
+	question = "Global message to send:"
+	title = "Admin Announce"
+	multiline = TRUE
+	max_len = MAX_TGUI_INPUT
+
+/datum/prompt/text/admin_announcement/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
