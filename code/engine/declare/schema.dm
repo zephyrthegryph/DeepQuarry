@@ -296,6 +296,8 @@ GLOBAL_VAR_INIT(schemas_built, FALSE)
 				return list(value, null)
 			return list(SCHEMA_REJECT, "[value] is not a [S.type_of]")
 		if(SCHEMA_PATH)
+			if(boundary && istext(value))
+				value = text2path(value) // a window sends a type as its text
 			if(ispath(value) && (!S.type_of || ispath(value, S.type_of)))
 				return list(value, null)
 			return list(SCHEMA_REJECT, "[value] is not a path under [S.type_of]")
