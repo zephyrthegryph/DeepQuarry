@@ -51,6 +51,7 @@ CAPABILITIES(/mob/living/carbon)
 	owns_one(nameof(hallucinations), /datum/hallucinations)
 	owns_one(nameof(ingested), /datum/reagents/metabolism/ingested)
 	owns_one(nameof(touching), /datum/reagents/metabolism/touch)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(species_emp_effects)))
 
 /// Every species has hands (has_working_hand() drops them when the body has lost them all). A species without hands overrides this list with
 /// without(); a mob with no species (a carp, a borg, the AI) declares its own providers.

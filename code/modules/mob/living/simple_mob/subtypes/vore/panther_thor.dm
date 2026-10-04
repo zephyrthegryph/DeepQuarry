@@ -98,7 +98,8 @@
 
 
 // Force uncloaking if attacked.
-DAMAGE_REACTION_AFTER(/mob/living/simple_mob/vore/aggressive/panther/thor, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther/thor)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
 /mob/living/simple_mob/vore/aggressive/panther/thor/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()

@@ -48,15 +48,16 @@
 	else
 		return ..()
 
-DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(blast_consume))
+CAPABILITIES(/obj/structure/closet/crate/mimic)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_consume))))
 
 /// A blast makes the mimic swallow what it held and vanish (its subtypes store the contents for later).
-/obj/structure/closet/crate/mimic/proc/blast_consume(datum/damage_packet/packet)
+/obj/structure/closet/crate/mimic/proc/blast_consume(datum/act/A)
 	latent_discard()
 	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 		consume(O)
 	qdel(src)
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
@@ -372,7 +373,13 @@ EXTEND_INTERACTIONS(/obj/effect/floormimic, INTERACT_ITEM(null, PROC_REF(floormi
 		return TRUE
 	return FALSE
 
-DAMAGE_REACTION(/obj/effect/floormimic, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_qdel))
+CAPABILITIES(/obj/effect/floormimic)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
+
+/// Any blast destroys the mimic outright.
+/obj/effect/floormimic/proc/blasted_away(datum/act/A)
+	qdel(src) // ALLOW(lifecycle): a blast destroys the mimic outright, there is nothing to hand its contents to
+	return TRUE
 
 /obj/effect/floormimic/safe
 	mimic_chance = 0

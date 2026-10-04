@@ -165,8 +165,9 @@
 
 	say_list_type = /datum/say_list/rabbit
 
-DAMAGE_REACTION(/mob/living/simple_mob/vore/rabbit/killer, DAMAGE_EXPLOSION, PROC_REF(blast_gib))
+CAPABILITIES(/mob/living/simple_mob/vore/rabbit/killer)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_gib))))
 
-/mob/living/simple_mob/vore/rabbit/killer/proc/blast_gib(datum/damage_packet/packet)
+/mob/living/simple_mob/vore/rabbit/killer/proc/blast_gib(datum/act/A)
 	gib()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE

@@ -126,11 +126,18 @@
 	laugh()
 	..()
 
-DAMAGE_REACTION(/mob/living/simple_mob/vore/demon, DAMAGE_PROJECTILE, PROC_REF(laugh_at_hit))
-DAMAGE_REACTION(/mob/living/simple_mob/vore/demon, DAMAGE_THROWN, PROC_REF(laugh_at_hit))
+CAPABILITIES(/mob/living/simple_mob/vore/demon)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
+	on_notice(/datum/notice/hit, then(PROC_REF(laugh_at_thrown)))
 
-/mob/living/simple_mob/vore/demon/proc/laugh_at_hit(datum/damage_packet/packet)
+/mob/living/simple_mob/vore/demon/proc/laugh_at_hit(datum/act/A)
 	laugh()
+
+/// A thrown thing is the generic hit: the laugh is for this entry alone.
+/mob/living/simple_mob/vore/demon/proc/laugh_at_thrown(datum/act/A)
+	var/datum/notice/hit/N = A
+	if(N.packet.entry == DAMAGE_ENTRY_THROWN)
+		laugh()
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(demon_interaction_laugh)), \

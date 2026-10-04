@@ -105,6 +105,8 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 CAPABILITIES(/mob/living/silicon/ai)
 	provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast))))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_shell_disconnect)))
 	owns_one(nameof(aiCommunicator), /obj/item/communicator)
 	owns_one(nameof(aiPDA), /obj/item/pda/ai)
 	owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated)
@@ -495,9 +497,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 /mob/living/silicon/ai/restrained()
 	return 0
 
-DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EMP, PROC_REF(emp_shell_disconnect))
-
-/mob/living/silicon/ai/proc/emp_shell_disconnect(datum/damage_packet/packet)
+/mob/living/silicon/ai/proc/emp_shell_disconnect(datum/act/A)
 	disconnect_shell("Disconnected from remote shell due to ionic interfe%*@$^___")
 	if (prob(30))
 		view_core()
@@ -983,13 +983,12 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 	else
 		to_chat(src, span_warning("You deny the request."))
 
-DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EXPLOSION, PROC_REF(core_blast))
-
 /// A direct blast destroys the core outright; weaker ones go through the silicon ladder.
-/mob/living/silicon/ai/proc/core_blast(datum/damage_packet/packet)
-	if(packet.severity == 1)
-		qdel(src)
-		return DAMAGE_REACTION_BLOCK
+/mob/living/silicon/ai/proc/core_blast(datum/act/hit/explosion/A)
+	if(A.packet.severity != 1)
+		return HOOK_DECLINE
+	qdel(src)
+	return TRUE
 
 DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/silicon/ai/appearance_overlays()

@@ -106,12 +106,13 @@
 	pulses_remaining = 5
 	pulse_delay = 2 SECONDS
 
-DAMAGE_REACTION(/obj/effect/temporary_effect/pulse/disintegrate, DAMAGE_EMP, PROC_REF(emp_disperse))
+CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(emp_disperse))))
 
-/obj/effect/temporary_effect/pulse/disintegrate/proc/emp_disperse(datum/damage_packet/packet)
+/obj/effect/temporary_effect/pulse/disintegrate/proc/emp_disperse(datum/act/A)
 	visible_message(span_warning("\The [src] flickers, before dispersing energetically."))
 	qdel(src)
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/effect/temporary_effect/pulse/disintegrate/on_pulse()
 	var/turf/T = get_turf(src)
