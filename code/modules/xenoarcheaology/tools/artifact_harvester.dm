@@ -17,6 +17,10 @@
 	bubble_icon = "science"
 	circuit = /obj/item/circuitboard/artifact_harvester
 
+CAPABILITIES(/obj/machinery/artifact_harvester)
+	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
+	ref_one(nameof(cur_artifact), /obj)
+
 /// If you want it to load smoothly, set it's dir to wherever the scanpad is!
 /obj/machinery/artifact_harvester/Initialize(mapload)
 	. = ..()
