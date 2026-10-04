@@ -184,5 +184,4 @@
 	//Removes the default sblade
 	var/obj/item/melee/robotic/blade/syndicate/sblade = locate_in_list(src.modules, /obj/item/melee/robotic/blade/syndicate)
 	if(sblade)
-		own_take_member(src, nameof(modules), sblade)
-		qdel(sblade)
+		rel_remove(src, nameof(modules), sblade)

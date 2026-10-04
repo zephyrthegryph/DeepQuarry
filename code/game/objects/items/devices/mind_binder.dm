@@ -154,8 +154,7 @@
 			target.set_tf_mob_holder(V.tf_mob_holder)
 		if(target.tf_mob_holder == target)
 			target.set_tf_mob_holder(null)
-		own_take_member(src, nameof(possessed_voice), V)
-		qdel(V)
+		rel_remove(src, nameof(possessed_voice), V)
 		to_chat(usr_mob,span_notice("Mind bound to [target]."))
 
 // Handle placing a mind into an item
@@ -191,8 +190,7 @@
 	if(length(possessed_voice) == 1)
 		var/mob/living/voice/V = possessed_voice[1]
 		item.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-		own_take_member(src, nameof(possessed_voice), V)
-		qdel(V)
+		rel_remove(src, nameof(possessed_voice), V)
 		to_chat(usr_mob,span_notice("Mind bound to [item]."))
 
 // Handle taking a mind out of a mob
@@ -242,8 +240,7 @@
 	var/mob/usr_mob = task.actor
 	if(length(possessed_voice) == 0 && item.possessed_voice.Find(target))
 		inhabit_item(target, target.real_name, target.tf_mob_holder)
-		own_take_member(item, nameof(item.possessed_voice), target)
-		qdel(target)
+		rel_remove(item, nameof(item.possessed_voice), target)
 		to_chat(usr_mob,span_notice("Mind successfully stored!"))
 
 /obj/item/mindbinder/proc/appearance_bound()

@@ -80,7 +80,8 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 	if(HAS_SYNTHETIC_BIOLOGY(H))
 		return
 	rel_set(src, nameof(corpse), new /mob/living/carbon/human(H.loc))
-	QDEL_SWAP(corpse().dna,H.dna.Clone())
+	own_clear(corpse(), nameof(/mob::dna), OWN_DELETE)
+	rel_set(corpse(), nameof(/mob::dna), H.dna.Clone())
 	var/obj/item/clothing/temp = null
 	if(H.get_equipped_item(SLOT_ID_UNIFORM))
 		corpse().equip_to_slot_or_del(new /obj/item/clothing/under/chameleon/changeling(corpse()), SLOT_ID_UNIFORM)

@@ -248,7 +248,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_module)
 	if(!source)
 		return FALSE
 	var/mod_type = source.modtype
-	qdel(source.module)
+	own_clear(source, nameof(/mob/living/silicon/robot::module), OWN_DELETE)
 	var/module_type = GLOB.robot_modules[target().modtype]
 	source.modtype = target().modtype
 	new module_type(source)
@@ -260,7 +260,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_module)
 	// Target
 	target().uneq_all()
 	target().hud_used?.update_robot_modules_display(TRUE)
-	qdel(target().module)
+	own_clear(target(), nameof(/mob/living/silicon/robot::module), OWN_DELETE)
 	target().modtype = mod_type
 	module_type = GLOB.robot_modules[mod_type]
 	target().transform_with_anim()
@@ -377,11 +377,11 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_channel)
 	if(selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM)
 		target().radio.centComm = 1
 	if(selected_radio_channel == CHANNEL_RAIDER)
-		qdel(target().radio.keyslot)
+		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/raider(target())
 		target().radio.syndie = 1
 	if(selected_radio_channel == CHANNEL_MERCENARY)
-		qdel(target().radio.keyslot)
+		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/syndicate(target())
 		target().radio.syndie = 1
 	target().module.channels += list("[selected_radio_channel]" = 1)
@@ -396,7 +396,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_channel)
 		target().radio.centComm = 0
 	target().module.channels -= selected_radio_channel
 	if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(target().module.channels[CHANNEL_RAIDER] || target().module.channels[CHANNEL_MERCENARY]))
-		qdel(target().radio.keyslot)
+		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = null
 		target().radio.syndie = 0
 	target().radio.channels = list()

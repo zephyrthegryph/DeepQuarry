@@ -204,8 +204,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 
 /obj/item/technomancer_core/proc/remove_all_spells()
 	for(var/obj/spellbutton/spell in spells)
-		own_take_member(src, nameof(spells), spell)
-		qdel(spell)
+		rel_remove(src, nameof(spells), spell)
 
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)
 	for(var/obj/spellbutton/spell in spells)

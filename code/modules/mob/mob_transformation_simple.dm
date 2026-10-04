@@ -55,7 +55,8 @@
 		M.real_name = src.real_name
 
 	if(src.dna)
-		QDEL_SWAP(M.dna, src.dna.Clone())
+		own_clear(M, nameof(M.dna), OWN_DELETE)
+		rel_set(M, nameof(M.dna), src.dna.Clone())
 
 	if(isliving(src) && isliving(M))
 		move_player(src, M, "admin changed mob type to [new_type]")
