@@ -92,17 +92,35 @@
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(commune_target_chosen), message = "Select a creature!", title = "Speak to creature", choices = getmobs())
+	open_request(src, /datum/prompt/choice, PROC_REF(commune_target_chosen), answerer = src, question = "Select a creature!", title = "Speak to creature", choices = getmobs(), timeout = 0)
 
-/mob/living/carbon/human/proc/commune_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/M = ask.choices[ask.choice]
+/mob/living/carbon/human/proc/commune_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_commune_target_chosen), A)
+	if(!result.ok)
+		stack_trace("Telepathic request: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/apply_commune_target_chosen(datum/act/request/A)
+	var/datum/prompt/choice/ask = A.request
+	var/mob/M = ask.choices[A.answer.answer_value]
 	if(!M)
 		return
-	om_ask(src, /datum/om/prompt/text/telepathy, PROC_REF(commune_answered), message = "What would you like to say?", title = "Speak to creature", target = M)
+	open_request(src, /datum/prompt/text/telepathy, PROC_REF(commune_answered), answerer = src, question = "What would you like to say?", title = "Speak to creature", recipient = M, recipient_expected = !isnull(M))
 
-/mob/living/carbon/human/proc/commune_answered(datum/om/prompt/text/telepathy/ask)
-	var/text = ask.text
-	var/mob/M = ask.target
+/mob/living/carbon/human/proc/commune_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_commune_answered), A)
+	if(!result.ok)
+		stack_trace("Telepathic request: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/apply_commune_answered(datum/act/request/A)
+	var/datum/prompt/text/telepathy/ask = A.request
+	var/text = A.answer.answer_value
+	var/mob/M = ask.recipient
 
 	if(isobserver(M) || M.stat == DEAD)
 		to_chat(src, span_filter_notice("Not even a [src.species.name] can speak to the dead."))
@@ -123,11 +141,20 @@
 	set desc = "Whisper silently to someone over a distance."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	om_ask(src, /datum/om/prompt/text/telepathy, PROC_REF(psychic_whisper_entered), title = "Psychic Whisper", target = M)
+	open_request(src, /datum/prompt/text/telepathy, PROC_REF(psychic_whisper_entered), answerer = src, title = "Psychic Whisper", recipient = M, recipient_expected = !isnull(M))
 
-/mob/living/carbon/human/proc/psychic_whisper_entered(datum/om/prompt/text/telepathy/ask)
-	var/mob/M = ask.target
-	var/msg = ask.text
+/mob/living/carbon/human/proc/psychic_whisper_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_psychic_whisper_entered), A)
+	if(!result.ok)
+		stack_trace("Telepathic request: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/apply_psychic_whisper_entered(datum/act/request/A)
+	var/datum/prompt/text/telepathy/ask = A.request
+	var/mob/M = ask.recipient
+	var/msg = A.answer.answer_value
 	log_talk("(PWHISPER to [key_name(M)]) [msg]", LOG_WHISPER)
 	to_chat(M, span_filter_say("[span_green("You hear a strange, alien voice in your head... <i>[msg]</i>")]"))
 	to_chat(src, span_filter_say("[span_green("You said: \"[msg]\" to [M]")]"))
