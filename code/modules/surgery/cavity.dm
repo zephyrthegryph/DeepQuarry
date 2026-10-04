@@ -193,10 +193,11 @@ CAPABILITIES(/datum/prompt/choice/extract_foreign_body)
 	var/mob/living/carbon/human/captured_patient = subject
 	var/obj/item/organ/external/captured_part = part
 	var/obj/item/captured_tool = tool
-	rel_clear(src, nameof(subject))
+	var/datum/request/request = src
+	rel_clear(request, nameof(request.subject))
 	rel_clear(src, nameof(part))
 	rel_clear(src, nameof(tool))
-	rel_set(src, nameof(subject), captured_patient)
+	rel_set(request, nameof(request.subject), captured_patient)
 	rel_set(src, nameof(part), captured_part)
 	rel_set(src, nameof(tool), captured_tool)
 
