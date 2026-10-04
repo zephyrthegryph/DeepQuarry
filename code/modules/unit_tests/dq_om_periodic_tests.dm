@@ -336,7 +336,9 @@
 	TEST_ASSERT(!om_task_periodic(T, PERIODIC_SLOW), "a switched-off computer could be started by hand")
 	T.enable_computer()
 	// Its work is a type-level every(when = enabled) now: switching on wakes it (no periodic pipe).
-	TEST_ASSERT(!length(T.rx?.every_parked), "switching a computer on did not start it")
+	TEST_ASSERT(sys_every_allows(T), "switching a computer on did not open its every() gate")
+	TEST_ASSERT(om_task_periodic(T, PERIODIC_SLOW) || T.periodic_pipe, "a switched-on computer can be started by hand")
+	om_task_periodic_stop(T)
 	T.set_enabled(FALSE)
 
 #endif
