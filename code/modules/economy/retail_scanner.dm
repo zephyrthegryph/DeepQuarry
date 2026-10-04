@@ -303,6 +303,9 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 		return 0
 
 /obj/item/retail_scanner/proc/scan_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
+	return scan_card_stage(I, ID_container, user, list())
+
+/obj/item/retail_scanner/proc/scan_card_stage(obj/item/card/id/I, obj/item/ID_container, mob/user, list/answers)
 	if(!transaction_amount || !ticket_is_valid())
 		return
 
@@ -324,7 +327,11 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 		var/attempt_pin = ""
 		// Answers re-run this scan; they're keyed by the ticket revision, so a changed ticket asks again.
 		if(D && D.security_level)
-			attempt_pin = rerun_ask(user, "pin[ticket_revision]:[transaction_amount]", PROC_REF(scan_card), args, /datum/om/prompt/number, message = "Enter PIN", title = "Transaction")
+			var/pin_key = "pin[ticket_revision]:[transaction_amount]"
+			if(!(pin_key in answers))
+				open_request(src, /datum/prompt/number/service_checkout_pin, PROC_REF(checkout_answered), answerer = user, payer_card = I, card_holder = ID_container, operator = user, answers = answers, answer_key = pin_key)
+				return
+			attempt_pin = answers[pin_key]
 			if(isnull(attempt_pin))
 				return
 			D = null
@@ -342,7 +349,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 					var/list/quote = department_service_quote(D, DEPARTMENT_CIVILIAN, transaction_amount)
 					if(!quote || !user)
 						return
-					var/tip = service_tip_choice(user, D, quote, transaction_purpose, src, PROC_REF(scan_card), args, "tip[ticket_revision]:[transaction_amount]")
+					var/tip = service_tip_choice(user, D, quote, transaction_purpose, src, TYPE_PROC_REF(/obj/item/retail_scanner, checkout_answered), answers, I, ID_container, "tip[ticket_revision]:[transaction_amount]")
 					if(isnull(tip) || !service_checkout_confirmation_valid(src, user, snapshot_revision, ticket_revision, snapshot_amount, transaction_amount, D.account_number, I.associated_account_number, snapshot_provider, linked_account, snapshot_staff_account, service_staff_account_number))
 						return
 					if(!complete_service_checkout(D, linked_account, transaction_amount, transaction_purpose, machine_id, item_list, price_list, service_staff_account_number, service_staff_name, tip, verified_sale_items))
@@ -556,3 +563,22 @@ DECLARE_EMAG(/obj/item/retail_scanner, PROC_REF(on_emag), null, null)
 /obj/item/retail_scanner/civilian
 	account_to_connect = "Civilian"
 
+
+/obj/item/retail_scanner/proc/checkout_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(checkout_apply), A)
+	if(!result.ok)
+		stack_trace("Service checkout answer replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/item/retail_scanner/proc/checkout_apply(datum/act/request/A)
+	var/datum/request/ask = A.answer
+	if(istype(ask, /datum/prompt/number/service_checkout_pin))
+		var/datum/prompt/number/service_checkout_pin/pin = ask
+		pin.answers[pin.answer_key] = pin.answer_value
+		return scan_card_stage(pin.payer_card, pin.card_holder, pin.operator, pin.answers)
+	var/datum/prompt/choice/service_checkout_tip/tip = ask
+	tip.answers[tip.answer_key] = tip.answer_value
+	return scan_card_stage(tip.payer_card, tip.card_holder, tip.operator, tip.answers)

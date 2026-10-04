@@ -512,10 +512,10 @@
 				"detail" = "Closed staff service ledger for accounting period [accounting_period]",
 			), "service-period:[accounting_period]:[department]:staff:[staff_account]")
 
-/// Asks the customer to confirm a service purchase and pick a tip, through `asker`'s rerun_ask
-/// (`proc_name` with `proc_args` runs again on the answer). Returns the tip, or null while waiting or
+/// Asks the customer to confirm a service purchase and pick a tip through the payment replay.
+/// The accepted callback resumes its original scan arguments. Returns the tip, or null while waiting or
 /// when declined.
-/proc/service_tip_choice(mob/user, datum/money_account/customer, list/quote, description, datum/asker, proc_name, list/proc_args, key = "tip")
+/proc/service_tip_choice(mob/user, datum/money_account/customer, list/quote, description, datum/asker, proc_name, list/answers, obj/item/card/id/payer_card, obj/item/card_holder, key = "tip")
 	var/ten_percent = round(quote["total"] * 0.1)
 	var/twenty_percent = round(quote["total"] * 0.2)
 	var/available = max(0, customer.money - quote["personal"])
@@ -524,7 +524,10 @@
 		options += "Confirm + [ten_percent] Th tip"
 	if(twenty_percent > 0 && twenty_percent <= available && twenty_percent != ten_percent)
 		options += "Confirm + [twenty_percent] Th tip"
-	var/choice = rerun_ask_on(asker, user, key, proc_name, proc_args, /datum/om/prompt/choice/alert, message = service_quote_text(quote, description, ten_percent, twenty_percent), title = "Confirm Service Purchase", choices = options)
+	if(!(key in answers))
+		open_request(asker, /datum/prompt/choice/service_checkout_tip, proc_name, answerer = user, payer_card = payer_card, card_holder = card_holder, operator = user, answers = answers, answer_key = key, question = service_quote_text(quote, description, ten_percent, twenty_percent), title = "Confirm Service Purchase", choices = options)
+		return null
+	var/choice = answers[key]
 	if(choice == "Confirm - no tip")
 		return 0
 	if(choice == "Confirm + [ten_percent] Th tip")
@@ -564,3 +567,82 @@
 
 #undef SERVICE_INVOICE_PAID
 #undef SERVICE_INVOICE_REFUNDED
+
+/datum/prompt/number/service_checkout_pin
+	timeout = 0
+	title = "Transaction"
+	question = "Enter PIN"
+	var/obj/item/card/id/payer_card
+	var/obj/item/card_holder
+	var/mob/operator
+	var/payer_card_expected = FALSE
+	var/card_holder_expected = FALSE
+	var/operator_expected = FALSE
+	var/list/answers
+	var/answer_key
+
+CAPABILITIES(/datum/prompt/number/service_checkout_pin)
+	ref_one(nameof(payer_card), /obj/item/card/id)
+	ref_one(nameof(card_holder), /obj/item)
+	ref_one(nameof(operator), /mob)
+
+/datum/prompt/number/service_checkout_pin/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/card/id/captured_card = payer_card
+	var/obj/item/captured_holder = card_holder
+	var/mob/captured_operator = operator
+	payer_card_expected = !isnull(captured_card)
+	card_holder_expected = !isnull(captured_holder)
+	operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(payer_card))
+	rel_clear(src, nameof(card_holder))
+	rel_clear(src, nameof(operator))
+	if(captured_card && !QDELETED(captured_card))
+		rel_set(src, nameof(payer_card), captured_card)
+	if(captured_holder && !QDELETED(captured_holder))
+		rel_set(src, nameof(card_holder), captured_holder)
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(operator), captured_operator)
+
+/datum/prompt/number/service_checkout_pin/recheck_extra()
+	if((payer_card_expected && QDELETED(payer_card)) || (card_holder_expected && QDELETED(card_holder)) || (operator_expected && QDELETED(operator)))
+		return "gone"
+
+/datum/prompt/choice/service_checkout_tip
+	timeout = 0
+	buttons = TRUE
+	var/obj/item/card/id/payer_card
+	var/obj/item/card_holder
+	var/mob/operator
+	var/payer_card_expected = FALSE
+	var/card_holder_expected = FALSE
+	var/operator_expected = FALSE
+	var/list/answers
+	var/answer_key
+
+CAPABILITIES(/datum/prompt/choice/service_checkout_tip)
+	ref_one(nameof(payer_card), /obj/item/card/id)
+	ref_one(nameof(card_holder), /obj/item)
+	ref_one(nameof(operator), /mob)
+
+/datum/prompt/choice/service_checkout_tip/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/card/id/captured_card = payer_card
+	var/obj/item/captured_holder = card_holder
+	var/mob/captured_operator = operator
+	payer_card_expected = !isnull(captured_card)
+	card_holder_expected = !isnull(captured_holder)
+	operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(payer_card))
+	rel_clear(src, nameof(card_holder))
+	rel_clear(src, nameof(operator))
+	if(captured_card && !QDELETED(captured_card))
+		rel_set(src, nameof(payer_card), captured_card)
+	if(captured_holder && !QDELETED(captured_holder))
+		rel_set(src, nameof(card_holder), captured_holder)
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(operator), captured_operator)
+
+/datum/prompt/choice/service_checkout_tip/recheck_extra()
+	if((payer_card_expected && QDELETED(payer_card)) || (card_holder_expected && QDELETED(card_holder)) || (operator_expected && QDELETED(operator)))
+		return "gone"
