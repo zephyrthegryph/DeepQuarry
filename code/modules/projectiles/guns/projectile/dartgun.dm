@@ -65,13 +65,13 @@
 	special_weapon_handling = TRUE
 
 // Slotted beakers sit in the gun's contents; mixing is a subset of them.
+CAPABILITIES(/obj/item/gun/projectile/dartgun)
+	ref_many(nameof(mixing))
+
 /obj/item/gun/projectile/dartgun/ownership()
 	. = ..()
 	. += owns(nameof(beakers), policy = OWN_CONTAINED, is_list = TRUE)
 
-/obj/item/gun/projectile/dartgun/relations()
-	. = ..()
-	. += rel_many(nameof(mixing))
 
 /obj/item/gun/projectile/dartgun/Initialize(mapload)
 	. = ..()

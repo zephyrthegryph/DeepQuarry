@@ -173,6 +173,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 CAPABILITIES(/mob/living/simple_mob)
+	ref_many(nameof(tamers))
 	owns_one(nameof(myid), /obj/item/card/id)
 	owns_one(nameof(mob_radio), /obj/item/radio/headset)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(synthetic_emp_surge)))

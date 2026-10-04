@@ -181,7 +181,10 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 	. = ..()
 	load_ammo(A, user)
 
+// power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
+// the shield generator's gun, the generator's cell: a relation view across the hierarchy.
 CAPABILITIES(/obj/item/gun/energy)
+	ref_one(nameof(power_supply))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
@@ -286,11 +289,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_ov
 	else
 		return FLOOR(power_supply.charge / max(charge_cost, 1), 1)
 
-// power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
-// the shield generator's gun, the generator's cell: a relation view across the hierarchy.
-/obj/item/gun/energy/relations()
-	. = ..()
-	. += rel_one(nameof(power_supply))
 
 /obj/item/gun/energy/note_shot()
 	..()

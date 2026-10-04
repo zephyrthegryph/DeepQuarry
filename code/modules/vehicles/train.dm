@@ -266,7 +266,5 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 /obj/vehicle/train/proc/lead() as /obj/vehicle/train
 	return lead
 
-/obj/vehicle/train/relations()
-	. = ..()
-	. += rel_one(nameof(lead), back = nameof(/obj/vehicle/train::tow))
-	. += rel_one(nameof(tow), back = nameof(/obj/vehicle/train::lead))
+CAPABILITIES(/obj/vehicle/train)
+	links(/obj/vehicle/train::lead, /obj/vehicle/train::tow)

@@ -39,6 +39,8 @@
 	var/special_weapon_handling = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile)
+	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
+	ref_one(nameof(chambered))
 	owns_many(nameof(loaded))
 
 /obj/item/gun/projectile/Initialize(mapload, starts_loaded = 1)
@@ -732,9 +734,3 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 /obj/item/gun/projectile/ownership()
 	. = ..()
 	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED)
-
-/obj/item/gun/projectile/relations()
-	. = ..()
-	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
-	. += rel_one(nameof(chambered))
-

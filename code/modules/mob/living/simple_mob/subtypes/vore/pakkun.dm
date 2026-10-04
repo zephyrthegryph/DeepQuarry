@@ -211,9 +211,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	/// The help-touchers she remembers (a relation list).
 	var/list/petters
 
-/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/relations()
-	. = ..()
-	. += rel_many(nameof(petters))
+CAPABILITIES(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy)
+	ref_many(nameof(petters))
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(snappy_interaction_hand)))
 
