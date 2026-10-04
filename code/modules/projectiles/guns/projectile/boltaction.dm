@@ -75,7 +75,7 @@
 			to_chat(user, span_warning("The [src] is already shortened!"))
 			return
 		to_chat(user, span_notice("You begin to shorten the barrel and stock of \the [src]."))
-		if(loaded.len)
+		if(length(loaded))
 			afterattack(user, user)
 			playsound(src, fire_sound, 50, 1)
 			act_message(user, src, MSG_SELF(span_danger("The rifle goes off in your face!")), MSG_OTHERS(span_danger("%T% goes off!")))

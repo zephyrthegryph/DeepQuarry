@@ -136,7 +136,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw{ammo_magazine?:
 
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/wt550/proc/appearance_mag_state()
-	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
+	return ammo_magazine ? "-[round(length(ammo_magazine.stored_ammo), 4)]" : ""
 APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_mag_state}")
 
 /*
@@ -212,7 +212,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	. = list()
 	. += ..()
 	if(ammo_magazine)
-		icon_state = "carbine-[round(ammo_magazine.stored_ammo.len,2)]"
+		icon_state = "carbine-[round(length(ammo_magazine.stored_ammo),2)]"
 	else
 		icon_state = "carbine"
 	update_held_icon()
@@ -300,7 +300,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 		icon_state = "l6[cover_open ? "open" : "closed"]mag"
 		item_state = icon_state
 	else
-		icon_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? round(ammo_magazine.stored_ammo.len, 25) : "-empty"]"
+		icon_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? round(length(ammo_magazine.stored_ammo), 25) : "-empty"]"
 		item_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]"
 	update_held_icon()
 
@@ -546,7 +546,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg{amm
 
 /// Declared icon_state suffix: rounded magazine count, or "empty".
 /obj/item/gun/projectile/automatic/p90/proc/appearance_mag_state()
-	return ammo_magazine ? round(ammo_magazine.stored_ammo.len, 6) : "empty"
+	return ammo_magazine ? round(length(ammo_magazine.stored_ammo), 6) : "empty"
 APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearance_mag_state}")
 
 // C-20R
@@ -688,7 +688,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, TYPE_PROC_REF(/a
 /obj/item/gun/projectile/automatic/sol/proc/update_charge()
 	if(!ammo_magazine)
 		return
-	var/ratio = ammo_magazine.stored_ammo.len / ammo_magazine.max_ammo
+	var/ratio = length(ammo_magazine.stored_ammo) / ammo_magazine.max_ammo
 	if(ratio < 0.25 && ratio != 0)
 		ratio = 0.25
 	ratio = round(ratio, 0.25) * 100
@@ -823,7 +823,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/projectile/automatic/mg42/appearance_overlays()
 	. = list()
-	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.stored_ammo.len == 0 ? "0" : ""]"
+	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && length(ammo_magazine.stored_ammo) == 0 ? "0" : ""]"
 	item_state = "mg42"
 	update_held_icon()
 

@@ -905,6 +905,7 @@
 #include "round2_supply_board_native.dm"
 #include "round2_decorative_card_native.dm"
 #include "interim2_caseless_chamber_disposal.dm"
+#include "interim2_weapon_lazy_ammo_appearance.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
