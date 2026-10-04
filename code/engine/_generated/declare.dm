@@ -3795,6 +3795,21 @@
 	into += entry_line(23)
 	into += list(global.owns_one(nameof(visuals), /atom/movable/weather_visuals))
 
+/// CAPABILITIES(/datum/whitelist_editor) at code/game/jobs/whitelist.dm:17
+/datum/whitelist_editor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/jobs/whitelist.dm", 17, /datum/whitelist_editor)
+	into += entry_line(18)
+	into += list(global.interface("WhitelistEdit", rights = R_ADMIN))
+	into += entry_line(19)
+	into += list(global.op("add_alienwhitelist", global.ui_act("add_alienwhitelist", global.arg("ckey", global.schema_text(4096)), global.arg("role", global.schema_text(4096)), global.arg("type", global.schema_text(4096))), global.then(PROC_REF(ui_act_add_alienwhitelist))))
+	into += entry_line(20)
+	into += list(global.op("remove_alienwhitelist", global.ui_act("remove_alienwhitelist", global.arg("ckey", global.schema_text(4096)), global.arg("role", global.schema_text(4096)), global.arg("type", global.schema_text(4096))), global.then(PROC_REF(ui_act_remove_alienwhitelist))))
+	into += entry_line(21)
+	into += list(global.op("reload_alienwhitelist", global.ui_act("reload_alienwhitelist"), global.then(PROC_REF(ui_act_reload_alienwhitelist))))
+	into += entry_line(22)
+	into += list(global.op("reload_jobwhitelist", global.ui_act("reload_jobwhitelist"), global.then(PROC_REF(ui_act_reload_jobwhitelist))))
+
 /// CAPABILITIES(/datum/wires) at code/datums/wires/wires.dm:30
 /datum/wires/declared_entries(list/into)
 	..(into)
@@ -12540,6 +12555,17 @@
 	into += entry_line(48)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/microwave))
 
+/// CAPABILITIES(/obj/machinery/mineral/stacking_unit_console) at code/modules/mining/machinery/machine_stacking.dm:38
+/obj/machinery/mineral/stacking_unit_console/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/machinery/machine_stacking.dm", 38, /obj/machinery/mineral/stacking_unit_console)
+	into += entry_line(39)
+	into += list(global.interface("MiningStackingConsole"))
+	into += entry_line(40)
+	into += list(global.op("change_stack", global.ui_act("change_stack", global.arg("amt", global.num(1, 50))), global.then(PROC_REF(ui_act_change_stack))))
+	into += entry_line(41)
+	into += list(global.op("release_stack", global.ui_act("release_stack", global.arg("stack", global.schema_text(4096))), global.then(PROC_REF(ui_act_release_stack))))
+
 /// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:484
 /obj/machinery/mining/brace/declared_entries(list/into)
 	..(into)
@@ -12631,6 +12657,14 @@
 	into += entry_block("code/modules/mining/machine_silo.dm", 17, /obj/machinery/ore_silo)
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(materials), /datum/material_container))
+	into += entry_line(19)
+	into += list(global.interface("OreSilo"))
+	into += entry_line(20)
+	into += list(global.op("remove", global.ui_act("remove", global.arg("id", global.num())), global.then(PROC_REF(ui_act_remove))))
+	into += entry_line(21)
+	into += list(global.op("hold", global.ui_act("hold", global.arg("id", global.num())), global.then(PROC_REF(ui_act_hold))))
+	into += entry_line(22)
+	into += list(global.op("remove_mat", global.ui_act("remove_mat", global.arg("amount", global.num()), global.arg("id", global.schema_text(4096))), global.then(PROC_REF(ui_act_remove_mat))))
 
 /// CAPABILITIES(/obj/machinery/organ_printer) at code/game/machinery/bioprinter.dm:97
 /obj/machinery/organ_printer/declared_entries(list/into)

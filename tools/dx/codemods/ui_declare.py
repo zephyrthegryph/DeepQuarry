@@ -436,7 +436,7 @@ def main():
                 bad = "proc_shared"
                 break
             body_no_user = re.sub(r"(?<![\w.])ui\.user\b", "user", body)  # ui.user is the viewer: the handler's `user`
-            for w in ("ui", "state", "action", "update_icon"):
+            for w in ("ui", "state", "action", "update_icon", "visible_message"):
                 if words_in(body_no_user, w):
                     bad = "body_uses"
                     break
