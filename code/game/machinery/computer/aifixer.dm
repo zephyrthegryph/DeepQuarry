@@ -12,10 +12,9 @@
 	/// Variable containing transferred AI
 	var/mob/living/silicon/ai/occupier
 
-	/// Variable dictating if we are in the process of restoring the occupier AI
-	var/restoring = FALSE
 
-TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTINGS)
+/// Variable dictating if we are in the process of restoring the occupier AI
+OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "restoring")
 
 /obj/machinery/computer/aifixer/declare_interactions(list/into)
