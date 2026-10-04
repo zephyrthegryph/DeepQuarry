@@ -45,7 +45,7 @@
 		if(ispath(our_gun.projectile_type))
 			rel_set(src, nameof(BB), new our_gun.projectile_type(src)) //Then we create the bullet inside of us that is the projectile_type that the gun shoots!
 		else
-			rel_set(src, nameof(BB), new /obj/item/projectile/bullet/foam_dart_riot(src)) //Something went wrong. Should never happen.
+			rel_set(src, nameof(BB), new /obj/item/projectile/bullet/foam_dart_riot(src)) // ALLOW(decl): bullet type comes from the gun's projectile_type, which a declared child cannot name; should never happen
 	else //The bullet was adminspawned in outside of an artifact gun.
-		rel_set(src, nameof(BB), new /obj/item/projectile/bullet/foam_dart_riot(src))
+		rel_set(src, nameof(BB), new /obj/item/projectile/bullet/foam_dart_riot(src)) // ALLOW(decl): adminspawned casing outside a gun has no projectile_type to declare from
 	randpixel_xy()

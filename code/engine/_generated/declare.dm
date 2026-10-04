@@ -2928,7 +2928,7 @@
 	into += entry_line(302)
 	into += list(global.owns_one(nameof(ling_chem_display), /atom/movable/screen/ling/chems))
 	into += entry_line(303)
-	into += list(global.owns_one(nameof(lleill_display), /atom/movable/screen/shadekin))
+	into += list(global.owns_one(nameof(lleill_display), /atom/movable/screen/lleill))
 	into += entry_line(304)
 	into += list(global.owns_one(nameof(machine_shim), /datum/using_machine_shim))
 	into += entry_line(305)
@@ -3789,7 +3789,7 @@
 	..(into)
 	into += entry_block("code/modules/projectiles/guns/launcher/confetti.dm", 17, /obj/item/gun/launcher/confetti_cannon)
 	into += entry_line(18)
-	into += list(global.owns_one(nameof(chambered), /obj/item/grenade/confetti/party_ball))
+	into += list(global.owns_one(nameof(chambered), /obj/item))
 
 /// CAPABILITIES(/obj/item/gun/magnetic) at code/modules/projectiles/guns/magnetic/magnetic.dm:33
 /obj/item/gun/magnetic/declared_entries(list/into)
@@ -8875,7 +8875,7 @@
 	into += entry_line(85)
 	into += list(global.construction(global.start(STAGE_WINDOOR_ASSEMBLY_FRAME), global.stage(STAGE_WINDOOR_ASSEMBLY_SECURED, global.tool(TOOL_WRENCH), global.wait(4 SECONDS), global.then(PROC_REF(secured_down)), global.undone(PROC_REF(unsecured)), undo = list(global.tool(TOOL_WRENCH), global.wait(4 SECONDS))), global.stage(STAGE_WINDOOR_ASSEMBLY_WIRED, global.stack(/obj/item/stack/cable_coil, 1), global.wait(4 SECONDS), global.then(PROC_REF(wired_up)), global.undone(PROC_REF(unwired)), undo = list(global.tool(TOOL_WIRECUTTER), global.wait(4 SECONDS))), global.stage(STAGE_WINDOOR_ASSEMBLY_BOARDED, global.item(/obj/item/airlock_electronics), global.wait(4 SECONDS), global.then(PROC_REF(board_seated)), global.undone(PROC_REF(board_taken)), undo = list(global.tool(TOOL_SCREWDRIVER), global.wait(4 SECONDS))), global.stage(STAGE_WINDOOR_ASSEMBLY_FINISHED, global.tool(TOOL_CROWBAR), global.wait(4 SECONDS), global.needs(global.req(PROC_REF(board_whole), because = MSG(windoor_assembly/broken_board))), global.then(PROC_REF(finish_windoor)), undo = null), global.dismantle(global.tool(TOOL_WELDER), global.wait(4 SECONDS), global.then(PROC_REF(disassembled)))))
 	into += entry_line(91)
-	into += list(global.owns_one(nameof(electronics), /obj/item/airlock_electronics))
+	into += list(global.owns_one(nameof(electronics), /obj/item))
 	into += entry_line(92)
 	into += list(global.op("rename", global.item(/obj/item/pen), global.label("Rename"), global.wait(0), global.asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), global.then(PROC_REF(renamed))))
 	into += entry_line(93)

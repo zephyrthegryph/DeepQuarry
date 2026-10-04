@@ -326,7 +326,8 @@ CAPABILITIES(/mob)
 	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
 	var/tmp/atom/movable/screen/shadekin/shadekin_display = null
-	var/tmp/atom/movable/screen/lleill/lleill_display = null
+	// the lleill glamour display (an /atom/movable/screen/lleill, see owns_one above; the var keeps the looser shadekin screen type, the glamour screen is not a shadekin one
+	var/tmp/atom/movable/screen/shadekin/lleill_display = null
 	var/tmp/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display = null
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
