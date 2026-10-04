@@ -725,7 +725,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	if(!A.answer)
 		return
 	var/datum/prompt/color/synx_part/ask = A.answer
-	vars[ask.style_var] = ask.style
+	switch(ask.style_var)
+		if("body_style")
+			body_style = ask.style
+		if("horns")
+			horns = ask.style
+		if("markings")
+			markings = ask.style
+		if("eyes")
+			eyes = ask.style
 	overlay_colors[ask.part] = ask.value
 	build_icons()
 
@@ -925,35 +933,45 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	name = "Syntox"
 	desc = "ERROR Connection to translation server could not be established!"
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename()
 	set name = "rename"
 	set desc = "Renames the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Renaming", message = "What would you like to change name to?", var_name = "name")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Renaming", question = "What would you like to change name to?", var_name = "name")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc()
 	set name = "redesc"
 	set desc = "Redescribes the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Redescribing", message = "What would you like to change desc to?", var_name = "desc")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Redescribing", question = "What would you like to change desc to?", var_name = "desc")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite()
 	set name = "resprite"
 	set desc = "Resprite the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Respriting", message = "What would you like to change icon_state to?", var_name = "icon_state")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Respriting", question = "What would you like to change icon_state to?", var_name = "icon_state")
 
 /// A debug synx var edit. `var_name` is the var set.
-/datum/om/prompt/text/synx_debug_var
+/datum/prompt/text/synx_debug_var
+	timeout = 0
 	var/var_name
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(datum/om/prompt/text/synx_debug_var/ask)
-	vars[ask.var_name] = ask.text
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/synx_debug_var/request = A.request
+	switch(request.var_name)
+		if("name")
+			name = A.answer.answer_value
+		if("desc")
+			desc = A.answer.answer_value
+		if("icon_state")
+			set_icon_state(A.answer.answer_value)
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc)
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/Initialize(mapload)
 	. = ..(mapload, TRUE)
