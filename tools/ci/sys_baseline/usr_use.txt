@@ -200,7 +200,6 @@ usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/pro
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	ask_path(usr, "objholder")
 usr_outside_verb	code/modules/admin/view_variables/debug_variables.dm	usr << browse_rsc(icon_value, rname)
-usr_outside_verb	code/modules/admin/view_variables/get_variables.dm	.["value"] = input(usr, "Pick file:", "File") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
 usr_outside_verb	code/modules/admin/view_variables/get_variables.dm	tgui_alert_async(usr,"Invalid ref!")
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(usr?.client)
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(rerun_ask(usr, "sure", PROC_REF(find_references), args, /datum/om/prompt/choice/alert, message = "Running this will lock everything up for about 5 minutes. Would you like to begin the search?", title = "Find References", choices = list("Yes", "No")) != "Yes")
