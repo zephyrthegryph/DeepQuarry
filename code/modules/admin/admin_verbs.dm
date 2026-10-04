@@ -571,31 +571,55 @@ ADMIN_VERB(toggledrones, R_ADMIN|R_FUN|R_EVENT, "Toggle maintenance drones", "To
 	message_admins("Admin [key_name_admin(user)] has [CONFIG_GET(flag/allow_drone_spawn) ? "en" : "dis"]abled maintenance drones.")
 
 ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with it.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/mob/living/living_target = verb_ask(user, "a17", args, /datum/om/prompt/choice, message = "Who to tell to man up and deal with it.", title = "Man up", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
-	if(isnull(living_target))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!living_target)
-		return
+	open_request(src, /datum/prompt/choice/admin_man_up, PROC_REF(target_chosen), answerer = answerer, question = "Who to tell to man up and deal with it.", title = "Man up", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 
-	var/_answer_a18 = verb_ask(user, "a18", args, /datum/om/prompt/choice/alert, message = "Are you sure you want to tell them to man up?", title = "Confirmation", choices = list("Deal with it","No"))
-	if(isnull(_answer_a18))
-		return
-	if(_answer_a18 != "Deal with it")
-		return
+/datum/admin_verb/man_up/proc/target_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(ask_target_confirmation), A)
+	if(!result.ok)
+		stack_trace("om flow man_up answer target_chosen: [result.error]")
 
+/datum/admin_verb/man_up/proc/ask_target_confirmation(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/living_target = A.request.answer_value
+	if(QDELETED(living_target))
+		return
+	open_request(src, /datum/prompt/choice/admin_man_up/confirmation, PROC_REF(target_confirmed), answerer = A.request.answerer, question = "Are you sure you want to tell them to man up?", title = "Confirmation", choices = list("Deal with it", "No"), buttons = TRUE, target = living_target)
+
+/datum/admin_verb/man_up/proc/target_confirmed(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(tell_target), A)
+	if(!result.ok)
+		stack_trace("om flow man_up answer target_confirmed: [result.error]")
+
+/datum/admin_verb/man_up/proc/tell_target(datum/act/request/A)
+	if(!A.answer || A.request.answer_value != "Deal with it")
+		return
+	var/datum/prompt/choice/admin_man_up/confirmation/ask = A.request
+	var/mob/living/living_target = ask.target
+	var/client/user = ask.answerer.client
 	to_chat(living_target, span_filter_system(span_boldnotice(span_large("Man up and deal with it."))))
 	to_chat(living_target, span_filter_system(span_notice("Move along.")))
 
 	log_admin("[key_name(user)] told [key_name(living_target)] to man up and deal with it.")
 	message_admins(span_blue("[key_name_admin(user)] told [key_name(living_target)] to man up and deal with it."), 1)
-
 ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man up and deal with it.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/_answer_a19 = verb_ask(user, "a19", args, /datum/om/prompt/choice/alert, message = "Are you sure you want to tell the whole server up?", title = "Confirmation", choices = list("Deal with it","No"))
-	if(isnull(_answer_a19))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(_answer_a19 != "Deal with it")
-		return
+	open_request(src, /datum/prompt/choice/admin_man_up, PROC_REF(everyone_confirmed), answerer = answerer, question = "Are you sure you want to tell the whole server up?", title = "Confirmation", choices = list("Deal with it", "No"), buttons = TRUE)
 
+/datum/admin_verb/global_man_up/proc/everyone_confirmed(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(tell_everyone), A)
+	if(!result.ok)
+		stack_trace("om flow global_man_up answer everyone_confirmed: [result.error]")
+
+/datum/admin_verb/global_man_up/proc/tell_everyone(datum/act/request/A)
+	if(!A.answer || A.request.answer_value != "Deal with it")
+		return
+	var/client/user = A.request.answerer.client
 	for (var/mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		to_chat(target_mob, "<br><center>" + span_filter_system(span_notice(span_bold(span_huge("Man up.<br> Deal with it.")) + "<br>Move along.")) + "</center><br>")
 		DIRECT_OUTPUT(target_mob, 'sound/voice/manup1.ogg')
@@ -930,3 +954,39 @@ ADMIN_VERB(modify_shift_end, (R_ADMIN|R_EVENT|R_SERVER), "Modify Shift End", "Mo
 		request_end(src, REQ_CANCELLED, null)
 		return
 	return ..()
+
+/datum/prompt/choice/admin_man_up
+	rights = R_ADMIN|R_FUN
+	timeout = 0
+
+/datum/prompt/choice/admin_man_up/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(istype(answer_value, /datum))
+		var/datum/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_man_up/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_man_up/confirmation
+	var/mob/living/target
+
+CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation)
+	ref_one(nameof(target), /mob/living)
+
+/datum/prompt/choice/admin_man_up/confirmation/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/captured = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured)
+
+/datum/prompt/choice/admin_man_up/confirmation/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(target) ? "target is gone" : null
