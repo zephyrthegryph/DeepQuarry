@@ -885,22 +885,47 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 		to_chat(creator, span_warning("The room you're in is too big. It can only be 70 tiles in size, excluding walls."))
 		return
 
-	om_ask_begin(null, creator, /datum/om/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), list(receiver = creator, subject = get_turf(creator), turfs = turfs))
+	open_request(creator, /datum/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), answerer = creator, subject = get_turf(creator), turfs = turfs)
 
-/datum/om/prompt/text/blueprint_new_area
+/datum/prompt/text/blueprint_new_area
 	title = "Area Name"
-	message = "What would you like to name the area?"
-	max_length = MAX_NAME_LEN
+	question = "What would you like to name the area?"
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
 	encode = FALSE
-	requires = BLUEPRINT_PROMPT_REQUIRES
+	timeout = 0
 	var/list/turfs
 
-/datum/om/prompt/text/blueprint_new_area/cancelled()
-	to_chat(answerer, span_warning("No new area made. Cancelling."))
+/datum/prompt/text/blueprint_new_area/proc/captures_live()
+	return !QDELETED(answerer) && !QDELETED(subject)
 
-/mob/proc/create_new_area_named(datum/om/prompt/text/blueprint_new_area/ask)
+/datum/prompt/text/blueprint_new_area/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/mob/proc/create_new_area_named(datum/act/request/context)
+	var/datum/prompt/text/blueprint_new_area/ask = context.request
+	if(!context.answer)
+		if(isnull(ask.answer_value) && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No new area made. Cancelling."))
+		return
+	var/datum/result/result = safe_call(PROC_REF(create_new_area_named_apply), context)
+	if(!result.ok)
+		stack_trace("om prompt blueprint_new_area answer create_new_area_named: [result.error]")
+
+/mob/proc/create_new_area_named_apply(datum/act/request/context)
+	var/datum/prompt/text/blueprint_new_area/ask = context.request
 	var/mob/creator = src
-	var/str = sanitizeSafe(ask.text, MAX_NAME_LEN)
+	var/str = sanitizeSafe(ask.answer_value, MAX_NAME_LEN)
 	if(!str || !length(str)) //sanity
 		to_chat(creator, span_warning("No new area made. Cancelling."))
 		return
