@@ -20,8 +20,14 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 
 /// Old attack_self.
 /obj/item/disk/botany/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	return botany_disk_wipe_stage(user, held, interaction)
+
+/obj/item/disk/botany/proc/botany_disk_wipe_stage(mob/user, obj/item/held, datum/interaction/interaction, botany_answer, botany_answer_ready = FALSE)
 	if(LAZYLEN(genes))
-		var/choice = rerun_ask(user, "k21", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe the disk?", title = "Xenobotany Data", choices = list("No", "Yes"))
+		if(!botany_answer_ready)
+			open_request(src, /datum/prompt/choice/botany_disk_wipe, PROC_REF(botany_disk_wipe_answered), answerer = user, botany_operator = user, botany_held = held, botany_interaction = interaction, question = "Are you sure you want to wipe the disk?", title = "Xenobotany Data", choices = list("No", "Yes"), buttons = TRUE)
+			return TRUE
+		var/choice = botany_answer
 		if(isnull(choice))
 			return TRUE
 		if(src && user && genes && choice && choice == "Yes" && user.Adjacent(get_turf(src)))
@@ -398,3 +404,52 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 /obj/machinery/botany/extractor/ownership()
 	. = ..()
 	. += rel_one(nameof(genetics_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+
+/obj/item/disk/botany/proc/botany_disk_wipe_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(botany_disk_wipe_apply), A)
+	if(!result.ok)
+		stack_trace("Botany disk_wipe replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/item/disk/botany/proc/botany_disk_wipe_apply(datum/act/request/A)
+	var/datum/prompt/choice/botany_disk_wipe/ask = A.answer
+	return botany_disk_wipe_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.answer_value, TRUE)
+
+/datum/prompt/choice/botany_disk_wipe
+	timeout = 0
+	var/mob/botany_operator
+	var/obj/item/botany_held
+	var/datum/interaction/botany_interaction
+	var/botany_operator_expected = FALSE
+	var/botany_held_expected = FALSE
+	var/botany_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/botany_disk_wipe)
+	ref_one(nameof(botany_operator), /mob)
+	ref_one(nameof(botany_held), /obj/item)
+	ref_one(nameof(botany_interaction), /datum/interaction)
+
+/datum/prompt/choice/botany_disk_wipe/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = botany_operator
+	var/obj/item/captured_held = botany_held
+	var/datum/interaction/captured_interaction = botany_interaction
+	botany_operator_expected = !isnull(captured_operator)
+	botany_held_expected = !isnull(captured_held)
+	botany_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(botany_operator))
+	rel_clear(src, nameof(botany_held))
+	rel_clear(src, nameof(botany_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(botany_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(botany_held), captured_held)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(botany_interaction), captured_interaction)
+
+/datum/prompt/choice/botany_disk_wipe/recheck_extra()
+	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
+		return "gone"
