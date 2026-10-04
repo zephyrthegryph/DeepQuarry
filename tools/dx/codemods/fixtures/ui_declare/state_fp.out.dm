@@ -2,9 +2,8 @@
 	name = "guarded"
 
 CAPABILITIES(/obj/machinery/guarded)
-	interface("Guarded")
+	interface("Guarded", state = nameof(GLOB.tgui_physical_state))
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
-DECLARE_UI_STATE(/obj/machinery/guarded, GLOB.tgui_physical_state)
 
 /obj/machinery/guarded/proc/ui_act_go(datum/act/op/A)
 	var/mob/user = A.actor

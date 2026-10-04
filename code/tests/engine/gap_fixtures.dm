@@ -109,4 +109,32 @@ CAPABILITY_DEF(gap_verb_cap, CAP_GAP_VERB_CAP, key = NONE)
 /datum/capability/def/gap_verb_cap/entries()
 	return list(verb_entry(/mob/gap_verb_mob/proc/gv_runtime))
 
+/// Windows that carry a tgui state: a state global by name, an admin rights mask, and none.
+/obj/gap_window_base
+	name = "gap window base"
+
+/obj/gap_window_base/proc/noop(datum/act/op/A)
+	return
+
+/obj/gap_window_base/state
+	name = "gap window state"
+
+CAPABILITIES(/obj/gap_window_base/state)
+	interface("GapWindow", state = nameof(GLOB.tgui_always_state))
+	op("noop", ui_act("noop"), then(PROC_REF(noop)))
+
+/obj/gap_window_base/rights
+	name = "gap window rights"
+
+CAPABILITIES(/obj/gap_window_base/rights)
+	interface("GapWindow", rights = R_ADMIN | R_EVENT)
+	op("noop", ui_act("noop"), then(PROC_REF(noop)))
+
+/obj/gap_window_base/plain
+	name = "gap window plain"
+
+CAPABILITIES(/obj/gap_window_base/plain)
+	interface("GapWindow")
+	op("noop", ui_act("noop"), then(PROC_REF(noop)))
+
 #endif

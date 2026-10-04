@@ -353,7 +353,20 @@ def main():
                 residue[t] = "data_rows"
                 continue
             data = {"row": data_rows[0], "fields": fields}
-        plan = {"type": t, "window": window, "title": title, "acts": acts, "data": data, "rows": rs, "handlers": [], "fp": fp}
+        plan = {"type": t, "window": window, "title": title, "acts": acts, "data": data, "rows": rs, "handlers": [], "fp": fp, "state": None}
+        # DECLARE_UI_STATE(T, GLOB.tgui_x_state) -> interface(.., state = nameof(GLOB.tgui_x_state)); (T, ADMIN_STATE(rights)) -> interface(.., rights = rights):
+        # the row goes. Any other expression (an instance's own state) keeps its row, which ui_open() still reads.
+        state_rows = [r for r in rs if r[0] == "DECLARE_UI_STATE"]
+        if len(state_rows) == 1:
+            sinner = inner_of_call(state_rows[0][3], "DECLARE_UI_STATE")
+            sparts = split_args(sinner) if sinner is not None else []
+            if len(sparts) == 2 and sparts[0] == t:
+                gm = re.match(r"^GLOB\.(\w+)$", sparts[1])
+                am = re.match(r"^ADMIN_STATE\((.+)\)$", sparts[1])
+                if gm:
+                    plan["state"] = ("state = nameof(GLOB.%s)" % gm.group(1), state_rows[0])
+                elif am:
+                    plan["state"] = ("rights = %s" % am.group(1), state_rows[0])
         # ---- handlers
         for a in acts:
             pat = re.compile(r"^UI_ACT_PROC\(" + tre + r",\s*" + re.escape(a["proc"]) + r"\)\s*(//.*)?$")
@@ -469,7 +482,7 @@ def main():
             continue
         tre = re.escape(t)
         entries = []
-        entries.append('interface("%s"%s)' % (plan["window"], (', title = "%s"' % plan["title"]) if plan["title"] is not None else ""))
+        entries.append('interface("%s"%s%s)' % (plan["window"], (', title = "%s"' % plan["title"]) if plan["title"] is not None else "", (", " + plan["state"][0]) if plan["state"] else ""))
         for a in plan["acts"]:
             parts = ['"%s"' % a["action"]]
             for kind, name, bounds in a["specs"]:
@@ -569,8 +582,11 @@ def main():
                     block_file = (rel, i)
         for kind, rel, idx, text in plan["rows"]:
             f = files[rel]
+            if kind == "DECLARE_UI_STATE" and plan["state"] and plan["state"][1][2] == idx:
+                f.lines[idx] = None  # carried by interface(): state = / rights =
+                continue
             if kind in ("UI_ACT_PROC", "DECLARE_UI_STATE"):
-                continue  # the state row stays: it is its own legacy form, read by ui_open() whether or not a DECLARE_UI stands beside it
+                continue  # a state that is not a GLOB state or an ADMIN_STATE stays: it is its own legacy form, read by ui_open() whether or not a DECLARE_UI stands beside it
             if kind in ("UI_DATA", "UI_DATA_REPLACE") and d and not d["rename"]:
                 continue  # the composed ui_data() stands where the row was
             if kind == "DECLARE_UI":

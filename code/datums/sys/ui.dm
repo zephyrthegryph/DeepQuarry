@@ -296,7 +296,7 @@ GLOBAL_LIST_EMPTY(ui_decls)
 	if(!interface)
 		return FALSE
 	ui = new(user, host, interface, host.ui_title(user), parent_ui, null, null, host.ui_window(user))
-	var/datum/tgui_state/state = custom_state || decl?.state || host.tgui_window_state || (host.ui_rights ? ADMIN_STATE(host.ui_rights) : null)
+	var/datum/tgui_state/state = custom_state || decl?.state || interface_state(host) || host.tgui_window_state || (host.ui_rights ? ADMIN_STATE(host.ui_rights) : null)
 	if(state)
 		ui.set_state(state)
 	if(decl?.autoupdate)
@@ -311,6 +311,26 @@ GLOBAL_LIST_EMPTY(ui_decls)
 		om_ui_bind(ui, host, decl.watch)
 		rel_set(ui, nameof(ui.om_bound), host)
 	return ui
+
+/// The tgui state the host's interface() declares: its `state` (a state global's name, or a state), else ADMIN_STATE of its `rights`, else null.
+/proc/interface_state(datum/host)
+	RETURN_TYPE(/datum/tgui_state)
+	var/datum/entry/declared = present_interface(host)
+	if(!declared)
+		return null
+	var/state = declared.args["state"]
+	if(istext(state))
+		var/found = GLOB.vars[state]
+		if(!istype(found, /datum/tgui_state))
+			stack_trace("interface([declared.args["window"]]) on [host.type]: state \"[state]\" is not a tgui state global")
+			return null
+		return found
+	if(istype(state, /datum/tgui_state))
+		return state
+	var/rights = declared.args["rights"]
+	if(isnum(rights) && rights)
+		return ADMIN_STATE(rights)
+	return null
 
 /// A window's periodic refresh (autoupdate, forced): the host's ui_prepare() runs as it does on a
 /// reopen, then the window updates. Never opens a window, so it never sleeps; a host that now

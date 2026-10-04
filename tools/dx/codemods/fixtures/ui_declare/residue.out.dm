@@ -1,7 +1,6 @@
 CAPABILITIES(/obj/machinery/stately)
-	interface("Stately")
+	interface("Stately", state = nameof(GLOB.tgui_always_state))
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
-DECLARE_UI_STATE(/obj/machinery/stately, GLOB.tgui_always_state)
 /obj/machinery/stately/proc/ui_act_go(datum/act/op/A)
 	return TRUE
 

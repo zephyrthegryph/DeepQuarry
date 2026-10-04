@@ -695,10 +695,14 @@
 
 // ---- windows ----
 
-/// interface(window, title =, rights =, host =, input = hand()): the window an entity opens. Declaring it adds the open op ("ui_open"), bound to
-/// the input and to remote() at the lowest tier: what a type does when nothing more specific answers.
-/proc/interface(window, title = null, rights = null, host = null, input = null)
-	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
+/// interface(window, title =, rights =, host =, input = hand(), state =): the window an entity opens. Declaring it adds the open op ("ui_open"), bound to
+/// the input and to remote() at the lowest tier: what a type does when nothing more specific answers. `state` is the tgui state the window uses (who may see
+/// and use it): `nameof(GLOB.tgui_physical_state)`, the name of a state global (read when the window opens, so the declaration never depends on the global init
+/// order), or a /datum/tgui_state; `rights` (an R_* mask, at least one of them) with no state is ADMIN_STATE(rights). Neither: the default state, or the
+/// host's own `tgui_window_state` var / `ui_rights` (interface_state() in code/datums/sys/ui.dm). A state that depends on the instance stays a
+/// tgui_state() override.
+/proc/interface(window, title = null, rights = null, host = null, input = null, state = null)
+	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
 
 /// ui_shape(operating, channels = list_of(row(...))): the declared shape of the window's data. `analyze gen ui_types` reads the declaration from source and
 /// writes the TypeScript type of the window (each field's schema range as the doc comment of its field); at runtime the entry carries no data.
