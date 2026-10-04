@@ -2388,6 +2388,20 @@
 	into += entry_line(84)
 	into += list(global.ref_one(nameof(painting), /obj/item/floor_painter))
 
+/// CAPABILITIES(/datum/prompt/choice/protean_layer_state) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:130
+/datum/prompt/choice/protean_layer_state/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 130, /datum/prompt/choice/protean_layer_state)
+	into += entry_line(131)
+	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
+/// CAPABILITIES(/datum/prompt/choice/protean_layers) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:113
+/datum/prompt/choice/protean_layers/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 113, /datum/prompt/choice/protean_layers)
+	into += entry_line(114)
+	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
 	..(into)
@@ -2423,12 +2437,26 @@
 	into += entry_line(164)
 	into += list(global.ref_one(nameof(preferences), /datum/preferences))
 
+/// CAPABILITIES(/datum/prompt/color/protean_layer) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:167
+/datum/prompt/color/protean_layer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 167, /datum/prompt/color/protean_layer)
+	into += entry_line(168)
+	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/structures/gravemarker.dm", 23, /datum/prompt/text/grave_carving)
 	into += entry_line(24)
 	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/text/protean_style) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:186
+/datum/prompt/text/protean_style/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 186, /datum/prompt/text/protean_style)
+	into += entry_line(187)
+	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
