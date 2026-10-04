@@ -11,6 +11,7 @@ ADMIN_VERB(manage_event_triggers, R_FUN, "Manage Event Triggers", "Open dialogue
 	var/owner_ckey
 	var/obj/effect/landmark/event_trigger/trigger
 	var/needs_trigger = FALSE
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 	ref_one(nameof(trigger), /obj/effect/landmark/event_trigger)
@@ -24,13 +25,6 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 
 /datum/prompt/choice/manage_event_triggers/recheck_extra()
 	return needs_trigger && QDELETED(trigger) ? "gone" : null
-
-/datum/prompt/choice/manage_event_triggers/begin()
-	var/reason = request_recheck(src)
-	if(reason)
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /mob/proc/ask_manage_event_triggers()
 	ask_event_trigger_choice(PROC_REF(event_trigger_mode_picked), null, null, "Manage Event Triggers", "What do you wish to do?", list("Create Notification Trigger", "Create Narration Trigger", "Manage Personal Triggers", "Manage Other's Triggers", "Cancel"), FALSE, "Cancel")

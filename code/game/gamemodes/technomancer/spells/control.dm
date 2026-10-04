@@ -93,10 +93,7 @@
 /obj/item/spell/control/proc/release_control_answered(datum/act/request/A)
 	if(!A.answer || A.answer.answer_value != "Yes")
 		return
-	var/datum/result/result = safe_call(PROC_REF(release_control_answered_apply), A)
-	if(!result.ok)
-		stack_trace("technomancer release_control_answered: [result.error]")
-	return result.value
+	return release_control_answered_apply(A)
 
 /obj/item/spell/control/proc/release_control_answered_apply(datum/act/request/A)
 	var/datum/prompt/choice/technomancer_carried/ask = A.answer

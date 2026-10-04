@@ -127,10 +127,7 @@ CAPABILITIES(/datum/prompt/text/communicator_reply)
 /obj/item/communicator/proc/reply_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(reply_apply), A)
-	if(!result.ok)
-		stack_trace("communicator reply: [result.error]")
-	return result.value
+	return reply_apply(A)
 
 /obj/item/communicator/proc/reply_apply(datum/act/request/A)
 	var/datum/prompt/text/communicator_reply/ask = A.answer
@@ -235,10 +232,7 @@ CAPABILITIES(/datum/prompt/text/ghost_text)
 /mob/observer/dead/proc/ghost_text_written(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(ghost_text_apply), A)
-	if(!result.ok)
-		stack_trace("ghost communicator text: [result.error]")
-	return result.value
+	return ghost_text_apply(A)
 
 /mob/observer/dead/proc/ghost_text_apply(datum/act/request/A)
 	var/datum/prompt/text/ghost_text/ask = A.answer

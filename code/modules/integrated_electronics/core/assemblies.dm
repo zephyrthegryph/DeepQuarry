@@ -305,9 +305,7 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
 		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
 			SStgui.update_uis(src)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_rename), A)
-	if(!result.ok)
-		stack_trace("Electronics rename request: [result.error]")
+	apply_rename(A)
 	SStgui.update_uis(src)
 
 /obj/item/electronic_assembly/proc/apply_rename(datum/act/request/A)
@@ -551,9 +549,7 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 	var/datum/prompt/choice/electronics_input/request = A.request
 	if(!A.answer || request.captures_gone())
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_input_selection), A)
-	if(!result.ok)
-		stack_trace("Assembly input selection request: [result.error]")
+	apply_input_selection(A)
 	SStgui.update_uis(src)
 
 /obj/item/electronic_assembly/proc/apply_input_selection(datum/act/request/A)

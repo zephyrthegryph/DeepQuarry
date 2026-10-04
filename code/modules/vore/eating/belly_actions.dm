@@ -115,11 +115,9 @@
 /obj/belly/proc/instant_digest_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(instant_digest_accepted), A)
-	if(!result.ok)
-		stack_trace("belly instant_digest consent: [result.error]")
+	. = instant_digest_accepted(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /obj/belly/proc/instant_digest_accepted(datum/act/request/A)
 	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
@@ -128,11 +126,9 @@
 /obj/belly/proc/instant_break_bone_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(instant_break_bone_accepted), A)
-	if(!result.ok)
-		stack_trace("belly instant_break_bone consent: [result.error]")
+	. = instant_break_bone_accepted(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /obj/belly/proc/instant_break_bone_accepted(datum/act/request/A)
 	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
@@ -141,11 +137,9 @@
 /obj/belly/proc/instant_absorb_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(instant_absorb_accepted), A)
-	if(!result.ok)
-		stack_trace("belly instant_absorb consent: [result.error]")
+	. = instant_absorb_accepted(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /obj/belly/proc/instant_absorb_accepted(datum/act/request/A)
 	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
@@ -154,11 +148,9 @@
 /obj/belly/proc/instant_knockout_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(instant_knockout_accepted), A)
-	if(!result.ok)
-		stack_trace("belly instant_knockout consent: [result.error]")
+	. = instant_knockout_accepted(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /obj/belly/proc/instant_knockout_accepted(datum/act/request/A)
 	var/datum/prompt/choice/belly_instant_consent/ask = A.answer

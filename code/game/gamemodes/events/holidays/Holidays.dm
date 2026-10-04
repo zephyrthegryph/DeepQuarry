@@ -245,10 +245,7 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 /client/proc/set_holiday_named(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(set_holiday_name_apply), A)
-	if(!result.ok)
-		stack_trace("set holiday name: [result.error]")
-	return result.value
+	return set_holiday_name_apply(A)
 
 /client/proc/set_holiday_name_apply(datum/act/request/A)
 	var/datum/prompt/text/set_holiday/ask = A.answer
@@ -261,10 +258,7 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 /client/proc/set_holiday_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(set_holiday_apply), A)
-	if(!result.ok)
-		stack_trace("set holiday description: [result.error]")
-	return result.value
+	return set_holiday_apply(A)
 
 /client/proc/set_holiday_apply(datum/act/request/A)
 	var/datum/prompt/text/set_holiday/ask = A.answer

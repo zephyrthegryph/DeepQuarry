@@ -96,9 +96,7 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 /datum/admin_verb/ToRban/proc/address_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(remove_address), context)
-	if(!result.ok)
-		stack_trace("om flow ToRban answer remove_address: [result.error]")
+	remove_address(context)
 
 /datum/admin_verb/ToRban/proc/remove_address(datum/act/request/context)
 	var/client/user = context.request.answerer.client
@@ -111,9 +109,7 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 /datum/admin_verb/ToRban/proc/address_entered(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(find_address), context)
-	if(!result.ok)
-		stack_trace("om flow ToRban answer find_address: [result.error]")
+	find_address(context)
 
 /datum/admin_verb/ToRban/proc/find_address(datum/act/request/context)
 	var/client/user = context.request.answerer.client
@@ -129,24 +125,14 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 	timeout = 0
 	title = "Remove ToR ban"
 	question = "Please select an IP address to remove from the ToR banlist:"
-
-/datum/prompt/choice/admin_tor_remove/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_tor_find
 	rights = R_ADMIN|R_SERVER
 	timeout = 0
 	title = "Find ToR ban"
 	question = "Please input an IP address to search for:"
-
-/datum/prompt/text/admin_tor_find/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 #undef TORFILE
 #undef TOR_UPDATE_INTERVAL

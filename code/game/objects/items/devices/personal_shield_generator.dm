@@ -200,10 +200,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/act/request/context)
 	if(!context.answer || context.answer.answer_value != "Remove")
 		return
-	var/datum/result/result = safe_call(PROC_REF(destroy_cell_apply), context)
-	if(!result.ok)
-		stack_trace("shield generator cell removal: [result.error]")
-	return result.value
+	return destroy_cell_apply(context)
 
 /obj/item/personal_shield_generator/proc/destroy_cell_apply(datum/act/request/context)
 	var/datum/prompt/choice/shield_cell_destroy/ask = context.answer

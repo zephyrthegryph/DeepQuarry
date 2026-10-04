@@ -76,9 +76,7 @@ ADMIN_VERB(print_jobban_old_filter, R_ADMIN|R_MOD, "Search Jobban Log", "This se
 /datum/admin_verb/print_jobban_old_filter/proc/filter_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(show_filtered_jobbans), A)
-	if(!result.ok)
-		stack_trace("om flow print_jobban_old_filter answer filter_answered: [result.error]")
+	show_filtered_jobbans(A)
 
 /datum/admin_verb/print_jobban_old_filter/proc/show_filtered_jobbans(datum/act/request/A)
 	var/client/user = A.request.answerer.client
@@ -96,9 +94,5 @@ ADMIN_VERB(print_jobban_old_filter, R_ADMIN|R_MOD, "Search Jobban Log", "This se
 	timeout = 0
 	question = "Contains what?"
 	title = "Job Filter"
+	recheck_on_open = TRUE
 
-/datum/prompt/text/admin_jobban_filter/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

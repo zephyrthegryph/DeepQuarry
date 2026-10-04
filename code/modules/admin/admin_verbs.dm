@@ -166,9 +166,7 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 /datum/admin_verb/stealth/proc/stealth_name_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(toggle_stealth), A.request.answerer.client, A.request.answer_value, TRUE)
-	if(!result.ok)
-		stack_trace("om flow stealth answer stealth_name_answered: [result.error]")
+	toggle_stealth(A.request.answerer.client, A.request.answer_value, TRUE)
 
 /datum/admin_verb/stealth/proc/toggle_stealth(client/user, _answer_a2 = null, answered = FALSE)
 	if(user.holder.fakekey)
@@ -285,12 +283,7 @@ ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strengt
 /datum/prompt/choice/admin_drop_bomb
 	rights = R_FUN
 	timeout = 0
-
-/datum/prompt/choice/admin_drop_bomb/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/number/admin_drop_bomb
 	rights = R_FUN
@@ -302,17 +295,10 @@ ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strengt
 	var/devastation_range
 	var/heavy_impact_range
 	var/light_impact_range
-
-/datum/prompt/number/admin_drop_bomb/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/admin_verb/drop_bomb/proc/bomb_question_answered(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(bomb_answer), A)
-	if(!result.ok)
-		stack_trace("om flow drop_bomb answer bomb_answer: [result.error]")
+	bomb_answer(A)
 
 /datum/admin_verb/drop_bomb/proc/bomb_answer(datum/act/request/A)
 	if(!A.answer)
@@ -352,9 +338,7 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 	open_request(src, /datum/prompt/choice/admin_body_effect, PROC_REF(modifier_answered), answerer = answerer, question = "What modifier should we add to [living_target]?", title = "Modifier Type", choices = possible_modifiers, living_target = living_target)
 
 /datum/admin_verb/admin_give_modifier/proc/modifier_answered(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(modifier_chosen), A)
-	if(!result.ok)
-		stack_trace("om flow admin_give_modifier answer modifier_chosen: [result.error]")
+	modifier_chosen(A)
 
 /datum/admin_verb/admin_give_modifier/proc/modifier_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -369,9 +353,7 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 	open_request(src, /datum/prompt/number/admin_body_effect, PROC_REF(modifier_duration_answered), answerer = answerer, living_target = ask.living_target, modifier_type = ask.answer_value)
 
 /datum/admin_verb/admin_give_modifier/proc/modifier_duration_answered(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(modifier_duration_chosen), A)
-	if(!result.ok)
-		stack_trace("om flow admin_give_modifier answer modifier_duration_chosen: [result.error]")
+	modifier_duration_chosen(A)
 
 /datum/admin_verb/admin_give_modifier/proc/modifier_duration_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -395,6 +377,7 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 	rights = R_EVENT
 	timeout = 0
 	var/mob/living/living_target
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/choice/admin_body_effect)
 	ref_one(nameof(living_target), /mob/living)
@@ -411,12 +394,6 @@ CAPABILITIES(/datum/prompt/choice/admin_body_effect)
 		return
 	return QDELETED(living_target) ? "target is gone" : null
 
-/datum/prompt/choice/admin_body_effect/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/number/admin_body_effect
 	rights = R_EVENT
 	timeout = 0
@@ -427,6 +404,7 @@ CAPABILITIES(/datum/prompt/choice/admin_body_effect)
 	max_value = INFINITY
 	step = 1
 	var/modifier_type
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/number/admin_body_effect)
 	ref_one(nameof(living_target), /mob/living)
@@ -442,12 +420,6 @@ CAPABILITIES(/datum/prompt/number/admin_body_effect)
 	if(.)
 		return
 	return QDELETED(living_target) ? "target is gone" : null
-
-/datum/prompt/number/admin_body_effect/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /datum/prompt/number/admin_body_effect/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
@@ -519,9 +491,7 @@ ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a si
 /datum/admin_verb/rename_silicon/proc/silicon_selected(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(ask_silicon_name), A)
-	if(!result.ok)
-		stack_trace("om flow rename_silicon answer silicon_selected: [result.error]")
+	ask_silicon_name(A)
 
 /datum/admin_verb/rename_silicon/proc/ask_silicon_name(datum/act/request/A)
 	var/mob/living/silicon/silicon_target = A.request.answer_value
@@ -530,9 +500,7 @@ ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a si
 /datum/admin_verb/rename_silicon/proc/silicon_named(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(rename_answered), A)
-	if(!result.ok)
-		stack_trace("om flow rename_silicon answer silicon_named: [result.error]")
+	rename_answered(A)
 
 /datum/admin_verb/rename_silicon/proc/rename_answered(datum/act/request/A)
 	var/datum/prompt/text/admin_silicon_name/ask = A.request
@@ -554,9 +522,7 @@ ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows 
 /datum/admin_verb/manage_silicon_laws/proc/law_target_selected(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(open_law_manager), A)
-	if(!result.ok)
-		stack_trace("om flow manage_silicon_laws answer law_target_selected: [result.error]")
+	open_law_manager(A)
 
 /datum/admin_verb/manage_silicon_laws/proc/open_law_manager(datum/act/request/A)
 	var/mob/living/silicon/selected_silicon = A.request.answer_value
@@ -575,9 +541,7 @@ ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets t
 /datum/admin_verb/change_security_level/proc/level_selected(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(confirm_level), A)
-	if(!result.ok)
-		stack_trace("om flow change_security_level answer level_selected: [result.error]")
+	confirm_level(A)
 
 /datum/admin_verb/change_security_level/proc/confirm_level(datum/act/request/A)
 	var/sec_level = A.request.answer_value
@@ -588,9 +552,7 @@ ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets t
 /datum/admin_verb/change_security_level/proc/level_confirmed(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_level), A)
-	if(!result.ok)
-		stack_trace("om flow change_security_level answer level_confirmed: [result.error]")
+	apply_level(A)
 
 /datum/admin_verb/change_security_level/proc/apply_level(datum/act/request/A)
 	var/datum/prompt/choice/admin_security_level/confirmation/ask = A.request
@@ -642,9 +604,7 @@ ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with i
 	open_request(src, /datum/prompt/choice/admin_man_up, PROC_REF(target_chosen), answerer = answerer, question = "Who to tell to man up and deal with it.", title = "Man up", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 
 /datum/admin_verb/man_up/proc/target_chosen(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(ask_target_confirmation), A)
-	if(!result.ok)
-		stack_trace("om flow man_up answer target_chosen: [result.error]")
+	ask_target_confirmation(A)
 
 /datum/admin_verb/man_up/proc/ask_target_confirmation(datum/act/request/A)
 	if(!A.answer)
@@ -655,9 +615,7 @@ ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with i
 	open_request(src, /datum/prompt/choice/admin_man_up/confirmation, PROC_REF(target_confirmed), answerer = A.request.answerer, question = "Are you sure you want to tell them to man up?", title = "Confirmation", choices = list("Deal with it", "No"), buttons = TRUE, target = living_target)
 
 /datum/admin_verb/man_up/proc/target_confirmed(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(tell_target), A)
-	if(!result.ok)
-		stack_trace("om flow man_up answer target_confirmed: [result.error]")
+	tell_target(A)
 
 /datum/admin_verb/man_up/proc/tell_target(datum/act/request/A)
 	if(!A.answer || A.request.answer_value != "Deal with it")
@@ -677,9 +635,7 @@ ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man
 	open_request(src, /datum/prompt/choice/admin_man_up, PROC_REF(everyone_confirmed), answerer = answerer, question = "Are you sure you want to tell the whole server up?", title = "Confirmation", choices = list("Deal with it", "No"), buttons = TRUE)
 
 /datum/admin_verb/global_man_up/proc/everyone_confirmed(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(tell_everyone), A)
-	if(!result.ok)
-		stack_trace("om flow global_man_up answer everyone_confirmed: [result.error]")
+	tell_everyone(A)
 
 /datum/admin_verb/global_man_up/proc/tell_everyone(datum/act/request/A)
 	if(!A.answer || A.request.answer_value != "Deal with it")
@@ -698,9 +654,7 @@ ADMIN_VERB(give_spell, R_FUN, "Give Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CAT
 	open_request(src, /datum/prompt/choice/admin_spell, PROC_REF(spell_given), answerer = answerer, question = "Choose the spell to give to that guy", title = "ABRAKADABRA", choices = typesof(/datum/spell), target_mob = spell_recipient)
 
 /datum/admin_verb/give_spell/proc/spell_given(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(give_spell_answered), A)
-	if(!result.ok)
-		stack_trace("om flow give_spell answer give_spell_answered: [result.error]")
+	give_spell_answered(A)
 
 /datum/admin_verb/give_spell/proc/give_spell_answered(datum/act/request/A)
 	if(!A.answer)
@@ -730,9 +684,7 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 	open_request(src, /datum/prompt/choice/admin_spell, PROC_REF(spell_removed), answerer = answerer, question = "Choose the spell to remove from [removal_target]", title = "ABRAKADABRA", choices = sortList(target_spell_list), target_mob = removal_target)
 
 /datum/admin_verb/remove_spell/proc/spell_removed(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(remove_spell_answered), A)
-	if(!result.ok)
-		stack_trace("om flow remove_spell answer remove_spell_answered: [result.error]")
+	remove_spell_answered(A)
 
 /datum/admin_verb/remove_spell/proc/remove_spell_answered(datum/act/request/A)
 	if(!A.answer)
@@ -762,6 +714,7 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 	timeout = 0
 	var/mob/target_mob
 	var/target_expected = FALSE
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/choice/admin_spell)
 	ref_one(nameof(target_mob), /mob)
@@ -778,12 +731,6 @@ CAPABILITIES(/datum/prompt/choice/admin_spell)
 	if(.)
 		return
 	return target_expected && QDELETED(target_mob) ? "target is gone" : null
-
-/datum/prompt/choice/admin_spell/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 ADMIN_VERB(debug_statpanel, R_DEBUG, "Debug Stat Panel", "Toggles local debug of the stat panel.", ADMIN_CATEGORY_DEBUG_MISC)
 	user.stat_panel.send_message("create_debug")
@@ -815,9 +762,7 @@ ADMIN_VERB(add_hidden_area, R_ADMIN|R_FUN, "Add Ghostsight Block Area", "Blocks 
 	open_request(src, /datum/prompt/choice/admin_ghostsight_area, PROC_REF(area_hidden), answerer = answerer, question = "Pick an area to hide from ghost", title = "Select Area to hide", choices = blocked_areas)
 
 /datum/admin_verb/add_hidden_area/proc/area_hidden(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(area_answered), A)
-	if(!result.ok)
-		stack_trace("om flow add_hidden_area answer area_answered: [result.error]")
+	area_answered(A)
 
 /datum/admin_verb/add_hidden_area/proc/area_answered(datum/act/request/A)
 	if(!A.answer)
@@ -850,9 +795,7 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 	open_request(src, /datum/prompt/choice/admin_ghostsight_area, PROC_REF(area_revealed), answerer = answerer, question = "Pick a from ghost hidden area to let them see it again", title = "Select Hidden Area", choices = blocked_areas)
 
 /datum/admin_verb/remove_hidden_area/proc/area_revealed(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(area_answered), A)
-	if(!result.ok)
-		stack_trace("om flow remove_hidden_area answer area_answered: [result.error]")
+	area_answered(A)
 
 /datum/admin_verb/remove_hidden_area/proc/area_answered(datum/act/request/A)
 	if(!A.answer)
@@ -1002,9 +945,7 @@ ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/
 	open_request(src, /datum/prompt/choice/admin_recolour_grant, PROC_REF(recolour_chosen), answerer = answerer)
 
 /datum/admin_verb/toggle_spawning_with_recolour/proc/recolour_chosen(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(apply_recolour_choice), A)
-	if(!result.ok)
-		stack_trace("om flow toggle_spawning_with_recolour answer recolour_chosen: [result.error]")
+	apply_recolour_choice(A)
 
 /datum/admin_verb/toggle_spawning_with_recolour/proc/apply_recolour_choice(datum/act/request/A)
 	if(!A.answer)
@@ -1025,16 +966,12 @@ ADMIN_VERB(modify_shift_end, (R_ADMIN|R_EVENT|R_SERVER), "Modify Shift End", "Mo
 /datum/prompt/choice/admin_ghostsight_area
 	rights = R_ADMIN|R_FUN
 	timeout = 0
-
-/datum/prompt/choice/admin_ghostsight_area/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_man_up
 	rights = R_ADMIN|R_FUN
 	timeout = 0
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_man_up/recheck_extra()
 	. = ..()
@@ -1043,12 +980,6 @@ ADMIN_VERB(modify_shift_end, (R_ADMIN|R_EVENT|R_SERVER), "Modify Shift End", "Mo
 	if(istype(answer_value, /datum))
 		var/datum/picked = answer_value
 		return QDELETED(picked) ? "target is gone" : null
-
-/datum/prompt/choice/admin_man_up/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /datum/prompt/choice/admin_man_up/confirmation
 	var/mob/living/target
@@ -1075,29 +1006,21 @@ CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation)
 	title = "Choose Recolour Toggle"
 	buttons = TRUE
 	choices = list("Robot", "Simple Mob")
-
-/datum/prompt/choice/admin_recolour_grant/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_stealth_name
 	rights = R_STEALTH
 	timeout = 0
 	question = "Enter your desired display name."
 	title = "Fake Key"
+	recheck_on_open = TRUE
 
-/datum/prompt/text/admin_stealth_name/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 /datum/prompt/choice/admin_silicon_rename
 	rights = R_ADMIN|R_FUN|R_EVENT
 	timeout = 0
 	question = "Select silicon."
 	title = "Rename Silicon."
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_silicon_rename/recheck_extra()
 	. = ..()
@@ -1107,18 +1030,13 @@ CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation)
 		var/mob/living/silicon/picked = answer_value
 		return QDELETED(picked) ? "target is gone" : null
 
-/datum/prompt/choice/admin_silicon_rename/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/text/admin_silicon_name
 	rights = R_ADMIN|R_FUN|R_EVENT
 	timeout = 0
 	question = "Enter new name. Leave blank or as is to cancel."
 	encode = FALSE
 	var/mob/living/silicon/target
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	ref_one(nameof(target), /mob/living/silicon)
@@ -1135,17 +1053,12 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 		return
 	return QDELETED(target) ? "target is gone" : null
 
-/datum/prompt/text/admin_silicon_name/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_law_target
 	rights = R_ADMIN|R_EVENT
 	timeout = 0
 	question = "Select silicon."
 	title = "Manage Silicon Laws"
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_law_target/recheck_extra()
 	. = ..()
@@ -1155,21 +1068,10 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 		var/mob/living/silicon/picked = answer_value
 		return QDELETED(picked) ? "target is gone" : null
 
-/datum/prompt/choice/admin_law_target/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_security_level
 	rights = R_ADMIN|R_EVENT
 	timeout = 0
-
-/datum/prompt/choice/admin_security_level/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_security_level/confirmation
 	title = "Change security level?"

@@ -218,12 +218,7 @@ ADMIN_VERB(ReleaseVirus, R_SPAWN|R_EVENT, "Release Virus", "Release a pre-set vi
 	rights = R_SPAWN|R_EVENT
 	timeout = 0
 	var/disease_type
-
-/datum/prompt/choice/admin_release_virus/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/admin_verb/ReleaseVirus/proc/disease_chosen(datum/act/request/A)
 	if(!A.answer)

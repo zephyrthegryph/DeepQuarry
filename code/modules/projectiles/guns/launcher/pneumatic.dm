@@ -47,10 +47,7 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	var/datum/prompt/choice/pneumatic_pressure/request = A.request
 	if(request.captures_gone())
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_pneumatic_pressure), A)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = apply_pneumatic_pressure(A)
 	SStgui.update_uis(src)
 
 /obj/item/gun/launcher/pneumatic/proc/apply_pneumatic_pressure(datum/act/request/A)

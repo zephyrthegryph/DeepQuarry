@@ -182,10 +182,7 @@ CAPABILITIES(/obj/item/pickaxe/excavationdrill)
 	var/datum/prompt/number/excavation_depth/request = A.request
 	if(request.captures_gone())
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_excavation_depth), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = apply_excavation_depth(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/pickaxe/excavationdrill/proc/apply_excavation_depth(mob/user, depth)

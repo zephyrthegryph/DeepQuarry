@@ -232,11 +232,9 @@
 /mob/living/proc/personal_mass_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(personal_mass_apply), A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("personal mass adjustment: [result.error]")
+	. = personal_mass_apply(A.answer.answer_value)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /mob/living/proc/personal_mass_apply(new_size)
 	if(size_range_check(new_size))

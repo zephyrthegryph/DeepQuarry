@@ -150,10 +150,7 @@
 /mob/living/proc/rainbow_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_rainbow_target_chosen), A)
-	if(!result.ok)
-		stack_trace("Living request: [result.error]")
-	return result.value
+	return apply_rainbow_target_chosen(A)
 
 /mob/living/proc/apply_rainbow_target_chosen(datum/act/request/A)
 	var/mob/living/carbon/human/chosen_target = A.answer.answer_value

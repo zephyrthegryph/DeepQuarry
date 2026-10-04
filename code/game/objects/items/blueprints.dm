@@ -491,9 +491,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 		if(isnull(ask.answer_value) && ask.captures_live())
 			to_chat(ask.answerer, span_warning("No choice selected. No adjustments made."))
 		return
-	var/datum/result/result = safe_call(PROC_REF(create_area_chosen_apply), context)
-	if(!result.ok)
-		stack_trace("om prompt choice/blueprint_expand answer create_area_chosen: [result.error]")
+	create_area_chosen_apply(context)
 
 /obj/item/areaeditor/proc/create_area_chosen_apply(datum/act/request/context)
 	var/datum/prompt/choice/blueprint_expand/ask = context.request
@@ -506,9 +504,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /obj/item/areaeditor/proc/create_area_named(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(create_area_named_apply), context)
-	if(!result.ok)
-		stack_trace("om prompt text/blueprint_area_name answer create_area_named: [result.error]")
+	create_area_named_apply(context)
 
 /obj/item/areaeditor/proc/create_area_named_apply(datum/act/request/context)
 	var/datum/prompt/text/blueprint_area_name/ask = context.request
@@ -618,9 +614,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 		if(isnull(ask.answer_value) && ask.captures_live())
 			to_chat(ask.answerer, span_warning("No changes made."))
 		return
-	var/datum/result/result = safe_call(PROC_REF(whole_area_chosen_apply), context)
-	if(!result.ok)
-		stack_trace("om prompt choice/blueprint_whole_area answer whole_area_chosen: [result.error]")
+	whole_area_chosen_apply(context)
 
 /obj/item/areaeditor/proc/whole_area_chosen_apply(datum/act/request/context)
 	var/datum/prompt/choice/blueprint_whole_area/ask = context.request
@@ -638,9 +632,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /obj/item/areaeditor/proc/whole_area_named(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(whole_area_named_apply), context)
-	if(!result.ok)
-		stack_trace("om prompt text/blueprint_area_name answer whole_area_named: [result.error]")
+	whole_area_named_apply(context)
 
 /obj/item/areaeditor/proc/whole_area_named_apply(datum/act/request/context)
 	var/datum/prompt/text/blueprint_area_name/ask = context.request
@@ -664,9 +656,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 		if((isnull(ask.answer_value) || ask.answer_value == "No") && ask.captures_live())
 			to_chat(ask.answerer, span_warning("No changes made."))
 		return
-	var/datum/result/result = safe_call(PROC_REF(whole_area_confirmed_apply), context)
-	if(!result.ok)
-		stack_trace("om prompt confirm/blueprint_whole_area answer whole_area_confirmed: [result.error]")
+	whole_area_confirmed_apply(context)
 
 /obj/item/areaeditor/proc/whole_area_confirmed_apply(datum/act/request/context)
 	var/datum/prompt/choice/blueprint_whole_confirm/ask = context.request
@@ -939,9 +929,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 		if(isnull(ask.answer_value) && ask.captures_live())
 			to_chat(ask.answerer, span_warning("No new area made. Cancelling."))
 		return
-	var/datum/result/result = safe_call(PROC_REF(create_new_area_named_apply), context)
-	if(!result.ok)
-		stack_trace("om prompt blueprint_new_area answer create_new_area_named: [result.error]")
+	create_new_area_named_apply(context)
 
 /mob/proc/create_new_area_named_apply(datum/act/request/context)
 	var/datum/prompt/text/blueprint_new_area/ask = context.request

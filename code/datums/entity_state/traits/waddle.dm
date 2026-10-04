@@ -155,11 +155,9 @@
 /mob/living/proc/waddle_settings_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(waddle_settings_apply), A)
-	if(!result.ok)
-		stack_trace("waddle configuration: [result.error]")
+	. = waddle_settings_apply(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /mob/living/proc/waddle_settings_apply(datum/act/request/A)
 	var/datum/prompt/number/waddle_settings/ask = A.answer

@@ -220,9 +220,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/rig, PROC_REF(on_emag), null)
 /obj/item/rig/proc/maintenance_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_maintenance_answer), A)
-	if(!result.ok)
-		stack_trace("RIG maintenance request: [result.error]")
+	apply_maintenance_answer(A)
 	SStgui.update_uis(src)
 
 /obj/item/rig/proc/apply_maintenance_answer(datum/act/request/A)

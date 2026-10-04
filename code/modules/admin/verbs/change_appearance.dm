@@ -84,9 +84,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 			open_request(src, /datum/prompt/choice/admin_edit_new_gender, PROC_REF(answered), answerer = actor)
 
 /datum/admin_edit_appearance_review/proc/answered(datum/act/request/context)
-	var/datum/result/result = safe_call(PROC_REF(continue_edit), context)
-	if(!result.ok)
-		stack_trace("om flow editappear answer continue_edit: [result.error]")
+	continue_edit(context)
 		retire()
 
 /datum/admin_edit_appearance_review/proc/continue_edit(datum/act/request/context)
@@ -174,6 +172,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	timeout = 0
 	question = "Select mob."
 	title = "Edit Appearance"
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_edit_target/recheck_extra()
 	. = ..()
@@ -187,12 +186,6 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 		var/mob/living/carbon/human/picked = answer_value
 		return QDELETED(picked) ? "target is gone" : null
 
-/datum/prompt/choice/admin_edit_target/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_edit_confirm
 	rights = R_FUN
 	timeout = 0
@@ -200,6 +193,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	title = "Danger!"
 	choices = list("Yes","No")
 	buttons = TRUE
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_edit_confirm/recheck_extra()
 	. = ..()
@@ -208,17 +202,12 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
 
-/datum/prompt/choice/admin_edit_confirm/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/color/admin_edit_new_facial
 	rights = R_FUN
 	timeout = 0
 	question = "Please select facial hair color."
 	title = "Character Generation"
+	recheck_on_open = TRUE
 
 /datum/prompt/color/admin_edit_new_facial/recheck_extra()
 	. = ..()
@@ -227,17 +216,12 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
 
-/datum/prompt/color/admin_edit_new_facial/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/color/admin_edit_new_hair
 	rights = R_FUN
 	timeout = 0
 	question = "Please select hair color."
 	title = "Character Generation"
+	recheck_on_open = TRUE
 
 /datum/prompt/color/admin_edit_new_hair/recheck_extra()
 	. = ..()
@@ -246,17 +230,12 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
 
-/datum/prompt/color/admin_edit_new_hair/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/color/admin_edit_new_eyes
 	rights = R_FUN
 	timeout = 0
 	question = "Please select eye color."
 	title = "Character Generation"
+	recheck_on_open = TRUE
 
 /datum/prompt/color/admin_edit_new_eyes/recheck_extra()
 	. = ..()
@@ -265,17 +244,12 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
 
-/datum/prompt/color/admin_edit_new_eyes/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/color/admin_edit_new_skin
 	rights = R_FUN
 	timeout = 0
 	question = "Please select body color. This is for Tajaran, Unathi, and Skrell only!"
 	title = "Character Generation"
+	recheck_on_open = TRUE
 
 /datum/prompt/color/admin_edit_new_skin/recheck_extra()
 	. = ..()
@@ -283,12 +257,6 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 		return
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
-
-/datum/prompt/color/admin_edit_new_skin/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /datum/prompt/number/admin_edit_new_tone
 	rights = R_FUN
@@ -298,6 +266,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	min_value = null
 	max_value = null
 	step = null
+	recheck_on_open = TRUE
 
 /datum/prompt/number/admin_edit_new_tone/recheck_extra()
 	. = ..()
@@ -305,12 +274,6 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 		return
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
-
-/datum/prompt/number/admin_edit_new_tone/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /datum/prompt/number/admin_edit_new_tone/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, 220, 1, timeout, TRUE, GLOB.tgui_always_state)
@@ -323,6 +286,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	timeout = 0
 	question = "Select a hair style"
 	title = "Grooming"
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_edit_new_hstyle/recheck_extra()
 	. = ..()
@@ -331,17 +295,12 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
 
-/datum/prompt/choice/admin_edit_new_hstyle/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_edit_new_fstyle
 	rights = R_FUN
 	timeout = 0
 	question = "Select a facial hair style"
 	title = "Grooming"
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_edit_new_fstyle/recheck_extra()
 	. = ..()
@@ -350,12 +309,6 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
 
-/datum/prompt/choice/admin_edit_new_fstyle/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_edit_new_gender
 	rights = R_FUN
 	timeout = 0
@@ -363,6 +316,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	title = "Character Generation"
 	choices = list("Male","Female","Neuter")
 	buttons = TRUE
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_edit_new_gender/recheck_extra()
 	. = ..()
@@ -371,18 +325,10 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
 
-/datum/prompt/choice/admin_edit_new_gender/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/admin_verb/change_human_appearance_admin/proc/appearance_target_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(open_appearance_editor), context)
-	if(!result.ok)
-		stack_trace("om flow change_human_appearance_admin answer open_appearance_editor: [result.error]")
+	open_appearance_editor(context)
 
 /datum/admin_verb/change_human_appearance_admin/proc/open_appearance_editor(datum/act/request/context)
 	var/mob/living/carbon/human/target_human = context.request.answer_value
@@ -396,6 +342,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	timeout = 0
 	title = "Change Mob Appearance - Admin"
 	question = "Select mob."
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_appearance_target/recheck_extra()
 	. = ..()
@@ -409,8 +356,3 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	if(QDELETED(picked))
 		return "The selected human is no longer available."
 
-/datum/prompt/choice/admin_appearance_target/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

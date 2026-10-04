@@ -299,9 +299,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
 			SStgui.update_uis(src)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_label), A)
-	if(!result.ok)
-		stack_trace("Mining drill label request: [result.error]")
+	apply_label(A)
 	SStgui.update_uis(src)
 
 /obj/machinery/mining/drill/proc/apply_label(datum/act/request/A)

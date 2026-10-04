@@ -155,10 +155,7 @@ UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
 /mob/new_player/proc/observe_confirmed(datum/act/request/A)
 	if(!A.answer || A.answer.answer_value != "Yes")
 		return
-	var/datum/result/result = safe_call(PROC_REF(observe_apply))
-	if(!result.ok)
-		stack_trace("lobby observe confirmation: [result.error]")
-	return result.value
+	return observe_apply()
 
 /mob/new_player/proc/observe_apply()
 	if(!spawning)

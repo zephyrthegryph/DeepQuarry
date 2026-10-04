@@ -957,9 +957,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 /obj/item/survivalcapsule/superpose/proc/template_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_template_answer), A)
-	if(!result.ok)
-		stack_trace("Shelter template request: [result.error]")
+	apply_template_answer(A)
 	SStgui.update_uis(src)
 
 /obj/item/survivalcapsule/superpose/proc/apply_template_answer(datum/act/request/A)

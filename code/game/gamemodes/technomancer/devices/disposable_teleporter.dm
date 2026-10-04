@@ -41,10 +41,7 @@ CAPABILITIES(/obj/item/disposable_teleporter)
 /obj/item/disposable_teleporter/proc/teleport_area_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(teleport_area_chosen_apply), A)
-	if(!result.ok)
-		stack_trace("technomancer teleport_area_chosen: [result.error]")
-	return result.value
+	return teleport_area_chosen_apply(A)
 
 /obj/item/disposable_teleporter/proc/teleport_area_chosen_apply(datum/act/request/request_act)
 	var/datum/prompt/choice/technomancer_carried/ask = request_act.answer

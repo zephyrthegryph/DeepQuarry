@@ -41,9 +41,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	var/datum/prompt/choice/extraction_beacon/request = A.request
 	if(!A.answer || request.captures_gone())
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_beacon_selection), A)
-	if(!result.ok)
-		stack_trace("Extraction beacon request: [result.error]")
+	apply_beacon_selection(A)
 	SStgui.update_uis(src)
 
 /obj/item/extraction_pack/proc/apply_beacon_selection(datum/act/request/A)

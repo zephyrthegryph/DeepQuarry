@@ -35,10 +35,7 @@
 /obj/structure/portal_event/resize/proc/ask_size_mode(datum/act/request/A)
 	if(!A.answer || A.answer.answer_value != "Yes")
 		return
-	var/datum/result/result = safe_call(PROC_REF(open_size_mode), A.request.answerer)
-	if(!result.ok)
-		stack_trace("Portal size mode request: [result.error]")
-	return result.value
+	return open_size_mode(A.request.answerer)
 
 /obj/structure/portal_event/resize/proc/open_size_mode(mob/user)
 	open_request(src, /datum/prompt/choice, PROC_REF(ask_size_limit), answerer = user, title = "Change portal size settings", question = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", choices = list("Shrink","Grow"), buttons = TRUE, rights = R_HOLDER, timeout = 0)
@@ -51,10 +48,7 @@
 /obj/structure/portal_event/resize/proc/size_settings_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_size_settings), A)
-	if(!result.ok)
-		stack_trace("Portal size limit request: [result.error]")
-	return result.value
+	return apply_size_settings(A)
 
 /obj/structure/portal_event/resize/proc/apply_size_settings(datum/act/request/A)
 	var/datum/prompt/number/portal_size_limit/ask = A.request

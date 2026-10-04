@@ -192,10 +192,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 /obj/item/soulstone/proc/construct_type_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_construct_type_chosen), A)
-	if(!result.ok)
-		stack_trace("Soulstone construct request: [result.error]")
-	return result.value
+	return apply_construct_type_chosen(A)
 
 /obj/item/soulstone/proc/apply_construct_type_chosen(datum/act/request/answer)
 	var/datum/request/ask = answer.request

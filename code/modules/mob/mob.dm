@@ -339,10 +339,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/flavor_text_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(flavor_text_apply), A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("flavor text update: [result.error]")
-	return result.value
+	return flavor_text_apply(A.answer.answer_value)
 
 /mob/proc/flavor_text_apply(new_text)
 	flavor_text = new_text
@@ -556,10 +553,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/observe_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(observe_target_apply), A)
-	if(!result.ok)
-		stack_trace("observer target selection: [result.error]")
-	return result.value
+	return observe_target_apply(A)
 
 /mob/proc/observe_target_apply(datum/act/request/A)
 	var/datum/prompt/choice/observe_target/ask = A.answer
@@ -982,10 +976,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 /mob/proc/yank_object_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(yank_object_apply), A)
-	if(!result.ok)
-		stack_trace("embedded object selection: [result.error]")
-	return result.value
+	return yank_object_apply(A)
 
 /mob/proc/yank_object_apply(datum/act/request/A)
 	var/datum/prompt/choice/yank_object/ask = A.answer
@@ -1398,12 +1389,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	default = "neutral"
 	timeout = 0
 	rights = R_HOLDER
-
-/datum/prompt/text/vv_ai_faction/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/vv_ai_stance
 	title = "AI combat mode"
@@ -1412,12 +1398,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	timeout = 0
 	rights = R_HOLDER
 	var/faction
-
-/datum/prompt/choice/vv_ai_stance/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/vv_ai_wake
 	title = "Wake mob?"
@@ -1428,20 +1409,12 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	rights = R_HOLDER
 	var/faction
 	var/stance
-
-/datum/prompt/choice/vv_ai_wake/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /mob/proc/vv_language_added(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_language_added_apply), A)
-	if(!result.ok)
-		stack_trace("VV language_added: [result.error]")
-	return result.value
+	return vv_language_added_apply(A)
 
 /mob/proc/vv_language_added_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_spawn/ask = A.answer
@@ -1455,10 +1428,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_language_removed(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_language_removed_apply), A)
-	if(!result.ok)
-		stack_trace("VV language_removed: [result.error]")
-	return result.value
+	return vv_language_removed_apply(A)
 
 /mob/proc/vv_language_removed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_spawn/ask = A.answer
@@ -1472,10 +1442,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_verb_added(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_verb_added_apply), A)
-	if(!result.ok)
-		stack_trace("VV verb_added: [result.error]")
-	return result.value
+	return vv_verb_added_apply(A)
 
 /mob/proc/vv_verb_added_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_debug/ask = A.answer
@@ -1488,10 +1455,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_verb_removed(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_verb_removed_apply), A)
-	if(!result.ok)
-		stack_trace("VV verb_removed: [result.error]")
-	return result.value
+	return vv_verb_removed_apply(A)
 
 /mob/proc/vv_verb_removed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_debug/ask = A.answer
@@ -1502,10 +1466,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_organ_added(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_organ_added_apply), A)
-	if(!result.ok)
-		stack_trace("VV organ_added: [result.error]")
-	return result.value
+	return vv_organ_added_apply(A)
 
 /mob/proc/vv_organ_added_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_spawn/ask = A.answer
@@ -1520,10 +1481,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_organ_removed(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_organ_removed_apply), A)
-	if(!result.ok)
-		stack_trace("VV organ_removed: [result.error]")
-	return result.value
+	return vv_organ_removed_apply(A)
 
 /mob/proc/vv_organ_removed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_spawn/ask = A.answer
@@ -1541,10 +1499,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_ai_faction_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_ai_faction_apply), A)
-	if(!result.ok)
-		stack_trace("VV AI faction: [result.error]")
-	return result.value
+	return vv_ai_faction_apply(A)
 
 /mob/proc/vv_ai_faction_apply(datum/act/request/A)
 	open_request(src, /datum/prompt/choice/vv_ai_stance, PROC_REF(vv_ai_stance_chosen), answerer = A.answer.answerer, faction = A.answer.answer_value)
@@ -1552,10 +1507,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_ai_stance_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_ai_stance_apply), A)
-	if(!result.ok)
-		stack_trace("VV AI combat stance: [result.error]")
-	return result.value
+	return vv_ai_stance_apply(A)
 
 /mob/proc/vv_ai_stance_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_ai_stance/ask = A.answer
@@ -1564,10 +1516,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_ai_configured(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_ai_configure_apply), A)
-	if(!result.ok)
-		stack_trace("VV AI configuration: [result.error]")
-	return result.value
+	return vv_ai_configure_apply(A)
 
 /mob/proc/vv_ai_configure_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_ai_wake/ask = A.answer

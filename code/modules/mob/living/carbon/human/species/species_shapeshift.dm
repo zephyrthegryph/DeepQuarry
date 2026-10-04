@@ -118,12 +118,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	shapeshifter_ask_hair(valid_hairstyles, valid_gradstyles, valid_facialhairstyles)
 
 /// Hair, gradient and facial hair styles in turn (each only if there are any to pick).
-/datum/prompt/choice/shapeshift_hair/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/shapeshift_hair
 	title = "Shapeshifter Hair"
 	timeout = 0
@@ -132,6 +126,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	var/list/facials
 	var/hair
 	var/gradient
+	recheck_on_open = TRUE
 
 /mob/living/carbon/human/proc/shapeshifter_ask_hair(list/hairs, list/grads, list/facials)
 	if(!length(hairs))
@@ -460,16 +455,11 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	open_request(src, /datum/prompt/choice/shapeshift_accessory, PROC_REF(shapeshifter_accessory_style_picked), answerer = src, question = I["pick"], title = "Character Preference", choices = pretty_styles, kind = kind)
 
 /// An accessory style, then its colours and alpha; each colour and the alpha can be skipped.
-/datum/prompt/choice/shapeshift_accessory/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/shapeshift_accessory
 	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 	var/kind
+	recheck_on_open = TRUE
 
 /datum/prompt/color/shapeshift_accessory
 	timeout = 0
@@ -634,24 +624,13 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 			defaults += LAZYACCESS(ear_secondary_colors, channel) || "#ffffff"
 	shapeshifter_next_secondary_ear_channel(defaults, list(), 0)
 
-/datum/prompt/color/shapeshift_secondary_ears/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/color/shapeshift_secondary_ears
 	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 	var/list/defaults
 	var/list/new_colors
 	var/channel
-
-/datum/prompt/number/shapeshift_secondary_ears/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/number/shapeshift_secondary_ears
 	timeout = 0
@@ -660,6 +639,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	max_value = 255
 	step = 1
 	var/list/new_colors
+	recheck_on_open = TRUE
 
 /mob/living/carbon/human/proc/shapeshifter_next_secondary_ear_channel(list/defaults, list/new_colors, channel)
 	channel++
@@ -752,18 +732,13 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_confirmed), answerer = src, title = "Reformation", question = "Do you want to copy the appearance data of your currently loaded save slot?", choices = list("Reform", "Cancel"), finish_proc = PROC_REF(shapeshifter_regenerate_answered))
 
 /// "Are you sure?", then whether to include flavour text and OOC notes.
-/datum/prompt/choice/shapeshift_reform/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/shapeshift_reform
 	timeout = 0
 	buttons = TRUE
 	ask_flags = ASK_CONSCIOUS
 	var/finish_proc
 	var/flavour
+	recheck_on_open = TRUE
 
 /mob/living/carbon/human/proc/shapeshifter_reform_confirmed(datum/act/request/A)
 	if(!A.answer || A.request.answer_value == "Cancel")
@@ -899,9 +874,7 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 	return null
 
 /mob/living/carbon/human/proc/shapeshifter_copy_consent_given(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(shapeshifter_copy_consent_step), A)
-	if(!result.ok)
-		stack_trace("copy body consent step: [result.error]")
+	shapeshifter_copy_consent_step(A)
 
 /mob/living/carbon/human/proc/shapeshifter_copy_consent_step(datum/act/request/A)
 	var/datum/prompt/yes_no/copy_body_consent/ask = A.request
@@ -919,9 +892,7 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 	open_request(src, /datum/prompt/choice/copy_body_flavour, PROC_REF(shapeshifter_copy_flavour_picked), answerer = src, question = "Copy [ask.victim]'s flavourtext?", choices = list("Yes", "No", "Cancel"), victim = ask.victim)
 
 /mob/living/carbon/human/proc/shapeshifter_copy_flavour_picked(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(shapeshifter_copy_flavour_step), A)
-	if(!result.ok)
-		stack_trace("copy body flavour step: [result.error]")
+	shapeshifter_copy_flavour_step(A)
 
 /mob/living/carbon/human/proc/shapeshifter_copy_flavour_step(datum/act/request/A)
 	var/datum/prompt/choice/copy_body_flavour/ask = A.request

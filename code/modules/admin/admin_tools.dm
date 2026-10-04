@@ -13,9 +13,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 	open_request(src, /datum/prompt/choice/admin_persistent_logs, PROC_REF(persistent_logs_chosen), answerer = answerer, choices = persistent_clients_by_ckey())
 
 /datum/admin_verb/persistent_client_logs/proc/persistent_logs_chosen(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(persistent_logs_answered), A)
-	if(!result.ok)
-		stack_trace("om flow persistent_client_logs answer persistent_logs_answered: [result.error]")
+	persistent_logs_answered(A)
 
 /datum/admin_verb/persistent_client_logs/proc/persistent_logs_answered(datum/act/request/A)
 	if(!A.answer)
@@ -36,12 +34,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 	title = "Ckey"
 	rights = R_ADMIN|R_MOD
 	timeout = 0
-
-/datum/prompt/choice/admin_persistent_logs/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/player_log_viwer
 	var/list/log_data

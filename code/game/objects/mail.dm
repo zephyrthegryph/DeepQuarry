@@ -348,10 +348,7 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 /client/proc/spawn_mail_type_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_spawn_mail_type_picked), A)
-	if(!result.ok)
-		stack_trace("Spawn mail request: [result.error]")
-	return result.value
+	return apply_spawn_mail_type_picked(A)
 
 /client/proc/apply_spawn_mail_type_picked(datum/act/request/A)
 	spawn_mail_type_chosen(A.answer.answer_value)
@@ -367,10 +364,7 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 /client/proc/spawn_mail_recipient_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_spawn_mail_recipient_picked), A)
-	if(!result.ok)
-		stack_trace("Spawn mail request: [result.error]")
-	return result.value
+	return apply_spawn_mail_recipient_picked(A)
 
 /client/proc/apply_spawn_mail_recipient_picked(datum/act/request/A)
 	var/datum/prompt/choice/admin_mail/ask = A.request
@@ -381,10 +375,7 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 /client/proc/spawn_mail_finish(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_spawn_mail_finish), A)
-	if(!result.ok)
-		stack_trace("Spawn mail request: [result.error]")
-	return result.value
+	return apply_spawn_mail_finish(A)
 
 /client/proc/apply_spawn_mail_finish(datum/act/request/A)
 	var/datum/prompt/choice/admin_mail/ask = A.request

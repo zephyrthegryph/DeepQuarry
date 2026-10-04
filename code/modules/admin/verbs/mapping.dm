@@ -131,17 +131,13 @@ ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts 
 /datum/admin_verb/count_objects_on_z_level/proc/level_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(count_level), A.request.answerer.client, A.request.answer_value)
-	if(!result.ok)
-		stack_trace("om flow count_objects_on_z_level answer level_answered: [result.error]")
+	count_level(A.request.answerer.client, A.request.answer_value)
 
 /datum/admin_verb/count_objects_on_z_level/proc/path_answered(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/datum/prompt/text/admin_count_level/type_path/ask = A.request
-	var/datum/result/result = safe_call(PROC_REF(count_level), ask.answerer.client, ask.level, ask.answer_value, TRUE)
-	if(!result.ok)
-		stack_trace("om flow count_objects_on_z_level answer path_answered: [result.error]")
+	count_level(ask.answerer.client, ask.level, ask.answer_value, TRUE)
 
 /datum/admin_verb/count_objects_on_z_level/proc/count_level(client/user, level, type_text = null, answered = FALSE)
 	if(!level)
@@ -194,9 +190,7 @@ ADMIN_VERB(count_objects_all, R_DEBUG, "Count Objects All", "Count all objects b
 /datum/admin_verb/count_objects_all/proc/count_type_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(count_selected_type), A)
-	if(!result.ok)
-		stack_trace("om flow count_objects_all answer count_type_answered: [result.error]")
+	count_selected_type(A)
 
 /datum/admin_verb/count_objects_all/proc/count_selected_type(datum/act/request/answer)
 	var/type_text = answer.request.answer_value
@@ -227,24 +221,14 @@ ADMIN_VERB(disable_mapping_verbs, R_DEBUG, "Disable Mapping Verbs", "Disable all
 	rights = R_DEBUG
 	timeout = 0
 	question = "Which type path?"
-
-/datum/prompt/text/admin_count_type/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_count_level
 	rights = R_DEBUG
 	timeout = 0
 	question = "Which z-level?"
 	title = "Level?"
-
-/datum/prompt/text/admin_count_level/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_count_level/type_path
 	question = "Which type path?"

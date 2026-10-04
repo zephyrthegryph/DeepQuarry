@@ -33,9 +33,7 @@ ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs
 	open_request(src, /datum/prompt/choice/admin_investigation, PROC_REF(investigation_subject_chosen), answerer = answerer, choices = list("hrefs","notes","singulo","telesci"))
 
 /datum/admin_verb/investigate_show/proc/investigation_subject_chosen(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(investigation_subject_answered), A)
-	if(!result.ok)
-		stack_trace("om flow investigate_show answer investigation_subject_answered: [result.error]")
+	investigation_subject_answered(A)
 
 /datum/admin_verb/investigate_show/proc/investigation_subject_answered(datum/act/request/A)
 	if(!A.answer)
@@ -75,11 +73,6 @@ ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs
 	title = "Select the subject to investigate."
 	rights = R_ADMIN|R_MOD|R_SERVER
 	timeout = 0
-
-/datum/prompt/choice/admin_investigation/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 #undef INVESTIGATE_DIR

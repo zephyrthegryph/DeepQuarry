@@ -625,10 +625,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 /mob/living/carbon/human/proc/flavor_part_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(flavor_part_entered_apply), A)
-	if(!result.ok)
-		stack_trace("flavor_part_entered: [result.error]")
-	return result.value
+	return flavor_part_entered_apply(A)
 
 /mob/living/carbon/human/proc/flavor_part_entered_apply(datum/act/request/A)
 	var/datum/prompt/text/flavor_part/ask = A.answer
@@ -702,10 +699,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 /mob/living/carbon/human/proc/hud_criminal_status_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(hud_criminal_status_chosen_apply), A)
-	if(!result.ok)
-		stack_trace("hud_criminal_status_chosen: [result.error]")
-	return result.value
+	return hud_criminal_status_chosen_apply(A)
 
 /mob/living/carbon/human/proc/hud_criminal_status_chosen_apply(datum/act/request/A)
 	var/datum/prompt/choice/hud_status/ask = A.answer
@@ -721,10 +715,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 /mob/living/carbon/human/proc/hud_medical_status_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(hud_medical_status_chosen_apply), A)
-	if(!result.ok)
-		stack_trace("hud_medical_status_chosen: [result.error]")
-	return result.value
+	return hud_medical_status_chosen_apply(A)
 
 /mob/living/carbon/human/proc/hud_medical_status_chosen_apply(datum/act/request/A)
 	var/datum/prompt/choice/hud_status/ask = A.answer
@@ -745,10 +736,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 /mob/living/carbon/human/proc/hud_comment_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(hud_comment_entered_apply), A)
-	if(!result.ok)
-		stack_trace("hud_comment_entered: [result.error]")
-	return result.value
+	return hud_comment_entered_apply(A)
 
 /mob/living/carbon/human/proc/hud_comment_entered_apply(datum/act/request/A)
 	var/datum/prompt/text/hud_comment/ask = A.answer
@@ -1127,10 +1115,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/remotesay_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(remotesay_target_apply), A)
-	if(!result.ok)
-		stack_trace("remote mind recipient: [result.error]")
-	return result.value
+	return remotesay_target_apply(A)
 
 /mob/living/carbon/human/proc/remotesay_target_apply(datum/act/request/A)
 	var/mob/recipient = A.answer.answer_value
@@ -1139,10 +1124,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/remotesay_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(remotesay_apply), A)
-	if(!result.ok)
-		stack_trace("remote telepathic message: [result.error]")
-	return result.value
+	return remotesay_apply(A)
 
 /mob/living/carbon/human/proc/remotesay_apply(datum/act/request/A)
 	var/datum/prompt/text/remotesay/ask = A.answer
@@ -1201,10 +1183,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/remoteobserve_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(remoteobserve_apply), A)
-	if(!result.ok)
-		stack_trace("remote observation: [result.error]")
-	return result.value
+	return remoteobserve_apply(A)
 
 /mob/living/carbon/human/proc/remoteobserve_apply(datum/act/request/A)
 	var/mob/target = A.answer.answer_value
@@ -1639,10 +1618,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/bloody_doodle_written(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(bloody_doodle_apply), A)
-	if(!result.ok)
-		stack_trace("blood writing message: [result.error]")
-	return result.value
+	return bloody_doodle_apply(A)
 
 /mob/living/carbon/human/proc/bloody_doodle_apply(datum/act/request/A)
 	var/datum/prompt/text/bloody_doodle/ask = A.answer
@@ -1840,10 +1816,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/relocate_joint_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(relocate_joint_apply), A)
-	if(!result.ok)
-		stack_trace("joint relocation selection: [result.error]")
-	return result.value
+	return relocate_joint_apply(A)
 
 /mob/living/carbon/human/proc/relocate_joint_apply(datum/act/request/A)
 	var/datum/prompt/choice/relocate_joint/ask = A.answer
@@ -2263,10 +2236,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 /mob/living/carbon/human/proc/vv_transform_confirmed(datum/act/request/A)
 	if(!A.answer || A.answer.answer_value != "Transform")
 		return
-	var/datum/result/result = safe_call(PROC_REF(vv_transform_apply), A)
-	if(!result.ok)
-		stack_trace("VV mob transformation confirmation: [result.error]")
-	return result.value
+	return vv_transform_apply(A)
 
 /mob/living/carbon/human/proc/vv_transform_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_transform/ask = A.answer

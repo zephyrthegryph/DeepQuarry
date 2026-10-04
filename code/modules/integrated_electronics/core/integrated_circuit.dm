@@ -74,9 +74,7 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
 			SStgui.update_uis(src)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_rename), A)
-	if(!result.ok)
-		stack_trace("Electronics rename request: [result.error]")
+	apply_rename(A)
 	SStgui.update_uis(src)
 
 /obj/item/integrated_circuit/proc/apply_rename(datum/act/request/A)

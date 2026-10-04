@@ -31,10 +31,7 @@ CAPABILITIES(/datum/prompt/text/mob_type)
 /mob/proc/mob_type_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(mob_type_apply), A)
-	if(!result.ok)
-		stack_trace("mob type selection: [result.error]")
-	return result.value
+	return mob_type_apply(A)
 
 /mob/proc/mob_type_apply(datum/act/request/A)
 	var/datum/prompt/text/mob_type/ask = A.answer

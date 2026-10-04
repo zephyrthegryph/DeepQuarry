@@ -236,12 +236,7 @@ ADMIN_VERB(dq_run_medical_scenario, R_DEBUG, "DQ Run Medical Scenario", "Spawn a
 	title = "DQ Medical Scenario"
 	rights = R_DEBUG
 	timeout = 0
-
-/datum/prompt/choice/medical_debug_scenario/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/admin_verb/dq_run_medical_scenario/proc/scenario_chosen(datum/act/request/A)
 	if(!A.answer)

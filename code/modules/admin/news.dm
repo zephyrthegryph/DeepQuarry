@@ -176,6 +176,7 @@ CAPABILITIES(/datum/admin_server_news_review)
 	timeout = 0
 	title = "Write News"
 	question = "Write a good title for the news update. Note: HTML is NOT supported."
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_server_news_title/recheck_extra()
 	. = ..()
@@ -183,12 +184,6 @@ CAPABILITIES(/datum/admin_server_news_review)
 		return
 	var/datum/admin_server_news_review/review = owner
 	return review.refusal()
-
-/datum/prompt/text/admin_server_news_title/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /datum/prompt/text/admin_server_news_body
 	rights = R_SERVER|R_EVENT
@@ -200,6 +195,7 @@ CAPABILITIES(/datum/admin_server_news_review)
 		\[row\], \[cell\], \[logo\], \[talogo\], \[sglogo\]."
 	max_len = MAX_MESSAGE_LEN
 	multiline = TRUE
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_server_news_body/recheck_extra()
 	. = ..()
@@ -207,11 +203,5 @@ CAPABILITIES(/datum/admin_server_news_review)
 		return
 	var/datum/admin_server_news_review/review = owner
 	return review.refusal()
-
-/datum/prompt/text/admin_server_news_body/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 #undef NEWSFILE

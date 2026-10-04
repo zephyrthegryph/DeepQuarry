@@ -94,9 +94,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 /datum/admin_verb/remove_mob_for_narration/proc/removal_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_selected_removal), context)
-	if(!result.ok)
-		stack_trace("om flow remove_mob_for_narration answer apply_selected_removal: [result.error]")
+	apply_selected_removal(context)
 
 /datum/admin_verb/remove_mob_for_narration/proc/apply_selected_removal(datum/act/request/context)
 	var/client/user = context.request.answerer.client
@@ -113,9 +111,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 /datum/admin_verb/remove_mob_for_narration/proc/clear_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_clear), context)
-	if(!result.ok)
-		stack_trace("om flow remove_mob_for_narration answer apply_clear: [result.error]")
+	apply_clear(context)
 
 /datum/admin_verb/remove_mob_for_narration/proc/apply_clear(datum/act/request/context)
 	var/datum/entity_narrate/holder = current_holder(context.request.answerer.client)
@@ -400,12 +396,7 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 	timeout = 0
 	title = "remove reference"
 	question = "Choose which entity to remove"
-
-/datum/prompt/choice/admin_narrate_remove/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_narrate_clear
 	rights = R_FUN
@@ -414,9 +405,5 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 	question = "Do you really want to clear your entity list?"
 	choices = list("Yes", "No")
 	buttons = TRUE
+	recheck_on_open = TRUE
 
-/datum/prompt/choice/admin_narrate_clear/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

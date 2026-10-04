@@ -46,10 +46,7 @@
 /obj/item/spell/summon/proc/summon_choice_made(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(summon_choice_made_apply), A)
-	if(!result.ok)
-		stack_trace("technomancer summon_choice_made: [result.error]")
-	return result.value
+	return summon_choice_made_apply(A)
 
 /obj/item/spell/summon/proc/summon_choice_made_apply(datum/act/request/A)
 	var/datum/prompt/choice/technomancer_carried/ask = A.answer

@@ -136,16 +136,11 @@ CAPABILITIES(/datum/record_update_review)
 	var/datum/record_update_review/review = owner
 	return QDELETED(review.actor) || QDELETED(review.record) ? "record gone" : null
 
-/datum/prompt/text/record_update_notes/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/text/record_update_notes
 	timeout = 0
 	max_len = MAX_RECORD_LENGTH
 	multiline = TRUE
+	recheck_on_open = TRUE
 
 /datum/prompt/text/record_update_notes/recheck_extra()
 	. = ..()
@@ -191,9 +186,7 @@ CAPABILITIES(/datum/record_update_review)
 
 /datum/record_update_review/proc/failed_step(step, error)
 	stack_trace("record update step [step]: [error]")
-	var/datum/result/result = safe_call(PROC_REF(refused))
-	if(!result.ok)
-		stack_trace("record update ended(error): [result.error]")
+	refused()
 	retire()
 
 /datum/record_update_review/proc/notes_entered(datum/act/request/A)

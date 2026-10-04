@@ -168,12 +168,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	rights = R_ADMIN
 	timeout = 0
 	var/obj_type
-
-/datum/prompt/choice/mind_objective_edit/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/number/mind_objective_edit
 	rights = R_ADMIN
@@ -182,24 +177,14 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	min_value = 0
 	max_value = INFINITY
 	step = 1
-
-/datum/prompt/number/mind_objective_edit/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/mind_objective_edit
 	rights = R_ADMIN
 	timeout = 0
 	var/obj_type
 	var/steal_type
-
-/datum/prompt/text/mind_objective_edit/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /// The second question depends on the chosen objective type.
 /datum/mind/proc/objective_type_chosen(datum/act/request/A)

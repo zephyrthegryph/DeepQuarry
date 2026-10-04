@@ -503,9 +503,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 /obj/item/clothing/suit/space/void/proc/component_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_component_answer), A)
-	if(!result.ok)
-		stack_trace("Voidsuit component request: [result.error]")
+	apply_component_answer(A)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/suit/space/void/proc/apply_component_answer(datum/act/request/A)

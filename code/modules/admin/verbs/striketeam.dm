@@ -31,13 +31,7 @@
 	rights = R_HOLDER
 	timeout = 0
 	var/team_type
-
-/datum/prompt/choice/admin_strike_team/begin()
-	var/reason = request_recheck(src)
-	if(reason)
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_strike_team
 	title = "Specify Mission"

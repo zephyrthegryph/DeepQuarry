@@ -48,10 +48,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 /obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedication_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_friendship_dedication), A)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = apply_friendship_dedication(A)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/accessory/bracelet/friendship/proc/apply_friendship_dedication(datum/act/request/A)

@@ -120,9 +120,5 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 	title = "Confirm Badmin"
 	buttons = TRUE
 	choices = list("No", "Yes (Cosmetic)", "Yes (Real)")
+	recheck_on_open = TRUE
 
-/datum/prompt/choice/admin_lightning_confirm/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

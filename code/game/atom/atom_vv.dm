@@ -26,6 +26,7 @@
 	var/x_mod
 	var/num_spins = -1
 	var/spins_per_sec
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/choice/vv_edit)
 	ref_one(nameof(subject), /atom)
@@ -40,12 +41,6 @@ CAPABILITIES(/datum/prompt/choice/vv_edit)
 /datum/prompt/choice/vv_edit/recheck_extra()
 	return QDELETED(subject) ? "gone" : null
 
-/datum/prompt/choice/vv_edit/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /// Native VV transform/spin questions retain the original actor and captured target.
 /datum/prompt/number/vv_edit
 	rights = R_VAREDIT
@@ -57,6 +52,7 @@ CAPABILITIES(/datum/prompt/choice/vv_edit)
 	var/x_mod
 	var/num_spins = -1
 	var/spins_per_sec
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/number/vv_edit)
 	ref_one(nameof(subject), /atom)
@@ -71,16 +67,11 @@ CAPABILITIES(/datum/prompt/number/vv_edit)
 /datum/prompt/number/vv_edit/recheck_extra()
 	return QDELETED(subject) ? "gone" : null
 
-/datum/prompt/number/vv_edit/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /// Native VV transform/spin questions retain the original actor and captured target.
 /datum/prompt/yes_no/vv_edit
 	rights = R_VAREDIT
 	timeout = 0
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	ref_one(nameof(subject), /atom)
@@ -94,12 +85,6 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 
 /datum/prompt/yes_no/vv_edit/recheck_extra()
 	return QDELETED(subject) ? "gone" : null
-
-/datum/prompt/yes_no/vv_edit/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /mob/proc/vv_transform_begin(atom/target)
 	open_request(src, /datum/prompt/choice/vv_edit, PROC_REF(vv_transform_kind_chosen), answerer = src, subject = target, title = "Transform Mod", question = "Choose the transformation to apply", choices = list("Scale","Translate","Rotate","Shear"))

@@ -168,14 +168,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	var/credit
 	var/input
 	var/show
-
-/datum/prompt/choice/web_sound/begin()
-	// The old flow checks R_SOUNDS before displaying its first question as well as on answers.
-	var/reason = request_recheck(src)
-	if(reason)
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /mob/proc/ask_web_sound(url, list/extra, page, song_title, duration, credit, input)
 	if(duration > 10 MINUTES)

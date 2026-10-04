@@ -12,9 +12,7 @@ ADMIN_VERB(atmosscan, R_DEBUG, "Check Piping", "Check all pipes in game (Only us
 /datum/admin_verb/atmosscan/proc/scan_confirmed(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(scan_selected), context)
-	if(!result.ok)
-		stack_trace("om flow atmosscan answer scan_confirmed: [result.error]")
+	scan_selected(context)
 
 /datum/admin_verb/atmosscan/proc/scan_selected(datum/act/request/context)
 	set background = 1
@@ -68,9 +66,5 @@ ADMIN_VERB(powerdebug, R_DEBUG, "Check Power", "Checks all powernets (Only use o
 	title = "Check Piping"
 	choices = list("No", "Yes")
 	buttons = TRUE
+	recheck_on_open = TRUE
 
-/datum/prompt/choice/admin_atmos_scan/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

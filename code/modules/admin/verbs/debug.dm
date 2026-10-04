@@ -138,9 +138,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 /datum/admin_verb/makepAI/proc/pai_player_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(make_chosen_pai), A)
-	if(!result.ok)
-		stack_trace("om flow makepAI answer pai_player_chosen: [result.error]")
+	make_chosen_pai(A)
 
 /datum/admin_verb/makepAI/proc/make_chosen_pai(datum/act/request/A)
 	var/mob/choice = A.request.answer_value
@@ -201,9 +199,7 @@ ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instance
 /datum/admin_verb/cmd_debug_del_all/proc/delete_type_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(delete_type_answered), A)
-	if(!result.ok)
-		stack_trace("om flow cmd_debug_del_all answer delete_type_chosen: [result.error]")
+	delete_type_answered(A)
 
 /datum/admin_verb/cmd_debug_del_all/proc/delete_type_answered(datum/act/request/A)
 	var/hsbitem = A.request.answer_value
@@ -312,9 +308,7 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 /datum/admin_verb/cmd_assume_direct_control/proc/control_confirmed(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(finish_control), context)
-	if(!result.ok)
-		stack_trace("om flow cmd_assume_direct_control answer finish_control: [result.error]")
+	finish_control(context)
 
 /datum/admin_verb/cmd_assume_direct_control/proc/finish_control(datum/act/request/context)
 	var/datum/prompt/choice/admin_control_target/request = context.request
@@ -440,9 +434,7 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 /datum/admin_verb/cmd_admin_dress/proc/dress_target_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(open_selected_outfit), context)
-	if(!result.ok)
-		stack_trace("om flow cmd_admin_dress answer open_selected_outfit: [result.error]")
+	open_selected_outfit(context)
 
 /datum/admin_verb/cmd_admin_dress/proc/open_selected_outfit(datum/act/request/context)
 	var/input = context.request.answer_value
@@ -462,9 +454,7 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 /datum/admin_verb/cmd_admin_dress/proc/outfit_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(dress_selected_outfit), context)
-	if(!result.ok)
-		stack_trace("om flow cmd_admin_dress answer dress_selected_outfit: [result.error]")
+	dress_selected_outfit(context)
 
 /datum/admin_verb/cmd_admin_dress/proc/dress_selected_outfit(datum/act/request/context)
 	var/datum/prompt/choice/admin_dress_outfit/request = context.request
@@ -589,9 +579,7 @@ ADMIN_VERB(cmd_debug_mob_lists, R_DEBUG, "Debug Mob Lists", "For when you just g
 /datum/admin_verb/cmd_debug_mob_lists/proc/list_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(show_chosen_list), A)
-	if(!result.ok)
-		stack_trace("om flow cmd_debug_mob_lists answer list_chosen: [result.error]")
+	show_chosen_list(A)
 
 /datum/admin_verb/cmd_debug_mob_lists/proc/show_chosen_list(datum/act/request/A)
 	var/client/user = A.request.answerer.client
@@ -827,12 +815,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	timeout = 0
 	question = "Choose an object to delete."
 	title = "Delete:"
-
-/datum/prompt/choice/admin_delete_type/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_mob_list
 	rights = R_DEBUG
@@ -840,18 +823,14 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	question = "Which list?"
 	title = "List Choice"
 	choices = list("Players", "Admins", "Mobs", "Living Mobs", "Dead Mobs", "Clients")
-
-/datum/prompt/choice/admin_mob_list/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_pai_player
 	rights = R_ADMIN|R_EVENT|R_DEBUG
 	timeout = 0
 	question = "Choose a player to play the pAI"
 	title = "Spawn pAI"
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_pai_player/recheck_extra()
 	. = ..()
@@ -862,12 +841,6 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 		if(QDELETED(picked) || !picked.key)
 			return "chosen player is gone"
 
-/datum/prompt/choice/admin_pai_player/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_control_target
 	rights = R_DEBUG|R_ADMIN|R_EVENT
 	timeout = 0
@@ -875,6 +848,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	choices = list("Yes", "No")
 	buttons = TRUE
 	var/mob/controlled_mob
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/choice/admin_control_target)
 	ref_one(nameof(controlled_mob), /mob)
@@ -891,23 +865,12 @@ CAPABILITIES(/datum/prompt/choice/admin_control_target)
 		return
 	return QDELETED(controlled_mob) ? "target is gone" : null
 
-/datum/prompt/choice/admin_control_target/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_dress_target
 	rights = R_FUN
 	timeout = 0
 	title = "Select the target to dress."
 	question = "Pick Target"
-
-/datum/prompt/choice/admin_dress_target/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_dress_outfit
 	rights = R_FUN
@@ -915,6 +878,7 @@ CAPABILITIES(/datum/prompt/choice/admin_control_target)
 	title = "Select equipment."
 	question = "Select outfit."
 	var/target_label
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_dress_outfit/recheck_extra()
 	. = ..()
@@ -924,8 +888,3 @@ CAPABILITIES(/datum/prompt/choice/admin_control_target)
 		var/datum/decl/hierarchy/outfit/picked = answer_value
 		return QDELETED(picked) ? "outfit is gone" : null
 
-/datum/prompt/choice/admin_dress_outfit/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

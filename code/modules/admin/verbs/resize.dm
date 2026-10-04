@@ -10,9 +10,7 @@ ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any liv
 /datum/admin_verb/mob_resize/proc/resize_target_selected(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(open_target_resize), A)
-	if(!result.ok)
-		stack_trace("om flow mob_resize answer resize_target_selected: [result.error]")
+	open_target_resize(A)
 
 /datum/admin_verb/mob_resize/proc/open_target_resize(datum/act/request/A)
 	var/mob/target_mob = A.request.answer_value
@@ -55,6 +53,7 @@ ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any liv
 	timeout = 0
 	question = "Select target to resize."
 	title = "Resize Target"
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_resize_target/recheck_extra()
 	. = ..()
@@ -63,12 +62,6 @@ ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any liv
 	if(!isnull(answer_value))
 		var/mob/picked = answer_value
 		return QDELETED(picked) ? "target is gone" : null
-
-/datum/prompt/choice/admin_resize_target/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /datum/admin_resize_review
 	var/mob/actor
@@ -89,9 +82,7 @@ CAPABILITIES(/datum/admin_resize_review)
 	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
 
 /datum/admin_resize_review/proc/answered(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(finish), A)
-	if(!result.ok)
-		stack_trace("om flow do_resize answer finish: [result.error]")
+	finish(A)
 	retire()
 
 /datum/admin_resize_review/proc/finish(datum/act/request/A)
@@ -109,6 +100,7 @@ CAPABILITIES(/datum/admin_resize_review)
 	min_value = 0
 	max_value = INFINITY
 	step = null
+	recheck_on_open = TRUE
 
 /datum/prompt/number/admin_resize_amount/recheck_extra()
 	. = ..()
@@ -116,12 +108,6 @@ CAPABILITIES(/datum/admin_resize_review)
 		return
 	var/datum/admin_resize_review/review = owner
 	return review.refusal()
-
-/datum/prompt/number/admin_resize_amount/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /datum/prompt/number/admin_resize_amount/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)

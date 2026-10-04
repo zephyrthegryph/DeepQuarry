@@ -587,10 +587,7 @@
 		if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value) && ask.emote_text && !QDELETED(ask.answerer))
 			to_chat(ask.answerer, span_warning("Nothing was picked. Your input has not been sent, but preserved:") + " [ask.emote_text]")
 		return
-	var/datum/result/result = safe_call(PROC_REF(custom_subtle_pick_apply), A)
-	if(!result.ok)
-		stack_trace("custom subtle selection: [result.error]")
-	return result.value
+	return custom_subtle_pick_apply(A)
 
 /mob/proc/custom_subtle_pick_apply(datum/act/request/A)
 	var/datum/prompt/choice/custom_subtle/ask = A.answer
@@ -602,10 +599,7 @@
 /mob/proc/custom_subtle_text_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(custom_subtle_text_apply), A)
-	if(!result.ok)
-		stack_trace("custom subtle text: [result.error]")
-	return result.value
+	return custom_subtle_text_apply(A)
 
 /mob/proc/custom_subtle_text_apply(datum/act/request/A)
 	var/datum/prompt/text/custom_subtle/ask = A.answer

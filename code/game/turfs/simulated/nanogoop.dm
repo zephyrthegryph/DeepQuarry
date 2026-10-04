@@ -96,10 +96,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_state_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_nanite_state_chosen), A)
-	if(!result.ok)
-		stack_trace("Nanite interface request: [result.error]")
-	return result.value
+	return apply_nanite_state_chosen(A)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/apply_nanite_state_chosen(datum/act/request/A)
 	var/datum/prompt/choice/nanite_state/ask = A.request
@@ -114,10 +111,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_targets_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_nanite_targets_chosen), A)
-	if(!result.ok)
-		stack_trace("Nanite interface request: [result.error]")
-	return result.value
+	return apply_nanite_targets_chosen(A)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/apply_nanite_targets_chosen(datum/act/request/A)
 	var/datum/prompt/choice/nanite_targets/ask = A.request

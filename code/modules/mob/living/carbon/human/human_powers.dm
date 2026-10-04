@@ -79,10 +79,7 @@
 		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value) && request.last_error == "not able to")
 			to_chat(request.answerer, span_notice("You cannot tackle in your current state."))
 		return
-	var/datum/result/result = safe_call(PROC_REF(tackle_target_apply), A)
-	if(!result.ok)
-		stack_trace("tackle target selection: [result.error]")
-	return result.value
+	return tackle_target_apply(A)
 
 /mob/living/carbon/human/proc/tackle_target_apply(datum/act/request/A)
 	var/mob/living/T = A.answer.answer_value
@@ -113,10 +110,7 @@
 /mob/living/carbon/human/proc/commune_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_commune_target_chosen), A)
-	if(!result.ok)
-		stack_trace("Telepathic request: [result.error]")
-	return result.value
+	return apply_commune_target_chosen(A)
 
 /mob/living/carbon/human/proc/apply_commune_target_chosen(datum/act/request/A)
 	var/datum/prompt/choice/ask = A.request
@@ -128,10 +122,7 @@
 /mob/living/carbon/human/proc/commune_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_commune_answered), A)
-	if(!result.ok)
-		stack_trace("Telepathic request: [result.error]")
-	return result.value
+	return apply_commune_answered(A)
 
 /mob/living/carbon/human/proc/apply_commune_answered(datum/act/request/A)
 	var/datum/prompt/text/telepathy/ask = A.request
@@ -162,10 +153,7 @@
 /mob/living/carbon/human/proc/psychic_whisper_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_psychic_whisper_entered), A)
-	if(!result.ok)
-		stack_trace("Telepathic request: [result.error]")
-	return result.value
+	return apply_psychic_whisper_entered(A)
 
 /mob/living/carbon/human/proc/apply_psychic_whisper_entered(datum/act/request/A)
 	var/datum/prompt/text/telepathy/ask = A.request
@@ -440,10 +428,7 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 /mob/living/carbon/human/proc/monitor_state_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(monitor_state_apply), A)
-	if(!result.ok)
-		stack_trace("monitor display selection: [result.error]")
-	return result.value
+	return monitor_state_apply(A)
 
 /mob/living/carbon/human/proc/monitor_state_apply(datum/act/request/A)
 	var/datum/prompt/choice/monitor_state/ask = A.answer

@@ -800,11 +800,9 @@ CAPABILITIES(/datum/prompt/choice/replicator_consent)
 /obj/machinery/replicator/vore/proc/consent_insert_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(consent_insert_apply), A)
-	if(!result.ok)
-		stack_trace("replicator vore consent: [result.error]")
+	. = consent_insert_apply(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /obj/machinery/replicator/vore/proc/consent_insert_apply(datum/act/request/A)
 	var/datum/prompt/choice/replicator_consent/ask = A.answer
@@ -814,11 +812,9 @@ CAPABILITIES(/datum/prompt/choice/replicator_consent)
 /obj/machinery/replicator/clothing/proc/consent_insert_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(consent_insert_apply), A)
-	if(!result.ok)
-		stack_trace("replicator clothing consent: [result.error]")
+	. = consent_insert_apply(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /obj/machinery/replicator/clothing/proc/consent_insert_apply(datum/act/request/A)
 	var/datum/prompt/choice/replicator_consent/ask = A.answer

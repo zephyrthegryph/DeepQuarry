@@ -20,9 +20,7 @@ ADMIN_VERB(roll_dices, R_FUN, "Roll Dice", "Allows to roll a dice.", ADMIN_CATEG
 		sum = ask.sum
 		side = ask.side
 		show_game = next_stage == 3 ? ask.answer_value : ask.show_game
-	var/datum/result/result = safe_call(PROC_REF(advance_dice), A.request.answerer.client, next_stage, sum, side, show_game, A.request.answer_value)
-	if(!result.ok)
-		stack_trace("om flow roll_dices answer dice_answered: [result.error]")
+	advance_dice(A.request.answerer.client, next_stage, sum, side, show_game, A.request.answer_value)
 
 /datum/admin_verb/roll_dices/proc/advance_dice(client/user, stage = 0, sum = null, side = null, show_game = null, show_result = null)
 	var/mob/answerer = user.mob
@@ -65,12 +63,7 @@ ADMIN_VERB(roll_dices, R_FUN, "Roll Dice", "Allows to roll a dice.", ADMIN_CATEG
 	step = 1
 	var/next_stage
 	var/sum
-
-/datum/prompt/number/admin_dice/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/number/admin_dice/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
@@ -88,9 +81,5 @@ ADMIN_VERB(roll_dices, R_FUN, "Roll Dice", "Allows to roll a dice.", ADMIN_CATEG
 	var/sum
 	var/side
 	var/show_game
+	recheck_on_open = TRUE
 
-/datum/prompt/choice/admin_dice/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

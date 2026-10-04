@@ -30,13 +30,7 @@
 	step = 1
 	timeout = 0
 	question = "Which Z-level do you wish to set the base turf for?"
-
-/datum/prompt/number/base_turf/begin()
-	var/reason = request_recheck(src)
-	if(reason)
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/base_turf
 	title = "Set Base Turf"

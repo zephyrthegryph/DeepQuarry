@@ -1078,10 +1078,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 /mob/observer/dead/proc/spectral_whisper_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(spectral_whisper_target_apply), A)
-	if(!result.ok)
-		stack_trace("spectral whisper recipient: [result.error]")
-	return result.value
+	return spectral_whisper_target_apply(A)
 
 /mob/observer/dead/proc/spectral_whisper_target_apply(datum/act/request/A)
 	open_request(src, /datum/prompt/text/spectral_whisper, PROC_REF(spectral_whisper_written), answerer = src, recipient = A.answer.answer_value)
@@ -1089,10 +1086,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 /mob/observer/dead/proc/spectral_whisper_written(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(spectral_whisper_apply), A)
-	if(!result.ok)
-		stack_trace("spectral whisper message: [result.error]")
-	return result.value
+	return spectral_whisper_apply(A)
 
 /mob/observer/dead/proc/spectral_whisper_apply(datum/act/request/A)
 	var/datum/prompt/text/spectral_whisper/ask = A.answer
@@ -1319,10 +1313,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 /mob/observer/dead/proc/autoresleever_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(autoresleever_choice_apply), A)
-	if(!result.ok)
-		stack_trace("auto-resleever location selection: [result.error]")
-	return result.value
+	return autoresleever_choice_apply(A)
 
 /mob/observer/dead/proc/autoresleever_choice_apply(datum/act/request/A)
 	var/datum/prompt/choice/ask = A.answer

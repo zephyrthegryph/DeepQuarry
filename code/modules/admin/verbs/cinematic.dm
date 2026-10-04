@@ -7,9 +7,7 @@ ADMIN_VERB(cinematic, R_FUN, "Cinematic", "Show a cinematic to all players.", AD
 /datum/admin_verb/cinematic/proc/cinematic_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(play_selected_cinematic), context)
-	if(!result.ok)
-		stack_trace("om flow cinematic answer cinematic_selected: [result.error]")
+	play_selected_cinematic(context)
 
 /datum/admin_verb/cinematic/proc/play_selected_cinematic(datum/act/request/context)
 	var/choice = context.request.answer_value
@@ -22,9 +20,5 @@ ADMIN_VERB(cinematic, R_FUN, "Cinematic", "Show a cinematic to all players.", AD
 	timeout = 0
 	question = "Chose a cinematic to play to everyone in the server."
 	title = "Choose Cinematic"
+	recheck_on_open = TRUE
 
-/datum/prompt/choice/admin_cinematic/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

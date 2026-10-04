@@ -69,10 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon, \
 /obj/item/clothing/under/chameleon/proc/chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/under/chameleon/proc/chameleon_change_verb_apply(mob/user, picked)
@@ -121,10 +118,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon, \
 /obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(head_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = head_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb_apply(mob/user, picked)
@@ -172,10 +166,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon, \
 /obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(suit_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = suit_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb_apply(mob/user, picked)
@@ -222,10 +213,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon, \
 /obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(shoes_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = shoes_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb_apply(mob/user, picked)
@@ -329,10 +317,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon, \
 /obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(gloves_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = gloves_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb_apply(mob/user, picked)
@@ -379,10 +364,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon, \
 /obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(mask_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = mask_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb_apply(mob/user, picked)
@@ -431,10 +413,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon, \
 /obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(glasses_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = glasses_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb_apply(mob/user, picked)
@@ -527,10 +506,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/chameleon, \
 /obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(accessory_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = accessory_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb_apply(mob/user, picked)
@@ -624,10 +600,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/chameleon, \
 /obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(energy_chameleon_change_verb_apply), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = energy_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb_apply(mob/user, picked)

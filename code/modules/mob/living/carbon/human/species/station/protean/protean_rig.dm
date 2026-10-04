@@ -414,10 +414,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 /obj/item/rig/protean/proc/module_removal_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(module_removal_apply), A)
-	if(!result.ok)
-		stack_trace("protean rig module removal selection: [result.error]")
-	return result.value
+	return module_removal_apply(A)
 
 /obj/item/rig/protean/proc/module_removal_apply(datum/act/request/A)
 	var/datum/prompt/choice/protean_rig_module/ask = A.answer

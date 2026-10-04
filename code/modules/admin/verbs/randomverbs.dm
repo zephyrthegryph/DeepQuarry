@@ -629,6 +629,7 @@ CAPABILITIES(/datum/respawn_review)
 	question = "Please specify which client's character to spawn."
 	rights = R_ADMIN|R_REJUVINATE
 	timeout = 0
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/respawn_client/recheck_extra()
 	. = ..()
@@ -641,17 +642,12 @@ CAPABILITIES(/datum/respawn_review)
 		if(GLOB.directory[picked_client.ckey] != picked_client)
 			return "client is gone"
 
-/datum/prompt/choice/respawn_client/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/respawn_review
 	rights = R_ADMIN|R_REJUVINATE
 	timeout = 0
 	var/stop_on_cancel = FALSE
 	var/next_step
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/respawn_review/recheck_extra()
 	. = ..()
@@ -662,16 +658,11 @@ CAPABILITIES(/datum/respawn_review)
 	if(!. && stop_on_cancel && answer_value == "Cancel")
 		return "cancelled"
 
-/datum/prompt/choice/respawn_review/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/text/respawn_review
 	var/next_step
 	rights = R_ADMIN|R_REJUVINATE
 	timeout = 0
+	recheck_on_open = TRUE
 
 /datum/prompt/text/respawn_review/recheck_extra()
 	. = ..()
@@ -680,16 +671,8 @@ CAPABILITIES(/datum/respawn_review)
 	var/datum/respawn_review/review = owner
 	return review.refusal()
 
-/datum/prompt/text/respawn_review/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/admin_verb/respawn_character/proc/respawn_client_answered(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(respawn_client_picked), A)
-	if(!result.ok)
-		stack_trace("om prompt /datum/prompt/choice/respawn_client answer respawn_client_picked: [result.error]")
+	respawn_client_picked(A)
 
 /datum/respawn_review/proc/start()
 	run_step(PROC_REF(begin_questions), null)
@@ -950,13 +933,7 @@ ADMIN_VERB(cmd_admin_create_centcom_report, R_ADMIN|R_SERVER|R_FUN, "Create Comm
 /datum/prompt/text/command_report
 	timeout = 0
 	var/report
-
-/datum/prompt/text/command_report/begin()
-	var/reason = request_recheck(src)
-	if(reason)
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/command_report
 	timeout = 0
@@ -1041,9 +1018,7 @@ ADMIN_VERB(toggle_view_range, R_HOLDER, "Change View Range", "Switches between 1
 /datum/admin_verb/toggle_view_range/proc/view_chosen(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(view_chosen_apply), context)
-	if(!result.ok)
-		stack_trace("om prompt callback view_chosen: [result.error]")
+	view_chosen_apply(context)
 
 /datum/admin_verb/toggle_view_range/proc/view_chosen_apply(datum/act/request/context)
 	set_view(context.request.answerer.client, context.request.answer_value)
@@ -1066,16 +1041,10 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 /datum/prompt/choice/admin_call_shuttle
 	timeout = 0
 	var/recall = FALSE
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_call_shuttle/recheck_extra()
 	return (SSticker && SSemergency_shuttle.location()) ? null : "no shuttle"
-
-/datum/prompt/choice/admin_call_shuttle/begin()
-	var/reason = request_recheck(src)
-	if(reason)
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /mob/proc/ask_admin_shuttle_call(rights)
 	open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_call_confirmed), answerer = src, rights = rights, buttons = TRUE, choices = list("Yes", "No"), title = "Confirm", question = "You sure?")
@@ -1275,6 +1244,7 @@ ADMIN_VERB(cmd_admin_droppod_spawn, R_SPAWN, "Drop Pod Atom", "Spawn a new atom/
 	var/needs_drop_mob = FALSE
 	var/podtype
 	var/feedback
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/choice/admin_drop_pod)
 	ref_one(nameof(drop_mob), /mob/living)
@@ -1288,14 +1258,6 @@ CAPABILITIES(/datum/prompt/choice/admin_drop_pod)
 
 /datum/prompt/choice/admin_drop_pod/recheck_extra()
 	return needs_drop_mob && QDELETED(drop_mob) ? "gone" : null
-
-/datum/prompt/choice/admin_drop_pod/begin()
-	// Flow startup checks rights and captured lifetimes before displaying the first question.
-	var/reason = request_recheck(src)
-	if(reason)
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /mob/proc/ask_admin_drop_pod(list/matches, rights, feedback)
 	if(!matches)
@@ -1378,6 +1340,7 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 	var/mob_type
 	var/use_name = FALSE
 	var/organs = FALSE
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/spawn_character/recheck_extra()
 	if(needs_picked && !GLOB.directory[picked_ckey])
@@ -1393,14 +1356,6 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 	if(needs_picked && !GLOB.directory[picked_ckey])
 		return "gone"
 	return null
-
-/datum/prompt/choice/spawn_character/begin()
-	// Match the old flow's initial rights gate before its first client selector is shown.
-	var/reason = request_recheck(src)
-	if(reason)
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /mob/proc/ask_spawn_character_mob(rights)
 	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_client_picked), answerer = src, rights = rights, title = "Client", question = "Who are we spawning as a mob?", choices = GLOB.clients)
@@ -1523,9 +1478,7 @@ ADMIN_VERB(cmd_admin_z_narrate, (R_ADMIN|R_MOD|R_EVENT), "Z Narrate", "Narrates 
 /datum/admin_verb/cmd_admin_z_narrate/proc/message_entered(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(narration_apply), context)
-	if(!result.ok)
-		stack_trace("om prompt callback message_entered: [result.error]")
+	narration_apply(context)
 
 /datum/admin_verb/cmd_admin_z_narrate/proc/narration_apply(datum/act/request/context)
 	var/client/user = context.request.answerer.client
@@ -1566,21 +1519,12 @@ ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/R
 	question = "Select view range:"
 	choices = list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,128)
 	buttons = FALSE
-
-/datum/prompt/choice/admin_view_range/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_z_narration
 	rights = R_ADMIN|R_MOD|R_EVENT
 	timeout = 0
 	title = "Enter the text you wish to appear to everyone:"
 	question = "Message:"
+	recheck_on_open = TRUE
 
-/datum/prompt/text/admin_z_narration/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

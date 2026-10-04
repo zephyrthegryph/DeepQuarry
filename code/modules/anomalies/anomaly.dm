@@ -169,9 +169,7 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 	var/datum/prompt/choice/research_anomaly/request = A.request
 	if(!A.answer || request.captures_gone())
 		return
-	var/datum/result/result = safe_call(PROC_REF(resume_particle_selection), A)
-	if(!result.ok)
-		stack_trace("Anomaly particle request: [result.error]")
+	resume_particle_selection(A)
 	SStgui.update_uis(src)
 
 /obj/item/gun/energy/anomaly/proc/resume_particle_selection(datum/act/request/A)
@@ -258,9 +256,7 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 	var/datum/prompt/choice/research_anomaly/request = A.request
 	if(!A.answer || request.captures_gone())
 		return
-	var/datum/result/result = safe_call(PROC_REF(resume_core_selection), A)
-	if(!result.ok)
-		stack_trace("Anomaly core request: [result.error]")
+	resume_core_selection(A)
 	SStgui.update_uis(src)
 
 /obj/item/assembly/signaler/anomaly/choice/proc/resume_core_selection(datum/act/request/A)

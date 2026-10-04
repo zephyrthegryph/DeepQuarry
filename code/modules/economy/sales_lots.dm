@@ -533,11 +533,9 @@ CAPABILITIES(/datum/prompt/number/freight_certification)
 /obj/item/retail_scanner/proc/freight_certification_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(freight_certification_apply), A)
-	if(!result.ok)
-		stack_trace("freight certification: [result.error]")
+	. = freight_certification_apply(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /obj/item/retail_scanner/proc/freight_certification_apply(datum/act/request/A)
 	var/obj/structure/closet/crate/shipment

@@ -173,11 +173,9 @@
 /mob/living/simple_mob/proc/animal_digestion_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(animal_digestion_apply), A)
-	if(!result.ok)
-		stack_trace("animal digestion setting: [result.error]")
+	. = animal_digestion_apply(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /mob/living/simple_mob/proc/animal_digestion_apply(datum/act/request/A)
 	var/datum/prompt/choice/animal_digestion/ask = A.answer
@@ -199,8 +197,6 @@
 /mob/living/simple_mob/proc/animal_nutrition_heal_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(nutrition_heal_stage), A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("animal nutrition healing: [result.error]")
+	. = nutrition_heal_stage(A.answer.answer_value)
 	SStgui.update_uis(src)
-	return result.value
+	return .

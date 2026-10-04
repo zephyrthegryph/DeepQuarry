@@ -81,10 +81,7 @@ CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
 /obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(ask_paint_color_apply), context)
-	if(!result.ok)
-		stack_trace("ask_paint_color: [result.error]")
-	return result.value
+	return ask_paint_color_apply(context)
 
 /obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color_apply(datum/act/request/context)
 	var/datum/prompt/choice/ask = context.answer
@@ -94,10 +91,7 @@ CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
 /obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(hull_painted_apply), context)
-	if(!result.ok)
-		stack_trace("hull_painted: [result.error]")
-	return result.value
+	return hull_painted_apply(context)
 
 /obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted_apply(datum/act/request/context)
 	var/datum/prompt/color/mech_paint/ask = context.answer

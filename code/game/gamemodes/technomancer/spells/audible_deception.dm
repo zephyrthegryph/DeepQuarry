@@ -73,10 +73,7 @@
 /obj/item/spell/audible_deception/proc/deception_sound_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(deception_sound_chosen_apply), A)
-	if(!result.ok)
-		stack_trace("technomancer deception_sound_chosen: [result.error]")
-	return result.value
+	return deception_sound_chosen_apply(A)
 
 /obj/item/spell/audible_deception/proc/deception_sound_chosen_apply(datum/act/request/A)
 	var/datum/prompt/choice/technomancer_carried/ask = A.answer

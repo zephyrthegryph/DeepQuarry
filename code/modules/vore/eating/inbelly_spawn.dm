@@ -72,9 +72,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		stopped("error")
 
 /datum/inbelly_spawn_review/proc/stopped(reason)
-	var/datum/result/result = safe_call(PROC_REF(notify_stopped), reason)
-	if(!result.ok)
-		stack_trace("inbelly spawn ended([reason]): [result.error]")
+	notify_stopped(reason)
 	retire()
 
 /datum/inbelly_spawn_review/proc/failed_answer(datum/request/R)

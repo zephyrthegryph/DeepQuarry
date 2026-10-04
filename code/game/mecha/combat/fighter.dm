@@ -368,10 +368,7 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 /obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(ask_stripe_color_apply), context)
-	if(!result.ok)
-		stack_trace("ask_stripe_color: [result.error]")
-	return result.value
+	return ask_stripe_color_apply(context)
 
 /obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color_apply(datum/act/request/context)
 	var/datum/prompt/choice/ask = context.answer
@@ -381,10 +378,7 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 /obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(stripe_painted_apply), context)
-	if(!result.ok)
-		stack_trace("stripe_painted: [result.error]")
-	return result.value
+	return stripe_painted_apply(context)
 
 /obj/mecha/combat/fighter/gunpod/proc/stripe_painted_apply(datum/act/request/context)
 	var/datum/prompt/color/mech_paint/ask = context.answer

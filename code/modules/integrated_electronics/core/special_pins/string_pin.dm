@@ -18,9 +18,7 @@
 /datum/integrated_io/string/proc/pin_input_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_pin_input), A)
-	if(!result.ok)
-		stack_trace("Native request pin_input_entered: [result.error]")
+	apply_pin_input(A)
 	SStgui.update_uis(src)
 
 /datum/integrated_io/string/proc/apply_pin_input(datum/act/request/A)

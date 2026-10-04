@@ -1719,10 +1719,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/datum/prompt/choice/organ_extraction/request = A.request
 	if(request.captures_gone())
 		return
-	var/datum/result/result = safe_call(PROC_REF(external_interaction_item), request.answerer, request.captured_item, request.captured_interaction, A.answer.answer_value, TRUE)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = external_interaction_item(request.answerer, request.captured_item, request.captured_interaction, A.answer.answer_value, TRUE)
 	SStgui.update_uis(src)
 
 /datum/prompt/choice/organ_extraction

@@ -154,10 +154,7 @@
 /mob/living/proc/sleep_confirmed(datum/act/request/A)
 	if(!A.answer || A.answer.answer_value != "Yes")
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_sleep_confirmed), A)
-	if(!result.ok)
-		stack_trace("Living request: [result.error]")
-	return result.value
+	return apply_sleep_confirmed(A)
 
 /mob/living/proc/apply_sleep_confirmed(datum/act/request/A)
 	toggle_voluntary_sleep()

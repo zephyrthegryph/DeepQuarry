@@ -178,6 +178,7 @@ CAPABILITIES(/datum/admin_save_conversion_review)
 	timeout = 0
 	title = "Convert Player Savefile"
 	question = "Enter the ckey of the player whose save file you want to convert."
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_convert_ckey/recheck_extra()
 	. = ..()
@@ -186,16 +187,11 @@ CAPABILITIES(/datum/admin_save_conversion_review)
 	var/datum/admin_save_conversion_review/review = owner
 	return review.refusal()
 
-/datum/prompt/text/admin_convert_ckey/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_convert_direction
 	rights = R_ADMIN
 	timeout = 0
 	title = "Convert Player Savefile"
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_convert_direction/recheck_extra()
 	. = ..()
@@ -204,18 +200,13 @@ CAPABILITIES(/datum/admin_save_conversion_review)
 	var/datum/admin_save_conversion_review/review = owner
 	return review.refusal()
 
-/datum/prompt/choice/admin_convert_direction/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_convert_confirmation
 	rights = R_ADMIN
 	timeout = 0
 	title = "Convert Player Savefile"
 	choices = list("Cancel", "Yes, they are logged off")
 	buttons = TRUE
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_convert_confirmation/recheck_extra()
 	. = ..()
@@ -224,8 +215,3 @@ CAPABILITIES(/datum/admin_save_conversion_review)
 	var/datum/admin_save_conversion_review/review = owner
 	return review.refusal()
 
-/datum/prompt/choice/admin_convert_confirmation/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

@@ -73,10 +73,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 	var/datum/prompt/text/card_data_label/request = A.request
 	if(request.captures_gone())
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_data_label), A.request.answerer, A.answer.answer_value)
-	if(!result.ok)
-		stack_trace("[type] request: [result.error]")
-	. = result.value
+	. = apply_data_label(A.request.answerer, A.answer.answer_value)
 	SStgui.update_uis(src)
 
 /obj/item/card/data/proc/apply_data_label(mob/user, t)

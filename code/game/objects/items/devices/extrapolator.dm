@@ -178,10 +178,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 /obj/item/extrapolator/proc/analyze_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_analyze_target_answered), A)
-	if(!result.ok)
-		stack_trace("Extrapolator analyze_target request: [result.error]")
-	return result.value
+	return apply_analyze_target_answered(A)
 
 /obj/item/extrapolator/proc/apply_analyze_target_answered(datum/act/request/A)
 	var/datum/prompt/choice/viral_extrapolator/analyze_target/ask = A.request
@@ -271,10 +268,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 /obj/item/extrapolator/proc/disease_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_disease_chosen), A)
-	if(!result.ok)
-		stack_trace("Extrapolator disease request: [result.error]")
-	return result.value
+	return apply_disease_chosen(A)
 
 /obj/item/extrapolator/proc/apply_disease_chosen(datum/act/request/A)
 	var/datum/prompt/choice/viral_extrapolator/disease/ask = A.request
@@ -283,10 +277,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 /obj/item/extrapolator/proc/isolation_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_isolation_chosen), A)
-	if(!result.ok)
-		stack_trace("Extrapolator isolate_what request: [result.error]")
-	return result.value
+	return apply_isolation_chosen(A)
 
 /obj/item/extrapolator/proc/apply_isolation_chosen(datum/act/request/A)
 	var/datum/prompt/choice/viral_extrapolator/isolate_what/ask = A.request
@@ -316,10 +307,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 /obj/item/extrapolator/proc/symptom_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_symptom_answered), A)
-	if(!result.ok)
-		stack_trace("Extrapolator symptom request: [result.error]")
-	return result.value
+	return apply_symptom_answered(A)
 
 /obj/item/extrapolator/proc/apply_symptom_answered(datum/act/request/A)
 	var/datum/prompt/choice/viral_extrapolator/symptom/ask = A.request

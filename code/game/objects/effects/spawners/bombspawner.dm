@@ -29,9 +29,7 @@ CAPABILITIES(/datum/ttv_bomb_review)
 	if(QDELETED(actor) || !admin_can(actor.client, R_SPAWN))
 		retire()
 		return
-	var/datum/result/result = safe_call(PROC_REF(start_step))
-	if(!result.ok)
-		stack_trace("TTV bomb start: [result.error]")
+	start_step()
 		retire()
 
 /datum/ttv_bomb_review/proc/start_step()

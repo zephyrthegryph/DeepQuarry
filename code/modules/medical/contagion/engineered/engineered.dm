@@ -556,6 +556,7 @@ CAPABILITIES(/datum/admin_virus_creation)
 /datum/prompt/choice/admin_virus_creation
 	rights = R_SPAWN|R_EVENT
 	timeout = 0
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_virus_creation/recheck_extra()
 	. = ..()
@@ -564,17 +565,12 @@ CAPABILITIES(/datum/admin_virus_creation)
 	var/datum/admin_virus_creation/creation = owner
 	return QDELETED(creation.strain) ? "draft is gone" : null
 
-/datum/prompt/choice/admin_virus_creation/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/text/admin_virus_creation
 	question = "Name your new disease."
 	title = "New Name"
 	rights = R_SPAWN|R_EVENT
 	timeout = 0
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_virus_creation/recheck_extra()
 	. = ..()
@@ -582,12 +578,6 @@ CAPABILITIES(/datum/admin_virus_creation)
 		return
 	var/datum/admin_virus_creation/creation = owner
 	return QDELETED(creation.strain) ? "draft is gone" : null
-
-/datum/prompt/text/admin_virus_creation/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 /datum/admin_virus_creation/proc/ask_symptom(client/user)
 	var/mob/answerer = user?.mob

@@ -278,11 +278,9 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 /obj/item/melee/artifact_blade/proc/summon_item_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(summon_item_apply), context)
-	if(!result.ok)
-		stack_trace("artifact blade summon: [result.error]")
+	. = summon_item_apply(context)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /obj/item/melee/artifact_blade/proc/summon_item_apply(datum/act/request/context)
 	var/datum/prompt/choice/artifact_blade_summon/request = context.answer

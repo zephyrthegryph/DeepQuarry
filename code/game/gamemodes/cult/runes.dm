@@ -196,10 +196,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		return
 	if(QDELETED(A.request.answerer))
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_convert_answered), A)
-	if(!result.ok)
-		stack_trace("Cult conversion request: [result.error]")
-	return result.value
+	return apply_convert_answered(A)
 
 /obj/effect/rune/proc/apply_convert_answered(datum/act/request/A)
 	var/datum/prompt/choice/cult_convert/ask = A.request
@@ -673,10 +670,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 		return
 	if(QDELETED(A.request.answerer))
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_communicate_entered), A)
-	if(!result.ok)
-		stack_trace("Cult communication request: [result.error]")
-	return result.value
+	return apply_communicate_entered(A)
 
 /obj/effect/rune/proc/apply_communicate_entered(datum/act/request/A)
 	var/mob/living/user = A.request.answerer
@@ -922,10 +916,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
 			return fizzle(A.request.answerer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_freedom_target_chosen), A)
-	if(!result.ok)
-		stack_trace("Cult ritual request: [result.error]")
-	return result.value
+	return apply_freedom_target_chosen(A)
 
 /obj/effect/rune/proc/apply_freedom_target_chosen(datum/act/request/A)
 	var/datum/prompt/choice/cult_ritual/ask = A.request
@@ -988,10 +979,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
 			return fizzle(A.request.answerer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_summon_target_chosen), A)
-	if(!result.ok)
-		stack_trace("Cult ritual request: [result.error]")
-	return result.value
+	return apply_summon_target_chosen(A)
 
 /obj/effect/rune/proc/apply_summon_target_chosen(datum/act/request/A)
 	var/datum/prompt/choice/cult_ritual/ask = A.request

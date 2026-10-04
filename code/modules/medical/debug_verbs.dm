@@ -138,12 +138,7 @@ ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print 
 	title = "DQ Medical"
 	rights = R_DEBUG
 	timeout = 0
-
-/datum/prompt/choice/medical_debug_target/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/admin_verb/dq_clear_conditions/proc/target_chosen(datum/act/request/A)
 	if(!A.answer)

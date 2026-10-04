@@ -320,10 +320,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /mob/proc/rename_self_entered(datum/act/request/request_act)
 	if(!request_act.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(rename_self_apply), request_act)
-	if(!result.ok)
-		stack_trace("role name selection: [result.error]")
-	return result.value
+	return rename_self_apply(request_act)
 
 /mob/proc/rename_self_apply(datum/act/request/request_act)
 	var/datum/prompt/text/rename_self/P = request_act.answer

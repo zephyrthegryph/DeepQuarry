@@ -30,10 +30,7 @@ CAPABILITIES(/datum/prompt/text/telepathy)
 /mob/living/carbon/human/proc/telepathy_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_telepathy_entered), A)
-	if(!result.ok)
-		stack_trace("Living request: [result.error]")
-	return result.value
+	return apply_telepathy_entered(A)
 
 /mob/living/carbon/human/proc/apply_telepathy_entered(datum/act/request/A)
 	var/datum/prompt/text/telepathy/ask = A.request

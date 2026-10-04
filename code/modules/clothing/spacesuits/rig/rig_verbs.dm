@@ -226,9 +226,7 @@
 /obj/item/rig/proc/select_module_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_select_module_answer), A)
-	if(!result.ok)
-		stack_trace("RIG select module request: [result.error]")
+	apply_select_module_answer(A)
 	SStgui.update_uis(src)
 
 /obj/item/rig/proc/apply_select_module_answer(datum/act/request/A)
@@ -242,9 +240,7 @@
 /obj/item/rig/proc/toggle_module_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_toggle_module_answer), A)
-	if(!result.ok)
-		stack_trace("RIG toggle module request: [result.error]")
+	apply_toggle_module_answer(A)
 	SStgui.update_uis(src)
 
 /obj/item/rig/proc/apply_toggle_module_answer(datum/act/request/A)
@@ -258,9 +254,7 @@
 /obj/item/rig/proc/engage_module_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_engage_module_answer), A)
-	if(!result.ok)
-		stack_trace("RIG engage module request: [result.error]")
+	apply_engage_module_answer(A)
 	SStgui.update_uis(src)
 
 /obj/item/rig/proc/apply_engage_module_answer(datum/act/request/A)

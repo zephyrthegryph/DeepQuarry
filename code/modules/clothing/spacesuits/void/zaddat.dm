@@ -328,9 +328,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 /obj/item/clothing/suit/space/void/zaddat/proc/style_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_style_answer), A)
-	if(!result.ok)
-		stack_trace("Shroud customization request: [result.error]")
+	apply_style_answer(A)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/suit/space/void/zaddat/proc/apply_style_answer(datum/act/request/A)

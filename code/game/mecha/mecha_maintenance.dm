@@ -142,10 +142,7 @@
 /obj/mecha/proc/component_pry_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(component_pry_apply), A)
-	if(!result.ok)
-		stack_trace("mecha component selection: [result.error]")
-	return result.value
+	return component_pry_apply(A)
 
 /obj/mecha/proc/component_pry_apply(datum/act/request/A)
 	var/datum/prompt/choice/mecha_pry_component/ask = A.answer

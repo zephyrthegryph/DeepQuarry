@@ -106,12 +106,7 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 	var/picked_z
 	buttons = TRUE
 	var/capture_range
-
-/datum/prompt/choice/admin_map_capture/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/number/admin_map_capture
 	rights = R_ADMIN
@@ -124,12 +119,7 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 	default = 1
 	min_value = 1
 	step = 1
-
-/datum/prompt/number/admin_map_capture/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/number/admin_map_capture/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
@@ -138,9 +128,7 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 	return box
 
 /datum/admin_verb/capture_map/proc/capture_question_answered(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(capture_answer), A)
-	if(!result.ok)
-		stack_trace("om flow capture_map answer capture_answer: [result.error]")
+	capture_answer(A)
 
 /datum/admin_verb/capture_map/proc/capture_answer(datum/act/request/A)
 	if(!A.answer)

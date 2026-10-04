@@ -105,9 +105,7 @@
 /obj/item/integrated_circuit/input/numberpad/proc/input_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_input), A)
-	if(!result.ok)
-		stack_trace("Native request input_entered: [result.error]")
+	apply_input(A)
 	SStgui.update_uis(src)
 
 /obj/item/integrated_circuit/input/numberpad/proc/apply_input(datum/act/request/A)
@@ -149,9 +147,7 @@
 /obj/item/integrated_circuit/input/textpad/proc/input_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_input), A)
-	if(!result.ok)
-		stack_trace("Native request input_entered: [result.error]")
+	apply_input(A)
 	SStgui.update_uis(src)
 
 /obj/item/integrated_circuit/input/textpad/proc/apply_input(datum/act/request/A)

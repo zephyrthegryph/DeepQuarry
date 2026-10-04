@@ -8,9 +8,7 @@ ADMIN_VERB(cmd_admin_change_custom_event, R_ADMIN|R_FUN|R_SERVER|R_EVENT, "Chang
 /datum/admin_verb/cmd_admin_change_custom_event/proc/event_description_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_event_description), context)
-	if(!result.ok)
-		stack_trace("om flow cmd_admin_change_custom_event answer event_description_answered: [result.error]")
+	apply_event_description(context)
 
 /datum/admin_verb/cmd_admin_change_custom_event/proc/apply_event_description(datum/act/request/context)
 	var/client/user = context.request.answerer.client
@@ -50,9 +48,5 @@ ADMIN_VERB(cmd_admin_change_custom_event, R_ADMIN|R_FUN|R_SERVER|R_EVENT, "Chang
 	title = "Custom Event"
 	max_len = MAX_PAPER_MESSAGE_LEN
 	multiline = TRUE
+	recheck_on_open = TRUE
 
-/datum/prompt/text/admin_custom_event/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

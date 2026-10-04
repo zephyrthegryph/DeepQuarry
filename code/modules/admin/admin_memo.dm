@@ -13,9 +13,7 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 	open_request(src, /datum/prompt/choice/admin_memo_menu, PROC_REF(memo_action_answered), answerer = answerer)
 
 /datum/admin_verb/admin_memo/proc/memo_action_answered(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(memo_action_chosen), A)
-	if(!result.ok)
-		stack_trace("om prompt /datum/prompt/choice/admin_memo_menu answer memo_action_chosen: [result.error]")
+	memo_action_chosen(A)
 
 /datum/admin_verb/admin_memo/proc/memo_action_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -101,12 +99,7 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 	choices = list("write", "show", "delete")
 	rights = R_ADMIN|R_MOD|R_EVENT
 	timeout = 0
-
-/datum/prompt/choice/admin_memo_menu/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_memo_write
 	question = "Type your memo\n(Leaving it blank will delete your current memo):"
@@ -114,11 +107,13 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 	multiline = TRUE
 	max_len = MAX_TGUI_INPUT
 	timeout = 0
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_memo_delete
 	question = "Whose memo shall we remove?"
 	title = "Remove Memo"
 	timeout = 0
+	recheck_on_open = TRUE
 
 /client/proc/memo_can_delete_others()
 	return admin_require(src, R_SERVER, "check_rights in [caller?.proc]", FALSE)
@@ -138,9 +133,7 @@ CAPABILITIES(/datum/admin_memo_review)
 	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
 
 /datum/admin_memo_review/proc/answered(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(finish), A)
-	if(!result.ok)
-		stack_trace("om flow [type] step finish: [result.error]")
+	finish(A)
 	retire()
 
 /datum/admin_memo_review/proc/finish(datum/act/request/A)
@@ -159,24 +152,12 @@ CAPABILITIES(/datum/admin_memo_review)
 	var/datum/admin_memo_review/review = owner
 	return review.refusal()
 
-/datum/prompt/text/admin_memo_write/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_memo_delete/recheck_extra()
 	. = ..()
 	if(.)
 		return
 	var/datum/admin_memo_review/review = owner
 	return review.refusal()
-
-/datum/prompt/choice/admin_memo_delete/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
 
 #undef MEMOFILE
 #undef ENABLE_MEMOS

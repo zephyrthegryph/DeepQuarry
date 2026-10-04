@@ -314,10 +314,7 @@
 /mob/observer/dead/proc/join_as_voice_confirmed(datum/act/request/A)
 	if(!A.answer || A.answer.answer_value != "Yes")
 		return
-	var/datum/result/result = safe_call(PROC_REF(join_as_voice_apply), A)
-	if(!result.ok)
-		stack_trace("communicator voice confirmation: [result.error]")
-	return result.value
+	return join_as_voice_apply(A)
 
 /mob/observer/dead/proc/join_as_voice_apply(datum/act/request/A)
 	var/datum/prompt/choice/join_as_voice/ask = A.answer

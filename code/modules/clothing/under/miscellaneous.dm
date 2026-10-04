@@ -2449,9 +2449,7 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 /obj/item/clothing/under/hyperfiber/bluespace/proc/uniform_size_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_uniform_size), A)
-	if(!result.ok)
-		stack_trace("Bluespace uniform size request: [result.error]")
+	apply_uniform_size(A)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/under/hyperfiber/bluespace/proc/apply_uniform_size(datum/act/request/A)
@@ -2461,9 +2459,7 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 /obj/item/clothing/gloves/bluespace/deluxe/proc/bracelet_size_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_bracelet_size), A)
-	if(!result.ok)
-		stack_trace("Bluespace bracelet size request: [result.error]")
+	apply_bracelet_size(A)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/gloves/bluespace/deluxe/proc/apply_bracelet_size(datum/act/request/A)

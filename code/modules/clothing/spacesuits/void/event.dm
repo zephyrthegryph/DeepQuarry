@@ -382,9 +382,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/aether, \
 /obj/item/clothing/head/helmet/space/void/aether/proc/aether_color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(apply_aether_color), A)
-	if(!result.ok)
-		stack_trace("Aether helmet color request: [result.error]")
+	apply_aether_color(A)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/head/helmet/space/void/aether/proc/apply_aether_color(datum/act/request/A)

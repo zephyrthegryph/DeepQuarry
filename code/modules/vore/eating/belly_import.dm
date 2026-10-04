@@ -1202,11 +1202,9 @@ UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_bellies)
 /datum/vore_look/import_panel/proc/belly_import_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(belly_import_apply), A)
-	if(!result.ok)
-		stack_trace("belly import confirmation: [result.error]")
+	. = belly_import_apply(A)
 	SStgui.update_uis(src)
-	return result.value
+	return .
 
 /datum/vore_look/import_panel/proc/belly_import_apply(datum/act/request/A)
 	var/datum/prompt/choice/belly_import_confirmation/ask = A.answer

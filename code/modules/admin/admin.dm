@@ -184,9 +184,7 @@ ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desire
 /datum/admin_verb/announce/proc/announcement_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(send_announcement), A)
-	if(!result.ok)
-		stack_trace("om flow announce answer announcement_answered: [result.error]")
+	send_announcement(A)
 
 /datum/admin_verb/announce/proc/send_announcement(datum/act/request/A)
 	var/client/user = A.request.answerer.client
@@ -221,9 +219,7 @@ ADMIN_VERB(intercom, R_ADMIN|R_EVENT, "Intercom Msg", "Send an intercom message,
 		msgverb = next_stage == 4 ? ask.answer_value : null
 	else
 		channel = A.request.answer_value
-	var/datum/result/result = safe_call(PROC_REF(advance_intercom), A.request.answerer.client, next_stage, channel, sender, message, msgverb)
-	if(!result.ok)
-		stack_trace("om flow intercom answer intercom_answered: [result.error]")
+	advance_intercom(A.request.answerer.client, next_stage, channel, sender, message, msgverb)
 
 /datum/admin_verb/intercom/proc/advance_intercom(client/user, stage = 0, channel = null, sender = null, message = null, msgverb = null)
 	var/mob/answerer = user.mob
@@ -267,9 +263,7 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 /datum/admin_verb/intercom_convo/proc/conversation_channel_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(ask_conversation_speech), context)
-	if(!result.ok)
-		stack_trace("om flow intercom_convo answer conversation_channel_selected: [result.error]")
+	ask_conversation_speech(context)
 
 /datum/admin_verb/intercom_convo/proc/ask_conversation_speech(datum/act/request/context)
 	var/channel = context.request.answer_value
@@ -280,9 +274,7 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 /datum/admin_verb/intercom_convo/proc/conversation_speech_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(ask_conversation_content), context)
-	if(!result.ok)
-		stack_trace("om flow intercom_convo answer conversation_speech_selected: [result.error]")
+	ask_conversation_content(context)
 
 /datum/admin_verb/intercom_convo/proc/ask_conversation_content(datum/act/request/context)
 	var/datum/prompt/choice/admin_intercom_conversation_speech/request = context.request
@@ -306,9 +298,7 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 /datum/admin_verb/intercom_convo/proc/conversation_content_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(send_conversation), context)
-	if(!result.ok)
-		stack_trace("om flow intercom_convo answer conversation_content_selected: [result.error]")
+	send_conversation(context)
 
 /datum/admin_verb/intercom_convo/proc/send_conversation(datum/act/request/context)
 	var/datum/prompt/text/admin_intercom_conversation_content/request = context.request
@@ -856,9 +846,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyz
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/admin_paralyze_confirm/ask = A.request
-	var/datum/result/result = safe_call(PROC_REF(toggle_paralyze), ask.answerer.client, ask.target, ask.answer_value, TRUE)
-	if(!result.ok)
-		stack_trace("om flow paralyze_mob answer paralyze_answered: [result.error]")
+	toggle_paralyze(ask.answerer.client, ask.target, ask.answer_value, TRUE)
 
 /datum/admin_verb/paralyze_mob/proc/toggle_paralyze(client/user, mob/living/living_target, _answer_a15 = null, answered = FALSE)
 	var/msg
@@ -887,9 +875,7 @@ ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to
 	open_request(src, /datum/prompt/number/admin_telecrystals, PROC_REF(set_crystals), answerer = answerer, question = "Amount of telecrystals for [human_mob.ckey], currently [human_mob.mind.tcrystals].", human_target = human_mob)
 
 /datum/admin_verb/set_tcrystals/proc/set_crystals(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(crystals_answered), A)
-	if(!result.ok)
-		stack_trace("om flow set_tcrystals answer crystals_answered: [result.error]")
+	crystals_answered(A)
 
 /datum/admin_verb/set_tcrystals/proc/crystals_answered(datum/act/request/A)
 	if(!A.answer)
@@ -910,9 +896,7 @@ ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to
 	open_request(src, /datum/prompt/number/admin_telecrystals, PROC_REF(add_crystals), answerer = answerer, question = "Amount of telecrystals to give to [human_mob.ckey], currently [human_mob.mind.tcrystals].", human_target = human_mob)
 
 /datum/admin_verb/add_tcrystals/proc/add_crystals(datum/act/request/A)
-	var/datum/result/result = safe_call(PROC_REF(crystals_answered), A)
-	if(!result.ok)
-		stack_trace("om flow add_tcrystals answer crystals_answered: [result.error]")
+	crystals_answered(A)
 
 /datum/admin_verb/add_tcrystals/proc/crystals_answered(datum/act/request/A)
 	if(!A.answer)
@@ -1104,9 +1088,7 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 /datum/admin_verb/set_uplink/proc/uplink_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/result/result = safe_call(PROC_REF(give_selected_uplink), A)
-	if(!result.ok)
-		stack_trace("om flow set_uplink answer uplink_target_chosen: [result.error]")
+	give_selected_uplink(A)
 
 /datum/admin_verb/set_uplink/proc/give_selected_uplink(datum/act/request/A)
 	var/mob/living/carbon/human/traitor_human = A.request.answer_value
@@ -1123,6 +1105,7 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	max_value = INFINITY
 	step = 1
 	var/mob/living/carbon/human/human_target
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/number/admin_telecrystals)
 	ref_one(nameof(human_target), /mob/living/carbon/human)
@@ -1139,12 +1122,6 @@ CAPABILITIES(/datum/prompt/number/admin_telecrystals)
 		return
 	return QDELETED(human_target) ? "target is gone" : null
 
-/datum/prompt/number/admin_telecrystals/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/number/admin_telecrystals/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
 	rel_set(box, nameof(box.prompt), src)
@@ -1158,6 +1135,7 @@ CAPABILITIES(/datum/prompt/number/admin_telecrystals)
 	buttons = TRUE
 	choices = list("Yes", "No")
 	var/mob/living/target
+	recheck_on_open = TRUE
 
 CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	ref_one(nameof(target), /mob/living)
@@ -1174,12 +1152,6 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 		return
 	return QDELETED(target) ? "target is gone" : null
 
-/datum/prompt/choice/admin_paralyze_confirm/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/text/admin_announcement
 	rights = R_SERVER|R_ADMIN|R_EVENT
 	timeout = 0
@@ -1187,18 +1159,14 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	title = "Admin Announce"
 	multiline = TRUE
 	max_len = MAX_TGUI_INPUT
-
-/datum/prompt/text/admin_announcement/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_uplink_target
 	rights = R_ADMIN|R_DEBUG
 	timeout = 0
 	question = "Select whom to give an uplink."
 	title = "Set uplink"
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_uplink_target/recheck_extra()
 	. = ..()
@@ -1208,23 +1176,12 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 		var/mob/living/carbon/human/picked = answer_value
 		return QDELETED(picked) ? "target is gone" : null
 
-/datum/prompt/choice/admin_uplink_target/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
-
 /datum/prompt/choice/admin_intercom_channel
 	rights = R_ADMIN|R_EVENT
 	timeout = 0
 	question = "Channel for message:"
 	title = "Channel"
-
-/datum/prompt/choice/admin_intercom_channel/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_intercom
 	rights = R_ADMIN|R_EVENT
@@ -1233,24 +1190,14 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	var/channel
 	var/sender
 	var/message
-
-/datum/prompt/text/admin_intercom/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_intercom_conversation_channel
 	rights = R_ADMIN|R_EVENT
 	timeout = 0
 	question = "Channel for message:"
 	title = "Channel"
-
-/datum/prompt/choice/admin_intercom_conversation_channel/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/admin_intercom_conversation_speech
 	rights = R_ADMIN|R_EVENT
@@ -1260,12 +1207,7 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	var/channel
 	choices = list("states", "says")
 	buttons = TRUE
-
-/datum/prompt/choice/admin_intercom_conversation_speech/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()
+	recheck_on_open = TRUE
 
 /datum/prompt/text/admin_intercom_conversation_content
 	rights = R_ADMIN|R_EVENT
@@ -1276,9 +1218,5 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	var/speech_verb
 	multiline = TRUE
 	max_len = MAX_TGUI_INPUT
+	recheck_on_open = TRUE
 
-/datum/prompt/text/admin_intercom_conversation_content/begin()
-	if(request_recheck(src))
-		request_end(src, REQ_CANCELLED, null)
-		return
-	return ..()

@@ -103,9 +103,7 @@ CAPABILITIES(/datum/armalis_commune_review)
 	if(QDELETED(actor))
 		retire()
 		return
-	var/datum/result/result = safe_call(PROC_REF(start_step))
-	if(!result.ok)
-		stack_trace("Armalis commune start: [result.error]")
+	start_step()
 		retire()
 
 /datum/armalis_commune_review/proc/start_step()
