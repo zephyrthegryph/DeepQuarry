@@ -287,6 +287,10 @@
 	COOLDOWN_DECLARE(slip_protect)
 
 CAPABILITIES(/mob)
+	ref_one(nameof(control_object)) // the object an admin possesses
+	ref_many(nameof(spell_list))
+	ref_many(nameof(actions))
+	links(/mob::exploit_addons, /obj/item::exploit_for, a_many = TRUE)
 	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
 	owns_one(nameof(autowhisper_display), /atom/movable/screen)
 	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
@@ -334,15 +338,7 @@ CAPABILITIES(/mob)
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
-/mob/relations()
-	. = ..()
-	. += rel_one(nameof(control_object)) // the object an admin possesses
-	. += rel_many(nameof(spell_list))
-	. += rel_many(nameof(actions))
-	. += rel_many(nameof(exploit_addons), back = nameof(/obj/item::exploit_for))
-/obj/item/relations()
-	. = ..()
-	. += rel_one(nameof(exploit_for), back = nameof(/mob::exploit_addons))
+
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob, blinded)
