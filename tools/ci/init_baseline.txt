@@ -1053,15 +1053,6 @@ initialize	code/modules/clothing/accessories/clothing.dm	/obj/item/clothing/acce
 initialize	code/modules/clothing/accessories/clothing.dm	/obj/item/clothing/accessory/hawaiian/random_flower/Initialize(mapload)
 initialize	code/modules/clothing/accessories/clothing.dm	/obj/item/clothing/accessory/tropical_random/Initialize(mapload)
 initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/Initialize(mapload, new_material)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/wood/Initialize(mapload)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/plastic/Initialize(mapload)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/iron/Initialize(mapload)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/steel/Initialize(mapload)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/silver/Initialize(mapload)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/gold/Initialize(mapload)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/platinum/Initialize(mapload)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/phoron/Initialize(mapload)
-initialize	code/modules/clothing/accessories/hands.dm	/obj/item/clothing/accessory/bracelet/material/glass/Initialize(mapload)
 initialize	code/modules/clothing/accessories/rings.dm	/obj/item/clothing/accessory/ring/material/Initialize(mapload, new_material)
 initialize	code/modules/clothing/accessories/rings.dm	/obj/item/clothing/accessory/ring/material/wood/Initialize(mapload)
 initialize	code/modules/clothing/accessories/rings.dm	/obj/item/clothing/accessory/ring/material/plastic/Initialize(mapload)
@@ -1808,13 +1799,6 @@ initialize	code/modules/pda/pda.dm	/obj/item/pda/Initialize(mapload)
 initialize	code/modules/pda/pda.dm	/obj/item/storage/box/PDAs/Initialize(mapload)
 initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/mime/Initialize(mapload)
 initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/librarian/Initialize(mapload)
-initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/multicaster/command/Initialize(mapload)
-initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/multicaster/security/Initialize(mapload)
-initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/multicaster/engineering/Initialize(mapload)
-initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/multicaster/medical/Initialize(mapload)
-initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/multicaster/research/Initialize(mapload)
-initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/multicaster/cargo/Initialize(mapload)
-initialize	code/modules/pda/pda_subtypes.dm	/obj/item/pda/multicaster/civilian/Initialize(mapload)
 initialize	code/modules/pda/pda_subtypes.dm	/obj/item/storage/box/PDAs/Initialize(mapload)
 initialize	code/modules/pda/radio.dm	/obj/item/radio/integrated/Initialize(mapload)
 initialize	code/modules/pda/radio.dm	/obj/item/radio/integrated/signal/Initialize(mapload)
@@ -1935,17 +1919,6 @@ initialize	code/modules/projectiles/ammunition.dm	/obj/item/ammo_casing/Initiali
 initialize	code/modules/projectiles/ammunition.dm	/obj/item/ammo_magazine/Initialize(mapload, material_key)
 initialize	code/modules/projectiles/ammunition/rounds.dm	/obj/item/ammo_casing/a145/spent/Initialize(mapload)
 initialize	code/modules/projectiles/broken.dm	/obj/item/broken_gun/Initialize(mapload, path)
-initialize	code/modules/projectiles/brokenguns/energy.dm	/obj/item/broken_gun/laserrifle/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/energy.dm	/obj/item/broken_gun/laser_retro/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/energy.dm	/obj/item/broken_gun/ionrifle/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/launcher.dm	/obj/item/broken_gun/grenadelauncher/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/magnetic.dm	/obj/item/broken_gun/flechette/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/projectile.dm	/obj/item/broken_gun/c20r/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/projectile.dm	/obj/item/broken_gun/silenced45/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/projectile.dm	/obj/item/broken_gun/pumpshotgun/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/projectile.dm	/obj/item/broken_gun/pumpshotgun_combat/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/projectile.dm	/obj/item/broken_gun/z8/Initialize(mapload)
-initialize	code/modules/projectiles/brokenguns/projectile.dm	/obj/item/broken_gun/dartgun/Initialize(mapload)
 initialize	code/modules/projectiles/gun.dm	/obj/item/gun/Initialize(mapload)
 initialize	code/modules/projectiles/guns/energy.dm	/obj/item/gun/energy/Initialize(mapload)
 initialize	code/modules/projectiles/guns/energy/bsharpoon.dm	/obj/item/bluespace_harpoon/Initialize(mapload)
@@ -2513,13 +2486,6 @@ world_reads	code/modules/overmap/sectors.dm	levels_for_distress[i] = GLOB.map_te
 world_reads	code/modules/paperwork/faxmachine.dm	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 world_reads	code/modules/paperwork/faxmachine.dm	GLOB.alldepartments |= department
 world_reads	code/modules/paperwork/photography.dm	id = GLOB.photo_count++
-world_reads	code/modules/pda/pda_subtypes.dm	cartridges_to_send_to = GLOB.command_cartridges
-world_reads	code/modules/pda/pda_subtypes.dm	cartridges_to_send_to = GLOB.security_cartridges
-world_reads	code/modules/pda/pda_subtypes.dm	cartridges_to_send_to = GLOB.engineering_cartridges
-world_reads	code/modules/pda/pda_subtypes.dm	cartridges_to_send_to = GLOB.medical_cartridges
-world_reads	code/modules/pda/pda_subtypes.dm	cartridges_to_send_to = GLOB.research_cartridges
-world_reads	code/modules/pda/pda_subtypes.dm	cartridges_to_send_to = GLOB.cargo_cartridges
-world_reads	code/modules/pda/pda_subtypes.dm	cartridges_to_send_to = GLOB.civilian_cartridges
 world_reads	code/modules/power/fusion/core/core_field.dm	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."

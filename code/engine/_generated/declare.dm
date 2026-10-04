@@ -2726,6 +2726,30 @@
 	into += entry_line(36)
 	into += list(global.owns_many(nameof(trait_states)))
 
+/// CAPABILITIES(/mob/living/bot/floorbot) at code/modules/mob/living/bot/floorbot.dm:7
+/mob/living/bot/floorbot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/bot/floorbot.dm", 7, /mob/living/bot/floorbot)
+	into += entry_line(8)
+	into += list(global.op("start", global.ui_act(), global.then(PROC_REF(native_ui_act_start))))
+
+/// CAPABILITIES(/mob/living/bot/secbot) at code/modules/mob/living/bot/secbot.dm:5
+/mob/living/bot/secbot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/bot/secbot.dm", 5, /mob/living/bot/secbot)
+	into += entry_line(6)
+	into += list(global.op("idcheck", global.ui_act(), global.then(PROC_REF(native_ui_act_idcheck))))
+	into += entry_line(7)
+	into += list(global.op("ignorerec", global.ui_act(), global.then(PROC_REF(native_ui_act_ignorerec))))
+	into += entry_line(8)
+	into += list(global.op("ignorearr", global.ui_act(), global.then(PROC_REF(native_ui_act_ignorearr))))
+	into += entry_line(9)
+	into += list(global.op("switchmode", global.ui_act(), global.then(PROC_REF(native_ui_act_switchmode))))
+	into += entry_line(10)
+	into += list(global.op("patrol", global.ui_act(), global.then(PROC_REF(native_ui_act_patrol))))
+	into += entry_line(11)
+	into += list(global.op("declarearrests", global.ui_act(), global.then(PROC_REF(native_ui_act_declarearrests))))
+
 /// CAPABILITIES(/mob/living/carbon) at code/engine/parts/hands.dm:48
 /mob/living/carbon/declared_entries(list/into)
 	..(into)
@@ -3154,6 +3178,15 @@
 	into += entry_line(175)
 	into += list(global.owns_many(nameof(stored_ammo)))
 
+/// CAPABILITIES(/obj/item/analyzer/plant_analyzer) at code/modules/hydroponics/trays/tray_tools.dm:24
+/obj/item/analyzer/plant_analyzer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/trays/tray_tools.dm", 24, /obj/item/analyzer/plant_analyzer)
+	into += entry_line(25)
+	into += list(global.op("print", global.ui_act(), global.then(PROC_REF(native_ui_act_print))))
+	into += entry_line(26)
+	into += list(global.op("close", global.ui_act(), global.then(PROC_REF(native_ui_act_close))))
+
 /// CAPABILITIES(/obj/item/anomaly_neutralizer) at code/modules/anomalies/anomaly.dm:13
 /obj/item/anomaly_neutralizer/declared_entries(list/into)
 	..(into)
@@ -3381,11 +3414,11 @@
 	into += entry_line(116)
 	into += list(global.owns_many(nameof(positive_locations)))
 
-/// CAPABILITIES(/obj/item/disk/body_record) at code/modules/resleeving/designer.dm:83
+/// CAPABILITIES(/obj/item/disk/body_record) at code/modules/resleeving/designer.dm:81
 /obj/item/disk/body_record/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/resleeving/designer.dm", 83, /obj/item/disk/body_record)
-	into += entry_line(84)
+	into += entry_block("code/modules/resleeving/designer.dm", 81, /obj/item/disk/body_record)
+	into += entry_line(82)
 	into += list(global.owns_one(nameof(stored), /datum/transhuman/body_record))
 
 /// CAPABILITIES(/obj/item/disk/botany) at code/modules/hydroponics/seed_machines.dm:11
@@ -3394,6 +3427,13 @@
 	into += entry_block("code/modules/hydroponics/seed_machines.dm", 11, /obj/item/disk/botany)
 	into += entry_line(12)
 	into += list(global.owns_many(nameof(genes)))
+
+/// CAPABILITIES(/obj/item/disk/tech_disk) at code/modules/research/tg/disks.dm:56
+/obj/item/disk/tech_disk/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/research/tg/disks.dm", 56, /obj/item/disk/tech_disk)
+	into += entry_line(57)
+	into += list(global.owns_one(nameof(stored_research_static), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/obj/item/dnainjector) at code/game/objects/items/weapons/dna_injector.dm:22
 /obj/item/dnainjector/declared_entries(list/into)
@@ -3776,6 +3816,8 @@
 	..(into)
 	into += entry_block("code/modules/nifsoft/nif_tgui.dm", 21, /obj/item/nif)
 	into += entry_line(22)
+	into += list(global.owns_one(nameof(comm), on_destroy = ON_DESTROY_DELETE))
+	into += entry_line(23)
 	into += list(global.owns_one(nameof(menu_ref), /datum/nif_menu))
 
 /// CAPABILITIES(/obj/item/nifrepairer) at code/game/objects/items/devices/advnifrepair.dm:19
@@ -5726,11 +5768,11 @@
 	into += entry_line(156)
 	into += list(global.configure(global.storage(max_size = ITEMSIZE_SMALL)))
 
-/// CAPABILITIES(/obj/item/storage/toolbox/mechanical) at code/modules/mob/living/bot/floorbot.dm:336
+/// CAPABILITIES(/obj/item/storage/toolbox/mechanical) at code/modules/mob/living/bot/floorbot.dm:339
 /obj/item/storage/toolbox/mechanical/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/bot/floorbot.dm", 336, /obj/item/storage/toolbox/mechanical)
-	into += entry_line(337)
+	into += entry_block("code/modules/mob/living/bot/floorbot.dm", 339, /obj/item/storage/toolbox/mechanical)
+	into += entry_line(340)
 	into += list(global.op("add_tiles", global.item(/obj/item/stack/tile/floor), global.when(req_storage_empty()), global.label("Add tiles"), global.then(PROC_REF(add_floorbot_tiles))))
 
 /// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:919
@@ -5979,12 +6021,44 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker))
 
+/// CAPABILITIES(/obj/machinery/atmospherics/binary) at code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm:104
+/obj/machinery/atmospherics/binary/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm", 104, /obj/machinery/atmospherics/binary)
+	into += entry_line(105)
+	into += list(global.owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(106)
+	into += list(global.owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY))
+
 /// CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm) at code/ATMOSPHERICS/components/binary_devices/algae_generator.dm:36
 /obj/machinery/atmospherics/binary/algae_farm/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/components/binary_devices/algae_generator.dm", 36, /obj/machinery/atmospherics/binary/algae_farm)
 	into += entry_line(37)
 	into += list(global.owns_one(nameof(internal), /datum/gas_mixture))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate) at code/ATMOSPHERICS/components/binary_devices/passive_gate.dm:207
+/obj/machinery/atmospherics/binary/passive_gate/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/passive_gate.dm", 207, /obj/machinery/atmospherics/binary/passive_gate)
+	into += entry_line(208)
+	into += list(global.op("toggle_valve", global.ui_act("toggle_valve"), global.then(PROC_REF(valve_switched))))
+	into += entry_line(209)
+	into += list(global.op("regulate_mode", global.ui_act("regulate_mode", global.arg("mode", global.schema_text())), global.then(PROC_REF(regulation_selected))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/pump) at code/ATMOSPHERICS/components/binary_devices/pump.dm:221
+/obj/machinery/atmospherics/binary/pump/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pump.dm", 221, /obj/machinery/atmospherics/binary/pump)
+	into += entry_line(222)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump) at code/ATMOSPHERICS/components/binary_devices/volume_pump.dm:244
+/obj/machinery/atmospherics/binary/volume_pump/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/volume_pump.dm", 244, /obj/machinery/atmospherics/binary/volume_pump)
+	into += entry_line(245)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni) at code/ATMOSPHERICS/components/omni_devices/omni_base.dm:28
 /obj/machinery/atmospherics/omni/declared_entries(list/into)
@@ -6013,6 +6087,24 @@
 	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm", 32, /obj/machinery/atmospherics/pipeturbine)
 	into += entry_line(33)
 	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/trinary) at code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm:220
+/obj/machinery/atmospherics/trinary/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm", 220, /obj/machinery/atmospherics/trinary)
+	into += entry_line(221)
+	into += list(global.owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(222)
+	into += list(global.owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(223)
+	into += list(global.owns_one(nameof(air3), on_destroy = ON_DESTROY_PRIVATE_COPY))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/unary) at code/ATMOSPHERICS/components/unary/unary_base.dm:172
+/obj/machinery/atmospherics/unary/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/unary/unary_base.dm", 172, /obj/machinery/atmospherics/unary)
+	into += entry_line(173)
+	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger) at code/ATMOSPHERICS/components/unary/heat_exchanger.dm:20
 /obj/machinery/atmospherics/unary/heat_exchanger/declared_entries(list/into)
@@ -6058,12 +6150,28 @@
 	into += entry_line(38)
 	into += list(global.owns_one(nameof(faketank), /datum/gas_mixture))
 
-/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:677
+/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:681
 /obj/machinery/bookbinder/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 677, /obj/machinery/bookbinder)
-	into += entry_line(678)
+	into += entry_block("code/modules/library/lib_machines.dm", 681, /obj/machinery/bookbinder)
+	into += entry_line(682)
 	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/botany) at code/modules/hydroponics/seed_machines.dm:72
+/obj/machinery/botany/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/seed_machines.dm", 72, /obj/machinery/botany)
+	into += entry_line(73)
+	into += list(global.owns_one(nameof(seed), on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(74)
+	into += list(global.owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL))
+
+/// CAPABILITIES(/obj/machinery/botany/extractor) at code/modules/hydroponics/seed_machines.dm:397
+/obj/machinery/botany/extractor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/seed_machines.dm", 397, /obj/machinery/botany/extractor)
+	into += entry_line(398)
+	into += list(global.owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34
 /obj/machinery/button/remote/declared_entries(list/into)
@@ -6254,6 +6362,15 @@
 	into += entry_line(66)
 	into += list(global.op("send_to_station", global.ui_act("send_to_station"), global.then(PROC_REF(ui_act_send_to_station))))
 
+/// CAPABILITIES(/obj/machinery/computer/rdconsole_tg) at code/modules/research/tg/rdconsole.dm:48
+/obj/machinery/computer/rdconsole_tg/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/research/tg/rdconsole.dm", 48, /obj/machinery/computer/rdconsole_tg)
+	into += entry_line(49)
+	into += list(global.owns_one(nameof(t_disk), on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(50)
+	into += list(global.owns_one(nameof(d_disk), on_destroy = ON_DESTROY_SPILL))
+
 /// CAPABILITIES(/obj/machinery/computer/security) at code/game/machinery/computer/camera.dm:18
 /obj/machinery/computer/security/declared_entries(list/into)
 	..(into)
@@ -6287,6 +6404,8 @@
 	..(into)
 	into += entry_block("code/modules/telesci/telesci_computer.dm", 33, /obj/machinery/computer/telescience)
 	into += entry_line(34)
+	into += list(global.owns_one(nameof(inserted_gps), on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(35)
 	into += list(global.owns_one(nameof(last_tele_data), /datum/projectile_data))
 
 /// CAPABILITIES(/obj/machinery/computer/transhuman/designer) at code/modules/resleeving/designer.dm:26
@@ -6294,7 +6413,16 @@
 	..(into)
 	into += entry_block("code/modules/resleeving/designer.dm", 26, /obj/machinery/computer/transhuman/designer)
 	into += entry_line(27)
+	into += list(global.owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(28)
 	into += list(global.owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer))
+
+/// CAPABILITIES(/obj/machinery/computer/transhuman/resleeving) at code/modules/resleeving/computers.dm:626
+/obj/machinery/computer/transhuman/resleeving/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/resleeving/computers.dm", 626, /obj/machinery/computer/transhuman/resleeving)
+	into += entry_line(627)
+	into += list(global.owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL))
 
 /// CAPABILITIES(/obj/machinery/computer/turbine_computer) at code/modules/power/turbine.dm:400
 /obj/machinery/computer/turbine_computer/declared_entries(list/into)
@@ -6689,24 +6817,43 @@
 	into += entry_line(32)
 	into += list(global.owns_one(nameof(fabricated_tablet), /obj/item/modular_computer/tablet))
 
-/// CAPABILITIES(/obj/machinery/librarycomp) at code/modules/library/lib_machines.dm:179
+/// CAPABILITIES(/obj/machinery/librarycomp) at code/modules/library/lib_machines.dm:182
 /obj/machinery/librarycomp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 179, /obj/machinery/librarycomp)
-	into += entry_line(180)
+	into += entry_block("code/modules/library/lib_machines.dm", 182, /obj/machinery/librarycomp)
+	into += entry_line(183)
 	into += list(global.owns_many(nameof(checkouts)))
+	into += entry_line(184)
+	into += list(global.op("print_bible", global.ui_act(), global.then(PROC_REF(native_ui_act_print_bible))))
+	into += entry_line(185)
+	into += list(global.op("arccheckout", global.ui_act(), global.then(PROC_REF(native_ui_act_arccheckout))))
+	into += entry_line(186)
+	into += list(global.op("increasetime", global.ui_act(), global.then(PROC_REF(native_ui_act_increasetime))))
+	into += entry_line(187)
+	into += list(global.op("decreasetime", global.ui_act(), global.then(PROC_REF(native_ui_act_decreasetime))))
+	into += entry_line(188)
+	into += list(global.op("checkout", global.ui_act(), global.then(PROC_REF(native_ui_act_checkout))))
 
-/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:628
+/// CAPABILITIES(/obj/machinery/librarypubliccomp) at code/modules/library/lib_machines.dm:23
+/obj/machinery/librarypubliccomp/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/library/lib_machines.dm", 23, /obj/machinery/librarypubliccomp)
+	into += entry_line(24)
+	into += list(global.op("search", global.ui_act(), global.then(PROC_REF(native_ui_act_search))))
+	into += entry_line(25)
+	into += list(global.op("back", global.ui_act(), global.then(PROC_REF(native_ui_act_back))))
+
+/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:632
 /obj/machinery/libraryscanner/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 628, /obj/machinery/libraryscanner)
-	into += entry_line(629)
+	into += entry_block("code/modules/library/lib_machines.dm", 632, /obj/machinery/libraryscanner)
+	into += entry_line(633)
 	into += list(global.interface("LibraryScanner", title = "Scanner"))
-	into += entry_line(630)
+	into += entry_line(634)
 	into += list(global.op("scan", global.ui_act("scan"), global.then(PROC_REF(ui_act_scan))))
-	into += entry_line(631)
+	into += entry_line(635)
 	into += list(global.op("clear", global.ui_act("clear"), global.then(PROC_REF(ui_act_clear))))
-	into += entry_line(632)
+	into += entry_line(636)
 	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
 
 /// CAPABILITIES(/obj/machinery/light) at code/modules/power/lighting.dm:106
@@ -6873,6 +7020,13 @@
 	into += entry_line(48)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/microwave))
 
+/// CAPABILITIES(/obj/machinery/mineral/processing_unit_console) at code/modules/mining/machinery/machine_processing.dm:34
+/obj/machinery/mineral/processing_unit_console/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/machinery/machine_processing.dm", 34, /obj/machinery/mineral/processing_unit_console)
+	into += entry_line(35)
+	into += list(global.owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL))
+
 /// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:486
 /obj/machinery/mining/brace/declared_entries(list/into)
 	..(into)
@@ -6959,6 +7113,8 @@
 	..(into)
 	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 18, /obj/machinery/portable_atmospherics)
 	into += entry_line(19)
+	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(20)
 	into += list(global.owns_one(nameof(holding), /obj/item/tank))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/canister) at code/game/machinery/atmoalter/canister.dm:31
@@ -7385,6 +7541,13 @@
 	into += entry_block("code/game/machinery/requests_console.dm", 57, /obj/machinery/requests_console)
 	into += entry_line(58)
 	into += list(global.owns_one(nameof(announcement), /datum/announcement))
+
+/// CAPABILITIES(/obj/machinery/rnd) at code/modules/research/tg/rdmachines.dm:103
+/obj/machinery/rnd/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/research/tg/rdmachines.dm", 103, /obj/machinery/rnd)
+	into += entry_line(104)
+	into += list(global.owns_one(nameof(loaded_item), on_destroy = ON_DESTROY_SPILL))
 
 /// CAPABILITIES(/obj/machinery/rnd/destructive_analyzer) at code/modules/research/tg/machinery/destructive_analyzer.dm:21
 /obj/machinery/rnd/destructive_analyzer/declared_entries(list/into)

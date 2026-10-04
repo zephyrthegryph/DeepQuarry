@@ -8,7 +8,7 @@ GLOBAL_LIST_EMPTY(language_whitelist)
 GLOBAL_LIST_EMPTY(robot_whitelist)
 
 ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Opens the editor for alien- and jobwhitelists.", ADMIN_CATEGORY_SERVER_CONFIG)
-	if(user.holder)
+	if(admin_can(user, 0))
 		user.holder.whitelist_editor = new /datum/whitelist_editor()
 		user.holder.whitelist_editor.tgui_interact(user.mob)
 

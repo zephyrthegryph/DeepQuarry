@@ -2998,7 +2998,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 	icon_state = "nuketoy"
 	play_sfx(src, SFX_MACHINES_ALARM)
 	after(src, 13.5 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoycool"))
-	after(src, 135 + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoyidle"))
+	after(src, 13.5 SECONDS + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoyidle"))
 
 /obj/structure/plushie/ownership()
 	. = ..()
