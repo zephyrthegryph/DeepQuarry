@@ -43,7 +43,7 @@
 	/// Custom atom dir (leave `null` for `2`).
 	var/atom_dir = 1
 	/// An associative list of x-y-z offsets.
-	var/offset = list()
+	var/list/offset
 	/// The pivot point for offsetting — relative or absolute.
 	var/offset_type = OFFSET_RELATIVE
 	/// Precise mode toggle. Used for build-mode-like spawning experience and targeting datums.

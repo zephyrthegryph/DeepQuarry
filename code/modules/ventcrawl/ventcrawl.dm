@@ -1,5 +1,4 @@
 /mob/living/var/list/icon/pipes_shown = list()
-/mob/living/var/last_played_vent
 /mob/living/var/is_ventcrawling = FALSE
 /mob/var/next_play_vent = 0
 

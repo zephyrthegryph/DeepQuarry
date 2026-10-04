@@ -4,7 +4,7 @@
 	name = "Player Notes"
 	tgui_id = "PlayerNotes"
 
-	var/ckeys = list()
+	var/list/ckeys
 
 	var/current_filter = ""
 	var/current_page = 1
@@ -46,9 +46,9 @@
 			var/lower_bound = page_index * PLAYER_NOTES_ENTRIES_PER_PAGE + 1
 			var/upper_bound = (page_index + 1) * PLAYER_NOTES_ENTRIES_PER_PAGE
 			upper_bound = min(upper_bound, note_keys.len)
-			ckeys = list()
+			ckeys = null
 			for(var/index = lower_bound, index <= upper_bound, index++)
-				ckeys += note_keys[index]
+				LAZYADD(ckeys, note_keys[index])
 
 	current_filter = filter
 

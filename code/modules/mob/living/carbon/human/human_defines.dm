@@ -32,7 +32,6 @@
 	var/g_skin = 0
 	var/b_skin = 0
 
-	var/skin_state = SKIN_NORMAL
 
 	//Synth colors
 	var/synth_color	= 0					//Lets normally uncolorable synth parts be colorable.
@@ -44,7 +43,6 @@
 	var/digitigrade = 0 // 0 = no digi, 1 = default, 2+ = digi styles... (Not used yet)
 
 	var/damage_multiplier = 1 //multiplies melee combat damage
-	var/icon_update = 1 //whether icon updating shall take place
 
 	var/lip_style = null	//no lipstick by default- arguably misleading, as it could be used for general makeup
 
@@ -98,7 +96,6 @@
 	// Used by "real" mobs after they leave a VR session
 	var/mob/living/carbon/human/vr_link = null
 
-	var/obj/machinery/machine_visual //machine that is currently applying visual effects to this mob. Only used for camera monitors currently.
 
 	inventory_panel_type = /datum/inventory_panel/human
 	butchery_loot = list(/obj/item/stack/animalhide/human = 1)

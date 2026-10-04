@@ -88,7 +88,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	catalogue_data = list(/datum/category_item/catalogue/fauna/teppi)
 	vis_height = 64
 
-	var/affinity = list()
+	var/list/affinity
 	var/allergen_preference
 	var/allergen_unpreference
 	var/body_color
@@ -597,7 +597,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	if(stat == DEAD)
 		return FALSE
 	if(interaction.stance == I_GRAB && item_type)
-		if(affinity[M.real_name] >= 30)
+		if(LAZYACCESS(affinity, M.real_name) >= 30)
 			act_message(M, src, MSG_SELF(span_notice("You remove %T%'s [item_type].")), MSG_OTHERS(span_notice("\The [M.name] removes %T%'s [item_type].")))
 			item_type = null
 			update_icon()
@@ -722,7 +722,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 			if(alltep)
 				new /mob/living/simple_mob/vore/alienanimals/teppi/baby(loc, src, alltep)
 				baby_countdown = 200
-				if(affinity[alltep.real_name])
+				if(LAZYACCESS(affinity, alltep.real_name))
 					return
 				handle_affinity(alltep, 30) //Mom and dad should like eachother when they do their business
 				alltep.handle_affinity(src, 30)
@@ -810,7 +810,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		init_vore(TRUE)
 	if(client)
 		return ..()
-	var/current_affinity = affinity[T.real_name]
+	var/current_affinity = LAZYACCESS(affinity, T.real_name)
 	ai_busy_begin()
 	T.stop_pulling()
 	if(current_affinity >= 50)
@@ -853,7 +853,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_checks(mob/living/user, mob/living/prey, mob/living/pred)
 	if(!pred)
 		pred = user
-	var/current_affinity = affinity[prey.real_name]
+	var/current_affinity = LAZYACCESS(affinity, prey.real_name)
 	if(current_affinity >= 50)
 		return friend_zone
 	if(current_affinity <= -50)
@@ -874,8 +874,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	M.stop_pulling()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/handle_affinity(mob/living/person, amount)
-	affinity[person.real_name] += amount * affection_factor
-	var/current_affinity = affinity[person.real_name]
+	LAZYADDASSOC(affinity, person.real_name, amount * affection_factor)
+	var/current_affinity = LAZYACCESS(affinity, person.real_name)
 	if(!teppi_adult)	//Don't want baby getting killed by parents in case of hostile or growing up with P in their AI
 		return
 	if(current_affinity >= 250)	//At this point the Teppi has joined your team
@@ -884,7 +884,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		//legacy ai_holder.target = person; .track_target_position; .set_stance(STANCE_FIGHT)
 		// became a single brain.give_target with urgent=TRUE which auto-aggros.
 		ai_brain?.give_target(person, TRUE)
-		affinity[person.real_name] = -100	//Don't hold a grudge though.
+		LAZYSET(affinity, person.real_name, -100)	//Don't hold a grudge though.
 
 /datum/say_list/teppi
 	speak = list("Gyooh~", "Gyuuuh!", "Gyuh?", "Gyaah...", "Iuuuuhh.", "Uoounh!", "GyoooOOOOoooh!", "Gyoh~", "Gyouh~","Gyuuuuh...", "Rrrr...", "Uuah~", "Groh!")
@@ -939,7 +939,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		"name" = teppi.name,
 		"real_name" = teppi.real_name,
 		"faction" = teppi.faction,
-		"affinity" = teppi.affinity,
+		"affinity" = teppi.affinity || list(),
 		"affection_factor" = teppi.affection_factor,
 		"nutrition" = teppi.nutrition,
 		"allergen_preference" = teppi.allergen_preference,
@@ -1034,7 +1034,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 			log_admin("[key_name_admin(src)] produced a baby teppi at [get_area(src)] - [COORD(src)]") //Won't show up in the chat, but makes a log of who's having babies where, for investigative purposes.
 			new /mob/living/simple_mob/vore/alienanimals/teppi/baby(loc, src, alltep)
 			baby_countdown = 400 //You don't have a random chance to deal with so the cooldown is twice as long.
-			if(affinity[alltep.real_name])
+			if(LAZYACCESS(affinity, alltep.real_name))
 				return
 			handle_affinity(alltep, 30) //Mom and dad should like eachother when they do their business
 			alltep.handle_affinity(src, 30)
@@ -1064,10 +1064,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	// Add everyone nearby to the list if they're in affinity, with key of the mob and value of the affinity
 	// . becomes list(jane = 1, tim = -3) etc
 	for(var/mob/living/M in people_nearby)
-		var/their_affinity = affinity[M.real_name]
+		var/their_affinity = LAZYACCESS(affinity, M.real_name)
 		if(their_affinity)
 			if(their_affinity >= 25 || their_affinity <= -10)
-				.[M] = affinity[M.real_name]
+				.[M] = LAZYACCESS(affinity, M.real_name)
 	// Sort the list (timsort default sort comperator is numeric ascending, so highest affinity will be last in the list)
 	sortTim(., associative = TRUE)
 

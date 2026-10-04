@@ -38,9 +38,6 @@
 	**/
 	VAR_FINAL/incapacitated = NONE
 
-	//Not in use yet
-	var/obj/effect/organstructure/organStructure = null
-
 	var/tmp/atom/movable/screen/hands = null
 	var/tmp/atom/movable/screen/pullin = null
 	var/tmp/atom/movable/screen/purged = null
@@ -83,10 +80,8 @@
 	var/computer_id = null
 	var/list/logging
 
-	var/already_placed = 0.0
 	var/other_mobs = null
 	var/memory = ""
-	var/poll_answer = 0.0
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
 	var/other = 0.0
@@ -101,7 +96,6 @@
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
-	var/antitoxs = null
 	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
@@ -155,7 +149,6 @@
 
 	var/inertia_dir = 0
 
-	var/music_lastplayed = "null"
 
 	var/job = null//Living
 
@@ -219,8 +212,6 @@
 
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 
-	var/tmp/list/radar_blips // list of screen objects, radar blips (currently unused; null until populated)
-	var/radar_open = 0 	// nonzero is radar is open
 
 
 	var/obj/control_object //Used by admins to possess objects. All mobs should have this var
