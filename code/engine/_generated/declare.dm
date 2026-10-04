@@ -2915,18 +2915,18 @@
 	into += entry_line(75)
 	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/choice/blueprint_expand) at code/game/objects/items/blueprints.dm:995
+/// CAPABILITIES(/datum/prompt/choice/blueprint_expand) at code/game/objects/items/blueprints.dm:993
 /datum/prompt/choice/blueprint_expand/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/blueprints.dm", 995, /datum/prompt/choice/blueprint_expand)
-	into += entry_line(996)
+	into += entry_block("code/game/objects/items/blueprints.dm", 993, /datum/prompt/choice/blueprint_expand)
+	into += entry_line(994)
 	into += list(global.ref_one(nameof(editor), /obj/item/areaeditor))
 
-/// CAPABILITIES(/datum/prompt/choice/blueprint_whole_confirm) at code/game/objects/items/blueprints.dm:1101
+/// CAPABILITIES(/datum/prompt/choice/blueprint_whole_confirm) at code/game/objects/items/blueprints.dm:1099
 /datum/prompt/choice/blueprint_whole_confirm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/blueprints.dm", 1101, /datum/prompt/choice/blueprint_whole_confirm)
-	into += entry_line(1102)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1099, /datum/prompt/choice/blueprint_whole_confirm)
+	into += entry_line(1100)
 	into += list(global.ref_one(nameof(chosen_area), /area))
 
 /// CAPABILITIES(/datum/prompt/choice/camera_direction) at code/game/machinery/camera/camera_assembly.dm:157
@@ -3036,11 +3036,11 @@
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
 
-/// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1035
+/// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1033
 /datum/prompt/text/blueprint_area_name/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/blueprints.dm", 1035, /datum/prompt/text/blueprint_area_name)
-	into += entry_line(1036)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1033, /datum/prompt/text/blueprint_area_name)
+	into += entry_line(1034)
 	into += list(global.ref_one(nameof(editor), /obj/item/areaeditor))
 
 /// CAPABILITIES(/datum/prompt/text/compliance_laws) at code/game/objects/items/weapons/implants/implant.dm:842
