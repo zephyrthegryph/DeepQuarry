@@ -100,6 +100,44 @@
 /proc/p2_apc_area_powered(obj/machinery/power/apc/A, index)
 	return !!(index == 0 ? A.area().power_equip : (index == 1 ? A.area().power_light : A.area().power_environ))
 
+/// The APC's output is down for a while (an EMP, an overload event, a supermatter shutdown): its power failure is on.
+/proc/p2_apc_failed(obj/machinery/power/apc/A)
+	return !!A.power_failed
+
+/// The frame is not finished (its electronics are not fastened): it does not run.
+/proc/p2_apc_unfinished(obj/machinery/power/apc/A)
+	return !!A.has_stat(MAINT)
+
+/// A power failure of `seconds` (what the electrical fault event and the supermatter do).
+/proc/p2_apc_energy_fail(obj/machinery/power/apc/A, seconds)
+	A.energy_fail(seconds SECONDS / MACHINE_SERVICE_INTERVAL)
+
+/// The station night shift turns on or off (the night-shift system's command).
+/proc/p2_apc_station_night(night)
+	SSnightshift.update_nightshift(night, FALSE, forced = TRUE)
+
+/// Swaps the APC's wire set for one that records who reached its window (a test mob has no client to open it for).
+/proc/p2_apc_record_wire_window(obj/machinery/power/apc/A)
+	wire_set_of(A)
+	var/datum/activation/act = cap_activation(A, CAP_WIRES, null, FALSE)
+	var/datum/cap_data/wires/D = act?.data
+	var/datum/wires/apc/p2_test/W = new(A)
+	D.wire_set = W
+	return W
+
+/// The wire window was reached by `user`.
+/proc/p2_apc_wire_window_opened(datum/wires/apc/p2_test/W, mob/user)
+	return user in W.p2_opened
+
+/// The APC's wires, recording who reached their window.
+/datum/wires/apc/p2_test
+	var/list/p2_opened
+
+/datum/wires/apc/p2_test/Interact(mob/user)
+	if(user && interactable(user))
+		LAZYADD(p2_opened, user)
+	return ..()
+
 /// The test APC: a real APC, except that a test mob has no client (can_use() asks for one) and the type records who opened its window.
 /obj/machinery/power/apc/p2_test
 	var/list/p2_opened
@@ -261,8 +299,8 @@
 	TEST_ASSERT_EQUAL(A.equipment, POWERCHAN_ON_AUTO, "equipment on auto")
 	TEST_ASSERT_EQUAL(A.lighting, POWERCHAN_ON_AUTO, "lighting on auto")
 	TEST_ASSERT_EQUAL(A.environ, POWERCHAN_ON_AUTO, "environment on auto")
-	TEST_ASSERT(!A.shorted && !A.power_failed, "neither shorted nor failed")
-	TEST_ASSERT(!A.has_stat(BROKEN) && !A.has_stat(MAINT), "neither broken nor under maintenance")
+	TEST_ASSERT(!A.shorted && !p2_apc_failed(A), "neither shorted nor failed")
+	TEST_ASSERT(!A.has_stat(BROKEN) && !p2_apc_unfinished(A), "neither broken nor under maintenance")
 	TEST_ASSERT(A.operable(), "it works")
 	TEST_ASSERT_EQUAL(A.get_integrity(), A.max_integrity, "undamaged")
 	for(var/index in 0 to 2)
@@ -842,11 +880,11 @@
 	unlock(H, A)
 	A.emp_act(1)
 	p2_settle()
-	TEST_ASSERT(A.power_failed, "the pulse failed it")
+	TEST_ASSERT(p2_apc_failed(A), "the pulse failed it")
 	press(H, A, "reboot", list())
-	TEST_ASSERT(!A.power_failed, "the reboot ended the failure")
+	TEST_ASSERT(!p2_apc_failed(A), "the reboot ended the failure")
 	test_time(15 MINUTES)
-	TEST_ASSERT(!A.power_failed, "and it does not come back")
+	TEST_ASSERT(!p2_apc_failed(A), "and it does not come back")
 	var/was = A.emergency_lights
 	press(H, A, "emergency_lighting", list())
 	TEST_ASSERT_EQUAL(A.emergency_lights, !was, "the emergency lighting flipped")
@@ -893,12 +931,12 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	A.emp_act(1)
 	p2_settle()
-	TEST_ASSERT(A.power_failed, "failed by the pulse")
+	TEST_ASSERT(p2_apc_failed(A), "failed by the pulse")
 	TEST_ASSERT(!p2_apc_area_powered(A, 1), "the area is dark")
 	test_time(3 MINUTES)
-	TEST_ASSERT(A.power_failed, "still failed minutes on")
+	TEST_ASSERT(p2_apc_failed(A), "still failed minutes on")
 	test_time(11 MINUTES)
-	TEST_ASSERT(!A.power_failed, "recovered by itself")
+	TEST_ASSERT(!p2_apc_failed(A), "recovered by itself")
 	TEST_ASSERT(p2_apc_area_powered(A, 1) || A.shorted, "the area is lit again unless a wire the pulse hit still holds it")
 
 /// A critical APC shrugs most of a pulse off: its failure is over in about a minute.
@@ -908,9 +946,9 @@
 	var/obj/machinery/power/apc/A = p2_apc(null, /obj/machinery/power/apc/p2_test/critical)
 	A.emp_act(1)
 	p2_settle()
-	TEST_ASSERT(A.power_failed, "failed")
+	TEST_ASSERT(p2_apc_failed(A), "failed")
 	test_time(100 SECONDS)
-	TEST_ASSERT(!A.power_failed, "a critical APC recovers within two minutes")
+	TEST_ASSERT(!p2_apc_failed(A), "a critical APC recovers within two minutes")
 
 /// A lighter pulse costs less time than a hard one.
 /datum/unit_test/dq_p2_apc/emp_severity_scales_the_failure
@@ -919,9 +957,9 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	A.emp_act(2)
 	p2_settle()
-	TEST_ASSERT(A.power_failed, "failed by a light pulse")
+	TEST_ASSERT(p2_apc_failed(A), "failed by a light pulse")
 	test_time(8 MINUTES)
-	TEST_ASSERT(!A.power_failed, "a light pulse is over within eight minutes")
+	TEST_ASSERT(!p2_apc_failed(A), "a light pulse is over within eight minutes")
 
 /// A damage that breaks the APC shuts it down: broken, the breaker off and the area dark.
 /datum/unit_test/dq_p2_apc/damage_breaks_the_apc_and_darkens_the_area
@@ -1141,7 +1179,7 @@
 	TEST_ASSERT(p2_apc_cover_open(A), "the cover is open")
 	TEST_ASSERT(!A.operating, "the breaker is off")
 	TEST_ASSERT_NULL(A.cell, "there is no cell")
-	TEST_ASSERT(A.has_stat(MAINT), "it is under maintenance")
+	TEST_ASSERT(p2_apc_unfinished(A), "it is under maintenance")
 	bare_floor()
 	touch(H, A, allocate(/obj/item/module/power_control, run_loc_floor_bottom_left))
 	TEST_ASSERT_EQUAL(p2_apc_stage(A), "board", "the board is in")
@@ -1152,7 +1190,7 @@
 	TEST_ASSERT_EQUAL(A.terminal.master, A, "and answers to the APC")
 	touch(H, A, tool(/obj/item/tool/screwdriver))
 	TEST_ASSERT_EQUAL(p2_apc_stage(A), "secured", "the electronics are fastened")
-	TEST_ASSERT(!A.has_stat(MAINT), "the APC works")
+	TEST_ASSERT(!p2_apc_unfinished(A), "the APC works")
 
 /// The cable step needs the floor plating off.
 /datum/unit_test/dq_p2_apc/wiring_needs_the_plating_bared
@@ -1183,7 +1221,7 @@
 	TEST_ASSERT_EQUAL(p2_apc_stage(A), "secured", "built")
 	touch(H, A, tool(/obj/item/tool/screwdriver))
 	TEST_ASSERT_EQUAL(p2_apc_stage(A), "wired", "the screwdriver unfastened it")
-	TEST_ASSERT(A.has_stat(MAINT), "under maintenance again")
+	TEST_ASSERT(p2_apc_unfinished(A), "under maintenance again")
 	touch(H, A, tool(/obj/item/tool/wirecutters))
 	TEST_ASSERT_EQUAL(p2_apc_stage(A), "board", "the wirecutters cut the cable out")
 	TEST_ASSERT_NULL(A.terminal, "the terminal is gone")
@@ -1324,3 +1362,170 @@
 			TEST_ASSERT_EQUAL(event.entity, original, "a transfer row is about the cell")
 			TEST_ASSERT(!findtext("[event.key]", ":"), "its slot is a plain name, not an op key: [event.key]")
 	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_SPILL), 0, "nothing spilled")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Outages: EMPs, the overload events and the reboot (pinned before the outage became a hold on the APC's operability)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A hard pulse during a lighter pulse's outage lengthens it; a light pulse during a hard pulse's outage never shortens it.
+/datum/unit_test/dq_p2_apc/emp_during_an_outage_keeps_the_longer_failure
+
+/datum/unit_test/dq_p2_apc/emp_during_an_outage_keeps_the_longer_failure/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	A.emp_act(2)
+	p2_settle()
+	TEST_ASSERT(p2_apc_failed(A), "a light pulse fails it (four to six minutes)")
+	A.emp_act(1)
+	p2_settle()
+	test_time(7 MINUTES)
+	TEST_ASSERT(p2_apc_failed(A), "the hard pulse that followed holds it past the light pulse's end")
+	test_time(6 MINUTES)
+	TEST_ASSERT(!p2_apc_failed(A), "and it ends when the hard pulse's outage ends")
+	var/obj/machinery/power/apc/B = p2_apc(run_loc_floor_top_right)
+	B.emp_act(1)
+	p2_settle()
+	B.emp_act(2)
+	p2_settle()
+	test_time(7 MINUTES)
+	TEST_ASSERT(p2_apc_failed(B), "a light pulse during a hard pulse's outage does not shorten it")
+
+/// An event's power failure (the electrical fault, the supermatter's shutdown) darkens the area for its duration; the reboot button ends it early.
+/datum/unit_test/dq_p2_apc/event_power_failure_lasts_its_duration
+
+/datum/unit_test/dq_p2_apc/event_power_failure_lasts_its_duration/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	var/mob/living/silicon/robot/R = p2_borg()
+	p2_apc_energy_fail(A, 60)
+	p2_settle()
+	TEST_ASSERT(p2_apc_failed(A), "the failure is on")
+	TEST_ASSERT(!p2_apc_area_powered(A, 0) && !p2_apc_area_powered(A, 1) && !p2_apc_area_powered(A, 2), "the area is dark")
+	TEST_ASSERT(A.operating, "the breaker is untouched")
+	test_time(30 SECONDS)
+	TEST_ASSERT(p2_apc_failed(A), "still failed half a minute on")
+	test_time(30 SECONDS)
+	TEST_ASSERT(!p2_apc_failed(A), "over after its minute")
+	TEST_ASSERT(p2_apc_area_powered(A, 0) && p2_apc_area_powered(A, 1) && p2_apc_area_powered(A, 2), "the area is lit again")
+	A.emp_act(1)
+	p2_settle()
+	p2_apc_energy_fail(A, 30)
+	test_time(1 MINUTE)
+	TEST_ASSERT(p2_apc_failed(A), "a shorter failure during a pulse's outage does not end it")
+	press(R, A, "reboot", list())
+	TEST_ASSERT(!p2_apc_failed(A), "the reboot button ends any failure at once")
+
+/// The overload button (a silicon's) spends 20 of the cell's charge and bursts the area's lights.
+/datum/unit_test/dq_p2_apc/ui_overload_bursts_the_area_lights
+
+/datum/unit_test/dq_p2_apc/ui_overload_bursts_the_area_lights/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	var/mob/living/silicon/robot/R = p2_borg()
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, run_loc_floor_top_right)
+	if(L.status != LIGHT_OK)
+		L.fix()
+	p2_settle()
+	TEST_ASSERT(L in p2_apc_area_lights(A), "the light is one of the area's")
+	var/charge = A.cell.charge
+	press(R, A, "overload", list())
+	TEST_ASSERT(A.cell.charge <= charge - 19, "the overload spent the cell's charge")
+	TEST_ASSERT_EQUAL(L.status, LIGHT_BROKEN, "and burst the light")
+	TEST_ASSERT(!p2_apc_failed(A), "it does not fail the APC")
+
+/// A surge from the grid never fails an APC's output, and a critical APC ignores it altogether.
+/datum/unit_test/dq_p2_apc/grid_surge_never_fails_the_apc
+
+/datum/unit_test/dq_p2_apc/grid_surge_never_fails_the_apc/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	for(var/i in 1 to 30)
+		A.overload(null)
+		TEST_ASSERT(!p2_apc_failed(A), "a surge does not fail the APC")
+	var/obj/machinery/power/apc/C = p2_apc(run_loc_floor_top_right, /obj/machinery/power/apc/p2_test/critical)
+	var/charge = C.cell.charge
+	for(var/i in 1 to 30)
+		C.overload(null)
+	p2_settle()
+	TEST_ASSERT(!p2_apc_failed(C), "a critical APC is not failed")
+	TEST_ASSERT(!p2_apc_emagged(C) && p2_apc_locked(C), "nor subverted")
+	TEST_ASSERT_EQUAL(C.cell.charge, charge, "nor its cell touched")
+	TEST_ASSERT(!C.has_stat(BROKEN), "nor broken")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Signallers and silicons (pinned before they became their own bindings)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A signaller held to the open wire panel (the cover shut) reaches the wire window, where it can be attached; with the panel shut it does nothing.
+/datum/unit_test/dq_p2_apc/signaler_at_the_open_panel_reaches_the_wires
+
+/datum/unit_test/dq_p2_apc/signaler_at_the_open_panel_reaches_the_wires/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	var/mob/living/carbon/human/H = p2_actor()
+	var/datum/wires/apc/p2_test/W = p2_apc_record_wire_window(A)
+	var/obj/item/assembly/signaler/S = allocate(/obj/item/assembly/signaler, run_loc_floor_bottom_left)
+	touch(H, A, S)
+	TEST_ASSERT(!p2_apc_wire_window_opened(W, H), "the panel shut: the wires are out of reach")
+	TEST_ASSERT_EQUAL(A.get_integrity(), A.max_integrity, "and the APC is not hurt")
+	open_panel(H, A)
+	touch(H, A, S)
+	TEST_ASSERT(p2_apc_wire_window_opened(W, H), "the panel open: the signaller reaches the wire window")
+	TEST_ASSERT_EQUAL(A.get_integrity(), A.max_integrity, "the APC is not hurt")
+
+/// A silicon's click opens the window: a cyborg's beside it and an AI's from across the room.
+/datum/unit_test/dq_p2_apc/silicon_click_opens_the_window
+
+/datum/unit_test/dq_p2_apc/silicon_click_opens_the_window/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	var/mob/living/silicon/robot/R = p2_borg()
+	test_click(R, A, null)
+	p2_settle()
+	TEST_ASSERT(p2_apc_interface_opened(A, R), "a cyborg's click opens the window")
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, run_loc_floor_top_right, null, null, null, TRUE)
+	test_click(AI, A, null)
+	p2_settle()
+	TEST_ASSERT(p2_apc_interface_opened(A, AI), "an AI's click opens the window")
+
+/// A cyborg using a module that means nothing to the APC opens the window instead of hitting it.
+/datum/unit_test/dq_p2_apc/cyborg_module_opens_the_window
+
+/datum/unit_test/dq_p2_apc/cyborg_module_opens_the_window/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	var/mob/living/silicon/robot/R = p2_borg()
+	var/obj/item/module = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	test_click(R, A, module)
+	p2_settle()
+	TEST_ASSERT(p2_apc_interface_opened(A, R), "a module with no use here opens the window")
+	TEST_ASSERT_EQUAL(A.get_integrity(), A.max_integrity, "and does not hit the APC")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Night shift (pinned before the night-shift system stopped calling every APC)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// On "automatic" an APC on a station level dims its area for the station's night; "never" keeps it bright; "always" dims it by day.
+/datum/unit_test/dq_p2_apc/night_shift_follows_the_station_night_on_automatic
+
+/datum/unit_test/dq_p2_apc/night_shift_follows_the_station_night_on_automatic/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	var/list/levels = using_map.station_levels.Copy()
+	var/was_night = SSnightshift.nightshift_active
+	if(!(A.z in using_map.station_levels))
+		using_map.station_levels += A.z
+	p2_apc_station_night(FALSE)
+	p2_settle()
+	TEST_ASSERT(!A.area().lights_nightshift, "by day the area is bright")
+	p2_apc_station_night(TRUE)
+	p2_settle()
+	TEST_ASSERT(A.area().lights_nightshift, "at night an automatic APC dims its area")
+	A.set_nightshift_setting(NIGHTSHIFT_NEVER)
+	p2_settle()
+	TEST_ASSERT(!A.area().lights_nightshift, "an APC set to never keeps it bright at night")
+	A.set_nightshift_setting(NIGHTSHIFT_AUTO)
+	p2_settle()
+	TEST_ASSERT(A.area().lights_nightshift, "back on automatic it dims again")
+	p2_apc_station_night(FALSE)
+	p2_settle()
+	TEST_ASSERT(!A.area().lights_nightshift, "the morning brightens it")
+	A.set_nightshift_setting(NIGHTSHIFT_ALWAYS)
+	p2_settle()
+	TEST_ASSERT(A.area().lights_nightshift, "an APC set to always dims it by day")
+	A.set_nightshift_setting(NIGHTSHIFT_AUTO)
+	using_map.station_levels = levels
+	p2_apc_station_night(was_night)
+	p2_settle()
