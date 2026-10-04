@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 
 /obj/item/pen/crayon/proc/rainbow_colour_picked(datum/act/request/A)
 	// Explicit closing skipped old prompt rechecks; a rejected answer did not continue.
-	if(!A.answer && (A.request.outcome != REQ_CANCELLED || A.request.last_error))
+	if(!A.answer && (A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value)))
 		return
 	var/mob/user = A.request.answerer
 	if(!user || QDELETED(user))

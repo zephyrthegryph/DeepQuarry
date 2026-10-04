@@ -124,6 +124,23 @@
 	user.next_click = 0
 	test_click(user, crayon, crayon)
 	test_drain()
+	request = SSrequests.open_for(user)
+	TEST_ASSERT_NOTNULL(request, "main color opens for the invalid-answer cancellation control")
+	test_answer(user, "not-a-color")
+	TEST_ASSERT_EQUAL(SSrequests.open_for(user), request, "an invalid color leaves the same request open")
+	TEST_ASSERT(request.last_error, "the invalid answer actually records its rejection")
+	test_answer(user, null, REQ_CANCELLED)
+	prompt = SSrequests.open_for(user)
+	TEST_ASSERT_NOTNULL(prompt, "explicit cancel after an invalid answer still opens shade")
+	TEST_ASSERT(prompt.shade, "the continuation after rejected input selects shade")
+	test_answer(user, null, REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(crayon.colour, "#102030", "invalid answer and explicit cancel retain main color")
+	TEST_ASSERT_EQUAL(crayon.shadeColour, "#405060", "shade cancellation retains shade color after rejected input")
+	TEST_ASSERT_NULL(SSrequests.open_for(user), "the cancellation chain after rejected input finishes")
+
+	user.next_click = 0
+	test_click(user, crayon, crayon)
+	test_drain()
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(user), "a new held use opens main color")
 	user.drop_from_inventory(crayon, run_loc_floor_bottom_left)
 	TEST_ASSERT_EQUAL(crayon.loc, run_loc_floor_bottom_left, "the crayon really leaves the actor before cancel")
