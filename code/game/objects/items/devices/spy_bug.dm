@@ -211,32 +211,24 @@ CAPABILITIES(/obj/item/bug_monitor)
 		if(in_use) // Don't allow spamming tgui menus
 			return
 		in_use = TRUE
-		if(!om_ask(user, /datum/om/prompt/choice/bug_camera, PROC_REF(camera_chosen), choices = cameras, monitor = src))
+		if(!user || QDELETED(user) || !open_request(src, /datum/prompt/choice/bug_camera, PROC_REF(camera_chosen), answerer = user, choices = cameras))
 			in_use = FALSE
 		return
 	view_camera(user)
 
 /// Picking a paired camera. Re-checked on the answer: the monitor is still carried. Any ending frees the monitor.
-/datum/om/prompt/choice/bug_camera
+/datum/prompt/choice/bug_camera
 	title = "Camera Choice"
-	message = "Select camera to view."
+	question = "Select camera to view."
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
-	var/obj/item/bug_monitor/monitor
+	timeout = 0
 
-/datum/om/prompt/choice/bug_camera/cancelled()
-	if(monitor)
-		monitor.in_use = FALSE
-	return ..()
-
-/datum/om/prompt/choice/bug_camera/refused(reason)
-	if(monitor)
-		monitor.in_use = FALSE
-	return ..()
-
-/obj/item/bug_monitor/proc/camera_chosen(datum/om/prompt/choice/bug_camera/ask)
+/obj/item/bug_monitor/proc/camera_chosen(datum/act/request/A)
 	in_use = FALSE
-	rel_set(src, nameof(selected_camera), ask.choice)
-	view_camera(ask.answerer)
+	if(!A.answer)
+		return
+	rel_set(src, nameof(selected_camera), A.answer.answer_value)
+	view_camera(A.request.answerer)
 
 /obj/item/bug_monitor/proc/view_camera(mob/user)
 	if(loc != user) // Nice try smartass, must be in your hand and not in a box in your inventory
