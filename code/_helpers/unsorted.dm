@@ -299,27 +299,38 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
 	if(isnull(started_at))
 		started_at = EXPIRY_AT(src, CLOCK_WORLD, 0)
-	om_ask(src, /datum/om/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
+	open_request(src, /datum/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), answerer = src, default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
 
 /// A mob picking its own name for a role (rename_self()).
-/datum/om/prompt/text/rename_self
+/datum/prompt/text/rename_self
 	title = "Name change"
-	max_length = MAX_NAME_LEN
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	timeout = 0
 	var/role
 	var/allow_numbers
 	var/attempt
 	EXPIRY_DECLARE(started_at)
 
-/datum/om/prompt/text/rename_self/prepare()
-	message = "You are \a [role]. Would you like to change your name to something else?"
-	return TRUE
+/datum/prompt/text/rename_self/prepare(datum/act/A)
+	. = ..()
+	question = "You are \a [role]. Would you like to change your name to something else?"
 
 /// We get 3 attempts to pick a suitable name, within five minutes; a cancel keeps the old one.
-/mob/proc/rename_self_entered(datum/om/prompt/text/rename_self/P)
+/mob/proc/rename_self_entered(datum/act/request/request_act)
+	if(!request_act.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(rename_self_apply), request_act)
+	if(!result.ok)
+		stack_trace("role name selection: [result.error]")
+	return result.value
+
+/mob/proc/rename_self_apply(datum/act/request/request_act)
+	var/datum/prompt/text/rename_self/P = request_act.answer
 	var/role = P.role
 	if(ELAPSED(P, started_at, CLOCK_WORLD) > 5 MINUTES)
 		return	//took too long
-	var/newname = sanitizeName(P.text, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
+	var/newname = sanitizeName(P.answer_value, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M == src)
 			continue
