@@ -11,6 +11,9 @@
 	var/capacity = 500
 	var/stored_charge = 0
 
+CAPABILITIES(/obj/item/anobattery)
+	owns_one(nameof(battery_effect), /datum/artifact_effect)
+
 /obj/item/anobattery/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))

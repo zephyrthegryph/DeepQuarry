@@ -233,8 +233,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 		//see if we can clear out an old effect
 		//delete it when the ids match to account for duplicate ids having different effects
 		if(inserted_battery().battery_effect && inserted_battery().stored_charge <= 0)
-			qdel(inserted_battery().battery_effect)
-			inserted_battery().battery_effect = null
+			own_clear(inserted_battery(), nameof(/obj/item/anobattery::battery_effect), OWN_DELETE)
 
 		//
 		var/datum/artifact_effect/source_effect
@@ -271,7 +270,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 					E.vars[varname] = source_effect.vars[varname] // ALLOW(api): artifact effect copy
 
 				//copy the new datum into the battery
-				inserted_battery().battery_effect = E
+				rel_set(inserted_battery(), nameof(/obj/item/anobattery::battery_effect), E)
 				inserted_battery().stored_charge = 0
 
 
