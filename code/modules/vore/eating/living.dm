@@ -420,22 +420,25 @@
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
 	selecting_slots = TRUE
-	om_ask(user, /datum/om/prompt/choice/vore_slot, PROC_REF(vore_slot_chosen), choices = charlist, default = default, prefs = src)
+	open_request(src, /datum/prompt/choice/vore_slot_review, PROC_REF(vore_slot_answered), answerer = user, choices = charlist, default = default)
 
-/// A character slot to load. Closing it ends the selection.
-/datum/om/prompt/choice/vore_slot
+/// A character slot to load. Every completion releases the selection latch.
+/datum/prompt/choice/vore_slot_review
+	timeout = 0
 	title = "Load Slot"
-	message = "Select a character to load:"
-	var/datum/preferences/prefs
+	question = "Select a character to load:"
 
-/datum/om/prompt/choice/vore_slot/cancelled()
-	if(prefs)
-		prefs.selecting_slots = FALSE
+/datum/preferences/proc/vore_slot_answered(datum/act/request/A)
+	selecting_slots = FALSE
+	if(!A.answer)
+		return
+	. = vore_slot_apply(A)
 
-/datum/preferences/proc/vore_slot_chosen(datum/om/prompt/choice/vore_slot/ask)
+/datum/preferences/proc/vore_slot_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_slot_review/ask = A.answer
 	selecting_slots = FALSE
 	var/mob/user = ask.answerer
-	var/choice = ask.choice
+	var/choice = ask.answer_value
 	var/list/charlist = ask.choices
 	var/remember_default = default_slot
 	var/slotnum = charlist[choice]
@@ -779,9 +782,15 @@
 // proc with the answer), and the attack that asked counts as handled.
 
 /mob/living/proc/eat_held_mob(mob/living/user, mob/living/prey, mob/living/pred)
+	return vore_held_feed_stage(user, prey, pred)
+
+/mob/living/proc/vore_held_feed_stage(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
 	var/belly
 	if(user != pred)
-		belly = rerun_ask(user, "belly", PROC_REF(eat_held_mob), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		if(!prompted)
+			open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_held_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, feed_prey = prey, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+			return TRUE
+		belly = selected_belly
 		if(isnull(belly))
 			return TRUE
 	else
@@ -789,13 +798,25 @@
 	return perform_the_nom(user, prey, pred, belly)
 
 /mob/living/proc/feed_self_to_grabbed(mob/living/user, mob/living/pred)
-	var/belly = rerun_ask(user, "belly", PROC_REF(feed_self_to_grabbed), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+	return vore_self_feed_stage(user, pred)
+
+/mob/living/proc/vore_self_feed_stage(mob/living/user, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_self_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		return TRUE
+	var/belly = selected_belly
 	if(isnull(belly))
 		return TRUE
 	return perform_the_nom(user, user, pred, belly)
 
 /mob/living/proc/feed_grabbed_to_other(mob/living/user, mob/living/prey, mob/living/pred)
-	var/belly = rerun_ask(user, "belly", PROC_REF(feed_grabbed_to_other), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+	return vore_other_feed_stage(user, prey, pred)
+
+/mob/living/proc/vore_other_feed_stage(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_other_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, feed_prey = prey, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		return TRUE
+	var/belly = selected_belly
 	if(isnull(belly))
 		return TRUE
 	return perform_the_nom(user, prey, pred, belly)
@@ -2027,4 +2048,74 @@ CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer)
 	if(!isnull(answer_value) && istype(answer_value, /datum))
 		var/datum/selected = answer_value
 		if(QDELETED(selected))
+			return "gone"
+
+/mob/living/proc/vore_held_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_held_feed_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_held_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_held_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.answer_value, TRUE)
+
+/mob/living/proc/vore_self_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_self_feed_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_self_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_self_feed_stage(ask.feed_operator, ask.feed_predator, ask.answer_value, TRUE)
+
+/mob/living/proc/vore_other_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_other_feed_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_other_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_other_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.answer_value, TRUE)
+
+/datum/prompt/choice/vore_feed_review
+	timeout = 0
+	var/mob/feed_operator
+	var/feed_operator_expected = FALSE
+	var/mob/feed_prey
+	var/feed_prey_expected = FALSE
+	var/mob/feed_predator
+	var/feed_predator_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/vore_feed_review)
+	ref_one(nameof(feed_operator), /mob)
+	ref_one(nameof(feed_prey), /mob)
+	ref_one(nameof(feed_predator), /mob)
+
+/datum/prompt/choice/vore_feed_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_feed_operator = feed_operator
+	feed_operator_expected = !isnull(captured_feed_operator)
+	rel_clear(src, nameof(feed_operator))
+	if(captured_feed_operator && !QDELETED(captured_feed_operator))
+		rel_set(src, nameof(feed_operator), captured_feed_operator)
+	var/mob/captured_feed_prey = feed_prey
+	feed_prey_expected = !isnull(captured_feed_prey)
+	rel_clear(src, nameof(feed_prey))
+	if(captured_feed_prey && !QDELETED(captured_feed_prey))
+		rel_set(src, nameof(feed_prey), captured_feed_prey)
+	var/mob/captured_feed_predator = feed_predator
+	feed_predator_expected = !isnull(captured_feed_predator)
+	rel_clear(src, nameof(feed_predator))
+	if(captured_feed_predator && !QDELETED(captured_feed_predator))
+		rel_set(src, nameof(feed_predator), captured_feed_predator)
+
+/datum/prompt/choice/vore_feed_review/recheck_extra()
+	if((feed_operator_expected && QDELETED(feed_operator)) || (feed_prey_expected && QDELETED(feed_prey)) || (feed_predator_expected && QDELETED(feed_predator)))
+		return "gone"
+	if(!isnull(answer_value))
+		var/obj/belly/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
 			return "gone"

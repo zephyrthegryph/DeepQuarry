@@ -917,6 +917,8 @@
 #include "interim_autopsy_snapshot_ownership.dm"
 #include "interim_living_inventory_drag_actor.dm"
 #include "interim_assembly_holder_sticky_disassembly.dm"
+#include "interim_synth_native_recipe.dm"
+#include "interim_rcd_native_choices.dm"
 #include "interim2_space_breach_owned_repair.dm"
 #include "interim2_detached_wound_owned_expiry.dm"
 #include "interim2_macrobattery_empty_projectile_disposal.dm"

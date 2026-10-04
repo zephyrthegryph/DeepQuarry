@@ -1,3 +1,8 @@
+#define MAKER_REQUEST_PLASTIC 1
+#define MAKER_REQUEST_DRAG 2
+#define MAKER_REQUEST_MENU 3
+#define MAKER_REQUEST_CREATE 4
+
 /obj/machinery/injector_maker
 	name = "Ready-to-Use Medicine 3000"
 	desc = "Fills plastic autoinjectors with chemicals! Molds new injectors if needed!  \n Add a beaker or a bottle filled with chemicals and an autoinjector of appropriate size or sheets of plastic to use! \n Plastic can be drag-dropped into the machine."
@@ -134,7 +139,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 	return held.get_material_name() == MAT_PLASTIC
 
 /obj/machinery/injector_maker/proc/interaction_add_plastic(mob/user, obj/item/stack/S, datum/interaction/interaction)
-	var/input_amount = rerun_ask(user, "a1", PROC_REF(interaction_add_plastic), args, /datum/om/prompt/number, message = "How many sheets would you like to add?", title = "Add plastic", default = 0, max = S.get_amount())
+	return maker_plastic_stage(user, S, interaction, list())
+
+/obj/machinery/injector_maker/proc/maker_plastic_stage(mob/user, obj/item/stack/S, datum/interaction/interaction, list/maker_answers)
+	if(!("a1" in maker_answers))
+		open_request(src, /datum/prompt/number/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a1", maker_route = MAKER_REQUEST_PLASTIC, maker_stack = S, maker_interaction = interaction, question = "How many sheets would you like to add?", title = "Add plastic", default = 0, maker_max = S.get_amount())
+		return TRUE
+	var/input_amount = maker_answers["a1"]
 	if(isnull(input_amount))
 		return TRUE
 	if(input_amount == 0)
@@ -164,9 +175,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 
 /// The old adjacency/consciousness checks were silent (no message), so they stay in the effect.
 /obj/machinery/injector_maker/proc/interaction_drag_add_plastic(mob/user, obj/item/stack/material/plastic/plastic_stack, datum/interaction/interaction)
+	return maker_drag_stage(user, plastic_stack, interaction, list())
+
+/obj/machinery/injector_maker/proc/maker_drag_stage(mob/user, obj/item/stack/material/plastic/plastic_stack, datum/interaction/interaction, list/maker_answers)
 	if(!isliving(user) || user.stat || !Adjacent(user) || !Adjacent(plastic_stack))
 		return TRUE
-	var/input_amount = rerun_ask(user, "a2", PROC_REF(interaction_drag_add_plastic), args, /datum/om/prompt/number, message = "How many sheets would you like to add?", title = "Add plastic", default = 0, max = plastic_stack.get_amount())
+	if(!("a2" in maker_answers))
+		open_request(src, /datum/prompt/number/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a2", maker_route = MAKER_REQUEST_DRAG, maker_stack = plastic_stack, maker_interaction = interaction, question = "How many sheets would you like to add?", title = "Add plastic", default = 0, maker_max = plastic_stack.get_amount())
+		return TRUE
+	var/input_amount = maker_answers["a2"]
 	if(isnull(input_amount))
 		return TRUE
 	if(input_amount == 0)
@@ -236,10 +253,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 	return TRUE
 
 /obj/machinery/injector_maker/interact(mob/user)
+	return maker_menu_stage(user, list())
+
+/obj/machinery/injector_maker/proc/maker_menu_stage(mob/user, list/maker_answers)
 	if(user.incapacitated() || !beaker)
 		return
 
-	var/choice = rerun_ask(user, "a3", TYPE_PROC_REF(/atom, interact), args, /datum/om/prompt/choice, message = "There are [src.count_small_injector] small and [src.count_large_injector]  large injectors left.", title = "Choose what to do", choices = list("large injector", "small injector", "eject beaker", "cancel"))
+	if(!("a3" in maker_answers))
+		open_request(src, /datum/prompt/choice/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a3", maker_route = MAKER_REQUEST_MENU, question = "There are [src.count_small_injector] small and [src.count_large_injector]  large injectors left.", title = "Choose what to do", choices = list("large injector", "small injector", "eject beaker", "cancel"))
+		return
+	var/choice = maker_answers["a3"]
 	if(isnull(choice))
 		return
 
@@ -256,7 +279,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 
 
 		if("small injector")
-			var/material = rerun_ask(user, "a4", TYPE_PROC_REF(/atom, interact), args, /datum/om/prompt/choice, message = "Use autoinjector storage, or mold new injectors to fill?", title = "Choose Material", choices = list("mold plastic", "use injectors"))
+			if(!("a4" in maker_answers))
+				open_request(src, /datum/prompt/choice/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a4", maker_route = MAKER_REQUEST_MENU, question = "Use autoinjector storage, or mold new injectors to fill?", title = "Choose Material", choices = list("mold plastic", "use injectors"))
+				return
+			var/material = maker_answers["a4"]
 			if(isnull(material))
 				return
 			switch(material)
@@ -271,7 +297,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 			if(!beaker.reagents.total_volume)
 				to_chat(user, span_warning("Chemical storage is empty!"))
 				return
-			var/injector_amount = rerun_ask(user, "a5", TYPE_PROC_REF(/atom, interact), args, /datum/om/prompt/number, message = "How many injectors would you like?", title = "Make small injectors", default = 0, max = 100)
+			if(!("a5" in maker_answers))
+				open_request(src, /datum/prompt/number/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a5", maker_route = MAKER_REQUEST_MENU, question = "How many injectors would you like?", title = "Make small injectors", default = 0, maker_max = 100)
+				return
+			var/injector_amount = maker_answers["a5"]
 			if(isnull(injector_amount))
 				return
 			if(injector_amount > 0)
@@ -285,7 +314,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 						if(src.count_small_injector < injector_amount)
 							to_chat(user, span_warning("Not enough autoinjectors! You only have [src.count_small_injector]"))
 							return
-				var/name = rerun_ask(user, "a6", TYPE_PROC_REF(/atom, interact), args, /datum/om/prompt/text, message = "Name Injector", title = "Naming", max_length = 32)
+				if(!("a6" in maker_answers))
+					open_request(src, /datum/prompt/text/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a6", maker_route = MAKER_REQUEST_MENU, question = "Name Injector", title = "Naming", max_len = 32, name_text = TRUE)
+					return
+				var/name = maker_answers["a6"]
 				if(isnull(name))
 					return
 				make_injector("small injector", injector_amount, name, material, user)
@@ -293,7 +325,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 
 
 		if("large injector")
-			var/material = rerun_ask(user, "a7", TYPE_PROC_REF(/atom, interact), args, /datum/om/prompt/choice, message = "Use autoinjector storage, or mold new injectors to fill?", title = "Choose Material", choices = list("mold plastic", "use injectors"))
+			if(!("a7" in maker_answers))
+				open_request(src, /datum/prompt/choice/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a7", maker_route = MAKER_REQUEST_MENU, question = "Use autoinjector storage, or mold new injectors to fill?", title = "Choose Material", choices = list("mold plastic", "use injectors"))
+				return
+			var/material = maker_answers["a7"]
 			if(isnull(material))
 				return
 			switch(material)
@@ -308,7 +343,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 			if(!beaker.reagents.total_volume)
 				to_chat(user, span_warning("Chemical storage is empty!"))
 				return
-			var/injector_amount = rerun_ask(user, "a8", TYPE_PROC_REF(/atom, interact), args, /datum/om/prompt/number, message = "How many injectors would you like?", title = "Make large injectors", default = 0, max = 100)
+			if(!("a8" in maker_answers))
+				open_request(src, /datum/prompt/number/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a8", maker_route = MAKER_REQUEST_MENU, question = "How many injectors would you like?", title = "Make large injectors", default = 0, maker_max = 100)
+				return
+			var/injector_amount = maker_answers["a8"]
 			if(isnull(injector_amount))
 				return
 			if(injector_amount > 0)
@@ -322,7 +360,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 						if(src.count_large_injector < injector_amount)
 							to_chat(user, span_warning("Not enough autoinjectors! You only have [src.count_large_injector]"))
 							return
-				var/name = rerun_ask(user, "a9", TYPE_PROC_REF(/atom, interact), args, /datum/om/prompt/text, message = "Name Injector", title = "Naming", max_length = 32)
+				if(!("a9" in maker_answers))
+					open_request(src, /datum/prompt/text/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a9", maker_route = MAKER_REQUEST_MENU, question = "Name Injector", title = "Naming", max_len = 32, name_text = TRUE)
+					return
+				var/name = maker_answers["a9"]
 				if(isnull(name))
 					return
 				make_injector("large injector", injector_amount, name, material,user)
@@ -330,6 +371,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 
 
 /obj/machinery/injector_maker/proc/make_injector(size, amount, new_name, material, mob/user)
+	return maker_create_stage(size, amount, new_name, material, user, list())
+
+/obj/machinery/injector_maker/proc/maker_create_stage(size, amount, new_name, material, mob/user, list/maker_answers)
 	if(!beaker)
 		return
 	var/amount_per_injector = null
@@ -340,7 +384,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 		if("large injector")
 			amount_per_injector = CLAMP(beaker.reagents.total_volume / amount, 0, 15)
 	if((size == "small injector" && amount_per_injector < 5) || size == "large injector" && amount_per_injector < 15)
-		var/_answer_a10 = rerun_ask(user, "a10", PROC_REF(make_injector), args, /datum/om/prompt/choice/alert, message = "Heads up! Less than max volume per injector!\n Making [amount] [size](s) filled with [amount_per_injector] total reagent volume each!", title = "Proceed?", choices = list("No","Yes"))
+		if(!("a10" in maker_answers))
+			open_request(src, /datum/prompt/choice/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a10", maker_route = MAKER_REQUEST_CREATE, maker_size = size, maker_amount = amount, maker_name = new_name, maker_material = material, question = "Heads up! Less than max volume per injector!\n Making [amount] [size](s) filled with [amount_per_injector] total reagent volume each!", title = "Proceed?", choices = list("No","Yes"), buttons = TRUE)
+			return
+		var/_answer_a10 = maker_answers["a10"]
 		if(isnull(_answer_a10))
 			return
 		proceed = _answer_a10
@@ -388,3 +435,210 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 /obj/machinery/injector_maker/ownership()
 	. = ..()
 	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+
+/obj/machinery/injector_maker/proc/maker_request_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	. = maker_request_apply(context)
+	SStgui.update_uis(src)
+
+/obj/machinery/injector_maker/proc/maker_request_apply(datum/act/request/context)
+	var/list/maker_answers
+	var/maker_key
+	var/maker_route
+	var/mob/maker_operator
+	var/obj/item/stack/maker_stack
+	var/datum/interaction/maker_interaction
+	var/maker_size
+	var/maker_amount
+	var/maker_name
+	var/maker_material
+	if(istype(context.answer, /datum/prompt/text/injector_maker_review))
+		var/datum/prompt/text/injector_maker_review/ask_text = context.answer
+		maker_answers = ask_text.maker_answers.Copy()
+		maker_key = ask_text.maker_key
+		maker_route = ask_text.maker_route
+		maker_operator = ask_text.maker_operator
+		maker_stack = ask_text.maker_stack
+		maker_interaction = ask_text.maker_interaction
+		maker_size = ask_text.maker_size
+		maker_amount = ask_text.maker_amount
+		maker_name = ask_text.maker_name
+		maker_material = ask_text.maker_material
+	else if(istype(context.answer, /datum/prompt/choice/injector_maker_review))
+		var/datum/prompt/choice/injector_maker_review/ask_choice = context.answer
+		maker_answers = ask_choice.maker_answers.Copy()
+		maker_key = ask_choice.maker_key
+		maker_route = ask_choice.maker_route
+		maker_operator = ask_choice.maker_operator
+		maker_stack = ask_choice.maker_stack
+		maker_interaction = ask_choice.maker_interaction
+		maker_size = ask_choice.maker_size
+		maker_amount = ask_choice.maker_amount
+		maker_name = ask_choice.maker_name
+		maker_material = ask_choice.maker_material
+	else if(istype(context.answer, /datum/prompt/number/injector_maker_review))
+		var/datum/prompt/number/injector_maker_review/ask_number = context.answer
+		maker_answers = ask_number.maker_answers.Copy()
+		maker_key = ask_number.maker_key
+		maker_route = ask_number.maker_route
+		maker_operator = ask_number.maker_operator
+		maker_stack = ask_number.maker_stack
+		maker_interaction = ask_number.maker_interaction
+		maker_size = ask_number.maker_size
+		maker_amount = ask_number.maker_amount
+		maker_name = ask_number.maker_name
+		maker_material = ask_number.maker_material
+
+	maker_answers[maker_key] = context.answer.answer_value
+	switch(maker_route)
+		if(MAKER_REQUEST_PLASTIC)
+			return maker_plastic_stage(maker_operator, maker_stack, maker_interaction, maker_answers)
+		if(MAKER_REQUEST_DRAG)
+			return maker_drag_stage(maker_operator, maker_stack, maker_interaction, maker_answers)
+		if(MAKER_REQUEST_MENU)
+			return maker_menu_stage(maker_operator, maker_answers)
+		if(MAKER_REQUEST_CREATE)
+			return maker_create_stage(maker_size, maker_amount, maker_name, maker_material, maker_operator, maker_answers)
+
+/datum/prompt/text/injector_maker_review
+	timeout = 0
+	var/list/maker_answers
+	var/maker_key
+	var/maker_route
+	var/mob/maker_operator
+	var/maker_operator_expected = FALSE
+	var/obj/item/stack/maker_stack
+	var/maker_stack_expected = FALSE
+	var/datum/interaction/maker_interaction
+	var/maker_interaction_expected = FALSE
+	var/maker_size
+	var/maker_amount
+	var/maker_name
+	var/maker_material
+
+CAPABILITIES(/datum/prompt/text/injector_maker_review)
+	ref_one(nameof(maker_operator), /mob)
+	ref_one(nameof(maker_stack), /obj/item/stack)
+	ref_one(nameof(maker_interaction), /datum/interaction)
+
+/datum/prompt/text/injector_maker_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = maker_operator
+	maker_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(maker_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(maker_operator), captured_operator)
+	var/obj/item/stack/captured_stack = maker_stack
+	maker_stack_expected = !isnull(captured_stack)
+	rel_clear(src, nameof(maker_stack))
+	if(captured_stack && !QDELETED(captured_stack))
+		rel_set(src, nameof(maker_stack), captured_stack)
+	var/datum/interaction/captured_interaction = maker_interaction
+	maker_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(maker_interaction))
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(maker_interaction), captured_interaction)
+
+/datum/prompt/text/injector_maker_review/recheck_extra()
+	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)) || (maker_interaction_expected && QDELETED(maker_interaction)))
+		return "gone"
+
+/datum/prompt/choice/injector_maker_review
+	timeout = 0
+	var/list/maker_answers
+	var/maker_key
+	var/maker_route
+	var/mob/maker_operator
+	var/maker_operator_expected = FALSE
+	var/obj/item/stack/maker_stack
+	var/maker_stack_expected = FALSE
+	var/datum/interaction/maker_interaction
+	var/maker_interaction_expected = FALSE
+	var/maker_size
+	var/maker_amount
+	var/maker_name
+	var/maker_material
+
+CAPABILITIES(/datum/prompt/choice/injector_maker_review)
+	ref_one(nameof(maker_operator), /mob)
+	ref_one(nameof(maker_stack), /obj/item/stack)
+	ref_one(nameof(maker_interaction), /datum/interaction)
+
+/datum/prompt/choice/injector_maker_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = maker_operator
+	maker_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(maker_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(maker_operator), captured_operator)
+	var/obj/item/stack/captured_stack = maker_stack
+	maker_stack_expected = !isnull(captured_stack)
+	rel_clear(src, nameof(maker_stack))
+	if(captured_stack && !QDELETED(captured_stack))
+		rel_set(src, nameof(maker_stack), captured_stack)
+	var/datum/interaction/captured_interaction = maker_interaction
+	maker_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(maker_interaction))
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(maker_interaction), captured_interaction)
+
+/datum/prompt/choice/injector_maker_review/recheck_extra()
+	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)) || (maker_interaction_expected && QDELETED(maker_interaction)))
+		return "gone"
+
+/datum/prompt/number/injector_maker_review
+	timeout = 0
+	var/list/maker_answers
+	var/maker_key
+	var/maker_route
+	var/mob/maker_operator
+	var/maker_operator_expected = FALSE
+	var/obj/item/stack/maker_stack
+	var/maker_stack_expected = FALSE
+	var/datum/interaction/maker_interaction
+	var/maker_interaction_expected = FALSE
+	var/maker_size
+	var/maker_amount
+	var/maker_name
+	var/maker_material
+	var/maker_min = 0
+	var/maker_max = INFINITY
+
+CAPABILITIES(/datum/prompt/number/injector_maker_review)
+	ref_one(nameof(maker_operator), /mob)
+	ref_one(nameof(maker_stack), /obj/item/stack)
+	ref_one(nameof(maker_interaction), /datum/interaction)
+
+/datum/prompt/number/injector_maker_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = maker_operator
+	maker_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(maker_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(maker_operator), captured_operator)
+	var/obj/item/stack/captured_stack = maker_stack
+	maker_stack_expected = !isnull(captured_stack)
+	rel_clear(src, nameof(maker_stack))
+	if(captured_stack && !QDELETED(captured_stack))
+		rel_set(src, nameof(maker_stack), captured_stack)
+	var/datum/interaction/captured_interaction = maker_interaction
+	maker_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(maker_interaction))
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(maker_interaction), captured_interaction)
+
+/datum/prompt/number/injector_maker_review/recheck_extra()
+	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)) || (maker_interaction_expected && QDELETED(maker_interaction)))
+		return "gone"
+
+/datum/prompt/number/injector_maker_review/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, maker_max, maker_min, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+#undef MAKER_REQUEST_PLASTIC
+#undef MAKER_REQUEST_DRAG
+#undef MAKER_REQUEST_MENU
+#undef MAKER_REQUEST_CREATE

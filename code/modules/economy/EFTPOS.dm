@@ -136,11 +136,20 @@ UI_DATA_REPLACE(/obj/item/eftpos, "eftpos_name:text", "machine_id:text", "transa
 // Topic switch lifted into tgui_act with stable action names.
 UI_ACT(/obj/item/eftpos, "change_code", ui_act_change_code)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_change_code)
-	var/attempt_code = act_ask(user, action, params, ui, "k147", /datum/om/prompt/number, message = "Re-enter the current EFTPOS access code", title = "Confirm old EFTPOS code")
+	return eftpos_change_code_stage(user, ui, list())
+
+/obj/item/eftpos/proc/eftpos_change_code_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
+	if(!("k147" in eftpos_answers))
+		open_request(src, /datum/prompt/number/eftpos_settings, PROC_REF(eftpos_settings_number_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "change_code", eftpos_key = "k147", eftpos_stage = PROC_REF(eftpos_change_code_stage), question = "Re-enter the current EFTPOS access code", title = "Confirm old EFTPOS code")
+		return
+	var/attempt_code = eftpos_answers["k147"]
 	if(isnull(attempt_code))
 		return
 	if(attempt_code == access_code)
-		var/trycode = act_ask(user, action, params, ui, "k149", /datum/om/prompt/number, message = "Enter a new access code for this device (4-6 digits, numbers only)", title = "Enter new EFTPOS code", max = 999999, min = 1000)
+		if(!("k149" in eftpos_answers))
+			open_request(src, /datum/prompt/number/eftpos_settings, PROC_REF(eftpos_settings_number_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "change_code", eftpos_key = "k149", eftpos_stage = PROC_REF(eftpos_change_code_stage), question = "Enter a new access code for this device (4-6 digits, numbers only)", title = "Enter new EFTPOS code", eftpos_max = 999999, eftpos_min = 1000)
+			return
+		var/trycode = eftpos_answers["k149"]
 		if(isnull(trycode))
 			return
 		if(trycode >= 1000 && trycode <= 999999)
@@ -154,11 +163,20 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_change_code)
 
 UI_ACT(/obj/item/eftpos, "change_id", ui_act_change_id)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_change_id)
-	var/attempt_code = act_ask(user, action, params, ui, "k159", /datum/om/prompt/number, message = "Re-enter the current EFTPOS access code", title = "Confirm EFTPOS code")
+	return eftpos_change_id_stage(user, ui, list())
+
+/obj/item/eftpos/proc/eftpos_change_id_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
+	if(!("k159" in eftpos_answers))
+		open_request(src, /datum/prompt/number/eftpos_settings, PROC_REF(eftpos_settings_number_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "change_id", eftpos_key = "k159", eftpos_stage = PROC_REF(eftpos_change_id_stage), question = "Re-enter the current EFTPOS access code", title = "Confirm EFTPOS code")
+		return
+	var/attempt_code = eftpos_answers["k159"]
 	if(isnull(attempt_code))
 		return
 	if(attempt_code == access_code)
-		var/_answer_k161 = act_ask(user, action, params, ui, "k161", /datum/om/prompt/text, message = "Enter a new terminal ID for this device", title = "Enter new EFTPOS ID", max_length = MAX_NAME_LEN)
+		if(!("k161" in eftpos_answers))
+			open_request(src, /datum/prompt/text/eftpos_settings, PROC_REF(eftpos_settings_text_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "change_id", eftpos_key = "k161", eftpos_stage = PROC_REF(eftpos_change_id_stage), question = "Enter a new terminal ID for this device", title = "Enter new EFTPOS ID", max_len = MAX_NAME_LEN, name_text = TRUE)
+			return
+		var/_answer_k161 = eftpos_answers["k161"]
 		if(isnull(_answer_k161))
 			return
 		eftpos_name = _answer_k161 + " EFTPOS scanner"
@@ -169,10 +187,19 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_change_id)
 
 UI_ACT(/obj/item/eftpos, "link_account", ui_act_link_account)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_link_account)
-	var/attempt_account_num = act_ask(user, action, params, ui, "k167", /datum/om/prompt/number, message = "Enter account number to pay EFTPOS charges into", title = "New account number")
+	return eftpos_link_account_stage(user, ui, list())
+
+/obj/item/eftpos/proc/eftpos_link_account_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
+	if(!("k167" in eftpos_answers))
+		open_request(src, /datum/prompt/number/eftpos_settings, PROC_REF(eftpos_settings_number_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "link_account", eftpos_key = "k167", eftpos_stage = PROC_REF(eftpos_link_account_stage), question = "Enter account number to pay EFTPOS charges into", title = "New account number")
+		return
+	var/attempt_account_num = eftpos_answers["k167"]
 	if(isnull(attempt_account_num))
 		return
-	var/attempt_pin = act_ask(user, action, params, ui, "k168", /datum/om/prompt/number, message = "Enter pin code", title = "Account pin")
+	if(!("k168" in eftpos_answers))
+		open_request(src, /datum/prompt/number/eftpos_settings, PROC_REF(eftpos_settings_number_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "link_account", eftpos_key = "k168", eftpos_stage = PROC_REF(eftpos_link_account_stage), question = "Enter pin code", title = "Account pin")
+		return
+	var/attempt_pin = eftpos_answers["k168"]
 	if(isnull(attempt_pin))
 		return
 	rel_set(src, nameof(/obj/item/eftpos::linked_account), attempt_account_access(attempt_account_num, attempt_pin, 1))
@@ -186,7 +213,13 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_link_account)
 
 UI_ACT(/obj/item/eftpos, "trans_purpose", ui_act_trans_purpose)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_purpose)
-	var/choice = act_ask(user, action, params, ui, "k178", /datum/om/prompt/text, message = "Enter reason for EFTPOS transaction", title = "Transaction purpose")
+	return eftpos_trans_purpose_stage(user, ui, list())
+
+/obj/item/eftpos/proc/eftpos_trans_purpose_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
+	if(!("k178" in eftpos_answers))
+		open_request(src, /datum/prompt/text/eftpos_settings, PROC_REF(eftpos_settings_text_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "trans_purpose", eftpos_key = "k178", eftpos_stage = PROC_REF(eftpos_trans_purpose_stage), question = "Enter reason for EFTPOS transaction", title = "Transaction purpose", name_text = FALSE)
+		return
+	var/choice = eftpos_answers["k178"]
 	if(isnull(choice))
 		return
 	if(choice)
@@ -195,7 +228,13 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_purpose)
 
 UI_ACT(/obj/item/eftpos, "trans_value", ui_act_trans_value)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_value)
-	var/try_num = act_ask(user, action, params, ui, "k183", /datum/om/prompt/number, message = "Enter amount for EFTPOS transaction", title = "Transaction amount")
+	return eftpos_trans_value_stage(user, ui, list())
+
+/obj/item/eftpos/proc/eftpos_trans_value_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
+	if(!("k183" in eftpos_answers))
+		open_request(src, /datum/prompt/number/eftpos_settings, PROC_REF(eftpos_settings_number_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "trans_value", eftpos_key = "k183", eftpos_stage = PROC_REF(eftpos_trans_value_stage), question = "Enter amount for EFTPOS transaction", title = "Transaction amount")
+		return
+	var/try_num = eftpos_answers["k183"]
 	if(isnull(try_num))
 		return
 	if(!isnum(try_num) || try_num <= 0 || try_num > EFTPOS_MAX_TRANSACTION)
@@ -206,12 +245,18 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_value)
 
 UI_ACT(/obj/item/eftpos, "toggle_lock", ui_act_toggle_lock)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_toggle_lock)
+	return eftpos_toggle_lock_stage(user, ui, list())
+
+/obj/item/eftpos/proc/eftpos_toggle_lock_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
 	if(transaction_locked)
 		if(transaction_paid)
 			transaction_locked = 0
 			transaction_paid = 0
 		else
-			var/attempt_code = act_ask(user, action, params, ui, "k195", /datum/om/prompt/number, message = "Enter EFTPOS access code", title = "Reset Transaction")
+			if(!("k195" in eftpos_answers))
+				open_request(src, /datum/prompt/number/eftpos_settings, PROC_REF(eftpos_settings_number_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "toggle_lock", eftpos_key = "k195", eftpos_stage = PROC_REF(eftpos_toggle_lock_stage), question = "Enter EFTPOS access code", title = "Reset Transaction")
+				return
+			var/attempt_code = eftpos_answers["k195"]
 			if(isnull(attempt_code))
 				return
 			if(attempt_code == access_code)
@@ -371,3 +416,102 @@ CAPABILITIES(/datum/prompt/number/eftpos_pin)
 /obj/item/eftpos/proc/pin_apply(datum/act/request/A)
 	var/datum/prompt/number/eftpos_pin/ask = A.answer
 	return scan_card_stage(ask.payer_card, ask.card_holder, ask.operator, ask.answer_value, TRUE)
+
+/obj/item/eftpos/proc/eftpos_settings_text_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/eftpos_settings/ask = context.answer
+	var/list/eftpos_answers = ask.eftpos_answers.Copy()
+	eftpos_answers[ask.eftpos_key] = ask.answer_value
+	return eftpos_settings_resume(ask.eftpos_ui, ask.eftpos_action, eftpos_answers, ask.eftpos_stage)
+
+/obj/item/eftpos/proc/eftpos_settings_number_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/eftpos_settings/ask = context.answer
+	var/list/eftpos_answers = ask.eftpos_answers.Copy()
+	eftpos_answers[ask.eftpos_key] = ask.answer_value
+	return eftpos_settings_resume(ask.eftpos_ui, ask.eftpos_action, eftpos_answers, ask.eftpos_stage)
+
+/// Match the original typed UI replay gates; stages have no UI arguments to parse.
+/obj/item/eftpos/proc/eftpos_settings_resume(datum/tgui/ui, action, list/eftpos_answers, stage)
+	if(QDELETED(src) || !ui || ui.status != STATUS_INTERACTIVE)
+		return FALSE
+	var/datum/ui_decl/decl = ui_decl_of(src)
+	var/list/row = decl?.acts[action] || decl?.acts[UI_ACT_ANY]
+	if(!row)
+		return FALSE
+	if(row[3])
+		stack_trace("[type] re-ran UI_ACT_NESTED action '[action]' through act_ask(); use rerun_ask() in UI_SUBACT handlers")
+		return FALSE
+	var/datum/tgui_state/state = ui.state()
+	if(!ui_act_allowed(ui.user, action, ui, state))
+		return FALSE
+	var/replayed = call(src, stage)(ui.user, ui, eftpos_answers)
+	if(replayed)
+		SStgui.update_uis(src)
+	return replayed
+
+/datum/prompt/text/eftpos_settings
+	timeout = 0
+	var/datum/tgui/eftpos_ui
+	var/eftpos_ui_expected = FALSE
+	var/list/eftpos_answers
+	var/eftpos_action
+	var/eftpos_key
+	var/eftpos_stage
+
+CAPABILITIES(/datum/prompt/text/eftpos_settings)
+	ref_one(nameof(eftpos_ui), /datum/tgui)
+
+/datum/prompt/text/eftpos_settings/prepare(datum/act/context)
+	. = ..()
+	var/datum/tgui/captured_ui = eftpos_ui
+	eftpos_ui_expected = !isnull(captured_ui)
+	rel_clear(src, nameof(eftpos_ui))
+	if(captured_ui && !QDELETED(captured_ui))
+		rel_set(src, nameof(eftpos_ui), captured_ui)
+
+/// The old text kind stripped name tokens; its max length belonged to the window only.
+/datum/prompt/text/eftpos_settings/normalize(given)
+	if(!istext(given))
+		return null
+	return name_text ? strip_name_tokens(given) : given
+
+/datum/prompt/text/eftpos_settings/recheck_extra()
+	if(eftpos_ui_expected && QDELETED(eftpos_ui))
+		return "gone"
+	return null
+
+/datum/prompt/number/eftpos_settings
+	timeout = 0
+	var/datum/tgui/eftpos_ui
+	var/eftpos_ui_expected = FALSE
+	var/list/eftpos_answers
+	var/eftpos_action
+	var/eftpos_key
+	var/eftpos_stage
+	var/eftpos_min = 0
+	var/eftpos_max = INFINITY
+
+CAPABILITIES(/datum/prompt/number/eftpos_settings)
+	ref_one(nameof(eftpos_ui), /datum/tgui)
+
+/datum/prompt/number/eftpos_settings/prepare(datum/act/context)
+	. = ..()
+	var/datum/tgui/captured_ui = eftpos_ui
+	eftpos_ui_expected = !isnull(captured_ui)
+	rel_clear(src, nameof(eftpos_ui))
+	if(captured_ui && !QDELETED(captured_ui))
+		rel_set(src, nameof(eftpos_ui), captured_ui)
+
+/datum/prompt/number/eftpos_settings/recheck_extra()
+	if(eftpos_ui_expected && QDELETED(eftpos_ui))
+		return "gone"
+	return null
+
+/datum/prompt/number/eftpos_settings/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default || 0, eftpos_max, eftpos_min, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box

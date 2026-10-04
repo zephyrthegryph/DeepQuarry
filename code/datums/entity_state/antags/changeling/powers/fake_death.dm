@@ -12,6 +12,10 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Regenerative Stasis (20)"
 
+	return changeling_fakedeath_stage()
+
+/mob/proc/changeling_fakedeath_stage(selected_answer, selected_ready = FALSE)
+
 	var/datum/changeling/changeling = changeling_power(CHANGELING_STASIS_COST,1,100,DEAD)
 	if(!changeling)
 		return
@@ -22,7 +26,10 @@
 		to_chat(src, span_danger("We have no genomes, not even our own, and cannot regenerate."))
 		return 0
 
-	var/_answer_a1 = rerun_ask(src, "a1", PROC_REF(changeling_fakedeath), args, /datum/om/prompt/choice/alert, message = "Are we sure we wish to regenerate? We will appear to be dead while doing so.", title = "Revival", choices = list("Yes","No"))
+	if(!selected_ready)
+		open_request(src, /datum/prompt/choice, PROC_REF(changeling_fakedeath_answered), answerer = src, question = "Are we sure we wish to regenerate? We will appear to be dead while doing so.", title = "Revival", choices = list("Yes","No"), buttons = TRUE, timeout = 0)
+		return
+	var/_answer_a1 = selected_answer
 	if(isnull(_answer_a1))
 		return
 	if(!C.stat && _answer_a1 != "Yes")
@@ -52,3 +59,10 @@
 /mob/proc/finish_changeling_revive()
 	//Lets the ling know it's revive time.
 	to_chat(src, span_notice(span_giant("We are ready to rise.  Use the <b>Revive</b> verb when you are ready.")))
+
+/mob/proc/changeling_fakedeath_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	// The old kept replay refreshes windows even if its effect faults.
+	. = changeling_fakedeath_stage(context.answer.answer_value, TRUE)
+	SStgui.update_uis(src)
