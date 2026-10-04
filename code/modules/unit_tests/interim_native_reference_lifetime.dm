@@ -106,3 +106,46 @@
 	qdel(early)
 	TEST_ASSERT(!QDELETED(replacement), "source teardown preserves the independently materialized target")
 	TEST_ASSERT_EQUAL(late.target_ref(), replacement, "one source teardown preserves the other source's target")
+
+/datum/interim_ability_argument_observer
+	var/calls = 0
+	var/list/first_arguments
+	var/list/latest_arguments
+	var/prior_call_marker
+
+/datum/interim_ability_argument_observer/proc/observe(list/arguments)
+	calls++
+	if(calls == 1)
+		first_arguments = arguments
+	latest_arguments = arguments
+	if(arguments)
+		prior_call_marker = arguments["callback_calls"]
+		arguments["callback_calls"] = calls
+
+/datum/unit_test/interim_ability_callback_arguments/Run()
+	var/datum/interim_ability_argument_observer/default_observer = allocate(/datum/interim_ability_argument_observer)
+	var/atom/movable/screen/ability/verb_based/default_ability = allocate(/atom/movable/screen/ability/verb_based)
+	default_ability.object_used = default_observer
+	default_ability.verb_to_call = TYPE_PROC_REF(/datum/interim_ability_argument_observer, observe)
+	default_ability.activate()
+	TEST_ASSERT_EQUAL(default_observer.calls, 1, "the production ability dispatches its configured callback")
+	TEST_ASSERT_NOTNULL(default_observer.first_arguments, "the actual callback receives the allocated default argument list")
+	TEST_ASSERT_EQUAL(default_ability.arguments_to_use, default_observer.first_arguments, "the callback receives the exact stored default list")
+	default_ability.activate()
+	TEST_ASSERT_EQUAL(default_observer.calls, 2, "the second production activation dispatches the callback again")
+	TEST_ASSERT_EQUAL(default_observer.latest_arguments, default_observer.first_arguments, "both callbacks receive the same original default list")
+	TEST_ASSERT_EQUAL(default_observer.prior_call_marker, 1, "the second callback sees the first callback's mutation")
+	TEST_ASSERT_EQUAL(default_observer.latest_arguments["callback_calls"], 2, "the second callback updates that same mutable list")
+
+	var/datum/interim_ability_argument_observer/supplied_observer = allocate(/datum/interim_ability_argument_observer)
+	var/atom/movable/screen/ability/verb_based/supplied_ability = allocate(/atom/movable/screen/ability/verb_based)
+	var/list/supplied_arguments = list("callback_calls" = 7)
+	supplied_ability.object_used = supplied_observer
+	supplied_ability.verb_to_call = TYPE_PROC_REF(/datum/interim_ability_argument_observer, observe)
+	supplied_ability.arguments_to_use = supplied_arguments
+	supplied_ability.activate()
+	TEST_ASSERT_EQUAL(supplied_observer.calls, 1, "the supplied-argument ability invokes its actual callback")
+	TEST_ASSERT_EQUAL(supplied_observer.first_arguments, supplied_arguments, "the callback receives the original caller-supplied list without copying")
+	TEST_ASSERT_EQUAL(supplied_ability.arguments_to_use, supplied_arguments, "activation retains the original caller-supplied identity")
+	TEST_ASSERT_EQUAL(supplied_observer.prior_call_marker, 7, "the callback reads the original supplied contents")
+	TEST_ASSERT_EQUAL(supplied_arguments["callback_calls"], 1, "the callback mutation reaches the original supplied list")
