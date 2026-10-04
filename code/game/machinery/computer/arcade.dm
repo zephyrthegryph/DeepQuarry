@@ -52,7 +52,6 @@
 		if(istype(prizeselect, /obj/item/clothing/suit/syndicatefake)) //Helmet is part of the suit
 			new	/obj/item/clothing/head/syndicatefake(src.loc)
 
-
 /obj/machinery/computer/arcade/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/arcade_ticket_redeem,
@@ -138,51 +137,70 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 	enemy_name = replacetext((name_part1 + name_part2), "the ", "")
 	name = (name_action + name_part1 + name_part2)
 
-
 /obj/machinery/computer/arcade/battle/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/open_ui,
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/computer/arcade/battle, "ArcadeBattle")
+CAPABILITIES(/obj/machinery/computer/arcade/battle)
+	interface("ArcadeBattle")
+	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
+	op("attack", ui_act("attack"), then(PROC_REF(ui_act_attack)))
+	op(XENO_CHEM_HEAL, ui_act(XENO_CHEM_HEAL), then(PROC_REF(ui_act_heal)))
+	op("charge", ui_act("charge"), then(PROC_REF(ui_act_charge)))
 
-UI_DATA(/obj/machinery/computer/arcade/battle, "name:text", "temp:text", "enemyAction=enemy_action:text", "enemyName=enemy_name:text", "playerHP=player_hp:num", "playerMP=player_mp:num", "enemyHP=enemy_hp:num", "gameOver=gameover:num")
+/obj/machinery/computer/arcade/battle/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["name"] = name
+	data["temp"] = temp
+	data["enemyAction"] = enemy_action
+	data["enemyName"] = enemy_name
+	data["playerHP"] = player_hp
+	data["playerMP"] = player_mp
+	data["enemyHP"] = enemy_hp
+	data["gameOver"] = gameover
+	return data
 
-/obj/machinery/computer/arcade/battle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!blocked && !gameover)
-		switch(action)
-			if("attack")
-				blocked = 1
-				var/attackamt = rand(2,6)
-				temp = "You attack for [attackamt] damage!"
-				play_sfx(src, SFX_ARCADE_HIT, ignore_walls = FALSE)
-				if(turtle > 0)
-					turtle--
-				after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(ui.user, attackamt, 0, 0))
-			if(XENO_CHEM_HEAL)
-				blocked = 1
-				var/pointamt = rand(1,3)
-				var/healamt = rand(6,8)
-				temp = "You use [pointamt] magic to heal for [healamt] damage!"
-				play_sfx(src, SFX_ARCADE_HEAL, ignore_walls = FALSE)
-				turtle++
-				after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(ui.user, 0, pointamt, healamt))
-			if("charge")
-				blocked = 1
-				var/chargeamt = rand(4,7)
-				temp = "You regain [chargeamt] points"
-				play_sfx(src, SFX_ARCADE_MANA, ignore_walls = FALSE)
-				player_mp += chargeamt
-				if(turtle > 0)
-					turtle--
-				after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(ui.user, 0, 0, 0))
-	return TRUE
+/// The player's moves: each is blocked until the last has landed and refused once the game is over.
+/obj/machinery/computer/arcade/battle/proc/ui_act_attack(datum/act/op/A)
+	if(blocked || gameover)
+		return OP_OK
+	blocked = 1
+	var/attackamt = rand(2,6)
+	temp = "You attack for [attackamt] damage!"
+	play_sfx(src, SFX_ARCADE_HIT, ignore_walls = FALSE)
+	if(turtle > 0)
+		turtle--
+	after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(A.actor, attackamt, 0, 0))
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/battle, "newgame", ui_act_newgame)
-UI_ACT_PROC(/obj/machinery/computer/arcade/battle, ui_act_newgame)
+/obj/machinery/computer/arcade/battle/proc/ui_act_heal(datum/act/op/A)
+	if(blocked || gameover)
+		return OP_OK
+	blocked = 1
+	var/pointamt = rand(1,3)
+	var/healamt = rand(6,8)
+	temp = "You use [pointamt] magic to heal for [healamt] damage!"
+	play_sfx(src, SFX_ARCADE_HEAL, ignore_walls = FALSE)
+	turtle++
+	after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(A.actor, 0, pointamt, healamt))
+	return OP_OK
+
+/obj/machinery/computer/arcade/battle/proc/ui_act_charge(datum/act/op/A)
+	if(blocked || gameover)
+		return OP_OK
+	blocked = 1
+	var/chargeamt = rand(4,7)
+	temp = "You regain [chargeamt] points"
+	play_sfx(src, SFX_ARCADE_MANA, ignore_walls = FALSE)
+	player_mp += chargeamt
+	if(turtle > 0)
+		turtle--
+	after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(A.actor, 0, 0, 0))
+	return OP_OK
+
+/obj/machinery/computer/arcade/battle/proc/ui_act_newgame(datum/act/op/A)
 	temp = "New Round"
 	player_hp = 30
 	player_mp = 10
@@ -194,7 +212,7 @@ UI_ACT_PROC(/obj/machinery/computer/arcade/battle, ui_act_newgame)
 	if(emagged)
 		randomize_characters()
 		set_emagged(0)
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 	return TRUE
 
 /// The player's move lands a second after it was chosen, then the enemy acts.
@@ -291,7 +309,6 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, nul
 	name = "Outbomb Cuban Pete"
 
 	return 1
-
 
 //////////////////////////
 //   ORION TRAIL HERE   //
@@ -720,7 +737,6 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 						event()
 	orion_refresh(user)
 
-
 /obj/machinery/computer/arcade/orion_trail/proc/event()
 	eventdat = "<center><h1>[event]</h1></center>"
 	canContinueEvent = 0
@@ -957,7 +973,6 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 
 				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"
 
-
 /obj/machinery/computer/arcade/orion_trail/proc/add_crewmember(specific = "")
 	var/newcrew = ""
 	if(specific)
@@ -988,7 +1003,6 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 		settlers -= removed
 		alive--
 	return removed
-
 
 /obj/machinery/computer/arcade/orion_trail/proc/win(mob/user)
 	gameStatus = ORION_STATUS_START
@@ -1167,7 +1181,6 @@ CAPABILITIES(/obj/item/orion_ship)
 		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 		to_chat(user, span_info("It doesn't seem to accept that! Seem you'll need to swipe a valid ID."))
 
-
 ///// Ewallet
 /obj/machinery/computer/arcade/clawmachine/proc/pay_with_ewallet(obj/item/spacecash/ewallet/wallet, mob/user)
 	if(!emagged)
@@ -1203,19 +1216,22 @@ CAPABILITIES(/obj/item/orion_ship)
 	// Have the customer punch in the PIN before checking if there's enough money. Prevents people from figuring out acct is
 	// empty at high security levels
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		om_ask(user, /datum/om/prompt/number/claw_pin, PROC_REF(card_pin_entered), account = I.associated_account_number)
+		open_request(src, /datum/prompt/number/claw_pin, PROC_REF(card_pin_entered), valid = PROC_REF(request_usable), answerer = user, account = I.associated_account_number, timeout = 0)
 		return 0
 	return charge_account(customer_account)
 
 /// The PIN arrived: the play is paid once the account accepts it.
-/datum/om/prompt/number/claw_pin
+/datum/prompt/number/claw_pin
 	title = "Vendor transaction"
-	message = "Enter pin code"
-	requires = PROMPT_ADJACENT
+	question = "Enter pin code"
+	min_value = null
 	var/account
 
-/obj/machinery/computer/arcade/clawmachine/proc/card_pin_entered(datum/om/prompt/number/claw_pin/ask)
-	var/datum/money_account/customer_account = attempt_account_access(ask.account, ask.number, 2)
+/obj/machinery/computer/arcade/clawmachine/proc/card_pin_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/claw_pin/R = A.request
+	var/datum/money_account/customer_account = attempt_account_access(R.account, A.answer.answer_value, 2)
 	if(!customer_account)
 		visible_message(span_info("Unable to access account: incorrect credentials."))
 		return
@@ -1249,12 +1265,25 @@ CAPABILITIES(/obj/item/orion_ship)
 
 /// TGUI Stuff
 
-DECLARE_UI(/obj/machinery/computer/arcade/clawmachine, "ClawMachine", UI_AUTOUPDATE)
+CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
+	interface("ClawMachine")
+	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
+	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
+	op("pointless", ui_act("pointless"), then(PROC_REF(ui_act_pointless)))
 
-UI_DATA_REPLACE(/obj/machinery/computer/arcade/clawmachine, "wintick:num", "instructions:text", "gameStatus:text", "winscreen:text")
+/obj/machinery/computer/arcade/clawmachine/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["wintick"] = wintick
+	data["instructions"] = instructions
+	data["gameStatus"] = gameStatus
+	data["winscreen"] = winscreen
+	return data
 
-UI_ACT(/obj/machinery/computer/arcade/clawmachine, "newgame", ui_act_newgame)
-UI_ACT_PROC(/obj/machinery/computer/arcade/clawmachine, ui_act_newgame)
+/// The play is a live game: the window refreshes on its own.
+/obj/machinery/computer/arcade/clawmachine/ui_opening(mob/user, datum/tgui/ui)
+	ui.set_autoupdate(TRUE)
+
+/obj/machinery/computer/arcade/clawmachine/proc/ui_act_newgame(datum/act/op/A)
 	if(gamepaid == 0)
 		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 	else if(gamepaid == 1)
@@ -1263,13 +1292,12 @@ UI_ACT_PROC(/obj/machinery/computer/arcade/clawmachine, ui_act_newgame)
 		instructions = "Guide the claw to the prize you want!"
 		wintick = 0
 
-UI_ACT(/obj/machinery/computer/arcade/clawmachine, "return", ui_act_return)
-UI_ACT_PROC(/obj/machinery/computer/arcade/clawmachine, ui_act_return)
+/obj/machinery/computer/arcade/clawmachine/proc/ui_act_return(datum/act/op/A)
 	if(gameStatus == "CLAWMACHINE_END")
 		gameStatus = "CLAWMACHINE_NEW"
 
-UI_ACT(/obj/machinery/computer/arcade/clawmachine, "pointless", ui_act_pointless)
-UI_ACT_PROC(/obj/machinery/computer/arcade/clawmachine, ui_act_pointless)
+/obj/machinery/computer/arcade/clawmachine/proc/ui_act_pointless(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wintick < 10)
 		wintick += 1
 	if(wintick >= 10)

@@ -8,7 +8,7 @@ DECLARE_INTERACTIONS(/obj/item/falls, INTERACT_HAND(null, PROC_REF(interaction_h
 /obj/item/falls/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user)
 		return FALSE
-	return TRUE
+	user.visible_message("falls off the end")
 
 DECLARE_INTERACTIONS(/obj/item/stancy, INTERACT_ALT(null, PROC_REF(interaction_alt)))
 

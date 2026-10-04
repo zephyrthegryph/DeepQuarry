@@ -50,6 +50,8 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 
 CAPABILITIES(/obj/item/laser_pointer)
 	op("item", item(/obj/item/stock_parts/micro_laser), label("Install"), then(PROC_REF(interaction_item)))
+	// The battery trickles back while recharging.
+	every(2 SECONDS, then(PROC_REF(laser_pointer_step)), when = nameof(recharging))
 
 /obj/item/laser_pointer/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -219,7 +221,7 @@ CAPABILITIES(/obj/item/laser_pointer)
 /obj/item/laser_pointer/proc/reset_laser_icon()
 	icon_state = initial(icon_state)
 
-/obj/item/laser_pointer/periodic_step()
+/obj/item/laser_pointer/proc/laser_pointer_step(datum/act/timer/A)
 	if(prob(20 - recharge_locked*5))
 		energy++
 		if(energy >= max_energy)
@@ -231,9 +233,8 @@ CAPABILITIES(/obj/item/laser_pointer)
 	. = ..()
 	. += owns(nameof(diode), policy = OWN_CONTAINED)
 
-OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
-// The battery trickles back while recharging.
-DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
+/obj/item/laser_pointer/var/recharging = 0
+TRACKED(/obj/item/laser_pointer, recharging)
 
 /// Relation view: pointer loc (reads null once it is gone).
 /obj/item/laser_pointer/proc/pointer_loc() as /turf

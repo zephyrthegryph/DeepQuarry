@@ -214,3 +214,34 @@ Rules. Decline from the first statement that knows, before anything is written: 
 `ACT_DECLINED` (never a filter, not in `ACT_ANY`); `perform_op()` and the test driver return it in `/datum/op_result` when every candidate declined, a player's click returns null (the mob's own click handling runs). An op that is waiting
 (`wait()` steps) and declines at its final effect has already spent the wait: decline is for immediate ops. `interact_declare.py` applies the table to `INTERACT_HAND`, `INTERACT_INSERT` and `INTERACT_ITEM` handlers
 (tools/dx/codemods/interact_declare.py); the wave that lands it converted 24 types (26 ops). Tests: `dq_gap/op_decline_falls_through`, `dq_gap/op_decline_alone_is_not_handled`.
+
+## DECLARE_PERIODIC_WHILE and DECLARE_REPEAT -> every()
+
+The target (doc section 3, section 7): the vars the work is gated on are `TRACKED(T, var)`; the work is a type-level `every(interval, then(PROC_REF(x)), when = cond)` in the type's `CAPABILITIES(T)` block. `tools/dx/codemods/periodic_while.py`.
+
+| Old | New |
+|---|---|
+| `OM_FIELD(T, f, D, CHANGE_EXPLICIT)` (also `OM_FIELD_TYPED`) | `T/var/f = D` and `TRACKED(T, f)` (`TRACKED_BRIDGED(T, f, CHANNEL)` for a channel other than `CHANGE_EXPLICIT`) |
+| `DECLARE_PERIODIC_WHILE(T, PERIODIC_SLOW, "f")` | `every(2 SECONDS, then(PROC_REF(<type>_step)), when = nameof(f))`; `PERIODIC_SECOND` is `1 SECOND`, `PERIODIC_FAST` `0.2 SECONDS` (the cadence's own interval) |
+| `DECLARE_PERIODIC_WHILE_ALL(T, C, list("a", "!b"))` | `when = cond_all(nameof(a), cond_not(nameof(b)))` |
+| a derived field `OM_DERIVE_FIELD(T, d, list(a, b))` whose proc is one `return a \|\| !b && c` | the expression inlined as `cond_any` / `cond_all` / `cond_not` of `nameof()`; the derive line goes (the proc stays for its other callers) |
+| `/T/periodic_step(delta)` and every override below T | `/T/proc/<type>_step(datum/act/timer/A)`, overrides `/U/<type>_step(datum/act/timer/A)` (no `proc/` on an override); a body that reads `delta` gets `var/delta = <the interval>` as its first line (written as the constant: the `handlers/context_field` lint does not model an every() context, so `A.dt` is not read) |
+| `DECLARE_REPEAT(T, 0.5 SECONDS, proc, "f")` | `every(0.5 SECONDS, then(PROC_REF(proc)), when = nameof(f))`; `proc` keeps its name and takes `(datum/act/timer/A)`; a `null` field has no `when` |
+| `DECLARE_REPEAT(T, "delay_proc", proc, ...)` where `delay_proc` is a proc of T | `every(PROC_REF(delay_proc), ...)`; `delay_proc` takes `(datum/act/A)` |
+
+The step name is the last segment of T plus `_step`; one that exists as a proc anywhere is residue `name_clash`.
+
+Semantics kept. The cadence interval is the same, the work runs while the gate holds and not after (a gated run is skipped), and the first step after the gate turns on is one interval later (the old cadence stepped a new member at its next sweep, at most one interval). The every() runs on the holder's own clock, so stasis pauses it. **Parking** (code/engine/actions/every.dm): a type-level every() whose `when =` is only tracked vars of the holder (`nameof(var)`, `cond_not` / `cond_all` / `cond_any` of those) and has no enclosing `when()` block parks while the gate is false (no timer at all) and wakes when the condition publishes true, through a synthesized `on_change` hook, so an idle holder costs nothing, like the old membership. Any other gate (a proc, a stat, a relation hop) polls: the timer runs every interval and a gated run is skipped.
+
+A declaration converts only when:
+- T is under `/atom` (`/obj`, `/turf`, `/mob`, `/area`): a `/datum` has no holder init to arm it (residue `non_atom`);
+- the cadence is `PERIODIC_SLOW`, `PERIODIC_SECOND` or `PERIODIC_FAST` (`MACHINE_PIPELINE` is the machine track's: `machine_pipeline`; the continuous lanes: `cadence`);
+- no related type has its own PERIODIC_WHILE (the old one replaced its parent's, an every() accumulates: `related_decl`), and for a REPEAT no related type declares the same proc;
+- T defines `periodic_step` exactly once, no ancestor defines it (`ancestor_handler`), no body returns `PROCESS_KILL` (an every() cannot end its own work: `handler_kill`), reads a local named `A` (`body_uses`) or takes more than one parameter;
+- nothing calls the handler or starts it by hand: no bare mention in a related type, no `x.periodic_step()` on a receiver whose declared type is related to T, no `om_task_periodic` in a related type (`handler_called`, `manual_start`);
+- every named field is TRACKED already, or an `OM_FIELD` on T or an ancestor that no other legacy macro line names (`field_shared`), or a derived field as above (`derived_expr`); a plain var, a relation view or a stat is `field_kind` (the var needs a setter and its writers converted first: the appearance codemod's tracked-writes step);
+- a REPEAT proc never returns `REPEAT_STOP` (`repeat_stop`: the every() would keep running while the field holds), has no parameters (`handler_params`) and its delay is a literal time or a proc of T (`delay_var`: a var read at each re-arm).
+
+Residue codes: `decl_form`, `machine_pipeline`, `cadence`, `non_atom`, `related_decl`, `handler_shape`, `ancestor_handler`, `handler_called`, `manual_start`, `handler_kill`, `body_uses`, `name_clash`, `field_kind`, `field_shared`, `derived_expr`, `repeat_stop`, `handler_params`, `delay_var`.
+Evidence: the hand conversions of the chargers, airlock and light flicker (`7bce9a692a`). Tests: `dq_gap/every_parks_and_wakes`, `every_starts_when_true`, `every_with_a_proc_gate_polls`, `periodic_pinpointer_steps_while_active`, `periodic_jammer_drains_while_on`.
+

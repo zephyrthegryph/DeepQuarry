@@ -129,8 +129,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/gloves/stamina, PERIODIC_SLOW, "feedin
 	var/brainloss_cost = 0
 
 /// TRUE while worn in the suit slot by a sentient mob.
-OM_FIELD(/obj/item/clothing/suit/armor/buffvest, worn_by_sentient, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/armor/buffvest, PERIODIC_SLOW, "worn_by_sentient")
+/obj/item/clothing/suit/armor/buffvest/var/worn_by_sentient = FALSE
+TRACKED(/obj/item/clothing/suit/armor/buffvest, worn_by_sentient)
+CAPABILITIES(/obj/item/clothing/suit/armor/buffvest)
+	every(2 SECONDS, then(PROC_REF(buffvest_step)), when = nameof(worn_by_sentient))
 
 /obj/item/clothing/suit/armor/buffvest/proc/activate_ability(mob/living/wearer)
 	COOLDOWN_START(src, cooldown, cooldown_duration)
@@ -157,7 +159,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/armor/buffvest, PERIODIC_SLOW, "w
 			if(flavor_drop)
 				to_chat(H, span_info(flavor_drop))
 
-/obj/item/clothing/suit/armor/buffvest/periodic_step()
+/obj/item/clothing/suit/armor/buffvest/proc/buffvest_step(datum/act/timer/A)
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(COOLDOWN_FINISHED(src, cooldown) && L.is_sentient() && L.get_tension() >= tension_threshold)

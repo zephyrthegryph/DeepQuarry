@@ -15,10 +15,12 @@
 	var/active = null
 
 /// Radioactive rods pulse radiation (periodic_step()) for as long as they are radioactive.
-OM_FIELD(/obj/item/fuel_assembly, radioactivity, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
+/obj/item/fuel_assembly/var/radioactivity = 0
+TRACKED(/obj/item/fuel_assembly, radioactivity)
+CAPABILITIES(/obj/item/fuel_assembly)
+	every(2 SECONDS, then(PROC_REF(fuel_assembly_step)), when = nameof(radioactivity))
 
-/obj/item/fuel_assembly/periodic_step()
+/obj/item/fuel_assembly/proc/fuel_assembly_step(datum/act/timer/A)
 	radiate()
 
 /obj/item/fuel_assembly/proc/radiate()

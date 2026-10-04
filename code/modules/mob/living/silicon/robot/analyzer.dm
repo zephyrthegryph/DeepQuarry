@@ -21,13 +21,13 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	do_scan(M, user)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+CAPABILITIES(/obj/item/robotanalyzer)
+	op("mode", hand(), gesture(GESTURE_ALT), then(PROC_REF(mode_toggled)))
 
-/// Old click_alt.
-/obj/item/robotanalyzer/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/// Alt-click: switch between scanning cyborgs and scanning for upgrades.
+/obj/item/robotanalyzer/proc/mode_toggled(datum/act/op/A)
 	mode = !mode
-	user.show_message(span_blue("[mode ? "Toggled to cyborg analyzing mode." : "Toggled to cyborg upgrade scan mode."]"), 1)
-	return TRUE
+	A.actor.show_message(span_blue("[mode ? "Toggled to cyborg analyzing mode." : "Toggled to cyborg upgrade scan mode."]"), 1)
 
 /obj/item/robotanalyzer/proc/do_scan(mob/living/M, mob/living/user)
 	if(CLUMSY_FAIL_CHANCE(user))

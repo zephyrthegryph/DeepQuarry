@@ -33,10 +33,11 @@
 
 CAPABILITIES(/obj/item/radio_jammer)
 	owns_one(nameof(power_source), /obj/item/cell/device/weapon, starts = /obj/item/cell/device/weapon)
+	/// Drains its cell while switched on.
+	every(2 SECONDS, then(PROC_REF(radio_jammer_step)), when = nameof(on))
 
-OM_FIELD(/obj/item/radio_jammer, on, FALSE, CHANGE_EXPLICIT)
-/// Drains its cell while switched on.
-DECLARE_PERIODIC_WHILE(/obj/item/radio_jammer, PERIODIC_SLOW, "on")
+/obj/item/radio_jammer/var/on = FALSE
+TRACKED(/obj/item/radio_jammer, on)
 
 /obj/item/radio_jammer/Initialize(mapload)
 	. = ..()
@@ -67,7 +68,7 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 	set_on(TRUE)
 	update_icon()
 
-/obj/item/radio_jammer/periodic_step()
+/obj/item/radio_jammer/proc/radio_jammer_step(datum/act/timer/A)
 	if(!power_source || !power_source.check_charge(tick_cost))
 		var/mob/living/notify
 		if(isliving(loc))

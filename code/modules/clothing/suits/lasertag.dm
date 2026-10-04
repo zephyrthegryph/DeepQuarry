@@ -48,6 +48,7 @@ DECLARE_EMAG(/obj/item/clothing/suit/lasertag, PROC_REF(on_emag), null, null)
 CAPABILITIES(/obj/item/clothing/suit/lasertag)
 	op("lasertag_adjust_health_verb", menu(), label("Adjust Suit Health"), needs(carried()), then(PROC_REF(lasertag_adjust_health_verb)))
 	op("lasertag_adjust_heal_time_verb", menu(), label("Adjust Healing Timer"), needs(carried()), then(PROC_REF(lasertag_adjust_heal_time_verb)))
+	every(2 SECONDS, then(PROC_REF(lasertag_step)), when = nameof(tag_worn))
 
 /// Old verb "Adjust Suit Health".
 /obj/item/clothing/suit/lasertag/proc/lasertag_adjust_health_verb(datum/act/op/A)
@@ -102,8 +103,8 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 		user.visible_message(span_notice("[src]'s healing function has been turned off!"))
 
 /// TRUE from equipped() until dropped(): it heals over time while worn.
-OM_FIELD(/obj/item/clothing/suit/lasertag, tag_worn, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/lasertag, PERIODIC_SLOW, "tag_worn")
+/obj/item/clothing/suit/lasertag/var/tag_worn = FALSE
+TRACKED(/obj/item/clothing/suit/lasertag, tag_worn)
 
 /obj/item/clothing/suit/lasertag/dropped(mob/user, equipping, slot)
 	..()
@@ -115,7 +116,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/lasertag, PERIODIC_SLOW, "tag_wor
 	..()
 	set_tag_worn(TRUE)
 
-/obj/item/clothing/suit/lasertag/periodic_step()
+/obj/item/clothing/suit/lasertag/proc/lasertag_step(datum/act/timer/A)
 	if(lasertag_health >= lasertag_max_health) //If we're at or above max health(due to admemes), no need to process.
 		return
 	if(!time_to_heal) //We have healing disabled.

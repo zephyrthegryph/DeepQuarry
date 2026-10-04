@@ -40,6 +40,7 @@
 CAPABILITIES(/obj/item/personal_shield_generator)
 	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
 	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
+	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
 
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
@@ -56,8 +57,8 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	update_icon()
 
 /// If the shield gen is active; it drains power while it is.
-OM_FIELD(/obj/item/personal_shield_generator, shield_active, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/personal_shield_generator, PERIODIC_SLOW, "shield_active")
+/obj/item/personal_shield_generator/var/shield_active = 0
+TRACKED(/obj/item/personal_shield_generator, shield_active)
 
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack
@@ -276,7 +277,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			to_chat(user, span_warning("You need a free hand to hold the gun!"))
 		update_icon() //success
 
-/obj/item/personal_shield_generator/periodic_step()
+/obj/item/personal_shield_generator/proc/personal_shield_generator_step(datum/act/timer/A)
 	if(!bcell) //They removed the battery midway.
 		if(ishuman(loc)) //We on someone? Tell them it turned off.
 			var/mob/living/carbon/human/user = loc

@@ -112,15 +112,17 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	id = rand(1, 1000)
 
 /// Watches its host every 2 s from implantation until it melts down.
-OM_FIELD(/obj/item/implant/tracking, tracking_active, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/implant/tracking, PERIODIC_SLOW, "tracking_active")
+/obj/item/implant/tracking/var/tracking_active = FALSE
+TRACKED(/obj/item/implant/tracking, tracking_active)
+CAPABILITIES(/obj/item/implant/tracking)
+	every(2 SECONDS, then(PROC_REF(tracking_step)), when = nameof(tracking_active))
 
 /obj/item/implant/tracking/post_implant(mob/source)
 	set_tracking_active(TRUE)
 
 // leaves its limb's implant list.
 
-/obj/item/implant/tracking/periodic_step()
+/obj/item/implant/tracking/proc/tracking_step(datum/act/timer/A)
 	var/mob/living/implant_mob // Get implant's mob from our host organ
 	if(istype(loc, /obj/item/organ))
 		var/obj/item/organ/O = loc
@@ -529,10 +531,12 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 	return dat
 
 /// Monitors its host every 2 s from implantation until it has raised its alarm (or broke).
-OM_FIELD(/obj/item/implant/death_alarm, alarm_armed, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/implant/death_alarm, PERIODIC_SLOW, "alarm_armed")
+/obj/item/implant/death_alarm/var/alarm_armed = FALSE
+TRACKED(/obj/item/implant/death_alarm, alarm_armed)
+CAPABILITIES(/obj/item/implant/death_alarm)
+	every(2 SECONDS, then(PROC_REF(death_alarm_step)), when = nameof(alarm_armed))
 
-/obj/item/implant/death_alarm/periodic_step()
+/obj/item/implant/death_alarm/proc/death_alarm_step(datum/act/timer/A)
 	if (!implanted) return
 	var/mob/M = imp_in()
 

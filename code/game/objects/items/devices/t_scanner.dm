@@ -19,13 +19,14 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-OM_FIELD(/obj/item/t_scanner, on, 0, CHANGE_EXPLICIT)
-// Scans underfloor objects while switched on.
-DECLARE_PERIODIC_WHILE(/obj/item/t_scanner, PERIODIC_SLOW, "on")
+/obj/item/t_scanner/var/on = 0
+TRACKED(/obj/item/t_scanner, on)
 APPEARANCE_TEMPLATE(/obj/item/t_scanner, "t-ray{on}")
 
 CAPABILITIES(/obj/item/t_scanner)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	// Scans underfloor objects while switched on.
+	every(2 SECONDS, then(PROC_REF(t_scanner_step)), when = nameof(on))
 
 /obj/item/t_scanner/proc/interaction_self(datum/act/op/A)
 	set_active(!on)
@@ -38,7 +39,7 @@ CAPABILITIES(/obj/item/t_scanner)
 		set_user_client(null)
 
 //If reset is set, then assume the client has none of our overlays, otherwise we only send new overlays.
-/obj/item/t_scanner/periodic_step()
+/obj/item/t_scanner/proc/t_scanner_step(datum/act/timer/A)
 	//handle clients changing
 	var/client/loc_client = null
 	if(ismob(src.loc))

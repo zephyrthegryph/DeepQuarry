@@ -98,20 +98,97 @@
 // the instance, A.cap and A.activation null, A.source the instance and A.dt the interval. The `when =` argument and any enclosing when() block gate
 // each run; a gated run is skipped and the next one still armed, so the work resumes the moment the gate holds again.
 
-/// Arms the type-level every() entries of `holder`, an interval from now on its clock.
+/datum/rx_state
+	/// The type-level every() entries (by their number among the type's) parked because their `when =` is false: nothing is scheduled for them.
+	var/list/every_parked
+
+/// Arms the type-level every() entries of `holder`, an interval from now on its clock. One whose `when =` is false now parks instead (see below).
 /proc/type_every_arm(datum/holder, datum/type_table/T)
 	var/index = 0
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_EVERY))
 		if(!isnull(C.owner))
 			continue // a capability's: its activation arms it
 		index++
+		if(type_every_parkable(holder, C) && !type_every_gate(holder, C))
+			type_every_park(holder, index)
+			continue
 		type_every_schedule(holder, C, index)
 
 /proc/type_every_schedule(datum/holder, datum/centry/C, index)
 	var/datum/entry/E = C.item
 	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index))
 
-/// One run of a type-level every(): the handler unless the gate fails, then the next arming.
+/// TRUE when the type-level every() `C` is held by its own `when =` alone (no enclosing when() block) and that condition is built only of tracked vars of the
+/// holder (nameof(var), cond_not/cond_all/cond_any of those): every write of such a var publishes, so the every() PARKS while the condition is false (no timer
+/// runs at all) and wakes when it publishes true (doc section 3, section 7). Any other gate (a block, a proc, a stat, a relation hop: something a write might not
+/// announce) keeps the polling form: the timer runs and a gated run is skipped.
+/proc/type_every_parkable(datum/holder, datum/centry/C)
+	var/datum/entry/E = C.item
+	var/cond = E.args["when"]
+	if(isnull(cond) || length(C.whens))
+		return FALSE
+	var/static/list/known = list()
+	var/id = "[holder.type]|[E.sig]"
+	if(isnull(known[id]))
+		known[id] = type_every_cond_tracked(holder, cond) ? TRUE : FALSE
+	return known[id]
+
+/// Is `cond` a tracked var of `holder`, or a cond_not/cond_all/cond_any tree of them?
+/proc/type_every_cond_tracked(datum/holder, cond)
+	if(islist(cond))
+		var/list/tree = cond
+		if(length(tree) < 2)
+			return FALSE
+		for(var/i in 2 to length(tree))
+			if(!type_every_cond_tracked(holder, tree[i]))
+				return FALSE
+		return TRUE
+	return istext(cond) && (cond in holder.vars) && hascall(holder, "__setter_[cond]")
+
+/// Does the `when =` of the every() `C` hold on the holder now?
+/proc/type_every_gate(datum/holder, datum/centry/C)
+	var/datum/entry/E = C.item
+	var/cond = E.args["when"]
+	if(!op_whens_hold(holder, C.whens))
+		return FALSE
+	return isnull(cond) || !!change_condition(holder, cond)
+
+/// Parks the every() number `index` of `holder`: nothing is scheduled until type_every_wake() finds its condition true.
+/proc/type_every_park(datum/holder, index)
+	var/datum/rx_state/S = rx_of(holder)
+	LAZYOR(S.every_parked, index)
+
+/// The wake of every parked every(): the synthesized on_change hook of an every() with `when =` runs this when the condition becomes true. Each parked
+/// every() whose condition holds now is armed an interval from now.
+/proc/type_every_wake(datum/act/A)
+	var/datum/holder = A.holder
+	if(!holder || QDELETED(holder))
+		return
+	var/datum/rx_state/S = holder.rx
+	if(!length(S?.every_parked))
+		return
+	var/index = 0
+	for(var/datum/centry/C as anything in compiled_entries(table_of(holder), ENTRY_EVERY))
+		if(!isnull(C.owner))
+			continue
+		index++
+		if(!(index in S.every_parked) || !type_every_gate(holder, C))
+			continue
+		S.every_parked -= index
+		type_every_schedule(holder, C, index)
+	if(!length(S.every_parked))
+		S.every_parked = null
+
+/// The change hook that wakes a parked every(): ENTER of its `when =`, running type_every_wake(). Built once per every() entry (hooks.dm asks for it).
+/proc/type_every_wake_entry(datum/entry/E)
+	var/static/list/made = list()
+	var/datum/entry/known = made[E.sig]
+	if(!known)
+		known = entry_make(ENTRY_ON_CHANGE, null, list("cond" = E.args["when"], "edge" = ENTER), list(then(GLOBAL_PROC_REF(type_every_wake))))
+		made[E.sig] = known
+	return known
+
+/// One run of a type-level every(): the handler unless the gate fails, then the next arming. A parkable every() whose gate fails parks instead of re-arming.
 /proc/type_every_fire(datum/holder, datum/centry/C, index)
 	if(!holder || QDELETED(holder) || !C)
 		return
@@ -120,6 +197,9 @@
 	var/cond = E.args["when"]
 	if(gated && !isnull(cond))
 		gated = !!change_condition(holder, cond)
+	if(!gated && type_every_parkable(holder, C))
+		type_every_park(holder, index)
+		return
 	if(gated)
 		var/datum/act/timer/T = every_context(holder, null, holder, isnum(E.args["interval"]) ? E.args["interval"] : 0)
 		var/depth = GLOB.act_depth

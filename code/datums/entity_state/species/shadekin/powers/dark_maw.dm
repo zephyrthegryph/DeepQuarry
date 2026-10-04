@@ -66,8 +66,10 @@
 
 /// TRUE while the maw lies in wait (placed, not yet triggered): it checks the light every 2 s and
 /// dispels in the light.
-OM_FIELD(/obj/effect/abstract/dark_maw, armed, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/effect/abstract/dark_maw, PERIODIC_SLOW, "armed")
+/obj/effect/abstract/dark_maw/var/armed = FALSE
+TRACKED(/obj/effect/abstract/dark_maw, armed)
+CAPABILITIES(/obj/effect/abstract/dark_maw)
+	every(2 SECONDS, then(PROC_REF(dark_maw_step)), when = nameof(armed))
 
 /obj/effect/abstract/dark_maw/Initialize(mapload, mob/user, trigger_now = FALSE)
 	. = ..()
@@ -123,7 +125,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/abstract/dark_maw, PERIODIC_SLOW, "armed")
 	if(!L.is_incorporeal() && (!owner() || L != owner()))
 		triggered_by(L)
 
-/obj/effect/abstract/dark_maw/periodic_step()
+/obj/effect/abstract/dark_maw/proc/dark_maw_step(datum/act/timer/A)
 	var/turf/T = get_turf(src)
 	if(!istype(T) || T.get_lumcount() >= 0.5)
 		dispel()

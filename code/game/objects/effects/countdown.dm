@@ -14,8 +14,10 @@
 	var/atom/attached_to
 
 /// Ticks its display every fast tick while started.
-OM_FIELD(/obj/effect/countdown, started, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
+/obj/effect/countdown/var/started = FALSE
+TRACKED(/obj/effect/countdown, started)
+CAPABILITIES(/obj/effect/countdown)
+	every(0.2 SECONDS, then(PROC_REF(countdown_step)), when = nameof(started))
 
 /obj/effect/countdown/Initialize(mapload)
 	. = ..()
@@ -54,7 +56,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
 	// Get the value from our atom
 	return
 
-/obj/effect/countdown/periodic_step()
+/obj/effect/countdown/proc/countdown_step(datum/act/timer/A)
 	if(!attached_to || QDELETED(attached_to))
 		consume(src)
 		return
