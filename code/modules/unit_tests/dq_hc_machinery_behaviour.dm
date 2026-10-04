@@ -267,3 +267,15 @@
 	var/list/data = hc_data(B, H)
 	TEST_ASSERT_EQUAL(data["points"], 0, "the window shows the biomass")
 	TEST_ASSERT_EQUAL(data["beaker"], !!B.beaker, "and whether a beaker is loaded")
+
+// Added with the conversion: the legacy label question needed a window state no player-less test can meet.
+/datum/unit_test/dq_hc_struct/canister_is_relabelled
+/datum/unit_test/dq_hc_struct/canister_is_relabelled/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/portable_atmospherics/canister/C = mach(/obj/machinery/portable_atmospherics/canister, tile(3, 2))
+	press(H, C, "relabel")
+	TEST_ASSERT(asked(H), "a relabellable canister asks for a label")
+	hci_answer(H, "\[O2\]")
+	settle()
+	TEST_ASSERT_EQUAL(C.canister_color, "blue", "the label paints the canister")
+	TEST_ASSERT_EQUAL(C.name, "Canister: \[O2\]", "and names it")

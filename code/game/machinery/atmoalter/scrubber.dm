@@ -21,22 +21,27 @@
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 	climb()
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(scrubber_emp))))
+	interface("PortableScrubber")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("volume_adj", ui_act("volume_adj", arg("vol", num())), then(PROC_REF(ui_act_volume_adj)))
 
 /obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload, skip_cell)
 	. = ..()
 	if(!skip_cell)
 		rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
 
-DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EMP, PROC_REF(scrubber_emp))
-/// An EMP may toggle a working scrubber.
-/obj/machinery/portable_atmospherics/powered/scrubber/proc/scrubber_emp(datum/damage_packet/packet)
+/// An EMP may toggle a working scrubber (before the hit lands; the hit goes on).
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/scrubber_emp(datum/act/hit/emp/A)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 
-	if(prob(50/packet.severity))
+	if(prob(50/A.packet.severity))
 		set_on(!on)
 		if(on)
 			changed(src, CHANGE_MACHINE_SETTINGS)
+	return HOOK_DECLINE
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/scrubber/appearance_overlays()
@@ -108,12 +113,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, T
 	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
 
-DECLARE_UI(/obj/machinery/portable_atmospherics/powered/scrubber, "PortableScrubber")
-
-UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/scrubber, "merge:ui_data_obj_machinery_portable_atmospherics_powered_scrubber{on:num,connected:num,pressure:unknown,rate:num,minrate:num,maxrate:num,powerDraw:num,cellCharge:num,cellMaxCharge:num,holding:list}")
-
-/// The computed part of /obj/machinery/portable_atmospherics/powered/scrubber's window data (declared on its UI_DATA row).
-/obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_data_obj_machinery_portable_atmospherics_powered_scrubber(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/portable_atmospherics/powered/scrubber/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["on"] = on ? 1 : 0
 	data["connected"] = connected_port() ? 1 : 0
@@ -135,25 +135,21 @@ UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/scrubber, "merge:ui
 
 	return data
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_power)
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_power(datum/act/op/A)
 	set_on(!on)
 	if(on)
 		changed(src, CHANGE_MACHINE_SETTINGS)
 	. = TRUE
-	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_eject)
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_eject(datum/act/op/A)
 	if(holding)
 		holding.forceMove(loc)
 		own_take(src, nameof(/datum/rule_binding::holding))
 	. = TRUE
 	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "volume_adj", ui_act_volume_adj, UI_ARG_NUM("vol"))
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_volume_adj)
-	volume_rate = CLAMP(params["vol"], minrate, maxrate)
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_volume_adj(datum/act/op/A, vol)
+	volume_rate = CLAMP(vol, minrate, maxrate)
 	. = TRUE
 	update_icon()
 

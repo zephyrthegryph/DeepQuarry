@@ -30,6 +30,11 @@
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	climb()
+	interface("Canister")
+	op("relabel", ui_act("relabel"), then(PROC_REF(ui_act_relabel)))
+	op("pressure", ui_act("pressure", arg("pressure", num())), then(PROC_REF(ui_act_pressure)))
+	op("valve", ui_act("valve"), then(PROC_REF(ui_act_valve)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 
 /obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
 	var/internal_temperature = air_contents?.return_temperature() || T20C
@@ -327,17 +332,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 
 DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/canister, GLOB.tgui_physical_state)
 
-DECLARE_UI(/obj/machinery/portable_atmospherics/canister, "Canister")
-
 /obj/machinery/portable_atmospherics/canister/ui_prepare(mob/user, datum/tgui/ui)
 	if(destroyed)
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/canister, "merge:ui_data_obj_machinery_portable_atmospherics_canister{can_relabel:num,connected:num,pressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num,valveOpen:num,holding:list}")
-
-/// The computed part of /obj/machinery/portable_atmospherics/canister's window data (declared on its UI_DATA row).
-/obj/machinery/portable_atmospherics/canister/proc/ui_data_obj_machinery_portable_atmospherics_canister(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/portable_atmospherics/canister/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["can_relabel"] = can_label ? 1 : 0
 	data["connected"] = connected_port() ? 1 : 0
@@ -357,26 +357,16 @@ UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/canister, "merge:ui_data_ob
 
 	return data
 
-UI_ACT(/obj/machinery/portable_atmospherics/canister, "relabel", ui_act_relabel)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_relabel)
+/obj/machinery/portable_atmospherics/canister/proc/ui_act_relabel(datum/act/op/A)
+	var/mob/user = A.actor
 	if(can_label)
-		var/list/colors = list(\
-			"\[N2O\]" = "redws", \
-			"\[N2\]" = "red", \
-			"\[O2\]" = "blue", \
-			"\[Phoron\]" = "orangeps", \
-			"\[CO2\]" = "black", \
-			"\[CH4\]" = "green", \
-			"\[Air\]" = "grey", \
-			"\[CAUTION\]" = "yellow", \
-		)
-		om_ask(ui.user, /datum/om/prompt/choice/canister_label, PROC_REF(label_chosen), choices = colors)
-	add_fingerprint(ui.user)
+		open_request(src, /datum/prompt/choice, PROC_REF(label_chosen), valid = PROC_REF(label_valid), answerer = user, title = "Gas canister", question = "Choose canister label", choices = label_colors(), timeout = 0)
+	add_fingerprint(user)
 	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/canister, "pressure", ui_act_pressure, UI_ARG_NUM("pressure"))
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_pressure)
-	var/pressure = params["pressure"]
+/obj/machinery/portable_atmospherics/canister/proc/ui_act_pressure(datum/act/op/A, raw_pressure)
+	var/mob/user = A.actor
+	var/pressure = raw_pressure
 	if(pressure == "reset")
 		pressure = initial(release_pressure)
 		. = TRUE
@@ -387,75 +377,83 @@ UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_pressure)
 		pressure = 10*ONE_ATMOSPHERE
 		. = TRUE
 	else if(pressure == "input")
-		om_ask(ui.user, /datum/om/prompt/number/canister_pressure, PROC_REF(release_pressure_entered), title = name, default = release_pressure, ui_refresh = src)
+		open_request(src, /datum/prompt/number, PROC_REF(release_pressure_entered), valid = PROC_REF(pressure_valid), answerer = user, title = name, question = "New release pressure ([ONE_ATMOSPHERE/10]-[10*ONE_ATMOSPHERE] kPa):", min_value = ONE_ATMOSPHERE/10, max_value = 10*ONE_ATMOSPHERE, default = release_pressure, timeout = 0)
 		return TRUE
 	else if(isnum(pressure))
 		. = TRUE
 	if(.)
 		release_pressure = clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/canister, "valve", ui_act_valve)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_valve)
+/obj/machinery/portable_atmospherics/canister/proc/ui_act_valve(datum/act/op/A)
+	var/mob/user = A.actor
 	if(valve_open)
 		if(holding)
-			release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the [holding]<br>"
+			release_log += "Valve was " + span_bold("closed") + " by [user] ([user.ckey]), stopping the transfer into the [holding]<br>"
 		else
-			release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the " + span_red(span_bold("air")) + "<br>"
+			release_log += "Valve was " + span_bold("closed") + " by [user] ([user.ckey]), stopping the transfer into the " + span_red(span_bold("air")) + "<br>"
 	else
 		if(holding)
-			release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the [holding]<br>"
+			release_log += "Valve was " + span_bold("opened") + " by [user] ([user.ckey]), starting the transfer into the [holding]<br>"
 		else
-			release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
-			log_open(ui.user)
+			release_log += "Valve was " + span_bold("opened") + " by [user] ([user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
+			log_open(user)
 	set_valve_open(!valve_open)
 	changed(src, CHANGE_MACHINE_SETTINGS)
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/canister, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_eject)
+/obj/machinery/portable_atmospherics/canister/proc/ui_act_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(holding)
 		if(valve_open)
 			set_valve_open(0)
-			release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the [holding]<br>"
+			release_log += "Valve was " + span_bold("closed") + " by [user] ([user.ckey]), stopping the transfer into the [holding]<br>"
 		if(istype(holding, /obj/item/tank))
-			holding.manipulated_by = ui.user.real_name
+			holding.manipulated_by = user.real_name
 		holding.forceMove(loc)
 		own_take(src, nameof(/datum/rule_binding::holding))
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	update_icon()
 
-/datum/om/prompt/choice/canister_label
-	title = "Gas canister"
-	message = "Choose canister label"
-	requires = PROMPT_USABLE
+/// The labels a canister can be given, each with the colour it paints the canister.
+/obj/machinery/portable_atmospherics/canister/proc/label_colors()
+	return list(\
+		"\[N2O\]" = "redws", \
+		"\[N2\]" = "red", \
+		"\[O2\]" = "blue", \
+		"\[Phoron\]" = "orangeps", \
+		"\[CO2\]" = "black", \
+		"\[CH4\]" = "green", \
+		"\[Air\]" = "grey", \
+		"\[CAUTION\]" = "yellow", \
+	)
 
-/datum/om/prompt/choice/canister_label/valid()
-	var/obj/machinery/portable_atmospherics/canister/C = subject
-	return C.can_label ? null : "can't label"
+/// Re-checked: the canister can still be labelled and the person is next to it and able.
+/obj/machinery/portable_atmospherics/canister/proc/label_valid(datum/request/R)
+	return can_label && answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
 
-/obj/machinery/portable_atmospherics/canister/proc/label_chosen(datum/om/prompt/choice/canister_label/ask)
-	var/label = ask.choice
-	if(label)
-		canister_color = ask.choices[label]
-		icon_state = ask.choices[label]
+/obj/machinery/portable_atmospherics/canister/proc/label_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/label = A.answer.answer_value
+	var/list/colors = label_colors()
+	if(label && colors[label])
+		canister_color = colors[label]
+		icon_state = colors[label]
 		name = "Canister: [label]"
 
-/datum/om/prompt/number/canister_pressure
-	min = ONE_ATMOSPHERE/10
-	max = 10*ONE_ATMOSPHERE
-	requires = PROMPT_USABLE
+/// Re-checked: the person is still next to the canister and able.
+/obj/machinery/portable_atmospherics/canister/proc/pressure_valid(datum/request/R)
+	return answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
 
-/datum/om/prompt/number/canister_pressure/prepare()
-	message = "New release pressure ([min]-[max] kPa):"
-	return TRUE
-
-/obj/machinery/portable_atmospherics/canister/proc/release_pressure_entered(datum/om/prompt/number/canister_pressure/ask)
-	release_pressure = clamp(round(ask.number), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
+/obj/machinery/portable_atmospherics/canister/proc/release_pressure_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	release_pressure = clamp(round(A.answer.answer_value), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
 
 /obj/machinery/portable_atmospherics/canister/phoron/Initialize(mapload)
 	. = ..()

@@ -10724,6 +10724,19 @@
 	into += entry_line(25)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/machinery/biogenerator) at code/game/machinery/biogenerator.dm:136
+/obj/machinery/biogenerator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/biogenerator.dm", 136, /obj/machinery/biogenerator)
+	into += entry_line(137)
+	into += list(global.interface("Biogenerator"))
+	into += entry_line(138)
+	into += list(global.op("activate", global.ui_act("activate"), global.then(PROC_REF(ui_act_activate))))
+	into += entry_line(139)
+	into += list(global.op("detach", global.ui_act("detach"), global.then(PROC_REF(ui_act_detach))))
+	into += entry_line(140)
+	into += list(global.op("purchase", global.ui_act("purchase", global.arg("amount", global.num()), global.arg("cat", global.schema_text(4096)), global.arg("name", global.schema_text(4096))), global.then(PROC_REF(ui_act_purchase))))
+
 /// CAPABILITIES(/obj/machinery/blackbox_recorder) at code/modules/research/message_server.dm:310
 /obj/machinery/blackbox_recorder/declared_entries(list/into)
 	..(into)
@@ -12309,6 +12322,16 @@
 	into += entry_block("code/game/machinery/atmoalter/canister.dm", 31, /obj/machinery/portable_atmospherics/canister)
 	into += entry_line(32)
 	into += list(global.climb())
+	into += entry_line(33)
+	into += list(global.interface("Canister"))
+	into += entry_line(34)
+	into += list(global.op("relabel", global.ui_act("relabel"), global.then(PROC_REF(ui_act_relabel))))
+	into += entry_line(35)
+	into += list(global.op("pressure", global.ui_act("pressure", global.arg("pressure", global.num())), global.then(PROC_REF(ui_act_pressure))))
+	into += entry_line(36)
+	into += list(global.op("valve", global.ui_act("valve"), global.then(PROC_REF(ui_act_valve))))
+	into += entry_line(37)
+	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics) at code/modules/hydroponics/trays/tray.dm:141
 /obj/machinery/portable_atmospherics/hydroponics/declared_entries(list/into)
@@ -12323,6 +12346,18 @@
 	into += entry_block("code/game/machinery/atmoalter/pump.dm", 23, /obj/machinery/portable_atmospherics/powered/pump)
 	into += entry_line(24)
 	into += list(global.climb())
+	into += entry_line(25)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(pump_emp)))))
+	into += entry_line(26)
+	into += list(global.interface("PortablePump"))
+	into += entry_line(27)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_act_power))))
+	into += entry_line(28)
+	into += list(global.op("direction", global.ui_act("direction"), global.then(PROC_REF(ui_act_direction))))
+	into += entry_line(29)
+	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
+	into += entry_line(30)
+	into += list(global.op("pressure", global.ui_act("pressure", global.arg("pressure")), global.then(PROC_REF(ui_act_pressure))))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery) at code/modules/reagents/machinery/distillery.dm:60
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/declared_entries(list/into)
@@ -12339,12 +12374,22 @@
 	into += entry_block("code/game/machinery/atmoalter/scrubber.dm", 22, /obj/machinery/portable_atmospherics/powered/scrubber)
 	into += entry_line(23)
 	into += list(global.climb())
+	into += entry_line(24)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(scrubber_emp)))))
+	into += entry_line(25)
+	into += list(global.interface("PortableScrubber"))
+	into += entry_line(26)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_act_power))))
+	into += entry_line(27)
+	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
+	into += entry_line(28)
+	into += list(global.op("volume_adj", global.ui_act("volume_adj", global.arg("vol", global.num())), global.then(PROC_REF(ui_act_volume_adj))))
 
-/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge) at code/game/machinery/atmoalter/scrubber.dm:189
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge) at code/game/machinery/atmoalter/scrubber.dm:185
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/atmoalter/scrubber.dm", 189, /obj/machinery/portable_atmospherics/powered/scrubber/huge)
-	into += entry_line(190)
+	into += entry_block("code/game/machinery/atmoalter/scrubber.dm", 185, /obj/machinery/portable_atmospherics/powered/scrubber/huge)
+	into += entry_line(186)
 	into += list(global.without(CAP_CLIMB))
 
 /// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:166

@@ -123,36 +123,39 @@
 
 	return static_data
 
-UI_DATA(/obj/machinery/biogenerator, "build_eff:num", "points:num", "processing:num", "merge:ui_data_obj_machinery_biogenerator{beaker:bool}")
-
-/// The computed part of /obj/machinery/biogenerator's window data (declared on its UI_DATA row).
-/obj/machinery/biogenerator/proc/ui_data_obj_machinery_biogenerator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/biogenerator/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["beaker"] = !!beaker
 
+	data["build_eff"] = build_eff
+	data["points"] = points
+	data["processing"] = processing
 	return data
 
-DECLARE_UI(/obj/machinery/biogenerator, "Biogenerator")
+CAPABILITIES(/obj/machinery/biogenerator)
+	interface("Biogenerator")
+	op("activate", ui_act("activate"), then(PROC_REF(ui_act_activate)))
+	op("detach", ui_act("detach"), then(PROC_REF(ui_act_detach)))
+	op("purchase", ui_act("purchase", arg("amount", num()), arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
 
-UI_ACT(/obj/machinery/biogenerator, "activate", ui_act_activate)
-UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_activate)
-	activate(ui.user)
+/obj/machinery/biogenerator/proc/ui_act_activate(datum/act/op/A)
+	var/mob/user = A.actor
+	activate(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/biogenerator, "detach", ui_act_detach)
-UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_detach)
+/obj/machinery/biogenerator/proc/ui_act_detach(datum/act/op/A)
 	if(beaker)
 		beaker.forceMove(loc)
 		own_take(src, nameof(/obj/machinery/biogenerator::beaker))
 		update_icon()
 	return TRUE
 
-UI_ACT(/obj/machinery/biogenerator, "purchase", ui_act_purchase, UI_ARG_NUM("amount"), UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
-	var/category = params["cat"] // meow
-	var/name = params["name"]
-	var/amount = params["amount"]
+/obj/machinery/biogenerator/proc/ui_act_purchase(datum/act/op/A, raw_amount, cat, raw_name)
+	var/mob/user = A.actor
+	var/category = cat // meow
+	var/name = raw_name
+	var/amount = raw_amount
 
 	if(!(category in item_list) || !(name in item_list[category]) || !isnum(amount)) // Not trying something that's not in the list, are you?
 		return FALSE
@@ -171,11 +174,11 @@ UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
 		if(cost < 1) //No going below 1 cost.
 			cost = 1
 		if(cost * amount > points)
-			to_chat(ui.user, span_danger("Insufficient biomass."))
+			to_chat(user, span_danger("Insufficient biomass."))
 			return FALSE
 		var/amt_to_actually_dispense = round(min(beaker.reagents.get_free_space(), amount))
 		if(amt_to_actually_dispense <= 0)
-			to_chat(ui.user, span_danger("The loaded beaker is full!"))
+			to_chat(user, span_danger("The loaded beaker is full!"))
 			return FALSE
 		points -= cost * amt_to_actually_dispense
 		beaker.reagents.add_reagent(br.reagent_id, amt_to_actually_dispense)
@@ -187,7 +190,7 @@ UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
 
 	var/cost = round(bi.cost / build_eff)
 	if(cost > points)
-		to_chat(ui.user, span_danger("Insufficient biomass."))
+		to_chat(user, span_danger("Insufficient biomass."))
 		return FALSE
 
 	points -= cost * amount
