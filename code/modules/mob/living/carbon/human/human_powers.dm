@@ -69,7 +69,7 @@
 /mob/living/carbon/human/proc/tackle_target_chosen(datum/om/prompt/choice/tackle/ask)
 	var/mob/living/T = ask.choice
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	var/failed
 	if(prob(75))

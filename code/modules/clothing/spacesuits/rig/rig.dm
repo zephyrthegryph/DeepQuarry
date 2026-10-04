@@ -288,8 +288,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	if(!seal_target)
 		booting_L.icon_state = "boot_left"
 		booting_R.icon_state = "boot_load"
-		animate(booting_L, alpha=230, time=30, easing=SINE_EASING)
-		animate(booting_R, alpha=200, time=20, easing=SINE_EASING)
+		animate(booting_L, alpha=230, time=3 SECONDS, easing=SINE_EASING)
+		animate(booting_R, alpha=200, time=2 SECONDS, easing=SINE_EASING)
 		M.client?.screen += booting_L
 		M.client?.screen += booting_R
 
@@ -407,8 +407,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	if(failed_to_seal)
 		M?.client?.screen -= booting_L
 		M?.client?.screen -= booting_R
-		qdel(booting_L)
-		qdel(booting_R)
+		consume(booting_L, M)
+		consume(booting_R, M)
 		for(var/obj/item/piece in list(helmet,boots,gloves,chest))
 			if(!piece) continue
 			piece.icon_state = "[suit_state][!seal_target ? "" : "_sealed"]"
@@ -429,7 +429,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
 	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
 	M.client?.screen -= booting_L
-	qdel(booting_L)
+	consume(booting_L, M)
 	booting_R.icon_state = "boot_done"
 	after(M, 4 SECONDS, /proc/rig_boot_hud_clear, with = list(M, booting_R))
 
@@ -921,7 +921,7 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 		return
 
 // Added this for protean living hardsuit
-	COOLDOWN_START(src, wearer_move_delay, 2)
+	COOLDOWN_START(src, wearer_move_delay, 0.2 SECONDS)
 	if(ai_moving)
 		if(!ai_can_move_suit(user, check_user_module = 1))
 			return
@@ -1035,7 +1035,7 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 /// The boot-up HUD's last piece leaves the screen once the seals finish.
 /proc/rig_boot_hud_clear(mob/M, atom/movable/screen/booting_R)
 	M.client?.screen -= booting_R
-	qdel(booting_R)
+	consume(booting_R, M)
 
 /obj/item/rig/ownership()
 	. = ..()

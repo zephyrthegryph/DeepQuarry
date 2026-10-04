@@ -137,10 +137,6 @@ dx_raw_delay	code/modules/casino/casino_prize_vendor.dm	after(src, rand(0, 15), 
 dx_raw_delay	code/modules/casino/slots.dm	after(src, rand(0, 15), PROC_REF(lose_power))
 dx_raw_delay	code/modules/casino/slots.dm	after(src, rand(0, 15), PROC_REF(lose_power))
 dx_raw_delay	code/modules/clothing/accessories/accessory.dm	after(src, 50, PROC_REF(jingledreset))
-dx_raw_delay	code/modules/clothing/spacesuits/rig/modules/modules.dm	after(src, 1, PROC_REF(refresh_suit_overlay))
-dx_raw_delay	code/modules/clothing/spacesuits/rig/modules/modules.dm	after(src, 1, PROC_REF(refresh_suit_overlay))
-dx_raw_delay	code/modules/clothing/spacesuits/rig/modules/specific/jetpack.dm	after(src, 1, PROC_REF(refresh_suit_overlay))
-dx_raw_delay	code/modules/clothing/spacesuits/rig/rig.dm	COOLDOWN_START(src, wearer_move_delay, 2)
 dx_raw_delay	code/modules/combat_ai/ports/slime_state.dm	after(speaker, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(message))
 dx_raw_delay	code/modules/combat_ai/ports/voice_commands.dm	after(who, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(pick(options)))
 dx_raw_delay	code/modules/contracts/contract_requirement.dm	after(src, max(1, stage["duration"]), PROC_REF(complete_stage), key = "pending:[stage_key]", with = list(stage_key, stage_index, token, event.actor_account, event.value("detail")))
@@ -165,8 +161,6 @@ dx_raw_delay	code/modules/library/lib_machines.dm	after(src, rand(200,400), PROC
 dx_raw_delay	code/modules/library/lib_machines.dm	after(src, rand(300,500), PROC_REF(bind_bundle), with = list(held))
 dx_raw_delay	code/modules/library/wikicomp.dm	after(src, rand(1000, 4000), PROC_REF(uncrash))
 dx_raw_delay	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	after(src, 1, PROC_REF(delayed_loc_check))
-dx_raw_delay	code/modules/medical/contagion/engineered/traits/cough.dm	after(A, 20, TYPE_PROC_REF(/datum/affliction/contagion, spread), with = list(2))
-dx_raw_delay	code/modules/medical/contagion/engineered/traits/sneeze.dm	after(A, 20, TYPE_PROC_REF(/datum/affliction/contagion, spread), with = list(4))
 dx_raw_delay	code/modules/mining/mine_turfs.dm	after(src, 1, PROC_REF(expose_ore)) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
 dx_raw_delay	code/modules/mining/ore.dm	after(src, 1, PROC_REF(scatter_if_dropped))
 dx_raw_delay	code/modules/mining/ore.dm	after(src, 1, PROC_REF(scatter_if_dropped))
@@ -175,37 +169,12 @@ dx_raw_delay	code/modules/mob/dead/observer/observer.dm	COOLDOWN_START(src, invi
 dx_raw_delay	code/modules/mob/living/bot/farmbot.dm	after(src, rand(30, 50), PROC_REF(emag_takes))
 dx_raw_delay	code/modules/mob/living/bot/mulebot.dm	after(src, 2, PROC_REF(load_finish), with = list(C))
 dx_raw_delay	code/modules/mob/living/carbon/alien/alien_attacks.dm	after(src, 3, PROC_REF(knocked_away_from), with = list(M))
-dx_raw_delay	code/modules/mob/living/carbon/human/emote.dm	after(src, 7, PROC_REF(flip_end), with = list(original_density, added_passtable))
-dx_raw_delay	code/modules/mob/living/carbon/human/examine.dm	after(src, 15, PROC_REF(pulse_check_result), with = list(user))
-dx_raw_delay	code/modules/mob/living/carbon/human/human_powers.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	COOLDOWN_START(src, last_special, 50)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/outsider/shadow.dm	after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_crumble))
 dx_raw_delay	code/modules/mob/living/carbon/human/species/shadekin/shadekin.dm	after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 10)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 10)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 10)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 10)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	after(src, 3, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK))) // ALLOW(decl): conditional, extra args
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	after(src, 1, PROC_REF(finish_survival_gear), with = list(H)) //Let their real nif load if they have one
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 600)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	after(C, 6, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(FALSE)) //.6 seconds.
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 50) //No spamming!
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 50) //No spamming!
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 10) //Anti-spam.
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 100) //Cooldown for successful strike.
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 10) //Anti-spam.
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	after(src, 5, PROC_REF(target_lunge_land), with = list(target)) // For the throw to complete.
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 10) //Anti-spam.
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 600)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 600)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/virtual_reality/avatar.dm	COOLDOWN_START(src, last_special, 10)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/virtual_reality/avatar.dm	after(src, 3000, PROC_REF(cleanup_vr)) //Delete the body after 5 minutes
 dx_raw_delay	code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm	COOLDOWN_START(src, last_special, 75)

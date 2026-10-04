@@ -45,7 +45,7 @@
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	om_ask(src, /datum/om/prompt/choice/shapeshifter_form, PROC_REF(lleill_shape_chosen), choices = species.get_valid_shapeshifter_forms(src))
 
@@ -71,7 +71,7 @@
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 
 	om_ask(src, /datum/om/prompt/color, PROC_REF(lleill_colour_chosen), title = "Shapeshifter Colour", message = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS)
 
