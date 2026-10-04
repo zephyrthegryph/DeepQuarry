@@ -26,3 +26,22 @@
 		TEST_ASSERT_EQUAL(fixed.max_integrity, custom.max_integrity, "Fixed and custom forms receive the same parent material behavior")
 		TEST_ASSERT_EQUAL(lowertext(fixed.color), lowertext(expected.icon_colour), "The real bracelet appearance uses the chosen material")
 		TEST_ASSERT_EQUAL(fixed.name, "[expected.display_name] bracelet", "The fixed bracelet displays its chosen material")
+
+/// Material subtypes override constructor choices; a generic ring honors them.
+/datum/unit_test/interim_ring_material_contract/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/datum/material/gold = get_material_by_name(MAT_GOLD)
+	var/datum/material/copper = get_material_by_name(MAT_COPPER)
+	TEST_ASSERT(gold && copper, "both real ring materials are registered")
+	var/obj/item/clothing/accessory/ring/material/fixed = allocate(/obj/item/clothing/accessory/ring/material/gold, T, "invalid caller material")
+	var/obj/item/clothing/accessory/ring/material/custom = allocate(/obj/item/clothing/accessory/ring/material, T, MAT_GOLD)
+	var/obj/item/clothing/accessory/ring/material/other = allocate(/obj/item/clothing/accessory/ring/material, T, MAT_COPPER)
+	TEST_ASSERT(fixed && !QDELETED(fixed), "the fixed gold ring survives an invalid caller material")
+	TEST_ASSERT(custom && !QDELETED(custom), "a generic ring accepts the real gold material")
+	TEST_ASSERT(other && !QDELETED(other), "a generic ring accepts a different real caller material")
+	TEST_ASSERT_EQUAL(fixed.get_material(), gold, "the subtype keeps the original registered gold identity")
+	TEST_ASSERT_EQUAL(custom.get_material(), gold, "the generic ring honors the gold choice")
+	TEST_ASSERT_EQUAL(other.get_material(), copper, "the generic ring honors the copper choice")
+	TEST_ASSERT_EQUAL(fixed.max_integrity, custom.max_integrity, "both gold rings receive the same parent integrity behavior")
+	TEST_ASSERT_EQUAL(lowertext(fixed.color), lowertext(gold.icon_colour), "the fixed ring uses actual gold appearance")
+	TEST_ASSERT_EQUAL(fixed.name, "[gold.display_name] ring", "the fixed ring displays the actual chosen material")

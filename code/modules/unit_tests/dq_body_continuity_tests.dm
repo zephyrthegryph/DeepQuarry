@@ -365,4 +365,24 @@
 	dq_test_set_organ_damage(brain, brain.max_damage)
 	TEST_ASSERT_NOTNULL(paddles.can_revive(H), "a brain at 100% damage should block defibrillation")
 
+/// Canonical mob subtypes force their species before the body is constructed.
+/datum/unit_test/interim_human_species_constructor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/custom = allocate(/mob/living/carbon/human, T, SPECIES_TAJARAN)
+	var/mob/living/carbon/human/skrell/fixed = allocate(/mob/living/carbon/human/skrell, T, SPECIES_TAJARAN)
+	var/mob/living/carbon/human/xdrone/drone = allocate(/mob/living/carbon/human/xdrone, T, SPECIES_SKRELL)
+	TEST_ASSERT(custom && !QDELETED(custom), "the generic human initializes with its caller's species")
+	TEST_ASSERT(fixed && !QDELETED(fixed), "the canonical skrell initializes despite a different caller species")
+	TEST_ASSERT(drone && !QDELETED(drone), "the canonical xenomorph initializes despite a different caller species")
+	TEST_ASSERT_EQUAL(custom.species.name, SPECIES_TAJARAN, "generic construction honors its actual species argument")
+	TEST_ASSERT_EQUAL(fixed.species.name, SPECIES_SKRELL, "canonical construction forces the original skrell species")
+	TEST_ASSERT_EQUAL(fixed.h_style, "Skrell Short Tentacles", "the original skrell hair is set before appearance construction")
+	TEST_ASSERT_EQUAL(drone.species.name, SPECIES_XENO_DRONE, "canonical alien construction forces its original caste")
+	TEST_ASSERT_EQUAL(drone.h_style, "Bald", "canonical alien construction retains its original hair")
+	TEST_ASSERT_EQUAL(drone.faction, FACTION_XENO, "canonical alien construction retains its original faction")
+	TEST_ASSERT(custom.body && fixed.body && drone.body, "all actual constructor paths create their bodies")
+	TEST_ASSERT_EQUAL(custom.body.owner, custom, "the generic body belongs to the original mob")
+	TEST_ASSERT_EQUAL(fixed.body.owner, fixed, "the canonical skrell body belongs to the original mob")
+	TEST_ASSERT_EQUAL(drone.body.owner, drone, "the canonical alien body belongs to the original mob")
+
 #endif

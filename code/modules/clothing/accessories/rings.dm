@@ -147,8 +147,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Eng
 	icon_state = "material"
 	material_slowdown_multiplier = 0 //it's a ring, it's never gonna be heavy enough to matter
 
+TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/ring/material, ring_forced_material, null)
+
 /obj/item/clothing/accessory/ring/material/Initialize(mapload, new_material)
-	. = ..()
+	var/forced_material = TYPE_TABLE_GET(src, ring_forced_material)
+	if(forced_material)
+		. = ..(mapload, forced_material)
+		new_material = forced_material
+	else
+		. = ..()
 	if(!new_material)
 		new_material = MAT_STEEL
 	material = get_material_by_name(new_material)
@@ -161,59 +168,41 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Eng
 /obj/item/clothing/accessory/ring/material/get_material()
 	return material
 
-/obj/item/clothing/accessory/ring/material/wood/Initialize(mapload)
-	. = ..(mapload, MAT_WOOD)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/wood, ring_forced_material, MAT_WOOD)
 
-/obj/item/clothing/accessory/ring/material/plastic/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTIC)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/plastic, ring_forced_material, MAT_PLASTIC)
 
-/obj/item/clothing/accessory/ring/material/iron/Initialize(mapload)
-	. = ..(mapload, MAT_IRON)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/iron, ring_forced_material, MAT_IRON)
 
-/obj/item/clothing/accessory/ring/material/glass/Initialize(mapload)
-	. = ..(mapload, MAT_GLASS)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/glass, ring_forced_material, MAT_GLASS)
 
-/obj/item/clothing/accessory/ring/material/steel/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/steel, ring_forced_material, MAT_STEEL)
 
-/obj/item/clothing/accessory/ring/material/silver/Initialize(mapload)
-	. = ..(mapload, MAT_SILVER)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/silver, ring_forced_material, MAT_SILVER)
 
-/obj/item/clothing/accessory/ring/material/gold/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/gold, ring_forced_material, MAT_GOLD)
 
-/obj/item/clothing/accessory/ring/material/platinum/Initialize(mapload)
-	. = ..(mapload, MAT_PLATINUM)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/platinum, ring_forced_material, MAT_PLATINUM)
 
-/obj/item/clothing/accessory/ring/material/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/phoron, ring_forced_material, MAT_PHORON)
 
-/obj/item/clothing/accessory/ring/material/titanium/Initialize(mapload)
-	. = ..(mapload, MAT_TITANIUM)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/titanium, ring_forced_material, MAT_TITANIUM)
 
-/obj/item/clothing/accessory/ring/material/copper/Initialize(mapload)
-	. = ..(mapload, MAT_COPPER)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/copper, ring_forced_material, MAT_COPPER)
 
-/obj/item/clothing/accessory/ring/material/bronze/Initialize(mapload)
-	. = ..(mapload, MAT_BRONZE)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/bronze, ring_forced_material, MAT_BRONZE)
 
-/obj/item/clothing/accessory/ring/material/uranium/Initialize(mapload)
-	. = ..(mapload, MAT_URANIUM)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/uranium, ring_forced_material, MAT_URANIUM)
 
-/obj/item/clothing/accessory/ring/material/osmium/Initialize(mapload)
-	. = ..(mapload, MAT_OSMIUM)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/osmium, ring_forced_material, MAT_OSMIUM)
 
-/obj/item/clothing/accessory/ring/material/lead/Initialize(mapload)
-	. = ..(mapload, MAT_LEAD)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/lead, ring_forced_material, MAT_LEAD)
 
-/obj/item/clothing/accessory/ring/material/diamond/Initialize(mapload)
-	. = ..(mapload, MAT_DIAMOND)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/diamond, ring_forced_material, MAT_DIAMOND)
 
-/obj/item/clothing/accessory/ring/material/tin/Initialize(mapload)
-	. = ..(mapload, MAT_TIN)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/tin, ring_forced_material, MAT_TIN)
 
-/obj/item/clothing/accessory/ring/material/void_opal/Initialize(mapload)
-	. = ..(mapload, MAT_VOPAL)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/void_opal, ring_forced_material, MAT_VOPAL)
 
 
 /obj/item/clothing/accessory/ring/ringworld1

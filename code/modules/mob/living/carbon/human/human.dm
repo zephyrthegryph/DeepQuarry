@@ -36,7 +36,20 @@
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
 	COOLDOWN_DECLARE(chew_cooldown)
 
+TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_species, null)
+TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_hair, null)
+TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
+
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
+	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
+	if(forced_species)
+		new_species = forced_species
+	var/forced_hair = TYPE_TABLE_GET(src, forced_initial_hair)
+	if(forced_hair)
+		h_style = forced_hair
+	var/forced_faction = TYPE_TABLE_GET(src, forced_initial_faction)
+	if(forced_faction)
+		faction = forced_faction
 	if(!dna)
 		rel_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
 		// Species name is handled by set_species()
@@ -54,7 +67,10 @@
 			mind.name = real_name
 
 	set_nutrition(rand(200,400))
-	. = ..()
+	if(forced_species)
+		. = ..(mapload, forced_species)
+	else
+		. = ..()
 
 	hide_underwear.Cut()
 	for(var/category in GLOB.global_underwear.categories_by_name)
@@ -274,7 +290,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			return 1
 	return 0
 
-/mob/living/carbon/human/var/co2overloadtime = null
 /mob/living/carbon/human/var/temperature_resistance = T0C+75
 
 // called when something steps onto a human
