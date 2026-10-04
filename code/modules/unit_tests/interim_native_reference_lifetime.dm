@@ -65,3 +65,44 @@
 	TEST_ASSERT(!QDELETED(sibling), "parent teardown preserves its referenced sibling")
 	TEST_ASSERT_NULL(sibling.parent, "parent teardown clears the surviving child's back reference")
 	TEST_ASSERT_EQUAL(owner_of(sibling), sibling_owner, "parent teardown preserves the sibling's original ownership")
+
+// Unique keys isolate inherited production keyed declarations from map fixtures.
+/obj/effect/step_trigger/autostrip/interim_native_keyed_fixture
+	targetid = "interim-native-autostrip-keyed-lifetime"
+
+/obj/effect/autostriptarget/interim_native_keyed_fixture
+	targetid = "interim-native-autostrip-keyed-lifetime"
+
+/obj/effect/autostriptarget/mob/interim_native_keyed_fixture
+	targetid = "interim-native-autostrip-keyed-lifetime"
+
+/datum/unit_test/interim_native_autostrip_keyed_lifetime/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/effect/step_trigger/autostrip/early = allocate(/obj/effect/step_trigger/autostrip/interim_native_keyed_fixture, T)
+	TEST_ASSERT_NULL(early.target_ref(), "source materialized first has no ordinary keyed target")
+	TEST_ASSERT_NULL(early.Mtarget(), "source materialized first has no mob keyed target")
+	var/obj/effect/autostriptarget/first = allocate(/obj/effect/autostriptarget/interim_native_keyed_fixture, T)
+	TEST_ASSERT_EQUAL(early.target_ref(), first, "late ordinary target binds the exact original identity")
+	TEST_ASSERT_NULL(early.Mtarget(), "ordinary target does not satisfy the mob-subtype keyed reference")
+	var/obj/effect/autostriptarget/mob/mob_target = allocate(/obj/effect/autostriptarget/mob/interim_native_keyed_fixture, T)
+	TEST_ASSERT_EQUAL(early.target_ref(), first, "adding a mob target preserves the already-bound ordinary identity")
+	TEST_ASSERT_EQUAL(early.Mtarget(), mob_target, "late mob target binds the exact subtype identity")
+	var/obj/effect/step_trigger/autostrip/late = allocate(/obj/effect/step_trigger/autostrip/interim_native_keyed_fixture, T)
+	TEST_ASSERT_EQUAL(late.target_ref(), first, "source materialized after targets finds the original ordinary identity")
+	TEST_ASSERT_EQUAL(late.Mtarget(), mob_target, "source materialized after targets finds the original mob identity")
+	qdel(first)
+	TEST_ASSERT(QDELETED(first), "ordinary target actually completes teardown")
+	TEST_ASSERT_NULL(early.target_ref(), "ordinary target deletion clears the earlier source")
+	TEST_ASSERT_NULL(late.target_ref(), "ordinary target deletion clears the later source")
+	TEST_ASSERT_EQUAL(early.Mtarget(), mob_target, "ordinary target deletion preserves the independent mob reference")
+	var/obj/effect/autostriptarget/replacement = allocate(/obj/effect/autostriptarget/interim_native_keyed_fixture, T)
+	TEST_ASSERT_EQUAL(early.target_ref(), replacement, "replacement target rebinds the earlier source to its exact new identity")
+	TEST_ASSERT_EQUAL(late.target_ref(), replacement, "replacement target rebinds the later source to its exact new identity")
+	qdel(mob_target)
+	TEST_ASSERT(QDELETED(mob_target), "mob target actually completes teardown")
+	TEST_ASSERT_NULL(early.Mtarget(), "mob target deletion clears the earlier subtype reference")
+	TEST_ASSERT_NULL(late.Mtarget(), "mob target deletion clears the later subtype reference")
+	TEST_ASSERT_EQUAL(early.target_ref(), replacement, "mob target deletion preserves the replacement ordinary reference")
+	qdel(early)
+	TEST_ASSERT(!QDELETED(replacement), "source teardown preserves the independently materialized target")
+	TEST_ASSERT_EQUAL(late.target_ref(), replacement, "one source teardown preserves the other source's target")
