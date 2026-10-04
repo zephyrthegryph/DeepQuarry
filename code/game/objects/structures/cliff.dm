@@ -256,7 +256,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 	var/obj/structure/cliff/bottom_cliff = locate_on(T, /obj/structure/cliff)
 	if(bottom_cliff)
 		visible_message(span_danger("\The [L] rolls down towards \the [bottom_cliff]!"))
-		after(bottom_cliff, 5, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), with = list(L))
+		after(bottom_cliff, 0.5 SECONDS, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), with = list(L))
 
 // This tells AI mobs to not be dumb and step off cliffs willingly.
 /obj/structure/cliff/is_safe_to_step(mob/living/L)

@@ -15,7 +15,7 @@
 	set_light(10, -10, "#FFFFFF")
 
 	var/extra_delay = rand(0,90)
-	after(src, 200 + extra_delay, PROC_REF(grenade_light), with = list(extra_delay))
+	after(src, 20 SECONDS + extra_delay, PROC_REF(grenade_light), with = list(extra_delay))
 
 /obj/item/grenade/anti_photon/proc/grenade_light(extra_delay)
 	PRIVATE_PROC(TRUE)

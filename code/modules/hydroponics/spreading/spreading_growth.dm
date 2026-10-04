@@ -26,7 +26,7 @@
 
 		if(floor.density)
 			if(!isnull(seed().chems[REAGENT_ID_PACID]))
-				after(floor, rand(5,25), TYPE_PROC_REF(/atom, ex_act), with = list(3))
+				after(floor, rand(0.5 SECONDS, 2.5 SECONDS), TYPE_PROC_REF(/atom, ex_act), with = list(3))
 			continue
 
 		if(!Adjacent(floor) || !floor.Enter(src))
@@ -130,7 +130,7 @@
 		return
 	var/obj/effect/plant/child = new(get_turf(src),seed(),parent())
 
-	after(src, 1, PROC_REF(spread_child_settles), with = list(child, target_turf)) // This should do a little bit of animation.
+	after(src, 0.1 SECONDS, PROC_REF(spread_child_settles), with = list(child, target_turf)) // This should do a little bit of animation.
 
 /obj/effect/plant/proc/die_off()
 	// Kill off our plant.

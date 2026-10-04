@@ -113,7 +113,7 @@ CAPABILITIES(/obj/item/extinguisher)
 		if (!COOLDOWN_FINISHED(src, use_cooldown))
 			return
 
-		COOLDOWN_START(src, use_cooldown, 20)
+		COOLDOWN_START(src, use_cooldown, 2 SECONDS)
 
 		play_sfx(src, SFX_EFFECTS_EXTINGUISH)
 

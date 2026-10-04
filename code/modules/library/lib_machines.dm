@@ -491,7 +491,7 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_targetid)
 		for(var/mob/V in hearers(src))
 			V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Printer unavailable. Please allow a short time before attempting to print.\""))
 		return TRUE
-	COOLDOWN_START(src, print_cooldown, 6)
+	COOLDOWN_START(src, print_cooldown, 0.6 SECONDS)
 	om_io(src, /datum/om/io/sql,
 		"SELECT id, author, title, content FROM library WHERE id = :id",
 		list("id" = numeric_id),
@@ -699,13 +699,13 @@ CAPABILITIES(/obj/machinery/bookbinder)
 		held.forceMove(src)
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		after(src, rand(200,400), PROC_REF(bind_paper), with = list(held))
+		after(src, rand(20 SECONDS, 40 SECONDS), PROC_REF(bind_paper), with = list(held))
 	else
 		user.drop_item()
 		held.forceMove(src)
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		after(src, rand(300,500), PROC_REF(bind_bundle), with = list(held))
+		after(src, rand(30 SECONDS, 50 SECONDS), PROC_REF(bind_bundle), with = list(held))
 	return TRUE
 
 /obj/machinery/bookbinder/proc/bind_paper(obj/item/paper/source_paper)

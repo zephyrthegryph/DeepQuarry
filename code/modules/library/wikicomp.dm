@@ -186,7 +186,7 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_crash)
 	if(!crash)
 		crash = TRUE
 		// crashes till it fixes itself
-		after(src, rand(1000, 4000), PROC_REF(uncrash))
+		after(src, rand(100 SECONDS, 400 SECONDS), PROC_REF(uncrash))
 	. = TRUE
 
 UI_ACT(/obj/machinery/librarywikicomp, "print", ui_act_print)

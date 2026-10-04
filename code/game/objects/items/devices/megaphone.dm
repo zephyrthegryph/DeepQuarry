@@ -62,7 +62,7 @@ TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!"
 	if(!can_broadcast(user))
 		return
 
-	COOLDOWN_START(src, spamcheck, 20)
+	COOLDOWN_START(src, spamcheck, 2 SECONDS)
 	do_broadcast(user, message)
 
 DECLARE_EMAG(/obj/item/megaphone, PROC_REF(on_emag), null, null)

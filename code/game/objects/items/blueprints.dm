@@ -678,7 +678,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 	charges -= 5
 
-	after(src, 5, "interact")
+	after(src, 0.5 SECONDS, "interact")
 	return
 
 /proc/move_turfs_to_area(list/turf/turfs, area/A)
@@ -791,7 +791,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	return TRUE
 
 /obj/item/paper/proc/create_area_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	COOLDOWN_START(src, area_cooldown, 600) //Anti spam.
+	COOLDOWN_START(src, area_cooldown, 60 SECONDS) //Anti spam.
 
 	create_new_area(user)
 	add_fingerprint(user)
