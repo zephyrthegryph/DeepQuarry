@@ -3432,6 +3432,13 @@
 	into += entry_line(7)
 	into += list(global.owns_many(nameof(generators)))
 
+/// CAPABILITIES(/datum/respawn_review) at code/modules/admin/verbs/randomverbs.dm:552
+/datum/respawn_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 552, /datum/respawn_review)
+	into += entry_line(553)
+	into += list(global.ref_one(nameof(actor), /mob))
+
 /// CAPABILITIES(/datum/rig_vision) at code/modules/clothing/spacesuits/rig/modules/specific/vision.dm:16
 /datum/rig_vision/declared_entries(list/into)
 	..(into)
