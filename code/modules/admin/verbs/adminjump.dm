@@ -238,54 +238,75 @@ CAPABILITIES(/datum/prompt/choice/admin_sendmob)
 	else
 		tgui_alert_async(src, "Admin jumping disabled")
 
-/// One missing coordinate for Move Atom; the answer re-enters cmd_admin_move_atom(), which asks for the next.
-/datum/om/prompt/number/move_atom_coord
+/// One missing coordinate for Move Atom; the answer retains its initiating actor for the next coordinate.
+/datum/prompt/number/move_atom_coord
 	title = "Move Atom"
-	requires = PROMPT_ADMIN(R_ADMIN|R_DEBUG|R_EVENT)
+	rights = R_ADMIN|R_DEBUG|R_EVENT
+	timeout = 0
+	step = 1
 	var/atom/movable/moved
 	var/tx
 	var/ty
 	var/tz
+	var/denial_entry
+	var/moved_required = FALSE
 
-/datum/om/prompt/number/move_atom_coord/prepare()
+CAPABILITIES(/datum/prompt/number/move_atom_coord)
+	ref_one(nameof(moved), /atom/movable)
+
+/datum/prompt/number/move_atom_coord/prepare(datum/act/A)
+	..()
+	var/atom/movable/captured_moved = moved
+	moved_required = !isnull(captured_moved)
+	rel_clear(src, nameof(moved))
+	rel_set(src, nameof(moved), captured_moved)
 	if(isnull(tx))
-		message = "Select X coordinate"
-		max = world.maxx
+		question = "Select X coordinate"
+		max_value = world.maxx
 	else if(isnull(ty))
-		message = "Select Y coordinate"
-		max = world.maxy
+		question = "Select Y coordinate"
+		max_value = world.maxy
 	else
-		message = "Select Z coordinate"
-		max = world.maxz
-	return TRUE
+		question = "Select Z coordinate"
+		max_value = world.maxz
 
-/client/proc/move_atom_coords_chosen(datum/om/prompt/number/move_atom_coord/ask)
-	if(isnull(ask.number))
+
+/datum/prompt/number/move_atom_coord/recheck_extra()
+	return moved_required && QDELETED(moved) ? "gone" : null
+
+/client/proc/move_atom_coords_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/move_atom_coord/ask = A.answer
+	if(isnull(ask.answer_value))
 		return
 	if(isnull(ask.tx))
-		ask.tx = ask.number
+		ask.tx = ask.answer_value
 	else if(isnull(ask.ty))
-		ask.ty = ask.number
+		ask.ty = ask.answer_value
 	else
-		ask.tz = ask.number
-	cmd_admin_move_atom(ask.moved, ask.tx, ask.ty, ask.tz)
+		ask.tz = ask.answer_value
+	move_atom_with_actor(ask.answerer, ask.moved, ask.tx, ask.ty, ask.tz, ask.denial_entry)
 
 /client/proc/cmd_admin_move_atom(atom/movable/AM, tx as num, ty as num, tz as num)
 	set category = VERB_CAT_ADMIN_GAME
 	set name = "Move Atom to Coordinate"
 
-	if(!check_rights(R_ADMIN|R_DEBUG|R_EVENT))
+	move_atom_with_actor(usr, AM, tx, ty, tz, "check_rights in [callee?.proc]")
+
+/client/proc/move_atom_with_actor(mob/user, atom/movable/AM, tx, ty, tz, denial_entry)
+	if(!admin_require(user?.client, R_ADMIN|R_DEBUG|R_EVENT, denial_entry))
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))
 		if(isnull(tx) || isnull(ty) || isnull(tz))
-			om_ask(usr, /datum/om/prompt/number/move_atom_coord, PROC_REF(move_atom_coords_chosen), moved = AM, tx = tx, ty = ty, tz = tz)
+			open_request(src, /datum/prompt/number/move_atom_coord, PROC_REF(move_atom_coords_chosen), answerer = user, moved = AM, tx = tx, ty = ty, tz = tz, denial_entry = denial_entry)
 			return
 		if(!tx || !ty || !tz)
 			return
 		var/turf/T = locate(tx, ty, tz)
 		if(!T)
-			to_chat(usr, span_warning("Those coordinates are outside the boundaries of the map."))
+			to_chat(user, span_warning("Those coordinates are outside the boundaries of the map."))
 			return
 		if(ismob(AM))
 			var/mob/M = AM
@@ -293,6 +314,6 @@ CAPABILITIES(/datum/prompt/choice/admin_sendmob)
 			M.reset_perspective(M) // Force reset to self before teleport
 		AM.forceMove(T)
 		feedback_add_details("admin_verb", "MA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-		message_admins("[key_name_admin(usr)] jumped [AM] to coordinates [tx], [ty], [tz]")
+		message_admins("[key_name_admin(user)] jumped [AM] to coordinates [tx], [ty], [tz]")
 	else
-		tgui_alert_async(usr, "Admin jumping disabled")
+		tgui_alert_async(user, "Admin jumping disabled")

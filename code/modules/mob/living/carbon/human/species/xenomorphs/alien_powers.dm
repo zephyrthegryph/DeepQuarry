@@ -67,21 +67,42 @@
 		to_chat(src, span_alium("Their plasma vessel is missing."))
 		return
 
-	om_ask(src, /datum/om/prompt/number/plasma_transfer, PROC_REF(plasma_amount_chosen), recipient = M)
+	open_request(src, /datum/prompt/number/plasma_transfer, PROC_REF(plasma_amount_chosen), answerer = src, recipient = M)
 
 /// How much plasma to give. Re-checked on the answer: still conscious, and the recipient still exists.
-/datum/om/prompt/number/plasma_transfer
-	message = "Amount:"
+/datum/prompt/number/plasma_transfer
+	question = "Amount:"
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
+	min_value = null
+	max_value = null
+	step = 1
+	default = 0
 	var/mob/living/carbon/human/recipient
 
-/datum/om/prompt/number/plasma_transfer/prepare()
-	title = "Transfer Plasma to [recipient]"
-	return TRUE
+CAPABILITIES(/datum/prompt/number/plasma_transfer,
+	ref_one(nameof(recipient), /mob/living/carbon/human),
+)
 
-/mob/living/carbon/human/proc/plasma_amount_chosen(datum/om/prompt/number/plasma_transfer/ask)
+/datum/prompt/number/plasma_transfer/prepare(datum/act/context)
+	. = ..()
+	var/mob/living/carbon/human/captured = recipient
+	rel_clear(src, nameof(recipient))
+	rel_set(src, nameof(recipient), captured)
+	title = "Transfer Plasma to [recipient]"
+
+/datum/prompt/number/plasma_transfer/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(recipient) ? "recipient gone" : null
+
+/mob/living/carbon/human/proc/plasma_amount_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/plasma_transfer/ask = A.request
 	var/mob/living/carbon/human/M = ask.recipient
-	var/amount = abs(round(ask.number))
+	var/amount = abs(round(ask.answer_value))
 	if(amount && check_alien_ability(amount,0,O_PLASMA))
 		M.gain_plasma(amount)
 		to_chat(M, span_alium("[src] has transfered [amount] plasma to you."))

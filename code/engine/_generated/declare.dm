@@ -2333,6 +2333,13 @@
 	into += entry_line(198)
 	into += list(global.ref_one(nameof(area), /area))
 
+/// CAPABILITIES(/datum/prompt/choice/fruit_gland) at code/modules/mob/living/carbon/human/species/station/alraune.dm:211
+/datum/prompt/choice/fruit_gland/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/station/alraune.dm", 211, /datum/prompt/choice/fruit_gland)
+	into += entry_line(212)
+	into += list(global.ref_one(nameof(gland), /obj/item/organ/internal/fruitgland))
+
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:121
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
 	..(into)
@@ -2376,6 +2383,20 @@
 	into += entry_block("code/game/objects/structures/artstuff.dm", 351, /datum/prompt/color/paint_palette)
 	into += entry_line(352)
 	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
+
+/// CAPABILITIES(/datum/prompt/number/move_atom_coord) at code/modules/admin/verbs/adminjump.dm:254
+/datum/prompt/number/move_atom_coord/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/adminjump.dm", 254, /datum/prompt/number/move_atom_coord)
+	into += entry_line(255)
+	into += list(global.ref_one(nameof(moved), /atom/movable))
+
+/// CAPABILITIES(/datum/prompt/number/plasma_transfer) at code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm:83
+/datum/prompt/number/plasma_transfer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm", 83, /datum/prompt/number/plasma_transfer)
+	into += entry_line(84)
+	into += list(global.ref_one(nameof(recipient), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/text/blueprint_rename_area) at code/game/objects/items/blueprints.dm:356
 /datum/prompt/text/blueprint_rename_area/declared_entries(list/into)
