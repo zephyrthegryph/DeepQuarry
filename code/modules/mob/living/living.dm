@@ -1191,7 +1191,6 @@ SETTER(/mob/living, nutrition)
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
 	return FALSE
 
-// === merged from living_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /mob/living/Check_Shoegrip()
 	if(flying)
 		return 1
@@ -1205,8 +1204,9 @@ SETTER(/mob/living, nutrition)
 	if(src.client)
 		open_request(src, /datum/prompt/choice, PROC_REF(custom_say_verb_chosen), answerer = src, title = "Select Verb", question = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE, timeout = 0)
 
-/// A custom speech verb. `say_var` is the mob var it sets.
-/datum/om/prompt/text/custom_say
+/// A custom speech verb; the selector is one of the four speech fields below.
+/datum/prompt/text/custom_say
+	timeout = 0
 	var/say_var
 
 /mob/living/proc/custom_say_verb_chosen(datum/act/request/A)
@@ -1214,16 +1214,28 @@ SETTER(/mob/living, nutrition)
 		return
 	switch(A.answer.answer_value)
 		if("Say")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Say", message = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Say", question = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
 		if("Whisper")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Whisper", message = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Whisper", question = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
 		if("Ask (?)")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Ask", message = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Ask", question = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
 		if("Exclaim/Shout/Yell (!)")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Exclaim", message = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Exclaim", question = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
 
-/mob/living/proc/custom_say_entered(datum/om/prompt/text/custom_say/ask)
-	vars[ask.say_var] = lowertext(ask.text)
+/mob/living/proc/custom_say_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/custom_say/ask = A.request
+	var/custom_verb = lowertext(ask.value)
+	switch(ask.say_var)
+		if("custom_say")
+			custom_say = custom_verb
+		if("custom_whisper")
+			custom_whisper = custom_verb
+		if("custom_ask")
+			custom_ask = custom_verb
+		if("custom_exclaim")
+			custom_exclaim = custom_verb
 
 /mob/living/verb/set_metainfo()
 	set name = "Set OOC Metainfo"
