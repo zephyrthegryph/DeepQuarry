@@ -12,13 +12,11 @@ TRACKED(/obj/item/borg/cloak, cloak_strength)
 /obj/item/borg/cloak/var/active = FALSE
 TRACKED(/obj/item/borg/cloak, active)
 CAPABILITIES(/obj/item/borg/cloak)
-	/// Draws power while cloaked at a non-zero strength.
-	every(2 SECONDS, then(PROC_REF(cloak_step)), when = cond_all(nameof(active), nameof(cloak_strength)))
-
-CAPABILITIES(/obj/item/borg/cloak)
 	op("set_level", in_hand(), then(PROC_REF(cloak_ask_level)))
 	op("strength", menu(), label("Toggle Cloak Strength"), needs(carried()), then(PROC_REF(cloak_ask_level)))
 	op("toggle", menu(), label("Toggle Cloak"), needs(carried()), then(PROC_REF(cloak_toggled)))
+	/// Draws power while cloaked at a non-zero strength.
+	every(2 SECONDS, then(PROC_REF(cloak_step)), when = cond_all(nameof(active), nameof(cloak_strength)))
 
 /// Using the cloak in hand, or its menu entry: ask the strength.
 /obj/item/borg/cloak/proc/cloak_ask_level(datum/act/op/A)
