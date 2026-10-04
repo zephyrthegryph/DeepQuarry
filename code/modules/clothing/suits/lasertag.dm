@@ -59,9 +59,13 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 /obj/item/clothing/suit/lasertag/proc/adjust_health_proc(mob/living/user)
 	var/max_health = 10
 	var/min_health = 1
-	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(adjust_health_proc), args, /datum/om/prompt/number, message = "Select Suit Health (Between 1 and 10)", title = "Tag Health", default = lasertag_max_health, max = max_health, min = min_health)
-	if(isnull(_answer_a1))
-		return
+	open_request(src, /datum/prompt/number/lasertag_setting, PROC_REF(tag_setting_entered), answerer = user, question = "Select Suit Health (Between 1 and 10)", title = "Tag Health", default = lasertag_max_health, min_value = min_health, max_value = max_health, healing_timer = FALSE)
+
+/obj/item/clothing/suit/lasertag/proc/apply_health_setting(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/max_health = 10
+	var/min_health = 1
+	var/_answer_a1 = A.answer.answer_value
 	var/new_health = _answer_a1 //If you need to go above 10, ask admins.
 	if(isnull(new_health))
 		return null
@@ -84,9 +88,13 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 /obj/item/clothing/suit/lasertag/proc/adjust_heal_time_proc(mob/living/user)
 	var/max_heal_time = 60
 	var/min_heal_time = 0
-	var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(adjust_heal_time_proc), args, /datum/om/prompt/number, message = "Select Heal Timer (Between 0(off) to 60 seconds)", title = "Heal Timer", default = time_to_heal*0.1, max = max_heal_time, min = min_heal_time)
-	if(isnull(_answer_a2))
-		return
+	open_request(src, /datum/prompt/number/lasertag_setting, PROC_REF(tag_setting_entered), answerer = user, question = "Select Heal Timer (Between 0(off) to 60 seconds)", title = "Heal Timer", default = time_to_heal / (1 SECOND), min_value = min_heal_time, max_value = max_heal_time, healing_timer = TRUE)
+
+/obj/item/clothing/suit/lasertag/proc/apply_healing_setting(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/max_heal_time = 60
+	var/min_heal_time = 0
+	var/_answer_a2 = A.answer.answer_value
 	var/new_heal_timer = _answer_a2 //If you need to go above 10, ask admins.
 	if(isnull(new_heal_timer))
 		return null
@@ -96,11 +104,40 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 	if(!Adjacent(user))
 		to_chat(user, span_danger("You must be adjacent to the suit to adjust its healing timer!"))
 		return null
-	time_to_heal = (new_heal_timer*10)
+	time_to_heal = new_heal_timer SECONDS
 	if(time_to_heal)
 		user.visible_message(span_notice("[src]'s heal speed has been set to [new_heal_timer] seconds!"))
 	else
 		user.visible_message(span_notice("[src]'s healing function has been turned off!"))
+
+/datum/prompt/number/lasertag_setting
+	timeout = 0
+	step = 1
+	var/healing_timer = FALSE
+
+/datum/prompt/number/lasertag_setting/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/obj/item/clothing/suit/lasertag/suit = owner
+	if(!suit.Adjacent(answerer))
+		return "not adjacent to the suit"
+	return null
+
+/obj/item/clothing/suit/lasertag/proc/tag_setting_entered(datum/act/request/A)
+	var/datum/prompt/number/lasertag_setting/request = A.request
+	if(QDELETED(request.answerer))
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+			if(!Adjacent(request.answerer))
+				to_chat(request.answerer, span_danger("You must be adjacent to the suit to adjust its healing timer!"))
+			SStgui.update_uis(src)
+		return
+	var/datum/result/result = safe_call(request.healing_timer ? PROC_REF(apply_healing_setting) : PROC_REF(apply_health_setting), A)
+	if(!result.ok)
+		stack_trace("Lasertag setting request: [result.error]")
+	SStgui.update_uis(src)
 
 /// TRUE from equipped() until dropped(): it heals over time while worn.
 /obj/item/clothing/suit/lasertag/var/tag_worn = FALSE
