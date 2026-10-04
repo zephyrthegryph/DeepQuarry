@@ -1741,7 +1741,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 	var/mob/user = A.actor
 	bluespace_size(user)
 
-/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_size(mob/user)
+/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_size(mob/user, answered_size = null, answered_large_bounds = FALSE)
 	if (!ishuman(user))
 		return
 
@@ -1754,17 +1754,11 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 		to_chat(H,span_warning("You must be WEARING the uniform to change your size."))
 		return
 
-	var/new_size
-	if(H.has_large_resize_bounds())
-		var/_answer_a1 = rerun_ask(H, "a1", PROC_REF(bluespace_size), args, /datum/om/prompt/number, message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", title = "Set Size", default = H.size_multiplier * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
-		if(isnull(_answer_a1))
-			return
-		new_size = _answer_a1
-	else
-		var/_answer_a2 = rerun_ask(H, "a2", PROC_REF(bluespace_size), args, /datum/om/prompt/number, message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", title = "Set Size", default = H.size_multiplier * 100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100)
-		if(isnull(_answer_a2))
-			return
-		new_size = _answer_a2
+	var/new_size = answered_size
+	var/large_bounds = H.has_large_resize_bounds()
+	if(isnull(new_size) || answered_large_bounds != large_bounds)
+		open_request(src, /datum/prompt/number/bluespace_clothing_size, PROC_REF(uniform_size_chosen), answerer = H, default = H.size_multiplier * 100, max_value = (large_bounds ? RESIZE_MAXIMUM_DORMS : RESIZE_MAXIMUM) * 100, min_value = (large_bounds ? RESIZE_MINIMUM_DORMS : RESIZE_MINIMUM) * 100, large_bounds = large_bounds)
+		return
 	if(!new_size)
 		return //cancelled
 
@@ -1898,7 +1892,7 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 	var/mob/user = A.actor
 	bluespace_size(user)
 
-/obj/item/clothing/gloves/bluespace/deluxe/proc/bluespace_size(mob/user) //Taken from HYPER suit
+/obj/item/clothing/gloves/bluespace/deluxe/proc/bluespace_size(mob/user, answered_size = null, answered_large_bounds = FALSE) //Taken from HYPER suit
 	if(!ishuman(user))
 		return
 
@@ -1916,18 +1910,11 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 		to_chat(H, span_warning("You must be WEARING the bracelet and have it uncovered to change your size."))
 		return
 
-	var/new_size
-	if(H.has_large_resize_bounds())
-		var/_answer_a3 = rerun_ask(H, "a3", PROC_REF(bluespace_size), args, /datum/om/prompt/number, message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", title = "Set Size", default = H.size_multiplier * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
-		if(isnull(_answer_a3))
-			return
-		new_size = _answer_a3
-	else
-		var/_answer_a4 = rerun_ask(H, "a4", PROC_REF(bluespace_size), args, /datum/om/prompt/number, message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", title = "Set Size", default = H.size_multiplier * 100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100)
-		if(isnull(_answer_a4))
-			return
-		new_size = _answer_a4
-
+	var/new_size = answered_size
+	var/large_bounds = H.has_large_resize_bounds()
+	if(isnull(new_size) || answered_large_bounds != large_bounds)
+		open_request(src, /datum/prompt/number/bluespace_clothing_size, PROC_REF(bracelet_size_chosen), answerer = H, default = H.size_multiplier * 100, max_value = (large_bounds ? RESIZE_MAXIMUM_DORMS : RESIZE_MAXIMUM) * 100, min_value = (large_bounds ? RESIZE_MINIMUM_DORMS : RESIZE_MINIMUM) * 100, large_bounds = large_bounds)
+		return
 	if(!new_size)
 		return
 
@@ -2458,3 +2445,40 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 	icon_state = "gestalt_sleeveless"
 	item_state = "gestalt_sleeveless"
 	body_parts_covered = CHEST|LEGS
+
+/obj/item/clothing/under/hyperfiber/bluespace/proc/uniform_size_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_uniform_size), A)
+	if(!result.ok)
+		stack_trace("Bluespace uniform size request: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/clothing/under/hyperfiber/bluespace/proc/apply_uniform_size(datum/act/request/A)
+	var/datum/prompt/number/bluespace_clothing_size/request = A.request
+	return bluespace_size(request.answerer, A.answer.answer_value, request.large_bounds)
+
+/obj/item/clothing/gloves/bluespace/deluxe/proc/bracelet_size_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_bracelet_size), A)
+	if(!result.ok)
+		stack_trace("Bluespace bracelet size request: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/clothing/gloves/bluespace/deluxe/proc/apply_bracelet_size(datum/act/request/A)
+	var/datum/prompt/number/bluespace_clothing_size/request = A.request
+	return bluespace_size(request.answerer, A.answer.answer_value, request.large_bounds)
+
+/datum/prompt/number/bluespace_clothing_size
+	question = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas."
+	title = "Set Size"
+	timeout = 0
+	step = 1
+	var/large_bounds = FALSE
+
+/datum/prompt/number/bluespace_clothing_size/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
