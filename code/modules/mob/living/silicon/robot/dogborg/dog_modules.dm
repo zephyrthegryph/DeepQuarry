@@ -289,33 +289,24 @@ DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interact
 CAPABILITIES(/obj/item/lightreplacer/dogborg)
 	op("choose", in_hand(), label("Reserves or colour"), priority(above("colour")),
 		asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)),
-		asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color)), when = PROC_REF(chose_colour)),
 		then(PROC_REF(dogborg_chosen)))
-	op("fabricate", ai(), needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full)), req(PROC_REF(has_reserves), because = MSG(lightreplacer/no_reserves))), wait(5 SECONDS), then(PROC_REF(fabricated)))
+	op("pick_colour", ai(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked)))
+	op("fabricate", ai(), needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full))), wait(5 SECONDS), then(PROC_REF(fabricated)))
 
-MSG_DEF_SELF(lightreplacer/no_reserves, "Insufficient material reserves.")
-
-/// The first question was answered "Color": the colour picker is the next step.
-/obj/item/lightreplacer/dogborg/proc/chose_colour(datum/act/op/A)
-	var/datum/prompt/choice/picked = A.answer
-	return istype(picked) && picked.value == "Color"
-
-/obj/item/lightreplacer/dogborg/proc/has_reserves(datum/act/op/A)
+/obj/item/lightreplacer/dogborg/proc/has_reserves()
 	return glass && glass.energy >= 125
 
-/// The picker was answered (the colour changes), or "Reserves" was (the count, then a light fabricated from the matter reserves while the borg stands still).
+/// "Color" opens the picker (the replacer's colour step), "Reserves" gives (the count, then a light fabricated from the matter reserves while the borg stands still).
 /obj/item/lightreplacer/dogborg/proc/dogborg_chosen(datum/act/op/A)
 	var/mob/user = A.actor
-	var/datum/prompt/color/picked_color = A.answer
-	if(istype(picked_color))
-		if(picked_color.value)
-			selected_color = picked_color.value
-			to_chat(user, span_filter_notice("The light color has been changed."))
+	var/datum/prompt/choice/picked = A.answer
+	if(picked?.value == "Color")
+		perform_op(user, src, "pick_colour", null, ORIGIN_AI, AUTH_AI)
 		return OP_OK
 	if(uses >= max_uses)
 		to_chat(user, span_warning("[src.name] is full."))
 		return OP_OK
-	if(!has_reserves(A))
+	if(!has_reserves())
 		to_chat(user, span_warning("Insufficient material reserves."))
 		return OP_OK
 	to_chat(user, span_filter_notice("It has [uses] lights remaining. Attempting to fabricate a replacement. Please stand still."))
@@ -323,6 +314,9 @@ MSG_DEF_SELF(lightreplacer/no_reserves, "Insufficient material reserves.")
 	return OP_OK
 
 /obj/item/lightreplacer/dogborg/proc/fabricated(datum/act/op/A)
+	if(!has_reserves())
+		to_chat(A.actor, span_warning("Insufficient material reserves."))
+		return OP_REFUSED
 	glass.use_charge(125)
 	add_uses(1)
 	return OP_OK

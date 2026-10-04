@@ -2796,7 +2796,7 @@
 	into += entry_line(15)
 	into += list(global.hands())
 	into += entry_line(16)
-	into += list(global.when(TYPE_PROC_REF(/mob/living/silicon/robot, interface_usable), global.provides(AFF_CONTROL, reach = BORG_INTERFACE_REACH, authority = AUTH_REMOTE_ACCESS)))
+	into += list(global.provides(AFF_CONTROL, reach = BORG_INTERFACE_REACH, authority = AUTH_REMOTE_ACCESS))
 	into += entry_line(17)
 	into += list(global.owns_one(nameof(camera), /obj/machinery/camera))
 	into += entry_line(18)
@@ -3503,9 +3503,11 @@
 	..(into)
 	into += entry_block("code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm", 289, /obj/item/lightreplacer/dogborg)
 	into += entry_line(290)
-	into += list(global.op("choose", global.in_hand(), global.label("Reserves or colour"), global.priority(global.above("colour")), global.asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)), global.asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color)), when = PROC_REF(chose_colour)), global.then(PROC_REF(dogborg_chosen))))
+	into += list(global.op("choose", global.in_hand(), global.label("Reserves or colour"), global.priority(global.above("colour")), global.asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)), global.then(PROC_REF(dogborg_chosen))))
+	into += entry_line(293)
+	into += list(global.op("pick_colour", global.ai(), global.wait(0), global.asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), global.then(PROC_REF(colour_asked))))
 	into += entry_line(294)
-	into += list(global.op("fabricate", global.ai(), global.needs(global.req(PROC_REF(has_room), because = MSG(lightreplacer/full)), global.req(PROC_REF(has_reserves), because = MSG(lightreplacer/no_reserves))), global.wait(5 SECONDS), global.then(PROC_REF(fabricated))))
+	into += list(global.op("fabricate", global.ai(), global.needs(global.req(PROC_REF(has_room), because = MSG(lightreplacer/full))), global.wait(5 SECONDS), global.then(PROC_REF(fabricated))))
 
 /// CAPABILITIES(/obj/item/mapping_unit) at code/modules/holomap/mapper.dm:46
 /obj/item/mapping_unit/declared_entries(list/into)

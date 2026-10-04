@@ -11,13 +11,10 @@
 /mob/living/silicon/ai/click_authority()
 	return AUTH_REMOTE_ACCESS
 
+/// A cyborg looking through a camera instead of its own eyes has no remote access to work machines with (the "Blocked" robot interaction on every
+/// legacy machine, machinery.dm, says the same): its clicks are physical only then.
 /mob/living/silicon/robot/click_authority()
-	return AUTH_PHYSICAL | AUTH_REMOTE_ACCESS
+	return is_remote_viewing() ? AUTH_PHYSICAL : (AUTH_PHYSICAL | AUTH_REMOTE_ACCESS)
 
 /mob/living/silicon/ai/reach_view_sees(atom/target)
 	return has_camera_sight(target)
-
-/// A cyborg's interface works machines it sees; looking through a camera instead of its own eyes it has none (the "Blocked" robot interaction on every
-/// legacy machine says the same, machinery.dm).
-/mob/living/silicon/robot/proc/interface_usable(datum/act/A)
-	return !is_remote_viewing()
