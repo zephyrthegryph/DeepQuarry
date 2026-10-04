@@ -64,7 +64,7 @@
 	//The spread for flamethrower fuel is much more precise, to create a wide fire pattern.
 	if(amount <= 0.1)
 		if(amount < 0.025) //Hopefully stops fuel spreading into unburnable puddles.
-			qdel(src)
+			consume(src)
 		return
 	var/turf/simulated/S = loc
 	if(!istype(S)) return

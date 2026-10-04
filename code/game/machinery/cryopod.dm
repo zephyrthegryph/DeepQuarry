@@ -338,14 +338,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	var/mob/living/silicon/robot/R = to_despawn
 	if(!istype(R)) return ..()
 
-	qdel(R.mmi)
+	own_clear(R, nameof(R.mmi), OWN_DELETE)
 	for(var/obj/item/I in R.module) // the tools the borg has; metal, glass, guns etc
 		for(var/mob/M in I)
 			despawn_occupant(M)
 		for(var/obj/item/O in I) // the things inside the tools, if anything; mainly for janiborg trash bags
 			O.forceMove(R)
 		qdel(I)
-	qdel(R.module)
+	own_clear(R, nameof(R.module), OWN_DELETE)
 
 	return ..()
 

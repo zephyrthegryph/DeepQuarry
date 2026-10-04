@@ -201,7 +201,7 @@ DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 
 			src.moveToNullspace()
 	else
-		qdel(src) //Let's not just sit in nullspace forever, yeah?
+		consume(src) //Let's not just sit in nullspace forever, yeah?
 		return PROCESS_KILL
 
 /obj/effect/shadow_wight/Bump(atom/obstacle)

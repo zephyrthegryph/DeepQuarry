@@ -71,8 +71,9 @@ CAPABILITIES(/obj/effect/anomaly/weather)
 	return ..()
 
 /obj/effect/anomaly/weather/detonate()
-	new /obj/effect/effect/smoke/bad/burntfood(loc) // OOoooOooh spooky cloud... Doesn't do ANYTHING
-	qdel(src)
+	var/atom/smoke_location = loc
+	if(consume(src))
+		new /obj/effect/effect/smoke/bad/burntfood(smoke_location) // OOoooOooh spooky cloud... Doesn't do ANYTHING
 
 /obj/effect/anomaly/weather/anomalyEffect(seconds_per_tick)
 	..()
