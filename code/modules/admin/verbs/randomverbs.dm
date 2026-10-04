@@ -1127,11 +1127,15 @@ ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a
 		return
 
 
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(notify_chosen), buttons = TRUE, title = "Options", message = "Do you want to notify the players?", choices = list("Yes", "No", "Cancel"), requires = PROMPT_ADMIN(permissions))
+	if(!user.mob || QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/choice/everyone_random, PROC_REF(notify_chosen), answerer = user.mob, buttons = TRUE, title = "Options", question = "Do you want to notify the players?", choices = list("Yes", "No", "Cancel"))
 
-/datum/admin_verb/everyone_random/proc/notify_chosen(datum/om/prompt/choice/ask)
-	var/client/user = ask.answerer.client
-	var/notifyplayers = ask.choice
+/datum/admin_verb/everyone_random/proc/notify_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer.client
+	var/notifyplayers = A.answer.answer_value
 	if(notifyplayers == "Cancel" || (SSticker && SSticker.mode))
 		return
 
@@ -1145,6 +1149,15 @@ ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a
 
 	CONFIG_SET(flag/force_random_names, TRUE)
 	feedback_add_details("admin_verb","MER") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/everyone_random
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/everyone_random/recheck_extra()
+	var/mob/admin = answerer
+	return admin_can(admin?.client, 0) ? null : "no admin rights"
 
 ADMIN_VERB(toggle_random_events, R_SERVER, "Toggle random events on/off", "Toggles random events such as meteors, black holes, blob (but not space dust) on/off", ADMIN_CATEGORY_SERVER_GAME)
 	if(!CONFIG_GET(flag/allow_random_events))
