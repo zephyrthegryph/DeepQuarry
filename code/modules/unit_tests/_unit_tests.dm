@@ -904,6 +904,7 @@
 #include "interim_living_inventory_drag_actor.dm"
 #include "interim_assembly_holder_sticky_disassembly.dm"
 #include "interim_parcel_native_label.dm"
+#include "interim_handlabeler_native_configuration.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
