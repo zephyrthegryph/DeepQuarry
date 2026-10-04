@@ -4121,38 +4121,38 @@
 	into += entry_line(256)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(hit_breaks_cloak))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/synx) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm:988
+/// CAPABILITIES(/mob/living/simple_mob/animal/synx) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm:1001
 /mob/living/simple_mob/animal/synx/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm", 988, /mob/living/simple_mob/animal/synx)
-	into += entry_line(989)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm", 1001, /mob/living/simple_mob/animal/synx)
+	into += entry_line(1002)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
-	into += entry_line(990)
+	into += entry_line(1003)
 	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
-	into += entry_line(991)
+	into += entry_line(1004)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/distend_stomach))
-	into += entry_line(992)
+	into += entry_line(1005)
 	into += list(global.verb_entry(/mob/living/simple_mob/proc/contort))
-	into += entry_line(993)
+	into += entry_line(1006)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/sonar_ping))
-	into += entry_line(994)
+	into += entry_line(1007)
 	into += list(global.verb_entry(/mob/living/proc/shred_limb))
-	into += entry_line(995)
+	into += entry_line(1008)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise))
-	into += entry_line(996)
+	into += entry_line(1009)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech))
-	into += entry_line(997)
+	into += entry_line(1010)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm:940
+/// CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm:953
 /mob/living/simple_mob/animal/synx/ai/pet/debug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm", 940, /mob/living/simple_mob/animal/synx/ai/pet/debug)
-	into += entry_line(941)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm", 953, /mob/living/simple_mob/animal/synx/ai/pet/debug)
+	into += entry_line(954)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename))
-	into += entry_line(942)
+	into += entry_line(955)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite))
-	into += entry_line(943)
+	into += entry_line(956)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc))
 
 /// CAPABILITIES(/mob/living/simple_mob/horror/BigTim) at code/modules/mob/living/simple_mob/subtypes/horror/shittytim.dm:36
@@ -5157,18 +5157,18 @@
 	into += entry_line(65)
 	into += list(global.op("crumble_remains", global.hand(), global.then(PROC_REF(interaction_crumble_remains))))
 
-/// CAPABILITIES(/obj/effect/dog_nose) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1053
+/// CAPABILITIES(/obj/effect/dog_nose) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1065
 /obj/effect/dog_nose/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1053, /obj/effect/dog_nose)
-	into += entry_line(1054)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1065, /obj/effect/dog_nose)
+	into += entry_line(1066)
 	into += list(global.op("boop_snoot", global.hand(), global.label("Boop"), global.then(PROC_REF(interaction_boop_snoot))))
 
-/// CAPABILITIES(/obj/effect/dog_teleporter) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1121
+/// CAPABILITIES(/obj/effect/dog_teleporter) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1133
 /obj/effect/dog_teleporter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1121, /obj/effect/dog_teleporter)
-	into += entry_line(1122)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1133, /obj/effect/dog_teleporter)
+	into += entry_line(1134)
 	into += list(global.op("dog_teleport", global.hand(), global.then(PROC_REF(interaction_dog_teleport))))
 
 /// CAPABILITIES(/obj/effect/energy_field) at code/modules/shieldgen/energy_field.dm:66
@@ -12857,49 +12857,49 @@
 	into += entry_line(406)
 	into += list(global.owns_one(nameof(confetti_spread), /datum/effect/effect/system))
 
-/// CAPABILITIES(/obj/mecha) at code/game/mecha/mecha.dm:176
+/// CAPABILITIES(/obj/mecha) at code/game/mecha/mecha.dm:175
 /obj/mecha/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/mecha/mecha.dm", 176, /obj/mecha)
-	into += entry_line(177)
+	into += entry_block("code/game/mecha/mecha.dm", 175, /obj/mecha)
+	into += entry_line(176)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell))
-	into += entry_line(178)
+	into += entry_line(177)
 	into += list(global.owns_one(nameof(internal_tank), /obj/item/tank))
-	into += entry_line(179)
+	into += entry_line(178)
 	into += list(global.owns_one(nameof(minihud), /datum/mini_hud/mech))
-	into += entry_line(180)
+	into += entry_line(179)
 	into += list(global.owns_many(nameof(internal_components)))
-	into += entry_line(181)
+	into += entry_line(180)
 	into += list(global.owns_one(nameof(radio), /obj/item/radio))
-	into += entry_line(182)
+	into += entry_line(181)
 	into += list(global.owns_one(nameof(eject_action), starts = /datum/action/innate/mecha/mech_eject))
-	into += entry_line(183)
+	into += entry_line(182)
 	into += list(global.owns_one(nameof(internals_action), starts = /datum/action/innate/mecha/mech_toggle_internals))
-	into += entry_line(184)
+	into += entry_line(183)
 	into += list(global.owns_one(nameof(lights_action), starts = /datum/action/innate/mecha/mech_toggle_lights))
-	into += entry_line(185)
+	into += entry_line(184)
 	into += list(global.owns_one(nameof(stats_action), starts = /datum/action/innate/mecha/mech_view_stats))
-	into += entry_line(186)
+	into += entry_line(185)
 	into += list(global.owns_one(nameof(strafing_action), starts = /datum/action/innate/mecha/strafe))
-	into += entry_line(187)
+	into += entry_line(186)
 	into += list(global.owns_one(nameof(defence_action), starts = /datum/action/innate/mecha/mech_defence_mode))
-	into += entry_line(188)
+	into += entry_line(187)
 	into += list(global.owns_one(nameof(overload_action), starts = /datum/action/innate/mecha/mech_overload_mode))
-	into += entry_line(189)
+	into += entry_line(188)
 	into += list(global.owns_one(nameof(smoke_action), starts = /datum/action/innate/mecha/mech_smoke))
-	into += entry_line(190)
+	into += entry_line(189)
 	into += list(global.owns_one(nameof(zoom_action), starts = /datum/action/innate/mecha/mech_zoom))
-	into += entry_line(191)
+	into += entry_line(190)
 	into += list(global.owns_one(nameof(thrusters_action), starts = /datum/action/innate/mecha/mech_toggle_thrusters))
-	into += entry_line(192)
+	into += entry_line(191)
 	into += list(global.owns_one(nameof(cycle_action), starts = /datum/action/innate/mecha/mech_cycle_equip))
-	into += entry_line(193)
+	into += entry_line(192)
 	into += list(global.owns_one(nameof(switch_damtype_action), starts = /datum/action/innate/mecha/mech_switch_damtype))
-	into += entry_line(194)
+	into += entry_line(193)
 	into += list(global.owns_one(nameof(phasing_action), starts = /datum/action/innate/mecha/mech_toggle_phasing))
-	into += entry_line(195)
+	into += entry_line(194)
 	into += list(global.owns_one(nameof(cloak_action), starts = /datum/action/innate/mecha/mech_toggle_cloaking))
-	into += entry_line(196)
+	into += entry_line(195)
 	into += list(global.owns_one(nameof(smoke_system), starts = /datum/effect/effect/system/smoke_spread))
 
 /// CAPABILITIES(/obj/mecha/combat/fighter) at code/game/mecha/combat/fighter.dm:53
@@ -12916,11 +12916,11 @@
 	into += entry_line(321)
 	into += list(global.op("gunpod_paint", global.item(/obj/item), global.label("Paint stripes"), global.then(PROC_REF(interaction_gunpod_paint))))
 
-/// CAPABILITIES(/obj/mecha/combat/gygax/serenity) at code/game/mecha/combat/gygax.dm:110
+/// CAPABILITIES(/obj/mecha/combat/gygax/serenity) at code/game/mecha/combat/gygax.dm:104
 /obj/mecha/combat/gygax/serenity/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/mecha/combat/gygax.dm", 110, /obj/mecha/combat/gygax/serenity)
-	into += entry_line(111)
+	into += entry_block("code/game/mecha/combat/gygax.dm", 104, /obj/mecha/combat/gygax/serenity)
+	into += entry_line(105)
 	into += list(global.owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/health/mech))
 
 /// CAPABILITIES(/obj/mecha/medical/odysseus) at code/game/mecha/medical/odysseus.dm:21
@@ -13456,11 +13456,11 @@
 	into += entry_line(81)
 	into += list(global.op("touch", global.item(/obj/item), global.priority(OP_PRIORITY_DEFAULT), global.wait(0), global.then(PROC_REF(touched_with)), global.passes()))
 
-/// CAPABILITIES(/obj/structure/control_pod) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:847
+/// CAPABILITIES(/obj/structure/control_pod) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:859
 /obj/structure/control_pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 847, /obj/structure/control_pod)
-	into += entry_line(848)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 859, /obj/structure/control_pod)
+	into += entry_line(860)
 	into += list(global.op("hand", global.hand(), global.then(PROC_REF(interaction_hand))))
 
 /// CAPABILITIES(/obj/structure/cult/pylon) at code/game/gamemodes/cult/cult_structures.dm:36
@@ -14083,11 +14083,11 @@
 	into += entry_line(21)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/lava))
 
-/// CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1278
+/// CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1290
 /turf/simulated/floor/water/digestive_enzymes/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1278, /turf/simulated/floor/water/digestive_enzymes)
-	into += entry_line(1279)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1290, /turf/simulated/floor/water/digestive_enzymes)
+	into += entry_line(1291)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(digestive_enzymes_step)), when = nameof(we_process)))
 
 /// CAPABILITIES(/turf/simulated/floor/water/underwater/indoors) at code/game/turfs/simulated/underwater.dm:105
