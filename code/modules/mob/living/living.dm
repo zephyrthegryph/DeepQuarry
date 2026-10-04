@@ -1368,10 +1368,12 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 
 	if(usr != src)
 		return
-	om_ask(src, /datum/om/prompt/text, PROC_REF(custom_link_entered), title = "Custom Link", message = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(custom_link), max_length = 100)
+	open_request(src, /datum/prompt/text, PROC_REF(custom_link_entered), answerer = src, title = "Custom Link", question = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(custom_link), max_len = 100, timeout = 0)
 
-/mob/living/proc/custom_link_entered(datum/om/prompt/text/ask)
-	var/new_link = strip_html_simple(ask.text)
+/mob/living/proc/custom_link_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_link = strip_html_simple(A.answer.answer_value)
 	if(new_link && CanUseTopic(src))
 		if(length(new_link) > 100)
 			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
@@ -1387,10 +1389,13 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	var/static/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_freq_preset_chosen), title = "Voice Frequency", message = "What would you like to set your voice frequency to?", choices = preset_voice_freqs)
+	open_request(src, /datum/prompt/choice, PROC_REF(voice_freq_preset_chosen), answerer = src, title = "Voice Frequency", question = "What would you like to set your voice frequency to?", choices = preset_voice_freqs, timeout = 0)
 
-/mob/living/proc/voice_freq_preset_chosen(datum/om/prompt/choice/ask)
-	var/choice = ask.choices[ask.choice]
+/mob/living/proc/voice_freq_preset_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	var/choice = ask.choices[ask.value]
 	if(choice == 1)
 		open_request(src, /datum/prompt/number, PROC_REF(voice_freq_entered), answerer = src, title = "Custom Voice Frequency", question = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max_value = MAX_VOICE_FREQ, min_value = MIN_VOICE_FREQ, timeout = 0)
 		return
@@ -1412,20 +1417,24 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	set desc = "Sets your voice style!"
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 
-	om_ask(src, /datum/om/prompt/choice/voice_type, PROC_REF(voice_type_chosen), choices = SSsounds.ready().talk_sound_sets())
+	var/list/sound_choices = SSsounds.ready().talk_sound_sets()
+	// The original empty list opened nothing and did not reset the voice.
+	if(length(sound_choices))
+		open_request(src, /datum/prompt/choice/voice_type, PROC_REF(voice_type_chosen), answerer = src, choices = sound_choices)
 
 /// A cancel resets the voice to the default sounds.
-/datum/om/prompt/choice/voice_type
+/datum/prompt/choice/voice_type
+	timeout = 0
 	title = "Voice Sounds"
-	message = "Which set of sounds would you like to use for your character's speech sounds?"
+	question = "Which set of sounds would you like to use for your character's speech sounds?"
 
-/datum/om/prompt/choice/voice_type/cancelled()
-	var/mob/living/L = answerer
-	if(L)
-		L.voice_sounds_list = DEFAULT_TALK_SOUNDS
-
-/mob/living/proc/voice_type_chosen(datum/om/prompt/choice/voice_type/ask)
-	voice_sounds_list = get_talk_sound(ask.choice)
+/mob/living/proc/voice_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/R = A.request
+		if(R.outcome == REQ_CANCELLED && isnull(R.answer_value))
+			voice_sounds_list = DEFAULT_TALK_SOUNDS
+		return
+	voice_sounds_list = get_talk_sound(A.answer.answer_value)
 
 /mob/living/proc/save_private_notes(mob/user)
 	if(user != src)
