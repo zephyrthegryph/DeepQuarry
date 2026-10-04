@@ -810,6 +810,17 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(landing), /atom/movable/screen/action_landing))
 
+/// CAPABILITIES(/datum/admin_report) at code/modules/admin/admin_report_panel.dm:37
+/datum/admin_report/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_report_panel.dm", 37, /datum/admin_report)
+	into += entry_line(38)
+	into += list(global.interface("AdminReport"))
+	into += entry_line(39)
+	into += list(global.op("forward_topic", global.ui_act("forward_topic", global.arg("href", global.schema_text(4096))), global.then(PROC_REF(ui_act_forward_topic))))
+	into += entry_line(40)
+	into += list(global.op("close", global.ui_act("close"), global.then(PROC_REF(ui_act_close))))
+
 /// CAPABILITIES(/datum/admins) at code/modules/admin/holder2.dm:55
 /datum/admins/declared_entries(list/into)
 	..(into)
@@ -1028,6 +1039,15 @@
 	into += list(global.owns_one(nameof(power_panel), /datum/changeling_panel))
 	into += entry_line(61)
 	into += list(global.owns_many(nameof(absorbed_dna), /datum/absorbed_dna))
+
+/// CAPABILITIES(/datum/changeling_panel) at code/datums/entity_state/antags/changeling/changeling.dm:459
+/datum/changeling_panel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 459, /datum/changeling_panel)
+	into += entry_line(460)
+	into += list(global.interface("ChangelingPanel", title = "Changeling Evolution Panel"))
+	into += entry_line(461)
+	into += list(global.op("evolve_power", global.ui_act("evolve_power", global.arg("val", global.schema_text(4096))), global.then(PROC_REF(ui_act_evolve_power))))
 
 /// CAPABILITIES(/datum/cinematic) at code/datums/cinematics/_cinematic.dm:52
 /datum/cinematic/declared_entries(list/into)
@@ -2093,6 +2113,25 @@
 	into += entry_line(17)
 	into += list(global.owns_many(nameof(brainmobs)))
 
+/// CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math) at code/modules/admin/view_variables/nobody_wants_to_learn_matrix_math.dm:24
+/datum/nobody_wants_to_learn_matrix_math/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/view_variables/nobody_wants_to_learn_matrix_math.dm", 24, /datum/nobody_wants_to_learn_matrix_math)
+	into += entry_line(25)
+	into += list(global.interface("MatrixMathTester"))
+	into += entry_line(26)
+	into += list(global.op("change_var", global.ui_act("change_var", global.arg("var_name", global.schema_text(4096)), global.arg("var_value", global.num())), global.then(PROC_REF(ui_act_change_var))))
+	into += entry_line(27)
+	into += list(global.op("scale", global.ui_act("scale", global.arg("x", global.num()), global.arg("y", global.num())), global.then(PROC_REF(ui_act_scale))))
+	into += entry_line(28)
+	into += list(global.op("translate", global.ui_act("translate", global.arg("x", global.num()), global.arg("y", global.num())), global.then(PROC_REF(ui_act_translate))))
+	into += entry_line(29)
+	into += list(global.op("shear", global.ui_act("shear", global.arg("x", global.num()), global.arg("y", global.num())), global.then(PROC_REF(ui_act_shear))))
+	into += entry_line(30)
+	into += list(global.op("turn", global.ui_act("turn", global.arg("angle", global.num())), global.then(PROC_REF(ui_act_turn))))
+	into += entry_line(31)
+	into += list(global.op("toggle_pixel", global.ui_act("toggle_pixel"), global.then(PROC_REF(ui_act_toggle_pixel))))
+
 /// CAPABILITIES(/datum/node/expression/FunctionCall) at code/modules/scripting/AST/AST Nodes.dm:80
 /datum/node/expression/FunctionCall/declared_entries(list/into)
 	..(into)
@@ -2905,6 +2944,17 @@
 	into += entry_line(617)
 	into += list(global.owns_one(nameof(embed), /datum/tgs_chat_embed/structure))
 
+/// CAPABILITIES(/datum/tgui_alert) at code/modules/tgui_input/alert.dm:89
+/datum/tgui_alert/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui_input/alert.dm", 89, /datum/tgui_alert)
+	into += entry_line(90)
+	into += list(global.interface("AlertModal"))
+	into += entry_line(91)
+	into += list(global.op("choose", global.ui_act("choose", global.arg("choice", global.schema_text(4096))), global.then(PROC_REF(ui_act_choose))))
+	into += entry_line(92)
+	into += list(global.op("cancel", global.ui_act("cancel"), global.then(PROC_REF(ui_act_cancel))))
+
 /// CAPABILITIES(/datum/tgui_alert/prompt) at code/engine/present/prompt_windows.dm:27
 /datum/tgui_alert/prompt/declared_entries(list/into)
 	..(into)
@@ -2933,6 +2983,39 @@
 	into += entry_line(116)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
+/// CAPABILITIES(/datum/tgui_feedback) at code/modules/tgui/feedback.dm:4
+/datum/tgui_feedback/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui/feedback.dm", 4, /datum/tgui_feedback)
+	into += entry_line(5)
+	into += list(global.interface("TguiFeedback", title = "TGUI Feedback Submission"))
+	into += entry_line(6)
+	into += list(global.op("pick_window", global.ui_act("pick_window", global.arg("win", global.schema_text(4096))), global.then(PROC_REF(ui_act_pick_window))))
+	into += entry_line(7)
+	into += list(global.op("submit", global.ui_act("submit", global.arg("comment", global.schema_text(4096)), global.arg("rating", global.schema_text(4096))), global.then(PROC_REF(ui_act_submit))))
+
+/// CAPABILITIES(/datum/tgui_input_keycombo) at code/modules/tgui_input/keycombo.dm:79
+/datum/tgui_input_keycombo/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui_input/keycombo.dm", 79, /datum/tgui_input_keycombo)
+	into += entry_line(80)
+	into += list(global.interface("KeyComboModal"))
+	into += entry_line(81)
+	into += list(global.op("submit", global.ui_act("submit", global.arg("entry", global.schema_text(4096))), global.then(PROC_REF(ui_act_submit))))
+	into += entry_line(82)
+	into += list(global.op("cancel", global.ui_act("cancel"), global.then(PROC_REF(ui_act_cancel))))
+
+/// CAPABILITIES(/datum/tgui_input_number) at code/modules/tgui_input/number.dm:101
+/datum/tgui_input_number/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui_input/number.dm", 101, /datum/tgui_input_number)
+	into += entry_line(102)
+	into += list(global.interface("NumberInputModal"))
+	into += entry_line(103)
+	into += list(global.op("submit", global.ui_act("submit", global.arg("entry", global.num())), global.then(PROC_REF(ui_act_submit))))
+	into += entry_line(104)
+	into += list(global.op("cancel", global.ui_act("cancel"), global.then(PROC_REF(ui_act_cancel))))
+
 /// CAPABILITIES(/datum/tgui_input_number/prompt) at code/engine/present/prompt_windows.dm:93
 /datum/tgui_input_number/prompt/declared_entries(list/into)
 	..(into)
@@ -2940,12 +3023,34 @@
 	into += entry_line(94)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
+/// CAPABILITIES(/datum/tgui_input_text) at code/modules/tgui_input/text.dm:106
+/datum/tgui_input_text/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui_input/text.dm", 106, /datum/tgui_input_text)
+	into += entry_line(107)
+	into += list(global.interface("TextInputModal"))
+	into += entry_line(108)
+	into += list(global.op("submit", global.ui_act("submit", global.arg("entry", global.schema_text(4096))), global.then(PROC_REF(ui_act_submit))))
+	into += entry_line(109)
+	into += list(global.op("cancel", global.ui_act("cancel"), global.then(PROC_REF(ui_act_cancel))))
+
 /// CAPABILITIES(/datum/tgui_input_text/prompt) at code/engine/present/prompt_windows.dm:71
 /datum/tgui_input_text/prompt/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/engine/present/prompt_windows.dm", 71, /datum/tgui_input_text/prompt)
 	into += entry_line(72)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_list_input) at code/modules/tgui_input/list.dm:103
+/datum/tgui_list_input/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tgui_input/list.dm", 103, /datum/tgui_list_input)
+	into += entry_line(104)
+	into += list(global.interface("ListInputModal"))
+	into += entry_line(105)
+	into += list(global.op("submit", global.ui_act("submit", global.arg("entry")), global.then(PROC_REF(ui_act_submit))))
+	into += entry_line(106)
+	into += list(global.op("cancel", global.ui_act("cancel"), global.then(PROC_REF(ui_act_cancel))))
 
 /// CAPABILITIES(/datum/tgui_list_input/prompt) at code/engine/present/prompt_windows.dm:49
 /datum/tgui_list_input/prompt/declared_entries(list/into)
@@ -3034,6 +3139,15 @@
 	into += entry_line(246)
 	into += list(global.owns_one(nameof(statclick), /obj/effect/statclick/ticket))
 
+/// CAPABILITIES(/datum/ticket_chat) at code/modules/tickets/tickets_player_ui.dm:8
+/datum/ticket_chat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tickets/tickets_player_ui.dm", 8, /datum/ticket_chat)
+	into += entry_line(9)
+	into += list(global.interface("TicketChat"))
+	into += entry_line(10)
+	into += list(global.op("send_msg", global.ui_act("send_msg", global.arg("msg", global.schema_text(4096))), global.then(PROC_REF(ui_act_send_msg))))
+
 /// CAPABILITIES(/datum/tooltip) at code/modules/tooltip/tooltip.dm:41
 /datum/tooltip/declared_entries(list/into)
 	..(into)
@@ -3047,6 +3161,42 @@
 	into += entry_block("code/modules/mob/living/carbon/human/species/station/traits/trait.dm", 230, /datum/trait)
 	into += entry_line(231)
 	into += list(global.entry_link("/datum/trait::linked_gene", "/datum/gene/trait::linked_trait"))
+
+/// CAPABILITIES(/datum/trait_state/radiation_effects) at code/datums/entity_state/traits/radiation_effects.dm:266
+/datum/trait_state/radiation_effects/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/traits/radiation_effects.dm", 266, /datum/trait_state/radiation_effects)
+	into += entry_line(267)
+	into += list(global.interface("RadiationConfig", title = "Radiation Config"))
+	into += entry_line(268)
+	into += list(global.op("toggle_color", global.ui_act("toggle_color"), global.then(PROC_REF(ui_act_toggle_color))))
+	into += entry_line(269)
+	into += list(global.op("toggle_glow", global.ui_act("toggle_glow"), global.then(PROC_REF(ui_act_toggle_glow))))
+	into += entry_line(270)
+	into += list(global.op("toggle_nutrition", global.ui_act("toggle_nutrition"), global.then(PROC_REF(ui_act_toggle_nutrition))))
+
+/// CAPABILITIES(/datum/trait_state/weaver) at code/datums/entity_state/traits/weaver.dm:79
+/datum/trait_state/weaver/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/traits/weaver.dm", 79, /datum/trait_state/weaver)
+	into += entry_line(80)
+	into += list(global.interface("WeaverConfig", title = "Weaver Config"))
+	into += entry_line(81)
+	into += list(global.op("new_silk_color", global.ui_act("new_silk_color"), global.then(PROC_REF(ui_act_new_silk_color))))
+	into += entry_line(82)
+	into += list(global.op("toggle_silk_production", global.ui_act("toggle_silk_production"), global.then(PROC_REF(ui_act_toggle_silk_production))))
+	into += entry_line(83)
+	into += list(global.op("check_silk_amount", global.ui_act("check_silk_amount"), global.then(PROC_REF(ui_act_check_silk_amount))))
+	into += entry_line(84)
+	into += list(global.op("weave_binding", global.ui_act("weave_binding"), global.then(PROC_REF(ui_act_weave_binding))))
+	into += entry_line(85)
+	into += list(global.op("weave_floor", global.ui_act("weave_floor"), global.then(PROC_REF(ui_act_weave_floor))))
+	into += entry_line(86)
+	into += list(global.op("weave_wall", global.ui_act("weave_wall"), global.then(PROC_REF(ui_act_weave_wall))))
+	into += entry_line(87)
+	into += list(global.op("weave_nest", global.ui_act("weave_nest"), global.then(PROC_REF(ui_act_weave_nest))))
+	into += entry_line(88)
+	into += list(global.op("weave_trap", global.ui_act("weave_trap"), global.then(PROC_REF(ui_act_weave_trap))))
 
 /// CAPABILITIES(/datum/transcore_db) at code/modules/resleeving/transcore_service.dm:178
 /datum/transcore_db/declared_entries(list/into)
@@ -3155,6 +3305,15 @@
 	into += entry_block("code/modules/mob/freelook/visualnet.dm", 11, /datum/visualnet)
 	into += entry_line(12)
 	into += list(global.owns_many(nameof(chunks)))
+
+/// CAPABILITIES(/datum/vote) at code/modules/vote/vote_datum.dm:153
+/datum/vote/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vote/vote_datum.dm", 153, /datum/vote)
+	into += entry_line(154)
+	into += list(global.interface("VotePanel", title = "Vote Panel"))
+	into += entry_line(155)
+	into += list(global.op("vote", global.ui_act("vote", global.arg("target", global.schema_text(4096))), global.then(PROC_REF(ui_act_vote))))
 
 /// CAPABILITIES(/datum/weather) at code/modules/planet/weather.dm:216
 /datum/weather/declared_entries(list/into)
@@ -5570,14 +5729,22 @@
 	into += entry_line(215)
 	into += list(global.op("sheriff_badge_self", global.in_hand(), global.label("Flash badge"), global.then(PROC_REF(sheriff_badge_self))))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/bodycam) at code/game/objects/items/devices/tvcamera.dm:147
+/// CAPABILITIES(/obj/item/clothing/accessory/bodycam) at code/game/objects/items/devices/tvcamera.dm:151
 /obj/item/clothing/accessory/bodycam/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/tvcamera.dm", 147, /obj/item/clothing/accessory/bodycam)
-	into += entry_line(148)
+	into += entry_block("code/game/objects/items/devices/tvcamera.dm", 151, /obj/item/clothing/accessory/bodycam)
+	into += entry_line(152)
 	into += list(global.owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera))
-	into += entry_line(149)
+	into += entry_line(153)
 	into += list(global.owns_one(nameof(bradio), starts = /obj/item/radio))
+	into += entry_line(154)
+	into += list(global.interface("EyeBuddy", title = "Eye Buddy"))
+	into += entry_line(155)
+	into += list(global.op("set_channel", global.ui_act("set_channel"), global.then(PROC_REF(ui_act_set_channel))))
+	into += entry_line(156)
+	into += list(global.op("toggle_video", global.ui_act("toggle_video"), global.then(PROC_REF(ui_act_toggle_video))))
+	into += entry_line(157)
+	into += list(global.op("toggle_audio", global.ui_act("toggle_audio"), global.then(PROC_REF(ui_act_toggle_audio))))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/collar/bell) at code/modules/clothing/accessories/accessory.dm:702
 /obj/item/clothing/accessory/collar/bell/declared_entries(list/into)
@@ -6680,12 +6847,20 @@
 	into += entry_line(182)
 	into += list(global.owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung))
 
-/// CAPABILITIES(/obj/item/gun/projectile/dartgun) at code/modules/projectiles/guns/projectile/dartgun.dm:68
+/// CAPABILITIES(/obj/item/gun/projectile/dartgun) at code/modules/admin/dartgun_panel.dm:5
 /obj/item/gun/projectile/dartgun/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/guns/projectile/dartgun.dm", 68, /obj/item/gun/projectile/dartgun)
-	into += entry_line(69)
+	into += entry_block("code/modules/admin/dartgun_panel.dm", 5, /obj/item/gun/projectile/dartgun)
+	into += entry_line(6)
 	into += list(global.ref_many(nameof(mixing)))
+	into += entry_line(7)
+	into += list(global.interface("Dartgun"))
+	into += entry_line(8)
+	into += list(global.op("toggle_mix", global.ui_act("toggle_mix", global.arg("index", global.num())), global.then(PROC_REF(ui_act_toggle_mix))))
+	into += entry_line(9)
+	into += list(global.op("eject_beaker", global.ui_act("eject_beaker", global.arg("index", global.num())), global.then(PROC_REF(ui_act_eject_beaker))))
+	into += entry_line(10)
+	into += list(global.op("eject_cart", global.ui_act("eject_cart"), global.then(PROC_REF(ui_act_eject_cart))))
 
 /// CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible) at code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm:5
 /obj/item/gun/projectile/heavysniper/collapsible/declared_entries(list/into)
@@ -9950,6 +10125,14 @@
 	into += list(global.owns_one(nameof(radio), starts = /obj/item/radio))
 	into += entry_line(22)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+	into += entry_line(23)
+	into += list(global.interface("EyeBuddy", title = "Eye Buddy"))
+	into += entry_line(24)
+	into += list(global.op("set_channel", global.ui_act("set_channel"), global.then(PROC_REF(ui_act_set_channel))))
+	into += entry_line(25)
+	into += list(global.op("toggle_video", global.ui_act("toggle_video"), global.then(PROC_REF(ui_act_toggle_video))))
+	into += entry_line(26)
+	into += list(global.op("toggle_audio", global.ui_act("toggle_audio"), global.then(PROC_REF(ui_act_toggle_audio))))
 
 /// CAPABILITIES(/obj/item/uav) at code/game/objects/items/uav.dm:45
 /obj/item/uav/declared_entries(list/into)
@@ -10196,12 +10379,38 @@
 	into += entry_line(81)
 	into += list(global.owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster))
 
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/freezer) at code/ATMOSPHERICS/components/unary/cold_sink.dm:77
+/obj/machinery/atmospherics/unary/freezer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/unary/cold_sink.dm", 77, /obj/machinery/atmospherics/unary/freezer)
+	into += entry_line(78)
+	into += list(global.interface("GasTemperatureSystem"))
+	into += entry_line(79)
+	into += list(global.op("toggleStatus", global.ui_act("toggleStatus"), global.then(PROC_REF(ui_act_togglestatus))))
+	into += entry_line(80)
+	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
+	into += entry_line(81)
+	into += list(global.op("setPower", global.ui_act("setPower", global.arg("value", global.num())), global.then(PROC_REF(ui_act_setpower))))
+
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger) at code/ATMOSPHERICS/components/unary/heat_exchanger.dm:20
 /obj/machinery/atmospherics/unary/heat_exchanger/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/components/unary/heat_exchanger.dm", 20, /obj/machinery/atmospherics/unary/heat_exchanger)
 	into += entry_line(21)
 	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/heater) at code/ATMOSPHERICS/components/unary/heat_source.dm:121
+/obj/machinery/atmospherics/unary/heater/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/unary/heat_source.dm", 121, /obj/machinery/atmospherics/unary/heater)
+	into += entry_line(122)
+	into += list(global.interface("GasTemperatureSystem"))
+	into += entry_line(123)
+	into += list(global.op("toggleStatus", global.ui_act("toggleStatus"), global.then(PROC_REF(ui_act_togglestatus))))
+	into += entry_line(124)
+	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
+	into += entry_line(125)
+	into += list(global.op("setPower", global.ui_act("setPower", global.arg("value", global.num())), global.then(PROC_REF(ui_act_setpower))))
 
 /// CAPABILITIES(/obj/machinery/autolathe) at code/game/machinery/autolathe.dm:44
 /obj/machinery/autolathe/declared_entries(list/into)
@@ -10766,6 +10975,17 @@
 	into += list(global.op("hackbot", global.ui_act("hackbot", global.arg("ref")), global.needs(global.req(PROC_REF(hack_possible), because = MSG(robotics/cannot_hack))), global.asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), global.then(PROC_REF(ui_act_hackbot))))
 	into += entry_line(139)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_authenticated), because = MSG(robotics/access_denied)))))
+
+/// CAPABILITIES(/obj/machinery/computer/roguezones) at code/modules/rogueminer/zone_console.dm:54
+/obj/machinery/computer/roguezones/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/rogueminer/zone_console.dm", 54, /obj/machinery/computer/roguezones)
+	into += entry_line(55)
+	into += list(global.interface("RogueZones"))
+	into += entry_line(56)
+	into += list(global.op("scan_for_new", global.ui_act("scan_for_new"), global.then(PROC_REF(ui_act_scan_for_new))))
+	into += entry_line(57)
+	into += list(global.op("recall_shuttle", global.ui_act("recall_shuttle"), global.then(PROC_REF(ui_act_recall_shuttle))))
 
 /// CAPABILITIES(/obj/machinery/computer/scan_consolenew) at code/game/dna/dna_modifier.dm:351
 /obj/machinery/computer/scan_consolenew/declared_entries(list/into)
@@ -11407,6 +11627,12 @@
 	into += entry_block("code/game/objects/items/weapons/implants/implantchair.dm", 22, /obj/machinery/implantchair)
 	into += entry_line(23)
 	into += list(global.owns_many(nameof(implant_list), /obj/item/implant/loyalty))
+	into += entry_line(24)
+	into += list(global.interface("ImplantChair", title = "Implanter Status"))
+	into += entry_line(25)
+	into += list(global.op("implant", global.ui_act("implant"), global.then(PROC_REF(ui_act_implant))))
+	into += entry_line(26)
+	into += list(global.op("replenish", global.ui_act("replenish"), global.then(PROC_REF(ui_act_replenish))))
 
 /// CAPABILITIES(/obj/machinery/ion_engine) at code/modules/overmap/ships/engines/ion_thruster.dm:47
 /obj/machinery/ion_engine/declared_entries(list/into)
@@ -11566,6 +11792,10 @@
 	into += list(global.owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler))
 	into += entry_line(33)
 	into += list(global.owns_many(nameof(product_datums)))
+	into += entry_line(34)
+	into += list(global.interface("RecyclerVendor"))
+	into += entry_line(35)
+	into += list(global.op("purchase", global.ui_act("purchase", global.arg("index", global.num())), global.then(PROC_REF(ui_act_purchase))))
 
 /// CAPABILITIES(/obj/machinery/material_furnace) at code/modules/materials/engineering/material_machines.dm:68
 /obj/machinery/material_furnace/declared_entries(list/into)
@@ -12054,6 +12284,21 @@
 	into += entry_line(27)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/machinery/radiocarbon_spectrometer) at code/modules/xenoarcheaology/tools/geosample_scanner.dm:108
+/obj/machinery/radiocarbon_spectrometer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/geosample_scanner.dm", 108, /obj/machinery/radiocarbon_spectrometer)
+	into += entry_line(109)
+	into += list(global.interface("XenoarchSpectrometer"))
+	into += entry_line(110)
+	into += list(global.op("scanItem", global.ui_act("scanItem"), global.then(PROC_REF(ui_act_scanitem))))
+	into += entry_line(111)
+	into += list(global.op("ejectItem", global.ui_act("ejectItem"), global.then(PROC_REF(ui_act_ejectitem))))
+	into += entry_line(112)
+	into += list(global.op("set_scanner_rpm_delta", global.ui_act("set_scanner_rpm_delta", global.arg("delta", global.num())), global.then(PROC_REF(ui_act_set_scanner_rpm_delta))))
+	into += entry_line(113)
+	into += list(global.op("inject_radiation", global.ui_act("inject_radiation"), global.then(PROC_REF(ui_act_inject_radiation))))
+
 /// CAPABILITIES(/obj/machinery/reagent_refinery/filter) at code/modules/refinery/core/industrial_reagent_filter.dm:21
 /obj/machinery/reagent_refinery/filter/declared_entries(list/into)
 	..(into)
@@ -12273,6 +12518,14 @@
 	into += entry_block("code/game/machinery/spaceheater.dm", 51, /obj/machinery/space_heater)
 	into += entry_line(52)
 	into += list(global.climb())
+	into += entry_line(53)
+	into += list(global.interface("SpaceHeater"))
+	into += entry_line(54)
+	into += list(global.op("temp", global.ui_act("temp", global.arg("newtemp", global.num())), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_temp))))
+	into += entry_line(55)
+	into += list(global.op("cellremove", global.ui_act("cellremove"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellremove))))
+	into += entry_line(56)
+	into += list(global.op("cellinstall", global.ui_act("cellinstall"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellinstall))))
 
 /// CAPABILITIES(/obj/machinery/station_map) at code/modules/holomap/station_holomap.dm:36
 /obj/machinery/station_map/declared_entries(list/into)

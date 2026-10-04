@@ -2,15 +2,18 @@
 
 DECLARE_UI_STATE(/obj/item/gun/projectile/dartgun, GLOB.tgui_default_state)
 
-DECLARE_UI(/obj/item/gun/projectile/dartgun, "Dartgun")
+CAPABILITIES(/obj/item/gun/projectile/dartgun)
+	ref_many(nameof(mixing))
+	interface("Dartgun")
+	op("toggle_mix", ui_act("toggle_mix", arg("index", num())), then(PROC_REF(ui_act_toggle_mix)))
+	op("eject_beaker", ui_act("eject_beaker", arg("index", num())), then(PROC_REF(ui_act_eject_beaker)))
+	op("eject_cart", ui_act("eject_cart"), then(PROC_REF(ui_act_eject_cart)))
 
 /obj/item/gun/projectile/dartgun/ui_title(mob/user)
 	return "[src] mixing control"
 
-UI_DATA_REPLACE(/obj/item/gun/projectile/dartgun, "merge:ui_data_obj_item_gun_projectile_dartgun{beakers:list,ammo_count:num}")
-
 /// The computed part of /obj/item/gun/projectile/dartgun's window data (declared on its UI_DATA row).
-/obj/item/gun/projectile/dartgun/proc/ui_data_obj_item_gun_projectile_dartgun(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/gun/projectile/dartgun/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/beaker_rows = list()
 	var/i = 0
@@ -32,9 +35,9 @@ UI_DATA_REPLACE(/obj/item/gun/projectile/dartgun, "merge:ui_data_obj_item_gun_pr
 		data["ammo_count"] = null
 	return data
 
-UI_ACT(/obj/item/gun/projectile/dartgun, "toggle_mix", ui_act_toggle_mix, UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/item/gun/projectile/dartgun, ui_act_toggle_mix)
-	var/idx = params["index"]
+/obj/item/gun/projectile/dartgun/proc/ui_act_toggle_mix(datum/act/op/A, index)
+	var/mob/user = A.actor
+	var/idx = index
 	if(!isnum(idx))
 		return
 	// Mirror the legacy logic: pick mix or stop_mix based on current state.
@@ -47,22 +50,22 @@ UI_ACT_PROC(/obj/item/gun/projectile/dartgun, ui_act_toggle_mix)
 	if(!B)
 		return TRUE
 	if(check_beaker_mixing(B))
-		dartgun_set_mixing(ui.user, idx, FALSE)
+		dartgun_set_mixing(user, idx, FALSE)
 	else
-		dartgun_set_mixing(ui.user, idx, TRUE)
+		dartgun_set_mixing(user, idx, TRUE)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/item/gun/projectile/dartgun, "eject_beaker", ui_act_eject_beaker, UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/item/gun/projectile/dartgun, ui_act_eject_beaker)
-	var/idx = params["index"]
-	dartgun_eject_beaker(ui.user, idx)
+/obj/item/gun/projectile/dartgun/proc/ui_act_eject_beaker(datum/act/op/A, index)
+	var/mob/user = A.actor
+	var/idx = index
+	dartgun_eject_beaker(user, idx)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/item/gun/projectile/dartgun, "eject_cart", ui_act_eject_cart)
-UI_ACT_PROC(/obj/item/gun/projectile/dartgun, ui_act_eject_cart)
-	add_fingerprint(ui.user)
-	unload_ammo(ui.user)
+/obj/item/gun/projectile/dartgun/proc/ui_act_eject_cart(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	unload_ammo(user)
 	SStgui.update_uis(src)
 	return TRUE

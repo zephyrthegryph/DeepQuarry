@@ -74,9 +74,21 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freeze
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/atmospherics/unary/freezer, "GasTemperatureSystem")
+CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	interface("GasTemperatureSystem")
+	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
+	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
+	op("setPower", ui_act("setPower", arg("value", num())), then(PROC_REF(ui_act_setpower)))
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/freezer, "powerSetting=power_setting:num", "reagentPower=reagent_cooling:num", "merge:ui_data_obj_machinery_atmospherics_unary_freezer{on:num,gasPressure:num,gasTemperature:num,minGasTemperature:num,maxGasTemperature:num,targetGasTemperature:num,reagentVolume:num,reagentMaximum:num,gasTemperatureClass:text}")
+/obj/machinery/atmospherics/unary/freezer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["powerSetting"] = power_setting
+	data["reagentPower"] = reagent_cooling
+	var/list/merged_1 = ui_data_obj_machinery_atmospherics_unary_freezer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/atmospherics/unary/freezer's window data (declared on its UI_DATA row).
 /obj/machinery/atmospherics/unary/freezer/proc/ui_data_obj_machinery_atmospherics_unary_freezer(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -102,32 +114,32 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/freezer, "powerSetting=power_s
 
 	return data
 
-UI_ACT(/obj/machinery/atmospherics/unary/freezer, "toggleStatus", ui_act_togglestatus)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_togglestatus)
+/obj/machinery/atmospherics/unary/freezer/proc/ui_act_togglestatus(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	set_use_power(!use_power)
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	if(.)
 		invalidate_gas_dependencies()
 
-UI_ACT(/obj/machinery/atmospherics/unary/freezer, "setGasTemperature", ui_act_setgastemperature, UI_ARG_NUM("temp"))
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setgastemperature)
+/obj/machinery/atmospherics/unary/freezer/proc/ui_act_setgastemperature(datum/act/op/A, temp)
+	var/mob/user = A.actor
 	. = TRUE
-	var/amount = params["temp"]
+	var/amount = temp
 	if(amount > 0)
 		set_temperature = min(amount, 1000)
 	else
 		set_temperature = max(amount, 0)
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	if(.)
 		invalidate_gas_dependencies()
 
-UI_ACT(/obj/machinery/atmospherics/unary/freezer, "setPower", ui_act_setpower, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setpower)
+/obj/machinery/atmospherics/unary/freezer/proc/ui_act_setpower(datum/act/op/A, value)
+	var/mob/user = A.actor
 	. = TRUE
-	var/new_setting = between(0, params["value"], 100)
+	var/new_setting = between(0, value, 100)
 	set_power_level(new_setting)
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	if(.)
 		invalidate_gas_dependencies()
 

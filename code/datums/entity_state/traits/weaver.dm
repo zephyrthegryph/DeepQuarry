@@ -76,7 +76,16 @@
 	silk_color = ask.picked_color
 
 //TGUI Weaver Panel
-DECLARE_UI(/datum/trait_state/weaver, "WeaverConfig", UI_TITLE("Weaver Config"))
+CAPABILITIES(/datum/trait_state/weaver)
+	interface("WeaverConfig", title = "Weaver Config")
+	op("new_silk_color", ui_act("new_silk_color"), then(PROC_REF(ui_act_new_silk_color)))
+	op("toggle_silk_production", ui_act("toggle_silk_production"), then(PROC_REF(ui_act_toggle_silk_production)))
+	op("check_silk_amount", ui_act("check_silk_amount"), then(PROC_REF(ui_act_check_silk_amount)))
+	op("weave_binding", ui_act("weave_binding"), then(PROC_REF(ui_act_weave_binding)))
+	op("weave_floor", ui_act("weave_floor"), then(PROC_REF(ui_act_weave_floor)))
+	op("weave_wall", ui_act("weave_wall"), then(PROC_REF(ui_act_weave_wall)))
+	op("weave_nest", ui_act("weave_nest"), then(PROC_REF(ui_act_weave_nest)))
+	op("weave_trap", ui_act("weave_trap"), then(PROC_REF(ui_act_weave_trap)))
 
 /mob/living/proc/weaver_control_panel()
 	set name = "Weaver Control Panel"
@@ -94,10 +103,8 @@ DECLARE_UI(/datum/trait_state/weaver, "WeaverConfig", UI_TITLE("Weaver Config"))
 	RETURN_TYPE(/datum/trait_state/weaver)
 	return get_trait_state(/datum/trait_state/weaver)
 
-UI_DATA_REPLACE(/datum/trait_state/weaver, "merge:ui_data_datum_trait_state_weaver{silk_reserve:num,silk_max_reserve:num,silk_color:text,silk_production:num,savefile_selected:unknown}")
-
 /// The computed part of /datum/trait_state/weaver's window data (declared on its UI_DATA row).
-/datum/trait_state/weaver/proc/ui_data_datum_trait_state_weaver(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/trait_state/weaver/ui_data(datum/act/eval/A)
 	var/data = list(
 		"silk_reserve" = silk_reserve,
 		"silk_max_reserve" = silk_max_reserve,
@@ -117,44 +124,37 @@ UI_DATA_REPLACE(/datum/trait_state/weaver, "merge:ui_data_datum_trait_state_weav
 		return TRUE
 	return FALSE
 
-UI_ACT(/datum/trait_state/weaver, "new_silk_color", ui_act_new_silk_color)
-UI_ACT_PROC(/datum/trait_state/weaver, ui_act_new_silk_color)
-	om_ask(ui.user, /datum/om/prompt/color, PROC_REF(silk_color_picked), message = "Select a color you wish your silk to be!", default = silk_color, ui_refresh = src, title = "Color Selector")
+/datum/trait_state/weaver/proc/ui_act_new_silk_color(datum/act/op/A)
+	var/mob/user = A.actor
+	om_ask(user, /datum/om/prompt/color, PROC_REF(silk_color_picked), message = "Select a color you wish your silk to be!", default = silk_color, ui_refresh = src, title = "Color Selector")
 	return FALSE
 
-UI_ACT(/datum/trait_state/weaver, "toggle_silk_production", ui_act_toggle_silk_production)
-UI_ACT_PROC(/datum/trait_state/weaver, ui_act_toggle_silk_production)
+/datum/trait_state/weaver/proc/ui_act_toggle_silk_production(datum/act/op/A)
 	silk_production = !(silk_production)
 	to_chat(owner, span_info("You are [silk_production ? "now" : "no longer"] producing silk."))
 	return FALSE
 
-UI_ACT(/datum/trait_state/weaver, "check_silk_amount", ui_act_check_silk_amount)
-UI_ACT_PROC(/datum/trait_state/weaver, ui_act_check_silk_amount)
+/datum/trait_state/weaver/proc/ui_act_check_silk_amount(datum/act/op/A)
 	to_chat(owner, span_info("Your silk reserves are at [silk_reserve]/[silk_max_reserve]."))
 	return FALSE
 
-UI_ACT(/datum/trait_state/weaver, "weave_binding", ui_act_weave_binding)
-UI_ACT_PROC(/datum/trait_state/weaver, ui_act_weave_binding)
+/datum/trait_state/weaver/proc/ui_act_weave_binding(datum/act/op/A)
 	weave_check(50, /obj/item/clothing/suit/weaversilk_bindings)
 	return TRUE
 
-UI_ACT(/datum/trait_state/weaver, "weave_floor", ui_act_weave_floor)
-UI_ACT_PROC(/datum/trait_state/weaver, ui_act_weave_floor)
+/datum/trait_state/weaver/proc/ui_act_weave_floor(datum/act/op/A)
 	weave_check(25, /obj/effect/weaversilk/floor)
 	return TRUE
 
-UI_ACT(/datum/trait_state/weaver, "weave_wall", ui_act_weave_wall)
-UI_ACT_PROC(/datum/trait_state/weaver, ui_act_weave_wall)
+/datum/trait_state/weaver/proc/ui_act_weave_wall(datum/act/op/A)
 	weave_check(100, /obj/effect/weaversilk/wall)
 	return TRUE
 
-UI_ACT(/datum/trait_state/weaver, "weave_nest", ui_act_weave_nest)
-UI_ACT_PROC(/datum/trait_state/weaver, ui_act_weave_nest)
+/datum/trait_state/weaver/proc/ui_act_weave_nest(datum/act/op/A)
 	weave_check(100, /obj/structure/bed/double/weaversilk_nest)
 	return TRUE
 
-UI_ACT(/datum/trait_state/weaver, "weave_trap", ui_act_weave_trap)
-UI_ACT_PROC(/datum/trait_state/weaver, ui_act_weave_trap)
+/datum/trait_state/weaver/proc/ui_act_weave_trap(datum/act/op/A)
 	weave_check(250, /obj/effect/weaversilk/trap)
 	return TRUE
 /*

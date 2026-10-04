@@ -103,7 +103,10 @@
 	while (!entry && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
-DECLARE_UI(/datum/tgui_input_text, "TextInputModal")
+CAPABILITIES(/datum/tgui_input_text)
+	interface("TextInputModal")
+	op("submit", ui_act("submit", arg("entry", schema_text(4096))), then(PROC_REF(ui_act_submit)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
 /datum/tgui_input_text/tgui_close(mob/user)
 	. = ..()
@@ -124,29 +127,26 @@ DECLARE_UI(/datum/tgui_input_text, "TextInputModal")
 	data["spellcheck"] = user.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
 	return data
 
-UI_DATA_REPLACE(/datum/tgui_input_text, "merge:ui_data_datum_tgui_input_text{timeout:num}")
-
 /// The computed part of /datum/tgui_input_text's window data (declared on its UI_DATA row).
-/datum/tgui_input_text/proc/ui_data_datum_tgui_input_text(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_input_text/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)
 	return data
 
-UI_ACT(/datum/tgui_input_text, "submit", ui_act_submit, UI_ARG_TEXT("entry"))
-UI_ACT_PROC(/datum/tgui_input_text, ui_act_submit)
+/datum/tgui_input_text/proc/ui_act_submit(datum/act/op/A, entry)
+	var/mob/user = A.actor
 	if(max_length)
-		if(length(params["entry"]) > max_length)
-			CRASH("[ui.user] typed a text string longer than the max length")
-		if(encode && (length(html_encode(params["entry"])) > max_length))
-			to_chat(ui.user, span_notice("Your message was clipped due to special character usage."))
-	set_entry(params["entry"])
+		if(length(entry) > max_length)
+			CRASH("[user] typed a text string longer than the max length")
+		if(encode && (length(html_encode(entry)) > max_length))
+			to_chat(user, span_notice("Your message was clipped due to special character usage."))
+	set_entry(entry)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_text, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/tgui_input_text, ui_act_cancel)
+/datum/tgui_input_text/proc/ui_act_cancel(datum/act/op/A)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE

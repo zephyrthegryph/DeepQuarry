@@ -21,12 +21,17 @@ DECLARE_UI_STATE(/datum/nobody_wants_to_learn_matrix_math, ADMIN_STATE(R_VAREDIT
 /datum/nobody_wants_to_learn_matrix_math/tgui_close(mob/user)
 	qdel(src)
 
-DECLARE_UI(/datum/nobody_wants_to_learn_matrix_math, "MatrixMathTester")
-
-UI_DATA_REPLACE(/datum/nobody_wants_to_learn_matrix_math, "merge:ui_data_datum_nobody_wants_to_learn_matrix_math{matrix_a:unknown,matrix_b:unknown,matrix_c:unknown,matrix_d:unknown,matrix_e:unknown,matrix_f:unknown,pixelated:num}")
+CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
+	interface("MatrixMathTester")
+	op("change_var", ui_act("change_var", arg("var_name", schema_text(4096)), arg("var_value", num())), then(PROC_REF(ui_act_change_var)))
+	op("scale", ui_act("scale", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_scale)))
+	op("translate", ui_act("translate", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_translate)))
+	op("shear", ui_act("shear", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_shear)))
+	op("turn", ui_act("turn", arg("angle", num())), then(PROC_REF(ui_act_turn)))
+	op("toggle_pixel", ui_act("toggle_pixel"), then(PROC_REF(ui_act_toggle_pixel)))
 
 /// The computed part of /datum/nobody_wants_to_learn_matrix_math's window data (declared on its UI_DATA row).
-/datum/nobody_wants_to_learn_matrix_math/proc/ui_data_datum_nobody_wants_to_learn_matrix_math(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/nobody_wants_to_learn_matrix_math/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["matrix_a"] = testing_matrix.a
 	data["matrix_b"] = testing_matrix.b
@@ -37,37 +42,31 @@ UI_DATA_REPLACE(/datum/nobody_wants_to_learn_matrix_math, "merge:ui_data_datum_n
 	data["pixelated"] = target().appearance_flags & PIXEL_SCALE
 	return data
 
-UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "change_var", ui_act_change_var, UI_ARG_TEXT("var_name"), UI_ARG_NUM("var_value"))
-UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_change_var)
-	var/matrix_var_name = params["var_name"]
-	var/matrix_var_value = params["var_value"]
+/datum/nobody_wants_to_learn_matrix_math/proc/ui_act_change_var(datum/act/op/A, var_name, var_value)
+	var/matrix_var_name = var_name
+	var/matrix_var_value = var_value
 	if(testing_matrix.vv_edit_var(matrix_var_name, matrix_var_value) == FALSE)
 		to_chat(src, "Your edit was rejected by the object. This is a bug with the matrix tester, not your fault, so report it on GitHub.", confidential = TRUE)
 		return
 	set_transform()
 
-UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "scale", ui_act_scale, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
-UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_scale)
-	testing_matrix.Scale(params["x"], params["y"])
+/datum/nobody_wants_to_learn_matrix_math/proc/ui_act_scale(datum/act/op/A, x, y)
+	testing_matrix.Scale(x, y)
 	set_transform()
 
-UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "translate", ui_act_translate, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
-UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_translate)
-	testing_matrix.Translate(params["x"], params["y"])
+/datum/nobody_wants_to_learn_matrix_math/proc/ui_act_translate(datum/act/op/A, x, y)
+	testing_matrix.Translate(x, y)
 	set_transform()
 
-UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "shear", ui_act_shear, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
-UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_shear)
-	testing_matrix.Shear(params["x"], params["y"])
+/datum/nobody_wants_to_learn_matrix_math/proc/ui_act_shear(datum/act/op/A, x, y)
+	testing_matrix.Shear(x, y)
 	set_transform()
 
-UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "turn", ui_act_turn, UI_ARG_NUM("angle"))
-UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_turn)
-	testing_matrix.Turn(params["angle"])
+/datum/nobody_wants_to_learn_matrix_math/proc/ui_act_turn(datum/act/op/A, angle)
+	testing_matrix.Turn(angle)
 	set_transform()
 
-UI_ACT(/datum/nobody_wants_to_learn_matrix_math, "toggle_pixel", ui_act_toggle_pixel)
-UI_ACT_PROC(/datum/nobody_wants_to_learn_matrix_math, ui_act_toggle_pixel)
+/datum/nobody_wants_to_learn_matrix_math/proc/ui_act_toggle_pixel(datum/act/op/A)
 	target().appearance_flags ^= PIXEL_SCALE
 
 /datum/nobody_wants_to_learn_matrix_math/proc/set_transform()

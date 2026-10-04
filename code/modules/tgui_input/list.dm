@@ -100,7 +100,10 @@
 	while (!choice && !closed)
 		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
-DECLARE_UI(/datum/tgui_list_input, "ListInputModal")
+CAPABILITIES(/datum/tgui_list_input)
+	interface("ListInputModal")
+	op("submit", ui_act("submit", arg("entry")), then(PROC_REF(ui_act_submit)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
 /datum/tgui_list_input/tgui_close(mob/user)
 	. = ..()
@@ -119,26 +122,22 @@ DECLARE_UI(/datum/tgui_list_input, "ListInputModal")
 	data["title"] = title
 	return data
 
-UI_DATA_REPLACE(/datum/tgui_list_input, "merge:ui_data_datum_tgui_list_input{timeout:num}")
-
 /// The computed part of /datum/tgui_list_input's window data (declared on its UI_DATA row).
-/datum/tgui_list_input/proc/ui_data_datum_tgui_list_input(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_list_input/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)
 	return data
 
-UI_ACT(/datum/tgui_list_input, "submit", ui_act_submit, UI_ARG_VALUE("entry"))
-UI_ACT_PROC(/datum/tgui_list_input, ui_act_submit)
-	if (!(params["entry"] in items))
+/datum/tgui_list_input/proc/ui_act_submit(datum/act/op/A, entry)
+	if (!(entry in items))
 		return
-	set_choice(items_map[params["entry"]])
+	set_choice(items_map[entry])
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_list_input, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/tgui_list_input, ui_act_cancel)
+/datum/tgui_list_input/proc/ui_act_cancel(datum/act/op/A)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE

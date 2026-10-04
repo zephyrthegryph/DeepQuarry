@@ -456,12 +456,12 @@ DECLARE_UI_STATE(/datum/changeling_panel, GLOB.tgui_always_state)
 		return STATUS_CLOSE
 	return ..()
 
-DECLARE_UI(/datum/changeling_panel, "ChangelingPanel", UI_TITLE("Changeling Evolution Panel"))
-
-UI_DATA_REPLACE(/datum/changeling_panel, "merge:ui_data_datum_changeling_panel{available_points:num,power_list:list}")
+CAPABILITIES(/datum/changeling_panel)
+	interface("ChangelingPanel", title = "Changeling Evolution Panel")
+	op("evolve_power", ui_act("evolve_power", arg("val", schema_text(4096))), then(PROC_REF(ui_act_evolve_power)))
 
 /// The computed part of /datum/changeling_panel's window data (declared on its UI_DATA row).
-/datum/changeling_panel/proc/ui_data_datum_changeling_panel(mob/living/carbon/human/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/changeling_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/power_list = list()
 
@@ -479,9 +479,8 @@ UI_DATA_REPLACE(/datum/changeling_panel, "merge:ui_data_datum_changeling_panel{a
 
 	return data
 
-UI_ACT(/datum/changeling_panel, "evolve_power", ui_act_evolve_power, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/datum/changeling_panel, ui_act_evolve_power)
-	comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
+/datum/changeling_panel/proc/ui_act_evolve_power(datum/act/op/A, val)
+	comp().purchasePower(comp().owner, val) //The power must be the power's NAME.
 	return TRUE
 
 /// The changeling this panel shows (a relation view).

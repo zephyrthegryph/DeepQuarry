@@ -34,12 +34,24 @@
 
 DECLARE_UI_STATE(/datum/admin_report, ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT))
 
-DECLARE_UI(/datum/admin_report, "AdminReport")
+CAPABILITIES(/datum/admin_report)
+	interface("AdminReport")
+	op("forward_topic", ui_act("forward_topic", arg("href", schema_text(4096))), then(PROC_REF(ui_act_forward_topic)))
+	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
 
 /datum/admin_report/ui_title(mob/user)
 	return title
 
-UI_DATA_REPLACE(/datum/admin_report, "title:text", "intro_html:text", "body_html:text", "merge:ui_data_datum_admin_report{lines:bool,columns:bool,rows:bool,has_host:bool}")
+/datum/admin_report/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["title"] = title
+	data["intro_html"] = intro_html
+	data["body_html"] = body_html
+	var/list/merged_1 = ui_data_datum_admin_report(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/admin_report's window data (declared on its UI_DATA row).
 /datum/admin_report/proc/ui_data_datum_admin_report(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -50,14 +62,13 @@ UI_DATA_REPLACE(/datum/admin_report, "title:text", "intro_html:text", "body_html
 	data["has_host"] = !!forward_host()
 	return data
 
-UI_ACT(/datum/admin_report, "forward_topic", ui_act_forward_topic, UI_ARG_TEXT("href"))
-UI_ACT_PROC(/datum/admin_report, ui_act_forward_topic)
-	dispatch_forwarded_topic(ui.user, forward_host(), "[params["href"]]")
+/datum/admin_report/proc/ui_act_forward_topic(datum/act/op/A, href)
+	var/mob/user = A.actor
+	dispatch_forwarded_topic(user, forward_host(), "[href]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/admin_report, "close", ui_act_close)
-UI_ACT_PROC(/datum/admin_report, ui_act_close)
+/datum/admin_report/proc/ui_act_close(datum/act/op/A)
 	SStgui.close_uis(src)
 	qdel(src)
 	return TRUE

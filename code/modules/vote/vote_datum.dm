@@ -150,9 +150,18 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 
 DECLARE_UI_STATE(/datum/vote, GLOB.tgui_always_state)
 
-DECLARE_UI(/datum/vote, "VotePanel", UI_TITLE("Vote Panel"))
+CAPABILITIES(/datum/vote)
+	interface("VotePanel", title = "Vote Panel")
+	op("vote", ui_act("vote", arg("target", schema_text(4096))), then(PROC_REF(ui_act_vote)))
 
-UI_DATA_REPLACE(/datum/vote, "question:text", "merge:ui_data_datum_vote{remaining:unknown,user_vote:unknown,choices:bool,show_counts:bool,counts:list}")
+/datum/vote/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["question"] = question
+	var/list/merged_1 = ui_data_datum_vote(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/vote's window data (declared on its UI_DATA row).
 /datum/vote/proc/ui_data_datum_vote(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -181,10 +190,10 @@ UI_DATA_REPLACE(/datum/vote, "question:text", "merge:ui_data_datum_vote{remainin
 
 	return data
 
-UI_ACT(/datum/vote, "vote", ui_act_vote, UI_ARG_TEXT("target"))
-UI_ACT_PROC(/datum/vote, ui_act_vote)
+/datum/vote/proc/ui_act_vote(datum/act/op/A, target)
+	var/mob/user = A.actor
 	. = TRUE
-	if(params["target"] in choices)
-		LAZYSET(voted, ui.user.ckey, params["target"])
+	if(target in choices)
+		LAZYSET(voted, user.ckey, target)
 	else
-		message_admins(span_warning("User [key_name_admin(ui.user)] spoofed a vote in the vote panel!"))
+		message_admins(span_warning("User [key_name_admin(user)] spoofed a vote in the vote panel!"))

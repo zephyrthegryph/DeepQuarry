@@ -608,6 +608,8 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 71)),
 	"/obj/machinery/recharger::takes_device" = list(0,
 		list(1, 0, 126)),
+	"/obj/machinery/space_heater::ui_gate" = list(0,
+		list(1, 0, 123)),
 	"/obj/machinery/vending::actor_is_no_silicon" = list(0),
 	"/obj/machinery/vending::bare_touch" = list(0),
 	"/obj/machinery/vending::cartridge_fits" = list(0,

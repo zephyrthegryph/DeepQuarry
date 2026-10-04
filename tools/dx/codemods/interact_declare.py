@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_declare import File, SETTINGS, body_range, related, split_args, strip_code, words_in  # noqa: E402
 
 SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/interactions/")
-KINDS = {"INTERACT_USE": "in_hand()", "INTERACT_HAND": "hand()", "INTERACT_ITEM": "item(/obj/item)", "INTERACT_INSERT": None, "INTERACT_VERB": "menu()"}
+KINDS = {"INTERACT_USE": "in_hand()", "INTERACT_HAND": "hand()", "INTERACT_ITEM": "item(/obj/item)", "INTERACT_INSERT": None, "INTERACT_VERB": "menu()", "INTERACT_HAND_UNGATED": "hand()"}
 HEAD = re.compile(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\((/[\w/]+)\s*,")
 
 
@@ -96,6 +96,7 @@ def main():
     # A type that REPLACES what it inherits (DECLARE_INTERACTIONS, a get_interactions/declare_interactions override) cannot share a hierarchy with a
     # converted one: the ops accumulate down the tree and the replacement would stop meaning anything. EXTEND_INTERACTIONS only adds, so it never blocks.
     replacers = {u for u, rs in decls.items() if any(r[0] in ("DECLARE_INTERACTIONS", "override") for r in rs)}
+    override_replacers = {u for u, rs in decls.items() if any(r[0] == "override" for r in rs)}
     # the text other code sees: no macro-call lines, no UI rows, no definitions
     def_re = re.compile(r"^/[\w/]+/(proc/)?\w+\(")
     tree_lines = []
@@ -131,7 +132,14 @@ def main():
         if len(rs) != 1:
             residue[t] = "interaction_forms"
             continue
-        if any(related(t, u) for u in replacers if u != t):
+        # DECLARE_INTERACTIONS replaces only the specs list (get_interactions) of its ancestors; an EXTEND_INTERACTIONS chain (declare_interactions
+        # calling ..()) still reaches every descendant. So an EXTEND conflicts only with a descendant whose declare_interactions override drops the
+        # chain (no ..()): ops would flow into it. A DECLARE conflicts with any related replacer: converted, it would inherit what it replaced.
+        if rs[0][0] == "EXTEND_INTERACTIONS":
+            if any(u != t and u.startswith(t + "/") for u in override_replacers):
+                residue[t] = "interaction_related"
+                continue
+        elif any(related(t, u) for u in replacers if u != t):
             residue[t] = "interaction_related"
             continue
         kind0, rel, first, last, text = rs[0]

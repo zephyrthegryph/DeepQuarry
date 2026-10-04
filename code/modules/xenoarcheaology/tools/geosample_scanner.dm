@@ -105,9 +105,27 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/radiocarbon_spectrometer, "XenoarchSpectrometer")
+CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
+	interface("XenoarchSpectrometer")
+	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
+	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
+	op("set_scanner_rpm_delta", ui_act("set_scanner_rpm_delta", arg("delta", num())), then(PROC_REF(ui_act_set_scanner_rpm_delta)))
+	op("inject_radiation", ui_act("inject_radiation"), then(PROC_REF(ui_act_inject_radiation)))
 
-UI_DATA(/obj/machinery/radiocarbon_spectrometer, "last_scan_data:text", "scanning:num", "scan_progress:num", "scanner_rpm:num", "scanner_rpm_delta:num", "radiation:num", "heat:num", "merge:ui_data_obj_machinery_radiocarbon_spectrometer{scanned_item:unknown,scanned_item_desc:unknown,coolant:num}")
+/obj/machinery/radiocarbon_spectrometer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["last_scan_data"] = last_scan_data
+	data["scanning"] = scanning
+	data["scan_progress"] = scan_progress
+	data["scanner_rpm"] = scanner_rpm
+	data["scanner_rpm_delta"] = scanner_rpm_delta
+	data["radiation"] = radiation
+	data["heat"] = heat
+	var/list/merged_1 = ui_data_obj_machinery_radiocarbon_spectrometer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/radiocarbon_spectrometer's window data (declared on its UI_DATA row).
 /obj/machinery/radiocarbon_spectrometer/proc/ui_data_obj_machinery_radiocarbon_spectrometer(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -138,38 +156,33 @@ UI_DATA(/obj/machinery/radiocarbon_spectrometer, "last_scan_data:text", "scannin
 
 	return data
 
-/obj/machinery/radiocarbon_spectrometer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/radiocarbon_spectrometer, "scanItem", ui_act_scanitem)
-UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_scanitem)
+/obj/machinery/radiocarbon_spectrometer/proc/ui_act_scanitem(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
 	if(scanning)
 		stop_scanning()
 		return
 	if(!scanned_item())
-		to_chat(ui.user, span_warning("Insert an item to scan."))
+		to_chat(user, span_warning("Insert an item to scan."))
 		return
 	start_scanning()
-	to_chat(ui.user, span_notice("Scan initiated."))
+	to_chat(user, span_notice("Scan initiated."))
 	return TRUE
 
-UI_ACT(/obj/machinery/radiocarbon_spectrometer, "ejectItem", ui_act_ejectitem)
-UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_ejectitem)
+/obj/machinery/radiocarbon_spectrometer/proc/ui_act_ejectitem(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(scanned_item())
 		scanned_item().forceMove(loc)
 		rel_clear(src, nameof(/obj/machinery/radiocarbon_spectrometer::scanned_item))
 	return TRUE
 
-UI_ACT(/obj/machinery/radiocarbon_spectrometer, "set_scanner_rpm_delta", ui_act_set_scanner_rpm_delta, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_set_scanner_rpm_delta)
-	scanner_rpm_delta = CLAMP(params["delta"], -RPM_MAX_DELTA, RPM_MAX_DELTA)
+/obj/machinery/radiocarbon_spectrometer/proc/ui_act_set_scanner_rpm_delta(datum/act/op/A, delta)
+	add_fingerprint(A.actor)
+	scanner_rpm_delta = CLAMP(delta, -RPM_MAX_DELTA, RPM_MAX_DELTA)
 	return TRUE
 
-UI_ACT(/obj/machinery/radiocarbon_spectrometer, "inject_radiation", ui_act_inject_radiation)
-UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_inject_radiation)
+/obj/machinery/radiocarbon_spectrometer/proc/ui_act_inject_radiation(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(!scanning)
 		radiation = 0
 		return

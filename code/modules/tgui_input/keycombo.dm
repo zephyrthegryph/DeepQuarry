@@ -76,7 +76,10 @@
 	while (!entry && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
-DECLARE_UI(/datum/tgui_input_keycombo, "KeyComboModal")
+CAPABILITIES(/datum/tgui_input_keycombo)
+	interface("KeyComboModal")
+	op("submit", ui_act("submit", arg("entry", schema_text(4096))), then(PROC_REF(ui_act_submit)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
 /datum/tgui_input_keycombo/tgui_close(mob/user)
 	. = ..()
@@ -94,24 +97,20 @@ DECLARE_UI(/datum/tgui_input_keycombo, "KeyComboModal")
 	data["title"] = title
 	return data
 
-UI_DATA_REPLACE(/datum/tgui_input_keycombo, "merge:ui_data_datum_tgui_input_keycombo{timeout:num}")
-
 /// The computed part of /datum/tgui_input_keycombo's window data (declared on its UI_DATA row).
-/datum/tgui_input_keycombo/proc/ui_data_datum_tgui_input_keycombo(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_input_keycombo/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-UI_ACT(/datum/tgui_input_keycombo, "submit", ui_act_submit, UI_ARG_TEXT("entry"))
-UI_ACT_PROC(/datum/tgui_input_keycombo, ui_act_submit)
-	set_entry(params["entry"])
+/datum/tgui_input_keycombo/proc/ui_act_submit(datum/act/op/A, entry)
+	set_entry(entry)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_keycombo, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/tgui_input_keycombo, ui_act_cancel)
+/datum/tgui_input_keycombo/proc/ui_act_cancel(datum/act/op/A)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
