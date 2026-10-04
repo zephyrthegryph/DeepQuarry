@@ -349,7 +349,7 @@
 
 /datum/entry/part/bind/proc/origins()
 	switch(bind_kind)
-		if(BIND_HAND, BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET, BIND_INSIDE)
+		if(BIND_HAND, BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET, BIND_INSIDE, BIND_TK)
 			return ORIGIN_CLICK | ORIGIN_MENU | ORIGIN_AI
 		if(BIND_REMOTE)
 			return ORIGIN_CLICK | ORIGIN_MENU | ORIGIN_UI
@@ -382,6 +382,8 @@
 			return AFF_HOLD
 		if(BIND_REMOTE)
 			return AFF_INTERFACE
+		if(BIND_TK)
+			return AFF_TELEKINESIS
 	return 0
 
 /datum/entry/part/bind/proc/authority_mask()
@@ -396,7 +398,7 @@
 
 /// Is this a physical binding (hand, tool, item, stack, in_hand, at_target, inside)?
 /datum/entry/part/bind/proc/physical()
-	return bind_kind in list(BIND_HAND, BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET, BIND_INSIDE, BIND_CLICKS)
+	return bind_kind in list(BIND_HAND, BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET, BIND_INSIDE, BIND_CLICKS, BIND_TK)
 
 /// The origins the op accepts through this binding: the select origin() when the op names one.
 /proc/op_accepts_origin(datum/op_plan/P, datum/entry/part/bind/B, origin)

@@ -11,6 +11,12 @@
 /datum/unit_test/dq_gap/proc/run_gap()
 	return
 
+/// A conscious person with hands.
+/datum/unit_test/dq_gap/proc/person(turf/T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T || run_loc_floor_bottom_left)
+	H.enable_godmode()
+	return H
+
 /// A handler that answers OP_DECLINE leaves the click to the next candidate; one that does not decline is the only one that runs.
 /datum/unit_test/dq_gap/op_decline_falls_through
 /datum/unit_test/dq_gap/op_decline_falls_through/run_gap()
@@ -188,3 +194,97 @@
 	D.set_detect_state("")
 	test_time(2)
 	TEST_ASSERT_EQUAL(D.icon_state, "[base]", "and back")
+
+/// drag(): an item(T) op pinned to GESTURE_DRAG answers a mob dragged onto its holder, the dragged mob is A.held, and OP_DECLINE leaves the drag to the next taker.
+/datum/unit_test/dq_gap/input_drag_puts_the_dragged_mob_in_held
+/datum/unit_test/dq_gap/input_drag_puts_the_dragged_mob_in_held/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/victim = person()
+	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
+	var/datum/op_result/R = test_drag(H, victim, target)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the drag committed")
+	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "drag", "only the drag op ran (the hand ops are not a drag's)")
+	TEST_ASSERT_EQUAL(target.dragged_what, victim, "the dragged mob was A.held")
+	target.ran.Cut()
+	target.powered = FALSE
+	R = test_drag(H, victim, target)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_DECLINED, "an op that declines is not handled")
+	TEST_ASSERT(!length(target.ran), "and ran nothing")
+
+/// alt_click: a hand() op pinned to GESTURE_ALT answers an alt-click, and a plain click does not reach it.
+/datum/unit_test/dq_gap/input_alt_is_a_pinned_hand_op
+/datum/unit_test/dq_gap/input_alt_is_a_pinned_hand_op/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
+	var/datum/op_result/R = test_click(H, target, null, GESTURE_ALT)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the alt-click committed")
+	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "alt", "the alt op ran")
+	target.ran.Cut()
+	test_click(H, target, null, GESTURE_CLICK)
+	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "pet", "a plain click is the hand's Use, not the alt-click")
+	// an unconscious actor is refused by the actor half of the hand gate, ungated() or not
+	target.ran.Cut()
+	H.stat = UNCONSCIOUS
+	test_click(H, target, null, GESTURE_ALT)
+	TEST_ASSERT(!length(target.ran), "an unconscious actor alt-clicks nothing")
+
+/// A stance variant is the same op with stance(): the actor's stance picks the one that answers, and two ops of disjoint stances are no clash.
+/datum/unit_test/dq_gap/input_stance_picks_the_variant
+/datum/unit_test/dq_gap/input_stance_picks_the_variant/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
+	test_click(H, target, null)
+	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "pet", "peaceful: the stance(I_HELP) op")
+	target.ran.Cut()
+	H.set_combat_mode(TRUE)
+	test_click(H, target, null)
+	TEST_ASSERT_EQUAL(jointext(target.ran, ","), "bite", "hostile: the stance(I_HURT) op")
+
+/// tk(): a telekinetic actor does a tk() op on what its hands do not reach, and only then; a hand op is reached at range through the same provider.
+/datum/unit_test/dq_gap/input_tk_is_a_provider_for_what_no_hand_reaches
+/datum/unit_test/dq_gap/input_tk_is_a_provider_for_what_no_hand_reaches/run_gap()
+	var/turf/home = run_loc_floor_bottom_left
+	var/turf/away = locate(home.x + 3, home.y, home.z)
+	TEST_ASSERT_NOTNULL(away, "a turf three tiles away")
+	var/mob/living/carbon/human/H = person(home)
+	var/obj/gap_inputs/far = allocate(/obj/gap_inputs, away)
+	var/obj/gap_touch/far_both = allocate(/obj/gap_touch, away)
+	test_click(H, far, null)
+	TEST_ASSERT(!length(far.ran), "without telekinesis nothing reaches three tiles")
+	H.add_mutation(TK)
+	TEST_ASSERT(H.tk_ready(), "the mutation makes the actor tk_ready()")
+	var/datum/op_result/R = test_click(H, far, null)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "with it the click committed")
+	TEST_ASSERT_EQUAL(jointext(far.ran, ","), "tk", "the tk op went first, ahead of the hand ops the same provider reaches")
+	test_click(H, far_both, null)
+	TEST_ASSERT_EQUAL(jointext(far_both.ran, ","), "touch", "with no tk op, the hand op is done through the telekinesis provider")
+	// next to the actor the hand's op answers and the tk op is not offered
+	var/obj/gap_inputs/near = allocate(/obj/gap_inputs, home)
+	test_click(H, near, null)
+	TEST_ASSERT_EQUAL(jointext(near.ran, ","), "pet", "adjacent: the hand's op, not the tk one")
+	H.remove_mutation(TK)
+	far.ran.Cut()
+	test_click(H, far, null)
+	TEST_ASSERT(!length(far.ran), "without the mutation it is out of reach again")
+	// an unconscious telekinetic actor does nothing: the actor half of the hand gate holds for tk()
+	H.add_mutation(TK)
+	far.ran.Cut()
+	H.stat = UNCONSCIOUS
+	test_click(H, far, null)
+	TEST_ASSERT(!length(far.ran), "an unconscious actor reaches with nothing")
+
+/// OP_PASS: handled, the input not used up: the op commits and the next candidate answers too; a handler that does not pass ends the click.
+/datum/unit_test/dq_gap/op_pass_hands_the_click_on
+/datum/unit_test/dq_gap/op_pass_hands_the_click_on/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_pass/target = allocate(/obj/gap_pass, run_loc_floor_bottom_left)
+	var/obj/item/pen/thing = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	H.put_in_active_hand(thing)
+	var/datum/op_result/R = test_click(H, target, thing)
+	TEST_ASSERT_EQUAL(target.first, 1, "the first op ran")
+	TEST_ASSERT_EQUAL(target.second, 1, "and, having passed, so did the second")
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the chain's last result committed")
+	target.passes_it = FALSE
+	test_click(H, target, thing)
+	TEST_ASSERT_EQUAL(target.first, 2, "the first op ran again")
+	TEST_ASSERT_EQUAL(target.second, 1, "not passing, it took the click and the second did not run")

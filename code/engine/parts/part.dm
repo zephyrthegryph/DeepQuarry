@@ -149,6 +149,10 @@
 	part_name = "clicks"
 	bind_kind = BIND_CLICKS
 
+/datum/entry/part/bind/tk
+	part_name = "tk"
+	bind_kind = BIND_TK
+
 /// hand(): the actor's hand on the target.
 /proc/hand()
 	return part_make(/datum/entry/part/bind/hand)
@@ -198,6 +202,14 @@
 /// the input a player uses for the op an AI behaviour reaches by key.
 /proc/clicks()
 	return part_make(/datum/entry/part/bind/clicks)
+
+/// tk(): the hand's touch of a target the actor reaches only with its mind: out of every hand's reach, in sight, within TK_RANGE (the old INTERACT_TK; an
+/// attack_tk() override). The telekinesis provider (AFF_TELEKINESIS, tk_ready(): a TK mutation, or powered kinesis gloves) does it, so the actor half of the hand gate
+/// holds (a conscious actor who is not stunned) and the machine half never does: a mind has no posture or dexterity, and a machine's power is the op's own business.
+/// The op sits one tier above hand ops, because a TK actor's other providers also reach what it sees (design: any hand op at range): at range the op
+/// that means telekinesis goes first, and next to the actor the hand's op does.
+/proc/tk()
+	return part_make(/datum/entry/part/bind/tk)
 
 /// ui_act(args...) or ui_act("name", args...): a window button. The window action is the op's key unless a name is given. The arguments
 /// are arg(name, schema) parts.

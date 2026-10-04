@@ -503,3 +503,13 @@ Pinned by `code/modules/unit_tests/dq_hc_items2_stacks.dm` (written on the legac
 * **Marker beacons:** "Place" refuses with the old two reasons as message types; the colour questions are `open_request()`s over a plain list of the colour names plus "Random" (a placed beacon turns "Random" into a colour at once, where it used to pick one at its next redraw). A placed beacon with no colour picks one when it enters the world. The alt-click needs the actor capable (the hand binding's own rule) in place of the old `dq_marker_beacon_can_recolor()`.
 * **Supermatter:** its split is the stack's `split_asked()` plus the scorch; the pick-up stays a legacy entry.
 * **Not converted here:** the timed actions of the family (`om_task_*`: recipe builds, wound treatment, flag and trail light planting, log cutting, hide scraping) stay as they are; they are the jobs track.
+
+
+## fw-gaps3 (input kinds)
+
+* **Telekinesis is a provider, and it does any hand op in sight.** `/mob` declares `telekinetic_reach()`: `provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE)` while the mob is `tk_ready()` (a TK mutation or powered kinesis gloves,
+  not through a remote view). The old reach was the types that declared an `INTERACT_TK` (structures refused a plain grab); under the design a telekinetic actor presses a button or opens a door it sees within 15 tiles through any `hand()` op, compartments and requirements
+  still applying. An `INTERACT_TK` entry becomes a `tk()` op: the hand touch for a target no hand reaches, one tier above the hand ops, so at range it is what a telekinetic actor does. Unconverted legacy types keep the telekinesis adapter's own click (`tk_grab`).
+* **An alt-click op is `hand()` + `gesture(GESTURE_ALT)` + `ungated()`**: the actor half of the hand gate (unconscious or stunned actors are refused) is new for `INTERACT_ALT`, which had `REQ_INTERACTION_REACH` only; the machine half is not applied, as before.
+* **A dragged-onto op needs the actor to have an `AFF_MANIPULATE` provider** (`item(T)` does): the old `INTERACT_DRAG` asked for reach only, so a handless mob could drag a body into a cryo cell; it cannot now (design section 8: a hand op needs a hand).
+* **`INTERACTION_HANDLED_PASS` is `OP_PASS`**, per return; behaviour is the same (the op commits, the next candidate or the mob's own click handling follows).

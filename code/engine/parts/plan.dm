@@ -505,7 +505,7 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 // yielded tiers
 /datum/entry/part/bind/yielded_tier()
 	switch(bind_kind)
-		if(BIND_TOOL, BIND_ITEM, BIND_STACK)
+		if(BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_TK)
 			return OP_PRIORITY_PART
 	return OP_PRIORITY_NORMAL
 
@@ -554,6 +554,11 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 	if((A.priority_rel && A.priority_rel[2] == B.key) || (B.priority_rel && B.priority_rel[2] == A.key))
 		return null
 	if(op_conds_exclusive(A, B))
+		return null
+	// two ops that answer disjoint stances (stance(I_HELP) and stance(I_HURT): the old _AS interactions) never answer the same click
+	var/list/stances_a = LAZYACCESS(A.selects, "stance")
+	var/list/stances_b = LAZYACCESS(B.selects, "stance")
+	if(length(stances_a) && length(stances_b) && !length(stances_a & stances_b))
 		return null
 	for(var/datum/entry/part/bind/BA as anything in A.bindings)
 		for(var/datum/entry/part/bind/BB as anything in B.bindings)

@@ -36,6 +36,8 @@
 	var/started = FALSE
 	/// The slot units a put_in() moved, and the reservation they came from.
 	var/list/moved_units
+	/// TRUE once an effect answered OP_PASS: the op commits and the click goes on to the next candidate.
+	var/passed = FALSE
 
 /// A handler reads the value of a captured field here, never off the live holder (resume policies: CAPTURE the snapshot, LATEST the live value).
 /datum/act/op/proc/captured(name)
@@ -225,12 +227,13 @@
 			return stat_hold_reason(L, STAT_CAN_ACT) || /datum/msg/req_not_capable
 	// The hand gate: a hand() op needs a hand that works (conscious, not stunned), and on a machine what the old attack_hand passed first (power,
 	// posture, dexterity) unless it says ungated(): the old interactions that never called ..() (INTERACT_HAND_UNGATED) skipped hand_gate(), not the actor.
-	if(B && B.bind_kind == BIND_HAND && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
+	// A tk() op has the actor half of it and never the machine half: a mind has no posture or dexterity, and the old attack_tk never ran hand_gate().
+	if(B && (B.bind_kind == BIND_HAND || B.bind_kind == BIND_TK) && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
 		var/mob/living/toucher = A.actor
 		if(istype(toucher) && (toucher.stat != CONSCIOUS || toucher.incapacitated(INCAPACITATION_STUNNED)))
 			return /datum/msg/req_not_capable
 		var/atom/gated = A.target
-		if(istype(gated) && !LAZYACCESS(P.selects, "ungated"))
+		if(B.bind_kind == BIND_HAND && istype(gated) && !LAZYACCESS(P.selects, "ungated"))
 			var/why_hand = gated.op_hand_refusal(A)
 			if(why_hand)
 				return why_hand
@@ -875,6 +878,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/report = OP_OK
 	for(var/datum/entry/part/effect/F as anything in P.effects)
 		report = op_run_effect(A, F)
+		if(report == OP_PASS) // handled, input not used up: the effects after it still run, the op commits, and the click goes on (OP_PASS)
+			A.passed = TRUE
+			report = OP_OK
+			continue
 		if(report != OP_OK)
 			break
 	if(report == OP_OK)
@@ -1003,6 +1010,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		result.outcome = outcome
 		result.reason = reason
 		result.rolled = A.rolled
+		result.passed = A.passed && outcome == ACT_COMMITTED
 	TEST_REC_OUTCOME(A.key, outcome, reason, actor)
 	var/committed = (outcome == ACT_COMMITTED)
 	if(committed && A.rolled && P)

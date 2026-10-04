@@ -176,6 +176,12 @@ Unit: one host type `T` with exactly one `DECLARE_INTERACTIONS(T, specs...)` or 
 | `INTERACT_HAND_UNGATED(name, PROC_REF(h))` (a touch whose old `attack_hand` never called `..()`: no `hand_gate()`) | `op("key", hand(), ungated(), label(name), then(PROC_REF(h)))` |
 | `INTERACT_VERB(name, PROC_REF(h))` (an object verb: the Menu only, no click) | `op("key", menu(), label(name), then(PROC_REF(h)))` |
 | `INTERACT_VERB(name, PROC_REF(h), REQ_IN_INVENTORY)` (the old `set src in usr`) | `op("key", menu(), label(name), needs(carried()), then(PROC_REF(h)))` |
+| `INTERACT_SELF(name, PROC_REF(h))` (use in hand; unlike USE its return counts) | `op("key", in_hand(), label(name), then(PROC_REF(h)))`, falsy returns `OP_DECLINE` |
+| `INTERACT_ALT(name, PROC_REF(h))` (alt-click on the holder; the old `click_alt` ran no `hand_gate()`) | `op("key", hand(), ungated(), gesture(GESTURE_ALT), label(name), then(PROC_REF(h)))`, falsy returns `OP_DECLINE` |
+| `INTERACT_DRAG(name, PROC_REF(h))` (a mob or item dragged onto the holder; the handler's second parameter is the dragged atom) | `op("key", item(/<the parameter's type, /atom/movable if untyped>), gesture(GESTURE_DRAG), label(name), then(PROC_REF(h)))`, the dragged atom is `A.held`, falsy returns `OP_DECLINE` |
+| `INTERACT_TK(name, PROC_REF(h))` (a telekinetic use at range, the old `attack_tk`) | `op("key", tk(), label(name), then(PROC_REF(h)))`, falsy returns `OP_DECLINE` (below) |
+| `INTERACT_<kind>_AS(I_X, ...)`, `_HOSTILE` (`I_HURT`), `_PEACEFUL` (`I_HELP`) | the same op with `stance(I_X)` added (`_AS` takes the stance first: `INTERACT_INSERT_AS(I_X, /held, h, name)`) |
+| `INTERACT_<kind>_DEFAULT`, `_DEFAULT_AS` (the type's default for the input, tried after everything else it offers) | the same op with `priority(OP_PRIORITY_DEFAULT)` (and `stance()`) |
 | a `null` name | no `label()` (the old name was derived from the proc name) |
 | handler `h(mob/a, obj/item/w, datum/interaction/i)` | `h(datum/act/op/A)`; `var/mob/a = A.actor` and `var/<w's type>/w = A.held` as the first body lines (after the leading settings) when used |
 
@@ -192,7 +198,8 @@ Evidence for the verb: the duffelbag tilt (`241131f467`), `INTERACT_VERB("Adjust
 
 Why the returns matter: an old HAND, INSERT or ITEM effect that returned falsy let the next candidate (or the type's default) have the input. The op form says the same with `OP_DECLINE` (next section): every
 falsy return (`return FALSE`, `return 0`, `return null`, a bare `return`) becomes `return OP_DECLINE`, and a handler converts only when every return is one of those or `TRUE` and the last statement is a return (a handler that falls off its end
-answered falsy before and would commit now: residue `handler_returns`). An `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` is the `passes()` part and stays residue.
+answered falsy before and would commit now: residue `handler_returns`). An `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` (handled, the input not used up: the old caller let `afterattack` or the loot panel follow) is `return OP_PASS`
+(`OP_PASS`, below), in every kind; the constant read any other way (compared, stored) is residue `body_uses`.
 
 **Hierarchies.** `DECLARE_INTERACTIONS` replaces only the specs list (`get_interactions`) of its ancestors, while an `EXTEND_INTERACTIONS` chain (`declare_interactions` calling `..()`) reaches every descendant, DECLARE or not. So an `EXTEND` converts whatever its ancestors declare (155 of the 205 types the old rule held back were an `EXTEND` under a `DECLARE`); it conflicts only with a descendant whose `declare_interactions` override drops the chain (no `..()`), because ops would flow into it. A `DECLARE` conflicts with any related replacer (a `DECLARE` or an override without `..()`): converted, it would inherit the ops of what it replaced. The design's way out is `without(key)` of the parent's ops plus the child's own ops, but it covers 7 types today (a `DECLARE` under or over another), so the codemod leaves them to hand work (`interaction_related`).
 
@@ -200,10 +207,21 @@ A type converts only when:
 - it is not in conflict with a replacer, as the paragraph above defines it;
 - every spec is one of the four kinds above with no requirement argument (`REQ_*`), a literal or `null` name, and `PROC_REF(h)` / `TYPE_PROC_REF(T, h)` as the effect;
 - each handler is defined once on `T` with three parameters, no related type defines the same name, and nothing else mentions it (a call, a `PROC_REF`, a `..()`);
-- the body does not use the third parameter, `INTERACTION_HANDLED_PASS`, `..()` or a local named `A`.
+- the body does not use the third parameter, `INTERACTION_HANDLED_PASS` other than as `return INTERACTION_HANDLED_PASS`, `..()` or a local named `A`;
+- no two ops of the type take the same input at the same tier for a stance in common (the clash rule of the table build; two `stance()` ops of disjoint stances, or a `_DEFAULT` beside a plain one, do not clash): residue `interaction_overlap`.
 
-Residue codes: `interaction_forms` (an `EXTEND_INTERACTIONS`, a `declare_interactions` override or a datum interaction type, a second row, a name or effect that is not a literal), `interaction_related`, `interaction_kind` (`INTERACT_HAND_UNGATED`, `INTERACT_ALT`, `INTERACT_SELF`, `INTERACT_VERB`,
-the `_AS`, `_HOSTILE`, `_PEACEFUL`, `_DEFAULT`, `INTERACT_SILICON`, `ROBOT`, `TK`, `OBSERVER` shapes), `requires`, `effect_expr`, `handler_shape`, `handler_shared`, `handler_returns`, `body_uses`, `key_clash`.
+Residue codes: `interaction_forms` (an `EXTEND_INTERACTIONS`, a `declare_interactions` override or a datum interaction type, a second row, a name, stance or effect that is not a literal), `interaction_related`, `interaction_kind` (`INTERACT_SILICON`, `ROBOT`, `OBSERVER`
+shapes, and any spec the table above does not name), `interaction_overlap`, `requires`, `effect_expr`, `handler_shape`, `handler_shared`, `handler_returns`, `body_uses`, `key_clash`.
+
+**The input forms behind the table** (tests `dq_gap/input_drag_puts_the_dragged_mob_in_held`, `input_alt_is_a_pinned_hand_op`, `input_stance_picks_the_variant`, `input_tk_is_a_provider_for_what_no_hand_reaches`, `op_pass_hands_the_click_on`).
+- **drag.** A drag onto the holder resolves as a click with gesture `GESTURE_DRAG` whose held atom is the dragged one, so `item(T)` is the binding (T the dragged thing's type: `/mob/living` for a body scanner) and `gesture(GESTURE_DRAG)` the pin; a drag answers only drag ops, never the hand's.
+- **alt-click.** `hand()` pinned to `GESTURE_ALT`. A `hand()` binding applies the hand gate (an unconscious or stunned actor is refused, and on a machine one that does not work, an actor who is lying or cannot use their hands); the old alt-click never ran `hand_gate()`, so the op says `ungated()` (the actor half always holds).
+- **stance.** `stance(I_X, ...)` drops the op from a click whose actor's `input_stance()` is not listed (menu picks and `perform_op()` by key ignore it); ops of disjoint stances never clash.
+- **telekinesis.** `tk()` is a hand touch that only the telekinesis provider does, and only on a target no hand reaches (next to the actor, or on it, the hand's op answers: the old tk adapter ran for ranged clicks only). The provider is `telekinetic_reach()`,
+  declared on `/mob`: `provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE)` while `tk_ready()` (a TK mutation, or powered kinesis gloves, and not through a remote view); `add_mutation(TK)`, `remove_mutation(TK)` and a glove's power spent call
+  `tk_refresh()`. As the design says, it is a plain `AFF_MANIPULATE` provider, so a telekinetic actor does any `hand()` op on a target it sees within `TK_RANGE` (the old reach was only the types that declared an `INTERACT_TK`); a `tk()` op sits one tier above hand ops so that at range
+  the op that means telekinesis goes first. Compartments, requirements and the actor half of the hand gate apply; the machine half never does (a mind has no posture or dexterity).
+- **pass-through.** `OP_PASS`, below.
 
 ## OP_DECLINE: an op handler that is not handled
 
@@ -219,6 +237,19 @@ Rules. Decline from the first statement that knows, before anything is written: 
 `ACT_DECLINED` (never a filter, not in `ACT_ANY`); `perform_op()` and the test driver return it in `/datum/op_result` when every candidate declined, a player's click returns null (the mob's own click handling runs). An op that is waiting
 (`wait()` steps) and declines at its final effect has already spent the wait: decline is for immediate ops. `interact_declare.py` applies the table to `INTERACT_HAND`, `INTERACT_INSERT` and `INTERACT_ITEM` handlers
 (tools/dx/codemods/interact_declare.py); the wave that lands it converted 24 types (26 ops). Tests: `dq_gap/op_decline_falls_through`, `dq_gap/op_decline_alone_is_not_handled`.
+
+## OP_PASS: handled, the input not used up
+
+A `then()` handler that answers `OP_PASS` commits the op (its costs, notice and feedback happen) and says the input is not used up: the click goes on to the next candidate whose conditions hold, then the next, and, when the chain ends on a pass, to the
+mob's own click handling (a player's click returns null; a driver-built click returns the last result, whose `passed` is TRUE when it ended on a pass). It is the per-return form of the `passes()` part, which passes after every commit. The effects after the one that answered
+still run.
+
+| Old | New |
+|---|---|
+| `return INTERACTION_HANDLED_PASS` in an interaction handler | `return OP_PASS` |
+| an op that always passes | `passes()` |
+
+Test: `dq_gap/op_pass_hands_the_click_on`.
 
 ## DECLARE_PERIODIC_WHILE and DECLARE_REPEAT -> every()
 

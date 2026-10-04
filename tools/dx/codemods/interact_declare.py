@@ -16,7 +16,26 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_declare import File, SETTINGS, body_range, related, split_args, strip_code, words_in  # noqa: E402
 
 SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/interactions/")
-KINDS = {"INTERACT_USE": "in_hand()", "INTERACT_HAND": "hand()", "INTERACT_ITEM": "item(/obj/item)", "INTERACT_INSERT": None, "INTERACT_VERB": "menu()", "INTERACT_HAND_UNGATED": "hand()"}
+# The base shape of each compact spec, as the engine reads it (code/datums/interactions/compact.dm): the binding and the parts the op needs beside it.
+#   in_hand() / hand() / item(T) / menu() as before; ALT is a hand() pinned to the alt-click gesture and never behind the hand gate (the old click_alt ran
+#   no hand_gate()), DRAG an item() of the dragged thing's type pinned to the drag gesture (the dragged atom is A.held), TK a tk() binding.
+KINDS = {
+    "USE": "in_hand()",
+    "SELF": "in_hand()",
+    "HAND": "hand()",
+    "HAND_UNGATED": "hand()",
+    "ITEM": "item(/obj/item)",
+    "INSERT": None,
+    "VERB": "menu()",
+    "ALT": "hand()",
+    "DRAG": "item(/atom/movable)",
+    "TK": "tk()",
+}
+# the macro's own name: INTERACT_<BASE><suffix>; _AS takes the stance as its first argument, _HOSTILE and _PEACEFUL fix it, _DEFAULT is the type's default for
+# the input (tried after everything else it offers)
+SPEC_NAME = re.compile(r"^INTERACT_(USE|SELF|HAND_UNGATED|HAND|ITEM|INSERT|DRAG|ALT|TK|VERB)(_AS|_HOSTILE|_PEACEFUL|_DEFAULT_AS|_DEFAULT)?$")
+STANCE_LITERAL = re.compile(r"^I_(HELP|DISARM|GRAB|HURT)$")
+FALLS_THROUGH = ("USE", "VERB")  # an effect whose return is ignored (always handled): every other kind falls through to the next candidate on a falsy return
 HEAD = re.compile(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\((/[\w/]+)\s*,")
 
 
@@ -52,6 +71,18 @@ def call_end(lines, i):
 
 def call_text(lines, i, j):
     return " ".join(l.rstrip().rstrip(chr(92)).strip() for l in lines[i : j + 1])
+
+
+def binding_of(spec, h):
+    """The binding text and the pinned gesture (or None) of one spec."""
+    kind = spec["kind"]
+    if spec["held"]:
+        return "item(%s)" % spec["held"], None
+    if kind == "DRAG":
+        return "item(/%s)" % h["held_type"], "GESTURE_DRAG"
+    if kind == "ALT":
+        return KINDS[kind], "GESTURE_ALT"
+    return KINDS[kind], None
 
 
 def main():
@@ -155,19 +186,31 @@ def main():
             if not p:
                 continue
             m = re.match(r"^(INTERACT_[A-Z_]+)\((.*)\)$", p, re.S)
-            if not m or m.group(1) not in KINDS:
+            nm = SPEC_NAME.match(m.group(1)) if m else None
+            if not nm:
                 bad = "interaction_kind"
                 break
             a = split_args(m.group(2))
-            kind = m.group(1)
-            if kind == "INTERACT_INSERT":
+            kind = nm.group(1)
+            suffix = nm.group(2) or ""
+            stance = None
+            if suffix in ("_AS", "_DEFAULT_AS"):
+                if not a or not STANCE_LITERAL.match(a[0]):
+                    bad = "interaction_forms"
+                    break
+                stance, a = a[0], a[1:]
+            elif suffix == "_HOSTILE":
+                stance = "I_HURT"
+            elif suffix == "_PEACEFUL":
+                stance = "I_HELP"
+            if kind == "INSERT":
                 if len(a) != 3:
                     bad = "requires" if len(a) > 3 else "interaction_forms"
                     break
                 held_type, effect, name = a
             else:
                 carried = False
-                if kind == "INTERACT_VERB" and len(a) == 3 and a[2] == "REQ_IN_INVENTORY":
+                if kind == "VERB" and len(a) == 3 and a[2] == "REQ_IN_INVENTORY":
                     a = a[:2]
                     carried = True
                 if len(a) != 2:
@@ -185,7 +228,7 @@ def main():
             if held_type is not None and not re.match(r"^/[\w/]+$", held_type):
                 bad = "interaction_forms"
                 break
-            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": kind != "INTERACT_INSERT" and carried})
+            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": kind != "INSERT" and carried, "stance": stance, "default": suffix.startswith("_DEFAULT")})
         if bad:
             residue[t] = bad
             continue
@@ -216,13 +259,15 @@ def main():
             body_lines = f.lines[fb : lb + 1]
             body = "\n".join(strip_code(l) for l in body_lines)
             n_actor, n_held, n_inter = [p.split("/")[-1] for p in ps]
-            if words_in(body, n_inter) or "INTERACTION_HANDLED_PASS" in body or re.search(r"\.\.\(", body) or words_in(body, "A"):
+            # INTERACTION_HANDLED_PASS (handled, the input not used up) is read only as a return value: `return OP_PASS`; any other use of it is residue
+            stray_pass = re.sub(r"\breturn\s+INTERACTION_HANDLED_PASS\b", "", body)
+            if words_in(body, n_inter) or "INTERACTION_HANDLED_PASS" in stray_pass or re.search(r"\.\.\(", body) or words_in(body, "A"):
                 bad = "body_uses"
                 break
-            if s["kind"] == "INTERACT_VERB" and words_in(body, n_held):
+            if s["kind"] == "VERB" and words_in(body, n_held):
                 bad = "body_uses"
                 break
-            if s["kind"] not in ("INTERACT_USE", "INTERACT_VERB"):
+            if s["kind"] not in FALLS_THROUGH:
                 # the old resolver let a falsy return fall through to the next candidate: a falsy return (FALSE, 0, null, bare) becomes OP_DECLINE, which the
                 # op engine reads the same way; the handler must end on a return so a fall-off-the-end (falsy then, truthy now) cannot change meaning
                 ret_ok = True
@@ -233,7 +278,7 @@ def main():
                         continue
                     last_stmt = t2
                     for rm in re.finditer(r"\breturn\b(.*)$", t2):
-                        if rm.group(1).strip() not in ("", "TRUE", "FALSE", "0", "null"):
+                        if rm.group(1).strip() not in ("", "TRUE", "FALSE", "0", "null", "INTERACTION_HANDLED_PASS"):
                             ret_ok = False
                     if re.match(r"^\.\s*=", t2):
                         ret_ok = False
@@ -241,6 +286,8 @@ def main():
                     bad = "handler_returns"
                     break
             held_type = "obj/item"
+            if s["kind"] == "DRAG":
+                held_type = "atom/movable"
             if "/" in ps[1].replace("var/", ""):
                 held_type = ps[1].replace("var/", "").rsplit("/", 1)[0]
             actor_type = "mob"
@@ -265,6 +312,21 @@ def main():
         if bad:
             residue[t] = bad
             continue
+        # two ops of one type that take the same input at the same tier for a stance in common are a build error (the clash rule); the old resolver took the
+        # first one meant and fell through on a falsy return, so the order is the declaration's, which the engine keeps, but the pair has to say so by hand
+        sigs = {}
+        for h in handlers:
+            sp = h["spec"]
+            h["binding"], h["gesture"] = binding_of(sp, h)
+            sig = (h["binding"], h["gesture"], sp["default"])
+            overlap = sigs.setdefault(sig, [])
+            if any(o is None or sp["stance"] is None or o == sp["stance"] for o in overlap):
+                bad = "interaction_overlap"
+                break
+            overlap.append(sp["stance"])
+        if bad:
+            residue[t] = bad
+            continue
         plans[t] = {"type": t, "decl": rs[0], "handlers": handlers}
     converted_ops = sum(len(p["handlers"]) for p in plans.values())
     if not check:
@@ -273,10 +335,15 @@ def main():
             entries = []
             for h in plan["handlers"]:
                 s = h["spec"]
-                binding = s["held"] and "item(%s)" % s["held"] or KINDS[s["kind"]]
-                parts = ['op("%s"' % h["key"], binding]
-                if s["kind"] == "INTERACT_HAND_UNGATED":
+                parts = ['op("%s"' % h["key"], h["binding"]]
+                if s["kind"] in ("HAND_UNGATED", "ALT"):
                     parts.append("ungated()")
+                if h["gesture"]:
+                    parts.append("gesture(%s)" % h["gesture"])
+                if s["stance"]:
+                    parts.append("stance(%s)" % s["stance"])
+                if s["default"]:
+                    parts.append("priority(OP_PRIORITY_DEFAULT)")
                 if s["name"]:
                     parts.append("label(%s)" % s["name"])
                 if s.get("carried"):
@@ -314,9 +381,10 @@ def main():
                         extra = block
                     else:
                         f.lines[after] = f.lines[after] + block
-                if s["kind"] not in ("INTERACT_USE", "INTERACT_VERB"):
-                    for k3 in range(h["first"], h["last"] + 1):
+                for k3 in range(h["first"], h["last"] + 1):
+                    if s["kind"] not in FALLS_THROUGH:
                         f.lines[k3] = re.sub(r"\breturn\b(?:\s+(?:FALSE|0|null))?(?=\s*(?://.*)?$)", "return OP_DECLINE", f.lines[k3])
+                    f.lines[k3] = re.sub(r"\breturn\s+INTERACTION_HANDLED_PASS\b", "return OP_PASS", f.lines[k3])
                 f.lines[h["idx"]] = sig + extra
                 f.dirty = True
             kind0, rel, first, last, text = plan["decl"]

@@ -122,7 +122,7 @@
 /proc/op_passes_chain(datum/op_cand/winner, datum/op_result/result, datum/op_resolution/R, defer_legacy)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/op_cand/last = winner
-	while(last.oplan.passes && result?.outcome == ACT_COMMITTED)
+	while((last.oplan.passes || result?.passed) && result?.outcome == ACT_COMMITTED)
 		var/datum/op_cand/next = null
 		var/seen = FALSE
 		for(var/datum/op_cand/C as anything in R.ordered)

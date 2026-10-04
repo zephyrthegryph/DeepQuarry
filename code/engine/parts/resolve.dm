@@ -175,6 +175,12 @@
 			return side == CAND_TARGET
 		if(BIND_HAND, BIND_REMOTE)
 			return side == CAND_TARGET
+		if(BIND_TK)
+			// telekinesis answers what no hand reaches: a target next to the actor (or on it) is the hand's, as the old tk adapter ran only for a ranged click
+			if(side != CAND_TARGET || !actor || !isatom(target))
+				return FALSE
+			var/atom/far = target
+			return far.loc != actor && !far.Adjacent(actor)
 		if(BIND_MENU, BIND_AI)
 			return TRUE // chosen by key: the actor's own op (an ability, a natural weapon) is reached from either side
 		if(BIND_CLICKS)

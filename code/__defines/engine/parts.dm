@@ -30,6 +30,8 @@
 #define BIND_AI "ai"
 /// The actor's own op, reached by the actor clicking something (a natural weapon): the op sits on the actor, and the clicked thing is its target.
 #define BIND_CLICKS "clicks"
+/// Telekinesis: the hand's touch of a target out of every hand's reach, done by the telekinesis provider (an old INTERACT_TK).
+#define BIND_TK "tk"
 
 /// The op tiers (section 8), highest first. OP_PRIORITY_* master values are kept; ATTACK is the one master lacks.
 #ifndef OP_PRIORITY_ATTACK

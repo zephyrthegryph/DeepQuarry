@@ -129,5 +129,7 @@
 	var/reason
 	/// FALSE when the op's chance() failed; otherwise TRUE.
 	var/rolled = TRUE
+	/// TRUE when the op committed and said the input is not used up (an effect answered OP_PASS): the click went on to the next candidate.
+	var/passed = FALSE
 	/// ORIGIN_*: where the input arrived.
 	var/origin

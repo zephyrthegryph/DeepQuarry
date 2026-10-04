@@ -18,6 +18,7 @@
 /obj/item/clothing/gloves/telekinetic/proc/use_grip_power(mob/user,play_sound)
 	if(cell)
 		cell.checked_use(use_power_amount)
+		user?.tk_refresh() // the power left may be too little for the next reach
 		if(play_sound)
 			if(cell.charge < use_power_amount)
 				to_chat(user,span_danger("\The [src] bwoop as it runs out of power."))
