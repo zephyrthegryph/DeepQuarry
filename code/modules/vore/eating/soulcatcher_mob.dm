@@ -103,6 +103,9 @@
 	src.nsay_vore_act()
 
 /mob/proc/nsay_vore_act(message)
+	return gem_say_stage(message)
+
+/mob/proc/gem_say_stage(message, prompted = FALSE)
 	if(stat != CONSCIOUS)
 		to_chat(src, span_warning("You can't use NSay Vore while unconscious."))
 		return
@@ -114,10 +117,9 @@
 		return
 
 	if(!message)
-		var/_answer_a1 = rerun_ask(src, "a1", PROC_REF(nsay_vore_act), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
-		if(isnull(_answer_a1))
+		if(!prompted)
+			open_request(src, /datum/prompt/text/soulcatcher_speech, PROC_REF(gem_say_answered), answerer = src, question = "Type a message to say.", title = "Speak into Soulcatcher", multiline = TRUE, encode = FALSE, max_len = MAX_TGUI_INPUT)
 			return
-		message = _answer_a1
 	if(message)
 		var/sane_message = sanitize(message)
 		gem.use_speech(sane_message, src)
@@ -137,6 +139,9 @@
 	src.nme_vore_act()
 
 /mob/proc/nme_vore_act(message)
+	return gem_emote_stage(message)
+
+/mob/proc/gem_emote_stage(message, prompted = FALSE)
 	if(stat != CONSCIOUS)
 		to_chat(src, span_warning("You can't use NMe Vore while unconscious."))
 		return
@@ -148,10 +153,9 @@
 		return
 
 	if(!message)
-		var/_answer_a2 = rerun_ask(src, "a2", PROC_REF(nme_vore_act), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
-		if(isnull(_answer_a2))
+		if(!prompted)
+			open_request(src, /datum/prompt/text/soulcatcher_speech, PROC_REF(gem_emote_answered), answerer = src, question = "Type an action to perform.", title = "Emote into Soulcatcher", multiline = TRUE, encode = FALSE, max_len = MAX_TGUI_INPUT)
 			return
-		message = _answer_a2
 	if(message)
 		var/sane_message = sanitize(message)
 		gem.use_emote(sane_message, src)
@@ -215,8 +219,11 @@
 	set desc = "Speak to your Soulcatcher (circumventing SR speaking)."
 	set category = VERB_CAT_SOULCATCHER
 
-	var/message = rerun_ask(src, "a3", VERB_REF(nsay_brain), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", multiline = TRUE)
-	if(isnull(message))
+	return gem_brain_say_stage()
+
+/mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_say_stage(message, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/text/soulcatcher_speech, PROC_REF(gem_brain_say_answered), answerer = src, question = "Type a message to say.", title = "Speak into Soulcatcher", multiline = TRUE)
 		return
 	if(message)
 		gem().use_speech(message, src)
@@ -226,18 +233,24 @@
 	set desc = "Emote to your Soulcatcher (circumventing SR speaking)."
 	set category = VERB_CAT_SOULCATCHER
 
-	var/message = rerun_ask(src, "a4", VERB_REF(nme_brain), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", multiline = TRUE)
-	if(isnull(message))
+	return gem_brain_emote_stage()
+
+/mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_emote_stage(message, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/text/soulcatcher_speech, PROC_REF(gem_brain_emote_answered), answerer = src, question = "Type an action to perform.", title = "Emote into Soulcatcher", multiline = TRUE)
 		return
 	if(message)
 		gem().use_emote(message, src)
 
 // Allows the captured owner to transfer themselves to valid nearby objects
 /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self()
-	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Transfer Self"
 	set desc = "Transfer youself while being in your own soulcatcher into a nearby Sleevemate or MMI."
 	set category = VERB_CAT_SOULCATCHER
+	return soul_transfer_stage()
+
+/mob/living/carbon/brain/caught_soul/vore/proc/soul_transfer_stage(obj/selected_target, prompted = FALSE)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 
 	if(eyeobj)
 		to_chat(src, span_warning("You can't do that while SR projecting!"))
@@ -250,7 +263,10 @@
 	if(!valid_objects || !valid_objects.len)
 		return
 
-	var/obj/target = rerun_ask(src, "a5", PROC_REF(transfer_self), args, /datum/om/prompt/choice, message = "Select where you want to store your own mind into.", title = "Mind Transfer Target", choices = valid_objects)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/soulcatcher_transfer, PROC_REF(soul_transfer_answered), answerer = src, question = "Select where you want to store your own mind into.", title = "Mind Transfer Target", choices = valid_objects)
+		return
+	var/obj/target = selected_target
 	if(isnull(target))
 		return
 
@@ -271,3 +287,77 @@
 /// the gem this refers to (a relation view: null once it is deleted).
 /mob/living/carbon/brain/caught_soul/vore/proc/gem() as /obj/soulgem
 	return gem
+
+/mob/proc/gem_say_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(gem_say_apply), A)
+	if(!caught.ok)
+		stack_trace("Soulcatcher gem_say replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/proc/gem_say_apply(datum/act/request/A)
+	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
+	return gem_say_stage(ask.answer_value, TRUE)
+
+/mob/proc/gem_emote_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(gem_emote_apply), A)
+	if(!caught.ok)
+		stack_trace("Soulcatcher gem_emote replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/proc/gem_emote_apply(datum/act/request/A)
+	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
+	return gem_emote_stage(ask.answer_value, TRUE)
+
+/mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_say_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(gem_brain_say_apply), A)
+	if(!caught.ok)
+		stack_trace("Soulcatcher gem_brain_say replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_say_apply(datum/act/request/A)
+	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
+	return gem_brain_say_stage(ask.answer_value, TRUE)
+
+/mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_emote_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(gem_brain_emote_apply), A)
+	if(!caught.ok)
+		stack_trace("Soulcatcher gem_brain_emote replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_emote_apply(datum/act/request/A)
+	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
+	return gem_brain_emote_stage(ask.answer_value, TRUE)
+
+/mob/living/carbon/brain/caught_soul/vore/proc/soul_transfer_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(soul_transfer_apply), A)
+	if(!caught.ok)
+		stack_trace("Soulcatcher transfer replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/carbon/brain/caught_soul/vore/proc/soul_transfer_apply(datum/act/request/A)
+	var/datum/prompt/choice/soulcatcher_transfer/ask = A.answer
+	return soul_transfer_stage(ask.answer_value, TRUE)
+
+/datum/prompt/choice/soulcatcher_transfer
+	timeout = 0
+
+/datum/prompt/choice/soulcatcher_transfer/recheck_extra()
+	if(!isnull(answer_value))
+		var/obj/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
