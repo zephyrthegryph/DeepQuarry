@@ -66,6 +66,10 @@
 	/// This survives reversible progress and makes milestones exactly-once.
 	var/settled_project_multiplier = 0
 
+CAPABILITIES(/datum/contract/social)
+	owns_many(nameof(stakeholder_proposals))
+	owns_many(nameof(stakeholder_roles))
+
 /datum/contract/social/New()
 	. = ..()
 	own_take_all(src, nameof(stakeholder_roles))
@@ -137,7 +141,7 @@
 /datum/contract/social/proc/add_stakeholder_role(datum/contract_stakeholder_role/role)
 	if(!role?.id || stakeholder_roles?[role.id])
 		return FALSE
-	own_put(src, nameof(stakeholder_roles), role.id, role)
+	rel_add(src, nameof(stakeholder_roles), role, role.id)
 	return TRUE
 
 /// Returns each active crew account once. Unit tests may supply a synthetic
@@ -264,7 +268,7 @@
 	proposal.status = CONTRACT_STAKEHOLDER_APPROVED
 	proposal.approved_weight = 1
 	proposal.contribution = max(proposal.contribution, contributions["[proposal.account_number]"] || 0)
-	own_put(src, nameof(stakeholder_proposals), key, proposal)
+	rel_add(src, nameof(stakeholder_proposals), proposal, key)
 	audit(CONTRACT_AUDIT_PROGRESS, "[proposal.account_name] joined [role.title].")
 	emit_contract_event(CONTRACT_EVENT_STAKEHOLDER_APPROVED, list(
 		"contract_id" = id,

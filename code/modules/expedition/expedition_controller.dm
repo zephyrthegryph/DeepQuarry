@@ -98,6 +98,7 @@ SYSTEM_DEF(expedition)
 
 CAPABILITIES(/datum/system/expedition)
 	owns_many(nameof(descriptors))
+	owns_many(nameof(sites))
 
 /datum/system/expedition/initialize()
 	initialized = TRUE
@@ -479,7 +480,7 @@ CAPABILITIES(/datum/system/expedition)
 		flight_plan.generation_stage = "Validating objectives and approach"
 
 	site.status = EXP_STATUS_READY
-	own_put(src, nameof(sites), "[z]", site)
+	rel_add(src, nameof(sites), site, "[z]")
 	demand()
 	SSflight?.register_expedition(site)
 	log_world("Expedition: generated [site.name] on z[z] (seed [generation_seed], difficulty [difficulty][mission ? ", mission '[mission.name]'" : ""]).")

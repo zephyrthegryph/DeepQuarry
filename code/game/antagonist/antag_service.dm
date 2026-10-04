@@ -119,6 +119,6 @@ SYSTEM_DEF(antag)
 /datum/system/antag/proc/populate_antag_type_list()
 	for(var/antag_type in subtypesof(/datum/antagonist))
 		var/datum/antagonist/antag_daturn = new antag_type
-		own_put(src, nameof(all_antag_types), antag_daturn.id, antag_daturn)
+		rel_add(src, nameof(all_antag_types), antag_daturn, antag_daturn.id)
 		all_antag_spawnpoints[antag_daturn.landmark_id] = list()
 		antag_names_to_ids[antag_daturn.role_text] = antag_daturn.id

@@ -177,6 +177,7 @@
 
 CAPABILITIES(/obj/item/organ/internal/augment/armmounted/shoulder/multiple)
 	owns_many(nameof(synths))
+	owns_many(nameof(integrated_tools))
 
 /// The tools this augment carries (constant per type).
 TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, tool_types, list( \

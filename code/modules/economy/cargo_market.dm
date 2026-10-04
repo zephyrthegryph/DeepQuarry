@@ -364,7 +364,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			continue
 		var/datum/cargo_market_counterparty/counterparty = new counterparty_type
 		counterparty.rotate_cover()
-		own_put(src, nameof(market_counterparties), counterparty.id, counterparty)
+		rel_add(src, nameof(market_counterparties), counterparty, counterparty.id)
 	refresh_cargo_market()
 
 /datum/system/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
@@ -393,12 +393,12 @@ CAPABILITIES(/datum/cargo_market_bid)
 	for(var/listing_id in listing_ids)
 		var/datum/cargo_market_listing/existing_listing = market_listings?[listing_id]
 		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && BEFORE(src, existing_listing.expires_at, CLOCK_WORLD)))
-			own_put(src, nameof(market_listings), listing_id, null) // disposes of the owned listing
+			rel_add(src, nameof(market_listings), null, listing_id) // disposes of the owned listing
 	var/list/bid_ids = market_bids?.Copy()
 	for(var/bid_id in bid_ids)
 		var/datum/cargo_market_bid/existing_bid = market_bids?[bid_id]
 		if(!(existing_bid.reservation_key && !existing_bid.completed_at && BEFORE(src, existing_bid.expires_at, CLOCK_WORLD)))
-			own_put(src, nameof(market_bids), bid_id, null) // disposes of the owned bid
+			rel_add(src, nameof(market_bids), null, bid_id) // disposes of the owned bid
 	market_generation++
 	var/expiry = world.time + CARGO_MARKET_REFRESH_INTERVAL
 	for(var/counterparty_id in market_counterparties)
@@ -421,7 +421,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			listing.stock = rand(1, 4)
 			listing.expires_at = expiry
 			listing.cover_name = counterparty.active_cover_name
-			own_put(src, nameof(market_listings), listing.id, listing)
+			rel_add(src, nameof(market_listings), listing, listing.id)
 		var/list/profile_paths = TYPE_TABLE_COPY(counterparty, buyer_profiles)
 		for(var/bid_index in 1 to min(CARGO_MARKET_BIDS_PER_PARTY, length(profile_paths)))
 			var/profile_path = pick_n_take(profile_paths)
@@ -434,7 +434,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 			bid.expires_at = expiry
 			bid.cover_name = counterparty.active_cover_name
-			own_put(src, nameof(market_bids), bid.id, bid)
+			rel_add(src, nameof(market_bids), bid, bid.id)
 	next_market_refresh = expiry
 
 /datum/system/supply/proc/process_cargo_market()
@@ -741,7 +741,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	listing.cover_name = counterparty.active_cover_name
 	listing.reservation_key = reservation_key
 	listing.reserved_account = reserved_account
-	own_put(src, nameof(market_listings), listing.id, listing)
+	rel_add(src, nameof(market_listings), listing, listing.id)
 	return listing
 
 /datum/system/supply/proc/create_reserved_market_bid(datum/cargo_market_counterparty/counterparty, profile_id, reserved_account, reservation_key, expires_at, target_units = 12)
@@ -757,7 +757,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	bid.cover_name = counterparty.active_cover_name
 	bid.reservation_key = reservation_key
 	bid.reserved_account = reserved_account
-	own_put(src, nameof(market_bids), bid.id, bid)
+	rel_add(src, nameof(market_bids), bid, bid.id)
 	return bid
 
 /datum/system/supply/proc/reserve_agent_contract_market(datum/contract/faction_agent/contract)

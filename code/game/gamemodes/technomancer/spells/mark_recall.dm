@@ -35,6 +35,7 @@
 
 CAPABILITIES(/datum/system/antag)
 	owns_many(nameof(mark_spells), /datum/technomancer_marker)
+	owns_many(nameof(all_antag_types))
 
 /// `user`'s placed mark, or null.
 /proc/technomancer_marker_of(mob/user)

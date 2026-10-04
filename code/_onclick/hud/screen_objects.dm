@@ -121,6 +121,9 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	var/hovering_choice
 	var/mutable_appearance/selecting_appearance
 
+CAPABILITIES(/atom/movable/screen/zone_sel)
+	owns_many(nameof(hover_overlays_cache))
+
 /atom/movable/screen/zone_sel/Click(location, control, params)
 	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): native targeting HUD clicks supply the initiating actor without chaining the atom input router
 
@@ -161,7 +164,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	if(!overlay_object)
 		overlay_object = new
 		overlay_object.icon_state = "[choice]"
-		own_put(src, nameof(hover_overlays_cache), choice, overlay_object)
+		rel_add(src, nameof(hover_overlays_cache), overlay_object, choice)
 	vis_contents += overlay_object
 
 /obj/effect/overlay/zone_sel

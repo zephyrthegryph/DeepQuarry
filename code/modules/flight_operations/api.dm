@@ -26,7 +26,7 @@
 		var/obj/effect/overmap/visitable/ship/landable/landable = ship
 		rel_set(vessel, nameof(vessel.shuttle), SSshuttles.shuttles[landable.shuttle])
 		vessel.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
-	own_put(src, nameof(vessels), vessel.id, vessel)
+	rel_add(src, nameof(vessels), vessel, vessel.id)
 	var/ship_ref = REF(ship) // lookup keyed by ref string: plain data
 	vessel_by_ship[ship_ref] = vessel.id
 	ship.flight_vessel_id = vessel.id
@@ -68,7 +68,7 @@
 	destination.body_color = "#ffc45c"
 	destination.surface_latitude = rand(-75, 75)
 	destination.surface_longitude = rand(-180, 180)
-	own_put(src, nameof(destinations), destination.id, destination)
+	rel_add(src, nameof(destinations), destination, destination.id)
 	if(destination.target())
 		destination_by_target[REF(destination.target())] = destination.id
 	site.flight_destination_id = destination.id
@@ -118,5 +118,5 @@
 	var/datum/flight_destination/origin = destinations?[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
 	rel_set(vessel, nameof(vessel.active_plan), plan) // the vessel owns its active plan; plans is the service's id lookup
-	own_put(src, nameof(plans), plan.id, plan)
+	rel_add(src, nameof(plans), plan, plan.id)
 	return plan

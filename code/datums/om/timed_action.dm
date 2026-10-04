@@ -98,10 +98,10 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/mob/user = actor
 	if(progress)
 		if(user.client)
-			own_set(src, nameof(progbar), new /datum/progressbar(user, duration, target || user))
+			rel_set(src, nameof(progbar), new /datum/progressbar(user, duration, target || user))
 			progbar.animate_fill(duration)
 		if(!hidden && duration >= 1 SECONDS)
-			own_set(src, nameof(cog), new /datum/cogbar(user, icon, iconstate))
+			rel_set(src, nameof(cog), new /datum/cogbar(user, icon, iconstate))
 	OM_EMIT(user, /datum/om/event/do_after_began)
 
 /// A repeating timed action (steps) shows a fresh bar for each step.
@@ -114,7 +114,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	if(!QDELETED(old_bar))
 		old_bar.end_progress(TRUE)
 	if(user.client && delay > 0)
-		own_set(src, nameof(progbar), new /datum/progressbar(user, delay, target || user))
+		rel_set(src, nameof(progbar), new /datum/progressbar(user, delay, target || user))
 		progbar.animate_fill(delay)
 
 /datum/om/task/timed/why_not_running()

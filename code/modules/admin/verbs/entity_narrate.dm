@@ -20,6 +20,9 @@
 	var/tgui_narrate_privacy = 0 //0 for loud, 1 for subtle
 	COOLDOWN_DECLARE(tgui_message_cooldown) // int to avoid spam
 
+CAPABILITIES(/datum/entity_narrate)
+	owns_many(nameof(entity_refs))
+
 
 
 
@@ -354,7 +357,7 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 /datum/entity_narrate/proc/track(unique_name, atom/A)
 	var/datum/entity_narrate_entry/entry = new
 	rel_set(entry, nameof(entry.target), A)
-	own_put(src, nameof(entity_refs), unique_name, entry)
+	rel_add(src, nameof(entity_refs), entry, unique_name)
 
 /// The entity tracked under `unique_name`, or null (never tracked, or deleted since).
 /datum/entity_narrate/proc/tracked(unique_name)
@@ -363,4 +366,4 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 
 /// Stops tracking `unique_name`.
 /datum/entity_narrate/proc/untrack(unique_name)
-	own_put(src, nameof(entity_refs), unique_name, null)
+	rel_add(src, nameof(entity_refs), null, unique_name)

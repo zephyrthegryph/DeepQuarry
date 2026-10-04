@@ -160,6 +160,9 @@ UI_ACT_PROC(/datum/tgui_module/ship/nav, ui_act_viewing)
 	// SENSORS
 	var/tmp/obj/machinery/shipsensors/sensors
 
+CAPABILITIES(/datum/tgui_module/ship/fullmonty)
+	owns_many(nameof(known_sectors))
+
 DECLARE_UI_STATE(/datum/tgui_module/ship/fullmonty, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
 
 /datum/tgui_module/ship/fullmonty/tgui_close(mob/user)
@@ -182,7 +185,7 @@ DECLARE_UI_STATE(/datum/tgui_module/ship/fullmonty, ADMIN_STATE(R_ADMIN|R_EVENT|
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			own_put(src, nameof(known_sectors), S.name, R)
+			rel_add(src, nameof(known_sectors), R, S.name)
 	// SENSORS
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked().check_ownership(S))
@@ -341,14 +344,14 @@ UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_add)
 	if(!R)
 		return TRUE
 	R.fields["name"] = sec_name
-	own_put(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), sec_name, R)
+	rel_add(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), R, sec_name)
 	. = TRUE
 
 UI_ACT(/datum/tgui_module/ship/fullmonty, "remove", ui_act_remove, UI_ARG_REF("remove", null, /datum/computer_file/data/waypoint))
 UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_remove)
 	var/datum/computer_file/data/waypoint/R = params["remove"]
 	if(istype(R) && known_sectors?[R.fields["name"]] == R) // only one of our own entries
-		own_put(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), R.fields["name"], null) // removes and disposes of it
+		rel_add(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), null, R.fields["name"]) // removes and disposes of it
 	. = TRUE
 
 UI_ACT(/datum/tgui_module/ship/fullmonty, "setcoord", ui_act_setcoord, UI_ARG_BOOL("setx"), UI_ARG_BOOL("sety"))

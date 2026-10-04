@@ -46,6 +46,11 @@
 	var/export_lock = FALSE
 	var/list/last_interop_response
 
+CAPABILITIES(/datum/tgs_api/v4)
+	owns_many(nameof(custom_commands))
+	owns_one(nameof(cached_revision), /datum/tgs_revision_information)
+	owns_many(nameof(cached_test_merges))
+
 /datum/tgs_api/v4/ApiVersion()
 	return new /datum/tgs_version("4.0.0.0")
 
@@ -84,7 +89,7 @@
 
 	var/list/revisionData = cached_json["revision"]
 	if(revisionData)
-		own_set(src, nameof(cached_revision), new /datum/tgs_revision_information)
+		rel_set(src, nameof(cached_revision), new /datum/tgs_revision_information)
 		cached_revision.commit = revisionData["commitSha"]
 		cached_revision.origin_commit = revisionData["originCommitSha"]
 
@@ -107,7 +112,7 @@
 		tm.head_commit = entry["pullRequestRevision"]
 		tm.comment = entry["comment"]
 
-		own_add(src, nameof(cached_test_merges), tm)
+		rel_add(src, nameof(cached_test_merges), tm)
 
 	return TRUE
 

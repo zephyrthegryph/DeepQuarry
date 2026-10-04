@@ -6,10 +6,17 @@ TGS_DEFINE_AND_SET_GLOBAL(tgs, null)
 
 	var/list/warned_deprecated_command_runs
 
+CAPABILITIES(/datum/tgs_api)
+	owns_one(nameof(version), /datum/tgs_version)
+	owns_one(nameof(event_handler), /datum/tgs_event_handler)
+
+CAPABILITIES(/datum/tgs_chat_user)
+	owns_one(nameof(channel), /datum/tgs_chat_channel)
+
 /datum/tgs_api/New(datum/tgs_event_handler/event_handler, datum/tgs_version/version, datum/tgs_http_handler/http_handler)
 	..()
-	own_set(src, nameof(event_handler), event_handler)
-	own_set(src, nameof(version), version)
+	rel_set(src, nameof(event_handler), event_handler)
+	rel_set(src, nameof(version), version)
 
 /datum/tgs_api/proc/TerminateWorld()
 	while(TRUE)

@@ -175,6 +175,10 @@ SYSTEM_DEF(transcore)
 	var/core_dumped = FALSE
 	var/key // Key for this DB
 
+CAPABILITIES(/datum/transcore_db)
+	owns_many(nameof(backed_up), /datum/transhuman/mind_record)
+	owns_many(nameof(body_scans), /datum/transhuman/body_record)
+
 /datum/transcore_db/proc/m_backup(datum/mind/mind, obj/item/nif/nif, one_time = FALSE)
 	ASSERT(mind)
 	if(!mind.name || core_dumped)
@@ -222,7 +226,7 @@ SYSTEM_DEF(transcore)
 // Called from mind_record to add itself to the transcore.
 /datum/transcore_db/proc/add_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	own_put(src, nameof(backed_up), MR.mindname, MR)
+	rel_add(src, nameof(backed_up), MR, MR.mindname)
 	backed_up = sortAssoc(backed_up) // ALLOW(ownership): the same records re-ordered by name; membership and stamps do not change
 
 // Remove a mind_record from the backup-checking list.  Keeps track of it in has_left // Why do we do that? ~Leshana
@@ -234,7 +238,7 @@ SYSTEM_DEF(transcore)
 // Called from body_record to add itself to the transcore.
 /datum/transcore_db/proc/add_body(datum/transhuman/body_record/BR)
 	ASSERT(BR)
-	own_put(src, nameof(body_scans), BR.mydna.name, BR) // deletes a record it replaces
+	rel_add(src, nameof(body_scans), BR, BR.mydna.name) // deletes a record it replaces
 	body_scans = sortAssoc(body_scans) // ALLOW(ownership): the same records re-ordered by name; membership and stamps do not change
 
 // Remove a body record from the database (Usually done when someone cryos)  // Why? ~Leshana

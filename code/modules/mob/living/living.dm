@@ -899,7 +899,7 @@
 //Add an entry to overlays, assuming it exists
 /mob/living/proc/apply_hud(cache_index, image/I)
 	if(I)
-		own_put(src, nameof(hud_list), cache_index, I) // the mob owns its HUD images; a replaced one is deleted
+		rel_add(src, nameof(hud_list), I, cache_index) // the mob owns its HUD images; a replaced one is deleted
 	if((. = hud_list[cache_index]))
 		add_overlay(.)
 

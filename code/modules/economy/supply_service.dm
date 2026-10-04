@@ -60,6 +60,9 @@ CAPABILITIES(/datum/system/supply)
 	owns_many(nameof(market_transactions))
 	owns_many(nameof(order_history))
 	owns_many(nameof(service_invoices))
+	owns_many(nameof(market_bids))
+	owns_many(nameof(market_counterparties))
+	owns_many(nameof(market_listings))
 
 /// The 15-minute payroll cycle runs once the first service step has started it.
 OM_FIELD(/datum/system/supply, payroll_running, FALSE, CHANGE_DATUM_A)

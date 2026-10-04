@@ -17,7 +17,7 @@
 	dir = NORTH
 	w_class = ITEMSIZE_NORMAL
 
-	var/obj/item/airlock_electronics/electronics = null
+	var/obj/item/airlock_electronics/electronics = null // may hold an /obj/item/circuitboard/broken (see board_whole)
 	var/created_name = null
 
 	//Vars to help with the icon's name
@@ -88,7 +88,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 		stage(STAGE_WINDOOR_ASSEMBLY_BOARDED, item(/obj/item/airlock_electronics), wait(4 SECONDS), then(PROC_REF(board_seated)), undone(PROC_REF(board_taken)), undo = list(tool(TOOL_SCREWDRIVER), wait(4 SECONDS))),
 		stage(STAGE_WINDOOR_ASSEMBLY_FINISHED, tool(TOOL_CROWBAR), wait(4 SECONDS), needs(req(PROC_REF(board_whole), because = MSG(windoor_assembly/broken_board))), then(PROC_REF(finish_windoor)), undo = null),
 		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
-	owns_one(nameof(electronics), /obj/item/airlock_electronics)
+	owns_one(nameof(electronics), /obj/item)
 	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
 	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
 	op("flip", menu(), label("Flip Windoor Assembly"), wait(0), then(PROC_REF(flipped)))

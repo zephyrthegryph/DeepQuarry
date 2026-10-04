@@ -116,15 +116,15 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 		if(islist(nested) && nested[STATE_KEY_TYPE] && isdatum(current) && "[current.type]" == nested[STATE_KEY_TYPE] && !isatom(current))
 			ctx.apply_datum(current, nested)
 			return
-		own_set(owner, var_name, decode_one(nested, ctx))
+		rel_set(owner, var_name, decode_one(nested, ctx))
 		return
 	own_clear(owner, var_name)
 	for(var/item in nested)
 		if(shape == "values")
 			var/list/pair = item
-			own_put(owner, var_name, ctx.decode_value(pair[1]), decode_one(pair[2], ctx))
+			rel_add(owner, var_name, decode_one(pair[2], ctx), ctx.decode_value(pair[1]))
 		else
-			own_add(owner, var_name, decode_one(item, ctx))
+			rel_add(owner, var_name, decode_one(item, ctx))
 
 /datum/state_codec/owned/proc/decode_one(nested, datum/state_context/ctx)
 	if(islist(nested) && nested[STATE_KEY_TYPE])

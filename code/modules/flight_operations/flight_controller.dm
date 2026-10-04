@@ -18,6 +18,12 @@ SYSTEM_DEF(flight)
 	/// TRUE while a plan pass that ran out of budget waits to resume.
 	VAR_PRIVATE/plans_resuming = FALSE
 
+CAPABILITIES(/datum/system/flight)
+	owns_many(nameof(destinations))
+	owns_many(nameof(plans))
+	owns_many(nameof(ports))
+	owns_many(nameof(vessels))
+
 /datum/system/flight/initialize()
 	initialized = TRUE
 	rebuild_registry()
@@ -37,7 +43,7 @@ SYSTEM_DEF(flight)
 	system.kind = FLIGHT_DEST_SYSTEM
 	system.body_radius = 5
 	system.body_color = "#ffd36a"
-	own_put(src, nameof(destinations), system.id, system)
+	rel_add(src, nameof(destinations), system, system.id)
 	for(var/obj/effect/overmap/visitable/target as anything in REGISTRY_MEMBERS(REGISTRY_OVERMAP_VISITABLES))
 		register_destination(target)
 	normalize_celestial_hierarchy()
@@ -102,7 +108,7 @@ SYSTEM_DEF(flight)
 	if(istype(target, /obj/effect/overmap/visitable/ship/exploration_carrier))
 		destination.orbit_radius = 19
 		destination.orbit_phase = 42
-	own_put(src, nameof(destinations), destination.id, destination)
+	rel_add(src, nameof(destinations), destination, destination.id)
 	var/target_ref = REF(target) // lookup keyed by ref string: plain data
 	destination_by_target[target_ref] = destination.id
 	return destination
@@ -221,7 +227,7 @@ SYSTEM_DEF(flight)
 		rel_set(port, nameof(port.landmark), landmark)
 		if(host_id == station_id)
 			port.berth_group = "southern-cross-hangar-three"
-		own_put(src, nameof(ports), port.id, port)
+		rel_add(src, nameof(ports), port, port.id)
 		var/landmark_ref = REF(landmark) // lookup keyed by ref string: plain data
 		port_by_landmark[landmark_ref] = port.id
 

@@ -1694,7 +1694,7 @@
 	var/datum/medical_trial_participant/participant = new(identity.id, list(), TRUE, 0)
 	participant.dose = MEDICAL_TRIAL_MINIMUM_DOSE
 	participant.exposure_time = world.time - MEDICAL_TRIAL_OBSERVATION_TIME
-	own_put(trial, nameof(trial.participants), identity.id, participant)
+	rel_add(trial, nameof(trial.participants), participant, identity.id)
 	var/list/baseline = list("subject_id" = identity.id, "scan_time" = participant.exposure_time, "snapshot" = list(), "operator_account" = 0)
 	var/list/trial_markers = list()
 	trial_markers[trial.id] = 1
@@ -1965,7 +1965,7 @@
 	record.account_number = account_number
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	own_put(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[account_number]", record)
+	rel_add(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), record, "[account_number]")
 
 	TEST_ASSERT(GLOB.station_faction_relations.add_agent_exposure(account_number, REPUTATION_FACTION_SYNDICATE, 15, "Focused trace A", "broker-trace-a"), "first covert trace was rejected")
 	TEST_ASSERT(!SScontracts.find_live_offer(offer_key) && !SScontracts.find_candidate(offer_key), "one covert trace generated an investigation")

@@ -44,6 +44,7 @@ CAPABILITIES(/mob/living/silicon)
 	owns_one(nameof(laws), /datum/ai_laws)
 	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor/robot)
 	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot)
+	owns_many(nameof(queued_alarms))
 
 /mob/living/silicon/Initialize(mapload, is_decoy = FALSE)
 	if(silicon_subsystems)

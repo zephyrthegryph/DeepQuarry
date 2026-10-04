@@ -325,7 +325,7 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 	for(var/slot in 1 to ROBOT_SLOT_COUNT)
 		var/component_type = types[slot]
 		var/datum/robot_component/C = new component_type(src, slot)
-		own_put(src, nameof(components), slot, C)
+		rel_add(src, nameof(components), C, slot)
 		if(slot == ROBOT_SLOT_POWER)
 			continue
 		if(C.internal)

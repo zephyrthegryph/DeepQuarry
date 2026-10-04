@@ -68,7 +68,7 @@
 // its containers drop out and the growing clone is ejected.
 /obj/machinery/clonepod/ownership()
 	. = ..()
-	. += owns(nameof(containers), policy = OWN_SPILL)
+	. += owns(nameof(containers), policy = OWN_SPILL, is_list = TRUE)
 
 /obj/machinery/clonepod/relations()
 	. = ..()

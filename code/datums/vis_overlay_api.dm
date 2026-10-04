@@ -13,14 +13,14 @@
 		overlay = vis_overlay_cache[.]
 		if(!overlay)
 			overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
-			own_put(src, nameof(vis_overlay_cache), ., overlay)
+			rel_add(src, nameof(vis_overlay_cache), overlay, .)
 		else
 			overlay.unused = 0
 	else
 		overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
 		overlay.cache_expiration = -1
 		var/cache_id = "\ref[overlay]@{[world.time]}"
-		own_put(src, nameof(vis_overlay_cache), cache_id, overlay)
+		rel_add(src, nameof(vis_overlay_cache), overlay, cache_id)
 		. = overlay
 	thing.vis_contents += overlay
 

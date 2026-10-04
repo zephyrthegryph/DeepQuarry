@@ -23,6 +23,9 @@
 	/// window key -> TRUE once pruned in this batch.
 	var/list/pruned_opportunity_windows
 
+CAPABILITIES(/datum/system/contracts)
+	owns_many(nameof(pending_damage_reports))
+
 /// One damaged atom's accumulated damage in a batch, with the location facts
 /// the event needs if the atom is gone by the time the batch flushes.
 /datum/contract_damage_report
@@ -73,7 +76,7 @@
 	var/datum/contract_damage_report/report = LAZYACCESS(pending_damage_reports, key)
 	if(!report)
 		report = new(source)
-		own_put(src, nameof(pending_damage_reports), key, report)
+		rel_add(src, nameof(pending_damage_reports), report, key)
 	report.total_amount += amount
 	report.integrity = source.get_integrity()
 

@@ -10,7 +10,7 @@
 		// needs to be recreated
 		clear_fullscreen(category, FALSE)
 		screen = new type()
-		own_put(src, nameof(screens), category, screen)
+		rel_add(src, nameof(screens), screen, category)
 	else if ((!severity || severity == screen.severity) && (!client || screen.screen_loc != "CENTER-7,CENTER-7" || screen.view == client.view))
 		// doesn't need to be updated
 		return screen

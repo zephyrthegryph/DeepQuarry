@@ -77,7 +77,7 @@
 				own_add(H, nameof(H.kids), C)
 				done = (C in H.kids)
 			if("own_put")
-				own_put(H, nameof(H.values), "k", C)
+				rel_add(H, nameof(H.values), C, "k")
 				done = LAZYACCESS(H.values, "k") == C
 			if("own_move")
 				own_move(C, H, nameof(H.child))

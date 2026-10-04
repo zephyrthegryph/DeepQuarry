@@ -10,6 +10,7 @@
 
 CAPABILITIES(/datum/codex_tree)
 	owns_one(nameof(home), /datum/lore/codex)
+	owns_many(nameof(readers))
 
 /datum/codex_tree/New(new_holder, new_root_type)
 	rel_set(src, nameof(holder), new_holder)
@@ -35,7 +36,7 @@ CAPABILITIES(/datum/codex_tree)
 	var/key = "[user]"
 	var/datum/codex_reader/R = LAZYACCESS(readers, key)
 	if(!R)
-		R = own_put(src, nameof(readers), key, new /datum/codex_reader)
+		R = rel_add(src, nameof(readers), new /datum/codex_reader, key)
 	return R
 
 /// `user`'s current page, or null.

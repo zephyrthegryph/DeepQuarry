@@ -72,6 +72,9 @@
 	var/tmp/list/seal_queued
 	var/tmp/seal_open_count = 0
 
+CAPABILITIES(/datum/generated_station_tile_plan)
+	owns_many(nameof(tiles))
+
 /// `deferred`: the grid is filled a column at a time by fill_column() (the materializer's phases).
 /datum/generated_station_tile_plan/New(new_width, new_height, datum/generated_station_materializer/new_generation_owner, deferred = FALSE)
 	..()
@@ -89,7 +92,7 @@
 
 /datum/generated_station_tile_plan/proc/fill_column(x)
 	for(var/y in 1 to grid_height)
-		own_put(src, nameof(tiles), coordinate_key(x, y), new /datum/generated_station_tile_intent(x, y))
+		rel_add(src, nameof(tiles), new /datum/generated_station_tile_intent(x, y), coordinate_key(x, y))
 
 
 /datum/generated_station_tile_plan/proc/coordinate_key(local_x, local_y)

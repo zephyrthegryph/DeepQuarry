@@ -26,6 +26,9 @@ CAPABILITIES(/obj/item/autopsy_scanner)
 										// the wounds to those organs with this data's weapon type
 	var/organ_names = ""
 
+CAPABILITIES(/datum/autopsy_data_scanner)
+	owns_many(nameof(organs_scanned))
+
 /datum/autopsy_data
 	var/weapon = null
 	var/pretend_weapon = null
@@ -55,7 +58,7 @@ CAPABILITIES(/obj/item/autopsy_scanner)
 		if(!D)
 			D = new()
 			D.weapon = W.weapon
-			own_put(src, nameof(wdata), V, D)
+			rel_add(src, nameof(wdata), D, V)
 
 		if(!LAZYACCESS(D.organs_scanned, O.name))
 			if(D.organ_names == "")
@@ -63,7 +66,7 @@ CAPABILITIES(/obj/item/autopsy_scanner)
 			else
 				D.organ_names += ", [O.name]"
 
-		own_put(D, nameof(D.organs_scanned), O.name, W.copy())
+		rel_add(D, nameof(D.organs_scanned), W.copy(), O.name)
 
 	for(var/V in O.trace_chemicals)
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))

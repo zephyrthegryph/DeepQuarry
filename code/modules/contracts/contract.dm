@@ -59,6 +59,9 @@
 	var/default_option_id
 	var/list/options
 
+CAPABILITIES(/datum/contract_negotiation_clause)
+	owns_many(nameof(options))
+
 /datum/contract_negotiation_clause/New(_id, _title, _description)
 	. = ..()
 	id = _id
@@ -70,7 +73,7 @@
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
 	if(!option?.id || options?[option.id])
 		return FALSE
-	own_put(src, nameof(options), option.id, option)
+	rel_add(src, nameof(options), option, option.id)
 	if(make_default || !default_option_id)
 		default_option_id = option.id
 	return TRUE
@@ -239,6 +242,7 @@
 CAPABILITIES(/datum/contract)
 	owns_many(nameof(audit_log))
 	owns_many(nameof(requirements))
+	owns_many(nameof(negotiation_clauses))
 
 /datum/contract/New()
 	. = ..()
@@ -297,7 +301,7 @@ CAPABILITIES(/datum/contract)
 /datum/contract/proc/add_negotiation_clause(datum/contract_negotiation_clause/clause)
 	if(!clause?.id || state != CONTRACT_OFFERED || negotiation_clauses?[clause.id] || !length(clause.options))
 		return FALSE
-	own_put(src, nameof(negotiation_clauses), clause.id, clause)
+	rel_add(src, nameof(negotiation_clauses), clause, clause.id)
 	negotiation_selections[clause.id] = clause.default_option_id
 	return TRUE
 

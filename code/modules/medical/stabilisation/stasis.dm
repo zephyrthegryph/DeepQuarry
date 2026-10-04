@@ -159,7 +159,7 @@
 		return FALSE
 	if(key)
 		om_release(src, EFFECT_CLOCK_BIO_INHIBIT, src, key)
-		own_put(src, nameof(stasis_sources), key, null)
+		rel_add(src, nameof(stasis_sources), null, key)
 		if(!length(stasis_sources))
 			own_clear(src, nameof(stasis_sources), OWN_DELETE)
 	if(stasis_type)
@@ -170,7 +170,7 @@
 		hold.stasis_type = stasis_type
 		if(source)
 			rel_set(hold, nameof(hold.source), source)
-		own_put(src, nameof(stasis_sources), key, hold)
+		rel_add(src, nameof(stasis_sources), hold, key)
 		om_hold(src, EFFECT_CLOCK_BIO_INHIBIT, src, level.stasis_depth(), key)
 	invalidate_factors()
 	changed(src, CHANGE_MOB_CONDITIONS)

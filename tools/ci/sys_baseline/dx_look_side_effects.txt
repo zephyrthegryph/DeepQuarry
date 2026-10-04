@@ -158,7 +158,7 @@ dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	t
 dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	I.color = track.basecolor
 dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	track.fresh=0
 dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	track.overlay=I
-dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	own_put(src, nameof(stack), stack_idx, track)
+dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	rel_add(src, nameof(stack), track, stack_idx)
 dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/tracks.dm	updatedtracks=0 // Clear our memory of updated tracks.
 dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/vore.dm	if(custombasecolor == "rainbow") custombasecolor = get_random_colour(1)
 dx_appearance_side_effect	code/game/objects/effects/decals/Cleanable/vore.dm	name = custombasename

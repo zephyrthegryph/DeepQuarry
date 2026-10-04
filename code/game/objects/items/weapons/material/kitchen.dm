@@ -223,4 +223,4 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 
 /obj/item/material/kitchen/utensil/ownership()
 	. = ..()
-	. += owns(nameof(food_inserted_micros), policy = OWN_SPILL)
+	. += owns(nameof(food_inserted_micros), policy = OWN_SPILL, is_list = TRUE)

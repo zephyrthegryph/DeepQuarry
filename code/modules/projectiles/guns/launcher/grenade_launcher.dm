@@ -22,7 +22,7 @@
 // Loaded grenades sit in the launcher's contents; the chambered one is a view (chambered).
 /obj/item/gun/launcher/grenade/ownership()
 	. = ..()
-	. += owns(nameof(grenades), policy = OWN_CONTAINED)
+	. += owns(nameof(grenades), policy = OWN_CONTAINED, is_list = TRUE)
 
 //revolves the magazine, allowing players to choose between multiple grenade types
 /obj/item/gun/launcher/grenade/proc/pump(mob/user)

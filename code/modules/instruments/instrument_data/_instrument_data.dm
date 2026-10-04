@@ -46,6 +46,9 @@
 	/// Volume multiplier. Synthesized instruments are quite loud and I don't like to cut off potential detail via editing. (someone correct me if this isn't a thing)
 	var/volume_multiplier = 0.33
 
+CAPABILITIES(/datum/instrument)
+	owns_many(nameof(samples))
+
 /datum/instrument/New()
 	if(isnull(id))
 		id = "[type]"
@@ -95,9 +98,9 @@
 		var/sample2 = real_samples[num2text(to_key)]
 		var/pivot = FLOOR((from_key + to_key) / 2, 1) //original code was a round but I replaced it because that's effectively a floor, thanks Baystation! who knows what was intended.
 		for(var/key in from_key to pivot)
-			own_put(src, nameof(samples), num2text(key), new /datum/instrument_key(sample1, key, key - from_key))
+			rel_add(src, nameof(samples), new /datum/instrument_key(sample1, key, key - from_key), num2text(key))
 		for(var/key in (pivot + 1) to to_key)
-			own_put(src, nameof(samples), num2text(key), new /datum/instrument_key(sample2, key, key - to_key))
+			rel_add(src, nameof(samples), new /datum/instrument_key(sample2, key, key - to_key), num2text(key))
 
 	// Fill in 0 to first key and last key to 127
 	var/first_key = real_keys[1]
@@ -105,9 +108,9 @@
 	var/first_sample = real_samples[num2text(first_key)]
 	var/last_sample = real_samples[num2text(last_key)]
 	for(var/key in LOWEST_KEY to (first_key - 1))
-		own_put(src, nameof(samples), num2text(key), new /datum/instrument_key(first_sample, key, key - first_key))
+		rel_add(src, nameof(samples), new /datum/instrument_key(first_sample, key, key - first_key), num2text(key))
 	for(var/key in last_key to HIGHEST_KEY)
-		own_put(src, nameof(samples), num2text(key), new /datum/instrument_key(last_sample, key, key - last_key))
+		rel_add(src, nameof(samples), new /datum/instrument_key(last_sample, key, key - last_key), num2text(key))
 
 /datum/instrument/relations()
 	. = ..()

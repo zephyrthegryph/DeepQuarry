@@ -49,4 +49,4 @@
 	mix.set_temperature(kelvin)
 	for(var/gas_id in gases)
 		mix.adjust_gas(gas_id, gases[gas_id] * litres / (R_IDEAL_GAS_EQUATION * kelvin))
-	own_set(holder, var_name, mix)
+	rel_set(holder, var_name, mix)

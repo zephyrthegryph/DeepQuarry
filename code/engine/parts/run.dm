@@ -498,10 +498,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	progress_planned = TRUE
 	if(user.client)
 		var/atom/where = target
-		own_set(src, nameof(progbar), new /datum/progressbar(user, delay, istype(where) ? where : user))
+		rel_set(src, nameof(progbar), new /datum/progressbar(user, delay, istype(where) ? where : user))
 		progbar.animate_fill(delay)
 	if(delay >= 1 SECONDS)
-		own_set(src, nameof(cog), new /datum/cogbar(user, 'icons/effects/progressbar.dmi', "cog"))
+		rel_set(src, nameof(cog), new /datum/cogbar(user, 'icons/effects/progressbar.dmi', "cog"))
 
 /// The bar and the cog go: filled on success, failed when the wait was broken.
 /datum/pending_op/proc/progress_end(success)

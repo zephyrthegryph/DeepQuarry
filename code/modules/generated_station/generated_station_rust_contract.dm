@@ -456,7 +456,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 			if(!node || tile_classes[key] != "maintenance_floor" || !istext(row["from_zone"]) || !length(row["from_zone"]) || !istext(row["to_zone"]) || !length(row["to_zone"]))
 				return generated_station_rust_decode_failure(spec, errors, "Maintenance door has invalid ownership or zone metadata.")
 			var/datum/generated_station_maintenance_door/maintenance_door = new(direction, node.id, row["from_zone"], row["to_zone"])
-			own_put(spec, nameof(spec.maintenance_doors), "[x],[y]", maintenance_door)
+			rel_add(spec, nameof(spec.maintenance_doors), maintenance_door, "[x],[y]")
 			continue
 		if(!node)
 			return generated_station_rust_decode_failure(spec, errors, "Door references an unknown node owner.")

@@ -62,7 +62,7 @@
 	if(!istext(name))
 		return
 	if(!object)
-		own_put(globalScope, nameof(globalScope.functions), name, path) // a proc path: plain data in the owned lookup
+		rel_add(globalScope, nameof(globalScope.functions), path, name) // a proc path: plain data in the owned lookup
 		return
 	var/datum/node/statement/FunctionDefinition/S = new()
 	S.func_name		= name
@@ -77,7 +77,7 @@
 	var/datum/node/statement/ReturnStatement/R=new()
 	rel_set(R, nameof(R.value), C)
 	LAZYADD(S.block.statements, R)
-	own_put(globalScope, nameof(globalScope.functions), name, S)
+	rel_add(globalScope, nameof(globalScope.functions), S, name)
 /*
 	Proc: VarExists
 	Checks whether a global variable with the specified name exists.

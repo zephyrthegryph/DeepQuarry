@@ -48,6 +48,9 @@
 	/// Resting state the current appearance was drawn for.
 	var/drawn_resting = FALSE
 
+CAPABILITIES(/datum/forms)
+	owns_many(nameof(forms))
+
 /// Form types this character can take, first one is the starting form.
 TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 
@@ -60,7 +63,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	own_take_all(src, nameof(forms))
 	var/list/types = TYPE_TABLE_GET(src, get_form_types)
 	for(var/form_type in types)
-		own_put(src, nameof(forms), form_type, new form_type())
+		rel_add(src, nameof(forms), new form_type(), form_type)
 	rel_set(src, nameof(current), forms[types[1]])
 	attach()
 

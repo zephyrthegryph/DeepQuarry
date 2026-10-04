@@ -1,31 +1,21 @@
-// One-call transfers (doc/rewrite/ownership.md §1.3a).
+// The movement layer under move_into() (code/engine/declare/transfer.dm, doc/rewrite/final_api.html sections 6 and 17).
 //
-// own_set / own_add / own_put on an atom holder, given a movable that is somewhere else, take it
-// out of wherever it is and put it in the holder before adopting it:
+// move_into(holder, var, item, actor) takes a movable out of wherever it is and puts it in the holder before the holder
+// adopts it. The checks and the move are these helpers:
+//   1. own_transfer_refusal(): the item can leave its current place (a mob's hand or equip slot: can_unequip and
+//      NODROP; a storage item's or any other ledger slot's removal rules) and it can enter the holder (the holder's
+//      ledger slot, when it has slots). A refusal changes nothing;
+//   2. own_transfer_land(): the release, the current place lets it go through its own procs, so its bookkeeping runs
+//      (a mob's HUD, slot redraw and dropped(); a storage's HUD and on_exit_storage()), and it lands in the holder
+//      (in `slot` when given);
+//   3. own_release_previous(): another holder's owned var naming it lets it go;
+//   4. own_transfer_record(): with an actor, changed(holder) and dispatch_record(actor, holder, "insert", log).
 //
-//   own_set(src, nameof(src.beaker), W, user = user)
-//
-// replaces `user.drop_item(); W.forceMove(src); own_set(src, nameof(src.beaker), W)`. In one call:
-//   1. the checks: it can leave its current place (a mob's hand or equip slot: can_unequip and
-//      NODROP; a storage item's or any other ledger slot's removal rules) and it can enter the
-//      holder (the holder's ledger slot, when it has slots). A refusal changes nothing, returns
-//      null and, with `user`, tells the user why;
-//   2. the release: the current place lets it go through its own procs, so its bookkeeping runs (a
-//      mob's HUD, slot redraw and dropped(); a storage's HUD and on_exit_storage()), and it lands in
-//      the holder (in `slot` when given);
-//   3. the adoption: another holder's owned var naming it lets it go, and the holder adopts it.
-//   4. with `user`, the transfer is a dispatched call: changed(holder) and
-//      dispatch_record(user, holder, "insert", log).
-//
-// When the accessor moves a value (own_wants_transfer()):
-//   - an OWN_CONTAINED var: always (its values are the holder's own contents), off a turf too;
-//   - `into = FALSE`: otherwise never (own_transfer / own_move re-own in place);
-//   - the value is already in the holder, or anywhere inside it: no move (with `slot`, a thing
-//     already in the holder moves into that slot: a mob's own held item into its body);
-//   - `into = TRUE` or a `user`: it moves in, off a turf too;
-//   - otherwise it moves in only when it is inside something else (a mob, a storage, a machine):
-//     an owned effect or item left on a turf on purpose (a beam, a projector's field, a pAI cable)
-//     stays where it is.
+// The accessors rel_set / rel_add (own_set / own_add underneath) never move a thing for a caller, except where
+// own_wants_transfer() says the var's own contents are meant: an OWN_CONTAINED var always takes its value into the
+// holder (off a turf too), and a value inside something else (a mob, a storage, a machine) is moved in; a value on a
+// turf or already inside the holder stays (a beam, a projector's field, a pAI cable). `into = FALSE` (own_transfer /
+// own_move re-own in place) never moves.
 //
 // Current places answer two procs, overridden where taking a thing out means more than a ledger
 // move: /atom/proc/release_refusal() and /atom/proc/release_to() (mobs and storage below).

@@ -685,7 +685,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	. += owns(nameof(target), policy = OWN_CONTAINED)
 	. += owns(nameof(reagent_container), policy = OWN_CONTAINED)
 	// Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
-	. += owns(nameof(storage), policy = OWN_SPILL)
+	. += owns(nameof(storage), policy = OWN_SPILL, is_list = TRUE)
 
 /// Holds the beaker (owned, in its contents). The process will consume ALL reagents inside it.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers

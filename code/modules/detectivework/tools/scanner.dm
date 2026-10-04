@@ -17,6 +17,9 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+CAPABILITIES(/obj/item/detective_scanner)
+	owns_many(nameof(stored))
+
 /obj/item/detective_scanner/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!ishuman(M))
 		to_chat(user, span_warning("\The [M] does not seem to be compatible with this device."))
@@ -176,7 +179,7 @@
 	if(old)
 		fresh.merge(old)
 		. = 1
-	own_put(src, nameof(stored), "\ref [A]", fresh)
+	rel_add(src, nameof(stored), fresh, "\ref [A]")
 
 /obj/item/detective_scanner/proc/examine_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
 

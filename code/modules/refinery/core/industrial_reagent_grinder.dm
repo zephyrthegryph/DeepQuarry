@@ -20,7 +20,7 @@
 
 /obj/machinery/reagent_refinery/grinder/ownership()
 	. = ..()
-	. += owns(nameof(holdingitems), policy = OWN_SPILL)
+	. += owns(nameof(holdingitems), policy = OWN_SPILL, is_list = TRUE)
 
 /obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
 	// Old attackby tried the parent's attackby FIRST, only falling to its own

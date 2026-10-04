@@ -50,14 +50,14 @@
 	AA.key = key
 	rel_set(AA, nameof(AA.owner), src)
 
-	own_put(src, nameof(alt_appearances_owned), key, AA) // deletes the one it replaces
+	rel_add(src, nameof(alt_appearances_owned), AA, key) // deletes the one it replaces
 	if(displayTo && displayTo.len)
 		display_alt_appearance(key, displayTo)
 
 /atom/proc/remove_alt_appearance(key)
 	var/list/owned = dq_get_alt_appearances(src)
 	if(owned && owned[key])
-		own_put(src, nameof(alt_appearances_owned), key, null)
+		rel_add(src, nameof(alt_appearances_owned), null, key)
 
 /atom/proc/remove_all_alt_appearances()
 	own_clear(src, nameof(alt_appearances_owned), OWN_DELETE)

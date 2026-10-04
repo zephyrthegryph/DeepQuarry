@@ -86,6 +86,9 @@
 	var/last_value // OM_WATCH_VALUE/OM_WATCH_DERIVED: the last value observed
 	var/list/raw_observer // om_callable() spec. OM_WATCH_RAW: (mixture_id, change_mask, observation, observation_index)
 
+CAPABILITIES(/datum/om_watch)
+	owns_many(nameof(bands), /datum/om_watch_band)
+
 /datum/om_watch/proc/gas_field_value(list/observation, observation_index, field)
 	switch(field)
 		if("pressure")
@@ -334,7 +337,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	W.mode = OM_WATCH_BANDS
 	own_clear(W, nameof(W.bands), OWN_DELETE)
 	for(var/datum/om_watch_band/band as anything in bands) // the watch owns its bands
-		own_add(W, nameof(W.bands), band)
+		rel_add(W, nameof(W.bands), band)
 	om_watch_register(W)
 	om_watch_index_gas(W, mixture_id)
 	return W
@@ -413,7 +416,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	W.mode = OM_WATCH_DERIVED
 	own_clear(W, nameof(W.bands), OWN_DELETE)
 	for(var/datum/om_watch_band/band as anything in bands) // the watch owns its bands
-		own_add(W, nameof(W.bands), band)
+		rel_add(W, nameof(W.bands), band)
 	W.value_getter = getter
 	W.interest_mask = interest_mask
 	om_watch_register(W)
