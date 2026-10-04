@@ -108,16 +108,18 @@
 // Syndicate stamp to forge documents.
 DECLARE_INTERACTIONS(/obj/item/stamp/chameleon, INTERACT_USE(null, PROC_REF(interaction_self)))
 
+/// Stamp metadata is immutable; enumerating choices must not construct temporary items.
+/obj/item/stamp/chameleon/proc/stamp_choice_types()
+	var/list/stamps = list()
+	for(var/stamp_type in typesof(/obj/item/stamp) - src.type)
+		var/obj/item/stamp/S = stamp_type
+		stamps[capitalize(initial(S.name))] = stamp_type
+	return stamps
+
 /// Old attack_self.
 /obj/item/stamp/chameleon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 
-	var/list/stamp_types = typesof(/obj/item/stamp) - src.type // Get all stamp types except our own
-	var/list/stamps = list()
-
-	// Generate them into a list
-	for(var/stamp_type in stamp_types)
-		var/obj/item/stamp/S = new stamp_type
-		stamps[capitalize(S.name)] = S
+	var/list/stamps = stamp_choice_types()
 
 	var/list/show_stamps = list("EXIT" = null) + sortList(stamps) // the list that will be shown to the user to pick from
 
@@ -130,10 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/stamp/chameleon, INTERACT_USE(null, PROC_REF(inte
 		var/obj/item/stamp/chosen_stamp = stamps[capitalize(input_stamp)]
 
 		if(chosen_stamp)
-			name = chosen_stamp.name
-			icon_state = chosen_stamp.icon_state
+			name = initial(chosen_stamp.name)
+			icon_state = initial(chosen_stamp.icon_state)
 
-	// Clean up the temporary picker instances we created above.
-	for(var/stamp_key in stamps)
-		qdel(stamps[stamp_key])
 	return TRUE

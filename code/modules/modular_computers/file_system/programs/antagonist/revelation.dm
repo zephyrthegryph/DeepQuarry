@@ -18,23 +18,24 @@
 		activate()
 
 /datum/computer_file/program/revelation/proc/activate()
-	if(!computer())
+	var/obj/item/modular_computer/target = computer()
+	if(!target)
 		return
 
-	computer().visible_message(span_notice("\The [computer()]'s screen brightly flashes and loud electrical buzzing is heard."))
-	computer().set_enabled(FALSE)
-	computer().last_power_usage = 0
-	computer().update_icon()
-	fx_sparks(computer().loc, 10)
+	target.visible_message(span_notice("\The [target]'s screen brightly flashes and loud electrical buzzing is heard."))
+	target.set_enabled(FALSE)
+	target.last_power_usage = 0
+	target.update_icon()
+	fx_sparks(target.loc, 10)
 
-	if(computer().hard_drive)
-		qdel(computer().hard_drive)
+	if(target.hard_drive)
+		own_clear(target, nameof(target.hard_drive), OWN_DELETE)
 
-	if(computer().battery_module && prob(25))
-		qdel(computer().battery_module)
+	if(target.battery_module && prob(25))
+		own_clear(target, nameof(target.battery_module), OWN_DELETE)
 
-	if(computer().tesla_link && prob(50))
-		qdel(computer().tesla_link)
+	if(target.tesla_link && prob(50))
+		own_clear(target, nameof(target.tesla_link), OWN_DELETE)
 
 CAPABILITIES(/datum/computer_file/program/revelation)
 	op("PRG_arm", ui_act(), then(PROC_REF(native_ui_act_prg_arm)))

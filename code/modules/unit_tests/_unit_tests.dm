@@ -898,6 +898,8 @@
 #include "interim_library_checkout_controls.dm"
 #include "interim_fighter_loadout_contract.dm"
 #include "interim_forensic_sample_release.dm"
+#include "interim_stamp_choice_metadata.dm"
+
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

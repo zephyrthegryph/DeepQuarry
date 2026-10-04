@@ -5,3 +5,5 @@ changes:
   - bugfix: "Cryopod departure and cyborg client cleanup now delete their owned objectives correctly."
   - bugfix: "Bola impacts rejected by thick clothing no longer create loose cuffs."
   - bugfix: "Combining forensic evidence now respects samples that cannot be released from inventory."
+  - bugfix: "Revelation malware safely finishes destroying hardware after retiring its own executable."
+  - bugfix: "Chameleon stamp choices no longer leak temporary stamps when canceled or when labels repeat."
