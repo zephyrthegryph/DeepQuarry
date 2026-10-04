@@ -28,9 +28,15 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 
 /// Old Name Gun verb: Rename your gun. If you're Security.
 /obj/item/gun/projectile/colt/detective/proc/det_colt_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	return detective_pistol_name_stage(user, held, interaction)
+
+/obj/item/gun/projectile/colt/detective/proc/detective_pistol_name_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
 	var/mob/M = user
 	if(!M.mind)	return 0
-	var/_answer_k47 = rerun_ask(M, "k47", PROC_REF(det_colt_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Gun", max_length = MAX_NAME_LEN, encode = FALSE)
+	if(!settings_ready)
+		open_request(src, /datum/prompt/text/weapon_setting_review, PROC_REF(detective_pistol_name_answered), answerer = M, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "What do you want to name the gun?", title = "Rename Gun", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k47 = settings_answer
 	if(isnull(_answer_k47))
 		return
 	var/input = sanitizeSafe(_answer_k47)
@@ -42,6 +48,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 
 /// Old Resprite gun verb: Click to choose a sprite for your gun.
 /obj/item/gun/projectile/colt/detective/proc/det_colt_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
+	return detective_pistol_skin_stage(user, held, interaction)
+
+/obj/item/gun/projectile/colt/detective/proc/detective_pistol_skin_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
 	var/mob/M = user
 	var/list/options = list()
 	options["MarsTech P11 Spur (Bubba'd)"] = "mod_colt"
@@ -51,7 +60,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	options["MarsTech P11 Spur (Dark)"] = "dark_colt"
 	options["MarsTech P11 Spur (Green)"] = "green_colt"
 	options["MarsTech P11 Spur (Blue)"] = "blue_colt"
-	var/choice = rerun_ask(M, "k68", PROC_REF(det_colt_verb_reskin), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
+	if(!settings_ready)
+		open_request(src, /datum/prompt/choice/weapon_setting_review, PROC_REF(detective_pistol_skin_answered), answerer = M, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "Choose your sprite!", title = "Resprite Gun", choices = options)
+		return
+	var/choice = settings_answer
 	if(isnull(choice))
 		return
 	if(src && choice && !M.stat && in_range(M,src))
@@ -551,3 +563,105 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/m2024, "{initial(icon_state)}{ammo_
 	fire_sound = SFX_WEAPONS_45PISTOL_VR
 	magazine_type = /obj/item/ammo_magazine/m45
 	allowed_magazines = list(/obj/item/ammo_magazine/m45)
+
+/obj/item/gun/projectile/colt/detective/proc/detective_pistol_name_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(detective_pistol_name_apply), context)
+	if(!caught.ok)
+		stack_trace("Weapon detective_pistol_name replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/gun/projectile/colt/detective/proc/detective_pistol_name_apply(datum/act/request/context)
+	var/datum/prompt/text/weapon_setting_review/ask = context.answer
+	return detective_pistol_name_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)
+
+/obj/item/gun/projectile/colt/detective/proc/detective_pistol_skin_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(detective_pistol_skin_apply), context)
+	if(!caught.ok)
+		stack_trace("Weapon detective_pistol_skin replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/gun/projectile/colt/detective/proc/detective_pistol_skin_apply(datum/act/request/context)
+	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
+	return detective_pistol_skin_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)
+
+/datum/prompt/text/weapon_setting_review
+	timeout = 0
+	var/mob/settings_operator
+	var/settings_operator_expected = FALSE
+	var/obj/item/settings_held
+	var/settings_held_expected = FALSE
+	var/datum/interaction/settings_interaction
+	var/settings_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/weapon_setting_review)
+	ref_one(nameof(settings_operator), /mob)
+	ref_one(nameof(settings_held), /obj/item)
+	ref_one(nameof(settings_interaction), /datum/interaction)
+
+/datum/prompt/text/weapon_setting_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = settings_operator
+	settings_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(settings_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(settings_operator), captured_operator)
+	var/obj/item/captured_held = settings_held
+	settings_held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(settings_held))
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(settings_held), captured_held)
+	var/datum/interaction/captured_interaction = settings_interaction
+	settings_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(settings_interaction))
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(settings_interaction), captured_interaction)
+
+/datum/prompt/text/weapon_setting_review/recheck_extra()
+	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)) || (settings_interaction_expected && QDELETED(settings_interaction)))
+		return "gone"
+
+/datum/prompt/choice/weapon_setting_review
+	timeout = 0
+	var/mob/settings_operator
+	var/settings_operator_expected = FALSE
+	var/obj/item/settings_held
+	var/settings_held_expected = FALSE
+	var/datum/interaction/settings_interaction
+	var/settings_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/weapon_setting_review)
+	ref_one(nameof(settings_operator), /mob)
+	ref_one(nameof(settings_held), /obj/item)
+	ref_one(nameof(settings_interaction), /datum/interaction)
+
+/datum/prompt/choice/weapon_setting_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = settings_operator
+	settings_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(settings_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(settings_operator), captured_operator)
+	var/obj/item/captured_held = settings_held
+	settings_held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(settings_held))
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(settings_held), captured_held)
+	var/datum/interaction/captured_interaction = settings_interaction
+	settings_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(settings_interaction))
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(settings_interaction), captured_interaction)
+
+/datum/prompt/choice/weapon_setting_review/recheck_extra()
+	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)) || (settings_interaction_expected && QDELETED(settings_interaction)))
+		return "gone"
+	if(!isnull(answer_value) && isdatum(answer_value))
+		var/datum/selected = answer_value
+		if(QDELETED(selected))
+			return "gone"

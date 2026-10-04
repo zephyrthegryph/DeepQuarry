@@ -101,7 +101,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 
 /// Old Select Gene verb.
 /obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(mob/user, obj/item/held, datum/interaction/interaction)
-	var/genemask = rerun_ask(user, "k108", PROC_REF(floragun_verb_select_gene), args, /datum/om/prompt/choice, message = "Choose a gene to modify.", title = "Gene Choice", choices = SSplants.plant_gene_datums)
+	return flora_gene_stage(user, held, interaction)
+
+/obj/item/gun/energy/floragun/proc/flora_gene_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
+	if(!settings_ready)
+		open_request(src, /datum/prompt/choice/weapon_setting_review, PROC_REF(flora_gene_answered), answerer = user, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "Choose a gene to modify.", title = "Gene Choice", choices = SSplants.plant_gene_datums)
+		return
+	var/genemask = settings_answer
 	if(isnull(genemask))
 		return
 
@@ -601,3 +607,16 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 /// A shared definition/flyweight (never cleared).
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene
 	return gene_static
+
+/obj/item/gun/energy/floragun/proc/flora_gene_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(flora_gene_apply), context)
+	if(!caught.ok)
+		stack_trace("Weapon flora_gene replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/gun/energy/floragun/proc/flora_gene_apply(datum/act/request/context)
+	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
+	return flora_gene_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)

@@ -150,9 +150,15 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 
 /// Old Name Gun verb: Rename your gun. If you're Security.
 /obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	return detective_stun_name_stage(user, held, interaction)
+
+/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_name_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
 	var/mob/M = user
 	if(!M.mind)	return 0
-	var/_answer_k156 = rerun_ask(M, "k156", PROC_REF(det_stunrevolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Gun", max_length = MAX_NAME_LEN, encode = FALSE)
+	if(!settings_ready)
+		open_request(src, /datum/prompt/text/weapon_setting_review, PROC_REF(detective_stun_name_answered), answerer = M, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "What do you want to name the gun?", title = "Rename Gun", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k156 = settings_answer
 	if(isnull(_answer_k156))
 		return
 	var/input = sanitizeSafe(_answer_k156)
@@ -164,6 +170,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 
 /// Old Resprite gun verb: Click to choose a sprite for your gun.
 /obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
+	return detective_stun_skin_stage(user, held, interaction)
+
+/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_skin_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
 	var/mob/M = user
 	var/list/options = list()
 	options["Lawson Arms LAEP20"] = "stunrevolver"
@@ -173,7 +182,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 	options["Lawson Arms LTX1020 (Stainless)"] = "stainstunrevolver"
 	options["Lawson Arms LTX1020 (Ace)"] = "snubstunrevolver"
 	options["Lawson Arms LTX1020 (Gold)"] = "goldstunrevolver"
-	var/choice = rerun_ask(M, "k177", PROC_REF(det_stunrevolver_verb_reskin), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
+	if(!settings_ready)
+		open_request(src, /datum/prompt/choice/weapon_setting_review, PROC_REF(detective_stun_skin_answered), answerer = M, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "Choose your sprite!", title = "Resprite Gun", choices = options)
+		return
+	var/choice = settings_answer
 	if(isnull(choice))
 		return
 	if(src && choice && !M.stat && in_range(M,src))
@@ -210,3 +222,29 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 	icon_state = "snubstunrevolver"
 	item_state = "stunrevolver"
 	w_class = ITEMSIZE_SMALL //small pistol is small
+
+/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_name_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(detective_stun_name_apply), context)
+	if(!caught.ok)
+		stack_trace("Weapon detective_stun_name replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_name_apply(datum/act/request/context)
+	var/datum/prompt/text/weapon_setting_review/ask = context.answer
+	return detective_stun_name_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)
+
+/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_skin_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(detective_stun_skin_apply), context)
+	if(!caught.ok)
+		stack_trace("Weapon detective_stun_skin replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_skin_apply(datum/act/request/context)
+	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
+	return detective_stun_skin_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)
