@@ -479,6 +479,7 @@
 #include "dq_hc_computers_batch1.dm"
 #include "dq_hc_computers_batch2.dm"
 #include "dq_hc_computers_batch3.dm"
+#include "dq_hc_computers_batch4.dm"
 #include "dq_p2_reagent_behaviour.dm"
 #include "dq_p2_reagent_spray_behaviour.dm"
 #include "dq_p2_lights_behaviour.dm"
