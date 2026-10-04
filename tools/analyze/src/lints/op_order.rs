@@ -100,7 +100,7 @@ struct CapDef {
 
 struct Model {
     caps: HashMap<String, CapDef>,
-    /// Named bundles (BUNDLE(name) and its entries): name -> the entries joined.
+    /// Entry procs (a global proc returning a list of entries): name -> the entries joined.
     bundles: HashMap<String, String>,
     /// Global procs: name -> (params, body).
     procs: HashMap<String, (Vec<String>, String)>,
@@ -366,7 +366,7 @@ impl Model {
             let body = entries.get(&datum).cloned().unwrap_or_default();
             caps.insert(name.clone(), CapDef { prefix, params, selector, body });
         }
-        let bundles = decls.markers_named("BUNDLE").filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].join(", ")))).collect();
+        let bundles = decls.markers_named(crate::sem::decls::ENTRY_PROC).filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].join(", ")))).collect();
         Model { caps, bundles, procs }
     }
 

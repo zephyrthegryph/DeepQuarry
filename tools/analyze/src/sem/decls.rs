@@ -31,13 +31,21 @@ pub const MARKERS: &[&str] = &[
     "STATE_GRAPH",
     "RESOURCE_DEF",
     "SOURCE_DEF",
-    "BUNDLE",
     "READS_AS",
     "READS_FROM",
 ];
 
 /// Markers whose entries may follow as an indented block (doc/rewrite/final_api.html section 1).
-pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "BUNDLE", "STATE_GRAPH"];
+pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GRAPH"];
+
+/// The marker the scan makes for an entry proc: a global `/proc/name(...)` whose first statement is `return list(...)` of declaration
+/// entries (`op(`, `extend(`, `interface(`, ...). It is the plain-proc form of reuse (doc section 11): a CAPABILITIES block that names
+/// `name()` gets those entries, so what reads a block (op keys, handlers, UI types, op order) reads the proc's entries the same way.
+/// `args[0]` is the proc's name, the rest are the list's entries; `body` is the text inside `list(...)`.
+pub const ENTRY_PROC: &str = "ENTRY_PROC";
+
+/// Calls that make a returned list a list of declaration entries.
+const ENTRY_CALLS: &[&str] = &["op(", "extend(", "interface(", "ui_shape(", "on_notice(", "on_change(", "without(", "configure("];
 
 /// The end offset (exclusive, trailing blanks trimmed) of the indented block that follows the marker whose `)` is at `close`,
 /// or None when no indented line follows it (the legacy single-macro form, or a header with no entries).
@@ -447,6 +455,26 @@ pub fn matching_paren(s: &str, open: usize) -> Option<usize> {
     None
 }
 
+/// The ENTRY_PROC marker of a global proc whose first statement (`t`, on `line`) is `return list(...)` holding declaration entries.
+#[allow(clippy::too_many_arguments)]
+fn entry_proc(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t: &str, name: String, head_line: u32, rel: &str, out: &mut Vec<Marker>) {
+    let Some(rest) = t.strip_prefix("return") else { return };
+    let rest = rest.trim_start();
+    let Some(after) = rest.strip_prefix("list") else { return };
+    if !after.trim_start().starts_with('(') {
+        return;
+    }
+    let open = starts[ln0] as usize + (line.len() - rest.len()) + rest.find('(').unwrap();
+    let Some(close) = matching_paren(stripped, open) else { return };
+    let body = stripped[open + 1..close].to_string();
+    if !ENTRY_CALLS.iter().any(|c| body.contains(c)) {
+        return;
+    }
+    let mut args = vec![name];
+    args.extend(split_args(&body));
+    out.push(Marker { name: ENTRY_PROC.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
+}
+
 fn scan_file(f: &SourceFile) -> FileDecls {
     let text = f.text();
     let stripped = strip_comments_keep_strings(text);
@@ -460,9 +488,18 @@ fn scan_file(f: &SourceFile) -> FileDecls {
     let mut fd = FileDecls { key_refs: Vec::new(), bad_sources: Vec::new(), markers: Vec::new(), relations: Vec::new(), tracked: Vec::new(), defines: Vec::new(), publishers: Vec::new(), entry_ops: Vec::new() };
     // The datum whose `entries()` body the scan is inside (the proc is declared at column 0 as `/datum/x/entries()`).
     let mut entries_of: Option<String> = None;
+    // A global proc (name, header line) whose first statement has not been seen yet: an entry proc when it is `return list(entries)`.
+    let mut proc_head: Option<(String, u32)> = None;
     for (ln0, line) in stripped.split('\n').enumerate() {
         let ln = ln0 as u32 + 1;
         let t = line.trim_start();
+        if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
+            proc_head = pat_match!(r"^/proc/(\w+)\([^)]*\)\s*$").captures(line).map(|m| (m.s(1).to_string(), ln));
+        } else if !t.is_empty() && !t.starts_with('#') {
+            if let Some((name, head_line)) = proc_head.take() {
+                entry_proc(&stripped, &starts, ln0, line, t, name, head_line, &f.rel, &mut fd.markers);
+            }
+        }
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
             entries_of = pat_match!(r"^(/datum/[\w/]+)/entries\(\)").captures(line).map(|m| m.s(1).to_string());
         } else if let Some(ty) = &entries_of {
@@ -599,6 +636,20 @@ mod tests {
         assert_eq!(d.markers.len(), 1);
         assert_eq!(d.markers[0].args, vec!["/obj", "foo", "ALL", "base = 1"]);
         assert_eq!(d.markers[0].line, 1);
+    }
+
+    #[test]
+    fn a_global_proc_returning_entries_is_an_entry_proc() {
+        let f = SourceFile::from_text(
+            "code/a.dm",
+            "/proc/door_controls()\n\t// the buttons\n\treturn list(op(\"bolt\", ui_act()),\n\t\textend(\"open\", needs(x())))\n/proc/parts()\n\treturn list(tool(TOOL_CROWBAR))\n/proc/later()\n\tvar/x = 1\n\treturn list(op(\"y\"))\n",
+        );
+        let d = scan_file(&f);
+        let procs: Vec<&Marker> = d.markers.iter().filter(|m| m.name == ENTRY_PROC).collect();
+        assert_eq!(procs.len(), 1, "only a first-statement list of entries: {:?}", procs.iter().map(|m| &m.args).collect::<Vec<_>>());
+        assert_eq!(procs[0].args, vec!["door_controls", "op(\"bolt\", ui_act())", "extend(\"open\", needs(x()))"]);
+        assert_eq!(procs[0].line, 1);
+        assert_eq!(procs[0].line_at(procs[0].body.find("extend").unwrap()), 4);
     }
 }
 

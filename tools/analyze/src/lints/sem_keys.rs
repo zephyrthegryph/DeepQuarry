@@ -47,7 +47,7 @@ static META: Meta = Meta {
 };
 
 /// Markers whose bodies may only name declared ids.
-const CHECKED_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "CAPABILITY_TYPE", "cap_keys", "BUNDLE", "STATE_GRAPH", "RESOURCE_DEF", "SCHEMA", "ACTION"];
+const CHECKED_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "CAPABILITY_TYPE", "cap_keys", crate::sem::decls::ENTRY_PROC, "STATE_GRAPH", "RESOURCE_DEF", "SCHEMA", "ACTION"];
 
 struct SemKeys;
 

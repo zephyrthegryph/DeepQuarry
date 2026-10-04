@@ -340,9 +340,14 @@ each state key; and, for each `CAPABILITIES(T)` block, `T/declared_entries(list/
 rewrites: `link(A::a, B::b)` (`link` is a BYOND keyword) becomes `entry_link("A::a", "B::b")`, and `configure(CAP_X, "selector", param =
 value)` becomes `configure(<constructor of CAP_X>("selector", param = value))`. Declarations in files under `code/tests/` go in an
 `#if defined(UNIT_TESTS)` block. A second `CAPABILITIES` list for one type is a diagnostic. DM cannot continue a macro call across lines,
-so a block is a header whose entries are the indented statements under it (`CAPABILITIES(T)`, `STATE_GRAPH(graph)`; `CAPABILITY_DEF` and `BUNDLE`
-are read the same way): `decls` joins the entries with commas in place of the entry-ending newlines (same length, so lines stay right) and every
-reader sees one argument list. The legacy backslash list is still read, for the fixtures. `links(A::a, B::b)` is the block spelling of `link`
+so a block is a header whose entries are the indented statements under it (`CAPABILITIES(T)`, `STATE_GRAPH(graph)`; `CAPABILITY_DEF` is
+read the same way): `decls` joins the entries with commas in place of the entry-ending newlines (same length, so lines stay right) and every
+reader sees one argument list. A `section(name, "doc")` line in a block opens a section: the entries after it (to the next section or the
+block's end) are written with `entry_line(line, "name")`, so Explain Type and Explain Interaction print `file:line section name`; the header
+itself is no entry, and an empty, misnamed or repeated section is a diagnostic. `BUNDLE(name)` is gone (`declaration_block`'s `bundle` rule
+rejects it). Reuse is a capability or a plain proc: `decls` reads a global `/proc/name(...)` whose first statement is `return list(...)` of
+entries as an `ENTRY_PROC` marker, so op keys (`sem_keys`), handler discovery, `ui_types` and `op_order` see into a `name()` entry the way
+they read a block. The legacy backslash list is still read, for the fixtures. `links(A::a, B::b)` is the block spelling of `link`
 (a BYOND reserved word).
 
 `stats.dm` (`analyze gen stats`, E3): for each `STAT(T, name, RULE, base =, reapply =, units =, formula = PROC_REF(x), reads = list(...), schema =,
