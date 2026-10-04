@@ -149,11 +149,13 @@ This device can be easily used to break ERP preferences due to the nature of tel
 Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.
 This device records all warnings given and teleport events for admin review in case of pref-breaking, so just don't do it.
 "},"OOC Warning")
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(beacon_chosen), choices = radial_images, anchor = radial_menu_anchor, require_near = TRUE, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(beacon_chosen), answerer = user, choices = radial_images, radial = TRUE, anchor = radial_menu_anchor || src, require_near = TRUE, tooltips = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/item/perfect_tele/proc/beacon_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/perfect_tele/proc/beacon_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(!choice || !check_menu(user))
 		return
 
@@ -162,16 +164,18 @@ This device records all warnings given and teleport events for admin review in c
 			to_chat(user, span_warning("The translocator can't support any more beacons!"))
 			return
 
-		om_ask(user, /datum/om/prompt/text, PROC_REF(beacon_named), title = "[src]", message = "New beacon's name (2-20 char):", max_length = 20, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(beacon_named), answerer = user, title = "[src]", question = "New beacon's name (2-20 char):", max_len = 20, name_text = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		return
 
 	else
 		rel_set(src, nameof(destination), find_beacon(choice))
 		rebuild_radial_images()
 
-/obj/item/perfect_tele/proc/beacon_named(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_name = ask.text
+/obj/item/perfect_tele/proc/beacon_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/new_name = A.answer.answer_value
 	if(!check_menu(user))
 		return
 	if(beacons_left <= 0)

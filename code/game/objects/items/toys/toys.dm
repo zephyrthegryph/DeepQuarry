@@ -1982,12 +1982,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/rock, INTERACT_INSERT(/obj/item/pen, PROC_REF
 
 /// Old attackby.
 /obj/item/toy/rock/proc/interaction_draw_face(mob/living/user, obj/item/I, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(face_chosen), title = "Faces", message = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(face_chosen), answerer = user, title = "Faces", question = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/toy/rock/proc/face_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/user = ask.answerer
-	switch(ask.choice)
+/obj/item/toy/rock/proc/face_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("fred")
 			src.icon_state = "fred"
 			to_chat(user, "You draw a face on the rock.")
