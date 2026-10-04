@@ -218,8 +218,7 @@ CAPABILITIES(/datum/stock)
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
 		if (ELAPSED(borrow, offer_expires, CLOCK_WORLD) > 0)
-			own_take_member(src, nameof(borrow_brokers), borrow)
-			qdel(borrow)
+			rel_remove(src, nameof(borrow_brokers), borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
 		generateBrokers()
 	fluctuation_counter += elapsed_steps
