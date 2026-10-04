@@ -10,14 +10,12 @@
 	var/obj/machinery/mass_driver/connected
 	var/time = 30.0
 	var/title = "Mass Driver Controls"
-	/// The countdown is running.
-	var/timing = FALSE
 
 /// Blast doors and mass drivers sharing our id.
 /obj/machinery/computer/pod/var/list/obj/machinery/door/blast/pod_doors
 /obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
 
-TRACKED_BRIDGED(/obj/machinery/computer/pod, timing, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("timing", "operable"))
 
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
