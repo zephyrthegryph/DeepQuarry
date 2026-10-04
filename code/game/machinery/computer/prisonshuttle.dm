@@ -60,12 +60,13 @@ DECLARE_REPEAT(/obj/machinery/computer/prison_shuttle, 0.5 SECONDS, prison_proce
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/prison_shuttle, "PrisonShuttleConsole", UI_TITLE("Prison Shuttle"))
-
-UI_DATA_REPLACE(/obj/machinery/computer/prison_shuttle, "merge:ui_data_obj_machinery_computer_prison_shuttle{moving:bool,at_station:bool,time_left:unknown,can_move:bool}")
+CAPABILITIES(/obj/machinery/computer/prison_shuttle)
+	interface("PrisonShuttleConsole", title = "Prison Shuttle")
+	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
+	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
 
 /// The computed part of /obj/machinery/computer/prison_shuttle's window data (declared on its UI_DATA row).
-/obj/machinery/computer/prison_shuttle/proc/ui_data_obj_machinery_computer_prison_shuttle(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["moving"] = GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison
 	data["at_station"] = !!GLOB.prison_shuttle_at_station
@@ -73,8 +74,8 @@ UI_DATA_REPLACE(/obj/machinery/computer/prison_shuttle, "merge:ui_data_obj_machi
 	data["can_move"] = prison_can_move() && !prison_break
 	return data
 
-UI_ACT(/obj/machinery/computer/prison_shuttle, "send_to_dock", ui_act_send_to_dock)
-UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_dock)
+/obj/machinery/computer/prison_shuttle/proc/ui_act_send_to_dock(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!prison_can_move())
 		to_chat(user, span_warning("The prison shuttle is unable to leave."))
 		return TRUE
@@ -88,8 +89,8 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_dock)
 	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/prison_shuttle, "send_to_station", ui_act_send_to_station)
-UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
+/obj/machinery/computer/prison_shuttle/proc/ui_act_send_to_station(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!prison_can_move())
 		to_chat(user, span_warning("The prison shuttle is unable to leave."))
 		return TRUE

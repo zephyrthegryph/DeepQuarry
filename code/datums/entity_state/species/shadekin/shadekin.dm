@@ -96,9 +96,9 @@
 	//Humans are ticked by the species_components life stage instead.
 
 	// Voice/name hooks
-	om_hook(owner, /datum/om/event/before/human_get_voice, src, PROC_REF(on_get_voice))
-	om_hook(owner, /datum/om/event/before/human_get_alt_name, src, PROC_REF(on_get_alt_name))
-	om_hook(owner, /datum/om/event/before/human_get_visible_name, src, PROC_REF(on_get_visible_name))
+	observe(owner, /datum/act/name_voice, src, instead(then(PROC_REF(on_get_voice))))
+	observe(owner, /datum/act/name_alt, src, instead(then(PROC_REF(on_get_alt_name))))
+	observe(owner, /datum/act/name_visible, src, instead(then(PROC_REF(on_get_visible_name))))
 
 	// This datum is the source for every ability it grants
 	// (code/datums/abilities/ability.dm); revoked with it in
@@ -305,37 +305,31 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 	hide_voice_in_phase = !hide_voice_in_phase
 	ui.user.write_preference_directly(/datum/preference/toggle/living/shadekin_hide_voice_in_phase, new_voice_hide, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 
-/// Signal handler for GetVoice()
-/datum/shadekin/proc/on_get_voice(mob/living/carbon/human/source, datum/om/event/before/human_get_voice/event)
+/// The voice answer of GetVoice(): phase-shifted shadekin who hide their voice are "Something". The handler's value is the voice (the act's reply).
+/datum/shadekin/proc/on_get_voice(datum/act/name_voice/voice)
 	EVENT_HANDLER
-	var/list/voice_data = event.voice_data
-
 	if(in_phase && hide_voice_in_phase)
-		voice_data[1] = "Something"
-		return COMPONENT_VOICE_CHANGED
+		return "Something"
+	return HOOK_DECLINE
 
-/// Signal handler for GetAltName()
-/datum/shadekin/proc/on_get_alt_name(mob/living/carbon/human/source, datum/om/event/before/human_get_alt_name/event)
+/// The alt name answer of GetAltName(): no alt name while hidden in phase, and none for shadekin with voice changers or no identification.
+/datum/shadekin/proc/on_get_alt_name(datum/act/name_alt/alt)
 	EVENT_HANDLER
-	var/list/name_data = event.name_data
-
+	var/mob/living/carbon/human/source = alt.target
 	if(in_phase && hide_voice_in_phase)
-		name_data[1] = ""
-		return COMPONENT_ALT_NAME_CHANGED
+		return ""
 
 	// Suppress "(as Unknown)" for shadekin with voice changers, or no identification.
 	if(source.name != source.GetVoice())
-		name_data[1] = ""
-		return COMPONENT_ALT_NAME_CHANGED
+		return ""
+	return HOOK_DECLINE
 
-/// Signal handler for get_visible_name()
-/datum/shadekin/proc/on_get_visible_name(mob/living/source, datum/om/event/before/human_get_visible_name/event)
+/// The visible name answer of get_visible_name().
+/datum/shadekin/proc/on_get_visible_name(datum/act/name_visible/shown)
 	EVENT_HANDLER
-	var/list/name_data = event.identity
-
 	if(in_phase && hide_voice_in_phase)
-		name_data[1] = "Something"
-		return COMPONENT_VISIBLE_NAME_CHANGED
+		return "Something"
+	return HOOK_DECLINE
 
 /mob/living/proc/shadekin_control_panel()
 	set name = "Shadekin Control Panel"

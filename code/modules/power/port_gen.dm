@@ -626,7 +626,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, TYPE_
 	for(var/i = 1, i <= parts_found.len, i++)
 		var/obj/item/W = parts_found[i]
 		rel_add(src, nameof(component_parts), W)
-		W.move_into(src, CONTAINER_SLOT_INTERNALS)
+		move_into(src, CONTAINER_SLOT_INTERNALS, W)
 	RefreshParts()
 
 /obj/machinery/power/rtg/machine_step()
@@ -781,7 +781,7 @@ APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 	return !cell
 
 /obj/machinery/power/rtg/abductor/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.cell), I, user = user))
+	if(!move_into(src, nameof(src.cell), I, user))
 		return TRUE
 	RefreshParts()
 	update_icon()

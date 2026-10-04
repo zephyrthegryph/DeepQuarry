@@ -67,7 +67,7 @@
 		om_handle_forward(original, built)
 		qdel(original)
 		if(slot_id && !QDELETED(holder) && !QDELETED(built))
-			built.move_into(holder, slot_id)
+			move_into(holder, slot_id, built)
 		return built
 	// arglist() can't be combined with a positional arg in the same call, so
 	// the loc goes into the same list as the rest of the constructor args.
@@ -83,7 +83,7 @@
 	// Best effort: the slot may refuse the successor (different accepts
 	// predicate) -- it still exists on the turf either way.
 	if(slot_id && !QDELETED(holder) && !QDELETED(successor))
-		successor.move_into(holder, slot_id)
+		move_into(holder, slot_id, successor)
 	return successor
 
 // ---- lifetime / expire() ----

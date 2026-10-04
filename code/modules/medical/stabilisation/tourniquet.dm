@@ -132,7 +132,7 @@
 /obj/item/organ/external/proc/apply_tourniquet(obj/item/tourniquet/T, mob/user)
 	if(tourniquet || !istype(T))
 		return FALSE
-	if(!own_set(src, nameof(tourniquet), T, user = user))
+	if(!move_into(src, nameof(tourniquet), T, user))
 		return FALSE
 	EXPIRY_STAMP(T, applied_at, CLOCK_WORLD)
 	afflict_ischemia_below()

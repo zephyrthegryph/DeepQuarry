@@ -12,6 +12,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/csandwich)
 	op("hide_shard", item(/obj/item/material/shard), priority(OP_PRIORITY_PART + 1), label("Hide it inside"), then(PROC_REF(shard_hidden)))
 	op("layer", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Layer it on"),
 		needs(req(PROC_REF(not_collapsing), because = MSG(snack/collapses))), then(PROC_REF(layered)))
+	owns_many(nameof(ingredients))
 
 MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to collapse.")
 
@@ -38,7 +39,7 @@ MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to coll
 /obj/item/reagent_containers/food/snacks/csandwich/proc/layered(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/reagent_containers/food/snacks/W = A.held
-	if(!own_add(src, nameof(src.ingredients), W, user = user))
+	if(!move_into(src, nameof(src.ingredients), W, user))
 		return OP_REFUSED
 	to_chat(user, span_blue("You layer [W] over \the [src]."))
 	W.reagents.trans_to_obj(src, W.reagents.total_volume)

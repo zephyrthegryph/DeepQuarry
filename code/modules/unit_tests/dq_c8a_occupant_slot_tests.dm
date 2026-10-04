@@ -9,7 +9,7 @@
 /// machine's own do_after-gated entry verb, which is that machine's business,
 /// not the containment wiring under test) and checks the slot's own shape.
 /datum/unit_test/proc/c8a_check_occupant_slot(atom/holder, mob/living/who, slot_id)
-	TEST_ASSERT(who.move_into(holder, slot_id), "[who] should be able to move into [holder]'s [slot_id] slot")
+	TEST_ASSERT(move_into(holder, slot_id, who), "[who] should be able to move into [holder]'s [slot_id] slot")
 	TEST_ASSERT_EQUAL(who.loc, holder, "[who] should be inside [holder]")
 	TEST_ASSERT(who in holder.slot_contents(slot_id), "[who] should be listed in [holder]'s [slot_id] slot")
 	var/datum/om/relation/slot/def = dq_path_slot_of(holder, who)
@@ -22,7 +22,7 @@
 
 /// Destroying an occupied holder spills the occupant instead of deleting them.
 /datum/unit_test/proc/c8a_check_occupant_spills_on_destroy(atom/movable/holder, mob/living/who, slot_id)
-	TEST_ASSERT(who.move_into(holder, slot_id), "[who] should be able to move into [holder]'s [slot_id] slot")
+	TEST_ASSERT(move_into(holder, slot_id, who), "[who] should be able to move into [holder]'s [slot_id] slot")
 	var/turf/T = get_turf(holder)
 	qdel(holder)
 	TEST_ASSERT(!QDELETED(who), "destroying the holder should not delete its occupant")
@@ -151,7 +151,7 @@
 	var/turf/T = test_floor()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
 	var/obj/item/stack/material/steel/cargo_item = allocate(/obj/item/stack/material/steel, T)
-	TEST_ASSERT(cargo_item.move_into(mech, MECHA_SLOT_CARGO), "a cargo item should be able to move into the mech's cargo slot")
+	TEST_ASSERT(move_into(mech, MECHA_SLOT_CARGO, cargo_item), "a cargo item should be able to move into the mech's cargo slot")
 	var/datum/om/relation/slot/def = dq_path_slot_of(mech, cargo_item)
 	TEST_ASSERT(def, "the mech should report a slot definition for its cargo")
 	TEST_ASSERT_EQUAL(def.exposure, SLOT_EXPOSURE_INTERNAL, "a mech's cargo compartment should be internal")

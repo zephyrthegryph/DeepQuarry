@@ -125,7 +125,7 @@
 		if(QDELETED(B)) // for mannequins or such
 			return
 		// Off the back (spawned) or out of the hand, into the rig.
-		if(!own_set(src, nameof(src.rig_storage), B, user = spawned ? null : P, into = TRUE))
+		if(!move_into(src, nameof(src.rig_storage), B, spawned ? null : P))
 			return
 		to_chat(P, span_notice("[B] has been integrated into the [src]."))
 		if(spawned)	//This feels very dumb to have a second if but I'm lazy
@@ -315,7 +315,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			return INTERACTION_HANDLED_PASS
 
 
-		if(!own_set(src, nameof(src.air_supply), W, user = user))
+		if(!move_into(src, nameof(src.air_supply), W, user))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 		return INTERACTION_HANDLED_PASS
@@ -452,21 +452,21 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	if(!istype(M) || M == myprotean)
 		return
 	rel_set(src, nameof(soaking_wearer), M)
-	om_hook(M, /datum/om/event/before/living_injure, src, PROC_REF(soak_wearer_injury))
+	observe(M, /datum/act/injure, src, adjusts_with(PROC_REF(soak_wearer_injury)))
 
 /obj/item/rig/protean/proc/stop_soaking()
 	if(!soaking_wearer)
 		return
-	om_unhook(soaking_wearer, /datum/om/event/before/living_injure, src)
+	unobserve(soaking_wearer, /datum/act/injure, src)
 	rel_clear(src, nameof(soaking_wearer))
 
-/obj/item/rig/protean/proc/soak_wearer_injury(mob/living/carbon/human/source, datum/om/event/before/living_injure/event)
+/obj/item/rig/protean/proc/soak_wearer_injury(datum/act/injure/hit)
 	EVENT_HANDLER
-	var/kind = event.kind
-	var/list/amount_ref = event.amount_ref
-	var/zone = event.zone
-	var/atom/hit_source = event.source
-	var/flags = event.flags
+	var/mob/living/carbon/human/source = hit.target
+	var/kind = hit.kind
+	var/zone = hit.zone
+	var/atom/hit_source = hit.cause
+	var/flags = hit.flags
 	if(!myprotean || inert || !(flags & INJURE_ARMORED))
 		return
 	var/armor_key = injury_armor_key(kind)
@@ -477,7 +477,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	var/armor_value = piece ? piece.get_armor().value(armor_key) : 0
 	if(!armor_value)
 		return
-	var/soaked = amount_ref[1] * clamp(armor_value, 0, 100) / 100
+	var/soaked = hit.amount * clamp(armor_value, 0, 100) / 100
 	if(soaked <= 0)
 		return
 	myprotean.injure(kind, soaked, E?.organ_tag, hit_source, 0, null, INJURE_SILENT)

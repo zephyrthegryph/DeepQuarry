@@ -176,7 +176,7 @@
 	. = INTERACTION_HANDLED_PASS
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
-			if(!own_set(src, nameof(src.bolt), W, user = user))
+			if(!move_into(src, nameof(src.bolt), W, user))
 				return
 			act_message(user, src, MSG_SELF("You slide [bolt] into %T%."), MSG_OTHERS("%U% slides [bolt] into %T%."))
 			update_icon()

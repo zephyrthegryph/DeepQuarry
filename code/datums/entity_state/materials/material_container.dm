@@ -77,7 +77,7 @@
 
 	// can we insert into this container
 	if(!(mat_container_flags & MATCONTAINER_NO_INSERT))
-		om_hook(owner, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
+		observe(owner, /datum/act/attackby, src, instead(then(PROC_REF(on_attackby))))
 
 	//to see available materials
 	if(mat_container_flags & MATCONTAINER_EXAMINE)
@@ -111,9 +111,9 @@
 			unobserve(owner, /datum/notice/examine, src)
 
 		if(old_flags & MATCONTAINER_NO_INSERT && !(mat_container_flags & MATCONTAINER_NO_INSERT))
-			om_hook(owner, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
+			observe(owner, /datum/act/attackby, src, instead(then(PROC_REF(on_attackby))))
 		else if(!(old_flags & MATCONTAINER_NO_INSERT) && mat_container_flags & MATCONTAINER_NO_INSERT)
-			om_unhook(owner, /datum/om/event/before/attackby, src)
+			unobserve(owner, /datum/act/attackby, src)
 
 /**
  * 3 Types of Procs
@@ -452,14 +452,15 @@
 		if(!QDELETED(deleting)) //deleting parents also delete their children so we check
 			qdel(deleting)
 
-/datum/material_container/proc/on_attackby(datum/source, datum/om/event/before/attackby/event)
+/datum/material_container/proc/on_attackby(datum/act/attackby/use)
 	EVENT_HANDLER
-	var/obj/item/I = event.item
-	var/mob/living/user = event.user
+	var/obj/item/I = use.item
+	var/mob/living/user = use.user
 	if(istype(I, /obj/item/storage/bag/sheetsnatcher))
-		return OnSheetSnatcher(source, user, I)
+		OnSheetSnatcher(use.target, user, I)
+		return HOOK_DECLINE
 
-	return attempt_insert(user, I)
+	return attempt_insert(user, I) ? TRUE : HOOK_DECLINE
 
 /datum/material_container/proc/OnSheetSnatcher(datum/source, mob/user, obj/item/storage/bag/sheetsnatcher/S)
 	SHOULD_NOT_SLEEP(TRUE)

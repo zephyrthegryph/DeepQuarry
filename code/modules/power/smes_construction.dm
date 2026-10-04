@@ -344,7 +344,7 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 
 		to_chat(user, "You install the coil into the SMES unit!")
 		cur_coils ++
-		if(!own_add(src, nameof(src.component_parts), W, user = user))
+		if(!move_into(src, nameof(src.component_parts), W, user))
 			return OP_OK
 		recalc_coils()
 	else

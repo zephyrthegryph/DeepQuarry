@@ -225,7 +225,7 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 		to_chat(user, span_warning("\The [src] is already occupied."))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_VR_POD))
+	if(!move_into(src, OCCUPANT_SLOT_VR_POD, M))
 		return
 
 	update_icon()

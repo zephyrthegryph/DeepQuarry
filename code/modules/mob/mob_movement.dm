@@ -221,8 +221,10 @@
 		return
 
 	// Relaymove could handle it
-	if(OM_EMIT(my_mob, /datum/om/event/before/mob_relay_movement, direct))
+	var/datum/act/relay_movement/relay = ACT_TRY(my_mob, relay_movement, direct)
+	if(!relay)
 		return TRUE
+	act_cancel(relay)
 
 	// Can't control ourselves when drifting
 	if((isspace(loc) || my_mob.lastarea?.get_gravity() == 0) && isturf(loc))

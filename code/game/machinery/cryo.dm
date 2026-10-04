@@ -196,7 +196,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectoccupant)
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		if(!own_set(src, nameof(src.beaker), G, user = user))
+		if(!move_into(src, nameof(src.beaker), G, user))
 			return TRUE
 		act_message(user, src, MSG_SELF("You add \a [G] to %T%!"), MSG_OTHERS("%U% adds \a [G] to %T%!"))
 		SStgui.update_uis(src)
@@ -353,7 +353,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 		to_chat(user, span_warning("The cell is not correctly connected to its pipe network!"))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_CRYO))
+	if(!move_into(src, OCCUPANT_SLOT_CRYO, M))
 		return
 	occupant = M
 	M.extinguish_mob()

@@ -202,7 +202,7 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 		rel_add(M, nameof(M.universal_equipment), src)
 	rel_add(M, nameof(M.equipment), src)
 	rel_set(src, nameof(chassis), M)
-	if(!move_into(M, MECHA_SLOT_EQUIPMENT))
+	if(!move_into(M, MECHA_SLOT_EQUIPMENT, src))
 		forceMove(M) // the equipment lists above already committed; guarantee the move
 
 	if(enable_special_checks(M))

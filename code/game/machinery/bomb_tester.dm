@@ -100,7 +100,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	return !tank1 || !tank2
 
 /obj/machinery/bomb_tester/proc/interaction_load_tank(mob/user, obj/item/I, datum/interaction/interaction)
-	var/adopted = tank1 ? own_set(src, nameof(src.tank2), I, user = user) : own_set(src, nameof(src.tank1), I, user = user)
+	var/adopted = tank1 ? move_into(src, nameof(src.tank2), I, user) : move_into(src, nameof(src.tank1), I, user)
 	if(!adopted)
 		return TRUE
 	update_icon()
@@ -176,7 +176,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_add_tank)
 			to_chat(ui.user, span_warning("Slot [slot] is full."))
 			return
 
-		own_set(src, slot_var, T, user = ui.user)
+		move_into(src, slot_var, T, ui.user)
 		return TRUE
 	else
 		to_chat(ui.user, span_warning("You must be wielding a tank to insert it!"))

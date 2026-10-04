@@ -105,11 +105,11 @@
 	var/lost_signals = 0
 	var/restored_signals = 0
 
-/datum/unit_test/dq_power_apc_cycle/proc/on_lost(datum/source, datum/om/event/machinery_power_lost/event)
+/datum/unit_test/dq_power_apc_cycle/proc/on_lost(datum/act/notice/N)
 	EVENT_HANDLER
 	lost_signals++
 
-/datum/unit_test/dq_power_apc_cycle/proc/on_restored(datum/source, datum/om/event/machinery_power_restored/event)
+/datum/unit_test/dq_power_apc_cycle/proc/on_restored(datum/act/notice/N)
 	EVENT_HANDLER
 	restored_signals++
 
@@ -136,8 +136,8 @@
 	var/obj/machinery/power/terminal/T = A.terminal
 	var/old_charge = A.cell.charge
 	var/obj/machinery/M = allocate(/obj/machinery, get_turf(A))
-	om_hook(M, /datum/om/event/machinery_power_lost, src, PROC_REF(on_lost))
-	om_hook(M, /datum/om/event/machinery_power_restored, src, PROC_REF(on_restored))
+	observe(M, /datum/notice/machinery_power_lost, src, then(PROC_REF(on_lost)))
+	observe(M, /datum/notice/machinery_power_restored, src, then(PROC_REF(on_restored)))
 	M.power_change()
 
 	// Cut off, nearly empty, with a load.
@@ -189,7 +189,8 @@
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	A.update()
 	refresh_flush()
-	om_unhook(M, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src)
+	unobserve(M, /datum/notice/machinery_power_lost, src)
+	unobserve(M, /datum/notice/machinery_power_restored, src)
 	SSmachines.process_power()
 
 /// A settled APC and an idle SMES neither poll nor hear from Rust.

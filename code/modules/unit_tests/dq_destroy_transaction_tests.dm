@@ -30,10 +30,10 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 
 /obj/item/dq_destroy_transaction_phase_probe/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
+	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
 	own_set(src, nameof(child), new /datum/dq_destroy_transaction_owned_child(src))
 
-/obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
+/obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/act/notice/N)
 	EVENT_HANDLER
 	dq_destroy_transaction_log("guard")
 
@@ -106,7 +106,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/turf/T = dq_containment_floor()
 	var/obj/item/dq_destroy_transaction_phase_probe/probe = allocate(/obj/item/dq_destroy_transaction_phase_probe, T)
 	var/obj/item/dq_destroy_transaction_content_probe/content = allocate(/obj/item/dq_destroy_transaction_content_probe, T)
-	TEST_ASSERT(content.move_into(probe, "main"), "content probe into the phase probe's slot")
+	TEST_ASSERT(move_into(probe, "main", content), "content probe into the phase probe's slot")
 
 	dq_destroy_transaction_log_reset()
 	qdel(probe)
@@ -128,7 +128,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/turf/T = dq_containment_floor()
 	var/obj/item/dq_destroy_transaction_phase_probe/probe = allocate(/obj/item/dq_destroy_transaction_phase_probe, T)
 	var/obj/item/dq_destroy_transaction_content_probe/content = allocate(/obj/item/dq_destroy_transaction_content_probe, T)
-	TEST_ASSERT(content.move_into(probe, "main"), "content probe into the phase probe's slot")
+	TEST_ASSERT(move_into(probe, "main", content), "content probe into the phase probe's slot")
 
 	TEST_ASSERT(probe.slot_remove(content, T), "an ordinary slot_remove, not a destroy transaction")
 	TEST_ASSERT(!content.saw_destroying_flag, "and it did not carry LEDGER_MOVE_DESTROYING")
@@ -166,8 +166,8 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/obj/item/dq_destroy_transaction_nest_outer/outer = allocate(/obj/item/dq_destroy_transaction_nest_outer, T)
 	var/obj/item/dq_destroy_transaction_nest_inner/inner = allocate(/obj/item/dq_destroy_transaction_nest_inner, T)
 	var/obj/item/dq_containment_test/grandchild = allocate(/obj/item/dq_containment_test, T)
-	TEST_ASSERT(inner.move_into(outer), "inner into outer")
-	TEST_ASSERT(grandchild.move_into(inner), "grandchild into inner")
+	TEST_ASSERT(move_into(outer, null, inner), "inner into outer")
+	TEST_ASSERT(move_into(inner, null, grandchild), "grandchild into inner")
 
 	dq_destroy_transaction_log_reset()
 	qdel(outer)
@@ -228,11 +228,11 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/obj/item/dq_destroy_transaction_mind_probe/head_mind = allocate(/obj/item/dq_destroy_transaction_mind_probe, T)
 	var/obj/item/dq_destroy_transaction_mind_probe/brain_mind = allocate(/obj/item/dq_destroy_transaction_mind_probe, T)
 
-	TEST_ASSERT(head.move_into(body, "body"), "head into body")
-	TEST_ASSERT(brain.move_into(head, "body"), "brain into head")
-	TEST_ASSERT(body_mind.move_into(body, "mind"), "body's own mind occupant")
-	TEST_ASSERT(head_mind.move_into(head, "mind"), "head's own mind occupant")
-	TEST_ASSERT(brain_mind.move_into(brain, "mind"), "brain's own mind occupant")
+	TEST_ASSERT(move_into(body, "body", head), "head into body")
+	TEST_ASSERT(move_into(head, "body", brain), "brain into head")
+	TEST_ASSERT(move_into(body, "mind", body_mind), "body's own mind occupant")
+	TEST_ASSERT(move_into(head, "mind", head_mind), "head's own mind occupant")
+	TEST_ASSERT(move_into(brain, "mind", brain_mind), "brain's own mind occupant")
 
 	dq_destroy_transaction_log_reset()
 	qdel(body)
@@ -268,7 +268,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/turf/T = dq_containment_floor()
 	var/obj/structure/dq_destroy_transaction_occupant_holder/pod = allocate(/obj/structure/dq_destroy_transaction_occupant_holder, T)
 	var/obj/item/dq_containment_test/occupant = allocate(/obj/item/dq_containment_test, T)
-	TEST_ASSERT(occupant.move_into(pod), "occupant into the pod's sealed slot")
+	TEST_ASSERT(move_into(pod, null, occupant), "occupant into the pod's sealed slot")
 
 	qdel(pod)
 
@@ -301,9 +301,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_reentrant_pair::partner))
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
-	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
+	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
 
-/datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
+/datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/act/notice/N)
 	EVENT_HANDLER
 	if(qdel_partner_on_signal && partner && !QDELETED(partner))
 		qdel(partner)
@@ -366,7 +366,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	for(var/i in 1 to 100)
 		var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 		var/obj/item/dq_containment_test/wood/item = allocate(/obj/item/dq_containment_test/wood, T)
-		TEST_ASSERT(item.move_into(box, "main"), "item [i] into its box")
+		TEST_ASSERT(move_into(box, "main", item), "item [i] into its box")
 		holders += box
 		contents_items += item
 
@@ -412,7 +412,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	for(var/i in 1 to 20)
 		var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 		var/obj/item/dq_containment_test/wood/dq_batch_probe/item = allocate(/obj/item/dq_containment_test/wood/dq_batch_probe, T)
-		TEST_ASSERT(item.move_into(box, "main"), "item [i] into its box")
+		TEST_ASSERT(move_into(box, "main", item), "item [i] into its box")
 		boxes += box
 		items += item
 	dq_destroy_transaction_log_reset()
@@ -437,7 +437,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	for(var/i in 1 to 10)
 		var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 		var/obj/item/dq_containment_test/wood/item = allocate(/obj/item/dq_containment_test/wood, T)
-		TEST_ASSERT(item.move_into(box, "main"), "item [i] into its box")
+		TEST_ASSERT(move_into(box, "main", item), "item [i] into its box")
 		boxes += box
 		items += item
 

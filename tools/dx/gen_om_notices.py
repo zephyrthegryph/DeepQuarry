@@ -59,6 +59,11 @@ NOTIFY_BEFORE = {
     "before/item_pre_attack": "item_pre_attack",
     "before/attackby": "attackby",
 }
+# After-fact events only unit tests watch: they get a notice twin so a test observe()s it as production listeners do (om_hook is gone).
+TEST_WATCHED = {
+    "machinery_broken", "living_injury_explained", "living_death_final", "body_part_detached", "body_part_attached",
+    "reagents_holder_reacted", "item_tool_acted", "tool_atom_acted", "unittest_data", "slot_inserted", "slot_removed",
+}
 # Base /datum/notice fields an event field may not shadow.
 RESERVED = {"source", "data", "type", "parent_type", "vars", "tag", "pool_state", "pool_max_free", "holder", "target", "outcome", "cap", "activation", "op_key"}
 
@@ -152,7 +157,7 @@ def build():
             return sorted({site.rsplit(":", 1)[0] for site in sites})
         row = {"fields": fields, "emits": files(emits), "listeners": files(listeners), "tests": files(r.get("test", [])),
                "reads_result": reads_result(emits)}
-        if not listeners and name not in NOTIFY_BEFORE:
+        if not listeners and name not in NOTIFY_BEFORE and name not in TEST_WATCHED:
             row["target"] = "delete" if not r.get("test") else "review"
         elif name in NOTIFY_BEFORE:
             notice = "/datum/notice/" + NOTIFY_BEFORE[name]

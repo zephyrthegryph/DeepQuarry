@@ -184,7 +184,13 @@
 	recursive++
 	if(recursive > 5) //After a certain depth, we're just going to assume that it's too insulated to be EMP'd.
 		return
-	var/protection = (emp_protection_flags & EMP_PROTECT_ALL) | OM_EMIT(src, /datum/om/event/before/atom_pre_emp_act, severity)
+	// Listeners add what they shield (adjusts_with writes the act's protection): the flags of every one combine with the atom's own.
+	var/protection = emp_protection_flags & EMP_PROTECT_ALL
+	var/datum/act/emp/pulse = ACT_TRY(src, emp, severity, protection)
+	if(!pulse)
+		return protection
+	protection = ACT_FINAL(pulse, protection, protection)
+	act_done(pulse)
 	if(!(protection & EMP_PROTECT_WIRES))
 		var/datum/wires/W = istype(wires) ? wires : wires_of(src) // the wires capability keeps its own
 		W?.emp_pulse()
@@ -197,8 +203,10 @@
 	return protection
 
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
-	if(OM_EMIT(src, /datum/om/event/before/atom_bullet_act, P, def_zone) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	var/datum/act/shoot/round = ACT_TRY(src, shoot, P, def_zone)
+	if(!round)
 		return
+	act_done(round)
 	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
 		return PROJECTILE_CONTINUE
 	// Declared projectile reactions run before on_hit(): a blocking one stops the round's effects too.
@@ -326,7 +334,11 @@ SETTER(/atom, density)
 	return TRUE
 
 /atom/proc/ex_act(strength = 3)
-	return (OM_EMIT(src, /datum/om/event/before/atom_ex_act, strength, src) & COMPONENT_IGNORE_EXPLOSION)
+	var/datum/act/explode/blast = ACT_TRY(src, explode, strength)
+	if(!blast)
+		return COMPONENT_IGNORE_EXPLOSION
+	act_done(blast)
+	return NONE
 
 /**
  * Respond to fire being used on our atom
@@ -544,6 +556,7 @@ SETTER(/atom, density)
 	OM_EMIT(AM, /datum/om/event/movable_attempted_move, old_loc, AM.loc)
 	OM_EMIT(src, /datum/om/event/atom_entered, AM, old_loc)
 	OM_EMIT(AM, /datum/om/event/atom_entering, src, old_loc)
+	RANGE_WATCH(src, RANGE_ENTERED, AM, old_loc)
 
 /atom/Exit(atom/movable/AM, atom/new_loc)
 	. = ..()
@@ -552,6 +565,7 @@ SETTER(/atom, density)
 	. = ..()
 	op_moved(AM, src)
 	OM_EMIT(src, /datum/om/event/atom_exited, AM, new_loc)
+	RANGE_WATCH(src, RANGE_EXITED, AM, new_loc)
 
 /atom/proc/interact(mob/user)
 	return

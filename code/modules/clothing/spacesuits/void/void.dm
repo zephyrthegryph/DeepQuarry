@@ -137,7 +137,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 	if(!istype(helm) || hood)
 		return
 
-	if(!own_set(src, nameof(src.hood), helm, into = TRUE))
+	if(!move_into(src, nameof(src.hood), helm))
 		return
 	helm.set_light_flags(helm.light_flags | LIGHT_ATTACHED)
 
@@ -269,7 +269,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "\The [src] already has magboots installed.")
 		else
 			to_chat(user, "You attach \the [W] to \the [src]'s boot mounts.")
-			own_set(src, nameof(src.boots), W, user = user)
+			move_into(src, nameof(src.boots), W, user)
 		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/tank))
 		if(tank)
@@ -278,7 +278,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "\The [src]'s suit cooling unit is the modular suit storage. Remove it first.")
 		else
 			to_chat(user, "You insert \the [W] into \the [src]'s storage compartment.")
-			own_set(src, nameof(src.tank), W, user = user)
+			move_into(src, nameof(src.tank), W, user)
 		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/suit_cooling_unit))
 		if(cooler)
@@ -287,7 +287,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "\The [src]'s airtank is in the modular suit storage.  Remove it first.")
 		else
 			to_chat(user, "You insert \the [W] into \the [src]'s storage compartment.")
-			own_set(src, nameof(src.cooler), W, user = user)
+			move_into(src, nameof(src.cooler), W, user)
 		return INTERACTION_HANDLED_PASS
 
 	return FALSE

@@ -140,7 +140,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 /obj/machinery/floorlayer/proc/TakeTile(obj/item/stack/tile/tile)
 	if(!T)
-		own_set(src, nameof(src.T), tile, into = TRUE)
+		move_into(src, nameof(src.T), tile)
 	else
 		tile.forceMove(src)
 

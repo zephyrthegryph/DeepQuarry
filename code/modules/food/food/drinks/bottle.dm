@@ -145,7 +145,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/insert_rag(obj/item/reagent_containers/glass/rag/R, mob/user)
 	if(!isGlass || rag) return
-	if(own_set(src, nameof(src.rag), R, user = user))
+	if(move_into(src, nameof(src.rag), R, user))
 		to_chat(user, span_notice("You stuff [R] into [src]."))
 		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
 		update_icon()

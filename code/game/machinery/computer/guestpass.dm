@@ -148,7 +148,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 	return TRUE
 
 /obj/machinery/computer/guestpass/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!giver && own_set(src, nameof(src.giver), held, user = user))
+	if(!giver && move_into(src, nameof(src.giver), held, user))
 		SStgui.update_uis(src)
 	else if(giver)
 		to_chat(user, span_warning("There is already ID card inside."))
@@ -252,7 +252,7 @@ UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_id)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			own_set(src, nameof(src.giver), I, user = ui.user)
+			move_into(src, nameof(src.giver), I, ui.user)
 	add_fingerprint(ui.user)
 	return TRUE
 

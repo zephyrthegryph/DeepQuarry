@@ -77,7 +77,7 @@ DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 			if(O:wielded)
 				O:wielded = 0
 				O.update_icon()
-			if(!own_set(src, nameof(src.fireaxe), O, user = user))
+			if(!move_into(src, nameof(src.fireaxe), O, user))
 				return TRUE
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
 			update_icon()

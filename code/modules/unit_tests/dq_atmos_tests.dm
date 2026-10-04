@@ -5644,7 +5644,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(H, "human alloc failed")
 
 	// Force the mob into the cryo cell's occupant slot.
-	H.move_into(C, OCCUPANT_SLOT_CRYO)
+	move_into(C, OCCUPANT_SLOT_CRYO, H)
 	H.set_bodytemperature(T20C) // warm starting body temp
 	var/initial_bodytemp = H.bodytemperature
 	C.set_on(TRUE)

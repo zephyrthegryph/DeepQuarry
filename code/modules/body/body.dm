@@ -446,11 +446,20 @@
 	consciousness = 100
 	vitality = 1
 
+/// TRUE when a hook on the owner takes the status question over: the body is held alive (a dormant nanoform core) and neither death nor
+/// unconsciousness is asked. A question, not a change: the action ends refused for whoever listens for that.
+/datum/body/proc/status_held()
+	var/datum/act/body_status/question = ACT_TRY(owner, body_status)
+	if(!question)
+		return TRUE
+	act_cancel(question)
+	return FALSE
+
 /// Apply death / consciousness from the cached vitals.
 /datum/body/proc/evaluate_status()
 	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
 		return
-	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
+	if(status_held())
 		if(has_trait(owner, TRAIT_CRITICAL_CONDITION))
 			remove_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
@@ -465,7 +474,7 @@
 		return FALSE
 	if(!is_lethal())
 		return FALSE
-	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
+	if(status_held())
 		return FALSE
 	owner.death()
 	return TRUE
@@ -477,7 +486,7 @@
 	return FALSE
 
 /datum/body/proc/is_unconscious()
-	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
+	if(status_held())
 		return FALSE
 	ensure_vitals()
 	return consciousness <= CONSCIOUSNESS_THRESHOLD

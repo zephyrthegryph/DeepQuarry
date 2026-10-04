@@ -631,7 +631,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 		return TRUE
 
 	user.stop_pulling()
-	if(!user.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
+	if(!move_into(src, OCCUPANT_SLOT_CRYOPOD, user, user))
 		return TRUE
 	set_occupant(user)
 	if(isliving(user) && applies_stasis)
@@ -758,7 +758,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
 		return
-	if(!M.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
+	if(!move_into(src, OCCUPANT_SLOT_CRYOPOD, M, user))
 		to_chat(user, span_warning("\The [src] won't take [M]."))
 		return
 	go_in_finish(M, user)

@@ -110,7 +110,7 @@
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 				own_take_member(src, nameof(possessed_voice), V)
 				qdel(V)
-			if(!NR.move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, eater))
+			if(!move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, NR, eater))
 				NR.forceMove(get_turf(eater))
 		if(trash)
 			var/obj/item/TrashItem = new trash(eater)
@@ -3858,7 +3858,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 /obj/item/pizzabox/proc/pizza_put_in(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	if(!own_set(src, nameof(src.pizza), I, user = user))
+	if(!move_into(src, nameof(src.pizza), I, user))
 		return OP_REFUSED
 	update_icon()
 	to_chat(user, span_warning("You put \the [I] in \the [src]!"))

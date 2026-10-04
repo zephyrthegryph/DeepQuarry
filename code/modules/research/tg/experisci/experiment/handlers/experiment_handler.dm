@@ -4,7 +4,7 @@
  * The owned state datum for interacting with experiments from a connected techweb (was the
  * experiment_handler component). It is generic and works on any movable holding it in its
  * `experiment_handler` var; create it with `new /datum/experiment_handler(holder, ...)`.
- * It hooks the holder's events with om_hook().
+ * It observes the holder's events and actions with observe().
  */
 /datum/experiment_handler
 	/// The movable this handler belongs to.
@@ -69,8 +69,8 @@
 		if(ispath(event_path, /datum/notice))
 			observe(owner, event_path, src, then(experiment_events[event_path]))
 		else
-			// The handheld scanner's item_pre_attack handler vetoes the attack, which only the om event can carry.
-			om_hook(owner, event_path, src, experiment_events[event_path])
+			// An action (the handheld scanner's pre_attack) can be taken over: the handler answers HOOK_DECLINE to let it go on.
+			observe(owner, event_path, src, instead(then(experiment_events[event_path])))
 
 	// Determine UI display mode
 	switch(config_mode)
@@ -96,14 +96,15 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hooks on attack to try and run an experiment (When using a handheld handler)
  */
-/datum/experiment_handler/proc/try_run_handheld_experiment(datum/source, datum/om/event/before/item_pre_attack/event)
+/datum/experiment_handler/proc/try_run_handheld_experiment(datum/act/pre_attack/swing)
 	EVENT_HANDLER
-	var/atom/target = event.target
-	var/mob/user = event.user
+	var/atom/target = swing.target_
+	var/mob/user = swing.user
+	var/datum/source = swing.target
 	if (!should_run_handheld_experiment(source, target, user))
-		return
+		return HOOK_DECLINE
 	try_run_handheld_experiment_async(source, target, user)
-	return COMPONENT_CANCEL_ATTACK_CHAIN
+	return TRUE
 
 /**
  * Checks that an experiment can be run using the provided target, used for preventing the cancellation of the attack chain inappropriately

@@ -13,7 +13,7 @@
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_floor())
 	S.set_stat(0)
-	patient.move_into(S, OCCUPANT_SLOT_SLEEPER)
+	move_into(S, OCCUPANT_SLOT_SLEEPER, patient)
 	TEST_ASSERT(!LAZYACCESS(S.available_chemicals, REAGENT_ID_TOXIN), "the sleeper must not list toxin")
 	S.inject_chemical(user, REAGENT_ID_TOXIN, 5)
 	TEST_ASSERT_EQUAL(patient.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 0, "an unlisted chemical must not be injected")

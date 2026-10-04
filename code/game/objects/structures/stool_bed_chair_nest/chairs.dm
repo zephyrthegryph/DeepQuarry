@@ -34,7 +34,7 @@ CAPABILITIES(/obj/structure/bed/chair)
 	var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	E.set_dir(dir)
-	if(!own_set(E, nameof(E.part), SK, user = user)) // out of the hand, into the chair
+	if(!move_into(E, nameof(E.part), SK, user)) // out of the hand, into the chair
 		qdel(E) // ALLOW(lifecycle): discards the just-built chair after own_set() refused the part: it never held anything and has no holder to take it out of
 		return OP_REFUSED
 	rel_set(SK, nameof(SK.master), E)

@@ -29,7 +29,7 @@
 	for(var/body_type in list(SPECIES_HUMAN, SPECIES_VOX, SPECIES_TESHARI))
 		var/mob/living/carbon/human/H = new(human_storage)
 		H.set_species(body_type)
-		om_hook(H, /datum/om/event/unittest_data, src, PROC_REF(get_signal_data))
+		observe(H, /datum/notice/unittest_data, src, then(PROC_REF(get_signal_data)))
 		own_put(src, nameof(test_humans), body_type, H)
 	#endif
 
@@ -56,7 +56,7 @@
 	#ifdef UNIT_TESTS
 	for(var/body_type in test_humans)
 		var/mob/living/carbon/human/H = test_humans[body_type]
-		om_unhook(H, /datum/om/event/unittest_data, src)
+		unobserve(H, /datum/notice/unittest_data, src)
 		qdel(H)
 	own_take_all(src, nameof(test_humans))
 	own_clear(src, nameof(human_storage), OWN_DELETE)
@@ -179,9 +179,11 @@
 					failed = TRUE
 	return failed
 
-/datum/unit_test/all_clothing_shall_be_valid/proc/get_signal_data(atom/source, datum/om/event/unittest_data/event)
+/datum/unit_test/all_clothing_shall_be_valid/proc/get_signal_data(datum/act/notice/N)
 	EVENT_HANDLER
-	var/list/data = event.data || list()
+	var/atom/source = N.target
+	var/datum/notice/unittest_data/event = N
+	var/list/data = event.data_ || list()
 	switch(data[1])
 		if("set_slot")
 			var/slot_name 	= data[2]

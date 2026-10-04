@@ -64,7 +64,7 @@ CAPABILITIES(/obj/machinery/account_database)
 
 /obj/machinery/account_database/proc/interaction_insert_card(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!held_card)
-		if(!own_set(src, nameof(src.held_card), O, user = user))
+		if(!move_into(src, nameof(src.held_card), O, user))
 			return TRUE
 
 		SStgui.update_uis(src)
@@ -218,7 +218,7 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_insert_card)
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
 			var/obj/item/card/id/C = I
-			own_set(src, nameof(src.held_card), C, user = ui.user)
+			move_into(src, nameof(src.held_card), C, ui.user)
 	return TRUE
 
 UI_ACT(/obj/machinery/account_database, "view_account_detail", ui_act_view_account_detail, UI_ARG_NUM("account_index"))

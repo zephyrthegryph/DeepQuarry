@@ -119,6 +119,7 @@ DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit
 CAPABILITIES(/obj/machinery/shieldgen)
 	owns_many(nameof(deployed_shields))
 	climb()
+	owns_one(nameof(cell), /obj/item/cell)
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
@@ -316,7 +317,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 		// insert cell
 		var/obj/item/cell/C = user.get_active_hand()
 		if(istype(C))
-			if(!own_set(src, nameof(src.cell), C, user = user))
+			if(!move_into(src, nameof(src.cell), C, user))
 				return TRUE
 			C.add_fingerprint(user)
 

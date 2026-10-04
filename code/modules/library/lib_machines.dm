@@ -625,12 +625,14 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/librarycomp, PROC_REF(on_emag), null)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/libraryscanner, "LibraryScanner", UI_TITLE("Scanner"))
-
-UI_DATA_REPLACE(/obj/machinery/libraryscanner, "merge:ui_data_obj_machinery_libraryscanner{has_cache:bool,cache_name:text,has_book:bool}")
+CAPABILITIES(/obj/machinery/libraryscanner)
+	interface("LibraryScanner", title = "Scanner")
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 
 /// The computed part of /obj/machinery/libraryscanner's window data (declared on its UI_DATA row).
-/obj/machinery/libraryscanner/proc/ui_data_obj_machinery_libraryscanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/libraryscanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["has_cache"] = !!cache()
 	data["cache_name"] = cache() ? cache().name : ""
@@ -641,8 +643,8 @@ UI_DATA_REPLACE(/obj/machinery/libraryscanner, "merge:ui_data_obj_machinery_libr
 	data["has_book"] = has_book
 	return data
 
-UI_ACT(/obj/machinery/libraryscanner, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_scan)
+/obj/machinery/libraryscanner/proc/ui_act_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		rel_set(src, nameof(/datum/om/edge::cache), B)
@@ -650,13 +652,11 @@ UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_scan)
 	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/libraryscanner, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_clear)
+/obj/machinery/libraryscanner/proc/ui_act_clear(datum/act/op/A)
 	rel_clear(src, nameof(/datum/om/edge::cache))
 	return TRUE
 
-UI_ACT(/obj/machinery/libraryscanner, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_eject)
+/obj/machinery/libraryscanner/proc/ui_act_eject(datum/act/op/A)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		B.forceMove(src.loc)

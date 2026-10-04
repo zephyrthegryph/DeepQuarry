@@ -126,17 +126,7 @@
 	EVENT_HANDLER
 	rel_clear(src, nameof(holder))
 
-/*	We don't have events set up for these
-// Disposal pipes related shits
-/datum/squeak/proc/disposing_react(datum/source, obj/structure/disposalholder/disposal_holder, obj/machinery/disposal/disposal_source)
-	//We don't need to worry about unhooking as it will happen for us automaticaly when the holder is qdeleted
-	om_hook(disposal_holder, /datum/om/event/atom_dir_change, src, PROC_REF(holder_dir_change))
 
-/datum/squeak/proc/holder_dir_change(datum/source, old_dir, new_dir)
-	//If the dir changes it means we're going through a bend in the pipes, let's pretend we bumped the wall
-	if(old_dir != new_dir)
-		play_squeak()
-*/
 
 /// The mob wearing the squeaky thing (a relation view).
 /datum/squeak/proc/holder() as /mob

@@ -21,6 +21,8 @@
 
 CAPABILITIES(/obj/structure/medical_stand)
 	owns_one(nameof(contained), /obj/item/clothing/mask/breath)
+	owns_one(nameof(beaker), /obj/item/reagent_containers)
+	owns_one(nameof(tank), /obj/item/tank)
 
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
 OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
@@ -337,7 +339,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		else if(!is_loosen)
 			to_chat(user, span_warning("Loosen the nut with a wrench first."))
 		else
-			if(!own_set(src, nameof(src.tank), W, user = user))
+			if(!move_into(src, nameof(src.tank), W, user))
 				return TRUE
 			act_message(user, src, MSG_SELF(span_notice("You attach %I% to %T%.")), MSG_OTHERS(span_bold("%U%") + " attaches %I% to %T%."), item = tank)
 			src.add_fingerprint(user)
@@ -348,7 +350,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if(!isnull(src.beaker))
 			to_chat(user, "There is already a reagent container loaded!")
 			return TRUE
-		if(!own_set(src, nameof(src.beaker), W, user = user))
+		if(!move_into(src, nameof(src.beaker), W, user))
 			return TRUE
 		to_chat(user, "You attach \the [W] to \the [src].")
 		update_icon()

@@ -34,7 +34,7 @@
 
 /// The physical-response state of an item made of an engineered material (was the
 /// material_response component). Owned by the item's build record (material_build_view(item).response);
-/// hooks its events with om_hook(). It pins its holder materialised (material_state.dm, state_refusal()).
+/// observes its events with observe(). It pins its holder materialised (material_state.dm, state_refusal()).
 
 /datum/material_response
 	/// The item this state belongs to.
@@ -77,11 +77,11 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		registry_join(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
 	observe(parent, /datum/notice/examine, src, then(PROC_REF(on_examine)))
 	observe(parent, /datum/notice/atom_take_damage, src, then(PROC_REF(on_take_damage)))
-	om_hook(parent, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(on_pre_emp))
+	observe(parent, /datum/act/emp, src, adjusts_with(PROC_REF(on_pre_emp)))
 	observe(parent, /datum/notice/atom_fire_act, src, then(PROC_REF(on_fire)))
 	observe(parent, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(on_propagated_radiation)))
 	observe(parent, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_radiation)))
-	observe(parent, /datum/notice/attackby, src, then(PROC_REF(on_attackby)))
+	observe(parent, /datum/notice/attacked_by, src, then(PROC_REF(on_attackby)))
 	observe(parent, /datum/notice/material_surgery, src, then(PROC_REF(on_surgery)))
 
 // its owner leaves the radiovoltaic registry (hooks and the `parent` back link
@@ -142,11 +142,11 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		var/obj/item/item = parent
 		after(item, 1 SECOND, TYPE_PROC_REF(/atom, repair_damage), with = list(max(1, round(material.shape_recovery_rate))))
 
-/datum/material_response/proc/on_pre_emp(datum/source, datum/om/event/before/atom_pre_emp_act/event)
+/datum/material_response/proc/on_pre_emp(datum/act/emp/pulse)
 	EVENT_HANDLER
 	var/datum/material/material = material()
 	if(electrical_form && material?.critical_temperature > 0 && ambient_temperature() < material.critical_temperature)
-		return EMP_PROTECT_SELF
+		pulse.protection |= EMP_PROTECT_SELF
 
 /datum/material_response/proc/on_fire(datum/act/notice/A)
 	EVENT_HANDLER
@@ -201,7 +201,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
 /datum/material_response/proc/on_attackby(datum/act/notice/N)
 	EVENT_HANDLER
-	var/datum/notice/attackby/event = N
+	var/datum/notice/attacked_by/event = N
 	var/obj/item/weapon = event.item
 	var/mob/living/user = event.user
 	var/datum/material/material = material()

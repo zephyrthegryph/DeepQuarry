@@ -69,7 +69,7 @@
 	var/obj/item/paper/P = new()
 	P.name = "Memo RE: proper analysis procedure"
 	P.info = "<br>We keep test dummies in pens here for a reason"
-	P.move_into(src)
+	move_into(src, null, P)
 
 /obj/item/folder/yellow_ce
 	desc = "A yellow folder with CE markings."
@@ -89,7 +89,7 @@ APPEARANCE_SLOT(/obj/item/folder, CONTAINER_SLOT_PAGES, "folder_paper")
 			to_chat(user, span_warning("You can't put \the [W] into \the [src]: [why]."))
 			return INTERACTION_HANDLED_PASS
 		user.drop_item()
-		if(W.move_into(src, CONTAINER_SLOT_PAGES, user))
+		if(move_into(src, CONTAINER_SLOT_PAGES, W, user))
 			to_chat(user, span_notice("You put the [W] into \the [src]."))
 	else if(istype(W, /obj/item/pen))
 		var/_answer_k98 = rerun_ask(user, "k98", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to label the folder?", title = "Folder Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
@@ -102,7 +102,7 @@ APPEARANCE_SLOT(/obj/item/folder, CONTAINER_SLOT_PAGES, "folder_paper")
 
 /obj/item/folder/afterattack(turf/T as turf, mob/user as mob)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
-		if(P.move_into(src, CONTAINER_SLOT_PAGES, user))
+		if(move_into(src, CONTAINER_SLOT_PAGES, P, user))
 			to_chat(user, span_notice("You tuck the [P] into \the [src]."))
 
 // TGUI migration. attack_self opens Folder.tsx; the Topic

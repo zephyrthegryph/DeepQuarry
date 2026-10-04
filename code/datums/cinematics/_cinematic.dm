@@ -63,11 +63,13 @@ CAPABILITIES(/datum/cinematic)
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.
 /datum/cinematic/proc/start_cinematic(list/watchers)
-	if(OM_EMIT_WORLD(/datum/om/event/before/world_play_cinematic, src) & COMPONENT_GLOB_BLOCK_CINEMATIC)
+	var/datum/act/play_cinematic/play = ACT_TRY(OM_WORLD, play_cinematic, src)
+	if(!play)
 		return
+	act_done(play)
 
-	// Register a signal to handle what happens when a different cinematic tries to play over us.
-	om_hook(OM_WORLD, /datum/om/event/before/world_play_cinematic, src, PROC_REF(handle_replacement_cinematics))
+	// Hook the world's play action to handle what happens when a different cinematic tries to play over us.
+	observe(OM_WORLD, /datum/act/play_cinematic, src, instead(then(PROC_REF(handle_replacement_cinematics))))
 
 	// Pause OOC
 	// NOT IMPLEMENTED
@@ -95,16 +97,16 @@ CAPABILITIES(/datum/cinematic)
 	stop_cinematic()
 
 /// Whenever another cinematic starts to play over us, we have the chacne to block it.
-/datum/cinematic/proc/handle_replacement_cinematics(datum/source, datum/om/event/before/world_play_cinematic/event)
+/datum/cinematic/proc/handle_replacement_cinematics(datum/act/play_cinematic/play)
 	EVENT_HANDLER
-	var/datum/cinematic/other = event.new_cinematic
+	var/datum/cinematic/other = play.cinematic
 
 	// Stop our's and allow others to play if we're local and it's global
 	if(!is_global && other.is_global)
 		stop_cinematic()
-		return NONE
+		return HOOK_DECLINE
 
-	return COMPONENT_GLOB_BLOCK_CINEMATIC
+	return TRUE
 
 /// Hooked to mob_client_login on each watching mob.
 /datum/cinematic/proc/on_watcher_client_login(datum/act/notice/A)

@@ -20,6 +20,9 @@
 	///If the core is removable once socketed.
 	var/core_removable = TRUE
 
+CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock)
+	owns_one(nameof(core), /obj/item/assembly/signaler/anomaly)
+
 
 /obj/item/organ/internal/heart/machine/anomalock/handle_organ_mod_special(removed)
 	if(!core)
@@ -110,7 +113,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 /obj/item/organ/internal/heart/machine/anomalock/proc/install_core(mob/user, obj/item/W)
 	if(core || W.loc != user)
 		return
-	if(!own_set(src, nameof(src.core), W, user = user))
+	if(!move_into(src, nameof(src.core), W, user))
 		return
 	balloon_alert(user, "core_installed")
 	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)

@@ -103,15 +103,13 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 		if(!user.unEquip(W))
 			return OP_REFUSED
 		W.moveToNullspace()
-		// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
-		own_set(src, nameof(src.corptag), W, into = FALSE)
+		rel_set(src, nameof(src.corptag), W)
 		to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
 	else
 		if(!user.unEquip(W))
 			return OP_REFUSED
 		W.moveToNullspace()
-		// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
-		own_set(src, nameof(src.corptag), W, into = FALSE)
+		rel_set(src, nameof(src.corptag), W)
 		to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
 	update_icon()
 	return OP_OK

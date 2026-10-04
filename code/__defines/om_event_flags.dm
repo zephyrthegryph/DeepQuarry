@@ -23,7 +23,6 @@
 #define EXAMINE_POSITION_NAME 3
 
 // ---- from signals_atom_movable.dm
-#define COMPONENT_MOVABLE_BLOCK_PRE_MOVE (1<<0)
 #define COMPONENT_BLOCK_CROSS (1<<0)
 #define COMPONENT_INTERCEPT_BUMPED (1<<0)
 #define MOVABLE_SAY_QUOTE_MESSAGE 1
@@ -38,14 +37,8 @@
 // ---- from signals_atom_x_act.dm
 #define COMPONENT_IGNORE_EXPLOSION (1<<0)
 
-// ---- from signals_container.dm
-#define COMPONENT_SLOT_BLOCK (1<<0)
-
 // ---- from signals_food.dm
 #define DESTROY_FOOD (1<<0)
-
-// ---- from signals_global.dm
-#define COMPONENT_GLOB_BLOCK_CINEMATIC (1<<0)
 
 // ---- from signals_janitor.dm
 #define COMPONENT_CLEANED (1<<0)
@@ -55,16 +48,13 @@
 #define COMPONENT_DEFIB_STOP (1<<0)
 #define COMPONENT_CANCEL_SURGERY (1<<0)
 #define COMPONENT_FORCE_SURGERY (1<<1)
-#define COMPONENT_CANCEL_INJURY (1<<0)
 
 // ---- from signals_mob_carbon.dm
-#define COMPONENT_VISIBLE_NAME_CHANGED (1<<0)
 #define VISIBLE_NAME_FACE 1
 #define VISIBLE_NAME_ID 2
 #define VISIBLE_NAME_FORCED 3
 
 // ---- from signals_mob_living.dm
-#define COMPONENT_BODY_KEEP_ALIVE (1<<0)
 #define COMPONENT_NO_STUN (1<<0) //For all of them: cancels the increase
 #define COMPONENT_BLOCK_LIVING_RADIATION (1<<0)
 #define COMPONENT_BLOCK_IRRADIATION (1<<0)
@@ -73,8 +63,6 @@
 
 // ---- from signals_mob_main.dm
 #define POST_BASIC_MOB_UPDATE_VARSPEED "post_basic_mob_update_varspeed"
-#define COMPONENT_VOICE_CHANGED (1<<0)
-#define COMPONENT_ALT_NAME_CHANGED (1<<0)
 
 // ---- from signals_mob_silicon.dm
 #define COMPONENT_BLOCK_EMP (1<<0) //If this is set, the EMP will not go through. Used by other EMP acts as well.
@@ -112,14 +100,10 @@
 #define CANCEL_STUMBLED_INTO	(1<<0)
 
 // ---- from signals_mob_main.dm
-/// before/mob_handle_hud: a listener drew the HUD; skip the default.
+/// draw_hud: a hook drew the HUD; skip the default.
 #define HUD_EVENT_HANDLED (1<<0)
-/// before/mob_handle_hud_health_icon: a listener set the health icon; skip the default.
+/// draw_health_icon: a hook set the health icon; skip the default.
 #define HEALTH_ICON_EVENT_HANDLED (1<<0)
-
-// ---- from signals_radiation.dm
-/// before/geiger_counter_scan: a listener reported the scan; skip the default readout.
-#define GEIGER_COUNTER_SCAN_SUCCESSFUL (1<<0)
 
 // ---- from dcs/declarations.dm (conflict_checking behaviour ids)
 

@@ -55,7 +55,7 @@ CAPABILITIES(/datum/remote_materials)
 	if(force_connect || (mapload && (T.z in using_map.station_levels)))
 		connect_to_silo = TRUE
 
-	om_hook(owner, /datum/om/event/before/attackby, src, PROC_REF(on_item_insert))
+	observe(owner, /datum/act/attackby, src, instead(then(PROC_REF(on_item_insert))))
 
 	if(mapload) // wait for silo to initialize during mapload
 		SSticker.OnRoundstart(om_callable(src, PROC_REF(_PrepareStorage), connect_to_silo))
@@ -173,30 +173,31 @@ CAPABILITIES(/datum/remote_materials)
 		to_chat(user, span_notice("You connect [owner] to [silo()] from the multitool's buffer."))
 		return TRUE
 
-/datum/remote_materials/proc/on_item_insert(datum/source, datum/om/event/before/attackby/event)
+/datum/remote_materials/proc/on_item_insert(datum/act/attackby/use)
 	EVENT_HANDLER
-	var/obj/item/target = event.item
-	var/mob/living/user = event.user
+	var/obj/item/target = use.item
+	var/mob/living/user = use.user
 	var/obj/item/multitool/multitool = target.get_multitool()
 	if(multitool)
-		return OnMultitool(source, user, multitool)
+		return OnMultitool(use.target, user, multitool) ? TRUE : HOOK_DECLINE
 
 	if(istype(target, /obj/item/forensics))
-		return FALSE
+		return HOOK_DECLINE
 
 	if(mat_container_flags & MATCONTAINER_NO_INSERT)
-		return FALSE
+		return HOOK_DECLINE
 
 	if(istype(target, /obj/item/storage/bag/sheetsnatcher))
-		return mat_container().OnSheetSnatcher(source, user, target)
+		mat_container().OnSheetSnatcher(use.target, user, target)
+		return HOOK_DECLINE
 
 	if(istype(target, /obj/item/gripper))
 		var/obj/item/gripper/robot_gripper = target
 		target = robot_gripper.get_wrapped_item()
 		attempt_insert(user, target)
-		return FALSE
+		return HOOK_DECLINE
 
-	return attempt_insert(user, target)
+	return attempt_insert(user, target) ? TRUE : HOOK_DECLINE
 
 /// Insert mats into silo
 /datum/remote_materials/proc/attempt_insert(mob/living/user, obj/item/target)

@@ -44,21 +44,23 @@
 	var/quality_acted_calls = 0
 	var/last_acted_quality
 
-/datum/unit_test/modern_tool_interaction_dispatch/proc/on_tool_acted(datum/source, datum/om/event/item_tool_acted/event)
+/datum/unit_test/modern_tool_interaction_dispatch/proc/on_tool_acted(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/item_tool_acted/event = N
 	tool_acted_calls++
 	last_acted_quality = event.tool_quality
 
-/datum/unit_test/modern_tool_interaction_dispatch/proc/on_quality_acted(datum/source, datum/om/event/tool_atom_acted/event)
+/datum/unit_test/modern_tool_interaction_dispatch/proc/on_quality_acted(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/tool_atom_acted/event = N
 	if(event.tool_quality == TOOL_WRENCH && !event.secondary)
 		quality_acted_calls++
 
 /datum/unit_test/modern_tool_interaction_dispatch/Run()
 	var/atom/movable/unit_test_interaction_target/target = new
 	var/obj/item/unit_test_interaction_tool/tool = new
-	om_hook(tool, /datum/om/event/item_tool_acted, src, PROC_REF(on_tool_acted))
-	om_hook(tool, /datum/om/event/tool_atom_acted, src, PROC_REF(on_quality_acted))
+	observe(tool, /datum/notice/item_tool_acted, src, then(PROC_REF(on_tool_acted)))
+	observe(tool, /datum/notice/tool_atom_acted, src, then(PROC_REF(on_quality_acted)))
 
 	var/primary_result = target.item_interaction(null, tool, list())
 	TEST_ASSERT(primary_result & ITEM_INTERACT_SUCCESS, "Primary tool interaction did not report success.")
@@ -104,7 +106,8 @@
 	TEST_ASSERT_EQUAL(target.attackby_calls, previous_attackby_calls + 1, "SKIP_TO_ATTACK did not enter the attackby fallback exactly once.")
 	TEST_ASSERT(!(skip_result & ITEM_INTERACT_SKIP_TO_ATTACK), "SKIP_TO_ATTACK leaked past the attackby fallback instead of returning attackby's result.")
 
-	om_unhook(tool, list(/datum/om/event/item_tool_acted, /datum/om/event/tool_atom_acted), src)
+	unobserve(tool, /datum/notice/item_tool_acted, src)
+	unobserve(tool, /datum/notice/tool_atom_acted, src)
 	qdel(target)
 	qdel(tool)
 

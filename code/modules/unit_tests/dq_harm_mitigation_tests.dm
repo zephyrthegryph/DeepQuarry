@@ -12,8 +12,9 @@
 	/// Amount entering injure()'s pipeline, keyed by kind, for the split-hit check.
 	var/list/split_shares
 
-/datum/unit_test/dq_harm_kind_declarations/proc/on_split_explained(mob/living/source, datum/om/event/living_injury_explained/event)
+/datum/unit_test/dq_harm_kind_declarations/proc/on_split_explained(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/living_injury_explained/event = N
 	var/list/stages = event.stages
 	var/incoming_kind = event.incoming_kind
 	if(length(stages))
@@ -50,9 +51,9 @@
 	// pipeline, not what lands: how much lands depends on the body's prior state.
 	var/mob/living/carbon/human/split_victim = allocate(/mob/living/carbon/human)
 	split_shares = list()
-	om_hook(split_victim, /datum/om/event/living_injury_explained, src, PROC_REF(on_split_explained))
+	observe(split_victim, /datum/notice/living_injury_explained, src, then(PROC_REF(on_split_explained)))
 	split_victim.injure_split(INJURY_BURN, alist(INJURY_BURN = 0.25, INJURY_BLUNT = 0.75), 20, BP_TORSO, flags = INJURE_SILENT)
-	om_unhook(split_victim, /datum/om/event/living_injury_explained, src)
+	unobserve(split_victim, /datum/notice/living_injury_explained, src)
 	TEST_ASSERT(dq_near(split_shares["[INJURY_BURN]"], 5), "a split hit should send its burn share (5), got [split_shares["[INJURY_BURN]"]]")
 	TEST_ASSERT(dq_near(split_shares["[INJURY_BLUNT]"], 15), "a split hit should send its blunt share (15), got [split_shares["[INJURY_BLUNT]"]]")
 
@@ -78,8 +79,9 @@
 /datum/unit_test/dq_harm_armor_by_kind
 	var/list/explained
 
-/datum/unit_test/dq_harm_armor_by_kind/proc/on_explained(mob/living/source, datum/om/event/living_injury_explained/event)
+/datum/unit_test/dq_harm_armor_by_kind/proc/on_explained(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/living_injury_explained/event = N
 	var/list/stages = event.stages
 	explained = stages.Copy()
 
@@ -110,7 +112,7 @@
 
 	// Burn armour 20 mitigates exactly 20% of an armoured hit, and only an armoured one.
 	// Read the armour stage itself: what the body does with the rest depends on its prior wounds.
-	om_hook(H, /datum/om/event/living_injury_explained, src, PROC_REF(on_explained))
+	observe(H, /datum/notice/living_injury_explained, src, then(PROC_REF(on_explained)))
 	H.injure(INJURY_BURN, 10, BP_TORSO, flags = INJURE_SILENT)
 	TEST_ASSERT(!length(explained) || explained[1][1] != INJURY_STAGE_ARMOR, "harm from inside the body shouldn't meet armour")
 	H.injure(INJURY_BURN, 10, BP_TORSO, flags = INJURE_SILENT | INJURE_ARMORED)
@@ -121,7 +123,7 @@
 	H.injure(INJURY_BURN, 10, BP_TORSO, armor_pen = 20, flags = INJURE_SILENT | INJURE_ARMORED)
 	armour_stage = explained[1]
 	TEST_ASSERT(dq_near(armour_stage[3], armour_stage[2]), "20 penetration should defeat 20 burn armour ([armour_stage[3]] of [armour_stage[2]])")
-	om_unhook(H, /datum/om/event/living_injury_explained, src)
+	unobserve(H, /datum/notice/living_injury_explained, src)
 
 	// Simple mobs read their natural armour list the same way.
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
@@ -137,8 +139,9 @@
 	var/list/explained
 	var/explained_kind
 
-/datum/unit_test/dq_harm_mitigation_pipeline/proc/on_explained(mob/living/source, datum/om/event/living_injury_explained/event)
+/datum/unit_test/dq_harm_mitigation_pipeline/proc/on_explained(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/living_injury_explained/event = N
 	var/list/stages = event.stages
 	explained = stages.Copy()
 	explained_kind = event.landed_kind
@@ -151,7 +154,7 @@
 	var/obj/item/cell/cell = allocate(/obj/item/cell/high)
 	dq_equip_shield(H, /datum/body_effect/shield_projection/bruteburn/weak, cell)
 	H.apply_body_effect(/datum/body_effect/dq_test_physical_half)
-	om_hook(H, /datum/om/event/living_injury_explained, src, PROC_REF(on_explained))
+	observe(H, /datum/notice/living_injury_explained, src, then(PROC_REF(on_explained)))
 
 	var/applied = H.injure(INJURY_BLUNT, 40, BP_TORSO, flags = INJURE_ARMORED | INJURE_SILENT)
 	TEST_ASSERT_NOTNULL(explained, "injure() should explain its mitigation to listeners")
@@ -182,7 +185,7 @@
 	explained = null
 	H.injure(INJURY_BLUNT, 10, BP_TORSO, flags = INJURE_SILENT)
 	TEST_ASSERT_EQUAL(length(explained), 3, "harm from inside the body skips armour")
-	om_unhook(H, /datum/om/event/living_injury_explained, src)
+	unobserve(H, /datum/notice/living_injury_explained, src)
 
 
 /// Object and structure damage is derived from the injury kind in one place.

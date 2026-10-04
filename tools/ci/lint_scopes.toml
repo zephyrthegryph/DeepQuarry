@@ -303,3 +303,14 @@ damage_ratchet_on_non_turf_ex_act_overrides_d5 = 10
 damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 2
+
+[lint.legacy_forms.lists]
+# Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
+banned = [
+  "om_hook = observe(source, /datum/notice/x, listener, then(PROC_REF(h))) (doc/rewrite/codemod_rules.md)",
+  "om_unhook = unobserve(source, /datum/notice/x, listener)",
+  "om_unhook_all = unobserve each source, or let the listener's death end the hooks",
+  "om_hooked = ask the activation: nothing replaces it",
+  "hooks_in = the OM hook table is gone: observe() grants a hook capability",
+  "hooks_out = the OM hook table is gone: observe() grants a hook capability",
+]

@@ -1,0 +1,2 @@
+banned_name	code/a/a.dm	2
+banned_name	code/a/a.dm	6

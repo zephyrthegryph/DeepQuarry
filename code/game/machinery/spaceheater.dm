@@ -133,7 +133,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 
 /obj/machinery/space_heater/proc/interaction_insert_cell(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/cell/C = held
-	if(!own_set(src, nameof(src.cell), C, user = user))
+	if(!move_into(src, nameof(src.cell), C, user))
 		return TRUE
 	C.add_fingerprint(user)
 	act_message(user, src, MSG_SELF(span_notice("You insert the power cell into %T%.")), MSG_OTHERS(span_notice("%U% inserts a power cell into %T%.")))
@@ -221,7 +221,7 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
 	if(!cell)
 		var/obj/item/cell/C = ui.user.get_active_hand()
 		if(istype(C))
-			if(!own_set(src, nameof(src.cell), C, user = ui.user))
+			if(!move_into(src, nameof(src.cell), C, ui.user))
 				return
 			C.add_fingerprint(ui.user)
 			power_change()

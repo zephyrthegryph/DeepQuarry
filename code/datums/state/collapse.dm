@@ -3,7 +3,7 @@
  * into a latent entry only if nothing live depends on it. The checks:
  *   - outgoing references the codecs refuse (the serializer's errors);
  *   - active timers and processing (state_refusal());
- *   - OM event hooks (om_hook()) with anything outside the subtree
+ *   - observe() hooks with anything outside the subtree
  *     (behaviours are fine: they are type behaviour, state.md section 8);
  *   - incoming references: refcount() of each object in the subtree must equal
  *     the references its container, its contents and the subtree itself account
@@ -120,22 +120,24 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 		nodes += child
 		state_collect_subtree(child, nodes)
 
-/// OM event hooks that tie the subtree to something outside it.
+/// observe() hooks that tie the subtree to something outside it: a node observing an outside entity, or an outside listener observing a node.
 /proc/state_hook_blockers(list/nodes, list/internal)
 	. = list()
 	for(var/datum/node as anything in internal)
-		for(var/datum/target as anything in node.om_rec?.hooks_out)
-			if(!(target in internal))
-				. += "[node.type] hooks events on [target.type]"
+		for(var/datum/activation/A as anything in node.rx?.sourced)
+			if(A.dead || A.def.cap_id != CAP_HOOK || !A.holder || (A.holder in internal))
+				continue
+			var/datum/capability/hook/def = A.def
+			if(def.on_listener)
+				. += "[node.type] observes events on [A.holder.type]"
 	for(var/datum/node as anything in nodes)
-		var/list/hooks_in = node.om_rec?.hooks_in
-		for(var/path in hooks_in)
-			var/list/hooks = hooks_in[path]
-			for(var/i in 1 to length(hooks) step 2)
-				var/datum/listener = hooks[i]
-				if(listener in internal)
-					continue
-				. += "[listener.type] hooks [path] on [node.type]"
+		for(var/datum/activation/A as anything in node.rx?.activations)
+			if(A.dead || A.def.cap_id != CAP_HOOK || !isdatum(A.source) || (A.source in internal))
+				continue
+			var/datum/capability/hook/def = A.def
+			if(def.on_listener)
+				var/datum/listener = A.source
+				. += "[listener.type] observes events on [node.type]"
 
 /// Compares refcount() of each object in the subtree with the references accounted for.
 /proc/state_refcount_blockers(list/nodes, list/internal, held_refs, name_holders = FALSE)

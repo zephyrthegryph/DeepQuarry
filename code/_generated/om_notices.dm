@@ -205,17 +205,6 @@
 	src.pulse_information = pulse_information
 	src.insulation_to_target = insulation_to_target
 
-/// From /datum/om/event/before/item_pre_attack.
-/datum/notice/item_pre_attack
-	var/target_
-	var/user
-	var/params
-
-/datum/notice/item_pre_attack/fill(target_, user, params)
-	src.target_ = target_
-	src.user = user
-	src.params = params
-
 /// From /datum/om/event/before/living_status_sleep.
 /datum/notice/living_status_sleep
 	var/amount
@@ -267,6 +256,20 @@
 /datum/notice/body_afflictions_changed/fill(affliction, added)
 	src.affliction = affliction
 	src.added = added
+
+/// From /datum/om/event/body_part_attached.
+/datum/notice/body_part_attached
+	var/part
+
+/datum/notice/body_part_attached/fill(part)
+	src.part = part
+
+/// From /datum/om/event/body_part_detached.
+/datum/notice/body_part_detached
+	var/part
+
+/datum/notice/body_part_detached/fill(part)
+	src.part = part
 
 /// From /datum/om/event/carbon_slip.
 /datum/notice/carbon_slip
@@ -424,8 +427,28 @@
 /datum/notice/item_pickup/fill(taker)
 	src.taker = taker
 
+/// From /datum/om/event/item_tool_acted.
+/datum/notice/item_tool_acted
+	var/target_
+	var/user
+	var/tool_quality
+	var/modifiers
+
+/datum/notice/item_tool_acted/fill(target_, user, tool_quality, modifiers)
+	src.target_ = target_
+	src.user = user
+	src.tool_quality = tool_quality
+	src.modifiers = modifiers
+
 /// From /datum/om/event/living_aheal.
 /datum/notice/living_aheal
+
+/// From /datum/om/event/living_death_final.
+/datum/notice/living_death_final
+	var/gibbed
+
+/datum/notice/living_death_final/fill(gibbed)
+	src.gibbed = gibbed
 
 /// From /datum/om/event/living_injured.
 /datum/notice/living_injured
@@ -438,6 +461,23 @@
 /datum/notice/living_injured/fill(kind, applied, zone, source_, flags)
 	src.kind = kind
 	src.applied = applied
+	src.zone = zone
+	src.source_ = source_
+	src.flags = flags
+
+/// From /datum/om/event/living_injury_explained.
+/datum/notice/living_injury_explained
+	var/incoming_kind
+	var/landed_kind
+	var/stages
+	var/zone
+	var/source_
+	var/flags
+
+/datum/notice/living_injury_explained/fill(incoming_kind, landed_kind, stages, zone, source_, flags)
+	src.incoming_kind = incoming_kind
+	src.landed_kind = landed_kind
+	src.stages = stages
 	src.zone = zone
 	src.source_ = source_
 	src.flags = flags
@@ -493,6 +533,13 @@
 
 /datum/notice/living_status_weaken/fill(amount)
 	src.amount = amount
+
+/// From /datum/om/event/machinery_broken.
+/datum/notice/machinery_broken
+	var/damage_flag
+
+/datum/notice/machinery_broken/fill(damage_flag)
+	src.damage_flag = damage_flag
 
 /// From /datum/om/event/machinery_destructive_scan.
 /datum/notice/machinery_destructive_scan
@@ -795,6 +842,13 @@
 	src.reagent = reagent
 	src.amount = amount
 
+/// From /datum/om/event/reagents_holder_reacted.
+/datum/notice/reagents_holder_reacted
+	var/chemical_reaction
+
+/datum/notice/reagents_holder_reacted/fill(chemical_reaction)
+	src.chemical_reaction = chemical_reaction
+
 /// From /datum/om/event/remote_view_clear.
 /datum/notice/remote_view_clear
 
@@ -816,6 +870,24 @@
 
 /// From /datum/om/event/silicon_laws_changed.
 /datum/notice/silicon_laws_changed
+
+/// From /datum/om/event/slot_inserted.
+/datum/notice/slot_inserted
+	var/thing
+	var/slot_id
+
+/datum/notice/slot_inserted/fill(thing, slot_id)
+	src.thing = thing
+	src.slot_id = slot_id
+
+/// From /datum/om/event/slot_removed.
+/datum/notice/slot_removed
+	var/thing
+	var/slot_id
+
+/datum/notice/slot_removed/fill(thing, slot_id)
+	src.thing = thing
+	src.slot_id = slot_id
 
 /// From /datum/om/event/stun_effect.
 /datum/notice/stun_effect
@@ -868,6 +940,21 @@
 /datum/notice/tgui_window_visible/fill(client)
 	src.client = client
 
+/// From /datum/om/event/tool_atom_acted.
+/datum/notice/tool_atom_acted
+	var/tool_quality
+	var/secondary
+	var/target_
+	var/user
+	var/modifiers
+
+/datum/notice/tool_atom_acted/fill(tool_quality, secondary, target_, user, modifiers)
+	src.tool_quality = tool_quality
+	src.secondary = secondary
+	src.target_ = target_
+	src.user = user
+	src.modifiers = modifiers
+
 /// From /datum/om/event/trait_gained.
 /datum/notice/trait_gained
 	var/trait
@@ -903,6 +990,13 @@
 /datum/notice/ui_act/fill(usr_, action)
 	src.usr_ = usr_
 	src.action = action
+
+/// From /datum/om/event/unittest_data.
+/datum/notice/unittest_data
+	var/data_
+
+/datum/notice/unittest_data/fill(data_)
+	src.data_ = data_
 
 /// From /datum/om/event/world_explosion.
 /datum/notice/world_explosion

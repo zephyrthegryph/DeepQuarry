@@ -7,7 +7,7 @@
 	for(var/sticky in list(FALSE, TRUE))
 		var/obj/item/reagent_containers/food/drinks/bottle/small/beer/bottle = allocate(/obj/item/reagent_containers/food/drinks/bottle/small/beer, T)
 		var/obj/item/reagent_containers/glass/rag/rag = allocate(/obj/item/reagent_containers/glass/rag, T)
-		TEST_ASSERT(own_set(bottle, nameof(bottle.rag), rag, user = user), "the actual bottle owns its physically contained rag")
+		TEST_ASSERT(move_into(bottle, nameof(bottle.rag), rag, user), "the actual bottle owns its physically contained rag")
 		TEST_ASSERT_EQUAL(rag.loc, bottle, "the real rag starts inside the original bottle")
 		TEST_ASSERT(user.put_in_active_hand(bottle), "the real bottle occupies the actor's hand")
 		var/datum/forensics_crime/evidence = bottle.init_forensic_data()

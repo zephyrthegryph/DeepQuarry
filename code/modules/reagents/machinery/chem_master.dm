@@ -55,7 +55,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/chem_master, "mixer{beaker?1:0}")
 	return !beaker
 
 /obj/machinery/chem_master/proc/interaction_load_beaker(mob/user, obj/item/B, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.beaker), B, user = user))
+	if(!move_into(src, nameof(src.beaker), B, user))
 		return TRUE
 	to_chat(user, "You add 	he [B] to the machine.")
 	update_icon()
@@ -78,7 +78,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/chem_master, "mixer{beaker?1:0}")
 	// straight off a turf or out of a latent holder still holds its
 	// pills as a declared generator until now.
 	PB.make_contents_real()
-	if(!own_set(src, nameof(src.loaded_pill_bottle), PB, user = user))
+	if(!move_into(src, nameof(src.loaded_pill_bottle), PB, user))
 		return TRUE
 	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
 	return TRUE

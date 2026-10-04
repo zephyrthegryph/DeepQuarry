@@ -35,9 +35,19 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/newspaper, "Newspaper", UI_TITLE("The Griffon"))
+CAPABILITIES(/obj/item/newspaper)
+	interface("Newspaper", title = "The Griffon")
+	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
+	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
 
-UI_DATA_REPLACE(/obj/item/newspaper, "curr_page:num", "merge:ui_data_obj_item_newspaper{company_name:text,scribble_page:unknown,scribble:bool,channels:list,wanted:list}")
+/obj/item/newspaper/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["curr_page"] = curr_page
+	var/list/merged_1 = ui_data_obj_item_newspaper(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/newspaper's window data (declared on its UI_DATA row).
 /obj/item/newspaper/proc/ui_data_obj_item_newspaper(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -74,8 +84,7 @@ UI_DATA_REPLACE(/obj/item/newspaper, "curr_page:num", "merge:ui_data_obj_item_ne
 		data["wanted"] = null
 	return data
 
-UI_ACT(/obj/item/newspaper, "next_page", ui_act_next_page)
-UI_ACT_PROC(/obj/item/newspaper, ui_act_next_page)
+/obj/item/newspaper/proc/ui_act_next_page(datum/act/op/A)
 	if(curr_page == pages + 1)
 		return TRUE
 	if(curr_page == pages)
@@ -86,8 +95,7 @@ UI_ACT_PROC(/obj/item/newspaper, ui_act_next_page)
 	play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
-UI_ACT(/obj/item/newspaper, "prev_page", ui_act_prev_page)
-UI_ACT_PROC(/obj/item/newspaper, ui_act_prev_page)
+/obj/item/newspaper/proc/ui_act_prev_page(datum/act/op/A)
 	if(curr_page == 0)
 		return TRUE
 	if(curr_page == 1)

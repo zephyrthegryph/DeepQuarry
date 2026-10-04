@@ -49,9 +49,9 @@
 
 /obj/machinery/computer/card/proc/interaction_insert_id(mob/user, obj/item/card/id/id_card, datum/interaction/interaction)
 	if(!scan && (ACCESS_CHANGE_IDS in id_card.GetAccess()))
-		own_set(src, nameof(src.scan), id_card, user = user)
+		move_into(src, nameof(src.scan), id_card, user)
 	else if(!modify)
-		own_set(src, nameof(src.modify), id_card, user = user)
+		move_into(src, nameof(src.modify), id_card, user)
 
 	SStgui.update_uis(src)
 	attack_hand(user)
@@ -177,7 +177,7 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_modify)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			own_set(src, nameof(src.modify), I, user = ui.user)
+			move_into(src, nameof(src.modify), I, ui.user)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
@@ -196,7 +196,7 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_scan)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			own_set(src, nameof(src.scan), I, user = ui.user)
+			move_into(src, nameof(src.scan), I, ui.user)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"

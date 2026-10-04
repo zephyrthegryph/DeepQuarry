@@ -144,7 +144,7 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 		if(isnull(thing))
 			rel_take(holder, var_name)
 		else
-			own_set(holder, var_name, thing, into = FALSE)
+			rel_set(holder, var_name, thing)
 		return
 	holder.vars[var_name] = thing // ALLOW(api): the one writer of a one-item slot over a var: the bay capability's own slot
 	changed(holder, CHANGE_EXPLICIT, var_name)
@@ -159,7 +159,9 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 /proc/varslot_insert(atom/holder, var_name, atom/movable/thing, mob/actor)
 	if(varslot_refusal(holder, var_name, thing, actor))
 		return FALSE
-	if(!own_bring_in(holder, var_name, thing, null, actor, TRUE, null, FALSE))
+	if(rel_kind(holder, var_name) == OWNK_OWN) // a declared owned var: the one transfer moves it in and adopts it
+		return move_into(holder, var_name, thing, actor)
+	if(!own_bring_in(holder, var_name, thing, null, actor, TRUE, null, FALSE)) // an undeclared var: placed, then the bay writes the var
 		return FALSE
 	varslot_set(holder, var_name, thing)
 	return TRUE

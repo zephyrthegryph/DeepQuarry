@@ -15,6 +15,9 @@
 	var/start_pressure = ONE_ATMOSPHERE
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
 
+CAPABILITIES(/obj/machinery/portable_atmospherics)
+	owns_one(nameof(holding), /obj/item/tank)
+
 /obj/machinery/portable_atmospherics/Initialize(mapload)
 	..()
 	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
@@ -150,7 +153,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	if(holding)
 		return TRUE
 	var/obj/item/tank/T = W
-	if(!own_set(src, nameof(src.holding), T, user = user))
+	if(!move_into(src, nameof(src.holding), T, user))
 		return TRUE
 	update_icon()
 	return TRUE
@@ -216,7 +219,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	var/obj/item/cell/C = I
 
 	C.add_fingerprint(user)
-	if(!own_set(src, nameof(src.cell), C, user = user))
+	if(!move_into(src, nameof(src.cell), C, user))
 		return TRUE
 	act_message(user, src, MSG_SELF(span_notice("You open the panel on %T% and insert [C].")), \
 		MSG_OTHERS(span_notice("%U% opens the panel on %T% and inserts [C].")))

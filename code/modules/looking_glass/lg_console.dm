@@ -53,9 +53,21 @@
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/computer/looking_glass, "LookingGlass")
+CAPABILITIES(/obj/machinery/computer/looking_glass)
+	interface("LookingGlass")
+	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))
+	op("gravity", ui_act("gravity"), then(PROC_REF(ui_act_gravity)))
+	op("immersion", ui_act("immersion"), then(PROC_REF(ui_act_immersion)))
 
-UI_DATA(/obj/machinery/computer/looking_glass, "currentProgram=current_program:text", "immersion:num", "merge:ui_data_obj_machinery_computer_looking_glass{supportedPrograms:list,gravity:num}")
+/obj/machinery/computer/looking_glass/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["currentProgram"] = current_program
+	data["immersion"] = immersion
+	var/list/merged_1 = ui_data_obj_machinery_computer_looking_glass(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/computer/looking_glass's window data (declared on its UI_DATA row).
 /obj/machinery/computer/looking_glass/proc/ui_data_obj_machinery_computer_looking_glass(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -77,10 +89,9 @@ UI_DATA(/obj/machinery/computer/looking_glass, "currentProgram=current_program:t
 
 	return data
 
-UI_ACT(/obj/machinery/computer/looking_glass, "program", ui_act_program, UI_ARG_TEXT("program"))
-UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_program)
+/obj/machinery/computer/looking_glass/proc/ui_act_program(datum/act/op/A, program)
 	if(COOLDOWN_FINISHED(src, ready))
-		var/prog = params["program"]
+		var/prog = program
 		if(prog == "Off")
 			current_program = "Off"
 			unload_program()
@@ -91,13 +102,11 @@ UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_program)
 		visible_message(span_warning("ERROR. Recalibrating displays."))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/looking_glass, "gravity", ui_act_gravity)
-UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_gravity)
+/obj/machinery/computer/looking_glass/proc/ui_act_gravity(datum/act/op/A)
 	toggle_gravity(my_area())
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/looking_glass, "immersion", ui_act_immersion)
-UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_immersion)
+/obj/machinery/computer/looking_glass/proc/ui_act_immersion(datum/act/op/A)
 	immersion = !immersion
 	my_area()?.toggle_optional(immersion)
 	return TRUE

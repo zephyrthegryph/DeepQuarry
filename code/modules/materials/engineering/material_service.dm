@@ -233,7 +233,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	if(batch && (batch.doomed[src] || batch.doomed[owner()]))
 		// Batched destroy (doc/rewrite/init_and_turfs.md sec 4.4 step 6): the whole set's gas
 		// watches disarm in one pass when the batch flushes, and no hook is unhooked one by one --
-		// this service's own OM teardown (lifecycle phase 5, om_teardown_hooks()) drops every hook
+		// this service's own teardown (its activations end with it) drops every observe()
 		// it holds, on the doomed owner and on its turf and holders alike.
 		var/watch_key = om_watch_entity_key(src) // handle text: plain data, not an entity
 		batch.material_service_watch_keys += watch_key

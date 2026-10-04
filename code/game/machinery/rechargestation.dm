@@ -334,7 +334,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 			return
 
 		add_fingerprint(R)
-		if(!R.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
+		if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, R))
 			return
 		MACHINE_WAKE(src)
 		update_icon()
@@ -347,7 +347,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 			return
 
 		add_fingerprint(P)
-		if(!P.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
+		if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, P))
 			return
 		MACHINE_WAKE(src)
 		update_icon()
@@ -357,7 +357,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 		var/mob/living/carbon/human/H = L
 		if(HAS_SYNTHETIC_BIOLOGY(H) || H.wearing_rig)
 			add_fingerprint(H)
-			if(!H.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
+			if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, H))
 				return
 			MACHINE_WAKE(src)
 			update_icon()

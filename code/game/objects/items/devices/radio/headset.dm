@@ -24,6 +24,7 @@
 
 CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey)
+	owns_one(nameof(keyslot1), /obj/item/encryptionkey)
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
@@ -96,10 +97,10 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 
 /obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!keyslot1)
-		own_set(src, nameof(src.keyslot1), W, user = user)
+		move_into(src, nameof(src.keyslot1), W, user)
 
 	else
-		own_set(src, nameof(src.keyslot2), W, user = user)
+		move_into(src, nameof(src.keyslot2), W, user)
 
 
 	recalculateChannels()
@@ -207,7 +208,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	if(isanimal(target))
 		var/mob/living/simple_mob/M = target
 		if(!M.mob_radio)
-			own_set(M, nameof(M.mob_radio), src, user = user)
+			move_into(M, nameof(M.mob_radio), src, user)
 			return
 		if(M.mob_radio)
 			M.mob_radio.forceMove(M.loc)

@@ -106,7 +106,7 @@ GLOBAL_LIST_EMPTY(occupant_slot_ids)
 /datum/capability/occupant/proc/enter(atom/holder, mob/M, mob/user)
 	if(refusal(holder, M))
 		return FALSE
-	if(!M.move_into(holder, slot_id, user))
+	if(!move_into(holder, slot_id, M, user))
 		return FALSE
 	if(user)
 		holder.add_fingerprint(user)

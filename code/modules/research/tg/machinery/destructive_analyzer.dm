@@ -20,6 +20,9 @@ It is used to destroy hand-held objects and advance technological research. Used
 
 CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	owns_one(nameof(rmat), /datum/remote_materials)
+	interface("DestructiveAnalyzer")
+	op("eject_item", ui_act("eject_item"), then(PROC_REF(ui_act_eject_item)))
+	op("deconstruct", ui_act("deconstruct", arg("deconstruct_id", schema_text(4096))), then(PROC_REF(ui_act_deconstruct)))
 
 /obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
 	rel_set(src, nameof(rmat), new /datum/remote_materials( \
@@ -117,7 +120,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/
 				to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
 				return TRUE
 		set_busy(TRUE)
-		if(!own_set(src, nameof(src.loaded_item), O, user = user))
+		if(!move_into(src, nameof(src.loaded_item), O, user))
 			return TRUE
 		SStgui.update_uis(src)
 		to_chat(user, span_notice("You add \the [O] to \the [src]."))
@@ -195,12 +198,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/
 // Handling deconstruction
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-DECLARE_UI(/obj/machinery/rnd/destructive_analyzer, "DestructiveAnalyzer")
-
-UI_DATA_REPLACE(/obj/machinery/rnd/destructive_analyzer, "merge:ui_data_obj_machinery_rnd_destructive_analyzer{server_connected:bool,node_data:list,item_icon:text,indestructible:unknown,loaded_item:unknown,already_deconstructed:bool,recoverable_points:unknown}")
-
 /// The computed part of /obj/machinery/rnd/destructive_analyzer's window data (declared on its UI_DATA row).
-/obj/machinery/rnd/destructive_analyzer/proc/ui_data_obj_machinery_rnd_destructive_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/rnd/destructive_analyzer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["server_connected"] = !!stored_research
 	data["node_data"] = null
@@ -230,8 +229,8 @@ UI_DATA_REPLACE(/obj/machinery/rnd/destructive_analyzer, "merge:ui_data_obj_mach
 	data["research_point_id"] = DESTRUCTIVE_ANALYZER_DESTROY_POINTS
 	return data
 
-UI_ACT(/obj/machinery/rnd/destructive_analyzer, "eject_item", ui_act_eject_item)
-UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_eject_item)
+/obj/machinery/rnd/destructive_analyzer/proc/ui_act_eject_item(datum/act/op/A)
+	var/mob/user = A.actor
 	var/current_item = loaded_item
 	if(busy)
 		balloon_alert(user, "already busy!")
@@ -240,9 +239,9 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_eject_item)
 		unload_item()
 		return TRUE
 
-UI_ACT(/obj/machinery/rnd/destructive_analyzer, "deconstruct", ui_act_deconstruct, UI_ARG_TEXT("deconstruct_id"))
-UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
-	if(!user_try_decon_id(params["deconstruct_id"]))
+/obj/machinery/rnd/destructive_analyzer/proc/ui_act_deconstruct(datum/act/op/A, deconstruct_id)
+	var/mob/user = A.actor
+	if(!user_try_decon_id(deconstruct_id))
 		balloon_alert(user, "analysis failed!")
 	return TRUE
 

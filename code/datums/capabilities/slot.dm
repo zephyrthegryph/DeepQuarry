@@ -161,7 +161,7 @@
 
 /// The one-call transfer in: out of the hand, slot or container it is in, into holder, adopted.
 /datum/capability/slot/proc/adopt(atom/holder, obj/item/item, mob/user)
-	return !isnull(own_set(holder, slot_var, item, user = user, into = TRUE))
+	return move_into(holder, slot_var, item, user)
 
 /// Puts `item` into the slot on `holder`. TRUE when it went in, UI_REFUSED when the input is used but
 /// refused, FALSE when the slot declines (SLOT_FULL_PASS, SLOT_REFUSED_PASS, a type it doesn't accept)

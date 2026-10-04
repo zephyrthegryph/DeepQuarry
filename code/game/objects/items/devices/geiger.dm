@@ -142,8 +142,10 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 		update_icon()
 
 /obj/item/geiger/proc/scan(atom/target, mob/user)
-	if (OM_EMIT(target, /datum/om/event/before/geiger_counter_scan, user, src) & GEIGER_COUNTER_SCAN_SUCCESSFUL)
-		return
+	var/datum/act/geiger_scan/scan = ACT_TRY(target, geiger_scan, user, src)
+	if(!scan)
+		return // the target answered the scan itself
+	act_cancel(scan)
 
 	if(isliving(target))
 		var/mob/living/living_target = target

@@ -114,7 +114,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	if(!istype(W, /obj/item/disk/body_record)) //Traitgenes Storing the entire body record
 		return FALSE
 	if(!diskette)
-		if(!own_set(src, nameof(src.diskette), W, user = user))
+		if(!move_into(src, nameof(src.diskette), W, user))
 			return FALSE
 		to_chat(user, "You insert [W].")
 		SStgui.update_uis(src)

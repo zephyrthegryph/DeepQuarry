@@ -40,7 +40,7 @@
 /mob/living/proc/store_in(obj/item/I, atom/S)
 	if(inventory_slot_id(I))
 		remove_from_mob(I, S)
-	else if(!I.move_into(S, null, src))
+	else if(!move_into(S, null, I, src))
 		I.forceMove(S)
 
 //Returns the thing in our active hand

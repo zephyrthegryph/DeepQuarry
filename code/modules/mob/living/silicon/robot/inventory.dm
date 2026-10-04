@@ -253,7 +253,7 @@
 	for(var/slot in 1 to 3)
 		if(get_module_slot(slot))
 			continue
-		if(!O.move_into(src, SLOT_ID_MODULE(slot), src))
+		if(!move_into(src, SLOT_ID_MODULE(slot), O, src))
 			return
 		O.hud_layerise()
 		var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)

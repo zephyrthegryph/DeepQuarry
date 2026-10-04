@@ -45,7 +45,7 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 /obj/item/implantpad/proc/interaction_item(mob/user, obj/item/implantcase/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/implantcase))
 		if(!( src.case ))
-			own_set(src, nameof(src.case), C, user = user)
+			move_into(src, nameof(src.case), C, user)
 	else
 		return INTERACTION_HANDLED_PASS
 	src.update()

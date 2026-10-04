@@ -1077,28 +1077,6 @@
 	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 1, "ending it raises once")
 	sched.test_raises = null
 
-/// The status row's veto signal: a handler answering COMPONENT_NO_STUN blocks the increase.
-/datum/unit_test/life_om/status_signal_veto
-	var/vetoes = 0
-
-/datum/unit_test/life_om/status_signal_veto/run_life()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	om_suspend(H, H)
-	om_hook(H, /datum/om/event/living_status_stun, src, PROC_REF(veto))
-	H.status_at_least(EFFECT_STUNNED, 2)
-	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "a vetoed increase doesn't land")
-	TEST_ASSERT_EQUAL(vetoes, 1, "the row's signal was sent once")
-	H.status_at_least(EFFECT_SLURRING, 2)
-	TEST_ASSERT(H.has_status(EFFECT_SLURRING), "a status without a signal isn't vetoed")
-	om_unhook(H, /datum/om/event/living_status_stun, src)
-	H.status_at_least(EFFECT_STUNNED, 2)
-	TEST_ASSERT(H.has_status(EFFECT_STUNNED), "without the veto it lands")
-
-/datum/unit_test/life_om/status_signal_veto/proc/veto(datum/source, datum/om/event/living_status_stun/event)
-	EVENT_HANDLER
-	vetoes++
-	return COMPONENT_NO_STUN
 
 /// Life never wakes itself: a frame on a mob with running statuses raises no status change, so a
 /// sleeping mouse parks like an idle one.

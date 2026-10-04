@@ -37,7 +37,7 @@ CAPABILITIES(/obj/item/mmi)
 /obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
 	if(B)
 		B.preserved = TRUE
-	own_set(src, nameof(src.brainobj), B, into = TRUE)
+	move_into(src, nameof(src.brainobj), B)
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.set_tissue(B)
 

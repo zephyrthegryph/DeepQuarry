@@ -29,7 +29,7 @@
 	var/atom/held
 
 
-/datum/dq_state_holder/proc/on_signal(datum/source, datum/om/event/qdeleting/event)
+/datum/dq_state_holder/proc/on_signal(datum/act/notice/N)
 	EVENT_HANDLER
 	return
 
@@ -256,14 +256,14 @@
 	TEST_ASSERT_EQUAL(length(blockers), 0, "releasing the outside reference should unblock: [jointext(blockers, "; ")]")
 
 	var/datum/dq_state_holder/listener = new
-	om_hook(box, /datum/om/event/qdeleting, listener, TYPE_PROC_REF(/datum/dq_state_holder, on_signal))
+	observe(box, /datum/notice/qdeleting, listener, then(TYPE_PROC_REF(/datum/dq_state_holder, on_signal)))
 	blockers = box.state_collapse_blockers(1)
 	var/found_signal = FALSE
 	for(var/reason in blockers)
-		if(findtext(reason, "hooks"))
+		if(findtext(reason, "observes"))
 			found_signal = TRUE
-	TEST_ASSERT(found_signal, "an event hook from outside should block collapse: [jointext(blockers, "; ")]")
-	om_unhook(box, /datum/om/event/qdeleting, listener)
+	TEST_ASSERT(found_signal, "an observe() hook from outside should block collapse: [jointext(blockers, "; ")]")
+	unobserve(box, /datum/notice/qdeleting, listener)
 	qdel(listener)
 
 	var/obj/item/paper/timed = new(test_floor())

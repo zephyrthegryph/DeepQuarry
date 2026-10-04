@@ -49,8 +49,10 @@ avoid code duplication. This includes items that may sometimes act as a standard
  */
 
 /obj/item/proc/pre_attack(atom/A, mob/user, params) //do stuff before attackby!
-	if(OM_EMIT(src, /datum/om/event/before/item_pre_attack, A, user, params) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	var/datum/act/pre_attack/swing = ACT_TRY(src, pre_attack, A, user, params)
+	if(!swing)
 		return TRUE
+	act_done(swing)
 	return FALSE //return TRUE to avoid calling attackby after this proc does stuff
 
 //I would prefer to rename this to attack(), but that would involve touching hundreds of files.
@@ -112,9 +114,12 @@ avoid code duplication. This includes items that may sometimes act as a standard
 
 /// Emits the tool-act event, then invokes the corresponding focused hook.
 /atom/proc/tool_act(mob/user, obj/item/tool, tool_quality, secondary = FALSE)
-	var/result = OM_EMIT(src, /datum/om/event/before/atom_tool_act, tool_quality, secondary, user, tool)
-	if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
-		return result
+	// A hook on the atom (a dormant core repaired on its body) takes the tool use over and answers the ITEM_INTERACT_* result.
+	var/datum/act/tool_act/use = ACT_TRY(src, tool_act, tool_quality, secondary, user, tool)
+	if(!use)
+		return ACT_TAKEN_OVER ? ACT_REPLY : ITEM_INTERACT_BLOCKING
+	act_cancel(use)
+	var/result = NONE
 	// Dormant material assemblies intentionally own no signal handlers. A
 	// deliberate diagnostic interaction is itself their admission event.
 	if(secondary && tool_quality == TOOL_MULTITOOL && isobj(src))
@@ -176,8 +181,20 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
 	if(W && user)
 		PUBLISH_LEGACY(src, /datum/notice/legacy_hit, user, W)
-	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(W, user, click_parameters)) == EVENT_VETO)
+	if(attackby_stopped(src, W, user, click_parameters))
 		return TRUE
+	return FALSE
+
+/// The gate every item use on `target` passes: a hook on the target (observe(target, /datum/act/attackby, ...)) or a legacy behaviour may stop it.
+/// TRUE when something did. The use is announced (/datum/notice/attacked_by) when nothing stopped it.
+/proc/attackby_stopped(atom/target, obj/item/W, mob/user, click_parameters)
+	var/datum/act/attackby/use = ACT_TRY(target, attackby, W, user, click_parameters)
+	if(!use)
+		return TRUE
+	if(om_wants(target, /datum/om/event/before/attackby) && om_emit(target, new /datum/om/event/before/attackby(W, user, click_parameters)) == EVENT_VETO)
+		act_cancel(use)
+		return TRUE
+	act_done(use)
 	return FALSE
 
 /// The attack_modifier of the item entry each actor is inside (a charged or off-hand swing).
@@ -218,7 +235,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 
 /// Signal listeners first (a nanoform's held body), then the hit. A hit that didn't use the input lets afterattack follow.
 /mob/living/proc/interaction_hit(mob/user, obj/item/I, datum/interaction/interaction)
-	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(I, user, dq_interaction_click_params(user))) == EVENT_VETO)
+	if(attackby_stopped(src, I, user, dq_interaction_click_params(user)))
 		return INTERACTION_HANDLED_PASS
 	var/modifier = GLOB.interaction_entry_attack_modifier[user]
 	var/hit = hit_with_item(I, user, isnull(modifier) ? 1 : modifier, interaction.stance)

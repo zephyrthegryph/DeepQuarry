@@ -60,8 +60,8 @@
 
 	var/attached = 0
 	var/detached = 0
-	om_hook(H, /datum/om/event/body_part_detached, src, PROC_REF(dq_count_detached))
-	om_hook(recipient, /datum/om/event/body_part_attached, src, PROC_REF(dq_count_attached))
+	observe(H, /datum/notice/body_part_detached, src, then(PROC_REF(dq_count_detached)))
+	observe(recipient, /datum/notice/body_part_attached, src, then(PROC_REF(dq_count_attached)))
 
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	TEST_ASSERT(isturf(arm.loc), "the severed arm lies on the floor")
@@ -94,11 +94,11 @@
 
 /datum/unit_test/var/dq_part_signal_count = 0
 
-/datum/unit_test/proc/dq_count_detached(datum/source, datum/om/event/body_part_detached/event)
+/datum/unit_test/proc/dq_count_detached(datum/act/notice/N)
 	EVENT_HANDLER
 	dq_part_signal_count++
 
-/datum/unit_test/proc/dq_count_attached(datum/source, datum/om/event/body_part_attached/event)
+/datum/unit_test/proc/dq_count_attached(datum/act/notice/N)
 	EVENT_HANDLER
 	dq_part_signal_count++
 

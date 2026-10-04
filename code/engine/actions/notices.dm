@@ -48,6 +48,13 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 	for_table["[notice_type]"] = hooks
 	return hooks
 
+/// TRUE when `E` is fully gone as far as notices go: deleted, and past being merely mid-deletion. An entity inside its own destroy transaction (qdel() has
+/// started: its qdeleting notice, the contents it spills, the links it drops) still publishes, and its observers still hear it, until the transaction ends.
+/proc/notice_entity_gone(datum/E)
+	if(!E)
+		return TRUE
+	return E.gc_destroyed && E.gc_destroyed != GC_CURRENTLY_BEING_QDELETED
+
 /// Does a hook asking for `asked` hear an outcome `outcome`? Asking about ACT_ANY (a WANTS) matches any hook that asked for something.
 /proc/outcome_heard(asked, outcome)
 	return !!(asked & outcome)
@@ -61,7 +68,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 
 /// notice_wanted() without the OM event twin (the twin's own check calls this).
 /proc/notice_wanted_native(datum/E, notice_type, outcome = ACT_COMMITTED)
-	if(!E || QDELETED(E) || !islist(GLOB?.notice_plans))
+	if(notice_entity_gone(E) || !islist(GLOB?.notice_plans))
 		return FALSE
 	var/datum/type_table/T = table_of(E)
 	for(var/datum/hook/H as anything in notice_hooks_static(T, notice_type))
@@ -116,15 +123,23 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 
 /// The hooks of this module that hear N (also called for a notice the legacy publish() delivers).
 /proc/notice_deliver_hooks(datum/holder, datum/notice/N, outcome)
-	if(QDELETED(holder) || !islist(GLOB?.notice_plans))
+	if(notice_entity_gone(holder) || !islist(GLOB?.notice_plans))
 		return
 	N.target = holder
 	N.outcome = (outcome == ACT_ROLL_FAILED) ? ACT_COMMITTED : outcome
+	// A holder inside its destroy transaction is heard by the observers that are still alive (its qdeleting notice, what it spills while it goes), and
+	// by its own hooks only for the qdeleting notice: nothing else runs on an entity that is being taken apart.
+	var/holder_dying = QDELETED(holder)
+	var/dying_notice = holder_dying && istype(N, /datum/notice/qdeleting)
 	for(var/datum/hook/H as anything in notice_plan_for(holder, N, outcome))
 		if(H.op_key && H.op_key != N.op_key)
 			continue
 		var/datum/run_on = H.on_listener ? H.activation?.source : holder
-		if(!isdatum(run_on) || QDELETED(run_on))
+		if(!isdatum(run_on) || notice_entity_gone(run_on))
+			continue
+		if(QDELETED(run_on) && !(dying_notice && run_on == holder))
+			continue // a listener mid-deletion hears nothing, except the notice that its own deletion has begun
+		if(holder_dying && !H.on_listener && !dying_notice)
 			continue
 		N.holder = run_on
 		hook_context(N, H)

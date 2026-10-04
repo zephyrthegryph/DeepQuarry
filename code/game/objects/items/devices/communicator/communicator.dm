@@ -178,13 +178,13 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 		else
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id))
-				own_set(src, nameof(src.id), I, user = user)
+				move_into(src, nameof(src.id), I, user)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name)
 			var/obj/old_id = own_take(src, nameof(src.id))
-			if(!own_set(src, nameof(src.id), I, user = user))
+			if(!move_into(src, nameof(src.id), I, user))
 				rel_set(src, nameof(src.id), old_id)
 				return 0
 			user.put_in_hands(old_id)

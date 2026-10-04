@@ -26,7 +26,7 @@
 	TEST_ASSERT_EQUAL(crate.tamper_proof, random_alert ? 1 : 2, "the real crate uses the intended existing anti-tamper setting")
 	TEST_ASSERT_EQUAL(shot.obj_damage_type(), BRUTE, "the real projectile has the actual object damage kind accepted by anti-tamper")
 	TEST_ASSERT(shot.damage > 0 && shot.damage < crate.get_integrity(), "the real canonical projectile is damaging but nonlethal to intact crates")
-	TEST_ASSERT(cargo.move_into(crate), "the real original cargo enters the declared crate interior through the public transfer API")
+	TEST_ASSERT(move_into(crate, null, cargo), "the real original cargo enters the declared crate interior through the public transfer API")
 	TEST_ASSERT_EQUAL(cargo.loc, crate, "the exact original cargo physically occupies its real crate")
 	TEST_ASSERT(cargo in crate.slot_contents(CONTAINER_SLOT_INTERIOR), "the exact original cargo is registered in the actual interior ledger")
 	var/control_integrity = control.get_integrity()

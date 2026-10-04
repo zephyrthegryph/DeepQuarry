@@ -1,7 +1,7 @@
 // The PUBLISH / OM_EMIT twins (doc/rewrite/final_api.html, "Coexistence rules", Events; section 19 "E4").
 //
 // While old and new forms run side by side, one occurrence is heard on both sides: PUBLISH of a notice also OM_EMITs its twin event to the
-// om_hook listeners, and OM_EMIT of an event also publishes its twin notice to the on_notice listeners. No hand-written bridge: the pairs are
+// event listeners, and OM_EMIT of an event also publishes its twin notice to the on_notice listeners. No hand-written bridge: the pairs are
 // the rows of GLOB.event_twin_notice (code/engine/_generated/event_twins.dm, `analyze gen event_twins`, from tools/dx/codemods/om_event_map.json)
 // and each row names the notice's fields in the order of the event's New() arguments. The last event deletes the map (step A7).
 //
@@ -52,7 +52,7 @@ GLOBAL_VAR_INIT(notice_twin_built, FALSE)
 	notice_publish(E, N, ACT_COMMITTED)
 	GLOB.twin_in_flight = FALSE
 
-/// A committed notice delivered on holder: its twin event is emitted to the om_hook listeners.
+/// A committed notice delivered on holder: its twin event is emitted to the event listeners.
 /proc/notice_to_event_twin(datum/holder, datum/notice/N)
 	if(GLOB.twin_in_flight)
 		return

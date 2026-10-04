@@ -25,9 +25,9 @@
 	var/death_stat
 	var/death_subject_ref
 
-/datum/unit_test/interim_pai_card_deletion/proc/personality_died(datum/source, datum/om/event/mob_death/event)
+/datum/unit_test/interim_pai_card_deletion/proc/personality_died(datum/act/notice/N)
 	EVENT_HANDLER
-	var/mob/living/silicon/pai/personality = source
+	var/mob/living/silicon/pai/personality = N.target
 	death_events++
 	death_stat = personality.stat
 	death_subject_ref = REF(personality)
@@ -45,7 +45,7 @@
 	TEST_ASSERT_EQUAL(personality.stat, CONSCIOUS, "The personality must actually be alive before card deletion")
 	var/personality_ref = REF(personality)
 	var/personality_handle = om_handle(personality)
-	om_hook(personality, /datum/om/event/mob_death, src, PROC_REF(personality_died))
+	observe(personality, /datum/notice/mob_death, src, then(PROC_REF(personality_died)))
 	qdel(card)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(card), "The actual card must be deleted")

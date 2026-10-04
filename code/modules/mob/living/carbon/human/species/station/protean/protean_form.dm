@@ -208,15 +208,11 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	hiding = new_hiding
 	if(hiding)
 		H.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		om_hook(H, /datum/om/event/before/movable_pre_move, src, PROC_REF(block_move))
+		observe(H, /datum/act/pre_move, src, instead())
 	else
 		H.mouse_opacity = MOUSE_OPACITY_ICON
-		om_unhook(H, /datum/om/event/before/movable_pre_move, src)
+		unobserve(H, /datum/act/pre_move, src)
 	H.get_forms()?.refresh_appearance()
-
-/datum/form/protean_blob/proc/block_move(atom/movable/source, datum/om/event/before/movable_pre_move/event)
-	EVENT_HANDLER
-	return COMPONENT_MOVABLE_BLOCK_PRE_MOVE
 
 // --- Blob styles: appearance as data ---------------------------------------------------
 

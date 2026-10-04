@@ -33,7 +33,7 @@
 	if(ispath(starting_scanner, /obj/item/stock_parts/scanning_module))
 		rel_set(src, nameof(scanner), new starting_scanner(src)) // ALLOW(decl): scanner from an Initialize argument
 	else if(istype(starting_scanner))
-		own_set(src, nameof(src.scanner), starting_scanner, into = TRUE)
+		move_into(src, nameof(src.scanner), starting_scanner)
 
 	refresh_parts()
 
@@ -44,7 +44,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 
 /obj/item/extrapolator/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	if(!scanner)
-		if(!own_set(src, nameof(src.scanner), item, user = user))
+		if(!move_into(src, nameof(src.scanner), item, user))
 			return TRUE
 		to_chat(user, span_notice("You install \the [scanner] in [src]."))
 		refresh_parts()

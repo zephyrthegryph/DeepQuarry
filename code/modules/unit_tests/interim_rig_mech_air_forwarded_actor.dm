@@ -73,7 +73,7 @@
 	var/datum/hud/hud = allocate(/datum/hud, actor)
 	hud.build_action_groups()
 	var/obj/mecha/working/ripley/interim_air_forwarded_actor/mech = allocate(/obj/mecha/working/ripley/interim_air_forwarded_actor, T)
-	TEST_ASSERT(actor.move_into(mech, MECHA_SLOT_PILOT, actor), "actual containment API establishes the real pilot slot")
+	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, actor, actor), "actual containment API establishes the real pilot slot")
 	TEST_ASSERT_EQUAL(mech.slot_item(MECHA_SLOT_PILOT), actor, "the real pilot ledger contains the precise actor")
 	TEST_ASSERT_EQUAL(actor.loc, mech, "actual pilot insertion moves the real human inside the mech")
 	var/obj/item/mecha_parts/component/gas/gas = mech.internal_components[MECH_GAS]

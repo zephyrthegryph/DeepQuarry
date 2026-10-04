@@ -229,7 +229,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 				rel_clear(micro, nameof(micro.held_mob))
 				qdel(micro)
 			return
-		if(!to_eat.move_into(belly, BELLY_SLOT_INTERIOR, hound))
+		if(!move_into(belly, BELLY_SLOT_INTERIOR, to_eat, hound))
 			return
 		log_admin("VORE: [hound] used their [src] to swallow [to_eat].")
 

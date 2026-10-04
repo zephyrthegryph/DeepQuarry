@@ -669,7 +669,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	if(stat_tracking)
 		GLOB.disposals_flush_shift_roundstat++
 
-	if(!OM_EMIT(src, /datum/om/event/before/disposal_flush, flushed_items, air_contents)) //If nothing handles it, we'll just expel immediately.
+	var/datum/act/flush_disposal/flush = ACT_TRY(src, flush_disposal, flushed_items, air_contents)
+	if(flush) //If nothing handles it, we'll just expel immediately.
+		act_cancel(flush)
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)
 

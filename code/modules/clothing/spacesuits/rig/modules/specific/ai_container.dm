@@ -192,7 +192,7 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 				else
 					return 0
 			else
-				if(!own_set(src, nameof(src.ai_card), ai, user = user))
+				if(!move_into(src, nameof(src.ai_card), ai, user))
 					return 0
 				to_chat(ai_mob, span_blue("You have been transferred to \the [holder]'s [src]."))
 				to_chat(user, span_blue("You load [ai_mob] into \the [holder]'s [src]."))

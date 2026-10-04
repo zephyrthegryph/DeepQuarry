@@ -1,7 +1,7 @@
 // Events that replaced the DCS signals (object_model_core.md sec 10,
 // signal_migration_map.md). One type per former COMSIG_*, payload vars named after
 // the signal's documented arguments. Plain events are `sync`: delivered at once to
-// the entity's behaviours and then to its hooks (om_hook), with numeric returns ORed
+// the entity's behaviours, with numeric returns ORed
 // into `result`, which om_emit() returns. before/ events are `accumulate`: the same,
 // for events whose sender reads the result (the former COMPONENT_* return bits, or
 // EVENT_VETO). Send with OM_EMIT(entity, /datum/om/event/x, args...).
@@ -34,16 +34,6 @@
 /datum/om/event/atom_after_successful_initialized_on/New(created, mapload)
 	src.created = created
 	src.mapload = mapload
-
-/// From base of atom/bullet_act(): (/obj/proj, def_zone, piercing_hit, blocked)
-/datum/om/event/before/atom_bullet_act
-	accumulate = TRUE
-	var/projectile
-	var/def_zone
-
-/datum/om/event/before/atom_bullet_act/New(projectile, def_zone)
-	src.projectile = projectile
-	src.def_zone = def_zone
 
 /// From base of atom/Bumped(): (/atom/movable) (the one that gets bumped)
 /datum/om/event/atom_bumped
@@ -107,16 +97,6 @@
 /datum/om/event/before/atom_extinguish
 	accumulate = TRUE
 
-/// From the [EX_ACT] wrapper macro: (severity, target)
-/datum/om/event/before/atom_ex_act
-	accumulate = TRUE
-	var/severity
-	var/target
-
-/datum/om/event/before/atom_ex_act/New(severity, target)
-	src.severity = severity
-	src.target = target
-
 /// From base of atom/fire_act(): (exposed_temperature, exposed_volume)
 /datum/om/event/atom_fire_act
 	sync = TRUE
@@ -126,14 +106,6 @@
 /datum/om/event/atom_fire_act/New(exposed_temperature, exposed_volume)
 	src.exposed_temperature = exposed_temperature
 	src.exposed_volume = exposed_volume
-
-/// From base of atom/emp_act(severity): (severity). return EMP protection flags
-/datum/om/event/before/atom_pre_emp_act
-	accumulate = TRUE
-	var/severity
-
-/datum/om/event/before/atom_pre_emp_act/New(severity)
-	src.severity = severity
 
 /// From internal loop in /atom/proc/propagate_radiation_pulse: (atom/pulse_source)
 /datum/om/event/atom_propagate_rad_pulse
@@ -281,16 +253,6 @@
 	src.params = params
 	src.user = user
 
-/// Called when a disposal connected object flushes its contents into the disposal pipe network
-/datum/om/event/before/disposal_flush
-	accumulate = TRUE
-	var/items
-	var/gas
-
-/datum/om/event/before/disposal_flush/New(items, gas)
-	src.items = items
-	src.gas = gas
-
 /// Called when a disposal connected object attempts to link to a trunk: (/obj/structure/disposalpipe/trunk)
 /datum/om/event/disposal_link
 	sync = TRUE
@@ -308,14 +270,6 @@
 /datum/om/event/disposal_receive/New(items, gas)
 	src.items = items
 	src.gas = gas
-
-/// Called when a disposal trunk attempts to send a packet, to be recieved by an atom with a disposal network connection component.
-/datum/om/event/before/disposal_send
-	accumulate = TRUE
-	var/holder
-
-/datum/om/event/before/disposal_send/New(holder)
-	src.holder = holder
 
 /// Called when a disposal connected object should unlink from a trunk it's attached to.
 /datum/om/event/disposal_unlink
@@ -356,16 +310,6 @@
 
 /datum/om/event/dqai_target_lost/New(old_target)
 	src.old_target = old_target
-
-/// Fired when scanning something with a geiger counter. (mob/user, obj/item/geiger_counter/geiger_counter)
-/datum/om/event/before/geiger_counter_scan
-	accumulate = TRUE
-	var/user
-	var/geiger_counter
-
-/datum/om/event/before/geiger_counter_scan/New(user, geiger_counter)
-	src.user = user
-	src.geiger_counter = geiger_counter
 
 /// Signal that gets sent when a ghost query is completed
 /datum/om/event/ghost_query_complete
@@ -421,14 +365,6 @@
 /datum/om/event/world_payment_account_status/New(account)
 	src.account = account
 
-/// Called by datum/cinematic/play() : (datum/cinematic/new_cinematic)
-/datum/om/event/before/world_play_cinematic
-	accumulate = TRUE
-	var/new_cinematic
-
-/datum/om/event/before/world_play_cinematic/New(new_cinematic)
-	src.new_cinematic = new_cinematic
-
 /// Shuttle Comsigs Supply shuttle selling, before all items are sold, called by /datum/controller/subsystem/supply/proc/sell() : (/list/area/supply_shuttle_areas)
 /datum/om/event/world_supply_shuttle_depart
 	sync = TRUE
@@ -453,10 +389,6 @@
 /datum/om/event/before/handle_mutations
 	accumulate = TRUE
 
-/// From the radiation life system
-/datum/om/event/before/handle_radiation
-	accumulate = TRUE
-
 /// Hose Connector Component
 /datum/om/event/hose_forcepump
 	sync = TRUE
@@ -464,30 +396,6 @@
 /// NON TG Signals When the mob's dna and species have been fully applied
 /datum/om/event/human_dna_finalized
 	sync = TRUE
-
-/// From /mob/living/carbon/human/GetAltName(): (list/name_data) - name_data[1] contains the alt name
-/datum/om/event/before/human_get_alt_name
-	accumulate = TRUE
-	var/name_data
-
-/datum/om/event/before/human_get_alt_name/New(name_data)
-	src.name_data = name_data
-
-/// From /mob/living/carbon/human/get_visible_name(), not sent if the mob has TRAIT_UNKNOWN: (identity)
-/datum/om/event/before/human_get_visible_name
-	accumulate = TRUE
-	var/identity
-
-/datum/om/event/before/human_get_visible_name/New(identity)
-	src.identity = identity
-
-/// From /mob/living/carbon/human/GetVoice(): (list/voice_data) - voice_data[1] contains the voice name
-/datum/om/event/before/human_get_voice
-	accumulate = TRUE
-	var/voice_data
-
-/datum/om/event/before/human_get_voice/New(voice_data)
-	src.voice_data = voice_data
 
 /// Sent to the instrument when a song stops playing
 /datum/om/event/instrument_end
@@ -555,18 +463,6 @@
 /datum/om/event/item_pickup/New(taker)
 	src.taker = taker
 
-/// From base of obj/item/pre_attack(): (atom/target, mob/user, list/modifiers, list/attack_modifiers)
-/datum/om/event/before/item_pre_attack
-	accumulate = TRUE
-	var/target
-	var/user
-	var/params
-
-/datum/om/event/before/item_pre_attack/New(target, user, params)
-	src.target = target
-	src.user = user
-	src.params = params
-
 /// Sent from [atom/proc/item_interaction], when this atom is used as a tool and an event occurs
 /datum/om/event/item_tool_acted
 	sync = TRUE
@@ -585,10 +481,6 @@
 /datum/om/event/living_aheal
 	sync = TRUE
 
-/// From /datum/body/evaluate_status(), before death/unconsciousness is applied: ()
-/datum/om/event/before/living_body_status
-	accumulate = TRUE
-
 /// From /mob/proc/death(), once per death, after EVERY death side effect (on_death(), HUD refresh, antag win check): (gibbed). Never sent on a repeated or replaced death. Hang end-of-death work (delete_on_death) here; death() itself never deletes the mob.
 /datum/om/event/living_death_final
 	sync = TRUE
@@ -596,22 +488,6 @@
 
 /datum/om/event/living_death_final/New(gibbed)
 	src.gibbed = gibbed
-
-/// From base of /mob/living/proc/injure(), before mitigation: (kind, list/amount_ref, zone, atom/source, flags). amount_ref[1] may be modified.
-/datum/om/event/before/living_injure
-	accumulate = TRUE
-	var/kind
-	var/amount_ref
-	var/zone
-	var/source
-	var/flags
-
-/datum/om/event/before/living_injure/New(kind, amount_ref, zone, source, flags)
-	src.kind = kind
-	src.amount_ref = amount_ref
-	src.zone = zone
-	src.source = source
-	src.flags = flags
 
 /// From base of /mob/living/proc/injure(), after the injury applied: (kind, applied, zone, atom/source, flags)
 /datum/om/event/living_injured
@@ -646,22 +522,6 @@
 	src.zone = zone
 	src.source = source
 	src.flags = flags
-
-/// From base of /mob/living/proc/apply_effect(var/effect = 0,var/effecttype = STUN, var/blocked = 0, var/check_protection = 1, rad_protection)
-/datum/om/event/before/living_irradiate_effect
-	accumulate = TRUE
-	var/effect
-	var/stun
-	var/blocked
-	var/check_protection
-	var/rad_protection
-
-/datum/om/event/before/living_irradiate_effect/New(effect, stun, blocked, check_protection, rad_protection)
-	src.effect = effect
-	src.stun = stun
-	src.blocked = blocked
-	src.check_protection = check_protection
-	src.rad_protection = rad_protection
 
 /// From /mob/living/proc/return_from_death(), after the mob is alive again: (datum/source, reason)
 /datum/om/event/living_revived
@@ -878,17 +738,9 @@
 /datum/om/event/mob_granted_action/New(action)
 	src.action = action
 
-/// From the HUD life system (/mob/proc/hud_available()).
-/datum/om/event/before/mob_handle_hud
-	accumulate = TRUE
-
 /// From the HUD life system (darksight()).
 /datum/om/event/mob_handle_hud_darksight
 	sync = TRUE
-
-/// From the HUD life system (health_icons()).
-/datum/om/event/before/mob_handle_hud_health_icon
-	accumulate = TRUE
 
 /// From the vision life system (the sight reaction, life_vision(); a ghost's upkeep).
 /datum/om/event/mob_handle_vision
@@ -921,14 +773,6 @@
 
 /datum/om/event/mob_mind_transferred_out_of/New(new_character)
 	src.new_character = new_character
-
-/// From base of /client/Move(n, direct) : (direction) returns bool, if component handled movement
-/datum/om/event/before/mob_relay_movement
-	accumulate = TRUE
-	var/direction
-
-/datum/om/event/before/mob_relay_movement/New(direction)
-	src.direction = direction
 
 /// From /datum/action/Remove(): (datum/action)
 /datum/om/event/mob_removed_action
@@ -1000,18 +844,6 @@
 /datum/om/event/movable_motiontracker/New(atom/source, echo_turf_location)
 	src.source = source // ALLOW(ownership): a sync event payload that lives for one emit and is never destroyed
 	src.echo_turf_location = echo_turf_location
-
-/// From base of atom/movable/Moved(): (/atom)
-/datum/om/event/before/movable_pre_move
-	accumulate = TRUE
-	var/new_loc
-	var/direction
-	var/movetime
-
-/datum/om/event/before/movable_pre_move/New(new_loc, direction, movetime)
-	src.new_loc = new_loc
-	src.direction = direction
-	src.movetime = movetime
 
 /// From base of atom/movable/on_changed_z_level(): (turf/old_turf, turf/new_turf, same_z_layer)
 /datum/om/event/before/movable_z_changed
@@ -1154,30 +986,6 @@
 	src.thing = thing
 	src.slot_id = slot_id
 
-/// Containment ledger (code/datums/containment/). Sent on the holder. from the ledger before a thing enters one of the holder's slots: (atom/movable/thing, slot_id, mob/actor)
-/datum/om/event/before/slot_pre_insert
-	accumulate = TRUE
-	var/thing
-	var/slot_id
-	var/actor
-
-/datum/om/event/before/slot_pre_insert/New(thing, slot_id, actor)
-	src.thing = thing
-	src.slot_id = slot_id
-	src.actor = actor
-
-/// From the ledger before a thing leaves one of the holder's slots: (atom/movable/thing, slot_id, mob/actor)
-/datum/om/event/before/slot_pre_remove
-	accumulate = TRUE
-	var/thing
-	var/slot_id
-	var/actor
-
-/datum/om/event/before/slot_pre_remove/New(thing, slot_id, actor)
-	src.thing = thing
-	src.slot_id = slot_id
-	src.actor = actor
-
 /// From the ledger after a thing left one of the holder's slots: (atom/movable/thing, slot_id)
 /datum/om/event/slot_removed
 	sync = TRUE
@@ -1285,21 +1093,6 @@
 
 /datum/om/event/trait_lost/New(trait)
 	src.trait = trait
-
-/// Was COMSIG_ATOM_TOOL_ACT(quality) / COMSIG_ATOM_SECONDARY_TOOL_ACT(quality): `user`
-/// uses `tool` of `tool_quality` on the atom. Result bits are the tool_act return flags.
-/datum/om/event/before/atom_tool_act
-	accumulate = TRUE
-	var/tool_quality
-	var/secondary
-	var/user
-	var/tool
-
-/datum/om/event/before/atom_tool_act/New(tool_quality, secondary, user, tool)
-	src.tool_quality = tool_quality
-	src.secondary = secondary
-	src.user = user
-	src.tool = tool
 
 /// Was COMSIG_TOOL_ATOM_ACTED_PRIMARY(quality) / _SECONDARY(quality), sent on the tool
 /// after it acted on `target`.

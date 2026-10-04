@@ -43,8 +43,8 @@
 			held.forceMove(loc)
 		else
 			held.moveToNullspace()
-	right?.move_into(src, SLOT_ID_HAND_R, src)
-	left?.move_into(src, SLOT_ID_HAND_L, src)
+	move_into(src, SLOT_ID_HAND_R, right, src)
+	move_into(src, SLOT_ID_HAND_L, left, src)
 	hand = null
 
 /datum/predicate/dq_test_weld_light

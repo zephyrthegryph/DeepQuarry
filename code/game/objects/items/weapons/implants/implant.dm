@@ -39,7 +39,7 @@
 		// The implant site slot (organ_external.dm, OM relations step 2) is
 		// the implanted_in relation: this move sets part/imp_in and the
 		// organ's implants membership, same as the physical placement.
-		move_into(affected, ORGAN_SLOT_IMPLANTS)
+		move_into(affected, ORGAN_SLOT_IMPLANTS, src)
 	else
 		// No organ to embed in (a non-human host, or no matching limb):
 		// imp_in has no relation to keep it in sync with, since there's no
@@ -85,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/item/implant, INTERACT_ITEM(null, PROC_REF(interaction
 		var/obj/item/implanter/implanter = I
 		if(implanter.imp)
 			return INTERACTION_HANDLED_PASS
-		if(!own_set(implanter, nameof(implanter.imp), src, user = user))
+		if(!move_into(implanter, nameof(implanter.imp), src, user))
 			return INTERACTION_HANDLED_PASS
 		implanter.update()
 	else

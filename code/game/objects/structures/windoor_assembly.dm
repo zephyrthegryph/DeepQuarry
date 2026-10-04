@@ -131,7 +131,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 
 /obj/structure/windoor_assembly/proc/board_seated(datum/act/op/A)
 	to_chat(A.actor, span_notice("You've installed the airlock electronics!"))
-	own_set(src, nameof(electronics), A.held, user = A.actor)
+	move_into(src, nameof(electronics), A.held, A.actor)
 	update_state()
 	return OP_OK
 

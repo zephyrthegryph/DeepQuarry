@@ -37,6 +37,12 @@
 	var/gridstatus = 0
 	var/chargecap = 1000
 
+CAPABILITIES(/obj/item/medigun_backpack)
+	owns_one(nameof(scapacitor), /obj/item/stock_parts/capacitor)
+	owns_one(nameof(slaser), /obj/item/stock_parts/micro_laser)
+	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator)
+	owns_one(nameof(smodule), /obj/item/stock_parts/scanning_module)
+
 //backpack item
 /obj/item/medigun_backpack/cmo
 	name = "prototype bluespace medigun backpack - CMO"
@@ -388,7 +394,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 	if(istype(W, /obj/item/cell))
 		if(ccell)
 			to_chat(user, span_notice("You swap the [W] for \the [ccell]."))
-		if(!own_set(src, nameof(src.ccell), W, user = user))
+		if(!move_into(src, nameof(src.ccell), W, user))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You install the [W] into \the [src]."))
 		charging = TRUE
@@ -399,7 +405,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(smodule)
 				to_chat(user, span_notice("\The [src] already has a scanning module."))
 			else
-				if(!own_set(src, nameof(src.smodule), W, user = user))
+				if(!move_into(src, nameof(src.smodule), W, user))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You install the [W] into \the [src]."))
 				medigun.beam_range = 3+smodule.get_rating()
@@ -410,7 +416,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(smanipulator)
 				to_chat(user, span_notice("\The [src] already has a manipulator."))
 				return INTERACTION_HANDLED_PASS
-			if(!own_set(src, nameof(src.smanipulator), W, user = user))
+			if(!move_into(src, nameof(src.smanipulator), W, user))
 				return INTERACTION_HANDLED_PASS
 			smaniptier = smanipulator.get_rating()
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
@@ -421,7 +427,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(slaser)
 				to_chat(user, span_notice("\The [src] already has a micro laser."))
 				return INTERACTION_HANDLED_PASS
-			if(!own_set(src, nameof(src.slaser), W, user = user))
+			if(!move_into(src, nameof(src.slaser), W, user))
 				return INTERACTION_HANDLED_PASS
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
@@ -431,7 +437,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(scapacitor)
 				to_chat(user, span_notice("\The [src] already has a capacitor."))
 				return INTERACTION_HANDLED_PASS
-			if(!own_set(src, nameof(src.scapacitor), W, user = user))
+			if(!move_into(src, nameof(src.scapacitor), W, user))
 				return INTERACTION_HANDLED_PASS
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
@@ -468,7 +474,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(sbin)
 				to_chat(user, span_notice("\The [src] already has a matter bin."))
 				return INTERACTION_HANDLED_PASS
-			if(!own_set(src, nameof(src.sbin), W, user = user))
+			if(!move_into(src, nameof(src.sbin), W, user))
 				return INTERACTION_HANDLED_PASS
 			sbintier = sbin.get_rating()
 			if(sbintier >= 5)

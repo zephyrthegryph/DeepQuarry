@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/gift/wrapper = allocate(/obj/item/gift, T)
 	var/obj/item/pen/present = allocate(/obj/item/pen, T)
-	TEST_ASSERT(own_set(wrapper, nameof(wrapper.gift), present, into = TRUE), "the actual wrapper owns its original physical present")
+	TEST_ASSERT(move_into(wrapper, nameof(wrapper.gift), present), "the actual wrapper owns its original physical present")
 	TEST_ASSERT_EQUAL(present.loc, wrapper, "the actual original present is contained in its wrapper")
 	TEST_ASSERT_EQUAL(owner_of(present), wrapper, "the actual wrapper stamps its original present ownership")
 	TEST_ASSERT(user.put_in_active_hand(wrapper), "the actor holds the actual wrapped gift")

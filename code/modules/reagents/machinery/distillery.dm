@@ -57,6 +57,10 @@
 // A multiplier for the production amount. This should really only ever be lower than one, otherwise you end up with duping.
 	var/efficiency = 1
 
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
+	owns_one(nameof(InputBeaker), /obj/item/reagent_containers/glass)
+	owns_one(nameof(OutputBeaker), /obj/item/reagent_containers/glass)
+
 DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, 600, null, /datum/reagents/distilling)
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/Initialize(mapload)
@@ -260,12 +264,12 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 		if("install input")
 			if(!InputBeaker)
 				W.add_fingerprint(user)
-				own_set(src, nameof(src.InputBeaker), W, user = user)
+				move_into(src, nameof(src.InputBeaker), W, user)
 
 		if("install output")
 			if(!OutputBeaker)
 				W.add_fingerprint(user)
-				own_set(src, nameof(src.OutputBeaker), W, user = user)
+				move_into(src, nameof(src.OutputBeaker), W, user)
 
 	update_icon()
 	return TRUE

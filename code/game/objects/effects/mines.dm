@@ -354,7 +354,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 				break
 
 		if(allowed)
-			own_set(src, nameof(src.trap), W, user = user)
+			move_into(src, nameof(src.trap), W, user)
 
 	return FALSE
 

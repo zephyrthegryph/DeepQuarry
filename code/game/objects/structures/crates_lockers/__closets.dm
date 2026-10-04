@@ -116,7 +116,7 @@ CAPABILITIES(/obj/structure/closet)
 		if(content_size > storage_capacity-5)
 			storage_capacity = content_size + 5
 		for(var/obj/item/I as anything in loose)
-			I.move_into(src)
+			move_into(src, null, I)
 
 	if(ispath(closet_appearance))
 		closet_appearance = GLOB.closet_appearances[closet_appearance]
@@ -286,19 +286,19 @@ CAPABILITIES(/obj/structure/closet)
 /obj/structure/closet/proc/store_misc()
 	. = 0
 	for(var/obj/effect/dummy/chameleon/AD in turf_contents_of_type(loc, /obj/effect/dummy/chameleon))
-		if(AD.move_into(src))
+		if(move_into(src, null, AD))
 			.++
 
 /obj/structure/closet/proc/store_items()
 	. = 0
 	for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))
-		if(I.move_into(src))
+		if(move_into(src, null, I))
 			.++
 
 /obj/structure/closet/proc/store_mobs()
 	. = 0
 	for(var/mob/living/M in turf_contents_of_type(loc, /mob/living))
-		if(M.move_into(src))
+		if(move_into(src, null, M))
 			.++
 
 /obj/structure/closet/proc/store_closets()
@@ -308,7 +308,7 @@ CAPABILITIES(/obj/structure/closet)
 			continue
 		if(C.max_closets)	//Prevents recursive storage
 			continue
-		if(C.move_into(src))
+		if(move_into(src, null, C))
 			.++
 
 /obj/structure/closet/proc/toggle(mob/user as mob)

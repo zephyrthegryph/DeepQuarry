@@ -229,8 +229,7 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 		new_item.forceMove(src)
 		robot.hud_used?.update_robot_modules_display()
 		return
-	// ALLOW(sys_manual_move_adopt): the ID card branch above moves the card in by hand; the robot owns it, not the module
-	own_add(src, nameof(src.modules), new_item, into = TRUE)
+	move_into(src, nameof(src.modules), new_item)
 	robot.hud_used?.update_robot_modules_display()
 
 	if(istype(new_item, /obj/item/robotic_multibelt/materials))

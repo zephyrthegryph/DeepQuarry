@@ -18,7 +18,7 @@
 	var/mob/living/carbon/human/interim_shoe_appearance_holder/wearer = allocate(/mob/living/carbon/human/interim_shoe_appearance_holder, T)
 	var/mob/living/carbon/human/interim_shoe_appearance_holder/bystander = allocate(/mob/living/carbon/human/interim_shoe_appearance_holder, T)
 	var/obj/item/clothing/shoes/boots/jackboots/interim_holder_appearance/boots = allocate(/obj/item/clothing/shoes/boots/jackboots/interim_holder_appearance, T)
-	TEST_ASSERT(boots.move_into(wearer, SLOT_ID_SHOES), "the actual wearer equips its real jackboots")
+	TEST_ASSERT(move_into(wearer, SLOT_ID_SHOES, boots), "the actual wearer equips its real jackboots")
 	var/obj/item/material/knife/tacknife/knife = allocate(/obj/item/material/knife/tacknife, T)
 	TEST_ASSERT(wearer.put_in_active_hand(knife), "the actual wearer holds a compatible boot knife")
 	boots.shoes_stuff_item(wearer, knife, null)

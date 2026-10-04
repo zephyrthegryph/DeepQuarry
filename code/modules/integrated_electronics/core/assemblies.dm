@@ -453,7 +453,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 			to_chat(user, span_warning("\The [src] already has \a [battery] inside.  Remove it first if you want to replace it."))
 			return INTERACTION_HANDLED_PASS
 		var/obj/item/cell/device/cell = I
-		if(!own_set(src, nameof(src.battery), cell, user = user))
+		if(!move_into(src, nameof(src.battery), cell, user))
 			return INTERACTION_HANDLED_PASS
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		to_chat(user, span_notice("You slot \the [cell] inside \the [src]'s power supplier."))

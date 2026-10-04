@@ -229,7 +229,7 @@
 	var/obj/item/organ/external/head = H.get_organ(BP_HEAD)
 	var/list/held_organs = chest.held_organs()
 	for(var/obj/item/organ/O as anything in held_organs)
-		O.move_into(head, SLOT_ID_PART_ORGANS)
+		move_into(head, SLOT_ID_PART_ORGANS, O)
 	TEST_ASSERT(!length(chest.held_organs()), "the chest's organs should have moved to the head")
 	H.injure(INJURY_BLUNT, chest.max_damage * (DQ_VITAL_PART_LETHAL_MULT - 0.5), BP_TORSO, flags = DQ_TEST_INJURE)
 	var/fraction = (chest.get_trauma() + chest.get_burn()) / chest.max_damage
@@ -239,7 +239,7 @@
 	fraction = (chest.get_trauma() + chest.get_burn()) / chest.max_damage
 	for(var/obj/item/organ/O as anything in held_organs)
 		if(!QDELETED(O) && !QDELETED(chest))
-			O.move_into(chest, SLOT_ID_PART_ORGANS)
+			move_into(chest, SLOT_ID_PART_ORGANS, O)
 	TEST_ASSERT(fraction >= DQ_VITAL_PART_LETHAL_MULT, "the chest should reach its lethal multiple (got [fraction]x)")
 	TEST_ASSERT_EQUAL(H.stat, DEAD, "a destroyed vital body part should kill ([fraction]x integrity)")
 
@@ -421,13 +421,15 @@
 	var/last_old_severity
 	var/removals = 0
 
-/datum/dq_test_signal_counter/proc/on_severity_changed(datum/source, datum/om/event/affliction_severity_changed/event)
+/datum/dq_test_signal_counter/proc/on_severity_changed(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/affliction_severity_changed/event = N
 	severity_changes++
 	last_old_severity = event.old_severity
 
-/datum/dq_test_signal_counter/proc/on_afflictions_changed(datum/source, datum/om/event/body_afflictions_changed/event)
+/datum/dq_test_signal_counter/proc/on_afflictions_changed(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/body_afflictions_changed/event = N
 	if(!event.added)
 		removals++
 
@@ -491,7 +493,7 @@
 /datum/unit_test/dq_body_severity_signal/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/dq_test_signal_counter/counter = new
-	om_hook(H, /datum/om/event/affliction_severity_changed, counter, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_severity_changed))
+	observe(H, /datum/notice/affliction_severity_changed, counter, then(TYPE_PROC_REF(/datum/dq_test_signal_counter, on_severity_changed)))
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 40)
 	TEST_ASSERT(counter.severity_changes >= 1, "setting severity should signal")
 	A.adjust_severity(-10)
@@ -506,7 +508,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 30)
 	var/datum/dq_test_signal_counter/counter = new
-	om_hook(H, /datum/om/event/body_afflictions_changed, counter, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_afflictions_changed))
+	observe(H, /datum/notice/body_afflictions_changed, counter, then(TYPE_PROC_REF(/datum/dq_test_signal_counter, on_afflictions_changed)))
 	var/datum/body/B = H.body
 	own_take(H, nameof(H.body))
 	qdel(B)

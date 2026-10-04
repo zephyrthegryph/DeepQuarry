@@ -431,7 +431,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_{appearance_occupied}")
 		return TRUE
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!beaker)
-			if(!own_set(src, nameof(src.beaker), I, user = user))
+			if(!move_into(src, nameof(src.beaker), I, user))
 				return TRUE
 			act_message(user, src, MSG_SELF(span_notice("You add  [I] to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " adds  [I] to %T%.")))
 		else
@@ -543,7 +543,7 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 		to_chat(user, span_warning("\The [src] is already occupied."))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_SLEEPER))
+	if(!move_into(src, OCCUPANT_SLOT_SLEEPER, M))
 		return
 	occupant = M
 	set_use_power(USE_POWER_ACTIVE)

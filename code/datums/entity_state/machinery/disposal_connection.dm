@@ -22,7 +22,7 @@
 	..()
 	rel_set(src, nameof(owner), new_owner)
 	visible_connection = visibly_connects
-	om_hook(owner, /datum/om/event/before/disposal_flush, src, PROC_REF(on_flush))
+	observe(owner, /datum/act/flush_disposal, src, instead(then(PROC_REF(on_flush))))
 	observe(owner, /datum/notice/disposal_link, src, then(PROC_REF(link_to_trunk)))
 	observe(owner, /datum/notice/disposal_unlink, src, then(PROC_REF(unlink_from_trunk)))
 	observe(owner, /datum/notice/examine, src, then(PROC_REF(on_examine)))
@@ -30,13 +30,13 @@
 
 // Signal handling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/disposal_system_connection/proc/on_flush(datum/source, datum/om/event/before/disposal_flush/event)
+/datum/disposal_system_connection/proc/on_flush(datum/act/flush_disposal/flush)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/list/flushed_items = event.items
-	var/datum/gas_mixture/flush_gas = event.gas
+	var/list/flushed_items = flush.items
+	var/datum/gas_mixture/flush_gas = flush.gas
 	// Important note, the flush_gas will be passed to the disposal packet when it's made. Caller should make a fresh gasmix datum after flushing this one!
-	return handle_flush(flushed_items, flush_gas)
+	return handle_flush(flushed_items, flush_gas) ? TRUE : HOOK_DECLINE
 
 /datum/disposal_system_connection/proc/link_to_trunk(datum/act/notice/A)
 	EVENT_HANDLER
@@ -49,21 +49,21 @@
 		return FALSE
 	rel_set(src, nameof(connected_trunk), trunk)
 	rel_set(trunk, nameof(trunk.linked), disposal_owner())
-	om_hook(trunk, /datum/om/event/before/disposal_send, src, PROC_REF(on_recieve))
+	observe(trunk, /datum/act/send_disposal, src, instead(then(PROC_REF(on_recieve))))
 
 /datum/disposal_system_connection/proc/unlink_from_trunk(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(connected_trunk())
 		rel_clear(connected_trunk(), nameof(/datum/integrated_io::linked))
-		om_unhook(connected_trunk(), /datum/om/event/before/disposal_send, src)
+		unobserve(connected_trunk(), /datum/act/send_disposal, src)
 		rel_clear(src, nameof(connected_trunk))
 
-/datum/disposal_system_connection/proc/on_recieve(datum/source, datum/om/event/before/disposal_send/event)
+/datum/disposal_system_connection/proc/on_recieve(datum/act/send_disposal/send)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/obj/structure/disposalholder/packet = event.holder
-	return handle_expel(packet)
+	var/obj/structure/disposalholder/packet = send.packet
+	return handle_expel(packet) ? TRUE : HOOK_DECLINE
 
 /datum/disposal_system_connection/proc/on_examine(datum/act/notice/N)
 	EVENT_HANDLER

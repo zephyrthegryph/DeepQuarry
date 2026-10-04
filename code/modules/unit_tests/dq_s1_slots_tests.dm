@@ -33,14 +33,14 @@
 	TEST_ASSERT_EQUAL(s1_strike(rack), 10, "an empty rack hooks nothing")
 	TEST_ASSERT_EQUAL(s1_strike(gizmo), 10, "a loose gizmo has no occupant hook")
 	// move_into: the item's hook lands on the holder, the holder's on the item.
-	TEST_ASSERT(gizmo.move_into(rack, "s1_main"), "the gizmo goes into the main slot")
+	TEST_ASSERT(move_into(rack, "s1_main", gizmo), "the gizmo goes into the main slot")
 	TEST_ASSERT_EQUAL(s1_strike(rack), 11, "ON_HOLDER: the rack has the gizmo's +1 while it is in s1_main")
 	TEST_ASSERT_EQUAL(s1_strike(gizmo), 14, "ON_CONTENTS: the gizmo has the rack's +4 while it is in s1_main")
 	// A move to another slot of the same holder (reslot) ends both.
-	TEST_ASSERT(gizmo.move_into(rack, "s1_side"), "and on to the side slot")
+	TEST_ASSERT(move_into(rack, "s1_side", gizmo), "and on to the side slot")
 	TEST_ASSERT_EQUAL(s1_strike(rack), 10, "reslot out of s1_main: the rack is unhooked")
 	TEST_ASSERT_EQUAL(s1_strike(gizmo), 10, "and so is the gizmo")
-	TEST_ASSERT(gizmo.move_into(rack, "s1_main"), "back into main (a reslot into it)")
+	TEST_ASSERT(move_into(rack, "s1_main", gizmo), "back into main (a reslot into it)")
 	TEST_ASSERT_EQUAL(s1_strike(rack), 11, "reslot into s1_main: hooked again")
 	// slot_remove.
 	TEST_ASSERT(rack.slot_remove(gizmo, T), "taken out to the floor")
@@ -83,7 +83,7 @@
 	var/obj/belly/s1_test/one = allocate(/obj/belly/s1_test, pred)
 	var/obj/belly/s1_test/two = allocate(/obj/belly/s1_test, pred)
 	TEST_ASSERT_EQUAL(s1_strike(prey), 10, "free prey is unhooked")
-	TEST_ASSERT(prey.move_into(one, BELLY_SLOT_INTERIOR), "swallowed")
+	TEST_ASSERT(move_into(one, BELLY_SLOT_INTERIOR, prey), "swallowed")
 	TEST_ASSERT_EQUAL(s1_strike(prey), 15, "the belly's +5 while inside")
 	TEST_ASSERT(one.slot_transfer(prey, two, BELLY_SLOT_INTERIOR), "passed to the second belly")
 	TEST_ASSERT_EQUAL(s1_strike(prey), 15, "still inside a belly of that type")
@@ -207,8 +207,8 @@
 	var/obj/item/s1_fixture/gizmo/gizmo = allocate(/obj/item/s1_fixture/gizmo, T)
 	var/obj/item/s1_fixture/trinket/trinket = allocate(/obj/item/s1_fixture/trinket, T)
 	var/mob/living/carbon/human/steward = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT(gizmo.move_into(rack, "s1_main"), "setup: the gizmo is in the rack")
-	TEST_ASSERT(trinket.move_into(rack, "s1_side"), "setup: the trinket too")
+	TEST_ASSERT(move_into(rack, "s1_main", gizmo), "setup: the gizmo is in the rack")
+	TEST_ASSERT(move_into(rack, "s1_side", trinket), "setup: the trinket too")
 	// The insert needs() of the receiving holder refuses a trinket; the remove never ended committed.
 	var/datum/act_plan/picky_plan = act_plan_for(picky, /datum/act/insert)
 	TEST_ASSERT_EQUAL(length(picky_plan.needs), 2, "the picky rack has two insert needs hooks")
@@ -235,7 +235,7 @@
 	// Forced: an admin authority skips the requirements and the ledger's refusals but still runs the actions and their notices.
 	rel_set(picky, nameof(picky.steward), null)
 	var/obj/item/s1_fixture/gizmo/other = allocate(/obj/item/s1_fixture/gizmo, T)
-	TEST_ASSERT(trinket.move_into(rack, "s1_side") || trinket.loc == rack, "setup")
+	TEST_ASSERT(move_into(rack, "s1_side", trinket) || trinket.loc == rack, "setup")
 	TEST_ASSERT(!picky.slot_transfer(gizmo, second, null, steward, AUTH_PHYSICAL), "an ordinary authority forces nothing")
 	var/removed_before = picky.removed_heard
 	TEST_ASSERT(picky.slot_transfer(gizmo, second, null, steward, AUTH_ADMIN), "AUTH_ADMIN forces it out of the welded rack")
@@ -243,7 +243,7 @@
 	TEST_ASSERT_EQUAL(picky.removed_heard, removed_before + 1, "the removal notice still went out")
 	// Into a full one-slot picky rack, past the insert needs() and the capacity.
 	picky.set_welded(FALSE)
-	TEST_ASSERT(other.move_into(picky), "fill the picky rack's one place")
+	TEST_ASSERT(move_into(picky, null, other), "fill the picky rack's one place")
 	TEST_ASSERT(!rack.slot_transfer(trinket, picky), "full and picky: refused")
 	TEST_ASSERT(rack.slot_transfer(trinket, picky, null, null, AUTH_ADMIN), "forced past needs() and capacity")
 	TEST_ASSERT_EQUAL(trinket.loc, picky, "the trinket is in")

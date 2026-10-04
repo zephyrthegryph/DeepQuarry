@@ -173,8 +173,7 @@
 	/// cosmetic event opts in.
 	var/skip_in_bulk = FALSE
 	/// Delivered at once even inside another delivery (never queued), like a direct call.
-	/// Hooked (om_hook) cross-entity events are sync so their listeners see the state
-	/// the sender is in.
+	/// Cross-entity events are sync so their listeners see the state the sender is in.
 	var/sync = FALSE
 	/// before/ events only: every handler runs and their numeric returns are ORed into
 	/// `result` (the event's documented result bits), instead of stopping at the first

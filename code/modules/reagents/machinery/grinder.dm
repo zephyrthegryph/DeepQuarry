@@ -75,7 +75,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 		if (beaker)
 			return TRUE
 		else
-			if(!own_set(src, nameof(src.beaker), O, user = user))
+			if(!move_into(src, nameof(src.beaker), O, user))
 				return TRUE
 			update_icon()
 			return TRUE
@@ -123,7 +123,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 		to_chat(user, "\The [O] is not suitable for blending.")
 		return TRUE
 
-	if(!own_add(src, nameof(src.holdingitems), O, user = user))
+	if(!move_into(src, nameof(src.holdingitems), O, user))
 		return TRUE
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
@@ -236,7 +236,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 			beaker.forceMove(drop_location())
 		own_take(src, nameof(beaker))
 	if(new_beaker)
-		own_set(src, nameof(src.beaker), new_beaker, user = user)
+		move_into(src, nameof(src.beaker), new_beaker, user)
 	update_icon()
 	return TRUE
 

@@ -6,7 +6,7 @@
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/implantchair/chair = allocate(/obj/machinery/implantchair, T)
 	var/datum/interim_resleever_actor_probe/probe = allocate(/datum/interim_resleever_actor_probe)
-	om_hook(chair, /datum/om/event/before/slot_pre_insert, probe, TYPE_PROC_REF(/datum/interim_resleever_actor_probe, on_insert))
+	observe(chair, /datum/act/check_insert, probe, instead(then(TYPE_PROC_REF(/datum/interim_resleever_actor_probe, on_insert))))
 	var/obj/item/grab/grab = allocate(/obj/item/grab, actor, patient)
 	TEST_ASSERT(!QDELETED(grab), "The real grab must remain live before insertion")
 	TEST_ASSERT_EQUAL(grab.grab_target(), patient, "The real grab must hold the intended patient")

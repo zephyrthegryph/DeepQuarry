@@ -1981,7 +1981,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(obj/item/perfect_tele/T, mob/living/carbon/human/user)
 	var/obj/item/perfect_tele/old = own_take(src, nameof(src.translocator)) // handed back below, not disposed of
-	if(!own_set(src, nameof(src.translocator), T, user = user))
+	if(!move_into(src, nameof(src.translocator), T, user))
 		rel_set(src, nameof(src.translocator), old)
 		return
 	if(old)

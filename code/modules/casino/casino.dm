@@ -113,7 +113,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 /obj/structure/casino_table/roulette_table/proc/interaction_insert_ball(mob/user, obj/item/W, datum/interaction/interaction)
 	if(ball)
 		return FALSE
-	if(!own_set(src, nameof(src.ball), W, user = user))
+	if(!move_into(src, nameof(src.ball), W, user))
 		return FALSE
 	to_chat(user, span_notice("You insert [W] into [src]."))
 	return INTERACTION_HANDLED_PASS
@@ -254,7 +254,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 		if(H.held_mob.get_effective_size(TRUE) > 50)
 			to_chat(user, span_warning("\The [H] is too big to fit inside!"))
 			return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.trapped), H, user = user))
+		if(!move_into(src, nameof(src.trapped), H, user))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You trap \the [H] inside the glass roulette ball."))
 		to_chat(H.held_mob, span_warning("\The [user] traps you inside a glass roulette ball!"))

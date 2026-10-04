@@ -90,7 +90,7 @@ CAPABILITIES(/obj/structure/closet/crate)
 			var/obj/structure/bed/B = O
 			if(B.has_buckled_mobs())
 				continue
-		O.move_into(src)
+		move_into(src, null, O)
 
 	set_opened(FALSE)
 	update_icon()

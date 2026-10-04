@@ -132,7 +132,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_ope
 		new_coil_ledger?.latent_clear()
 		for(var/obj/item/stock_parts/C in component_parts)
 			own_take_member(src, nameof(component_parts), C)
-			C.move_into(new_coil, CONTAINER_SLOT_INTERNALS)
+			move_into(new_coil, CONTAINER_SLOT_INTERNALS, C)
 		own_take_all(new_coil, nameof(new_coil.component_parts))
 		for(var/obj/item/I in new_coil.slot_contents(CONTAINER_SLOT_INTERNALS))
 			rel_add(new_coil, nameof(new_coil.component_parts), I)

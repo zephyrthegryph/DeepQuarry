@@ -299,7 +299,7 @@ CAPABILITIES(/obj/item/storage/box/gum)
 					to_chat(F, span_warning("You manage to pull yourself free of \the [src] at the last second!"))
 					to_chat(M, span_notice("[F] barely escapes from your mouth!"))
 					F.forceMove(get_turf(src))
-				else if(!F.move_into(M.vore_selected, BELLY_SLOT_INTERIOR, M))
+				else if(!move_into(M.vore_selected, BELLY_SLOT_INTERIOR, F, M))
 					F.forceMove(get_turf(src))
 				own_take_member(src, nameof(victims), F)
 	return ..()
@@ -323,7 +323,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 
 		var/mob/living/M = H.held_mob
 
-		own_add(src, nameof(src.victims), M, user = user, into = TRUE) // out of the holder
+		move_into(src, nameof(src.victims), M, user) // out of the holder
 		rel_clear(H, nameof(H.held_mob))
 		consume(H, user)
 

@@ -7,6 +7,8 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	/datum/act/body_status = /datum/notice/body_status_changed,
 	/datum/act/buckle = /datum/notice/buckled,
 	/datum/act/bump = /datum/notice/bumped,
+	/datum/act/check_insert = /datum/notice/insert_checked,
+	/datum/act/check_remove = /datum/notice/remove_checked,
 	/datum/act/climb = /datum/notice/climbed,
 	/datum/act/cross = /datum/notice/crossed,
 	/datum/act/draw_health_icon = /datum/notice/health_icon_drawn,
@@ -36,6 +38,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	/datum/act/name_voice = /datum/notice/voice_named,
 	/datum/act/play_cinematic = /datum/notice/cinematic_played,
 	/datum/act/pre_attack = /datum/notice/pre_attacked,
+	/datum/act/pre_move = /datum/notice/pre_moved,
 	/datum/act/relay_movement = /datum/notice/movement_relayed,
 	/datum/act/remove = /datum/notice/removed,
 	/datum/act/send_disposal = /datum/notice/disposal_sent,
@@ -169,6 +172,60 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.bumped = bumped // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
+/// ACTION(check_insert) at code/contracts/acts/world_actions.dm:47
+/datum/act/check_insert
+	parent_type = /datum/act/action
+	var/atom/movable/thing
+	var/slot_id
+/datum/notice/insert_checked
+	var/atom/movable/thing
+	var/slot_id
+
+/datum/act/check_insert/make_notice()
+	RETURN_TYPE(/datum/notice/insert_checked)
+	var/datum/notice/insert_checked/N = notice_take(/datum/notice/insert_checked)
+	N.thing = thing // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	N.slot_id = slot_id
+	return N
+
+/proc/act_check_insert(datum/holder, atom/movable/thing, slot_id)
+	RETURN_TYPE(/datum/act/check_insert)
+	if(!act_wanted(holder, /datum/act/check_insert))
+		return ACT_PASS
+	var/datum/act/check_insert/A = act_begin(/datum/act/check_insert, holder)
+	if(!A)
+		return null
+	A.thing = thing // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	A.slot_id = slot_id
+	return act_resolve(A)
+
+/// ACTION(check_remove) at code/contracts/acts/world_actions.dm:48
+/datum/act/check_remove
+	parent_type = /datum/act/action
+	var/atom/movable/thing
+	var/slot_id
+/datum/notice/remove_checked
+	var/atom/movable/thing
+	var/slot_id
+
+/datum/act/check_remove/make_notice()
+	RETURN_TYPE(/datum/notice/remove_checked)
+	var/datum/notice/remove_checked/N = notice_take(/datum/notice/remove_checked)
+	N.thing = thing // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	N.slot_id = slot_id
+	return N
+
+/proc/act_check_remove(datum/holder, atom/movable/thing, slot_id)
+	RETURN_TYPE(/datum/act/check_remove)
+	if(!act_wanted(holder, /datum/act/check_remove))
+		return ACT_PASS
+	var/datum/act/check_remove/A = act_begin(/datum/act/check_remove, holder)
+	if(!A)
+		return null
+	A.thing = thing // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	A.slot_id = slot_id
+	return act_resolve(A)
+
 /// ACTION(climb) at code/contracts/acts/world_actions.dm:36
 /datum/act/climb
 	parent_type = /datum/act/action
@@ -215,7 +272,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.crosser = crosser // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
-/// ACTION(draw_health_icon) at code/contracts/acts/world_actions.dm:51
+/// ACTION(draw_health_icon) at code/contracts/acts/world_actions.dm:54
 /datum/act/draw_health_icon
 	parent_type = /datum/act/action
 /datum/notice/health_icon_drawn
@@ -234,7 +291,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 		return null
 	return act_resolve(A)
 
-/// ACTION(draw_hud) at code/contracts/acts/world_actions.dm:50
+/// ACTION(draw_hud) at code/contracts/acts/world_actions.dm:53
 /datum/act/draw_hud
 	parent_type = /datum/act/action
 /datum/notice/hud_drawn
@@ -276,7 +333,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.emote_key = emote_key
 	return act_resolve(A)
 
-/// ACTION(emp) at code/contracts/acts/world_actions.dm:46
+/// ACTION(emp) at code/contracts/acts/world_actions.dm:49
 /datum/act/emp
 	parent_type = /datum/act/action
 	var/severity
@@ -330,7 +387,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.slot_id = slot_id
 	return act_resolve(A)
 
-/// ACTION(explode) at code/contracts/acts/world_actions.dm:47
+/// ACTION(explode) at code/contracts/acts/world_actions.dm:50
 /datum/act/explode
 	parent_type = /datum/act/action
 	var/severity
@@ -380,7 +437,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.landed_on = landed_on // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
-/// ACTION(flush_disposal) at code/contracts/acts/world_actions.dm:55
+/// ACTION(flush_disposal) at code/contracts/acts/world_actions.dm:58
 /datum/act/flush_disposal
 	parent_type = /datum/act/action
 	var/items
@@ -407,7 +464,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.gas = gas // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
-/// ACTION(geiger_scan) at code/contracts/acts/world_actions.dm:54
+/// ACTION(geiger_scan) at code/contracts/acts/world_actions.dm:57
 /datum/act/geiger_scan
 	parent_type = /datum/act/action
 	var/mob/user
@@ -698,7 +755,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.rad_protection = rad_protection
 	return act_resolve(A)
 
-/// ACTION(live_radiation) at code/contracts/acts/world_actions.dm:53
+/// ACTION(live_radiation) at code/contracts/acts/world_actions.dm:56
 /datum/act/live_radiation
 	parent_type = /datum/act/action
 /datum/notice/radiation_lived
@@ -747,7 +804,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.direction = direction
 	return act_resolve(A)
 
-/// ACTION(name_alt) at code/contracts/acts/world_actions.dm:58
+/// ACTION(name_alt) at code/contracts/acts/world_actions.dm:61
 /datum/act/name_alt
 	parent_type = /datum/act/action
 /datum/notice/alt_named
@@ -766,7 +823,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 		return null
 	return act_resolve(A)
 
-/// ACTION(name_visible) at code/contracts/acts/world_actions.dm:59
+/// ACTION(name_visible) at code/contracts/acts/world_actions.dm:62
 /datum/act/name_visible
 	parent_type = /datum/act/action
 /datum/notice/visibly_named
@@ -785,7 +842,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 		return null
 	return act_resolve(A)
 
-/// ACTION(name_voice) at code/contracts/acts/world_actions.dm:57
+/// ACTION(name_voice) at code/contracts/acts/world_actions.dm:60
 /datum/act/name_voice
 	parent_type = /datum/act/action
 /datum/notice/voice_named
@@ -804,12 +861,12 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 		return null
 	return act_resolve(A)
 
-/// ACTION(op) at code/contracts/acts/world_actions.dm:60
+/// ACTION(op) at code/contracts/acts/world_actions.dm:63
 /datum/notice/op_done
 	var/datum/op_def/op
 	var/provider
 
-/// ACTION(play_cinematic) at code/contracts/acts/world_actions.dm:49
+/// ACTION(play_cinematic) at code/contracts/acts/world_actions.dm:52
 /datum/act/play_cinematic
 	parent_type = /datum/act/action
 	var/datum/cinematic/cinematic
@@ -835,35 +892,62 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 /// ACTION(pre_attack) at code/contracts/acts/world_actions.dm:45
 /datum/act/pre_attack
 	parent_type = /datum/act/action
-	var/atom/attacked
+	var/atom/target_
 	var/mob/user
 	var/params
 /datum/notice/pre_attacked
-	var/atom/attacked
+	var/atom/target_
 	var/mob/user
 	var/params
 
 /datum/act/pre_attack/make_notice()
 	RETURN_TYPE(/datum/notice/pre_attacked)
 	var/datum/notice/pre_attacked/N = notice_take(/datum/notice/pre_attacked)
-	N.attacked = attacked // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	N.target_ = target_ // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	N.user = user // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	N.params = params
 	return N
 
-/proc/act_pre_attack(datum/holder, atom/attacked, mob/user, params)
+/proc/act_pre_attack(datum/holder, atom/target_, mob/user, params)
 	RETURN_TYPE(/datum/act/pre_attack)
 	if(!act_wanted(holder, /datum/act/pre_attack))
 		return ACT_PASS
 	var/datum/act/pre_attack/A = act_begin(/datum/act/pre_attack, holder)
 	if(!A)
 		return null
-	A.attacked = attacked // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	A.target_ = target_ // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	A.user = user // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	A.params = params
 	return act_resolve(A)
 
-/// ACTION(relay_movement) at code/contracts/acts/world_actions.dm:52
+/// ACTION(pre_move) at code/contracts/acts/world_actions.dm:46
+/datum/act/pre_move
+	parent_type = /datum/act/action
+	var/direction
+	var/atom/destination
+/datum/notice/pre_moved
+	var/direction
+	var/atom/destination
+
+/datum/act/pre_move/make_notice()
+	RETURN_TYPE(/datum/notice/pre_moved)
+	var/datum/notice/pre_moved/N = notice_take(/datum/notice/pre_moved)
+	N.direction = direction
+	N.destination = destination // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	return N
+
+/proc/act_pre_move(datum/holder, direction, atom/destination)
+	RETURN_TYPE(/datum/act/pre_move)
+	if(!act_wanted(holder, /datum/act/pre_move))
+		return ACT_PASS
+	var/datum/act/pre_move/A = act_begin(/datum/act/pre_move, holder)
+	if(!A)
+		return null
+	A.direction = direction
+	A.destination = destination // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	return act_resolve(A)
+
+/// ACTION(relay_movement) at code/contracts/acts/world_actions.dm:55
 /datum/act/relay_movement
 	parent_type = /datum/act/action
 	var/direction
@@ -913,7 +997,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.slot_id = slot_id
 	return act_resolve(A)
 
-/// ACTION(send_disposal) at code/contracts/acts/world_actions.dm:56
+/// ACTION(send_disposal) at code/contracts/acts/world_actions.dm:59
 /datum/act/send_disposal
 	parent_type = /datum/act/action
 	var/obj/structure/disposalholder/packet
@@ -936,7 +1020,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.packet = packet // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
-/// ACTION(shoot) at code/contracts/acts/world_actions.dm:48
+/// ACTION(shoot) at code/contracts/acts/world_actions.dm:51
 /datum/act/shoot
 	parent_type = /datum/act/action
 	var/obj/item/projectile/projectile

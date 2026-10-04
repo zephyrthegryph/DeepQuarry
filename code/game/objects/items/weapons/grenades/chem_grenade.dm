@@ -20,6 +20,7 @@
 
 CAPABILITIES(/obj/item/grenade/chem_grenade)
 	owns_many(nameof(beakers))
+	owns_one(nameof(detonator), /obj/item/assembly_holder)
 
 TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle))
 
@@ -79,7 +80,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		path = 1
 		to_chat(user, span_notice("You add [W] to the metal casing."))
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER2)
-		if(!own_set(src, nameof(src.detonator), det, user = user))
+		if(!move_into(src, nameof(src.detonator), det, user))
 			return INTERACTION_HANDLED_PASS
 		if(istimer(detonator.a_left))
 			var/obj/item/assembly/timer/T = detonator.a_left
@@ -99,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 			return INTERACTION_HANDLED_PASS
 		else
 			if(W.reagents.total_volume)
-				if(!own_add(src, nameof(beakers), W, user = user, into = TRUE))
+				if(!move_into(src, nameof(beakers), W, user))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
 				stage = 1

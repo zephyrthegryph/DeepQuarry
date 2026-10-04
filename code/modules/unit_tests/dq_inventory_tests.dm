@@ -180,7 +180,7 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	var/obj/item/storage/toolbox/toolbox = allocate(/obj/item/storage/toolbox, T)
 	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "you need a jumpsuit first", "a pocket needs a jumpsuit")
-	TEST_ASSERT(!pen.move_into(H, SLOT_ID_POCKET_L, H), "the ledger slot refuses it too")
+	TEST_ASSERT(!move_into(H, SLOT_ID_POCKET_L, pen, H), "the ledger slot refuses it too")
 	TEST_ASSERT_EQUAL(pen.loc, T, "a refused pen stays put")
 	var/obj/item/clothing/under/color/grey/U = allocate(/obj/item/clothing/under/color/grey, T)
 	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "jumpsuit on")

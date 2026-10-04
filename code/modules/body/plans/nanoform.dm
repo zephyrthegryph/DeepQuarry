@@ -8,7 +8,7 @@
 // - The swarm's own troubles are nanite afflictions
 //   (code/modules/medical/conditions/nanite.dm); this plan triggers them.
 // - A body that would die instead goes dormant: the core_dormancy affliction
-//   holds it alive through /datum/om/event/before/living_body_status, knocks it out through
+//   holds it alive through the /datum/act/body_status question it takes over, knocks it out through
 //   the consciousness model and leaves its control cluster inert, until it is
 //   revived by calibration, plating repair and defibrillation.
 
@@ -215,7 +215,7 @@
 	treated_by = list(TREAT_CALIBRATION = 1, TREAT_PLATING_REPAIR = 1, TREAT_DEFIBRILLATION = 1)
 	/// DORMANCY_* revival step.
 	var/revival_step = DORMANCY_SEALED
-	/// The mob whose /datum/om/event/before/living_body_status we answer.
+	/// The mob whose body status question (/datum/act/body_status) we answer: held alive.
 	var/mob/living/held_mob
 
 
@@ -223,10 +223,10 @@
 	..()
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)
 	rel_set(src, nameof(held_mob), owner)
-	om_hook(held_mob, /datum/om/event/before/living_body_status, src, PROC_REF(hold_alive))
+	observe(held_mob, /datum/act/body_status, src, instead())
 	// Without a control cluster to work through, the core is repaired on the body itself.
-	om_hook(held_mob, /datum/om/event/before/atom_tool_act, src, PROC_REF(on_body_screwdriver))
-	om_hook(held_mob, /datum/om/event/before/attackby, src, PROC_REF(on_body_attackby))
+	observe(held_mob, /datum/act/tool_act, src, instead(then(PROC_REF(on_body_screwdriver))))
+	observe(held_mob, /datum/act/attackby, src, instead(then(PROC_REF(on_body_attackby))))
 	log_game("NANOFORM: [key_name(held_mob)] entered core dormancy at [AREACOORD(held_mob)].")
 	play_sfx(held_mob, SFX_VOICE_BORG_DEATHSOUND)
 	held_mob.visible_message(span_bold("[held_mob.name]") + " shudders and retreats inwards, coalescing into a single core component!")
@@ -256,15 +256,13 @@
 		om_cancel_timer_slot(src, "reboot_timer")
 	if(!held_mob)
 		return
-	om_unhook(held_mob, list(/datum/om/event/before/living_body_status, /datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby), src)
+	unobserve(held_mob, /datum/act/body_status, src)
+	unobserve(held_mob, /datum/act/tool_act, src)
+	unobserve(held_mob, /datum/act/attackby, src)
 	var/datum/forms/protean/F = held_mob.get_protean_forms()
 	F?.rig?.wake()
 	log_game("NANOFORM: [key_name(held_mob)] left core dormancy.")
 	rel_clear(src, nameof(held_mob))
-
-/datum/affliction/core_dormancy/proc/hold_alive(mob/living/source, datum/om/event/before/living_body_status/event)
-	EVENT_HANDLER
-	return COMPONENT_BODY_KEEP_ALIVE
 
 /// Dormant cores don't progress or heal on their own; they stay down.
 /datum/affliction/core_dormancy/progress()
@@ -280,25 +278,25 @@
 	var/datum/forms/protean/F = held_mob?.get_protean_forms()
 	return !F?.in_rig()
 
-/datum/affliction/core_dormancy/proc/on_body_screwdriver(mob/living/source, datum/om/event/before/atom_tool_act/event)
+/datum/affliction/core_dormancy/proc/on_body_screwdriver(datum/act/tool_act/use)
 	EVENT_HANDLER
-	if(event.tool_quality != TOOL_SCREWDRIVER || event.secondary)
-		return NONE
-	var/mob/living/user = event.user
-	var/obj/item/tool = event.tool
+	if(use.tool_quality != TOOL_SCREWDRIVER || use.secondary)
+		return HOOK_DECLINE
+	var/mob/living/user = use.user
+	var/obj/item/tool = use.tool
 	if(revival_step != DORMANCY_SEALED || !repaired_on_body())
-		return NONE
-	repair_with(tool, user, source)
+		return HOOK_DECLINE
+	repair_with(tool, user, use.target)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/affliction/core_dormancy/proc/on_body_attackby(mob/living/source, datum/om/event/before/attackby/event)
+/datum/affliction/core_dormancy/proc/on_body_attackby(datum/act/attackby/use)
 	EVENT_HANDLER
-	var/obj/item/W = event.item
-	var/mob/living/user = event.user
+	var/obj/item/W = use.item
+	var/mob/living/user = use.user
 	if(!repaired_on_body() || !is_repair_item(W))
-		return NONE
-	repair_with(W, user, source)
-	return COMPONENT_CANCEL_ATTACK_CHAIN
+		return HOOK_DECLINE
+	repair_with(W, user, use.target)
+	return TRUE
 
 /// Whether `W` is the tool for the current revival step.
 /datum/affliction/core_dormancy/proc/is_repair_item(obj/item/W)

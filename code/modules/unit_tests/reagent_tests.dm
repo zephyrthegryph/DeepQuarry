@@ -120,7 +120,7 @@
 	// need to test for instant reactions blocking distillation!
 	own_set(src, nameof(instant_beaker), new /obj/item/reagent_containers/glass/beaker())
 	instant_beaker.reagents.maximum_volume = 5000
-	om_hook(instant_beaker.reagents, /datum/om/event/reagents_holder_reacted, src, PROC_REF(get_signal_data))
+	observe(instant_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
 
 	//actual test
 	var/list/all_reactions = GLOB.decls_repository.get_decls_of_subtype(/datum/decl/chemical_reaction)
@@ -154,17 +154,17 @@
 			fake_beaker.reagents.maximum_volume = 5000
 
 		// Perform test! If it fails once, it will perform a deeper check trying to use the inhibitors of anything in the beaker
-		om_hook(fake_beaker.reagents, /datum/om/event/reagents_holder_reacted, src, PROC_REF(get_signal_data))
+		observe(fake_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
 
 		// Check if we failed the test with inhibitors in use, if so we absolutely couldn't make it...
 		// Uncomment the UNIT_TEST section in code\modules\reagents\reactions\_reactions.dm if you require more info
 		if(perform_reaction(CR) == RESULT_REACTION_FAILED)
 			TEST_NOTICE(src, "[CR.type]: Reagents - !!!!chemical reaction did not produce \"[CR.result]\"!!!! CONTAINS: \"[fake_beaker.reagents.get_reagents()]\"")
 			failed = TRUE
-		om_unhook(fake_beaker.reagents, /datum/om/event/reagents_holder_reacted, src)
+		unobserve(fake_beaker.reagents, /datum/notice/reagents_holder_reacted, src)
 
 	// Cleanup
-	om_unhook(instant_beaker.reagents, /datum/om/event/reagents_holder_reacted, src)
+	unobserve(instant_beaker.reagents, /datum/notice/reagents_holder_reacted, src)
 	own_clear(src, nameof(fake_beaker), OWN_DELETE)
 	own_clear(src, nameof(instant_beaker), OWN_DELETE)
 
@@ -244,8 +244,9 @@
 		TEST_NOTICE(src, "[CR.type]: Reagents - Used inhibitor for: [test_react]")
 	return RESULT_REACTION_FAILED
 
-/datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(atom/source, datum/om/event/reagents_holder_reacted/event)
+/datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/reagents_holder_reacted/event = N
 	LAZYADD(result_reactions, event.chemical_reaction) // Append the reactions that happened, then use that to check their inhibitors
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/check_instants()

@@ -34,7 +34,7 @@
 			return INTERACTION_HANDLED_PASS
 		size += gun.w_class
 		complexity = complexity * gun.w_class //Max complexity that a case can reach is 240. This means a small gun = 60 complexity, normal = 90, large = 120. This means you could fit 3 small guns, 2 normal guns, or 1 large gun in the circuit.
-		if(!own_set(src, nameof(src.installed_gun), gun, user = user))
+		if(!move_into(src, nameof(src.installed_gun), gun, user))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You slide \the [gun] into the firing mechanism."))
 		play_sfx(src, SFX_ITEMS_CROWBAR)

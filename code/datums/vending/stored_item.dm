@@ -116,7 +116,7 @@
 		return FALSE
 	if(try_collapse(product))
 		return TRUE
-	if(!product.move_into(stored, CONTAINER_SLOT_STOCK))
+	if(!move_into(stored, CONTAINER_SLOT_STOCK, product))
 		product.forceMove(stored)
 	rel_add(src, nameof(instances), product)
 	return TRUE

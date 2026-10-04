@@ -80,12 +80,19 @@
 	if(!own_wants_transfer(holder, var_name, value, entry, user, into, slot))
 		return TRUE
 	var/atom/movable/thing = value
-	var/atom/dest = holder
 	if(!force)
-		var/reason = own_transfer_refusal(dest, thing, slot, user)
+		var/reason = own_transfer_refusal(holder, thing, slot, user)
 		if(reason)
 			refuse(user, "[capitalize(reason)].")
 			return FALSE
+	if(!own_transfer_land(holder, var_name, thing, slot, user, force))
+		return FALSE
+	own_release_previous(holder, var_name, thing)
+	return TRUE
+
+/// The move itself, already checked: the current place lets `thing` go through release_to() and it lands in
+/// `dest` (its ledger slot `slot`). FALSE, with `user` told, when it did not land (a bug in a release_to() override).
+/proc/own_transfer_land(atom/dest, var_name, atom/movable/thing, slot, mob/user, force)
 	var/atom/place = thing.loc
 	if(place)
 		place.release_to(thing, dest, slot, user, force ? LEDGER_MOVE_FORCED : 0)
@@ -101,14 +108,16 @@
 		var/list/placed = L?.entries[thing]
 		if(placed && placed[LEDGER_E_SLOT] != slot)
 			dq_ledger_commit(thing, dest, slot)
-	// Another holder's owned var naming it lets it go: it is the new holder's now.
+	return TRUE
+
+/// Another holder's owned var naming `thing` lets it go: it is the new holder's now.
+/proc/own_release_previous(datum/holder, var_name, datum/thing)
 	var/datum/previous = owner_of(thing)
 	if(previous && !(previous == holder && thing.own_slot == var_name))
 		var/previous_var = thing.own_slot
 		previous.on_owned_release(previous_var, thing)
 		own_release_member(previous, previous_var, thing)
 		own_unstamp(thing)
-	return TRUE
 
 /// A user's transfer is a dispatched call: the holder refreshes, is fingerprinted, and the log
 /// line is written at `log` (LOG_GAME / LOG_ADMIN / null).

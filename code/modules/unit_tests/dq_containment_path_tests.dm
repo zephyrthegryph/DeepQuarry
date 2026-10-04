@@ -95,8 +95,8 @@
 	var/obj/structure/closet/dq_path_freezer/freezer = allocate(/obj/structure/closet/dq_path_freezer, get_step(floor, EAST))
 	var/obj/item/dq_path_probe/in_closet = allocate(/obj/item/dq_path_probe, floor)
 	var/obj/item/dq_path_probe/in_freezer = allocate(/obj/item/dq_path_probe, floor)
-	TEST_ASSERT(in_closet.move_into(closet), "the probe goes into the closet")
-	TEST_ASSERT(in_freezer.move_into(freezer), "the probe goes into the freezer")
+	TEST_ASSERT(move_into(closet, null, in_closet), "the probe goes into the closet")
+	TEST_ASSERT(move_into(freezer, null, in_freezer), "the probe goes into the freezer")
 
 	var/ambient = dq_heat_path_ambient(closet)
 	var/fire = ambient + 1000
@@ -111,7 +111,7 @@
 
 	// A fire no hotter than the room reaches nobody.
 	var/obj/item/dq_path_probe/cold = allocate(/obj/item/dq_path_probe, floor)
-	cold.move_into(closet)
+	move_into(closet, null, cold)
 	closet.fire_act(ambient - 10, CELL_VOLUME)
 	TEST_ASSERT_EQUAL(cold.hottest_fire, 0, "no exposure below ambient")
 
@@ -126,8 +126,8 @@
 	var/obj/structure/closet/closet = allocate(/obj/structure/closet, floor)
 	var/obj/item/folder/folder = allocate(/obj/item/folder, floor)
 	var/obj/item/paper/page = allocate(/obj/item/paper, floor)
-	TEST_ASSERT(page.move_into(folder), "the page goes in the folder")
-	TEST_ASSERT(folder.move_into(closet), "the folder goes in the closet")
+	TEST_ASSERT(move_into(folder, null, page), "the page goes in the folder")
+	TEST_ASSERT(move_into(closet, null, folder), "the folder goes in the closet")
 	var/expected = 0.5 * 0.9
 	TEST_ASSERT(DQ_PATH_CLOSE(dq_path_share(page, closet, PATH_EFFECT_HEAT), expected), "closet then folder: [dq_path_share(page, closet, PATH_EFFECT_HEAT)] of the heat reaches the page")
 	TEST_ASSERT_EQUAL(dq_path_share(page, get_turf(closet), PATH_EFFECT_HEAT), 0, "a turf is not on the slot path")
@@ -140,7 +140,7 @@
 	var/turf/floor = dq_containment_floor()
 	var/obj/item/dq_path_bag/bag = allocate(/obj/item/dq_path_bag, floor)
 	var/obj/item/dq_path_probe/probe = allocate(/obj/item/dq_path_probe, floor)
-	TEST_ASSERT(probe.move_into(bag), "the probe goes in the bag")
+	TEST_ASSERT(move_into(bag, null, probe), "the probe goes in the bag")
 
 	bag.deal_damage(DAMAGE_BLUNT, 20)
 	TEST_ASSERT_EQUAL(probe.damage_taken[DAMAGE_BLUNT], 0, "a blunt blow on the bag stays on the bag")
@@ -156,7 +156,7 @@
 	// Armour on the holder attenuates what passes.
 	var/obj/item/dq_path_bag/armored/armored = allocate(/obj/item/dq_path_bag/armored, floor)
 	var/obj/item/dq_path_probe/lined = allocate(/obj/item/dq_path_probe, floor)
-	TEST_ASSERT(lined.move_into(armored), "the probe goes in the armoured bag")
+	TEST_ASSERT(move_into(armored, null, lined), "the probe goes in the armoured bag")
 	armored.deal_damage(DAMAGE_PIERCE, 20)
 	TEST_ASSERT(DQ_PATH_CLOSE(lined.damage_taken[DAMAGE_PIERCE], 5), "the lining halves what gets through ([lined.damage_taken[DAMAGE_PIERCE]])")
 	// Penetration cuts through the lining too.
@@ -168,7 +168,7 @@
 	var/list/probes = list()
 	for(var/i in 1 to 3)
 		var/obj/item/dq_path_probe/P = allocate(/obj/item/dq_path_probe, floor)
-		TEST_ASSERT(P.move_into(crowded), "probe [i] goes in")
+		TEST_ASSERT(move_into(crowded, null, P), "probe [i] goes in")
 		probes += P
 	crowded.deal_damage(DAMAGE_PIERCE, 20)
 	var/hit = 0
@@ -184,8 +184,8 @@
 	var/obj/structure/closet/closet = allocate(/obj/structure/closet, floor)
 	var/obj/item/dq_path_bag/bag = allocate(/obj/item/dq_path_bag, floor)
 	var/obj/item/dq_path_probe/probe = allocate(/obj/item/dq_path_probe, floor)
-	TEST_ASSERT(probe.move_into(bag), "the probe goes in the bag")
-	TEST_ASSERT(bag.move_into(closet), "the bag goes in the closet")
+	TEST_ASSERT(move_into(bag, null, probe), "the probe goes in the bag")
+	TEST_ASSERT(move_into(closet, null, bag), "the bag goes in the closet")
 
 	closet.deal_damage(DAMAGE_BLUNT, 20)
 	TEST_ASSERT_EQUAL(probe.damage_taken[DAMAGE_BLUNT], 0, "kicking the closet leaves the bag's contents alone")
@@ -224,17 +224,17 @@
 	var/obj/item/dq_path_sealed/flask = allocate(/obj/item/dq_path_sealed, floor)
 	var/obj/item/dq_path_probe/sealed_in = allocate(/obj/item/dq_path_probe, floor)
 	var/obj/item/dq_path_probe/open_in = allocate(/obj/item/dq_path_probe, floor)
-	TEST_ASSERT(sealed_in.move_into(flask, "sealed"), "a probe goes in the sealed slot")
-	TEST_ASSERT(open_in.move_into(flask, "interior"), "a probe goes in the open slot")
+	TEST_ASSERT(move_into(flask, "sealed", sealed_in), "a probe goes in the sealed slot")
+	TEST_ASSERT(move_into(flask, "interior", open_in), "a probe goes in the open slot")
 	TEST_ASSERT_EQUAL(dq_path_step(flask, sealed_in, PATH_EFFECT_GAS), 0, "the sealed slot blocks gas")
 	TEST_ASSERT_EQUAL(dq_path_step(flask, open_in, PATH_EFFECT_GAS), 1, "the internal slot shares the air")
 	var/turf/east = get_step(floor, EAST)
 	var/obj/structure/closet/closet = allocate(/obj/structure/closet, east)
 	var/obj/item/dq_path_probe/closeted = allocate(/obj/item/dq_path_probe, east)
-	TEST_ASSERT(closeted.move_into(closet), "a probe goes in the closet")
+	TEST_ASSERT(move_into(closet, null, closeted), "a probe goes in the closet")
 	TEST_ASSERT_EQUAL(dq_path_step(closet, closeted, PATH_EFFECT_GAS), 1, "a closet is not airtight")
 	// Nested: gas stops at the first seal.
-	TEST_ASSERT(flask.move_into(closet), "the flask goes in the closet")
+	TEST_ASSERT(move_into(closet, null, flask), "the flask goes in the closet")
 	TEST_ASSERT_EQUAL(dq_path_share(sealed_in, closet, PATH_EFFECT_GAS), 0, "no gas past the seal from the closet")
 	TEST_ASSERT_EQUAL(dq_path_share(open_in, closet, PATH_EFFECT_GAS), 1, "gas reaches the flask's open slot")
 	// Sealed slots take the conservative sealed damage shares: no acid.
@@ -253,14 +253,14 @@
 	var/obj/item/dq_path_probe/padded/undersuit = allocate(/obj/item/dq_path_probe/padded, floor)
 	var/obj/item/dq_path_probe/padded/uniform = allocate(/obj/item/dq_path_probe/padded, floor)
 	var/obj/item/dq_path_probe/padded/suit = allocate(/obj/item/dq_path_probe/padded, floor)
-	TEST_ASSERT(undersuit.move_into(wearer, "undersuit"), "undersuit on")
-	TEST_ASSERT(uniform.move_into(wearer, "uniform"), "uniform on")
+	TEST_ASSERT(move_into(wearer, "undersuit", undersuit), "undersuit on")
+	TEST_ASSERT(move_into(wearer, "uniform", uniform), "uniform on")
 
 	// Two layers: the uniform covers the undersuit.
 	TEST_ASSERT(DQ_PATH_CLOSE(dq_path_step(wearer, uniform, PATH_EFFECT_HEAT), 1), "the outer layer takes the full heat")
 	TEST_ASSERT(DQ_PATH_CLOSE(dq_path_step(wearer, undersuit, PATH_EFFECT_HEAT), 0.5), "the uniform halves the heat on the undersuit")
 
-	TEST_ASSERT(suit.move_into(wearer, "suit"), "suit on")
+	TEST_ASSERT(move_into(wearer, "suit", suit), "suit on")
 	TEST_ASSERT(DQ_PATH_CLOSE(dq_path_step(wearer, suit, PATH_EFFECT_HEAT), 1), "the suit is outermost now")
 	TEST_ASSERT(DQ_PATH_CLOSE(dq_path_step(wearer, uniform, PATH_EFFECT_HEAT), 0.5), "the suit halves the uniform's heat")
 	TEST_ASSERT(DQ_PATH_CLOSE(dq_path_step(wearer, undersuit, PATH_EFFECT_HEAT), 0.25), "suit and uniform quarter the undersuit's heat")
