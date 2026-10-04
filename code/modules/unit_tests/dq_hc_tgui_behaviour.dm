@@ -30,6 +30,8 @@
 	abstract_type = /datum/unit_test/dq_hc_tgui
 	var/list/hct_windows
 	var/list/hct_made
+	/// Cards a test tied to a pAI.
+	var/list/hct_cards
 	/// The map's contact levels before a test widened them (a list holding the old list).
 	var/list/hct_saved_levels
 
@@ -42,6 +44,10 @@
 		if(!QDELETED(ui))
 			qdel(ui)
 	hct_windows = null
+	for(var/obj/item/paicard/card as anything in hct_cards)
+		card.removePersonality() // the card lets go of its pAI before the block is swept, so no spark outlives the test
+	for(var/turf/N in range(3, run_loc_floor_bottom_left))
+		own_turf_contents(N)
 	if(hct_saved_levels)
 		using_map.contact_levels = hct_saved_levels[1]
 		hct_saved_levels = null
@@ -508,3 +514,98 @@
 	TEST_ASSERT_EQUAL(M.target(), R2, "another robot is selected")
 	press(H, M, "add_restriction", list("new_restriction" = "no such module"))
 	TEST_ASSERT(!length(R2.restrict_modules_to), "an unknown module is not added to the restrictions")
+
+// ---- batch 5: pAI, robot windows ----
+
+/// A pAI standing next to the person, with a card.
+/datum/unit_test/dq_hc_tgui/proc/hct_pai()
+	var/obj/item/paicard/card = allocate(/obj/item/paicard, hct_spot())
+	var/mob/living/silicon/pai/P = allocate(/mob/living/silicon/pai, card)
+	if(!card.pai)
+		rel_set(card, nameof(card.pai), P)
+	LAZYADD(hct_cards, card)
+	P.forceMove(get_step(hct_spot(), NORTH))
+	return P
+
+/datum/unit_test/dq_hc_tgui/pai_software_window
+/datum/unit_test/dq_hc_tgui/pai_software_window/run_gate()
+	var/mob/living/silicon/pai/P = hct_pai()
+	var/datum/pai_software/S
+	for(var/key in GLOB.pai_software_by_key)
+		var/datum/pai_software/candidate = GLOB.pai_software_by_key[key]
+		if(!(key in P.software) && candidate.ram_cost > 0 && candidate.ram_cost <= P.ram)
+			S = candidate
+			break
+	TEST_ASSERT(S, "there is a program the pAI can buy")
+	var/ram = P.ram
+	press(P, P, "purchase", list("purchase" = S.id))
+	TEST_ASSERT(P.software[S.id], "the program is bought")
+	TEST_ASSERT_EQUAL(P.ram, ram - S.ram_cost, "and its RAM is spent")
+	press(P, P, "purchase", list("purchase" = "no such program"))
+	TEST_ASSERT_EQUAL(P.ram, ram - S.ram_cost, "an unknown program costs nothing")
+	var/list/data = data_of(P, P)
+	TEST_ASSERT(islist(data["bought"]), "the bought programs are sent")
+	TEST_ASSERT(islist(data["not_bought"]), "and the others")
+	var/emotion = P.card.current_emotion
+	press(P, P, "image", list("image" = 3))
+	TEST_ASSERT_EQUAL(P.card.current_emotion, 3, "the face is picked")
+	TEST_ASSERT_NOTEQUAL(emotion, 3, "and it changed")
+
+/datum/unit_test/dq_hc_tgui/pai_signaller_window
+/datum/unit_test/dq_hc_tgui/pai_signaller_window/run_gate()
+	var/mob/living/silicon/pai/P = hct_pai()
+	var/datum/pai_software/signaller/S = GLOB.pai_software_by_key["signaller"]
+	TEST_ASSERT(S, "the signaller program exists")
+	var/mob/living/carbon/human/H = hct_actor()
+	var/obj/item/radio/integrated/signal/R = P.sradio
+	press(P, S, "code", list("code" = 42))
+	TEST_ASSERT_EQUAL(R.code, 42, "the signal code is set")
+	press(P, S, "reset", list("reset" = "code"))
+	TEST_ASSERT_EQUAL(R.code, initial(R.code), "and reset")
+	press(H, S, "code", list("code" = 77))
+	TEST_ASSERT_NOTEQUAL(R.code, 77, "only a pAI works the program")
+	var/list/data = data_of(S, P)
+	TEST_ASSERT_EQUAL(data["code"], R.code, "the code is sent")
+
+/datum/unit_test/dq_hc_tgui/pai_chassis_window
+/datum/unit_test/dq_hc_tgui/pai_chassis_window/run_gate()
+	var/mob/living/silicon/pai/P = hct_pai()
+	var/datum/tgui_module/pai_chassis/M = hct_track(new /datum/tgui_module/pai_chassis(P))
+	press(P, M, "change_color", list("color" = "#12ab34"))
+	TEST_ASSERT_EQUAL(M.selected_color, "#12ab34", "the colour is picked")
+	var/list/chassises = SSpai.get_chassis_list()
+	var/choice = chassises[1]
+	press(P, M, "pick_icon", list("value" = choice))
+	TEST_ASSERT_EQUAL(M.selected_chassis, choice, "a chassis is picked")
+	press(P, M, "pick_icon", list("value" = "no such chassis"))
+	TEST_ASSERT_EQUAL(M.selected_chassis, choice, "an unknown chassis changes nothing")
+	press(P, M, "confirm")
+	TEST_ASSERT_EQUAL(P.eye_color, "#12ab34", "confirming applies the colour")
+
+/datum/unit_test/dq_hc_tgui/robot_window_buttons
+/datum/unit_test/dq_hc_tgui/robot_window_buttons/run_gate()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
+	var/datum/tgui_module/robot_ui/M = hct_track(new /datum/tgui_module/robot_ui(R))
+	press(R, M, "set_light_col", list("value" = "#00ff00"))
+	TEST_ASSERT_EQUAL(R.robot_light_col, "#00ff00", "the lamp colour is set")
+	press(R, M, "set_light_col", list("value" = "green"))
+	TEST_ASSERT_EQUAL(R.robot_light_col, "#00ff00", "a bad colour changes nothing")
+	press(R, M, "toggle_module", list("ref" = "\ref[R]"))
+	press(R, M, "activate_module", list("ref" = "\ref[R]"))
+	var/list/data = data_of(M, R)
+	TEST_ASSERT(islist(data), "the window data is sent")
+
+/datum/unit_test/dq_hc_tgui/robot_module_picker
+/datum/unit_test/dq_hc_tgui/robot_module_picker/run_gate()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
+	var/datum/tgui_module/robot_ui_module/M = hct_track(new /datum/tgui_module/robot_ui_module(R))
+	press(R, M, "rename", list("value" = "Sprocket"))
+	TEST_ASSERT_EQUAL(M.new_name, "Sprocket", "the name is picked")
+	TEST_ASSERT_EQUAL(R.sprite_name, "Sprocket", "and kept on the robot")
+	press(R, M, "pick_module", list("value" = "no such module"))
+	TEST_ASSERT_NULL(M.selected_module, "an unknown module is not picked")
+	press(R, M, "confirm")
+	TEST_ASSERT(!R.module, "confirming with nothing picked changes nothing")
+	var/datum/tgui_module/robot_ui_decals/D = hct_track(new /datum/tgui_module/robot_ui_decals(R))
+	press(R, D, "toggle_decal", list("value" = "stripe"))
+	TEST_ASSERT(!LAZYLEN(R.robotdecal_on), "a robot with no sprite has no decals to switch")
