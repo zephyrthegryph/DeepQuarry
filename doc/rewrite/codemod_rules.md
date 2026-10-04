@@ -272,7 +272,7 @@ Residue codes: `decl_form`, `non_atom`, `verb_expr`, `grant_shared`, `grant_form
 
 ## DECLARE_APPEARANCE_PROC -> draw(look)
 
-The target (doc section 13): a type's look is `draw(datum/look/look)`, the one output that says how it appears; the vars it reads are `TRACKED(T, var)` and every writer of such a var uses the setter, so the generated reads (`analyze gen reads`, `code/_generated/reads.dm` through `DQ_WRITE_GENERATED=1 analyze check`) redraw it when one changes and no `update_icon()` follows the write. `tools/dx/codemods/appearance_draw.py`.
+The target (doc section 13): a type's look is `draw(datum/look/look)`, the one output that says how it appears; the vars it reads are `TRACKED(T, var)` and every writer of such a var uses the setter, so the generated reads (`analyze gen reads`, `code/_generated/reads.dm` through `analyze gen derived_reads`) redraw it when one changes and no `update_icon()` follows the write. `tools/dx/codemods/appearance_draw.py`.
 
 | Old (`DECLARE_APPEARANCE_PROC(T, TYPE_PROC_REF(/atom, appearance_overlays), list())` and `/T/appearance_overlays()`) | New (`/T/draw(datum/look/look)`) |
 |---|---|
