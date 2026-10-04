@@ -444,57 +444,118 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 		var/datum/sprite_accessory/instance = source[path]
 		if((!instance.ckeys_allowed) || (ckey in instance.ckeys_allowed))
 			pretty_styles[instance.name] = path
-	om_flow_start(/datum/om/flow/shapeshift_accessory, src, src, kind = kind, pretty_styles = pretty_styles, info = I)
+	open_request(src, /datum/prompt/choice/shapeshift_accessory, PROC_REF(shapeshifter_accessory_style_picked), answerer = src, question = I["pick"], title = "Character Preference", choices = pretty_styles, kind = kind)
 
-/// An accessory style, then its colours (secondary and tertiary only after a primary) and alpha;
-/// each colour and the alpha can be skipped.
-/datum/om/flow/shapeshift_accessory
-	requires = PROMPT_CONSCIOUS
+/// An accessory style, then its colours and alpha; each colour and the alpha can be skipped.
+/datum/prompt/choice/shapeshift_accessory
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
 	var/kind
-	var/list/pretty_styles
-	/// shapeshifter_accessory_info(kind).
-	var/list/info
-	var/style_name
+
+/datum/prompt/color/shapeshift_accessory
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	var/kind
+	var/style_path
+	var/channel
+	var/c1
+	var/c2
+
+/datum/prompt/number/shapeshift_accessory
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	min_value = 0
+	max_value = 255
+	step = 1
+	var/kind
+	var/style_path
 	var/c1
 	var/c2
 	var/c3
-	var/alpha
 
-/datum/om/flow/shapeshift_accessory/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(style_chosen), message = info["pick"], title = "Character Preference", choices = pretty_styles, ask_flags = ASK_CONSCIOUS)
-
-/// rgb() of the human's colour vars for this accessory and `suffix` ("", "2", "3").
-/datum/om/flow/shapeshift_accessory/proc/current_color(suffix)
-	var/mob/living/carbon/human/H = actor
-	var/p = info["prefix"]
-	return rgb(H.vars["r_[p][suffix]"], H.vars["g_[p][suffix]"], H.vars["b_[p][suffix]"])
-
-/datum/om/flow/shapeshift_accessory/proc/style_chosen(datum/om/prompt/choice/ask)
-	style_name = ask.choice
-	om_ask(actor, /datum/om/prompt/color/shapeshift_optional, PROC_REF(c1_chosen), message = "Pick primary [info["noun"]] color:", title = "[info["title"]] Color (Pri)", default = current_color(""))
-
-/datum/om/flow/shapeshift_accessory/proc/c1_chosen(datum/om/prompt/color/ask)
-	c1 = ask.picked_color
-	if(!c1) //don't bother if they clicked cancel on the primary colour
-		ask_alpha()
+/mob/living/carbon/human/proc/shapeshifter_accessory_style_picked(datum/act/request/A)
+	if(!A.answer)
 		return
-	om_ask(actor, /datum/om/prompt/color/shapeshift_optional, PROC_REF(c2_chosen), message = "Pick secondary [info["noun"]] color (only applies to some [info["noun"]]s):", title = "[info["title"]] Color (sec)", default = current_color("2"))
+	var/datum/prompt/choice/shapeshift_accessory/ask = A.request
+	shapeshifter_ask_accessory_color(ask.kind, ask.choices[ask.answer_value], 1)
 
-/datum/om/flow/shapeshift_accessory/proc/c2_chosen(datum/om/prompt/color/ask)
-	c2 = ask.picked_color
-	om_ask(actor, /datum/om/prompt/color/shapeshift_optional, PROC_REF(c3_chosen), message = "Pick tertiary [info["noun"]] color (only applies to some [info["noun"]]s):", title = "[info["title"]] Color (ter)", default = current_color("3"))
+/// The live colour at the opening of each channel's prompt.
+/mob/living/carbon/human/proc/shapeshifter_accessory_current_color(kind, suffix)
+	switch("[kind][suffix]")
+		if("ears")
+			return rgb(r_ears, g_ears, b_ears)
+		if("ears2")
+			return rgb(r_ears2, g_ears2, b_ears2)
+		if("ears3")
+			return rgb(r_ears3, g_ears3, b_ears3)
+		if("tail")
+			return rgb(r_tail, g_tail, b_tail)
+		if("tail2")
+			return rgb(r_tail2, g_tail2, b_tail2)
+		if("tail3")
+			return rgb(r_tail3, g_tail3, b_tail3)
+		if("wings")
+			return rgb(r_wing, g_wing, b_wing)
+		if("wings2")
+			return rgb(r_wing2, g_wing2, b_wing2)
+		if("wings3")
+			return rgb(r_wing3, g_wing3, b_wing3)
 
-/datum/om/flow/shapeshift_accessory/proc/c3_chosen(datum/om/prompt/color/ask)
-	c3 = ask.picked_color
-	ask_alpha()
+/mob/living/carbon/human/proc/shapeshifter_ask_accessory_color(kind, style_path, channel, c1, c2)
+	var/list/info = shapeshifter_accessory_info(kind)
+	var/question
+	var/title
+	var/suffix
+	switch(channel)
+		if(1)
+			question = "Pick primary [info["noun"]] color:"
+			title = "[info["title"]] Color (Pri)"
+			suffix = ""
+		if(2)
+			question = "Pick secondary [info["noun"]] color (only applies to some [info["noun"]]s):"
+			title = "[info["title"]] Color (sec)"
+			suffix = "2"
+		if(3)
+			question = "Pick tertiary [info["noun"]] color (only applies to some [info["noun"]]s):"
+			title = "[info["title"]] Color (ter)"
+			suffix = "3"
+	open_request(src, /datum/prompt/color/shapeshift_accessory, PROC_REF(shapeshifter_accessory_color_picked), answerer = src, title = title, question = question, default = shapeshifter_accessory_current_color(kind, suffix), kind = kind, style_path = style_path, channel = channel, c1 = c1, c2 = c2)
 
-/datum/om/flow/shapeshift_accessory/proc/ask_alpha()
-	var/mob/living/carbon/human/H = actor
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(alpha_chosen), message = "Set [info["noun"]] alpha (0-255):", title = "[info["title"]] Alpha", default = H.vars["a_[info["prefix"]]"], ask_flags = ASK_CONSCIOUS, cancel_answer = "", min = 0, max = 255)
+/mob/living/carbon/human/proc/shapeshifter_accessory_color_picked(datum/act/request/A)
+	var/datum/prompt/color/shapeshift_accessory/ask = A.request
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+			return
+	var/color = A.answer ? ask.answer_value : ""
+	switch(ask.channel)
+		if(1)
+			if(!color)
+				shapeshifter_ask_accessory_alpha(ask.kind, ask.style_path, color)
+				return
+			shapeshifter_ask_accessory_color(ask.kind, ask.style_path, 2, color)
+		if(2)
+			shapeshifter_ask_accessory_color(ask.kind, ask.style_path, 3, ask.c1, color)
+		if(3)
+			shapeshifter_ask_accessory_alpha(ask.kind, ask.style_path, ask.c1, ask.c2, color)
 
-/datum/om/flow/shapeshift_accessory/proc/alpha_chosen(datum/om/prompt/number/ask)
-	var/mob/living/carbon/human/H = actor
-	H.shapeshifter_accessory_chosen(kind, pretty_styles[style_name], list("c1" = c1, "c2" = c2, "c3" = c3), ask.number)
+/mob/living/carbon/human/proc/shapeshifter_ask_accessory_alpha(kind, style_path, c1, c2, c3)
+	var/list/info = shapeshifter_accessory_info(kind)
+	var/current_alpha
+	switch(kind)
+		if("ears")
+			current_alpha = a_ears
+		if("tail")
+			current_alpha = a_tail
+		if("wings")
+			current_alpha = a_wing
+	open_request(src, /datum/prompt/number/shapeshift_accessory, PROC_REF(shapeshifter_accessory_alpha_picked), answerer = src, title = "[info["title"]] Alpha", question = "Set [info["noun"]] alpha (0-255):", default = current_alpha, kind = kind, style_path = style_path, c1 = c1, c2 = c2, c3 = c3)
+
+/mob/living/carbon/human/proc/shapeshifter_accessory_alpha_picked(datum/act/request/A)
+	var/datum/prompt/number/shapeshift_accessory/ask = A.request
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+			return
+	shapeshifter_accessory_chosen(ask.kind, ask.style_path, list("c1" = ask.c1, "c2" = ask.c2, "c3" = ask.c3), A.answer ? ask.answer_value : "")
 
 /// Applies an accessory pick: `style_path` (null: none), `colors` ("c1"/"c2"/"c3" -> "#rrggbb" or
 /// empty to keep) and `alpha` (empty to keep).
