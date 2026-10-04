@@ -1,7 +1,7 @@
 /obj/item/trash/material
 	icon = 'icons/obj/material_trash.dmi'
 	MATERIAL_NONE
-	var/matter_chances = list()	//List of lists: list(mat_name, chance, amount)
+	var/list/matter_chances	//List of lists: list(mat_name, chance, amount)
 
 
 /obj/item/trash/material/Initialize(mapload)

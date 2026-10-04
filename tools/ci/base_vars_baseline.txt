@@ -826,7 +826,6 @@ base_var	code/modules/mob/mob_defines.dm	var/faction_bump_vore = FALSE // Don't 
 base_var	code/modules/nifsoft/nif.dm	/mob/living/carbon/human/var/obj/item/nif/nif
 base_var	code/modules/organs/blood.dm	/mob/living/carbon/human/var/datum/reagents/vessel // Container for blood and BLOOD ONLY. Do not transfer other chems here.
 base_var	code/modules/organs/blood.dm	/mob/living/carbon/human/var/var/pale = 0 // Should affect how mob sprite is drawn, but currently doesn't.
-base_var	code/modules/organs/pain.dm	/mob/var/list/pain_stored = list()
 base_var	code/modules/organs/pain.dm	/mob/var/last_pain_message = ""
 base_var	code/modules/organs/pain.dm	/mob/var/next_pain_time = 0
 base_var	code/modules/organs/pain.dm	/mob/var/multilimb_pain_time = 0 // Global pain cooldown exists to prevent spam for multi-limb damage
@@ -1040,20 +1039,13 @@ list_init	code/game/antagonist/antagonist.dm	var/default_access = list()
 list_init	code/game/area/Space Station 13 areas.dm	var/asteroid_spawns = list()
 list_init	code/game/area/Space Station 13 areas.dm	var/mob_spawns = list()
 list_init	code/game/machinery/cryopod.dm	var/disallow_occupant_types = list()
-list_init	code/game/machinery/gear_dispenser.dm	var/unique_dispense_list = list()
 list_init	code/game/machinery/telecomms/telecomunications.dm	var/parameters = list() // carbon-copy to signal.data[]
 list_init	code/game/objects/items/devices/translocator.dm	var/warned_users = list()
-list_init	code/game/objects/items/trash_material.dm	var/matter_chances = list() //List of lists: list(mat_name, chance, amount)
-list_init	code/game/objects/structures/salvageable.dm	var/salvageable_parts = list()
 list_init	code/game/skincmd.dm	/mob/var/skincmds = list()
 list_init	code/modules/admin/spawn_panel/spawn_panel.dm	var/offset = list()
 list_init	code/modules/asset_cache/asset_list.dm	var/assets = list()
-list_init	code/modules/casino/casino.dm	var/lottery_tickets = list()
-list_init	code/modules/casino/casino.dm	var/lottery_tickets_ckeys = list()
 list_init	code/modules/casino/casino.dm	var/collar_list = list()
-list_init	code/modules/casino/casino.dm	var/sentientprizes_ckeys_list = list() //Same trick as lottery, to keep life simple
 list_init	code/modules/client/preferences/preferences_tg.dm	var/value_cache = list()
-list_init	code/modules/economy/cash.dm	var/access = list()
 list_init	code/modules/economy/casinocash.dm	var/access = list()
 list_init	code/modules/economy/casinocash.dm	var/access = list()
 list_init	code/modules/lore_codex/lore_data_yw/orgs.dm	var/auto_keywords = list()
@@ -1064,7 +1056,6 @@ list_init	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi
 list_init	code/modules/mob/mob_defines.dm	var/proc_holder_list[] = list()//Right now unused.
 list_init	code/modules/mob/new_player/sprite_accessories_markings.dm	var/body_parts = list() //A list of bodyparts this covers, in organ_tag defines
 list_init	code/modules/modular_computers/NTNet/emails/email_account.dm	var/connected_clients = list()
-list_init	code/modules/organs/pain.dm	/mob/var/list/pain_stored = list()
 list_init	code/modules/planet/sun.dm	var/turfs_providing_spreads = list()
 list_init	code/modules/planet/sun.dm	var/spreads = list()
 list_init	code/modules/planet/weather.dm	var/transition_chances = list() // Assoc list of weather identifiers and the odds to shift to a specific type of weather. Can contain its own identifier to prolong it.

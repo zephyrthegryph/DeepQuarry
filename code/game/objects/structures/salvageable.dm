@@ -4,7 +4,7 @@
 	icon = 'icons/obj/salvageable.dmi'
 	density = TRUE
 	anchored = TRUE
-	var/salvageable_parts = list()
+	var/list/salvageable_parts
 
 /obj/structure/salvageable/proc/dismantle()
 	new /obj/structure/frame (src.loc)
