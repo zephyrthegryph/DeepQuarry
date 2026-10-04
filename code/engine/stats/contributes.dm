@@ -470,30 +470,38 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 	state[stat_key] = 2
 
 
-/// stat_table_needs_init() before GLOB exists: reads the generated /datum/stat_decl rows (no registry needed).
-/proc/stat_table_needs_init_early(datum/type_table/T)
-	for(var/datum/centry/C as anything in T.items)
-		var/datum/entry/entry = C.item
-		if(istype(entry) && (entry.kind == "contributes" || entry.kind == "contributes_to"))
-			return TRUE
-	if(!T.owner_type)
-		return FALSE
-	for(var/decl_type in subtypesof(/datum/stat_decl))
-		var/datum/stat_decl/D = new decl_type
-		var/list/row = D.spec()
-		if(length(row) < 2 || !ispath(T.owner_type, row[1]))
-			continue
-		var/list/made = call(row[2])()
-		if(length(made) >= 2 && made[2] == STAT_RULE_FORMULA)
+/// The types that declare a FORMULA stat (STAT(type, x, FORMULA)), read from the generated /datum/stat_decl rows so it works while the
+/// globals initialize too (type tables are statics and may be built then).
+/proc/stat_formula_types()
+	var/static/list/types
+	if(!types)
+		types = list()
+		for(var/decl_type in subtypesof(/datum/stat_decl))
+			var/datum/stat_decl/D = new decl_type
+			var/list/row = D.spec()
+			if(length(row) < 2)
+				continue
+			var/list/made = call(row[2])()
+			if(length(made) >= 2 && made[2] == STAT_RULE_FORMULA)
+				types |= row[1]
+	return types
+
+/// TRUE when `type` inherits a FORMULA stat that `table_type` (the type whose table it would share) does not: it needs a table of its own,
+/// or the shared table's hooks never compute that formula at init.
+/proc/stat_type_needs_own_table(type, table_type)
+	for(var/declared in stat_formula_types())
+		if(ispath(type, declared) && !ispath(table_type, declared))
 			return TRUE
 	return FALSE
 
 /// TRUE when instances of the table's type compute stats at init: it has a contributes()/contributes_to() entry or declares a FORMULA stat.
 /proc/stat_table_needs_init(datum/type_table/T)
+	if(T.owner_type)
+		for(var/declared in stat_formula_types())
+			if(ispath(T.owner_type, declared))
+				return TRUE
 	if(!islist(GLOB?.stat_defs))
-		// A table built while the globals initialize (tables are statics, built lazily) is cached for good: answer from the
-		// generated STAT declarations themselves, or a FORMULA type would never compute its stats at init.
-		return stat_table_needs_init_early(T)
+		return FALSE
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/entry = C.item
 		if(istype(entry) && (entry.kind == "contributes" || entry.kind == "contributes_to"))
