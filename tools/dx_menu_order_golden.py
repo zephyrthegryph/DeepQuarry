@@ -74,7 +74,11 @@ def main():
         GOLDEN.write_text(render([{}, {}]), encoding="utf-8", newline="\n")
         return
     rel = GOLDEN.relative_to(GOLDEN.parents[3]).as_posix()
-    old = read_tables(subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=GOLDEN.parents[3], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    # the committed tables: HEAD's, or origin/master's when HEAD committed them empty mid-capture
+    for rev in ("HEAD", "origin/master"):
+        old = read_tables(subprocess.run(["git", "show", f"{rev}:{rel}"], cwd=GOLDEN.parents[3], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+        if old[0] and old[1]:
+            break
     new = read_logs(logs)
     new[1] = {k: v for k, v in new[1].items() if k in old[1] or k in add}
     if not new[0] or not new[1]:
