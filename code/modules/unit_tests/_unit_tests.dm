@@ -486,6 +486,7 @@
 #include "dq_p2_lights_behaviour.dm"
 #include "dq_hc_items_behaviour.dm"
 #include "dq_hc_items2_stacks.dm"
+#include "dq_hc_items2_A2.dm"
 #include "dq_hc_struct_behaviour.dm"
 #include "dq_hc_tgui_behaviour.dm"
 #include "dq_hc_machinery_behaviour.dm"
