@@ -1599,25 +1599,39 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		var/obj/item/organ/external/current_limb = organs_by_name[limb]
 		if(current_limb && current_limb.dislocated > 0 && !current_limb.is_parent_dislocated()) //if the parent is also dislocated you will have to relocate that first
 			limbs |= current_limb
-	om_ask(usr, /datum/om/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), choices = limbs)
+	open_request(src, /datum/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), answerer = usr, choices = limbs)
 	return TRUE
 
 /// Picking a joint on the subject. Re-checked on the answer: next to them, unrestrained, awake,
 /// and the limb is still theirs and still dislocated.
-/datum/om/prompt/choice/relocate_joint
+/datum/prompt/choice/relocate_joint
 	title = "Joint Choice"
-	message = "Which joint do you wish to relocate?"
-	requires = list(/datum/om/check/adjacent, /datum/om/check/not_restrained, /datum/om/check/conscious)
+	question = "Which joint do you wish to relocate?"
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_RESTRAINED | ASK_CONSCIOUS
 
-/datum/om/prompt/choice/relocate_joint/valid()
-	var/obj/item/organ/external/limb = choice
-	if(limb.owner != subject || limb.dislocated <= 0)
+/datum/prompt/choice/relocate_joint/recheck_extra()
+	if(isnull(answer_value))
+		return
+	var/obj/item/organ/external/limb = answer_value
+	if(!istype(limb) || QDELETED(limb))
+		return "gone"
+	if(limb.owner != owner || limb.dislocated <= 0)
 		return "not dislocated"
 	return null
 
-/mob/living/carbon/human/proc/relocate_joint_chosen(datum/om/prompt/choice/relocate_joint/ask)
+/mob/living/carbon/human/proc/relocate_joint_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(relocate_joint_apply), A)
+	if(!result.ok)
+		stack_trace("joint relocation selection: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/relocate_joint_apply(datum/act/request/A)
+	var/datum/prompt/choice/relocate_joint/ask = A.answer
 	var/mob/U = ask.answerer
-	var/obj/item/organ/external/current_limb = ask.choice
+	var/obj/item/organ/external/current_limb = ask.answer_value
 	var/mob/S = src
 	var/self = (U == src)
 	if(self)
