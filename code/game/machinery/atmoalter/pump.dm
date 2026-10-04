@@ -22,6 +22,12 @@
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	climb()
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(pump_emp))))
+	interface("PortablePump")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("direction", ui_act("direction"), then(PROC_REF(ui_act_direction)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 
 /obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload, skip_cell)
 	. = ..()
@@ -50,22 +56,23 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump, TYPE_
 
 	return .
 
-DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, PROC_REF(pump_emp))
-/// An EMP scrambles a working pump's settings.
-/obj/machinery/portable_atmospherics/powered/pump/proc/pump_emp(datum/damage_packet/packet)
+/// An EMP scrambles a working pump's settings (before the hit lands; the hit goes on).
+/obj/machinery/portable_atmospherics/powered/pump/proc/pump_emp(datum/act/hit/emp/A)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 
-	if(prob(50/packet.severity))
+	var/severity = A.packet.severity
+	if(prob(50/severity))
 		set_on(!on)
 
-	if(prob(100/packet.severity))
+	if(prob(100/severity))
 		direction_out = !direction_out
 
 	target_pressure = rand(0,1300)
 	if(on)
 		changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
+	return HOOK_DECLINE
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
 // section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
@@ -136,15 +143,10 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
 
-DECLARE_UI(/obj/machinery/portable_atmospherics/powered/pump, "PortablePump")
-
 
 DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/powered/pump, GLOB.tgui_physical_state)
 
-UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/pump, "merge:ui_data_obj_machinery_portable_atmospherics_powered_pump{on:bool,direction:bool,connected:bool,pressure:unknown,target_pressure:num,default_pressure:num,min_pressure:num,max_pressure:num,powerDraw:num,cellCharge:num,cellMaxCharge:num,holding:list}")
-
-/// The computed part of /obj/machinery/portable_atmospherics/powered/pump's window data (declared on its UI_DATA row).
-/obj/machinery/portable_atmospherics/powered/pump/proc/ui_data_obj_machinery_portable_atmospherics_powered_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/portable_atmospherics/powered/pump/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["on"] = on ? TRUE : FALSE
 	data["direction"] = !direction_out ? TRUE : FALSE
@@ -168,31 +170,26 @@ UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/pump, "merge:ui_dat
 
 	return data
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_power)
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_power(datum/act/op/A)
 	set_on(!on)
 	if(on)
 		changed(src, CHANGE_MACHINE_SETTINGS)
 	. = 1
-	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "direction", ui_act_direction)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_direction)
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_direction(datum/act/op/A)
 	direction_out = !direction_out
 	. = 1
 	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_eject)
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_eject(datum/act/op/A)
 	if(holding)
 		holding.forceMove(loc)
 		own_take(src, nameof(/datum/rule_binding::holding))
 	. = 1
 	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_pressure)
-	var/pressure = params["pressure"]
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_pressure(datum/act/op/A, raw_pressure)
+	var/pressure = raw_pressure
 	if(pressure == "reset")
 		pressure = initial(target_pressure)
 		. = TRUE

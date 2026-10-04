@@ -27,6 +27,11 @@
 
 CAPABILITIES(/obj/machinery/exonet_node)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	interface("ExonetNode")
+	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
+	op("toggle_PDA_port", ui_act("toggle_PDA_port"), then(PROC_REF(ui_act_toggle_pda_port)))
+	op("toggle_communicator_port", ui_act("toggle_communicator_port"), then(PROC_REF(ui_act_toggle_communicator_port)))
+	op("toggle_newscaster_port", ui_act("toggle_newscaster_port"), then(PROC_REF(ui_act_toggle_newscaster_port)))
 
 // Proc: New()
 // Parameters: None
@@ -113,66 +118,66 @@ CAPABILITY(/obj/machinery/exonet_node, emp_disable(300 SECONDS))
 // Proc: tgui_interact()
 // Parameters: 2 (user - person interacting with the UI, ui - the UI itself, in a refresh)
 // Description: Handles opening the TGUI interface
-DECLARE_UI(/obj/machinery/exonet_node, "ExonetNode")
 
 // Proc: tgui_data()
 // Parameters: 1 (user - the person using the interface)
 // Description: Allows the user to turn the machine on or off, or open or close certain 'ports' for things like external PDA messages, newscasters, etc.
-UI_DATA_REPLACE(/obj/machinery/exonet_node, "allowPDAs=allow_external_PDAs:num", "allowCommunicators=allow_external_communicators:num", "allowNewscasters=allow_external_newscasters:num", "merge:ui_data_obj_machinery_exonet_node{on:num,logs:bool}")
 
-/// The computed part of /obj/machinery/exonet_node's window data (declared on its UI_DATA row).
-/obj/machinery/exonet_node/proc/ui_data_obj_machinery_exonet_node(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/exonet_node/ui_data(datum/act/eval/A)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
 
 	data["on"] = toggle ? 1 : 0
 	data["logs"] = (logs || list())
 
+	data["allowPDAs"] = allow_external_PDAs
+	data["allowCommunicators"] = allow_external_communicators
+	data["allowNewscasters"] = allow_external_newscasters
 	return data
 
 // Proc: tgui_act()
 // Parameters: 2 (standard tgui_act arguments)
 // Description: Responds to button presses on the TGUI interface.
-UI_ACT(/obj/machinery/exonet_node, "toggle_power", ui_act_toggle_power)
-UI_ACT_PROC(/obj/machinery/exonet_node, ui_act_toggle_power)
+/obj/machinery/exonet_node/proc/ui_act_toggle_power(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	toggle = !toggle
 	update_power()
 	if(!toggle)
-		var/msg = "[ui.user.client.key] ([ui.user]) has turned [src] off, at [x],[y],[z]."
+		var/msg = "[user.client.key] ([user]) has turned [src] off, at [x],[y],[z]."
 		message_admins(msg)
 		log_game(msg)
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/exonet_node, "toggle_PDA_port", ui_act_toggle_pda_port)
-UI_ACT_PROC(/obj/machinery/exonet_node, ui_act_toggle_pda_port)
+/obj/machinery/exonet_node/proc/ui_act_toggle_pda_port(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	allow_external_PDAs = !allow_external_PDAs
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/exonet_node, "toggle_communicator_port", ui_act_toggle_communicator_port)
-UI_ACT_PROC(/obj/machinery/exonet_node, ui_act_toggle_communicator_port)
+/obj/machinery/exonet_node/proc/ui_act_toggle_communicator_port(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	allow_external_communicators = !allow_external_communicators
 	if(!allow_external_communicators)
-		var/msg = "[ui.user.client.key] ([ui.user]) has turned [src]'s communicator port off, at [x],[y],[z]."
+		var/msg = "[user.client.key] ([user]) has turned [src]'s communicator port off, at [x],[y],[z]."
 		message_admins(msg)
 		log_game(msg)
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/exonet_node, "toggle_newscaster_port", ui_act_toggle_newscaster_port)
-UI_ACT_PROC(/obj/machinery/exonet_node, ui_act_toggle_newscaster_port)
+/obj/machinery/exonet_node/proc/ui_act_toggle_newscaster_port(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	allow_external_newscasters = !allow_external_newscasters
 	if(!allow_external_newscasters)
-		var/msg = "[ui.user.client.key] ([ui.user]) has turned [src]'s newscaster port off, at [x],[y],[z]."
+		var/msg = "[user.client.key] ([user]) has turned [src]'s newscaster port off, at [x],[y],[z]."
 		message_admins(msg)
 		log_game(msg)
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 // Proc: get_exonet_node()
 // Parameters: None

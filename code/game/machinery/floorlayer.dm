@@ -59,12 +59,14 @@
 	return TRUE
 
 /obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(work_mode_chosen), message = "Choose work mode", title = "Mode", choices = work_modes, requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(work_mode_chosen), answerer = user, title = "Mode", question = "Choose work mode", choices = work_modes, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/floorlayer/proc/work_mode_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/selected_mode = ask.choice
+/obj/machinery/floorlayer/proc/work_mode_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/selected_mode = A.answer.answer_value
 	work_modes[selected_mode] = !work_modes[selected_mode]
 	act_message(user, src, MSG_SELF(span_notice("You set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")), \
 		MSG_OTHERS(span_notice("%U% has set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")))
@@ -74,12 +76,14 @@
 	if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
 		to_chat(user, span_notice("\The [src] is empty."))
 		return ITEM_INTERACT_BLOCKING
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(tile_removal_chosen), message = "Choose remove tile type.", title = "Tiles", choices = contents, requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(tile_removal_chosen), answerer = user, title = "Tiles", question = "Choose remove tile type.", choices = contents, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/floorlayer/proc/tile_removal_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/stack/tile/selected = ask.choice
+/obj/machinery/floorlayer/proc/tile_removal_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/stack/tile/selected = A.answer.answer_value
 	if(selected.loc != src)
 		return
 	if(selected)
@@ -89,11 +93,13 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(tile_type_chosen), message = "Choose tile type.", title = "Tiles", choices = contents, requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(tile_type_chosen), answerer = user, title = "Tiles", question = "Choose tile type.", choices = contents, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/floorlayer/proc/tile_type_chosen(datum/om/prompt/choice/ask)
-	var/obj/item/stack/tile/selected = ask.choice
+/obj/machinery/floorlayer/proc/tile_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/item/stack/tile/selected = A.answer.answer_value
 	if(selected.loc == src)
 		rel_set(src, nameof(T), selected)
 

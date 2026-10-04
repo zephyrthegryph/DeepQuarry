@@ -56,6 +56,20 @@ GLOBAL_LIST_EMPTY(req_console_information)
 
 CAPABILITIES(/obj/machinery/requests_console)
 	owns_one(nameof(announcement), /datum/announcement)
+	interface("RequestConsole")
+	op("write", ui_act("write", arg("priority", num()), arg("write", schema_text(4096))), then(PROC_REF(ui_act_write)))
+	op("writeAnnouncement", ui_act("writeAnnouncement"), then(PROC_REF(ui_act_writeannouncement)))
+	op("sendAnnouncement", ui_act("sendAnnouncement"), then(PROC_REF(ui_act_sendannouncement)))
+	op("department", ui_act("department", arg("department", schema_text(4096))), then(PROC_REF(ui_act_department)))
+	op("print", ui_act("print", arg("print", num())), then(PROC_REF(ui_act_print)))
+	op("setScreen", ui_act("setScreen", arg("setScreen", num())), then(PROC_REF(ui_act_setscreen)))
+	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+
+/// Whoever presses a button leaves their prints on the console.
+/obj/machinery/requests_console/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 
@@ -126,15 +140,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	held_type = /obj/item/stamp
 	effect = /obj/machinery/requests_console/proc/interaction_stamp
 
-DECLARE_UI(/obj/machinery/requests_console, "RequestConsole")
-
 /obj/machinery/requests_console/ui_title(mob/user)
 	return "[department] Request Console"
 
-UI_DATA(/obj/machinery/requests_console, "department:text", "screen:num", "newmessagepriority:num", "silent:num", "announcementConsole:num", "message:text", "recipient:text", "priority:num", "msgStamped:text", "msgVerified:text", "announceAuth:num", "merge:ui_data_obj_machinery_requests_console{message_log:bool,assist_dept:unknown,supply_dept:unknown,info_dept:unknown}")
-
-/// The computed part of /obj/machinery/requests_console's window data (declared on its UI_DATA row).
-/obj/machinery/requests_console/proc/ui_data_obj_machinery_requests_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/requests_console/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["message_log"] = (message_log || list())
 
@@ -142,37 +151,41 @@ UI_DATA(/obj/machinery/requests_console, "department:text", "screen:num", "newme
 	data["supply_dept"] = GLOB.req_console_supplies
 	data["info_dept"]   = GLOB.req_console_information
 
+	data["department"] = department
+	data["screen"] = screen
+	data["newmessagepriority"] = newmessagepriority
+	data["silent"] = silent
+	data["announcementConsole"] = announcementConsole
+	data["message"] = message
+	data["recipient"] = recipient
+	data["priority"] = priority
+	data["msgStamped"] = msgStamped
+	data["msgVerified"] = msgVerified
+	data["announceAuth"] = announceAuth
 	return data
 
-/obj/machinery/requests_console/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
 
-UI_ACT(/obj/machinery/requests_console, "write", ui_act_write, UI_ARG_NUM("priority"), UI_ARG_TEXT("write"))
-UI_ACT_PROC(/obj/machinery/requests_console, ui_act_write)
-	if(reject_bad_text(params["write"]))
-		recipient = params["write"] //write contains the string of the receiving department's name
+/obj/machinery/requests_console/proc/ui_act_write(datum/act/op/A, raw_priority, raw_write)
+	var/mob/user = A.actor
+	if(reject_bad_text(raw_write))
+		recipient = raw_write //write contains the string of the receiving department's name
 
-		om_ask(ui.user, /datum/om/prompt/text/request_message, PROC_REF(message_written), priority = params["priority"])
+		open_request(src, /datum/prompt/text/request_message, PROC_REF(message_written), valid = PROC_REF(request_usable), answerer = user, title = "Awaiting Input", question = "Write your message:", default = "", priority = raw_priority, timeout = 0)
 		. = TRUE
 
-UI_ACT(/obj/machinery/requests_console, "writeAnnouncement", ui_act_writeannouncement)
-UI_ACT_PROC(/obj/machinery/requests_console, ui_act_writeannouncement)
-	om_ask(ui.user, /datum/om/prompt/text/request_message, PROC_REF(announcement_written))
+/obj/machinery/requests_console/proc/ui_act_writeannouncement(datum/act/op/A)
+	var/mob/user = A.actor
+	open_request(src, /datum/prompt/text/request_message, PROC_REF(announcement_written), valid = PROC_REF(request_usable), answerer = user, title = "Awaiting Input", question = "Write your message:", default = "", timeout = 0)
 	. = TRUE
 
-UI_ACT(/obj/machinery/requests_console, "sendAnnouncement", ui_act_sendannouncement)
-UI_ACT_PROC(/obj/machinery/requests_console, ui_act_sendannouncement)
+/obj/machinery/requests_console/proc/ui_act_sendannouncement(datum/act/op/A)
 	if(!announcementConsole)
 		return FALSE
 	announcement.Announce(message, msg_sanitized = 1)
 	reset_message(1)
 	. = TRUE
 
-UI_ACT(/obj/machinery/requests_console, "department", ui_act_department, UI_ARG_TEXT("department"))
-UI_ACT_PROC(/obj/machinery/requests_console, ui_act_department)
+/obj/machinery/requests_console/proc/ui_act_department(datum/act/op/A, raw_department)
 	if(!message)
 		return FALSE
 	var/log_msg = message
@@ -181,7 +194,7 @@ UI_ACT_PROC(/obj/machinery/requests_console, ui_act_department)
 	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!MS.active)
 			continue
-		MS.send_rc_message(ckey(params["department"]), department, log_msg, msgStamped, msgVerified, priority)
+		MS.send_rc_message(ckey(raw_department), department, log_msg, msgStamped, msgVerified, priority)
 		pass = 1
 	if(pass)
 		screen = RCS_SENTPASS
@@ -192,9 +205,8 @@ UI_ACT_PROC(/obj/machinery/requests_console, ui_act_department)
 
 //Handle printing
 
-UI_ACT(/obj/machinery/requests_console, "print", ui_act_print, UI_ARG_NUM("print"))
-UI_ACT_PROC(/obj/machinery/requests_console, ui_act_print)
-	var/print_index = params["print"]
+/obj/machinery/requests_console/proc/ui_act_print(datum/act/op/A, print)
+	var/print_index = print
 	if(!print_index || print_index < 1 || print_index > length(message_log))
 		return
 	var/msg = LAZYACCESS(message_log, print_index)
@@ -209,9 +221,8 @@ UI_ACT_PROC(/obj/machinery/requests_console, ui_act_print)
 
 //Handle screen switching
 
-UI_ACT(/obj/machinery/requests_console, "setScreen", ui_act_setscreen, UI_ARG_NUM("setScreen"))
-UI_ACT_PROC(/obj/machinery/requests_console, ui_act_setscreen)
-	var/tempScreen = params["setScreen"]
+/obj/machinery/requests_console/proc/ui_act_setscreen(datum/act/op/A, setScreen)
+	var/tempScreen = setScreen
 	if(tempScreen == RCS_ANNOUNCE && !announcementConsole)
 		return
 	if(tempScreen == RCS_VIEWMSGS)
@@ -226,29 +237,31 @@ UI_ACT_PROC(/obj/machinery/requests_console, ui_act_setscreen)
 
 //Handle silencing the console
 
-UI_ACT(/obj/machinery/requests_console, "toggleSilent", ui_act_togglesilent)
-UI_ACT_PROC(/obj/machinery/requests_console, ui_act_togglesilent)
+/obj/machinery/requests_console/proc/ui_act_togglesilent(datum/act/op/A)
 	silent = !silent
 	. = TRUE
 
 			//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
 
-/datum/om/prompt/text/request_message
-	title = "Awaiting Input"
-	message = "Write your message:"
-	default = ""
-	requires = PROMPT_USABLE
-	/// The message priority from the UI (messages only).
+/// The question a message or an announcement is written in; the priority comes from the window (messages only).
+/datum/prompt/text/request_message
 	var/priority
 
-/obj/machinery/requests_console/proc/message_written(datum/om/prompt/text/request_message/ask)
-	var/new_message = ask.text
-	var/list/params = list("priority" = ask.priority)
+/// A question the console asked is still worth answering: the console stands and the person is next to it (a silicon works from anywhere).
+/obj/machinery/requests_console/proc/request_usable(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && !QDELETED(src) && (issilicon(M) || in_range(src, M))
+
+/obj/machinery/requests_console/proc/message_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/request_message/R = A.request
+	var/new_message = A.answer.answer_value
 	SStgui.update_uis(src)
 	if(new_message)
 		message = new_message
 		screen = RCS_MESSAUTH
-		switch(params["priority"])
+		switch(R.priority)
 			if(1)
 				priority = 1
 			if(2)
@@ -259,8 +272,10 @@ UI_ACT_PROC(/obj/machinery/requests_console, ui_act_togglesilent)
 		reset_message(1)
 	. = TRUE
 
-/obj/machinery/requests_console/proc/announcement_written(datum/om/prompt/text/request_message/ask)
-	var/new_message = ask.text
+/obj/machinery/requests_console/proc/announcement_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_message = A.answer.answer_value
 	SStgui.update_uis(src)
 	if(new_message)
 		message = new_message
@@ -295,20 +310,15 @@ UI_ACT_PROC(/obj/machinery/requests_console, ui_act_togglesilent)
 	return TRUE
 
 /obj/machinery/requests_console/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/text/request_department, PROC_REF(department_entered), default = department)
+	open_request(src, /datum/prompt/text, PROC_REF(department_entered), answerer = user, title = "Multitool-Request Console Interface", question = "What Department ID would you like to give this request console?", default = department, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/om/prompt/text/request_department
-	title = "Multitool-Request Console Interface"
-	message = "What Department ID would you like to give this request console?"
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/text/request_department/cancelled()
-	to_chat(answerer, "No input found. Please hang up and try your call again.")
-
-/obj/machinery/requests_console/proc/department_entered(datum/om/prompt/text/request_department/ask)
-	var/mob/user = ask.answerer
-	var/input = ask.text
+/obj/machinery/requests_console/proc/department_entered(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	if(!A.answer)
+		to_chat(user, "No input found. Please hang up and try your call again.")
+		return
+	var/input = A.answer.answer_value
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING

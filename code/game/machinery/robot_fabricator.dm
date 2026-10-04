@@ -67,51 +67,55 @@
 	cut_overlay("fab-load-metal")
 	inserting = FALSE
 
-DECLARE_UI(/obj/machinery/robotic_fabricator, "AncientDroneFab")
+CAPABILITIES(/obj/machinery/robotic_fabricator)
+	interface("AncientDroneFab")
+	op("build_l_arm", ui_act("build_l_arm"), then(PROC_REF(ui_act_build_l_arm)))
+	op("build_r_arm", ui_act("build_r_arm"), then(PROC_REF(ui_act_build_r_arm)))
+	op("build_l_leg", ui_act("build_l_leg"), then(PROC_REF(ui_act_build_l_leg)))
+	op("build_r_leg", ui_act("build_r_leg"), then(PROC_REF(ui_act_build_r_leg)))
+	op("build_chest", ui_act("build_chest"), then(PROC_REF(ui_act_build_chest)))
+	op("build_head", ui_act("build_head"), then(PROC_REF(ui_act_build_head)))
+	op("build_frame", ui_act("build_frame"), then(PROC_REF(ui_act_build_frame)))
+	extend(TAG_UI, needs(req(PROC_REF(fabricator_idle), because = MSG(robotic_fabricator/busy))))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 
-UI_DATA_REPLACE(/obj/machinery/robotic_fabricator, "merge:ui_data_obj_machinery_robotic_fabricator{operating:num,metal_amount:num}")
+MSG_DEF_SELF(robotic_fabricator/busy, "It is busy building something.")
 
-/// The computed part of /obj/machinery/robotic_fabricator's window data (declared on its UI_DATA row).
-/obj/machinery/robotic_fabricator/proc/ui_data_obj_machinery_robotic_fabricator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// A fabricator that is building something takes no new order.
+/obj/machinery/robotic_fabricator/proc/fabricator_idle(datum/act/op/A)
+	return !operating // ALLOW(reads): the fabricator's work is read when a button is pressed, never from a cached menu
+
+/// Whoever presses a button leaves their prints on the fabricator.
+/obj/machinery/robotic_fabricator/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
+
+/obj/machinery/robotic_fabricator/ui_data(datum/act/eval/A)
 	return list(
 		"operating" = operating,
 		"metal_amount" = metal_amount
 	)
 
-/obj/machinery/robotic_fabricator/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(operating)
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
 
-UI_ACT(/obj/machinery/robotic_fabricator, "build_l_arm", ui_act_build_l_arm)
-UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_l_arm)
+/obj/machinery/robotic_fabricator/proc/ui_act_build_l_arm(datum/act/op/A)
 	return try_start_building("/obj/item/robot_parts/l_arm", 20 SECONDS, 25000)
 
-UI_ACT(/obj/machinery/robotic_fabricator, "build_r_arm", ui_act_build_r_arm)
-UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_r_arm)
+/obj/machinery/robotic_fabricator/proc/ui_act_build_r_arm(datum/act/op/A)
 	return try_start_building("/obj/item/robot_parts/r_arm", 20 SECONDS, 25000)
 
-UI_ACT(/obj/machinery/robotic_fabricator, "build_l_leg", ui_act_build_l_leg)
-UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_l_leg)
+/obj/machinery/robotic_fabricator/proc/ui_act_build_l_leg(datum/act/op/A)
 	return try_start_building("/obj/item/robot_parts/l_leg", 20 SECONDS, 25000)
 
-UI_ACT(/obj/machinery/robotic_fabricator, "build_r_leg", ui_act_build_r_leg)
-UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_r_leg)
+/obj/machinery/robotic_fabricator/proc/ui_act_build_r_leg(datum/act/op/A)
 	return try_start_building("/obj/item/robot_parts/r_leg", 20 SECONDS, 25000)
 
-UI_ACT(/obj/machinery/robotic_fabricator, "build_chest", ui_act_build_chest)
-UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_chest)
+/obj/machinery/robotic_fabricator/proc/ui_act_build_chest(datum/act/op/A)
 	return try_start_building("/obj/item/robot_parts/chest", 35 SECONDS, 50000)
 
-UI_ACT(/obj/machinery/robotic_fabricator, "build_head", ui_act_build_head)
-UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_head)
+/obj/machinery/robotic_fabricator/proc/ui_act_build_head(datum/act/op/A)
 	return try_start_building("/obj/item/robot_parts/head", 35 SECONDS, 50000)
 
-UI_ACT(/obj/machinery/robotic_fabricator, "build_frame", ui_act_build_frame)
-UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_frame)
+/obj/machinery/robotic_fabricator/proc/ui_act_build_frame(datum/act/op/A)
 	return try_start_building("/obj/item/robot_parts/robot_suit", 60 SECONDS, 75000)
 
 /obj/machinery/robotic_fabricator/proc/try_start_building(build_type, build_time, build_cost)

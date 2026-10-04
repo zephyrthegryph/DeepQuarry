@@ -72,25 +72,25 @@
 	power_change() //Checks power and initial settings
 	. = ..()
 
-/obj/machinery/turretid/proc/isLocked(mob/user)
+MSG_DEF_SELF(turretid/panel_locked, "The controls are locked.")
+MSG_DEF_SELF(turretid/firewall, "There seems to be a firewall preventing you from accessing this device.")
+
+/// Why the panel's controls refuse `user` (a message type), or null when they answer: reads only.
+/obj/machinery/turretid/proc/lock_refusal(mob/user)
 	if(isrobot(user) || isAI(user))
-		if(ailock)
-			to_chat(user, span_notice("There seems to be a firewall preventing you from accessing this device."))
-			return TRUE
-		else
-			return FALSE
+		return ailock ? /datum/msg/turretid/firewall : null // ALLOW(reads): the firewall is read when a button is pressed, never from a cached menu
 
 	if(isobserver(user))
 		var/mob/observer/dead/D = user
-		if(D.can_admin_interact())
-			return FALSE
-		else
-			return TRUE
+		return D.can_admin_interact() ? null : /datum/msg/turretid/panel_locked
 
-	if(locked)
-		return TRUE
+	return locked ? /datum/msg/turretid/panel_locked : null
 
-	return FALSE
+/obj/machinery/turretid/proc/isLocked(mob/user)
+	var/why = lock_refusal(user)
+	if(why == /datum/msg/turretid/firewall)
+		to_chat(user, span_notice("There seems to be a firewall preventing you from accessing this device."))
+	return !!why
 
 /obj/machinery/turretid/declare_interactions(list/into)
 	into += list(
@@ -121,13 +121,12 @@
 		return TRUE
 	return FALSE
 
-DECLARE_EMAG(/obj/machinery/turretid, PROC_REF(on_emag), null, null)
-/obj/machinery/turretid/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(user, span_danger("You short out the turret controls' access analysis module."))
+/obj/machinery/turretid/proc/on_emag(datum/act/op/A)
+	to_chat(A.actor, span_danger("You short out the turret controls' access analysis module."))
 	set_emagged(TRUE)
 	set_locked(FALSE)
 	ailock = FALSE
-	return TRUE
+	return OP_OK
 
 /obj/machinery/turretid
 	silicon_use = SILICON_USE_UI
@@ -142,12 +141,32 @@ DECLARE_EMAG(/obj/machinery/turretid, PROC_REF(on_emag), null, null)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/turretid, "PortableTurret")
+CAPABILITIES(/obj/machinery/turretid)
+	interface("PortableTurret")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("lethal", ui_act("lethal"), then(PROC_REF(ui_act_lethal)))
+	op("authweapon", ui_act("authweapon"), then(PROC_REF(ui_act_authweapon)))
+	op("authaccess", ui_act("authaccess"), then(PROC_REF(ui_act_authaccess)))
+	op("authnorecord", ui_act("authnorecord"), then(PROC_REF(ui_act_authnorecord)))
+	op("autharrest", ui_act("autharrest"), then(PROC_REF(ui_act_autharrest)))
+	op("authxeno", ui_act("authxeno"), then(PROC_REF(ui_act_authxeno)))
+	op("authsynth", ui_act("authsynth"), then(PROC_REF(ui_act_authsynth)))
+	op("authall", ui_act("authall"), then(PROC_REF(ui_act_authall)))
+	op("authdown", ui_act("authdown"), then(PROC_REF(ui_act_authdown)))
+	extend(TAG_UI, needs(req(PROC_REF(controller_unlocked), because = PROC_REF(controller_lock_reason))))
+	emag(then(PROC_REF(on_emag)))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(turretid_emp))))
 
-UI_DATA_REPLACE(/obj/machinery/turretid, "merge:ui_data_obj_machinery_turretid{locked:unknown,on:num,targetting_is_configurable:unknown,lethal:num,lethal_is_configurable:num,check_weapons:unknown,neutralize_noaccess:unknown,one_access:bool,selectedAccess:list,access_is_configurable:bool,neutralize_norecord:num,neutralize_criminals:num,neutralize_nonsynth:unknown,neutralize_all:unknown,neutralize_unidentified:unknown,neutralize_down:unknown}")
+/// The window answers someone who has the panel's access.
+/obj/machinery/turretid/proc/controller_unlocked(datum/act/op/A)
+	return isnull(lock_refusal(A.actor))
 
-/// The computed part of /obj/machinery/turretid's window data (declared on its UI_DATA row).
-/obj/machinery/turretid/proc/ui_data_obj_machinery_turretid(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// Why the window refuses someone.
+/obj/machinery/turretid/proc/controller_lock_reason(datum/act/op/A)
+	return lock_refusal(A.actor) || /datum/msg/turretid/panel_locked
+
+/obj/machinery/turretid/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list(
 		"locked" = isLocked(user), // does the current user have access?
 		"on" = enabled,
@@ -168,84 +187,68 @@ UI_DATA_REPLACE(/obj/machinery/turretid, "merge:ui_data_obj_machinery_turretid{l
 	)
 	return data
 
-/obj/machinery/turretid/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(isLocked(ui.user))
-		return FALSE
-	return TRUE
 
-UI_ACT(/obj/machinery/turretid, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_power)
+/obj/machinery/turretid/proc/ui_act_power(datum/act/op/A)
 	. = TRUE
 	enabled = !enabled
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "lethal", ui_act_lethal)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_lethal)
+/obj/machinery/turretid/proc/ui_act_lethal(datum/act/op/A)
 	. = TRUE
 	if(lethal_is_configurable)
 		lethal = !lethal
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "authweapon", ui_act_authweapon)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_authweapon)
+/obj/machinery/turretid/proc/ui_act_authweapon(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_weapons = !check_weapons
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "authaccess", ui_act_authaccess)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_authaccess)
+/obj/machinery/turretid/proc/ui_act_authaccess(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_access = !check_access
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "authnorecord", ui_act_authnorecord)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_authnorecord)
+/obj/machinery/turretid/proc/ui_act_authnorecord(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_records = !check_records
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "autharrest", ui_act_autharrest)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_autharrest)
+/obj/machinery/turretid/proc/ui_act_autharrest(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_arrest = !check_arrest
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "authxeno", ui_act_authxeno)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_authxeno)
+/obj/machinery/turretid/proc/ui_act_authxeno(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_anomalies = !check_anomalies
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "authsynth", ui_act_authsynth)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_authsynth)
+/obj/machinery/turretid/proc/ui_act_authsynth(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_synth = !check_synth
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "authall", ui_act_authall)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_authall)
+/obj/machinery/turretid/proc/ui_act_authall(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
 	check_all = !check_all
 	updateTurrets()
 
-UI_ACT(/obj/machinery/turretid, "authdown", ui_act_authdown)
-UI_ACT_PROC(/obj/machinery/turretid, ui_act_authdown)
+/obj/machinery/turretid/proc/ui_act_authdown(datum/act/op/A)
 	. = TRUE
 	if(!(targetting_is_configurable))
 		return FALSE
@@ -293,9 +296,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, TYPE_PROC_REF(/atom, appearance
 		icon_state = "control_standby"
 		set_light(1.5, 1,"#003300")
 
-DAMAGE_REACTION(/obj/machinery/turretid, DAMAGE_EMP, PROC_REF(turretid_emp))
-/// An EMP on an active control panel disables its turrets for a while and scrambles its settings.
-/obj/machinery/turretid/proc/turretid_emp(datum/damage_packet/packet)
+/// An EMP on an active control panel disables its turrets for a while and scrambles its settings (before the hit lands; the hit goes on).
+/obj/machinery/turretid/proc/turretid_emp(datum/act/hit/emp/A)
 	if(enabled)
 		//if the turret is on, the EMP no matter how severe disables the turret for a while
 		//and scrambles its settings, with a slight chance of having an emag effect
@@ -310,6 +312,7 @@ DAMAGE_REACTION(/obj/machinery/turretid, DAMAGE_EMP, PROC_REF(turretid_emp))
 		updateTurrets()
 
 		after(src, rand(60, 600), PROC_REF(emp_reenable))
+	return HOOK_DECLINE
 
 /obj/machinery/turretid/proc/emp_reenable()
 	if(!enabled)
