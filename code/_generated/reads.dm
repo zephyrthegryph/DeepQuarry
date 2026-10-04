@@ -60,9 +60,21 @@
 	. = ..()
 	. += drawn_from(nameof(anchored))
 
+/obj/item/clothing/mask/chewable/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(wrapped))
+
+/obj/item/clothing/mask/smokable/ecig/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(active), nameof(brightness_on))
+
 /obj/item/light/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(base_state), nameof(status))
+
+/obj/item/material/ashtray/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(base_overlay), nameof(butts), nameof(max_butts))
 
 /obj/item/reagent_containers/cooking_container/generated_reads()
 	. = ..()

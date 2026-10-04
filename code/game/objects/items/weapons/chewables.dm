@@ -11,6 +11,8 @@
 	var/brand
 	var/wrapped = FALSE
 
+TRACKED(/obj/item/clothing/mask/chewable, wrapped)
+
 DECLARE_REAGENTS(/obj/item/clothing/mask/chewable, "chem_volume", null)
 
 /// TRUE while worn in the mask slot by a mob with a mouth.
@@ -18,24 +20,23 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable, "chem_volume", null)
 TRACKED(/obj/item/clothing/mask/chewable, chewing)
 CAPABILITIES(/obj/item/clothing/mask/chewable)
 	every(1 SECOND, then(PROC_REF(chewable_step)), when = nameof(chewing))
+	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(unwrapped)))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PROC_REF(chewable_self)))
-
-/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
-/obj/item/clothing/mask/chewable/proc/chewable_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using it in the hand unwraps it; the clothing's own self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/chewable/proc/unwrapped(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wrapped)
-		wrapped = FALSE
+		set_wrapped(FALSE)
 		to_chat(user, span_notice("You unwrap \the [name]."))
 		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER)
 		slot_flags = SLOT_EARS | SLOT_MASK
 		update_icon()
-	return FALSE
+	return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/chewable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/mask/chewable/appearance_overlays()
-	. = list()
+/obj/item/clothing/mask/chewable/draw(datum/look/look)
+	..()
 	if(wrapped)
-		. += "[initial(icon_state)]_wrapper"
+		look.overlay("[initial(icon_state)]_wrapper")
 
 /obj/item/clothing/mask/chewable/Initialize(mapload)
 	. = ..()
@@ -306,17 +307,20 @@ CAPABILITIES(/obj/item/storage/box/gum)
 				own_take_member(src, nameof(victims), F)
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(null, PROC_REF(lolli_item)))
+CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
+	op("stick_on", item(/obj/item/holder), passes(), then(PROC_REF(stuck_on)))
 
-/// Old attackby.
-/obj/item/clothing/mask/chewable/candy/lolli/proc/lolli_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// A small living thing in a holder can be stuck to the lollipop (unwrapped); the click goes on.
+/obj/item/clothing/mask/chewable/candy/lolli/proc/stuck_on(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/holder))
 		if(!(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)))
-			return FALSE
+			return OP_DECLINE
 
 		if(wrapped)
 			to_chat(user, span_warning("You cannot stick [W] to \the [src] without unwrapping it!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_OK
 
 		var/obj/item/holder/H = W
 
@@ -331,8 +335,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 
 		to_chat(user, span_notice("You stick [M] to \the [src]."))
 		to_chat(M, span_warning("[user] sticks you to \the [src]!"))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_OK
+	return OP_OK
 
 /obj/item/clothing/mask/chewable/candy/lolli/examine(mob/user)
 	. = ..()

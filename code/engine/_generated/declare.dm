@@ -7586,12 +7586,21 @@
 	into += entry_line(186)
 	into += list(global.op("changeling_mask_shred_verb", global.menu(), global.label("Shred Mask"), global.needs(global.carried()), global.then(PROC_REF(changeling_mask_shred_verb))))
 
-/// CAPABILITIES(/obj/item/clothing/mask/chewable) at code/game/objects/items/weapons/chewables.dm:19
+/// CAPABILITIES(/obj/item/clothing/mask/chewable) at code/game/objects/items/weapons/chewables.dm:21
 /obj/item/clothing/mask/chewable/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/chewables.dm", 19, /obj/item/clothing/mask/chewable)
-	into += entry_line(20)
+	into += entry_block("code/game/objects/items/weapons/chewables.dm", 21, /obj/item/clothing/mask/chewable)
+	into += entry_line(22)
 	into += list(global.every(1 SECOND, global.then(PROC_REF(chewable_step)), when = nameof(chewing)))
+	into += entry_line(23)
+	into += list(global.op("unwrap", global.in_hand(), global.label("Unwrap"), global.then(PROC_REF(unwrapped))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli) at code/game/objects/items/weapons/chewables.dm:310
+/obj/item/clothing/mask/chewable/candy/lolli/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/chewables.dm", 310, /obj/item/clothing/mask/chewable/candy/lolli)
+	into += entry_line(311)
+	into += list(global.op("stick_on", global.item(/obj/item/holder), global.passes(), global.then(PROC_REF(stuck_on))))
 
 /// CAPABILITIES(/obj/item/clothing/mask/emotions) at code/modules/clothing/masks/miscellaneous.dm:409
 /obj/item/clothing/mask/emotions/declared_entries(list/into)
@@ -7628,12 +7637,47 @@
 	into += entry_line(358)
 	into += list(global.op("paper_mask_design_self", global.in_hand(), global.label("Change design"), global.then(PROC_REF(paper_mask_design_self))))
 
-/// CAPABILITIES(/obj/item/clothing/mask/smokable/ecig) at code/game/objects/items/weapons/ecigs.dm:19
+/// CAPABILITIES(/obj/item/clothing/mask/smokable) at code/game/objects/items/weapons/cigs_lighters.dm:136
+/obj/item/clothing/mask/smokable/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cigs_lighters.dm", 136, /obj/item/clothing/mask/smokable)
+	into += entry_line(137)
+	into += list(global.every(2 SECONDS, global.then(PROC_REF(smokable_step)), when = nameof(lit)))
+	into += entry_line(138)
+	into += list(global.op("item_applied", global.item(/obj/item), global.passes(), global.when(global.req(PROC_REF(held_is_another))), global.then(PROC_REF(item_applied))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette) at code/game/objects/items/weapons/cigs_lighters.dm:359
+/obj/item/clothing/mask/smokable/cigarette/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cigs_lighters.dm", 359, /obj/item/clothing/mask/smokable/cigarette)
+	into += entry_line(360)
+	into += list(global.op("put_out", global.in_hand(), global.stance(I_HELP, I_DISARM, I_GRAB), global.then(PROC_REF(put_out))))
+	into += entry_line(361)
+	into += list(global.op("tread_out", global.in_hand(), global.stance(I_HURT), global.priority(OP_PRIORITY_ATTACK), global.then(PROC_REF(tread_out))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/smokable/ecig) at code/game/objects/items/weapons/ecigs.dm:33
 /obj/item/clothing/mask/smokable/ecig/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 19, /obj/item/clothing/mask/smokable/ecig)
-	into += entry_line(20)
+	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 33, /obj/item/clothing/mask/smokable/ecig)
+	into += entry_line(34)
 	into += list(global.owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge, starts = nameof(cartridge_type)))
+	into += entry_line(35)
+	into += list(global.every(2 SECONDS, global.then(PROC_REF(ecig_step)), when = nameof(active)))
+	into += entry_line(36)
+	into += list(global.on_change(nameof(ec_cartridge), ANY, global.then(PROC_REF(cartridge_changed))))
+	into += entry_line(37)
+	into += list(global.op("toggle", global.in_hand(), global.then(PROC_REF(toggled))))
+	into += entry_line(38)
+	into += list(global.op("eject_cartridge", global.hand(), global.ungated(), global.when(req_empty_hand()), global.label("Eject cartridge"), global.then(PROC_REF(cartridge_ejected))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/smokable/pipe) at code/game/objects/items/weapons/cigs_lighters.dm:504
+/obj/item/clothing/mask/smokable/pipe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cigs_lighters.dm", 504, /obj/item/clothing/mask/smokable/pipe)
+	into += entry_line(505)
+	into += list(global.op("put_out", global.in_hand(), global.stance(I_HELP, I_DISARM, I_GRAB), global.then(PROC_REF(put_out))))
+	into += entry_line(506)
+	into += list(global.op("empty_out", global.in_hand(), global.stance(I_HURT), global.priority(OP_PRIORITY_ATTACK), global.then(PROC_REF(empty_out))))
 
 /// CAPABILITIES(/obj/item/clothing/mask/surgical) at code/modules/clothing/masks/miscellaneous.dm:62
 /obj/item/clothing/mask/surgical/declared_entries(list/into)
@@ -8062,6 +8106,13 @@
 	into += entry_line(303)
 	into += list(global.op("flag_wave_self", global.in_hand(), global.label("Wave"), global.then(PROC_REF(flag_wave_self))))
 
+/// CAPABILITIES(/obj/item/flame) at code/game/objects/items/weapons/cigs_lighters.dm:21
+/obj/item/flame/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cigs_lighters.dm", 21, /obj/item/flame)
+	into += entry_line(22)
+	into += list(global.every(2 SECONDS, global.then(PROC_REF(flame_step)), when = nameof(lit)))
+
 /// CAPABILITIES(/obj/item/flame/candle) at code/game/objects/items/weapons/candle.dm:31
 /obj/item/flame/candle/declared_entries(list/into)
 	..(into)
@@ -8070,6 +8121,13 @@
 	into += list(global.op("snuff", global.in_hand(), global.then(PROC_REF(snuffed))))
 	into += entry_line(33)
 	into += list(global.op("light_from", global.item(/obj/item), global.passes(), global.when(global.req(PROC_REF(offers_flame))), global.then(PROC_REF(lit_from))))
+
+/// CAPABILITIES(/obj/item/flame/lighter) at code/game/objects/items/weapons/cigs_lighters.dm:717
+/obj/item/flame/lighter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cigs_lighters.dm", 717, /obj/item/flame/lighter)
+	into += entry_line(718)
+	into += list(global.op("toggle", global.in_hand(), global.then(PROC_REF(toggled))))
 
 /// CAPABILITIES(/obj/item/flamethrower) at code/game/objects/items/weapons/flamethrower.dm:34
 /obj/item/flamethrower/declared_entries(list/into)
@@ -8884,6 +8942,13 @@
 	into += entry_line(95)
 	into += list(global.op("material_interaction_item", global.item(/obj/item), global.label("Repair"), global.then(PROC_REF(material_interaction_item))))
 
+/// CAPABILITIES(/obj/item/material/ashtray) at code/game/objects/items/weapons/material/ashtray.dm:49
+/obj/item/material/ashtray/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/material/ashtray.dm", 49, /obj/item/material/ashtray)
+	into += entry_line(50)
+	into += list(global.op("add_butt", global.item(/obj/item), global.priority(global.above("material_interaction_item")), global.when(global.req(PROC_REF(held_is_another))), global.then(PROC_REF(butt_added))))
+
 /// CAPABILITIES(/obj/item/material/butterfly) at code/game/objects/items/weapons/material/knives.dm:47
 /obj/item/material/butterfly/declared_entries(list/into)
 	..(into)
@@ -9596,11 +9661,11 @@
 	into += entry_line(33)
 	into += list(global.op("squirt", global.at_target(/mob/living), global.label("Squirt into eyes"), global.begins(MSG(dropper/begin)), global.wait(2 SECONDS), global.needs(req_reagents(1, because = MSG(dropper/empty)), req_reagent_room(because = MSG(needle/target_full))), global.then(PROC_REF(squirted))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge) at code/game/objects/items/weapons/ecigs.dm:167
+/// CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge) at code/game/objects/items/weapons/ecigs.dm:196
 /obj/item/reagent_containers/ecig_cartridge/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 167, /obj/item/reagent_containers/ecig_cartridge)
-	into += entry_line(168)
+	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 196, /obj/item/reagent_containers/ecig_cartridge)
+	into += entry_line(197)
 	into += list(global.reagent_container( volume = nameof(volume), settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
 
 /// CAPABILITIES(/obj/item/reagent_containers/food) at code/modules/food/food.dm:18
@@ -9989,15 +10054,15 @@
 	into += entry_line(92)
 	into += list(global.op("snort", global.inputs(global.item(/obj/item/glass_extra/straw), global.item(/obj/item/reagent_containers/rollingpaper)), global.label("Snort it"), global.needs(global.req(PROC_REF(snorter_is_human), because = MSG(powder/not_flesh))), global.then(PROC_REF(snorted))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/rollingpaper) at code/game/objects/items/weapons/cigs_lighters.dm:580
+/// CAPABILITIES(/obj/item/reagent_containers/rollingpaper) at code/game/objects/items/weapons/cigs_lighters.dm:624
 /obj/item/reagent_containers/rollingpaper/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/cigs_lighters.dm", 580, /obj/item/reagent_containers/rollingpaper)
-	into += entry_line(581)
+	into += entry_block("code/game/objects/items/weapons/cigs_lighters.dm", 624, /obj/item/reagent_containers/rollingpaper)
+	into += entry_line(625)
 	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, sealed = TRUE, settable = FALSE, shows_contents = FALSE))
-	into += entry_line(587)
+	into += entry_line(631)
 	into += list(global.op("add", global.item(/obj/item/reagent_containers/food/snacks), global.label("Add it to the paper"), global.then(PROC_REF(plant_added))))
-	into += entry_line(588)
+	into += entry_line(632)
 	into += list(global.op("roll", global.in_hand(), global.label("Roll it"), global.then(PROC_REF(rolled))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/spray) at code/modules/reagents/reagent_containers/spray.dm:26
@@ -10972,11 +11037,11 @@
 	into += entry_line(28)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/cup, /obj/item/reagent_containers/food/drinks/tall, /obj/item/reagent_containers/food/drinks/grande, /obj/item/reagent_containers/food/drinks/venti))))
 
-/// CAPABILITIES(/obj/item/storage/box/gum) at code/game/objects/items/weapons/chewables.dm:255
+/// CAPABILITIES(/obj/item/storage/box/gum) at code/game/objects/items/weapons/chewables.dm:256
 /obj/item/storage/box/gum/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/chewables.dm", 255, /obj/item/storage/box/gum)
-	into += entry_line(256)
+	into += entry_block("code/game/objects/items/weapons/chewables.dm", 256, /obj/item/storage/box/gum)
+	into += entry_line(257)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/chewable/candy/gum, /obj/item/trash/spitgum))))
 
 /// CAPABILITIES(/obj/item/storage/box/handcuffs/fake) at code/game/objects/items/toys/toys.dm:2185
@@ -11030,11 +11095,11 @@
 	into += entry_line(345)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/monkeycube))))
 
-/// CAPABILITIES(/obj/item/storage/box/pocky) at code/game/objects/items/weapons/chewables.dm:364
+/// CAPABILITIES(/obj/item/storage/box/pocky) at code/game/objects/items/weapons/chewables.dm:368
 /obj/item/storage/box/pocky/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/chewables.dm", 364, /obj/item/storage/box/pocky)
-	into += entry_line(365)
+	into += entry_block("code/game/objects/items/weapons/chewables.dm", 368, /obj/item/storage/box/pocky)
+	into += entry_line(369)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky))))
 
 /// CAPABILITIES(/obj/item/storage/box/rhubarbcustard) at code/modules/food/food/snacks.dm:8271
@@ -11698,6 +11763,13 @@
 	into += entry_block("code/modules/mining/shelter_atoms.dm", 196, /obj/item/survivalcapsule/superpose)
 	into += entry_line(197)
 	into += list(global.op("superpose_capsule_verb_reset", global.menu(), global.label("Reset Active Pod"), global.needs(global.carried()), global.then(PROC_REF(superpose_capsule_verb_reset))))
+
+/// CAPABILITIES(/obj/item/syndie/c4explosive) at code/game/objects/items/weapons/syndie.dm:70
+/obj/item/syndie/c4explosive/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/syndie.dm", 70, /obj/item/syndie/c4explosive)
+	into += entry_line(71)
+	into += list(global.op("link_detonator", global.item(/obj/item/flame/lighter/zippo/c4detonator), global.passes(), global.then(PROC_REF(detonator_linked))))
 
 /// CAPABILITIES(/obj/item/t_scanner) at code/game/objects/items/devices/t_scanner.dm:26
 /obj/item/t_scanner/declared_entries(list/into)

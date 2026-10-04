@@ -5,7 +5,15 @@
 /// One step of an item's periodic work. The legacy periodic lane is not driven by the test clock, so the tests call the step the lane would (an adapter:
 /// only its body changes when the family moves to every()).
 /proc/hci2b_step(obj/item/I)
-	I.periodic_step()
+	if(istype(I, /obj/item/flame))
+		var/obj/item/flame/F = I
+		F.flame_step(null)
+	else if(istype(I, /obj/item/clothing/mask/smokable/ecig))
+		var/obj/item/clothing/mask/smokable/ecig/E = I
+		E.ecig_step(null)
+	else if(istype(I, /obj/item/clothing/mask/smokable))
+		var/obj/item/clothing/mask/smokable/S = I
+		S.smokable_step(null)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Matches, lighters, cigarettes, pipes, e-cigs
@@ -196,3 +204,44 @@
 	hci_click(H, A, butt)
 	settle()
 	TEST_ASSERT_EQUAL(butt.loc, A, "a butt is put in")
+
+/datum/unit_test/dq_hc_items/b_burning_steps_run_with_the_clock
+
+/datum/unit_test/dq_hc_items/b_burning_steps_run_with_the_clock/run_gate()
+	var/turf/T = tile(2, 2)
+	var/obj/item/flame/match/M = allocate(/obj/item/flame/match, T)
+	test_time(6 SECONDS)
+	TEST_ASSERT_EQUAL(M.smoketime, 5, "an unlit match does not burn")
+	M.light(null)
+	test_time(4 SECONDS)
+	TEST_ASSERT(M.smoketime < 5, "a lit match burns with the clock")
+	var/obj/item/clothing/mask/smokable/cigarette/C = allocate(/obj/item/clothing/mask/smokable/cigarette, T)
+	test_time(6 SECONDS)
+	TEST_ASSERT_EQUAL(C.smoketime, 300, "an unlit cigarette does not burn")
+	C.light("lit")
+	var/start = C.smoketime
+	test_time(6 SECONDS)
+	TEST_ASSERT(C.smoketime < start, "a lit cigarette burns with the clock")
+	C.update_icon()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(C.icon_state, "cig_on", "it looks lit")
+	C.quench()
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(C.icon_state, "cig_burnt", "a put out cigarette looks partly smoked")
+	TEST_ASSERT_EQUAL(C.item_state, "cig_burnt", "and is held that way")
+	for(var/obj/effect/decal/cleanable/ash/ash in T)
+		qdel(ash)
+
+/datum/unit_test/dq_hc_items/b_ecig_states_follow_the_cartridge
+
+/datum/unit_test/dq_hc_items/b_ecig_states_follow_the_cartridge/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/clothing/mask/smokable/ecig/deluxe/E = allocate(/obj/item/clothing/mask/smokable/ecig/deluxe, tile(2, 2))
+	settle()
+	TEST_ASSERT_EQUAL(E.icon_state, E.icon_off, "a loaded e-cig shows its off state")
+	TEST_ASSERT_EQUAL(E.item_state, E.icon_off, "and is held that way")
+	H.put_in_inactive_hand(E)
+	hci_click(H, E, null)
+	settle()
+	TEST_ASSERT_EQUAL(E.icon_state, E.icon_empty, "without a cartridge it shows the empty state")
+	TEST_ASSERT_EQUAL(E.item_state, E.icon_empty, "and is held that way")

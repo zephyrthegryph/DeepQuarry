@@ -16,12 +16,31 @@
 	var/icon_empty
 	var/ecig_colors = list(null, COLOR_DARK_GRAY, COLOR_RED_GRAY, COLOR_BLUE_GRAY, COLOR_GREEN_GRAY, COLOR_PURPLE_GRAY)
 
+/// Vapes (ecig_step) every 2 s while switched on (replaces the smokable's "lit").
+/obj/item/clothing/mask/smokable/ecig/var/active = 0
+
+/// Switching it on or off changes its in-hand and worn state (a draw never writes it).
+/obj/item/clothing/mask/smokable/ecig/proc/set_active(value)
+	if(active == value)
+		return FALSE
+	active = value
+	tracked_changed(src, nameof(active))
+	sync_item_state()
+	return TRUE
+
+SETTER(/obj/item/clothing/mask/smokable/ecig, active)
+
 CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
 	owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge, starts = nameof(cartridge_type))
+	every(2 SECONDS, then(PROC_REF(ecig_step)), when = nameof(active))
+	on_change(nameof(ec_cartridge), ANY, then(PROC_REF(cartridge_changed)))
+	op("toggle", in_hand(), then(PROC_REF(toggled)))
+	op("eject_cartridge", hand(), ungated(), when(req_empty_hand()), label("Eject cartridge"), then(PROC_REF(cartridge_ejected)))
 
-/// Vapes (periodic_step) every 2 s while switched on (replaces the smokable's "lit").
-OM_FIELD(/obj/item/clothing/mask/smokable/ecig, active, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/smokable/ecig, PERIODIC_SLOW, "active")
+// INIT: sets its in-hand and worn state from the cartridge the type table loads it with (a draw never writes it)
+/obj/item/clothing/mask/smokable/ecig/Initialize(mapload)
+	. = ..()
+	sync_item_state()
 
 /obj/item/clothing/mask/smokable/ecig/examine(mob/user)
 	. = ..()
@@ -76,7 +95,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/smokable/ecig, PERIODIC_SLOW, "ac
 	icon_empty = "pcigoff2"
 	icon_on = "pcigon"
 
-/obj/item/clothing/mask/smokable/ecig/periodic_step()
+/obj/item/clothing/mask/smokable/ecig/proc/ecig_step(datum/act/timer/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/C = loc
 		if (src == C.get_equipped_item(SLOT_ID_MASK) && C.check_has_mouth()) // if it's in the human/monkey mouth, transfer reagents to the mob
@@ -87,47 +106,56 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/smokable/ecig, PERIODIC_SLOW, "ac
 				return
 			ec_cartridge.reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.4) // Most of it is not inhaled... balance reasons.
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable/ecig, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/mask/smokable/ecig/appearance_overlays()
-	. = list()
-	if (active)
-		item_state = icon_on
-		icon_state = icon_on
-		set_light(brightness_on)
-	else if (ec_cartridge)
-		set_light(0)
-		item_state = icon_off
-		icon_state = icon_off
-	else
-		icon_state = icon_empty
-		item_state = icon_empty
-		set_light(0)
+/// A cartridge going in or out (or the first one made) changes its in-hand and worn state.
+/obj/item/clothing/mask/smokable/ecig/proc/cartridge_changed(datum/act/A)
+	sync_item_state()
+
+/// What it shows: on, off with a cartridge, or empty (its own states, not the smokable's).
+/obj/item/clothing/mask/smokable/ecig/proc/ecig_state()
+	if(active)
+		return icon_on
+	if(ec_cartridge)
+		return icon_off
+	return icon_empty
+
+/obj/item/clothing/mask/smokable/ecig/draw(datum/look/look)
+	..()
+	look.state(ecig_state())
+	if(active)
+		look.light(brightness_on)
+
+/obj/item/clothing/mask/smokable/ecig/state_suffix()
+	return ""
+
+/// The in-hand and worn state is the icon state it shows.
+/obj/item/clothing/mask/smokable/ecig/sync_item_state()
+	var/wanted = ecig_state()
+	if(item_state == wanted)
+		return
+	item_state = wanted
 	if(ismob(loc))
 		var/mob/living/M = loc
 		M.update_inv_wear_mask(0)
 		M.update_inv_l_hand(0)
 		M.update_inv_r_hand(1)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
-	INTERACT_SELF(null, PROC_REF(ecig_self)), \
-	INTERACT_ITEM(null, PROC_REF(ecig_item)), \
-	INTERACT_HAND_UNGATED("Eject cartridge", PROC_REF(ecig_hand)), \
-)
-
-/// Old attackby. It never called its parent, so it always answers (the smokable lighting never applied to e-cigs).
-/obj/item/clothing/mask/smokable/ecig/proc/ecig_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// A cartridge used on it is installed. It never lit from a flame (the smokable's lighting does not apply to e-cigs); the click goes on.
+/obj/item/clothing/mask/smokable/ecig/item_applied(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/reagent_containers/ecig_cartridge))
 		if (ec_cartridge)//can't add second one
 			to_chat(user, span_notice("A cartridge has already been installed."))
 		else//fits in new one
 			if(!move_into(src, nameof(src.ec_cartridge), I, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_OK
 			update_icon()
 			to_chat(user, span_notice("You insert [I] into [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
-/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
-/obj/item/clothing/mask/smokable/ecig/proc/ecig_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using it in the hand switches it on or off; the clothing's own self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/smokable/ecig/proc/toggled(datum/act/op/A)
+	var/mob/user = A.actor
 	if(active)
 		set_active(FALSE)
 		to_chat(user, span_notice("You turn off \the [src]. "))
@@ -135,23 +163,24 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 	else
 		if(!ec_cartridge)
 			to_chat(user, span_notice("You can't use it with no cartridge installed!."))
-			return FALSE
+			return OP_DECLINE
 		set_active(TRUE)
 		to_chat(user, span_notice("You turn on \the [src]. "))
 		update_icon()
-	return FALSE
+	return OP_DECLINE
 
-/// Old attack_hand: eject the cartridge.
-/obj/item/clothing/mask/smokable/ecig/proc/ecig_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// An empty hand on the held e-cig ejects the cartridge.
+/obj/item/clothing/mask/smokable/ecig/proc/cartridge_ejected(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() != src)//if being hold
-		return FALSE
+		return OP_DECLINE
 	if (ec_cartridge)
 		set_active(0)
 		user.put_in_hands(ec_cartridge)
 		to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
 		own_take(src, nameof(ec_cartridge))
 		update_icon()
-	return TRUE
+	return OP_OK
 
 MATERIAL_MIX(/obj/item/reagent_containers/ecig_cartridge, list(MAT_STEEL = 50, MAT_GLASS = 10))
 /obj/item/reagent_containers/ecig_cartridge

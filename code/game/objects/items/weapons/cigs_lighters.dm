@@ -14,9 +14,16 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 //For anything that can light stuff on fire
 /obj/item/flame
 
-/// Burns (periodic_step) every 2 s while lit.
-OM_FIELD(/obj/item/flame, lit, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/flame, PERIODIC_SLOW, "lit")
+/// Burns (flame_step) every 2 s while lit.
+/obj/item/flame/var/lit = 0
+TRACKED(/obj/item/flame, lit)
+
+CAPABILITIES(/obj/item/flame)
+	every(2 SECONDS, then(PROC_REF(flame_step)), when = nameof(lit))
+
+/// One burn step of a lit flame; each kind of flame overrides it with what it burns.
+/obj/item/flame/proc/flame_step(datum/act/timer/A)
+	return
 
 /obj/item/flame/is_hot()
 	return lit
@@ -37,7 +44,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/flame, PERIODIC_SLOW, "lit")
 	drop_sound = SFX_ITEMS_DROP_FOOD
 	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 
-/obj/item/flame/match/periodic_step()
+/obj/item/flame/match/flame_step(datum/act/timer/A)
 	if(isliving(loc))
 		var/mob/living/M = loc
 		M.ignite_mob()
@@ -100,20 +107,70 @@ DECLARE_PERIODIC_WHILE(/obj/item/flame, PERIODIC_SLOW, "lit")
 
 DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 
-/// Smokes (periodic_step) every 2 s while lit.
-OM_FIELD(/obj/item/clothing/mask/smokable, lit, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/smokable, PERIODIC_SLOW, "lit")
+/// Smokes (smokable_step) every 2 s while lit.
+/obj/item/clothing/mask/smokable/var/lit = 0
+TRACKED(/obj/item/clothing/mask/smokable, max_smoketime)
+
+/// Lighting or putting it out changes what it looks like worn and held: the in-hand and worn state follow it (a draw never writes them).
+/obj/item/clothing/mask/smokable/proc/set_lit(value)
+	if(lit == value)
+		return FALSE
+	lit = value
+	tracked_changed(src, nameof(lit))
+	sync_item_state()
+	return TRUE
+
+SETTER(/obj/item/clothing/mask/smokable, lit)
+
+/// Smoking it down changes how burnt it looks (and so its in-hand and worn state).
+/obj/item/clothing/mask/smokable/proc/set_smoketime(value)
+	if(smoketime == value)
+		return FALSE
+	smoketime = value
+	tracked_changed(src, nameof(smoketime))
+	sync_item_state()
+	return TRUE
+
+SETTER(/obj/item/clothing/mask/smokable, smoketime)
+
+CAPABILITIES(/obj/item/clothing/mask/smokable)
+	every(2 SECONDS, then(PROC_REF(smokable_step)), when = nameof(lit))
+	op("item_applied", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(item_applied)))
+
+/// A click with the held item on itself is the in-hand use, not an item applied to it.
+/obj/item/clothing/mask/smokable/proc/held_is_another(datum/act/op/A)
+	return A.held != src
+
+/// What it shows now, as a suffix of its base state: burning, partly smoked (a pipe stays as it is), or as new.
+/obj/item/clothing/mask/smokable/proc/state_suffix()
+	if(lit)
+		return "_on"
+	if(smoketime < max_smoketime && !is_pipe)
+		return "_burnt"
+	return ""
+
+/// The in-hand and worn state follows the look; mobs wearing or holding it redraw when it changes.
+/obj/item/clothing/mask/smokable/proc/sync_item_state()
+	var/wanted = "[initial(item_state)][state_suffix()]"
+	if(item_state == wanted)
+		return
+	item_state = wanted
+	if(ismob(loc))
+		var/mob/living/M = loc
+		M.update_inv_wear_mask(0)
+		M.update_inv_l_hand(0)
+		M.update_inv_r_hand(1)
 
 /obj/item/clothing/mask/smokable/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT // so it doesn't react until you light it
 	if(smoketime && !max_smoketime)
-		max_smoketime = smoketime
+		set_max_smoketime(smoketime)
 
 /obj/item/clothing/mask/smokable/proc/smoke(amount)
 	if(smoketime > max_smoketime)
-		smoketime = max_smoketime
-	smoketime -= amount
+		set_smoketime(max_smoketime)
+	set_smoketime(smoketime - amount)
 	smoke_reagents(src, amount)
 
 /// One puff of source's reagents: into the mouth of the human wearing it as a mask, else a little
@@ -128,7 +185,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/smokable, PERIODIC_SLOW, "lit")
 	else // else just remove some of the reagents
 		source.reagents.remove_any(REM)
 
-/obj/item/clothing/mask/smokable/periodic_step()
+/obj/item/clothing/mask/smokable/proc/smokable_step(datum/act/timer/A)
 	var/turf/location = get_turf(src)
 	smoke(1)
 	if(smoketime < 1)
@@ -137,25 +194,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/smokable, PERIODIC_SLOW, "lit")
 	if(location)
 		location.hotspot_expose(700, 5)
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/mask/smokable/appearance_overlays()
-	. = list()
-	if(lit)
-		icon_state = "[initial(icon_state)]_on"
-		item_state = "[initial(item_state)]_on"
-	else if(smoketime < max_smoketime)
-		if(is_pipe)
-			icon_state = initial(icon_state)
-			item_state = initial(item_state)
-		else
-			icon_state = "[initial(icon_state)]_burnt"
-			item_state = "[initial(item_state)]_burnt"
-	if(ismob(loc))
-		var/mob/living/M = loc
-		M.update_inv_wear_mask(0)
-		M.update_inv_l_hand(0)
-		M.update_inv_r_hand(1)
-	. += ..()
+/obj/item/clothing/mask/smokable/draw(datum/look/look)
+	..()
+	var/suffix = state_suffix()
+	if(suffix)
+		look.state("[initial(icon_state)][suffix]")
 
 /obj/item/clothing/mask/smokable/examine(mob/user)
 	. = ..()
@@ -235,10 +278,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, a
 				to_chat(M, span_notice("Your [name] goes out, and you empty the ash."))
 				play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			set_lit(0)
-			icon_state = initial(icon_state)
-			item_state = initial(item_state)
 			M.update_inv_wear_mask(0)
-			smoketime = 0
+			set_smoketime(0)
 			reagents.clear_reagents()
 			name = "empty [initial(name)]"
 
@@ -263,10 +304,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, a
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable, INTERACT_ITEM(null, PROC_REF(smokable_item)))
-
-/// Old attackby (ran its parent first; the clothing handling now runs before this candidate).
-/obj/item/clothing/mask/smokable/proc/smokable_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Something hot used on it lights it, and the click goes on. A kind of smokable that takes more overrides this (the cigar, the pipe, the e-cig).
+/obj/item/clothing/mask/smokable/proc/item_applied(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.is_hot())
 		var/text = matchmes
 		if(istype(W, /obj/item/flame/match))
@@ -283,7 +324,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable, INTERACT_ITEM(null, PROC_R
 		text = replacetext(text, "NAME", "[name]")
 		text = replacetext(text, "FLAME", "[W.name]")
 		light(text)
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/clothing/mask/smokable/water_act(amount)
 	if(amount >= 5)
@@ -315,24 +356,21 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba, null, 
 DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/cigar/havana, null, list(REAGENT_ID_NICOTINE = 6)) // 10 total
 DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/joint/blunt, null, list(REAGENT_ID_NICOTINE = 2)) // 4 total
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
-	INTERACT_SELF_AS(I_HELP, null, PROC_REF(cigarette_self)), \
-	INTERACT_SELF_AS(I_DISARM, null, PROC_REF(cigarette_self)), \
-	INTERACT_SELF_AS(I_GRAB, null, PROC_REF(cigarette_self)), \
-	INTERACT_SELF_AS(I_HURT, null, PROC_REF(cigarette_self)), \
-	INTERACT_ITEM(null, PROC_REF(cigarette_item)), \
-)
+CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
+	op("put_out", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(put_out)))
+	op("tread_out", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), then(PROC_REF(tread_out)))
 
-/// Old attackby: the smokable handling first (the old ..()), then its own.
-/obj/item/clothing/mask/smokable/cigarette/proc/cigarette_item(mob/user, obj/item/W, datum/interaction/interaction)
-	smokable_item(user, W, interaction)
-
+/// A cigarette takes an active energy sword's flame too, after what any smokable takes.
+/obj/item/clothing/mask/smokable/cigarette/item_applied(datum/act/op/A)
+	..()
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/melee/energy/sword))
 		var/obj/item/melee/energy/sword/S = W
 		if(S.active)
 			light(span_warning("[user] swings their [W], barely missing their nose. They light their [name] in the process."))
 
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/clothing/mask/smokable/cigarette/afterattack(obj/item/reagent_containers/glass/glass, mob/user as mob, proximity)
 	..()
@@ -348,17 +386,22 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 			else
 				to_chat(user, span_notice("[src] is full."))
 
-/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
-/obj/item/clothing/mask/smokable/cigarette/proc/cigarette_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using a lit cigarette in the hand puts it out. The clothing's own self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/smokable/cigarette/proc/put_out(datum/act/op/A)
+	var/mob/user = A.actor
 	if(lit == 1)
-		if(interaction.stance == I_HURT)
-			act_message(user, src, others = span_notice("%U% drops and treads on the lit [src], putting it out instantly."))
-			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
-			die(1)
-		else
-			act_message(user, src, others = span_notice("%U% puts out %T%."))
-			quench()
-	return FALSE
+		act_message(user, src, others = span_notice("%U% puts out %T%."))
+		quench()
+	return OP_DECLINE
+
+/// In the hurt stance the lit cigarette is dropped and trodden on.
+/obj/item/clothing/mask/smokable/cigarette/proc/tread_out(datum/act/op/A)
+	var/mob/user = A.actor
+	if(lit == 1)
+		act_message(user, src, others = span_notice("%U% drops and treads on the lit [src], putting it out instantly."))
+		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
+		die(1)
+	return OP_DECLINE
 
 ////////////
 // CIGARS //
@@ -425,16 +468,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 	desc = "A manky old cigar butt."
 	icon_state = "cigarbutt"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette/cigar, INTERACT_ITEM(null, PROC_REF(cigar_item)))
-
-/// Old attackby: the cigarette handling first (the old ..()), then its own.
-/obj/item/clothing/mask/smokable/cigarette/cigar/proc/cigar_item(mob/user, obj/item/W, datum/interaction/interaction)
-	cigarette_item(user, W, interaction)
-
+/// A cigar redraws the user's mask and hands after the cigarette handling.
+/obj/item/clothing/mask/smokable/cigarette/cigar/item_applied(datum/act/op/A)
+	..()
+	var/mob/user = A.actor
 	user.update_inv_wear_mask(0)
 	user.update_inv_l_hand(0)
 	user.update_inv_r_hand(1)
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /////////////////
 //SMOKING PIPES//
@@ -460,43 +501,46 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette/cigar, INTERACT_I
 	. = ..()
 	name = "empty [initial(name)]"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
-	INTERACT_SELF_AS(I_HELP, null, PROC_REF(pipe_self)), \
-	INTERACT_SELF_AS(I_DISARM, null, PROC_REF(pipe_self)), \
-	INTERACT_SELF_AS(I_GRAB, null, PROC_REF(pipe_self)), \
-	INTERACT_SELF_AS(I_HURT, null, PROC_REF(pipe_self)), \
-	INTERACT_ITEM(null, PROC_REF(pipe_item)), \
-)
+CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
+	op("put_out", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(put_out)))
+	op("empty_out", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), then(PROC_REF(empty_out)))
 
-/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
-/obj/item/clothing/mask/smokable/pipe/proc/pipe_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using a lit pipe in the hand puts it out. The clothing's own self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/smokable/pipe/proc/put_out(datum/act/op/A)
+	var/mob/user = A.actor
 	if(lit == 1)
-		if(interaction.stance == I_HURT)
-			act_message(user, src, others = span_notice("%U% empties the lit [src] on the floor!."))
-			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
-			die(1)
-		else
-			act_message(user, src, others = span_notice("%U% puts out %T%."))
-			quench()
-	return FALSE
+		act_message(user, src, others = span_notice("%U% puts out %T%."))
+		quench()
+	return OP_DECLINE
 
-/// Old attackby: the smokable handling first (the old ..()), then its own.
-/obj/item/clothing/mask/smokable/pipe/proc/pipe_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// In the hurt stance the lit pipe is emptied on the floor.
+/obj/item/clothing/mask/smokable/pipe/proc/empty_out(datum/act/op/A)
+	var/mob/user = A.actor
+	if(lit == 1)
+		act_message(user, src, others = span_notice("%U% empties the lit [src] on the floor!."))
+		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
+		die(1)
+	return OP_DECLINE
+
+/// A pipe takes what any smokable takes, and is packed with a dried plant (an active energy sword does nothing to it).
+/obj/item/clothing/mask/smokable/pipe/item_applied(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/melee/energy/sword))
-		return INTERACTION_HANDLED_PASS
+		return OP_OK
 
-	smokable_item(user, W, interaction)
+	..()
 
 	if (istype(W, /obj/item/reagent_containers/food/snacks))
 		var/obj/item/reagent_containers/food/snacks/grown/G = W
 		if (!G.dry)
 			to_chat(user, span_notice("[G] must be dried before you stuff it into [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_OK
 		if (smoketime)
 			to_chat(user, span_notice("[src] is already packed."))
-			return INTERACTION_HANDLED_PASS
-		max_smoketime = 1000
-		smoketime = 1000
+			return OP_OK
+		set_max_smoketime(1000)
+		set_smoketime(1000)
 		if(G.reagents)
 			G.reagents.trans_to_obj(src, G.reagents.total_volume)
 		name = "[G.name]-packed [initial(name)]"
@@ -518,7 +562,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
 	user.update_inv_wear_mask(0)
 	user.update_inv_l_hand(0)
 	user.update_inv_r_hand(1)
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/clothing/mask/smokable/pipe/cobpipe
 	name = "corn cob pipe"
@@ -667,7 +711,11 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 	/// Var used for detonator zippos
 
 /// Var used for detonator zippos
-OM_FIELD(/obj/item/flame/lighter, detonator_mode, 0, CHANGE_EXPLICIT)
+/obj/item/flame/lighter/var/detonator_mode = 0
+TRACKED(/obj/item/flame/lighter, detonator_mode)
+
+CAPABILITIES(/obj/item/flame/lighter)
+	op("toggle", in_hand(), then(PROC_REF(toggled)))
 
 // TODO: Remove this path from POIs and loose maps (it's no longer needed)
 /obj/item/flame/lighter/random
@@ -679,14 +727,13 @@ OM_FIELD(/obj/item/flame/lighter, detonator_mode, 0, CHANGE_EXPLICIT)
 	I.color = pick(available_colors)
 	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
-EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighter_self)))
-
-/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
-/obj/item/flame/lighter/proc/lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Using the lighter in the hand lights it or puts it out. Each kind of lighter overrides this; one that does not handle the use declines it, and the click goes on to the item's own use.
+/obj/item/flame/lighter/proc/toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(special_variant)
-		return FALSE
+		return OP_DECLINE
 	if(detonator_mode)
-		return FALSE
+		return OP_DECLINE
 	if(!lit)
 		set_lit(TRUE)
 		icon_state = "lighteron"
@@ -703,7 +750,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 
 		set_light(0)
 		update_icon()
-	return TRUE
+	return OP_OK
 
 /obj/item/flame/lighter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(lit == 1)
@@ -743,12 +790,11 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 	. = ..()
 	cut_overlays() // ALLOW(decl): removes the parent's random overlay. Prevents the Cheap Lighter overlay from appearing on this
 
-EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(zippo_self)))
-
-/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
-/obj/item/flame/lighter/zippo/proc/zippo_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// A zippo flips open and shut with its own states.
+/obj/item/flame/lighter/zippo/toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(detonator_mode)
-		return FALSE
+		return OP_DECLINE
 	if(!base_state)
 		base_state = icon_state
 	if(!lit)
@@ -767,7 +813,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 		act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing.")))
 
 		set_light(0)
-	return TRUE
+	return OP_OK
 
 //Here we add Zippo skins.
 
@@ -865,12 +911,11 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 	special_supermatter = TRUE
 
 // safe smzippo
-EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PROC_REF(sm_lighter_self)))
-
-/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
-/obj/item/flame/lighter/supermatter/proc/sm_lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// The hardlight supermatter zippo (the dangerous ones below override this).
+/obj/item/flame/lighter/supermatter/toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(special_supermatter)
-		return FALSE
+		return OP_DECLINE
 	if(!base_state)
 		base_state = icon_state
 	if(!lit)
@@ -911,7 +956,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 
 /obj/item/flame/lighter/supermatter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -933,17 +978,10 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 	else
 		..()
 
-/obj/item/flame/lighter/supermatter/periodic_step()
-	var/turf/location = get_turf(src)
-	if(location)
-		location.hotspot_expose(700, 5)
-	return
-
 // syndicate smzippo
-EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_SELF(null, PROC_REF(syndi_sm_lighter_self)))
-
-/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
-/obj/item/flame/lighter/supermatter/syndismzippo/proc/syndi_sm_lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// The phoron supermatter zippo.
+/obj/item/flame/lighter/supermatter/syndismzippo/toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!base_state)
 		base_state = icon_state
 	if(!lit)
@@ -982,7 +1020,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 
 /obj/item/flame/lighter/supermatter/syndismzippo/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -1005,17 +1043,16 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 	else
 		..()
 
-/obj/item/flame/lighter/periodic_step()
+/obj/item/flame/lighter/flame_step(datum/act/timer/A)
 	var/turf/location = get_turf(src)
 	if(location)
 		location.hotspot_expose(700, 5)
 	return
 
 // Experimental smzippo
-EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SELF(null, PROC_REF(exp_sm_lighter_self)))
-
-/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
-/obj/item/flame/lighter/supermatter/expsmzippo/proc/exp_sm_lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// The experimental supermatter lighter.
+/obj/item/flame/lighter/supermatter/expsmzippo/toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (!base_state)
 		base_state = icon_state
 	if (!lit)
@@ -1148,7 +1185,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/flame/lighter/supermatter/expsmzippo/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (lit == 1)
@@ -1166,12 +1203,6 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."))
 	else
 		..()
-
-/obj/item/flame/lighter/supermatter/expsmzippo/periodic_step()
-	var/turf/location = get_turf(src)
-	if (location)
-		location.hotspot_expose(700, 5)
-	return
 
 /// Lights up the turf the match landed on, then goes out.
 /obj/item/flame/match/proc/burn_out_where_dropped()

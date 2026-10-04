@@ -61,7 +61,7 @@ CAPABILITIES(/obj/item/flame/candle)
 		visible_message(flavor_text)
 		set_light(CANDLE_LUM)
 
-/obj/item/flame/candle/periodic_step()
+/obj/item/flame/candle/flame_step(datum/act/timer/A)
 	set_wax(wax - 1)
 	if(!wax)
 		if(istype(src.loc, /mob))
@@ -134,10 +134,10 @@ CAPABILITIES(/obj/item/flame/candle)
 	. = ..()
 	light(span_notice("\The [src] mysteriously lights itself!."))
 
-/obj/item/flame/candle/everburn/periodic_step()
-	// The permanent light has no fuel state to advance. Leaving it in SSobj also
+/obj/item/flame/candle/everburn/flame_step(datum/act/timer/A)
+	// The permanent light has no fuel state to advance. Burning its step as a lit candle
 	// exposed its turf as a 700 K hotspot forever, keeping whole atmos regions awake.
-	return PROCESS_KILL
+	return
 
-/obj/item/flame/candle/candelabra/everburn/periodic_step()
-	return PROCESS_KILL
+/obj/item/flame/candle/candelabra/everburn/flame_step(datum/act/timer/A)
+	return
