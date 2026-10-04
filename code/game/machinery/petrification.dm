@@ -179,9 +179,9 @@ CAPABILITIES(/obj/machinery/petrification)
 		return
 	switch(option)
 		if("tint")
-			om_ask(user, /datum/om/prompt/color, PROC_REF(tint_chosen), title = "Statue color", message = "Choose the color for the [identifier] to be:", default = tint, requires = PROMPT_USABLE)
+			open_request(src, /datum/prompt/color/statue_tint, PROC_REF(tint_chosen), answerer = user, title = "Statue color", question = "Choose the color for the [identifier] to be:", default = tint)
 		if("material","identifier","adjective")
-			om_ask(user, /datum/om/prompt/text/statue_option, PROC_REF(statue_text_entered), title = "Statue [option]", message = "What should the [option] be?", default = vars[option], option = option)
+			open_request(src, /datum/prompt/text/statue_option, PROC_REF(statue_text_entered), answerer = user, title = "Statue [option]", question = "What should the [option] be?", default = vars[option], option = option)
 		if("able_to_unpetrify", "discard_clothes")
 			vars[option] = !vars[option] // ALLOW(api): TGUI settings keyed by option name
 		if("target")
@@ -189,21 +189,26 @@ CAPABILITIES(/obj/machinery/petrification)
 			if (!length(targets))
 				popup_msg(user, "No targets within range. Make sure there is a humanoid being within a 3x3 metre square in front of the interface.")
 				return
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(petrify_target_chosen), title = "Petrification Target", message = "Choose the target.", choices = targets, requires = PROMPT_USABLE)
+			open_request(src, /datum/prompt/choice/statue_target, PROC_REF(petrify_target_chosen), answerer = user, title = "Petrification Target", question = "Choose the target.", choices = targets)
 
-/obj/machinery/petrification/proc/tint_chosen(datum/om/prompt/color/ask)
-	if (ask.picked_color)
-		tint = ask.picked_color
+/obj/machinery/petrification/proc/tint_chosen(datum/act/request/A)
+	if(A.answer?.answer_value)
+		tint = A.answer.answer_value
 
-/datum/om/prompt/text/statue_option
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_USABLE
+/datum/prompt/text/statue_option
+	max_len = MAX_NAME_LEN
+	timeout = 0
+	usable_state = "default"
+	recheck_on_open = TRUE
 	/// "material", "identifier" or "adjective".
 	var/option
 
-/obj/machinery/petrification/proc/statue_text_entered(datum/om/prompt/text/statue_option/ask)
+/obj/machinery/petrification/proc/statue_text_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/statue_option/ask = A.answer
 	var/option = ask.option
-	var/input = sanitizeSafe(ask.text, 25)
+	var/input = sanitizeSafe(ask.answer_value, 25)
 	if (length(input) <= 0)
 		return
 	if (option == "adjective")
@@ -223,11 +228,14 @@ CAPABILITIES(/obj/machinery/petrification)
 							input += "s"
 	vars[option] = input // ALLOW(api): TGUI settings keyed by option name
 
-/obj/machinery/petrification/proc/petrify_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/H = ask.choices[ask.choice]
+/obj/machinery/petrification/proc/petrify_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	var/mob/living/carbon/human/H = ask.choices[ask.answer_value]
 	if(!ishuman(H) || !is_valid_target(H))
 		return
-	open_request(src, /datum/prompt/choice/petrify_consent, PROC_REF(first_confirmed), answerer = H, operator = ask.answerer, question = "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.")
+	open_request(src, /datum/prompt/choice/petrify_consent, PROC_REF(first_confirmed), answerer = H, operator = A.request.answerer, question = "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.")
 
 /// The chosen target confirms twice; a no or a cancel at either step tells the operator (actor).
 /datum/prompt/choice/petrify_consent
@@ -312,3 +320,26 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 /// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/petrification/proc/target_ref() as /mob/living/carbon/human
 	return target
+
+/datum/prompt/color/statue_tint
+	timeout = 0
+	usable_state = "default"
+	recheck_on_open = TRUE
+
+/datum/prompt/color/statue_tint/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/color/statue_tint/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title || "Pick a color", default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker
+
+/// The old name-text normalization stripped tokens without truncating raw submissions.
+/datum/prompt/text/statue_option/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/choice/statue_target
+	timeout = 0
+	usable_state = "default"
+	recheck_on_open = TRUE
