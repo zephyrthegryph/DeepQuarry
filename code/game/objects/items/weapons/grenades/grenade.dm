@@ -40,16 +40,14 @@
 		else if(det_time == null)
 			. += "\The [src] is set for instant detonation."
 
-// EXTEND, not DECLARE: subtypes DECLARE item interactions of their own, which this must not replace.
-EXTEND_INTERACTIONS(/obj/item/grenade, \
-	INTERACT_SELF("Prime", PROC_REF(grenade_interaction_self)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(grenade_interaction_hand)), \
-)
+// Keep the inherited hand touch separate from subtype item interactions.
+EXTEND_INTERACTIONS(/obj/item/grenade, INTERACT_HAND_UNGATED(null, PROC_REF(grenade_interaction_hand)))
 
-/// Old attack_self. FALSE (special handling) moves on to a subtype's own self-use.
-/obj/item/grenade/proc/grenade_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+CAPABILITIES(/obj/item/grenade)
+	op("prime", in_hand(), when(cond_not(nameof(special_handling))), label("Prime"), then(PROC_REF(grenade_primed)))
+
+/obj/item/grenade/proc/grenade_primed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!active)
 		if(clown_check(user))
 			to_chat(user, span_warning("You prime \the [name]! [det_time/10] seconds!"))
@@ -59,7 +57,7 @@ EXTEND_INTERACTIONS(/obj/item/grenade, \
 			if(iscarbon(user))
 				var/mob/living/carbon/C = user
 				C.throw_mode_on()
-	return TRUE
+	return OP_OK
 
 /obj/item/grenade/proc/activate(mob/user as mob)
 	if(active)

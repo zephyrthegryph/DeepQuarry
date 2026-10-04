@@ -556,17 +556,17 @@ DECLARE_PERIODIC_WHILE(/obj/item/implant/death_alarm, PERIODIC_SLOW, "alarm_arme
 				a.autosay("[mobname] has died in Space!", "[mobname]'s Death Alarm")
 			else
 				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 			set_alarm_armed(FALSE)
 		if ("emp")
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			var/name = prob(50) ? t.name : pick(GLOB.teleportlocs)
 			a.autosay("[mobname] has died in [name]!", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 		else
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 			set_alarm_armed(FALSE)
 
 DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_emp))

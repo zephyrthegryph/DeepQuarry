@@ -65,7 +65,7 @@ UI_DATA(/datum/tgui_module/robot_ui, "merge:ui_data_datum_tgui_module_robot_ui{m
 	data["max_health"] = 100
 	data["light_color"] = R.robot_light_col
 
-	data["weapon_lock"] = !!om_timer_slot_pending(R, "weapon_lock")
+	data["weapon_lock"] = !!after_pending(R, "weapon_lock")
 
 	var/list/modules = list()
 	for(var/obj/item/I as anything in R.module.modules)
@@ -142,7 +142,7 @@ UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_toggle_component)
 UI_ACT(/datum/tgui_module/robot_ui, "toggle_module", ui_act_toggle_module, UI_ARG_REF("ref", null, /obj/item))
 UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_toggle_module)
 	var/mob/living/silicon/robot/R = host()
-	if(om_timer_slot_pending(R, "weapon_lock"))
+	if(after_pending(R, "weapon_lock"))
 		to_chat(ui.user, span_danger("Error: Modules locked."))
 		return
 	var/obj/item/module = params["ref"]

@@ -79,7 +79,6 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 
 DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_INSERT(/obj/item/cell/device/weapon, PROC_REF(interaction_item), "Insert cell"), \
 )
 
@@ -92,7 +91,11 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 		return TRUE
 	return FALSE
 
-/obj/item/radio_jammer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/radio_jammer)
+	op("power", in_hand(), label("Toggle subspace jammer"), then(PROC_REF(jammer_power_requested)))
+
+/obj/item/radio_jammer/proc/jammer_power_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	if(on)
 		turn_off(user)
 	else
@@ -100,6 +103,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 			turn_on(user)
 		else
 			to_chat(user,span_warning("\The [src] has no power source!"))
+	return OP_OK
 
 /obj/item/radio_jammer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!power_source)

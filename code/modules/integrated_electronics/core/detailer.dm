@@ -50,10 +50,10 @@ UI_ACT_PROC(/obj/item/integrated_electronics/detailer, ui_act_change_color)
 	update_icon()
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/integrated_electronics/detailer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/integrated_electronics/detailer)
+	op("controls", in_hand(), label("Open assembly detailer"), then(PROC_REF(detailer_controls_requested)))
 
-/// Old attack_self.
-/obj/item/integrated_electronics/detailer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/obj/item/integrated_electronics/detailer/proc/detailer_controls_requested(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 

@@ -39,12 +39,15 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	radio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/tvcamera)
+	op("controls", in_hand(), label("Open broadcast controls"), then(PROC_REF(broadcast_controls_opened)))
 
-/obj/item/tvcamera/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tvcamera/proc/broadcast_controls_opened(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	user.set_machine(src)
 	show_ui(user)
+	return OP_OK
 
 // show_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 

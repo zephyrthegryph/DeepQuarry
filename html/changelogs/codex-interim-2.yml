@@ -23,3 +23,5 @@ changes:
   - bugfix: "Native hand requirements update when an item moves between hands and worn slots within the same inventory."
   - code_imp: "Eyepatches, survival watches, concealed canes, taskmanagers, robotic equipment, smartguns and handheld instrument controls use native operations."
   - code_imp: "Console helpers use native ownership declarations, and dimensional armour effects reuse immutable theme templates."
+  - code_imp: "Migrated handheld research, medical, security and weapon controls to native inputs."
+  - bugfix: "Empty magazines no longer cause weapon appearance updates to fail."

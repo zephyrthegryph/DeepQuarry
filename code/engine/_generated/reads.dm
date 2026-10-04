@@ -406,6 +406,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/obj/item/trash/bowl::holds_plain_food" = list(0),
 	"/obj/item/universal_translator::language_supported" = list(0,
 		list(6, 0, 78)),
+	"/obj/item/xenoarch_multi_tool::operator_living" = list(0),
 	"/obj/machinery/access_button::button_allows" = list(0,
 		list(1, 0, 79),
 		list(1, 0, 80)),

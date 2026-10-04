@@ -355,15 +355,16 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 		return PROCESS_KILL
 	search_for_ghosts()
 
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/entrepreneur/emf)
+	op("scan", in_hand(), label("Read EMF scanner"), then(PROC_REF(emf_scan_requested)))
 
-/// Old attack_self.
-/obj/item/entrepreneur/emf/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/entrepreneur/emf/proc/emf_scan_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, scan_cooldown))
 		search_for_ghosts(user)
 	else
 		to_chat(user, span_warning("Your EMF scanner is recharging. The current reading is [emf]mG."))
-	return TRUE
+	return OP_OK
 
 /obj/item/entrepreneur/emf/proc/search_for_ghosts(mob/user)
 	var/turf/our_turf = get_turf(src)

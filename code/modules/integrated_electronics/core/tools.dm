@@ -16,6 +16,8 @@
 	var/datum/integrated_io/selected_io = null
 	var/mode = WIRE
 
+TRACKED(/obj/item/integrated_electronics/wirer, mode)
+
 APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 
 /obj/item/integrated_electronics/wirer/proc/wire(datum/integrated_io/io, mob/user)
@@ -25,7 +27,7 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 	if(mode == WIRE)
 		rel_set(src, nameof(selected_io), io)
 		to_chat(user, span_notice("You attach a data wire to \the [selected_io.holder()]'s [selected_io.name] data channel."))
-		mode = WIRING
+		set_mode(WIRING)
 		update_icon()
 	else if(mode == WIRING)
 		if(io == selected_io)
@@ -42,7 +44,7 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 		rel_add(io, nameof(io.linked), selected_io)
 
 		to_chat(user, span_notice("You connect \the [selected_io.holder()]'s [selected_io.name] to \the [io.holder()]'s [io.name]."))
-		mode = WIRE
+		set_mode(WIRE)
 		update_icon()
 		selected_io.holder().interact(user) // This is to update the UI.
 		rel_clear(src, nameof(selected_io))
@@ -54,7 +56,7 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 			rel_clear(src, nameof(selected_io))
 			return
 		to_chat(user, span_notice("You prepare to detach a data wire from \the [selected_io.holder()]'s [selected_io.name] data channel."))
-		mode = UNWIRING
+		set_mode(UNWIRING)
 		update_icon()
 		return
 
@@ -70,7 +72,7 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 			\the [io.holder()]'s [io.name]."))
 			selected_io.holder().interact(user) // This is to update the UI.
 			rel_clear(src, nameof(selected_io))
-			mode = UNWIRE
+			set_mode(UNWIRE)
 			update_icon()
 		else
 			to_chat(user, span_warning("\The [selected_io.holder()]'s [selected_io.name] and \the [io.holder()]'s \
@@ -78,28 +80,29 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 			return
 	return
 
-DECLARE_INTERACTIONS(/obj/item/integrated_electronics/wirer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/integrated_electronics/wirer)
+	op("mode", in_hand(), label("Switch wiring mode"), then(PROC_REF(wiring_mode_changed)))
 
-/// Old attack_self.
-/obj/item/integrated_electronics/wirer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_electronics/wirer/proc/wiring_mode_changed(datum/act/op/A)
+	var/mob/user = A.actor
 	switch(mode)
 		if(WIRE)
-			mode = UNWIRE
+			set_mode(UNWIRE)
 		if(WIRING)
 			if(selected_io)
 				to_chat(user, span_notice("You decide not to wire the data channel."))
 			rel_clear(src, nameof(selected_io))
-			mode = WIRE
+			set_mode(WIRE)
 		if(UNWIRE)
-			mode = WIRE
+			set_mode(WIRE)
 		if(UNWIRING)
 			if(selected_io)
 				to_chat(user, span_notice("You decide not to disconnect the data channel."))
 			rel_clear(src, nameof(selected_io))
-			mode = UNWIRE
+			set_mode(UNWIRE)
 	update_icon()
 	to_chat(user, span_notice("You set \the [src] to [mode]."))
-	return TRUE
+	return OP_OK
 
 #undef WIRE
 #undef WIRING

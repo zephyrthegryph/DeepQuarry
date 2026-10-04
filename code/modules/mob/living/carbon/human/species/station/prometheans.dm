@@ -186,7 +186,7 @@
 /datum/species/shapeshifter/promethean/handle_death(mob/living/carbon/human/H)
 	if(!H)
 		return
-	after(H, 1, TYPE_PROC_REF(/mob, gib))
+	after(H, 0.1 SECONDS, TYPE_PROC_REF(/mob, gib))
 
 /datum/species/shapeshifter/promethean/get_blood_colour(mob/living/carbon/human/H)
 	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
@@ -253,7 +253,7 @@
 	unobserve(owner, /datum/notice/moved, src)
 	unobserve(owner, /datum/notice/mob_equipped_item, src)
 	..()
-	if(om_timer_slot_pending(src, "still_timer"))
+	if(after_pending(src, "still_timer"))
 		om_cancel_timer_slot(src, "still_timer")
 
 /datum/trait_state/promethean_biology/proc/restart_stillness()

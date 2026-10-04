@@ -442,7 +442,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/
 	throwforce = 1  //Throwing or dropping the item deletes it.
 	throw_speed = 1
 	throw_range = 1
-	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such. //CHOMP Edit
+	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such.
 	flags = NOBLOODY
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	var/mob/living/creator
@@ -455,12 +455,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/
 
 	set_light(lrange, lpower, lcolor)
 
-EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_REF(blade_interaction_self)))
+CAPABILITIES(/obj/item/melee/energy/blade)
+	op("dismiss", in_hand(), label("Dismiss energy blade"), then(PROC_REF(blade_dismiss_requested)))
 
-/// Old attack_self (the parent's self-use does nothing for a blade: special handling).
-/obj/item/melee/energy/blade/proc/blade_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.drop_from_inventory(src)
-	expire(1)
+/obj/item/melee/energy/blade/proc/blade_dismiss_requested(datum/act/op/A)
+	A.actor.drop_from_inventory(src)
+	expire(0.1 SECONDS)
+	return OP_OK
 
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.

@@ -18,15 +18,13 @@
 
 CAPABILITIES(/obj/item/starcaster_news)
 	owns_one(nameof(loaded_article_owned), /datum/computer_file/data/news_article)
+	op("read_news", in_hand(), then(PROC_REF(reader_selected)), opens_ui())
 
 
 
-DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/obj/item/starcaster_news/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.set_machine(src)
-	tgui_interact(user) //Activates tgui. Bless tgui.
-	return
+/obj/item/starcaster_news/proc/reader_selected(datum/act/op/A)
+	A.actor.set_machine(src)
+	return OP_OK
 
 DECLARE_UI(/obj/item/starcaster_news, "StarcasterCh")
 

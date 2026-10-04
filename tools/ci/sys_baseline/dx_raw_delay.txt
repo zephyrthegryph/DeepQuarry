@@ -193,7 +193,6 @@ dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	
 dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 10)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
 dx_raw_delay	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	COOLDOWN_START(src, last_special, 50)
-dx_raw_delay	code/modules/mob/living/carbon/human/species/station/prometheans.dm	after(H, 1, TYPE_PROC_REF(/mob, gib))
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	after(src, 3, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK))) // ALLOW(decl): conditional, extra args
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	after(src, 1, PROC_REF(finish_survival_gear), with = list(H)) //Let their real nif load if they have one
 dx_raw_delay	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	COOLDOWN_START(src, last_special, 600)
@@ -243,7 +242,6 @@ dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	af
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/gateway/imperion.dm	after(src, 1.5, PROC_REF(microsingularity_second), with = list(target, prob(50) ? /obj/item/projectile/bullet/imperionblaster : /obj/item/projectile/bullet/imperionspear))
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm	after(src, 5, PROC_REF(lunge_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/mechanical/cyber_horror.dm	after(src, 5, PROC_REF(do_special_attack_2), with = list(A))
-dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	after(src, 1, PROC_REF(yeet), with = list(am))
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/vore/cryptdrake.dm	after(src, 5, PROC_REF(do_special_attack_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/vore/frog.dm	after(src, 20, PROC_REF(chargeend), with = list(A))
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm	after(src, 20, PROC_REF(chargeend), with = list(A))

@@ -24,10 +24,12 @@ OM_FIELD(/obj/item/t_scanner, on, 0, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/t_scanner, PERIODIC_SLOW, "on")
 APPEARANCE_TEMPLATE(/obj/item/t_scanner, "t-ray{on}")
 
-DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/t_scanner)
+	op("power", in_hand(), label("Toggle T-ray scanner"), then(PROC_REF(scanner_power_requested)))
 
-/obj/item/t_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/t_scanner/proc/scanner_power_requested(datum/act/op/A)
 	set_active(!on)
+	return OP_OK
 
 /obj/item/t_scanner/proc/set_active(active)
 	set_on(active)

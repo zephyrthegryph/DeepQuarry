@@ -13,7 +13,7 @@
 		else
 			a.autosay("PAI \"[src]\" has died in [t.name]!", "PAI [src]'s Death Alarm")
 		paiDA = FALSE // no repeats we died already
-		qdel(a)
+		consume(a)
 	release_vore_contents()
 	close_up(TRUE)
 	if(!card)

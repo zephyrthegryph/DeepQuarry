@@ -22,7 +22,6 @@
 
 DECLARE_INTERACTIONS(/obj/item/implantpad, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
@@ -52,12 +51,8 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 	return INTERACTION_HANDLED_PASS
 
 
-// TGUI migration. attack_self opens ImplantPad.tsx; the
-// Topic tracking_id stepper moves to tgui_act.
-/// Old attack_self.
-/obj/item/implantpad/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+CAPABILITIES(/obj/item/implantpad)
+	op("inspect_implant", in_hand(), opens_ui())
 
 DECLARE_UI(/obj/item/implantpad, "ImplantPad", UI_TITLE("Implant Mini-Computer"))
 

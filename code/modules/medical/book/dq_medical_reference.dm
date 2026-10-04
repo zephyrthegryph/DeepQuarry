@@ -30,11 +30,8 @@
 	libcategory = "Reference"
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/book/dq_medical_reference, INTERACT_USE("Read", PROC_REF(interaction_read_reference)))
-
-/// Old attack_self.
-/obj/item/book/dq_medical_reference/proc/interaction_read_reference(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
+CAPABILITIES(/obj/item/book/dq_medical_reference)
+	op("read_reference", in_hand(), label("Read"), opens_ui())
 
 DECLARE_UI_STATE(/obj/item/book/dq_medical_reference, GLOB.tgui_physical_state)
 
