@@ -28,7 +28,7 @@
 				P.event_idremoved(1)
 
 /// Runs its programs while on; off, it sleeps until enable_computer().
-/obj/item/modular_computer/periodic_step()
+/obj/item/modular_computer/proc/modular_computer_step(datum/act/timer/A)
 	if(computer_broken())
 		shutdown_computer()
 		return 0

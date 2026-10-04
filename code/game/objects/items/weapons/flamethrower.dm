@@ -35,6 +35,7 @@ CAPABILITIES(/obj/item/flamethrower)
 	owns_one(nameof(igniter), /obj/item/assembly/igniter)
 	owns_one(nameof(ptank), /obj/item/tank/phoron)
 	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool)
+	every(2 SECONDS, then(PROC_REF(flamethrower_step)), when = nameof(lit))
 
 /obj/item/flamethrower/Initialize(mapload)
 	. = ..()
@@ -50,10 +51,10 @@ CAPABILITIES(/obj/item/flamethrower/full)
 	status = TRUE
 
 /// On or off: while lit it heats its turf every 2 s.
-OM_FIELD(/obj/item/flamethrower, lit, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/flamethrower, PERIODIC_SLOW, "lit")
+/obj/item/flamethrower/var/lit = FALSE
+TRACKED(/obj/item/flamethrower, lit)
 
-/obj/item/flamethrower/periodic_step()
+/obj/item/flamethrower/proc/flamethrower_step(datum/act/timer/A)
 	var/turf/location = loc
 	if(istype(location, /mob/))
 		var/mob/living/M = location

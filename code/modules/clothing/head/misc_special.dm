@@ -128,10 +128,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/welding, \
 	body_parts_covered = HEAD
 	special_handling = TRUE
 
-OM_FIELD(/obj/item/clothing/head/cakehat, onfire, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/cakehat, PERIODIC_SLOW, "onfire")
+/obj/item/clothing/head/cakehat/var/onfire = FALSE
+TRACKED(/obj/item/clothing/head/cakehat, onfire)
 
-/obj/item/clothing/head/cakehat/periodic_step()
+/obj/item/clothing/head/cakehat/proc/cakehat_step(datum/act/timer/A)
 	var/turf/location = src.loc
 	if(istype(location, /mob/))
 		var/mob/living/carbon/human/M = location
@@ -143,6 +143,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/cakehat, PERIODIC_SLOW, "onfire")
 
 CAPABILITIES(/obj/item/clothing/head/cakehat)
 	op("cakehat_light_self", in_hand(), label("Light"), then(PROC_REF(cakehat_light_self)))
+	every(2 SECONDS, then(PROC_REF(cakehat_step)), when = nameof(onfire))
 
 /// Old attack_self.
 /obj/item/clothing/head/cakehat/proc/cakehat_light_self(datum/act/op/A)
@@ -273,8 +274,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, TYPE_PROC_REF(/atom, appe
 	var/brainloss_cost = 3 // Whenever it activates, inflict this much brainloss on the wearer, as its not good for the mind to wear things that manipulate it.
 
 /// Put on a sentient wearer's head (and not yet dropped): it watches the wearer's tension.
-OM_FIELD(/obj/item/clothing/head/psy_crown, crown_worn, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/psy_crown, PERIODIC_SLOW, "crown_worn")
+/obj/item/clothing/head/psy_crown/var/crown_worn = FALSE
+TRACKED(/obj/item/clothing/head/psy_crown, crown_worn)
+CAPABILITIES(/obj/item/clothing/head/psy_crown)
+	every(2 SECONDS, then(PROC_REF(psy_crown_step)), when = nameof(crown_worn))
 
 /obj/item/clothing/head/psy_crown/proc/activate_ability(mob/living/wearer)
 	COOLDOWN_START(src, cooldown, cooldown_duration)
@@ -303,7 +306,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/psy_crown, PERIODIC_SLOW, "crown_
 		if(flavor_drop)
 			to_chat(user, flavor_drop)
 
-/obj/item/clothing/head/psy_crown/periodic_step()
+/obj/item/clothing/head/psy_crown/proc/psy_crown_step(datum/act/timer/A)
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(COOLDOWN_FINISHED(src, cooldown) && L.is_sentient() && L.get_tension() >= tension_threshold)

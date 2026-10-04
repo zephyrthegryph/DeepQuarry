@@ -26,7 +26,6 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 
 /// The shuttle this console sent is in flight: prison_process() counts it down every half second.
 TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/computer/prison_shuttle, 0.5 SECONDS, prison_process, "in_flight")
 
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
@@ -66,6 +65,7 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	interface("PrisonShuttleConsole", title = "Prison Shuttle")
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
+	every(0.5 SECONDS, then(PROC_REF(prison_process)), when = nameof(in_flight))
 
 /obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 
 
 /// The prison shuttle in flight: counts down every half second, then arrives.
-/obj/machinery/computer/prison_shuttle/proc/prison_process()
+/obj/machinery/computer/prison_shuttle/proc/prison_process(datum/act/timer/A)
 	if(GLOB.prison_shuttle_time - world.timeofday > 0)
 		var/ticksleft = GLOB.prison_shuttle_time - world.timeofday
 

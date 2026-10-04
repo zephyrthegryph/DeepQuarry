@@ -7,8 +7,10 @@
 	var/robotic_brain = FALSE
 
 /// TRUE while it assists a brain and watches for it being ripped out; a meltdown ends it.
-OM_FIELD(/obj/item/implant/neural, monitoring_brain, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/implant/neural, PERIODIC_SLOW, "monitoring_brain")
+/obj/item/implant/neural/var/monitoring_brain = FALSE
+TRACKED(/obj/item/implant/neural, monitoring_brain)
+CAPABILITIES(/obj/item/implant/neural)
+	every(2 SECONDS, then(PROC_REF(neural_step)), when = nameof(monitoring_brain))
 
 /obj/item/implant/neural/post_implant(mob/source)
 	if(ishuman(source))
@@ -29,7 +31,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/implant/neural, PERIODIC_SLOW, "monitoring_brai
 		to_chat(my_brain().owner, span_critical("You feel a pressure in your mind as something is ripped away."))
 	..()
 
-/obj/item/implant/neural/periodic_step()
+/obj/item/implant/neural/proc/neural_step(datum/act/timer/A)
 	if(my_brain() && part)
 		if(my_brain().loc != part.loc)
 			to_chat(my_brain().owner, span_critical("You feel a pressure in your mind as something is ripped away."))

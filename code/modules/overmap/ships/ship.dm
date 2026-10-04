@@ -85,11 +85,12 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
 /// Mirror of "not still": speed is a list mutated in place, so adjust_speed() (its only writer)
 /// publishes the start/stop transition through this field.
-OM_FIELD_TYPED(/obj/effect/overmap/visitable/ship, tmp, under_way, FALSE, CHANGE_EXPLICIT)
+/obj/effect/overmap/visitable/ship/var/tmp/under_way = FALSE
+TRACKED(/obj/effect/overmap/visitable/ship, under_way)
 
 /// Under way (not still).
-OM_DERIVE_FIELD(/obj/effect/overmap/visitable/ship, is_moving, list("under_way"))
-DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_moving")
+CAPABILITIES(/obj/effect/overmap/visitable/ship)
+	every(1 SECOND, then(PROC_REF(ship_step)), when = nameof(under_way))
 
 /obj/effect/overmap/visitable/ship/proc/is_moving()
 	return under_way
@@ -197,7 +198,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 /obj/effect/overmap/visitable/ship/proc/accelerate(direction, accel_limit)
 	return
 
-/obj/effect/overmap/visitable/ship/periodic_step(wait)
+/obj/effect/overmap/visitable/ship/proc/ship_step(datum/act/timer/A)
 	adjust_speed(-speed[1], -speed[2])
 
 // If we get moved, update our internal tracking to account for it

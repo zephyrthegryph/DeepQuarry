@@ -20,9 +20,11 @@
 	var/recharge_rate = 4
 	var/charge_tick = 0
 
-OM_FIELD(/obj/item/gun/magic, can_charge, TRUE, CHANGE_EXPLICIT)
-/// Regains charges while it can charge.
-DECLARE_PERIODIC_WHILE(/obj/item/gun/magic, PERIODIC_SLOW, "can_charge")
+/obj/item/gun/magic/var/can_charge = TRUE
+TRACKED(/obj/item/gun/magic, can_charge)
+CAPABILITIES(/obj/item/gun/magic)
+	/// Regains charges while it can charge.
+	every(2 SECONDS, then(PROC_REF(magic_step)), when = nameof(can_charge))
 
 /obj/item/gun/magic/consume_next_projectile(mob/user)
 	if(checks_antimagic && locate_within(user, /obj/item/nullrod)) return null
@@ -37,7 +39,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magic, PERIODIC_SLOW, "can_charge")
 	. = ..()
 	charges = max_charges
 
-/obj/item/gun/magic/periodic_step()
+/obj/item/gun/magic/proc/magic_step(datum/act/timer/A)
 	if (charges >= max_charges)
 		charge_tick = 0
 		return

@@ -464,12 +464,14 @@ CAPABILITIES(/obj/item/form_printer)
 	COOLDOWN_DECLARE(flash_refresh_cooldown)	//When the flash count clears after the last flash
 
 /// If the shield is on (off while it recovers from an overload).
-OM_FIELD(/obj/item/borg/combat/shield, active, TRUE, CHANGE_EXPLICIT)
+/obj/item/borg/combat/shield/var/active = TRUE
+TRACKED(/obj/item/borg/combat/shield, active)
 /// Counter for how many times the shield has been flashed.
-OM_FIELD(/obj/item/borg/combat/shield, flash_count, 0, CHANGE_EXPLICIT)
+/obj/item/borg/combat/shield/var/flash_count = 0
+TRACKED(/obj/item/borg/combat/shield, flash_count)
 /// Derived field: an overload or a flash count is pending recovery.
-OM_DERIVE_FIELD(/obj/item/borg/combat/shield, recovering, list("active", "flash_count"))
-DECLARE_PERIODIC_WHILE(/obj/item/borg/combat/shield, PERIODIC_SLOW, "recovering")
+CAPABILITIES(/obj/item/borg/combat/shield)
+	every(2 SECONDS, then(PROC_REF(shield_step)), when = cond_any(cond_not(nameof(active)), nameof(flash_count)))
 
 /obj/item/borg/combat/shield/proc/recovering()
 	return !active || flash_count
@@ -480,7 +482,7 @@ CAPABILITIES(/obj/item/borg/combat/shield)
 
 /// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
 /// or an overload starts it); otherwise it sleeps.
-/obj/item/borg/combat/shield/periodic_step()
+/obj/item/borg/combat/shield/proc/shield_step(datum/act/timer/A)
 	if(active)
 		if(flash_count && COOLDOWN_FINISHED(src, flash_refresh_cooldown))
 			set_flash_count(0)

@@ -30,16 +30,17 @@ CAPABILITIES(/obj/item/suit_cooling_unit)
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/cell), label("Insert cell"), then(PROC_REF(interaction_item)))
+	every(2 SECONDS, then(PROC_REF(suit_cooling_unit_step)), when = nameof(on))
 
 /obj/item/suit_cooling_unit/ui_action_click(mob/user, actiontype)
 	toggle(user)
 
 
 /// Is it turned on?
-OM_FIELD(/obj/item/suit_cooling_unit, on, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/suit_cooling_unit, PERIODIC_SLOW, "on")
+/obj/item/suit_cooling_unit/var/on = 0
+TRACKED(/obj/item/suit_cooling_unit, on)
 
-/obj/item/suit_cooling_unit/periodic_step()
+/obj/item/suit_cooling_unit/proc/suit_cooling_unit_step(datum/act/timer/A)
 	if (!cell)
 		turn_off()
 		return

@@ -6,11 +6,14 @@
 	icon_state = "shock"
 
 /// Percent of visibility, 0 is visible, 1 is fully invisible.
-OM_FIELD(/obj/item/borg/cloak, cloak_strength, 0.5, CHANGE_EXPLICIT)
+/obj/item/borg/cloak/var/cloak_strength = 0.5
+TRACKED(/obj/item/borg/cloak, cloak_strength)
 /// If the cloak is on.
-OM_FIELD(/obj/item/borg/cloak, active, FALSE, CHANGE_EXPLICIT)
-/// Draws power while cloaked at a non-zero strength.
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/borg/cloak, PERIODIC_SLOW, list("active", "cloak_strength"))
+/obj/item/borg/cloak/var/active = FALSE
+TRACKED(/obj/item/borg/cloak, active)
+CAPABILITIES(/obj/item/borg/cloak)
+	/// Draws power while cloaked at a non-zero strength.
+	every(2 SECONDS, then(PROC_REF(cloak_step)), when = cond_all(nameof(active), nameof(cloak_strength)))
 
 CAPABILITIES(/obj/item/borg/cloak)
 	op("set_level", in_hand(), then(PROC_REF(cloak_ask_level)))
@@ -29,7 +32,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	toggle_cloak(user)
 	return
 
-/obj/item/borg/cloak/periodic_step()
+/obj/item/borg/cloak/proc/cloak_step(datum/act/timer/A)
 	if(!isliving(src.loc)) //It's not currently in our active modules.
 		set_active(FALSE)
 		if(isrobot(loc.loc)) //The robot

@@ -11,9 +11,8 @@
 	var/active_force = 55
 	var/inactive_force = 10
 
-OM_FIELD(/obj/item/chainsaw, on, FALSE, CHANGE_EXPLICIT)
-/// Burns fuel every 2 s while running.
-DECLARE_PERIODIC_WHILE(/obj/item/chainsaw, PERIODIC_SLOW, "on")
+/obj/item/chainsaw/var/on = FALSE
+TRACKED(/obj/item/chainsaw, on)
 
 /obj/item/chainsaw/Initialize(mapload)
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
@@ -63,6 +62,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/chainsaw, PERIODIC_SLOW, "on")
 
 CAPABILITIES(/obj/item/chainsaw)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	/// Burns fuel every 2 s while running.
+	every(2 SECONDS, then(PROC_REF(chainsaw_step)), when = nameof(on))
 
 /// Old attack_self.
 /obj/item/chainsaw/proc/interaction_self(datum/act/op/A)
@@ -117,7 +118,7 @@ CAPABILITIES(/obj/item/chainsaw)
 	to_chat(user, span_notice("Don't move while you're refilling the chainsaw."))
 
 /// Burns fuel every 2 s while running (declared above); off, it sleeps.
-/obj/item/chainsaw/periodic_step()
+/obj/item/chainsaw/proc/chainsaw_step(datum/act/timer/A)
 	if(get_fuel() > 0)
 		reagents.remove_reagent(REAGENT_ID_FUEL, 1)
 		play_sfx(src, SFX_WEAPONS_CHAINSAW_TURNOFF, volume = 15)

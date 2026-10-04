@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Periodic work converted from DECLARE_PERIODIC_WHILE / DECLARE_REPEAT to every(): a type-level every() with a tracked-var gate parks while idle and wakes on the change"
