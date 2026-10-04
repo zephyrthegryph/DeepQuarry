@@ -285,6 +285,9 @@ CAPABILITIES(/datum/xenochimera)
 /mob/living/carbon/human/proc/reconstitute_form() //Scree's race ability.in exchange for: No cloning.
 	set name = "Reconstitute Form"
 	set category = VERB_CAT_ABILITIES_XENOCHIMERA
+	return reconstitute_form_stage(list())
+
+/mob/living/carbon/human/proc/reconstitute_form_stage(list/answers)
 	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(!xc)
 		return
@@ -293,19 +296,28 @@ CAPABILITIES(/datum/xenochimera)
 		return
 	// Sanity is mostly handled in chimera_regenerate()
 	if(stat == DEAD)
-		var/confirm = rerun_ask(src, "a1", PROC_REF(reconstitute_form), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to regenerate your corpse? This process can take up to thirty minutes. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", title = "Confirm Regeneration", choices = list("Yes", "No"))
+		var/confirm = answers["a1"]
+		if(!("a1" in answers))
+			open_request(src, /datum/prompt/choice/xenochimera_review, PROC_REF(reconstitute_form_answered), answerer = src, answers = answers, answer_key = "a1", question = "Are you sure you want to regenerate your corpse? This process can take up to thirty minutes. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", title = "Confirm Regeneration", choices = list("Yes", "No"))
+			return
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
 			xc.chimera_regenerate()
 	else if(quickcheckuninjured())
-		var/confirm = rerun_ask(src, "a2", PROC_REF(reconstitute_form), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to regenerate? As you are uninjured this will only take 30 seconds. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", title = "Confirm Regeneration", choices = list("Yes", "No"))
+		var/confirm = answers["a2"]
+		if(!("a2" in answers))
+			open_request(src, /datum/prompt/choice/xenochimera_review, PROC_REF(reconstitute_form_answered), answerer = src, answers = answers, answer_key = "a2", question = "Are you sure you want to regenerate? As you are uninjured this will only take 30 seconds. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", title = "Confirm Regeneration", choices = list("Yes", "No"))
+			return
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
 			xc.chimera_regenerate()
 	else
-		var/confirm = rerun_ask(src, "a3", PROC_REF(reconstitute_form), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to completely reconstruct your form? This process can take up to fifteen minutes, depending on how hungry you are, and you will be unable to move. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot", title = "Confirm Regeneration", choices = list("Yes", "No"))
+		var/confirm = answers["a3"]
+		if(!("a3" in answers))
+			open_request(src, /datum/prompt/choice/xenochimera_review, PROC_REF(reconstitute_form_answered), answerer = src, answers = answers, answer_key = "a3", question = "Are you sure you want to completely reconstruct your form? This process can take up to fifteen minutes, depending on how hungry you are, and you will be unable to move. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot", title = "Confirm Regeneration", choices = list("Yes", "No"))
+			return
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
@@ -391,6 +403,9 @@ CAPABILITIES(/datum/xenochimera)
 /mob/living/carbon/human/proc/hatch()
 	set name = "Hatch"
 	set category = VERB_CAT_ABILITIES_XENOCHIMERA
+	return hatch_stage(list())
+
+/mob/living/carbon/human/proc/hatch_stage(list/answers)
 	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(!xc)
 		return
@@ -398,7 +413,10 @@ CAPABILITIES(/datum/xenochimera)
 		return //Hwhat?
 
 	// Default is use internal record, even if closes menu
-	var/reload_slot = rerun_ask(src, "a4", PROC_REF(hatch), args, /datum/om/prompt/choice/alert, message = "Regenerate from your current form, or from the appearance of your current character slot(This will not change your current species or traits.)", title = "Regenerate Form", choices = list("Current Form", "From Slot"), cancel_answer = "Current Form")
+	var/reload_slot = answers["a4"]
+	if(!("a4" in answers))
+		open_request(src, /datum/prompt/choice/xenochimera_review, PROC_REF(hatch_answered), answerer = src, answers = answers, answer_key = "a4", question = "Regenerate from your current form, or from the appearance of your current character slot(This will not change your current species or traits.)", title = "Regenerate Form", choices = list("Current Form", "From Slot"), cancel_default = "Current Form")
+		return
 	if(isnull(reload_slot))
 		return
 
@@ -416,7 +434,10 @@ CAPABILITIES(/datum/xenochimera)
 			return
 		from_slot = "You'll hatch using [client.prefs.read_preference(/datum/preference/name/real_name)]'s appearance"
 
-	var/confirm = rerun_ask(src, "a5", PROC_REF(hatch), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to hatch right now? This will be very obvious to anyone in view. [from_slot]! Are you sure?", title = "Confirm Regeneration", choices = list("Yes", "No"))
+	var/confirm = answers["a5"]
+	if(!("a5" in answers))
+		open_request(src, /datum/prompt/choice/xenochimera_review, PROC_REF(hatch_answered), answerer = src, answers = answers, answer_key = "a5", question = "Are you sure you want to hatch right now? This will be very obvious to anyone in view. [from_slot]! Are you sure?", title = "Confirm Regeneration", choices = list("Yes", "No"))
+		return
 	if(isnull(confirm))
 		return
 	if(confirm == "Yes")
@@ -527,3 +548,41 @@ CAPABILITIES(/datum/xenochimera)
 /// Removes the xenochimera state datum, if any.
 /mob/living/carbon/human/proc/remove_xenochimera()
 	own_clear(src, nameof(xenochimera), OWN_DELETE)
+
+/// A current-state replay answer; closing the source question keeps the old Current Form default.
+/datum/prompt/choice/xenochimera_review
+	timeout = 0
+	buttons = TRUE
+	var/list/answers
+	var/answer_key
+	var/cancel_default
+
+/mob/living/carbon/human/proc/reconstitute_form_answered(datum/act/request/A)
+	var/datum/prompt/choice/xenochimera_review/ask = A.request
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value) && !isnull(ask.cancel_default)))
+		return
+	var/datum/result/result = safe_call(PROC_REF(reconstitute_form_answer_apply), A)
+	if(!result.ok)
+		stack_trace("xenochimera reconstitute_form choice: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/mob/living/carbon/human/proc/reconstitute_form_answer_apply(datum/act/request/A)
+	var/datum/prompt/choice/xenochimera_review/ask = A.request
+	ask.answers[ask.answer_key] = A.answer ? ask.answer_value : ask.cancel_default
+	return reconstitute_form_stage(ask.answers)
+
+/mob/living/carbon/human/proc/hatch_answered(datum/act/request/A)
+	var/datum/prompt/choice/xenochimera_review/ask = A.request
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value) && !isnull(ask.cancel_default)))
+		return
+	var/datum/result/result = safe_call(PROC_REF(hatch_answer_apply), A)
+	if(!result.ok)
+		stack_trace("xenochimera hatch choice: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/mob/living/carbon/human/proc/hatch_answer_apply(datum/act/request/A)
+	var/datum/prompt/choice/xenochimera_review/ask = A.request
+	ask.answers[ask.answer_key] = A.answer ? ask.answer_value : ask.cancel_default
+	return hatch_stage(ask.answers)
