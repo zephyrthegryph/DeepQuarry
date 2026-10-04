@@ -30,6 +30,8 @@
 	abstract_type = /datum/unit_test/dq_hc_tgui
 	var/list/hct_windows
 	var/list/hct_made
+	/// The map's contact levels before a test widened them (a list holding the old list).
+	var/list/hct_saved_levels
 
 /datum/unit_test/dq_hc_tgui/Run()
 	test_driver_begin()
@@ -40,6 +42,9 @@
 		if(!QDELETED(ui))
 			qdel(ui)
 	hct_windows = null
+	if(hct_saved_levels)
+		using_map.contact_levels = hct_saved_levels[1]
+		hct_saved_levels = null
 	for(var/datum/D as anything in hct_made)
 		if(!QDELETED(D))
 			qdel(D)
@@ -374,3 +379,66 @@
 	var/datum/tgui_state/LS = interface_state(L) || L.tgui_state(H)
 	TEST_ASSERT(LS != GLOB.tgui_default_state, "the admin law manager has an admin state")
 	TEST_ASSERT(L.tgui_status(H, LS) < STATUS_INTERACTIVE, "a player cannot work the admin law manager")
+
+// ---- batch 3: communications console (COMM_* are local to communications.dm: authentication 0 none, 2 captain; screens 1 main, 2 status) ----
+
+/// A communications console whose user may log in as the captain, on a level the station's contact range covers.
+/datum/unit_test/dq_hc_tgui/proc/hct_comms()
+	if(!hct_saved_levels)
+		hct_saved_levels = list(using_map.contact_levels)
+		using_map.contact_levels = using_map.contact_levels.Copy() + run_loc_floor_bottom_left.z
+	var/datum/tgui_module/communications/M = hct_track(new /datum/tgui_module/communications(hct_host()))
+	M.using_access = list(ACCESS_HEADS, ACCESS_CAPTAIN)
+	return M
+
+/datum/unit_test/dq_hc_tgui/comms_needs_login
+/datum/unit_test/dq_hc_tgui/comms_needs_login/run_gate()
+	var/datum/tgui_module/communications/M = hct_comms()
+	var/mob/living/carbon/human/H = hct_actor()
+	press(H, M, "status")
+	TEST_ASSERT_NOTEQUAL(M.menu_state, 2, "nothing works before logging in")
+	M.authenticated = 2 // the legacy window has no working login button: its "auth" action has no handler (see intended_changes.md)
+	press(H, M, "status")
+	TEST_ASSERT_EQUAL(M.menu_state, 2, "the status screen opens once logged in")
+	press(H, M, "main")
+	TEST_ASSERT_EQUAL(M.menu_state, 1, "the main screen opens")
+
+/datum/unit_test/dq_hc_tgui/comms_status_messages
+/datum/unit_test/dq_hc_tgui/comms_status_messages/run_gate()
+	var/datum/tgui_module/communications/M = hct_comms()
+	var/mob/living/carbon/human/H = hct_actor()
+	press(H, M, "setmsg1")
+	TEST_ASSERT_NULL(M.stat_msg1, "a line is not asked for before logging in")
+	M.authenticated = 2
+	press(H, M, "setmsg1")
+	TEST_ASSERT(p2cl_has_question(H), "line 1 is asked for")
+	p2cl_answer(H, "Hello station")
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(M.stat_msg1, "Hello station", "line 1 is set")
+	TEST_ASSERT_EQUAL(M.menu_state, 2, "and the status screen shows")
+	press(H, M, "setmsg2")
+	p2cl_answer(H, "Second line")
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(M.stat_msg2, "Second line", "line 2 is set")
+	press(H, M, "setmsg1")
+	p2cl_answer(H, "", TRUE)
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(M.stat_msg1, "Hello station", "a cancelled question changes nothing")
+
+/datum/unit_test/dq_hc_tgui/comms_shuttle_question
+/datum/unit_test/dq_hc_tgui/comms_shuttle_question/run_gate()
+	var/datum/tgui_module/communications/M = hct_comms()
+	var/mob/living/carbon/human/H = hct_actor()
+	press(H, M, "callshuttle")
+	TEST_ASSERT(!p2cl_has_question(H), "the shuttle is not offered before logging in")
+	M.authenticated = 2
+	press(H, M, "callshuttle")
+	TEST_ASSERT(p2cl_has_question(H), "calling the shuttle is confirmed first")
+	p2cl_answer(H, FALSE)
+	test_time(10 SECONDS)
+	TEST_ASSERT(!SSemergency_shuttle.online(), "a no calls nothing")
+	press(H, M, "announce")
+	TEST_ASSERT(p2cl_has_question(H), "an announcement is asked for")
+	p2cl_answer(H, "x", TRUE)
+	test_time(10 SECONDS)
+	TEST_ASSERT(COOLDOWN_FINISHED(M, message_cooldown), "a cancelled announcement costs no cooldown")
