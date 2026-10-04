@@ -247,3 +247,131 @@
 	TEST_ASSERT(S.density, "the stake can be pushed again")
 	TEST_ASSERT(!X.density, "the target is not an obstacle")
 	TEST_ASSERT_EQUAL(H.get_active_hand(), X, "the target is in the hand that took it")
+
+/// A window button as the player presses it (the engine's UI input first; a legacy window's tgui_act when the host has no op for it).
+/proc/hci_ui(mob/actor, datum/host, action, list/args)
+	var/datum/op_result/result = test_ui(actor, host, action, args || list())
+	if(!isnull(result))
+		return result
+	var/datum/tgui/ui = new(null, host, "UiTest")
+	ui.status = STATUS_INTERACTIVE
+	ui.user = actor
+	return host.tgui_act(action, args || list(), ui)
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Candles
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_items/candle_use_snuffs_and_flame_lights
+
+/datum/unit_test/dq_hc_items/candle_use_snuffs_and_flame_lights/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/flame/candle/C = allocate(/obj/item/flame/candle, tile(2, 2))
+	var/obj/item/flame/lighter/L = allocate(/obj/item/flame/lighter, tile(2, 2))
+	TEST_ASSERT(!C.lit, "starts unlit")
+	hci_click(H, C, L)
+	settle()
+	TEST_ASSERT(!C.lit, "an unlit lighter does not light it")
+	L.set_lit(TRUE)
+	hci_click(H, C, L)
+	settle()
+	TEST_ASSERT(C.lit, "a lit lighter lights it")
+	C.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(C.icon_state, "candle1_lit", "a lit fresh candle shows its lit state")
+	hci_click(H, C, C)
+	settle()
+	TEST_ASSERT(!C.lit, "using a lit candle in hand snuffs it")
+	C.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(C.icon_state, "candle1", "an unlit candle shows its plain state")
+
+/datum/unit_test/dq_hc_items/candelabra_look_follows_wax_and_flame
+
+/datum/unit_test/dq_hc_items/candelabra_look_follows_wax_and_flame/run_gate()
+	var/obj/item/flame/candle/candelabra/C = allocate(/obj/item/flame/candle/candelabra, tile(2, 2))
+	C.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(C.icon_state, "candelabra", "plain")
+	C.set_lit(TRUE)
+	C.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(C.icon_state, "candelabra_lit", "lit")
+	C.wax = 0
+	C.update_icon()
+	settle()
+	TEST_ASSERT_EQUAL(C.icon_state, "candelabra_melted", "melted")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Contraband package, telecrystal, empty sandbags
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_items/contraband_unwraps_into_hands
+
+/datum/unit_test/dq_hc_items/contraband_unwraps_into_hands/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/contraband/B = allocate(/obj/item/contraband, tile(2, 2))
+	B.w_class = ITEMSIZE_SMALL
+	hci_click(H, B, B)
+	settle()
+	TEST_ASSERT(QDELETED(B), "the package is used up")
+	TEST_ASSERT(H.get_active_hand(), "what was inside is in the hand that held the package")
+	qdel(H.get_active_hand())
+
+/datum/unit_test/dq_hc_items/telecrystal_use_without_mind_keeps_stack
+
+/datum/unit_test/dq_hc_items/telecrystal_use_without_mind_keeps_stack/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/stack/telecrystal/T = allocate(/obj/item/stack/telecrystal, tile(2, 2), 10)
+	hci_click(H, T, T)
+	settle()
+	TEST_ASSERT_EQUAL(T.amount, 10, "a user who takes no telecrystals leaves the stack whole")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Wiki book and implant pad
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_items/wiki_book_open_wiki_button_is_accepted
+
+/datum/unit_test/dq_hc_items/wiki_book_open_wiki_button_is_accepted/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/book/manual/wiki/engineering_hacking/B = allocate(/obj/item/book/manual/wiki/engineering_hacking, tile(2, 2))
+	hci_ui(H, B, "open_wiki")
+	settle()
+	TEST_ASSERT(!QDELETED(B), "the button does nothing to the book without a client")
+
+/datum/unit_test/dq_hc_items/implantpad_takes_case_in_and_out
+
+/datum/unit_test/dq_hc_items/implantpad_takes_case_in_and_out/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/implantpad/P = allocate(/obj/item/implantpad, tile(2, 2))
+	var/obj/item/implantcase/tracking/C = allocate(/obj/item/implantcase/tracking, tile(2, 2))
+	hci_click(H, P, C)
+	settle()
+	TEST_ASSERT_EQUAL(P.case, C, "a case clicked onto the pad goes in")
+	TEST_ASSERT_EQUAL(P.icon_state, "implantpad-1", "the pad shows it holds one")
+	H.put_in_inactive_hand(P)
+	hci_click(H, P, null)
+	settle()
+	TEST_ASSERT_NULL(P.case, "an empty hand on a carried pad takes the case out")
+	TEST_ASSERT_EQUAL(H.get_active_hand(), C, "the case is in that hand")
+
+/datum/unit_test/dq_hc_items/implantpad_tracking_id_steps_and_clamps
+
+/datum/unit_test/dq_hc_items/implantpad_tracking_id_steps_and_clamps/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/implantpad/P = allocate(/obj/item/implantpad, tile(2, 2))
+	var/obj/item/implantcase/tracking/C = allocate(/obj/item/implantcase/tracking, tile(2, 2))
+	hci_click(H, P, C)
+	settle()
+	var/obj/item/implant/tracking/T = C.imp
+	T.id = 5
+	hci_ui(H, P, "tracking_id", list("delta" = 3))
+	settle()
+	TEST_ASSERT_EQUAL(T.id, 8, "the stepper moves the id")
+	hci_ui(H, P, "tracking_id", list("delta" = -100))
+	settle()
+	TEST_ASSERT_EQUAL(T.id, 1, "the id is clamped to 1")
+	hci_ui(H, P, "tracking_id", list("delta" = 5000))
+	settle()
+	TEST_ASSERT_EQUAL(T.id, 1000, "the id is clamped to 1000")
