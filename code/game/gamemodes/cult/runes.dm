@@ -177,27 +177,36 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
 
 		else
-			om_ask(target, /datum/om/prompt/confirm/cult_convert, PROC_REF(convert_answered), waiting = waiting_for_input)
+			open_request(src, /datum/prompt/choice/cult_convert, PROC_REF(convert_answered), answerer = target, waiting = waiting_for_input)
 
 	if(target in converting)
 		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1)) //proc once every 10 seconds
 
 /// The convert rune's offer. Closing it is resisting; `waiting` is the rune's asked-already list.
-/datum/om/prompt/confirm/cult_convert
+/datum/prompt/choice/cult_convert
 	title = "Submit to Nar'Sie"
-	message = "Do you want to join the cult?"
-	yes_text = "Submit"
-	no_text = "Resist"
-	no_first = TRUE
-	answer_on_no = TRUE
-	cancel_answer = "Resist"
+	question = "Do you want to join the cult?"
+	choices = list("Resist", "Submit")
+	buttons = TRUE
+	timeout = 0
 	var/list/waiting
 
-/obj/effect/rune/proc/convert_answered(datum/om/prompt/confirm/cult_convert/ask)
+/obj/effect/rune/proc/convert_answered(datum/act/request/A)
+	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value)))
+		return
+	if(QDELETED(A.request.answerer))
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_convert_answered), A)
+	if(!result.ok)
+		stack_trace("Cult conversion request: [result.error]")
+	return result.value
+
+/obj/effect/rune/proc/apply_convert_answered(datum/act/request/A)
+	var/datum/prompt/choice/cult_convert/ask = A.request
 	var/mob/living/carbon/target = ask.answerer
 	var/list/waiting_for_input = ask.waiting
 	waiting_for_input[target] = 0
-	if(ask.yes) //choosing 'Resist' does nothing of course.
+	if(A.answer && A.answer.answer_value == "Submit") //choosing 'Resist' does nothing of course.
 		GLOB.cult.add_antagonist(target.mind)
 		rel_remove(src, nameof(converting), target)
 		target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
@@ -656,12 +665,22 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 // returns 0 if the rune is not used. returns 1 if the rune is used.
 /obj/effect/rune/proc/communicate(mob/living/user)
 	. = 1 // Default output is 1. If the rune is deleted it will return 1
-	om_ask(user, /datum/om/prompt/text, PROC_REF(communicate_entered), title = "Voice of Blood", message = "Please choose a message to tell to the other acolytes.", default = "", ask_flags = ASK_ADJACENT | ASK_CAPABLE, cancel_answer = "")
+	open_request(src, /datum/prompt/text, PROC_REF(communicate_entered), answerer = user, title = "Voice of Blood", question = "Please choose a message to tell to the other acolytes.", default = "", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return 1
 
-/obj/effect/rune/proc/communicate_entered(datum/om/prompt/text/ask)
-	var/mob/living/user = ask.answerer
-	var/input = ask.text
+/obj/effect/rune/proc/communicate_entered(datum/act/request/A)
+	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value)))
+		return
+	if(QDELETED(A.request.answerer))
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_communicate_entered), A)
+	if(!result.ok)
+		stack_trace("Cult communication request: [result.error]")
+	return result.value
+
+/obj/effect/rune/proc/apply_communicate_entered(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/input = A.answer ? A.answer.answer_value : ""
 	if(!input)
 		if (istype(src))
 			fizzle(user)
@@ -875,27 +894,43 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			users+=C
 	var/dam = round(15 / users.len)
 	if(users.len>=3)
-		om_ask(user, /datum/om/prompt/choice/cult_ritual, PROC_REF(freedom_target_chosen), message = "Choose the one who you want to free", choices = (cultists - users), users = users, dam = dam)
+		open_request(src, /datum/prompt/choice/cult_ritual, PROC_REF(freedom_target_chosen), answerer = user, question = "Choose the one who you want to free", choices = (cultists - users), users = users, dam = dam)
 		return
 
 /// A group rune's pick of a cultist (freedom, summon). Re-checked: next to the rune and able. A
 /// cancel fizzles the rune.
-/datum/om/prompt/choice/cult_ritual
+/datum/prompt/choice/cult_ritual
 	title = "Followers of Geometer"
 	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+	timeout = 0
 	/// The cultists around the rune when it was invoked.
 	var/list/users
 	var/dam
 
-/datum/om/prompt/choice/cult_ritual/cancelled()
-	var/obj/effect/rune/R = subject
-	if(istype(R))
-		R.fizzle(answerer)
-	return ..()
+/datum/prompt/choice/cult_ritual/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/living/carbon/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+	return null
 
-/obj/effect/rune/proc/freedom_target_chosen(datum/om/prompt/choice/cult_ritual/ask)
+/obj/effect/rune/proc/freedom_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			return fizzle(A.request.answerer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_freedom_target_chosen), A)
+	if(!result.ok)
+		stack_trace("Cult ritual request: [result.error]")
+	return result.value
+
+/obj/effect/rune/proc/apply_freedom_target_chosen(datum/act/request/A)
+	var/datum/prompt/choice/cult_ritual/ask = A.request
 	var/mob/living/user = ask.answerer
-	var/mob/living/carbon/cultist = ask.choice
+	var/mob/living/carbon/cultist = A.answer.answer_value
 	var/list/users = ask.users
 	var/dam = ask.dam
 	if(!cultist)
@@ -944,13 +979,24 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 		if(iscultist(C) && !C.stat)
 			users += C
 	if(users.len>=3)
-		om_ask(user, /datum/om/prompt/choice/cult_ritual, PROC_REF(summon_target_chosen), message = "Choose the one who you want to summon", choices = (cultists - user), users = users)
+		open_request(src, /datum/prompt/choice/cult_ritual, PROC_REF(summon_target_chosen), answerer = user, question = "Choose the one who you want to summon", choices = (cultists - user), users = users)
 		return
 	return fizzle(user)
 
-/obj/effect/rune/proc/summon_target_chosen(datum/om/prompt/choice/cult_ritual/ask)
+/obj/effect/rune/proc/summon_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			return fizzle(A.request.answerer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_summon_target_chosen), A)
+	if(!result.ok)
+		stack_trace("Cult ritual request: [result.error]")
+	return result.value
+
+/obj/effect/rune/proc/apply_summon_target_chosen(datum/act/request/A)
+	var/datum/prompt/choice/cult_ritual/ask = A.request
 	var/mob/living/user = ask.answerer
-	var/mob/living/carbon/cultist = ask.choice
+	var/mob/living/carbon/cultist = A.answer.answer_value
 	var/list/users = ask.users
 	if(!cultist)
 		return fizzle(user)
