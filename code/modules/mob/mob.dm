@@ -334,10 +334,18 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set src in usr
 	if(usr != src)
 		to_chat(src, "No.")
-	om_ask(src, /datum/om/prompt/text, PROC_REF(flavor_text_entered), title = "Flavor Text", message = "Set the flavor text in your 'examine' verb.", default = html_decode(flavor_text), max_length = MAX_MESSAGE_LEN, multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(flavor_text_entered), answerer = src, timeout = 0, title = "Flavor Text", question = "Set the flavor text in your 'examine' verb.", default = html_decode(flavor_text), max_len = MAX_MESSAGE_LEN, multiline = TRUE)
 
-/mob/proc/flavor_text_entered(datum/om/prompt/text/ask)
-	flavor_text = ask.text
+/mob/proc/flavor_text_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(flavor_text_apply), A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("flavor text update: [result.error]")
+	return result.value
+
+/mob/proc/flavor_text_apply(new_text)
+	flavor_text = new_text
 
 /mob/proc/warn_flavor_changed()
 	if(flavor_text && flavor_text != "") // don't spam people that don't use it!

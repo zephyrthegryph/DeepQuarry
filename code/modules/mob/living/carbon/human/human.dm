@@ -486,9 +486,9 @@ TOPIC_ACTION(/mob/living/carbon/human, "emprecordadd", PROC_REF(topic_hud_empadd
 			// flavor_changes is TGUI now; close via SStgui
 			SStgui.close_uis(src)
 		if("general")
-			om_ask(user, /datum/om/prompt/text/flavor_part, PROC_REF(flavor_part_entered), message = "Update the general description of your character. This will be shown regardless of clothing.", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)	//Separating out OOC notes
+			open_request(src, /datum/prompt/text/flavor_part, PROC_REF(flavor_part_entered), answerer = user, question = "Update the general description of your character. This will be shown regardless of clothing.", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)	//Separating out OOC notes
 		else
-			om_ask(user, /datum/om/prompt/text/flavor_part, PROC_REF(flavor_part_entered), message = "Update the flavor text for your [part].", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)
+			open_request(src, /datum/prompt/text/flavor_part, PROC_REF(flavor_part_entered), answerer = user, question = "Update the flavor text for your [part].", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)
 
 // --- HUD record links (examine) --------------------------------------------------
 // Each HUD reads and writes one record set. The status link edits the "status" set (the
@@ -551,9 +551,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		hud_no_record(user)
 		return
 	if(hud_type == "security")
-		om_ask(user, /datum/om/prompt/choice/hud_status, PROC_REF(hud_criminal_status_chosen), message = "Specify a new criminal status for this person.", title = "Security HUD", choices = list("None", "*Arrest*", "Incarcerated", "Parolled", "Released", "Cancel"), record = R, hud_type = "security")
+		open_request(src, /datum/prompt/choice/hud_status, PROC_REF(hud_criminal_status_chosen), answerer = user, question = "Specify a new criminal status for this person.", title = "Security HUD", choices = list("None", "*Arrest*", "Incarcerated", "Parolled", "Released", "Cancel"), record = R, hud_type = "security")
 	else
-		om_ask(user, /datum/om/prompt/choice/hud_status, PROC_REF(hud_medical_status_chosen), message = "Specify a new medical status for this person.", title = "Medical HUD", choices = list("*SSD*", "*Deceased*", "Physically Unfit", "Active", "Disabled", "Cancel"), record = R, hud_type = "medical")
+		open_request(src, /datum/prompt/choice/hud_status, PROC_REF(hud_medical_status_chosen), answerer = user, question = "Specify a new medical status for this person.", title = "Medical HUD", choices = list("*SSD*", "*Deceased*", "Physically Unfit", "Active", "Disabled", "Cancel"), record = R, hud_type = "medical")
 
 /// Print the record `hud_type` reads.
 /mob/living/carbon/human/proc/hud_topic_show_record(mob/user, hud_type)
@@ -609,16 +609,27 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	to_chat(user, span_filter_notice("<a href='byond://?src=\ref[src];[kind[1]]recordadd=`'>\[Add comment\]</a>"))
 
 /// Editing one flavor text part. Re-checked on the answer: it's your own.
-/datum/om/prompt/text/flavor_part
+/datum/prompt/text/flavor_part
 	title = "Flavor Text"
 	multiline = TRUE
+	timeout = 0
 	var/part
 
-/datum/om/prompt/text/flavor_part/valid()
-	return answerer == subject ? null : "not yours"
+/datum/prompt/text/flavor_part/recheck_extra()
+	if(!isnull(answer_value) && answerer != owner)
+		return "not yours"
 
-/mob/living/carbon/human/proc/flavor_part_entered(datum/om/prompt/text/flavor_part/ask)
-	var/msg = strip_html_simple(ask.text)
+/mob/living/carbon/human/proc/flavor_part_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(flavor_part_entered_apply), A)
+	if(!result.ok)
+		stack_trace("flavor_part_entered: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/flavor_part_entered_apply(datum/act/request/A)
+	var/datum/prompt/text/flavor_part/ask = A.answer
+	var/msg = strip_html_simple(ask.answer_value)
 	if(msg)
 		LAZYSET(flavor_texts, ask.part, msg)
 		set_flavor()
@@ -632,27 +643,70 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
 /// A record status picked through a HUD on the subject. Re-checked on the answer: the HUD still works.
-/datum/om/prompt/choice/hud_status
+/datum/prompt/choice/hud_status
+	timeout = 0
 	var/datum/data/record/record
 	var/hud_type
+	var/record_expected = FALSE
 
-/datum/om/prompt/choice/hud_status/valid()
-	var/mob/living/carbon/human/H = subject
+CAPABILITIES(/datum/prompt/choice/hud_status)
+	ref_one(nameof(record), /datum/data/record)
+
+/datum/prompt/choice/hud_status/prepare(datum/act/A)
+	. = ..()
+	var/datum/data/record/captured_record = record
+	record_expected = !isnull(captured_record)
+	rel_clear(src, nameof(record))
+	if(captured_record && !QDELETED(captured_record))
+		rel_set(src, nameof(record), captured_record)
+
+/datum/prompt/choice/hud_status/recheck_extra()
+	if(record_expected && QDELETED(record))
+		return "gone"
+	if(isnull(answer_value))
+		return
+	var/mob/living/carbon/human/H = owner
 	return H.hud_still_usable(answerer, hud_type) ? null : "HUD unusable"
 
 /// A record comment added through a HUD on the subject. Re-checked on the answer: the HUD still works.
-/datum/om/prompt/text/hud_comment
-	message = "Add Comment:"
+/datum/prompt/text/hud_comment
+	question = "Add Comment:"
 	multiline = TRUE
+	timeout = 0
 	var/datum/data/record/record
 	var/hud_type
+	var/record_expected = FALSE
 
-/datum/om/prompt/text/hud_comment/valid()
-	var/mob/living/carbon/human/H = subject
+CAPABILITIES(/datum/prompt/text/hud_comment)
+	ref_one(nameof(record), /datum/data/record)
+
+/datum/prompt/text/hud_comment/prepare(datum/act/A)
+	. = ..()
+	var/datum/data/record/captured_record = record
+	record_expected = !isnull(captured_record)
+	rel_clear(src, nameof(record))
+	if(captured_record && !QDELETED(captured_record))
+		rel_set(src, nameof(record), captured_record)
+
+/datum/prompt/text/hud_comment/recheck_extra()
+	if(record_expected && QDELETED(record))
+		return "gone"
+	if(isnull(answer_value))
+		return
+	var/mob/living/carbon/human/H = owner
 	return H.hud_still_usable(answerer, hud_type) ? null : "HUD unusable"
 
-/mob/living/carbon/human/proc/hud_criminal_status_chosen(datum/om/prompt/choice/hud_status/ask)
-	var/setcriminal = ask.choice
+/mob/living/carbon/human/proc/hud_criminal_status_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(hud_criminal_status_chosen_apply), A)
+	if(!result.ok)
+		stack_trace("hud_criminal_status_chosen: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/hud_criminal_status_chosen_apply(datum/act/request/A)
+	var/datum/prompt/choice/hud_status/ask = A.answer
+	var/setcriminal = ask.answer_value
 	var/mob/user = ask.answerer
 	if(setcriminal == "Cancel")
 		return
@@ -661,8 +715,17 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	flag_hud_update(WANTED_HUD)
 	hud_record_changed(user)
 
-/mob/living/carbon/human/proc/hud_medical_status_chosen(datum/om/prompt/choice/hud_status/ask)
-	var/setmedical = ask.choice
+/mob/living/carbon/human/proc/hud_medical_status_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(hud_medical_status_chosen_apply), A)
+	if(!result.ok)
+		stack_trace("hud_medical_status_chosen: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/hud_medical_status_chosen_apply(datum/act/request/A)
+	var/datum/prompt/choice/hud_status/ask = A.answer
+	var/setmedical = ask.answer_value
 	var/mob/user = ask.answerer
 	if(setmedical == "Cancel")
 		return
@@ -674,10 +737,19 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /// Asks for a comment to add to record R through a HUD of `hud_type`.
 /mob/living/carbon/human/proc/hud_ask_comment(mob/user, datum/data/record/R, hud_type, title, max_length)
-	om_ask(user, /datum/om/prompt/text/hud_comment, PROC_REF(hud_comment_entered), title = title, max_length = max_length, record = R, hud_type = hud_type)
+	open_request(src, /datum/prompt/text/hud_comment, PROC_REF(hud_comment_entered), answerer = user, title = title, max_len = max_length, name_text = max_length && max_length <= MAX_NAME_LEN, record = R, hud_type = hud_type)
 
-/mob/living/carbon/human/proc/hud_comment_entered(datum/om/prompt/text/hud_comment/ask)
-	var/t1 = ask.text
+/mob/living/carbon/human/proc/hud_comment_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(hud_comment_entered_apply), A)
+	if(!result.ok)
+		stack_trace("hud_comment_entered: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/hud_comment_entered_apply(datum/act/request/A)
+	var/datum/prompt/text/hud_comment/ask = A.answer
+	var/t1 = ask.answer_value
 	var/mob/user = ask.answerer
 	if(!t1)
 		return
