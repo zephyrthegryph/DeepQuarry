@@ -45,6 +45,10 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Transform (1)"
 
+	return lesser_transform_stage()
+
+/mob/proc/lesser_transform_stage(selected_form, selected_ready = FALSE)
+
 	var/datum/changeling/changeling = changeling_power(1,1,0)
 	if(!changeling)	return
 
@@ -52,7 +56,10 @@
 	for(var/datum/dna/DNA in changeling.absorbed_dna)
 		names += "[DNA.real_name]"
 
-	var/S = rerun_ask(src, "a1", PROC_REF(changeling_lesser_transform), args, /datum/om/prompt/choice, message = "Select the target DNA:", title = "Target DNA", choices = names)
+	if(!selected_ready)
+		open_request(src, /datum/prompt/choice, PROC_REF(lesser_transform_answered), answerer = src, question = "Select the target DNA:", title = "Target DNA", choices = names, timeout = 0)
+		return
+	var/S = selected_form
 	if(isnull(S))
 		return
 	if(!S)
@@ -128,3 +135,15 @@
 	feedback_add_details("changeling_powers","LFT")
 	qdel(C)
 	return 1
+
+/mob/proc/lesser_transform_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(lesser_transform_apply), context)
+	if(!caught.ok)
+		stack_trace("Lesser transform replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/proc/lesser_transform_apply(datum/act/request/context)
+	return lesser_transform_stage(context.answer.answer_value, TRUE)
