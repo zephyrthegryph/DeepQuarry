@@ -80,15 +80,13 @@ CAPABILITIES(/obj/item/camerabug)
 	if(get_dist(user, src) == 0)
 		. += "It has a tiny camera inside. Needs to be both configured and brought in contact with monitor device to be fully functional."
 
-DECLARE_APPEARANCE_PROC(/obj/item/camerabug, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/camerabug/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/camerabug/draw(datum/look/look)
+	..()
 
 	if(anchored)	// Standard versions are relatively obvious if not hidden in a container. Anchoring them is advised, to disguise them.
-		alpha = 50
+		look.alpha = 50
 	else
-		alpha = 255
+		look.alpha = 255
 
 DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	INTERACT_INSERT(/obj/item/bug_monitor, PROC_REF(interaction_pair), "Pair"), \

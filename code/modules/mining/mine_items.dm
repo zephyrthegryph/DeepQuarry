@@ -168,12 +168,10 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 		set_bulk_material(material().name, 50)
 		update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/shovel/wood, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/shovel/wood/appearance_overlays()
-	. = list()
-	. += ..()
-	color = material() ? material().icon_colour : initial(color)
-	alpha = min(max(255 * material().opacity, 80), 255)
+/obj/item/shovel/wood/draw(datum/look/look)
+	..()
+	look.color = material() ? material().icon_colour : initial(color)
+	look.alpha = min(max(255 * material().opacity, 80), 255)
 
 /obj/item/shovel/spade
 	name = "spade"

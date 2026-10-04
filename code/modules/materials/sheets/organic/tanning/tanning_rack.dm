@@ -31,14 +31,13 @@ DECLARE_PERIODIC_WHILE(/obj/structure/tanning_rack, PERIODIC_SLOW, "has_wet_leat
 	if(drying() && !QDELETED(drying()))
 		. += "\The [drying()] is [drying().get_dryness_text()]."
 
-DECLARE_APPEARANCE_PROC(/obj/structure/tanning_rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/tanning_rack/appearance_overlays()
-	. = list()
+/obj/structure/tanning_rack/draw(datum/look/look)
+	..()
 	if(drying())
 		if(drying().wetness)
-			. += "leather_wet"
+			look.overlay("leather_wet")
 		else
-			. += "leather_dry"
+			look.overlay("leather_dry")
 
 /// Old attackby.
 /obj/structure/tanning_rack/proc/interaction_item(mob/user, atom/A, datum/interaction/interaction)

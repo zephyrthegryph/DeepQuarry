@@ -56,6 +56,10 @@
 	. = ..()
 	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(is_shifting))
 
+/obj/item/camerabug/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(anchored))
+
 /obj/item/light/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(base_state), nameof(status))
@@ -67,6 +71,10 @@
 /obj/item/reagent_containers/food/condiment/carton/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(reagents))
+
+/obj/item/robot_parts/robot_suit/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(chest), nameof(head), nameof(l_arm), nameof(l_leg), nameof(r_arm), nameof(r_leg))
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/generated_reads()
 	. = ..()
@@ -124,6 +132,10 @@
 	. = ..()
 	. += drawn_from(nameof(closed_state), nameof(open), nameof(open_state))
 
+/obj/item/toy/balloon/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(reagents))
+
 /obj/machinery/atmospherics/binary/dp_vent_pump/generated_reads()
 	. = ..()
 	. += rust_push(nameof(external_pressure_bound), nameof(input_pressure_min), nameof(node1), nameof(node2), nameof(output_pressure_max), nameof(power_rating), nameof(pressure_checks), nameof(pump_direction), nameof(use_power))
@@ -147,6 +159,14 @@
 /obj/machinery/atmospherics/omni/mixer/generated_reads()
 	. = ..()
 	. += rust_push(nameof(inputs), nameof(output), nameof(ports), nameof(power_rating), nameof(set_flow_rate), nameof(use_power))
+
+/obj/machinery/atmospherics/pipe/cap/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(pipe_color))
+
+/obj/machinery/atmospherics/pipe/zpipe/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(pipe_color))
 
 /obj/machinery/atmospherics/trinary/atmos_filter/generated_reads()
 	. = ..()
@@ -200,6 +220,22 @@
 /obj/machinery/recharger/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(charge_phase), nameof(icon_state_charged), nameof(icon_state_charging), nameof(icon_state_idle))
+
+/obj/structure/event_collector/nukies/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(current_step))
+
+/obj/structure/girder/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(anchored))
+
+/obj/structure/girder/cult/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(anchored))
+
+/obj/structure/lift/button/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(light_up))
 
 /// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).
 /proc/rx_boot_types()

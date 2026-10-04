@@ -69,21 +69,20 @@
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/robot_parts/robot_suit, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/robot_parts/robot_suit/appearance_overlays()
-	. = list()
+/obj/item/robot_parts/robot_suit/draw(datum/look/look)
+	..()
 	if(src.l_arm)
-		. += "l_arm+o"
+		look.overlay("l_arm+o")
 	if(src.r_arm)
-		. += "r_arm+o"
+		look.overlay("r_arm+o")
 	if(src.chest)
-		. += "chest+o"
+		look.overlay("chest+o")
 	if(src.l_leg)
-		. += "l_leg+o"
+		look.overlay("l_leg+o")
 	if(src.r_leg)
-		. += "r_leg+o"
+		look.overlay("r_leg+o")
 	if(src.head)
-		. += "head+o"
+		look.overlay("head+o")
 
 /obj/item/robot_parts/robot_suit/proc/check_completion()
 	if(src.l_arm && src.r_arm)

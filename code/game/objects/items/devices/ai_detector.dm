@@ -18,6 +18,7 @@
 	RED: You are currently being watched by the AI.<br>\
 	FLASHING RED AND ORANGE: You are currently being TRACKED by the AI.<br>\
 	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range."
+TRACKED(/obj/item/multitool/ai_detector, detect_state)
 
 /obj/item/multitool/ai_detector/Initialize(mapload)
 	. = ..()
@@ -30,7 +31,7 @@
 		return PROCESS_KILL
 	var/old_detect_state = detect_state
 	var/new_detect_state = detect_ai()
-	detect_state = new_detect_state
+	set_detect_state(new_detect_state)
 	update_icon()
 	update_warning(old_detect_state, new_detect_state)
 	return
@@ -74,10 +75,9 @@
 	// If we reach this point, AI or sec isn't near us.
 	return PROXIMITY_NONE
 
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/ai_detector, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/multitool/ai_detector/appearance_overlays()
-	. = list()
-	icon_state = "[initial(icon_state)][detect_state]"
+/obj/item/multitool/ai_detector/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][detect_state]")
 
 /obj/item/multitool/ai_detector/proc/update_warning(old_state, new_state)
 	var/mob/living/carrier = isliving(loc) ? loc : null
