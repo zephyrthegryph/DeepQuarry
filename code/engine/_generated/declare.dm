@@ -903,13 +903,6 @@
 	into += entry_line(58)
 	into += list(global.owns_many(nameof(my_effects)))
 
-/// CAPABILITIES(/datum/balance_scenario) at code/modules/balance/_balance_harness.dm:45
-/datum/balance_scenario/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/balance/_balance_harness.dm", 45, /datum/balance_scenario)
-	into += entry_line(46)
-	into += list(global.owns_many(nameof(spawned)))
-
 /// CAPABILITIES(/datum/beam) at code/datums/beam.dm:19
 /datum/beam/declared_entries(list/into)
 	..(into)
