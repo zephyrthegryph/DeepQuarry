@@ -6,21 +6,20 @@
 	size = 3
 	requires_ntnet = FALSE
 	available_on_ntnet = TRUE
-	tgui_id = "NtosFishing"
 	usage_flags = PROGRAM_ALL
 
-UI_DATA_REPLACE(/datum/computer_file/program/fishing, "merge:ui_data_datum_computer_file_program_fishing{}")
+CAPABILITIES(/datum/computer_file/program/fishing)
+	interface("NtosFishing")
+	op("lose", ui_act("lose"), then(PROC_REF(ui_act_lose)))
+	op("win", ui_act("win"), then(PROC_REF(ui_act_win)))
 
-/// The computed part of /datum/computer_file/program/fishing's window data (declared on its UI_DATA row).
-/datum/computer_file/program/fishing/proc/ui_data_datum_computer_file_program_fishing(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/fishing/ui_data(datum/act/eval/A)
 	return get_header_data()
 
-UI_ACT(/datum/computer_file/program/fishing, "lose", ui_act_lose)
-UI_ACT_PROC(/datum/computer_file/program/fishing, ui_act_lose)
+/datum/computer_file/program/fishing/proc/ui_act_lose(datum/act/op/A)
 	play_sfx(computer(), SFX_ARCADE_LOSE)
 	. = TRUE
 
-UI_ACT(/datum/computer_file/program/fishing, "win", ui_act_win)
-UI_ACT_PROC(/datum/computer_file/program/fishing, ui_act_win)
+/datum/computer_file/program/fishing/proc/ui_act_win(datum/act/op/A)
 	play_sfx(computer(), SFX_ARCADE_WIN)
 	. = TRUE

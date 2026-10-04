@@ -9,7 +9,6 @@
 	requires_ntnet = TRUE
 	available_on_ntnet = FALSE
 	available_on_syndinet = TRUE
-	tgui_id = "NtosAccessDecrypter"
 
 	var/message = ""
 	var/running = FALSE
@@ -50,16 +49,19 @@
 		message = "Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]"
 		target_access_static = null
 
-UI_ACT(/datum/computer_file/program/access_decrypter, "PRG_reset", ui_act_prg_reset)
-UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_reset)
+CAPABILITIES(/datum/computer_file/program/access_decrypter)
+	interface("NtosAccessDecrypter")
+	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
+	op("PRG_execute", ui_act("PRG_execute", arg("access_target", schema_text(4096)), arg("allowed", num())), then(PROC_REF(ui_act_prg_execute)))
+
+/datum/computer_file/program/access_decrypter/proc/ui_act_prg_reset(datum/act/op/A)
 	reset()
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/access_decrypter, "PRG_execute", ui_act_prg_execute, UI_ARG_TEXT("access_target"), UI_ARG_NUM("allowed"))
-UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_execute)
+/datum/computer_file/program/access_decrypter/proc/ui_act_prg_execute(datum/act/op/A, access_target_arg, allowed)
 	if(running)
 		return TRUE
-	if(params["allowed"])
+	if(allowed)
 		return TRUE
 	var/obj/item/computer_hardware/processor_unit/CPU = computer().processor_unit
 	var/obj/item/computer_hardware/card_slot/RFID = computer().card_slot
@@ -70,7 +72,7 @@ UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_execute)
 		message = "RFID card is not present in the device. Operation aborted."
 		return
 	running = TRUE
-	target_access_static = SSaccess.get_access_by_id("[params["access_target"]]")
+	target_access_static = SSaccess.get_access_by_id("[access_target_arg]")
 	if(!target_access())
 		message = "Invalid access target. Operation aborted."
 		running = FALSE
@@ -80,10 +82,7 @@ UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_execute)
 		GLOB.ntnet_global.intrusion_detection_alarm = TRUE
 	return TRUE
 
-UI_DATA_REPLACE(/datum/computer_file/program/access_decrypter, "merge:ui_data_datum_computer_file_program_access_decrypter{message:text,running:num,rate:num,factor:num,regions:list}")
-
-/// The computed part of /datum/computer_file/program/access_decrypter's window data (declared on its UI_DATA row).
-/datum/computer_file/program/access_decrypter/proc/ui_data_datum_computer_file_program_access_decrypter(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/access_decrypter/ui_data(datum/act/eval/A)
 	if(!GLOB.ntnet_global)
 		return
 	var/list/data = get_header_data()

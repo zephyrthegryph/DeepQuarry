@@ -9,7 +9,6 @@
 	requires_ntnet = FALSE
 	available_on_ntnet = FALSE
 	available_on_syndinet = TRUE
-	tgui_id = "NtosRevelation"
 	var/armed = 0
 
 /datum/computer_file/program/revelation/run_program(mob/living/user)
@@ -36,19 +35,22 @@
 	if(computer().tesla_link && prob(50))
 		qdel(computer().tesla_link)
 
-UI_ACT(/datum/computer_file/program/revelation, "PRG_arm", ui_act_prg_arm)
-UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_arm)
+CAPABILITIES(/datum/computer_file/program/revelation)
+	interface("NtosRevelation")
+	op("PRG_arm", ui_act("PRG_arm"), then(PROC_REF(ui_act_prg_arm)))
+	op("PRG_activate", ui_act("PRG_activate"), then(PROC_REF(ui_act_prg_activate)))
+	op("PRG_obfuscate", ui_act("PRG_obfuscate", arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_prg_obfuscate)))
+
+/datum/computer_file/program/revelation/proc/ui_act_prg_arm(datum/act/op/A)
 	armed = !armed
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/revelation, "PRG_activate", ui_act_prg_activate)
-UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_activate)
+/datum/computer_file/program/revelation/proc/ui_act_prg_activate(datum/act/op/A)
 	activate()
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/revelation, "PRG_obfuscate", ui_act_prg_obfuscate, UI_ARG_TEXT("new_name"))
-UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_obfuscate)
-	var/newname = params["new_name"]
+/datum/computer_file/program/revelation/proc/ui_act_prg_obfuscate(datum/act/op/A, new_name)
+	var/newname = new_name
 	if(!newname)
 		return
 	filedesc = newname
@@ -59,11 +61,8 @@ UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_obfuscate)
 	temp.armed = armed
 	return temp
 
-UI_DATA_REPLACE(/datum/computer_file/program/revelation, "armed:num", "merge:ui_data_datum_computer_file_program_revelation{}")
-
-/// The computed part of /datum/computer_file/program/revelation's window data (declared on its UI_DATA row).
-/datum/computer_file/program/revelation/proc/ui_data_datum_computer_file_program_revelation(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/revelation/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()
-
+	data["armed"] = armed
 
 	return data

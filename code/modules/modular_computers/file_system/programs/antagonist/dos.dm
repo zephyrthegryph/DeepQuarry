@@ -9,7 +9,6 @@
 	requires_ntnet = TRUE
 	available_on_ntnet = FALSE
 	available_on_syndinet = TRUE
-	tgui_id = "NtosNetDos"
 
 	var/tmp/obj/machinery/ntnet_relay/target
 	var/dos_speed = 0
@@ -40,14 +39,18 @@
 
 	..(forced)
 
-UI_DATA_REPLACE(/datum/computer_file/program/ntnet_dos, "error:text", "merge:ui_data_datum_computer_file_program_ntnet_dos{target:bool,speed:num,overload:num,capacity:num,relays:list,focus:unknown}")
+CAPABILITIES(/datum/computer_file/program/ntnet_dos)
+	interface("NtosNetDos")
+	op("PRG_target_relay", ui_act("PRG_target_relay", arg("targid", num())), then(PROC_REF(ui_act_prg_target_relay)))
+	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
+	op("PRG_execute", ui_act("PRG_execute"), then(PROC_REF(ui_act_prg_execute)))
 
-/// The computed part of /datum/computer_file/program/ntnet_dos's window data (declared on its UI_DATA row).
-/datum/computer_file/program/ntnet_dos/proc/ui_data_datum_computer_file_program_ntnet_dos(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/ntnet_dos/ui_data(datum/act/eval/A)
 	if(!GLOB.ntnet_global)
 		return
 
 	var/list/data = get_header_data()
+	data["error"] = error
 
 	if(target() && executed)
 		data["target"] = TRUE
@@ -64,16 +67,14 @@ UI_DATA_REPLACE(/datum/computer_file/program/ntnet_dos, "error:text", "merge:ui_
 
 	return data
 
-UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_target_relay", ui_act_prg_target_relay, UI_ARG_NUM("targid"))
-UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_target_relay)
+/datum/computer_file/program/ntnet_dos/proc/ui_act_prg_target_relay(datum/act/op/A, targid)
 	for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
-		if(R.uid == params["targid"])
+		if(R.uid == targid)
 			rel_set(src, nameof(/datum/accessory_stat_modifier::target), R)
 			break
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_reset", ui_act_prg_reset)
-UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_reset)
+/datum/computer_file/program/ntnet_dos/proc/ui_act_prg_reset(datum/act/op/A)
 	if(target())
 		rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
 		rel_clear(src, nameof(/datum/accessory_stat_modifier::target))
@@ -81,8 +82,7 @@ UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_reset)
 	error = ""
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_execute", ui_act_prg_execute)
-UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_execute)
+/datum/computer_file/program/ntnet_dos/proc/ui_act_prg_execute(datum/act/op/A)
 	if(target())
 		executed = TRUE
 		rel_add(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)

@@ -8,7 +8,6 @@
 	size = 12
 	requires_ntnet = TRUE
 	available_on_ntnet = TRUE
-	tgui_id = "NtosEmailAdministration"
 	required_access = ACCESS_NETWORK
 	category = PROG_ADMIN
 
@@ -16,12 +15,19 @@
 	var/tmp/datum/computer_file/data/email_message/current_message
 	var/error = ""
 
-UI_DATA_REPLACE(/datum/computer_file/program/email_administration, "error:text", "merge:ui_data_datum_computer_file_program_email_administration{cur_title:text,cur_body:unknown,cur_timestamp:unknown,cur_source:text,current_account:text,cur_suspended:num,messages:list,accounts:list}")
+CAPABILITIES(/datum/computer_file/program/email_administration)
+	ref_one(nameof(current_account), /datum/computer_file/data/email_account)
+	interface("NtosEmailAdministration")
+	op("back", ui_act("back"), then(PROC_REF(ui_act_back)))
+	op("ban", ui_act("ban"), then(PROC_REF(ui_act_ban)))
+	op("changepass", ui_act("changepass"), needs(req(PROC_REF(has_account), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Password", "question" = computed(PROC_REF(newpass_question)), "max_len" = 100)), then(PROC_REF(ui_act_changepass)))
+	op("viewmail", ui_act("viewmail", arg("viewmail", num())), then(PROC_REF(ui_act_viewmail)))
+	op("viewaccount", ui_act("viewaccount", arg("viewaccount", num())), then(PROC_REF(ui_act_viewaccount)))
+	op("newaccount", ui_act("newaccount"), asks(/datum/prompt/choice, fields = list("title" = "Domain name", "question" = "Pick domain:", "choices" = computed(PROC_REF(email_domains))), step = "domain"), asks(/datum/prompt/text, fields = list("title" = "Account name", "question" = computed(PROC_REF(account_question)), "max_len" = 100), step = "login", when = PROC_REF(domain_chosen)), then(PROC_REF(ui_act_newaccount)))
 
-/// The computed part of /datum/computer_file/program/email_administration's window data (declared on its UI_DATA row).
-/datum/computer_file/program/email_administration/proc/ui_data_datum_computer_file_program_email_administration(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/email_administration/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()
-
+	data["error"] = error
 
 	data["cur_title"] = null
 	data["cur_body"] = null
@@ -71,8 +77,7 @@ UI_DATA_REPLACE(/datum/computer_file/program/email_administration, "error:text",
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/email_administration, "back", ui_act_back)
-UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_back)
+/datum/computer_file/program/email_administration/proc/ui_act_back(datum/act/op/A)
 	if(error)
 		error = ""
 	else if(current_message())
@@ -81,9 +86,9 @@ UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_back)
 		rel_clear(src, nameof(/datum/tgui_module/email_client::current_account))
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/email_administration, "ban", ui_act_ban)
-UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_ban)
-	var/obj/item/card/id/I = ui.user.GetIdCard()
+/datum/computer_file/program/email_administration/proc/ui_act_ban(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = user.GetIdCard()
 	if(!current_account())
 		return TRUE
 
@@ -92,51 +97,60 @@ UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_ban)
 	error = "Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended."
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/email_administration, "changepass", ui_act_changepass)
-UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_changepass)
-	var/obj/item/card/id/I = ui.user.GetIdCard()
+/datum/computer_file/program/email_administration/proc/has_account(datum/act/op/A)
+	return !!current_account()
+
+/datum/computer_file/program/email_administration/proc/newpass_question(datum/act/op/A)
+	return "Enter new password for account [current_account()?.login]"
+
+/datum/computer_file/program/email_administration/proc/ui_act_changepass(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = user.GetIdCard()
 	if(!current_account())
 		return TRUE
 
-	var/newpass = act_ask(ui.user, action, params, ui, "k96", /datum/om/prompt/text, message = "Enter new password for account [current_account().login]", title = "Password", max_length = 100)
-	if(isnull(newpass))
-		return
+	var/datum/prompt/P = A.answer
+	var/newpass = P?.value
 	if(!newpass)
 		return TRUE
 	current_account().password = newpass
 	GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Password for account [current_account().login] has been changed by SA [I.registered_name] ([I.assignment]).")
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/email_administration, "viewmail", ui_act_viewmail, UI_ARG_NUM("viewmail"))
-UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_viewmail)
+/datum/computer_file/program/email_administration/proc/ui_act_viewmail(datum/act/op/A, viewmail)
 	if(!current_account())
 		return TRUE
 
 	for(var/datum/computer_file/data/email_message/received_message in (current_account().inbox | current_account().spam | current_account().deleted))
-		if(received_message.uid == params["viewmail"])
+		if(received_message.uid == viewmail)
 			rel_set(src, nameof(/datum/tgui_module/email_client::current_message), received_message)
 			break
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/email_administration, "viewaccount", ui_act_viewaccount, UI_ARG_NUM("viewaccount"))
-UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_viewaccount)
+/datum/computer_file/program/email_administration/proc/ui_act_viewaccount(datum/act/op/A, viewaccount)
 	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
-		if(email_account.uid == params["viewaccount"])
+		if(email_account.uid == viewaccount)
 			rel_set(src, nameof(/datum/tgui_module/email_client::current_account), email_account)
 			break
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/email_administration, "newaccount", ui_act_newaccount)
-UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_newaccount)
-	var/newdomain = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/choice, message = "Pick domain:", title = "Domain name", choices = using_map.usable_email_tlds)
-	if(isnull(newdomain))
-		return
-	if(!newdomain)
-		return TRUE
-	var/newlogin = act_ask(ui.user, action, params, ui, "k124", /datum/om/prompt/text, message = "Pick account name (@[newdomain]):", title = "Account name", max_length = 100)
-	if(isnull(newlogin))
-		return
-	if(!newlogin)
+/datum/computer_file/program/email_administration/proc/email_domains(datum/act/op/A)
+	return using_map.usable_email_tlds
+
+/datum/computer_file/program/email_administration/proc/domain_chosen(datum/act/op/A)
+	var/datum/prompt/P = A.step_answer("domain")
+	return !!P?.value
+
+/datum/computer_file/program/email_administration/proc/account_question(datum/act/op/A)
+	var/datum/prompt/P = A.step_answer("domain")
+	return "Pick account name (@[P?.value]):"
+
+/datum/computer_file/program/email_administration/proc/ui_act_newaccount(datum/act/op/A)
+	var/datum/prompt/domain_answer = A.step_answer("domain")
+	var/datum/prompt/login_answer = A.step_answer("login")
+	var/newdomain = domain_answer?.value
+	var/newlogin = login_answer?.value
+	if(!newdomain || !newlogin)
 		return TRUE
 
 	var/complete_login = "[newlogin]@[newdomain]"
@@ -149,6 +163,7 @@ UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_newaccount
 	new_account.password = GenerateKey()
 	error = "Email [new_account.login] has been created, with generated password [new_account.password]"
 	return TRUE
+
 
 /// The current_account this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/email_administration/proc/current_account() as /datum/computer_file/data/email_account

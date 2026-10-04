@@ -9,13 +9,20 @@
 	requires_ntnet = TRUE
 	required_access = ACCESS_NETWORK
 	available_on_ntnet = TRUE
-	tgui_id = "NtosNetMonitor"
 	category = PROG_ADMIN
 
-UI_DATA_REPLACE(/datum/computer_file/program/ntnetmonitor, "merge:ui_data_datum_computer_file_program_ntnetmonitor{ntnetstatus:unknown,ntnetrelays:num,idsstatus:num,idsalarm:num,config_softwaredownload:num,config_peertopeer:num,config_communication:num,config_systemcontrol:num,ntnetlogs:list,minlogs:num,maxlogs:num,banned_nids:bool,ntnetmaxlogs:num}")
+CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
+	interface("NtosNetMonitor")
+	op("resetIDS", ui_act("resetIDS"), then(PROC_REF(ui_act_resetids)))
+	op("toggleIDS", ui_act("toggleIDS"), then(PROC_REF(ui_act_toggleids)))
+	op("toggleWireless", ui_act("toggleWireless"), asks(/datum/prompt/yes_no, fields = list("title" = "NTNet shutdown", "question" = "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices."), when = PROC_REF(wireless_enabled)), then(PROC_REF(ui_act_togglewireless)))
+	op("purgelogs", ui_act("purgelogs"), then(PROC_REF(ui_act_purgelogs)))
+	op("updatemaxlogs", ui_act("updatemaxlogs", arg("new_number", num())), then(PROC_REF(ui_act_updatemaxlogs)))
+	op("toggle_function", ui_act("toggle_function", arg("id", num())), then(PROC_REF(ui_act_toggle_function)))
+	op("ban_nid", ui_act("ban_nid"), needs(req(PROC_REF(ntnet_present), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Enter NID", "question" = "Enter NID of device which you want to block from the network:")), then(PROC_REF(ui_act_ban_nid)))
+	op("unban_nid", ui_act("unban_nid"), needs(req(PROC_REF(ntnet_present), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Enter NID", "question" = "Enter NID of device which you want to unblock from the network:")), then(PROC_REF(ui_act_unban_nid)))
 
-/// The computed part of /datum/computer_file/program/ntnetmonitor's window data (declared on its UI_DATA row).
-/datum/computer_file/program/ntnetmonitor/proc/ui_data_datum_computer_file_program_ntnetmonitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/ntnetmonitor/ui_data(datum/act/eval/A)
 	if(!GLOB.ntnet_global)
 		return
 	var/list/data = get_header_data()
@@ -42,20 +49,21 @@ UI_DATA_REPLACE(/datum/computer_file/program/ntnetmonitor, "merge:ui_data_datum_
 
 	return data
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "resetIDS", ui_act_resetids)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_resetids)
+/datum/computer_file/program/ntnetmonitor/proc/ui_act_resetids(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.resetIDS()
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "toggleIDS", ui_act_toggleids)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_toggleids)
+/datum/computer_file/program/ntnetmonitor/proc/ui_act_toggleids(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.toggleIDS()
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "toggleWireless", ui_act_togglewireless)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_togglewireless)
+/// Disabling the network is confirmed; enabling it is not.
+/datum/computer_file/program/ntnetmonitor/proc/wireless_enabled(datum/act/op/A)
+	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
+
+/datum/computer_file/program/ntnetmonitor/proc/ui_act_togglewireless(datum/act/op/A)
 	if(!GLOB.ntnet_global)
 		return
 
@@ -64,51 +72,45 @@ UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_togglewireless)
 		GLOB.ntnet_global.setting_disabled = FALSE
 		return TRUE
 
-	var/response = act_ask(ui.user, action, params, ui, "k63", /datum/om/prompt/choice/alert, message = "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices.", title = "NTNet shutdown", choices = list("Yes", "No"))
-	if(isnull(response))
-		return
-	if(response == "Yes" && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
+	var/datum/prompt/P = A.answer
+	if(P?.value)
 		GLOB.ntnet_global.setting_disabled = TRUE
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "purgelogs", ui_act_purgelogs)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_purgelogs)
+/datum/computer_file/program/ntnetmonitor/proc/ui_act_purgelogs(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.purge_logs()
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "updatemaxlogs", ui_act_updatemaxlogs, UI_ARG_NUM("new_number"))
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_updatemaxlogs)
-	var/logcount = params["new_number"]
+/datum/computer_file/program/ntnetmonitor/proc/ui_act_updatemaxlogs(datum/act/op/A, new_number)
+	var/logcount = new_number
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.update_max_log_count(logcount)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "toggle_function", ui_act_toggle_function, UI_ARG_NUM("id"))
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_toggle_function)
+/datum/computer_file/program/ntnetmonitor/proc/ui_act_toggle_function(datum/act/op/A, id)
 	if(!GLOB.ntnet_global)
 		return
-	GLOB.ntnet_global.toggle_function(params["id"])
+	GLOB.ntnet_global.toggle_function(id)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "ban_nid", ui_act_ban_nid)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_ban_nid)
+/datum/computer_file/program/ntnetmonitor/proc/ntnet_present(datum/act/op/A)
+	return !!GLOB.ntnet_global
+
+/datum/computer_file/program/ntnetmonitor/proc/ui_act_ban_nid(datum/act/op/A)
 	if(!GLOB.ntnet_global)
 		return
-	var/nid = act_ask(ui.user, action, params, ui, "k84", /datum/om/prompt/number, message = "Enter NID of device which you want to block from the network:", title = "Enter NID")
-	if(isnull(nid))
-		return
-	if(nid && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
+	var/datum/prompt/P = A.answer
+	var/nid = P?.value
+	if(nid)
 		LAZYOR(GLOB.ntnet_global.banned_nids, nid)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "unban_nid", ui_act_unban_nid)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_unban_nid)
+/datum/computer_file/program/ntnetmonitor/proc/ui_act_unban_nid(datum/act/op/A)
 	if(!GLOB.ntnet_global)
 		return
-	var/nid = act_ask(ui.user, action, params, ui, "k91", /datum/om/prompt/number, message = "Enter NID of device which you want to unblock from the network:", title = "Enter NID")
-	if(isnull(nid))
-		return
-	if(nid && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
+	var/datum/prompt/P = A.answer
+	var/nid = P?.value
+	if(nid)
 		LAZYREMOVE(GLOB.ntnet_global.banned_nids, nid)
 	return TRUE

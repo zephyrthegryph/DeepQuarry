@@ -21,7 +21,6 @@ CAPABILITIES(/datum/computer_file/program/comm)
 	..()
 	rel_set(src, nameof(message_core), new /datum/comm_message_listener)
 
-
 /datum/computer_file/program/comm/clone()
 	var/datum/computer_file/program/comm/temp = ..()
 	temp.message_core.messages = null
