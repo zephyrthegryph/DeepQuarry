@@ -363,3 +363,16 @@ Pinned by `code/modules/unit_tests/dq_hc_items_behaviour.dm` (written and green 
 * **Petrifier.** The refusal "the device beeps but does nothing" is a message of the op's requirement.
 * **Shooting target.** Taking a pinned target off its stake is an op of an empty hand, only a candidate while a stake near it holds it pinned (so a free target is picked up like any item). Written after the conversion: `target_pinned_is_taken_off_stake` was not run on the legacy code; it follows the legacy handler line by line.
 * `can_puncture()` and `get_ultimate_mob()` carry `READS_FROM` so a condition may call them.
+
+## Mobs (code/modules/mob/living), hand conversion
+
+Pinned by `code/modules/unit_tests/dq_hc_mobs_behaviour.dm` and `dq_hc_bots_behaviour.dm` (written and green on the legacy forms first). Each worker's area adds its own section below.
+
+* **A mob's damage reaction runs after the hit, not before it.** The 40 `DAMAGE_REACTION` / `DAMAGE_REACTION_AFTER` rows are `on_notice(/datum/notice/hit/<entry>)` for the ones that only react (EMP effects, projectile sounds, antlings, blinking, cloak breaks: they used to run just ahead of the sink) and `extend(/datum/act/hit/<entry>, instead(...))` for the ones that stop a blast (cockroach, illusion, rabbit, puffer, dark purple slime, oil slime, AI core, weaver silk, mimic crate, floor mimic, swarm pulse). A reaction that did not block therefore sees the mob after the hit landed and only when the hit was committed. The mob's own family ladder (human species, simple mob injuries) still runs after the reaction exactly as before.
+* **A thrown thing is the generic hit.** The simple mob's reaction sound and the demon's laugh on a thrown thing listen to `/datum/notice/hit` and check the entry (`DAMAGE_ENTRY_THROWN`) themselves: there is no thrown notice.
+* **`break_cloak` has a handler for the hit** (`/mob/proc/hit_breaks_cloak(datum/act/A)`); `break_cloak()` stays the call everything else uses.
+* **Service bots: the controls open on a hand click through the window's own op** (floorbot, cleanbot, secbot): the old "Open controls" entry took any hand; the op needs an actor who can act (not stunned, not restrained). Farmbot keeps its help-intent touch (it pets first and opens the controls when that did nothing) as its own op, medbot and mulebot keep their legacy hand entries (tip over, right, controls) and the window's open op answers the menu and a remote user only.
+* **A button press leaves the presser's fingerprints** through one `extend(TAG_UI, then(ui_fingerprint))` on the bot base (floorbot used to fingerprint the bot itself).
+* **Mulebot beacon questions** (set home, set destination) are requests: the answer is re-resolved to its beacon when it arrives (a beacon that was removed meanwhile ends the question without effect instead of reading a deleted one), and the "can still work its window" check is the default tgui state's.
+* **`EVENT_HANDLER` is `SHOULD_NOT_SLEEP(TRUE)`** on the 28 mob handlers that carried it (the macro expanded to exactly that).
+* `answerer_holds()` (code/library/prompts/answer_checks.dm) is the one `valid()` helper for the old `ask_flags`.
