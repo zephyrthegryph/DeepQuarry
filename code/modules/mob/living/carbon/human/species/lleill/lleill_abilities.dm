@@ -245,10 +245,11 @@
 	if(src?.buckled_to())
 		to_chat(src,span_warning("You can't do that when restrained."))
 
-	om_ask(src, /datum/om/prompt/choice/lleill_ring_action, PROC_REF(lleill_ring_action_chosen), message = "What would you like to do with your rings? You currently have [species.lleill_energy] energy remaining.", choices = list("Spawn New Ring ([energy_cost_spawn])", "Teleport to Ring ([energy_cost_tele])", "Cancel"), energy_cost_spawn = energy_cost_spawn, energy_cost_tele = energy_cost_tele)
+	open_request(src, /datum/prompt/choice/lleill_ring_action, PROC_REF(lleill_ring_action_chosen), answerer = src, question = "What would you like to do with your rings? You currently have [species.lleill_energy] energy remaining.", choices = list("Spawn New Ring ([energy_cost_spawn])", "Teleport to Ring ([energy_cost_tele])", "Cancel"), energy_cost_spawn = energy_cost_spawn, energy_cost_tele = energy_cost_tele)
 
 /// What to do with the rings; carries both costs.
-/datum/om/prompt/choice/lleill_ring_action
+/datum/prompt/choice/lleill_ring_action
+	timeout = 0
 	title = "Actions"
 	buttons = TRUE
 	ask_flags = ASK_CONSCIOUS
@@ -256,18 +257,31 @@
 	var/energy_cost_tele
 
 /// Also re-checked: the ring is still one of ours.
-/datum/om/prompt/choice/lleill_energy/lleill_ring_teleport
+/datum/prompt/choice/lleill_ring_teleport
 	title = "Teleport"
-	message = "Where do you wish to teleport?"
+	question = "Where do you wish to teleport?"
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	var/energy_cost
 
-/datum/om/prompt/choice/lleill_energy/lleill_ring_teleport/valid()
+/datum/prompt/choice/lleill_ring_teleport/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/carbon/human/H = answerer
-	if(!(choice in H.teleporters))
-		return "ring gone"
-	return ..()
+	if(!isnull(answer_value))
+		var/obj/structure/glamour_ring/R = answer_value
+		if(!istype(R) || QDELETED(R))
+			return "gone"
+		if(!(answer_value in H.teleporters))
+			return "ring gone"
+	return H.species.lleill_energy < energy_cost ? "no energy" : null
 
-/mob/living/carbon/human/proc/lleill_ring_action_chosen(datum/om/prompt/choice/lleill_ring_action/ask)
-	var/r_action = ask.choice
+/mob/living/carbon/human/proc/lleill_ring_action_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/lleill_ring_action/ask = A.request
+	var/r_action = ask.answer_value
 	var/energy_cost_spawn = ask.energy_cost_spawn
 	var/energy_cost_tele = ask.energy_cost_tele
 	if(r_action == "Cancel")
@@ -285,10 +299,15 @@
 		if(!src.teleporters.len)
 			to_chat(src, span_warning("You need to place rings to teleport to them."))
 			return
-		om_ask(src, /datum/om/prompt/choice/lleill_energy/lleill_ring_teleport, PROC_REF(lleill_ring_teleport_chosen), choices = src.teleporters, energy_cost = energy_cost_tele)
+		open_request(src, /datum/prompt/choice/lleill_ring_teleport, PROC_REF(lleill_ring_teleport_chosen), answerer = src, choices = src.teleporters, energy_cost = energy_cost_tele)
 
-/mob/living/carbon/human/proc/lleill_ring_teleport_chosen(datum/om/prompt/choice/lleill_energy/lleill_ring_teleport/ask)
-	var/obj/structure/glamour_ring/R = ask.choice
+/mob/living/carbon/human/proc/lleill_ring_teleport_chosen(datum/act/request/A)
+	var/datum/prompt/choice/lleill_ring_teleport/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
+		return
+	var/obj/structure/glamour_ring/R = ask.answer_value
 	var/energy_cost_tele = ask.energy_cost
 	var/T = get_turf(src)
 	play_sfx(T, SFX_SPARKS)
