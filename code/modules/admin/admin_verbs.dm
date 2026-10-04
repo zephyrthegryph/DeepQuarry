@@ -161,12 +161,27 @@ ADMIN_VERB(game_panel, R_ADMIN|R_SERVER|R_FUN, "Game Panel", "Look at the state 
 	GLOB.stealthminID["[ckey]"] = "@[num2text(num)]"
 
 ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY_GAME)
+	return toggle_stealth(user)
+
+/datum/admin_verb/stealth/proc/stealth_name_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(toggle_stealth), A.request.answerer.client, A.request.answer_value, TRUE)
+	if(!result.ok)
+		stack_trace("om flow stealth answer stealth_name_answered: [result.error]")
+
+/datum/admin_verb/stealth/proc/toggle_stealth(client/user, _answer_a2 = null, answered = FALSE)
 	if(user.holder.fakekey)
 		user.holder.fakekey = null
 		if(isnewplayer(user.mob))
 			user.mob.name = capitalize(user.ckey)
 	else
-		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/text, message = "Enter your desired display name.", title = "Fake Key", default = user.key)
+		if(!answered)
+			var/mob/answerer = user.mob
+			if(QDELETED(answerer))
+				return
+			open_request(src, /datum/prompt/text/admin_stealth_name, PROC_REF(stealth_name_answered), answerer = answerer, default = user.key)
+			return
 		if(isnull(_answer_a2))
 			return
 		var/new_key = ckeyEx(_answer_a2)
@@ -178,7 +193,7 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 		user.createStealthKey()
 		if(isnewplayer(user.mob))
 			user.mob.name = new_key
-	log_and_message_admins("has turned stealth mode [user.holder.fakekey ? "ON" : "OFF"]", usr)
+	log_and_message_admins("has turned stealth mode [user.holder.fakekey ? "ON" : "OFF"]", user)
 	feedback_add_details("admin_verb","SM") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 #define MAX_WARNS 3
@@ -1012,6 +1027,18 @@ CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation)
 	choices = list("Robot", "Simple Mob")
 
 /datum/prompt/choice/admin_recolour_grant/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_stealth_name
+	rights = R_STEALTH
+	timeout = 0
+	question = "Enter your desired display name."
+	title = "Fake Key"
+
+/datum/prompt/text/admin_stealth_name/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return
