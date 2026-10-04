@@ -44,16 +44,9 @@
 		color = null
 	..()
 
-/mob/living/simple_mob/blob/relations()
-	. = ..()
-	. += rel_one(nameof(overmind), back = nameof(/mob/observer/blob::blob_mobs))
-	. += rel_one(nameof(factory), back = nameof(/obj/structure/blob/factory::spores))
-/mob/observer/blob/relations()
-	. = ..()
-	. += rel_many(nameof(blob_mobs), back = nameof(/mob/living/simple_mob/blob::overmind))
-/obj/structure/blob/factory/relations()
-	. = ..()
-	. += rel_many(nameof(spores), back = nameof(/mob/living/simple_mob/blob::factory))
+CAPABILITIES(/mob/living/simple_mob/blob)
+	links(/mob/living/simple_mob/blob::overmind, /mob/observer/blob::blob_mobs, b_many = TRUE)
+	links(/mob/living/simple_mob/blob::factory, /obj/structure/blob/factory::spores, b_many = TRUE)
 
 /mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
 	if(!overmind && B.overmind)
