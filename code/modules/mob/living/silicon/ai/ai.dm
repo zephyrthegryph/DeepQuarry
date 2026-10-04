@@ -116,6 +116,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	owns_one(nameof(track), /datum/trackable)
 	owns_one(nameof(aiMulti), starts = /obj/item/multitool)
 	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam, starts = /obj/item/camera/siliconcam/ai_camera)
+	op("ai_interaction_card", item(/obj/item/aicard), label("Transfer to card"), then(PROC_REF(ai_interaction_card)))
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	om_grant_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
@@ -843,10 +844,10 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 				src.camera.set_light(AI_CAMERA_LUMINOSITY)
 		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
 
-EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PROC_REF(ai_interaction_card), "Transfer to card"))
-
 /// Old attackby: an intelliCard pulls the AI in.
-/mob/living/silicon/ai/proc/ai_interaction_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
+/mob/living/silicon/ai/proc/ai_interaction_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/aicard/card = A.held
 	card.grab_ai(src, user)
 	return TRUE
 

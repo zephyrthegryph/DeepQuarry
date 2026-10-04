@@ -136,10 +136,12 @@ CAPABILITIES(/obj/item/card/robot)
 	var/mode = 1
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode", PROC_REF(interaction_robopen)))
+CAPABILITIES(/obj/item/pen/robopen)
+	op("robopen", in_hand(), label("Change colour or mode"), then(PROC_REF(interaction_robopen)))
 
 /// Old attack_self.
-/obj/item/pen/robopen/proc/interaction_robopen(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/robopen/proc/interaction_robopen(datum/act/op/A)
+	var/mob/user = A.actor
 	open_request(src, /datum/prompt/choice, PROC_REF(robopen_choice_made), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Change What?", question = "Would you like to change colour or mode?", choices = list("Colour", "Mode", "Cancel"), buttons = TRUE, timeout = 0)
 
 /obj/item/pen/robopen/proc/robopen_choice_made(datum/act/request/A)

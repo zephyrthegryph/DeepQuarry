@@ -239,10 +239,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool/cyborg, TYPE_PROC_REF(/atom, appeara
 /obj/item/stack/cable_coil/cyborg/material_totals()
 	return list()
 
-EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colour", PROC_REF(cyborg_coil_self)))
+CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
+	op("cyborg_coil_self", in_hand(), label("Change colour"), then(PROC_REF(cyborg_coil_self)))
 
 /// Old attack_self.
-/obj/item/stack/cable_coil/cyborg/proc/cyborg_coil_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stack/cable_coil/cyborg/proc/cyborg_coil_self(datum/act/op/A)
+	var/mob/user = A.actor
 	set_colour(user)
 
 /obj/item/stack/cable_coil/cyborg/proc/set_colour(mob/user)
