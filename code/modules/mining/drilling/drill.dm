@@ -96,6 +96,7 @@
 CAPABILITIES(/obj/machinery/mining/drill)
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
 	climb()
+	op("label", tool(TOOL_MULTITOOL), label("Assign ID number"), needs(req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), then(PROC_REF(label_tool_used)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
@@ -270,6 +271,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 /obj/machinery/mining/drill/multitool_act(mob/user, obj/item/tool)
 	if(active)
 		return ITEM_INTERACT_BLOCKING
+	return label_request_open(user, tool)
+
+/obj/machinery/mining/drill/proc/label_available(datum/act/op/A)
+	return !active
+
+/obj/machinery/mining/drill/proc/label_tool_used(datum/act/op/A)
+	label_request_open(A.actor, A.held)
+	return OP_OK
+
+/obj/machinery/mining/drill/proc/label_request_open(mob/user, obj/item/tool)
 	var/original_client_ckey
 	if(istype(user, /client))
 		var/client/C = user

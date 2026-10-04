@@ -165,11 +165,15 @@ CAPABILITIES(/obj/item/storage/excavation)
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("drilled")
 
-DECLARE_INTERACTIONS(/obj/item/pickaxe/excavationdrill, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/pickaxe/excavationdrill)
+	op("depth", in_hand(), label("Set excavation depth"), then(PROC_REF(depth_used)))
 
-/// Old attack_self.
-/obj/item/pickaxe/excavationdrill/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/number/excavation_depth, PROC_REF(excavation_depth_entered), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "Put the desired depth (1-60 centimeters).", title = "Set Depth", default = excavation_amount, max_value = 60, min_value = 1, timeout = 0)
+/obj/item/pickaxe/excavationdrill/proc/depth_used(datum/act/op/A)
+	depth_request_open(A.actor, A.held)
+	return OP_OK
+
+/obj/item/pickaxe/excavationdrill/proc/depth_request_open(mob/user, obj/item/held)
+	open_request(src, /datum/prompt/number/excavation_depth, PROC_REF(excavation_depth_entered), answerer = user, captured_item = held, item_expected = !isnull(held), question = "Put the desired depth (1-60 centimeters).", title = "Set Depth", default = excavation_amount, max_value = 60, min_value = 1, timeout = 0)
 	return TRUE
 
 /obj/item/pickaxe/excavationdrill/proc/excavation_depth_entered(datum/act/request/A)
