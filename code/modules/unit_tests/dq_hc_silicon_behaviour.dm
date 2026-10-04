@@ -150,3 +150,109 @@
 	hci_answer(R, null, TRUE)
 	settle()
 	TEST_ASSERT_NULL(R.pose, "a cancel clears the pose")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// pAI
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A pAI standing on a floor tile next to a person, with a card.
+/datum/unit_test/dq_hc_silicon/proc/make_pai(mob/living/carbon/human/H)
+	var/obj/item/paicard/card = allocate(/obj/item/paicard, test_floor())
+	var/mob/living/silicon/pai/P = allocate(/mob/living/silicon/pai, card)
+	P.forceMove(get_step(H, EAST))
+	return P
+
+/// An ID swiped over a pAI, as the pAI's item handler takes it (an interaction handler today).
+/proc/hcs_swipe(mob/user, mob/living/silicon/pai/P, obj/item/card/id/ID)
+	return P.pai_interaction_item(user, ID, null)
+
+/datum/unit_test/dq_hc_silicon/pai_access_add_copies_the_card_access
+
+/datum/unit_test/dq_hc_silicon/pai_access_add_copies_the_card_access/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/pai/P = make_pai(H)
+	var/obj/item/card/id/ID = allocate(/obj/item/card/id, test_floor())
+	ID.access = list(ACCESS_SECURITY)
+	H.put_in_active_hand(ID)
+	P.idaccessible = 1
+	P.idcard.access = list()
+	hcs_swipe(H, P, ID)
+	hci_answer(H, "Add Access")
+	settle()
+	TEST_ASSERT(ACCESS_SECURITY in P.idcard.access, "the card's access is copied to the pAI")
+
+/datum/unit_test/dq_hc_silicon/pai_access_remove_clears_access
+
+/datum/unit_test/dq_hc_silicon/pai_access_remove_clears_access/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/pai/P = make_pai(H)
+	var/obj/item/card/id/ID = allocate(/obj/item/card/id, test_floor())
+	H.put_in_active_hand(ID)
+	P.idaccessible = 1
+	P.idcard.access = list(ACCESS_SECURITY)
+	hcs_swipe(H, P, ID)
+	hci_answer(H, "Remove Access")
+	settle()
+	TEST_ASSERT(!length(P.idcard.access), "Remove Access clears the pAI's access")
+
+/datum/unit_test/dq_hc_silicon/pai_access_dropped_when_card_leaves_hand
+
+/datum/unit_test/dq_hc_silicon/pai_access_dropped_when_card_leaves_hand/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/pai/P = make_pai(H)
+	var/obj/item/card/id/ID = allocate(/obj/item/card/id, test_floor())
+	ID.access = list(ACCESS_SECURITY)
+	H.put_in_active_hand(ID)
+	P.idaccessible = 1
+	P.idcard.access = list()
+	hcs_swipe(H, P, ID)
+	H.drop_item()
+	ID.forceMove(test_floor())
+	hci_answer(H, "Add Access")
+	settle()
+	TEST_ASSERT(!length(P.idcard.access), "a card that left the hand copies nothing")
+
+/datum/unit_test/dq_hc_silicon/pai_wipe_asks_before_wiping
+
+/datum/unit_test/dq_hc_silicon/pai_wipe_asks_before_wiping/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/pai/P = make_pai(H)
+	var/obj/item/paicard/card = P.card
+	P.wipe_software()
+	hci_answer(P, FALSE)
+	settle()
+	TEST_ASSERT_EQUAL(card.pai, P, "a no keeps the personality in the card")
+	P.wipe_software()
+	hci_answer(P, null, TRUE)
+	settle()
+	TEST_ASSERT_EQUAL(card.pai, P, "a cancel keeps the personality in the card")
+
+/datum/unit_test/dq_hc_silicon/pai_download_spends_ram
+
+/datum/unit_test/dq_hc_silicon/pai_download_spends_ram/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/pai/P = make_pai(H)
+	var/datum/pai_software/target = GLOB.pai_software_by_key["med_records"]
+	TEST_ASSERT(target, "the medical records software exists")
+	P.software -= target.id
+	P.ram = 100
+	P.touch_window(target.name)
+	hci_answer(P, TRUE)
+	settle()
+	TEST_ASSERT(P.software[target.id], "the software is installed")
+	TEST_ASSERT_EQUAL(P.ram, 100 - target.ram_cost, "the download costs its RAM")
+
+/datum/unit_test/dq_hc_silicon/pai_download_dropped_when_ram_runs_out
+
+/datum/unit_test/dq_hc_silicon/pai_download_dropped_when_ram_runs_out/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/pai/P = make_pai(H)
+	var/datum/pai_software/target = GLOB.pai_software_by_key["med_records"]
+	P.software -= target.id
+	P.ram = 100
+	P.touch_window(target.name)
+	P.ram = 0
+	hci_answer(P, TRUE)
+	settle()
+	TEST_ASSERT(!P.software[target.id], "a pAI that spent its RAM meanwhile installs nothing")
+	TEST_ASSERT_EQUAL(P.ram, 0, "and pays nothing")
