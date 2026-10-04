@@ -27,9 +27,23 @@
 
 //ADMINVERBS
 ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs, notes or singulo and telesci logs.", ADMIN_CATEGORY_INVESTIGATE)
-	var/subject = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select Subject", title = "Select the subject to investigate.", choices = list("hrefs","notes","singulo","telesci"))
-	if(isnull(subject))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_investigation, PROC_REF(investigation_subject_chosen), answerer = answerer, choices = list("hrefs","notes","singulo","telesci"))
+
+/datum/admin_verb/investigate_show/proc/investigation_subject_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(investigation_subject_answered), A)
+	if(!result.ok)
+		stack_trace("om flow investigate_show answer investigation_subject_answered: [result.error]")
+
+/datum/admin_verb/investigate_show/proc/investigation_subject_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	var/subject = A.request.answer_value
 	if(!subject)
 		return
 
@@ -55,5 +69,17 @@ ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs
 			else
 				to_chat(user, span_filter_adminlog(span_warning("Error: admin_investigate: Href Logging is not on.")))
 				return
+
+/datum/prompt/choice/admin_investigation
+	question = "Select Subject"
+	title = "Select the subject to investigate."
+	rights = R_ADMIN|R_MOD|R_SERVER
+	timeout = 0
+
+/datum/prompt/choice/admin_investigation/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 #undef INVESTIGATE_DIR
