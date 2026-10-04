@@ -464,6 +464,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 	set_light(lrange, lpower, lcolor)
 
 CAPABILITIES(/obj/item/melee/energy/blade)
+	without("power") // special_handling: a summoned blade is never toggled, only dismissed
 	op("dismiss", in_hand(), label("Dismiss energy blade"), then(PROC_REF(blade_dismiss_requested)))
 
 /obj/item/melee/energy/blade/proc/blade_dismiss_requested(datum/act/op/A)

@@ -11729,6 +11729,8 @@
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/melee/energy.dm", 466, /obj/item/melee/energy/blade)
 	into += entry_line(467)
+	into += list(global.without("power"))
+	into += entry_line(468)
 	into += list(global.op("dismiss", global.in_hand(), global.label("Dismiss energy blade"), global.then(PROC_REF(blade_dismiss_requested))))
 
 /// CAPABILITIES(/obj/item/melee/fluffstuff) at code/modules/vore/fluffstuff/custom_items.dm:1102
