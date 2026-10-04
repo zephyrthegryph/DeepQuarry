@@ -158,9 +158,10 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 	var/tmp/datum/material/material_static
 	resistance_flags = FLAMMABLE
 
-/obj/item/shovel/wood/Initialize(mapload, _mat)
+/obj/item/shovel/wood/Initialize(mapload, _mat = MAT_WOOD)
 	. = ..()
-	material_static = get_material_by_name(_mat)
+	// A shovel spawned bare (the survival recipe, a map, a test) is plain wood, not material-less.
+	material_static = get_material_by_name(_mat || MAT_WOOD)
 	if(!istype(material(), /datum/material))
 		material_static = null
 	else
@@ -171,7 +172,8 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 /obj/item/shovel/wood/draw(datum/look/look)
 	..()
 	look.color = material() ? material().icon_colour : initial(color)
-	look.alpha = min(max(255 * material().opacity, 80), 255)
+	if(material())
+		look.alpha = min(max(255 * material().opacity, 80), 255)
 
 /obj/item/shovel/spade
 	name = "spade"
