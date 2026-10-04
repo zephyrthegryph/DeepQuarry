@@ -1,51 +1,48 @@
 /datum/tgui_module/rustcore_monitor
 	name = "R-UST Core Monitoring"
-	tgui_id = "RustCoreMonitor"
 
 	var/core_tag = ""
 
-/// The devices this console controls, for the UI's refs.
-/datum/tgui_module/rustcore_monitor/proc/fusion_cores()
-	return REGISTRY_MEMBERS(REGISTRY_FUSION_CORES)
+CAPABILITIES(/datum/tgui_module/rustcore_monitor)
+	interface("RustCoreMonitor")
+	op("toggle_active", ui_act("toggle_active", arg("core", schema_ref(/obj/machinery/power/fusion_core))), then(PROC_REF(ui_act_toggle_active)))
+	op("toggle_reactantdump", ui_act("toggle_reactantdump", arg("core", schema_ref(/obj/machinery/power/fusion_core))), then(PROC_REF(ui_act_toggle_reactantdump)))
+	op("set_tag", ui_act("set_tag"), then(PROC_REF(ui_act_set_tag)))
+	op("set_fieldstr", ui_act("set_fieldstr", arg("core", schema_ref(/obj/machinery/power/fusion_core)), arg("fieldstr", num())), then(PROC_REF(ui_act_set_fieldstr)))
 
-UI_ACT(/datum/tgui_module/rustcore_monitor, "toggle_active", ui_act_toggle_active, UI_ARG_REF("core", "proc:fusion_cores", /obj/machinery/power/fusion_core))
-UI_ACT_PROC(/datum/tgui_module/rustcore_monitor, ui_act_toggle_active)
-	var/obj/machinery/power/fusion_core/C = params["core"]
+/datum/tgui_module/rustcore_monitor/proc/ui_act_toggle_active(datum/act/op/A, core)
+	var/obj/machinery/power/fusion_core/C = core
 	if(!C)
 		return TRUE
 	if(!C.Startup()) //Startup() whilst the device is active will return null.
 		C.Shutdown()
 	return TRUE
 
-UI_ACT(/datum/tgui_module/rustcore_monitor, "toggle_reactantdump", ui_act_toggle_reactantdump, UI_ARG_REF("core", "proc:fusion_cores", /obj/machinery/power/fusion_core))
-UI_ACT_PROC(/datum/tgui_module/rustcore_monitor, ui_act_toggle_reactantdump)
-	var/obj/machinery/power/fusion_core/C = params["core"]
+/datum/tgui_module/rustcore_monitor/proc/ui_act_toggle_reactantdump(datum/act/op/A, core)
+	var/obj/machinery/power/fusion_core/C = core
 	if(C)
 		C.reactant_dump = !C.reactant_dump
 	return TRUE
 
-UI_ACT(/datum/tgui_module/rustcore_monitor, "set_tag", ui_act_set_tag)
-UI_ACT_PROC(/datum/tgui_module/rustcore_monitor, ui_act_set_tag)
-	var/_answer_a1 = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Core Control", default = core_tag)
-	if(isnull(_answer_a1))
+/datum/tgui_module/rustcore_monitor/proc/ui_act_set_tag(datum/act/op/A)
+	open_request(src, /datum/prompt/text, PROC_REF(tag_entered), valid = PROC_REF(request_usable), answerer = A.actor, title = "Core Control", question = "Enter a new ident tag.", default = core_tag, timeout = 0)
+
+/datum/tgui_module/rustcore_monitor/proc/tag_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/new_ident = sanitize_text(_answer_a1)
+	var/new_ident = sanitize_text(A.answer.answer_value)
 	if(new_ident)
 		core_tag = new_ident
-	return TRUE
+	SStgui.update_uis(src)
 
-UI_ACT(/datum/tgui_module/rustcore_monitor, "set_fieldstr", ui_act_set_fieldstr, UI_ARG_REF("core", "proc:fusion_cores", /obj/machinery/power/fusion_core), UI_ARG_NUM("fieldstr"))
-UI_ACT_PROC(/datum/tgui_module/rustcore_monitor, ui_act_set_fieldstr)
-	var/obj/machinery/power/fusion_core/C = params["core"]
-	var/new_strength = params["fieldstr"]
+/datum/tgui_module/rustcore_monitor/proc/ui_act_set_fieldstr(datum/act/op/A, core, fieldstr)
+	var/obj/machinery/power/fusion_core/C = core
+	var/new_strength = fieldstr
 	if(C)
 		C.target_field_strength = new_strength
 	return TRUE
 
-UI_DATA_REPLACE(/datum/tgui_module/rustcore_monitor, "merge:ui_data_datum_tgui_module_rustcore_monitor{cores:list}")
-
-/// The computed part of /datum/tgui_module/rustcore_monitor's window data (declared on its UI_DATA row).
-/datum/tgui_module/rustcore_monitor/proc/ui_data_datum_tgui_module_rustcore_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/rustcore_monitor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/cores = list()
 

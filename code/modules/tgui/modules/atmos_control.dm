@@ -1,6 +1,5 @@
 /datum/tgui_module/atmos_control
 	name = "Atmospherics Control"
-	tgui_id = "AtmosControl"
 	/// A private access-check object (owned: built in New).
 	var/obj/access
 	var/emagged = 0
@@ -10,6 +9,9 @@
 
 CAPABILITIES(/datum/tgui_module/atmos_control)
 	owns_one(nameof(access), /obj)
+	interface("AtmosControl")
+	op("alarm", ui_act("alarm", arg("alarm", schema_ref(/obj/machinery/alarm))), then(PROC_REF(ui_act_alarm)))
+	op("setZLevel", ui_act("setZLevel", arg("mapZLevel", num())), then(PROC_REF(ui_act_setzlevel)))
 
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()
@@ -30,29 +32,26 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 /datum/tgui_module/atmos_control/proc/alarm_sources()
 	return LAZYLEN(monitored_alarms) ? LAZYCOPY(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)
 
-UI_ACT(/datum/tgui_module/atmos_control, "alarm", ui_act_alarm, UI_ARG_REF("alarm", "proc:alarm_sources", /obj/machinery/alarm))
-UI_ACT_PROC(/datum/tgui_module/atmos_control, ui_act_alarm)
-	if(ui_ref)
-		var/obj/machinery/alarm/alarm = params["alarm"]
-		if(alarm)
-			var/datum/tgui_state/TS = generate_state(alarm)
-			alarm.tgui_interact(ui.user, parent_ui = ui_ref, custom_state = TS)
+/datum/tgui_module/atmos_control/proc/ui_act_alarm(datum/act/op/A, obj/machinery/alarm/alarm)
+	var/mob/user = A.actor
+	if(ui_ref && (alarm in alarm_sources()))
+		var/datum/tgui_state/TS = generate_state(alarm)
+		alarm.tgui_interact(user, parent_ui = ui_ref, custom_state = TS)
 	return 1
 
-UI_ACT(/datum/tgui_module/atmos_control, "setZLevel", ui_act_setzlevel, UI_ARG_NUM("mapZLevel"))
-UI_ACT_PROC(/datum/tgui_module/atmos_control, ui_act_setzlevel)
-	ui.set_map_z_level(params["mapZLevel"])
+/datum/tgui_module/atmos_control/proc/ui_act_setzlevel(datum/act/op/A, mapZLevel)
+	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
+	ui?.set_map_z_level(mapZLevel)
 	return TRUE
 
 /datum/tgui_module/atmos_control/ui_assets(mob/user)
 	. = ..()
 	. += get_asset_datum(/datum/asset/simple/holo_nanomap)
 
-DECLARE_UI(/datum/tgui_module/atmos_control, UI_FROM_VAR("tgui_id"), UI_AUTOUPDATE)
-
 /datum/tgui_module/atmos_control/ui_opening(mob/user, datum/tgui/ui)
 	..()
 	ui_ref = ui
+	ui.set_autoupdate(TRUE)
 
 /datum/tgui_module/atmos_control/tgui_static_data(mob/user)
 	. = ..()
@@ -76,10 +75,8 @@ DECLARE_UI(/datum/tgui_module/atmos_control, UI_FROM_VAR("tgui_id"), UI_AUTOUPDA
 			"z" = alarm.z)
 	.["alarms"] = alarms
 
-UI_DATA_REPLACE(/datum/tgui_module/atmos_control, "merge:ui_data_datum_tgui_module_atmos_control{map_levels:list}")
-
-/// The computed part of /datum/tgui_module/atmos_control's window data (declared on its UI_DATA row).
-/datum/tgui_module/atmos_control/proc/ui_data_datum_tgui_module_atmos_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/atmos_control/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	var/z = get_z(user)
@@ -118,7 +115,6 @@ UI_DATA_REPLACE(/datum/tgui_module/atmos_control, "merge:ui_data_datum_tgui_modu
 
 /datum/tgui_module/atmos_control/robot
 DECLARE_UI_STATE(/datum/tgui_module/atmos_control/robot, GLOB.tgui_self_state)
-
 
 /// The atmos_control this refers to (a relation view: null once that is deleted).
 /datum/tgui_state/air_alarm_remote/proc/atmos_control() as /datum/tgui_module/atmos_control

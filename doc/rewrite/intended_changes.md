@@ -424,3 +424,16 @@ Pinned by `code/modules/unit_tests/dq_hc_struct_behaviour.dm` (written on the le
 * **Gravemarker carving:** the epitaph's carving starts a second tool use while the name's is still running and is refused by it, as before; only the name is carved. Pinned by `gravemarker_name_is_carved`, unchanged.
 * **The painting admin pick** (`admin_lateload_painting`): the three `usr` reads are one `var/mob/admin = usr` (an annotated verb-context read); the questions re-check the admin's rights (`rights = R_HOLDER`) when the answer arrives.
 * **Interim tests that built a legacy prompt by hand** (`interim_sign_refasten`, `interim_medical_stand_prompt_actor`) open and answer the request instead; the snapshot row of the biowaste tank (`dq_i7_structures_bulk_capture.dm`) no longer lists the legacy emag interaction.
+
+## hc-tgui (datum-hosted windows: tgui modules, panels, programs)
+
+Pinned by `code/modules/unit_tests/dq_hc_tgui_behaviour.dm` (written on the legacy code first).
+
+* **A module's window is its type's `interface()`; the NTOS skin is added by `/datum/tgui_module/ui_interface()`** (`ntos = TRUE` gives `Ntos<Window>`), where `New()` used to rewrite `tgui_id`. A subtype that only changes the window's state keeps its `DECLARE_UI_STATE` row (the ratchet `tgui_state_override` wants it; `interface(null, state =)` would drop the window name).
+* **A ref argument is resolved at the boundary.** `schema_ref()` now accepts the text a window sends (`locate(text)`, null when it names nothing) when the value comes from a player, so `arg("valve", schema_ref(/obj/...))` hands the handler the entity. The old `UI_ARG_REF(name, SOURCE, type)` searched SOURCE; where SOURCE was a whole registry of the type (fuel injectors, fusion cores, gyrotrons, cameras, mobs, shutoff valves) the type check is the same set, so the source procs are gone; where it was narrower (a console's own alarms, an AI's own laws) the handler still checks membership.
+* **`ui_shape()` is a macro** (`code/__defines/engine/declare.dm`): the proc taking `...` rejected the documented `ui_shape(field = schema)` form at run time ("bad arg name"). A data-only window declares `ui_shape(...)`, since `analyze gen ui_types` refuses an `interface()` with neither a shape nor an op.
+* **The NTOS header buttons** (`PC_exit`, `PC_shutdown`, `PC_minimize`) are three ops of `/datum/tgui_module` (one handler read `action` before).
+* **A question a module button asks is an `open_request()`** whose answer is dropped unless the asker's window on the module is still open and interactive (`request_usable()`), as the old re-run dropped it; the `tgui_status(user, state) == STATUS_INTERACTIVE` re-checks inside handlers went with it. A text field's default is read when the question is asked.
+* **`ui_act_allowed()` guards** of a module become requirements on its ops: `alarm_monitor` (an AI only, silent), `crew_monitor` (station levels, with the old refusal text; the typing sound plays on every accepted button, not on refused ones).
+* **`crew_monitor` and `atmos_control` autoupdate** through `ui_opening()` (`UI_AUTOUPDATE` had no equivalent); `setZLevel` finds the viewer's window with `SStgui.get_open_ui()`.
+* **A number prompt with `round_entry = FALSE`** is `step = 0.01` (the new kind rounds to whole numbers unless it has a step).

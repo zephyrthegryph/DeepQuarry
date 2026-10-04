@@ -97,6 +97,9 @@
 	var/mob/living/carbon/human/H = hct_actor()
 	var/list/data = data_of(M, H)
 	TEST_ASSERT(("manifest" in data), "the manifest is sent")
+	var/datum/tgui_module/crew_manifest/robot/R = hct_track(new /datum/tgui_module/crew_manifest/robot(hct_host()))
+	TEST_ASSERT_EQUAL(R.tgui_state(H), GLOB.tgui_self_state, "a cyborg's manifest works through its self state")
+	TEST_ASSERT_EQUAL(M.tgui_state(H), GLOB.tgui_default_state, "the plain one through the default state")
 
 /datum/unit_test/dq_hc_tgui/crew_manifest_self_deleting
 /datum/unit_test/dq_hc_tgui/crew_manifest_self_deleting/run_gate()

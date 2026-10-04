@@ -67,6 +67,8 @@
 #define SCHEMA(T, V, SCHEMA_EXPR, opts...) ##T/proc/__schema_##V() { return list(#V, SCHEMA_EXPR, list(opts), #SCHEMA_EXPR); };/datum/schema_decl##T/__##V/spec() { return list(T, ##T/proc/__schema_##V); }
 
 /// A write the schema refused (the setter's value after schema_write()).
+/// ui_shape(field | field = schema, ...): the window's data fields; read from source by `analyze gen ui_types`, an empty entry at runtime (part.dm).
+#define ui_shape(fields...) entry_make("ui_shape", null)
 #define SCHEMA_REJECT "\[schema rejected]"
 
 // ---- Messages (section 13) ----

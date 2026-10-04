@@ -1,11 +1,11 @@
 /datum/tgui_module/crew_manifest
 	name = "Crew Manifest"
-	tgui_id = "CrewManifest"
 
-UI_DATA(/datum/tgui_module/crew_manifest, "merge:ui_data_datum_tgui_module_crew_manifest{manifest:unknown}")
+CAPABILITIES(/datum/tgui_module/crew_manifest)
+	interface("CrewManifest")
+	ui_shape(manifest = map_of(schema_text(), list_of(map_of(schema_text(), schema_text()))))
 
-/// The computed part of /datum/tgui_module/crew_manifest's window data (declared on its UI_DATA row).
-/datum/tgui_module/crew_manifest/proc/ui_data_datum_tgui_module_crew_manifest(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/crew_manifest/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(GLOB.data_core)
 		GLOB.data_core.get_manifest_list()

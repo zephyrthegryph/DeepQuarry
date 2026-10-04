@@ -1,12 +1,15 @@
 /datum/tgui_module/rustfuel_control
 	name = "Fuel Injector Control"
-	tgui_id = "RustFuelControl"
 
 	var/fuel_tag = ""
 
-UI_ACT(/datum/tgui_module/rustfuel_control, "toggle_active", ui_act_toggle_active, UI_ARG_REF("fuel", "proc:ui_source_registry_members_registry_fuel_injectors", /obj/machinery/fusion_fuel_injector))
-UI_ACT_PROC(/datum/tgui_module/rustfuel_control, ui_act_toggle_active)
-	var/obj/machinery/fusion_fuel_injector/FI = params["fuel"]
+CAPABILITIES(/datum/tgui_module/rustfuel_control)
+	interface("RustFuelControl")
+	op("toggle_active", ui_act("toggle_active", arg("fuel", schema_ref(/obj/machinery/fusion_fuel_injector))), then(PROC_REF(ui_act_toggle_active)))
+	op("set_tag", ui_act("set_tag"), then(PROC_REF(ui_act_set_tag)))
+
+/datum/tgui_module/rustfuel_control/proc/ui_act_toggle_active(datum/act/op/A, fuel)
+	var/obj/machinery/fusion_fuel_injector/FI = fuel
 	if(!istype(FI))
 		return FALSE
 
@@ -17,23 +20,18 @@ UI_ACT_PROC(/datum/tgui_module/rustfuel_control, ui_act_toggle_active)
 
 	return TRUE
 
-UI_ACT(/datum/tgui_module/rustfuel_control, "set_tag", ui_act_set_tag)
-UI_ACT_PROC(/datum/tgui_module/rustfuel_control, ui_act_set_tag)
-	var/_answer_a1 = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Gyrotron Control", default = fuel_tag)
-	if(isnull(_answer_a1))
+/datum/tgui_module/rustfuel_control/proc/ui_act_set_tag(datum/act/op/A)
+	open_request(src, /datum/prompt/text, PROC_REF(tag_entered), valid = PROC_REF(request_usable), answerer = A.actor, title = "Gyrotron Control", question = "Enter a new ident tag.", default = fuel_tag, timeout = 0)
+
+/datum/tgui_module/rustfuel_control/proc/tag_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/new_ident = sanitize_text(_answer_a1)
+	var/new_ident = sanitize_text(A.answer.answer_value)
 	if(new_ident)
 		fuel_tag = new_ident
+	SStgui.update_uis(src)
 
-/// The list the UI_ARG_REF rows resolve refs in.
-/datum/tgui_module/rustfuel_control/proc/ui_source_registry_members_registry_fuel_injectors()
-	return REGISTRY_MEMBERS(REGISTRY_FUEL_INJECTORS)
-
-UI_DATA_REPLACE(/datum/tgui_module/rustfuel_control, "merge:ui_data_datum_tgui_module_rustfuel_control{fuels:list}")
-
-/// The computed part of /datum/tgui_module/rustfuel_control's window data (declared on its UI_DATA row).
-/datum/tgui_module/rustfuel_control/proc/ui_data_datum_tgui_module_rustfuel_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/rustfuel_control/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/fuels = list()
 

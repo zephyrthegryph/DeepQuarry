@@ -1,6 +1,5 @@
 /datum/tgui_module/power_monitor
 	name = "Power monitor"
-	tgui_id = "PowerMonitor"
 	var/list/grid_sensors
 	var/active_sensor = null	//name_tag of the currently selected sensor
 
@@ -8,10 +7,14 @@
 	. = ..()
 	refresh_sensors()
 
-UI_DATA_REPLACE(/datum/tgui_module/power_monitor, "merge:ui_data_datum_tgui_module_power_monitor{all_sensors:list,focus:unknown}")
+CAPABILITIES(/datum/tgui_module/power_monitor)
+	interface("PowerMonitor")
+	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("setsensor", ui_act("setsensor", arg("id", schema_text(4096))), then(PROC_REF(ui_act_setsensor)))
 
-/// The computed part of /datum/tgui_module/power_monitor's window data (declared on its UI_DATA row).
-/datum/tgui_module/power_monitor/proc/ui_data_datum_tgui_module_power_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/power_monitor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	var/list/sensors = list()
@@ -40,19 +43,16 @@ UI_DATA_REPLACE(/datum/tgui_module/power_monitor, "merge:ui_data_datum_tgui_modu
 
 	return data
 
-UI_ACT(/datum/tgui_module/power_monitor, "clear", ui_act_clear)
-UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_clear)
+/datum/tgui_module/power_monitor/proc/ui_act_clear(datum/act/op/A)
 	active_sensor = null
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/power_monitor, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_refresh)
+/datum/tgui_module/power_monitor/proc/ui_act_refresh(datum/act/op/A)
 	refresh_sensors()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/power_monitor, "setsensor", ui_act_setsensor, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_setsensor)
-	active_sensor = params["id"]
+/datum/tgui_module/power_monitor/proc/ui_act_setsensor(datum/act/op/A, id)
+	active_sensor = id
 	. = TRUE
 
 /datum/tgui_module/power_monitor/proc/has_alarm()

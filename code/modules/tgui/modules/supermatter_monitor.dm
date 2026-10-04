@@ -1,7 +1,6 @@
 
 /datum/tgui_module/supermatter_monitor
 	name = "Supermatter monitor"
-	tgui_id = "SupermatterMonitor"
 	var/list/supermatters
 	var/tmp/obj/machinery/power/supermatter/active	// Currently selected supermatter crystal.
 
@@ -30,10 +29,13 @@
 	for(var/obj/machinery/power/supermatter/S in supermatters)
 		. = max(., S.get_status())
 
-UI_DATA(/datum/tgui_module/supermatter_monitor, "merge:ui_data_datum_tgui_module_supermatter_monitor{active:num,SM_area:unknown,SM_integrity:unknown,SM_power:num,SM_ambienttemp:unknown,SM_ambientpressure:unknown,SM_EPR:unknown,SM_gas_O2:num,SM_gas_CO2:num,SM_gas_N2:num,SM_gas_PH:num,SM_gas_CH4:num,SM_gas_N2O:num,supermatters:list}")
+CAPABILITIES(/datum/tgui_module/supermatter_monitor)
+	interface("SupermatterMonitor")
+	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("set", ui_act("set", arg("set", num())), then(PROC_REF(ui_act_set)))
 
-/// The computed part of /datum/tgui_module/supermatter_monitor's window data (declared on its UI_DATA row).
-/datum/tgui_module/supermatter_monitor/proc/ui_data_datum_tgui_module_supermatter_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/supermatter_monitor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	if(istype(active(), /obj/machinery/power/supermatter))
@@ -71,12 +73,12 @@ UI_DATA(/datum/tgui_module/supermatter_monitor, "merge:ui_data_datum_tgui_module
 	else
 		var/list/SMS = list()
 		for(var/obj/machinery/power/supermatter/S in supermatters)
-			var/area/A = get_area(S)
-			if(!A)
+			var/area/A2 = get_area(S)
+			if(!A2)
 				continue
 
 			SMS.Add(list(list(
-			"area_name" = A.name,
+			"area_name" = A2.name,
 			"integrity" = S.get_integrity(),
 			"uid" = S.uid
 			)))
@@ -86,19 +88,16 @@ UI_DATA(/datum/tgui_module/supermatter_monitor, "merge:ui_data_datum_tgui_module
 
 	return data
 
-UI_ACT(/datum/tgui_module/supermatter_monitor, "clear", ui_act_clear)
-UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_clear)
+/datum/tgui_module/supermatter_monitor/proc/ui_act_clear(datum/act/op/A)
 	rel_clear(src, nameof(/area/looking_glass::active))
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/supermatter_monitor, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_refresh)
+/datum/tgui_module/supermatter_monitor/proc/ui_act_refresh(datum/act/op/A)
 	refresh()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/supermatter_monitor, "set", ui_act_set, UI_ARG_NUM("set"))
-UI_ACT_PROC(/datum/tgui_module/supermatter_monitor, ui_act_set)
-	var/newuid = params["set"]
+/datum/tgui_module/supermatter_monitor/proc/ui_act_set(datum/act/op/A, set_uid)
+	var/newuid = set_uid
 	for(var/obj/machinery/power/supermatter/S in supermatters)
 		if(S.uid == newuid)
 			rel_set(src, nameof(/area/looking_glass::active), S)

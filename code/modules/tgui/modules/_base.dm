@@ -15,8 +15,12 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 
 /datum/tgui_module/New(host)
 	rel_set(src, nameof(host), host)
-	if(ntos)
-		tgui_id = "Ntos" + tgui_id
+
+/// A module's window is its type's interface(); on a modular computer the window is the NTOS skin of it.
+/datum/tgui_module/ui_interface(mob/user)
+	. = ..()
+	if(ntos && istext(.))
+		return "Ntos[.]"
 
 /datum/tgui_module/tgui_host()
 	return host() ? host().tgui_host() : src
@@ -64,25 +68,53 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 	if(istype(host))
 		. += host.get_header_data()
 
-// The NTOS header buttons, when the module runs on a modular computer.
-UI_ACT(/datum/tgui_module, "PC_exit", ui_act_pc_exit)
-UI_ACT(/datum/tgui_module, "PC_shutdown", ui_act_pc_exit)
-UI_ACT(/datum/tgui_module, "PC_minimize", ui_act_pc_exit)
-UI_ACT_PROC(/datum/tgui_module, ui_act_pc_exit)
+CAPABILITIES(/datum/tgui_module)
+	// The NTOS header buttons, when the module runs on a modular computer.
+	op("pc_exit", ui_act("PC_exit"), then(PROC_REF(ui_act_pc_exit)))
+	op("pc_shutdown", ui_act("PC_shutdown"), then(PROC_REF(ui_act_pc_shutdown)))
+	op("pc_minimize", ui_act("PC_minimize"), then(PROC_REF(ui_act_pc_minimize)))
+	// A button works while its window does: checked when it is pressed and again when the answer to its question arrives.
+	extend(TAG_UI, needs(req(PROC_REF(ui_usable), silent = TRUE)))
+
+/// The window the viewer works this module through is still interactive. A button press arrives from that window; the answer to a question it
+/// asked needs the window to be still open (a question is dropped once the window is gone, as the re-run of the old handler was).
+/datum/tgui_module/proc/ui_usable(datum/act/op/A)
+	var/mob/user = A.actor
+	if(QDELETED(src) || !istype(user))
+		return FALSE
+	var/datum/tgui/ui = SStgui.get_open_ui(user, src)
+	if(!ui)
+		return !A.answer
+	return ui.status == STATUS_INTERACTIVE
+
+/// The answer to a question a button asked still counts: its window is still open and interactive for the one who answers.
+/datum/tgui_module/proc/request_usable(datum/request/R)
+	var/mob/user = R.answerer
+	if(QDELETED(src) || !istype(user))
+		return FALSE
+	var/datum/tgui/ui = SStgui.get_open_ui(user, src)
+	return !!ui && ui.status == STATUS_INTERACTIVE
+
+/datum/tgui_module/proc/ui_act_pc_exit(datum/act/op/A)
 	var/obj/item/modular_computer/host = tgui_host()
 	if(!istype(host))
 		return FALSE
-	switch(action)
-		if("PC_exit")
-			host.kill_program(FALSE, user)
-		if("PC_shutdown")
-			host.shutdown_computer()
-		if("PC_minimize")
-			host.minimize_program(user)
+	host.kill_program(FALSE, A.actor)
 	return TRUE
 
-// Each module subtype names its interface in tgui_id.
-DECLARE_UI(/datum/tgui_module, UI_FROM_VAR("tgui_id"))
+/datum/tgui_module/proc/ui_act_pc_shutdown(datum/act/op/A)
+	var/obj/item/modular_computer/host = tgui_host()
+	if(!istype(host))
+		return FALSE
+	host.shutdown_computer()
+	return TRUE
+
+/datum/tgui_module/proc/ui_act_pc_minimize(datum/act/op/A)
+	var/obj/item/modular_computer/host = tgui_host()
+	if(!istype(host))
+		return FALSE
+	host.minimize_program(A.actor)
+	return TRUE
 
 /datum/tgui_module/proc/relaymove(mob/user, direction)
 	return FALSE

@@ -1,6 +1,5 @@
 /datum/tgui_module/alarm_monitor
 	name = "Alarm monitor"
-	tgui_id = "StationAlertConsole"
 	var/list_cameras = 0						// Whether or not to list camera references. A future goal would be to merge this with the enginering/security camera console. Currently really only for AI-use.
 
 /// The particular list of alarm handlers this alarm monitor should present to the user. The handlers
@@ -88,50 +87,45 @@ DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/security/glasses, GLOB.tgui_gl
 
 	return all_alarms
 
-/datum/tgui_module/alarm_monitor/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!isAI(ui.user))
-		return FALSE
-	return TRUE
+/// Only an AI works the buttons (silently: anyone else is just not answered).
+/datum/tgui_module/alarm_monitor/proc/ui_gate(datum/act/op/A)
+	return isAI(A.actor)
 
-UI_ACT(/datum/tgui_module/alarm_monitor, "switchTo", ui_act_switchto, UI_ARG_REF("camera", "proc:ui_source_registry_members_registry_cameras", /obj/machinery/camera))
-UI_ACT_PROC(/datum/tgui_module/alarm_monitor, ui_act_switchto)
-	var/obj/machinery/camera/C = params["camera"]
+CAPABILITIES(/datum/tgui_module/alarm_monitor)
+	interface("StationAlertConsole")
+	op("switchTo", ui_act("switchTo", arg("camera", schema_ref(/obj/machinery/camera))), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_switchto)))
+
+/datum/tgui_module/alarm_monitor/proc/ui_act_switchto(datum/act/op/A, camera)
+	var/mob/user = A.actor
+	var/obj/machinery/camera/C = camera
 	if(!C)
 		return
 
-	ui.user.switch_to_camera(C)
+	user.switch_to_camera(C)
 	return 1
 
-/// The list the UI_ARG_REF rows resolve refs in.
-/datum/tgui_module/alarm_monitor/proc/ui_source_registry_members_registry_cameras()
-	return REGISTRY_MEMBERS(REGISTRY_CAMERAS)
-
-UI_DATA_REPLACE(/datum/tgui_module/alarm_monitor, "merge:ui_data_datum_tgui_module_alarm_monitor{categories:list}")
-
-/// The computed part of /datum/tgui_module/alarm_monitor's window data (declared on its UI_DATA row).
-/datum/tgui_module/alarm_monitor/proc/ui_data_datum_tgui_module_alarm_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/alarm_monitor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	var/categories[0]
 	var/z = get_z(tgui_host())
 	for(var/datum/alarm_handler/AH in alarm_handlers())
 		categories[++categories.len] = list("category" = AH.category, "alarms" = list())
-		for(var/datum/alarm/A in AH.visible_alarms(z))
+		for(var/datum/alarm/A2 in AH.visible_alarms(z))
 			var/cameras[0]
 			var/lost_sources[0]
 
 			if(isAI(user))
-				for(var/obj/machinery/camera/C in A.cameras())
+				for(var/obj/machinery/camera/C in A2.cameras())
 					cameras[++cameras.len] = C.tgui_structure()
-			for(var/datum/alarm_source/AS in A.sources)
+			for(var/datum/alarm_source/AS in A2.sources)
 				if(!AS.source)
 					lost_sources[++lost_sources.len] = AS.source_name
 
 			categories[categories.len]["alarms"] += list(list(
-					"name" = "[A.alarm_name()]" + "[A.max_severity() > 1 ? "(MAJOR)" : ""]",
-					"origin_lost" = A.origin() == null,
+					"name" = "[A2.alarm_name()]" + "[A2.max_severity() > 1 ? "(MAJOR)" : ""]",
+					"origin_lost" = A2.origin() == null,
 					"has_cameras" = cameras.len,
 					"cameras" = cameras,
 					"lost_sources" = lost_sources.len ? sanitize(english_list(lost_sources, nothing_text = "", and_text = ", ")) : ""))
