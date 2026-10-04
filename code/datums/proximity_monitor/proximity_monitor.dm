@@ -7,11 +7,11 @@
 	var/current_range
 	///If we don't check turfs in range if the host's loc isn't a turf
 	var/ignore_if_not_on_turf
-	///The hooks of the range connector, needed to monitor the turfs in range.
+	///What the range connector tells the monitor about the turfs in range.
 	var/static/list/loc_connections = list(
-		/datum/om/event/atom_entered = PROC_REF(on_entered),
-		/datum/om/event/atom_exited = PROC_REF(on_uncrossed),
-		/datum/om/event/atom_after_successful_initialized_on = PROC_REF(on_initialized_on),
+		RANGE_ENTERED = PROC_REF(on_entered),
+		RANGE_EXITED = PROC_REF(on_uncrossed),
+		RANGE_INITIALIZED = PROC_REF(on_initialized_on),
 	)
 	/// Hooks the containers of the host (owned).
 	var/datum/connect_containers/containers_connector
@@ -90,21 +90,21 @@ CAPABILITIES(/datum/proximity_monitor)
 	//Update the ignore_if_not_on_turf
 	update_range_connector(ignore_if_not_on_turf)
 
-/datum/proximity_monitor/proc/on_uncrossed(atom/source, datum/om/event/atom_exited/event)
+/datum/proximity_monitor/proc/on_uncrossed(atom/source, atom/movable/gone, atom/new_loc)
 	EVENT_HANDLER
-	uncrossed(source, event.gone, event.new_loc)
+	uncrossed(source, gone, new_loc)
 
 /// Something left a turf in range. Used by the advanced subtype for effect fields.
 /datum/proximity_monitor/proc/uncrossed(atom/source, atom/movable/gone, atom/new_loc)
 	return
 
-/datum/proximity_monitor/proc/on_entered(atom/source, datum/om/event/atom_entered/event)
+/datum/proximity_monitor/proc/on_entered(atom/source, atom/movable/arrived, atom/old_loc)
 	EVENT_HANDLER
-	entered(source, event.arrived)
+	entered(source, arrived)
 
-/datum/proximity_monitor/proc/on_initialized_on(atom/source, datum/om/event/atom_after_successful_initialized_on/event)
+/datum/proximity_monitor/proc/on_initialized_on(atom/source, atom/movable/created, mapload)
 	EVENT_HANDLER
-	entered(source, event.created)
+	entered(source, created)
 
 /// Something entered (or was created on) a turf in range.
 /datum/proximity_monitor/proc/entered(atom/source, atom/movable/arrived)
