@@ -519,3 +519,31 @@
 	TEST_ASSERT(!T.on, "starts off")
 	T.emp_act(1)
 	TEST_ASSERT(T.on, "an EMP switches it on")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Bomb tester and point defence (batch M5)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_struct/bomb_tester_takes_settings_only_when_idle
+/datum/unit_test/dq_hc_struct/bomb_tester_takes_settings_only_when_idle/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/bomb_tester/B = mach(/obj/machinery/bomb_tester, tile(3, 2))
+	press(H, B, "set_mode", list("mode" = 2))
+	TEST_ASSERT_EQUAL(B.sim_mode, 2, "the mode button sets the mode")
+	press(H, B, "set_can_pressure", list("pressure" = 1e9))
+	TEST_ASSERT(B.sim_canister_output <= ONE_ATMOSPHERE * 10, "the canister pressure is clamped")
+	B.simulating = 1
+	press(H, B, "set_mode", list("mode" = 1))
+	TEST_ASSERT_EQUAL(B.sim_mode, 2, "a running simulation takes no new mode")
+
+/datum/unit_test/dq_hc_struct/point_defense_gun_is_retagged_with_a_multitool
+/datum/unit_test/dq_hc_struct/point_defense_gun_is_retagged_with_a_multitool/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/pointdefense/P = mach(/obj/machinery/pointdefense, tile(3, 2))
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
+	H.put_in_active_hand(M)
+	P.multitool_act(H, M)
+	TEST_ASSERT(asked(H), "the multitool asks for the new tag")
+	hci_answer(H, "northern_net")
+	settle()
+	TEST_ASSERT_EQUAL(P.id_tag, "northern_net", "the answer becomes the tag")

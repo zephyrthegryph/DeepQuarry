@@ -44,6 +44,8 @@
 CAPABILITIES(/obj/machinery/autolathe)
 	owns_one(nameof(materials), /datum/material_container)
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
+	interface("Autolathe")
+	op("make", ui_act("make", arg("id", schema_text(256)), arg("multiplier", num(1, 50)), arg("materialSlots")), then(PROC_REF(ui_act_make)))
 
 /obj/machinery/autolathe/Initialize(mapload)
 	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE))
@@ -139,8 +141,6 @@ CAPABILITIES(/obj/machinery/autolathe)
 	flick("autolathe_loading", src)//plays metal insertion animation
 	SStgui.update_uis(src)
 
-DECLARE_UI(/obj/machinery/autolathe, "Autolathe")
-
 /**
  * Converts all the designs supported by this autolathe into UI data
  * Arguments
@@ -205,10 +205,7 @@ DECLARE_UI(/obj/machinery/autolathe, "Autolathe")
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs),
 	)
 
-UI_DATA_REPLACE(/obj/machinery/autolathe, "merge:ui_data_obj_machinery_autolathe{materialtotal:unknown,materialsmax:num,active:unknown,materials:unknown,materialChoices:unknown}")
-
-/// The computed part of /obj/machinery/autolathe's window data (declared on its UI_DATA row).
-/obj/machinery/autolathe/proc/ui_data_obj_machinery_autolathe(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/autolathe/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["materialtotal"] = materials.total_amount()
@@ -219,8 +216,8 @@ UI_DATA_REPLACE(/obj/machinery/autolathe, "merge:ui_data_obj_machinery_autolathe
 
 	return data
 
-UI_ACT(/obj/machinery/autolathe, "make", ui_act_make, UI_ARG_TEXT("id", 256), UI_ARG_NUM("multiplier", 1, 50), UI_ARG_LIST("materialSlots"))
-UI_ACT_PROC(/obj/machinery/autolathe, ui_act_make)
+/obj/machinery/autolathe/proc/ui_act_make(datum/act/op/A, raw_id, multiplier, materialSlots)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	//sanity checks to start printing
@@ -233,7 +230,7 @@ UI_ACT_PROC(/obj/machinery/autolathe, ui_act_make)
 		return
 
 	//validate design
-	var/design_id = params["id"]
+	var/design_id = raw_id
 	if(!design_id)
 		return
 	var/valid_design = LAZYACCESS(stored_research().researched_designs, design_id)
@@ -249,12 +246,12 @@ UI_ACT_PROC(/obj/machinery/autolathe, ui_act_make)
 		return
 
 	//validate print quantity
-	var/build_count = params["multiplier"]
+	var/build_count = multiplier
 	if(isnull(build_count))
 		return
 
 	// Material-selectable designs let the user pick which loaded material to use.
-	var/list/chosen_materials = params["materialSlots"] || list()
+	var/list/chosen_materials = islist(materialSlots) ? materialSlots : list()
 	if(design.material_template && !design.material_choice_valid(chosen_materials))
 		atom_say("Select valid materials for every required construction slot.")
 		return

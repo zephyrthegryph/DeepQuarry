@@ -2377,6 +2377,13 @@
 	into += entry_line(24)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/text/pandemic_release_reason) at code/game/machinery/pandemic.dm:106
+/datum/prompt/text/pandemic_release_reason/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/pandemic.dm", 106, /datum/prompt/text/pandemic_release_reason)
+	into += entry_line(107)
+	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
+
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
 	..(into)
@@ -2392,6 +2399,13 @@
 	into += entry_block("code/modules/mob/living/silicon/pai/software_modules.dm", 83, /datum/prompt/yes_no/pai_dna_sample)
 	into += entry_line(84)
 	into += list(global.ref_one(nameof(pai), /mob/living/silicon/pai))
+
+/// CAPABILITIES(/datum/prompt/yes_no/pandemic_release_sign) at code/game/machinery/pandemic.dm:109
+/datum/prompt/yes_no/pandemic_release_sign/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/pandemic.dm", 109, /datum/prompt/yes_no/pandemic_release_sign)
+	into += entry_line(110)
+	into += list(global.ref_one(nameof(disease), /datum/affliction/contagion/engineered))
 
 /// CAPABILITIES(/datum/prompt/yes_no/record_notes_delete) at code/game/machinery/computer/medical.dm:430
 /datum/prompt/yes_no/record_notes_delete/declared_entries(list/into)
@@ -10960,6 +10974,10 @@
 	into += list(global.owns_one(nameof(materials), /datum/material_container))
 	into += entry_line(46)
 	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print))
+	into += entry_line(47)
+	into += list(global.interface("Autolathe"))
+	into += entry_line(48)
+	into += list(global.op("make", global.ui_act("make", global.arg("id", global.schema_text(256)), global.arg("multiplier", global.num(1, 50)), global.arg("materialSlots")), global.then(PROC_REF(ui_act_make))))
 
 /// CAPABILITIES(/obj/machinery/beehive) at code/modules/hydroponics/beekeeping/beehive.dm:24
 /obj/machinery/beehive/declared_entries(list/into)
@@ -11013,12 +11031,28 @@
 	into += entry_line(184)
 	into += list(global.op("print_p", global.ui_act("print_p"), global.then(PROC_REF(ui_act_print_p))))
 
-/// CAPABILITIES(/obj/machinery/bomb_tester) at code/game/machinery/bomb_tester.dm:37
+/// CAPABILITIES(/obj/machinery/bomb_tester) at code/game/machinery/bomb_tester.dm:33
 /obj/machinery/bomb_tester/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/bomb_tester.dm", 37, /obj/machinery/bomb_tester)
-	into += entry_line(38)
+	into += entry_block("code/game/machinery/bomb_tester.dm", 33, /obj/machinery/bomb_tester)
+	into += entry_line(34)
 	into += list(global.owns_one(nameof(faketank), /datum/gas_mixture))
+	into += entry_line(35)
+	into += list(global.interface("BombTester"))
+	into += entry_line(36)
+	into += list(global.op("set_mode", global.ui_act("set_mode", global.arg("mode", global.num(BOMB_TESTER_MODE_SINGLE, BOMB_TESTER_MODE_CANISTER))), global.then(PROC_REF(ui_act_set_mode))))
+	into += entry_line(37)
+	into += list(global.op("add_tank", global.ui_act("add_tank", global.arg("slot", global.num())), global.then(PROC_REF(ui_act_add_tank))))
+	into += entry_line(38)
+	into += list(global.op("remove_tank", global.ui_act("remove_tank", global.arg("ref")), global.then(PROC_REF(ui_act_remove_tank))))
+	into += entry_line(39)
+	into += list(global.op("canister_scan", global.ui_act("canister_scan"), global.then(PROC_REF(ui_act_canister_scan))))
+	into += entry_line(40)
+	into += list(global.op("set_can_pressure", global.ui_act("set_can_pressure", global.arg("pressure", global.num())), global.then(PROC_REF(ui_act_set_can_pressure))))
+	into += entry_line(41)
+	into += list(global.op("start_sim", global.ui_act("start_sim"), global.then(PROC_REF(ui_act_start_sim))))
+	into += entry_line(42)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(not_simulating), because = MSG(bomb_tester/simulating)))))
 
 /// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:677
 /obj/machinery/bookbinder/declared_entries(list/into)
@@ -11477,6 +11511,29 @@
 	into += list(global.op("health_adj", global.ui_act("health_adj", global.arg("new", global.num(-100, 100))), global.then(PROC_REF(ui_act_health_adj))))
 	into += entry_line(54)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_attended), early = TRUE)))
+
+/// CAPABILITIES(/obj/machinery/computer/pandemic) at code/game/machinery/pandemic.dm:95
+/obj/machinery/computer/pandemic/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/pandemic.dm", 95, /obj/machinery/computer/pandemic)
+	into += entry_line(96)
+	into += list(global.interface("Pandemic"))
+	into += entry_line(97)
+	into += list(global.op("create_culture_bottle", global.ui_act("create_culture_bottle", global.arg("index", global.num())), global.then(PROC_REF(ui_act_create_culture_bottle))))
+	into += entry_line(98)
+	into += list(global.op("create_vaccine_bottle", global.ui_act("create_vaccine_bottle", global.arg("index", global.schema_text(4096))), global.then(PROC_REF(ui_act_create_vaccine_bottle))))
+	into += entry_line(99)
+	into += list(global.op("eject_beaker", global.ui_act("eject_beaker"), global.then(PROC_REF(ui_act_eject_beaker))))
+	into += entry_line(100)
+	into += list(global.op("destroy_eject_beaker", global.ui_act("destroy_eject_beaker"), global.then(PROC_REF(ui_act_destroy_eject_beaker))))
+	into += entry_line(101)
+	into += list(global.op("empty_beaker", global.ui_act("empty_beaker"), global.then(PROC_REF(ui_act_empty_beaker))))
+	into += entry_line(102)
+	into += list(global.op("rename_disease", global.ui_act("rename_disease", global.arg("index"), global.arg("name", global.schema_text(4096))), global.then(PROC_REF(ui_act_rename_disease))))
+	into += entry_line(103)
+	into += list(global.op("print_release_form", global.ui_act("print_release_form", global.arg("index", global.num())), global.then(PROC_REF(ui_act_print_release_form))))
+	into += entry_line(104)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(console_works), because = MSG(pandemic/not_working)))))
 
 /// CAPABILITIES(/obj/machinery/computer/pod) at code/game/machinery/computer/pod.dm:69
 /obj/machinery/computer/pod/declared_entries(list/into)
@@ -12609,6 +12666,25 @@
 	into += entry_line(30)
 	into += list(global.owns_many(nameof(recipes)))
 
+/// CAPABILITIES(/obj/machinery/partslathe) at code/game/machinery/partslathe.dm:239
+/obj/machinery/partslathe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/partslathe.dm", 239, /obj/machinery/partslathe)
+	into += entry_line(240)
+	into += list(global.interface("PartsLathe"))
+	into += entry_line(241)
+	into += list(global.op("queue", global.ui_act("queue", global.arg("queue")), global.then(PROC_REF(ui_act_queue))))
+	into += entry_line(242)
+	into += list(global.op("queueBoard", global.ui_act("queueBoard"), global.then(PROC_REF(ui_act_queueboard))))
+	into += entry_line(243)
+	into += list(global.op("cancel", global.ui_act("cancel", global.arg("cancel", global.num())), global.then(PROC_REF(ui_act_cancel))))
+	into += entry_line(244)
+	into += list(global.op("ejectBoard", global.ui_act("ejectBoard"), global.then(PROC_REF(ui_act_ejectboard))))
+	into += entry_line(245)
+	into += list(global.op("remove_mat", global.ui_act("remove_mat", global.arg("amount", global.num()), global.arg("id", global.schema_text(4096))), global.then(PROC_REF(ui_act_remove_mat))))
+	into += entry_line(246)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint), early = TRUE)))
+
 /// CAPABILITIES(/obj/machinery/partyalarm) at code/game/machinery/fire_alarm.dm:288
 /obj/machinery/partyalarm/declared_entries(list/into)
 	..(into)
@@ -12669,6 +12745,15 @@
 	into += entry_block("code/game/machinery/pipe/pipelayer.dm", 25, /obj/machinery/pipelayer)
 	into += entry_line(26)
 	into += list(global.owns_one(nameof(W), starts = /obj/item/tool/wrench))
+
+/// CAPABILITIES(/obj/machinery/pointdefense_control) at code/game/machinery/pointdefense.dm:40
+/obj/machinery/pointdefense_control/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/pointdefense.dm", 40, /obj/machinery/pointdefense_control)
+	into += entry_line(41)
+	into += list(global.interface("PointDefenseControl"))
+	into += entry_line(42)
+	into += list(global.op("toggle_active", global.ui_act("toggle_active", global.arg("target")), global.then(PROC_REF(ui_act_toggle_active))))
 
 /// CAPABILITIES(/obj/machinery/porta_turret) at code/game/machinery/portable_turret.dm:414
 /obj/machinery/porta_turret/declared_entries(list/into)

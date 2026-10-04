@@ -37,7 +37,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(!id_tag)
 		. += "[desc_panel_image("multitool")]to set ident tag"
 
-DECLARE_UI(/obj/machinery/pointdefense_control, "PointDefenseControl")
+CAPABILITIES(/obj/machinery/pointdefense_control)
+	interface("PointDefenseControl")
+	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
 
 /obj/machinery/pointdefense_control/declare_interactions(list/into)
 	into += list(
@@ -46,9 +48,9 @@ DECLARE_UI(/obj/machinery/pointdefense_control, "PointDefenseControl")
 	)
 	..()
 
-UI_ACT(/obj/machinery/pointdefense_control, "toggle_active", ui_act_toggle_active, UI_ARG_REF("target", null, /obj/machinery/pointdefense))
-UI_ACT_PROC(/obj/machinery/pointdefense_control, ui_act_toggle_active)
-	var/obj/machinery/pointdefense/PD = params["target"]
+/obj/machinery/pointdefense_control/proc/ui_act_toggle_active(datum/act/op/A, target)
+	var/mob/user = A.actor
+	var/obj/machinery/pointdefense/PD = ui_ref(target, null, /obj/machinery/pointdefense)
 	if(!istype(PD))
 		return FALSE
 
@@ -56,17 +58,14 @@ UI_ACT_PROC(/obj/machinery/pointdefense_control, ui_act_toggle_active)
 		return FALSE
 
 	if(!(get_z(PD) in GetConnectedZlevels(get_z(src))))
-		to_chat(ui.user, span_warning("[PD] is not within control range."))
+		to_chat(user, span_warning("[PD] is not within control range."))
 		return FALSE
 
 	if(!PD.Activate()) //Activate() whilst the device is active will return false.
 		PD.Deactivate()
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/pointdefense_control, "merge:ui_data_obj_machinery_pointdefense_control{id:text,turrets:list}")
-
-/// The computed part of /obj/machinery/pointdefense_control's window data (declared on its UI_DATA row).
-/obj/machinery/pointdefense_control/proc/ui_data_obj_machinery_pointdefense_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/pointdefense_control/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["id"] = id_tag
 	var/list/turrets = list()
@@ -159,12 +158,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 			return PDC
 
 /obj/machinery/pointdefense/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(ident_entered), message = "Enter a new ident tag.", title = "[src]", default = id_tag, max_length = MAX_NAME_LEN, requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/text, PROC_REF(ident_entered), answerer = user, title = "[src]", question = "Enter a new ident tag.", default = id_tag, max_len = MAX_NAME_LEN, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/pointdefense/proc/ident_entered(mob/user, new_ident, datum/om/prompt/ask)
+/obj/machinery/pointdefense/proc/ident_entered(datum/act/request/A)
+	if(!A.answer)
+		return ITEM_INTERACT_BLOCKING
+	var/new_ident = A.answer.answer_value
 	if(new_ident && new_ident != id_tag)
-		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
+		to_chat(A.request.answerer, span_notice("You register [src] with the [new_ident] network."))
 		id_tag = new_ident
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING

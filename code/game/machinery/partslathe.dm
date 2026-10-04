@@ -236,12 +236,21 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearan
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials)
 	)
 
-DECLARE_UI(/obj/machinery/partslathe, "PartsLathe")
+CAPABILITIES(/obj/machinery/partslathe)
+	interface("PartsLathe")
+	op("queue", ui_act("queue", arg("queue")), then(PROC_REF(ui_act_queue)))
+	op("queueBoard", ui_act("queueBoard"), then(PROC_REF(ui_act_queueboard)))
+	op("cancel", ui_act("cancel", arg("cancel", num())), then(PROC_REF(ui_act_cancel)))
+	op("ejectBoard", ui_act("ejectBoard"), then(PROC_REF(ui_act_ejectboard)))
+	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_mat)))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 
-UI_DATA(/obj/machinery/partslathe, "panelOpen=panel_open:num", "merge:ui_data_obj_machinery_partslathe{materials:list,SHEET_MATERIAL_AMOUNT:num,copyBoard:text,copyBoardReqComponents:list,queue:list,building:text,buildPercent:num,error:unknown,recipies:list}")
+/// Whoever presses a button leaves their prints on the lathe.
+/obj/machinery/partslathe/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-/// The computed part of /obj/machinery/partslathe's window data (declared on its UI_DATA row).
-/obj/machinery/partslathe/proc/ui_data_obj_machinery_partslathe(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/partslathe/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/materials_ui = list()
@@ -287,27 +296,23 @@ UI_DATA(/obj/machinery/partslathe, "panelOpen=panel_open:num", "merge:ui_data_ob
 		recipies_ui.Add(list(list("name" = R.name, "type" = "[T]")))
 	data["recipies"] = recipies_ui
 
+	data["panelOpen"] = panel_open
 	return data
 
-/obj/machinery/partslathe/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
 
-UI_ACT(/obj/machinery/partslathe, "queue", ui_act_queue, UI_ARG_PATH("queue", /datum))
-UI_ACT_PROC(/obj/machinery/partslathe, ui_act_queue)
-	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+/obj/machinery/partslathe/proc/ui_act_queue(datum/act/op/A, queue)
+	var/mob/user = A.actor
+	var/obj/item/card/id/producer_id = user.GetIdCard()
 	var/producer_account = producer_id?.associated_account_number || 0
-	var/type_to_build = params["queue"]
-	var/datum/category_item/partslathe/to_build = partslathe_recipies[type_to_build]
+	var/type_to_build = text2path(queue)
+	var/datum/category_item/partslathe/to_build = ispath(type_to_build, /datum) ? partslathe_recipies[type_to_build] : null
 	if(to_build)
 		addToQueue(to_build, producer_account)
 	return TRUE
 
-UI_ACT(/obj/machinery/partslathe, "queueBoard", ui_act_queueboard)
-UI_ACT_PROC(/obj/machinery/partslathe, ui_act_queueboard)
-	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+/obj/machinery/partslathe/proc/ui_act_queueboard(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/producer_id = user.GetIdCard()
 	var/producer_account = producer_id?.associated_account_number || 0
 	if(!istype(copy_board) || !copy_board.req_components)
 		return
@@ -322,9 +327,8 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_queueboard)
 			addToQueue(to_build, producer_account)
 	return TRUE
 
-UI_ACT(/obj/machinery/partslathe, "cancel", ui_act_cancel, UI_ARG_NUM("cancel"))
-UI_ACT_PROC(/obj/machinery/partslathe, ui_act_cancel)
-	var/index = params["cancel"]
+/obj/machinery/partslathe/proc/ui_act_cancel(datum/act/op/A, cancel)
+	var/index = cancel
 	if(index < 1 || index > queue.len)
 		return
 	if(busy && index == 1)
@@ -332,10 +336,10 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_cancel)
 	removeFromQueue(index)
 	return TRUE
 
-UI_ACT(/obj/machinery/partslathe, "ejectBoard", ui_act_ejectboard)
-UI_ACT_PROC(/obj/machinery/partslathe, ui_act_ejectboard)
+/obj/machinery/partslathe/proc/ui_act_ejectboard(datum/act/op/A)
+	var/mob/user = A.actor
 	if(busy)
-		to_chat(ui.user, span_notice("[src] is busy. Please wait for completion of previous operation."))
+		to_chat(user, span_notice("[src] is busy. Please wait for completion of previous operation."))
 		return
 	if(copy_board)
 		visible_message(span_notice("[copy_board] is ejected from [src]'s circuit reader."))
@@ -343,14 +347,14 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_ejectboard)
 		own_take(src, nameof(/obj/machinery/partslathe::copy_board))
 	return TRUE
 
-UI_ACT(/obj/machinery/partslathe, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/partslathe, ui_act_remove_mat)
+/obj/machinery/partslathe/proc/ui_act_remove_mat(datum/act/op/A, raw_amount, id)
+	var/mob/user = A.actor
 	if(busy)
-		to_chat(ui.user, span_notice("[src] is busy. Please wait for completion of previous operation."))
+		to_chat(user, span_notice("[src] is busy. Please wait for completion of previous operation."))
 		return
 	// Remove a material from the fab
-	var/mat_id = params["id"]
-	var/amount = params["amount"]
+	var/mat_id = id
+	var/amount = raw_amount
 	eject_materials(mat_id, amount)
 	return
 

@@ -1,7 +1,3 @@
-#define MODE_SINGLE 1
-#define MODE_DOUBLE 2
-#define MODE_CANISTER 3
-
 /obj/machinery/bomb_tester
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "explosive effect simulator"
@@ -21,7 +17,7 @@
 	var/obj/item/tank/tank2
 	var/obj/machinery/portable_atmospherics/canister/test_canister
 
-	var/sim_mode = MODE_SINGLE
+	var/sim_mode = BOMB_TESTER_MODE_SINGLE
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
 
 	var/simulating = 0
@@ -36,6 +32,20 @@
 
 CAPABILITIES(/obj/machinery/bomb_tester)
 	owns_one(nameof(faketank), /datum/gas_mixture)
+	interface("BombTester")
+	op("set_mode", ui_act("set_mode", arg("mode", num(BOMB_TESTER_MODE_SINGLE, BOMB_TESTER_MODE_CANISTER))), then(PROC_REF(ui_act_set_mode)))
+	op("add_tank", ui_act("add_tank", arg("slot", num())), then(PROC_REF(ui_act_add_tank)))
+	op("remove_tank", ui_act("remove_tank", arg("ref")), then(PROC_REF(ui_act_remove_tank)))
+	op("canister_scan", ui_act("canister_scan"), then(PROC_REF(ui_act_canister_scan)))
+	op("set_can_pressure", ui_act("set_can_pressure", arg("pressure", num())), then(PROC_REF(ui_act_set_can_pressure)))
+	op("start_sim", ui_act("start_sim"), then(PROC_REF(ui_act_start_sim)))
+	extend(TAG_UI, needs(req(PROC_REF(not_simulating), because = MSG(bomb_tester/simulating))))
+
+MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
+
+/// A simulation that is running takes no new settings.
+/obj/machinery/bomb_tester/proc/not_simulating(datum/act/op/A)
+	return !simulating // ALLOW(reads): the run is read when a button is pressed, never from a cached menu
 
 /obj/machinery/bomb_tester/Initialize(mapload)
 	. = ..()
@@ -118,12 +128,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/bomb_tester, "BombTester")
-
-UI_DATA(/obj/machinery/bomb_tester, "simulating:num", "merge:ui_data_obj_machinery_bomb_tester{mode:unknown,tank1:unknown,tank1ref:text,tank2:unknown,tank2ref:text,canister:unknown,sim_canister_output:num}")
-
-/// The computed part of /obj/machinery/bomb_tester's window data (declared on its UI_DATA row).
-/obj/machinery/bomb_tester/proc/ui_data_obj_machinery_bomb_tester(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/bomb_tester/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	if(!simulating)
@@ -135,55 +140,48 @@ UI_DATA(/obj/machinery/bomb_tester, "simulating:num", "merge:ui_data_obj_machine
 		data["canister"] = test_canister()
 		data["sim_canister_output"] = sim_canister_output
 
+	data["simulating"] = simulating
 	return data
 
 /// The loaded tanks, for the UI's remove_tank refs.
 /obj/machinery/bomb_tester/proc/tank_slots()
 	return list(tank1, tank2)
 
-/obj/machinery/bomb_tester/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(simulating)
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/machinery/bomb_tester, "set_mode", ui_act_set_mode, UI_ARG_NUM("mode", MODE_SINGLE, MODE_CANISTER))
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_set_mode)
-	sim_mode = params["mode"]
+/obj/machinery/bomb_tester/proc/ui_act_set_mode(datum/act/op/A, mode)
+	var/mob/user = A.actor
+	sim_mode = mode
 	var/text_mode
 	switch(sim_mode)
-		if(MODE_SINGLE)
+		if(BOMB_TESTER_MODE_SINGLE)
 			text_mode = "single gas tank detonation"
-		if(MODE_DOUBLE)
+		if(BOMB_TESTER_MODE_DOUBLE)
 			text_mode = "tank transfer valve detonation"
-		if(MODE_CANISTER)
+		if(BOMB_TESTER_MODE_CANISTER)
 			text_mode = "canister-assisted single gas tank detonation"
-	to_chat(ui.user, span_notice("[src] set to simulate a [text_mode]."))
+	to_chat(user, span_notice("[src] set to simulate a [text_mode]."))
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "add_tank", ui_act_add_tank, UI_ARG_NUM("slot"))
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_add_tank)
-	if(istype(ui.user.get_active_hand(), /obj/item/tank))
-		var/obj/item/tank/T = ui.user.get_active_hand()
-		var/slot = params["slot"]
+/obj/machinery/bomb_tester/proc/ui_act_add_tank(datum/act/op/A, raw_slot)
+	var/mob/user = A.actor
+	if(istype(user.get_active_hand(), /obj/item/tank))
+		var/obj/item/tank/T = user.get_active_hand()
+		var/slot = raw_slot
 		var/slot_var
 		if(slot == 1 && !tank1)
 			slot_var = "tank1"
 		else if(slot == 2 && !tank2)
 			slot_var = "tank2"
 		else
-			to_chat(ui.user, span_warning("Slot [slot] is full."))
+			to_chat(user, span_warning("Slot [slot] is full."))
 			return
 
-		move_into(src, slot_var, T, ui.user)
+		move_into(src, slot_var, T, user)
 		return TRUE
 	else
-		to_chat(ui.user, span_warning("You must be wielding a tank to insert it!"))
+		to_chat(user, span_warning("You must be wielding a tank to insert it!"))
 
-UI_ACT(/obj/machinery/bomb_tester, "remove_tank", ui_act_remove_tank, UI_ARG_REF("ref", "proc:tank_slots", /obj/item/tank))
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_remove_tank)
-	var/obj/item/tank/T = params["ref"]
+/obj/machinery/bomb_tester/proc/ui_act_remove_tank(datum/act/op/A, raw_ref)
+	var/obj/item/tank/T = ui_ref(raw_ref, tank_slots(), /obj/item/tank)
 	if(istype(T))
 		if(T == tank1)
 			own_take(src, nameof(/obj/machinery/bomb_tester::tank1))
@@ -193,8 +191,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_remove_tank)
 		update_icon()
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "canister_scan", ui_act_canister_scan)
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_canister_scan)
+/obj/machinery/bomb_tester/proc/ui_act_canister_scan(datum/act/op/A)
 	for(var/obj/machinery/portable_atmospherics/canister/C in orange(1,src))
 		if(C && C == test_canister())
 			continue
@@ -205,18 +202,16 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_canister_scan)
 			rel_clear(src, nameof(/obj/machinery/bomb_tester::test_canister))
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "set_can_pressure", ui_act_set_can_pressure, UI_ARG_NUM("pressure"))
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_set_can_pressure)
-	sim_canister_output = CLAMP(params["pressure"], ONE_ATMOSPHERE/10, ONE_ATMOSPHERE*10)
+/obj/machinery/bomb_tester/proc/ui_act_set_can_pressure(datum/act/op/A, pressure)
+	sim_canister_output = CLAMP(pressure, ONE_ATMOSPHERE/10, ONE_ATMOSPHERE*10)
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "start_sim", ui_act_start_sim)
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
+/obj/machinery/bomb_tester/proc/ui_act_start_sim(datum/act/op/A)
 	start_simulating()
 	return TRUE
 
 /obj/machinery/bomb_tester/proc/start_simulating()
-	if(!tank1 || (sim_mode == MODE_DOUBLE && !tank2) || (sim_mode == MODE_CANISTER && !test_canister()))
+	if(!tank1 || (sim_mode == BOMB_TESTER_MODE_DOUBLE && !tank2) || (sim_mode == BOMB_TESTER_MODE_CANISTER && !test_canister()))
 		simulation_results = "Error"
 		simulation_finish()
 		return
@@ -230,13 +225,13 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 	after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
 	update_icon()
 	switch(sim_mode)
-		if(MODE_SINGLE)
+		if(BOMB_TESTER_MODE_SINGLE)
 			single_tank_sim()
 
-		if(MODE_DOUBLE)
+		if(BOMB_TESTER_MODE_DOUBLE)
 			ttv_sim()
 
-		if(MODE_CANISTER)
+		if(BOMB_TESTER_MODE_CANISTER)
 			canister_sim()
 
 /obj/machinery/bomb_tester/proc/simulate_tank() //This is a heavily cut down version of check_status() from tanks.dm
@@ -391,9 +386,6 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 
 	return results
 
-#undef MODE_SINGLE
-#undef MODE_DOUBLE
-#undef MODE_CANISTER
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/bomb_tester/step_start_condition()
