@@ -3096,6 +3096,13 @@
 	into += entry_line(1734)
 	into += list(global.ref_one(nameof(belly), /obj/belly))
 
+/// CAPABILITIES(/datum/prompt/choice/vv_edit) at code/game/atom/atom_vv.dm:30
+/datum/prompt/choice/vv_edit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/atom/atom_vv.dm", 30, /datum/prompt/choice/vv_edit)
+	into += entry_line(31)
+	into += list(global.ref_one(nameof(subject), /atom))
+
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
 /datum/prompt/color/paint_palette/declared_entries(list/into)
 	..(into)
@@ -3130,6 +3137,13 @@
 	into += entry_block("code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm", 83, /datum/prompt/number/plasma_transfer)
 	into += entry_line(84)
 	into += list(global.ref_one(nameof(recipient), /mob/living/carbon/human))
+
+/// CAPABILITIES(/datum/prompt/number/vv_edit) at code/game/atom/atom_vv.dm:61
+/datum/prompt/number/vv_edit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/atom/atom_vv.dm", 61, /datum/prompt/number/vv_edit)
+	into += entry_line(62)
+	into += list(global.ref_one(nameof(subject), /atom))
 
 /// CAPABILITIES(/datum/prompt/text/admin_narrate) at code/modules/admin/verbs/randomverbs.dm:96
 /datum/prompt/text/admin_narrate/declared_entries(list/into)
@@ -3255,6 +3269,13 @@
 	into += entry_block("code/game/machinery/computer/shuttle.dm", 104, /datum/prompt/yes_no/shuttle_emag_launch)
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(card), /obj/item/card))
+
+/// CAPABILITIES(/datum/prompt/yes_no/vv_edit) at code/game/atom/atom_vv.dm:85
+/datum/prompt/yes_no/vv_edit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/atom/atom_vv.dm", 85, /datum/prompt/yes_no/vv_edit)
+	into += entry_line(86)
+	into += list(global.ref_one(nameof(subject), /atom))
 
 /// CAPABILITIES(/datum/protean_blob_style/layered) at code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm:328
 /datum/protean_blob_style/layered/declared_entries(list/into)
@@ -4542,6 +4563,13 @@
 	into += entry_block("code/modules/resleeving/infocore_records.dm", 101, /datum/transhuman/body_record)
 	into += entry_line(102)
 	into += list(global.owns_one(nameof(mydna), /datum/dna2/record))
+
+/// CAPABILITIES(/datum/ttv_bomb_review) at code/game/objects/effects/spawners/bombspawner.dm:17
+/datum/ttv_bomb_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/spawners/bombspawner.dm", 17, /datum/ttv_bomb_review)
+	into += entry_line(18)
+	into += list(global.ref_one(nameof(actor), /mob))
 
 /// CAPABILITIES(/datum/turbolift) at code/modules/turbolift/turbolift.dm:20
 /datum/turbolift/declared_entries(list/into)

@@ -1,28 +1,70 @@
 ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfer valve bomb.", ADMIN_CATEGORY_DEBUG_GAME)
 	var/obj/effect/spawner/newbomb/proto = /obj/effect/spawner/newbomb/radio/custom
-
-	om_flow_start(/datum/om/flow/ttv_bomb, user.mob, null, phoron = initial(proto.phoron_amt), oxygen = initial(proto.oxygen_amt), carbon = initial(proto.carbon_amt))
+	var/datum/ttv_bomb_review/review = new
+	rel_set(review, nameof(review.actor), user.mob)
+	review.phoron = initial(proto.phoron_amt)
+	review.oxygen = initial(proto.oxygen_amt)
+	review.carbon = initial(proto.carbon_amt)
+	review.start()
 
 /// The three gas amounts, then the bomb at the admin's feet. The admin keeps R_SPAWN throughout.
-/datum/om/flow/ttv_bomb
-	requires = PROMPT_ADMIN(R_SPAWN)
+/datum/ttv_bomb_review
+	var/mob/actor
 	var/phoron
 	var/oxygen
 	var/carbon
 
-/datum/om/flow/ttv_bomb/start()
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(phoron_entered), title = "Phoron", message = "Enter phoron amount (mol):", default = phoron)
+CAPABILITIES(/datum/ttv_bomb_review)
+	ref_one(nameof(actor), /mob)
 
-/datum/om/flow/ttv_bomb/proc/phoron_entered(datum/om/prompt/number/ask)
-	phoron = ask.number
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(oxygen_entered), title = "Oxygen", message = "Enter oxygen amount (mol):", default = oxygen)
+/datum/prompt/number/ttv_bomb_review
+	timeout = 0
+	rights = R_SPAWN
+	step = 1
+	min_value = 0
+	max_value = INFINITY
 
-/datum/om/flow/ttv_bomb/proc/oxygen_entered(datum/om/prompt/number/ask)
-	oxygen = ask.number
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(carbon_entered), title = "Carbon Dioxide", message = "Enter carbon dioxide amount (mol):", default = carbon)
+/datum/ttv_bomb_review/proc/start()
+	if(QDELETED(actor) || !actor.client?.holder || !check_rights_for(actor.client, R_SPAWN))
+		consume(src)
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		stack_trace("TTV bomb start: [result.error]")
+		consume(src)
 
-/datum/om/flow/ttv_bomb/proc/carbon_entered(datum/om/prompt/number/ask)
-	spawn_ttv_bomb(get_turf(actor), /obj/effect/spawner/newbomb/radio/custom, phoron, oxygen, ask.number)
+/datum/ttv_bomb_review/proc/start_step()
+	open_request(src, /datum/prompt/number/ttv_bomb_review, PROC_REF(phoron_entered), answerer = actor, asker = actor, title = "Phoron", question = "Enter phoron amount (mol):", default = phoron)
+
+/datum/ttv_bomb_review/proc/run_step(step, datum/act/request/A)
+	if(!A.answer || QDELETED(actor))
+		consume(src)
+		return
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("TTV bomb step [step]: [result.error]")
+		consume(src)
+
+/datum/ttv_bomb_review/proc/phoron_entered(datum/act/request/A)
+	run_step(PROC_REF(phoron_step), A)
+
+/datum/ttv_bomb_review/proc/phoron_step(datum/act/request/A)
+	phoron = A.answer.answer_value
+	open_request(src, /datum/prompt/number/ttv_bomb_review, PROC_REF(oxygen_entered), answerer = actor, asker = actor, title = "Oxygen", question = "Enter oxygen amount (mol):", default = oxygen)
+
+/datum/ttv_bomb_review/proc/oxygen_entered(datum/act/request/A)
+	run_step(PROC_REF(oxygen_step), A)
+
+/datum/ttv_bomb_review/proc/oxygen_step(datum/act/request/A)
+	oxygen = A.answer.answer_value
+	open_request(src, /datum/prompt/number/ttv_bomb_review, PROC_REF(carbon_entered), answerer = actor, asker = actor, title = "Carbon Dioxide", question = "Enter carbon dioxide amount (mol):", default = carbon)
+
+/datum/ttv_bomb_review/proc/carbon_entered(datum/act/request/A)
+	run_step(PROC_REF(carbon_step), A)
+
+/datum/ttv_bomb_review/proc/carbon_step(datum/act/request/A)
+	spawn_ttv_bomb(get_turf(actor), /obj/effect/spawner/newbomb/radio/custom, phoron, oxygen, A.answer.answer_value)
+	consume(src)
 
 /obj/effect/spawner/newbomb
 	name = "TTV bomb"
