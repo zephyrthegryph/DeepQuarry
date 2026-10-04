@@ -153,13 +153,13 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	music_extra_data["album"] = data["album"]
 	var/duration = data["duration"] * 1 SECONDS
 	// youtube-dl has answered; the questions come now, and the flow plays it.
-	om_flow_start(/datum/om/flow/web_sound, user, null, url = web_sound_url, extra = music_extra_data, page = webpage_url, song_title = data["title"], duration = duration, credit = credit, input = input)
+	user.ask_web_sound(web_sound_url, music_extra_data, webpage_url, data["title"], duration, credit, input)
 
-/// The questions before a web sound plays: a length warning for long songs, whether to show the
-/// song, and whether to credit the admin. A cancel at any step stops it.
-/datum/om/flow/web_sound
-	name = "web sound"
-	requires = PROMPT_ADMIN(R_SOUNDS)
+/// The original admin mob owns each question; a cancel stops without playing or broadcasting.
+/datum/prompt/choice/web_sound
+	buttons = TRUE
+	timeout = 0
+	rights = R_SOUNDS
 	var/url
 	var/list/extra
 	var/page
@@ -167,33 +167,55 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	var/duration
 	var/credit
 	var/input
-	/// "Yes": show the title and link.
 	var/show
 
-/datum/om/flow/web_sound/start()
+/datum/prompt/choice/web_sound/begin()
+	// The old flow checks R_SOUNDS before displaying its first question as well as on answers.
+	var/reason = request_recheck(src)
+	if(reason)
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/mob/proc/ask_web_sound(url, list/extra, page, song_title, duration, credit, input)
 	if(duration > 10 MINUTES)
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(length_answered), buttons = TRUE, title = "Length Warning!", message = "This song is over 10 minutes long. Are you sure you want to play it?", choices = list("No", "Yes", "Cancel"))
+		open_request(src, /datum/prompt/choice/web_sound, PROC_REF(web_sound_length_answered), answerer = src, url = url, extra = extra, page = page, song_title = song_title, duration = duration, credit = credit, input = input, title = "Length Warning!", question = "This song is over 10 minutes long. Are you sure you want to play it?", choices = list("No", "Yes", "Cancel"))
 		return
-	ask_show()
+	ask_web_sound_show(url, extra, page, song_title, duration, credit, input)
 
-/datum/om/flow/web_sound/proc/length_answered(datum/om/prompt/choice/ask)
-	if(ask.choice == "Yes")
-		ask_show()
-
-/datum/om/flow/web_sound/proc/ask_show()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(show_answered), buttons = TRUE, title = "Show Info?", message = "Show the title of and link to this song to the players?\n[song_title]", choices = list("Yes", "No", "Cancel"))
-
-/datum/om/flow/web_sound/proc/show_answered(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/mob/proc/web_sound_length_answered(datum/act/request/A)
+	if(!A.answer)
 		return
-	show = ask.choice
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(anon_answered), buttons = TRUE, title = "Credit Yourself?", message = "Display who played the song?", choices = list("Yes", "No", "Cancel"))
+	var/datum/prompt/choice/web_sound/ask = A.answer
+	if(ask.answer_value == "Yes")
+		ask_web_sound_show(ask.url, ask.extra, ask.page, ask.song_title, ask.duration, ask.credit, ask.input)
 
-/datum/om/flow/web_sound/proc/anon_answered(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/mob/proc/ask_web_sound_show(url, list/extra, page, song_title, duration, credit, input)
+	open_request(src, /datum/prompt/choice/web_sound, PROC_REF(web_sound_show_answered), answerer = src, url = url, extra = extra, page = page, song_title = song_title, duration = duration, credit = credit, input = input, title = "Show Info?", question = "Show the title of and link to this song to the players?\n[song_title]", choices = list("Yes", "No", "Cancel"))
+
+/mob/proc/web_sound_show_answered(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/mob/user = actor
-	var/list/music_extra_data = extra
+	var/datum/prompt/choice/web_sound/ask = A.answer
+	if(ask.answer_value == "Cancel")
+		return
+	open_request(src, /datum/prompt/choice/web_sound, PROC_REF(web_sound_anon_answered), answerer = src, url = ask.url, extra = ask.extra, page = ask.page, song_title = ask.song_title, duration = ask.duration, credit = ask.credit, input = ask.input, show = ask.answer_value, title = "Credit Yourself?", question = "Display who played the song?", choices = list("Yes", "No", "Cancel"))
+
+/mob/proc/web_sound_anon_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/web_sound/ask = A.answer
+	if(ask.answer_value == "Cancel")
+		return
+	var/mob/user = src
+	var/list/music_extra_data = ask.extra
+	var/show = ask.show
+	var/song_title = ask.song_title
+	var/page = ask.page
+	var/credit = ask.credit
+	var/input = ask.input
+	var/url = ask.url
+	var/duration = ask.duration
 	if(show == "Yes")
 		music_extra_data["title"] = song_title
 	else
@@ -202,7 +224,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 		music_extra_data["artist"] = "Song Artist Hidden"
 		music_extra_data["upload_date"] = "Song Upload Date Hidden"
 		music_extra_data["album"] = "Song Album Hidden"
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("Yes")
 			if(show == "Yes")
 				to_chat(world, span_boldannounce("[user.key] played: [page]"), confidential = TRUE)
