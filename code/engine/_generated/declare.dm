@@ -1062,11 +1062,26 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(message_core), /datum/comm_message_listener))
 
+/// CAPABILITIES(/datum/computer_file/program/filemanager) at code/modules/modular_computers/file_system/programs/generic/file_browser.dm:19
+/datum/computer_file/program/filemanager/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/modular_computers/file_system/programs/generic/file_browser.dm", 19, /datum/computer_file/program/filemanager)
+	into += entry_line(20)
+	into += list(global.op("PRG_closefile", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_closefile))))
+	into += entry_line(21)
+	into += list(global.op("PRG_clearerror", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_clearerror))))
+
 /// CAPABILITIES(/datum/computer_file/program/newsbrowser) at code/modules/modular_computers/file_system/programs/generic/news_browser.dm:21
 /datum/computer_file/program/newsbrowser/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/modular_computers/file_system/programs/generic/news_browser.dm", 21, /datum/computer_file/program/newsbrowser)
 	into += entry_line(22)
+	into += list(global.op("PRG_reset", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_reset))))
+	into += entry_line(23)
+	into += list(global.op("PRG_clearmessage", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_clearmessage))))
+	into += entry_line(24)
+	into += list(global.op("PRG_toggle_archived", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_toggle_archived))))
+	into += entry_line(25)
 	into += list(global.owns_one(nameof(loaded_article), /datum/computer_file/data/news_article))
 
 /// CAPABILITIES(/datum/computer_file/program/ntnetdownload) at code/modules/modular_computers/file_system/programs/generic/ntdownloader.dm:32
@@ -1074,7 +1089,37 @@
 	..(into)
 	into += entry_block("code/modules/modular_computers/file_system/programs/generic/ntdownloader.dm", 32, /datum/computer_file/program/ntnetdownload)
 	into += entry_line(33)
+	into += list(global.op("PRG_reseterror", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_reseterror))))
+	into += entry_line(34)
 	into += list(global.owns_one(nameof(downloaded_file), /datum/computer_file/program))
+
+/// CAPABILITIES(/datum/computer_file/program/ntnetmonitor) at code/modules/modular_computers/file_system/programs/research/ntmonitor.dm:45
+/datum/computer_file/program/ntnetmonitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/modular_computers/file_system/programs/research/ntmonitor.dm", 45, /datum/computer_file/program/ntnetmonitor)
+	into += entry_line(46)
+	into += list(global.op("resetIDS", global.ui_act(), global.then(PROC_REF(native_ui_act_resetids))))
+	into += entry_line(47)
+	into += list(global.op("toggleIDS", global.ui_act(), global.then(PROC_REF(native_ui_act_toggleids))))
+	into += entry_line(48)
+	into += list(global.op("purgelogs", global.ui_act(), global.then(PROC_REF(native_ui_act_purgelogs))))
+
+/// CAPABILITIES(/datum/computer_file/program/wordprocessor) at code/modules/modular_computers/file_system/programs/generic/wordprocessor.dm:75
+/datum/computer_file/program/wordprocessor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/modular_computers/file_system/programs/generic/wordprocessor.dm", 75, /datum/computer_file/program/wordprocessor)
+	into += entry_line(76)
+	into += list(global.op("PRG_txtrpeview", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_txtrpeview))))
+	into += entry_line(77)
+	into += list(global.op("PRG_taghelp", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_taghelp))))
+	into += entry_line(78)
+	into += list(global.op("PRG_closebrowser", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_closebrowser))))
+	into += entry_line(79)
+	into += list(global.op("PRG_backtomenu", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_backtomenu))))
+	into += entry_line(80)
+	into += list(global.op("PRG_loadmenu", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_loadmenu))))
+	into += entry_line(81)
+	into += list(global.op("PRG_printfile", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_printfile))))
 
 /// CAPABILITIES(/datum/construction_graph) at code/datums/interactions/construction.dm:88
 /datum/construction_graph/declared_entries(list/into)
@@ -1237,6 +1282,42 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(voresweeper), /datum/board_game/vore_sweeper))
 
+/// CAPABILITIES(/datum/data/pda/app/main_menu) at code/modules/pda/core_apps.dm:6
+/datum/data/pda/app/main_menu/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/pda/core_apps.dm", 6, /datum/data/pda/app/main_menu)
+	into += entry_line(7)
+	into += list(global.op("UpdateInfo", global.ui_act(), global.then(PROC_REF(native_ui_act_updateinfo))))
+
+/// CAPABILITIES(/datum/data/pda/app/notekeeper) at code/modules/pda/core_apps.dm:58
+/datum/data/pda/app/notekeeper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/pda/core_apps.dm", 58, /datum/data/pda/app/notekeeper)
+	into += entry_line(59)
+	into += list(global.op("Note1", global.ui_act(), global.then(PROC_REF(native_ui_act_note1))))
+	into += entry_line(60)
+	into += list(global.op("Note2", global.ui_act(), global.then(PROC_REF(native_ui_act_note2))))
+	into += entry_line(61)
+	into += list(global.op("Note3", global.ui_act(), global.then(PROC_REF(native_ui_act_note3))))
+	into += entry_line(62)
+	into += list(global.op("Note4", global.ui_act(), global.then(PROC_REF(native_ui_act_note4))))
+	into += entry_line(63)
+	into += list(global.op("Note5", global.ui_act(), global.then(PROC_REF(native_ui_act_note5))))
+	into += entry_line(64)
+	into += list(global.op("Note6", global.ui_act(), global.then(PROC_REF(native_ui_act_note6))))
+	into += entry_line(65)
+	into += list(global.op("Note7", global.ui_act(), global.then(PROC_REF(native_ui_act_note7))))
+	into += entry_line(66)
+	into += list(global.op("Note8", global.ui_act(), global.then(PROC_REF(native_ui_act_note8))))
+	into += entry_line(67)
+	into += list(global.op("Note9", global.ui_act(), global.then(PROC_REF(native_ui_act_note9))))
+	into += entry_line(68)
+	into += list(global.op("Note10", global.ui_act(), global.then(PROC_REF(native_ui_act_note10))))
+	into += entry_line(69)
+	into += list(global.op("Note11", global.ui_act(), global.then(PROC_REF(native_ui_act_note11))))
+	into += entry_line(70)
+	into += list(global.op("Note12", global.ui_act(), global.then(PROC_REF(native_ui_act_note12))))
+
 /// CAPABILITIES(/datum/data/pda/app/power) at code/modules/pda/cart_apps.dm:123
 /datum/data/pda/app/power/declared_entries(list/into)
 	..(into)
@@ -1244,11 +1325,11 @@
 	into += entry_line(124)
 	into += list(global.owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor))
 
-/// CAPABILITIES(/datum/data/pda/app/timeclock) at code/modules/pda/core_apps.dm:342
+/// CAPABILITIES(/datum/data/pda/app/timeclock) at code/modules/pda/core_apps.dm:346
 /datum/data/pda/app/timeclock/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/pda/core_apps.dm", 342, /datum/data/pda/app/timeclock)
-	into += entry_line(343)
+	into += entry_block("code/modules/pda/core_apps.dm", 346, /datum/data/pda/app/timeclock)
+	into += entry_line(347)
 	into += list(global.owns_one(nameof(announce), /obj/item/radio/intercom))
 
 /// CAPABILITIES(/datum/datacore) at code/datums/datacore.dm:19
@@ -2203,8 +2284,16 @@
 	..(into)
 	into += entry_block("code/modules/client/preferences.dm", 126, /datum/preferences)
 	into += entry_line(127)
-	into += list(global.owns_one(nameof(savefile), /datum/json_savefile))
+	into += list(global.op("save", global.ui_act(), global.then(PROC_REF(native_ui_act_save))))
 	into += entry_line(128)
+	into += list(global.op("reload", global.ui_act(), global.then(PROC_REF(native_ui_act_reload))))
+	into += entry_line(129)
+	into += list(global.op("game_prefs", global.ui_act(), global.then(PROC_REF(native_ui_act_game_prefs))))
+	into += entry_line(130)
+	into += list(global.op("cycle_background", global.ui_act(), global.then(PROC_REF(native_ui_act_cycle_background))))
+	into += entry_line(131)
+	into += list(global.owns_one(nameof(savefile), /datum/json_savefile))
+	into += entry_line(132)
 	into += list(global.owns_many(nameof(middleware), /datum/preference_middleware))
 
 /// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:25
@@ -3876,6 +3965,15 @@
 	into += list(global.owns_one(nameof(IC), /obj/item/electronic_assembly/clothing))
 	into += entry_line(47)
 	into += list(global.owns_many(nameof(accessories)))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/bodycam) at code/modules/tvcamera_panel.dm:64
+/obj/item/clothing/accessory/bodycam/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tvcamera_panel.dm", 64, /obj/item/clothing/accessory/bodycam)
+	into += entry_line(65)
+	into += list(global.op("toggle_video", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_video))))
+	into += entry_line(66)
+	into += list(global.op("toggle_audio", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_audio))))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/dosimeter) at code/modules/clothing/accessories/badges.dm:303
 /obj/item/clothing/accessory/dosimeter/declared_entries(list/into)
@@ -7102,6 +7200,10 @@
 	..(into)
 	into += entry_block("code/game/objects/items/devices/tvcamera.dm", 42, /obj/item/tvcamera)
 	into += entry_line(43)
+	into += list(global.op("toggle_video", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_video))))
+	into += entry_line(44)
+	into += list(global.op("toggle_audio", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_audio))))
+	into += entry_line(45)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/uav) at code/game/objects/items/uav.dm:45
@@ -7265,6 +7367,15 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker))
 
+/// CAPABILITIES(/obj/machinery/atm) at code/modules/economy/ATM.dm:207
+/obj/machinery/atm/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/ATM.dm", 207, /obj/machinery/atm)
+	into += entry_line(208)
+	into += list(global.op("insert_card", global.ui_act(), global.then(PROC_REF(native_ui_act_insert_card))))
+	into += entry_line(209)
+	into += list(global.op("logout", global.ui_act(), global.then(PROC_REF(native_ui_act_logout))))
+
 /// CAPABILITIES(/obj/machinery/atmospherics) at code/ATMOSPHERICS/rust_pipenets.dm:79
 /obj/machinery/atmospherics/declared_entries(list/into)
 	..(into)
@@ -7356,6 +7467,13 @@
 	into += entry_block("code/ATMOSPHERICS/components/unary/unary_base.dm", 172, /obj/machinery/atmospherics/unary)
 	into += entry_line(173)
 	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/engine) at code/modules/overmap/ships/engines/gas_thruster.dm:80
+/obj/machinery/atmospherics/unary/engine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/overmap/ships/engines/gas_thruster.dm", 80, /obj/machinery/atmospherics/unary/engine)
+	into += entry_line(81)
+	into += list(global.owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger) at code/ATMOSPHERICS/components/unary/heat_exchanger.dm:20
 /obj/machinery/atmospherics/unary/heat_exchanger/declared_entries(list/into)
@@ -7561,6 +7679,12 @@
 	..(into)
 	into += entry_block("code/game/machinery/atmoalter/area_atmos_computer.dm", 19, /obj/machinery/computer/area_atmos)
 	into += entry_line(20)
+	into += list(global.op("allon", global.ui_act(), global.then(PROC_REF(native_ui_act_allon))))
+	into += entry_line(21)
+	into += list(global.op("alloff", global.ui_act(), global.then(PROC_REF(native_ui_act_alloff))))
+	into += entry_line(22)
+	into += list(global.op("scan", global.ui_act(), global.then(PROC_REF(native_ui_act_scan))))
+	into += entry_line(23)
 	into += list(global.ref_many(nameof(connectedscrubbers)))
 
 /// CAPABILITIES(/obj/machinery/computer/atmoscontrol) at code/game/machinery/computer/atmos_control.dm:18
@@ -7677,6 +7801,13 @@
 	into += entry_block("code/modules/overmap/ships/computers/helm.dm", 28, /obj/machinery/computer/ship/helm)
 	into += entry_line(29)
 	into += list(global.owns_many(nameof(known_sectors)))
+
+/// CAPABILITIES(/obj/machinery/computer/ship/navigation) at code/modules/overmap/ships/computers/helm.dm:341
+/obj/machinery/computer/ship/navigation/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/overmap/ships/computers/helm.dm", 341, /obj/machinery/computer/ship/navigation)
+	into += entry_line(342)
+	into += list(global.owns_one(nameof(nav_tgui), starts = /datum/tgui_module/ship/nav))
 
 /// CAPABILITIES(/obj/machinery/computer/shuttle_control/explore) at code/modules/flight_operations/flight_console.dm:242
 /obj/machinery/computer/shuttle_control/explore/declared_entries(list/into)
@@ -9040,6 +9171,13 @@
 	into += entry_block("code/game/machinery/spaceheater.dm", 52, /obj/machinery/space_heater)
 	into += entry_line(53)
 	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/station_map) at code/modules/holomap/station_holomap.dm:36
+/obj/machinery/station_map/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/holomap/station_holomap.dm", 36, /obj/machinery/station_map)
+	into += entry_line(37)
+	into += list(global.owns_one(nameof(holomap_datum), starts = /datum/station_holomap))
 
 /// CAPABILITIES(/obj/machinery/station_slot_machine) at code/modules/casino/slots.dm:183
 /obj/machinery/station_slot_machine/declared_entries(list/into)

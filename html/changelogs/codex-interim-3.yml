@@ -2,4 +2,3 @@ author: "Codex"
 delete-after: true
 changes:
   - code_imp: "Replaced raw delays with equivalent time defines and migrated machine controls, material constructor facts, and ownership declarations."
-  - bugfix: "Restored cyborg cell EMP protection after the event observer conversion."
