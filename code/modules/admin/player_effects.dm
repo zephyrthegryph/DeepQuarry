@@ -102,14 +102,16 @@ CAPABILITIES(/datum/eventkit/player_effects)
 
 	return data
 
-/datum/om/prompt/text/admin_popup
+/// The question of a popup message: who sent it, for the reply's log line.
+/datum/prompt/text/admin_popup
 	title = "Reply"
 	/// key_name() of the sending admin.
 	var/admin_name
 
-/datum/eventkit/player_effects/proc/popup_replied(datum/om/prompt/text/admin_popup/ask)
-	if(ask.text)
-		log_and_message_admins("replied to [ask.admin_name]'s message: [ask.text].", ask.answerer)
+/datum/eventkit/player_effects/proc/popup_replied(datum/act/request/A)
+	var/datum/prompt/text/admin_popup/ask = A.request
+	if(A.answer && ask.answer_value)
+		log_and_message_admins("replied to [ask.admin_name]'s message: [ask.answer_value].", ask.answerer)
 
 /// Only somebody with the spawn right works a button, and every effect is logged once, as it is pressed.
 /datum/eventkit/player_effects/proc/ui_log_use(datum/act/op/A)
@@ -1022,7 +1024,7 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 		return
 	log_admin("[key_name(user)] sent message to [target()]: [message]")
 	// The player answers in their own time; the reply doesn't need this panel open.
-	om_ask(target(), /datum/om/prompt/text/admin_popup, PROC_REF(popup_replied), message = "An admin has sent you a message: [message]", admin_name = key_name(user))
+	open_request(src, /datum/prompt/text/admin_popup, PROC_REF(popup_replied), answerer = target(), question = "An admin has sent you a message: [message]", admin_name = key_name(user), timeout = 0)
 
 /datum/eventkit/player_effects/proc/ui_act_stop_orbits(datum/act/op/A)
 	target().stop_orbiters()
@@ -1033,7 +1035,6 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 		return
 	Tar.revert_mob_tf()
 
-/// The target of the effects (a relation view: null once that is deleted).
 /// The target's organs (every organ a player effect may pick), for the organ questions.
 /// The answer to a question a button asked still counts (its window is still open and interactive for the one who answers).
 /datum/eventkit/player_effects/proc/request_usable(datum/request/R)
@@ -1074,5 +1075,6 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 /datum/eventkit/player_effects/proc/target_living(datum/act/op/A)
 	return istype(target(), /mob/living)
 
+/// The target of the effects (a relation view: null once that is deleted).
 /datum/eventkit/player_effects/proc/target() as /mob
 	return target

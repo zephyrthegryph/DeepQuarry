@@ -217,6 +217,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/datum/computer_file/program/email_administration::domain_chosen" = list(0),
 	"/datum/computer_file/program/email_administration::has_account" = list(0,
 		list(1, 0, 5)),
+	"/datum/computer_file/program/email_administration::ui_network_access" = list(0),
 	"/datum/computer_file/program/filemanager::edit_file_incompatible" = list(0,
 		list(1, 0, 6),
 		list(1, 0, 7)),
