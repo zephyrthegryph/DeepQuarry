@@ -375,15 +375,24 @@ ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a si
 	feedback_add_details("admin_verb","RAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows to modify silicon laws.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/selected_silicon = verb_ask(user, "a13", args, /datum/om/prompt/choice, message = "Select silicon.", title = "Manage Silicon Laws", choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
-	if(isnull(selected_silicon))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!selected_silicon)
-		return
+	open_request(src, /datum/prompt/choice/admin_law_target, PROC_REF(law_target_selected), answerer = answerer, choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
 
+/datum/admin_verb/manage_silicon_laws/proc/law_target_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(open_law_manager), A)
+	if(!result.ok)
+		stack_trace("om flow manage_silicon_laws answer law_target_selected: [result.error]")
+
+/datum/admin_verb/manage_silicon_laws/proc/open_law_manager(datum/act/request/A)
+	var/mob/living/silicon/selected_silicon = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	var/datum/tgui_module/law_manager/admin/law_interface = new(selected_silicon)
 	law_interface.tgui_interact(user.mob)
-	log_and_message_admins("has opened [selected_silicon]'s law manager.")
+	log_and_message_admins("has opened [selected_silicon]'s law manager.", user)
 	feedback_add_details("admin_verb","MSL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets the station security level.", ADMIN_CATEGORY_EVENTS)
@@ -728,6 +737,26 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	return QDELETED(target) ? "target is gone" : null
 
 /datum/prompt/text/admin_silicon_name/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_law_target
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "Select silicon."
+	title = "Manage Silicon Laws"
+
+/datum/prompt/choice/admin_law_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/living/silicon/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_law_target/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return
