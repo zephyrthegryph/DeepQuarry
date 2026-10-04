@@ -18,6 +18,9 @@
 	tank_calls++
 	return ..()
 
+/datum/unit_test/interim_rig_mech_air_forwarded_actor
+	abstract_type = /datum/unit_test/interim_rig_mech_air_forwarded_actor
+
 /datum/unit_test/interim_rig_mech_air_forwarded_actor/rig/Run()
 	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
