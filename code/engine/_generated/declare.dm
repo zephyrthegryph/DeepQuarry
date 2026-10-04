@@ -3184,6 +3184,15 @@
 	into += entry_line(158)
 	into += list(global.ref_one(nameof(camera), /obj/machinery/camera))
 
+/// CAPABILITIES(/datum/prompt/choice/electronics_input) at code/modules/integrated_electronics/core/assemblies.dm:586
+/datum/prompt/choice/electronics_input/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/integrated_electronics/core/assemblies.dm", 586, /datum/prompt/choice/electronics_input)
+	into += entry_line(587)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(588)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:46
 /datum/prompt/choice/frame_type_wall/declared_entries(list/into)
 	..(into)
