@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))
+	op("matfed_interaction_hand", hand(), then(PROC_REF(matfed_interaction_hand)))
 
 /obj/item/gun/magnetic/matfed/proc/update_rating_mod()
 	if(capacitor && manipulator)
@@ -53,10 +54,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 	. += overlays_to_add
 	. += ..()
 
-EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(matfed_interaction_hand)))
-
 /// Old attack_hand.
-/obj/item/gun/magnetic/matfed/proc/matfed_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/magnetic/matfed/proc/matfed_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		var/obj/item/removing
 
@@ -70,7 +70,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			update_icon()
 			return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/gun/magnetic/matfed/check_ammo()
 	if(mat_storage - mat_cost >= 0)

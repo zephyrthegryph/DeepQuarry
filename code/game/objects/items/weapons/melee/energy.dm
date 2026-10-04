@@ -461,10 +461,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 
 	set_light(lrange, lpower, lcolor)
 
-EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_REF(blade_interaction_self)))
+CAPABILITIES(/obj/item/melee/energy/blade)
+	op("blade_interaction_self", in_hand(), label("Dismiss"), then(PROC_REF(blade_interaction_self)))
 
 /// Old attack_self (the parent's self-use does nothing for a blade: special handling).
-/obj/item/melee/energy/blade/proc/blade_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/energy/blade/proc/blade_interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.drop_from_inventory(src)
 	expire(1)
 

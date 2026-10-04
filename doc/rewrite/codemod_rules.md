@@ -173,6 +173,7 @@ Unit: one host type `T` with exactly one `DECLARE_INTERACTIONS(T, specs...)` or 
 | `INTERACT_HAND(name, PROC_REF(h))` (an empty hand; base requirement `REQ_INTERACTION_REACH`) | `op("key", hand(), label(name), then(PROC_REF(h)))` |
 | `INTERACT_INSERT(/held/type, PROC_REF(h), name)` (an item of that type) | `op("key", item(/held/type), label(name), then(PROC_REF(h)))` |
 | `INTERACT_ITEM(name, PROC_REF(h))` (any item) | `op("key", item(/obj/item), label(name), then(PROC_REF(h)))` |
+| `INTERACT_HAND_UNGATED(name, PROC_REF(h))` (a touch whose old `attack_hand` never called `..()`: no `hand_gate()`) | `op("key", hand(), label(name), then(PROC_REF(h)))`, the same as `INTERACT_HAND`: the op path has no `hand_gate()` at all (ops resolve before the mob's legacy click handling, code/engine/parts/inputs.dm), so "ungated" is what an op is |
 | `INTERACT_VERB(name, PROC_REF(h))` (an object verb: the Menu only, no click) | `op("key", menu(), label(name), then(PROC_REF(h)))` |
 | `INTERACT_VERB(name, PROC_REF(h), REQ_IN_INVENTORY)` (the old `set src in usr`) | `op("key", menu(), label(name), needs(carried()), then(PROC_REF(h)))` |
 | a `null` name | no `label()` (the old name was derived from the proc name) |
@@ -191,8 +192,10 @@ Why the returns matter: an old HAND, INSERT or ITEM effect that returned falsy l
 falsy return (`return FALSE`, `return 0`, `return null`, a bare `return`) becomes `return OP_DECLINE`, and a handler converts only when every return is one of those or `TRUE` and the last statement is a return (a handler that falls off its end
 answered falsy before and would commit now: residue `handler_returns`). An `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` is the `passes()` part and stays residue.
 
+**Hierarchies.** `DECLARE_INTERACTIONS` replaces only the specs list (`get_interactions`) of its ancestors, while an `EXTEND_INTERACTIONS` chain (`declare_interactions` calling `..()`) reaches every descendant, DECLARE or not. So an `EXTEND` converts whatever its ancestors declare (155 of the 205 types the old rule held back were an `EXTEND` under a `DECLARE`); it conflicts only with a descendant whose `declare_interactions` override drops the chain (no `..()`), because ops would flow into it. A `DECLARE` conflicts with any related replacer (a `DECLARE` or an override without `..()`): converted, it would inherit the ops of what it replaced. The design's way out is `without(key)` of the parent's ops plus the child's own ops, but it covers 7 types today (a `DECLARE` under or over another), so the codemod leaves them to hand work (`interaction_related`).
+
 A type converts only when:
-- it is not in a hierarchy with a type that REPLACES what it inherits (a `DECLARE_INTERACTIONS` or a `get_interactions` / `declare_interactions` override that does not call `..()`): ops accumulate down the tree, so a replacement would stop meaning anything. `EXTEND_INTERACTIONS` only adds and never blocks;
+- it is not in conflict with a replacer, as the paragraph above defines it;
 - every spec is one of the four kinds above with no requirement argument (`REQ_*`), a literal or `null` name, and `PROC_REF(h)` / `TYPE_PROC_REF(T, h)` as the effect;
 - each handler is defined once on `T` with three parameters, no related type defines the same name, and nothing else mentions it (a call, a `PROC_REF`, a `..()`);
 - the body does not use the third parameter, `INTERACTION_HANDLED_PASS`, `..()` or a local named `A`.

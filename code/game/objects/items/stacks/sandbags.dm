@@ -145,10 +145,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearanc
 		return INITIALIZE_HINT_QDEL
 	color = M.icon_colour
 
-EXTEND_INTERACTIONS(/obj/item/stack/emptysandbag, INTERACT_USE("Fill", PROC_REF(emptysandbag_self)))
+CAPABILITIES(/obj/item/stack/emptysandbag)
+	op("emptysandbag_self", in_hand(), label("Fill"), then(PROC_REF(emptysandbag_self)))
 
 /// Old attack_self.
-/obj/item/stack/emptysandbag/proc/emptysandbag_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stack/emptysandbag/proc/emptysandbag_self(datum/act/op/A)
+	var/mob/user = A.actor
 	fill_next_bag(user)
 
 /// Fills one sandbag a second while the user stays put on outdoor ground.

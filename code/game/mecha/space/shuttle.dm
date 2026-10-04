@@ -66,12 +66,15 @@ DECLARE_APPEARANCE_PROC(/obj/mecha/working/hoverpod/shuttlecraft, TYPE_PROC_REF(
 		central_paint_mask.color = central_paint
 		. += central_paint_mask
 
-EXTEND_INTERACTIONS(/obj/mecha/working/hoverpod/shuttlecraft, INTERACT_ITEM("Paint hull", PROC_REF(interaction_shuttlecraft_paint)))
+CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
+	op("shuttlecraft_paint", item(/obj/item), label("Paint hull"), then(PROC_REF(interaction_shuttlecraft_paint)))
 
 /// Old attackby: a multitool repaints the hull while the maintenance state is open.
-/obj/mecha/working/hoverpod/shuttlecraft/proc/interaction_shuttlecraft_paint(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/mecha/working/hoverpod/shuttlecraft/proc/interaction_shuttlecraft_paint(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W,/obj/item/multitool) || state != 1)
-		return FALSE
+		return OP_DECLINE
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_paint_color), subject = W, choices = list("Central", "Engine", "Base", "Front", "CANCEL"), title = "Paint Zone", message = "Please select a target zone.", ask_flags = ASK_HELD | ASK_CAPABLE)
 	return TRUE
 

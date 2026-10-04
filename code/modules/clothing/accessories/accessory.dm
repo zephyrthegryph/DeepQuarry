@@ -89,13 +89,14 @@
 		forceMove(get_turf(src))
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PROC_REF(accessory_attached_hand)))
+CAPABILITIES(/obj/item/clothing/accessory)
+	op("accessory_attached_hand", hand(), then(PROC_REF(accessory_attached_hand)))
 
 /// Old attack_hand: an attached accessory isn't picked up.
-/obj/item/clothing/accessory/proc/accessory_attached_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/proc/accessory_attached_hand(datum/act/op/A)
 	if(has_suit())
 		return TRUE	//we aren't an object on the ground so don't call parent
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/accessory/tie
 	name = "blue tie"

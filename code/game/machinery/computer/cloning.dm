@@ -43,6 +43,8 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	op("toggle_mode", ui_act("toggle_mode"), then(PROC_REF(ui_act_toggle_mode)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	op("cloning_console_interaction_item", item(/obj/item), then(PROC_REF(cloning_console_interaction_item)))
+	op("cloning_console_interaction_hand", hand(), then(PROC_REF(cloning_console_interaction_hand)))
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
 /obj/machinery/computer/cloning/ownership()
@@ -118,18 +120,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 			rel_add(src, nameof(pods), P)
 			P.name = "[initial(P.name)] #[num++]"
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
-	INTERACT_ITEM(null, PROC_REF(cloning_console_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(cloning_console_interaction_hand)), \
-)
-
 /// Old attackby.
-/obj/machinery/computer/cloning/proc/cloning_console_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/cloning/proc/cloning_console_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W, /obj/item/disk/body_record)) //Traitgenes Storing the entire body record
-		return FALSE
+		return OP_DECLINE
 	if(!diskette)
 		if(!move_into(src, nameof(src.diskette), W, user))
-			return FALSE
+			return OP_DECLINE
 		to_chat(user, "You insert [W].")
 		SStgui.update_uis(src)
 	return TRUE
@@ -146,7 +145,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/computer/cloning/proc/cloning_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/cloning/proc/cloning_console_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	if(!operable())

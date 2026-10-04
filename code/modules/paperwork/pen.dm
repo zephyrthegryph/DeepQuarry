@@ -124,10 +124,12 @@ DECLARE_INTERACTIONS(/obj/item/pen, \
 	play_sfx(src, SFX_ITEMS_PENCLICK)
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/item/pen/multi, INTERACT_USE("Change colour", PROC_REF(interaction_cycle_colour)))
+CAPABILITIES(/obj/item/pen/multi)
+	op("cycle_colour", in_hand(), label("Change colour"), then(PROC_REF(interaction_cycle_colour)))
 
 /// Old attack_self.
-/obj/item/pen/multi/proc/interaction_cycle_colour(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/multi/proc/interaction_cycle_colour(datum/act/op/A)
+	var/mob/user = A.actor
 	if(++selectedColor > 3)
 		selectedColor = 1
 

@@ -193,10 +193,12 @@
 	return ..()
 
 // Allows resetting the capsule if the wrong template is chosen.
-EXTEND_INTERACTIONS(/obj/item/survivalcapsule/superpose, INTERACT_VERB("Reset Active Pod", PROC_REF(superpose_capsule_verb_reset), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/survivalcapsule/superpose)
+	op("superpose_capsule_verb_reset", menu(), label("Reset Active Pod"), needs(carried()), then(PROC_REF(superpose_capsule_verb_reset)))
 
 /// Old Reset Active Pod verb: Resets the pod back to factory settings.
-/obj/item/survivalcapsule/superpose/proc/superpose_capsule_verb_reset(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/superpose/proc/superpose_capsule_verb_reset(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!used)
 		template_id = null
 		template_static = null // Important to reset both, otherwise the template cannot be reset once the pod has been deployed.
