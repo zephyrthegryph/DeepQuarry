@@ -810,6 +810,13 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(landing), /atom/movable/screen/action_landing))
 
+/// CAPABILITIES(/datum/admin_memo_review) at code/modules/admin/admin_memo.dm:131
+/datum/admin_memo_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_memo.dm", 131, /datum/admin_memo_review)
+	into += entry_line(132)
+	into += list(global.ref_one(nameof(actor), /mob))
+
 /// CAPABILITIES(/datum/admin_report) at code/modules/admin/admin_report_panel.dm:37
 /datum/admin_report/declared_entries(list/into)
 	..(into)
@@ -3102,6 +3109,20 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/admin_body_effect) at code/modules/admin/admin_verbs.dm:384
+/datum/prompt/choice/admin_body_effect/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 384, /datum/prompt/choice/admin_body_effect)
+	into += entry_line(385)
+	into += list(global.ref_one(nameof(living_target), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/choice/admin_spell) at code/modules/admin/admin_verbs.dm:677
+/datum/prompt/choice/admin_spell/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 677, /datum/prompt/choice/admin_spell)
+	into += entry_line(678)
+	into += list(global.ref_one(nameof(target_mob), /mob))
+
 /// CAPABILITIES(/datum/prompt/choice/air_control_menu) at code/game/machinery/atmo_control.dm:285
 /datum/prompt/choice/air_control_menu/declared_entries(list/into)
 	..(into)
@@ -3150,6 +3171,15 @@
 	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 302, /datum/prompt/choice/explosive_implant_level)
 	into += entry_line(303)
 	into += list(global.ref_one(nameof(source), /mob))
+
+/// CAPABILITIES(/datum/prompt/choice/extraction_beacon) at code/modules/mining/fulton.dm:76
+/datum/prompt/choice/extraction_beacon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/fulton.dm", 76, /datum/prompt/choice/extraction_beacon)
+	into += entry_line(77)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(78)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:46
 /datum/prompt/choice/frame_type_wall/declared_entries(list/into)
@@ -3202,6 +3232,17 @@
 	into += entry_line(176)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/choice/research_anomaly) at code/modules/anomalies/anomaly.dm:281
+/datum/prompt/choice/research_anomaly/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/anomalies/anomaly.dm", 281, /datum/prompt/choice/research_anomaly)
+	into += entry_line(282)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(283)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+	into += entry_line(284)
+	into += list(global.ref_one(nameof(captured_callback), /datum))
+
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
 	..(into)
@@ -3216,12 +3257,35 @@
 	into += entry_line(352)
 	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
 
+/// CAPABILITIES(/datum/prompt/number/admin_body_effect) at code/modules/admin/admin_verbs.dm:416
+/datum/prompt/number/admin_body_effect/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 416, /datum/prompt/number/admin_body_effect)
+	into += entry_line(417)
+	into += list(global.ref_one(nameof(living_target), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:978
+/datum/prompt/number/admin_telecrystals/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin.dm", 978, /datum/prompt/number/admin_telecrystals)
+	into += entry_line(979)
+	into += list(global.ref_one(nameof(human_target), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:76
 /datum/prompt/number/cablelayer_cut/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/CableLayer.dm", 76, /datum/prompt/number/cablelayer_cut)
 	into += entry_line(77)
 	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/number/excavation_depth) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:245
+/datum/prompt/number/excavation_depth/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 245, /datum/prompt/number/excavation_depth)
+	into += entry_line(246)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(247)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/text/air_control_sensor_name) at code/game/machinery/atmo_control.dm:308
 /datum/prompt/text/air_control_sensor_name/declared_entries(list/into)
@@ -3237,12 +3301,28 @@
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
 
+/// CAPABILITIES(/datum/prompt/text/card_data_label) at code/game/objects/items/weapons/id cards/cards.dm:354
+/datum/prompt/text/card_data_label/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/id cards/cards.dm", 354, /datum/prompt/text/card_data_label)
+	into += entry_line(355)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(356)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/text/compliance_laws) at code/game/objects/items/weapons/implants/implant.dm:842
 /datum/prompt/text/compliance_laws/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 842, /datum/prompt/text/compliance_laws)
 	into += entry_line(843)
 	into += list(global.ref_one(nameof(implant), /obj/item/implant/compliance))
+
+/// CAPABILITIES(/datum/prompt/text/drill_label) at code/modules/mining/drilling/drill.dm:323
+/datum/prompt/text/drill_label/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/drilling/drill.dm", 323, /datum/prompt/text/drill_label)
+	into += entry_line(324)
+	into += list(global.ref_one(nameof(captured_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/text/explosive_implant_phrase) at code/game/objects/items/weapons/implants/implant.dm:309
 /datum/prompt/text/explosive_implant_phrase/declared_entries(list/into)
@@ -3271,6 +3351,15 @@
 	into += entry_block("code/game/machinery/pandemic.dm", 104, /datum/prompt/text/pandemic_release_reason)
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/text/tracking_beacon_signal) at code/game/objects/items/devices/radio/beacon.dm:76
+/datum/prompt/text/tracking_beacon_signal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/radio/beacon.dm", 76, /datum/prompt/text/tracking_beacon_signal)
+	into += entry_line(77)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(78)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
@@ -7187,11 +7276,11 @@
 	into += entry_line(13)
 	into += list(global.owns_one(nameof(dummy_card), starts = nameof(dummy_card_type)))
 
-/// CAPABILITIES(/obj/item/card_fluff) at code/game/objects/items/weapons/id cards/cards.dm:210
+/// CAPABILITIES(/obj/item/card_fluff) at code/game/objects/items/weapons/id cards/cards.dm:224
 /obj/item/card_fluff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/id cards/cards.dm", 210, /obj/item/card_fluff)
-	into += entry_line(211)
+	into += entry_block("code/game/objects/items/weapons/id cards/cards.dm", 224, /obj/item/card_fluff)
+	into += entry_line(225)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/cartridge/rd) at code/modules/pda/cart.dm:232
@@ -14074,11 +14163,11 @@
 	into += entry_line(41)
 	into += list(global.op("release_stack", global.ui_act("release_stack", global.arg("stack", global.schema_text(4096))), global.then(PROC_REF(ui_act_release_stack))))
 
-/// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:484
+/// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:545
 /obj/machinery/mining/brace/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mining/drilling/drill.dm", 484, /obj/machinery/mining/brace)
-	into += entry_line(485)
+	into += entry_block("code/modules/mining/drilling/drill.dm", 545, /obj/machinery/mining/brace)
+	into += entry_line(546)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/mining/drill) at code/modules/mining/drilling/drill.dm:96
