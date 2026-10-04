@@ -19,6 +19,7 @@
 	var/datum/nif_menu/menu_ref
 
 CAPABILITIES(/obj/item/nif)
+	owns_one(nameof(comm), on_destroy = ON_DESTROY_DELETE)
 	owns_one(nameof(menu_ref), /datum/nif_menu)
 
 /**

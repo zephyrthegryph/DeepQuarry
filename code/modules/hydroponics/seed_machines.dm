@@ -69,10 +69,9 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	..()
 */
 
-/obj/machinery/botany/ownership()
-	. = ..()
-	. += owns(nameof(seed), policy = OWN_SPILL)
-	. += owns(nameof(loaded_disk), policy = OWN_SPILL)
+CAPABILITIES(/obj/machinery/botany)
+	owns_one(nameof(seed), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL)
 
 /obj/machinery/botany/machine_step()
 
@@ -395,6 +394,5 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 /obj/machinery/botany/extractor/proc/genetics() as /datum/seed
 	return genetics_static
 
-/obj/machinery/botany/extractor/ownership()
-	. = ..()
-	. += rel_one(nameof(genetics_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+CAPABILITIES(/obj/machinery/botany/extractor)
+	owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
