@@ -87,11 +87,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 	if(has_stat(NOPOWER))
 		return ITEM_INTERACT_BLOCKING
 	play_sfx(src, SFX_ITEMS_PENCLICK, 1.2)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(poster_chosen), message = "Available Posters", title = "Holographic Poster", choices = postertypes + "random", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(poster_chosen), answerer = user, question = "Available Posters", title = "Holographic Poster", choices = postertypes + "random", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/holoposter/proc/poster_chosen(datum/om/prompt/choice/ask)
-	var/choice = ask.choice
+/obj/machinery/holoposter/proc/poster_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.answer_value
 	if(has_stat(NOPOWER))
 		return
 	icon_state = choice
