@@ -927,32 +927,72 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		if(h == src) // Don't target self
 			continue
 		creatures += h
-	om_ask(src, /datum/om/prompt/choice/remotesay_target, PROC_REF(remotesay_target_chosen), choices = creatures)
+	open_request(src, /datum/prompt/choice/remotesay_target, PROC_REF(remotesay_target_chosen), answerer = src, choices = creatures)
 
 /// Re-checked on the answer: conscious and still telepathic.
-/datum/om/prompt/choice/remotesay_target
+/datum/prompt/choice/remotesay_target
 	title = "Project Mind"
-	message = "Who do you want to project your mind to?"
+	question = "Who do you want to project your mind to?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/remotesay_target/valid()
-	return answerer.has_mutation(mRemotetalk) ? null : "not telepathic"
+/datum/prompt/choice/remotesay_target/recheck_extra()
+	if(!answerer.has_mutation(mRemotetalk))
+		return "not telepathic"
+	if(!isnull(answer_value))
+		var/mob/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
 
-/// What to say; carries who to. Re-checked on the answer: conscious and still telepathic.
-/datum/om/prompt/text/remotesay
-	message = "What do you wish to say?"
+/// Captures the original recipient weakly while the speaker writes the message.
+/datum/prompt/text/remotesay
+	question = "What do you wish to say?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
-	var/mob/target
+	var/mob/recipient
+	var/recipient_expected = FALSE
 
-/datum/om/prompt/text/remotesay/valid()
-	return answerer.has_mutation(mRemotetalk) ? null : "not telepathic"
+CAPABILITIES(/datum/prompt/text/remotesay)
+	ref_one(nameof(recipient), /mob)
 
-/mob/living/carbon/human/proc/remotesay_target_chosen(datum/om/prompt/choice/remotesay_target/ask)
-	om_ask(src, /datum/om/prompt/text/remotesay, PROC_REF(remotesay_answered), target = ask.choice)
+/datum/prompt/text/remotesay/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_recipient = recipient
+	recipient_expected = !isnull(captured_recipient)
+	rel_clear(src, nameof(recipient))
+	if(captured_recipient && !QDELETED(captured_recipient))
+		rel_set(src, nameof(recipient), captured_recipient)
 
-/mob/living/carbon/human/proc/remotesay_answered(datum/om/prompt/text/remotesay/ask)
-	var/mob/target = ask.target
-	var/say = ask.text
+/datum/prompt/text/remotesay/recheck_extra()
+	if(!answerer.has_mutation(mRemotetalk))
+		return "not telepathic"
+	if(recipient_expected && QDELETED(recipient))
+		return "gone"
+
+/mob/living/carbon/human/proc/remotesay_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(remotesay_target_apply), A)
+	if(!result.ok)
+		stack_trace("remote mind recipient: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/remotesay_target_apply(datum/act/request/A)
+	var/mob/recipient = A.answer.answer_value
+	open_request(src, /datum/prompt/text/remotesay, PROC_REF(remotesay_answered), answerer = src, recipient = recipient)
+
+/mob/living/carbon/human/proc/remotesay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(remotesay_apply), A)
+	if(!result.ok)
+		stack_trace("remote telepathic message: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/remotesay_apply(datum/act/request/A)
+	var/datum/prompt/text/remotesay/ask = A.answer
+	var/mob/target = ask.recipient
+	var/say = ask.answer_value
 	if(target.has_mutation(mRemotetalk))
 		target.show_message(span_filter_say("[span_blue("You hear [src.real_name]'s voice: [say]")]"))
 	else
@@ -986,21 +1026,33 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			continue
 		creatures += h
 
-	om_ask(src, /datum/om/prompt/choice/remoteobserve, PROC_REF(remoteobserve_chosen), choices = creatures)
+	open_request(src, /datum/prompt/choice/remoteobserve, PROC_REF(remoteobserve_chosen), answerer = src, choices = creatures)
 
 /// Re-checked on the answer: both conscious, and not already viewing.
-/datum/om/prompt/choice/remoteobserve
-	message = "Who do you want to project your mind to?"
+/datum/prompt/choice/remoteobserve
+	question = "Who do you want to project your mind to?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/remoteobserve/valid()
-	var/mob/target = choice
+/datum/prompt/choice/remoteobserve/recheck_extra()
+	if(isnull(answer_value))
+		return
+	var/mob/target = answer_value
+	if(!istype(target) || QDELETED(target))
+		return "gone"
 	if(target.stat != CONSCIOUS || answerer.is_remote_viewing())
 		return "can't view"
-	return null
 
-/mob/living/carbon/human/proc/remoteobserve_chosen(datum/om/prompt/choice/remoteobserve/ask)
-	var/mob/target = ask.choice
+/mob/living/carbon/human/proc/remoteobserve_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(remoteobserve_apply), A)
+	if(!result.ok)
+		stack_trace("remote observation: [result.error]")
+	return result.value
+
+/mob/living/carbon/human/proc/remoteobserve_apply(datum/act/request/A)
+	var/mob/target = A.answer.answer_value
 	begin_remote_view(/datum/remote_view/mremote_mutation, target)
 
 /mob/living/carbon/human/get_visible_gender(mob/user, force)
