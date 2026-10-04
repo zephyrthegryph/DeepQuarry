@@ -20,10 +20,7 @@
 		user.client.register_map_obj(linked().cam_background)
 		linked().update_screen()
 
-UI_DATA(/datum/tgui_module/ship, "merge:ui_data_datum_tgui_module_ship{mapRef:unknown}")
-
-/// The computed part of /datum/tgui_module/ship's window data (declared on its UI_DATA row).
-/datum/tgui_module/ship/proc/ui_data_datum_tgui_module_ship(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/ship/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(linked())
 		data["mapRef"] = linked().map_name
@@ -78,7 +75,6 @@ UI_DATA(/datum/tgui_module/ship, "merge:ui_data_datum_tgui_module_ship{mapRef:un
 // Navigation
 /datum/tgui_module/ship/nav
 	name = "Navigation Display"
-	tgui_id = "OvermapNavigation"
 
 /datum/tgui_module/ship/nav/ui_prepare(mob/user, datum/tgui/ui)
 	if(!linked())
@@ -100,11 +96,14 @@ UI_DATA(/datum/tgui_module/ship, "merge:ui_data_datum_tgui_module_ship{mapRef:un
 		return FALSE
 	return ..()
 
-UI_DATA(/datum/tgui_module/ship/nav, "merge:ui_data_datum_tgui_module_ship_nav{sector:text,sector_info:text,s_x:num,s_y:num,speed:num,accel:num,heading:unknown,viewing:unknown,ETAnext:text}")
+CAPABILITIES(/datum/tgui_module/ship/nav)
+	interface("OvermapNavigation")
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
 
-/// The computed part of /datum/tgui_module/ship/nav's window data (declared on its UI_DATA row).
-/datum/tgui_module/ship/nav/proc/ui_data_datum_tgui_module_ship_nav(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
+/datum/tgui_module/ship/nav/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	var/list/data = ..()
 
 	var/turf/T = get_turf(linked())
 	var/obj/effect/overmap/visitable/sector/current_sector = locate_on(T, /obj/effect/overmap/visitable/sector)
@@ -125,21 +124,18 @@ UI_DATA(/datum/tgui_module/ship/nav, "merge:ui_data_datum_tgui_module_ship_nav{s
 
 	return data
 
-/datum/tgui_module/ship/nav/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!linked())
-		return FALSE
-	return TRUE
+/// A navigation display with no ship linked answers nothing (silently).
+/datum/tgui_module/ship/nav/proc/ui_gate(datum/act/op/A)
+	return !!linked()
 
-UI_ACT(/datum/tgui_module/ship/nav, "viewing", ui_act_viewing)
-UI_ACT_PROC(/datum/tgui_module/ship/nav, ui_act_viewing)
-	if(!get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
+/datum/tgui_module/ship/nav/proc/ui_act_viewing(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!get_dist(user, src) > 1 || user.blinded || !linked())
 		return FALSE
-	else if(!viewing_overmap(ui.user))
-		start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
+	else if(!viewing_overmap(user))
+		start_coordinated_remoteview(src, user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 	else
-		ui.user.reset_perspective()
+		user.reset_perspective()
 	return TRUE
 
 /datum/tgui_module/ship/nav/ntos
@@ -148,7 +144,6 @@ UI_ACT_PROC(/datum/tgui_module/ship/nav, ui_act_viewing)
 // Full monty control computer
 /datum/tgui_module/ship/fullmonty
 	name = "Full Monty Overmap Control"
-	tgui_id = "OvermapFull"
 	// HELM
 	var/autopilot = 0
 	var/autopilot_disabled = TRUE
@@ -162,8 +157,28 @@ UI_ACT_PROC(/datum/tgui_module/ship/nav, ui_act_viewing)
 
 CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 	owns_many(nameof(known_sectors))
-
-DECLARE_UI_STATE(/datum/tgui_module/ship/fullmonty, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
+	interface("OvermapFull", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	op("add", ui_act("add", arg("add", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "New navigation entry", "question" = "Input navigation entry name", "default" = computed(PROC_REF(add_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE), step = "name"), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new entry x coordinate", "default" = computed(PROC_REF(add_x_default)), "max_value" = world.maxx, "min_value" = 1), step = "x", when = PROC_REF(add_is_new)), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new entry y coordinate", "default" = computed(PROC_REF(add_y_default)), "max_value" = world.maxy, "min_value" = 1), step = "y", when = PROC_REF(add_is_new)), then(PROC_REF(ui_act_add)))
+	op("remove", ui_act("remove", arg("remove", schema_ref(/datum/computer_file/data/waypoint))), then(PROC_REF(ui_act_remove)))
+	op("setcoord", ui_act("setcoord", arg("setx", bool()), arg("sety", bool())), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new destiniation x coordinate", "default" = computed(PROC_REF(setcoord_x_default)), "max_value" = world.maxx, "min_value" = 1), step = "x", when = PROC_REF(setcoord_x)), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new destiniation y coordinate", "default" = computed(PROC_REF(setcoord_y_default)), "max_value" = world.maxy, "min_value" = 1), step = "y", when = PROC_REF(setcoord_y)), then(PROC_REF(ui_act_setcoord)))
+	op("setds", ui_act("setds", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_setds)))
+	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
+	op("speedlimit", ui_act("speedlimit"), then(PROC_REF(ui_act_speedlimit)))
+	op("accellimit", ui_act("accellimit"), then(PROC_REF(ui_act_accellimit)))
+	op("move", ui_act("move", arg("dir", num())), then(PROC_REF(ui_act_move)))
+	op("brake", ui_act("brake"), then(PROC_REF(ui_act_brake)))
+	op("apilot", ui_act("apilot"), then(PROC_REF(ui_act_apilot)))
+	op("apilot_lock", ui_act("apilot_lock"), then(PROC_REF(ui_act_apilot_lock)))
+	op("manual", ui_act("manual"), then(PROC_REF(ui_act_manual)))
+	op("global_toggle", ui_act("global_toggle"), then(PROC_REF(ui_act_global_toggle)))
+	op("set_global_limit", ui_act("set_global_limit"), then(PROC_REF(ui_act_set_global_limit)))
+	op("global_limit", ui_act("global_limit", arg("global_limit", num())), then(PROC_REF(ui_act_global_limit)))
+	op("set_limit", ui_act("set_limit", arg("engine", schema_ref(/datum/ship_engine))), asks(/datum/prompt/number, fields = list("title" = "Thrust limit", "question" = "Input new thrust limit (0..100)", "default" = computed(PROC_REF(thrust_limit_default)), "max_value" = 100)), then(PROC_REF(ui_act_set_limit)))
+	op("limit", ui_act("limit", arg("engine", schema_ref(/datum/ship_engine)), arg("limit", num())), then(PROC_REF(ui_act_limit)))
+	op("toggle_engine", ui_act("toggle_engine", arg("engine", schema_ref(/datum/ship_engine))), then(PROC_REF(ui_act_toggle_engine)))
+	op("range", ui_act("range"), then(PROC_REF(ui_act_range)))
+	op("toggle_sensor", ui_act("toggle_sensor"), then(PROC_REF(ui_act_toggle_sensor)))
+	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
 
 /datum/tgui_module/ship/fullmonty/tgui_close(mob/user)
 	. = ..()
@@ -200,11 +215,14 @@ DECLARE_UI_STATE(/datum/tgui_module/ship/fullmonty, ADMIN_STATE(R_ADMIN|R_EVENT|
 	return ..()
 
 // Beware ye eyes. This holds all of the data from helm, engine, and sensor control all at once.
-UI_DATA(/datum/tgui_module/ship/fullmonty, "d_x=dx", "d_y=dy", "autopilot_disabled:num", "autopilot:num", "merge:ui_data_datum_tgui_module_ship_fullmonty{sector:text,sector_info:text,landed:unknown,s_x:num,s_y:num,dest:bool,speedlimit:unknown,accel:num,heading:unknown,manual_control:unknown,canburn:unknown,accellimit:unknown,speed:num,speed_color:unknown,ETAnext:text,locations:unknown,global_state:num,global_limit:num,engines_info:list,total_thrust:num,viewing:unknown,on:unknown,range:unknown,health:unknown,max_health:num,heat:num,critical_heat:num,status:text,contacts:list}")
 
-/// The computed part of /datum/tgui_module/ship/fullmonty's window data (declared on its UI_DATA row).
-/datum/tgui_module/ship/fullmonty/proc/ui_data_datum_tgui_module_ship_fullmonty(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
+/datum/tgui_module/ship/fullmonty/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	var/list/data = ..()
+	data["d_x"] = dx
+	data["d_y"] = dy
+	data["autopilot_disabled"] = autopilot_disabled
+	data["autopilot"] = autopilot
 
 	// HELM
 	var/turf/T = get_turf(linked())
@@ -311,33 +329,43 @@ UI_DATA(/datum/tgui_module/ship/fullmonty, "d_x=dx", "d_y=dy", "autopilot_disabl
 			contacts.Add(list(list("name"=O.name, "ref"="\ref[O]", "bearing"=bearing)))
 		data["contacts"] = contacts
 
-
 	return data
 
 // Beware ye eyes. This holds all of the ACTIONS from helm, engine, and sensor control all at once.
-UI_ACT(/datum/tgui_module/ship/fullmonty, "add", ui_act_add, UI_ARG_TEXT("add"))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_add)
-	var/sec_name = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Input navigation entry name", title = "New navigation entry", default = "Sector #[length(known_sectors)]", max_length = MAX_NAME_LEN)
-	if(isnull(sec_name))
-		return
+/datum/tgui_module/ship/fullmonty/proc/add_is_new(datum/act/op/A)
+	return A.args["add"] == "new"
+
+/datum/tgui_module/ship/fullmonty/proc/add_name_default(datum/act/op/A)
+	return "Sector #[length(known_sectors)]"
+
+/datum/tgui_module/ship/fullmonty/proc/add_x_default(datum/act/op/A)
+	return linked().x
+
+/datum/tgui_module/ship/fullmonty/proc/add_y_default(datum/act/op/A)
+	return linked().y
+
+/datum/tgui_module/ship/fullmonty/proc/ui_act_add(datum/act/op/A, add)
+	var/mob/user = A.actor
+	var/datum/prompt/name_answer = A.step_answer("name")
+	var/sec_name = name_answer?.value
 	if(!sec_name)
 		sec_name = "Sector #[length(known_sectors)]"
 	if(sec_name in known_sectors)
-		to_chat(ui.user, span_warning("Sector with that name already exists, please input a different name."))
+		to_chat(user, span_warning("Sector with that name already exists, please input a different name."))
 		return TRUE
 	var/datum/computer_file/data/waypoint/R
-	switch(params["add"])
+	switch(add)
 		if("current")
 			R = new()
 			R.fields["x"] = linked().x
 			R.fields["y"] = linked().y
 		if("new")
-			var/newx = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/number, message = "Input new entry x coordinate", title = "Coordinate input", default = linked().x, max = world.maxx, min = 1)
-			if(isnull(newx))
-				return
-			var/newy = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/number, message = "Input new entry y coordinate", title = "Coordinate input", default = linked().y, max = world.maxy, min = 1)
-			if(isnull(newy))
-				return
+			var/datum/prompt/x_answer = A.step_answer("x")
+			var/datum/prompt/y_answer = A.step_answer("y")
+			var/newx = x_answer?.value
+			var/newy = y_answer?.value
+			if(isnull(newx) || isnull(newy))
+				return TRUE
 			R = new()
 			R.fields["x"] = CLAMP(newx, 1, world.maxx)
 			R.fields["y"] = CLAMP(newy, 1, world.maxy)
@@ -347,171 +375,182 @@ UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_add)
 	rel_add(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), R, sec_name)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "remove", ui_act_remove, UI_ARG_REF("remove", null, /datum/computer_file/data/waypoint))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_remove)
-	var/datum/computer_file/data/waypoint/R = params["remove"]
+/datum/tgui_module/ship/fullmonty/proc/ui_act_remove(datum/act/op/A, remove)
+	var/datum/computer_file/data/waypoint/R = remove
 	if(istype(R) && known_sectors?[R.fields["name"]] == R) // only one of our own entries
 		rel_add(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), null, R.fields["name"]) // removes and disposes of it
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "setcoord", ui_act_setcoord, UI_ARG_BOOL("setx"), UI_ARG_BOOL("sety"))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_setcoord)
-	if(params["setx"])
-		var/newx = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/number, message = "Input new destiniation x coordinate", title = "Coordinate input", default = dx, max = world.maxx, min = 1)
-		if(isnull(newx))
-			return
-		if(newx)
-			dx = CLAMP(newx, 1, world.maxx)
+/datum/tgui_module/ship/fullmonty/proc/setcoord_x(datum/act/op/A)
+	return !!A.args["setx"]
 
-	if(params["sety"])
-		var/newy = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/number, message = "Input new destiniation y coordinate", title = "Coordinate input", default = dy, max = world.maxy, min = 1)
-		if(isnull(newy))
-			return
-		if(newy)
-			dy = CLAMP(newy, 1, world.maxy)
+/datum/tgui_module/ship/fullmonty/proc/setcoord_x_default(datum/act/op/A)
+	return dx
+
+/datum/tgui_module/ship/fullmonty/proc/setcoord_y_default(datum/act/op/A)
+	return dy
+
+/datum/tgui_module/ship/fullmonty/proc/setcoord_y(datum/act/op/A)
+	return !!A.args["sety"]
+
+/datum/tgui_module/ship/fullmonty/proc/ui_act_setcoord(datum/act/op/A, setx, sety)
+	var/datum/prompt/x_answer = A.step_answer("x")
+	var/datum/prompt/y_answer = A.step_answer("y")
+	var/newx = x_answer?.value
+	if(newx)
+		dx = CLAMP(newx, 1, world.maxx)
+	var/newy = y_answer?.value
+	if(newy)
+		dy = CLAMP(newy, 1, world.maxy)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "setds", ui_act_setds, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_setds)
-	dx = params["x"]
-	dy = params["y"]
+/datum/tgui_module/ship/fullmonty/proc/ui_act_setds(datum/act/op/A, x, y)
+	dx = x
+	dy = y
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "reset", ui_act_reset)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_reset)
+/datum/tgui_module/ship/fullmonty/proc/ui_act_reset(datum/act/op/A)
 	dx = 0
 	dy = 0
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "speedlimit", ui_act_speedlimit)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_speedlimit)
-	var/newlimit = act_ask(ui.user, action, params, ui, "a6", /datum/om/prompt/number, message = "Input new speed limit for autopilot (0 to brake)", title = "Autopilot speed limit", default = speedlimit*1000, max = 100000)
-	if(isnull(newlimit))
+/datum/tgui_module/ship/fullmonty/proc/ui_act_speedlimit(datum/act/op/A)
+	open_request(src, /datum/prompt/number, PROC_REF(speedlimit_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Input new speed limit for autopilot (0 to brake)", title = "Autopilot speed limit", default = speedlimit*1000, max_value = 100000, timeout = 0)
+
+/datum/tgui_module/ship/fullmonty/proc/speedlimit_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/newlimit = A.answer.answer_value
 	if(newlimit)
 		speedlimit = CLAMP(newlimit/1000, 0, 100)
 	. = TRUE
+	SStgui.update_uis(src)
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "accellimit", ui_act_accellimit)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_accellimit)
-	var/newlimit = act_ask(ui.user, action, params, ui, "a7", /datum/om/prompt/number, message = "Input new acceleration limit", title = "Acceleration limit", default = accellimit*1000)
-	if(isnull(newlimit))
+/datum/tgui_module/ship/fullmonty/proc/ui_act_accellimit(datum/act/op/A)
+	open_request(src, /datum/prompt/number, PROC_REF(accellimit_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Input new acceleration limit", title = "Acceleration limit", default = accellimit*1000, timeout = 0)
+
+/datum/tgui_module/ship/fullmonty/proc/accellimit_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/newlimit = A.answer.answer_value
 	if(newlimit)
 		accellimit = max(newlimit/1000, 0)
 	. = TRUE
+	SStgui.update_uis(src)
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "move", ui_act_move, UI_ARG_NUM("dir"))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_move)
-	var/ndir = params["dir"]
+/datum/tgui_module/ship/fullmonty/proc/ui_act_move(datum/act/op/A, dir)
+	var/mob/user = A.actor
+	var/ndir = dir
 	ndir = turn(ndir,pick(90,-90))
-	linked().relaymove(ui.user, ndir, accellimit)
+	linked().relaymove(user, ndir, accellimit)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "brake", ui_act_brake)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_brake)
+/datum/tgui_module/ship/fullmonty/proc/ui_act_brake(datum/act/op/A)
 	linked().decelerate()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "apilot", ui_act_apilot)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_apilot)
+/datum/tgui_module/ship/fullmonty/proc/ui_act_apilot(datum/act/op/A)
 	if(autopilot_disabled)
 		autopilot = FALSE
 	else
 		autopilot = !autopilot
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "apilot_lock", ui_act_apilot_lock)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_apilot_lock)
+/datum/tgui_module/ship/fullmonty/proc/ui_act_apilot_lock(datum/act/op/A)
 	autopilot_disabled = !autopilot_disabled
 	autopilot = FALSE
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "manual", ui_act_manual)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_manual)
-	if(ui.user.blinded || !linked())
+/datum/tgui_module/ship/fullmonty/proc/ui_act_manual(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user.blinded || !linked())
 		return FALSE
-	else  if(!viewing_overmap(ui.user))
-		start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
+	else  if(!viewing_overmap(user))
+		start_coordinated_remoteview(src, user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 	else
-		ui.user.reset_perspective()
+		user.reset_perspective()
 	. = TRUE
 // END HELM
 // ENGINES
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "global_toggle", ui_act_global_toggle)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_global_toggle)
+/datum/tgui_module/ship/fullmonty/proc/ui_act_global_toggle(datum/act/op/A)
 	linked().engines_state = !linked().engines_state
 	for(var/datum/ship_engine/E in linked().engines)
 		if(linked().engines_state == !E.is_on())
 			E.toggle()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "set_global_limit", ui_act_set_global_limit)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_set_global_limit)
-	var/newlim = act_ask(ui.user, action, params, ui, "a8", /datum/om/prompt/number, message = "Input new thrust limit (0..100%)", title = "Thrust limit", default = linked().thrust_limit*100, max = 100)
-	if(isnull(newlim))
+/datum/tgui_module/ship/fullmonty/proc/ui_act_set_global_limit(datum/act/op/A)
+	open_request(src, /datum/prompt/number, PROC_REF(set_global_limit_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Input new thrust limit (0..100%)", title = "Thrust limit", default = linked().thrust_limit*100, max_value = 100, timeout = 0)
+
+/datum/tgui_module/ship/fullmonty/proc/set_global_limit_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/newlim = A.answer.answer_value
 	linked().thrust_limit = clamp(newlim/100, 0, 1)
 	for(var/datum/ship_engine/E in linked().engines)
 		E.set_thrust_limit(linked().thrust_limit)
 	. = TRUE
+	SStgui.update_uis(src)
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "global_limit", ui_act_global_limit, UI_ARG_NUM("global_limit"))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_global_limit)
-	linked().thrust_limit = clamp(linked().thrust_limit + params["global_limit"], 0, 1)
+/datum/tgui_module/ship/fullmonty/proc/ui_act_global_limit(datum/act/op/A, global_limit)
+	linked().thrust_limit = clamp(linked().thrust_limit + global_limit, 0, 1)
 	for(var/datum/ship_engine/E in linked().engines)
 		E.set_thrust_limit(linked().thrust_limit)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "set_limit", ui_act_set_limit, UI_ARG_REF("engine", null, /datum/ship_engine))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_set_limit)
-	var/datum/ship_engine/E = params["engine"]
+/datum/tgui_module/ship/fullmonty/proc/thrust_limit_default(datum/act/op/A)
+	var/datum/ship_engine/E = A.args["engine"]
+	return istype(E) ? E.get_thrust_limit() : 0
+
+/datum/tgui_module/ship/fullmonty/proc/ui_act_set_limit(datum/act/op/A, engine)
+	var/datum/ship_engine/E = engine
 	if(!istype(E))
 		return TRUE
-	var/newlim = act_ask(ui.user, action, params, ui, "a9", /datum/om/prompt/number, message = "Input new thrust limit (0..100)", title = "Thrust limit", default = E.get_thrust_limit(), max = 100)
+	var/datum/prompt/P = A.answer
+	var/newlim = P?.value
 	if(isnull(newlim))
-		return
+		return TRUE
 	var/limit = clamp(newlim/100, 0, 1)
 	E.set_thrust_limit(limit)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "limit", ui_act_limit, UI_ARG_REF("engine", null, /datum/ship_engine), UI_ARG_NUM("limit"))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_limit)
-	var/datum/ship_engine/E = params["engine"]
+/datum/tgui_module/ship/fullmonty/proc/ui_act_limit(datum/act/op/A, engine, limit_arg)
+	var/datum/ship_engine/E = engine
 	if(!istype(E))
 		return TRUE
-	var/limit = clamp(E.get_thrust_limit() + params["limit"], 0, 1)
+	var/limit = clamp(E.get_thrust_limit() + limit_arg, 0, 1)
 	E.set_thrust_limit(limit)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "toggle_engine", ui_act_toggle_engine, UI_ARG_REF("engine", null, /datum/ship_engine))
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_toggle_engine)
-	var/datum/ship_engine/E = params["engine"]
+/datum/tgui_module/ship/fullmonty/proc/ui_act_toggle_engine(datum/act/op/A, engine)
+	var/datum/ship_engine/E = engine
 	if(istype(E))
 		E.toggle()
 	. = TRUE
 // END ENGINES
 // SENSORS
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "range", ui_act_range)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_range)
-	var/nrange = act_ask(ui.user, action, params, ui, "a10", /datum/om/prompt/number, message = "Set new sensors range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
-	if(isnull(nrange))
+/datum/tgui_module/ship/fullmonty/proc/ui_act_range(datum/act/op/A)
+	open_request(src, /datum/prompt/number, PROC_REF(range_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Set new sensors range", title = "Sensor range", default = sensors().range, max_value = world.view, step = 0.01, timeout = 0)
+
+/datum/tgui_module/ship/fullmonty/proc/range_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/nrange = A.answer.answer_value
 	if(nrange)
 		sensors().set_range(CLAMP(nrange, 1, world.view))
 	. = TRUE
+	SStgui.update_uis(src)
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "toggle_sensor", ui_act_toggle_sensor)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_toggle_sensor)
+/datum/tgui_module/ship/fullmonty/proc/ui_act_toggle_sensor(datum/act/op/A)
 	sensors().toggle()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "viewing", ui_act_viewing)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_viewing)
-	if(ui.user && !isAI(ui.user))
-		viewing_overmap(ui.user) ? unlook(ui.user) : look(ui.user)
+/datum/tgui_module/ship/fullmonty/proc/ui_act_viewing(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user && !isAI(user))
+		viewing_overmap(user) ? unlook(user) : look(user)
 	. = TRUE
 // END SENSORS
 

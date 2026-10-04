@@ -442,3 +442,16 @@
 	p2cl_answer(H, "x", TRUE)
 	test_time(10 SECONDS)
 	TEST_ASSERT(COOLDOWN_FINISHED(M, message_cooldown), "a cancelled announcement costs no cooldown")
+
+/// New with the conversion: the legacy window's "auth" button had no handler (see intended_changes.md), so this passes only on the op.
+/datum/unit_test/dq_hc_tgui/comms_login_button
+/datum/unit_test/dq_hc_tgui/comms_login_button/run_gate()
+	var/datum/tgui_module/communications/M = hct_comms()
+	var/mob/living/carbon/human/H = hct_actor()
+	press(H, M, "auth")
+	TEST_ASSERT_EQUAL(M.authenticated, 2, "a person with captain access logs in as captain")
+	press(H, M, "auth")
+	TEST_ASSERT_EQUAL(M.authenticated, 0, "pressing it again logs out")
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
+	press(R, M, "auth")
+	TEST_ASSERT_EQUAL(M.authenticated, 0, "a cyborg cannot log in")

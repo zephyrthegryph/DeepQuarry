@@ -2,7 +2,6 @@
 
 /datum/tgui_module/player_notes
 	name = "Player Notes"
-	tgui_id = "PlayerNotes"
 
 	var/ckeys = list()
 
@@ -56,7 +55,13 @@
 	var/datum/admins/A = GLOB.admin_datums[user.ckey]
 	A.PlayerNotesLegacy(user)
 
-DECLARE_UI_STATE(/datum/tgui_module/player_notes, ADMIN_STATE(R_ADMIN|R_MOD|R_EVENT|R_DEBUG))
+CAPABILITIES(/datum/tgui_module/player_notes)
+	interface("PlayerNotes", rights = R_ADMIN|R_MOD|R_EVENT|R_DEBUG)
+	op("show_player_info", ui_act("show_player_info", arg("name", schema_text(4096))), then(PROC_REF(ui_act_show_player_info)))
+	op("filter_player_notes", ui_act("filter_player_notes"), then(PROC_REF(ui_act_filter_player_notes)))
+	op("set_page", ui_act("set_page", arg("index", num())), then(PROC_REF(ui_act_set_page)))
+	op("clear_player_info_filter", ui_act("clear_player_info_filter"), then(PROC_REF(ui_act_clear_player_info_filter)))
+	op("open_legacy_ui", ui_act("open_legacy_ui"), then(PROC_REF(ui_act_open_legacy_ui)))
 
 /datum/tgui_module/player_notes/tgui_fallback(payload, mob/user)
 	if(..())
@@ -64,37 +69,36 @@ DECLARE_UI_STATE(/datum/tgui_module/player_notes, ADMIN_STATE(R_ADMIN|R_MOD|R_EV
 
 	open_legacy(user)
 
-UI_ACT(/datum/tgui_module/player_notes, "show_player_info", ui_act_show_player_info, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_show_player_info)
-	var/datum/tgui_module/player_notes_info/A = new(src)
-	A.key = params["name"]
-	A.tgui_interact(ui.user)
+/datum/tgui_module/player_notes/proc/ui_act_show_player_info(datum/act/op/A, name)
+	var/mob/user = A.actor
+	var/datum/tgui_module/player_notes_info/A2 = new(src)
+	A2.key = name
+	A2.tgui_interact(user)
 
-UI_ACT(/datum/tgui_module/player_notes, "filter_player_notes", ui_act_filter_player_notes)
-UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_filter_player_notes)
-	var/input = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Filter string (case-insensitive regex)", title = "Player notes filter")
-	if(isnull(input))
+/datum/tgui_module/player_notes/proc/ui_act_filter_player_notes(datum/act/op/A)
+	open_request(src, /datum/prompt/text, PROC_REF(filter_player_notes_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Filter string (case-insensitive regex)", title = "Player notes filter", timeout = 0)
+
+/datum/tgui_module/player_notes/proc/filter_player_notes_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/input = A.answer.answer_value
 	current_filter = input
 
-UI_ACT(/datum/tgui_module/player_notes, "set_page", ui_act_set_page, UI_ARG_NUM("index"))
-UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_set_page)
-	var/page = params["index"]
+/datum/tgui_module/player_notes/proc/ui_act_set_page(datum/act/op/A, index)
+	var/page = index
 	current_page = page
 
-UI_ACT(/datum/tgui_module/player_notes, "clear_player_info_filter", ui_act_clear_player_info_filter)
-UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_clear_player_info_filter)
+/datum/tgui_module/player_notes/proc/ui_act_clear_player_info_filter(datum/act/op/A)
 	current_filter = ""
 
-UI_ACT(/datum/tgui_module/player_notes, "open_legacy_ui", ui_act_open_legacy_ui)
-UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_open_legacy_ui)
-	open_legacy(ui.user)
+/datum/tgui_module/player_notes/proc/ui_act_open_legacy_ui(datum/act/op/A)
+	var/mob/user = A.actor
+	open_legacy(user)
 
-UI_DATA_REPLACE(/datum/tgui_module/player_notes, "filter=current_filter:text", "merge:ui_data_datum_tgui_module_player_notes{ckeys:list,pages:num}")
-
-/// The computed part of /datum/tgui_module/player_notes's window data (declared on its UI_DATA row).
-/datum/tgui_module/player_notes/proc/ui_data_datum_tgui_module_player_notes(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/player_notes/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
+	data["filter"] = current_filter
 
 	filter_ckeys(current_page, current_filter, user)
 	data["ckeys"] = list()
@@ -110,7 +114,6 @@ UI_DATA_REPLACE(/datum/tgui_module/player_notes, "filter=current_filter:text", "
 // PLAYER NOTES INFO
 /datum/tgui_module/player_notes_info
 	name = "Player Notes Info"
-	tgui_id = "PlayerNotesInfo"
 
 	var/key = null
 
@@ -119,7 +122,11 @@ UI_DATA_REPLACE(/datum/tgui_module/player_notes, "filter=current_filter:text", "
 	if(!QDELETED(src))
 		qdel(src)
 
-DECLARE_UI_STATE(/datum/tgui_module/player_notes_info, ADMIN_STATE(R_ADMIN|R_MOD|R_EVENT|R_DEBUG))
+CAPABILITIES(/datum/tgui_module/player_notes_info)
+	interface("PlayerNotesInfo", rights = R_ADMIN|R_MOD|R_EVENT|R_DEBUG)
+	op("cahngekey", ui_act("cahngekey", arg("ckey", schema_text(4096))), then(PROC_REF(ui_act_cahngekey)))
+	op("add_player_info", ui_act("add_player_info", arg("ckey", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "Add Player Info", "question" = "Write your comment below.", "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT)), then(PROC_REF(ui_act_add_player_info)))
+	op("remove_player_info", ui_act("remove_player_info", arg("ckey", schema_text(4096)), arg("index", num())), then(PROC_REF(ui_act_remove_player_info)))
 
 /datum/tgui_module/player_notes_info/tgui_fallback(payload, mob/user)
 	if(..())
@@ -128,36 +135,30 @@ DECLARE_UI_STATE(/datum/tgui_module/player_notes_info, ADMIN_STATE(R_ADMIN|R_MOD
 	var/datum/admins/A = GLOB.admin_datums[user.ckey]
 	A.show_player_info_legacy(user, key)
 
-UI_ACT(/datum/tgui_module/player_notes_info, "cahngekey", ui_act_cahngekey, UI_ARG_TEXT("ckey"))
-UI_ACT_PROC(/datum/tgui_module/player_notes_info, ui_act_cahngekey)
-	key = sanitize(params["ckey"])
+/datum/tgui_module/player_notes_info/proc/ui_act_cahngekey(datum/act/op/A, ckey)
+	key = sanitize(ckey)
 	return TRUE
 
-UI_ACT(/datum/tgui_module/player_notes_info, "add_player_info", ui_act_add_player_info, UI_ARG_TEXT("ckey"))
-UI_ACT_PROC(/datum/tgui_module/player_notes_info, ui_act_add_player_info)
-	var/key = params["ckey"]
-	var/add = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Write your comment below.", title = "Add Player Info", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-	if(isnull(add))
-		return
+/datum/tgui_module/player_notes_info/proc/ui_act_add_player_info(datum/act/op/A, ckey)
+	var/mob/user = A.actor
+	var/datum/prompt/P = A.answer
+	var/add = P?.value
 	if(!add)
 		return FALSE
-
-	notes_add(key,add,ui.user)
+	notes_add(ckey, add, user)
 	return TRUE
 
-UI_ACT(/datum/tgui_module/player_notes_info, "remove_player_info", ui_act_remove_player_info, UI_ARG_TEXT("ckey"), UI_ARG_NUM("index"))
-UI_ACT_PROC(/datum/tgui_module/player_notes_info, ui_act_remove_player_info)
-	var/key = params["ckey"]
-	var/index = params["index"]
+/datum/tgui_module/player_notes_info/proc/ui_act_remove_player_info(datum/act/op/A, ckey, index_arg)
+	var/mob/user = A.actor
+	var/key = ckey
+	var/index = index_arg
 
-	notes_del(key, index, ui.user)
+	notes_del(key, index, user)
 	return TRUE
 
-UI_DATA_REPLACE(/datum/tgui_module/player_notes_info, "ckey=key:text", "merge:ui_data_datum_tgui_module_player_notes_info{entries:list,age:text}")
-
-/// The computed part of /datum/tgui_module/player_notes_info's window data (declared on its UI_DATA row).
-/datum/tgui_module/player_notes_info/proc/ui_data_datum_tgui_module_player_notes_info(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/player_notes_info/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["ckey"] = key
 
 	if(!key)
 		return data
