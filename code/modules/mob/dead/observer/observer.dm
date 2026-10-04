@@ -425,12 +425,15 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	if(!mobname)
 		var/list/possible_mobs = jumpable_mobs()
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(follow_target_chosen), title = "Ghost Follow", message = "Select a mob:", choices = possible_mobs)
+		open_request(src, /datum/prompt/choice, PROC_REF(follow_target_chosen), answerer = src, title = "Ghost Follow", question = "Select a mob:", choices = possible_mobs, timeout = 0)
 		return
 	follow_mob(jumpable_mobs()[mobname])
 
-/mob/observer/dead/proc/follow_target_chosen(datum/om/prompt/choice/ask)
-	follow_mob(ask.choices[ask.choice])
+/mob/observer/dead/proc/follow_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/prompt = A.answer
+	follow_mob(prompt.choices[A.answer.answer_value])
 
 /mob/observer/dead/proc/follow_mob(mob/M)
 	if(!M)
@@ -587,13 +590,16 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return
 
 	var/list/possible_mobs = jumpable_mobs()
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(jump_target_chosen), title = "Ghost Jump", message = "Select a mob:", choices = possible_mobs)
+	open_request(src, /datum/prompt/choice, PROC_REF(jump_target_chosen), answerer = src, title = "Ghost Jump", question = "Select a mob:", choices = possible_mobs, timeout = 0)
 
-/mob/observer/dead/proc/jump_target_chosen(datum/om/prompt/choice/ask)
+/mob/observer/dead/proc/jump_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/prompt = A.answer
 	if(!isobserver(src)) //Make sure they're an observer!
 		return
 
-	var/target = ask.choices[ask.choice]
+	var/target = prompt.choices[A.answer.answer_value]
 	if (!target)//Make sure we actually have a target
 		return
 	else
