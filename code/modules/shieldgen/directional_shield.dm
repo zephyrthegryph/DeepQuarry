@@ -403,10 +403,12 @@ DAMAGE_REACTION(/obj/item/shield_projector, DAMAGE_EMP, PROC_REF(projector_emp_d
 	else
 		my_tool().set_ready_state(TRUE)
 
-EXTEND_INTERACTIONS(/obj/item/shield_projector/line/exosuit, INTERACT_USE("Toggle", PROC_REF(exosuit_interaction_self)))
+CAPABILITIES(/obj/item/shield_projector/line/exosuit)
+	op("exosuit_interaction_self", in_hand(), label("Toggle"), then(PROC_REF(exosuit_interaction_self)))
 
 /// Old attack_self (the parent's self-use does nothing here: special handling).
-/obj/item/shield_projector/line/exosuit/proc/exosuit_interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/shield_projector/line/exosuit/proc/exosuit_interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(active)
 		if(always_on)
 			to_chat(user, span_warning("You can't seem to deactivate \the [src]."))

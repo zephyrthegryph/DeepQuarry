@@ -255,12 +255,11 @@ CAPABILITIES(/obj/item/storage/belt/chameleon/changeling)
 		rel_set(src, nameof(registered_user), loc)
 	access = null
 
-EXTEND_INTERACTIONS(/obj/item/card/id/syndicate/changeling, \
-	INTERACT_VERB("Shred ID Card", PROC_REF(changeling_syndicate_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/card/id/syndicate/changeling)
+	op("changeling_syndicate_shred_verb", menu(), label("Shred ID Card"), needs(carried()), then(PROC_REF(changeling_syndicate_shred_verb)))
 
 /// Old verb "Shred ID Card".
-/obj/item/card/id/syndicate/changeling/proc/changeling_syndicate_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/id/syndicate/changeling/proc/changeling_syndicate_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)

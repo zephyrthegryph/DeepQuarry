@@ -112,7 +112,8 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		if(16 to INFINITY)
 			icon_state = "pinonfar"
 
-/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	set_active(FALSE)
 	icon_state = "pinoff"
@@ -352,6 +353,5 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 	return our_shuttle
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/pinpointer/advpinpointer, \
-	INTERACT_VERB("Toggle Pinpointer Mode", PROC_REF(advpinpointer_toggle_mode_effect)), \
-)
+CAPABILITIES(/obj/item/pinpointer/advpinpointer)
+	op("advpinpointer_toggle_mode_effect", menu(), label("Toggle Pinpointer Mode"), then(PROC_REF(advpinpointer_toggle_mode_effect)))

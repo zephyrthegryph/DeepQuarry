@@ -121,15 +121,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occu
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return occupant_mob
 
-EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(clonepod_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(clonepod_interaction_item)), \
-	INTERACT_VERB("Eject Cloner", PROC_REF(clonepod_eject)), \
-	INTERACT_VERB("Eject Beakers", PROC_REF(clonepod_empty_beakers)), \
-)
+CAPABILITIES(/obj/machinery/clonepod)
+	op("clonepod_interaction_hand", hand(), then(PROC_REF(clonepod_interaction_hand)))
+	op("clonepod_interaction_item", item(/obj/item), then(PROC_REF(clonepod_interaction_item)))
+	op("clonepod_eject", menu(), label("Eject Cloner"), then(PROC_REF(clonepod_eject)))
+	op("clonepod_empty_beakers", menu(), label("Eject Beakers"), then(PROC_REF(clonepod_empty_beakers)))
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/clonepod/proc/clonepod_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/clonepod/proc/clonepod_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/occupant = get_occupant()
 	if((isnull(occupant)) || (has_stat(NOPOWER)))
 		return TRUE
@@ -283,7 +283,9 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = W)
 
 /// Old attackby.
-/obj/machinery/clonepod/proc/clonepod_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/clonepod/proc/clonepod_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/mob/living/occupant = get_occupant()
 	if(isnull(occupant))
 		if(default_part_replacement(user, W))
@@ -306,7 +308,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		else
 			om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, W))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/clonepod/screwdriver_act(mob/user, obj/item/tool)
 	if(get_occupant())
@@ -391,7 +393,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 	return clamp(100 * (AFFLICTION_SEVERITY_TERMINAL - clone_growth_load(occupant)) / span, 0, 100)
 
 /// Old verb "Eject Cloner".
-/obj/machinery/clonepod/proc/clonepod_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/clonepod/proc/clonepod_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return
 	go_out()
@@ -456,7 +459,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 	return 0
 
 // Empties all of the beakers from the cloning pod, used to refill it
-/obj/machinery/clonepod/proc/clonepod_empty_beakers(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/clonepod/proc/clonepod_empty_beakers(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return
 

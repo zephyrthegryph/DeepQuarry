@@ -318,10 +318,12 @@ EXTEND_INTERACTIONS(/obj/effect/rune, \
 	return ITEM_INTERACT_SUCCESS
 
 
-EXTEND_INTERACTIONS(/obj/item/book/tome, INTERACT_USE("Read", PROC_REF(interaction_tome)))
+CAPABILITIES(/obj/item/book/tome)
+	op("tome", in_hand(), label("Read"), then(PROC_REF(interaction_tome)))
 
 /// Old attack_self.
-/obj/item/book/tome/proc/interaction_tome(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/book/tome/proc/interaction_tome(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(occult_tier > 1) //This is a low tier book. If it's a higher tier, use ITS parent call instead of  continuing.
@@ -465,10 +467,12 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	w_class = ITEMSIZE_SMALL
 	occult_tier = 2
 	var/cultistsonly = 1
-EXTEND_INTERACTIONS(/obj/item/book/tome/imbued, INTERACT_USE("Scribe a rune", PROC_REF(interaction_imbued)))
+CAPABILITIES(/obj/item/book/tome/imbued)
+	op("imbued", in_hand(), label("Scribe a rune"), then(PROC_REF(interaction_imbued)))
 
 /// Old attack_self: the admin tome scribes working runes at once. Its parent's self-use did nothing at this tier.
-/obj/item/book/tome/imbued/proc/interaction_imbued(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/book/tome/imbued/proc/interaction_imbued(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.cultistsonly && !iscultist(user))
 		return
 	if(!GLOB.cultwords["travel"])

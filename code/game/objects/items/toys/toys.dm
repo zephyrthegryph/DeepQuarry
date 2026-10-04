@@ -2878,10 +2878,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 	if (pokephrase != "Rawr~!")
 		pokephrase = pick("ROAR!", "RAWR!", "GAWR!", "GRR!", "GROAR!", "GRAH!", "Weh!", "Merp!")
 
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_REF(interaction_dragon_squeeze)))
+CAPABILITIES(/obj/item/toy/plushie/dragon)
+	op("dragon_squeeze", in_hand(), label("Squeeze"), then(PROC_REF(interaction_dragon_squeeze)))
 
 /// Old attack_self: the dragon noise. The plushie's squeeze does nothing for it (special_handling).
-/obj/item/toy/plushie/dragon/proc/interaction_dragon_squeeze(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/plushie/dragon/proc/interaction_dragon_squeeze(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		switch(pokephrase)
 			if("Weh!")

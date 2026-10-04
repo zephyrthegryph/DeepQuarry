@@ -27,10 +27,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/carbon, TYPE_PROC_REF(/atom, appearance_
 
 
 
-EXTEND_INTERACTIONS(/obj/item/paper/carbon, INTERACT_VERB("Remove carbon-copy", PROC_REF(carbon_paper_verb_remove_copy), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/paper/carbon)
+	op("carbon_paper_verb_remove_copy", menu(), label("Remove carbon-copy"), needs(carried()), then(PROC_REF(carbon_paper_verb_remove_copy)))
 
 /// Old Remove carbon-copy verb.
-/obj/item/paper/carbon/proc/carbon_paper_verb_remove_copy(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper/carbon/proc/carbon_paper_verb_remove_copy(datum/act/op/A)
+	var/mob/user = A.actor
 	if (copied == 0)
 		var/obj/item/paper/carbon/c = src
 		var/copycontents = html_decode(c.info)

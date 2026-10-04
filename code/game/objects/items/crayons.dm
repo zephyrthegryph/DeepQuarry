@@ -6,10 +6,12 @@
 	colourName = "mime"
 	uses = 0
 
-EXTEND_INTERACTIONS(/obj/item/pen/crayon/mime, INTERACT_USE("Invert colours", PROC_REF(interaction_invert)))
+CAPABILITIES(/obj/item/pen/crayon/mime)
+	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(interaction_invert)))
 
 /// Old attack_self.
-/obj/item/pen/crayon/mime/proc/interaction_invert(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/crayon/mime/proc/interaction_invert(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
 		shadeColour = "#000000"
@@ -27,10 +29,12 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/mime, INTERACT_USE("Invert colours", PR
 	colourName = "rainbow"
 	uses = 0
 
-EXTEND_INTERACTIONS(/obj/item/pen/crayon/rainbow, INTERACT_USE("Pick colour", PROC_REF(interaction_pick_colour)))
+CAPABILITIES(/obj/item/pen/crayon/rainbow)
+	op("interaction_pick_colour", in_hand(), label("Pick colour"), then(PROC_REF(interaction_pick_colour)))
 
 /// Old attack_self.
-/obj/item/pen/crayon/rainbow/proc/interaction_pick_colour(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/crayon/rainbow/proc/interaction_pick_colour(datum/act/op/A)
+	var/mob/living/user = A.actor
 	ask_rainbow_colour(user, "Crayon colour", "Crayon shade colour")
 	return
 
@@ -181,10 +185,12 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/rainbow, INTERACT_USE("Pick colour", PR
 	colourName = "mime"
 	uses = 0
 
-EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/mime, INTERACT_USE("Invert colours", PROC_REF(interaction_invert)))
+CAPABILITIES(/obj/item/pen/crayon/marker/mime)
+	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(interaction_invert)))
 
 /// Old attack_self.
-/obj/item/pen/crayon/marker/mime/proc/interaction_invert(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/crayon/marker/mime/proc/interaction_invert(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
 		shadeColour = "#000000"
@@ -202,10 +208,12 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/mime, INTERACT_USE("Invert colou
 	colourName = "rainbow"
 	uses = 0
 
-EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/rainbow, INTERACT_USE("Pick colour", PROC_REF(interaction_pick_colour)))
+CAPABILITIES(/obj/item/pen/crayon/marker/rainbow)
+	op("interaction_pick_colour", in_hand(), label("Pick colour"), then(PROC_REF(interaction_pick_colour)))
 
 /// Old attack_self.
-/obj/item/pen/crayon/marker/rainbow/proc/interaction_pick_colour(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/crayon/marker/rainbow/proc/interaction_pick_colour(datum/act/op/A)
+	var/mob/living/user = A.actor
 	ask_rainbow_colour(user, "Marker colour", "Marker colour")
 	return
 

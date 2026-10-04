@@ -565,12 +565,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil, TYPE_PROC_REF(/atom, appeara
 	set_cable_color(selected_type, user)
 	return ITEM_INTERACT_SUCCESS
 
-EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
-	INTERACT_VERB("Make Cable Restraints", PROC_REF(cable_coil_make_restraint), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/stack/cable_coil)
+	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
 
 /// Old verb "Make Cable Restraints" (an obj verb with no `set src`, so src in usr).
-/obj/item/stack/cable_coil/proc/cable_coil_make_restraint(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stack/cable_coil/proc/cable_coil_make_restraint(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/M = user
 
 	if(ishuman(M) && !M.restrained() && !M.stat && !M.has_status(EFFECT_PARALYZED) && ! M.has_status(EFFECT_STUNNED))

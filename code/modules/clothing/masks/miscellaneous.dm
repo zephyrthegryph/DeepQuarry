@@ -18,13 +18,15 @@
 	w_class = ITEMSIZE_TINY
 
 // Clumsy folks can't take the mask off themselves.
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/muzzle, INTERACT_HAND_UNGATED(null, PROC_REF(muzzle_worn_hand)))
+CAPABILITIES(/obj/item/clothing/mask/muzzle)
+	op("muzzle_worn_hand", hand(), then(PROC_REF(muzzle_worn_hand)))
 
 /// Old attack_hand.
-/obj/item/clothing/mask/muzzle/proc/muzzle_worn_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/muzzle/proc/muzzle_worn_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_equipped_item(SLOT_ID_MASK) == src && !user.IsAdvancedToolUser())
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/mask/surgical
 	name = "sterile mask"

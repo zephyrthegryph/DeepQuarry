@@ -371,7 +371,8 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	on = 1
 	light_system = STATIC_LIGHT
 
-/obj/item/flashlight/lamp/proc/lamp_toggle_light_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flashlight/lamp/proc/lamp_toggle_light_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(!user.stat)
 		attack_self(user)
@@ -545,6 +546,5 @@ DECLARE_PERIODIC_WHILE(/obj/item/flashlight/glowstick, PERIODIC_SLOW, "on")
 #undef CAN_USE
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/flashlight/lamp, \
-	INTERACT_VERB("Toggle light", PROC_REF(lamp_toggle_light_effect)), \
-)
+CAPABILITIES(/obj/item/flashlight/lamp)
+	op("lamp_toggle_light_effect", menu(), label("Toggle light"), then(PROC_REF(lamp_toggle_light_effect)))

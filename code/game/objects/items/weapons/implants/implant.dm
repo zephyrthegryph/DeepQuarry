@@ -830,10 +830,12 @@ DAMAGE_REACTION(/obj/item/implant/sizecontrol, DAMAGE_EMP, PROC_REF(sizecontrol_
 		to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
 		implant.laws = newlaws //Organic
 
-EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PROC_REF(compliance_implanter_self)))
+CAPABILITIES(/obj/item/implanter/compliance)
+	op("compliance_implanter_self", in_hand(), label("Set laws"), then(PROC_REF(compliance_implanter_self)))
 
 /// Old attack_self.
-/obj/item/implanter/compliance/proc/compliance_implanter_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/implanter/compliance/proc/compliance_implanter_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(imp,/obj/item/implant/compliance))
 		var/obj/item/implant/compliance/implant = imp
 		om_ask(user, /datum/om/prompt/text/compliance_laws, PROC_REF(laws_entered), implant = implant)

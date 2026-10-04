@@ -317,12 +317,15 @@ DECLARE_APPEARANCE_PROC(/obj/mecha/combat/fighter/gunpod, TYPE_PROC_REF(/atom, a
 		stripe2_overlay.color = stripe2_color
 		. += stripe2_overlay
 
-EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint stripes", PROC_REF(interaction_gunpod_paint)))
+CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
+	op("gunpod_paint", item(/obj/item), label("Paint stripes"), then(PROC_REF(interaction_gunpod_paint)))
 
 /// Old attackby: a multitool repaints the stripes while the maintenance state is open.
-/obj/mecha/combat/fighter/gunpod/proc/interaction_gunpod_paint(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/mecha/combat/fighter/gunpod/proc/interaction_gunpod_paint(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W,/obj/item/multitool) || state != 1)
-		return FALSE
+		return OP_DECLINE
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_stripe_color), subject = W, title = "Paint Zone", message = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
 	return TRUE
 

@@ -80,14 +80,16 @@
 	B.escapechance = 25
 	B.escape_stun = 5
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTERACT_HAND_UNGATED(null, PROC_REF(abyss_lurker_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
+	op("abyss_lurker_interaction_hand", hand(), then(PROC_REF(abyss_lurker_interaction_hand)))
 
 /// Old attack_hand: touching a willing prey-player makes the lurker target them instead of the normal touch.
-/mob/living/simple_mob/vore/vore_hostile/abyss_lurker/proc/abyss_lurker_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/vore_hostile/abyss_lurker/proc/abyss_lurker_interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(client || !user.client || !ai_brain || !isliving(user))
-		return FALSE
+		return OP_DECLINE
 	if(!user.devourable || !user.allowmobvore || !user.can_be_drop_prey)
-		return FALSE
+		return OP_DECLINE
 	ai_brain?.give_target(user, TRUE)
 	return TRUE
 

@@ -207,18 +207,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 		SPECIES_VOX = 'icons/inventory/ears/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/ears/mob_werebeast.dmi')
 
-EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_REF(ears_take_off_hand)))
+CAPABILITIES(/obj/item/clothing/ears)
+	op("ears_take_off_hand", hand(), then(PROC_REF(ears_take_off_hand)))
 
 /// Old attack_hand: take worn ears off into the hand.
-/obj/item/clothing/ears/proc/ears_take_off_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (!user) return FALSE
+/obj/item/clothing/ears/proc/ears_take_off_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	if (!user) return OP_DECLINE
 
 	if (src.loc != user || !ishuman(user))
-		return FALSE
+		return OP_DECLINE
 
 	var/mob/living/carbon/human/H = user
 	if(H.get_equipped_item(SLOT_ID_EAR_L) != src && H.get_equipped_item(SLOT_ID_EAR_R) != src)
-		return FALSE
+		return OP_DECLINE
 
 	if(!canremove)
 		return TRUE

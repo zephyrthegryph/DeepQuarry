@@ -43,10 +43,12 @@ DECLARE_PERIODIC(/obj/singularity, PERIODIC_SLOW)
 			target = singubeacon
 			break
 
-DECLARE_INTERACTIONS(/obj/singularity, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_singularity_touch)))
+CAPABILITIES(/obj/singularity)
+	op("singularity_touch", hand(), then(PROC_REF(interaction_singularity_touch)))
 
 /// Old attack_hand: touching it is fatal.
-/obj/singularity/proc/interaction_singularity_touch(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/singularity/proc/interaction_singularity_touch(datum/act/op/A)
+	var/mob/user = A.actor
 	consume(user)
 	return TRUE
 

@@ -23,10 +23,12 @@ DECLARE_SHARED_CACHE(codex_trees, GLOBAL_PROC_REF(build_codex_tree), SC_NEVER)
 /proc/build_codex_tree(atom/movable/first_holder, root_type)
 	return new /datum/codex_tree(first_holder, root_type)
 
-EXTEND_INTERACTIONS(/obj/item/book/codex, INTERACT_USE("Read", PROC_REF(interaction_read_codex)))
+CAPABILITIES(/obj/item/book/codex)
+	op("read_codex", in_hand(), label("Read"), then(PROC_REF(interaction_read_codex)))
 
 /// Old attack_self.
-/obj/item/book/codex/proc/interaction_read_codex(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/book/codex/proc/interaction_read_codex(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!tree)
 		rel_set(src, nameof(tree), CACHED_KEY(codex_trees, root_type, src, root_type))
 	icon_state = "[initial(icon_state)]-open"

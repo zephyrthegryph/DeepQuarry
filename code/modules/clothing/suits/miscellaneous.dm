@@ -264,16 +264,18 @@ TYPE_TABLE(/obj/item/clothing/suit/syndicatefake, suit_storage_spec, list(HOLD_O
 
 	var/resist_time = 4800	// Eight minutes.
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGATED(null, PROC_REF(straight_jacket_worn_hand)))
+CAPABILITIES(/obj/item/clothing/suit/straight_jacket)
+	op("straight_jacket_worn_hand", hand(), then(PROC_REF(straight_jacket_worn_hand)))
 
 /// Old attack_hand: the wearer can't take it off themselves.
-/obj/item/clothing/suit/straight_jacket/proc/straight_jacket_worn_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/straight_jacket/proc/straight_jacket_worn_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(src == H.get_equipped_item(SLOT_ID_SUIT))
 			to_chat(H, span_notice("You need help taking this off!"))
 			return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/suit/straight_jacket/equipped(mob/living/user,slot)
 	. = ..()

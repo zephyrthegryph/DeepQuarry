@@ -67,10 +67,12 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PR
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-EXTEND_INTERACTIONS(/obj/machinery/fitness/heavy, INTERACT_HAND_UNGATED(null, PROC_REF(heavy_fitness_safety_hand)))
+CAPABILITIES(/obj/machinery/fitness/heavy)
+	op("heavy_fitness_safety_hand", hand(), then(PROC_REF(heavy_fitness_safety_hand)))
 
 /// Old attack_hand: safety checks; FALSE goes on to the workout.
-/obj/machinery/fitness/heavy/proc/heavy_fitness_safety_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/fitness/heavy/proc/heavy_fitness_safety_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!anchored)
 		to_chat(user, span_notice("For safety reasons, you are required to have this equipment wrenched down before using it!"))
 		return TRUE
@@ -79,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness/heavy, INTERACT_HAND_UNGATED(null, PR
 		to_chat(user, span_notice("For safety reasons, you need to be sitting in the [src] for it to work!"))
 		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/fitness/heavy/lifter
 	name = "fitness lifter"

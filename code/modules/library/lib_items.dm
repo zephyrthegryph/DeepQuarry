@@ -380,10 +380,12 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 /obj/item/book/bundle/proc/show_content(mob/user)
 	tgui_interact(user)
 
-EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interaction_read_bundle)))
+CAPABILITIES(/obj/item/book/bundle)
+	op("read_bundle", in_hand(), label("Read"), then(PROC_REF(interaction_read_bundle)))
 
 /// Old attack_self.
-/obj/item/book/bundle/proc/interaction_read_bundle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/book/bundle/proc/interaction_read_bundle(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	update_icon()
 	tgui_interact(user)
