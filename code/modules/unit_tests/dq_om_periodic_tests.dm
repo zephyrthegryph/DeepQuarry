@@ -332,9 +332,11 @@
 	var/obj/item/modular_computer/tablet/T = allocate(/obj/item/modular_computer/tablet, test_floor())
 	T.set_enabled(FALSE)
 	TEST_ASSERT_NULL(T.periodic_pipe, "a switched-off computer kept stepping")
+	TEST_ASSERT(length(T.rx?.every_parked), "a switched-off computer's every() work is not parked")
 	TEST_ASSERT(!om_task_periodic(T, PERIODIC_SLOW), "a switched-off computer could be started by hand")
 	T.enable_computer()
-	TEST_ASSERT(T.periodic_pipe == PERIODIC_SLOW, "switching a computer on did not start it")
+	// Its work is a type-level every(when = enabled) now: switching on wakes it (no periodic pipe).
+	TEST_ASSERT(!length(T.rx?.every_parked), "switching a computer on did not start it")
 	T.set_enabled(FALSE)
 
 #endif
