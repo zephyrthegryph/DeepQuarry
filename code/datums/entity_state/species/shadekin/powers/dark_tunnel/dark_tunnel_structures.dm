@@ -53,6 +53,9 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 
 /// Old attack_hand.
 /obj/structure/dark_portal/hub/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+	return portal_hand_stage(user, held, interaction, list())
+
+/obj/structure/dark_portal/hub/proc/portal_hand_stage(mob/living/user, obj/item/held, datum/interaction/interaction, list/answers)
 	if(!isliving(user))
 		return TRUE
 	var/datum/shadekin/SK = user.get_shadekin_state()
@@ -64,7 +67,10 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 			to_chat(user, span_warning("You can't use this while phase shifted!"))
 			return TRUE
 		if(locked != src)
-			var/confirm = rerun_ask(user, "a1", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "This portal is currently open to [locked_name]. Change the portal destination?", title = "Change Portal Destination", choices = list("Yes", "Cancel"))
+			if(!("a1" in answers))
+				open_request(src, /datum/prompt/choice/dark_portal_review, PROC_REF(portal_hand_answered), answerer = user, operator = user, held_item = held, interaction_context = interaction, answers = answers, answer_key = "a1", buttons = TRUE, question = "This portal is currently open to [locked_name]. Change the portal destination?", title = "Change Portal Destination", choices = list("Yes", "Cancel"))
+				return TRUE
+			var/confirm = answers["a1"]
 			if(isnull(confirm))
 				return TRUE
 			if(!confirm || confirm == "Cancel")
@@ -78,7 +84,10 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 		for(var/obj/structure/dark_portal/minion/M in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_MINIONS))
 			var/tmpname = "Dark Portal ([get_area(M)])"
 			L[tmpname] = M
-		var/desc = rerun_ask(user, "a2", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Please select a hub portal to connect to.", title = "Portal Menu", choices = L)
+		if(!("a2" in answers))
+			open_request(src, /datum/prompt/choice/dark_portal_review, PROC_REF(portal_hand_answered), answerer = user, operator = user, held_item = held, interaction_context = interaction, answers = answers, answer_key = "a2", buttons = FALSE, question = "Please select a hub portal to connect to.", title = "Portal Menu", choices = L)
+			return TRUE
+		var/desc = answers["a2"]
 		if(isnull(desc))
 			return TRUE
 		if(!desc)
@@ -147,6 +156,9 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 
 /// Old attack_hand.
 /obj/structure/dark_portal/minion/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+	return portal_hand_stage(user, held, interaction, list())
+
+/obj/structure/dark_portal/minion/proc/portal_hand_stage(mob/living/user, obj/item/held, datum/interaction/interaction, list/answers)
 	if(!isliving(user))
 		return TRUE
 	var/datum/shadekin/SK = user.get_shadekin_state()
@@ -158,7 +170,10 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 			to_chat(user, span_warning("You can't use this while phase shifted!"))
 			return TRUE
 		if(icon_state == "minion1")
-			var/confirm = rerun_ask(user, "a3", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "This portal is currently open to [locked_name]. Close this portal to the dark?", title = "Close Portal", choices = list("Yes", "Cancel"))
+			if(!("a3" in answers))
+				open_request(src, /datum/prompt/choice/dark_portal_review, PROC_REF(portal_hand_answered), answerer = user, operator = user, held_item = held, interaction_context = interaction, answers = answers, answer_key = "a3", buttons = TRUE, question = "This portal is currently open to [locked_name]. Close this portal to the dark?", title = "Close Portal", choices = list("Yes", "Cancel"))
+				return TRUE
+			var/confirm = answers["a3"]
 			if(isnull(confirm))
 				return TRUE
 			if(!confirm || confirm == "Cancel")
@@ -183,7 +198,10 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 		var/list/L = list()
 		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
 			L[H.name] = H
-		var/desc = rerun_ask(user, "a4", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Please select a hub portal to connect to.", title = "Portal Menu", choices = L)
+		if(!("a4" in answers))
+			open_request(src, /datum/prompt/choice/dark_portal_review, PROC_REF(portal_hand_answered), answerer = user, operator = user, held_item = held, interaction_context = interaction, answers = answers, answer_key = "a4", buttons = FALSE, question = "Please select a hub portal to connect to.", title = "Portal Menu", choices = L)
+			return TRUE
+		var/desc = answers["a4"]
 		if(isnull(desc))
 			return TRUE
 		if(!desc)
@@ -213,3 +231,69 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 	if(icon_state == "minion1")
 		teleport(M)
 	return
+
+/obj/structure/dark_portal/hub/proc/portal_hand_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(portal_hand_apply), A)
+	if(!result.ok)
+		stack_trace("Dark portal hub choice replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/structure/dark_portal/hub/proc/portal_hand_apply(datum/act/request/A)
+	var/datum/prompt/choice/dark_portal_review/ask = A.answer
+	ask.answers[ask.answer_key] = ask.answer_value
+	return portal_hand_stage(ask.operator, ask.held_item, ask.interaction_context, ask.answers)
+
+/obj/structure/dark_portal/minion/proc/portal_hand_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(portal_hand_apply), A)
+	if(!result.ok)
+		stack_trace("Dark portal minion choice replay: [result.error]")
+	SStgui.update_uis(src)
+	return result.value
+
+/obj/structure/dark_portal/minion/proc/portal_hand_apply(datum/act/request/A)
+	var/datum/prompt/choice/dark_portal_review/ask = A.answer
+	ask.answers[ask.answer_key] = ask.answer_value
+	return portal_hand_stage(ask.operator, ask.held_item, ask.interaction_context, ask.answers)
+
+/datum/prompt/choice/dark_portal_review
+	timeout = 0
+	var/mob/living/operator
+	var/obj/item/held_item
+	var/datum/interaction/interaction_context
+	var/operator_expected = FALSE
+	var/held_item_expected = FALSE
+	var/interaction_context_expected = FALSE
+	var/list/answers
+	var/answer_key
+
+CAPABILITIES(/datum/prompt/choice/dark_portal_review)
+	ref_one(nameof(operator), /mob/living)
+	ref_one(nameof(held_item), /obj/item)
+	ref_one(nameof(interaction_context), /datum/interaction)
+
+/datum/prompt/choice/dark_portal_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/captured_operator = operator
+	var/obj/item/captured_held = held_item
+	var/datum/interaction/captured_interaction = interaction_context
+	operator_expected = !isnull(captured_operator)
+	held_item_expected = !isnull(captured_held)
+	interaction_context_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(operator))
+	rel_clear(src, nameof(held_item))
+	rel_clear(src, nameof(interaction_context))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(held_item), captured_held)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(interaction_context), captured_interaction)
+
+/datum/prompt/choice/dark_portal_review/recheck_extra()
+	if((operator_expected && QDELETED(operator)) || (held_item_expected && QDELETED(held_item)) || (interaction_context_expected && QDELETED(interaction_context)))
+		return "gone"
