@@ -630,6 +630,9 @@
 	set name = "OOC Escape"
 	set category = VERB_CAT_OOC_VORE
 
+	return vore_escape_stage(list())
+
+/mob/living/proc/vore_escape_stage(list/escape_answers)
 	//You're in a belly!
 	if(isbelly(loc))
 		//You've been taken over by a morph
@@ -638,7 +641,10 @@
 			s.undo_prey_takeover(TRUE)
 			return
 		var/obj/belly/B = loc
-		var/confirm = rerun_ask(src, "a1", PROC_REF(escapeOOC), args, /datum/om/prompt/choice/alert, message = "Please feel free to use this button at any time you are uncomfortable and in a belly. Consent is important.", title = "Confirmation", choices = list("Okay", "Cancel"))
+		if(!("a1" in escape_answers))
+			open_request(src, /datum/prompt/choice/vore_escape_review, PROC_REF(vore_escape_answered), answerer = src, escape_answers = escape_answers, escape_key = "a1", question = "Please feel free to use this button at any time you are uncomfortable and in a belly. Consent is important.", title = "Confirmation", choices = list("Okay", "Cancel"), buttons = TRUE)
+			return
+		var/confirm = escape_answers["a1"]
 		if(isnull(confirm))
 			return
 		if(confirm != "Okay" || loc != B)
@@ -659,7 +665,10 @@
 		var/mob/living/silicon/pred = loc.loc //Thing holding the belly!
 		var/obj/item/dogborg/sleeper/belly = loc //The belly!
 
-		var/confirm = rerun_ask(src, "a2", PROC_REF(escapeOOC), args, /datum/om/prompt/choice/alert, message = "You're in a cyborg sleeper. This is for escaping from preference-breaking or if your predator disconnects/AFKs. If your preferences were being broken, please admin-help as well.", title = "Confirmation", choices = list("Okay", "Cancel"))
+		if(!("a2" in escape_answers))
+			open_request(src, /datum/prompt/choice/vore_escape_review, PROC_REF(vore_escape_answered), answerer = src, escape_answers = escape_answers, escape_key = "a2", question = "You're in a cyborg sleeper. This is for escaping from preference-breaking or if your predator disconnects/AFKs. If your preferences were being broken, please admin-help as well.", title = "Confirmation", choices = list("Okay", "Cancel"), buttons = TRUE)
+			return
+		var/confirm = escape_answers["a2"]
 		if(isnull(confirm))
 			return
 		if(confirm != "Okay" || loc != belly)
@@ -1249,13 +1258,18 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Print out your vorebelly messages into chat for copypasting."
 
-	var/result = rerun_ask(src, "a1", PROC_REF(vorebelly_printout), args, /datum/om/prompt/choice/alert, message = "Would you rather open the export panel?", title = "Selected Belly Export", choices = list("Open Panel", "Print to Chat"))
+	return vore_export_stage()
+
+/mob/living/proc/vore_export_stage(result, mob/living/answerer, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_utility_review, PROC_REF(vore_export_answered), answerer = src, question = "Would you rather open the export panel?", title = "Selected Belly Export", choices = list("Open Panel", "Print to Chat"), buttons = TRUE)
+		return
 	if(isnull(result))
 		return
 	if(!result)
 		return
 	if(result == "Open Panel")
-		var/mob/living/user = usr
+		var/mob/living/user = answerer
 		if(!user)
 			to_chat(user,span_notice("Mob undefined: [user]"))
 			return FALSE
@@ -1513,7 +1527,12 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Check the amount of liquid in your belly."
 
-	var/obj/belly/RTB = rerun_ask(src, "a1", PROC_REF(vore_check_reagents), args, /datum/om/prompt/choice, message = "Choose which vore belly to check", title = "Select Belly", choices = vore_organs)
+	return vore_liquid_report_stage()
+
+/mob/living/proc/vore_liquid_report_stage(obj/belly/RTB, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_utility_review, PROC_REF(vore_liquid_report_answered), answerer = src, question = "Choose which vore belly to check", title = "Select Belly", choices = vore_organs)
+		return
 	if(isnull(RTB))
 		return
 	if(!RTB)
@@ -1818,8 +1837,13 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set category = VERB_CAT_OOC_DEBUG
 	set desc = "Fix certain vore effects lingering after you've exited a belly."
 
+	return vore_effect_cleanup_stage()
+
+/mob/living/proc/vore_effect_cleanup_stage(sure, prompted = FALSE)
 	if(!isbelly(src.loc))
-		var/sure = rerun_ask(src, "sure", PROC_REF(fix_vore_effects), args, /datum/om/prompt/choice/alert, message = "Only use this verb if you are affected by certain vore effects outside of a belly, such as muffling or a stuck belly fullscreen.", title = "Clear Vore Effects", choices = list("Continue", "Nevermind"))
+		if(!prompted)
+			open_request(src, /datum/prompt/choice/vore_utility_review, PROC_REF(vore_effect_cleanup_answered), answerer = src, question = "Only use this verb if you are affected by certain vore effects outside of a belly, such as muffling or a stuck belly fullscreen.", title = "Clear Vore Effects", choices = list("Continue", "Nevermind"), buttons = TRUE)
+			return
 		if(sure != "Continue")
 			return
 
@@ -1852,6 +1876,73 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	. = 0
 	for(var/category in INJURY_CATEGORY_PHYSICAL to INJURY_CATEGORY_NEURAL)
 		. += injury_load(category)
+
+/mob/living/proc/vore_escape_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_escape_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore OOC escape replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/proc/vore_escape_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_escape_review/ask = A.answer
+	ask.escape_answers[ask.escape_key] = ask.answer_value
+	return vore_escape_stage(ask.escape_answers)
+
+/datum/prompt/choice/vore_escape_review
+	timeout = 0
+	var/list/escape_answers
+	var/escape_key
+
+/mob/living/proc/vore_liquid_report_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_liquid_report_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore vore_liquid_report replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/proc/vore_liquid_report_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_utility_review/ask = A.answer
+	return vore_liquid_report_stage(ask.answer_value, TRUE)
+
+/mob/living/proc/vore_export_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_export_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore vore_export replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/proc/vore_export_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_utility_review/ask = A.answer
+	return vore_export_stage(ask.answer_value, A.request.answerer, TRUE)
+
+/mob/living/proc/vore_effect_cleanup_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/caught = safe_call(PROC_REF(vore_effect_cleanup_apply), A)
+	if(!caught.ok)
+		stack_trace("Vore vore_effect_cleanup replay: [caught.error]")
+	SStgui.update_uis(src)
+	return caught.value
+
+/mob/living/proc/vore_effect_cleanup_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_utility_review/ask = A.answer
+	return vore_effect_cleanup_stage(ask.answer_value, TRUE)
+
+/datum/prompt/choice/vore_utility_review
+	timeout = 0
+
+/datum/prompt/choice/vore_utility_review/recheck_extra()
+	if(!isnull(answer_value) && istype(answer_value, /datum))
+		var/datum/selected = answer_value
+		if(QDELETED(selected))
+			return "gone"
 
 /mob/living/proc/vore_liquid_answered(datum/act/request/A)
 	if(!A.answer)
