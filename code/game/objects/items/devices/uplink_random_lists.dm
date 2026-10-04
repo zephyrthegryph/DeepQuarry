@@ -23,8 +23,6 @@ CAPABILITIES(/datum/uplink_random_selection)
 
 /datum/uplink_random_selection/New()
 	..()
-	rel_set(src, nameof(items), list())
-	rel_set(src, nameof(all_items), list())
 
 /datum/uplink_random_selection/proc/get_random_item(telecrystals, obj/item/uplink/U, list/bought_items, items_override = 0)
 	var/const/attempts = 50

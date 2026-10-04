@@ -49,6 +49,8 @@ GLOBAL_VAR(act_next_authority)
 /proc/act_begin(act_type, datum/holder)
 	if(GLOB.act_depth >= ACT_MAX_DEPTH)
 		GLOB.act_too_deep++
+		GLOB.act_last_outcome = ACT_REFUSED
+		GLOB.act_last_reply = null
 		var/chain = act_chain_text()
 		TEST_REC_OUTCOME("[act_type]", ACT_REFUSED, /datum/msg/act/too_deeply_nested, null)
 		log_world("ACT: [act_type] on [holder?.type] refused: nested deeper than [ACT_MAX_DEPTH] ([chain])")
@@ -74,7 +76,11 @@ GLOBAL_VAR(act_next_authority)
 			break // an admin authority skips requirements (a forced slot transfer), never the takeovers and adjustments below
 		if(!hook_conditions_hold(H, A.holder))
 			continue
+		var/datum/entered_from = hook_enter(A, H)
+		if(!entered_from)
+			continue
 		var/reason = act_needs_refusal(A, H)
+		A.holder = entered_from // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 		if(reason)
 			A.reason = reason
 			act_end(A, ACT_REFUSED)
@@ -82,22 +88,42 @@ GLOBAL_VAR(act_next_authority)
 	for(var/datum/hook/H as anything in P.instead)
 		if(!hook_conditions_hold(H, A.holder))
 			continue
+		var/datum/entered_from = hook_enter(A, H)
+		if(!entered_from)
+			continue
 		hook_context(A, H)
 		GLOB.act_chain += "[A.type]:[H.cap_key || H.activation?.def.key || "type"]"
 		var/took = hook_run_parts(H, A, H.entry.children)
 		GLOB.act_chain.len--
+		A.holder = entered_from // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 		if(took)
 			act_end(A, ACT_REPLACED)
 			return null
 	for(var/datum/hook/H as anything in P.adjusts)
 		if(!hook_conditions_hold(H, A.holder))
 			continue
+		var/datum/entered_from = hook_enter(A, H)
+		if(!entered_from)
+			continue
 		hook_context(A, H)
 		act_apply_adjust(A, H)
+		A.holder = entered_from // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.activation = null // ALLOW(ownership): an engine record the one teardown path drops
 	A.cap = null
 	A.source = null // ALLOW(ownership): an engine record the one teardown path drops
 	return A
+
+/// An observe() hook (on_listener) runs its parts on the listener: A.holder is the listener while the hook runs and A.target stays the observed entity. Returns
+/// the holder to put back afterwards (A.holder itself for an ordinary hook), or null when the listener is gone and the hook is skipped.
+/proc/hook_enter(datum/act/A, datum/hook/H)
+	if(!H.on_listener)
+		return A.holder
+	var/datum/listener = H.activation?.source
+	if(!isdatum(listener) || QDELETED(listener))
+		return null
+	var/datum/was = A.holder
+	A.holder = listener // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	return was
 
 /// Sets the entry-level fields of the context for hook H: the activation running it, its capability and its source.
 /proc/hook_context(datum/act/A, datum/hook/H)
@@ -120,6 +146,9 @@ GLOBAL_VAR(act_next_authority)
 /proc/act_apply_adjust(datum/act/A, datum/hook/H)
 	var/list/opts = H.entry.args
 	if(opts["when"] && !hook_gate(H, A, opts["when"]))
+		return
+	if(opts["with"])
+		hook_call(H, opts["with"], A) // adjusts_with(): the handler writes the act's fields itself
 		return
 	var/list/path = splittext(opts["field"], ".")
 	var/datum/walk = A
@@ -155,12 +184,16 @@ GLOBAL_VAR(act_next_authority)
 /// put_in() reports the two differently (OP_REFUSED, OP_REPLACED).
 GLOBAL_VAR(act_last_outcome)
 GLOBAL_VAR(act_last_reason)
+/// What the hook that took the last ended action over answered (the value its then() handler returned, or what it set in A.reply): the payload of a
+/// veto. Read it right after ACT_TRY returned null with ACT_TAKEN_OVER.
+GLOBAL_VAR(act_last_reply)
 
 /// Ends the act with `outcome`, delivers its notice to the listeners that asked for that outcome, and releases it.
 /proc/act_end(datum/act/action/A, outcome)
 	A.outcome = outcome
 	GLOB.act_last_outcome = outcome
 	GLOB.act_last_reason = A.reason
+	GLOB.act_last_reply = A.reply
 	var/notice_type = act_notice_type(A.type)
 	var/datum/holder = A.holder
 	if(notice_type && !QDELETED(holder) && notice_wanted(holder, notice_type, outcome))

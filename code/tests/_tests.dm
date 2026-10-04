@@ -11,6 +11,7 @@
 #include "engine\e1_fixtures.dm"
 #include "engine\e3_fixtures.dm"
 #include "engine\e4_fixtures.dm"
+#include "engine\veto_fixtures.dm"
 #include "engine\e2_fixtures.dm"
 #include "engine\e2_bench_fixtures.dm"
 #include "library\fixtures.dm"

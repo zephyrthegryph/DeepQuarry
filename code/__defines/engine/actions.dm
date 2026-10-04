@@ -11,6 +11,15 @@
 /// local when it returned ACT_PASS (nothing could have adjusted it). `ACT_FINAL(F, landing, T)`.
 #define ACT_FINAL(F, field, local) ((F) == ACT_PASS ? (local) : F.field)
 
+/// After ACT_TRY returned null: TRUE when a hook took the action over (an instead, ACT_REPLACED) rather than refused it. A caller that has a result to give
+/// back reads it with ACT_REPLY: `if(!hit) { if(ACT_TAKEN_OVER) return ACT_REPLY; return FALSE }`.
+#define ACT_TAKEN_OVER (GLOB.act_last_outcome & ACT_REPLACED)
+/// The answer of the hook that took the last action over (see ACT_TAKEN_OVER); null when it answered nothing.
+#define ACT_REPLY (GLOB.act_last_reply)
+/// What a then() handler of an instead returns to leave the action to the next taker (it did not apply after all). Any other value takes the action
+/// over and is the reply.
+#define HOOK_DECLINE "hook_decline"
+
 /// Announces a FIXED action (nothing can refuse it): `PUBLISH(world_owner(), round_started)`, `PUBLISH(src, slash, slasher = user)`. Allocates
 /// nothing when nobody listens. The legacy `PUBLISH(E, /datum/notice/x, args)` is PUBLISH_LEGACY.
 #define PUBLISH(E, token, args...) publish_##token(E, ##args)

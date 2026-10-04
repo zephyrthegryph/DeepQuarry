@@ -52,6 +52,10 @@
 	var/outcome
 	/// The refusal reason (a /datum/msg type) when the action ended refused.
 	var/reason
+	/// What the hook that took the action over answered: the value its then() handler returned (HOOK_DECLINE leaves the action to the next taker).
+	/// The caller reads it with ACT_REPLY right after ACT_TRY returned null; it is the payload of a veto (the name a disguise shows, the
+	/// ITEM_INTERACT_* result of an item the holder took over).
+	var/reply
 	/// Validated UI or topic args (they also arrive as typed proc params), or an after(with =) payload.
 	var/list/args
 

@@ -70,6 +70,12 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /proc/adjusts(field, by = null, scale = null, when = null)
 	return entry_make(ENTRY_ADJUSTS, null, list("field" = field, "by" = by, "scale" = scale, "when" = when))
 
+/// adjusts_with(PROC_REF(x), when =): modifies the action in flight with code, for what a constant by/scale cannot say (a flag a listener ORs in, an amount
+/// a listener splits). x(datum/act/A) runs on the hook's holder (on the listener for an observe()), may write the act's typed fields and does not take the
+/// action over. An accumulator: every adjusts_with of the action runs, in order, so flags from several listeners combine.
+/proc/adjusts_with(handler, when = null)
+	return entry_make(ENTRY_ADJUSTS, null, list("with" = handler, "when" = when))
+
 /// then(PROC_REF(x), checks = /datum/act/y): calls x(datum/act/A). CAP_PROC(x) names a proc of the capability datum. `checks` is an op effect's declaration of the
 /// world action it starts (the op engine pre-checks it; a hook ignores it).
 /// `early` (an op effect only): the effect runs before the op's other effects, in declaration order among the early ones (a shock a touch takes first).
@@ -122,11 +128,21 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// observe(source, /datum/notice/x, listener, parts...): `listener` hears the notice when `source` publishes it. The handlers run on the
 /// listener, with A.holder the listener and A.target the source. An activation of a hook capability on `source` sourced by the listener: either
 /// end dying ends it. The legacy form takes a reaction and a handler.
+///
+/// observe(source, /datum/act/x, listener, parts...) is the runtime counterpart of extend(/datum/act/x, parts...): the listener refuses
+/// (needs), takes over (instead) or modifies in flight (adjusts, adjusts_with) an action done to `source`. The parts run on the listener
+/// (A.holder is the listener for the hook, A.target the source); the activation ends with unobserve(), with the listener or with the source.
+///
+///	observe(host, /datum/act/injure, src, instead(when(PROC_REF(stasis_holds))))    // refuses: the injury never lands
+///	observe(host, /datum/act/pre_emp, src, adjusts_with(PROC_REF(shield_emp)))      // writes A.protection in flight
 /proc/observe(datum/source, trigger, datum/listener, p1, p2, p3, p4, p5, outcome = ACT_COMMITTED, op = null)
 	if(!ispath(trigger))
 		return legacy_observe(source, trigger, listener, p1)
 	if(!source || !listener || QDELETED(source) || QDELETED(listener))
 		return null
+	if(ispath(trigger, /datum/act/action))
+		var/datum/entry/hook_entry = extend(trigger, p1, p2, p3, p4, p5)
+		return grant(source, hook_capability_of(list(hook_entry), TRUE), listener)
 	var/datum/entry/E = entry_make(ENTRY_ON_NOTICE, null, list("notice" = trigger, "outcome" = outcome, "op" = op), entry_flatten(list(p1, p2, p3, p4, p5)))
 	return grant(source, hook_capability_of(list(E), TRUE), listener)
 
@@ -144,6 +160,8 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 		var/matched = isnull(trigger)
 		for(var/datum/entry/E in def.hook_entries)
 			if(E.kind == ENTRY_ON_NOTICE && E.args["notice"] == trigger)
+				matched = TRUE
+			else if(E.kind == ENTRY_EXTEND && E.args["target"] == trigger)
 				matched = TRUE
 		if(matched)
 			activation_end(A)
@@ -369,7 +387,12 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 				if(!TEST_ROLL(part.args["percent"]))
 					return FALSE
 			if(ENTRY_THEN)
-				hook_call(H, part.args["handler"], A)
+				var/reply = hook_call(H, part.args["handler"], A)
+				if(reply == HOOK_DECLINE)
+					return FALSE
+				if(!isnull(reply) && istype(A, /datum/act/action))
+					var/datum/act/action/taken = A
+					taken.reply = reply
 			else
 				act_run_part(A, H, part)
 	return TRUE
