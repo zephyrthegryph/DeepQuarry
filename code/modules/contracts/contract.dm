@@ -240,6 +240,7 @@ CAPABILITIES(/datum/contract_negotiation_clause)
 	var/list/secondary_faction_reputation_rewards
 
 CAPABILITIES(/datum/contract)
+	links(/datum/contract::parent, /datum/contract::children, b_many = TRUE)
 	owns_many(nameof(audit_log))
 	owns_many(nameof(requirements))
 	owns_many(nameof(negotiation_clauses))
@@ -771,9 +772,3 @@ CAPABILITIES(/datum/contract)
 	payout_distributed = paid_reward >= reward
 	audit(CONTRACT_AUDIT_PAYMENT, "[reason]: distributed [planned_total] Thalers ([paid_reward]/[reward] settled).")
 	return TRUE
-
-// A sub-contract sits in its parent's children list; Destroy() orphans our own children.
-/datum/contract/relations()
-	. = ..()
-	. += rel_one(nameof(parent), back = nameof(/datum/contract::children))
-	. += rel_many(nameof(children), back = nameof(/datum/contract::parent))
