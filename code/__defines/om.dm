@@ -598,29 +598,7 @@
 /// Returned by a prompt kind's refine_answer() when it asked again instead of answering.
 #define OM_PROMPT_REOPENED "om_prompt_reopened"
 
-// ---------------------------------------------------------------- typed prompt re-checks (ask.dm)
-// The prompt's ask_flags: re-checked when the answer arrives, before the answer proc runs.
-// Roles: the answerer sees the window; the asker started it (default: the answerer); the
-// subject is what it's about (default: the receiver, when it is an atom).
-
-/// The answerer and the asker are alive.
-#define ASK_ALIVE (1<<0)
-/// The answerer and the asker are conscious.
-#define ASK_CONSCIOUS (1<<1)
-/// The answerer is next to the asker (next to the subject when they are the same mob).
-#define ASK_ADJACENT (1<<2)
-/// The subject is still in the asker's hands.
-#define ASK_HELD (1<<3)
-/// The subject is still somewhere on the asker (held, worn, in a bag).
-#define ASK_CARRIED (1<<4)
-/// Neither the answerer nor the asker is incapacitated.
-#define ASK_CAPABLE (1<<5)
-/// The subject is next to the answerer.
-#define ASK_NEAR_SUBJECT (1<<6)
-/// Neither the answerer nor the asker is restrained (cuffed, buckled in restraints).
-#define ASK_RESTRAINED (1<<7)
-/// The common "someone offers you something" set: both alive, awake and adjacent.
-#define ASK_FACE_TO_FACE (ASK_CONSCIOUS | ASK_ADJACENT)
+// The ASK_* re-check flags moved to code/__defines/kernel.dm (a request re-checks them when its answer arrives).
 
 /// Thrown by flow_io_answer() (flow_io.dm) to unwind a prompt flow whose query is in flight;
 /// prompt_flow() catches it.

@@ -337,3 +337,54 @@ CAPABILITIES(/obj/p2_pulse)
 	pulses++
 
 #endif
+
+// ---- a silent requirement ----
+
+MSG_DEF_SELF(p2_silent/closed, "It is closed.")
+
+/// A holder whose button is refused by a requirement that tells nobody (an old ui_act_allowed returning FALSE).
+/obj/p2_silent
+	name = "p2 silent"
+	var/open = FALSE
+	var/pressed = 0
+
+CAPABILITIES(/obj/p2_silent)
+	op("press", ui_act(), needs(req(PROC_REF(is_open), silent = TRUE)), then(PROC_REF(was_pressed)))
+	op("press_loud", ui_act(), needs(req(PROC_REF(is_open), because = MSG(p2_silent/closed))), then(PROC_REF(was_pressed)))
+
+/obj/p2_silent/proc/is_open(datum/act/op/A)
+	return open // ALLOW(reads): a test fixture's plain flag, read when the press arrives
+
+/obj/p2_silent/proc/was_pressed(datum/act/op/A)
+	pressed++
+	return OP_OK
+
+// ---- a window on a datum ----
+
+/// A window host that is not an atom (a tgui module, a prompt window, an app): data and a button, no reach.
+/datum/p2_panel
+	var/pressed = 0
+
+CAPABILITIES(/datum/p2_panel)
+	interface("P2Panel")
+	op("panel_press", ui_act(), then(PROC_REF(panel_pressed)))
+
+/datum/p2_panel/ui_data(datum/act/eval/A)
+	return list("pressed" = pressed, "viewer" = A.actor ? "[A.actor]" : null)
+
+/datum/p2_panel/proc/panel_pressed(datum/act/op/A)
+	pressed++
+	return OP_OK
+
+// ---- request re-checks ----
+
+/// An item that asks and records what its handler saw.
+/obj/item/p2_asker_item
+	name = "p2 asker item"
+	var/handled = 0
+	var/seen_answer = null
+
+/obj/item/p2_asker_item/proc/answered(datum/act/request/A)
+	handled++
+	seen_answer = A.answer?.answer_value
+	return OP_OK

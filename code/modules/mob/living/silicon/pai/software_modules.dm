@@ -71,23 +71,27 @@ UI_ACT_PROC(/datum/pai_software/directives, ui_act_getdna)
 		count++
 
 	// Check the carrier
-	om_ask(M, /datum/om/prompt/confirm/pai_dna_sample, PROC_REF(dna_sample_answered), asker = P, pai = P)
+	var/datum/prompt/yes_no/pai_dna_sample/sample = open_request(src, /datum/prompt/yes_no/pai_dna_sample, PROC_REF(dna_sample_answered), answerer = M, title = "[P] Check DNA", question = "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", timeout = 0)
+	if(sample)
+		rel_set(sample, nameof(sample.pai), P)
 	return TRUE
 
 /// A pAI asks its carrier for a DNA sample. The answer proc runs on no too (the pAI is told).
-/datum/om/prompt/confirm/pai_dna_sample
-	answer_on_no = TRUE
+/datum/prompt/yes_no/pai_dna_sample
 	var/mob/living/silicon/pai/pai
 
-/datum/om/prompt/confirm/pai_dna_sample/prepare()
-	title = "[pai] Check DNA"
-	message = "[pai] is requesting a DNA sample from you. Will you allow it to confirm your identity?"
-	return TRUE
+CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample)
+	ref_one(nameof(pai), /mob/living/silicon/pai)
 
-/datum/pai_software/directives/proc/dna_sample_answered(datum/om/prompt/confirm/pai_dna_sample/ask)
-	var/mob/living/M = ask.answerer
-	var/mob/living/silicon/pai/P = ask.pai
-	if(ask.yes)
+/datum/pai_software/directives/proc/dna_sample_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/yes_no/pai_dna_sample/sample = A.request
+	var/mob/living/M = A.request.answerer
+	var/mob/living/silicon/pai/P = sample.pai
+	if(!P || !M)
+		return
+	if(A.answer.answer_value)
 		var/turf/T = get_turf(P.loc)
 		for (var/mob/v in viewers(T))
 			v.show_message(span_notice("[M] presses [M.p_their()] thumb against [P]."), 3, span_notice("[P] makes a sharp clicking sound as it extracts DNA material from [M]."), 2)

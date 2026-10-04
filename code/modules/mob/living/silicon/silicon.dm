@@ -265,10 +265,11 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	set category = VERB_CAT_IC_SETTINGS
 
 	// A cancel answers "": the pose is cleared.
-	om_ask(src, /datum/om/prompt/text, PROC_REF(silicon_pose_entered), title = "Pose", message = "This is [src]. It is...", cancel_answer = "")
+	open_request(src, /datum/prompt/text, PROC_REF(silicon_pose_entered), answerer = src, title = "Pose", question = "This is [src]. It is...", timeout = 0)
 
-/mob/living/silicon/proc/silicon_pose_entered(datum/om/prompt/text/ask)
-	pose = ask.text ? strip_html_simple(ask.text) : null
+/mob/living/silicon/proc/silicon_pose_entered(datum/act/request/A)
+	var/text = A.answer ? A.answer.answer_value : ""
+	pose = text ? strip_html_simple(text) : null
 
 /mob/living/silicon/verb/set_flavor()
 	set name = "Set Flavour Text"

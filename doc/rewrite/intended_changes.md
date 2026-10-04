@@ -380,3 +380,22 @@ Pinned by `code/modules/unit_tests/dq_hc_mobs_behaviour.dm` and `dq_hc_bots_beha
 * **Mulebot beacon questions** (set home, set destination) are requests: the answer is re-resolved to its beacon when it arrives (a beacon that was removed meanwhile ends the question without effect instead of reading a deleted one), and the "can still work its window" check is the default tgui state's.
 * **`EVENT_HANDLER` is `SHOULD_NOT_SLEEP(TRUE)`** on the 28 mob handlers that carried it (the macro expanded to exactly that).
 * `answerer_holds()` (code/library/prompts/answer_checks.dm) is the one `valid()` helper for the old `ask_flags`.
+* **Batch 3: medical, security and employment records consoles.** The records window's per-button guard (drop a record the data core no longer holds; the employment console also leaves fingerprints) is an early `then()` on `TAG_UI`. The modal buttons of the window (`modal_open`, `modal_answer`, `modal_close`, the virus and field editors) are not window ops: they stay on the legacy named dispatch, and they no longer drop a stale record first (only the buttons do).
+* **The notes editor** (`edit_notes`) is an op: a multi-line text question (`asks()`), refused with "You must log in first." for somebody not logged in (the old handler refused silently, after nothing), and an empty answer asks "Are you sure you want to delete the current record's notes?" with `open_request(/datum/prompt/yes_no/record_notes_delete)` that re-checks the operator is still next to the console. The old "Delete" button text is the standard Yes / No. `/datum/om/prompt/text/record_notes` and `.../confirm/record_notes_delete` are deleted; the editor on a console with no record open is refused instead of runtime.
+
+### Hand-converted items, batch 2 (candles, contraband package, telecrystal, implant pad)
+
+Pinned by `dq_hc_items_behaviour.dm` (green on the legacy code first) and the interim candle and contraband tests, which now drive the click instead of calling the old handlers.
+
+* **Candles.** `wax` is tracked (`set_wax()`), the look is a `draw()` (`look_state()` per type: the candelabra overrides it) and no longer an `APPEARANCE_TEMPLATE`/`APPEARANCE_WATCH`. A lit lighter, match or candle clicked on a candle lights it through an op that passes the click on, as before.
+* **Implant pad.** The window answers only a conscious actor (a requirement on every UI op, with the reason "You can't do that right now."); the `ui_act_allowed()` override is gone. An empty hand takes the case out of a pad that is carried anywhere on the actor (`carried()`), where the old check was a hand; a pad lying or inside another's bag is picked up as any item.
+* **Contraband package, telecrystal.** Plain ops; a package whose release is refused stays whole (pinned).
+* **Residue of this batch:** `code/game/objects/items/weapons/wiki_manuals.dm` (its parent `/obj/item/book` in code/modules/library declares a UI of its own), the stack family (`stacks/*`: `/obj/item/stack` is a hub for dozens of types and its `INTERACT_SELF` entry, UI and state convert as one step), and every `OM_FIELD` that feeds a `DECLARE_PERIODIC_WHILE` (the periodic declaration resolves its fields from the `OM_FIELD` registry, so the field and the periodic form convert together).
+
+
+## hc-mobs silicon
+
+Pinned by `code/modules/unit_tests/dq_hc_silicon_behaviour.dm` (written on the legacy code first, except where noted).
+
+* **"Are you sure?" confirmations show Yes first.** The store-core and pAI wipe confirmations used `no_first = TRUE` (No on the left); `/datum/prompt/yes_no` has no button order, so Yes is first. The answer is unchanged.
+* **A hud-less pAI can finish a download.** `refresh_software_status()` read `hud_used.other` and crashed for a pAI with no HUD (nobody playing it); it now skips the buttons.

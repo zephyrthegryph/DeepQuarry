@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "Converted the geiger counter, gun boxes, latex balloon, petrifier and shooting target to the final op, hook and look forms."
+  - refactor: "Converted the geiger counter, gun boxes, latex balloon, petrifier, shooting target, candles, contraband package, telecrystal and implant pad to the final op, hook and look forms."

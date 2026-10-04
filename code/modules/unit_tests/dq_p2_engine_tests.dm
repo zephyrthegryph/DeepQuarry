@@ -382,3 +382,104 @@
 	// gaps 2, 4, 2, 4: runs at 2, 6, 8 and 12
 	TEST_ASSERT_EQUAL(P.pulses, 4, "four runs in twelve deciseconds")
 	TEST_ASSERT(P.gaps_asked >= 4, "the gap is asked again before each run")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// req(silent = TRUE): refuses like any requirement but tells the actor nothing.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_silent_requirement_refuses_without_a_message
+
+/datum/unit_test/dq_p2_engine/a_silent_requirement_refuses_without_a_message/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/p2_silent/T = allocate(/obj/p2_silent)
+	var/datum/op_result/quiet = test_ui(H, T, "press")
+	TEST_ASSERT_EQUAL(quiet?.outcome, ACT_REFUSED, "the press is refused while the guard fails")
+	TEST_ASSERT_EQUAL(quiet?.reason, /datum/msg/req_silent, "with the silent reason")
+	TEST_ASSERT(!reason_text(quiet?.reason), "which has no text to tell the actor")
+	var/datum/op_result/loud = test_ui(H, T, "press_loud")
+	TEST_ASSERT_EQUAL(loud?.outcome, ACT_REFUSED, "the same guard without silent is refused too")
+	TEST_ASSERT(!!reason_text(loud?.reason), "and says why")
+	TEST_ASSERT_EQUAL(T.pressed, 0, "neither ran the handler")
+	T.open = TRUE
+	test_ui(H, T, "press")
+	TEST_ASSERT_EQUAL(T.pressed, 1, "once the guard holds the press runs")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// A window hosted by a datum: ui_data() and the window's buttons work without an atom to reach.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_datum_hosts_a_window
+
+/datum/unit_test/dq_p2_engine/a_datum_hosts_a_window/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/p2_panel/P = new
+	var/list/data = list()
+	present_tgui_data(P, H, data)
+	TEST_ASSERT_EQUAL(data["pressed"], 0, "the datum's ui_data() output is the window's data")
+	TEST_ASSERT_EQUAL(data["viewer"], "[H]", "with the viewer on the act")
+	TEST_ASSERT_EQUAL(P.ui_interface(H), "P2Panel", "and the window it declares is the one it opens")
+	var/datum/op_result/pressed = test_ui(H, P, "panel_press")
+	TEST_ASSERT_EQUAL(pressed?.outcome, ACT_COMMITTED, "a button on it runs as an op")
+	TEST_ASSERT_EQUAL(P.pressed, 1, "and its handler ran")
+	qdel(P)
+
+// ---------------------------------------------------------------------------------------------------------------------
+// open_request(ask_flags =, rights =, usable_state =): the answer is re-checked when it arrives; a failure ends the request cancelled.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/request_rechecks_drop_an_answer_that_no_longer_holds
+
+/datum/unit_test/dq_p2_engine/request_rechecks_drop_an_answer_that_no_longer_holds/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/p2_asker_item/I = allocate(/obj/item/p2_asker_item)
+	// held: the subject must still be in the asker's hands
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_HELD)
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(I.handled, 1, "the handler runs when the request ends")
+	TEST_ASSERT_NULL(I.seen_answer, "but an item that is not in the asker's hands drops the answer")
+	H.put_in_active_hand(I)
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_HELD)
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(I.handled, 2, "again")
+	TEST_ASSERT_EQUAL(I.seen_answer, TRUE, "and the answer stands while it is held")
+	// conscious: the answerer must still be awake
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_CONSCIOUS)
+	H.set_stat(UNCONSCIOUS)
+	test_answer(H, TRUE)
+	TEST_ASSERT_NULL(I.seen_answer, "an answerer who fell unconscious has no answer")
+	H.set_stat(CONSCIOUS)
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_CONSCIOUS)
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(I.seen_answer, TRUE, "an awake one does")
+	// inside: the answerer must be directly inside the subject
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, ask_flags = ASK_INSIDE)
+	test_answer(H, TRUE)
+	TEST_ASSERT_NULL(I.seen_answer, "an answerer outside the subject has no answer")
+	// rights: the answerer's player must hold them
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, rights = R_ADMIN)
+	test_answer(H, TRUE)
+	TEST_ASSERT_NULL(I.seen_answer, "a player with no admin rights has no answer")
+	// no flags: nothing is re-checked
+	open_request(I, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H)
+	test_answer(H, TRUE)
+	TEST_ASSERT_EQUAL(I.seen_answer, TRUE, "a request that names no re-check keeps every answer")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The choice ring's options: require_near drops an answer given out of reach of the anchor.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_radial_prompt_drops_an_answer_out_of_reach
+
+/datum/unit_test/dq_p2_engine/a_radial_prompt_drops_an_answer_out_of_reach/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/p2_asker_item/I = allocate(/obj/item/p2_asker_item)
+	var/obj/item/p2_asker_item/far = allocate(/obj/item/p2_asker_item, run_loc_floor_top_right)
+	open_request(I, /datum/prompt/choice, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, choices = list("a", "b"), radial = TRUE, require_near = TRUE, anchor = far)
+	test_answer(H, "a")
+	TEST_ASSERT_NULL(I.seen_answer, "an anchor out of reach drops the answer")
+	open_request(I, /datum/prompt/choice, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, choices = list("a", "b"), radial = TRUE, require_near = TRUE, anchor = I)
+	test_answer(H, "b")
+	TEST_ASSERT_EQUAL(I.seen_answer, "b", "an anchor in reach keeps it")
+	open_request(I, /datum/prompt/choice, TYPE_PROC_REF(/obj/item/p2_asker_item, answered), answerer = H, choices = list("a", "b"), radial = TRUE, anchor = far)
+	test_answer(H, "a")
+	TEST_ASSERT_EQUAL(I.seen_answer, "a", "without require_near the distance does not matter")

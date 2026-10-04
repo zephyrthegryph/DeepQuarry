@@ -18,12 +18,14 @@
 	else
 		to_chat(user, span_warning("There are not enough telecrystals to do that."))
 
-EXTEND_INTERACTIONS(/obj/item/stack/telecrystal, INTERACT_USE(null, PROC_REF(telecrystal_self)))
+CAPABILITIES(/obj/item/stack/telecrystal)
+	op("redeem", in_hand(), then(PROC_REF(redeemed)))
 
-/// Old attack_self: add the crystals to your balance.
-/obj/item/stack/telecrystal/proc/telecrystal_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using the crystals in the hand adds them to your balance.
+/obj/item/stack/telecrystal/proc/redeemed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.mind && user.mind.accept_tcrystals) //Checks to see if antag type allows for tcrystals
 		to_chat(user, span_notice("You use \the [src], adding [src.amount] to your balance."))
 		user.mind.tcrystals += amount
 		use(amount)
-	return
+	return OP_OK

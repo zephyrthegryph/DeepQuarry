@@ -20,51 +20,45 @@
 	return
 
 
-DECLARE_INTERACTIONS(/obj/item/implantpad, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/implantpad)
+	interface("ImplantPad", title = "Implant Mini-Computer", input = in_hand())
+	op("take_case", hand(), when(cond_all(PROC_REF(has_case), carried())), then(PROC_REF(case_taken)))
+	op("insert_case", item(/obj/item/implantcase), passes(), when(req(PROC_REF(has_no_case))), then(PROC_REF(case_inserted)))
+	op("tracking_id", ui_act("tracking_id", arg("delta", num())), then(PROC_REF(ui_act_tracking_id)))
+	extend(TAG_UI, needs(req(PROC_REF(user_conscious), because = MSG(implantpad/unconscious))))
 
-/// Old attack_hand.
-/obj/item/implantpad/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if ((src.case && user.item_is_in_hands(src)))
-		user.put_in_active_hand(case)
+/// An empty hand takes the case out of a pad it carries; a pad that is not carried, or holds none, is picked up as any item.
+/obj/item/implantpad/proc/has_case(datum/act/A)
+	return !!case // ALLOW(reads): what the pad holds is read when the hand is used, never from a cached menu
 
-		src.case.add_fingerprint(user)
-		own_take(src, nameof(case))
+/obj/item/implantpad/proc/case_taken(datum/act/op/A)
+	var/mob/living/user = A.actor
+	user.put_in_active_hand(case)
 
-		src.add_fingerprint(user)
-		update()
-	else
-		return FALSE
-	return TRUE
+	src.case.add_fingerprint(user)
+	own_take(src, nameof(case))
 
+	src.add_fingerprint(user)
+	update()
+	return OP_OK
 
-/// Old attackby.
-/obj/item/implantpad/proc/interaction_item(mob/user, obj/item/implantcase/C, datum/interaction/interaction)
-	if(istype(C, /obj/item/implantcase))
-		if(!( src.case ))
-			move_into(src, nameof(src.case), C, user)
-	else
-		return INTERACTION_HANDLED_PASS
+/// The pad takes one case.
+/obj/item/implantpad/proc/has_no_case(datum/act/op/A)
+	return !case // ALLOW(reads): what the pad holds is read when the case is offered, never from a cached menu
+
+/obj/item/implantpad/proc/case_inserted(datum/act/op/A)
+	move_into(src, nameof(src.case), A.held, A.actor)
 	src.update()
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
+MSG_DEF_SELF(implantpad/unconscious, "You can't do that right now.")
 
-// TGUI migration. attack_self opens ImplantPad.tsx; the
-// Topic tracking_id stepper moves to tgui_act.
-/// Old attack_self.
-/obj/item/implantpad/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/// The window only answers someone who is conscious.
+/obj/item/implantpad/proc/user_conscious(datum/act/op/A)
+	var/mob/user = A.actor
+	return !user.stat
 
-DECLARE_UI(/obj/item/implantpad, "ImplantPad", UI_TITLE("Implant Mini-Computer"))
-
-UI_DATA_REPLACE(/obj/item/implantpad, "merge:ui_data_obj_item_implantpad{has_case:bool,has_implant:unknown,implant_info:unknown,is_tracking:bool,tracking_id:num}")
-
-/// The computed part of /obj/item/implantpad's window data (declared on its UI_DATA row).
-/obj/item/implantpad/proc/ui_data_obj_item_implantpad(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/implantpad/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["has_case"] = !!case
 	data["has_implant"] = !!(case?.imp)
@@ -79,22 +73,15 @@ UI_DATA_REPLACE(/obj/item/implantpad, "merge:ui_data_obj_item_implantpad{has_cas
 			data["tracking_id"] = T.id
 	return data
 
-/obj/item/implantpad/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(user.stat)
-		return FALSE
+/obj/item/implantpad/proc/ui_act_tracking_id(datum/act/op/A, delta)
+	var/mob/user = A.actor
 	add_fingerprint(user)
-	return TRUE
-
-UI_ACT(/obj/item/implantpad, "tracking_id", ui_act_tracking_id, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/implantpad, ui_act_tracking_id)
 	if(!istype(case?.imp, /obj/item/implant/tracking))
-		return TRUE
+		return OP_OK
 	var/obj/item/implant/tracking/T = case.imp
-	T.id += params["delta"]
+	T.id += delta
 	T.id = clamp(T.id, 1, 1000)
-	return TRUE
+	return OP_OK
 
 /obj/item/implantpad/ownership()
 	. = ..()

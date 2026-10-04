@@ -46,8 +46,11 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 
 /// `picked`: the target came from the shell list (don't ask again if it's no longer usable).
-/mob/living/silicon/robot/proc/transfer_shell_picked(datum/om/prompt/choice/ai_shell/ask)
-	transfer_shell(ask.choice, TRUE)
+/mob/living/silicon/robot/proc/transfer_shell_picked(datum/act/request/A)
+	if(!A.answer)
+		to_chat(src, span_notice("Deployment aborted."))
+		return
+	transfer_shell(A.answer.answer_value, TRUE)
 
 /mob/living/silicon/robot/proc/transfer_shell(mob/living/silicon/robot/target, picked = FALSE)
 	var/mob/living/silicon/ai/AI = mainframe
@@ -92,7 +95,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 		target = possible[1]
 
 	if(!picked && (!target || !(target in possible))) //If the AI is looking for a new shell, or its pre-selected shell is no longer valid
-		om_ask(src, /datum/om/prompt/choice/ai_shell, PROC_REF(transfer_shell_picked), choices = possible)
+		open_request(src, /datum/prompt/choice, PROC_REF(transfer_shell_picked), answerer = src, title = "Shell Choice", question = "Which body to control?", choices = possible, timeout = 0)
 		return
 	if(!(target in possible))
 		target = null

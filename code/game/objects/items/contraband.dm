@@ -238,12 +238,14 @@ CAPABILITIES(/obj/item/miscdisc)
 	item_state = "table_parts"
 	w_class = ITEMSIZE_HUGE
 
-DECLARE_INTERACTIONS(/obj/item/contraband, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap)))
+CAPABILITIES(/obj/item/contraband)
+	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(unwrapped)))
 
-/// Old attack_self.
-/obj/item/contraband/proc/interaction_unwrap(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using the package in the hand opens it: what was inside lands in that hand.
+/obj/item/contraband/proc/unwrapped(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!consume(src, user))
-		return INTERACTION_HANDLED_PASS
+		return OP_REFUSED
 	var/contraband = pick(
 		/obj/item/reagent_containers/glass/beaker/vial/macrocillin,
 		/obj/item/reagent_containers/glass/beaker/vial/microcillin,
@@ -261,3 +263,4 @@ DECLARE_INTERACTIONS(/obj/item/contraband, INTERACT_USE("Unwrap", PROC_REF(inter
 
 	user.put_in_hands(new contraband(user.loc))
 	to_chat(user, "You unwrap the package.")
+	return OP_OK

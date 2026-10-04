@@ -246,13 +246,49 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/skills, "GeneralRecords", UI_TITLE("Department Management"))
+CAPABILITIES(/obj/machinery/computer/skills)
+	interface("GeneralRecords", title = "Department Management")
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
+	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
+	op("screen", ui_act("screen", arg("screen", num())), then(PROC_REF(ui_act_screen)))
+	op("contract_accept", ui_act("contract_accept", arg("id", schema_text(4096))), then(PROC_REF(ui_act_contract_accept)))
+	op("contract_decline", ui_act("contract_decline", arg("id", schema_text(4096))), then(PROC_REF(ui_act_contract_decline)))
+	op("contract_negotiate", ui_act("contract_negotiate", arg("clause", schema_text(4096)), arg("id", schema_text(4096)), arg("option", schema_text(4096))), then(PROC_REF(ui_act_contract_negotiate)))
+	op("contract_finalize_outcome", ui_act("contract_finalize_outcome", arg("id", schema_text(4096))), then(PROC_REF(ui_act_contract_finalize_outcome)))
+	op("contract_print_trial_packet", ui_act("contract_print_trial_packet", arg("id", schema_text(4096))), then(PROC_REF(ui_act_contract_print_trial_packet)))
+	op("contract_print_trial_report", ui_act("contract_print_trial_report", arg("adverse", schema_text(4096)), arg("id", schema_text(4096))), then(PROC_REF(ui_act_contract_print_trial_report)))
+	op("contract_resupply_trial", ui_act("contract_resupply_trial", arg("id", schema_text(4096))), then(PROC_REF(ui_act_contract_resupply_trial)))
+	op("contract_reissue_trial_packet", ui_act("contract_reissue_trial_packet", arg("id", schema_text(4096)), arg("subject_id", schema_text(4096))), then(PROC_REF(ui_act_contract_reissue_trial_packet)))
+	op("contract_print_trial_revocation", ui_act("contract_print_trial_revocation", arg("id", schema_text(4096)), arg("subject_id", schema_text(4096))), then(PROC_REF(ui_act_contract_print_trial_revocation)))
+	op("contract_print_case_forms", ui_act("contract_print_case_forms", arg("id", schema_text(4096))), then(PROC_REF(ui_act_contract_print_case_forms)))
+	op("contract_print_case_revocation", ui_act("contract_print_case_revocation", arg("id", schema_text(4096))), then(PROC_REF(ui_act_contract_print_case_revocation)))
+	op("set_department_wages", ui_act("set_department_wages", arg("department", schema_text(4096)), arg("multiplier", num())), then(PROC_REF(ui_act_set_department_wages)))
+	op("set_department_allocation_percent", ui_act("set_department_allocation_percent", arg("department", schema_text(4096)), arg("percent", num())), then(PROC_REF(ui_act_set_department_allocation_percent)))
+	op("transfer_department_funds", ui_act("transfer_department_funds", arg("amount", num()), arg("department", schema_text(4096))), then(PROC_REF(ui_act_transfer_department_funds)))
+	op("clear_department_allocation", ui_act("clear_department_allocation", arg("department", schema_text(4096))), then(PROC_REF(ui_act_clear_department_allocation)))
+	op("set_allocation_policy", ui_act("set_allocation_policy", arg("policy", schema_text(4096))), then(PROC_REF(ui_act_set_allocation_policy)))
+	op("set_service_subsidy", ui_act("set_service_subsidy", arg("subsidy", num())), then(PROC_REF(ui_act_set_service_subsidy)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("del_all", ui_act("del_all"), then(PROC_REF(ui_act_del_all)))
+	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
+	op("edit_notes", ui_act("edit_notes"), needs(req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default)))), then(PROC_REF(ui_act_edit_notes)))
+	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
+	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
+	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
+	op("del_c", ui_act("del_c", arg("del_c", num())), then(PROC_REF(ui_act_del_c)))
+	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
+	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 
-UI_DATA_REPLACE(/obj/machinery/computer/skills, "temp:text", "authenticated", "rank", "screen:num", "printing:num", "merge:ui_data_obj_machinery_computer_skills{scan:text,isAI:num,isRobot:num,can_allocate_station_budget:unknown,station_balance:num,station_monthly_income:num,station_monthly_expenses:num,station_income_sources:unknown,nt_salary_support:num,allocation_policy:unknown,next_budget_cycle:num,budget_plan:unknown,department_finances:list,station_transactions:unknown,contract_departments:list,contract_faction_standings:list,contracts:list,records:list,general:list,modal:unknown}")
-
-/// The computed part of /obj/machinery/computer/skills's window data (declared on its UI_DATA row).
-/obj/machinery/computer/skills/proc/ui_data_obj_machinery_computer_skills(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/skills/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
+	data["temp"] = temp
+	data["authenticated"] = authenticated
+	data["rank"] = rank
+	data["screen"] = screen
+	data["printing"] = printing
 	data["scan"] = scan ? scan.name : null
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
@@ -444,276 +480,242 @@ UI_DATA_REPLACE(/obj/machinery/computer/skills, "temp:text", "authenticated", "r
 		return FALSE
 	return contract.finalize_graded_outcome(user?.real_name || authenticated)
 
-/obj/machinery/computer/skills/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	if(!(active1() in GLOB.data_core.general))
-		rel_clear(src, nameof(active1))
-	return TRUE
-
-/obj/machinery/computer/skills/proc/native_ui_act_scan(datum/act/op/A)
-	var/mob/user = A.actor
-	add_fingerprint(user)
-	if(!(active1() in GLOB.data_core.general))
-		rel_clear(src, nameof(active1))
-	if(scan)
-		scan.forceMove(loc)
-		if(ishuman(user) && !user.get_active_hand())
-			user.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
-	else
-		var/obj/item/I = user.get_active_hand()
-		if(istype(I, /obj/item/card/id))
-			move_into(src, nameof(src.scan), I, user)
-	return OP_OK
-
-CAPABILITIES(/obj/machinery/computer/skills)
-	op("scan", ui_act(), then(PROC_REF(native_ui_act_scan)))
-	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
-
-/obj/machinery/computer/skills/proc/native_ui_act_cleartemp(datum/act/op/A)
+/// Every button first drops a record the data core no longer holds (the old window guard's side effects).
+/obj/machinery/computer/skills/proc/ui_records_fresh(datum/act/op/A)
 	add_fingerprint(A.actor)
 	if(!(active1() in GLOB.data_core.general))
 		rel_clear(src, nameof(active1))
-	temp = null
 	return OP_OK
 
-UI_ACT(/obj/machinery/computer/skills, "login", ui_act_login, UI_ARG_NUM("login_type"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_login)
+/obj/machinery/computer/skills/proc/ui_act_scan(datum/act/op/A)
 	. = TRUE
-	var/login_type = params["login_type"]
+	if(scan)
+		scan.forceMove(loc)
+		if(ishuman(A.actor) && !A.actor.get_active_hand())
+			A.actor.put_in_hands(scan)
+		own_take(src, nameof(/obj/item/extrapolator::scan))
+	else
+		var/obj/item/I = A.actor.get_active_hand()
+		if(istype(I, /obj/item/card/id))
+			move_into(src, nameof(src.scan), I, A.actor)
+
+/obj/machinery/computer/skills/proc/ui_act_cleartemp(datum/act/op/A)
+	. = TRUE
+	temp = null
+
+/obj/machinery/computer/skills/proc/ui_act_login(datum/act/op/A, login_type_arg)
+	. = TRUE
+	var/login_type = login_type_arg
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
 			authenticated = scan.registered_name
 			rank = scan.assignment
-	else if(login_type == LOGIN_TYPE_AI && isAI(ui.user))
-		authenticated = ui.user.name
+	else if(login_type == LOGIN_TYPE_AI && isAI(A.actor))
+		authenticated = A.actor.name
 		rank = JOB_AI
-	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(ui.user))
-		authenticated = ui.user.name
-		var/mob/living/silicon/robot/R = ui.user
+	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(A.actor))
+		authenticated = A.actor.name
+		var/mob/living/silicon/robot/R = A.actor
 		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
 		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 		screen = GENERAL_RECORD_LIST
 
-UI_ACT(/obj/machinery/computer/skills, "logout", ui_act_logout)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_logout)
+/obj/machinery/computer/skills/proc/ui_act_logout(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
 	if(scan)
 		scan.forceMove(loc)
-		if(ishuman(ui.user) && !ui.user.get_active_hand())
-			ui.user.put_in_hands(scan)
+		if(ishuman(A.actor) && !A.actor.get_active_hand())
+			A.actor.put_in_hands(scan)
 		own_take(src, nameof(/obj/item/extrapolator::scan))
 	authenticated = null
 	screen = null
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 
-UI_ACT(/obj/machinery/computer/skills, "screen", ui_act_screen, UI_ARG_NUM("screen"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_screen)
+/obj/machinery/computer/skills/proc/ui_act_screen(datum/act/op/A, screen_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/requested_screen = params["screen"]
+	var/requested_screen = screen_arg
 	if(requested_screen in list(GENERAL_RECORD_FINANCES, GENERAL_RECORD_CONTRACTS))
 		screen = requested_screen
 	else
 		screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 
-UI_ACT(/obj/machinery/computer/skills, "contract_accept", ui_act_contract_accept, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_accept)
+/obj/machinery/computer/skills/proc/ui_act_contract_accept(datum/act/op/A, id_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
-	return accept_management_contract(contract, ui.user)
+	var/datum/contract/contract = SScontracts.contracts_by_id[id_arg]
+	return accept_management_contract(contract, A.actor)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_decline", ui_act_contract_decline, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_decline)
+/obj/machinery/computer/skills/proc/ui_act_contract_decline(datum/act/op/A, id_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
-	return decline_management_contract(contract, ui.user)
+	var/datum/contract/contract = SScontracts.contracts_by_id[id_arg]
+	return decline_management_contract(contract, A.actor)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_negotiate", ui_act_contract_negotiate, UI_ARG_TEXT("clause"), UI_ARG_TEXT("id"), UI_ARG_TEXT("option"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_negotiate)
+/obj/machinery/computer/skills/proc/ui_act_contract_negotiate(datum/act/op/A, clause, id_arg, option)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
-	return negotiate_management_contract(contract, params["clause"], params["option"], ui.user)
+	var/datum/contract/contract = SScontracts.contracts_by_id[id_arg]
+	return negotiate_management_contract(contract, clause, option, A.actor)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_finalize_outcome", ui_act_contract_finalize_outcome, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_finalize_outcome)
+/obj/machinery/computer/skills/proc/ui_act_contract_finalize_outcome(datum/act/op/A, id_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/social/contract = SScontracts.contracts_by_id[params["id"]]
-	return finalize_social_contract(contract, ui.user)
+	var/datum/contract/social/contract = SScontracts.contracts_by_id[id_arg]
+	return finalize_social_contract(contract, A.actor)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_packet", ui_act_contract_print_trial_packet, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_packet)
+/obj/machinery/computer/skills/proc/ui_act_contract_print_trial_packet(datum/act/op/A, id_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
 	return trial.print_clinical_packet(get_turf(src), account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_report", ui_act_contract_print_trial_report, UI_ARG_TEXT("adverse"), UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_report)
+/obj/machinery/computer/skills/proc/ui_act_contract_print_trial_report(datum/act/op/A, adverse, id_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
-	return trial.print_final_report(get_turf(src), params["adverse"])
+	return trial.print_final_report(get_turf(src), adverse)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_resupply_trial", ui_act_contract_resupply_trial, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_resupply_trial)
+/obj/machinery/computer/skills/proc/ui_act_contract_resupply_trial(datum/act/op/A, id_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	return trial.request_resupply(get_turf(src))
 
-UI_ACT(/obj/machinery/computer/skills, "contract_reissue_trial_packet", ui_act_contract_reissue_trial_packet, UI_ARG_TEXT("id"), UI_ARG_TEXT("subject_id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_reissue_trial_packet)
+/obj/machinery/computer/skills/proc/ui_act_contract_reissue_trial_packet(datum/act/op/A, id_arg, subject_id)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
-	return trial.reissue_clinical_packet(get_turf(src), params["subject_id"], account?.account_number)
+	return trial.reissue_clinical_packet(get_turf(src), subject_id, account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_revocation", ui_act_contract_print_trial_revocation, UI_ARG_TEXT("id"), UI_ARG_TEXT("subject_id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_revocation)
+/obj/machinery/computer/skills/proc/ui_act_contract_print_trial_revocation(datum/act/op/A, id_arg, subject_id)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
-	return trial.print_consent_revocation(get_turf(src), params["subject_id"], account?.account_number)
+	return trial.print_consent_revocation(get_turf(src), subject_id, account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_case_forms", ui_act_contract_print_case_forms, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_case_forms)
+/obj/machinery/computer/skills/proc/ui_act_contract_print_case_forms(datum/act/op/A, id_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[params["id"]]
+	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[id_arg]
 	if(!istype(report) || !can_view_department(report.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
 	return report.print_case_forms(get_turf(src), account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_case_revocation", ui_act_contract_print_case_revocation, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_case_revocation)
+/obj/machinery/computer/skills/proc/ui_act_contract_print_case_revocation(datum/act/op/A, id_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[params["id"]]
+	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[id_arg]
 	if(!istype(report) || !can_view_department(report.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
 	return report.print_consent_revocation(get_turf(src), account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "set_department_wages", ui_act_set_department_wages, UI_ARG_TEXT("department"), UI_ARG_NUM("multiplier"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_department_wages)
+/obj/machinery/computer/skills/proc/ui_act_set_department_wages(datum/act/op/A, department_arg, multiplier)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/department = params["department"]
-	var/new_multiplier = params["multiplier"]
+	var/department = department_arg
+	var/new_multiplier = multiplier
 	return set_department_wage(department, new_multiplier)
 
-UI_ACT(/obj/machinery/computer/skills, "set_department_allocation_percent", ui_act_set_department_allocation_percent, UI_ARG_TEXT("department"), UI_ARG_NUM("percent"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_department_allocation_percent)
+/obj/machinery/computer/skills/proc/ui_act_set_department_allocation_percent(datum/act/op/A, department_arg, percent_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/department = params["department"]
-	var/percent = params["percent"]
-	return set_department_allocation_percent(department, percent, ui.user)
+	var/department = department_arg
+	var/percent = percent_arg
+	return set_department_allocation_percent(department, percent, A.actor)
 
-UI_ACT(/obj/machinery/computer/skills, "transfer_department_funds", ui_act_transfer_department_funds, UI_ARG_NUM("amount"), UI_ARG_TEXT("department"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_transfer_department_funds)
+/obj/machinery/computer/skills/proc/ui_act_transfer_department_funds(datum/act/op/A, amount, department_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	return transfer_department_funds(params["department"], params["amount"], ui.user)
+	return transfer_department_funds(department_arg, amount, A.actor)
 
-UI_ACT(/obj/machinery/computer/skills, "clear_department_allocation", ui_act_clear_department_allocation, UI_ARG_TEXT("department"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_clear_department_allocation)
+/obj/machinery/computer/skills/proc/ui_act_clear_department_allocation(datum/act/op/A, department_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	return clear_department_allocation(params["department"], ui.user)
+	return clear_department_allocation(department_arg, A.actor)
 
-UI_ACT(/obj/machinery/computer/skills, "set_allocation_policy", ui_act_set_allocation_policy, UI_ARG_TEXT("policy"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_allocation_policy)
+/obj/machinery/computer/skills/proc/ui_act_set_allocation_policy(datum/act/op/A, policy)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
 	if(!can_allocate_station_budget())
 		return FALSE
-	return SSsupply.set_allocation_policy(params["policy"], TRUE)
+	return SSsupply.set_allocation_policy(policy, TRUE)
 
-UI_ACT(/obj/machinery/computer/skills, "set_service_subsidy", ui_act_set_service_subsidy, UI_ARG_NUM("subsidy"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_service_subsidy)
+/obj/machinery/computer/skills/proc/ui_act_set_service_subsidy(datum/act/op/A, subsidy_arg)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
 	if(!can_view_department(DEPARTMENT_CIVILIAN))
 		return FALSE
-	var/subsidy = params["subsidy"]
+	var/subsidy = subsidy_arg
 	if(!isnum(subsidy) || subsidy < 0 || subsidy > 1)
 		return FALSE
 	GLOB.department_accounts[DEPARTMENT_CIVILIAN].service_subsidy = subsidy
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/skills, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_refresh)
+/obj/machinery/computer/skills/proc/ui_act_refresh(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/skills, "del_all", ui_act_del_all)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_del_all)
+/obj/machinery/computer/skills/proc/ui_act_del_all(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
@@ -724,26 +726,35 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_del_all)
 		qdel(R)
 	set_temp("All employment records deleted.")
 
-UI_ACT(/obj/machinery/computer/skills, "sync_r", ui_act_sync_r)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_sync_r)
+/obj/machinery/computer/skills/proc/ui_act_sync_r(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
 	if(active1())
-		set_temp(client_update_record(src,ui.user))
+		set_temp(client_update_record(src,A.actor))
 
-UI_ACT(/obj/machinery/computer/skills, "edit_notes", ui_act_edit_notes)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_edit_notes)
-	. = TRUE
-	if(!(authenticated))
-		return FALSE
-	. = TRUE
-		// The modal input in tgui is busted for this sadly...
-	om_ask(ui.user, /datum/om/prompt/text/record_notes, PROC_REF(record_notes_entered), default = html_decode(active1().fields["notes"]), record = active1())
+/obj/machinery/computer/skills/proc/ui_act_edit_notes(datum/act/op/A)
+	var/datum/data/record/target = active1()
+	var/datum/prompt/R = A.answer
+	if(!target || !R)
+		return OP_OK
+	var/new_notes = strip_html_simple(R.value, MAX_RECORD_LENGTH)
+	if(new_notes != "")
+		set_record_notes(target, new_notes)
+		return OP_OK
+	open_request(src, /datum/prompt/yes_no/record_notes_delete, PROC_REF(record_notes_confirmed), valid = PROC_REF(record_notes_valid), answerer = A.actor, record = target, timeout = 0)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/skills, "del_r", ui_act_del_r)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_del_r)
+/// The notes the editor starts with.
+/obj/machinery/computer/skills/proc/notes_default(datum/act/A)
+	return html_decode(active1()?.fields["notes"])
+
+/// The operator is logged in (the old handlers each refused without it).
+/obj/machinery/computer/skills/proc/records_authenticated(datum/act/op/A)
+	return !!authenticated // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
+
+/obj/machinery/computer/skills/proc/ui_act_del_r(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
@@ -759,13 +770,12 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_del_r)
 		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 		QDEL_NULL(deleted_record)
 
-UI_ACT(/obj/machinery/computer/skills, "d_rec", ui_act_d_rec, UI_ARG_REF("d_rec", null, /datum/data/record))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_d_rec)
+/obj/machinery/computer/skills/proc/ui_act_d_rec(datum/act/op/A, d_rec)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/data/record/general_record = params["d_rec"]
+	var/datum/data/record/general_record = ui_ref(d_rec, null, /datum/data/record)
 	if(!(general_record in GLOB.data_core.general))
 		set_temp("Record not found.", "danger")
 		return
@@ -773,8 +783,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_d_rec)
 	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), general_record)
 	screen = GENERAL_RECORD_DATA
 
-UI_ACT(/obj/machinery/computer/skills, "new", ui_act_new)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_new)
+/obj/machinery/computer/skills/proc/ui_act_new(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
@@ -785,13 +794,12 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_new)
 	screen = GENERAL_RECORD_DATA
 	set_temp("Employment record created.", "success")
 
-UI_ACT(/obj/machinery/computer/skills, "del_c", ui_act_del_c, UI_ARG_NUM("del_c"))
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_del_c)
+/obj/machinery/computer/skills/proc/ui_act_del_c(datum/act/op/A, del_c)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/index = params["del_c"]
+	var/index = del_c
 	if(!index || !istype(active1(), /datum/data/record))
 		return
 
@@ -800,8 +808,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_del_c)
 	if(comments[index])
 		comments.Cut(index, index + 1)
 
-UI_ACT(/obj/machinery/computer/skills, "print_p", ui_act_print_p)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_print_p)
+/obj/machinery/computer/skills/proc/ui_act_print_p(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
@@ -811,21 +818,21 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_print_p)
 		SStgui.update_uis(src)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
 
-/obj/machinery/computer/skills/proc/record_notes_entered(datum/om/prompt/text/record_notes/ask)
-	var/new_notes = strip_html_simple(ask.text, MAX_RECORD_LENGTH)
-	if(new_notes != "")
-		set_record_notes(ask.record, new_notes)
+/obj/machinery/computer/skills/proc/record_notes_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/record_notes_delete, PROC_REF(record_notes_confirmed), record = ask.record)
+	var/datum/prompt/yes_no/record_notes_delete/R = A.request
+	set_record_notes(R.record, "")
 
-/obj/machinery/computer/skills/proc/record_notes_confirmed(datum/om/prompt/confirm/record_notes_delete/ask)
-	set_record_notes(ask.record, "")
+/// The operator is still next to the console when the answer arrives.
+/obj/machinery/computer/skills/proc/record_notes_valid(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && in_range(src, M)
 
 /obj/machinery/computer/skills/proc/set_record_notes(datum/data/record/R, notes)
 	if(R == active1())
 		active1().fields["notes"] = notes
 		SStgui.update_uis(src)
-
 
 /obj/machinery/computer/skills/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE
