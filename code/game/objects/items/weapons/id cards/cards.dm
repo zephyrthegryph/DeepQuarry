@@ -65,7 +65,21 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 
 /obj/item/card/data/proc/data_label_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	// The old verb took the text as its argument; ask for it instead.
-	var/t = rerun_ask(user, "data_card_label", PROC_REF(data_label_effect), args, /datum/om/prompt/text, message = "Enter a label for the card.", title = "Label Card", max_length = MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text/card_data_label, PROC_REF(data_label_entered), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "Enter a label for the card.", title = "Label Card", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
+
+/obj/item/card/data/proc/data_label_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/card_data_label/request = A.request
+	if(request.captures_gone())
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_data_label), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/card/data/proc/apply_data_label(mob/user, t)
 	if(isnull(t))
 		return
 	if(get(src, /mob) != user)
@@ -330,3 +344,33 @@ CAPABILITIES(/obj/item/card_fluff)
 EXTEND_INTERACTIONS(/obj/item/card/data, \
 	INTERACT_VERB("Label Card", PROC_REF(data_label_effect), REQ_IN_INVENTORY), \
 )
+
+/datum/prompt/text/card_data_label
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/card_data_label)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/text/card_data_label/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/text/card_data_label/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/text/card_data_label/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null
