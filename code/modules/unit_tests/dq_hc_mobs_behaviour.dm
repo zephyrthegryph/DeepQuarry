@@ -103,3 +103,29 @@
 	module.emp_act(EMP_HEAVY)
 	TEST_ASSERT(S.energy < before, "a pulse drains the synths of the module")
 	qdel(S)
+
+/// A species that is sensitive to EMPs hurts its carbon mob on a pulse; one that is not, does not.
+/datum/unit_test/dq_hc_mobs/carbon_species_emp
+/datum/unit_test/dq_hc_mobs/carbon_species_emp/Run()
+	var/mob/living/carbon/human/sensitive = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/carbon/human/steady = allocate(/mob/living/carbon/human, test_floor())
+	sensitive.species.emp_sensitivity = EMP_BRUTE_DMG
+	var/before = sensitive.vitality()
+	var/steady_before = steady.vitality()
+	sensitive.emp_act(EMP_HEAVY)
+	steady.emp_act(EMP_HEAVY)
+	TEST_ASSERT(sensitive.vitality() < before, "an EMP-sensitive species takes injury from a pulse")
+	TEST_ASSERT_EQUAL(steady.vitality(), steady_before, "a species with no EMP sensitivity does not")
+
+/// A cloaked lurker uncloaks when a round hits it.
+/datum/unit_test/dq_hc_mobs/lurker_cloak_breaks_on_hit
+/datum/unit_test/dq_hc_mobs/lurker_cloak_breaks_on_hit/Run()
+	var/mob/living/simple_mob/animal/giant_spider/lurker/spider = allocate(/mob/living/simple_mob/animal/giant_spider/lurker, test_floor())
+	spider.cloak()
+	TEST_ASSERT(dq_get_cloaked(spider), "the lurker starts cloaked")
+	var/obj/item/projectile/P = allocate(/obj/item/projectile, test_floor())
+	P.damage = 5
+	P.injury_kind = INJURY_BLUNT
+	rel_set(P, nameof(P.starting), test_floor())
+	spider.bullet_act(P, BP_TORSO)
+	TEST_ASSERT(!dq_get_cloaked(spider), "a hit breaks the cloak")
