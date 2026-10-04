@@ -7,11 +7,23 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 	return
 	#endif
 
-	var/task = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select Action", title = "Select the Memo Action.", choices = list("write","show","delete"))
-	if(isnull(task))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!task)
+	open_request(src, /datum/prompt/choice/admin_memo_menu, PROC_REF(memo_action_answered), answerer = answerer)
+
+/datum/admin_verb/admin_memo/proc/memo_action_answered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(memo_action_chosen), A)
+	if(!result.ok)
+		stack_trace("om prompt /datum/prompt/choice/admin_memo_menu answer memo_action_chosen: [result.error]")
+
+/datum/admin_verb/admin_memo/proc/memo_action_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	var/task = A.request.answer_value
 
 	switch(task)
 		if("write")
@@ -22,10 +34,19 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 			user.admin_memo_delete()
 
 //write a message
-/client/proc/admin_memo_write()
+/client/proc/admin_memo_write(memo = null, answered = FALSE)
 	var/savefile/F = new(MEMOFILE)
 	if(F)
-		var/memo = client_ask("a1", PROC_REF(admin_memo_write), args, 0, /datum/om/prompt/text, message = "Type your memo\n(Leaving it blank will delete your current memo):", title = "Write Memo", multiline = TRUE, max_length = MAX_TGUI_INPUT)
+		if(!answered)
+			var/mob/answerer = mob
+			if(QDELETED(answerer))
+				return
+			var/datum/admin_memo_review/review = new
+			rel_set(review, nameof(review.actor), answerer)
+			review.client_ckey = ckey
+			review.writing = TRUE
+			open_request(review, /datum/prompt/text/admin_memo_write, TYPE_PROC_REF(/datum/admin_memo_review, answered), answerer = answerer)
+			return
 		if(isnull(memo))
 			return
 		switch(memo)
@@ -51,20 +72,111 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 			to_chat(src, span_filter_adminlog("<center><span class='motd'><b>Admin Memo</b><i> by [F[ckey]]</i></span></center>"))
 
 //delete your own or somebody else's memo
-/client/proc/admin_memo_delete()
+/client/proc/admin_memo_delete(selected_ckey = null, answered = FALSE)
 	var/savefile/F = new(MEMOFILE)
 	if(F)
 		var/ckey
-		if(check_rights(R_SERVER,0))	//high ranking admins can delete other admin's memos
-			var/_answer_a1 = client_ask("a1", PROC_REF(admin_memo_delete), args, 0, /datum/om/prompt/choice, message = "Whose memo shall we remove?", title = "Remove Memo", choices = F.dir)
-			if(isnull(_answer_a1))
+		if(memo_can_delete_others())	//high ranking admins can delete other admin's memos
+			if(!answered)
+				var/mob/answerer = mob
+				if(QDELETED(answerer))
+					return
+				var/datum/admin_memo_review/review = new
+				rel_set(review, nameof(review.actor), answerer)
+				review.client_ckey = src.ckey
+				open_request(review, /datum/prompt/choice/admin_memo_delete, TYPE_PROC_REF(/datum/admin_memo_review, answered), answerer = answerer, choices = F.dir)
 				return
-			ckey = _answer_a1
+			if(isnull(selected_ckey))
+				return
+			ckey = selected_ckey
 		else
 			ckey = src.ckey
 		if(ckey)
 			F.dir.Remove(ckey)
 			to_chat(src, span_filter_adminlog(span_bold("Removed Memo created by [ckey].")))
+
+/datum/prompt/choice/admin_memo_menu
+	title = "Select the Memo Action."
+	question = "Select Action"
+	choices = list("write", "show", "delete")
+	rights = R_ADMIN|R_MOD|R_EVENT
+	timeout = 0
+
+/datum/prompt/choice/admin_memo_menu/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_memo_write
+	question = "Type your memo\n(Leaving it blank will delete your current memo):"
+	title = "Write Memo"
+	multiline = TRUE
+	max_len = MAX_TGUI_INPUT
+	timeout = 0
+
+/datum/prompt/choice/admin_memo_delete
+	question = "Whose memo shall we remove?"
+	title = "Remove Memo"
+	timeout = 0
+
+/client/proc/memo_can_delete_others()
+	return admin_require(src, R_SERVER, "check_rights in [caller?.proc]", FALSE)
+
+/datum/admin_memo_review
+	var/mob/actor
+	var/client_ckey
+	var/writing = FALSE
+
+CAPABILITIES(/datum/admin_memo_review)
+	ref_one(nameof(actor), /mob)
+
+/datum/admin_memo_review/proc/refusal()
+	return QDELETED(actor) || !GLOB.directory[client_ckey] ? "participant is gone" : null
+
+/datum/admin_memo_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+
+/datum/admin_memo_review/proc/answered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(finish), A)
+	if(!result.ok)
+		stack_trace("om flow [type] step finish: [result.error]")
+	retire()
+
+/datum/admin_memo_review/proc/finish(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = GLOB.directory[client_ckey]
+	if(writing)
+		user.admin_memo_write(A.request.answer_value, TRUE)
+	else
+		user.admin_memo_delete(A.request.answer_value, TRUE)
+
+/datum/prompt/text/admin_memo_write/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_memo_review/review = owner
+	return review.refusal()
+
+/datum/prompt/text/admin_memo_write/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_memo_delete/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_memo_review/review = owner
+	return review.refusal()
+
+/datum/prompt/choice/admin_memo_delete/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
 #undef MEMOFILE
 #undef ENABLE_MEMOS
