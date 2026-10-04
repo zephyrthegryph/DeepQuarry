@@ -340,10 +340,9 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 	var/address
 
 /// A cancel clears the note.
-/datum/om/prompt/text/communicator/note
-	message = "Please enter message"
+/datum/prompt/text/communicator/note
+	question = "Please enter message"
 	multiline = TRUE
-	cancel_answer = ""
 
 /obj/item/communicator/proc/name_entered(datum/act/request/A)
 	if(!A.answer)
@@ -358,8 +357,17 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 	if(A.answer.answer_value)
 		ttone = A.answer.answer_value
 
-/obj/item/communicator/proc/note_entered(datum/om/prompt/text/communicator/note/ask)
-	var/n = sanitizeSafe(ask.text, extra = 0)
+/obj/item/communicator/proc/note_entered(datum/act/request/A)
+	var/text
+	if(A.answer)
+		text = A.answer.answer_value
+	else
+		// An accepted answer rejected by the usability recheck keeps its original value.
+		// An explicit cancel has none, including after an earlier refused submission.
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value) || QDELETED(A.request.answerer))
+			return
+		text = ""
+	var/n = sanitizeSafe(text, extra = 0)
 	if(n)
 		note = html_decode(n)
 		notehtml = note
@@ -519,7 +527,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_switch_tab)
 UI_ACT(/obj/item/communicator, "edit", ui_act_edit)
 UI_ACT_PROC(/obj/item/communicator, ui_act_edit)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/note, PROC_REF(note_entered), title = name, default = notehtml)
+	open_request(src, /datum/prompt/text/communicator/note, PROC_REF(note_entered), answerer = ui.user, title = name, default = notehtml)
 
 UI_ACT(/obj/item/communicator, "Light", ui_act_light)
 UI_ACT_PROC(/obj/item/communicator, ui_act_light)
