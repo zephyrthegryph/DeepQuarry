@@ -891,6 +891,22 @@
 	into += entry_line(27)
 	into += list(global.ref_one(nameof(actor), /mob))
 
+/// CAPABILITIES(/datum/admin_set_ckey_review) at code/modules/admin/ckey.dm:28
+/datum/admin_set_ckey_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/ckey.dm", 28, /datum/admin_set_ckey_review)
+	into += entry_line(29)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(30)
+	into += list(global.ref_one(nameof(target_mob), /mob))
+
+/// CAPABILITIES(/datum/admin_ticket_panel_review) at code/modules/tickets/procs.dm:159
+/datum/admin_ticket_panel_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tickets/procs.dm", 159, /datum/admin_ticket_panel_review)
+	into += entry_line(160)
+	into += list(global.ref_one(nameof(actor), /mob))
+
 /// CAPABILITIES(/datum/admin_trader_dispatch_review) at code/modules/admin/verbs/trader.dm:21
 /datum/admin_trader_dispatch_review/declared_entries(list/into)
 	..(into)
@@ -3751,6 +3767,50 @@
 	into += entry_line(1105)
 	into += list(global.ref_one(nameof(chosen_area), /area))
 
+/// CAPABILITIES(/datum/prompt/choice/botany_disk_wipe) at code/modules/hydroponics/seed_machines.dm:424
+/datum/prompt/choice/botany_disk_wipe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/seed_machines.dm", 424, /datum/prompt/choice/botany_disk_wipe)
+	into += entry_line(425)
+	into += list(global.ref_one(nameof(botany_operator), /mob))
+	into += entry_line(426)
+	into += list(global.ref_one(nameof(botany_held), /obj/item))
+	into += entry_line(427)
+	into += list(global.ref_one(nameof(botany_interaction), /datum/interaction))
+
+/// CAPABILITIES(/datum/prompt/choice/botany_ghost_harvest) at code/modules/hydroponics/trays/tray.dm:833
+/datum/prompt/choice/botany_ghost_harvest/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/trays/tray.dm", 833, /datum/prompt/choice/botany_ghost_harvest)
+	into += entry_line(834)
+	into += list(global.ref_one(nameof(botany_operator), /mob))
+	into += entry_line(835)
+	into += list(global.ref_one(nameof(botany_held), /obj/item))
+	into += entry_line(836)
+	into += list(global.ref_one(nameof(botany_interaction), /datum/interaction))
+
+/// CAPABILITIES(/datum/prompt/choice/botany_soil_destroy) at code/modules/hydroponics/trays/tray_soil.dm:137
+/datum/prompt/choice/botany_soil_destroy/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/trays/tray_soil.dm", 137, /datum/prompt/choice/botany_soil_destroy)
+	into += entry_line(138)
+	into += list(global.ref_one(nameof(botany_operator), /mob))
+	into += entry_line(139)
+	into += list(global.ref_one(nameof(botany_held), /obj/item))
+	into += entry_line(140)
+	into += list(global.ref_one(nameof(botany_interaction), /datum/interaction))
+
+/// CAPABILITIES(/datum/prompt/choice/botany_tray_light) at code/modules/hydroponics/trays/tray.dm:879
+/datum/prompt/choice/botany_tray_light/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/trays/tray.dm", 879, /datum/prompt/choice/botany_tray_light)
+	into += entry_line(880)
+	into += list(global.ref_one(nameof(botany_operator), /mob))
+	into += entry_line(881)
+	into += list(global.ref_one(nameof(botany_held), /obj/item))
+	into += entry_line(882)
+	into += list(global.ref_one(nameof(botany_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/choice/camera_direction) at code/game/machinery/camera/camera_assembly.dm:157
 /datum/prompt/choice/camera_direction/declared_entries(list/into)
 	..(into)
@@ -3994,6 +4054,28 @@
 	into += entry_line(86)
 	into += list(global.ref_one(nameof(inquirer), /mob))
 
+/// CAPABILITIES(/datum/prompt/choice/paperwork_review) at code/modules/paperwork/pen.dm:489
+/datum/prompt/choice/paperwork_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/pen.dm", 489, /datum/prompt/choice/paperwork_review)
+	into += entry_line(490)
+	into += list(global.ref_one(nameof(paperwork_operator), /mob))
+	into += entry_line(491)
+	into += list(global.ref_one(nameof(paperwork_held), /obj/item))
+	into += entry_line(492)
+	into += list(global.ref_one(nameof(paperwork_interaction), /datum/interaction))
+
+/// CAPABILITIES(/datum/prompt/choice/parcel_label_review) at code/modules/recycling/disposal_mail.dm:356
+/datum/prompt/choice/parcel_label_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/recycling/disposal_mail.dm", 356, /datum/prompt/choice/parcel_label_review)
+	into += entry_line(357)
+	into += list(global.ref_one(nameof(parcel_operator), /mob))
+	into += entry_line(358)
+	into += list(global.ref_one(nameof(parcel_pen), /obj/item))
+	into += entry_line(359)
+	into += list(global.ref_one(nameof(parcel_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/choice/petrify_consent) at code/game/machinery/petrification.dm:240
 /datum/prompt/choice/petrify_consent/declared_entries(list/into)
 	..(into)
@@ -4216,6 +4298,17 @@
 	into += entry_line(792)
 	into += list(global.ref_one(nameof(card_interaction), /datum/interaction))
 
+/// CAPABILITIES(/datum/prompt/number/dice_configuration) at code/modules/games/dice.dm:348
+/datum/prompt/number/dice_configuration/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/games/dice.dm", 348, /datum/prompt/number/dice_configuration)
+	into += entry_line(349)
+	into += list(global.ref_one(nameof(dice_operator), /mob))
+	into += entry_line(350)
+	into += list(global.ref_one(nameof(dice_held), /obj/item))
+	into += entry_line(351)
+	into += list(global.ref_one(nameof(dice_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/number/eftpos_pin) at code/modules/economy/EFTPOS.dm:338
 /datum/prompt/number/eftpos_pin/declared_entries(list/into)
 	..(into)
@@ -4293,6 +4386,13 @@
 	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 96, /datum/prompt/text/admin_narrate)
 	into += entry_line(97)
 	into += list(global.ref_one(nameof(subject), /mob))
+
+/// CAPABILITIES(/datum/prompt/text/admin_paper_write_review) at code/modules/paperwork/adminpaper.dm:238
+/datum/prompt/text/admin_paper_write_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/adminpaper.dm", 238, /datum/prompt/text/admin_paper_write_review)
+	into += entry_line(239)
+	into += list(global.ref_one(nameof(write_operator), /mob))
 
 /// CAPABILITIES(/datum/prompt/text/admin_silicon_name) at code/modules/admin/admin_verbs.dm:1041
 /datum/prompt/text/admin_silicon_name/declared_entries(list/into)
@@ -4434,6 +4534,17 @@
 	into += entry_line(24)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/text/hand_labeler_label) at code/modules/paperwork/handlabeler.dm:109
+/datum/prompt/text/hand_labeler_label/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/handlabeler.dm", 109, /datum/prompt/text/hand_labeler_label)
+	into += entry_line(110)
+	into += list(global.ref_one(nameof(label_operator), /mob))
+	into += entry_line(111)
+	into += list(global.ref_one(nameof(label_held), /obj/item))
+	into += entry_line(112)
+	into += list(global.ref_one(nameof(label_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/text/hud_comment) at code/modules/mob/living/carbon/human/human.dm:680
 /datum/prompt/text/hud_comment/declared_entries(list/into)
 	..(into)
@@ -4468,6 +4579,46 @@
 	into += entry_block("code/game/machinery/pandemic.dm", 104, /datum/prompt/text/pandemic_release_reason)
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/text/paper_rename_review) at code/modules/paperwork/paper.dm:996
+/datum/prompt/text/paper_rename_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/paper.dm", 996, /datum/prompt/text/paper_rename_review)
+	into += entry_line(997)
+	into += list(global.ref_one(nameof(paper_operator), /mob))
+	into += entry_line(998)
+	into += list(global.ref_one(nameof(paper_held), /obj/item))
+	into += entry_line(999)
+	into += list(global.ref_one(nameof(paper_interaction), /datum/interaction))
+
+/// CAPABILITIES(/datum/prompt/text/paper_write_review) at code/modules/paperwork/paper.dm:962
+/datum/prompt/text/paper_write_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/paper.dm", 962, /datum/prompt/text/paper_write_review)
+	into += entry_line(963)
+	into += list(global.ref_one(nameof(paper_operator), /mob))
+
+/// CAPABILITIES(/datum/prompt/text/paperwork_review) at code/modules/paperwork/pen.dm:453
+/datum/prompt/text/paperwork_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/pen.dm", 453, /datum/prompt/text/paperwork_review)
+	into += entry_line(454)
+	into += list(global.ref_one(nameof(paperwork_operator), /mob))
+	into += entry_line(455)
+	into += list(global.ref_one(nameof(paperwork_held), /obj/item))
+	into += entry_line(456)
+	into += list(global.ref_one(nameof(paperwork_interaction), /datum/interaction))
+
+/// CAPABILITIES(/datum/prompt/text/parcel_label_review) at code/modules/recycling/disposal_mail.dm:394
+/datum/prompt/text/parcel_label_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/recycling/disposal_mail.dm", 394, /datum/prompt/text/parcel_label_review)
+	into += entry_line(395)
+	into += list(global.ref_one(nameof(parcel_operator), /mob))
+	into += entry_line(396)
+	into += list(global.ref_one(nameof(parcel_pen), /obj/item))
+	into += entry_line(397)
+	into += list(global.ref_one(nameof(parcel_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/text/protean_style) at code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm:186
 /datum/prompt/text/protean_style/declared_entries(list/into)
@@ -9728,11 +9879,11 @@
 	into += entry_line(21)
 	into += list(global.owns_many(nameof(stored)))
 
-/// CAPABILITIES(/obj/item/dice) at code/modules/games/dice.dm:113
+/// CAPABILITIES(/obj/item/dice) at code/modules/games/dice.dm:125
 /obj/item/dice/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/games/dice.dm", 113, /obj/item/dice)
-	into += entry_line(114)
+	into += entry_block("code/modules/games/dice.dm", 125, /obj/item/dice)
+	into += entry_line(126)
 	into += list(global.op("roll", global.in_hand(), global.label("Roll die"), global.then(PROC_REF(dice_roll_requested))))
 
 /// CAPABILITIES(/obj/item/disk/body_record) at code/modules/resleeving/designer.dm:81
@@ -12277,6 +12428,13 @@
 	into += entry_line(320)
 	into += list(global.op("deploy", global.in_hand(), global.label("Deploy"), global.when(nameof(held)), global.then(PROC_REF(deployed))))
 
+/// CAPABILITIES(/obj/item/roulette_ball/hollow) at code/modules/casino/casino.dm:297
+/obj/item/roulette_ball/hollow/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/casino.dm", 297, /obj/item/roulette_ball/hollow)
+	into += entry_line(298)
+	into += list(global.owns_one(nameof(trapped), on_destroy = ON_DESTROY_SPILL))
+
 /// CAPABILITIES(/obj/item/royal_spider_egg) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother.dm:143
 /obj/item/royal_spider_egg/declared_entries(list/into)
 	..(into)
@@ -13268,17 +13426,17 @@
 	into += entry_line(301)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/inflatable))))
 
-/// CAPABILITIES(/obj/item/storage/dicecup) at code/modules/games/dice.dm:219
+/// CAPABILITIES(/obj/item/storage/dicecup) at code/modules/games/dice.dm:237
 /obj/item/storage/dicecup/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/games/dice.dm", 219, /obj/item/storage/dicecup)
-	into += entry_line(220)
+	into += entry_block("code/modules/games/dice.dm", 237, /obj/item/storage/dicecup)
+	into += entry_line(238)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/dice))))
-	into += entry_line(221)
+	into += entry_line(239)
 	into += list(global.op("interaction_shake", global.in_hand(), global.label("Shake"), global.then(PROC_REF(interaction_shake))))
-	into += entry_line(222)
+	into += entry_line(240)
 	into += list(global.op("dicecup_verb_peek", global.menu(), global.label("Peek at Dice"), global.needs(global.carried()), global.then(PROC_REF(dicecup_verb_peek))))
-	into += entry_line(223)
+	into += entry_line(241)
 	into += list(global.op("dicecup_verb_reveal", global.menu(), global.label("Reveal Dice"), global.needs(global.carried()), global.then(PROC_REF(dicecup_verb_reveal))))
 
 /// CAPABILITIES(/obj/item/storage/excavation) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:122
@@ -13467,11 +13625,11 @@
 	into += entry_line(100)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/stock_parts, /obj/item/reagent_containers/glass/beaker))))
 
-/// CAPABILITIES(/obj/item/storage/photo_album) at code/modules/paperwork/photography.dm:120
+/// CAPABILITIES(/obj/item/storage/photo_album) at code/modules/paperwork/photography.dm:132
 /obj/item/storage/photo_album/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/paperwork/photography.dm", 120, /obj/item/storage/photo_album)
-	into += entry_line(121)
+	into += entry_block("code/modules/paperwork/photography.dm", 132, /obj/item/storage/photo_album)
+	into += entry_line(133)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/photo))))
 
 /// CAPABILITIES(/obj/item/storage/pill_bottle) at code/game/objects/items/weapons/storage/firstaid.dm:138
@@ -14278,6 +14436,24 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker))
 
+/// CAPABILITIES(/obj/machinery/artifact_analyser) at code/modules/xenoarcheaology/tools/artifact_analyser.dm:25
+/obj/machinery/artifact_analyser/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/artifact_analyser.dm", 25, /obj/machinery/artifact_analyser)
+	into += entry_line(26)
+	into += list(global.ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad))
+	into += entry_line(27)
+	into += list(global.ref_one(nameof(scanned_object), /obj))
+
+/// CAPABILITIES(/obj/machinery/artifact_harvester) at code/modules/xenoarcheaology/tools/artifact_harvester.dm:20
+/obj/machinery/artifact_harvester/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/artifact_harvester.dm", 20, /obj/machinery/artifact_harvester)
+	into += entry_line(21)
+	into += list(global.ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad))
+	into += entry_line(22)
+	into += list(global.ref_one(nameof(cur_artifact), /obj))
+
 /// CAPABILITIES(/obj/machinery/atm) at code/modules/economy/ATM.dm:207
 /obj/machinery/atm/declared_entries(list/into)
 	..(into)
@@ -14574,20 +14750,20 @@
 	into += entry_line(682)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/botany) at code/modules/hydroponics/seed_machines.dm:72
+/// CAPABILITIES(/obj/machinery/botany) at code/modules/hydroponics/seed_machines.dm:78
 /obj/machinery/botany/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/hydroponics/seed_machines.dm", 72, /obj/machinery/botany)
-	into += entry_line(73)
+	into += entry_block("code/modules/hydroponics/seed_machines.dm", 78, /obj/machinery/botany)
+	into += entry_line(79)
 	into += list(global.owns_one(nameof(seed), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(74)
+	into += entry_line(80)
 	into += list(global.owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL))
 
-/// CAPABILITIES(/obj/machinery/botany/extractor) at code/modules/hydroponics/seed_machines.dm:397
+/// CAPABILITIES(/obj/machinery/botany/extractor) at code/modules/hydroponics/seed_machines.dm:403
 /obj/machinery/botany/extractor/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/hydroponics/seed_machines.dm", 397, /obj/machinery/botany/extractor)
-	into += entry_line(398)
+	into += entry_block("code/modules/hydroponics/seed_machines.dm", 403, /obj/machinery/botany/extractor)
+	into += entry_line(404)
 	into += list(global.owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34
@@ -14658,11 +14834,11 @@
 	into += entry_line(47)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(camera_emp)))))
 
-/// CAPABILITIES(/obj/machinery/casinosentientprize_handler) at code/modules/casino/casino.dm:616
+/// CAPABILITIES(/obj/machinery/casinosentientprize_handler) at code/modules/casino/casino.dm:615
 /obj/machinery/casinosentientprize_handler/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/casino/casino.dm", 616, /obj/machinery/casinosentientprize_handler)
-	into += entry_line(617)
+	into += entry_block("code/modules/casino/casino.dm", 615, /obj/machinery/casinosentientprize_handler)
+	into += entry_line(616)
 	into += list(global.ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize))
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
@@ -17723,11 +17899,11 @@
 	into += entry_line(35)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/wheel_of_fortune) at code/modules/casino/casino.dm:405
+/// CAPABILITIES(/obj/machinery/wheel_of_fortune) at code/modules/casino/casino.dm:404
 /obj/machinery/wheel_of_fortune/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/casino/casino.dm", 405, /obj/machinery/wheel_of_fortune)
-	into += entry_line(406)
+	into += entry_block("code/modules/casino/casino.dm", 404, /obj/machinery/wheel_of_fortune)
+	into += entry_line(405)
 	into += list(global.owns_one(nameof(confetti_spread), /datum/effect/effect/system))
 
 /// CAPABILITIES(/obj/mecha) at code/game/mecha/mecha.dm:175

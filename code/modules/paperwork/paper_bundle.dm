@@ -200,7 +200,13 @@ UI_ACT_PROC(/obj/item/paper_bundle, ui_act_remove)
 
 /// Old Rename bundle verb.
 /obj/item/paper_bundle/proc/paper_bundle_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k189 = rerun_ask(user, "k189", PROC_REF(paper_bundle_verb_rename), args, /datum/om/prompt/text, message = "What would you like to label the bundle?", title = "Bundle Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+	return paper_bundle_label_stage(user, held, interaction)
+
+/obj/item/paper_bundle/proc/paper_bundle_label_stage(mob/user, obj/item/held, datum/interaction/interaction, paper_answer, paper_answer_ready = FALSE)
+	if(!paper_answer_ready)
+		open_request(src, /datum/prompt/text/paper_rename_review, PROC_REF(paper_bundle_label_answered), answerer = user, paper_operator = user, paper_held = held, paper_interaction = interaction, question = "What would you like to label the bundle?", title = "Bundle Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k189 = paper_answer
 	if(isnull(_answer_k189))
 		return
 	var/n_name = sanitizeSafe(_answer_k189, MAX_NAME_LEN)
@@ -266,3 +272,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, TYPE_PROC_REF(/atom, appearance_
 
 	else
 		to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+
+/obj/item/paper_bundle/proc/paper_bundle_label_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paper_bundle_label_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/paper_bundle/proc/paper_bundle_label_apply(datum/act/request/A)
+	var/datum/prompt/text/paper_rename_review/ask = A.answer
+	return paper_bundle_label_stage(ask.paper_operator, ask.paper_held, ask.paper_interaction, ask.answer_value, TRUE)

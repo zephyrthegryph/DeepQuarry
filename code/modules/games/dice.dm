@@ -26,12 +26,18 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/dice/proc/weight_die(mob/user)
+	return dice_weight_stage(user)
+
+/obj/item/dice/proc/dice_weight_stage(mob/user, dice_answer, dice_answer_ready = FALSE)
 	if(cheater)
 		to_chat(user, span_warning("Wait, this [name] is already weighted!"))
 	else if(tamper_proof)
 		to_chat(user, span_warning("This [name] is proofed against tampering!"))
 	else
-		var/to_weight = rerun_ask(user, "k33", PROC_REF(weight_die), args, /datum/om/prompt/number, message = "What should the [name] be weighted towards? You can't undo this later, only change the number!", title = "Set the desired result", default = 1, max = 6, min = 1)
+		if(!dice_answer_ready)
+			open_request(src, /datum/prompt/number/dice_configuration, PROC_REF(dice_weight_answered), answerer = user, dice_operator = user, question = "What should the [name] be weighted towards? You can't undo this later, only change the number!", title = "Set the desired result", default = 1, dice_ui_max = 6)
+			return
+		var/to_weight = dice_answer
 		if(isnull(to_weight))
 			return
 		if(isnull(to_weight) || (to_weight < 1) || (to_weight > sides))
@@ -44,9 +50,15 @@
 
 /// Old click_alt.
 /obj/item/dice/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	return dice_cheat_stage(user, held, interaction)
+
+/obj/item/dice/proc/dice_cheat_stage(mob/user, obj/item/held, datum/interaction/interaction, dice_answer, dice_answer_ready = FALSE)
 	if(cheater)
 		if(!loaded)
-			var/to_weight = rerun_ask(user, "k46", PROC_REF(interaction_alt), args, /datum/om/prompt/number, message = "What should the [name] be weighted towards?", title = "Set the desired result", default = 1, max = sides, min = 1)
+			if(!dice_answer_ready)
+				open_request(src, /datum/prompt/number/dice_configuration, PROC_REF(dice_cheat_answered), answerer = user, dice_operator = user, dice_held = held, dice_interaction = interaction, question = "What should the [name] be weighted towards?", title = "Set the desired result", default = 1, dice_ui_max = sides)
+				return TRUE
+			var/to_weight = dice_answer
 			if(isnull(to_weight))
 				return TRUE
 			if(isnull(to_weight) || (to_weight < 1) || (to_weight > sides) ) //You must input a number higher than 0 and no greater than the number of sides
@@ -151,9 +163,15 @@ CAPABILITIES(/obj/item/dice)
 	set_dice(user)
 
 /obj/item/dice/proc/set_dice(mob/user)
+	return dice_face_stage(user)
+
+/obj/item/dice/proc/dice_face_stage(mob/user, dice_answer, dice_answer_ready = FALSE)
 	if(user.stat || !Adjacent(user))
 		return
-	var/to_value = rerun_ask(user, "k147", PROC_REF(set_dice), args, /datum/om/prompt/number, message = "What face should \the [src] be turned to?", title = "Set die face", default = 1, max = sides, min = 1)
+	if(!dice_answer_ready)
+		open_request(src, /datum/prompt/number/dice_configuration, PROC_REF(dice_face_answered), answerer = user, dice_operator = user, question = "What face should \the [src] be turned to?", title = "Set die face", default = 1, dice_ui_max = sides)
+		return
+	var/to_value = dice_answer
 	if(isnull(to_value))
 		return
 	if(!to_value)
@@ -283,3 +301,79 @@ CAPABILITIES(/obj/item/storage/dicecup)
 
 		else
 			cursed_user.add_omen(incidents_left = 1, luck_mod = 0.3, damage_mod = 1, evil = FALSE, safe_disposals = FALSE, vorish = TRUE)
+
+/obj/item/dice/proc/dice_weight_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = dice_weight_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/dice/proc/dice_weight_apply(datum/act/request/A)
+	var/datum/prompt/number/dice_configuration/ask = A.answer
+	return dice_weight_stage(ask.dice_operator, ask.answer_value, TRUE)
+
+/obj/item/dice/proc/dice_cheat_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = dice_cheat_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/dice/proc/dice_cheat_apply(datum/act/request/A)
+	var/datum/prompt/number/dice_configuration/ask = A.answer
+	return dice_cheat_stage(ask.dice_operator, ask.dice_held, ask.dice_interaction, ask.answer_value, TRUE)
+
+/obj/item/dice/proc/dice_face_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = dice_face_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/dice/proc/dice_face_apply(datum/act/request/A)
+	var/datum/prompt/number/dice_configuration/ask = A.answer
+	return dice_face_stage(ask.dice_operator, ask.answer_value, TRUE)
+
+/datum/prompt/number/dice_configuration
+	timeout = 0
+	min_value = null
+	max_value = null
+	step = null
+	var/dice_ui_max = 6
+	var/mob/dice_operator
+	var/obj/item/dice_held
+	var/datum/interaction/dice_interaction
+	var/dice_operator_expected = FALSE
+	var/dice_held_expected = FALSE
+	var/dice_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/number/dice_configuration)
+	ref_one(nameof(dice_operator), /mob)
+	ref_one(nameof(dice_held), /obj/item)
+	ref_one(nameof(dice_interaction), /datum/interaction)
+
+/datum/prompt/number/dice_configuration/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = dice_operator
+	var/obj/item/captured_held = dice_held
+	var/datum/interaction/captured_interaction = dice_interaction
+	dice_operator_expected = !isnull(captured_operator)
+	dice_held_expected = !isnull(captured_held)
+	dice_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(dice_operator))
+	rel_clear(src, nameof(dice_held))
+	rel_clear(src, nameof(dice_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(dice_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(dice_held), captured_held)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(dice_interaction), captured_interaction)
+
+/datum/prompt/number/dice_configuration/recheck_extra()
+	if((dice_operator_expected && QDELETED(dice_operator)) || (dice_held_expected && QDELETED(dice_held)) || (dice_interaction_expected && QDELETED(dice_interaction)))
+		return "gone"
+
+/datum/prompt/number/dice_configuration/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, dice_ui_max, 1, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box

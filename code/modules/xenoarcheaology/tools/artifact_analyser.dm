@@ -7,7 +7,6 @@
 	density = TRUE
 	bubble_icon = "science"
 	var/scan_in_progress = 0
-	var/tmp/obj/scanned_obj
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	EXPIRY_DECLARE(scan_completion_time)
 	var/scan_duration = 50
@@ -22,6 +21,10 @@
 										/obj/machinery/replicator,
 										/obj/structure/crystal
 									)
+
+CAPABILITIES(/obj/machinery/artifact_analyser)
+	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
+	ref_one(nameof(scanned_object), /obj)
 
 /obj/machinery/artifact_analyser/Initialize(mapload)
 	. = ..()
@@ -213,10 +216,6 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 				return out
 
 			return "[scanned_obj.name] - mundane application."
-
-/// Accessor for the scanned_obj var.
-/obj/machinery/artifact_analyser/proc/scanned_obj() as /obj
-	return scanned_obj
 
 /// Accessor for the owned_scanner var.
 /obj/machinery/artifact_analyser/proc/owned_scanner() as /obj/machinery/artifact_scanpad

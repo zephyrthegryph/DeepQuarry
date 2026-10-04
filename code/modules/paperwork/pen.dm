@@ -294,6 +294,9 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 /// Old attack_self.
 /obj/item/pen/chameleon/proc/interaction_signature(mob/user, obj/item/held, datum/interaction/interaction)
+	return paperwork_signature_stage(user, held, interaction)
+
+/obj/item/pen/chameleon/proc/paperwork_signature_stage(mob/user, obj/item/held, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
 	/*
 	// Limit signatures to official crew members
 	var/personnel_list[] = list()
@@ -305,7 +308,10 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 	if(new_signature)
 		signature = new_signature
 	*/
-	var/_answer_k301 = rerun_ask(user, "k301", PROC_REF(interaction_signature), args, /datum/om/prompt/text, message = "Enter new signature. Leave blank for 'Anonymous'", title = "New Signature", default = signature)
+	if(!paperwork_answer_ready)
+		open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_signature_answered), answerer = user, paperwork_operator = user, paperwork_held = held, paperwork_interaction = interaction, question = "Enter new signature. Leave blank for 'Anonymous'", title = "New Signature", default = signature)
+		return TRUE
+	var/_answer_k301 = paperwork_answer
 	if(isnull(_answer_k301))
 		return TRUE
 	signature = _answer_k301
@@ -318,8 +324,14 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 /// Old Change Pen Colour verb.
 /obj/item/pen/chameleon/proc/chameleon_pen_verb_colour(mob/user, obj/item/held, datum/interaction/interaction)
+	return paperwork_ink_stage(user, held, interaction)
+
+/obj/item/pen/chameleon/proc/paperwork_ink_stage(mob/user, obj/item/held, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
 	var/list/possible_colours = list ("Yellow", "Green", "Pink", "Blue", "Orange", "Cyan", "Red", "Invisible", "Black")
-	var/selected_type = rerun_ask(user, "k314", PROC_REF(chameleon_pen_verb_colour), args, /datum/om/prompt/choice, message = "Pick new colour.", title = "Pen Colour", choices = possible_colours)
+	if(!paperwork_answer_ready)
+		open_request(src, /datum/prompt/choice/paperwork_review, PROC_REF(paperwork_ink_answered), answerer = user, paperwork_operator = user, paperwork_held = held, paperwork_interaction = interaction, question = "Pick new colour.", title = "Pen Colour", choices = possible_colours)
+		return
+	var/selected_type = paperwork_answer
 	if(isnull(selected_type))
 		return
 
@@ -408,3 +420,95 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 		return ITEM_INTERACT_FAILURE
 	M.status_at_least(EFFECT_WEAKENED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/pen/chameleon/proc/paperwork_signature_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paperwork_signature_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/pen/chameleon/proc/paperwork_signature_apply(datum/act/request/A)
+	var/datum/prompt/text/paperwork_review/ask = A.answer
+	return paperwork_signature_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+
+/obj/item/pen/chameleon/proc/paperwork_ink_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paperwork_ink_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/pen/chameleon/proc/paperwork_ink_apply(datum/act/request/A)
+	var/datum/prompt/choice/paperwork_review/ask = A.answer
+	return paperwork_ink_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+
+/datum/prompt/text/paperwork_review
+	timeout = 0
+	var/mob/paperwork_operator
+	var/obj/item/paperwork_held
+	var/datum/interaction/paperwork_interaction
+	var/paperwork_operator_expected = FALSE
+	var/paperwork_held_expected = FALSE
+	var/paperwork_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/paperwork_review)
+	ref_one(nameof(paperwork_operator), /mob)
+	ref_one(nameof(paperwork_held), /obj/item)
+	ref_one(nameof(paperwork_interaction), /datum/interaction)
+
+/datum/prompt/text/paperwork_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = paperwork_operator
+	var/obj/item/captured_held = paperwork_held
+	var/datum/interaction/captured_interaction = paperwork_interaction
+	paperwork_operator_expected = !isnull(captured_operator)
+	paperwork_held_expected = !isnull(captured_held)
+	paperwork_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(paperwork_operator))
+	rel_clear(src, nameof(paperwork_held))
+	rel_clear(src, nameof(paperwork_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(paperwork_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(paperwork_held), captured_held)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(paperwork_interaction), captured_interaction)
+
+/datum/prompt/text/paperwork_review/recheck_extra()
+	if((paperwork_operator_expected && QDELETED(paperwork_operator)) || (paperwork_held_expected && QDELETED(paperwork_held)) || (paperwork_interaction_expected && QDELETED(paperwork_interaction)))
+		return "gone"
+
+/datum/prompt/choice/paperwork_review
+	timeout = 0
+	var/mob/paperwork_operator
+	var/obj/item/paperwork_held
+	var/datum/interaction/paperwork_interaction
+	var/paperwork_operator_expected = FALSE
+	var/paperwork_held_expected = FALSE
+	var/paperwork_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/paperwork_review)
+	ref_one(nameof(paperwork_operator), /mob)
+	ref_one(nameof(paperwork_held), /obj/item)
+	ref_one(nameof(paperwork_interaction), /datum/interaction)
+
+/datum/prompt/choice/paperwork_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = paperwork_operator
+	var/obj/item/captured_held = paperwork_held
+	var/datum/interaction/captured_interaction = paperwork_interaction
+	paperwork_operator_expected = !isnull(captured_operator)
+	paperwork_held_expected = !isnull(captured_held)
+	paperwork_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(paperwork_operator))
+	rel_clear(src, nameof(paperwork_held))
+	rel_clear(src, nameof(paperwork_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(paperwork_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(paperwork_held), captured_held)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(paperwork_interaction), captured_interaction)
+
+/datum/prompt/choice/paperwork_review/recheck_extra()
+	if((paperwork_operator_expected && QDELETED(paperwork_operator)) || (paperwork_held_expected && QDELETED(paperwork_held)) || (paperwork_interaction_expected && QDELETED(paperwork_interaction)))
+		return "gone"
