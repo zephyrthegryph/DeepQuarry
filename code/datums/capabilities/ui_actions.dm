@@ -133,6 +133,7 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 
 /// The datum a ref names, if it is in `within` (or anywhere with within null) and of type `type`.
 /proc/ui_ref(value, list/within, type)
+	READS_FROM() // a ref names a thing when a choice is made, never cached
 	if(!istext(value))
 		return null
 	var/datum/D = within ? locate(value) in within : locate(value) // ALLOW(spatial): a ref lookup in a list the caller passes (a UI's own table), not a walk of an atom's contents

@@ -251,7 +251,6 @@ struct SchemaFacts {
 struct KindFacts {
     /// `(var name, kind index into KIND_NAMES)`, sorted and distinct
     usage: Vec<(String, u8)>,
-    default_children: Vec<(String, String)>,
 }
 
 const KIND_NAMES: [&str; 4] = ["OWN", "REL", "PROTO", "SHARED"];
@@ -351,8 +350,8 @@ pub struct OwnershipKinds {
     pub idx: Arc<Index>,
     /// var name -> kinds it is written through (`OWN`, `REL`, `PROTO`, `SHARED`)
     pub usage: HashMap<String, BTreeSet<&'static str>>,
-    /// `(type, var)` from `DECLARE_DEFAULT_CHILD(/type, "var", ...)`: adopted with own_set/own_add
-    pub default_children: HashSet<(String, String)>,
+    /// `(type, var)` declared in a `CAPABILITIES(/type)` block: `owns_one` / `owns_many` are `OWN`, `ref_one` / `ref_many` are `REL`.
+    pub declared: HashMap<(String, String), &'static str>,
 }
 
 impl OwnershipKinds {
@@ -370,9 +369,7 @@ impl OwnershipKinds {
         let idx = Index::get(tree, files);
         let facts: Vec<KindFacts> = oi::sharded_facts("schema-kinds-facts", files, |f| {
             let raw = f.raw();
-            let dc = pat_match!(r#"^DECLARE_DEFAULT_CHILD\(\s*(/[\w/]+)\s*,\s*"(\w+)""#);
             let mut usage: BTreeSet<(String, u8)> = BTreeSet::new();
-            let mut children: BTreeSet<(String, String)> = BTreeSet::new();
             for m in oi::ACCESSOR.captures_iter(&raw.text) {
                 let func = m.s(1);
                 let kind = if func.starts_with("own_") {
@@ -386,28 +383,31 @@ impl OwnershipKinds {
                 };
                 usage.insert((m.s(3).to_string(), kind));
             }
-            for line in raw.lines() {
-                if let Some(m) = dc.captures(line) {
-                    children.insert((m.s(1).to_string(), m.s(2).to_string()));
-                }
-            }
-            KindFacts { usage: usage.into_iter().collect(), default_children: children.into_iter().collect() }
+            KindFacts { usage: usage.into_iter().collect() }
         });
         let mut usage: HashMap<String, BTreeSet<&'static str>> = HashMap::new();
-        let mut default_children = HashSet::new();
         for x in facts {
             for (name, kind) in x.usage {
                 usage.entry(name).or_default().insert(KIND_NAMES[kind as usize]);
             }
-            default_children.extend(x.default_children);
         }
-        OwnershipKinds { idx, usage, default_children }
+        // The declared form: the entries of CAPABILITIES(T) blocks (sem::decls reads the blocks, backslash form and block form alike).
+        let entry = regex::Regex::new(r"\b(owns_one|owns_many|ref_one|ref_many)\(\s*nameof\((\w+)\)").expect("ownership entry pattern");
+        let mut declared: HashMap<(String, String), &'static str> = HashMap::new();
+        for m in crate::sem::decls::Decls::get(tree).markers_named("CAPABILITIES") {
+            let Some(ty) = m.args.first() else { continue };
+            for c in entry.captures_iter(&m.body) {
+                let kind = if c[1].starts_with("owns_") { "OWN" } else { "REL" };
+                declared.entry((ty.clone(), c[2].to_string())).or_insert(kind);
+            }
+        }
+        OwnershipKinds { idx, usage, declared }
     }
 
     pub fn kind(&self, owner: &str, name: &str) -> Option<String> {
         for p in oi::parents(owner) {
-            if self.default_children.contains(&(p, name.to_string())) {
-                return Some("OWN".to_string());
+            if let Some(kind) = self.declared.get(&(p, name.to_string())) {
+                return Some(kind.to_string());
             }
         }
         if let Some((_, d)) = self.idx.decl(owner, name) {

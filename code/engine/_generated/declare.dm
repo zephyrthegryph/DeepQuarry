@@ -858,10 +858,6 @@
 	..(into)
 	into += entry_block("code/modules/combat_ai/brain/brain.dm", 73, /datum/ai_brain)
 	into += entry_line(74)
-	into += list(global.ref_many(nameof(behavior_sources)))
-	into += entry_line(75)
-	into += list(global.ref_many(nameof(personal_mobs)))
-	into += entry_line(76)
 	into += list(global.owns_one(nameof(model), /datum/world_model))
 
 /// CAPABILITIES(/datum/ai_laws) at code/datums/ai_laws.dm:37
@@ -869,16 +865,14 @@
 	..(into)
 	into += entry_block("code/datums/ai_laws.dm", 37, /datum/ai_laws)
 	into += entry_line(38)
-	into += list(global.ref_many(nameof(sorted_laws)))
-	into += entry_line(39)
 	into += list(global.owns_one(nameof(zeroth_law), /datum/ai_law/zero))
-	into += entry_line(40)
+	into += entry_line(39)
 	into += list(global.owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero))
-	into += entry_line(41)
+	into += entry_line(40)
 	into += list(global.owns_many(nameof(inherent_laws), /datum/ai_law))
-	into += entry_line(42)
+	into += entry_line(41)
 	into += list(global.owns_many(nameof(ion_laws), /datum/ai_law/ion))
-	into += entry_line(43)
+	into += entry_line(42)
 	into += list(global.owns_many(nameof(supplied_laws)))
 
 /// CAPABILITIES(/datum/alarm) at code/modules/alarm/alarm.dm:26
@@ -969,13 +963,6 @@
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(active_ui), /datum/tgui))
 
-/// CAPABILITIES(/datum/board_game/rpg_dice) at code/modules/casino/board_games/rpg_dice.dm:1
-/datum/board_game/rpg_dice/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/casino/board_games/rpg_dice.dm", 1, /datum/board_game/rpg_dice)
-	into += entry_line(2)
-	into += list(global.op("clear_history", global.ui_act(), global.then(PROC_REF(native_ui_act_clear_history))))
-
 /// CAPABILITIES(/datum/body) at code/modules/body/physiology.dm:75
 /datum/body/declared_entries(list/into)
 	..(into)
@@ -1043,12 +1030,8 @@
 	..(into)
 	into += entry_block("code/datums/cinematics/_cinematic.dm", 52, /datum/cinematic)
 	into += entry_line(53)
-	into += list(global.ref_many(nameof(watching)))
-	into += entry_line(54)
-	into += list(global.ref_many(nameof(locked)))
-	into += entry_line(55)
 	into += list(global.owns_one(nameof(screen), /atom/movable/screen/cinematic))
-	into += entry_line(56)
+	into += entry_line(54)
 	into += list(global.owns_one(nameof(special_callback), /datum/callback))
 
 /// CAPABILITIES(/datum/codex_tree) at code/modules/lore_codex/codex_tree.dm:11
@@ -1081,13 +1064,6 @@
 	into += entry_line(41)
 	into += list(global.owns_one(nameof(TM), /datum/tgui_module))
 
-/// CAPABILITIES(/datum/computer_file/program/access_decrypter) at code/modules/modular_computers/file_system/programs/antagonist/access_decrypter.dm:53
-/datum/computer_file/program/access_decrypter/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/modular_computers/file_system/programs/antagonist/access_decrypter.dm", 53, /datum/computer_file/program/access_decrypter)
-	into += entry_line(54)
-	into += list(global.op("PRG_reset", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_reset))))
-
 /// CAPABILITIES(/datum/computer_file/program/comm) at code/modules/modular_computers/file_system/programs/command/comm.dm:17
 /datum/computer_file/program/comm/declared_entries(list/into)
 	..(into)
@@ -1095,98 +1071,19 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(message_core), /datum/comm_message_listener))
 
-/// CAPABILITIES(/datum/computer_file/program/filemanager) at code/modules/modular_computers/file_system/programs/generic/file_browser.dm:19
-/datum/computer_file/program/filemanager/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/modular_computers/file_system/programs/generic/file_browser.dm", 19, /datum/computer_file/program/filemanager)
-	into += entry_line(20)
-	into += list(global.op("PRG_closefile", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_closefile))))
-	into += entry_line(21)
-	into += list(global.op("PRG_clearerror", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_clearerror))))
-
-/// CAPABILITIES(/datum/computer_file/program/fishing) at code/modules/modular_computers/file_system/programs/generic/fishing.dm:12
-/datum/computer_file/program/fishing/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/modular_computers/file_system/programs/generic/fishing.dm", 12, /datum/computer_file/program/fishing)
-	into += entry_line(13)
-	into += list(global.op("lose", global.ui_act(), global.then(PROC_REF(native_ui_act_lose))))
-	into += entry_line(14)
-	into += list(global.op("win", global.ui_act(), global.then(PROC_REF(native_ui_act_win))))
-
 /// CAPABILITIES(/datum/computer_file/program/newsbrowser) at code/modules/modular_computers/file_system/programs/generic/news_browser.dm:21
 /datum/computer_file/program/newsbrowser/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/modular_computers/file_system/programs/generic/news_browser.dm", 21, /datum/computer_file/program/newsbrowser)
 	into += entry_line(22)
-	into += list(global.op("PRG_reset", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_reset))))
-	into += entry_line(23)
-	into += list(global.op("PRG_clearmessage", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_clearmessage))))
-	into += entry_line(24)
-	into += list(global.op("PRG_toggle_archived", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_toggle_archived))))
-	into += entry_line(25)
 	into += list(global.owns_one(nameof(loaded_article), /datum/computer_file/data/news_article))
-
-/// CAPABILITIES(/datum/computer_file/program/ntnet_dos) at code/modules/modular_computers/file_system/programs/antagonist/dos.dm:67
-/datum/computer_file/program/ntnet_dos/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/modular_computers/file_system/programs/antagonist/dos.dm", 67, /datum/computer_file/program/ntnet_dos)
-	into += entry_line(68)
-	into += list(global.op("PRG_reset", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_reset))))
-	into += entry_line(69)
-	into += list(global.op("PRG_execute", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_execute))))
 
 /// CAPABILITIES(/datum/computer_file/program/ntnetdownload) at code/modules/modular_computers/file_system/programs/generic/ntdownloader.dm:32
 /datum/computer_file/program/ntnetdownload/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/modular_computers/file_system/programs/generic/ntdownloader.dm", 32, /datum/computer_file/program/ntnetdownload)
 	into += entry_line(33)
-	into += list(global.op("PRG_reseterror", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_reseterror))))
-	into += entry_line(34)
 	into += list(global.owns_one(nameof(downloaded_file), /datum/computer_file/program))
-
-/// CAPABILITIES(/datum/computer_file/program/ntnetmonitor) at code/modules/modular_computers/file_system/programs/research/ntmonitor.dm:45
-/datum/computer_file/program/ntnetmonitor/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/modular_computers/file_system/programs/research/ntmonitor.dm", 45, /datum/computer_file/program/ntnetmonitor)
-	into += entry_line(46)
-	into += list(global.op("resetIDS", global.ui_act(), global.then(PROC_REF(native_ui_act_resetids))))
-	into += entry_line(47)
-	into += list(global.op("toggleIDS", global.ui_act(), global.then(PROC_REF(native_ui_act_toggleids))))
-	into += entry_line(48)
-	into += list(global.op("purgelogs", global.ui_act(), global.then(PROC_REF(native_ui_act_purgelogs))))
-
-/// CAPABILITIES(/datum/computer_file/program/nttransfer) at code/modules/modular_computers/file_system/programs/generic/nttransfer.dm:129
-/datum/computer_file/program/nttransfer/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/modular_computers/file_system/programs/generic/nttransfer.dm", 129, /datum/computer_file/program/nttransfer)
-	into += entry_line(130)
-	into += list(global.op("PRG_reset", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_reset))))
-	into += entry_line(131)
-	into += list(global.op("PRG_uploadmenu", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_uploadmenu))))
-
-/// CAPABILITIES(/datum/computer_file/program/revelation) at code/modules/modular_computers/file_system/programs/antagonist/revelation.dm:39
-/datum/computer_file/program/revelation/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/modular_computers/file_system/programs/antagonist/revelation.dm", 39, /datum/computer_file/program/revelation)
-	into += entry_line(40)
-	into += list(global.op("PRG_arm", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_arm))))
-	into += entry_line(41)
-	into += list(global.op("PRG_activate", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_activate))))
-
-/// CAPABILITIES(/datum/computer_file/program/wordprocessor) at code/modules/modular_computers/file_system/programs/generic/wordprocessor.dm:75
-/datum/computer_file/program/wordprocessor/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/modular_computers/file_system/programs/generic/wordprocessor.dm", 75, /datum/computer_file/program/wordprocessor)
-	into += entry_line(76)
-	into += list(global.op("PRG_txtrpeview", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_txtrpeview))))
-	into += entry_line(77)
-	into += list(global.op("PRG_taghelp", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_taghelp))))
-	into += entry_line(78)
-	into += list(global.op("PRG_closebrowser", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_closebrowser))))
-	into += entry_line(79)
-	into += list(global.op("PRG_backtomenu", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_backtomenu))))
-	into += entry_line(80)
-	into += list(global.op("PRG_loadmenu", global.ui_act(), global.then(PROC_REF(native_ui_act_prg_loadmenu))))
 
 /// CAPABILITIES(/datum/construction_graph) at code/datums/interactions/construction.dm:88
 /datum/construction_graph/declared_entries(list/into)
@@ -1328,13 +1225,6 @@
 	into += entry_line(106)
 	into += list(global.owns_many(nameof(ready_zones), /datum/rogue/zonemaster))
 
-/// CAPABILITIES(/datum/data/pda/app/crew_records) at code/modules/pda/cart_apps.dm:162
-/datum/data/pda/app/crew_records/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/pda/cart_apps.dm", 162, /datum/data/pda/app/crew_records)
-	into += entry_line(163)
-	into += list(global.op("Back", global.ui_act(), global.then(PROC_REF(native_ui_act_back))))
-
 /// CAPABILITIES(/datum/data/pda/app/game_launcher) at code/modules/pda/game_launcher.dm:17
 /datum/data/pda/app/game_launcher/declared_entries(list/into)
 	..(into)
@@ -1356,69 +1246,18 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(voresweeper), /datum/board_game/vore_sweeper))
 
-/// CAPABILITIES(/datum/data/pda/app/main_menu) at code/modules/pda/core_apps.dm:6
-/datum/data/pda/app/main_menu/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/pda/core_apps.dm", 6, /datum/data/pda/app/main_menu)
-	into += entry_line(7)
-	into += list(global.op("UpdateInfo", global.ui_act(), global.then(PROC_REF(native_ui_act_updateinfo))))
-
-/// CAPABILITIES(/datum/data/pda/app/messenger) at code/modules/pda/messenger.dm:68
-/datum/data/pda/app/messenger/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/pda/messenger.dm", 68, /datum/data/pda/app/messenger)
-	into += entry_line(69)
-	into += list(global.op("Toggle Messenger", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_messenger))))
-	into += entry_line(70)
-	into += list(global.op("Toggle Ringer", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_ringer))))
-	into += entry_line(71)
-	into += list(global.op("Back", global.ui_act(), global.then(PROC_REF(native_ui_act_back))))
-
-/// CAPABILITIES(/datum/data/pda/app/notekeeper) at code/modules/pda/core_apps.dm:58
-/datum/data/pda/app/notekeeper/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/pda/core_apps.dm", 58, /datum/data/pda/app/notekeeper)
-	into += entry_line(59)
-	into += list(global.op("Note1", global.ui_act(), global.then(PROC_REF(native_ui_act_note1))))
-	into += entry_line(60)
-	into += list(global.op("Note2", global.ui_act(), global.then(PROC_REF(native_ui_act_note2))))
-	into += entry_line(61)
-	into += list(global.op("Note3", global.ui_act(), global.then(PROC_REF(native_ui_act_note3))))
-	into += entry_line(62)
-	into += list(global.op("Note4", global.ui_act(), global.then(PROC_REF(native_ui_act_note4))))
-	into += entry_line(63)
-	into += list(global.op("Note5", global.ui_act(), global.then(PROC_REF(native_ui_act_note5))))
-	into += entry_line(64)
-	into += list(global.op("Note6", global.ui_act(), global.then(PROC_REF(native_ui_act_note6))))
-	into += entry_line(65)
-	into += list(global.op("Note7", global.ui_act(), global.then(PROC_REF(native_ui_act_note7))))
-	into += entry_line(66)
-	into += list(global.op("Note8", global.ui_act(), global.then(PROC_REF(native_ui_act_note8))))
-	into += entry_line(67)
-	into += list(global.op("Note9", global.ui_act(), global.then(PROC_REF(native_ui_act_note9))))
-	into += entry_line(68)
-	into += list(global.op("Note10", global.ui_act(), global.then(PROC_REF(native_ui_act_note10))))
-	into += entry_line(69)
-	into += list(global.op("Note11", global.ui_act(), global.then(PROC_REF(native_ui_act_note11))))
-	into += entry_line(70)
-	into += list(global.op("Note12", global.ui_act(), global.then(PROC_REF(native_ui_act_note12))))
-
 /// CAPABILITIES(/datum/data/pda/app/power) at code/modules/pda/cart_apps.dm:123
 /datum/data/pda/app/power/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/pda/cart_apps.dm", 123, /datum/data/pda/app/power)
 	into += entry_line(124)
-	into += list(global.op("Back", global.ui_act(), global.then(PROC_REF(native_ui_act_back))))
-	into += entry_line(125)
 	into += list(global.owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor))
 
-/// CAPABILITIES(/datum/data/pda/app/timeclock) at code/modules/pda/core_apps.dm:346
+/// CAPABILITIES(/datum/data/pda/app/timeclock) at code/modules/pda/core_apps.dm:342
 /datum/data/pda/app/timeclock/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/pda/core_apps.dm", 346, /datum/data/pda/app/timeclock)
-	into += entry_line(347)
-	into += list(global.op("switch-to-offduty", global.ui_act(), global.then(PROC_REF(native_ui_act_switch_to_offduty))))
-	into += entry_line(348)
+	into += entry_block("code/modules/pda/core_apps.dm", 342, /datum/data/pda/app/timeclock)
+	into += entry_line(343)
 	into += list(global.owns_one(nameof(announce), /obj/item/radio/intercom))
 
 /// CAPABILITIES(/datum/datacore) at code/datums/datacore.dm:19
@@ -1502,15 +1341,6 @@
 	into += entry_block("code/modules/admin/verbs/entity_narrate.dm", 23, /datum/entity_narrate)
 	into += entry_line(24)
 	into += list(global.owns_many(nameof(entity_refs)))
-
-/// CAPABILITIES(/datum/error_viewer) at code/modules/error_handler/error_viewer_panel.dm:1
-/datum/error_viewer/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/error_handler/error_viewer_panel.dm", 1, /datum/error_viewer)
-	into += entry_line(2)
-	into += list(global.op("refresh", global.ui_act(), global.then(PROC_REF(native_ui_act_refresh))))
-	into += entry_line(3)
-	into += list(global.op("back", global.ui_act(), global.then(PROC_REF(native_ui_act_back))))
 
 /// CAPABILITIES(/datum/error_viewer/error_cache) at code/modules/error_handler/error_viewer.dm:63
 /datum/error_viewer/error_cache/declared_entries(list/into)
@@ -1678,15 +1508,6 @@
 	into += list(global.owns_one(nameof(station_utilities), /datum/generated_station_utility_topology))
 	into += entry_line(64)
 	into += list(global.owns_many(nameof(station_controls)))
-
-/// CAPABILITIES(/datum/experiment_handler) at code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm:9
-/datum/experiment_handler/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm", 9, /datum/experiment_handler)
-	into += entry_line(10)
-	into += list(global.op("clear_server", global.ui_act(), global.then(PROC_REF(native_ui_act_clear_server))))
-	into += entry_line(11)
-	into += list(global.op("clear_experiment", global.ui_act(), global.then(PROC_REF(native_ui_act_clear_experiment))))
 
 /// CAPABILITIES(/datum/feed_channel) at code/game/machinery/newscaster.dm:32
 /datum/feed_channel/declared_entries(list/into)
@@ -2051,8 +1872,6 @@
 	..(into)
 	into += entry_block("code/modules/instruments/instrument_data/_instrument_data.dm", 49, /datum/instrument)
 	into += entry_line(50)
-	into += list(global.ref_many(nameof(songs_using)))
-	into += entry_line(51)
 	into += list(global.owns_many(nameof(samples)))
 
 /// CAPABILITIES(/datum/job) at code/game/jobs/job/job.dm:77
@@ -2159,16 +1978,14 @@
 	..(into)
 	into += entry_block("code/datums/mind.dm", 70, /datum/mind)
 	into += entry_line(71)
-	into += list(global.ref_many(nameof(shared_objectives)))
-	into += entry_line(72)
 	into += list(global.owns_one(nameof(antag_holder), /datum/antag_holder))
-	into += entry_line(73)
+	into += entry_line(72)
 	into += list(global.owns_one(nameof(identity), /datum/character_identity))
-	into += entry_line(74)
+	into += entry_line(73)
 	into += list(global.owns_one(nameof(my_religion), /datum/religion))
-	into += entry_line(75)
+	into += entry_line(74)
 	into += list(global.owns_one(nameof(tgui_edit_memory_panel), /datum/edit_memory_panel))
-	into += entry_line(76)
+	into += entry_line(75)
 	into += list(global.owns_many(nameof(objectives), /datum/objective))
 
 /// CAPABILITIES(/datum/mind_host) at code/datums/entity_state/mind_host.dm:37
@@ -2455,16 +2272,8 @@
 	..(into)
 	into += entry_block("code/modules/client/preferences.dm", 126, /datum/preferences)
 	into += entry_line(127)
-	into += list(global.op("save", global.ui_act(), global.then(PROC_REF(native_ui_act_save))))
-	into += entry_line(128)
-	into += list(global.op("reload", global.ui_act(), global.then(PROC_REF(native_ui_act_reload))))
-	into += entry_line(129)
-	into += list(global.op("game_prefs", global.ui_act(), global.then(PROC_REF(native_ui_act_game_prefs))))
-	into += entry_line(130)
-	into += list(global.op("cycle_background", global.ui_act(), global.then(PROC_REF(native_ui_act_cycle_background))))
-	into += entry_line(131)
 	into += list(global.owns_one(nameof(savefile), /datum/json_savefile))
-	into += entry_line(132)
+	into += entry_line(128)
 	into += list(global.owns_many(nameof(middleware), /datum/preference_middleware))
 
 /// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:25
@@ -2608,13 +2417,6 @@
 	into += entry_line(13)
 	into += list(global.owns_many(nameof(variables)))
 
-/// CAPABILITIES(/datum/shadekin) at code/datums/entity_state/species/shadekin/shadekin.dm:353
-/datum/shadekin/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/datums/entity_state/species/shadekin/shadekin.dm", 353, /datum/shadekin)
-	into += entry_line(354)
-	into += list(global.ref_many(nameof(active_dark_maws)))
-
 /// CAPABILITIES(/datum/shuttle/autodock/ferry/specops) at code/modules/shuttles/shuttle_specops.dm:24
 /datum/shuttle/autodock/ferry/specops/declared_entries(list/into)
 	..(into)
@@ -2637,26 +2439,6 @@
 	into += list(global.owns_many(nameof(autopaths)))
 	into += entry_line(172)
 	into += list(global.owns_many(nameof(destinations)))
-
-/// CAPABILITIES(/datum/silicon_alarm_queue) at code/modules/mob/living/silicon/silicon.dm:387
-/datum/silicon_alarm_queue/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/silicon/silicon.dm", 387, /datum/silicon_alarm_queue)
-	into += entry_line(388)
-	into += list(global.ref_many(nameof(raised)))
-	into += entry_line(389)
-	into += list(global.ref_many(nameof(cleared)))
-
-/// CAPABILITIES(/datum/song) at code/modules/instruments/songs/_song.dm:427
-/datum/song/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/instruments/songs/_song.dm", 427, /datum/song)
-	into += entry_line(428)
-	into += list(global.op("start_new_song", global.ui_act(), global.then(PROC_REF(native_ui_act_start_new_song))))
-	into += entry_line(429)
-	into += list(global.op("toggle_sustain_hold_indefinitely", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_sustain_hold_indefinitely))))
-	into += entry_line(430)
-	into += list(global.ref_many(nameof(hearing_mobs)))
 
 /// CAPABILITIES(/datum/species) at code/engine/parts/hands.dm:57
 /datum/species/declared_entries(list/into)
@@ -2929,12 +2711,8 @@
 	..(into)
 	into += entry_block("code/modules/research/tg/techwebs/_techweb.dm", 85, /datum/techweb)
 	into += entry_line(86)
-	into += list(global.ref_many(nameof(consoles_accessing)))
-	into += entry_line(87)
-	into += list(global.ref_many(nameof(techweb_servers)))
-	into += entry_line(88)
 	into += list(global.owns_many(nameof(available_experiments), /datum/experiment))
-	into += entry_line(89)
+	into += entry_line(87)
 	into += list(global.owns_many(nameof(completed_experiments), /datum/experiment))
 
 /// CAPABILITIES(/datum/tgs_api) at code/modules/tgs/core/datum.dm:9
@@ -3082,37 +2860,12 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(msg_attachment), /datum/computer_file))
 
-/// CAPABILITIES(/datum/tgui_module/law_manager) at code/modules/tgui/modules/law_manager.dm:1
-/datum/tgui_module/law_manager/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/tgui/modules/law_manager.dm", 1, /datum/tgui_module/law_manager)
-	into += entry_line(2)
-	into += list(global.op("state_laws", global.ui_act(), global.then(PROC_REF(native_ui_act_state_laws))))
-	into += entry_line(3)
-	into += list(global.op("notify_laws", global.ui_act(), global.then(PROC_REF(native_ui_act_notify_laws))))
-
 /// CAPABILITIES(/datum/tgui_module/ship/fullmonty) at code/modules/tgui/modules/overmap.dm:163
 /datum/tgui_module/ship/fullmonty/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/tgui/modules/overmap.dm", 163, /datum/tgui_module/ship/fullmonty)
 	into += entry_line(164)
 	into += list(global.owns_many(nameof(known_sectors)))
-
-/// CAPABILITIES(/datum/tgui_module/supermatter_monitor) at code/modules/tgui/modules/supermatter_monitor.dm:89
-/datum/tgui_module/supermatter_monitor/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/tgui/modules/supermatter_monitor.dm", 89, /datum/tgui_module/supermatter_monitor)
-	into += entry_line(90)
-	into += list(global.op("clear", global.ui_act(), global.then(PROC_REF(native_ui_act_clear))))
-	into += entry_line(91)
-	into += list(global.op("refresh", global.ui_act(), global.then(PROC_REF(native_ui_act_refresh))))
-
-/// CAPABILITIES(/datum/tgui_module/teleport_control) at code/modules/tgui/modules/teleporter.dm:23
-/datum/tgui_module/teleport_control/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/tgui/modules/teleporter.dm", 23, /datum/tgui_module/teleport_control)
-	into += entry_line(24)
-	into += list(global.op("test_fire", global.ui_act(), global.then(PROC_REF(native_ui_act_test_fire))))
 
 /// CAPABILITIES(/datum/tgui_panel) at code/modules/tgui_panel/tgui_panel.dm:19
 /datum/tgui_panel/declared_entries(list/into)
@@ -3147,8 +2900,6 @@
 	..(into)
 	into += entry_block("code/modules/tooltip/tooltip.dm", 41, /datum/tooltip)
 	into += entry_line(42)
-	into += list(global.op("dismiss", global.ui_act(), global.then(PROC_REF(native_ui_act_dismiss))))
-	into += entry_line(43)
 	into += list(global.owns_one(nameof(tooltip_window), /datum/tgui_window))
 
 /// CAPABILITIES(/datum/transcore_db) at code/modules/resleeving/transcore_service.dm:178
@@ -3284,13 +3035,6 @@
 	into += entry_line(31)
 	into += list(global.owns_many(nameof(assemblies)))
 
-/// CAPABILITIES(/datum/world_model) at code/modules/combat_ai/world_model/world_model.dm:158
-/datum/world_model/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/combat_ai/world_model/world_model.dm", 158, /datum/world_model)
-	into += entry_line(159)
-	into += list(global.ref_many(nameof(hazard_atoms)))
-
 /// CAPABILITIES(/datum/world_test_gauge) at code/modules/unit_tests/dq_om_world_watch_tests.dm:342
 /datum/world_test_gauge/declared_entries(list/into)
 	..(into)
@@ -3422,41 +3166,6 @@
 	into += entry_line(625)
 	into += list(global.owns_one(nameof(access_scanner), starts = /obj))
 
-/// CAPABILITIES(/mob/living/bot/cleanbot) at code/modules/mob/living/bot/cleanbot.dm:230
-/mob/living/bot/cleanbot/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/bot/cleanbot.dm", 230, /mob/living/bot/cleanbot)
-	into += entry_line(231)
-	into += list(global.op("start", global.ui_act(), global.then(PROC_REF(native_ui_act_start))))
-	into += entry_line(232)
-	into += list(global.op("blood", global.ui_act(), global.then(PROC_REF(native_ui_act_blood))))
-	into += entry_line(233)
-	into += list(global.op("patrol", global.ui_act(), global.then(PROC_REF(native_ui_act_patrol))))
-	into += entry_line(234)
-	into += list(global.op("vocal", global.ui_act(), global.then(PROC_REF(native_ui_act_vocal))))
-	into += entry_line(235)
-	into += list(global.op("wet_floors", global.ui_act(), global.then(PROC_REF(native_ui_act_wet_floors))))
-	into += entry_line(236)
-	into += list(global.op("spray_blood", global.ui_act(), global.then(PROC_REF(native_ui_act_spray_blood))))
-
-/// CAPABILITIES(/mob/living/bot/cleanbot/edCLN) at code/modules/mob/living/bot/edCLNbot.dm:81
-/mob/living/bot/cleanbot/edCLN/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/bot/edCLNbot.dm", 81, /mob/living/bot/cleanbot/edCLN)
-	into += entry_line(82)
-	into += list(global.op("red_switch", global.ui_act(), global.then(PROC_REF(native_ui_act_red_switch))))
-	into += entry_line(83)
-	into += list(global.op("green_switch", global.ui_act(), global.then(PROC_REF(native_ui_act_green_switch))))
-	into += entry_line(84)
-	into += list(global.op("blue_switch", global.ui_act(), global.then(PROC_REF(native_ui_act_blue_switch))))
-
-/// CAPABILITIES(/mob/living/bot/floorbot) at code/modules/mob/living/bot/floorbot.dm:7
-/mob/living/bot/floorbot/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/bot/floorbot.dm", 7, /mob/living/bot/floorbot)
-	into += entry_line(8)
-	into += list(global.op("start", global.ui_act(), global.then(PROC_REF(native_ui_act_start))))
-
 /// CAPABILITIES(/mob/living/carbon) at code/engine/parts/hands.dm:48
 /mob/living/carbon/declared_entries(list/into)
 	..(into)
@@ -3471,20 +3180,6 @@
 	into += list(global.owns_one(nameof(ingested), /datum/reagents/metabolism/ingested))
 	into += entry_line(53)
 	into += list(global.owns_one(nameof(touching), /datum/reagents/metabolism/touch))
-
-/// CAPABILITIES(/mob/living/carbon/alien/diona) at code/modules/mob/living/carbon/alien/diona/diona.dm:78
-/mob/living/carbon/alien/diona/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/carbon/alien/diona/diona.dm", 78, /mob/living/carbon/alien/diona)
-	into += entry_line(79)
-	into += list(global.owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL))
-
-/// CAPABILITIES(/mob/living/carbon/brain) at code/modules/mob/living/carbon/brain/brain.dm:137
-/mob/living/carbon/brain/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/carbon/brain/brain.dm", 137, /mob/living/carbon/brain)
-	into += entry_line(138)
-	into += list(global.ref_one(nameof(container)))
 
 /// CAPABILITIES(/mob/living/carbon/human) at code/library/mob/hands.dm:5
 /mob/living/carbon/human/declared_entries(list/into)
@@ -3539,28 +3234,24 @@
 	..(into)
 	into += entry_block("code/modules/mob/living/silicon/ai/ai.dm", 106, /mob/living/silicon/ai)
 	into += entry_line(107)
-	into += list(global.owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(108)
-	into += list(global.ref_many(nameof(multicam_screens)))
-	into += entry_line(109)
 	into += list(global.provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS))
-	into += entry_line(110)
+	into += entry_line(108)
 	into += list(global.owns_one(nameof(aiCommunicator), /obj/item/communicator))
-	into += entry_line(111)
+	into += entry_line(109)
 	into += list(global.owns_one(nameof(aiPDA), /obj/item/pda/ai))
-	into += entry_line(112)
+	into += entry_line(110)
 	into += list(global.owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated))
-	into += entry_line(113)
+	into += entry_line(111)
 	into += list(global.owns_one(nameof(announcement), /datum/announcement/priority))
-	into += entry_line(114)
+	into += entry_line(112)
 	into += list(global.owns_one(nameof(psupply), /obj/machinery/ai_powersupply))
-	into += entry_line(115)
+	into += entry_line(113)
 	into += list(global.owns_one(nameof(research), /datum/malf_research))
-	into += entry_line(116)
+	into += entry_line(114)
 	into += list(global.owns_one(nameof(track), /datum/trackable))
-	into += entry_line(117)
+	into += entry_line(115)
 	into += list(global.owns_one(nameof(aiMulti), starts = /obj/item/multitool))
-	into += entry_line(118)
+	into += entry_line(116)
 	into += list(global.owns_one(nameof(aiCamera), /obj/item/camera/siliconcam, starts = /obj/item/camera/siliconcam/ai_camera))
 
 /// CAPABILITIES(/mob/living/silicon/pai) at code/modules/mob/living/silicon/pai/pai.dm:107
@@ -3634,25 +3325,11 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(udder), /datum/reagents))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/hyena) at code/modules/mob/living/simple_mob/subtypes/animal/hyena/hyena.dm:152
-/mob/living/simple_mob/animal/hyena/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/hyena/hyena.dm", 152, /mob/living/simple_mob/animal/hyena)
-	into += entry_line(153)
-	into += list(global.owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL))
-
-/// CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo) at code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm:51
-/mob/living/simple_mob/animal/passive/armadillo/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm", 51, /mob/living/simple_mob/animal/passive/armadillo)
-	into += entry_line(52)
-	into += list(global.owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL))
-
-/// CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo/torta) at code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm:137
+/// CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo/torta) at code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm:138
 /mob/living/simple_mob/animal/passive/armadillo/torta/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm", 137, /mob/living/simple_mob/animal/passive/armadillo/torta)
-	into += entry_line(138)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm", 138, /mob/living/simple_mob/animal/passive/armadillo/torta)
+	into += entry_line(139)
 	into += list(global.owns_one(nameof(hat), starts = /obj/item/clothing/head/sombrero, on_destroy = ON_DESTROY_SPILL))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/passive/cow) at code/modules/mob/living/simple_mob/subtypes/animal/farm animals/cow.dm:26
@@ -3661,15 +3338,6 @@
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/farm animals/cow.dm", 26, /mob/living/simple_mob/animal/passive/cow)
 	into += entry_line(27)
 	into += list(global.owns_one(nameof(udder), /datum/reagents))
-
-/// CAPABILITIES(/mob/living/simple_mob/animal/passive/dog) at code/modules/mob/living/simple_mob/subtypes/animal/pets/dog.dm:256
-/mob/living/simple_mob/animal/passive/dog/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/pets/dog.dm", 256, /mob/living/simple_mob/animal/passive/dog)
-	into += entry_line(257)
-	into += list(global.owns_one(nameof(inventory_head), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(258)
-	into += list(global.owns_one(nameof(inventory_back), on_destroy = ON_DESTROY_SPILL))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse) at code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm:53
 /mob/living/simple_mob/animal/passive/mouse/declared_entries(list/into)
@@ -3684,13 +3352,6 @@
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm", 127, /mob/living/simple_mob/animal/sif/frostfly)
 	into += entry_line(128)
 	into += list(global.owns_one(nameof(smoke_special), starts = /datum/effect/effect/system/smoke_spread/frost))
-
-/// CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm) at code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm:122
-/mob/living/simple_mob/animal/sif/sakimm/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm", 122, /mob/living/simple_mob/animal/sif/sakimm)
-	into += entry_line(123)
-	into += list(global.owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/sif/tymisian) at code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm:142
 /mob/living/simple_mob/animal/sif/tymisian/declared_entries(list/into)
@@ -3789,13 +3450,6 @@
 	into += entry_line(58)
 	into += list(global.owns_one(nameof(core), starts = /obj/item/technomancer_core/golem))
 
-/// CAPABILITIES(/mob/living/simple_mob/slime) at code/modules/mob/living/simple_mob/subtypes/slime/slime.dm:105
-/mob/living/simple_mob/slime/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/slime/slime.dm", 105, /mob/living/simple_mob/slime)
-	into += entry_line(106)
-	into += list(global.owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL))
-
 /// CAPABILITIES(/mob/living/simple_mob/slime/xenobio) at code/modules/combat_ai/ports/slime.dm:13
 /mob/living/simple_mob/slime/xenobio/declared_entries(list/into)
 	..(into)
@@ -3819,39 +3473,32 @@
 	into += entry_line(56)
 	into += list(global.owns_many(nameof(infections), /datum/affliction/contagion))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:113
-/mob/living/simple_mob/vore/alienanimals/catslug/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 113, /mob/living/simple_mob/vore/alienanimals/catslug)
-	into += entry_line(114)
-	into += list(global.owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL))
-
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1130
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1131
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1130, /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
-	into += entry_line(1131)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1131, /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
+	into += entry_line(1132)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1133
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1134
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1133, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
-	into += entry_line(1134)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1134, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
+	into += entry_line(1135)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1139
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1140
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1139, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
-	into += entry_line(1140)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1140, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
+	into += entry_line(1141)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1136
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1137
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1136, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
-	into += entry_line(1137)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1137, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
+	into += entry_line(1138)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/bigdragon) at code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm:972
@@ -3888,13 +3535,6 @@
 	into += entry_block("code/modules/mob/living/simple_mob/overmap_mob.dm", 118, /mob/living/simple_mob/vore/overmap)
 	into += entry_line(119)
 	into += list(global.owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable/simplemob))
-
-/// CAPABILITIES(/mob/living/voice) at code/modules/mob/living/voice/voice.dm:156
-/mob/living/voice/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/voice/voice.dm", 156, /mob/living/voice)
-	into += entry_line(157)
-	into += list(global.ref_one(nameof(comm)))
 
 /// CAPABILITIES(/mob/new_player) at code/modules/mob/new_player/news_panel.dm:8
 /mob/new_player/declared_entries(list/into)
@@ -3937,13 +3577,6 @@
 	into += list(global.op("observer_tome_manifest", global.item(/obj/item/book/tome), global.label("Manifest"), global.then(PROC_REF(observer_tome_manifest))))
 	into += entry_line(9)
 	into += list(global.owns_one(nameof(exonet), starts = /datum/exonet_protocol))
-
-/// CAPABILITIES(/mob/observer/eye/aiEye/pic_in_pic) at code/modules/mob/living/silicon/ai/multicam.dm:200
-/mob/observer/eye/aiEye/pic_in_pic/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/silicon/ai/multicam.dm", 200, /mob/observer/eye/aiEye/pic_in_pic)
-	into += entry_line(201)
-	into += list(global.ref_many(nameof(cameras_telegraphed)))
 
 /// CAPABILITIES(/obj) at code/datums/behaviours/burning.dm:35
 /obj/declared_entries(list/into)
@@ -4231,15 +3864,6 @@
 	into += entry_line(173)
 	into += list(global.owns_many(nameof(stored_ammo)))
 
-/// CAPABILITIES(/obj/item/analyzer/plant_analyzer) at code/modules/hydroponics/trays/tray_tools.dm:24
-/obj/item/analyzer/plant_analyzer/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/hydroponics/trays/tray_tools.dm", 24, /obj/item/analyzer/plant_analyzer)
-	into += entry_line(25)
-	into += list(global.op("print", global.ui_act(), global.then(PROC_REF(native_ui_act_print))))
-	into += entry_line(26)
-	into += list(global.op("close", global.ui_act(), global.then(PROC_REF(native_ui_act_close))))
-
 /// CAPABILITIES(/obj/item/ano_scanner) at code/modules/xenoarcheaology/tools/tools.dm:49
 /obj/item/ano_scanner/declared_entries(list/into)
 	..(into)
@@ -4523,18 +4147,14 @@
 	into += entry_line(215)
 	into += list(global.op("sheriff_badge_self", global.in_hand(), global.label("Flash badge"), global.then(PROC_REF(sheriff_badge_self))))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/bodycam) at code/game/objects/items/devices/tvcamera.dm:148
+/// CAPABILITIES(/obj/item/clothing/accessory/bodycam) at code/game/objects/items/devices/tvcamera.dm:145
 /obj/item/clothing/accessory/bodycam/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/tvcamera.dm", 148, /obj/item/clothing/accessory/bodycam)
-	into += entry_line(149)
+	into += entry_block("code/game/objects/items/devices/tvcamera.dm", 145, /obj/item/clothing/accessory/bodycam)
+	into += entry_line(146)
 	into += list(global.owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera))
-	into += entry_line(150)
+	into += entry_line(147)
 	into += list(global.owns_one(nameof(bradio), starts = /obj/item/radio))
-	into += entry_line(151)
-	into += list(global.op("toggle_video", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_video))))
-	into += entry_line(152)
-	into += list(global.op("toggle_audio", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_audio))))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/collar/bell) at code/modules/clothing/accessories/accessory.dm:702
 /obj/item/clothing/accessory/collar/bell/declared_entries(list/into)
@@ -4584,6 +4204,13 @@
 	into += entry_block("code/modules/clothing/accessories/rings.dm", 32, /obj/item/clothing/accessory/ring/engagement)
 	into += entry_line(33)
 	into += list(global.op("engagement_ring_present_self", global.in_hand(), global.label("Present"), global.then(PROC_REF(engagement_ring_present_self))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/storage) at code/modules/clothing/accessories/storage.dm:15
+/obj/item/clothing/accessory/storage/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/storage.dm", 15, /obj/item/clothing/accessory/storage)
+	into += entry_line(16)
+	into += list(global.owns_one(nameof(hold), starts = /obj/item/storage/internal))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/watch/survival) at code/modules/clothing/accessories/watches.dm:61
 /obj/item/clothing/accessory/watch/survival/declared_entries(list/into)
@@ -4810,6 +4437,13 @@
 	into += entry_line(131)
 	into += list(global.op("vox_mask_port_self", global.in_hand(), global.label("Feeding port"), global.then(PROC_REF(vox_mask_port_self))))
 
+/// CAPABILITIES(/obj/item/clothing/mask/gas/voice) at code/modules/clothing/masks/voice.dm:38
+/obj/item/clothing/mask/gas/voice/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/masks/voice.dm", 38, /obj/item/clothing/mask/gas/voice)
+	into += entry_line(39)
+	into += list(global.owns_one(nameof(changer), starts = /obj/item/voice_changer))
+
 /// CAPABILITIES(/obj/item/clothing/mask/paper) at code/modules/clothing/masks/miscellaneous.dm:355
 /obj/item/clothing/mask/paper/declared_entries(list/into)
 	..(into)
@@ -4988,11 +4622,11 @@
 	into += entry_line(1737)
 	into += list(global.op("bluespace_resize_verb", global.menu(), global.label("Adjust Bluespace Fibers"), global.needs(global.carried()), global.then(PROC_REF(bluespace_resize_verb))))
 
-/// CAPABILITIES(/obj/item/cmo_disk_holder) at code/modules/resleeving/computers.dm:501
+/// CAPABILITIES(/obj/item/cmo_disk_holder) at code/modules/resleeving/computers.dm:507
 /obj/item/cmo_disk_holder/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/resleeving/computers.dm", 501, /obj/item/cmo_disk_holder)
-	into += entry_line(502)
+	into += entry_block("code/modules/resleeving/computers.dm", 507, /obj/item/cmo_disk_holder)
+	into += entry_line(508)
 	into += list(global.op("cmo_disk_holder_interaction_tear", global.in_hand(), global.label("Tear open"), global.then(PROC_REF(cmo_disk_holder_interaction_tear))))
 
 /// CAPABILITIES(/obj/item/commcard) at code/game/objects/items/devices/communicator/cartridge.dm:18
@@ -5079,11 +4713,11 @@
 	into += entry_line(21)
 	into += list(global.owns_many(nameof(stored)))
 
-/// CAPABILITIES(/obj/item/disk/body_record) at code/modules/resleeving/designer.dm:81
+/// CAPABILITIES(/obj/item/disk/body_record) at code/modules/resleeving/designer.dm:83
 /obj/item/disk/body_record/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/resleeving/designer.dm", 81, /obj/item/disk/body_record)
-	into += entry_line(82)
+	into += entry_block("code/modules/resleeving/designer.dm", 83, /obj/item/disk/body_record)
+	into += entry_line(84)
 	into += list(global.owns_one(nameof(stored), /datum/transhuman/body_record))
 
 /// CAPABILITIES(/obj/item/disk/botany) at code/modules/hydroponics/seed_machines.dm:11
@@ -5092,13 +4726,6 @@
 	into += entry_block("code/modules/hydroponics/seed_machines.dm", 11, /obj/item/disk/botany)
 	into += entry_line(12)
 	into += list(global.owns_many(nameof(genes)))
-
-/// CAPABILITIES(/obj/item/disk/tech_disk) at code/modules/research/tg/disks.dm:56
-/obj/item/disk/tech_disk/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/research/tg/disks.dm", 56, /obj/item/disk/tech_disk)
-	into += entry_line(57)
-	into += list(global.owns_one(nameof(stored_research_static), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/obj/item/disposable_teleporter) at code/game/gamemodes/technomancer/devices/disposable_teleporter.dm:28
 /obj/item/disposable_teleporter/declared_entries(list/into)
@@ -5420,13 +5047,6 @@
 	into += list(global.owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes)))
 	into += entry_line(119)
 	into += list(global.owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector))
-
-/// CAPABILITIES(/obj/item/gun/energy/gun/generator) at code/game/objects/items/devices/personal_shield_generator.dm:578
-/obj/item/gun/energy/gun/generator/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/objects/items/devices/personal_shield_generator.dm", 578, /obj/item/gun/energy/gun/generator)
-	into += entry_line(579)
-	into += list(global.ref_one(nameof(power_supply)))
 
 /// CAPABILITIES(/obj/item/gun/energy/particle) at code/modules/projectiles/guns/energy/particle.dm:25
 /obj/item/gun/energy/particle/declared_entries(list/into)
@@ -5944,17 +5564,15 @@
 	..(into)
 	into += entry_block("code/modules/mob/living/carbon/brain/MMI.dm", 24, /obj/item/mmi)
 	into += entry_line(25)
-	into += list(global.ref_one(nameof(mecha)))
-	into += entry_line(26)
 	into += list(global.owns_one(nameof(body_backup), /mob/living))
-	into += entry_line(27)
+	into += entry_line(26)
 	into += list(global.owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio))
 
-/// CAPABILITIES(/obj/item/mmi/digital) at code/modules/mob/living/carbon/brain/MMI.dm:219
+/// CAPABILITIES(/obj/item/mmi/digital) at code/modules/mob/living/carbon/brain/MMI.dm:218
 /obj/item/mmi/digital/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/carbon/brain/MMI.dm", 219, /obj/item/mmi/digital)
-	into += entry_line(220)
+	into += entry_block("code/modules/mob/living/carbon/brain/MMI.dm", 218, /obj/item/mmi/digital)
+	into += entry_line(219)
 	into += list(global.owns_one(nameof(Q), /datum/ghost_query))
 
 /// CAPABILITIES(/obj/item/modular_computer) at code/modules/modular_computers/computers/modular_computer/variables.dm:79
@@ -6022,10 +5640,8 @@
 	..(into)
 	into += entry_block("code/modules/nifsoft/nif_tgui.dm", 21, /obj/item/nif)
 	into += entry_line(22)
-	into += list(global.owns_one(nameof(comm), on_destroy = ON_DESTROY_DELETE))
-	into += entry_line(23)
 	into += list(global.owns_many(nameof(nifsofts), /datum/nifsoft))
-	into += entry_line(24)
+	into += entry_line(23)
 	into += list(global.owns_one(nameof(menu_ref), /datum/nif_menu))
 
 /// CAPABILITIES(/obj/item/nifrepairer) at code/game/objects/items/devices/advnifrepair.dm:19
@@ -6111,11 +5727,11 @@
 	into += entry_line(41)
 	into += list(global.owns_one(nameof(stored_mmi), /obj/item/mmi))
 
-/// CAPABILITIES(/obj/item/orion_ship) at code/game/machinery/computer/arcade.dm:1034
+/// CAPABILITIES(/obj/item/orion_ship) at code/game/machinery/computer/arcade.dm:1032
 /obj/item/orion_ship/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/arcade.dm", 1034, /obj/item/orion_ship)
-	into += entry_line(1035)
+	into += entry_block("code/game/machinery/computer/arcade.dm", 1032, /obj/item/orion_ship)
+	into += entry_line(1033)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/pack) at code/modules/games/cards.dm:404
@@ -6166,8 +5782,6 @@
 	..(into)
 	into += entry_block("code/game/objects/items/devices/translocator.dm", 39, /obj/item/perfect_tele)
 	into += entry_line(40)
-	into += list(global.ref_many(nameof(beacons)))
-	into += entry_line(41)
 	into += list(global.owns_one(nameof(power_source), /obj/item/cell, starts = nameof(cell_type)))
 
 /// CAPABILITIES(/obj/item/personal_shield_generator) at code/game/objects/items/devices/personal_shield_generator.dm:40
@@ -6281,11 +5895,11 @@
 	into += entry_line(724)
 	into += list(global.owns_many(nameof(remove_spells)))
 
-/// CAPABILITIES(/obj/item/radio/intercom) at code/game/objects/items/devices/radio/intercom.dm:50
+/// CAPABILITIES(/obj/item/radio/intercom) at code/game/objects/items/devices/radio/intercom.dm:31
 /obj/item/radio/intercom/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/radio/intercom.dm", 50, /obj/item/radio/intercom)
-	into += entry_line(51)
+	into += entry_block("code/game/objects/items/devices/radio/intercom.dm", 31, /obj/item/radio/intercom)
+	into += entry_line(32)
 	into += list(global.owns_one(nameof(circuit), starts = nameof(circuit)))
 
 /// CAPABILITIES(/obj/item/radio_jammer) at code/game/objects/items/devices/radio/jammer.dm:34
@@ -6295,18 +5909,18 @@
 	into += entry_line(35)
 	into += list(global.owns_one(nameof(power_source), /obj/item/cell/device/weapon, starts = /obj/item/cell/device/weapon))
 
-/// CAPABILITIES(/obj/item/rcd) at code/game/objects/items/weapons/RCD.dm:323
+/// CAPABILITIES(/obj/item/rcd) at code/game/objects/items/weapons/RCD.dm:329
 /obj/item/rcd/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/RCD.dm", 323, /obj/item/rcd)
-	into += entry_line(324)
+	into += entry_block("code/game/objects/items/weapons/RCD.dm", 329, /obj/item/rcd)
+	into += entry_line(330)
 	into += list(global.owns_many(nameof(effects)))
 
-/// CAPABILITIES(/obj/item/rcd/electric) at code/game/objects/items/weapons/RCD.dm:176
+/// CAPABILITIES(/obj/item/rcd/electric) at code/game/objects/items/weapons/RCD.dm:182
 /obj/item/rcd/electric/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/RCD.dm", 176, /obj/item/rcd/electric)
-	into += entry_line(177)
+	into += entry_block("code/game/objects/items/weapons/RCD.dm", 182, /obj/item/rcd/electric)
+	into += entry_line(183)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell))
 
 /// CAPABILITIES(/obj/item/reagent_containers/blood) at code/modules/reagents/reagent_containers/blood_pack.dm:65
@@ -7104,13 +6718,6 @@
 	into += entry_block("code/game/gamemodes/technomancer/spells/illusion.dm", 19, /obj/item/spell/illusion)
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(illusion), /mob/living/simple_mob/illusion))
-
-/// CAPABILITIES(/obj/item/spellbook) at code/modules/spells/spellbook_panel.dm:1
-/obj/item/spellbook/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/spells/spellbook_panel.dm", 1, /obj/item/spellbook)
-	into += entry_line(2)
-	into += list(global.op("clear_temp", global.ui_act(), global.then(PROC_REF(native_ui_act_clear_temp))))
 
 /// CAPABILITIES(/obj/item/stack/material/processed_alloy) at code/modules/materials/engineering/processed_material.dm:295
 /obj/item/stack/material/processed_alloy/declared_entries(list/into)
@@ -8265,11 +7872,11 @@
 	into += entry_line(156)
 	into += list(global.configure(global.storage(max_size = ITEMSIZE_SMALL)))
 
-/// CAPABILITIES(/obj/item/storage/toolbox/mechanical) at code/modules/mob/living/bot/floorbot.dm:339
+/// CAPABILITIES(/obj/item/storage/toolbox/mechanical) at code/modules/mob/living/bot/floorbot.dm:336
 /obj/item/storage/toolbox/mechanical/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/bot/floorbot.dm", 339, /obj/item/storage/toolbox/mechanical)
-	into += entry_line(340)
+	into += entry_block("code/modules/mob/living/bot/floorbot.dm", 336, /obj/item/storage/toolbox/mechanical)
+	into += entry_line(337)
 	into += list(global.op("add_tiles", global.item(/obj/item/stack/tile/floor), global.when(req_storage_empty()), global.label("Add tiles"), global.then(PROC_REF(add_floorbot_tiles))))
 
 /// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:919
@@ -8550,10 +8157,6 @@
 	into += entry_line(21)
 	into += list(global.owns_one(nameof(radio), starts = /obj/item/radio))
 	into += entry_line(22)
-	into += list(global.op("toggle_video", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_video))))
-	into += entry_line(23)
-	into += list(global.op("toggle_audio", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_audio))))
-	into += entry_line(24)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/uav) at code/game/objects/items/uav.dm:45
@@ -8591,10 +8194,6 @@
 	..(into)
 	into += entry_block("code/modules/media/walkpod.dm", 29, /obj/item/walkpod)
 	into += entry_line(30)
-	into += list(global.op("stop", global.ui_act(), global.then(PROC_REF(native_ui_act_stop))))
-	into += entry_line(31)
-	into += list(global.op("play", global.ui_act(), global.then(PROC_REF(native_ui_act_play))))
-	into += entry_line(32)
 	into += list(global.owns_one(nameof(deployed_headpods), /obj/item/headpods))
 
 /// CAPABILITIES(/obj/item/weldpack) at code/game/objects/items/weapons/weldbackpack.dm:15
@@ -8670,13 +8269,6 @@
 	into += entry_line(130)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm))
 
-/// CAPABILITIES(/obj/machinery/anomaly_harvester) at code/modules/anomalies/anomaly_harvester.dm:1
-/obj/machinery/anomaly_harvester/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/anomalies/anomaly_harvester.dm", 1, /obj/machinery/anomaly_harvester)
-	into += entry_line(2)
-	into += list(global.op("release_all", global.ui_act(), global.then(PROC_REF(native_ui_act_release_all))))
-
 /// CAPABILITIES(/obj/machinery/appliance) at code/modules/food/kitchen/cooking_machines/_appliance.dm:47
 /obj/machinery/appliance/declared_entries(list/into)
 	..(into)
@@ -8735,15 +8327,6 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker))
 
-/// CAPABILITIES(/obj/machinery/atm) at code/modules/economy/ATM.dm:207
-/obj/machinery/atm/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/economy/ATM.dm", 207, /obj/machinery/atm)
-	into += entry_line(208)
-	into += list(global.op("insert_card", global.ui_act(), global.then(PROC_REF(native_ui_act_insert_card))))
-	into += entry_line(209)
-	into += list(global.op("logout", global.ui_act(), global.then(PROC_REF(native_ui_act_logout))))
-
 /// CAPABILITIES(/obj/machinery/atmospherics) at code/ATMOSPHERICS/rust_pipenets.dm:79
 /obj/machinery/atmospherics/declared_entries(list/into)
 	..(into)
@@ -8751,44 +8334,12 @@
 	into += entry_line(80)
 	into += list(global.owns_many(nameof(rust_unbound_port_air), /datum/gas_mixture))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/binary) at code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm:104
-/obj/machinery/atmospherics/binary/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm", 104, /obj/machinery/atmospherics/binary)
-	into += entry_line(105)
-	into += list(global.owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(106)
-	into += list(global.owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY))
-
 /// CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm) at code/ATMOSPHERICS/components/binary_devices/algae_generator.dm:36
 /obj/machinery/atmospherics/binary/algae_farm/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/components/binary_devices/algae_generator.dm", 36, /obj/machinery/atmospherics/binary/algae_farm)
 	into += entry_line(37)
 	into += list(global.owns_one(nameof(internal), /datum/gas_mixture))
-
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate) at code/ATMOSPHERICS/components/binary_devices/passive_gate.dm:207
-/obj/machinery/atmospherics/binary/passive_gate/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/passive_gate.dm", 207, /obj/machinery/atmospherics/binary/passive_gate)
-	into += entry_line(208)
-	into += list(global.op("toggle_valve", global.ui_act("toggle_valve"), global.then(PROC_REF(valve_switched))))
-	into += entry_line(209)
-	into += list(global.op("regulate_mode", global.ui_act("regulate_mode", global.arg("mode", global.schema_text())), global.then(PROC_REF(regulation_selected))))
-
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/pump) at code/ATMOSPHERICS/components/binary_devices/pump.dm:221
-/obj/machinery/atmospherics/binary/pump/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pump.dm", 221, /obj/machinery/atmospherics/binary/pump)
-	into += entry_line(222)
-	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
-
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump) at code/ATMOSPHERICS/components/binary_devices/volume_pump.dm:244
-/obj/machinery/atmospherics/binary/volume_pump/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/volume_pump.dm", 244, /obj/machinery/atmospherics/binary/volume_pump)
-	into += entry_line(245)
-	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni) at code/ATMOSPHERICS/components/omni_devices/omni_base.dm:28
 /obj/machinery/atmospherics/omni/declared_entries(list/into)
@@ -8818,24 +8369,6 @@
 	into += entry_line(33)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/atmospherics/trinary) at code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm:220
-/obj/machinery/atmospherics/trinary/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm", 220, /obj/machinery/atmospherics/trinary)
-	into += entry_line(221)
-	into += list(global.owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(222)
-	into += list(global.owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(223)
-	into += list(global.owns_one(nameof(air3), on_destroy = ON_DESTROY_PRIVATE_COPY))
-
-/// CAPABILITIES(/obj/machinery/atmospherics/unary) at code/ATMOSPHERICS/components/unary/unary_base.dm:172
-/obj/machinery/atmospherics/unary/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/unary_base.dm", 172, /obj/machinery/atmospherics/unary)
-	into += entry_line(173)
-	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
-
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/engine) at code/modules/overmap/ships/engines/gas_thruster.dm:80
 /obj/machinery/atmospherics/unary/engine/declared_entries(list/into)
 	..(into)
@@ -8843,26 +8376,12 @@
 	into += entry_line(81)
 	into += list(global.owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary/freezer) at code/ATMOSPHERICS/components/unary/cold_sink.dm:1
-/obj/machinery/atmospherics/unary/freezer/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/cold_sink.dm", 1, /obj/machinery/atmospherics/unary/freezer)
-	into += entry_line(2)
-	into += list(global.op("toggleStatus", global.ui_act(), global.then(PROC_REF(native_ui_act_togglestatus))))
-
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger) at code/ATMOSPHERICS/components/unary/heat_exchanger.dm:20
 /obj/machinery/atmospherics/unary/heat_exchanger/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/components/unary/heat_exchanger.dm", 20, /obj/machinery/atmospherics/unary/heat_exchanger)
 	into += entry_line(21)
 	into += list(global.climb())
-
-/// CAPABILITIES(/obj/machinery/atmospherics/unary/heater) at code/ATMOSPHERICS/components/unary/heat_source.dm:1
-/obj/machinery/atmospherics/unary/heater/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/heat_source.dm", 1, /obj/machinery/atmospherics/unary/heater)
-	into += entry_line(2)
-	into += list(global.op("toggleStatus", global.ui_act(), global.then(PROC_REF(native_ui_act_togglestatus))))
 
 /// CAPABILITIES(/obj/machinery/autolathe) at code/game/machinery/autolathe.dm:44
 /obj/machinery/autolathe/declared_entries(list/into)
@@ -8901,28 +8420,12 @@
 	into += entry_line(38)
 	into += list(global.owns_one(nameof(faketank), /datum/gas_mixture))
 
-/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:681
+/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:677
 /obj/machinery/bookbinder/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 681, /obj/machinery/bookbinder)
-	into += entry_line(682)
+	into += entry_block("code/modules/library/lib_machines.dm", 677, /obj/machinery/bookbinder)
+	into += entry_line(678)
 	into += list(global.climb())
-
-/// CAPABILITIES(/obj/machinery/botany) at code/modules/hydroponics/seed_machines.dm:72
-/obj/machinery/botany/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/hydroponics/seed_machines.dm", 72, /obj/machinery/botany)
-	into += entry_line(73)
-	into += list(global.owns_one(nameof(seed), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(74)
-	into += list(global.owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL))
-
-/// CAPABILITIES(/obj/machinery/botany/extractor) at code/modules/hydroponics/seed_machines.dm:397
-/obj/machinery/botany/extractor/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/hydroponics/seed_machines.dm", 397, /obj/machinery/botany/extractor)
-	into += entry_line(398)
-	into += list(global.owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
 /// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34
 /obj/machinery/button/remote/declared_entries(list/into)
@@ -9047,34 +8550,25 @@
 	into += entry_line(29)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/computer/HolodeckControl) at code/modules/holodeck/HolodeckControl.dm:189
-/obj/machinery/computer/HolodeckControl/declared_entries(list/into)
+/// CAPABILITIES(/obj/machinery/computer/aifixer) at code/game/machinery/computer/aifixer.dm:83
+/obj/machinery/computer/aifixer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/holodeck/HolodeckControl.dm", 189, /obj/machinery/computer/HolodeckControl)
-	into += entry_line(190)
-	into += list(global.ref_many(nameof(holographic_objs)))
-	into += entry_line(191)
-	into += list(global.ref_many(nameof(holographic_mobs)))
+	into += entry_block("code/game/machinery/computer/aifixer.dm", 83, /obj/machinery/computer/aifixer)
+	into += entry_line(84)
+	into += list(global.interface("AiRestorer"))
+	into += entry_line(85)
+	into += list(global.op("PRG_beginReconstruction", global.ui_act("PRG_beginReconstruction"), global.then(PROC_REF(ui_act_prg_beginreconstruction))))
+	into += entry_line(86)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_typed), early = TRUE)))
 
-/// CAPABILITIES(/obj/machinery/computer/arcade/battle) at code/game/machinery/computer/arcade.dm:1
-/obj/machinery/computer/arcade/battle/declared_entries(list/into)
+/// CAPABILITIES(/obj/machinery/computer/atmos_alert) at code/game/machinery/computer/atmos_alert.dm:27
+/obj/machinery/computer/atmos_alert/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/arcade.dm", 1, /obj/machinery/computer/arcade/battle)
-	into += entry_line(2)
-	into += list(global.op("newgame", global.ui_act(), global.then(PROC_REF(native_ui_act_newgame))))
-
-/// CAPABILITIES(/obj/machinery/computer/area_atmos) at code/game/machinery/atmoalter/area_atmos_computer.dm:19
-/obj/machinery/computer/area_atmos/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/atmoalter/area_atmos_computer.dm", 19, /obj/machinery/computer/area_atmos)
-	into += entry_line(20)
-	into += list(global.op("allon", global.ui_act(), global.then(PROC_REF(native_ui_act_allon))))
-	into += entry_line(21)
-	into += list(global.op("alloff", global.ui_act(), global.then(PROC_REF(native_ui_act_alloff))))
-	into += entry_line(22)
-	into += list(global.op("scan", global.ui_act(), global.then(PROC_REF(native_ui_act_scan))))
-	into += entry_line(23)
-	into += list(global.ref_many(nameof(connectedscrubbers)))
+	into += entry_block("code/game/machinery/computer/atmos_alert.dm", 27, /obj/machinery/computer/atmos_alert)
+	into += entry_line(28)
+	into += list(global.interface("AtmosAlertConsole"))
+	into += entry_line(29)
+	into += list(global.op("clear", global.ui_act("clear", global.arg("ref")), global.then(PROC_REF(ui_act_clear))))
 
 /// CAPABILITIES(/obj/machinery/computer/atmoscontrol) at code/game/machinery/computer/atmos_control.dm:18
 /obj/machinery/computer/atmoscontrol/declared_entries(list/into)
@@ -9088,12 +8582,8 @@
 	..(into)
 	into += entry_block("code/game/machinery/computer/cloning.dm", 29, /obj/machinery/computer/cloning)
 	into += entry_line(30)
-	into += list(global.op("refresh", global.ui_act(), global.then(PROC_REF(native_ui_act_refresh))))
-	into += entry_line(31)
-	into += list(global.op("cleartemp", global.ui_act(), global.then(PROC_REF(native_ui_act_cleartemp))))
-	into += entry_line(32)
 	into += list(global.owns_one(nameof(loaded_BR), /datum/transhuman/body_record))
-	into += entry_line(33)
+	into += entry_line(31)
 	into += list(global.owns_many(nameof(records)))
 
 /// CAPABILITIES(/obj/machinery/computer/communications) at code/game/machinery/computer/communications.dm:15
@@ -9151,14 +8641,38 @@
 	into += entry_line(31)
 	into += list(global.owns_one(nameof(scan), /obj/item/card/id))
 
-/// CAPABILITIES(/obj/machinery/computer/message_monitor) at code/game/machinery/computer/message.dm:1
-/obj/machinery/computer/message_monitor/declared_entries(list/into)
+/// CAPABILITIES(/obj/machinery/computer/operating) at code/game/machinery/computer/Operating.dm:40
+/obj/machinery/computer/operating/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/message.dm", 1, /obj/machinery/computer/message_monitor)
-	into += entry_line(2)
-	into += list(global.op("cleartemp", global.ui_act(), global.then(PROC_REF(native_ui_act_cleartemp))))
-	into += entry_line(3)
-	into += list(global.op("deauth", global.ui_act(), global.then(PROC_REF(native_ui_act_deauth))))
+	into += entry_block("code/game/machinery/computer/Operating.dm", 40, /obj/machinery/computer/operating)
+	into += entry_line(41)
+	into += list(global.interface("OperatingComputer", title = "Patient Monitor"))
+	into += entry_line(42)
+	into += list(global.op("verboseOn", global.ui_act("verboseOn"), global.then(PROC_REF(ui_act_verboseon))))
+	into += entry_line(43)
+	into += list(global.op("verboseOff", global.ui_act("verboseOff"), global.then(PROC_REF(ui_act_verboseoff))))
+	into += entry_line(44)
+	into += list(global.op("healthOn", global.ui_act("healthOn"), global.then(PROC_REF(ui_act_healthon))))
+	into += entry_line(45)
+	into += list(global.op("healthOff", global.ui_act("healthOff"), global.then(PROC_REF(ui_act_healthoff))))
+	into += entry_line(46)
+	into += list(global.op("critOn", global.ui_act("critOn"), global.then(PROC_REF(ui_act_criton))))
+	into += entry_line(47)
+	into += list(global.op("critOff", global.ui_act("critOff"), global.then(PROC_REF(ui_act_critoff))))
+	into += entry_line(48)
+	into += list(global.op("spo2On", global.ui_act("spo2On"), global.then(PROC_REF(ui_act_spo2on))))
+	into += entry_line(49)
+	into += list(global.op("spo2Off", global.ui_act("spo2Off"), global.then(PROC_REF(ui_act_spo2off))))
+	into += entry_line(50)
+	into += list(global.op("spo2_adj", global.ui_act("spo2_adj", global.arg("new", global.num(0, 100))), global.then(PROC_REF(ui_act_spo2_adj))))
+	into += entry_line(51)
+	into += list(global.op("choiceOn", global.ui_act("choiceOn"), global.then(PROC_REF(ui_act_choiceon))))
+	into += entry_line(52)
+	into += list(global.op("choiceOff", global.ui_act("choiceOff"), global.then(PROC_REF(ui_act_choiceoff))))
+	into += entry_line(53)
+	into += list(global.op("health_adj", global.ui_act("health_adj", global.arg("new", global.num(-100, 100))), global.then(PROC_REF(ui_act_health_adj))))
+	into += entry_line(54)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_attended), early = TRUE)))
 
 /// CAPABILITIES(/obj/machinery/computer/pod) at code/game/machinery/computer/pod.dm:69
 /obj/machinery/computer/pod/declared_entries(list/into)
@@ -9197,6 +8711,19 @@
 	into += entry_line(66)
 	into += list(global.op("send_to_station", global.ui_act("send_to_station"), global.then(PROC_REF(ui_act_send_to_station))))
 
+/// CAPABILITIES(/obj/machinery/computer/prisoner) at code/game/machinery/computer/prisoner.dm:24
+/obj/machinery/computer/prisoner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/prisoner.dm", 24, /obj/machinery/computer/prisoner)
+	into += entry_line(25)
+	into += list(global.interface("PrisonerManagement"))
+	into += entry_line(26)
+	into += list(global.op("inject", global.ui_act("inject", global.arg("imp"), global.arg("val", global.num())), global.then(PROC_REF(ui_act_inject))))
+	into += entry_line(27)
+	into += list(global.op("lock", global.ui_act("lock"), global.then(PROC_REF(ui_act_lock))))
+	into += entry_line(28)
+	into += list(global.op("warn", global.ui_act("warn", global.arg("imp", global.schema_text(4096))), global.asks(/datum/prompt/text, fields = list("title" = "Enter your message here!", "question" = "Message:")), global.then(PROC_REF(ui_act_warn))))
+
 /// CAPABILITIES(/obj/machinery/computer/rcon) at code/game/machinery/computer/RCON_Console.dm:18
 /obj/machinery/computer/rcon/declared_entries(list/into)
 	..(into)
@@ -9204,20 +8731,30 @@
 	into += entry_line(19)
 	into += list(global.owns_one(nameof(rcon), starts = /datum/tgui_module/rcon))
 
-/// CAPABILITIES(/obj/machinery/computer/rdconsole_tg) at code/modules/research/tg/rdconsole.dm:48
-/obj/machinery/computer/rdconsole_tg/declared_entries(list/into)
+/// CAPABILITIES(/obj/machinery/computer/robotics) at code/game/machinery/computer/robot.dm:132
+/obj/machinery/computer/robotics/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/research/tg/rdconsole.dm", 48, /obj/machinery/computer/rdconsole_tg)
-	into += entry_line(49)
-	into += list(global.owns_one(nameof(t_disk), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(50)
-	into += list(global.owns_one(nameof(d_disk), on_destroy = ON_DESTROY_SPILL))
+	into += entry_block("code/game/machinery/computer/robot.dm", 132, /obj/machinery/computer/robotics)
+	into += entry_line(133)
+	into += list(global.interface("RoboticsControlConsole"))
+	into += entry_line(134)
+	into += list(global.op("arm", global.ui_act("arm"), global.then(PROC_REF(ui_act_arm))))
+	into += entry_line(135)
+	into += list(global.op("nuke", global.ui_act("nuke"), global.then(PROC_REF(ui_act_nuke))))
+	into += entry_line(136)
+	into += list(global.op("killbot", global.ui_act("killbot", global.arg("ref")), global.then(PROC_REF(ui_act_killbot))))
+	into += entry_line(137)
+	into += list(global.op("stopbot", global.ui_act("stopbot", global.arg("ref")), global.then(PROC_REF(ui_act_stopbot))))
+	into += entry_line(138)
+	into += list(global.op("hackbot", global.ui_act("hackbot", global.arg("ref")), global.needs(global.req(PROC_REF(hack_possible), because = MSG(robotics/cannot_hack))), global.asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), global.then(PROC_REF(ui_act_hackbot))))
+	into += entry_line(139)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_authenticated), because = MSG(robotics/access_denied)))))
 
-/// CAPABILITIES(/obj/machinery/computer/scan_consolenew) at code/game/dna/dna_modifier.dm:352
+/// CAPABILITIES(/obj/machinery/computer/scan_consolenew) at code/game/dna/dna_modifier.dm:351
 /obj/machinery/computer/scan_consolenew/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/dna/dna_modifier.dm", 352, /obj/machinery/computer/scan_consolenew)
-	into += entry_line(353)
+	into += entry_block("code/game/dna/dna_modifier.dm", 351, /obj/machinery/computer/scan_consolenew)
+	into += entry_line(352)
 	into += list(global.owns_many(nameof(buffers), /datum/transhuman/body_record))
 
 /// CAPABILITIES(/obj/machinery/computer/security) at code/game/machinery/computer/camera.dm:18
@@ -9283,28 +8820,6 @@
 	into += entry_line(13)
 	into += list(global.owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor))
 
-/// CAPABILITIES(/obj/machinery/computer/telecomms/monitor) at code/game/machinery/telecomms/telemonitor.dm:23
-/obj/machinery/computer/telecomms/monitor/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/telecomms/telemonitor.dm", 23, /obj/machinery/computer/telecomms/monitor)
-	into += entry_line(24)
-	into += list(global.op("mainmenu", global.ui_act(), global.then(PROC_REF(native_ui_act_mainmenu))))
-	into += entry_line(25)
-	into += list(global.op("release", global.ui_act(), global.then(PROC_REF(native_ui_act_release))))
-	into += entry_line(26)
-	into += list(global.op("cleartemp", global.ui_act(), global.then(PROC_REF(native_ui_act_cleartemp))))
-
-/// CAPABILITIES(/obj/machinery/computer/telecomms/server) at code/game/machinery/telecomms/logbrowser.dm:22
-/obj/machinery/computer/telecomms/server/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/telecomms/logbrowser.dm", 22, /obj/machinery/computer/telecomms/server)
-	into += entry_line(23)
-	into += list(global.op("mainmenu", global.ui_act(), global.then(PROC_REF(native_ui_act_mainmenu))))
-	into += entry_line(24)
-	into += list(global.op("release", global.ui_act(), global.then(PROC_REF(native_ui_act_release))))
-	into += entry_line(25)
-	into += list(global.op("cleartemp", global.ui_act(), global.then(PROC_REF(native_ui_act_cleartemp))))
-
 /// CAPABILITIES(/obj/machinery/computer/teleporter) at code/game/machinery/teleporter.dm:16
 /obj/machinery/computer/teleporter/declared_entries(list/into)
 	..(into)
@@ -9317,52 +8832,29 @@
 	..(into)
 	into += entry_block("code/modules/telesci/telesci_computer.dm", 33, /obj/machinery/computer/telescience)
 	into += entry_line(34)
-	into += list(global.owns_one(nameof(inserted_gps), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(35)
 	into += list(global.owns_one(nameof(last_tele_data), /datum/projectile_data))
 
-/// CAPABILITIES(/obj/machinery/computer/timeclock) at code/game/machinery/computer/timeclock.dm:116
+/// CAPABILITIES(/obj/machinery/computer/timeclock) at code/game/machinery/computer/timeclock.dm:70
 /obj/machinery/computer/timeclock/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/timeclock.dm", 116, /obj/machinery/computer/timeclock)
-	into += entry_line(117)
-	into += list(global.op("id", global.ui_act(), global.then(PROC_REF(native_ui_act_id))))
-	into += entry_line(118)
-	into += list(global.op("switch-to-offduty", global.ui_act(), global.then(PROC_REF(native_ui_act_switch_to_offduty))))
+	into += entry_block("code/game/machinery/computer/timeclock.dm", 70, /obj/machinery/computer/timeclock)
+	into += entry_line(71)
+	into += list(global.interface("TimeClock"))
+	into += entry_line(72)
+	into += list(global.op("id", global.ui_act("id"), global.then(PROC_REF(ui_act_id))))
+	into += entry_line(73)
+	into += list(global.op("switch-to-onduty-rank", global.ui_act("switch-to-onduty-rank", global.arg("assignment"), global.arg("rank")), global.then(PROC_REF(ui_act_switch_to_onduty_rank))))
+	into += entry_line(74)
+	into += list(global.op("switch-to-offduty", global.ui_act("switch-to-offduty"), global.then(PROC_REF(ui_act_switch_to_offduty))))
+	into += entry_line(75)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_touched), early = TRUE)))
 
 /// CAPABILITIES(/obj/machinery/computer/transhuman/designer) at code/modules/resleeving/designer.dm:26
 /obj/machinery/computer/transhuman/designer/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/resleeving/designer.dm", 26, /obj/machinery/computer/transhuman/designer)
 	into += entry_line(27)
-	into += list(global.owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(28)
 	into += list(global.owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer))
-
-/// CAPABILITIES(/obj/machinery/computer/transhuman/resleeving) at code/modules/resleeving/computers.dm:622
-/obj/machinery/computer/transhuman/resleeving/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/resleeving/computers.dm", 622, /obj/machinery/computer/transhuman/resleeving)
-	into += entry_line(623)
-	into += list(global.op("clear_b_rec", global.ui_act(), global.then(PROC_REF(native_ui_act_clear_b_rec))))
-	into += entry_line(624)
-	into += list(global.op("clear_m_rec", global.ui_act(), global.then(PROC_REF(native_ui_act_clear_m_rec))))
-	into += entry_line(625)
-	into += list(global.op("ejectdisk", global.ui_act(), global.then(PROC_REF(native_ui_act_ejectdisk))))
-	into += entry_line(626)
-	into += list(global.op("create", global.ui_act(), global.then(PROC_REF(native_ui_act_create))))
-	into += entry_line(627)
-	into += list(global.op("genereset", global.ui_act(), global.then(PROC_REF(native_ui_act_genereset))))
-	into += entry_line(628)
-	into += list(global.op("cleartemp", global.ui_act(), global.then(PROC_REF(native_ui_act_cleartemp))))
-	into += entry_line(629)
-	into += list(global.ref_many(nameof(pods)))
-	into += entry_line(630)
-	into += list(global.ref_many(nameof(spods)))
-	into += entry_line(631)
-	into += list(global.ref_many(nameof(sleevers)))
-	into += entry_line(632)
-	into += list(global.owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL))
 
 /// CAPABILITIES(/obj/machinery/computer/turbine_computer) at code/modules/power/turbine.dm:400
 /obj/machinery/computer/turbine_computer/declared_entries(list/into)
@@ -9698,14 +9190,6 @@
 	..(into)
 	into += entry_block("code/game/machinery/exonet_node.dm", 28, /obj/machinery/exonet_node)
 	into += entry_line(29)
-	into += list(global.op("toggle_power", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_power))))
-	into += entry_line(30)
-	into += list(global.op("toggle_PDA_port", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_pda_port))))
-	into += entry_line(31)
-	into += list(global.op("toggle_communicator_port", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_communicator_port))))
-	into += entry_line(32)
-	into += list(global.op("toggle_newscaster_port", global.ui_act(), global.then(PROC_REF(native_ui_act_toggle_newscaster_port))))
-	into += entry_line(33)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/tcomms))
 
 /// CAPABILITIES(/obj/machinery/field_generator) at code/modules/power/singularity/field_generator.dm:87
@@ -9754,8 +9238,6 @@
 	..(into)
 	into += entry_block("code/game/machinery/hologram.dm", 49, /obj/machinery/hologram/holopad)
 	into += entry_line(50)
-	into += list(global.ref_many(nameof(masters)))
-	into += entry_line(51)
 	into += list(global.owns_many(nameof(holograms), /obj/effect/overlay/aiholo))
 
 /// CAPABILITIES(/obj/machinery/hyperpad/centre) at code/modules/telesci/hyper_pad.dm:28
@@ -9788,43 +9270,24 @@
 	into += entry_line(32)
 	into += list(global.owns_one(nameof(fabricated_tablet), /obj/item/modular_computer/tablet))
 
-/// CAPABILITIES(/obj/machinery/librarycomp) at code/modules/library/lib_machines.dm:182
+/// CAPABILITIES(/obj/machinery/librarycomp) at code/modules/library/lib_machines.dm:179
 /obj/machinery/librarycomp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 182, /obj/machinery/librarycomp)
-	into += entry_line(183)
+	into += entry_block("code/modules/library/lib_machines.dm", 179, /obj/machinery/librarycomp)
+	into += entry_line(180)
 	into += list(global.owns_many(nameof(checkouts)))
-	into += entry_line(184)
-	into += list(global.op("print_bible", global.ui_act(), global.then(PROC_REF(native_ui_act_print_bible))))
-	into += entry_line(185)
-	into += list(global.op("arccheckout", global.ui_act(), global.then(PROC_REF(native_ui_act_arccheckout))))
-	into += entry_line(186)
-	into += list(global.op("increasetime", global.ui_act(), global.then(PROC_REF(native_ui_act_increasetime))))
-	into += entry_line(187)
-	into += list(global.op("decreasetime", global.ui_act(), global.then(PROC_REF(native_ui_act_decreasetime))))
-	into += entry_line(188)
-	into += list(global.op("checkout", global.ui_act(), global.then(PROC_REF(native_ui_act_checkout))))
 
-/// CAPABILITIES(/obj/machinery/librarypubliccomp) at code/modules/library/lib_machines.dm:23
-/obj/machinery/librarypubliccomp/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 23, /obj/machinery/librarypubliccomp)
-	into += entry_line(24)
-	into += list(global.op("search", global.ui_act(), global.then(PROC_REF(native_ui_act_search))))
-	into += entry_line(25)
-	into += list(global.op("back", global.ui_act(), global.then(PROC_REF(native_ui_act_back))))
-
-/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:632
+/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:628
 /obj/machinery/libraryscanner/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 632, /obj/machinery/libraryscanner)
-	into += entry_line(633)
+	into += entry_block("code/modules/library/lib_machines.dm", 628, /obj/machinery/libraryscanner)
+	into += entry_line(629)
 	into += list(global.interface("LibraryScanner", title = "Scanner"))
-	into += entry_line(634)
+	into += entry_line(630)
 	into += list(global.op("scan", global.ui_act("scan"), global.then(PROC_REF(ui_act_scan))))
-	into += entry_line(635)
+	into += entry_line(631)
 	into += list(global.op("clear", global.ui_act("clear"), global.then(PROC_REF(ui_act_clear))))
-	into += entry_line(636)
+	into += entry_line(632)
 	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
 
 /// CAPABILITIES(/obj/machinery/light) at code/modules/power/lighting.dm:106
@@ -9998,17 +9461,6 @@
 	into += entry_line(48)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/microwave))
 
-/// CAPABILITIES(/obj/machinery/mineral/processing_unit_console) at code/modules/mining/machinery/machine_processing.dm:34
-/obj/machinery/mineral/processing_unit_console/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mining/machinery/machine_processing.dm", 34, /obj/machinery/mineral/processing_unit_console)
-	into += entry_line(35)
-	into += list(global.op("showAllOres", global.ui_act(), global.then(PROC_REF(native_ui_act_showallores))))
-	into += entry_line(36)
-	into += list(global.op("speed_toggle", global.ui_act(), global.then(PROC_REF(native_ui_act_speed_toggle))))
-	into += entry_line(37)
-	into += list(global.owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL))
-
 /// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:484
 /obj/machinery/mining/brace/declared_entries(list/into)
 	..(into)
@@ -10032,12 +9484,6 @@
 	..(into)
 	into += entry_block("code/game/machinery/newscaster.dm", 161, /obj/machinery/newscaster)
 	into += entry_line(162)
-	into += list(global.op("cleartemp", global.ui_act(), global.then(PROC_REF(native_ui_act_cleartemp))))
-	into += entry_line(163)
-	into += list(global.op("set_channel_lock", global.ui_act(), global.then(PROC_REF(native_ui_act_set_channel_lock))))
-	into += entry_line(164)
-	into += list(global.op("set_attachment", global.ui_act(), global.then(PROC_REF(native_ui_act_set_attachment))))
-	into += entry_line(165)
 	into += list(global.owns_one(nameof(photo_data), /datum/news_photo))
 
 /// CAPABILITIES(/obj/machinery/ntnet_relay) at code/modules/modular_computers/NTNet/NTNet_relay.dm:25
@@ -10052,10 +9498,6 @@
 	..(into)
 	into += entry_block("code/modules/mining/machine_silo.dm", 17, /obj/machinery/ore_silo)
 	into += entry_line(18)
-	into += list(global.ref_many(nameof(holds)))
-	into += entry_line(19)
-	into += list(global.ref_many(nameof(ore_connected_machines)))
-	into += entry_line(20)
 	into += list(global.owns_one(nameof(materials), /datum/material_container))
 
 /// CAPABILITIES(/obj/machinery/organ_printer) at code/game/machinery/bioprinter.dm:97
@@ -10109,13 +9551,6 @@
 	into += entry_line(23)
 	into += list(global.owns_many(nameof(remotes)))
 
-/// CAPABILITIES(/obj/machinery/photocopier) at code/modules/paperwork/photocopier.dm:40
-/obj/machinery/photocopier/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/paperwork/photocopier.dm", 40, /obj/machinery/photocopier)
-	into += entry_line(41)
-	into += list(global.op("make_copy", global.ui_act(), global.then(PROC_REF(native_ui_act_make_copy))))
-
 /// CAPABILITIES(/obj/machinery/pipelayer) at code/game/machinery/pipe/pipelayer.dm:25
 /obj/machinery/pipelayer/declared_entries(list/into)
 	..(into)
@@ -10123,20 +9558,11 @@
 	into += entry_line(26)
 	into += list(global.owns_one(nameof(W), starts = /obj/item/tool/wrench))
 
-/// CAPABILITIES(/obj/machinery/pointdefense_control) at code/game/machinery/pointdefense.dm:183
-/obj/machinery/pointdefense_control/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/pointdefense.dm", 183, /obj/machinery/pointdefense_control)
-	into += entry_line(184)
-	into += list(global.ref_many(nameof(targets)))
-
 /// CAPABILITIES(/obj/machinery/portable_atmospherics) at code/game/machinery/atmoalter/portable_atmospherics.dm:18
 /obj/machinery/portable_atmospherics/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 18, /obj/machinery/portable_atmospherics)
 	into += entry_line(19)
-	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(20)
 	into += list(global.owns_one(nameof(holding), /obj/item/tank))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/canister) at code/game/machinery/atmoalter/canister.dm:31
@@ -10566,13 +9992,6 @@
 	into += entry_line(58)
 	into += list(global.owns_one(nameof(announcement), /datum/announcement))
 
-/// CAPABILITIES(/obj/machinery/rnd) at code/modules/research/tg/rdmachines.dm:103
-/obj/machinery/rnd/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/research/tg/rdmachines.dm", 103, /obj/machinery/rnd)
-	into += entry_line(104)
-	into += list(global.owns_one(nameof(loaded_item), on_destroy = ON_DESTROY_SPILL))
-
 /// CAPABILITIES(/obj/machinery/rnd/destructive_analyzer) at code/modules/research/tg/machinery/destructive_analyzer.dm:21
 /obj/machinery/rnd/destructive_analyzer/declared_entries(list/into)
 	..(into)
@@ -10721,15 +10140,6 @@
 	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 55, /obj/machinery/telecomms)
 	into += entry_line(56)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/tcomms))
-
-/// CAPABILITIES(/obj/machinery/telecomms/relay) at code/game/machinery/telecomms/machine_interactions.dm:1
-/obj/machinery/telecomms/relay/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 1, /obj/machinery/telecomms/relay)
-	into += entry_line(2)
-	into += list(global.op("receive", global.ui_act(), global.then(PROC_REF(native_ui_act_receive))))
-	into += entry_line(3)
-	into += list(global.op("broadcast", global.ui_act(), global.then(PROC_REF(native_ui_act_broadcast))))
 
 /// CAPABILITIES(/obj/machinery/telecomms/server) at code/game/machinery/telecomms/telecomunications.dm:547
 /obj/machinery/telecomms/server/declared_entries(list/into)

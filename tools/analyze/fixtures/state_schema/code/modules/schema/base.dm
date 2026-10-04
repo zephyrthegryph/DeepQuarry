@@ -101,7 +101,7 @@ text"}
 	rel_set(src, "rel_string_ref", null)
 	shared_set(src, nameof(shared_set_ref), null)
 
-DECLARE_DEFAULT_CHILD(/datum/base, "default_child", /datum/thing)
+CAPABILITIES(/datum/base, owns_one(nameof(default_child), starts = /datum/thing))
 
 /proc/global_proc()
 	var/datum/global_local

@@ -19,7 +19,7 @@
 /datum/om/event/living_revived
 	var/source
 
-/datum/om/event/before/in_range_of_irradiation
+/datum/om/event/before/dice_roll
 	var/source
 
 /datum/act

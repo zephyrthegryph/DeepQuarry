@@ -221,10 +221,7 @@ def main():
             residue[t] = "ui_options"
             continue
         window, title = m.group(2), m.group(3)
-        if "DECLARE_UI_STATE" in kinds:
-            residue[t] = "ui_state"
-            continue
-        if any(k not in ("DECLARE_UI", "UI_ACT", "UI_ACT_PROC", "UI_DATA", "UI_DATA_REPLACE") for k in kinds):
+        if any(k not in ("DECLARE_UI", "DECLARE_UI_STATE", "UI_ACT", "UI_ACT_PROC", "UI_DATA", "UI_DATA_REPLACE") for k in kinds):
             residue[t] = "ui_forms"
             continue
         if any(related(t, u) for u in types if u != t):
@@ -534,8 +531,8 @@ def main():
                     block_file = (rel, i)
         for kind, rel, idx, text in plan["rows"]:
             f = files[rel]
-            if kind == "UI_ACT_PROC":
-                continue
+            if kind in ("UI_ACT_PROC", "DECLARE_UI_STATE"):
+                continue  # the state row stays: it is its own legacy form, read by ui_open() whether or not a DECLARE_UI stands beside it
             if kind in ("UI_DATA", "UI_DATA_REPLACE") and d and not d["rename"]:
                 continue  # the composed ui_data() stands where the row was
             if kind == "DECLARE_UI":
@@ -556,6 +553,9 @@ def main():
         for f in files.values():
             if f.dirty:
                 f.save()
+    if "--why" in sys.argv:
+        for t, why in sorted(residue.items()):
+            print("WHY	%s	%s	%s" % (why, t, ",".join(sorted({r[0] for r in rows[t]}))))
     by = defaultdict(list)
     for t, why in residue.items():
         by[why].append(t)

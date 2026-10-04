@@ -12,9 +12,8 @@
 	var/hide_on_roll = FALSE
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/storage/ownership()
-	. = ..()
-	. += owns(nameof(hold), starts = /obj/item/storage/internal)
+CAPABILITIES(/obj/item/clothing/accessory/storage)
+	owns_one(nameof(hold), starts = /obj/item/storage/internal)
 
 /obj/item/clothing/accessory/storage/Initialize(mapload)
 	. = ..()

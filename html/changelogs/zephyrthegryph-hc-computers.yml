@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Computer consoles and their window buttons moved to the final declaration forms"

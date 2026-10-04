@@ -7,7 +7,7 @@
 	// the event is a variable
 	om_hook(thing, event_type, src, PROC_REF(fine))
 	// a guard has no notice twin
-	om_hook(thing, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(fine))
+	om_hook(thing, /datum/om/event/before/dice_roll, src, PROC_REF(fine))
 	// an event list in a value
 	var/ok = list(om_hook(thing, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(fine)))
 	// the listener is not src
@@ -19,7 +19,7 @@
 	// something else calls the handler
 	om_hook(thing, /datum/om/event/moved, src, PROC_REF(called_directly))
 	// the unhook of a hook that does not convert, and of one nobody hooks
-	om_unhook(thing, /datum/om/event/before/in_range_of_irradiation, src)
+	om_unhook(thing, /datum/om/event/before/dice_roll, src)
 	om_unhook(thing, /datum/om/event/qdeleting, src)
 	om_unhook_all(src)
 	return ok

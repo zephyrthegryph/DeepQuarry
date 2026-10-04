@@ -21,12 +21,13 @@
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/computer/prisoner, "PrisonerManagement")
+CAPABILITIES(/obj/machinery/computer/prisoner)
+	interface("PrisonerManagement")
+	op("inject", ui_act("inject", arg("imp"), arg("val", num())), then(PROC_REF(ui_act_inject)))
+	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
+	op("warn", ui_act("warn", arg("imp", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "Enter your message here!", "question" = "Message:")), then(PROC_REF(ui_act_warn)))
 
-UI_DATA_REPLACE(/obj/machinery/computer/prisoner, "merge:ui_data_obj_machinery_computer_prisoner{}")
-
-/// The computed part of /obj/machinery/computer/prisoner's window data (declared on its UI_DATA row).
-/obj/machinery/computer/prisoner/proc/ui_data_obj_machinery_computer_prisoner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/prisoner/ui_data(datum/act/eval/A)
 	var/list/chemImplants = list()
 	var/list/trackImplants = list()
 	if(screen)
@@ -64,39 +65,28 @@ UI_DATA_REPLACE(/obj/machinery/computer/prisoner, "merge:ui_data_obj_machinery_c
 
 	return list("locked" = !screen, "chemImplants" = chemImplants, "trackImplants" = trackImplants)
 
-
-UI_ACT(/obj/machinery/computer/prisoner, "inject", ui_act_inject, UI_ARG_REF("imp", null, /obj/item/implant), UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/computer/prisoner, ui_act_inject)
-	var/obj/item/implant/I = params["imp"]
+/obj/machinery/computer/prisoner/proc/ui_act_inject(datum/act/op/A, imp, val)
+	var/obj/item/implant/I = ui_ref(imp, null, /obj/item/implant)
 	if(I)
-		I.activate(clamp(params["val"], 0, 10))
+		I.activate(clamp(val, 0, 10))
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/prisoner, "lock", ui_act_lock)
-UI_ACT_PROC(/obj/machinery/computer/prisoner, ui_act_lock)
-	if(allowed(ui.user))
+/obj/machinery/computer/prisoner/proc/ui_act_lock(datum/act/op/A)
+	if(allowed(A.actor))
 		screen = !screen
 	else
-		to_chat(ui.user, "Unauthorized Access.")
+		to_chat(A.actor, "Unauthorized Access.")
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/prisoner, "warn", ui_act_warn, UI_ARG_TEXT("imp"))
-UI_ACT_PROC(/obj/machinery/computer/prisoner, ui_act_warn)
-	om_ask(ui.user, /datum/om/prompt/text/implant_warning, PROC_REF(warning_entered), imp_ref = params["imp"], ui_refresh = src)
-	. = TRUE
-	add_fingerprint(ui.user)
-
-/datum/om/prompt/text/implant_warning
-	title = "Enter your message here!"
-	message = "Message:"
-	default = ""
-	requires = PROMPT_USABLE
-	/// The implant's ref from the UI.
-	var/imp_ref
-
-/obj/machinery/computer/prisoner/proc/warning_entered(datum/om/prompt/text/implant_warning/ask)
-	var/obj/item/implant/I = locate(ask.imp_ref)
+/obj/machinery/computer/prisoner/proc/ui_act_warn(datum/act/op/A, imp)
+	add_fingerprint(A.actor)
+	var/datum/prompt/R = A.answer
+	var/message = R?.value
+	if(!message)
+		return OP_OK
+	var/obj/item/implant/I = ui_ref(imp, null, /obj/item/implant)
 	if(I && I.imp_in())
-		to_chat(I.imp_in(), span_notice("You hear a voice in your head saying: '[ask.text]'"))
+		to_chat(I.imp_in(), span_notice("You hear a voice in your head saying: '[message]'"))
+	return OP_OK
