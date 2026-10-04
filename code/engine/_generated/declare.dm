@@ -14821,7 +14821,7 @@
 	into += entry_line(92)
 	into += list(global.owns_one(nameof(charging), /obj/item, on_destroy = ON_DESTROY_SPILL))
 	into += entry_line(93)
-	into += list(global.op("insert", global.item(/obj/item), global.priority(OP_PRIORITY_PART - 1), global.when(global.req(PROC_REF(takes_device))), global.needs(global.req(PROC_REF(device_ok), because = PROC_REF(device_refusal))), global.then(PROC_REF(insert_device))))
+	into += list(global.op("insert", global.item(/obj/item), global.when(global.req(PROC_REF(takes_device))), global.needs(global.req(PROC_REF(device_ok), because = PROC_REF(device_refusal))), global.then(PROC_REF(insert_device))))
 	into += entry_line(96)
 	into += list(global.op("insert_drag", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.when(global.req(PROC_REF(takes_device))), global.needs(global.req(PROC_REF(device_ok), because = PROC_REF(device_refusal))), global.then(PROC_REF(drag_in_device))))
 	into += entry_line(99)
@@ -15961,7 +15961,7 @@
 	into += entry_line(411)
 	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS)))
 	into += entry_line(412)
-	into += list(global.op("loose", global.item(/obj/item), global.priority(OP_PRIORITY_PART - 1), global.label("Use"), global.when(global.req(PROC_REF(is_loose))), global.then(PROC_REF(note_loose))))
+	into += list(global.op("loose", global.item(/obj/item), global.label("Use"), global.when(global.req(PROC_REF(is_loose))), global.then(PROC_REF(note_loose))))
 
 /// CAPABILITIES(/obj/structure/dispenser) at code/game/objects/structures/tank_dispenser.dm:53
 /obj/structure/dispenser/declared_entries(list/into)

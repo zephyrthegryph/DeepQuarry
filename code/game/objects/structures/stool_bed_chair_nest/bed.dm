@@ -409,7 +409,7 @@ CAPABILITIES(/obj/structure/dirtybed)
 	buckle()
 	anchor()
 	extend("anchor.toggle", wait(2 SECONDS))
-	op("loose", item(/obj/item), priority(OP_PRIORITY_PART - 1), label("Use"), when(req(PROC_REF(is_loose))), then(PROC_REF(note_loose)))
+	op("loose", item(/obj/item), label("Use"), when(req(PROC_REF(is_loose))), then(PROC_REF(note_loose)))
 
 /// The mattress is not bolted down.
 /obj/structure/dirtybed/proc/is_loose(datum/act/A)
