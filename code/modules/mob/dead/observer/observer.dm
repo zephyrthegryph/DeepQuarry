@@ -1213,15 +1213,24 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 	var/obj/machinery/transhuman/autoresleever/chosen_resleever = null
 	if(length(autoresleevers) > 1)
 		// Prompt user to choose which one they wanna go to
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(autoresleever_chosen), title = "Choose Auto-Resleever", message = "There are multiple auto-resleevers available! Choose one.", choices = autoresleevers)
+		open_request(src, /datum/prompt/choice, PROC_REF(autoresleever_chosen), answerer = src, title = "Choose Auto-Resleever", question = "There are multiple auto-resleevers available! Choose one.", choices = autoresleevers, timeout = 0)
 		return
 	else
 		// If there's less than one, just choose whatever one is available (if any)
 		chosen_resleever = autoresleevers[pick(autoresleevers)]
 	go_to_autoresleever(chosen_resleever)
 
-/mob/observer/dead/proc/autoresleever_chosen(datum/om/prompt/choice/ask)
-	go_to_autoresleever(ask.choices[ask.choice])
+/mob/observer/dead/proc/autoresleever_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(autoresleever_choice_apply), A)
+	if(!result.ok)
+		stack_trace("auto-resleever location selection: [result.error]")
+	return result.value
+
+/mob/observer/dead/proc/autoresleever_choice_apply(datum/act/request/A)
+	var/datum/prompt/choice/ask = A.answer
+	go_to_autoresleever(ask.choices[ask.answer_value])
 
 /mob/observer/dead/proc/go_to_autoresleever(obj/machinery/transhuman/autoresleever/chosen_resleever)
 	if(!chosen_resleever)
