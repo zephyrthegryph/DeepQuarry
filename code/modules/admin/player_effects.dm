@@ -23,14 +23,17 @@ DECLARE_UI(/datum/eventkit/player_effects, "PlayerEffects", UI_TITLE("Player Eff
 
 DECLARE_UI_STATE(/datum/eventkit/player_effects, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
 
-/datum/om/prompt/text/admin_popup
+/datum/prompt/text/admin_popup
 	title = "Reply"
+	timeout = 0
 	/// key_name() of the sending admin.
 	var/admin_name
 
-/datum/eventkit/player_effects/proc/popup_replied(datum/om/prompt/text/admin_popup/ask)
-	if(ask.text)
-		log_and_message_admins("replied to [ask.admin_name]'s message: [ask.text].", ask.answerer)
+/datum/eventkit/player_effects/proc/popup_replied(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/text/admin_popup/request = A.request
+	log_and_message_admins("replied to [request.admin_name]'s message: [A.answer.answer_value].", request.answerer)
 
 /// Every effect is logged once (answers to its questions re-run the action with om_reentry set).
 /datum/eventkit/player_effects/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
@@ -979,7 +982,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_popup_box)
 		return
 	log_admin("[key_name(ui.user)] sent message to [target()]: [message]")
 	// The player answers in their own time; the reply doesn't need this panel open.
-	om_ask(target(), /datum/om/prompt/text/admin_popup, PROC_REF(popup_replied), message = "An admin has sent you a message: [message]", admin_name = key_name(ui.user))
+	open_request(src, /datum/prompt/text/admin_popup, PROC_REF(popup_replied), answerer = target(), question = "An admin has sent you a message: [message]", admin_name = key_name(ui.user))
 
 UI_ACT(/datum/eventkit/player_effects, "stop-orbits", ui_act_stop_orbits)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_stop_orbits)
