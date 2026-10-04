@@ -109,3 +109,56 @@
 	var/seen = J.power_source.charge
 	test_time(6 SECONDS)
 	TEST_ASSERT_EQUAL(J.power_source.charge, seen, "off again: it stopped")
+
+/// verb_entry(): always and inherited-then-hidden verbs are on at init, a `when` verb follows its tracked var, a login verb waits for a player.
+/datum/unit_test/dq_gap/verb_entries_follow_their_conditions
+/datum/unit_test/dq_gap/verb_entries_follow_their_conditions/run_gap()
+	var/mob/gap_verb_mob/M = allocate(/mob/gap_verb_mob, run_loc_floor_bottom_left)
+	TEST_ASSERT(/mob/gap_verb_mob/proc/gv_always in M.verbs, "an always entry is on at init")
+	TEST_ASSERT(!(/mob/gap_verb_mob/proc/gv_when in M.verbs), "a when entry is off while its var is false")
+	TEST_ASSERT(!(/mob/gap_verb_mob/verb/gv_inherited in M.verbs), "a hidden entry takes the type's own verb off")
+	TEST_ASSERT(!(/mob/gap_verb_mob/proc/gv_login in M.verbs), "a login entry is off with no player")
+	M.set_flag(TRUE)
+	test_time(2)
+	TEST_ASSERT(/mob/gap_verb_mob/proc/gv_when in M.verbs, "the var turning true put the verb on")
+	M.set_flag(FALSE)
+	test_time(2)
+	TEST_ASSERT(!(/mob/gap_verb_mob/proc/gv_when in M.verbs), "and false took it off")
+	M.key = "gap_verb_test_key"
+	verb_store_login(M)
+	TEST_ASSERT(/mob/gap_verb_mob/proc/gv_login in M.verbs, "a player has the mob: the login verb is on")
+	M.key = null
+
+/// grant(M, granted_verb(path), source): the verb is on while the source holds it and ends with revoke() or the source.
+/datum/unit_test/dq_gap/granted_verb_follows_its_source
+/datum/unit_test/dq_gap/granted_verb_follows_its_source/run_gap()
+	var/mob/gap_verb_mob/M = allocate(/mob/gap_verb_mob, run_loc_floor_bottom_left)
+	var/path = /mob/gap_verb_mob/proc/gv_runtime
+	var/datum/other = new
+	TEST_ASSERT(!(path in M.verbs), "no verb yet")
+	grant(M, granted_verb(path), other)
+	TEST_ASSERT(path in M.verbs, "granted")
+	TEST_ASSERT(granted(M, granted_verb(path)), "granted() says so")
+	TEST_ASSERT(revoke(M, granted_verb(path), other), "revoke finds it")
+	TEST_ASSERT(!(path in M.verbs), "revoked")
+	grant(M, granted_verb(path), other)
+	qdel(other)
+	TEST_ASSERT(!(path in M.verbs), "the source died: the verb went with it")
+	var/datum/second = new
+	grant(M, hidden_verb(/mob/gap_verb_mob/proc/gv_always), second)
+	TEST_ASSERT(!(/mob/gap_verb_mob/proc/gv_always in M.verbs), "a hidden verb is off while its source holds the hide")
+	revoke(M, hidden_verb(/mob/gap_verb_mob/proc/gv_always), second)
+	TEST_ASSERT(/mob/gap_verb_mob/proc/gv_always in M.verbs, "and back when it lets go")
+	qdel(second)
+
+/// A verb_entry inside a capability is a grant: on while the capability is granted, gone when it ends.
+/datum/unit_test/dq_gap/verb_entry_in_a_capability_is_a_grant
+/datum/unit_test/dq_gap/verb_entry_in_a_capability_is_a_grant/run_gap()
+	var/mob/gap_verb_mob/M = allocate(/mob/gap_verb_mob, run_loc_floor_bottom_left)
+	var/path = /mob/gap_verb_mob/proc/gv_runtime
+	var/datum/source = new
+	grant(M, gap_verb_cap(), source)
+	TEST_ASSERT(path in M.verbs, "the capability brought its verb")
+	revoke(M, gap_verb_cap(), source)
+	TEST_ASSERT(!(path in M.verbs), "and took it away")
+	qdel(source)

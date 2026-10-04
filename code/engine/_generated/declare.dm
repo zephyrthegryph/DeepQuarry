@@ -182,6 +182,19 @@
 /datum/capdef_decl/c_glass_handling/spec()
 	return list(CAP_GLASS_HANDLING, /datum/capability/def/glass_handling, NONE, STACK, "glass_handling", "")
 
+/// CAPABILITY_DEF(granted_verb, CAP_GRANTED_VERB) at code/engine/present/verbs.dm:168
+/datum/capability/def/granted_verb
+	var/verb_path = null
+	var/verb_name = null
+	var/verb_desc = null
+	var/on = ON_HOLDER
+	var/hidden = FALSE
+/proc/granted_verb(verb_path, verb_name, verb_desc, on, hidden)
+	RETURN_TYPE(/datum/capability/def/granted_verb)
+	return cap_construct(CAP_GRANTED_VERB, /datum/capability/def/granted_verb, list(verb_path, verb_name, verb_desc, on, hidden), "verb_path, verb_name, verb_desc, on, hidden")
+/datum/capdef_decl/c_granted_verb/spec()
+	return list(CAP_GRANTED_VERB, /datum/capability/def/granted_verb, "verb_path", STACK, "granted_verb", "verb_path, verb_name, verb_desc, on, hidden")
+
 /// CAPABILITY_TYPE(injector, CAP_INJECTOR) at code/library/reagents/injector.dm:20
 /datum/capability/lib/injector
 	var/slow = null
@@ -418,15 +431,6 @@
 	return cap_construct(CAP_TWO_HANDS, /datum/capability/lib/two_hands, list(), "")
 /datum/capdef_decl/c_two_hands/spec()
 	return list(CAP_TWO_HANDS, /datum/capability/lib/two_hands, NONE, STACK, "two_hands", "")
-
-/// CAPABILITY_TYPE(verb_grant, CAP_VERB_GRANT) at code/library/items/held_verb.dm:11
-/datum/capability/lib/verb_grant
-	var/verb_path = null
-/proc/verb_grant(verb_path)
-	RETURN_TYPE(/datum/capability/lib/verb_grant)
-	return cap_construct(CAP_VERB_GRANT, /datum/capability/lib/verb_grant, list(verb_path), "verb_path")
-/datum/capdef_decl/c_verb_grant/spec()
-	return list(CAP_VERB_GRANT, /datum/capability/lib/verb_grant, "verb_path", STACK, "verb_grant", "verb_path")
 
 /// CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE) at code/library/machine/machine.dm:109
 /datum/capability/def/wall_machine
@@ -3377,6 +3381,10 @@
 	into += entry_block("code/modules/mob/living/carbon/alien/alien_damage.dm", 1, /mob/living/carbon/alien)
 	into += entry_line(2)
 	into += list(global.on_notice(/datum/notice/hit/explosion, global.then(PROC_REF(alien_blast))))
+	into += entry_line(3)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(4)
+	into += list(global.verb_entry(/mob/living/proc/hide))
 
 /// CAPABILITIES(/mob/living/carbon/human) at code/library/mob/hands.dm:5
 /mob/living/carbon/human/declared_entries(list/into)
@@ -3398,6 +3406,13 @@
 	into += list(global.owns_many(nameof(teleporters)))
 	into += entry_line(13)
 	into += list(global.owns_one(nameof(crafting), starts = /datum/personal_crafting))
+
+/// CAPABILITIES(/mob/living/dominated_brain) at code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:20
+/mob/living/dominated_brain/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm", 20, /mob/living/dominated_brain)
+	into += entry_line(21)
+	into += list(global.verb_entry(/mob/living/dominated_brain/proc/resist_control))
 
 /// CAPABILITIES(/mob/living/silicon) at code/modules/mob/living/silicon/silicon.dm:36
 /mob/living/silicon/declared_entries(list/into)
@@ -3473,6 +3488,22 @@
 	into += list(global.owns_one(nameof(pda), starts = /obj/item/pda/ai/pai))
 	into += entry_line(113)
 	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(emp_scramble))))
+	into += entry_line(114)
+	into += list(global.verb_entry(/mob/living/silicon/pai/proc/choose_chassis))
+	into += entry_line(115)
+	into += list(global.verb_entry(/mob/living/silicon/pai/proc/choose_verbs))
+	into += entry_line(116)
+	into += list(global.verb_entry(/mob/proc/dominate_predator))
+	into += entry_line(117)
+	into += list(global.verb_entry(/mob/living/proc/dominate_prey))
+	into += entry_line(118)
+	into += list(global.verb_entry(/mob/living/proc/set_size))
+	into += entry_line(119)
+	into += list(global.verb_entry(/mob/living/proc/shred_limb))
+	into += entry_line(120)
+	into += list(global.verb_entry(/mob/living/proc/toggle_trash_catching))
+	into += entry_line(121)
+	into += list(global.verb_entry(/mob/verb/toggle_gun_mode, hidden = TRUE))
 
 /// CAPABILITIES(/mob/living/silicon/robot) at code/library/mob/hands.dm:15
 /mob/living/silicon/robot/declared_entries(list/into)
@@ -3505,12 +3536,16 @@
 	into += entry_line(28)
 	into += list(global.owns_one(nameof(robotact), starts = /datum/tgui_module/robot_ui))
 
-/// CAPABILITIES(/mob/living/silicon/robot/drone) at code/modules/mob/living/silicon/robot/drone/drone.dm:255
+/// CAPABILITIES(/mob/living/silicon/robot/drone) at code/modules/mob/living/silicon/robot/drone/drone.dm:252
 /mob/living/silicon/robot/drone/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/drone/drone.dm", 255, /mob/living/silicon/robot/drone)
-	into += entry_line(256)
+	into += entry_block("code/modules/mob/living/silicon/robot/drone/drone.dm", 252, /mob/living/silicon/robot/drone)
+	into += entry_line(253)
 	into += list(global.op("hat", global.item(/obj/item/clothing/head), global.stance(I_HELP), global.label("Put on hat"), global.then(PROC_REF(hat_put_on))))
+	into += entry_line(254)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(255)
+	into += list(global.verb_entry(/mob/living/proc/hide))
 
 /// CAPABILITIES(/mob/living/simple_mob) at code/modules/mob/living/simple_mob/simple_mob.dm:175
 /mob/living/simple_mob/declared_entries(list/into)
@@ -3524,6 +3559,28 @@
 	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(synthetic_emp_surge))))
 	into += entry_line(179)
 	into += list(global.on_notice(/datum/notice/hit, global.then(PROC_REF(thrown_reaction_sound))))
+	into += entry_line(180)
+	into += list(global.verb_entry(/mob/verb/observe, hidden = TRUE))
+	into += entry_line(181)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_nom, when = nameof(vore_active)))
+	into += entry_line(182)
+	into += list(global.verb_entry(/mob/living/proc/shred_limb, when = nameof(vore_active)))
+	into += entry_line(183)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/nutrition_heal))
+	into += entry_line(184)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/use_headset))
+	into += entry_line(185)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/use_pda))
+	into += entry_line(186)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/pick_size, login = TRUE))
+	into += entry_line(187)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE))
+	into += entry_line(188)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/set_name, login = TRUE))
+	into += entry_line(189)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/set_desc, login = TRUE))
+	into += entry_line(190)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/set_gender, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/borer) at code/modules/mob/living/simple_mob/subtypes/animal/borer/borer_query.dm:4
 /mob/living/simple_mob/animal/borer/declared_entries(list/into)
@@ -3533,6 +3590,10 @@
 	into += list(global.owns_one(nameof(ghost_check), /datum/ghost_query))
 	into += entry_line(6)
 	into += list(global.owns_one(nameof(host_brain), /mob/living/captive_brain))
+	into += entry_line(7)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(8)
+	into += list(global.verb_entry(/mob/living/proc/hide))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lurker) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/lurker.dm:113
 /mob/living/simple_mob/animal/giant_spider/lurker/declared_entries(list/into)
@@ -3569,33 +3630,106 @@
 	into += entry_line(27)
 	into += list(global.owns_one(nameof(udder), /datum/reagents))
 
+/// CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach) at code/modules/mob/living/simple_mob/subtypes/animal/passive/mothroach.dm:48
+/mob/living/simple_mob/animal/passive/mothroach/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/mothroach.dm", 48, /mob/living/simple_mob/animal/passive/mothroach)
+	into += entry_line(49)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(50)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+
 /// CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse) at code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm:53
 /mob/living/simple_mob/animal/passive/mouse/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm", 53, /mob/living/simple_mob/animal/passive/mouse)
 	into += entry_line(54)
 	into += list(global.owns_many(nameof(rat_diseases), /datum/affliction/contagion))
+	into += entry_line(55)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(56)
+	into += list(global.verb_entry(/mob/living/proc/hide))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/sif/frostfly) at code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm:127
+/// CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/beastmode) at code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm:350
+/mob/living/simple_mob/animal/passive/mouse/beastmode/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm", 350, /mob/living/simple_mob/animal/passive/mouse/beastmode)
+	into += entry_line(351)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl, hidden = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/mining) at code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm:325
+/mob/living/simple_mob/animal/passive/mouse/mining/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm", 325, /mob/living/simple_mob/animal/passive/mouse/mining)
+	into += entry_line(326)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(327)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/passive/opossum) at code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm:98
+/mob/living/simple_mob/animal/passive/opossum/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm", 98, /mob/living/simple_mob/animal/passive/opossum)
+	into += entry_line(99)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(100)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/passive/opossum/beastmode) at code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm:120
+/mob/living/simple_mob/animal/passive/opossum/beastmode/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/passive/possum.dm", 120, /mob/living/simple_mob/animal/passive/opossum/beastmode)
+	into += entry_line(121)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl, hidden = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/sif/frostfly) at code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm:124
 /mob/living/simple_mob/animal/sif/frostfly/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm", 127, /mob/living/simple_mob/animal/sif/frostfly)
-	into += entry_line(128)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm", 124, /mob/living/simple_mob/animal/sif/frostfly)
+	into += entry_line(125)
 	into += list(global.owns_one(nameof(smoke_special), starts = /datum/effect/effect/system/smoke_spread/frost))
+	into += entry_line(126)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(127)
+	into += list(global.verb_entry(/mob/living/proc/hide))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/sif/tymisian) at code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm:142
+/// CAPABILITIES(/mob/living/simple_mob/animal/sif/leech) at code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm:101
+/mob/living/simple_mob/animal/sif/leech/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm", 101, /mob/living/simple_mob/animal/sif/leech)
+	into += entry_line(102)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(103)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm) at code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm:137
+/mob/living/simple_mob/animal/sif/sakimm/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm", 137, /mob/living/simple_mob/animal/sif/sakimm)
+	into += entry_line(138)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(139)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/sif/tymisian) at code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm:139
 /mob/living/simple_mob/animal/sif/tymisian/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm", 142, /mob/living/simple_mob/animal/sif/tymisian)
-	into += entry_line(143)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm", 139, /mob/living/simple_mob/animal/sif/tymisian)
+	into += entry_line(140)
 	into += list(global.owns_one(nameof(smoke_spore), starts = /datum/effect/effect/system/smoke_spread/mothspore))
+	into += entry_line(141)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(142)
+	into += list(global.verb_entry(/mob/living/proc/hide))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva) at code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm:247
+/// CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva) at code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm:245
 /mob/living/simple_mob/animal/solargrub_larva/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm", 247, /mob/living/simple_mob/animal/solargrub_larva)
-	into += entry_line(248)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm", 245, /mob/living/simple_mob/animal/solargrub_larva)
+	into += entry_line(246)
 	into += list(global.owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine))
+	into += entry_line(247)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer) at code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm:364
 /mob/living/simple_mob/animal/space/carp/puffer/declared_entries(list/into)
@@ -3604,19 +3738,55 @@
 	into += entry_line(365)
 	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(blast_kaboom)))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth) at code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm:254
+/// CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army) at code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm:58
+/mob/living/simple_mob/animal/space/mouse_army/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm", 58, /mob/living/simple_mob/animal/space/mouse_army)
+	into += entry_line(59)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(60)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth) at code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm:255
 /mob/living/simple_mob/animal/space/mouse_army/stealth/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm", 254, /mob/living/simple_mob/animal/space/mouse_army/stealth)
-	into += entry_line(255)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm", 255, /mob/living/simple_mob/animal/space/mouse_army/stealth)
+	into += entry_line(256)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(hit_breaks_cloak))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/synx) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm:996
+/// CAPABILITIES(/mob/living/simple_mob/animal/synx) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm:988
 /mob/living/simple_mob/animal/synx/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm", 996, /mob/living/simple_mob/animal/synx)
-	into += entry_line(997)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm", 988, /mob/living/simple_mob/animal/synx)
+	into += entry_line(989)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
+	into += entry_line(990)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(991)
+	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/distend_stomach))
+	into += entry_line(992)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/contort))
+	into += entry_line(993)
+	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/sonar_ping))
+	into += entry_line(994)
+	into += list(global.verb_entry(/mob/living/proc/shred_limb))
+	into += entry_line(995)
+	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise))
+	into += entry_line(996)
+	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech))
+	into += entry_line(997)
+	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm:940
+/mob/living/simple_mob/animal/synx/ai/pet/debug/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm", 940, /mob/living/simple_mob/animal/synx/ai/pet/debug)
+	into += entry_line(941)
+	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename))
+	into += entry_line(942)
+	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite))
+	into += entry_line(943)
+	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc))
 
 /// CAPABILITIES(/mob/living/simple_mob/horror/BigTim) at code/modules/mob/living/simple_mob/subtypes/horror/shittytim.dm:36
 /mob/living/simple_mob/horror/BigTim/declared_entries(list/into)
@@ -3688,12 +3858,57 @@
 	into += entry_line(374)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(blink_when_shot))))
 
+/// CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh) at code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm:876
+/mob/living/simple_mob/humanoid/cultist/castertesh/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm", 876, /mob/living/simple_mob/humanoid/cultist/castertesh)
+	into += entry_line(877)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(878)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball) at code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm:758
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm", 758, /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
+	into += entry_line(759)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(760)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
 /// CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus) at code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm:566
 /mob/living/simple_mob/humanoid/cultist/magus/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm", 566, /mob/living/simple_mob/humanoid/cultist/magus)
 	into += entry_line(567)
 	into += list(global.owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/magus))
+
+/// CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift) at code/modules/mob/living/simple_mob/subtypes/humanoid/cultboss.dm:135
+/mob/living/simple_mob/humanoid/cultist/magus/rift/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/humanoid/cultboss.dm", 135, /mob/living/simple_mob/humanoid/cultist/magus/rift)
+	into += entry_line(136)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(137)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle) at code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm:797
+/mob/living/simple_mob/humanoid/cultist/noodle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm", 797, /mob/living/simple_mob/humanoid/cultist/noodle)
+	into += entry_line(798)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(799)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh) at code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm:837
+/mob/living/simple_mob/humanoid/cultist/tesh/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm", 837, /mob/living/simple_mob/humanoid/cultist/tesh)
+	into += entry_line(838)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(839)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain) at code/modules/mob/living/simple_mob/subtypes/humanoid/pirates.dm:448
 /mob/living/simple_mob/humanoid/pirate/captain/declared_entries(list/into)
@@ -3785,6 +4000,27 @@
 	into += entry_line(58)
 	into += list(global.owns_one(nameof(core), starts = /obj/item/technomancer_core/golem))
 
+/// CAPABILITIES(/mob/living/simple_mob/metroid) at code/modules/mob/living/simple_mob/subtypes/metroid/metBaseType.dm:69
+/mob/living/simple_mob/metroid/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/metroid/metBaseType.dm", 69, /mob/living/simple_mob/metroid)
+	into += entry_line(70)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+
+/// CAPABILITIES(/mob/living/simple_mob/shadekin) at code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm:77
+/mob/living/simple_mob/shadekin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm", 77, /mob/living/simple_mob/shadekin)
+	into += entry_line(78)
+	into += list(global.verb_entry(/mob/proc/adjust_hive_range))
+
+/// CAPABILITIES(/mob/living/simple_mob/slime) at code/modules/mob/living/simple_mob/subtypes/slime/slime.dm:96
+/mob/living/simple_mob/slime/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/slime/slime.dm", 96, /mob/living/simple_mob/slime)
+	into += entry_line(97)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+
 /// CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple) at code/modules/mob/living/simple_mob/subtypes/slimess/feral.dm:93
 /mob/living/simple_mob/slime/feral/dark_purple/declared_entries(list/into)
 	..(into)
@@ -3813,12 +4049,39 @@
 	into += entry_line(686)
 	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(blast_explode)))))
 
+/// CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound) at code/modules/mob/living/simple_mob/subtypes/vore/corrupt_hounds.dm:117
+/mob/living/simple_mob/vore/aggressive/corrupthound/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/corrupt_hounds.dm", 117, /mob/living/simple_mob/vore/aggressive/corrupthound)
+	into += entry_line(118)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(119)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
 /// CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie) at code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm:328
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm", 328, /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
 	into += entry_line(329)
 	into += list(global.owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw) at code/modules/mob/living/simple_mob/subtypes/vore/deathclaw.dm:74
+/mob/living/simple_mob/vore/aggressive/deathclaw/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/deathclaw.dm", 74, /mob/living/simple_mob/vore/aggressive/deathclaw)
+	into += entry_line(75)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(76)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon) at code/modules/mob/living/simple_mob/subtypes/vore/dragon.dm:116
+/mob/living/simple_mob/vore/aggressive/dragon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/dragon.dm", 116, /mob/living/simple_mob/vore/aggressive/dragon)
+	into += entry_line(117)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(118)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage) at code/modules/mob/living/simple_mob/subtypes/vore/macrophage.dm:54
 /mob/living/simple_mob/vore/aggressive/macrophage/declared_entries(list/into)
@@ -3829,6 +4092,15 @@
 	into += entry_line(56)
 	into += list(global.owns_many(nameof(infections), /datum/affliction/contagion))
 
+/// CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther) at code/modules/mob/living/simple_mob/subtypes/vore/panther.dm:56
+/mob/living/simple_mob/vore/aggressive/panther/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/panther.dm", 56, /mob/living/simple_mob/vore/aggressive/panther)
+	into += entry_line(57)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(58)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
 /// CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther/thor) at code/modules/mob/living/simple_mob/subtypes/vore/panther_thor.dm:101
 /mob/living/simple_mob/vore/aggressive/panther/thor/declared_entries(list/into)
 	..(into)
@@ -3836,40 +4108,89 @@
 	into += entry_line(102)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(hit_breaks_cloak))))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1133
+/// CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat) at code/modules/mob/living/simple_mob/subtypes/vore/rat.dm:226
+/mob/living/simple_mob/vore/aggressive/rat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/rat.dm", 226, /mob/living/simple_mob/vore/aggressive/rat)
+	into += entry_line(227)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(228)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:109
+/mob/living/simple_mob/vore/alienanimals/catslug/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 109, /mob/living/simple_mob/vore/alienanimals/catslug)
+	into += entry_line(110)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(111)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+	into += entry_line(112)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:297
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 297, /mob/living/simple_mob/vore/alienanimals/catslug/custom)
+	into += entry_line(298)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(299)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+	into += entry_line(300)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, hidden = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1136
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1133, /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
-	into += entry_line(1134)
-	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
-
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1136
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1136, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1136, /mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
 	into += entry_line(1137)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1142
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/declared_entries(list/into)
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1139
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1142, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
-	into += entry_line(1143)
-	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
-
-/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1139
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1139, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1139, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
 	into += entry_line(1140)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/bigdragon) at code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm:974
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1145
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1145, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
+	into += entry_line(1146)
+	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm:1142
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm", 1142, /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
+	into += entry_line(1143)
+	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/bigdragon) at code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm:964
 /mob/living/simple_mob/vore/bigdragon/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm", 974, /mob/living/simple_mob/vore/bigdragon)
-	into += entry_line(975)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm", 964, /mob/living/simple_mob/vore/bigdragon)
+	into += entry_line(965)
 	into += list(global.owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset))
+	into += entry_line(966)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(967)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+	into += entry_line(968)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/set_style, login = TRUE))
+	into += entry_line(969)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/toggle_glow, login = TRUE))
+	into += entry_line(970)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle, login = TRUE))
+	into += entry_line(971)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/flame_toggle, login = TRUE))
+	into += entry_line(972)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/special_toggle, login = TRUE))
+	into += entry_line(973)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/export_style, login = TRUE))
+	into += entry_line(974)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/import_style, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk) at code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm:632
 /mob/living/simple_mob/vore/blackhole_obelisk/declared_entries(list/into)
@@ -3878,19 +4199,112 @@
 	into += entry_line(633)
 	into += list(global.owns_one(nameof(loopy), /datum/looping_sound/obelisk))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:449
+/// CAPABILITIES(/mob/living/simple_mob/vore/blaidd) at code/modules/mob/living/simple_mob/subtypes/glamour/blaidd.dm:47
+/mob/living/simple_mob/vore/blaidd/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/glamour/blaidd.dm", 47, /mob/living/simple_mob/vore/blaidd)
+	into += entry_line(48)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(49)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+	into += entry_line(50)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/blaidd/proc/blaidd_invis, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/candy/bluecabold) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:47
+/mob/living/simple_mob/vore/candy/bluecabold/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 47, /mob/living/simple_mob/vore/candy/bluecabold)
+	into += entry_line(48)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(49)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:172
+/mob/living/simple_mob/vore/candy/marshmellowserpent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 172, /mob/living/simple_mob/vore/candy/marshmellowserpent)
+	into += entry_line(173)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(174)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/candy/orangecabold) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:122
+/mob/living/simple_mob/vore/candy/orangecabold/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 122, /mob/living/simple_mob/vore/candy/orangecabold)
+	into += entry_line(123)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(124)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:455
 /mob/living/simple_mob/vore/candy/ouroboros/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 449, /mob/living/simple_mob/vore/candy/ouroboros)
-	into += entry_line(450)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 455, /mob/living/simple_mob/vore/candy/ouroboros)
+	into += entry_line(456)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(shed_critter))))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:622
+/// CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:628
 /mob/living/simple_mob/vore/candy/peppermint/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 622, /mob/living/simple_mob/vore/candy/peppermint)
-	into += entry_line(623)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 628, /mob/living/simple_mob/vore/candy/peppermint)
+	into += entry_line(629)
 	into += list(global.op("peppermint_interaction_item", global.item(/obj/item), global.then(PROC_REF(peppermint_interaction_item))))
+	into += entry_line(630)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(631)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/candy/purplecabold) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:147
+/mob/living/simple_mob/vore/candy/purplecabold/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 147, /mob/living/simple_mob/vore/candy/purplecabold)
+	into += entry_line(148)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(149)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/candy/redcabold) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:72
+/mob/living/simple_mob/vore/candy/redcabold/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 72, /mob/living/simple_mob/vore/candy/redcabold)
+	into += entry_line(73)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(74)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/candy/yellowcabold) at code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm:97
+/mob/living/simple_mob/vore/candy/yellowcabold/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gateway/candy.dm", 97, /mob/living/simple_mob/vore/candy/yellowcabold)
+	into += entry_line(98)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(99)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/cryptdrake) at code/modules/mob/living/simple_mob/subtypes/vore/cryptdrake.dm:63
+/mob/living/simple_mob/vore/cryptdrake/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/cryptdrake.dm", 63, /mob/living/simple_mob/vore/cryptdrake)
+	into += entry_line(64)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(65)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/ddraig) at code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm:87
+/mob/living/simple_mob/vore/ddraig/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/glamour/ddraig.dm", 87, /mob/living/simple_mob/vore/ddraig)
+	into += entry_line(88)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(89)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+	into += entry_line(90)
+	into += list(global.verb_entry(/mob/living/proc/set_size, login = TRUE))
+	into += entry_line(91)
+	into += list(global.verb_entry(/mob/living/proc/polymorph, login = TRUE))
+	into += entry_line(92)
+	into += list(global.verb_entry(/mob/living/proc/glamour_invisibility, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/demon) at code/modules/mob/living/simple_mob/subtypes/vore/demon/demon.dm:129
 /mob/living/simple_mob/vore/demon/declared_entries(list/into)
@@ -3910,12 +4324,61 @@
 	into += entry_line(164)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(hit_breaks_cloak))))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/greatwolf) at code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm:103
+/// CAPABILITIES(/mob/living/simple_mob/vore/greatwolf) at code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm:99
 /mob/living/simple_mob/vore/greatwolf/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm", 103, /mob/living/simple_mob/vore/greatwolf)
-	into += entry_line(104)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm", 99, /mob/living/simple_mob/vore/greatwolf)
+	into += entry_line(100)
 	into += list(global.op("greatwolf_interaction_feed", global.item(/obj/item/reagent_containers/food), global.label("Feed"), global.then(PROC_REF(greatwolf_interaction_feed))))
+	into += entry_line(101)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(102)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+	into += entry_line(103)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/gryphon) at code/modules/mob/living/simple_mob/subtypes/vore/gryphon.dm:142
+/mob/living/simple_mob/vore/gryphon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/gryphon.dm", 142, /mob/living/simple_mob/vore/gryphon)
+	into += entry_line(143)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(144)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/hippo) at code/modules/mob/living/simple_mob/subtypes/vore/hippo.dm:63
+/mob/living/simple_mob/vore/hippo/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/hippo.dm", 63, /mob/living/simple_mob/vore/hippo)
+	into += entry_line(64)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(65)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/horse) at code/modules/mob/living/simple_mob/subtypes/vore/horse.dm:70
+/mob/living/simple_mob/vore/horse/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/horse.dm", 70, /mob/living/simple_mob/vore/horse)
+	into += entry_line(71)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(72)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/leopardmander) at code/modules/mob/living/simple_mob/subtypes/vore/leopardmander.dm:67
+/mob/living/simple_mob/vore/leopardmander/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/leopardmander.dm", 67, /mob/living/simple_mob/vore/leopardmander)
+	into += entry_line(68)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(69)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/leopardmander/exotic) at code/modules/mob/living/simple_mob/subtypes/vore/leopardmander.dm:182
+/mob/living/simple_mob/vore/leopardmander/exotic/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/leopardmander.dm", 182, /mob/living/simple_mob/vore/leopardmander/exotic)
+	into += entry_line(183)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/meowl) at code/modules/mob/living/simple_mob/subtypes/vore/meowl.dm:102
 /mob/living/simple_mob/vore/meowl/declared_entries(list/into)
@@ -3924,12 +4387,48 @@
 	into += entry_line(103)
 	into += list(global.op("meowl_interaction_feed", global.item(/obj/item/reagent_containers/food), global.label("Feed"), global.then(PROC_REF(meowl_interaction_feed))))
 
+/// CAPABILITIES(/mob/living/simple_mob/vore/morph) at code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm:63
+/mob/living/simple_mob/vore/morph/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm", 63, /mob/living/simple_mob/vore/morph)
+	into += entry_line(64)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(65)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/morph/proc/take_over_prey))
+	into += entry_line(66)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey) at code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm:68
+/mob/living/simple_mob/vore/morph/dominated_prey/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm", 68, /mob/living/simple_mob/vore/morph/dominated_prey)
+	into += entry_line(69)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color, hidden = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/otie) at code/modules/mob/living/simple_mob/subtypes/vore/otie.dm:324
+/mob/living/simple_mob/vore/otie/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/otie.dm", 324, /mob/living/simple_mob/vore/otie)
+	into += entry_line(325)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(326)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
 /// CAPABILITIES(/mob/living/simple_mob/vore/overmap) at code/modules/mob/living/simple_mob/overmap_mob.dm:118
 /mob/living/simple_mob/vore/overmap/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mob/living/simple_mob/overmap_mob.dm", 118, /mob/living/simple_mob/vore/overmap)
 	into += entry_line(119)
 	into += list(global.owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable/simplemob))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:57
+/mob/living/simple_mob/vore/overmap/stardog/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 57, /mob/living/simple_mob/vore/overmap/stardog)
+	into += entry_line(58)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE))
+	into += entry_line(59)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/rabbit/killer) at code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm:168
 /mob/living/simple_mob/vore/rabbit/killer/declared_entries(list/into)
@@ -3938,12 +4437,177 @@
 	into += entry_line(169)
 	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(blast_gib)))))
 
+/// CAPABILITIES(/mob/living/simple_mob/vore/raptor) at code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm:76
+/mob/living/simple_mob/vore/raptor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm", 76, /mob/living/simple_mob/vore/raptor)
+	into += entry_line(77)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(78)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound) at code/modules/mob/living/simple_mob/subtypes/vore/corrupt_hounds.dm:360
+/mob/living/simple_mob/vore/retaliate/corrupthound/janihound/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/corrupt_hounds.dm", 360, /mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	into += entry_line(361)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(362)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion) at code/modules/mob/living/simple_mob/subtypes/vore/lion.dm:131
+/mob/living/simple_mob/vore/retaliate/lion/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/lion.dm", 131, /mob/living/simple_mob/vore/retaliate/lion)
+	into += entry_line(132)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE))
+	into += entry_line(133)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE))
+	into += entry_line(134)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/scel) at code/modules/mob/living/simple_mob/subtypes/vore/scel.dm:85
+/mob/living/simple_mob/vore/scel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/scel.dm", 85, /mob/living/simple_mob/vore/scel)
+	into += entry_line(86)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(87)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+	into += entry_line(88)
+	into += list(global.verb_entry(/mob/living/proc/glow_toggle, login = TRUE))
+	into += entry_line(89)
+	into += list(global.verb_entry(/mob/living/proc/glow_color, login = TRUE))
+	into += entry_line(90)
+	into += list(global.verb_entry(/mob/living/proc/long_vore, login = TRUE))
+	into += entry_line(91)
+	into += list(global.verb_entry(/mob/living/proc/target_lunge, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/sect_drone) at code/modules/mob/living/simple_mob/subtypes/vore/sect_drone.dm:87
+/mob/living/simple_mob/vore/sect_drone/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/sect_drone.dm", 87, /mob/living/simple_mob/vore/sect_drone)
+	into += entry_line(88)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/sect_queen) at code/modules/mob/living/simple_mob/subtypes/vore/sect_queen.dm:88
+/mob/living/simple_mob/vore/sect_queen/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/sect_queen.dm", 88, /mob/living/simple_mob/vore/sect_queen)
+	into += entry_line(89)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/sheep) at code/modules/mob/living/simple_mob/subtypes/vore/sheep.dm:44
+/mob/living/simple_mob/vore/sheep/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/sheep.dm", 44, /mob/living/simple_mob/vore/sheep)
+	into += entry_line(45)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(46)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
 /// CAPABILITIES(/mob/living/simple_mob/vore/spacecritter) at code/modules/mob/living/simple_mob/subtypes/vore/spacecritters.dm:41
 /mob/living/simple_mob/vore/spacecritter/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/spacecritters.dm", 41, /mob/living/simple_mob/vore/spacecritter)
 	into += entry_line(42)
 	into += list(global.op("spacecritter_interaction_item", global.item(/obj/item), global.then(PROC_REF(spacecritter_interaction_item))))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf) at code/modules/mob/living/simple_mob/subtypes/vore/wolf.dm:113
+/mob/living/simple_mob/vore/wolf/direwolf/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/wolf.dm", 113, /mob/living/simple_mob/vore/wolf/direwolf)
+	into += entry_line(114)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(115)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+	into += entry_line(116)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/woof) at code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm:54
+/mob/living/simple_mob/vore/woof/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm", 54, /mob/living/simple_mob/vore/woof)
+	into += entry_line(55)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
+	into += entry_line(56)
+	into += list(global.verb_entry(/mob/living/proc/hide))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/zorgoia) at code/modules/mob/living/simple_mob/subtypes/vore/goia.dm:216
+/mob/living/simple_mob/vore/zorgoia/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/goia.dm", 216, /mob/living/simple_mob/vore/zorgoia)
+	into += entry_line(217)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/appearance_switch))
+	into += entry_line(218)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/recolor))
+	into += entry_line(219)
+	into += list(global.verb_entry(/mob/living/proc/injection))
+	into += entry_line(220)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/export_style))
+	into += entry_line(221)
+	into += list(global.verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/import_style))
+	into += entry_line(222)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(223)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee) at code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm:53
+/mob/living/simple_mob/vr/alchemistbee/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm", 53, /mob/living/simple_mob/vr/alchemistbee)
+	into += entry_line(54)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE))
+	into += entry_line(55)
+	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/xeno_ch) at code/modules/mob/living/simple_mob/subtypes/xenomorph.dm:65
+/mob/living/simple_mob/xeno_ch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/xenomorph.dm", 65, /mob/living/simple_mob/xeno_ch)
+	into += entry_line(66)
+	into += list(global.verb_entry(/mob/living/simple_mob/xeno_ch/proc/xeno_build, login = TRUE))
+	into += entry_line(67)
+	into += list(global.verb_entry(/mob/living/simple_mob/verb/toggle_speech_sounds, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/xeno_ch/hunter) at code/modules/mob/living/simple_mob/subtypes/xenomorph.dm:94
+/mob/living/simple_mob/xeno_ch/hunter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/xenomorph.dm", 94, /mob/living/simple_mob/xeno_ch/hunter)
+	into += entry_line(95)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/pounce_toggle, login = TRUE))
+	into += entry_line(96)
+	into += list(global.verb_entry(/mob/living/proc/ventcrawl, login = TRUE))
+	into += entry_line(97)
+	into += list(global.verb_entry(/mob/living/proc/hide, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/xeno_ch/queen) at code/modules/mob/living/simple_mob/subtypes/xenomorph.dm:157
+/mob/living/simple_mob/xeno_ch/queen/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/xenomorph.dm", 157, /mob/living/simple_mob/xeno_ch/queen)
+	into += entry_line(158)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/neurotoxin, login = TRUE))
+	into += entry_line(159)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/acidspit, login = TRUE))
+	into += entry_line(160)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/corrosive_acid, login = TRUE))
+	into += entry_line(161)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/speen, login = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/xeno_ch/sentinel) at code/modules/mob/living/simple_mob/subtypes/xenomorph.dm:123
+/mob/living/simple_mob/xeno_ch/sentinel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/xenomorph.dm", 123, /mob/living/simple_mob/xeno_ch/sentinel)
+	into += entry_line(124)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/pounce_toggle, login = TRUE))
+	into += entry_line(125)
+	into += list(global.verb_entry(/mob/living/proc/hide, login = TRUE))
+	into += entry_line(126)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/neurotoxin, login = TRUE))
+	into += entry_line(127)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/acidspit, login = TRUE))
+	into += entry_line(128)
+	into += list(global.verb_entry(/mob/living/simple_mob/proc/corrosive_acid, login = TRUE))
 
 /// CAPABILITIES(/mob/new_player) at code/modules/mob/new_player/news_panel.dm:8
 /mob/new_player/declared_entries(list/into)
@@ -4119,18 +4783,18 @@
 	into += entry_line(65)
 	into += list(global.op("crumble_remains", global.hand(), global.then(PROC_REF(interaction_crumble_remains))))
 
-/// CAPABILITIES(/obj/effect/dog_nose) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1052
+/// CAPABILITIES(/obj/effect/dog_nose) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1053
 /obj/effect/dog_nose/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1052, /obj/effect/dog_nose)
-	into += entry_line(1053)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1053, /obj/effect/dog_nose)
+	into += entry_line(1054)
 	into += list(global.op("boop_snoot", global.hand(), global.label("Boop"), global.then(PROC_REF(interaction_boop_snoot))))
 
-/// CAPABILITIES(/obj/effect/dog_teleporter) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1120
+/// CAPABILITIES(/obj/effect/dog_teleporter) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1121
 /obj/effect/dog_teleporter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1120, /obj/effect/dog_teleporter)
-	into += entry_line(1121)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1121, /obj/effect/dog_teleporter)
+	into += entry_line(1122)
 	into += list(global.op("dog_teleport", global.hand(), global.then(PROC_REF(interaction_dog_teleport))))
 
 /// CAPABILITIES(/obj/effect/fake_sun) at code/modules/lighting/lighting_fake_sun.dm:24
@@ -4654,6 +5318,8 @@
 	into += list(global.owns_one(nameof(IC), /obj/item/electronic_assembly/clothing))
 	into += entry_line(47)
 	into += list(global.owns_many(nameof(accessories)))
+	into += entry_line(48)
+	into += list(global.verb_entry(/obj/item/clothing/proc/change_color, when = nameof(polychromic)))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff) at code/modules/clothing/accessories/badges.dm:214
 /obj/item/clothing/accessory/badge/sheriff/declared_entries(list/into)
@@ -4804,15 +5470,15 @@
 	into += entry_line(520)
 	into += list(global.op("aviator_mode_self", global.in_hand(), global.label("Switch mode"), global.then(PROC_REF(aviator_mode_self))))
 
-/// CAPABILITIES(/obj/item/clothing/gloves) at code/modules/clothing/clothing.dm:328
+/// CAPABILITIES(/obj/item/clothing/gloves) at code/modules/clothing/clothing.dm:326
 /obj/item/clothing/gloves/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/clothing.dm", 328, /obj/item/clothing/gloves)
-	into += entry_line(329)
+	into += entry_block("code/modules/clothing/clothing.dm", 326, /obj/item/clothing/gloves)
+	into += entry_line(327)
 	into += list(global.owns_one(nameof(gloves), /obj/item/clothing/gloves))
-	into += entry_line(330)
+	into += entry_line(328)
 	into += list(global.owns_one(nameof(ring), /obj/item/clothing/accessory))
-	into += entry_line(331)
+	into += entry_line(329)
 	into += list(global.owns_one(nameof(special_attack), starts = nameof(special_attack_type)))
 
 /// CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe) at code/modules/clothing/under/miscellaneous.dm:1893
@@ -4872,6 +5538,8 @@
 	into += entry_block("code/modules/clothing/spacesuits/spacesuits.dm", 34, /obj/item/clothing/head/helmet/space)
 	into += entry_line(35)
 	into += list(global.owns_one(nameof(camera), /obj/machinery/camera))
+	into += entry_line(36)
+	into += list(global.verb_entry(/obj/item/clothing/head/helmet/space/proc/toggle_camera, when = nameof(camera_networks)))
 
 /// CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam) at code/modules/clothing/spacesuits/void/ert.dm:132
 /obj/item/clothing/head/helmet/space/void/responseteam/declared_entries(list/into)
@@ -5003,15 +5671,15 @@
 	into += entry_line(61)
 	into += list(global.op("surgical_toggle_verb", global.menu(), global.label("Adjust mask"), global.needs(global.carried()), global.then(PROC_REF(surgical_toggle_verb))))
 
-/// CAPABILITIES(/obj/item/clothing/shoes) at code/modules/clothing/clothing.dm:638
+/// CAPABILITIES(/obj/item/clothing/shoes) at code/modules/clothing/clothing.dm:636
 /obj/item/clothing/shoes/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/clothing.dm", 638, /obj/item/clothing/shoes)
-	into += entry_line(639)
+	into += entry_block("code/modules/clothing/clothing.dm", 636, /obj/item/clothing/shoes)
+	into += entry_line(637)
 	into += list(global.owns_one(nameof(shoes), /obj/item/clothing/shoes))
-	into += entry_line(640)
+	into += entry_line(638)
 	into += list(global.owns_one(nameof(squeak), /datum/squeak))
-	into += entry_line(641)
+	into += entry_line(639)
 	into += list(global.owns_one(nameof(holding), /obj/item))
 
 /// CAPABILITIES(/obj/item/clothing/shoes/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:105
@@ -5021,11 +5689,11 @@
 	into += entry_line(106)
 	into += list(global.op("changeling_shoes_shred_verb", global.menu(), global.label("Shred Shoes"), global.needs(global.carried()), global.then(PROC_REF(changeling_shoes_shred_verb))))
 
-/// CAPABILITIES(/obj/item/clothing/suit) at code/modules/clothing/clothing.dm:936
+/// CAPABILITIES(/obj/item/clothing/suit) at code/modules/clothing/clothing.dm:934
 /obj/item/clothing/suit/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/clothing.dm", 936, /obj/item/clothing/suit)
-	into += entry_line(937)
+	into += entry_block("code/modules/clothing/clothing.dm", 934, /obj/item/clothing/suit)
+	into += entry_line(935)
 	into += list(global.owns_one(nameof(hood), /obj/item/clothing/head))
 
 /// CAPABILITIES(/obj/item/clothing/suit/armor/buffvest) at code/modules/clothing/gateway/gateway.dm:134
@@ -5671,6 +6339,15 @@
 	into += entry_block("code/modules/projectiles/guns/energy/particle.dm", 25, /obj/item/gun/energy/particle)
 	into += entry_line(26)
 	into += list(global.owns_one(nameof(attached_safety), /obj/item/pressurelock))
+
+/// CAPABILITIES(/obj/item/gun/energy/sizegun) at code/modules/vore/resizing/sizegun.dm:25
+/obj/item/gun/energy/sizegun/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/resizing/sizegun.dm", 25, /obj/item/gun/energy/sizegun)
+	into += entry_line(26)
+	into += list(global.verb_entry(/obj/item/gun/energy/sizegun/proc/select_size))
+	into += entry_line(27)
+	into += list(global.verb_entry(/obj/item/gun/energy/sizegun/proc/spin_dial))
 
 /// CAPABILITIES(/obj/item/gun/launcher/confetti_cannon) at code/modules/projectiles/guns/launcher/confetti.dm:17
 /obj/item/gun/launcher/confetti_cannon/declared_entries(list/into)
@@ -11934,11 +12611,11 @@
 	into += entry_line(81)
 	into += list(global.op("touch", global.item(/obj/item), global.priority(OP_PRIORITY_DEFAULT), global.wait(0), global.then(PROC_REF(touched_with)), global.passes()))
 
-/// CAPABILITIES(/obj/structure/control_pod) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:846
+/// CAPABILITIES(/obj/structure/control_pod) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:847
 /obj/structure/control_pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 846, /obj/structure/control_pod)
-	into += entry_line(847)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 847, /obj/structure/control_pod)
+	into += entry_line(848)
 	into += list(global.op("hand", global.hand(), global.then(PROC_REF(interaction_hand))))
 
 /// CAPABILITIES(/obj/structure/cult/pylon) at code/game/gamemodes/cult/cult_structures.dm:36
@@ -12458,6 +13135,8 @@
 	into += entry_block("code/modules/lighting/sunlight_handler.dm", 5, /turf/simulated)
 	into += entry_line(6)
 	into += list(global.owns_one(nameof(shandler), /datum/sunlight_handler))
+	into += entry_line(7)
+	into += list(global.verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable)))
 
 /// CAPABILITIES(/turf/simulated/floor/lava) at code/game/turfs/simulated/lava.dm:20
 /turf/simulated/floor/lava/declared_entries(list/into)
@@ -12466,11 +13145,11 @@
 	into += entry_line(21)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/lava))
 
-/// CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1277
+/// CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1278
 /turf/simulated/floor/water/digestive_enzymes/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1277, /turf/simulated/floor/water/digestive_enzymes)
-	into += entry_line(1278)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1278, /turf/simulated/floor/water/digestive_enzymes)
+	into += entry_line(1279)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(digestive_enzymes_step)), when = nameof(we_process)))
 
 /// CAPABILITIES(/turf/simulated/floor/water/underwater/indoors) at code/game/turfs/simulated/underwater.dm:105
@@ -12567,6 +13246,13 @@
 /datum/capdef_decl/c_e1_widget/spec()
 	return list(CAP_E1_WIDGET, /datum/capability/e1_widget, "label", BEST(power), "e1_widget", "label, power")
 
+/// CAPABILITY_DEF(gap_verb_cap, CAP_GAP_VERB_CAP) at code/tests/engine/gap_fixtures.dm:107
+/proc/gap_verb_cap()
+	RETURN_TYPE(/datum/capability/def/gap_verb_cap)
+	return cap_construct(CAP_GAP_VERB_CAP, /datum/capability/def/gap_verb_cap, list(), "")
+/datum/capdef_decl/c_gap_verb_cap/spec()
+	return list(CAP_GAP_VERB_CAP, /datum/capability/def/gap_verb_cap, NONE, STACK, "gap_verb_cap", "")
+
 /// CAPABILITY_TYPE(p1_ticker, CAP_P1_TICKER) at code/tests/engine/p1_fixtures.dm:13
 /datum/capability/p1_ticker
 	var/power = 1
@@ -12658,6 +13344,19 @@
 	into += list(global.hands())
 	into += entry_line(167)
 	into += list(global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 6)))
+
+/// CAPABILITIES(/mob/gap_verb_mob) at code/tests/engine/gap_fixtures.dm:80
+/mob/gap_verb_mob/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/gap_fixtures.dm", 80, /mob/gap_verb_mob)
+	into += entry_line(81)
+	into += list(global.verb_entry(/mob/gap_verb_mob/proc/gv_always))
+	into += entry_line(82)
+	into += list(global.verb_entry(/mob/gap_verb_mob/proc/gv_login, login = TRUE))
+	into += entry_line(83)
+	into += list(global.verb_entry(/mob/gap_verb_mob/proc/gv_when, when = nameof(flag)))
+	into += entry_line(84)
+	into += list(global.verb_entry(/mob/gap_verb_mob/verb/gv_inherited, hidden = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/e0_fixture) at code/tests/engine/fixtures.dm:113
 /mob/living/simple_mob/e0_fixture/declared_entries(list/into)

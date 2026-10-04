@@ -18,6 +18,8 @@
 		stat_holder_init(holder, mapload)
 	hooks_change_baseline(holder)
 	type_every_arm(holder, T)
+	if(isatom(holder))
+		verb_entries_init(holder)
 
 /// Before the base body of Initialize runs: for work the parent's init reads (a part made in nullspace).
 /proc/engine_holder_preinit(datum/holder, mapload)

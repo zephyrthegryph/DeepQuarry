@@ -5,3 +5,5 @@
 #define ENTRY_EXAMINE_LINE "examine_line"
 /// look_layer(name, when =): a named layer of the holder's look, drawn while its condition holds.
 #define ENTRY_LOOK_LAYER "look_layer"
+/// verb_entry(path, login =, when =, hidden =): a verb a type has (or, inside a capability, a verb granted while the capability lives).
+#define ENTRY_VERB "verb_entry"

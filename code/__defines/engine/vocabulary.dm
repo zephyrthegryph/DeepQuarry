@@ -96,6 +96,8 @@
 #define ON_ACTOR 3
 #define ON_HELD 4
 #define ON_CONTENTS 5
+/// verb_entry(): the verb lands on the activation's source instead of its holder (an item's own verb, listed while a mob carries it).
+#define ON_SOURCE 6
 
 // ---- Slot families a while_slotted() may name (scopes.dm, slot_matches()). ----
 /// Any slot of the holder that is worn equipment (a body slot with BODY_SLOT_WORN).
