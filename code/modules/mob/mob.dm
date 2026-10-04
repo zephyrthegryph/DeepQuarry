@@ -1364,12 +1364,20 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	VV_DROPDOWN_OPTION(VV_HK_DIRECT_CONTROL, "Assume Direct Control")
 
 /// A variable-edit choice needing +SPAWN.
-/datum/om/prompt/choice/vv_spawn
-	requires = PROMPT_ADMIN(R_SPAWN)
+/datum/prompt/choice/vv_spawn
+	timeout = 0
+	rights = R_SPAWN
+
+/datum/prompt/choice/vv_spawn/recheck_extra()
+	if(isdatum(answer_value))
+		var/datum/selected = answer_value
+		if(QDELETED(selected))
+			return "gone"
 
 /// A variable-edit choice needing +DEBUG.
-/datum/om/prompt/choice/vv_debug
-	requires = PROMPT_ADMIN(R_DEBUG)
+/datum/prompt/choice/vv_debug
+	timeout = 0
+	rights = R_DEBUG
 
 /datum/om/prompt/text/vv_ai_faction
 	key = "faction"
@@ -1389,46 +1397,100 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	message = "Make mob wake up? This is needed for carbon mobs."
 	answer_on_no = TRUE
 
-/mob/proc/vv_language_added(datum/om/prompt/choice/vv_spawn/ask)
+/mob/proc/vv_language_added(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_language_added_apply), A)
+	if(!result.ok)
+		stack_trace("VV language_added: [result.error]")
+	return result.value
+
+/mob/proc/vv_language_added_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/new_language = ask.choice
+	var/new_language = ask.answer_value
 	if(add_language(new_language))
 		to_chat(user, "Added [new_language] to [src].")
 		return
 	to_chat(user, "Mob already knows that language.")
 
-/mob/proc/vv_language_removed(datum/om/prompt/choice/vv_spawn/ask)
+/mob/proc/vv_language_removed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_language_removed_apply), A)
+	if(!result.ok)
+		stack_trace("VV language_removed: [result.error]")
+	return result.value
+
+/mob/proc/vv_language_removed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/datum/language/rem_language = ask.choice
+	var/datum/language/rem_language = ask.answer_value
 	if(remove_language(rem_language.name))
 		to_chat(user, "Removed [rem_language] from [src].")
 		return
 	to_chat(user, "Mob doesn't know that language.")
 
-/mob/proc/vv_verb_added(datum/om/prompt/choice/vv_debug/ask)
-	var/verb = ask.choice
+/mob/proc/vv_verb_added(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_verb_added_apply), A)
+	if(!result.ok)
+		stack_trace("VV verb_added: [result.error]")
+	return result.value
+
+/mob/proc/vv_verb_added_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_debug/ask = A.answer
+	var/verb = ask.answer_value
 	if(verb != "Cancel")
 		// An admin's hand edit: lifts that admin hand's hide, grants from the admin source.
 		om_revoke(src, GRANT_VERB_HIDE, verb, verb_source(VERB_SOURCE_ADMIN))
 		grant(src, granted_verb(verb), verb_source(VERB_SOURCE_ADMIN))
 
-/mob/proc/vv_verb_removed(datum/om/prompt/choice/vv_debug/ask)
-	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
-	revoke(src, granted_verb(ask.choice), verb_source(VERB_SOURCE_ADMIN))
-	om_grant(src, GRANT_VERB_HIDE, ask.choice, verb_source(VERB_SOURCE_ADMIN))
+/mob/proc/vv_verb_removed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_verb_removed_apply), A)
+	if(!result.ok)
+		stack_trace("VV verb_removed: [result.error]")
+	return result.value
 
-/mob/proc/vv_organ_added(datum/om/prompt/choice/vv_spawn/ask)
+/mob/proc/vv_verb_removed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_debug/ask = A.answer
+	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
+	revoke(src, granted_verb(ask.answer_value), verb_source(VERB_SOURCE_ADMIN))
+	om_grant(src, GRANT_VERB_HIDE, ask.answer_value, verb_source(VERB_SOURCE_ADMIN))
+
+/mob/proc/vv_organ_added(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_organ_added_apply), A)
+	if(!result.ok)
+		stack_trace("VV organ_added: [result.error]")
+	return result.value
+
+/mob/proc/vv_organ_added_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/new_organ = ask.choice
+	var/new_organ = ask.answer_value
 	var/mob/living/carbon/M = src
 	if(locate_in_list(M.internal_organ_list(), new_organ))
 		to_chat(user, "Mob already has that organ.")
 		return
 	new new_organ(M)
 
-/mob/proc/vv_organ_removed(datum/om/prompt/choice/vv_spawn/ask)
+/mob/proc/vv_organ_removed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(vv_organ_removed_apply), A)
+	if(!result.ok)
+		stack_trace("VV organ_removed: [result.error]")
+	return result.value
+
+/mob/proc/vv_organ_removed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/obj/item/organ/rem_organ = ask.choice
+	var/obj/item/organ/rem_organ = ask.answer_value
 	var/mob/living/carbon/M = src
 	if(!(locate_in_list(M.internal_organ_list(), rem_organ)))
 		to_chat(user, "Mob does not have that organ.")
@@ -1489,18 +1551,18 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	return TRUE
 
 /mob/proc/vv_topic_add_language(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_added), title = "Language", message = "Please choose a language to add.", choices = GLOB.all_languages)
+	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_language_added), answerer = user, title = "Language", question = "Please choose a language to add.", choices = GLOB.all_languages)
 	return TRUE
 
 /mob/proc/vv_topic_remove_language(mob/user, list/args)
 	if(!languages.len)
 		to_chat(user, "This mob knows no languages.")
 		return
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_removed), title = "Language", message = "Please choose a language to remove.", choices = languages)
+	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_language_removed), answerer = user, title = "Language", question = "Please choose a language to remove.", choices = languages)
 	return TRUE
 
 /mob/proc/vv_topic_add_verb(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_added), title = "Verbs", message = "Select a verb!", choices = vv_addable_verbs(src))
+	open_request(src, /datum/prompt/choice/vv_debug, PROC_REF(vv_verb_added), answerer = user, title = "Verbs", question = "Select a verb!", choices = vv_addable_verbs(src))
 	return TRUE
 
 /// The verbs VV can add to `H` (a global proc: typesof(/mob/proc) inside a /mob proc is a cross-reference loop).
@@ -1526,15 +1588,15 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	return possibleverbs
 
 /mob/proc/vv_topic_remove_verb(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_removed), title = "Verbs", message = "Please choose a verb to remove.", choices = verbs)
+	open_request(src, /datum/prompt/choice/vv_debug, PROC_REF(vv_verb_removed), answerer = user, title = "Verbs", question = "Please choose a verb to remove.", choices = verbs)
 	return TRUE
 
 /mob/living/carbon/proc/vv_topic_add_organ(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_added), title = "Organ", message = "Please choose an organ to add.", choices = subtypesof(/obj/item/organ))
+	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_organ_added), answerer = user, title = "Organ", question = "Please choose an organ to add.", choices = subtypesof(/obj/item/organ))
 	return TRUE
 
 /mob/living/carbon/proc/vv_topic_remove_organ(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), title = "Organ", message = "Please choose an organ to remove.", choices = internal_organ_list())
+	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), answerer = user, title = "Organ", question = "Please choose an organ to remove.", choices = internal_organ_list())
 	return TRUE
 
 /mob/living/proc/vv_topic_give_ai(mob/user, list/args)
