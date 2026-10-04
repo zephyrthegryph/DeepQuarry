@@ -444,11 +444,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
 CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
 	on_notice(/datum/notice/shoes_step, then(PROC_REF(dry_step)))
 
-/obj/item/clothing/shoes/dry_galoshes/proc/dry_step(datum/notice/shoes_step/N)
+/obj/item/clothing/shoes/dry_galoshes/proc/dry_step(datum/act/notice/A)
 	var/turf/simulated/T = get_turf(src)
 	var/obj/effect/decal/cleanable/blood/B = locate_within(T, /obj/effect/decal/cleanable/blood)
 	if(istype(T))
 		T.wet_floor_finish()
 	if(B)
 		B.dry()
-

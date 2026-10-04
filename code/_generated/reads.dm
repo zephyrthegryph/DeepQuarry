@@ -293,7 +293,6 @@
 			/datum/system/vote = RXB_EVERY,
 			/obj/effect/hotspot = RXB_EVERY,
 			/obj/item/broken_gun = RXB_INIT,
-			/obj/item/clothing/shoes/dry_galoshes = RXB_NOTICE,
 		)
 	return table
 
