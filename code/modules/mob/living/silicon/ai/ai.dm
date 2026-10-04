@@ -694,12 +694,14 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/hologram_change_chosen(datum/om/prompt/choice/ai_able/ask)
 	switch(ask.choice)
 		if("Color")
-			om_ask(src, /datum/om/prompt/color, PROC_REF(hologram_color_chosen), title = "Hologram Color", message = "Choose a color:", default = holo_color)
+			open_request(src, /datum/prompt/color, PROC_REF(hologram_color_chosen), answerer = src, title = "Hologram Color", question = "Choose a color:", default = holo_color, timeout = 0)
 		if("Model")
 			om_ask(src, /datum/om/prompt/choice/ai_able, PROC_REF(hologram_model_kind_chosen), title = "Hologram Selection", message = "Would you like to select a hologram based on a (visible) crew member, switch to unique avatar, or load your character from your character slot?", choices = list("Crew Member", "Unique", "My Character"), buttons = TRUE)
 
-/mob/living/silicon/ai/proc/hologram_color_chosen(datum/om/prompt/color/ask)
-	holo_color = ask.picked_color
+/mob/living/silicon/ai/proc/hologram_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	holo_color = A.answer.answer_value
 
 /mob/living/silicon/ai/proc/hologram_model_kind_chosen(datum/om/prompt/choice/ai_able/ask)
 	switch(ask.choice)

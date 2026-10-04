@@ -271,11 +271,13 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
 		return
-	om_ask(usr, /datum/om/prompt/color, PROC_REF(color_picked), message = "Choose a color.", default = color)
+	open_request(src, /datum/prompt/color, PROC_REF(color_picked), answerer = usr, question = "Choose a color.", default = color, timeout = 0)
 
-/mob/living/simple_mob/proc/color_picked(datum/om/prompt/color/ask)
+/mob/living/simple_mob/proc/color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(!picked_color)
-		color = ask.picked_color
+		color = A.answer.answer_value
 	picked_color = TRUE
 	update_icon()
 

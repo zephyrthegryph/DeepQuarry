@@ -3,6 +3,7 @@
 	om_ask(user, /datum/om/prompt/text, PROC_REF(said), message = "Say what?", encode = FALSE, multiline = TRUE)
 	om_ask(user, /datum/om/prompt/number, PROC_REF(counted), message = "How many?", min = 1, max = 10, default = 5, timeout = 30 SECONDS)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(picked), message = "Which?", choices = names, buttons = TRUE)
+	om_ask(user, /datum/om/prompt/color, PROC_REF(tinted), title = "Tint", message = "Pick a tint:", default = "#ff0000")
 	om_ask(user, /datum/om/prompt/confirm, PROC_REF(sure), message = "Sure?")
 	om_ask(user, /datum/om/prompt/confirm, TYPE_PROC_REF(/datum/holder, either), message = "Either way?", answer_on_no = TRUE)
 	// a string that names it stays as it is
@@ -31,3 +32,6 @@
 
 /datum/holder/proc/either(datum/om/prompt/confirm/ask)
 	return ask.yes
+
+/datum/holder/proc/tinted(datum/om/prompt/color/ask)
+	return ask.picked_color

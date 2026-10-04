@@ -40,6 +40,7 @@ enum Kind {
     Text,
     Number,
     Choice,
+    Color,
 }
 
 impl Kind {
@@ -49,6 +50,7 @@ impl Kind {
             "/datum/om/prompt/text" => Some(Kind::Text),
             "/datum/om/prompt/number" => Some(Kind::Number),
             "/datum/om/prompt/choice" => Some(Kind::Choice),
+            "/datum/om/prompt/color" => Some(Kind::Color),
             _ => None,
         }
     }
@@ -58,6 +60,7 @@ impl Kind {
             Kind::Text => "/datum/prompt/text",
             Kind::Number => "/datum/prompt/number",
             Kind::Choice => "/datum/prompt/choice",
+            Kind::Color => "/datum/prompt/color",
         }
     }
     /// The var the old kind keeps its answer in.
@@ -67,6 +70,7 @@ impl Kind {
             Kind::Text => "text",
             Kind::Number => "number",
             Kind::Choice => "choice",
+            Kind::Color => "picked_color",
         }
     }
     /// The old parameters the kind takes (besides title, message, timeout) and the new field each becomes.
@@ -76,6 +80,7 @@ impl Kind {
             Kind::Text => &[("default", "default"), ("max_length", "max_len"), ("multiline", "multiline"), ("encode", "encode"), ("name_text", "name_text")],
             Kind::Number => &[("default", "default"), ("min", "min_value"), ("max", "max_value")],
             Kind::Choice => &[("choices", "choices"), ("default", "default"), ("buttons", "buttons")],
+            Kind::Color => &[("default", "default")],
         }
     }
 }

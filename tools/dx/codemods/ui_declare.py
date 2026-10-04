@@ -208,10 +208,40 @@ def main():
         l for l in all_code.split("\n") if not re.match(r"^(UI_[A-Z_]+|DECLARE_UI\w*)\(", l) and not re.match(r"^/[\w/]+/(proc/)?\w+\(", l)
     )
     tree_text = "\n".join("\n".join(f.lines) for f in files.values())
+    # `ui_act_allowed` definitions: type -> (rel, line index). The op path never calls it, so a type that overrides it converts only when
+    # the override is `if(!..()) return FALSE; add_fingerprint(user); return TRUE` and no related type defines one: then the guard is
+    # always TRUE and the fingerprint moves to the head of every handler (the same effect, once per press, before anything else).
+    allowed_defs = defaultdict(list)
+    uaa = re.compile(r"^(/[\w/]+?)/(?:proc/)?ui_act_allowed\(")
+    for rel, f in files.items():
+        for i, l in enumerate(f.lines):
+            if l and l[0] == "/":
+                um = uaa.match(l)
+                if um:
+                    allowed_defs[um.group(1)].append((rel, i))
+    FP_BODY_A = ["if(!..())", "return FALSE", "add_fingerprint(ui.user)", "return TRUE"]
+    FP_BODY_B = ["if(!..())", "return FALSE", "add_fingerprint(user)", "return TRUE"]
+
+    def fingerprint_only(t):
+        defs = allowed_defs.get(t, [])
+        if len(defs) != 1 or any(related(t, u) for u in allowed_defs if u != t and u != "/datum"):
+            return None
+        rel, i = defs[0]
+        f = files[rel]
+        first, last = body_range(f.lines, i)
+        lines = [strip_code(l).strip() for l in f.lines[first : last + 1]]
+        lines = [l for l in lines if l]
+        if lines not in (FP_BODY_A, FP_BODY_B):
+            return None
+        return (rel, i, first, last)
+
     for t, rs in sorted(rows.items()):
         if only and t != only:
             continue
         kinds = [r[0] for r in rs]
+        if not re.match(r"^/(atom|obj|mob|turf|area)(/|$)", t):
+            residue[t] = "ui_not_atom"  # the new output procs (ui_data, present_interface) are on /atom: a /datum window has no new form yet
+            continue
         decl = [r for r in rs if r[0] == "DECLARE_UI"]
         if len(decl) != 1:
             residue[t] = "ui_forms"  # no declaration here (inherited), or several
@@ -228,7 +258,8 @@ def main():
             residue[t] = "ui_related"
             continue
         tre = re.escape(t)
-        ovr = re.compile(r"^" + tre + r"/(?:proc/)?(" + "|".join(OVERRIDES) + r")\(", re.M)
+        fp = fingerprint_only(t)
+        ovr = re.compile(r"^" + tre + r"/(?:proc/)?(" + "|".join(o for o in OVERRIDES if not (fp and o == "ui_act_allowed")) + r")\(", re.M)
         if ovr.search(tree_text) or re.search(r"^CAPABILITIES\(" + tre + r"\)[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+interface\(", tree_text, re.M):
             residue[t] = "ui_override"
             continue
@@ -322,7 +353,7 @@ def main():
                 residue[t] = "data_rows"
                 continue
             data = {"row": data_rows[0], "fields": fields}
-        plan = {"type": t, "window": window, "title": title, "acts": acts, "data": data, "rows": rs, "handlers": []}
+        plan = {"type": t, "window": window, "title": title, "acts": acts, "data": data, "rows": rs, "handlers": [], "fp": fp}
         # ---- handlers
         for a in acts:
             pat = re.compile(r"^UI_ACT_PROC\(" + tre + r",\s*" + re.escape(a["proc"]) + r"\)\s*(//.*)?$")
@@ -465,7 +496,8 @@ def main():
             sig = t + "/proc/" + a["proc"] + "(datum/act/op/A" + "".join(", " + d for d in declared) + ")"
             # insert `user` after the leading settings
             extra = ""
-            if words_in(body, "user"):
+            heads = (["var/mob/user = A.actor"] if words_in(body, "user") else []) + (["add_fingerprint(A.actor)"] if plan["fp"] else [])
+            if heads:
                 after = h["idx"]
                 k = h["first"]
                 while k <= h["last"]:
@@ -483,7 +515,7 @@ def main():
                     if f.lines[k2].strip():
                         indent = re.match(r"^[ \t]*", f.lines[k2]).group(0)
                         break
-                line = indent + "var/mob/user = A.actor"
+                line = ("\n").join(indent + hl for hl in heads)
                 if after == h["idx"]:
                     extra = "\n" + line
                 else:
@@ -523,6 +555,12 @@ def main():
             drow = d["row"]
             files[drow[1]].lines[drow[2]] = "\n".join(out)
             files[drow[1]].dirty = True
+        if plan["fp"]:
+            frel, fi, ffirst, flast = plan["fp"]
+            ff = files[frel]
+            for k in range(fi, flast + 1):
+                ff.lines[k] = None
+            ff.dirty = True
         # delete the legacy rows; the declaration line becomes the block (or goes, when the type already has one)
         block_file = None
         for rel, f in files.items():

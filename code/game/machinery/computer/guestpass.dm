@@ -56,10 +56,17 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 
 /// Old attack_self in combat mode: deactivate the pass.
 /obj/item/card/id/guest/proc/interaction_guest_pass_deactivate(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(deactivation_confirmed), title = "Confirm Deactivation", message = "Do you really want to deactivate this guest pass? (you can't reactivate it)", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(deactivation_confirmed), valid = PROC_REF(deactivation_valid), answerer = user, title = "Confirm Deactivation", question = "Do you really want to deactivate this guest pass? (you can't reactivate it)", timeout = 0)
 
-/obj/item/card/id/guest/proc/deactivation_confirmed(datum/om/prompt/confirm/ask)
-	var/mob/living/user = ask.answerer
+/// The pass is still carried by whoever was asked, who can still act.
+/obj/item/card/id/guest/proc/deactivation_valid(datum/request/R)
+	var/mob/living/user = R.answerer
+	return istype(user) && loc == user && !user.incapacitated()
+
+/obj/item/card/id/guest/proc/deactivation_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/living/user = A.request.answerer
 	if(icon_state != "guest-invalid")
 		//rip guest pass </3
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + "deactivates %T%."))
@@ -111,7 +118,6 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 /obj/machinery/computer/guestpass/Initialize(mapload)
 	. = ..()
 	uid = "[rand(100,999)]-G[rand(10,99)]"
-
 
 /obj/machinery/computer/guestpass/declare_interactions(list/into)
 	into += list(
@@ -174,24 +180,35 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 		to_chat(user, span_warning("There is nothing to remove from the console."))
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/guestpass, "GuestPass")
+CAPABILITIES(/obj/machinery/computer/guestpass)
+	interface("GuestPass")
+	op("mode", ui_act("mode", arg("mode", num())), then(PROC_REF(ui_act_mode)))
+	op("giv_name", ui_act("giv_name"), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Person pass is issued to", "default" = nameof(giv_name))), then(PROC_REF(ui_act_giv_name)))
+	op("reason", ui_act("reason"), asks(/datum/prompt/text, fields = list("title" = "Reason", "question" = "Reason why pass is issued", "default" = nameof(reason))), then(PROC_REF(ui_act_reason)))
+	op("duration", ui_act("duration"), asks(/datum/prompt/number, fields = list("title" = "Duration", "question" = "Duration (in minutes) during which pass is valid (up to 360 minutes).", "min_value" = 0, "max_value" = 360)), then(PROC_REF(ui_act_duration)))
+	op("access", ui_act("access", arg("access", num())), then(PROC_REF(ui_act_access)))
+	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
+	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
+	op("issue", ui_act("issue"), then(PROC_REF(ui_act_issue)))
 
-UI_DATA(/obj/machinery/computer/guestpass, "giver", "giveName=giv_name:text", "reason:text", "duration:num", "uid", "merge:ui_data_obj_machinery_computer_guestpass{access:unknown,area:list,mode:num,log:bool}")
-
-/// The computed part of /obj/machinery/computer/guestpass's window data (declared on its UI_DATA row).
-/obj/machinery/computer/guestpass/proc/ui_data_obj_machinery_computer_guestpass(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/guestpass/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["giver"] = giver
+	data["giveName"] = giv_name
+	data["reason"] = reason
+	data["duration"] = duration
+	data["uid"] = uid
 
 	var/list/area_list = list()
 
 	data["access"] = null
 	if(giver && giver.GetAccess())
 		data["access"] = giver.GetAccess()
-		for (var/A in giver.GetAccess())
-			if(A in accesses)
-				area_list.Add(list(list("area" = A, "area_name" = SSaccess.get_access_desc(A), "on" = 1)))
+		for (var/acc in giver.GetAccess())
+			if(acc in accesses)
+				area_list.Add(list(list("area" = acc, "area_name" = SSaccess.get_access_desc(acc), "on" = 1)))
 			else
-				area_list.Add(list(list("area" = A, "area_name" = SSaccess.get_access_desc(A), "on" = null)))
+				area_list.Add(list(list("area" = acc, "area_name" = SSaccess.get_access_desc(acc), "on" = null)))
 	data["area"] = area_list
 
 	data["mode"] = mode
@@ -199,83 +216,83 @@ UI_DATA(/obj/machinery/computer/guestpass, "giver", "giveName=giv_name:text", "r
 
 	return data
 
-UI_ACT(/obj/machinery/computer/guestpass, "mode", ui_act_mode, UI_ARG_NUM("mode"))
-UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_mode)
-	set_mode(params["mode"])
-	add_fingerprint(ui.user)
+/obj/machinery/computer/guestpass/proc/ui_act_mode(datum/act/op/A, new_mode)
+	set_mode(new_mode)
+	add_fingerprint(A.actor)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/guestpass, "giv_name", ui_act_giv_name)
-UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_giv_name)
-	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_name_entered), title = "Name", message = "Person pass is issued to", default = giv_name, requires = PROMPT_USABLE)
-	add_fingerprint(ui.user)
+/obj/machinery/computer/guestpass/proc/ui_act_giv_name(datum/act/op/A)
+	add_fingerprint(A.actor)
+	var/datum/prompt/R = A.answer
+	var/nam = sanitizeName(R?.value)
+	if(nam)
+		giv_name = nam
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/guestpass, "reason", ui_act_reason)
-UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_reason)
-	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_reason_entered), title = "Reason", message = "Reason why pass is issued", default = reason, requires = PROMPT_USABLE)
-	add_fingerprint(ui.user)
+/obj/machinery/computer/guestpass/proc/ui_act_reason(datum/act/op/A)
+	add_fingerprint(A.actor)
+	var/datum/prompt/R = A.answer
+	if(R?.value)
+		reason = R.value
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/guestpass, "duration", ui_act_duration)
-UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_duration)
-	om_ask(ui.user, /datum/om/prompt/number, PROC_REF(pass_duration_entered), title = "Duration", message = "Duration (in minutes) during which pass is valid (up to 360 minutes).", max = 360, min = 0, requires = PROMPT_USABLE)
-	add_fingerprint(ui.user)
+/obj/machinery/computer/guestpass/proc/ui_act_duration(datum/act/op/A)
+	add_fingerprint(A.actor)
+	var/datum/prompt/R = A.answer
+	var/dur = R?.value
+	if(dur > 0 && dur <= 360)
+		duration = dur
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/guestpass, "access", ui_act_access, UI_ARG_NUM("access"))
-UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_access)
-	var/A = params["access"]
-	if(A in accesses)
-		LAZYREMOVE(accesses, A)
+/obj/machinery/computer/guestpass/proc/ui_act_access(datum/act/op/A, access)
+	var/selected = access
+	if(selected in accesses)
+		LAZYREMOVE(accesses, selected)
 	else
-		if(A in giver.GetAccess())	//Let's make sure the ID card actually has the access.
-			LAZYADD(accesses, A)
+		if(selected in giver?.GetAccess())	//Let's make sure the ID card actually has the access.
+			LAZYADD(accesses, selected)
 		else
-			to_chat(ui.user, span_warning("Invalid selection, please consult technical support if there are any issues."))
-			log_admin("[key_name_admin(ui.user)] tried selecting an invalid guest pass terminal option.")
-	add_fingerprint(ui.user)
+			to_chat(A.actor, span_warning("Invalid selection, please consult technical support if there are any issues."))
+			log_admin("[key_name_admin(A.actor)] tried selecting an invalid guest pass terminal option.")
+	add_fingerprint(A.actor)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/guestpass, "id", ui_act_id)
-UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_id)
+/obj/machinery/computer/guestpass/proc/ui_act_id(datum/act/op/A)
 	if(giver)
-		if(ishuman(ui.user))
-			giver.forceMove(ui.user.loc)
-			if(!ui.user.get_active_hand())
-				ui.user.put_in_hands(giver)
+		if(ishuman(A.actor))
+			giver.forceMove(A.actor.loc)
+			if(!A.actor.get_active_hand())
+				A.actor.put_in_hands(giver)
 			own_take(src, nameof(/obj/machinery/computer/guestpass::giver))
 		else
 			giver.forceMove(src.loc)
 			own_take(src, nameof(/obj/machinery/computer/guestpass::giver))
 		LAZYCLEARLIST(accesses)
 	else
-		var/obj/item/I = ui.user.get_active_hand()
+		var/obj/item/I = A.actor.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			move_into(src, nameof(src.giver), I, ui.user)
-	add_fingerprint(ui.user)
+			move_into(src, nameof(src.giver), I, A.actor)
+	add_fingerprint(A.actor)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/guestpass, "print", ui_act_print)
-UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_print)
+/obj/machinery/computer/guestpass/proc/ui_act_print(datum/act/op/A)
 	var/dat = "<h3>Activity log of guest pass terminal #[uid]</h3><br>"
 	for (var/entry in internal_log)
 		dat += "[entry]<br><hr>"
 	var/obj/item/paper/P = new/obj/item/paper( loc )
 	P.name = "activity log"
 	P.info = dat
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/guestpass, "issue", ui_act_issue)
-UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_issue)
+/obj/machinery/computer/guestpass/proc/ui_act_issue(datum/act/op/A)
 	if(giver)
 		var/number = add_zero("[rand(0,9999)]", 4)
 		var/entry = "\[[stationtime2text()]\] Pass #[number] issued by [giver.registered_name] ([giver.assignment]) to [giv_name]. Reason: [reason]. Grants access to following areas: "
 		for (var/i=1 to length(accesses))
-			var/A = LAZYACCESS(accesses, i)
-			if(A)
-				var/area = SSaccess.get_access_desc(A)
+			var/granted = LAZYACCESS(accesses, i)
+			if(granted)
+				var/area = SSaccess.get_access_desc(granted)
 				entry += "[i > 1 ? ", [area]" : "[area]"]"
 		entry += ". Expires at [worldtime2stationtime(world.time + duration*10*60)]."
 		LAZYADD(internal_log, entry)
@@ -287,32 +304,9 @@ UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_issue)
 		pass.reason = reason
 		pass.name = "guest pass #[number]"
 	else
-		to_chat(ui.user, span_warning("Cannot issue pass without issuing ID."))
-	add_fingerprint(ui.user)
+		to_chat(A.actor, span_warning("Cannot issue pass without issuing ID."))
+	add_fingerprint(A.actor)
 	return TRUE
-
-/obj/machinery/computer/guestpass/proc/pass_name_entered(datum/om/prompt/text/ask)
-	var/nam = sanitizeName(ask.text)
-	if(nam)
-		giv_name = nam
-		SStgui.update_uis(src)
-
-/obj/machinery/computer/guestpass/proc/pass_reason_entered(datum/om/prompt/text/ask)
-	var/reas = ask.text
-	if(reas)
-		reason = reas
-		SStgui.update_uis(src)
-
-/obj/machinery/computer/guestpass/proc/pass_duration_entered(datum/om/prompt/number/ask)
-	var/dur = ask.number
-	var/mob/user = ask.answerer
-	if(!dur)
-		return
-	if(dur > 0 && dur <= 360)
-		duration = dur
-		SStgui.update_uis(src)
-	else
-		to_chat(user, span_warning("Invalid duration."))
 
 /obj/machinery/computer/guestpass/ownership()
 	. = ..()

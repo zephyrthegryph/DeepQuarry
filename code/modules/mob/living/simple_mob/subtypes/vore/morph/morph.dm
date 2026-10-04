@@ -245,12 +245,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 	set name = "Pick Color"
 	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "You can set your color!"
-	om_ask(src, /datum/om/prompt/color, PROC_REF(morph_color_picked), message = "Choose a color.", default = color)
+	open_request(src, /datum/prompt/color, PROC_REF(morph_color_picked), answerer = src, question = "Choose a color.", default = color, timeout = 0)
 
-/mob/living/simple_mob/vore/morph/proc/morph_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		color = ask.picked_color
-		chosen_color = ask.picked_color
+/mob/living/simple_mob/vore/morph/proc/morph_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		color = A.answer.answer_value
+		chosen_color = A.answer.answer_value
 
 /mob/living/simple_mob/vore/morph/proc/take_over_prey()
 	set name = "Take Over Prey"

@@ -17,7 +17,7 @@
 	return 0
 
 /obj/machinery/computer/card/proc/is_authenticated()
-	return scan ? check_access(scan) : 0
+	return scan ? check_access(scan) : 0 // ALLOW(reads): the scanned card is asked when the button is pressed and again when the answer arrives, never cached
 
 /obj/machinery/computer/card/proc/get_target_rank()
 	return modify && modify.assignment ? modify.assignment : "Unassigned"
@@ -93,7 +93,18 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/card, "IdentificationComputer")
+CAPABILITIES(/obj/machinery/computer/card)
+	interface("IdentificationComputer")
+	op("modify", ui_act("modify"), then(PROC_REF(ui_act_modify)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("access", ui_act("access", arg("access_target", num()), arg("allowed", num())), then(PROC_REF(ui_act_access)))
+	op("assign", ui_act("assign", arg("assign_target", schema_text(4096))), then(PROC_REF(ui_act_assign)))
+	op("assign_custom", ui_act("assign_custom"), needs(req(PROC_REF(assign_possible), because = MSG(card_console/cannot_assign))), asks(/datum/prompt/text, fields = list("title" = "Assignment", "question" = "Enter a custom job assignment.", "default" = "", "max_len" = 45)), then(PROC_REF(ui_act_assign_custom)))
+	op("reg", ui_act("reg", arg("reg", schema_text(4096))), then(PROC_REF(ui_act_reg)))
+	op("account", ui_act("account", arg("account", num())), then(PROC_REF(ui_act_account)))
+	op("mode", ui_act("mode", arg("mode_target", num())), then(PROC_REF(ui_act_mode)))
+	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
+	op("terminate", ui_act("terminate"), then(PROC_REF(ui_act_terminate)))
 
 /obj/machinery/computer/card/tgui_static_data(mob/user)
 	var/list/data =  ..()
@@ -102,11 +113,9 @@ DECLARE_UI(/obj/machinery/computer/card, "IdentificationComputer")
 	data["manifest"] = GLOB.PDA_Manifest
 	return data
 
-UI_DATA(/obj/machinery/computer/card, "printing:num", "merge:ui_data_obj_machinery_computer_card{station_name:text,mode:num,target_name:text,target_owner:text,target_rank:unknown,scan_name:text,authenticated:unknown,has_modify:bool,account_number:num,centcom_access:unknown,all_centcom_access:list,regions:list,id_rank:text,departments:list}")
-
-/// The computed part of /obj/machinery/computer/card's window data (declared on its UI_DATA row).
-/obj/machinery/computer/card/proc/ui_data_obj_machinery_computer_card(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/card/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["printing"] = printing
 
 	data["station_name"] = station_name()
 	data["mode"] = mode
@@ -161,51 +170,48 @@ UI_DATA(/obj/machinery/computer/card, "printing:num", "merge:ui_data_obj_machine
 
 	return data
 
-UI_ACT(/obj/machinery/computer/card, "modify", ui_act_modify)
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_modify)
+/obj/machinery/computer/card/proc/ui_act_modify(datum/act/op/A)
 	if(modify)
 		GLOB.data_core.manifest_modify(modify.registered_name, modify.assignment, modify.rank)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
-		if(ishuman(ui.user))
+		if(ishuman(A.actor))
 			modify.forceMove(get_turf(src))
-			if(!ui.user.get_active_hand())
-				ui.user.put_in_hands(modify)
+			if(!A.actor.get_active_hand())
+				A.actor.put_in_hands(modify)
 			own_take(src, nameof(/obj/machinery/computer/card::modify))
 		else
 			modify.forceMove(get_turf(src))
 			own_take(src, nameof(/obj/machinery/computer/card::modify))
 	else
-		var/obj/item/I = ui.user.get_active_hand()
+		var/obj/item/I = A.actor.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			move_into(src, nameof(src.modify), I, ui.user)
+			move_into(src, nameof(src.modify), I, A.actor)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-UI_ACT(/obj/machinery/computer/card, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_scan)
+/obj/machinery/computer/card/proc/ui_act_scan(datum/act/op/A)
 	if(scan)
-		if(ishuman(ui.user))
+		if(ishuman(A.actor))
 			scan.forceMove(get_turf(src))
-			if(!ui.user.get_active_hand())
-				ui.user.put_in_hands(scan)
+			if(!A.actor.get_active_hand())
+				A.actor.put_in_hands(scan)
 			own_take(src, nameof(/obj/item/extrapolator::scan))
 		else
 			scan.forceMove(get_turf(src))
 			own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
-		var/obj/item/I = ui.user.get_active_hand()
+		var/obj/item/I = A.actor.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			move_into(src, nameof(src.scan), I, ui.user)
+			move_into(src, nameof(src.scan), I, A.actor)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-UI_ACT(/obj/machinery/computer/card, "access", ui_act_access, UI_ARG_NUM("access_target"), UI_ARG_NUM("allowed"))
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_access)
+/obj/machinery/computer/card/proc/ui_act_access(datum/act/op/A, access_target, allowed)
 	if(is_authenticated())
-		var/access_type = params["access_target"]
-		var/access_allowed = params["allowed"]
+		var/access_type = access_target
+		var/access_allowed = allowed
 		if(access_type in (is_centcom() ? SSaccess.get_all_centcom_access() : SSaccess.get_all_station_access()))
 			modify.access -= access_type
 			if(!access_allowed)
@@ -214,35 +220,30 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_access)
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-UI_ACT(/obj/machinery/computer/card, "assign", ui_act_assign, UI_ARG_TEXT("assign_target"))
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_assign)
+/obj/machinery/computer/card/proc/ui_act_assign(datum/act/op/A, assign_target)
 	if(is_authenticated() && modify)
-		var/t1 = params["assign_target"]
-		if(t1 == "Custom")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(custom_assignment_entered), title = "Assignment", message = "Enter a custom job assignment.", default = "", max_length = 45, requires = PROMPT_USABLE)
+		var/t1 = assign_target
+		var/list/access = list()
+		if(is_centcom())
+			access = SSaccess.get_centcom_access(t1)
 		else
-			var/list/access = list()
-			if(is_centcom())
-				access = SSaccess.get_centcom_access(t1)
-			else
-				var/datum/job/jobdatum = SSjob.get_job(t1)
-				if(!jobdatum)
-					to_chat(ui.user, span_warning("No log exists for this job: [t1]"))
-					return
-				access = jobdatum.get_access()
+			var/datum/job/jobdatum = SSjob.get_job(t1)
+			if(!jobdatum)
+				to_chat(A.actor, span_warning("No log exists for this job: [t1]"))
+				return
+			access = jobdatum.get_access()
 
-			modify.access = access
-			modify.assignment = t1
-			modify.rank = t1
+		modify.access = access
+		modify.assignment = t1
+		modify.rank = t1
 
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-UI_ACT(/obj/machinery/computer/card, "reg", ui_act_reg, UI_ARG_TEXT("reg"))
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_reg)
+/obj/machinery/computer/card/proc/ui_act_reg(datum/act/op/A, reg)
 	if(is_authenticated())
-		var/temp_name = sanitizeName(params["reg"])
+		var/temp_name = sanitizeName(reg)
 		if(temp_name)
 			modify.registered_name = temp_name
 		else
@@ -251,24 +252,21 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_reg)
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-UI_ACT(/obj/machinery/computer/card, "account", ui_act_account, UI_ARG_NUM("account"))
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_account)
+/obj/machinery/computer/card/proc/ui_act_account(datum/act/op/A, account)
 	if(is_authenticated())
-		var/account_num = params["account"]
+		var/account_num = account
 		modify.associated_account_number = account_num
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-UI_ACT(/obj/machinery/computer/card, "mode", ui_act_mode, UI_ARG_NUM("mode_target"))
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_mode)
-	set_mode(params["mode_target"])
+/obj/machinery/computer/card/proc/ui_act_mode(datum/act/op/A, mode_target)
+	set_mode(mode_target)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-UI_ACT(/obj/machinery/computer/card, "print", ui_act_print)
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_print)
+/obj/machinery/computer/card/proc/ui_act_print(datum/act/op/A)
 	if(!printing)
 		printing = 1
 		after(src, 5 SECONDS, PROC_REF(finish_printing))
@@ -276,8 +274,7 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_print)
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-UI_ACT(/obj/machinery/computer/card, "terminate", ui_act_terminate)
-UI_ACT_PROC(/obj/machinery/computer/card, ui_act_terminate)
+/obj/machinery/computer/card/proc/ui_act_terminate(datum/act/op/A)
 	if(is_authenticated())
 		modify.assignment = "Dismissed" // setting adjustment
 		modify.access = list()
@@ -286,18 +283,26 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_terminate)
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-/obj/machinery/computer/card/proc/custom_assignment_entered(datum/om/prompt/text/ask)
-	var/temp_t = ask.text
-	//let custom jobs function as an impromptu alt title, mainly for sechuds
+/// The operator is authenticated and a card is loaded.
+/obj/machinery/computer/card/proc/assign_possible(datum/act/op/A)
+	return is_authenticated() && modify // ALLOW(reads): the loaded card is asked when the button is pressed, never cached
+
+/// A custom assignment, typed: it works as an impromptu alt title, mainly for sechuds.
+/obj/machinery/computer/card/proc/ui_act_assign_custom(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/temp_t = R?.value
 	if(temp_t && modify && is_authenticated())
 		modify.assignment = temp_t
-		SStgui.update_uis(src)
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
+	return OP_OK
+
+MSG_DEF_SELF(card_console/cannot_assign, "The console refuses: it needs an authenticated operator and a card to change.")
 
 /obj/machinery/computer/card/centcom
 	name = "\improper CentCom ID card modification console"
 	circuit = /obj/item/circuitboard/card/centcom
 	req_access = list(ACCESS_CENT_CAPTAIN)
-
 
 /obj/machinery/computer/card/centcom/is_centcom()
 	return 1

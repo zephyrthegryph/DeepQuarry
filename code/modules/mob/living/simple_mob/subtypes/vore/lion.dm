@@ -119,11 +119,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_RE
 	set name = "Set Mane Color"
 	set desc = "Set the color of your mane"
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/color, PROC_REF(mane_color_picked), title = "Mane Color", message = "Please pick a mane color:", default = mane_color)
+	open_request(src, /datum/prompt/color, PROC_REF(mane_color_picked), answerer = src, title = "Mane Color", question = "Please pick a mane color:", default = mane_color, timeout = 0)
 
-/mob/living/simple_mob/vore/retaliate/lion/proc/mane_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		mane_color = ask.picked_color
+/mob/living/simple_mob/vore/retaliate/lion/proc/mane_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		mane_color = A.answer.answer_value
 		update_icon()
 
 DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex)

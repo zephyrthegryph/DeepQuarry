@@ -290,6 +290,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
 
 CAPABILITIES(/obj/item/beacon_locator)
 	op("interaction_open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
+	interface("BeaconLocator")
+	op("reset_tracking", ui_act("reset_tracking"), then(PROC_REF(ui_act_reset_tracking)))
+	op("setFrequency", ui_act("setFrequency", arg("freq", num())), then(PROC_REF(ui_act_setfrequency)))
 
 /// Old attack_self: open the interface.
 /obj/item/beacon_locator/proc/interaction_open(datum/act/op/A)
@@ -299,9 +302,15 @@ CAPABILITIES(/obj/item/beacon_locator)
 
 DECLARE_UI_STATE(/obj/item/beacon_locator, GLOB.tgui_inventory_state)
 
-DECLARE_UI(/obj/item/beacon_locator, "BeaconLocator")
-
-UI_DATA(/obj/item/beacon_locator, "scan_ticks:num", "rawfreq=frequency:num", "merge:ui_data_obj_item_beacon_locator{degrees:num,minFrequency:num,maxFrequency:num}")
+/obj/item/beacon_locator/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["scan_ticks"] = scan_ticks
+	data["rawfreq"] = frequency
+	var/list/merged_1 = ui_data_obj_item_beacon_locator(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/beacon_locator's window data (declared on its UI_DATA row).
 /obj/item/beacon_locator/proc/ui_data_obj_item_beacon_locator(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -316,15 +325,13 @@ UI_DATA(/obj/item/beacon_locator, "scan_ticks:num", "rawfreq=frequency:num", "me
 
 	return data
 
-UI_ACT(/obj/item/beacon_locator, "reset_tracking", ui_act_reset_tracking)
-UI_ACT_PROC(/obj/item/beacon_locator, ui_act_reset_tracking)
+/obj/item/beacon_locator/proc/ui_act_reset_tracking(datum/act/op/A)
 	rel_clear(src, nameof(/obj/item/beacon_locator::target_radio))
 	set_scan_ticks(1)
 	return TRUE
 
-UI_ACT(/obj/item/beacon_locator, "setFrequency", ui_act_setfrequency, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/obj/item/beacon_locator, ui_act_setfrequency)
-	var/new_frequency = (params["freq"])
+/obj/item/beacon_locator/proc/ui_act_setfrequency(datum/act/op/A, freq)
+	var/new_frequency = (freq)
 	new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	frequency = new_frequency
 	return TRUE

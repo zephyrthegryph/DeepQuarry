@@ -3,6 +3,7 @@
 	open_request(src, /datum/prompt/text, PROC_REF(said), answerer = user, question = "Say what?", encode = FALSE, multiline = TRUE, timeout = 0)
 	open_request(src, /datum/prompt/number, PROC_REF(counted), answerer = user, question = "How many?", min_value = 1, max_value = 10, default = 5, timeout = 30 SECONDS)
 	open_request(src, /datum/prompt/choice, PROC_REF(picked), answerer = user, question = "Which?", choices = names, buttons = TRUE, timeout = 0)
+	open_request(src, /datum/prompt/color, PROC_REF(tinted), answerer = user, title = "Tint", question = "Pick a tint:", default = "#ff0000", timeout = 0)
 	open_request(src, /datum/prompt/yes_no, PROC_REF(sure), answerer = user, question = "Sure?", timeout = 0)
 	open_request(src, /datum/prompt/yes_no, TYPE_PROC_REF(/datum/holder, either), answerer = user, question = "Either way?", timeout = 0)
 	// a string that names it stays as it is
@@ -40,6 +41,11 @@
 	return A.answer.answer_value
 
 /datum/holder/proc/either(datum/act/request/A)
+	if(!A.answer)
+		return
+	return A.answer.answer_value
+
+/datum/holder/proc/tinted(datum/act/request/A)
 	if(!A.answer)
 		return
 	return A.answer.answer_value

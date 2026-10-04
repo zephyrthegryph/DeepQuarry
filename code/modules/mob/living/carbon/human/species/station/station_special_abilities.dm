@@ -878,7 +878,7 @@
 		return
 	switch(A.answer.answer_value)
 		if("Color") //Easy way to set color so we don't bloat up the menu with even more buttons.
-			om_ask(src, /datum/om/prompt/color, PROC_REF(appendage_color_chosen), message = "Choose a color to set your appendage to!", default = appendage_color)
+			open_request(src, /datum/prompt/color, PROC_REF(appendage_color_chosen), answerer = src, question = "Choose a color to set your appendage to!", default = appendage_color, timeout = 0)
 		if("Functionality")
 			open_request(src, /datum/prompt/choice, PROC_REF(appendage_setting_chosen), answerer = src, title = "Functionality Setting", question = "Choose if you want to be pulled to the target or pull them to you!", choices = list("Pull target to self", "Pull self to target"), buttons = TRUE, timeout = 0)
 		if("Use it")
@@ -893,8 +893,10 @@
 				return
 			om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(long_vore_target_chosen), choices = targets)
 
-/mob/living/proc/appendage_color_chosen(datum/om/prompt/color/ask)
-	appendage_color = ask.picked_color
+/mob/living/proc/appendage_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	appendage_color = A.answer.answer_value
 
 /mob/living/proc/appendage_setting_chosen(datum/act/request/A)
 	if(!A.answer)

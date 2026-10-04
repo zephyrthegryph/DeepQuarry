@@ -1,7 +1,8 @@
-DECLARE_UI(/obj/machinery/stately, "Stately")
+CAPABILITIES(/obj/machinery/stately)
+	interface("Stately")
+	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
 DECLARE_UI_STATE(/obj/machinery/stately, GLOB.tgui_always_state)
-UI_ACT(/obj/machinery/stately, "go", ui_act_go)
-UI_ACT_PROC(/obj/machinery/stately, ui_act_go)
+/obj/machinery/stately/proc/ui_act_go(datum/act/op/A)
 	return TRUE
 
 DECLARE_UI(/obj/machinery/greedy, "Greedy")
