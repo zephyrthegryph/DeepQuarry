@@ -197,9 +197,9 @@
 	TEST_ASSERT(assert_resolves(H, A, wirecutters, GESTURE_CLICK, "wires.cut"), "panel open: wirecutters go to the wires")
 	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "wires.pulse"), "panel open: a multitool goes to the wires")
 	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "wires.open"), "panel open: an empty hand opens the wires before the window")
-	A.set_emagged(TRUE)
+	cap_key_set(A, EMAG_EMAGGED, TRUE, null)
 	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "subversion_reset.use"), "subverted: the multitool resets it before it pulses a wire")
-	A.set_emagged(FALSE)
+	cap_key_set(A, EMAG_EMAGGED, FALSE, null)
 	// the cover open: the build ladder's steps come first
 	cap_key_set(A, COVER_OPEN, TRUE, null)
 	TEST_ASSERT(assert_resolves(H, A, screwdriver, GESTURE_CLICK, "construction.undo:apc_secured"), "cover open: the screwdriver unfastens the electronics before the panel")

@@ -168,6 +168,17 @@
 /datum/capdef_decl/c_emag/spec()
 	return list(CAP_EMAG, /datum/capability/lib/emag, NONE, STACK, "emag", "parts, say, disables_for, repeatable")
 
+/// CAPABILITY_TYPE(emp_disable, CAP_EMP_DISABLE) at code/library/machine/emp_disable.dm:21
+/datum/capability/lib/emp_disable
+	var/lasts = 0
+	var/resist = 0
+	var/extends = FALSE
+/proc/emp_disable(lasts, resist, extends)
+	RETURN_TYPE(/datum/capability/lib/emp_disable)
+	return cap_construct(CAP_EMP_DISABLE, /datum/capability/lib/emp_disable, list(lasts, resist, extends), "lasts, resist, extends")
+/datum/capdef_decl/c_emp_disable/spec()
+	return list(CAP_EMP_DISABLE, /datum/capability/lib/emp_disable, NONE, STACK, "emp_disable", "lasts, resist, extends")
+
 /// CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER) at code/modules/reagents/reagent_containers/glass.dm:43
 /proc/glass_container()
 	RETURN_TYPE(/datum/capability/def/glass_container)
@@ -627,17 +638,17 @@
 	return list(SRC_HELD_ITEM, "held_item")
 /datum/source_def/all/spec()
 	return list(SRC_ALL, "all")
+/datum/source_def/emp/spec()
+	return list(SRC_EMP, "emp")
 /datum/source_def/power_failure/spec()
 	return list(SRC_POWER_FAILURE, "power_failure")
 
-/// CAPABILITIES(/area) at code/game/area/areas.dm:691
+/// CAPABILITIES(/area) at code/game/area/areas.dm:687
 /area/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/area/areas.dm", 691, /area)
-	into += entry_line(692)
-	into += list(global.contributes(STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights)))
-	into += entry_line(693)
-	into += list(global.contributes(STAT_LIGHTS_EMERGENCY_OFF, PROC_REF(emergency_lights_switched_off)))
+	into += entry_block("code/game/area/areas.dm", 687, /area)
+	into += entry_line(688)
+	into += list(global.on_change(nameof(apc), ANY, global.then(PROC_REF(apc_changed))))
 
 /// CAPABILITIES(/atom) at code/modules/xenoarcheaology/effect_master.dm:34
 /atom/declared_entries(list/into)
@@ -10014,18 +10025,22 @@
 	into += entry_line(14)
 	into += list(global.op("print", global.in_hand(), global.label("Print gold star"), global.cooldown(print_cooldown), global.needs(global.carried()), global.asks(/datum/prompt/text, keeps = 0, step = "title", fields = list("timeout" = 0, "title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32, "name_text" = TRUE)), global.asks(/datum/prompt/text/gold_star_description, fields = list("timeout" = 0), keeps = 0, step = "description", when = PROC_REF(has_title)), global.then(PROC_REF(star_printed))))
 
-/// CAPABILITIES(/obj/item/gps) at code/game/objects/items/devices/gps.dm:89
+/// CAPABILITIES(/obj/item/gps) at code/game/objects/items/devices/gps.dm:90
 /obj/item/gps/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/gps.dm", 89, /obj/item/gps)
-	into += entry_line(90)
-	into += list(global.op("power", global.ui_act(), global.then(PROC_REF(ui_act_power))))
+	into += entry_block("code/game/objects/items/devices/gps.dm", 90, /obj/item/gps)
 	into += entry_line(91)
-	into += list(global.op("localMode", global.ui_act(), global.then(PROC_REF(ui_act_localmode))))
+	into += list(global.op("power", global.ui_act(), global.then(PROC_REF(ui_act_power))))
 	into += entry_line(92)
-	into += list(global.owns_one(nameof(compass), starts = /obj/compass_holder))
+	into += list(global.op("localMode", global.ui_act(), global.then(PROC_REF(ui_act_localmode))))
 	into += entry_line(93)
+	into += list(global.owns_one(nameof(compass), starts = /obj/compass_holder))
+	into += entry_line(94)
 	into += list(global.op("toggle_tracking", global.hand(), global.gesture(GESTURE_ALT), global.needs(global.req_adjacent()), global.then(PROC_REF(tracking_toggled))))
+	into += entry_line(95)
+	into += list(global.emp_disable(5 MINUTES))
+	into += entry_line(96)
+	into += list(global.on_change(STAT_OPERABLE, ANY, global.then(PROC_REF(emp_state_changed))))
 
 /// CAPABILITIES(/obj/item/grab) at code/modules/mob/mob_grab.dm:176
 /obj/item/grab/declared_entries(list/into)
@@ -14260,11 +14275,15 @@
 	into += entry_line(209)
 	into += list(global.op("logout", global.ui_act(), global.then(PROC_REF(ui_act_logout))))
 
-/// CAPABILITIES(/obj/machinery/atmospheric_field_generator) at code/game/machinery/atm_ret_field.dm:112
+/// CAPABILITIES(/obj/machinery/atmospheric_field_generator) at code/game/machinery/atm_ret_field.dm:101
 /obj/machinery/atmospheric_field_generator/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/atm_ret_field.dm", 112, /obj/machinery/atmospheric_field_generator)
-	into += entry_line(113)
+	into += entry_block("code/game/machinery/atm_ret_field.dm", 101, /obj/machinery/atmospheric_field_generator)
+	into += entry_line(102)
+	into += list(global.emp_disable(7.5 SECONDS))
+	into += entry_line(103)
+	into += list(global.on_change(STAT_OPERABLE, ANY, global.then(PROC_REF(emp_state_changed))))
+	into += entry_line(104)
 	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(field_generator_blast)))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics) at code/ATMOSPHERICS/rust_pipenets.dm:79
@@ -15906,6 +15925,27 @@
 	into += entry_line(51)
 	into += list(global.owns_one(nameof(last)))
 
+/// CAPABILITIES(/obj/machinery/dq_emp_probe) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:105
+/obj/machinery/dq_emp_probe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 105, /obj/machinery/dq_emp_probe)
+	into += entry_line(106)
+	into += list(global.emp_disable(30 SECONDS))
+
+/// CAPABILITIES(/obj/machinery/dq_emp_probe/extends) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:111
+/obj/machinery/dq_emp_probe/extends/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 111, /obj/machinery/dq_emp_probe/extends)
+	into += entry_line(112)
+	into += list(global.configure(global.emp_disable(30 SECONDS, extends = TRUE)))
+
+/// CAPABILITIES(/obj/machinery/dq_emp_probe/resists) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:117
+/obj/machinery/dq_emp_probe/resists/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 117, /obj/machinery/dq_emp_probe/resists)
+	into += entry_line(118)
+	into += list(global.configure(global.emp_disable(30 SECONDS, resist = 100)))
+
 /// CAPABILITIES(/obj/machinery/embedded_controller) at code/game/machinery/embedded_controller/embedded_controller_base.dm:11
 /obj/machinery/embedded_controller/declared_entries(list/into)
 	..(into)
@@ -15920,10 +15960,14 @@
 	into += entry_line(19)
 	into += list(global.owns_one(nameof(airlock_program), starts = /datum/embedded_program/airlock/docking))
 
-/// CAPABILITIES(/obj/machinery/exonet_node) at code/game/machinery/exonet_node.dm:28
+/// CAPABILITIES(/obj/machinery/exonet_node) at code/game/machinery/exonet_node.dm:26
 /obj/machinery/exonet_node/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/exonet_node.dm", 28, /obj/machinery/exonet_node)
+	into += entry_block("code/game/machinery/exonet_node.dm", 26, /obj/machinery/exonet_node)
+	into += entry_line(27)
+	into += list(global.emp_disable(300 SECONDS))
+	into += entry_line(28)
+	into += list(global.on_change(STAT_OPERABLE, ANY, global.then(PROC_REF(emp_state_changed))))
 	into += entry_line(29)
 	into += list(global.op("toggle_power", global.ui_act("toggle_power"), global.then(PROC_REF(ui_act_toggle_power))))
 	into += entry_line(30)
@@ -16598,12 +16642,16 @@
 	into += entry_line(294)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(button_usable), because = MSG(partyalarm/unusable)))))
 
-/// CAPABILITIES(/obj/machinery/pda_multicaster) at code/game/machinery/pda_multicaster.dm:21
+/// CAPABILITIES(/obj/machinery/pda_multicaster) at code/game/machinery/pda_multicaster.dm:19
 /obj/machinery/pda_multicaster/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/pda_multicaster.dm", 21, /obj/machinery/pda_multicaster)
-	into += entry_line(22)
+	into += entry_block("code/game/machinery/pda_multicaster.dm", 19, /obj/machinery/pda_multicaster)
+	into += entry_line(20)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/tcomms))
+	into += entry_line(21)
+	into += list(global.emp_disable(300 SECONDS))
+	into += entry_line(22)
+	into += list(global.on_change(STAT_OPERABLE, ANY, global.then(PROC_REF(emp_state_changed))))
 
 /// CAPABILITIES(/obj/machinery/petrification) at code/game/machinery/petrification.dm:22
 /obj/machinery/petrification/declared_entries(list/into)
@@ -16791,88 +16839,102 @@
 	into += entry_line(186)
 	into += list(global.without(CAP_CLIMB))
 
-/// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:166
+/// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:170
 /obj/machinery/power/apc/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/apc.dm", 166, /obj/machinery/power/apc)
-	into += entry_line(167)
+	into += entry_block("code/modules/power/apc.dm", 170, /obj/machinery/power/apc)
+	into += entry_line(171)
 	into += list(global.wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE))
-	into += entry_line(168)
+	into += entry_line(172)
 	into += list(global.configure(global.construction_graph(start = STAGE_APC_SECURED)))
-	into += entry_line(169)
+	into += entry_line(173)
 	into += list(global.maintenance_hatch( cover = global.cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), global.at(BAY_HATCH))), wires = /datum/wires/apc, wires_by_hand = TRUE, emag = list(global.wait(0.6 SECONDS), global.then(PROC_REF(emag_sparks)), global.sets(LOCK_LOCKED, FALSE)), emag_say = MSG(apc/emagged), panel_needs_cover_closed = TRUE, starts_locked = nameof(lock_at_start)))
-	into += entry_line(177)
-	into += list(global.owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(178)
-	into += list(global.cell_bay(nameof(cell), at = BAY_HATCH))
-	into += entry_line(179)
-	into += list(global.powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY))
-	into += entry_line(180)
-	into += list(global.subversion_reset(list(global.tool(TOOL_MULTITOOL), global.at(BAY_HATCH)), done = MSG(apc/reset_done)))
 	into += entry_line(181)
-	into += list(global.entry_link("/obj/machinery/power/apc::terminal", "/obj/machinery/power/terminal::master"))
+	into += list(global.owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type), on_destroy = ON_DESTROY_SPILL))
 	into += entry_line(182)
-	into += list(global.entry_link("/obj/machinery/power/apc::hacker", "/mob/living/silicon/ai::hacked_apcs"))
+	into += list(global.cell_bay(nameof(cell), at = BAY_HATCH))
 	into += entry_line(183)
-	into += list(global.extend(/datum/act/hit/blob, global.instead(cuts_all_wires(), global.sets(PANEL_OPEN, TRUE))))
+	into += list(global.powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY))
 	into += entry_line(184)
-	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(apc_emp_fail))))
+	into += list(global.subversion_reset(list(global.tool(TOOL_MULTITOOL), global.at(BAY_HATCH)), done = MSG(apc/reset_done)))
 	into += entry_line(185)
-	into += list(global.on_notice(/datum/notice/hit/explosion, global.then(PROC_REF(apc_blast_wake))))
+	into += list(membership(joins = REGISTRY_APCS))
 	into += entry_line(186)
-	into += list(global.on_notice(/datum/notice/legacy_hit, global.then(PROC_REF(apc_hit))))
+	into += list(global.emp_disable(PROC_REF(emp_outage), extends = TRUE))
 	into += entry_line(187)
-	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(apc_slashed))))
+	into += list(global.contributes(STAT_OPERABLE, PROC_REF(electronics_fastened), reason = MSG(apc/unfinished), reads = list("graph:[CAP_CONSTRUCTION]")))
 	into += entry_line(188)
-	into += list(global.on_change(nameof(cell), ANY, global.then(PROC_REF(cell_changed))))
+	into += list(global.contributes(STAT_SUPPLYING, STAT_OPERABLE))
 	into += entry_line(189)
-	into += list(global.on_change(nameof(power_failed), ANY, global.then(PROC_REF(power_failed_changed))))
+	into += list(global.entry_link("/obj/machinery/power/apc::terminal", "/obj/machinery/power/terminal::master"))
+	into += entry_line(190)
+	into += list(global.entry_link("/obj/machinery/power/apc::hacker", "/mob/living/silicon/ai::hacked_apcs"))
+	into += entry_line(191)
+	into += list(global.entry_link("/obj/machinery/power/apc::area", "/area::apc"))
+	into += entry_line(192)
+	into += list(global.contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights)))
+	into += entry_line(193)
+	into += list(global.contributes_to(nameof(area), STAT_LIGHTS_EMERGENCY_OFF, nameof(emergency_lights)))
+	into += entry_line(194)
+	into += list(global.op("wires_signaler", global.item(/obj/item/assembly/signaler), global.label("Reach the wires"), global.when(PANEL_OPEN), global.when(global.cond_not(COVER_OPEN)), global.wait(0), global.then(PROC_REF(signaler_at_the_wires))))
+	into += entry_line(196)
+	into += list(global.extend(/datum/act/hit/blob, global.instead(cuts_all_wires(), global.sets(PANEL_OPEN, TRUE))))
+	into += entry_line(197)
+	into += list(global.on_notice(/datum/notice/attacked_by, global.then(PROC_REF(apc_struck))))
+	into += entry_line(198)
+	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(apc_slashed))))
+	into += entry_line(199)
+	into += list(global.on_change(nameof(cell), ANY, global.then(PROC_REF(cell_changed))))
+	into += entry_line(200)
+	into += list(global.on_change(nameof(supplying), ANY, global.then(PROC_REF(supply_changed))))
+	into += entry_line(201)
+	into += list(global.examine_line(PROC_REF(fault_lights_text)))
 	// section controls: The APC's window and the buttons in it
-	into += entry_line(194, "controls")
-	into += list(global.interface("APC"))
-	into += entry_line(195, "controls")
-	into += list(global.op("breaker", global.ui_act(), global.toggles(nameof(operating)), global.then(PROC_REF(settings_applied)), global.logs(LOG_GAME)))
-	into += entry_line(196, "controls")
-	into += list(global.op("chargemode", global.ui_act("charge"), global.toggles(nameof(chargemode)), global.then(PROC_REF(chargemode_applied)), global.logs(LOG_GAME)))
-	into += entry_line(197, "controls")
-	into += list(global.op("coverlock", global.ui_act("cover"), global.toggles(nameof(coverlocked)), global.logs(LOG_GAME)))
-	into += entry_line(198, "controls")
-	into += list(global.op("set_channel", global.ui_act("channel", global.arg("channel", global.int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), global.arg("mode", global.int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))), global.then(PROC_REF(ui_set_channel))))
-	into += entry_line(200, "controls")
-	into += list(global.op("nightshift", global.ui_act(global.arg("nightshift", global.int(NIGHTSHIFT_AUTO, NIGHTSHIFT_ALWAYS))), global.cooldown(1 SECOND), global.then(PROC_REF(ui_set_nightshift)), global.logs(LOG_GAME)))
-	into += entry_line(202, "controls")
-	into += list(global.op("emergency_lighting", global.ui_act(), global.toggles(nameof(emergency_lights)), global.logs(LOG_GAME)))
-	into += entry_line(203, "controls")
-	into += list(global.op("reboot", global.ui_act(), global.then(PROC_REF(ui_reboot)), global.logs(LOG_GAME)))
-	into += entry_line(204, "controls")
-	into += list(global.op("overload", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only))), global.then(PROC_REF(ui_overload)), global.logs(LOG_GAME)))
 	into += entry_line(206, "controls")
-	into += list(global.op("lock", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), req_operable()), global.toggles(LOCK_LOCKED), global.logs(LOG_GAME)))
+	into += list(global.interface("APC"))
+	into += entry_line(207, "controls")
+	into += list(global.op("breaker", global.ui_act(), global.toggles(nameof(operating)), global.then(PROC_REF(settings_applied)), global.logs(LOG_GAME)))
 	into += entry_line(208, "controls")
-	into += list(global.extend("ui_open", global.needs(req_operable())))
+	into += list(global.op("chargemode", global.ui_act("charge"), global.toggles(nameof(chargemode)), global.then(PROC_REF(chargemode_applied)), global.logs(LOG_GAME)))
 	into += entry_line(209, "controls")
-	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))))
+	into += list(global.op("coverlock", global.ui_act("cover"), global.toggles(nameof(coverlocked)), global.logs(LOG_GAME)))
 	into += entry_line(210, "controls")
+	into += list(global.op("set_channel", global.ui_act("channel", global.arg("channel", global.int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), global.arg("mode", global.int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))), global.then(PROC_REF(ui_set_channel))))
+	into += entry_line(212, "controls")
+	into += list(global.op("nightshift", global.ui_act(global.arg("nightshift", global.int(NIGHTSHIFT_AUTO, NIGHTSHIFT_ALWAYS))), global.cooldown(1 SECOND), global.then(PROC_REF(ui_set_nightshift)), global.logs(LOG_GAME)))
+	into += entry_line(214, "controls")
+	into += list(global.op("emergency_lighting", global.ui_act(), global.toggles(nameof(emergency_lights)), global.logs(LOG_GAME)))
+	into += entry_line(215, "controls")
+	into += list(global.op("reboot", global.ui_act(), global.then(PROC_REF(ui_reboot)), global.logs(LOG_GAME)))
+	into += entry_line(216, "controls")
+	into += list(global.op("overload", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only))), global.then(PROC_REF(ui_overload)), global.logs(LOG_GAME)))
+	into += entry_line(218, "controls")
+	into += list(global.op("lock", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), req_operable()), global.toggles(LOCK_LOCKED), global.logs(LOG_GAME)))
+	into += entry_line(220, "controls")
+	into += list(global.extend("ui_open", global.needs(req_operable())))
+	into += entry_line(221, "controls")
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))))
+	into += entry_line(222, "controls")
 	into += list(global.extend("nightshift", drop = "lock"))
 	// section cover_rules: What the APC's hatch asks of the APC beyond the library's rules
-	into += entry_line(216, "cover_rules")
+	into += entry_line(228, "cover_rules")
 	into += list(global.extend(list("cover.open", "cover.remove"), global.needs(global.req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))))
-	into += entry_line(217, "cover_rules")
+	into += entry_line(229, "cover_rules")
 	into += list(global.extend("cover.replace", global.needs(global.req(PROC_REF(cover_replaceable), because = PROC_REF(cover_replace_reason))), global.then(PROC_REF(cover_replaced))))
-	into += entry_line(219, "cover_rules")
+	into += entry_line(231, "cover_rules")
 	into += list(global.extend("cell_bay.cell.take", global.when(COVER_OPEN)))
-	into += entry_line(220, "cover_rules")
+	into += entry_line(232, "cover_rules")
 	into += list(global.extend("cell_bay.cell.insert", global.needs(global.req_built(STAGE_APC_SECURED, because = MSG(apc/needs_electronics)), global.req(PROC_REF(cell_fits), because = PROC_REF(cell_fit_reason)))))
-	into += entry_line(222, "cover_rules")
+	into += entry_line(234, "cover_rules")
 	into += list(global.extend(CAP_LOCK, global.needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_operable())))
-	into += entry_line(223, "cover_rules")
+	into += entry_line(235, "cover_rules")
 	into += list(global.extend("emag.use", global.needs(req_not_subverted(), req_operable())))
 
-/// CAPABILITIES(/obj/machinery/power/apc/angled) at code/modules/power/apc.dm:226
+/// CAPABILITIES(/obj/machinery/power/apc/angled) at code/modules/power/apc.dm:238
 /obj/machinery/power/apc/angled/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/apc.dm", 226, /obj/machinery/power/apc/angled)
-	into += entry_line(227)
+	into += entry_block("code/modules/power/apc.dm", 238, /obj/machinery/power/apc/angled)
+	into += entry_line(239)
 	into += list(global.configure(global.wall_mount(offset = 24, offset_ns = 20)))
 
 /// CAPABILITIES(/obj/machinery/power/emitter) at code/modules/power/singularity/emitter.dm:364
@@ -16902,6 +16964,13 @@
 	into += entry_block("code/modules/power/tesla/coil.dm", 340, /obj/machinery/power/grounding_rod)
 	into += entry_line(341)
 	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/power/port_gen) at code/modules/power/port_gen.dm:17
+/obj/machinery/power/port_gen/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/port_gen.dm", 17, /obj/machinery/power/port_gen)
+	into += entry_line(18)
+	into += list(global.emp_disable(10 MINUTES))
 
 /// CAPABILITIES(/obj/machinery/power/rad_collector) at code/modules/power/singularity/collector.dm:22
 /obj/machinery/power/rad_collector/declared_entries(list/into)
@@ -17226,6 +17295,15 @@
 	into += entry_line(41)
 	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print))
 
+/// CAPABILITIES(/obj/machinery/rnd/server) at code/modules/research/tg/server.dm:20
+/obj/machinery/rnd/server/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/research/tg/server.dm", 20, /obj/machinery/rnd/server)
+	into += entry_line(21)
+	into += list(global.emp_disable(60 SECONDS))
+	into += entry_line(22)
+	into += list(global.on_change(STAT_OPERABLE, ANY, global.then(PROC_REF(emp_state_changed))))
+
 /// CAPABILITIES(/obj/machinery/robotic_fabricator) at code/game/machinery/robot_fabricator.dm:78
 /obj/machinery/robotic_fabricator/declared_entries(list/into)
 	..(into)
@@ -17449,14 +17527,18 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(suspension_field), /obj/effect/suspension_field))
 
-/// CAPABILITIES(/obj/machinery/telecomms) at code/game/machinery/telecomms/telecomunications.dm:57
+/// CAPABILITIES(/obj/machinery/telecomms) at code/game/machinery/telecomms/telecomunications.dm:55
 /obj/machinery/telecomms/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 57, /obj/machinery/telecomms)
-	into += entry_line(58)
+	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 55, /obj/machinery/telecomms)
+	into += entry_line(56)
 	into += list(global.entry_link("/obj/machinery/telecomms::links", "/obj/machinery/telecomms::links", a_many = TRUE, b_many = TRUE))
-	into += entry_line(59)
+	into += entry_line(57)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/tcomms))
+	into += entry_line(58)
+	into += list(global.emp_disable(PROC_REF(emp_outage)))
+	into += entry_line(59)
+	into += list(global.on_change(STAT_OPERABLE, ANY, global.then(PROC_REF(emp_state_changed))))
 	into += entry_line(60)
 	into += list(global.interface("TelecommsMultitoolMenu"))
 	into += entry_line(61)
@@ -17514,15 +17596,15 @@
 	into += entry_line(4)
 	into += list(global.op("change_listening", global.ui_act("change_listening"), global.then(PROC_REF(ui_act_change_listening))))
 
-/// CAPABILITIES(/obj/machinery/telecomms/server) at code/game/machinery/telecomms/telecomunications.dm:557
+/// CAPABILITIES(/obj/machinery/telecomms/server) at code/game/machinery/telecomms/telecomunications.dm:555
 /obj/machinery/telecomms/server/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 557, /obj/machinery/telecomms/server)
-	into += entry_line(558)
+	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 555, /obj/machinery/telecomms/server)
+	into += entry_line(556)
 	into += list(global.owns_one(nameof(Compiler), /datum/TCS_Compiler))
-	into += entry_line(559)
+	into += entry_line(557)
 	into += list(global.owns_one(nameof(server_radio), /obj/item/radio/headset))
-	into += entry_line(560)
+	into += entry_line(558)
 	into += list(global.owns_many(nameof(log_entries)))
 
 /// CAPABILITIES(/obj/machinery/turretid) at code/game/machinery/turret_control.dm:144
@@ -17795,11 +17877,11 @@
 	into += entry_line(15)
 	into += list(global.extend(/datum/act/hit, global.instead(global.then(PROC_REF(alien_thrown_at)))))
 
-/// CAPABILITIES(/obj/structure/atmospheric_retention_field) at code/game/machinery/atm_ret_field.dm:217
+/// CAPABILITIES(/obj/structure/atmospheric_retention_field) at code/game/machinery/atm_ret_field.dm:215
 /obj/structure/atmospheric_retention_field/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/atm_ret_field.dm", 217, /obj/structure/atmospheric_retention_field)
-	into += entry_line(218)
+	into += entry_block("code/game/machinery/atm_ret_field.dm", 215, /obj/structure/atmospheric_retention_field)
+	into += entry_line(216)
 	into += list(global.op("hand", global.hand(), global.ungated(), global.then(PROC_REF(interaction_hand))))
 
 /// CAPABILITIES(/obj/structure/barricade/cutout) at code/game/machinery/deployable.dm:220
@@ -18940,12 +19022,16 @@
 	into += entry_line(95)
 	into += list(global.extend("construction.dismantle", global.needs(global.req_not(global.req_built(STAGE_WINDOOR_ASSEMBLY_SECURED, because = MSG(windoor_assembly/bolted_down)), because = MSG(windoor_assembly/bolted_down)))))
 
-/// CAPABILITIES(/obj/vehicle) at code/modules/vehicles/vehicle.dm:52
+/// CAPABILITIES(/obj/vehicle) at code/modules/vehicles/vehicle.dm:53
 /obj/vehicle/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vehicles/vehicle.dm", 52, /obj/vehicle)
-	into += entry_line(53)
+	into += entry_block("code/modules/vehicles/vehicle.dm", 53, /obj/vehicle)
+	into += entry_line(54)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine))
+	into += entry_line(55)
+	into += list(global.emp_disable(PROC_REF(emp_outage)))
+	into += entry_line(56)
+	into += list(global.on_change(STAT_OPERABLE, ANY, global.then(PROC_REF(emp_state_changed))))
 
 /// CAPABILITIES(/obj/vehicle/bike) at code/modules/vehicles/bike.dm:29
 /obj/vehicle/bike/declared_entries(list/into)

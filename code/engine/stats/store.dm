@@ -311,6 +311,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 
 /// TRUE if `source` holds the stat. Allocates nothing.
 /proc/held_by_source(datum/E, stat, source)
+	READS_FROM(E)
 	var/datum/stat_def/def = stat_def_of(stat)
 	if(!def)
 		return FALSE
@@ -321,6 +322,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 
 /// Time left on a timed hold, in deciseconds of the hold's clock (null: no such hold, 0: it has no deadline).
 /proc/hold_left(datum/E, stat, source)
+	READS_FROM(E)
 	var/datum/stat_def/def = stat_def_of(stat)
 	if(!def)
 		return null

@@ -7,7 +7,7 @@
 
 /// The holder is down from a pulse.
 /proc/p2e_emp_down(atom/A)
-	return A.vars["emp_until"] > EXPIRY_NOW(A, CLOCK_WORLD)
+	return emp_disabled(A)
 
 /// The second GPS sees the first one.
 /proc/p2e_gps_sees(obj/item/gps/watcher, obj/item/gps/other)
@@ -92,3 +92,52 @@
 	G.emp_act(1)
 	pass_time(1 SECOND)
 	TEST_ASSERT(p2e_gps_sees(watcher, G), "a shielded GPS shrugs a pulse off")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The library itself (code/library/machine/emp_disable.dm)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A machine knocked out for 30 s over the severity, pulses while down change nothing.
+/obj/machinery/dq_emp_probe
+	name = "emp probe"
+	use_power = USE_POWER_OFF
+
+CAPABILITIES(/obj/machinery/dq_emp_probe)
+	emp_disable(30 SECONDS)
+
+/// The same, but a harder pulse while down lengthens the outage.
+/obj/machinery/dq_emp_probe/extends
+
+CAPABILITIES(/obj/machinery/dq_emp_probe/extends)
+	configure(emp_disable(30 SECONDS, extends = TRUE))
+
+/// Shrugs off every pulse.
+/obj/machinery/dq_emp_probe/resists
+
+CAPABILITIES(/obj/machinery/dq_emp_probe/resists)
+	configure(emp_disable(30 SECONDS, resist = 100))
+
+/// A pulse is a timed hold on operability: down for its outage (the legacy operable() reads it too), back by itself; a second pulse does not
+/// lengthen it unless the holder extends; a holder that resists stays up.
+/datum/unit_test/dq_emp_disable/library_holds_operability_for_the_outage
+
+/datum/unit_test/dq_emp_disable/library_holds_operability_for_the_outage/run_gate()
+	var/obj/machinery/dq_emp_probe/P = allocate(/obj/machinery/dq_emp_probe, run_loc_floor_bottom_left)
+	TEST_ASSERT(stat_value(P, STAT_OPERABLE), "it starts working")
+	P.emp_act(2)
+	TEST_ASSERT(emp_disabled(P), "a pulse holds it down")
+	TEST_ASSERT(!stat_value(P, STAT_OPERABLE), "its operability is off")
+	TEST_ASSERT(!P.operable(), "and the legacy reader agrees")
+	TEST_ASSERT_EQUAL(emp_disabled_left(P), 15 SECONDS, "for 30 s over the severity")
+	P.emp_act(1)
+	TEST_ASSERT_EQUAL(emp_disabled_left(P), 15 SECONDS, "a pulse while down changes nothing")
+	test_time(16 SECONDS)
+	TEST_ASSERT(!emp_disabled(P), "the outage ends by itself")
+	TEST_ASSERT(stat_value(P, STAT_OPERABLE) && P.operable(), "and it works again")
+	var/obj/machinery/dq_emp_probe/extends/E = allocate(/obj/machinery/dq_emp_probe/extends, run_loc_floor_bottom_left)
+	E.emp_act(2)
+	E.emp_act(1)
+	TEST_ASSERT_EQUAL(emp_disabled_left(E), 30 SECONDS, "an extending holder keeps the longer outage")
+	var/obj/machinery/dq_emp_probe/resists/R = allocate(/obj/machinery/dq_emp_probe/resists, run_loc_floor_bottom_left)
+	R.emp_act(1)
+	TEST_ASSERT(!emp_disabled(R) && stat_value(R, STAT_OPERABLE), "a holder that resists stays up")

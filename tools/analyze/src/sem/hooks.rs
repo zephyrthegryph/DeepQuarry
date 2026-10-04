@@ -77,6 +77,7 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "req", ctx: Ctx::Op, role: Role::Requirement },
     HookForm { kw: "when", ctx: Ctx::Eval, role: Role::Condition },
     HookForm { kw: "contributes", ctx: Ctx::Eval, role: Role::Contribution },
+    HookForm { kw: "contributes_to", ctx: Ctx::Eval, role: Role::Contribution },
     HookForm { kw: "outputs", ctx: Ctx::Eval, role: Role::Output },
     HookForm { kw: "look_layer", ctx: Ctx::Eval, role: Role::Condition },
     HookForm { kw: "then", ctx: Ctx::Op, role: Role::Effect },

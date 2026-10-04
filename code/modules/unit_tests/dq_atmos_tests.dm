@@ -7451,7 +7451,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	multicaster.update_power()
 	TEST_ASSERT(!multicaster.on, "EMP state did not immediately turn off the multicaster")
 	multicaster.stat_remove(EMPED)
-	multicaster.emp_disable_changed(FALSE)
+	multicaster.update_power()
 	TEST_ASSERT_EQUAL(multicaster.on, multicaster.toggle && multicaster.operable(), "EMP recovery did not immediately reconcile multicaster state")
 	qdel(multicaster)
 

@@ -16,8 +16,6 @@
 	var/wasactive = FALSE		//controls automatic reboot after power-loss
 	var/alwaysactive = FALSE	//for a special subtype
 
-	/// Until when an EMP keeps the generator shut down (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 
 	var/hatch_open = FALSE
 	var/wires_intact = TRUE
@@ -100,17 +98,17 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_{appearanc
 		ispowered = FALSE
 		disable_field()
 
-CAPABILITY(/obj/machinery/atmospheric_field_generator, emp_disable(7.5 SECONDS))
+CAPABILITIES(/obj/machinery/atmospheric_field_generator)
+	emp_disable(7.5 SECONDS)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_generator_blast))))
 
-/obj/machinery/atmospheric_field_generator/emp_disable_changed(disabled)
-	..()
-	if(disabled)
+/// A pulse took it down (the field drops) or its outage ended (the field comes back if it was on, or is always on).
+/obj/machinery/atmospheric_field_generator/proc/emp_state_changed(datum/act/A)
+	if(emp_disabled(src))
 		disable_field() //shutting dowwwwwwn
 	else if(alwaysactive || wasactive) //reboot after a short delay if we were online before
 		generate_field()
-
-CAPABILITIES(/obj/machinery/atmospheric_field_generator)
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_generator_blast))))
 
 /// A light blast knocks the field generator out like a pulse.
 /obj/machinery/atmospheric_field_generator/proc/field_generator_blast(datum/act/hit/explosion/A)

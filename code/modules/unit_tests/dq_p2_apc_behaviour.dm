@@ -52,12 +52,16 @@
 
 /// The APC's interface is subverted, as an emag leaves it: subverted and unlocked.
 /proc/p2_apc_subvert(obj/machinery/power/apc/A)
-	A.set_emagged(TRUE)
-	A.set_locked(FALSE)
+	cap_key_set(A, EMAG_EMAGGED, TRUE, null)
+	cap_key_set(A, LOCK_LOCKED, FALSE, null)
 
 /// Somebody opens the APC's window (the touch of a hand or a silicon).
 /proc/p2_apc_open_interface(obj/machinery/power/apc/A, mob/user)
-	A.interact(user)
+	if(issilicon(user))
+		A.tgui_interact(user) // a silicon's interface: what the remote() binding of the open op does
+		return
+	test_click(user, A, null)
+	test_time(1 SECOND)
 
 /// The lights of the area the APC powers.
 /proc/p2_apc_area_lights(obj/machinery/power/apc/A)
@@ -84,7 +88,8 @@
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
-	A.update()
+	A.apply_area_power()
+	A.push_to_rust() // the test rewrote the area's requires_power, which the APC never sees change in a round
 	refresh_flush()
 
 /// The area takes `watts` more static load on the equipment channel (negative: gives it back).
@@ -102,11 +107,11 @@
 
 /// The APC's output is down for a while (an EMP, an overload event, a supermatter shutdown): its power failure is on.
 /proc/p2_apc_failed(obj/machinery/power/apc/A)
-	return !!A.power_failed
+	return A.failure_left() > 0
 
 /// The frame is not finished (its electronics are not fastened): it does not run.
 /proc/p2_apc_unfinished(obj/machinery/power/apc/A)
-	return !!A.has_stat(MAINT)
+	return !built(A, STAGE_APC_SECURED)
 
 /// A power failure of `seconds` (what the electrical fault event and the supermatter do).
 /proc/p2_apc_energy_fail(obj/machinery/power/apc/A, seconds)

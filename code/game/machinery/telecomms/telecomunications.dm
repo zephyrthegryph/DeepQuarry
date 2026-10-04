@@ -22,8 +22,6 @@
 	step_on_power_change = TRUE
 	icon = 'icons/obj/stationobjs.dmi'
 	unacidable = TRUE
-	/// Until when an EMP keeps the machine down (EMP_DISABLE). Takes a long time for the machines to reboot.
-	EXPIRY_DECLARE(emp_until)
 	var/list/links // list of machines this machine is linked to
 	var/traffic = 0 // value increases as traffic increases
 	var/netspeed = 5 // how much traffic to lose per tick (50 gigabytes/second * netspeed)
@@ -57,6 +55,8 @@
 CAPABILITIES(/obj/machinery/telecomms)
 	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	emp_disable(PROC_REF(emp_outage))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	interface("TelecommsMultitoolMenu")
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
 	op("network", ui_act("network"), then(PROC_REF(ui_act_network)))
@@ -245,17 +245,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 /obj/machinery/telecomms/proc/thermal_check_due()
 	MACHINE_WAKE(src)
 
-CAPABILITY(/obj/machinery/telecomms, emp_disable(300 SECONDS))
+/// emp_disable()'s outage: 300 s over the severity, and weaker pulses only sometimes knock a telecomms machine out.
+/obj/machinery/telecomms/proc/emp_outage(severity)
+	if(!prob(100 / max(severity, 1)))
+		return 0
+	return 300 SECONDS / max(severity, 1)
 
-/// Weaker pulses only sometimes knock a telecomms machine out.
-/obj/machinery/telecomms/emp_disable_react(datum/damage_packet/packet)
-	if(!prob(100/max(packet.severity, 1)))
-		return
-	return ..()
-
-/obj/machinery/telecomms/emp_disable_changed(disabled)
-	..()
-	if(disabled)
+/// A pulse knocked it out: the pulse sound.
+/obj/machinery/telecomms/proc/emp_state_changed(datum/act/A)
+	if(emp_disabled(src))
 		play_sfx(src, SFX_MACHINES_TCOMMS_TCOMMS_PULSE)
 
 /// Telecomms heat: idle_power_usage while on, 30% with no traffic. It goes

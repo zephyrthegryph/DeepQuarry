@@ -1,0 +1,7 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "The APC is fully on the final forms: EMPs and event power failures are timed holds on its operability, its area, night lighting and emergency lighting are declared links and contributions, and signallers and silicons reach it through their own bindings."
+  - code_imp: "emp_disable() is a library capability that holds a machine (or a GPS or vehicle) out of operation for the pulse's outage."
+  - bugfix: "The station power-failure event, its restore and the supermatter cascade now really empty or refill APC cells."
+  - qol: "An APC switched to automatic night lighting, or built, during the night dims its area at once."

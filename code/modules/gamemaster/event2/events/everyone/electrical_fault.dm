@@ -67,7 +67,7 @@
 /datum/event2/event/electrical_fault/proc/affect_apc(obj/machinery/power/apc/A)
 	// Main breaker is turned off or is Special(tm). Consider it protected.
 	// Important APCs like the AI or the engine core shouldn't get shut off by this event.
-	if((!A.operating || A.power_failed) || A.is_critical)
+	if((!A.operating || A.failure_left()) || A.is_critical)
 		return
 
 	// In reality this would probably make the lights get brighter but oh well.
@@ -90,7 +90,7 @@
 
 	// Relatively small chance to emag the apc as apc_damage event does.
 	if(prob(5))
-		A.set_emagged(TRUE)
+		cap_key_set(A, EMAG_EMAGGED, TRUE, null)
 		play_sfx(A, SFX_MACHINES_CHIME)
 		apcs_emagged++
 

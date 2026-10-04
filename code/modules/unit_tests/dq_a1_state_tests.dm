@@ -93,7 +93,7 @@
 /datum/unit_test/dq_a1_private_copy_and_flyweights/Run()
 	var/datum/own_entry/E = rel_one("x", kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 	TEST_ASSERT_EQUAL(E.entry[OWNE_KIND], OWNK_PROTO, "OWN_PRIVATE_COPY declares a prototype var")
-	var/datum/capability/C = caps_of(allocate(/obj/machinery/exonet_node))[1]
+	var/datum/capability/C = caps_of(allocate(/obj/structure/dq_reflect_probe))[1] // REFLECTS: a legacy capability line
 	TEST_ASSERT(is_flyweight(C), "an interned capability is a flyweight")
 	TEST_ASSERT(!is_flyweight(allocate(/datum/a1_fx)), "an ordinary datum is not")
 

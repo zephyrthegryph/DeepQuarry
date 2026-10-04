@@ -6,7 +6,7 @@
 // named `origin` is declared `origin_turf` (every act has an ORIGIN_* `origin`). Not declared here:
 //   - irradiate, injure and body_status carry the body domain's fields (section 14), declared by the body domain.
 //   - the op action's act type is the op context (context.dm); only its notice, /datum/notice/op_done, is generated.
-//   - the legacy /datum/notice/hit of master (an item used on the holder with no answer) is /datum/notice/legacy_hit.
+//   - an item used on the holder with no answer is the attackby action's notice, /datum/notice/attacked_by.
 
 ACTION(move, turf/origin, turf/destination, direction)
 ACTION(z_change, turf/origin, turf/destination)

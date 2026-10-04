@@ -223,7 +223,7 @@
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(cell), nameof(charging), nameof(operating))
-	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(shorted), nameof(vg_entity))
+	. += rust_push(nameof(area), nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(shorted), nameof(supplying), nameof(vg_entity))
 
 /obj/machinery/power/smes/generated_reads()
 	. = ..()
