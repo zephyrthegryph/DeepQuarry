@@ -1,13 +1,7 @@
 ADMIN_VERB(change_human_appearance_admin, R_FUN, "Change Mob Appearance - Admin", "Allows you to change the mob appearance.", ADMIN_CATEGORY_EVENTS)
-	var/mob/living/carbon/human/target_human = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select mob.", title = "Change Mob Appearance - Admin", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
-	if(isnull(target_human))
+	if(QDELETED(user.mob))
 		return
-	if(!target_human)
-		return
-
-	log_and_message_admins("is altering the appearance of [target_human].")
-	target_human.change_appearance(APPEARANCE_ALL, usr, check_species_whitelist = 0, state = ADMIN_STATE(R_FUN))
-	feedback_add_details("admin_verb","CHAA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	open_request(src, /datum/prompt/choice/admin_appearance_target, PROC_REF(appearance_target_answered), answerer = user.mob, choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
 ADMIN_VERB(change_human_appearance_self, R_FUN, "Change Mob Appearance - Self", "Allows the mob to change its appearance.", ADMIN_CATEGORY_EVENTS)
 	var/mob/living/carbon/human/human_target = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Select mob.", title = "Change Mob Appearance - Self", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
@@ -378,6 +372,39 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	return review.refusal()
 
 /datum/prompt/choice/admin_edit_new_gender/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/admin_verb/change_human_appearance_admin/proc/appearance_target_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(open_appearance_editor), context)
+	if(!result.ok)
+		stack_trace("om flow change_human_appearance_admin answer open_appearance_editor: [result.error]")
+
+/datum/admin_verb/change_human_appearance_admin/proc/open_appearance_editor(datum/act/request/context)
+	var/mob/living/carbon/human/target_human = context.request.answer_value
+	var/mob/user = context.request.answerer
+	log_and_message_admins("is altering the appearance of [target_human].", user)
+	target_human.change_appearance(APPEARANCE_ALL, user, check_species_whitelist = 0, state = ADMIN_STATE(R_FUN))
+	feedback_add_details("admin_verb","CHAA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_appearance_target
+	rights = R_FUN
+	timeout = 0
+	title = "Change Mob Appearance - Admin"
+	question = "Select mob."
+
+/datum/prompt/choice/admin_appearance_target/refusal(given)
+	. = ..()
+	if(.)
+		return
+	if(!istype(given, /mob/living/carbon/human) || QDELETED(given))
+		return "The selected human is no longer available."
+
+/datum/prompt/choice/admin_appearance_target/begin()
 	if(request_recheck(src))
 		request_end(src, REQ_CANCELLED, null)
 		return
