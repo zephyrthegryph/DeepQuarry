@@ -3061,11 +3061,11 @@
 	into += entry_line(158)
 	into += list(global.ref_one(nameof(default_entity), /datum))
 
-/// CAPABILITIES(/datum/pin_value_review/list_edit) at code/modules/integrated_electronics/core/special_pins/list_pin.dm:79
+/// CAPABILITIES(/datum/pin_value_review/list_edit) at code/modules/integrated_electronics/core/special_pins/list_pin.dm:75
 /datum/pin_value_review/list_edit/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/integrated_electronics/core/special_pins/list_pin.dm", 79, /datum/pin_value_review/list_edit)
-	into += entry_line(80)
+	into += entry_block("code/modules/integrated_electronics/core/special_pins/list_pin.dm", 75, /datum/pin_value_review/list_edit)
+	into += entry_line(76)
 	into += list(global.ref_one(nameof(entry_entity), /datum))
 
 /// CAPABILITIES(/datum/pipe_network) at code/ATMOSPHERICS/datum_pipe_network.dm:22

@@ -227,9 +227,34 @@ ADMIN_VERB(dq_run_medical_scenario, R_DEBUG, "DQ Run Medical Scenario", "Spawn a
 	if(!length(options))
 		to_chat(user.mob, span_warning("No /datum/dq_medical_scenario subtypes defined."))
 		return
-	var/picked_key = verb_ask(user.mob, "k230", args, /datum/om/prompt/choice, message = "Which scenario?", title = "DQ Medical Scenario", choices = options)
-	if(isnull(picked_key))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/medical_debug_scenario, PROC_REF(scenario_chosen), answerer = answerer, choices = options)
+
+/datum/prompt/choice/medical_debug_scenario
+	question = "Which scenario?"
+	title = "DQ Medical Scenario"
+	rights = R_DEBUG
+	timeout = 0
+
+/datum/prompt/choice/medical_debug_scenario/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/admin_verb/dq_run_medical_scenario/proc/scenario_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	var/list/options = _dq_list_medical_scenarios()
+	if(!length(options))
+		to_chat(user.mob, span_warning("No /datum/dq_medical_scenario subtypes defined."))
+		return
+	var/picked_key = A.request.answer_value
 	if(!picked_key)
 		return
 	var/scenario_type = options[picked_key]
