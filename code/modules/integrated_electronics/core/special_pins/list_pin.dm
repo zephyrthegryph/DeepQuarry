@@ -45,10 +45,8 @@
 		to_chat(user, span_warning("The list is empty, there's nothing to remove."))
 		return
 	if(!target_entry)
-		var/_answer_k48 = rerun_ask(user, "k48", PROC_REF(remove_from_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to remove?", title = "Remove", choices = my_list)
-		if(isnull(_answer_k48))
-			return
-		target_entry = _answer_k48
+		start_list_selection(user, "remove")
+		return
 	if(target_entry)
 		my_list.Remove(target_entry)
 
@@ -58,10 +56,8 @@
 		to_chat(user, span_warning("The list is empty, there's nothing to modify."))
 		return
 	if(!target_entry)
-		var/_answer_k58 = rerun_ask(user, "k58", PROC_REF(edit_in_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to edit?", title = "Edit", choices = my_list)
-		if(isnull(_answer_k58))
-			return
-		target_entry = _answer_k58
+		start_list_selection(user, "edit")
+		return
 	if(target_entry)
 		var/datum/pin_value_review/list_edit/review = new
 		review.capture_entry(target_entry)
@@ -137,18 +133,11 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 	if(my_list.len <= 1)
 		to_chat(user, span_warning("The list is empty, or too small to do any meaningful swapping."))
 		return
-	if(!first_target)
-		var/_answer_k93 = rerun_ask(user, "k93", PROC_REF(swap_inside_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to swap? (1)", title = "Swap", choices = my_list)
-		if(isnull(_answer_k93))
-			return
-		first_target = _answer_k93
+	if(!first_target || !second_target)
+		start_list_selection(user, "swap", first_target, second_target)
+		return
 
 	if(first_target)
-		if(!second_target)
-			var/_answer_k97 = rerun_ask(user, "k97", PROC_REF(swap_inside_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to swap? (2)", title = "Swap", choices = my_list - first_target)
-			if(isnull(_answer_k97))
-				return
-			second_target = _answer_k97
 
 		if(second_target)
 			var/first_pos = my_list.Find(first_target)
@@ -173,3 +162,112 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 /datum/integrated_io/list/display_pin_type()
 	return IC_FORMAT_LIST
 
+
+/// List selection retains arbitrary values using the same weak capture rules as pin editing.
+/datum/pin_value_review/list_edit/selection
+	var/action
+	var/original_client_ckey
+	var/selecting_second = FALSE
+
+/datum/prompt/choice/pin_list_selection
+	timeout = 0
+
+/datum/prompt/choice/pin_list_selection/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/pin_value_review/list_edit/selection/review = owner
+	if(review.why_not())
+		return "gone"
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+
+/datum/integrated_io/list/proc/start_list_selection(mob/user, action, first_target, second_target)
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		return
+	var/datum/pin_value_review/list_edit/selection/review = new
+	rel_set(review, nameof(review.actor), user)
+	rel_set(review, nameof(review.pin), src)
+	review.action = action
+	review.original_client_ckey = original_client_ckey
+	review.capture_default(first_target)
+	review.capture_entry(second_target)
+	review.selecting_second = !!first_target
+	review.begin_selection()
+
+/datum/pin_value_review/list_edit/selection/proc/begin_selection()
+	if(why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(open_selection))
+	if(!result.ok)
+		stack_trace("Pin list selection start: [result.error]")
+		retire()
+
+/datum/pin_value_review/list_edit/selection/why_not()
+	. = ..()
+	if(.)
+		return
+	if(original_client_ckey && !GLOB.directory[original_client_ckey])
+		return "gone"
+
+/datum/pin_value_review/list_edit/selection/proc/open_selection()
+	if(why_not())
+		retire()
+		return
+	var/datum/integrated_io/list/list_pin = pin
+	var/list/my_list = list_pin.data
+	var/title
+	var/question
+	var/list/choices = my_list
+	switch(action)
+		if("remove")
+			title = "Remove"
+			question = "Which piece of data do you want to remove?"
+		if("edit")
+			title = "Edit"
+			question = "Which piece of data do you want to edit?"
+		if("swap")
+			title = "Swap"
+			question = "Which piece of data do you want to swap? ([selecting_second ? 2 : 1])"
+			if(selecting_second)
+				choices = my_list - default_value()
+	open_request(src, /datum/prompt/choice/pin_list_selection, PROC_REF(selection_entered), answerer = actor, title = title, question = question, choices = choices)
+
+/datum/pin_value_review/list_edit/selection/proc/selection_entered(datum/act/request/A)
+	run_step(PROC_REF(selection_step), A)
+
+/datum/pin_value_review/list_edit/selection/proc/selection_step(datum/act/request/A)
+	var/selected = A.answer.answer_value
+	if(!selected)
+		retire()
+		return
+	var/datum/integrated_io/list/list_pin = pin
+	var/mob/user = original_client_ckey ? GLOB.directory[original_client_ckey] : actor
+	switch(action)
+		if("remove")
+			list_pin.remove_from_list(user, selected)
+		if("edit")
+			list_pin.edit_in_list(user, selected)
+		if("swap")
+			if(!selecting_second)
+				capture_default(selected)
+				if(entry_value())
+					list_pin.swap_inside_list(user, default_value(), entry_value())
+				else
+					var/list/my_list = list_pin.data
+					if(my_list.len <= 1)
+						list_pin.swap_inside_list(user)
+					else
+						selecting_second = TRUE
+						open_selection()
+						return
+			else
+				list_pin.swap_inside_list(user, default_value(), selected)
+	retire()
