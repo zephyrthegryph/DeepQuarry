@@ -32,14 +32,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 )
 
 /// Old verb "Customize Shroud".
-/obj/item/clothing/suit/space/void/zaddat/proc/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/space/void/zaddat/proc/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction, selected_style = null)
 	var/mob/M = user
-	var/suit_style = null
-
-	var/_answer_a1 = rerun_ask(M, "a1", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Suit Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
-	if(isnull(_answer_a1))
-		return
-	suit_style = _answer_a1
+	if(isnull(selected_style))
+		return open_style_request(user, "Suit Style")
+	var/suit_style = selected_style
 	switch(suit_style)
 		if("Engineer")
 			name = "\improper Engineer's Guild Shroud"
@@ -161,14 +158,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 
 
 
-/obj/item/clothing/suit/space/void/zaddat/security/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/space/void/zaddat/security/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction, selected_style = null)
 	var/mob/M = user
-	var/suit_style = null
-
-	var/_answer_a2 = rerun_ask(M, "a2", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
-	if(isnull(_answer_a2))
-		return
-	suit_style = _answer_a2
+	if(isnull(selected_style))
+		return open_style_request(user, "Select Style")
+	var/suit_style = selected_style
 	switch(suit_style)
 		if("Spacer")
 			name = "\improper Security Spacer's Guild Shroud"
@@ -232,14 +226,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 	return TRUE
 
 
-/obj/item/clothing/suit/space/void/zaddat/engineer/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/space/void/zaddat/engineer/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction, selected_style = null)
 	var/mob/M = user
-	var/suit_style = null
-
-	var/_answer_a3 = rerun_ask(M, "a3", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
-	if(isnull(_answer_a3))
-		return
-	suit_style = _answer_a3
+	if(isnull(selected_style))
+		return open_style_request(user, "Select Style")
+	var/suit_style = selected_style
 	switch(suit_style)
 		if("Engineer")
 			name = "\improper Rad-Plated Engineer's Guild Shroud"
@@ -323,3 +314,40 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 	has_been_customized = TRUE
 	M.regenerate_icons()
 	return TRUE
+
+/obj/item/clothing/suit/space/void/zaddat/proc/open_style_request(mob/user, prompt_title)
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		return
+	open_request(src, /datum/prompt/choice/shroud_style, PROC_REF(style_chosen), answerer = user, title = prompt_title, original_client_ckey = original_client_ckey)
+
+/obj/item/clothing/suit/space/void/zaddat/proc/style_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_style_answer), A)
+	if(!result.ok)
+		stack_trace("Shroud customization request: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/clothing/suit/space/void/zaddat/proc/apply_style_answer(datum/act/request/A)
+	var/datum/prompt/choice/shroud_style/request = A.request
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	return zaddat_custom_suit_verb(user, null, null, A.answer.answer_value)
+
+/datum/prompt/choice/shroud_style
+	question = "Which suit style would you like?"
+	timeout = 0
+	choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft")
+	var/original_client_ckey
+
+/datum/prompt/choice/shroud_style/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(original_client_ckey && !GLOB.directory[original_client_ckey])
+		return "gone"
+	return null

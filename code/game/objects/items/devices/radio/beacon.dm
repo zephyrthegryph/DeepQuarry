@@ -17,7 +17,21 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 
 /obj/item/radio/beacon/proc/alter_signal_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	// The old verb took the text as its argument; ask for it instead.
-	var/t = rerun_ask(user, "beacon_signal", PROC_REF(alter_signal_effect), args, /datum/om/prompt/text, message = "Enter the beacon's new signal code.", title = "Alter Beacon's Signal", default = code, max_length = MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text/tracking_beacon_signal, PROC_REF(beacon_signal_entered), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "Enter the beacon's new signal code.", title = "Alter Beacon's Signal", default = code, max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
+
+/obj/item/radio/beacon/proc/beacon_signal_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/tracking_beacon_signal/request = A.request
+	if(request.captures_gone())
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_beacon_signal), A.request.answerer, A.answer.answer_value)
+	if(!result.ok)
+		stack_trace("[type] request: [result.error]")
+	. = result.value
+	SStgui.update_uis(src)
+
+/obj/item/radio/beacon/proc/apply_beacon_signal(mob/user, t)
 	if(isnull(t))
 		return
 	if(loc != user)
@@ -52,3 +66,33 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 EXTEND_INTERACTIONS(/obj/item/radio/beacon, \
 	INTERACT_VERB("Alter Beacon's Signal", PROC_REF(alter_signal_effect), REQ_IN_INVENTORY), \
 )
+
+/datum/prompt/text/tracking_beacon_signal
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/tracking_beacon_signal)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/text/tracking_beacon_signal/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/text/tracking_beacon_signal/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/text/tracking_beacon_signal/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null

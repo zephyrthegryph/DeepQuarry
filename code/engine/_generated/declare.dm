@@ -880,6 +880,13 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(landing), /atom/movable/screen/action_landing))
 
+/// CAPABILITIES(/datum/admin_memo_review) at code/modules/admin/admin_memo.dm:131
+/datum/admin_memo_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_memo.dm", 131, /datum/admin_memo_review)
+	into += entry_line(132)
+	into += list(global.ref_one(nameof(actor), /mob))
+
 /// CAPABILITIES(/datum/admin_report) at code/modules/admin/admin_report_panel.dm:37
 /datum/admin_report/declared_entries(list/into)
 	..(into)
@@ -3311,6 +3318,13 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/admin_body_effect) at code/modules/admin/admin_verbs.dm:399
+/datum/prompt/choice/admin_body_effect/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 399, /datum/prompt/choice/admin_body_effect)
+	into += entry_line(400)
+	into += list(global.ref_one(nameof(living_target), /mob/living))
+
 /// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1270
 /datum/prompt/choice/admin_drop_pod/declared_entries(list/into)
 	..(into)
@@ -3318,12 +3332,33 @@
 	into += entry_line(1271)
 	into += list(global.ref_one(nameof(drop_mob), /mob/living))
 
+/// CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation) at code/modules/admin/admin_verbs.dm:1006
+/datum/prompt/choice/admin_man_up/confirmation/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 1006, /datum/prompt/choice/admin_man_up/confirmation)
+	into += entry_line(1007)
+	into += list(global.ref_one(nameof(target), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm) at code/modules/admin/admin.dm:1087
+/datum/prompt/choice/admin_paralyze_confirm/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin.dm", 1087, /datum/prompt/choice/admin_paralyze_confirm)
+	into += entry_line(1088)
+	into += list(global.ref_one(nameof(target), /mob/living))
+
 /// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:209
 /datum/prompt/choice/admin_sendmob/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/admin/verbs/adminjump.dm", 209, /datum/prompt/choice/admin_sendmob)
 	into += entry_line(210)
 	into += list(global.ref_one(nameof(area), /area))
+
+/// CAPABILITIES(/datum/prompt/choice/admin_spell) at code/modules/admin/admin_verbs.dm:716
+/datum/prompt/choice/admin_spell/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 716, /datum/prompt/choice/admin_spell)
+	into += entry_line(717)
+	into += list(global.ref_one(nameof(target_mob), /mob))
 
 /// CAPABILITIES(/datum/prompt/choice/air_control_menu) at code/game/machinery/atmo_control.dm:285
 /datum/prompt/choice/air_control_menu/declared_entries(list/into)
@@ -3422,6 +3457,15 @@
 	into += entry_line(189)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/choice/extraction_beacon) at code/modules/mining/fulton.dm:76
+/datum/prompt/choice/extraction_beacon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/fulton.dm", 76, /datum/prompt/choice/extraction_beacon)
+	into += entry_line(77)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(78)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/choice/faction_join) at code/game/antagonist/antagonist_factions.dm:46
 /datum/prompt/choice/faction_join/declared_entries(list/into)
 	..(into)
@@ -3431,13 +3475,13 @@
 	into += entry_line(48)
 	into += list(global.ref_one(nameof(faction), /datum/antagonist))
 
-/// CAPABILITIES(/datum/prompt/choice/fax_stamp) at code/modules/admin/admin.dm:891
+/// CAPABILITIES(/datum/prompt/choice/fax_stamp) at code/modules/admin/admin.dm:935
 /datum/prompt/choice/fax_stamp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 891, /datum/prompt/choice/fax_stamp)
-	into += entry_line(892)
+	into += entry_block("code/modules/admin/admin.dm", 935, /datum/prompt/choice/fax_stamp)
+	into += entry_line(936)
 	into += list(global.ref_one(nameof(paper), /obj/item/paper/admin))
-	into += entry_line(893)
+	into += entry_line(937)
 	into += list(global.ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine))
 
 /// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:46
@@ -3517,6 +3561,15 @@
 	into += entry_line(89)
 	into += list(global.ref_one(nameof(victim), /mob/living))
 
+/// CAPABILITIES(/datum/prompt/choice/organ_extraction) at code/modules/organs/organ_external.dm:1734
+/datum/prompt/choice/organ_extraction/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/organs/organ_external.dm", 1734, /datum/prompt/choice/organ_extraction)
+	into += entry_line(1735)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(1736)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/choice/pai_access) at code/modules/mob/living/silicon/pai/pai.dm:340
 /datum/prompt/choice/pai_access/declared_entries(list/into)
 	..(into)
@@ -3585,6 +3638,24 @@
 	into += list(global.ref_one(nameof(power), /datum/protean_power))
 	into += entry_line(271)
 	into += list(global.ref_one(nameof(form), /datum/forms/protean))
+
+/// CAPABILITIES(/datum/prompt/choice/research_anomaly) at code/modules/anomalies/anomaly.dm:281
+/datum/prompt/choice/research_anomaly/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/anomalies/anomaly.dm", 281, /datum/prompt/choice/research_anomaly)
+	into += entry_line(282)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(283)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+	into += entry_line(284)
+	into += list(global.ref_one(nameof(captured_callback), /datum))
+
+/// CAPABILITIES(/datum/prompt/choice/rig_maintenance) at code/modules/clothing/spacesuits/rig/rig_attackby.dm:245
+/datum/prompt/choice/rig_maintenance/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/spacesuits/rig/rig_attackby.dm", 245, /datum/prompt/choice/rig_maintenance)
+	into += entry_line(246)
+	into += list(global.ref_one(nameof(captured_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
@@ -3658,12 +3729,33 @@
 	into += entry_line(168)
 	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
 
+/// CAPABILITIES(/datum/prompt/number/admin_body_effect) at code/modules/admin/admin_verbs.dm:431
+/datum/prompt/number/admin_body_effect/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 431, /datum/prompt/number/admin_body_effect)
+	into += entry_line(432)
+	into += list(global.ref_one(nameof(living_target), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:1052
+/datum/prompt/number/admin_telecrystals/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin.dm", 1052, /datum/prompt/number/admin_telecrystals)
+	into += entry_line(1053)
+	into += list(global.ref_one(nameof(human_target), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:81
 /datum/prompt/number/cablelayer_cut/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/CableLayer.dm", 81, /datum/prompt/number/cablelayer_cut)
 	into += entry_line(82)
 	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/number/excavation_depth) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:247
+/datum/prompt/number/excavation_depth/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 247, /datum/prompt/number/excavation_depth)
+	into += entry_line(248)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/number/hand_game_move) at code/modules/mob/living/carbon/human/human_powers.dm:588
 /datum/prompt/number/hand_game_move/declared_entries(list/into)
@@ -3728,6 +3820,15 @@
 	into += entry_line(357)
 	into += list(global.ref_one(nameof(area_to_rename), /area))
 
+/// CAPABILITIES(/datum/prompt/text/card_data_label) at code/game/objects/items/weapons/id cards/cards.dm:364
+/datum/prompt/text/card_data_label/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/id cards/cards.dm", 364, /datum/prompt/text/card_data_label)
+	into += entry_line(365)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(366)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/text/chaplain_religion) at code/game/jobs/job/civilian_chaplain.dm:78
 /datum/prompt/text/chaplain_religion/declared_entries(list/into)
 	..(into)
@@ -3753,6 +3854,13 @@
 	into += entry_line(876)
 	into += list(global.ref_one(nameof(implant), /obj/item/implant/compliance))
 
+/// CAPABILITIES(/datum/prompt/text/drill_label) at code/modules/mining/drilling/drill.dm:334
+/datum/prompt/text/drill_label/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/drilling/drill.dm", 334, /datum/prompt/text/drill_label)
+	into += entry_line(335)
+	into += list(global.ref_one(nameof(captured_tool), /obj/item))
+
 /// CAPABILITIES(/datum/prompt/text/electronics_rename) at code/modules/integrated_electronics/core/integrated_circuit.dm:104
 /datum/prompt/text/electronics_rename/declared_entries(list/into)
 	..(into)
@@ -3769,13 +3877,13 @@
 	into += entry_line(324)
 	into += list(global.ref_one(nameof(source), /mob))
 
-/// CAPABILITIES(/datum/prompt/text/fax_title) at code/modules/admin/admin.dm:861
+/// CAPABILITIES(/datum/prompt/text/fax_title) at code/modules/admin/admin.dm:905
 /datum/prompt/text/fax_title/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 861, /datum/prompt/text/fax_title)
-	into += entry_line(862)
+	into += entry_block("code/modules/admin/admin.dm", 905, /datum/prompt/text/fax_title)
+	into += entry_line(906)
 	into += list(global.ref_one(nameof(paper), /obj/item/paper/admin))
-	into += entry_line(863)
+	into += entry_line(907)
 	into += list(global.ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine))
 
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
@@ -3812,6 +3920,15 @@
 	into += entry_block("code/modules/mob/living/carbon/human/species/station/protean/protean_appearance.dm", 186, /datum/prompt/text/protean_style)
 	into += entry_line(187)
 	into += list(global.ref_one(nameof(style), /datum/protean_blob_style/layered))
+
+/// CAPABILITIES(/datum/prompt/text/tracking_beacon_signal) at code/game/objects/items/devices/radio/beacon.dm:76
+/datum/prompt/text/tracking_beacon_signal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/radio/beacon.dm", 76, /datum/prompt/text/tracking_beacon_signal)
+	into += entry_line(77)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(78)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
@@ -8065,11 +8182,11 @@
 	into += entry_line(13)
 	into += list(global.owns_one(nameof(dummy_card), starts = nameof(dummy_card_type)))
 
-/// CAPABILITIES(/obj/item/card_fluff) at code/game/objects/items/weapons/id cards/cards.dm:212
+/// CAPABILITIES(/obj/item/card_fluff) at code/game/objects/items/weapons/id cards/cards.dm:226
 /obj/item/card_fluff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/id cards/cards.dm", 212, /obj/item/card_fluff)
-	into += entry_line(213)
+	into += entry_block("code/game/objects/items/weapons/id cards/cards.dm", 226, /obj/item/card_fluff)
+	into += entry_line(227)
 	into += list(global.op("customize", global.in_hand(), global.label("Customize card"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice, keeps = 0, step = "element", fields = list("title" = "Customize Card", "question" = "What element would you like to customize?", "choices" = list("Band", "Stamp", "Reset"), "timeout" = 0)), global.asks(/datum/prompt/choice, keeps = 0, step = "band", when = PROC_REF(customizing_band), fields = list("title" = "Band colour", "question" = "Select colour", "choices" = list("red", "orange", "green", "dark green", "medical blue", "dark blue", "purple", "tan", "pink", "gold", "white", "black"), "timeout" = 0)), global.asks(/datum/prompt/choice, keeps = 0, step = "stamp", when = PROC_REF(customizing_stamp), fields = list("title" = "Stamp image", "question" = "Select image", "choices" = list("ship", "cross", "big ears", "shield", "circle-cross", "target", "smile", "frown", "peace", "exclamation"), "timeout" = 0)), global.then(PROC_REF(customize_chosen))))
 
 /// CAPABILITIES(/obj/item/cartridge/rd) at code/modules/pda/cart.dm:232
@@ -8380,11 +8497,11 @@
 	into += entry_line(331)
 	into += list(global.owns_one(nameof(special_attack), /datum/unarmed_attack, starts = nameof(special_attack_type)))
 
-/// CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe) at code/modules/clothing/under/miscellaneous.dm:1893
+/// CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe) at code/modules/clothing/under/miscellaneous.dm:1887
 /obj/item/clothing/gloves/bluespace/deluxe/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/under/miscellaneous.dm", 1893, /obj/item/clothing/gloves/bluespace/deluxe)
-	into += entry_line(1894)
+	into += entry_block("code/modules/clothing/under/miscellaneous.dm", 1887, /obj/item/clothing/gloves/bluespace/deluxe)
+	into += entry_line(1888)
 	into += list(global.op("deluxe_turn_dial_verb", global.menu(), global.label("Adjust Bluespace Dial"), global.needs(global.carried()), global.then(PROC_REF(deluxe_turn_dial_verb))))
 
 /// CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:159
@@ -10587,6 +10704,13 @@
 	into += entry_block("code/game/objects/items/petrifier.dm", 20, /obj/item/petrifier)
 	into += entry_line(21)
 	into += list(global.op("fire", global.in_hand(), global.wait(0), global.needs(global.req(PROC_REF(can_fire), because = MSG(petrifier/beeps))), global.then(PROC_REF(fired))))
+
+/// CAPABILITIES(/obj/item/pickaxe/excavationdrill) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:168
+/obj/item/pickaxe/excavationdrill/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 168, /obj/item/pickaxe/excavationdrill)
+	into += entry_line(169)
+	into += list(global.op("depth", global.in_hand(), global.label("Set excavation depth"), global.then(PROC_REF(depth_used))))
 
 /// CAPABILITIES(/obj/item/pinpointer) at code/game/gamemodes/nuclear/pinpointer.dm:23
 /obj/item/pinpointer/declared_entries(list/into)
@@ -15565,13 +15689,13 @@
 	into += entry_line(41)
 	into += list(global.op("release_stack", global.ui_act("release_stack", global.arg("stack", global.schema_text(4096))), global.then(PROC_REF(ui_act_release_stack))))
 
-/// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:481
+/// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:553
 /obj/machinery/mining/brace/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mining/drilling/drill.dm", 481, /obj/machinery/mining/brace)
-	into += entry_line(482)
+	into += entry_block("code/modules/mining/drilling/drill.dm", 553, /obj/machinery/mining/brace)
+	into += entry_line(554)
 	into += list(global.entry_link("/obj/machinery/mining/brace::connected", "/obj/machinery/mining/drill::supports", b_many = TRUE))
-	into += entry_line(483)
+	into += entry_line(555)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/mining/drill) at code/modules/mining/drilling/drill.dm:96
@@ -15583,6 +15707,8 @@
 	into += entry_line(98)
 	into += list(global.climb())
 	into += entry_line(99)
+	into += list(global.op("label", global.tool(TOOL_MULTITOOL), global.wait(0), global.label("Assign ID number"), global.needs(global.req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), global.then(PROC_REF(label_tool_used))))
+	into += entry_line(100)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell)))
 
 /// CAPABILITIES(/obj/machinery/navbeacon) at code/game/machinery/navbeacon.dm:94

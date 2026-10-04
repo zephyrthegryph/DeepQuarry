@@ -96,6 +96,7 @@
 CAPABILITIES(/obj/machinery/mining/drill)
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
 	climb()
+	op("label", tool(TOOL_MULTITOOL), wait(0), label("Assign ID number"), needs(req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), then(PROC_REF(label_tool_used)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
@@ -270,9 +271,45 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 /obj/machinery/mining/drill/multitool_act(mob/user, obj/item/tool)
 	if(active)
 		return ITEM_INTERACT_BLOCKING
-	var/_answer_k279 = rerun_ask(user, "k279", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "Enter new ID number or leave empty to cancel.", title = "Assign ID number", max_length = 4, encode = FALSE)
-	if(isnull(_answer_k279))
+	return label_request_open(user, tool)
+
+/obj/machinery/mining/drill/proc/label_available(datum/act/op/A)
+	return !active
+
+/obj/machinery/mining/drill/proc/label_tool_used(datum/act/op/A)
+	label_request_open(A.actor, A.held)
+	return OP_OK
+
+/obj/machinery/mining/drill/proc/label_request_open(mob/user, obj/item/tool)
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
 		return ITEM_INTERACT_BLOCKING
+	open_request(src, /datum/prompt/text/drill_label, PROC_REF(label_entered), answerer = user, captured_tool = tool, tool_expected = !isnull(tool), original_client_ckey = original_client_ckey)
+	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/mining/drill/proc/label_entered(datum/act/request/A)
+	var/datum/prompt/text/drill_label/request = A.request
+	if(request.captures_gone())
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+			SStgui.update_uis(src)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_label), A)
+	if(!result.ok)
+		stack_trace("Mining drill label request: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/machinery/mining/drill/proc/apply_label(datum/act/request/A)
+	if(active)
+		return ITEM_INTERACT_BLOCKING
+	var/datum/prompt/text/drill_label/request = A.request
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	var/_answer_k279 = A.answer.answer_value
 	var/newtag = text2num(sanitizeSafe(_answer_k279, 4))
 	if(newtag)
 		name = "[initial(name)] #[newtag]"
@@ -281,6 +318,41 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 		name = initial(name)
 		to_chat(user, span_notice("You removed the drill's ID and any extraneous labels."))
 	return ITEM_INTERACT_SUCCESS
+
+/datum/prompt/text/drill_label
+	question = "Enter new ID number or leave empty to cancel."
+	title = "Assign ID number"
+	timeout = 0
+	max_len = 4
+	name_text = TRUE
+	encode = FALSE
+	multiline = FALSE
+	var/obj/item/captured_tool
+	var/tool_expected = FALSE
+	var/original_client_ckey
+
+CAPABILITIES(/datum/prompt/text/drill_label)
+	ref_one(nameof(captured_tool), /obj/item)
+
+/datum/prompt/text/drill_label/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/tool = captured_tool
+	rel_clear(src, nameof(captured_tool))
+	rel_set(src, nameof(captured_tool), tool)
+
+/datum/prompt/text/drill_label/proc/captures_gone()
+	return QDELETED(answerer) || (tool_expected && QDELETED(captured_tool)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+
+/datum/prompt/text/drill_label/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	var/obj/machinery/mining/drill/drill = owner
+	if(drill.active)
+		return "the drill is active"
+	return null
 
 /obj/machinery/mining/drill/screwdriver_act(mob/user, obj/item/tool)
 	if(active)

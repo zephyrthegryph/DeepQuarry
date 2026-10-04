@@ -299,14 +299,14 @@
 	. = ..()
 	if(QDELETED(src))
 		return
-	show_tooltip(params)
+	show_tooltip(usr, params) // ALLOW(sys_usr_outside_verb): BYOND palette MouseEntered supplies the actual hovering viewer to its tooltip helper.
 
 /atom/movable/screen/button_palette/MouseExited()
 	closeToolTip(usr, src)
 	return ..()
 
-/atom/movable/screen/button_palette/proc/show_tooltip(params)
-	openToolTip(usr, src, params, title = name, content = desc)
+/atom/movable/screen/button_palette/proc/show_tooltip(mob/user, params)
+	openToolTip(user, src, params, title = name, content = desc)
 
 GLOBAL_LIST_INIT(palette_added_matrix, list(0.4,0.5,0.2,0, 0,1.4,0,0, 0,0.4,0.6,0, 0,0,0,1, 0,0,0,0))
 GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,0, 0,0,0,1, 0,0,0,0))
