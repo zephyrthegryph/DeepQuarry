@@ -1,0 +1,5 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated mob, admin and blueprint choices to native requests."
+  - bugfix: "Anomaly batteries now dispose their captured artifact effect when emptied or destroyed."
