@@ -45,7 +45,7 @@
 /obj/item/clothing/head/fishing/proc/roll_slogan()
 	hatsize = 0
 	//short phrases that women and fish may have about you
-	var/feelings = list("love me",
+	var/static/list/feelings = list("love me",
 						"fear me",
 						"despise me",
 						"are ambivalent towards me",
@@ -111,7 +111,7 @@
 						"attempt to approach me"
 						)
 	//significantly more complex feelings that women and fish may have about you
-	var/verylongfeelings = list("construct inferior defensive walls lacking additional fall back locations as they believe their initial defense shall be enough to withstand me",
+	var/static/list/verylongfeelings = list("construct inferior defensive walls lacking additional fall back locations as they believe their initial defense shall be enough to withstand me",
 							"insist upon forming an unsteady yet reliable alliance in which they teeter upon the dual edge of betrayal and ruination in the perpetual desire to bring ruin upon me",
 							"construct elaborate fantasies about my graphic and harrowing death at the hands of a giant robot",
 							"call it oven when you of in the cold food of out hot eat the food",
