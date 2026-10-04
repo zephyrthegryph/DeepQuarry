@@ -236,11 +236,6 @@ dx_raw_delay	code/modules/power/fusion/core/core_field.dm	after(src, 1, PROC_REF
 dx_raw_delay	code/modules/power/generator.dm	after(src, 1, PROC_REF(announce_power_spike))
 dx_raw_delay	code/modules/power/port_gen.dm	after(null, 100, GLOBAL_PROC_REF(explosion), with = list(get_turf(src), 2, 3, 4, 8)) // Not a normal explosion.
 dx_raw_delay	code/modules/power/power_grid.dm	om_after_replace(null, max(duration, 1), GLOBAL_PROC_REF(power_warn_expire), id)
-dx_raw_delay	code/modules/power/singularity/field_generator.dm	after(src, 1, PROC_REF(finish_turn_off))
-dx_raw_delay	code/modules/power/singularity/field_generator.dm	after(src, 1, PROC_REF(setup_field), with = list(1))
-dx_raw_delay	code/modules/power/singularity/field_generator.dm	after(src, 2, PROC_REF(setup_field), with = list(2))
-dx_raw_delay	code/modules/power/singularity/field_generator.dm	after(src, 3, PROC_REF(setup_field), with = list(4))
-dx_raw_delay	code/modules/power/singularity/field_generator.dm	after(src, 4, PROC_REF(setup_field), with = list(8))
 dx_raw_delay	code/modules/power/singularity/singularity.dm	after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), with = list(movement_dir))
 dx_raw_delay	code/modules/power/supermatter/supermatter.dm	after(null, 5, /proc/leave_broken_supermatter, with = list(TS))
 dx_raw_delay	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	after(src, recipes[r_id][step + 1] * delay_modifier, PROC_REF(perform_reaction), with = list(r_id, step))
