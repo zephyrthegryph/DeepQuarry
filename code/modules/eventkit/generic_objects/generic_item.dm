@@ -117,7 +117,7 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 	var/s_effect = 0
 	var/s_sound = 0
 	var/s_object = 0
-	var/list/icon_state_options = list("old_handheld",
+	var/static/list/icon_state_options = list("old_handheld",
 										"old_handheld_on",
 										"switch",
 										"switch_on",
@@ -153,7 +153,7 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 										"fleshorb_moving",
 										"Upload Own Sprite")
 
-	var/list/sound_options = list('sound/effects/alert.ogg',
+	var/static/list/sound_options = list('sound/effects/alert.ogg',
 								'sound/effects/bamf.ogg',
 								'sound/effects/bang.ogg',
 								'sound/effects/blobattack.ogg',

@@ -139,7 +139,7 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 	var/s_object = 0
 	var/s_icon = 0
 	var/s_icon2 = 0
-	var/list/icon_state_options = list("bsb_off",
+	var/static/list/icon_state_options = list("bsb_off",
 										"bsb_on",
 										"bsc",
 										"bsc_dust",
@@ -208,7 +208,7 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 										"angel",
 										"Upload Own Sprite")
 
-	var/list/sound_options = list('sound/effects/alert.ogg',
+	var/static/list/sound_options = list('sound/effects/alert.ogg',
 								'sound/effects/bamf.ogg',
 								'sound/effects/bang.ogg',
 								'sound/effects/blobattack.ogg',
@@ -402,8 +402,8 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 	var/obj/structure/generic_structure/P = new(spawnloc)
 	P.name = s_name
 	P.desc = s_desc
-	P.anchored = s_anchored
-	P.density = s_density
+	P.set_anchored(s_anchored)
+	P.set_density(s_density)
 	P.icon_state_off = s_icon_state_off
 	P.icon_state_on = s_icon_state_on
 	P.wrenchable = s_wrenchable
