@@ -2283,10 +2283,12 @@
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/datum_pipeline.dm", 20, /datum/pipeline)
 	into += entry_line(21)
-	into += list(global.ref_one(nameof(network)))
+	into += list(global.owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY))
 	into += entry_line(22)
-	into += list(global.entry_link("/datum/pipeline::members", "/obj/machinery/atmospherics/pipe::parent", a_many = TRUE))
+	into += list(global.ref_one(nameof(network)))
 	into += entry_line(23)
+	into += list(global.entry_link("/datum/pipeline::members", "/obj/machinery/atmospherics/pipe::parent", a_many = TRUE))
+	into += entry_line(24)
 	into += list(global.entry_link("/datum/pipeline::edges", "/obj/machinery/atmospherics/pipe::edge_pipelines", a_many = TRUE, b_many = TRUE))
 
 /// CAPABILITIES(/datum/plane_holder) at code/modules/mob/mob_planes.dm:9

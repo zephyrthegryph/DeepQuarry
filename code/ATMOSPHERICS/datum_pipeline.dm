@@ -18,6 +18,7 @@
 	var/alert_pressure = 0
 
 CAPABILITIES(/datum/pipeline)
+	owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	ref_one(nameof(network))
 	links(/datum/pipeline::members, /obj/machinery/atmospherics/pipe::parent, a_many = TRUE)
 	links(/datum/pipeline::edges, /obj/machinery/atmospherics/pipe::edge_pipelines, a_many = TRUE, b_many = TRUE)
@@ -135,7 +136,3 @@ CAPABILITIES(/datum/pipeline)
 	air.add_thermal_energy(heat_gain)
 	if(network)
 		network.mark_dirty()
-
-/datum/pipeline/ownership()
-	. = ..()
-	. += rel_one(nameof(air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
