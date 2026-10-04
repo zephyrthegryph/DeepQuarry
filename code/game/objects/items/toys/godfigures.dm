@@ -10,7 +10,8 @@
 	w_class = ITEMSIZE_SMALL
 
 
-/obj/item/godfig/proc/resprite_figure_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/godfig/proc/resprite_figure_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	var/mob/M = user
 	var/list/options = list()
@@ -114,7 +115,8 @@
 
 
 
-/obj/item/godfig/proc/rename_fig_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/godfig/proc/rename_fig_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	var/mob/M = user
 	if(!M.mind)	return 0
@@ -129,7 +131,6 @@
 		to_chat(M, "You name the figure. Glory to [input]!.")
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/godfig, \
-	INTERACT_VERB("Customize Figure", PROC_REF(resprite_figure_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Name Figure", PROC_REF(rename_fig_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/godfig)
+	op("resprite_figure_effect", menu(), label("Customize Figure"), needs(carried()), then(PROC_REF(resprite_figure_effect)))
+	op("rename_fig_effect", menu(), label("Name Figure"), needs(carried()), then(PROC_REF(rename_fig_effect)))

@@ -100,12 +100,13 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob
 		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1.5 // 1.5 Downstream
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \
-	INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(greatwolf_interaction_feed), "Feed"), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/greatwolf)
+	op("greatwolf_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(greatwolf_interaction_feed)))
 
 /// Old attackby: trade food for people!
-/mob/living/simple_mob/vore/greatwolf/proc/greatwolf_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/greatwolf/proc/greatwolf_interaction_feed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	consume(O, user)
 	play_sfx(src, SFX_VORE_GULP, volume = rand(10,50))
 	if(!(ai_brain != null))//No autobarf on player control.

@@ -310,10 +310,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/shotgun/pump, TYPE_PROC_REF(/at
 	play_sfx(src, SFX_WEAPONS_TARGETON)
 	user.update_mob_action_buttons()
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/compact, INTERACT_VERB("Toggle stock", PROC_REF(compact_shotgun_verb_toggle_stock), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
+	op("compact_shotgun_verb_toggle_stock", menu(), label("Toggle stock"), needs(carried()), then(PROC_REF(compact_shotgun_verb_toggle_stock)))
 
 /// Old Toggle stock verb.
-/obj/item/gun/projectile/shotgun/compact/proc/compact_shotgun_verb_toggle_stock(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/shotgun/compact/proc/compact_shotgun_verb_toggle_stock(datum/act/op/A)
+	var/mob/user = A.actor
 	if(issilicon(user))
 		return
 

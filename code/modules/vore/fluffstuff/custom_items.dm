@@ -299,10 +299,12 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/joanbadge, INTERACT_
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "Flag_Nanotrasen_mob"
 
-EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self)))
+CAPABILITIES(/obj/item/flag)
+	op("flag_wave_self", in_hand(), label("Wave"), then(PROC_REF(flag_wave_self)))
 
 /// Old attack_self: wave the banner.
-/obj/item/flag/proc/flag_wave_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flag/proc/flag_wave_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		act_message(user, null, MSG_SELF(span_warning("You wave your Banner around.")), MSG_OTHERS(span_warning("%U% waves their Banner around!")))
 
@@ -506,12 +508,12 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	var/unbuttoned = 0
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/fluff/purp_robes, \
-	INTERACT_VERB("Toggle coat buttons", PROC_REF(purp_robes_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
+	op("purp_robes_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(purp_robes_toggle_verb)))
 
 /// Old verb "Toggle coat buttons".
-/obj/item/clothing/suit/fluff/purp_robes/proc/purp_robes_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/fluff/purp_robes/proc/purp_robes_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
@@ -780,10 +782,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/storage/backpack/saddlebag/tempest, PERIODIC_SL
 	icon_state = "dragor_dot"
 	w_class = ITEMSIZE_SMALL
 
-EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(dragor_dot_self)))
+CAPABILITIES(/obj/item/fluff/dragor_dot)
+	op("dragor_dot_self", in_hand(), then(PROC_REF(dragor_dot_self)))
 
 /// Old attack_self: its owner gains the gender shapeshift verb.
-/obj/item/fluff/dragor_dot/proc/dragor_dot_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/fluff/dragor_dot/proc/dragor_dot_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.ckey == "pontifexminimus")
 		om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_gender, user)
 	else
@@ -1093,10 +1097,12 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	edge = initial(edge)
 	w_class = initial(w_class)
 
-EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(fluffstuff_toggle_self)))
+CAPABILITIES(/obj/item/melee/fluffstuff)
+	op("fluffstuff_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(fluffstuff_toggle_self)))
 
 /// Old attack_self: activate or deactivate the blade.
-/obj/item/melee/fluffstuff/proc/fluffstuff_toggle_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/fluffstuff/proc/fluffstuff_toggle_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
 			act_message(user, src, MSG_SELF(span_danger("You accidentally cut yourself with %T%.")), \

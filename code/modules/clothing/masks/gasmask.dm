@@ -127,10 +127,12 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, fit_spec, list(REQ_FITS_BODYTYP
 			to_chat(user, "Your mask moves to cover your mouth.")
 	return
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/swat/vox, INTERACT_USE("Feeding port", PROC_REF(vox_mask_port_self)))
+CAPABILITIES(/obj/item/clothing/mask/gas/swat/vox)
+	op("vox_mask_port_self", in_hand(), label("Feeding port"), then(PROC_REF(vox_mask_port_self)))
 
 /// Old attack_self.
-/obj/item/clothing/mask/gas/swat/vox/proc/vox_mask_port_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/gas/swat/vox/proc/vox_mask_port_self(datum/act/op/A)
+	var/mob/user = A.actor
 	feeding_port(user)
 
 /obj/item/clothing/mask/gas/zaddat

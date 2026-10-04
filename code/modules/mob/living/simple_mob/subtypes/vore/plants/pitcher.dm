@@ -327,10 +327,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, l
 	dropped_pit?.forceMove(user.loc)
 	consume(src, user)
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTERACT_USE("Plant", PROC_REF(pitcher_fruit_self)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
+	op("pitcher_fruit_self", in_hand(), label("Plant"), then(PROC_REF(pitcher_fruit_self)))
 
 /// Old attack_self: plant the fruit.
-/obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/pitcher_fruit_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/pitcher_fruit_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You plant the fruit."))
 	new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(get_turf(user),src.seed)
 	GLOB.seed_planted_shift_roundstat++

@@ -183,10 +183,12 @@ TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mo
 		return
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("Empty", PROC_REF(butterfly_net_self)))
+CAPABILITIES(/obj/item/material/fishing_net/butterfly_net)
+	op("butterfly_net_self", in_hand(), label("Empty"), then(PROC_REF(butterfly_net_self)))
 
 /// Old attack_self.
-/obj/item/material/fishing_net/butterfly_net/proc/butterfly_net_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/fishing_net/butterfly_net/proc/butterfly_net_self(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/mob/living/M in contents_of(src))
 		if(!user.get_inactive_hand()) //Check if the inactive hand is empty
 			M.forceMove(get_turf(src))

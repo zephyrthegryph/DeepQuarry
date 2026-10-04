@@ -45,13 +45,13 @@ DECLARE_EMAG(/obj/item/clothing/suit/lasertag, PROC_REF(on_emag), null, null)
 	. += "It currently has [lasertag_health] hits out of [lasertag_max_health] remaining!"
 	. += "It regenerates one hit every [time_to_heal*0.1] seconds."
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
-	INTERACT_VERB("Adjust Suit Health", PROC_REF(lasertag_adjust_health_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Adjust Healing Timer", PROC_REF(lasertag_adjust_heal_time_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/lasertag)
+	op("lasertag_adjust_health_verb", menu(), label("Adjust Suit Health"), needs(carried()), then(PROC_REF(lasertag_adjust_health_verb)))
+	op("lasertag_adjust_heal_time_verb", menu(), label("Adjust Healing Timer"), needs(carried()), then(PROC_REF(lasertag_adjust_heal_time_verb)))
 
 /// Old verb "Adjust Suit Health".
-/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_health_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_health_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		adjust_health_proc(user)
 
@@ -75,7 +75,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 	act_message(user, src, MSG_SELF(span_notice("Set %T%'s allowed shots to [lasertag_max_health], fully healing the vest!")))
 
 /// Old verb "Adjust Healing Timer".
-/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_heal_time_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_heal_time_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		adjust_heal_time_proc(user)
 

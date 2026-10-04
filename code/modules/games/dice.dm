@@ -217,15 +217,13 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 
 CAPABILITIES(/obj/item/storage/dicecup)
 	configure(storage(accepts = list(/obj/item/dice)))
-
-EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
-	INTERACT_USE("Shake", PROC_REF(interaction_shake)), \
-	INTERACT_VERB("Peek at Dice", PROC_REF(dicecup_verb_peek), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Reveal Dice", PROC_REF(dicecup_verb_reveal), REQ_IN_INVENTORY), \
-)
+	op("interaction_shake", in_hand(), label("Shake"), then(PROC_REF(interaction_shake)))
+	op("dicecup_verb_peek", menu(), label("Peek at Dice"), needs(carried()), then(PROC_REF(dicecup_verb_peek)))
+	op("dicecup_verb_reveal", menu(), label("Reveal Dice"), needs(carried()), then(PROC_REF(dicecup_verb_reveal)))
 
 /// Old attack_self: shake the cup.
-/obj/item/storage/dicecup/proc/interaction_shake(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/storage/dicecup/proc/interaction_shake(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You shake %T%.")), \
 		MSG_OTHERS(span_notice("%U% shakes %T%.")), \
 		MSG_BLIND(span_notice("You hear dice rolling.")))
@@ -244,11 +242,13 @@ EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
 		to_chat(viewer, "The [D.name] shows a [D.result].")
 
 /// Old Peek at Dice verb: Peek at the dice under your cup.
-/obj/item/storage/dicecup/proc/dicecup_verb_peek(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/storage/dicecup/proc/dicecup_verb_peek(datum/act/op/A)
+	var/mob/user = A.actor
 	revealDice(user)
 
 /// Old Reveal Dice verb: Reveal the dice hidden under your cup.
-/obj/item/storage/dicecup/proc/dicecup_verb_reveal(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/storage/dicecup/proc/dicecup_verb_reveal(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/mob/living/player in viewers(3, user))
 		to_chat(player, "[user] reveals their dice.")
 		revealDice(player)

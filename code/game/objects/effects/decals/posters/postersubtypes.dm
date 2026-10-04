@@ -23,9 +23,10 @@
 	poster_type = /obj/structure/sign/poster/custom
 
 /// Verb to change a custom poster's design
-/obj/item/poster/custom/proc/select_poster_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/poster/custom/proc/select_poster_effect(datum/act/op/A)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	var/mob/user = A.actor
 
 	var/mob/M = user
 	var/list/options = list()
@@ -46,6 +47,5 @@
 	roll_type = /obj/item/poster/custom
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/poster/custom, \
-	INTERACT_VERB("Set Poster type", PROC_REF(select_poster_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/poster/custom)
+	op("select_poster_effect", menu(), label("Set Poster type"), needs(carried()), then(PROC_REF(select_poster_effect)))

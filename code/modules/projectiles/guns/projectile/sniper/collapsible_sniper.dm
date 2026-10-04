@@ -2,10 +2,12 @@
 
 /obj/item/gun/projectile/heavysniper/collapsible
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper/collapsible, INTERACT_VERB("Disassemble Rifle", PROC_REF(collapsible_sniper_verb_take_down), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible)
+	op("collapsible_sniper_verb_take_down", menu(), label("Disassemble Rifle"), needs(carried()), then(PROC_REF(collapsible_sniper_verb_take_down)))
 
 /// Old Disassemble Rifle verb.
-/obj/item/gun/projectile/heavysniper/collapsible/proc/collapsible_sniper_verb_take_down(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/heavysniper/collapsible/proc/collapsible_sniper_verb_take_down(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	if(user.stat)
 		return
 

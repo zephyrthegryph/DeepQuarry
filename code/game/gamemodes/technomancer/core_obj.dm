@@ -35,6 +35,7 @@
 CAPABILITIES(/obj/item/technomancer_core)
 	owns_many(nameof(spells))
 	owns_many(nameof(summoned_mobs))
+	op("technomancer_core_toggle_lock_effect", menu(), label("Toggle Core Lock"), needs(carried()), then(PROC_REF(technomancer_core_toggle_lock_effect)))
 
 /// Reference to the mob wearing the core. A field: it regenerates and keeps its wearer's upkeep while worn.
 OM_FIELD_VIEW(/obj/item/technomancer_core, mob/living, wearer, CHANGE_EXPLICIT)
@@ -347,7 +348,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	regen_rate = 100 //250 seconds to full
 	instability_modifier = 0.75
 
-/obj/item/technomancer_core/proc/technomancer_core_toggle_lock_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/technomancer_core/proc/technomancer_core_toggle_lock_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	canremove = !canremove
 	to_chat(user, span_notice("You [canremove ? "de" : ""]activate the locking mechanism on \the [src]."))
@@ -373,7 +375,4 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	expire(30)
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/technomancer_core, \
-	INTERACT_VERB("Toggle Core Lock", PROC_REF(technomancer_core_toggle_lock_effect), REQ_IN_INVENTORY), \
-)
 

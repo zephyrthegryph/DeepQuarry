@@ -59,10 +59,12 @@
 	primary =/obj/item/remote_scene_tool/voodoo_doll
 	secondary =/obj/item/remote_scene_tool/voodoo_necklace
 
-EXTEND_INTERACTIONS(/obj/item/remote_scene_tool/voodoo_doll, INTERACT_VERB("Disable Special Rendering", PROC_REF(voodoo_doll_verb_toggle_fun), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
+	op("voodoo_doll_verb_toggle_fun", menu(), label("Disable Special Rendering"), needs(carried()), then(PROC_REF(voodoo_doll_verb_toggle_fun)))
 
 /// Old Disable Special Rendering verb: Disables the displacement-based rendering on the doll, leaving it as just a doll at all times.
-/obj/item/remote_scene_tool/voodoo_doll/proc/voodoo_doll_verb_toggle_fun(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/remote_scene_tool/voodoo_doll/proc/voodoo_doll_verb_toggle_fun(datum/act/op/A)
+	var/mob/user = A.actor
 	no_fun_mode = !no_fun_mode
 	to_chat(user,span_notice("you turn the dial on the back of \the [src], and turn the advanced projection matrix [no_fun_mode ? "off" : "on"]"))
 	update_icon() //force a refresh

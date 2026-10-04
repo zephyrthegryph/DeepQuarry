@@ -65,12 +65,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/toggle, \
 	flags_inv = HIDEHOLSTER
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/hooded/toggle, \
-	INTERACT_VERB("Toggle Coat Buttons", PROC_REF(hooded_toggle_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
+	op("hooded_toggle_toggle_verb", menu(), label("Toggle Coat Buttons"), needs(carried()), then(PROC_REF(hooded_toggle_toggle_verb)))
 
 /// Old verb "Toggle Coat Buttons".
-/obj/item/clothing/suit/storage/hooded/toggle/proc/hooded_toggle_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/hooded/toggle/proc/hooded_toggle_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
@@ -109,12 +109,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/storage/hooded/toggle, TYPE_PROC
 	var/icon_badge
 	var/icon_nobadge
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/vest, \
-	INTERACT_VERB("Adjust Badge", PROC_REF(vest_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/storage/vest)
+	op("vest_toggle_verb", menu(), label("Adjust Badge"), needs(carried()), then(PROC_REF(vest_toggle_verb)))
 
 /// Old verb "Adjust Badge".
-/obj/item/clothing/suit/storage/vest/proc/vest_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/vest/proc/vest_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 

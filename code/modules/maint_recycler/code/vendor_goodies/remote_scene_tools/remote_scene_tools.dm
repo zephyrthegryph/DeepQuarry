@@ -186,10 +186,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool, TYPE_PROC_REF(/atom, appear
 			return loc.loc
 	return null
 
-EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpart", PROC_REF(remote_scene_tool_verb_summon), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/remote_scene_tool)
+	op("remote_scene_tool_verb_summon", menu(), label("Summon Counterpart"), needs(carried()), then(PROC_REF(remote_scene_tool_verb_summon)))
 
 /// Old Summon Counterpart verb: Forcibly moves the linked object over to you - or, if it doesn't exist, spawn a new one.
-/obj/item/remote_scene_tool/proc/remote_scene_tool_verb_summon(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/remote_scene_tool/proc/remote_scene_tool_verb_summon(datum/act/op/A)
+	var/mob/user = A.actor
 	if(can_summon || (linked() == null && can_replace))
 		if(linked() == null)
 			create_counterpart()

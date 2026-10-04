@@ -31,12 +31,11 @@
 	canremove = FALSE //Since this is essentially flesh impersonating clothes, tearing someone's skin off as if it were clothing isn't possible.
 	has_sensor = FALSE // Reveals ling, and doesn't make sense anyway!
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon/changeling, \
-	INTERACT_VERB("Shred Jumpsuit", PROC_REF(changeling_under_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/under/chameleon/changeling)
+	op("changeling_under_shred_verb", menu(), label("Shred Jumpsuit"), needs(carried()), then(PROC_REF(changeling_under_shred_verb)))
 
 /// Old verb "Shred Jumpsuit".
-/obj/item/clothing/under/chameleon/changeling/proc/changeling_under_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/chameleon/changeling/proc/changeling_under_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
@@ -53,12 +52,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon/changeling, \
 	canremove = FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon/changeling, \
-	INTERACT_VERB("Shred Helmet", PROC_REF(changeling_head_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/head/chameleon/changeling)
+	op("changeling_head_shred_verb", menu(), label("Shred Helmet"), needs(carried()), then(PROC_REF(changeling_head_shred_verb)))
 
 /// Old verb "Shred Helmet".
-/obj/item/clothing/head/chameleon/changeling/proc/changeling_head_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/chameleon/changeling/proc/changeling_head_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
@@ -79,12 +77,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon/changeling, \
 	canremove = FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon/changeling, \
-	INTERACT_VERB("Shred Suit", PROC_REF(changeling_suit_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/chameleon/changeling)
+	op("changeling_suit_shred_verb", menu(), label("Shred Suit"), needs(carried()), then(PROC_REF(changeling_suit_shred_verb)))
 
 /// Old verb "Shred Suit".
-/obj/item/clothing/suit/chameleon/changeling/proc/changeling_suit_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/chameleon/changeling/proc/changeling_suit_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
@@ -105,12 +102,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon/changeling, \
 	canremove = FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon/changeling, \
-	INTERACT_VERB("Shred Shoes", PROC_REF(changeling_shoes_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/shoes/chameleon/changeling)
+	op("changeling_shoes_shred_verb", menu(), label("Shred Shoes"), needs(carried()), then(PROC_REF(changeling_shoes_shred_verb)))
 
 /// Old verb "Shred Shoes".
-/obj/item/clothing/shoes/chameleon/changeling/proc/changeling_shoes_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/shoes/chameleon/changeling/proc/changeling_shoes_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
@@ -131,12 +127,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon/changeling, \
 	canremove = FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon/changeling, \
-	INTERACT_VERB("Shred Backpack", PROC_REF(changeling_backpack_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling)
+	op("changeling_backpack_shred_verb", menu(), label("Shred Backpack"), needs(carried()), then(PROC_REF(changeling_backpack_shred_verb)))
 
 /// Old verb "Shred Backpack".
-/obj/item/storage/backpack/chameleon/changeling/proc/changeling_backpack_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/storage/backpack/chameleon/changeling/proc/changeling_backpack_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
@@ -161,12 +156,11 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon/changeling, \
 	canremove = FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon/changeling, \
-	INTERACT_VERB("Shred Gloves", PROC_REF(changeling_gloves_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling)
+	op("changeling_gloves_shred_verb", menu(), label("Shred Gloves"), needs(carried()), then(PROC_REF(changeling_gloves_shred_verb)))
 
 /// Old verb "Shred Gloves".
-/obj/item/clothing/gloves/chameleon/changeling/proc/changeling_gloves_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/gloves/chameleon/changeling/proc/changeling_gloves_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
@@ -188,12 +182,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon/changeling, \
 	canremove = FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon/changeling, \
-	INTERACT_VERB("Shred Mask", PROC_REF(changeling_mask_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/mask/chameleon/changeling)
+	op("changeling_mask_shred_verb", menu(), label("Shred Mask"), needs(carried()), then(PROC_REF(changeling_mask_shred_verb)))
 
 /// Old verb "Shred Mask".
-/obj/item/clothing/mask/chameleon/changeling/proc/changeling_mask_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/chameleon/changeling/proc/changeling_mask_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
@@ -210,12 +203,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon/changeling, \
 	canremove = FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon/changeling, \
-	INTERACT_VERB("Shred Glasses", PROC_REF(changeling_glasses_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/chameleon/changeling)
+	op("changeling_glasses_shred_verb", menu(), label("Shred Glasses"), needs(carried()), then(PROC_REF(changeling_glasses_shred_verb)))
 
 /// Old verb "Shred Glasses".
-/obj/item/clothing/glasses/chameleon/changeling/proc/changeling_glasses_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/chameleon/changeling/proc/changeling_glasses_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
@@ -236,12 +228,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon/changeling, \
 	canremove = FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon/changeling, \
-	INTERACT_VERB("Shred Belt", PROC_REF(changeling_belt_shred_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/storage/belt/chameleon/changeling)
+	op("changeling_belt_shred_verb", menu(), label("Shred Belt"), needs(carried()), then(PROC_REF(changeling_belt_shred_verb)))
 
 /// Old verb "Shred Belt".
-/obj/item/storage/belt/chameleon/changeling/proc/changeling_belt_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/storage/belt/chameleon/changeling/proc/changeling_belt_shred_verb(datum/act/op/A)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)

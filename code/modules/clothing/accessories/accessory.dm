@@ -699,12 +699,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 	overlay_state = "collar_bell"
 	var/jingled = 0
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
-	INTERACT_VERB("Jingle Bell", PROC_REF(bell_jinglebell_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/accessory/collar/bell)
+	op("bell_jinglebell_verb", menu(), label("Jingle Bell"), needs(carried()), then(PROC_REF(bell_jinglebell_verb)))
 
 /// Old verb "Jingle Bell".
-/obj/item/clothing/accessory/collar/bell/proc/bell_jinglebell_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/collar/bell/proc/bell_jinglebell_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -739,10 +739,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null, PROC_REF(shock_collar_ui_self)))
+CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
+	op("shock_collar_ui_self", in_hand(), then(PROC_REF(shock_collar_ui_self)))
 
 /// Old attack_self: open the collar's interface.
-/obj/item/clothing/accessory/collar/shock/proc/shock_collar_ui_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/collar/shock/proc/shock_collar_ui_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
 		return
 	tgui_interact(user)
@@ -1312,10 +1314,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/casinosentientprize, INT
 		var/mob/M = src.loc
 		M.update_inv_wear_suit()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/poncho/roles/cloak/half, INTERACT_USE("Flip cloak", PROC_REF(half_cloak_flip_self)))
+CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
+	op("half_cloak_flip_self", in_hand(), label("Flip cloak"), then(PROC_REF(half_cloak_flip_self)))
 
 /// Old attack_self.
-/obj/item/clothing/accessory/poncho/roles/cloak/half/proc/half_cloak_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/poncho/roles/cloak/half/proc/half_cloak_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]_open"
 		src.item_state = "[item_state]_open"
@@ -1397,10 +1401,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/poncho/roles/cloak/half, INTERA
 		var/mob/M = src.loc
 		M.update_inv_wear_suit()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/poncho/roles/neo_ranger, INTERACT_USE("Adjust", PROC_REF(neo_ranger_adjust_self)))
+CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
+	op("neo_ranger_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(neo_ranger_adjust_self)))
 
 /// Old attack_self.
-/obj/item/clothing/accessory/poncho/roles/neo_ranger/proc/neo_ranger_adjust_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/poncho/roles/neo_ranger/proc/neo_ranger_adjust_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]_open"
 		src.item_state = "[item_state]_open"

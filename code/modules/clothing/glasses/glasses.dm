@@ -205,12 +205,12 @@ TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYP
 	drop_sound = SFX_ITEMS_DROP_GLOVES
 	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatch, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/eyepatch)
+	op("eyepatch_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatch_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/eyepatch/proc/eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/eyepatch/proc/eyepatch_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -231,12 +231,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatch, \
 	drop_sound = SFX_ITEMS_DROP_GLOVES
 	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatchwhite_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
+	op("eyepatchwhite_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatchwhite_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/eyepatchwhite/proc/eyepatchwhite_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/eyepatchwhite/proc/eyepatchwhite_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -516,10 +516,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
 	activation_sound = SFX_EFFECTS_POP
 	specialty_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERACT_USE("Switch mode", PROC_REF(aviator_mode_self)))
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/aviator)
+	op("aviator_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(aviator_mode_self)))
 
 /// Old attack_self.
-/obj/item/clothing/glasses/sunglasses/sechud/aviator/proc/aviator_mode_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/proc/aviator_mode_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(toggleable && !user.incapacitated())
 		on = !on
 		if(on)

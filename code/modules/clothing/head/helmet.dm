@@ -69,10 +69,12 @@
 	special_handling = TRUE
 	var/name_descriptor = "riot helmet" // for visor toggle messages
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/riot, INTERACT_USE("Toggle visor", PROC_REF(riot_visor_self)))
+CAPABILITIES(/obj/item/clothing/head/helmet/riot)
+	op("riot_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(riot_visor_self)))
 
 /// Old attack_self.
-/obj/item/clothing/head/helmet/riot/proc/riot_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/riot/proc/riot_visor_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the visor on the [name_descriptor].") // Visor toggle messages

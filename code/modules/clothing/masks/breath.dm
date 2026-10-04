@@ -33,17 +33,18 @@
 			to_chat(user, "You pull the mask up to cover your face.")
 		update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/breath, \
-	INTERACT_USE("Adjust", PROC_REF(breath_mask_adjust_self)), \
-	INTERACT_VERB("Adjust mask", PROC_REF(breath_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/mask/breath)
+	op("breath_mask_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(breath_mask_adjust_self)))
+	op("breath_toggle_verb", menu(), label("Adjust mask"), needs(carried()), then(PROC_REF(breath_toggle_verb)))
 
 /// Old attack_self.
-/obj/item/clothing/mask/breath/proc/breath_mask_adjust_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/breath/proc/breath_mask_adjust_self(datum/act/op/A)
+	var/mob/user = A.actor
 	adjust_mask(user)
 
 /// Old verb "Adjust mask".
-/obj/item/clothing/mask/breath/proc/breath_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/breath/proc/breath_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	adjust_mask(user)
 
 /obj/item/clothing/mask/breath/medical

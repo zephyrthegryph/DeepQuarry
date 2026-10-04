@@ -55,10 +55,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT
 
 APPEARANCE_TEMPLATE(/obj/item/clothing/suit/armor/reactive, "reactive{active?:off}")
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle", PROC_REF(reactive_armor_toggle_self)))
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
+	op("reactive_armor_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(reactive_armor_toggle_self)))
 
 /// Old attack_self.
-/obj/item/clothing/suit/armor/reactive/proc/reactive_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/armor/reactive/proc/reactive_armor_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	active = !active
 	to_chat(user, span_notice("[src] is now [active ? "active" : "inactive"]."))
 	update_icon()

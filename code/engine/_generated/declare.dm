@@ -3206,6 +3206,20 @@
 	into += entry_line(633)
 	into += list(global.owns_one(nameof(loopy), /datum/looping_sound/obelisk))
 
+/// CAPABILITIES(/mob/living/simple_mob/vore/greatwolf) at code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm:103
+/mob/living/simple_mob/vore/greatwolf/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/greatwolf.dm", 103, /mob/living/simple_mob/vore/greatwolf)
+	into += entry_line(104)
+	into += list(global.op("greatwolf_interaction_feed", global.item(/obj/item/reagent_containers/food), global.label("Feed"), global.then(PROC_REF(greatwolf_interaction_feed))))
+
+/// CAPABILITIES(/mob/living/simple_mob/vore/meowl) at code/modules/mob/living/simple_mob/subtypes/vore/meowl.dm:102
+/mob/living/simple_mob/vore/meowl/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/meowl.dm", 102, /mob/living/simple_mob/vore/meowl)
+	into += entry_line(103)
+	into += list(global.op("meowl_interaction_feed", global.item(/obj/item/reagent_containers/food), global.label("Feed"), global.then(PROC_REF(meowl_interaction_feed))))
+
 /// CAPABILITIES(/mob/living/simple_mob/vore/overmap) at code/modules/mob/living/simple_mob/overmap_mob.dm:118
 /mob/living/simple_mob/vore/overmap/declared_entries(list/into)
 	..(into)
@@ -3250,6 +3264,8 @@
 	into += entry_block("code/modules/communicator/exonet_log_panel.dm", 6, /mob/observer/dead)
 	into += entry_line(7)
 	into += list(global.owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel))
+	into += entry_line(8)
+	into += list(global.op("observer_tome_manifest", global.item(/obj/item/book/tome), global.label("Manifest"), global.then(PROC_REF(observer_tome_manifest))))
 
 /// CAPABILITIES(/obj) at code/datums/behaviours/burning.dm:35
 /obj/declared_entries(list/into)
@@ -3330,12 +3346,47 @@
 	into += entry_line(23)
 	into += list(global.owns_many(nameof(viruses), /datum/affliction/contagion))
 
+/// CAPABILITIES(/obj/effect/decal/cleanable/ash) at code/game/objects/effects/decals/Cleanable/misc.dm:18
+/obj/effect/decal/cleanable/ash/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/decals/Cleanable/misc.dm", 18, /obj/effect/decal/cleanable/ash)
+	into += entry_line(19)
+	into += list(global.op("sift_ash", global.hand(), global.label("Sift"), global.then(PROC_REF(interaction_sift_ash))))
+
 /// CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks) at code/game/objects/effects/decals/Cleanable/tracks.dm:63
 /obj/effect/decal/cleanable/blood/tracks/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/effects/decals/Cleanable/tracks.dm", 63, /obj/effect/decal/cleanable/blood/tracks)
 	into += entry_line(64)
 	into += list(global.owns_many(nameof(stack), /datum/fluidtrack))
+
+/// CAPABILITIES(/obj/effect/decal/cleanable/confetti) at code/game/objects/effects/decals/Cleanable/misc.dm:236
+/obj/effect/decal/cleanable/confetti/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/decals/Cleanable/misc.dm", 236, /obj/effect/decal/cleanable/confetti)
+	into += entry_line(237)
+	into += list(global.op("pick_confetti", global.hand(), global.label("Pick up"), global.then(PROC_REF(interaction_pick_confetti))))
+
+/// CAPABILITIES(/obj/effect/decal/remains) at code/game/objects/effects/decals/remains.dm:64
+/obj/effect/decal/remains/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/decals/remains.dm", 64, /obj/effect/decal/remains)
+	into += entry_line(65)
+	into += list(global.op("crumble_remains", global.hand(), global.then(PROC_REF(interaction_crumble_remains))))
+
+/// CAPABILITIES(/obj/effect/dog_nose) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1052
+/obj/effect/dog_nose/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1052, /obj/effect/dog_nose)
+	into += entry_line(1053)
+	into += list(global.op("boop_snoot", global.hand(), global.label("Boop"), global.then(PROC_REF(interaction_boop_snoot))))
+
+/// CAPABILITIES(/obj/effect/dog_teleporter) at code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm:1120
+/obj/effect/dog_teleporter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm", 1120, /obj/effect/dog_teleporter)
+	into += entry_line(1121)
+	into += list(global.op("dog_teleport", global.hand(), global.then(PROC_REF(interaction_dog_teleport))))
 
 /// CAPABILITIES(/obj/effect/fake_sun) at code/modules/lighting/lighting_fake_sun.dm:24
 /obj/effect/fake_sun/declared_entries(list/into)
@@ -3720,12 +3771,124 @@
 	into += entry_line(47)
 	into += list(global.owns_many(nameof(accessories)))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/dosimeter) at code/modules/clothing/accessories/badges.dm:303
+/// CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff) at code/modules/clothing/accessories/badges.dm:214
+/obj/item/clothing/accessory/badge/sheriff/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/badges.dm", 214, /obj/item/clothing/accessory/badge/sheriff)
+	into += entry_line(215)
+	into += list(global.op("sheriff_badge_self", global.in_hand(), global.label("Flash badge"), global.then(PROC_REF(sheriff_badge_self))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/collar/bell) at code/modules/clothing/accessories/accessory.dm:702
+/obj/item/clothing/accessory/collar/bell/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 702, /obj/item/clothing/accessory/collar/bell)
+	into += entry_line(703)
+	into += list(global.op("bell_jinglebell_verb", global.menu(), global.label("Jingle Bell"), global.needs(global.carried()), global.then(PROC_REF(bell_jinglebell_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/collar/shock) at code/modules/clothing/accessories/accessory.dm:742
+/obj/item/clothing/accessory/collar/shock/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 742, /obj/item/clothing/accessory/collar/shock)
+	into += entry_line(743)
+	into += list(global.op("shock_collar_ui_self", global.in_hand(), global.then(PROC_REF(shock_collar_ui_self))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/dosimeter) at code/modules/clothing/accessories/badges.dm:305
 /obj/item/clothing/accessory/dosimeter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/badges.dm", 303, /obj/item/clothing/accessory/dosimeter)
-	into += entry_line(304)
+	into += entry_block("code/modules/clothing/accessories/badges.dm", 305, /obj/item/clothing/accessory/dosimeter)
+	into += entry_line(306)
 	into += list(global.owns_one(nameof(current_film), /obj/item/dosimeter_film))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/permit) at code/modules/clothing/accessories/permits.dm:13
+/obj/item/clothing/accessory/permit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/permits.dm", 13, /obj/item/clothing/accessory/permit)
+	into += entry_line(14)
+	into += list(global.op("permit_register_self", global.in_hand(), global.label("Register"), global.then(PROC_REF(permit_register_self))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half) at code/modules/clothing/accessories/accessory.dm:1317
+/obj/item/clothing/accessory/poncho/roles/cloak/half/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1317, /obj/item/clothing/accessory/poncho/roles/cloak/half)
+	into += entry_line(1318)
+	into += list(global.op("half_cloak_flip_self", global.in_hand(), global.label("Flip cloak"), global.then(PROC_REF(half_cloak_flip_self))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger) at code/modules/clothing/accessories/accessory.dm:1404
+/obj/item/clothing/accessory/poncho/roles/neo_ranger/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1404, /obj/item/clothing/accessory/poncho/roles/neo_ranger)
+	into += entry_line(1405)
+	into += list(global.op("neo_ranger_adjust_self", global.in_hand(), global.label("Adjust"), global.then(PROC_REF(neo_ranger_adjust_self))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/ring/engagement) at code/modules/clothing/accessories/rings.dm:32
+/obj/item/clothing/accessory/ring/engagement/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/rings.dm", 32, /obj/item/clothing/accessory/ring/engagement)
+	into += entry_line(33)
+	into += list(global.op("engagement_ring_present_self", global.in_hand(), global.label("Present"), global.then(PROC_REF(engagement_ring_present_self))))
+
+/// CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones) at code/modules/clothing/ears/ears.dm:22
+/obj/item/clothing/ears/earmuffs/headphones/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/ears/ears.dm", 22, /obj/item/clothing/ears/earmuffs/headphones)
+	into += entry_line(23)
+	into += list(global.op("headphones_togglemusic_verb", global.menu(), global.label("Toggle Headphone Music"), global.needs(global.carried()), global.then(PROC_REF(headphones_togglemusic_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/glasses/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:206
+/obj/item/clothing/glasses/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 206, /obj/item/clothing/glasses/chameleon/changeling)
+	into += entry_line(207)
+	into += list(global.op("changeling_glasses_shred_verb", global.menu(), global.label("Shred Glasses"), global.needs(global.carried()), global.then(PROC_REF(changeling_glasses_shred_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/glasses/eyepatch) at code/modules/clothing/glasses/glasses.dm:208
+/obj/item/clothing/glasses/eyepatch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/glasses/glasses.dm", 208, /obj/item/clothing/glasses/eyepatch)
+	into += entry_line(209)
+	into += list(global.op("eyepatch_switcheye_verb", global.menu(), global.label("Switch Eyepatch"), global.needs(global.carried()), global.then(PROC_REF(eyepatch_switcheye_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite) at code/modules/clothing/glasses/glasses.dm:234
+/obj/item/clothing/glasses/eyepatchwhite/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/glasses/glasses.dm", 234, /obj/item/clothing/glasses/eyepatchwhite)
+	into += entry_line(235)
+	into += list(global.op("eyepatchwhite_switcheye_verb", global.menu(), global.label("Switch Eyepatch"), global.needs(global.carried()), global.then(PROC_REF(eyepatchwhite_switcheye_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch) at code/modules/clothing/glasses/hud.dm:397
+/obj/item/clothing/glasses/hud/health/eyepatch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/glasses/hud.dm", 397, /obj/item/clothing/glasses/hud/health/eyepatch)
+	into += entry_line(398)
+	into += list(global.op("health_eyepatch_switcheye_verb", global.menu(), global.label("Switch Eyepatch"), global.needs(global.carried()), global.then(PROC_REF(health_eyepatch_switcheye_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch) at code/modules/clothing/glasses/hud.dm:347
+/obj/item/clothing/glasses/hud/security/eyepatch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/glasses/hud.dm", 347, /obj/item/clothing/glasses/hud/security/eyepatch)
+	into += entry_line(348)
+	into += list(global.op("security_eyepatch_switcheye_verb", global.menu(), global.label("Switch Eyepatch"), global.needs(global.carried()), global.then(PROC_REF(security_eyepatch_switcheye_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2) at code/modules/clothing/glasses/hud.dm:372
+/obj/item/clothing/glasses/hud/security/eyepatch2/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/glasses/hud.dm", 372, /obj/item/clothing/glasses/hud/security/eyepatch2)
+	into += entry_line(373)
+	into += list(global.op("eyepatch2_switcheye_verb", global.menu(), global.label("Switch Eyepatch"), global.needs(global.carried()), global.then(PROC_REF(eyepatch2_switcheye_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle) at code/modules/clothing/glasses/hud.dm:470
+/obj/item/clothing/glasses/omnihud/mantle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/glasses/hud.dm", 470, /obj/item/clothing/glasses/omnihud/mantle)
+	into += entry_line(471)
+	into += list(global.op("mantle_switcheye_verb", global.menu(), global.label("Toggle Autocorrective Vision"), global.needs(global.carried()), global.then(PROC_REF(mantle_switcheye_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/aviator) at code/modules/clothing/glasses/glasses.dm:519
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/glasses/glasses.dm", 519, /obj/item/clothing/glasses/sunglasses/sechud/aviator)
+	into += entry_line(520)
+	into += list(global.op("aviator_mode_self", global.in_hand(), global.label("Switch mode"), global.then(PROC_REF(aviator_mode_self))))
 
 /// CAPABILITIES(/obj/item/clothing/gloves) at code/modules/clothing/clothing.dm:326
 /obj/item/clothing/gloves/declared_entries(list/into)
@@ -3736,12 +3899,47 @@
 	into += entry_line(328)
 	into += list(global.owns_one(nameof(ring), /obj/item/clothing/accessory))
 
+/// CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe) at code/modules/clothing/under/miscellaneous.dm:1893
+/obj/item/clothing/gloves/bluespace/deluxe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/under/miscellaneous.dm", 1893, /obj/item/clothing/gloves/bluespace/deluxe)
+	into += entry_line(1894)
+	into += list(global.op("deluxe_turn_dial_verb", global.menu(), global.label("Adjust Bluespace Dial"), global.needs(global.carried()), global.then(PROC_REF(deluxe_turn_dial_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:159
+/obj/item/clothing/gloves/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 159, /obj/item/clothing/gloves/chameleon/changeling)
+	into += entry_line(160)
+	into += list(global.op("changeling_gloves_shred_verb", global.menu(), global.label("Shred Gloves"), global.needs(global.carried()), global.then(PROC_REF(changeling_gloves_shred_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/head/cakehat) at code/modules/clothing/head/misc_special.dm:144
+/obj/item/clothing/head/cakehat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/head/misc_special.dm", 144, /obj/item/clothing/head/cakehat)
+	into += entry_line(145)
+	into += list(global.op("cakehat_light_self", global.in_hand(), global.label("Light"), global.then(PROC_REF(cakehat_light_self))))
+
+/// CAPABILITIES(/obj/item/clothing/head/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:55
+/obj/item/clothing/head/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 55, /obj/item/clothing/head/chameleon/changeling)
+	into += entry_line(56)
+	into += list(global.op("changeling_head_shred_verb", global.menu(), global.label("Shred Helmet"), global.needs(global.carried()), global.then(PROC_REF(changeling_head_shred_verb))))
+
 /// CAPABILITIES(/obj/item/clothing/head/fluff/nikki) at code/modules/vore/fluffstuff/custom_clothes.dm:1972
 /obj/item/clothing/head/fluff/nikki/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/vore/fluffstuff/custom_clothes.dm", 1972, /obj/item/clothing/head/fluff/nikki)
 	into += entry_line(1973)
 	into += list(global.owns_one(nameof(translocator), /obj/item/perfect_tele))
+
+/// CAPABILITIES(/obj/item/clothing/head/helmet/riot) at code/modules/clothing/head/helmet.dm:72
+/obj/item/clothing/head/helmet/riot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/head/helmet.dm", 72, /obj/item/clothing/head/helmet/riot)
+	into += entry_line(73)
+	into += list(global.op("riot_visor_self", global.in_hand(), global.label("Toggle visor"), global.then(PROC_REF(riot_visor_self))))
 
 /// CAPABILITIES(/obj/item/clothing/head/helmet/space) at code/modules/clothing/spacesuits/spacesuits.dm:34
 /obj/item/clothing/head/helmet/space/declared_entries(list/into)
@@ -3750,12 +3948,98 @@
 	into += entry_line(35)
 	into += list(global.owns_one(nameof(camera), /obj/machinery/camera))
 
+/// CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam) at code/modules/clothing/spacesuits/void/ert.dm:132
+/obj/item/clothing/head/helmet/space/void/responseteam/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/spacesuits/void/ert.dm", 132, /obj/item/clothing/head/helmet/space/void/responseteam)
+	into += entry_line(133)
+	into += list(global.op("responseteam_toggle_verb", global.menu(), global.label("Toggle Mark 7 Suit HUD"), global.needs(global.carried()), global.then(PROC_REF(responseteam_toggle_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/head/pilot) at code/modules/clothing/head/pilot_helmet.dm:156
+/obj/item/clothing/head/pilot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/head/pilot_helmet.dm", 156, /obj/item/clothing/head/pilot)
+	into += entry_line(157)
+	into += list(global.op("pilot_hud_colors_verb", global.menu(), global.label("Alter HUD color"), global.needs(global.carried()), global.then(PROC_REF(pilot_hud_colors_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/head/pilot/alt) at code/modules/clothing/head/pilot_helmet.dm:195
+/obj/item/clothing/head/pilot/alt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/head/pilot_helmet.dm", 195, /obj/item/clothing/head/pilot/alt)
+	into += entry_line(196)
+	into += list(global.op("pilot_alt_visor_self", global.in_hand(), global.label("Toggle visor"), global.then(PROC_REF(pilot_alt_visor_self))))
+
+/// CAPABILITIES(/obj/item/clothing/head/pilot_vr) at code/modules/clothing/head/pilot_helmet.dm:223
+/obj/item/clothing/head/pilot_vr/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/head/pilot_helmet.dm", 223, /obj/item/clothing/head/pilot_vr)
+	into += entry_line(224)
+	into += list(global.op("pilot_vr_visor_self", global.in_hand(), global.label("Toggle visor"), global.then(PROC_REF(pilot_vr_visor_self))))
+
+/// CAPABILITIES(/obj/item/clothing/head/soft) at code/modules/clothing/head/soft_caps.dm:18
+/obj/item/clothing/head/soft/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/head/soft_caps.dm", 18, /obj/item/clothing/head/soft)
+	into += entry_line(19)
+	into += list(global.op("soft_cap_flip_self", global.in_hand(), global.label("Flip"), global.then(PROC_REF(soft_cap_flip_self))))
+
+/// CAPABILITIES(/obj/item/clothing/head/ushanka) at code/modules/clothing/head/misc_special.dm:170
+/obj/item/clothing/head/ushanka/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/head/misc_special.dm", 170, /obj/item/clothing/head/ushanka)
+	into += entry_line(171)
+	into += list(global.op("ushanka_flaps_self", global.in_hand(), global.label("Toggle ear flaps"), global.then(PROC_REF(ushanka_flaps_self))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/breath) at code/modules/clothing/masks/breath.dm:36
+/obj/item/clothing/mask/breath/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/masks/breath.dm", 36, /obj/item/clothing/mask/breath)
+	into += entry_line(37)
+	into += list(global.op("breath_mask_adjust_self", global.in_hand(), global.label("Adjust"), global.then(PROC_REF(breath_mask_adjust_self))))
+	into += entry_line(38)
+	into += list(global.op("breath_toggle_verb", global.menu(), global.label("Adjust mask"), global.needs(global.carried()), global.then(PROC_REF(breath_toggle_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:185
+/obj/item/clothing/mask/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 185, /obj/item/clothing/mask/chameleon/changeling)
+	into += entry_line(186)
+	into += list(global.op("changeling_mask_shred_verb", global.menu(), global.label("Shred Mask"), global.needs(global.carried()), global.then(PROC_REF(changeling_mask_shred_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/emotions) at code/modules/clothing/masks/miscellaneous.dm:404
+/obj/item/clothing/mask/emotions/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/masks/miscellaneous.dm", 404, /obj/item/clothing/mask/emotions)
+	into += entry_line(405)
+	into += list(global.op("emotion_mask_design_self", global.in_hand(), global.label("Change emotion"), global.then(PROC_REF(emotion_mask_design_self))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/gas/swat/vox) at code/modules/clothing/masks/gasmask.dm:130
+/obj/item/clothing/mask/gas/swat/vox/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/masks/gasmask.dm", 130, /obj/item/clothing/mask/gas/swat/vox)
+	into += entry_line(131)
+	into += list(global.op("vox_mask_port_self", global.in_hand(), global.label("Feeding port"), global.then(PROC_REF(vox_mask_port_self))))
+
+/// CAPABILITIES(/obj/item/clothing/mask/paper) at code/modules/clothing/masks/miscellaneous.dm:354
+/obj/item/clothing/mask/paper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/masks/miscellaneous.dm", 354, /obj/item/clothing/mask/paper)
+	into += entry_line(355)
+	into += list(global.op("paper_mask_design_self", global.in_hand(), global.label("Change design"), global.then(PROC_REF(paper_mask_design_self))))
+
 /// CAPABILITIES(/obj/item/clothing/mask/smokable/ecig) at code/game/objects/items/weapons/ecigs.dm:19
 /obj/item/clothing/mask/smokable/ecig/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 19, /obj/item/clothing/mask/smokable/ecig)
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge))
+
+/// CAPABILITIES(/obj/item/clothing/mask/surgical) at code/modules/clothing/masks/miscellaneous.dm:60
+/obj/item/clothing/mask/surgical/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/masks/miscellaneous.dm", 60, /obj/item/clothing/mask/surgical)
+	into += entry_line(61)
+	into += list(global.op("surgical_toggle_verb", global.menu(), global.label("Adjust mask"), global.needs(global.carried()), global.then(PROC_REF(surgical_toggle_verb))))
 
 /// CAPABILITIES(/obj/item/clothing/shoes) at code/modules/clothing/clothing.dm:637
 /obj/item/clothing/shoes/declared_entries(list/into)
@@ -3768,6 +4052,13 @@
 	into += entry_line(640)
 	into += list(global.owns_one(nameof(holding), /obj/item))
 
+/// CAPABILITIES(/obj/item/clothing/shoes/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:105
+/obj/item/clothing/shoes/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 105, /obj/item/clothing/shoes/chameleon/changeling)
+	into += entry_line(106)
+	into += list(global.op("changeling_shoes_shred_verb", global.menu(), global.label("Shred Shoes"), global.needs(global.carried()), global.then(PROC_REF(changeling_shoes_shred_verb))))
+
 /// CAPABILITIES(/obj/item/clothing/suit) at code/modules/clothing/clothing.dm:935
 /obj/item/clothing/suit/declared_entries(list/into)
 	..(into)
@@ -3775,12 +4066,130 @@
 	into += entry_line(936)
 	into += list(global.owns_one(nameof(hood), /obj/item/clothing/head))
 
+/// CAPABILITIES(/obj/item/clothing/suit/armor/reactive) at code/modules/clothing/suits/reactive_armour.dm:58
+/obj/item/clothing/suit/armor/reactive/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/suits/reactive_armour.dm", 58, /obj/item/clothing/suit/armor/reactive)
+	into += entry_line(59)
+	into += list(global.op("reactive_armor_toggle_self", global.in_hand(), global.label("Toggle"), global.then(PROC_REF(reactive_armor_toggle_self))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/armor/shield) at code/game/gamemodes/technomancer/devices/shield_armor.dm:65
+/obj/item/clothing/suit/armor/shield/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/gamemodes/technomancer/devices/shield_armor.dm", 65, /obj/item/clothing/suit/armor/shield)
+	into += entry_line(66)
+	into += list(global.op("shield_armor_toggle_self", global.in_hand(), global.label("Toggle"), global.then(PROC_REF(shield_armor_toggle_self))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/armor/tesla) at code/game/gamemodes/technomancer/devices/tesla_armor.dm:52
+/obj/item/clothing/suit/armor/tesla/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/gamemodes/technomancer/devices/tesla_armor.dm", 52, /obj/item/clothing/suit/armor/tesla)
+	into += entry_line(53)
+	into += list(global.op("tesla_armor_toggle_self", global.in_hand(), global.label("Toggle"), global.then(PROC_REF(tesla_armor_toggle_self))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:80
+/obj/item/clothing/suit/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 80, /obj/item/clothing/suit/chameleon/changeling)
+	into += entry_line(81)
+	into += list(global.op("changeling_suit_shred_verb", global.menu(), global.label("Shred Suit"), global.needs(global.carried()), global.then(PROC_REF(changeling_suit_shred_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes) at code/modules/vore/fluffstuff/custom_items.dm:511
+/obj/item/clothing/suit/fluff/purp_robes/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 511, /obj/item/clothing/suit/fluff/purp_robes)
+	into += entry_line(512)
+	into += list(global.op("purp_robes_toggle_verb", global.menu(), global.label("Toggle coat buttons"), global.needs(global.carried()), global.then(PROC_REF(purp_robes_toggle_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/lasertag) at code/modules/clothing/suits/lasertag.dm:48
+/obj/item/clothing/suit/lasertag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/suits/lasertag.dm", 48, /obj/item/clothing/suit/lasertag)
+	into += entry_line(49)
+	into += list(global.op("lasertag_adjust_health_verb", global.menu(), global.label("Adjust Suit Health"), global.needs(global.carried()), global.then(PROC_REF(lasertag_adjust_health_verb))))
+	into += entry_line(50)
+	into += list(global.op("lasertag_adjust_heal_time_verb", global.menu(), global.label("Adjust Healing Timer"), global.needs(global.carried()), global.then(PROC_REF(lasertag_adjust_heal_time_verb))))
+
 /// CAPABILITIES(/obj/item/clothing/suit/space) at code/modules/clothing/spacesuits/breaches.dm:24
 /obj/item/clothing/suit/space/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/clothing/spacesuits/breaches.dm", 24, /obj/item/clothing/suit/space)
 	into += entry_line(25)
 	into += list(global.owns_many(nameof(breaches)))
+
+/// CAPABILITIES(/obj/item/clothing/suit/storage/flannel) at code/modules/clothing/suits/miscellaneous.dm:928
+/obj/item/clothing/suit/storage/flannel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/suits/miscellaneous.dm", 928, /obj/item/clothing/suit/storage/flannel)
+	into += entry_line(929)
+	into += list(global.op("flannel_roll_sleeves_verb", global.menu(), global.label("Roll Sleeves"), global.needs(global.carried()), global.then(PROC_REF(flannel_roll_sleeves_verb))))
+	into += entry_line(930)
+	into += list(global.op("flannel_tuck_verb", global.menu(), global.label("Toggle Shirt Tucking"), global.needs(global.carried()), global.then(PROC_REF(flannel_tuck_verb))))
+	into += entry_line(931)
+	into += list(global.op("flannel_button_verb", global.menu(), global.label("Toggle Shirt Buttons"), global.needs(global.carried()), global.then(PROC_REF(flannel_button_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat) at code/modules/vore/fluffstuff/custom_clothes.dm:342
+/obj/item/clothing/suit/storage/fluff/fedcoat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_clothes.dm", 342, /obj/item/clothing/suit/storage/fluff/fedcoat)
+	into += entry_line(343)
+	into += list(global.op("fedcoat_toggle_verb", global.menu(), global.label("Toggle coat buttons"), global.needs(global.carried()), global.then(PROC_REF(fedcoat_toggle_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket) at code/modules/vore/fluffstuff/custom_clothes.dm:1389
+/obj/item/clothing/suit/storage/fluff/jacket/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_clothes.dm", 1389, /obj/item/clothing/suit/storage/fluff/jacket)
+	into += entry_line(1390)
+	into += list(global.op("jacket_toggle_verb", global.menu(), global.label("Toggle coat buttons"), global.needs(global.carried()), global.then(PROC_REF(jacket_toggle_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes) at code/modules/vore/fluffstuff/custom_clothes.dm:2222
+/obj/item/clothing/suit/storage/hooded/purple_robes/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_clothes.dm", 2222, /obj/item/clothing/suit/storage/hooded/purple_robes)
+	into += entry_line(2223)
+	into += list(global.op("purple_robes_toggle_verb", global.menu(), global.label("Toggle Eyes"), global.needs(global.carried()), global.then(PROC_REF(purple_robes_toggle_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle) at code/modules/clothing/suits/storage.dm:68
+/obj/item/clothing/suit/storage/hooded/toggle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/suits/storage.dm", 68, /obj/item/clothing/suit/storage/hooded/toggle)
+	into += entry_line(69)
+	into += list(global.op("hooded_toggle_toggle_verb", global.menu(), global.label("Toggle Coat Buttons"), global.needs(global.carried()), global.then(PROC_REF(hooded_toggle_toggle_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/suit/storage/vest) at code/modules/clothing/suits/storage.dm:112
+/obj/item/clothing/suit/storage/vest/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/suits/storage.dm", 112, /obj/item/clothing/suit/storage/vest)
+	into += entry_line(113)
+	into += list(global.op("vest_toggle_verb", global.menu(), global.label("Adjust Badge"), global.needs(global.carried()), global.then(PROC_REF(vest_toggle_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/under/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:34
+/obj/item/clothing/under/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 34, /obj/item/clothing/under/chameleon/changeling)
+	into += entry_line(35)
+	into += list(global.op("changeling_under_shred_verb", global.menu(), global.label("Shred Jumpsuit"), global.needs(global.carried()), global.then(PROC_REF(changeling_under_shred_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/under/hyperfiber) at code/modules/clothing/under/miscellaneous.dm:1711
+/obj/item/clothing/under/hyperfiber/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/under/miscellaneous.dm", 1711, /obj/item/clothing/under/hyperfiber)
+	into += entry_line(1712)
+	into += list(global.op("hyperfiber_toggle_fibers_verb", global.menu(), global.label("Adjust Bluespace Fibers"), global.needs(global.carried()), global.then(PROC_REF(hyperfiber_toggle_fibers_verb))))
+
+/// CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace) at code/modules/clothing/under/miscellaneous.dm:1736
+/obj/item/clothing/under/hyperfiber/bluespace/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/under/miscellaneous.dm", 1736, /obj/item/clothing/under/hyperfiber/bluespace)
+	into += entry_line(1737)
+	into += list(global.op("bluespace_resize_verb", global.menu(), global.label("Adjust Bluespace Fibers"), global.needs(global.carried()), global.then(PROC_REF(bluespace_resize_verb))))
+
+/// CAPABILITIES(/obj/item/cmo_disk_holder) at code/modules/resleeving/computers.dm:507
+/obj/item/cmo_disk_holder/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/resleeving/computers.dm", 507, /obj/item/cmo_disk_holder)
+	into += entry_line(508)
+	into += list(global.op("cmo_disk_holder_interaction_tear", global.in_hand(), global.label("Tear open"), global.then(PROC_REF(cmo_disk_holder_interaction_tear))))
 
 /// CAPABILITIES(/obj/item/commcard) at code/game/objects/items/devices/communicator/cartridge.dm:18
 /obj/item/commcard/declared_entries(list/into)
@@ -3968,6 +4377,13 @@
 	into += entry_line(110)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
+/// CAPABILITIES(/obj/item/flag) at code/modules/vore/fluffstuff/custom_items.dm:302
+/obj/item/flag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 302, /obj/item/flag)
+	into += entry_line(303)
+	into += list(global.op("flag_wave_self", global.in_hand(), global.label("Wave"), global.then(PROC_REF(flag_wave_self))))
+
 /// CAPABILITIES(/obj/item/flamethrower) at code/game/objects/items/weapons/flamethrower.dm:34
 /obj/item/flamethrower/declared_entries(list/into)
 	..(into)
@@ -3992,6 +4408,13 @@
 	into += entry_block("code/game/objects/items/devices/flashlight.dm", 42, /obj/item/flashlight)
 	into += entry_line(43)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell))
+
+/// CAPABILITIES(/obj/item/fluff/dragor_dot) at code/modules/vore/fluffstuff/custom_items.dm:785
+/obj/item/fluff/dragor_dot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 785, /obj/item/fluff/dragor_dot)
+	into += entry_line(786)
+	into += list(global.op("dragor_dot_self", global.in_hand(), global.then(PROC_REF(dragor_dot_self))))
 
 /// CAPABILITIES(/obj/item/form_printer) at code/modules/mob/living/silicon/robot/robot_items.dm:205
 /obj/item/form_printer/declared_entries(list/into)
@@ -4041,6 +4464,15 @@
 	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm", 131, /obj/item/glamour_face)
 	into += entry_line(132)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+
+/// CAPABILITIES(/obj/item/godfig) at code/game/objects/items/toys/godfigures.dm:134
+/obj/item/godfig/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/toys/godfigures.dm", 134, /obj/item/godfig)
+	into += entry_line(135)
+	into += list(global.op("resprite_figure_effect", global.menu(), global.label("Customize Figure"), global.needs(global.carried()), global.then(PROC_REF(resprite_figure_effect))))
+	into += entry_line(136)
+	into += list(global.op("rename_fig_effect", global.menu(), global.label("Name Figure"), global.needs(global.carried()), global.then(PROC_REF(rename_fig_effect))))
 
 /// CAPABILITIES(/obj/item/gold_star_printer) at code/game/objects/items/devices/gold_star_printer.dm:14
 /obj/item/gold_star_printer/declared_entries(list/into)
@@ -4132,6 +4564,13 @@
 	into += entry_line(182)
 	into += list(global.owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung))
 
+/// CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible) at code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm:5
+/obj/item/gun/projectile/heavysniper/collapsible/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm", 5, /obj/item/gun/projectile/heavysniper/collapsible)
+	into += entry_line(6)
+	into += list(global.op("collapsible_sniper_verb_take_down", global.menu(), global.label("Disassemble Rifle"), global.needs(global.carried()), global.then(PROC_REF(collapsible_sniper_verb_take_down))))
+
 /// CAPABILITIES(/obj/item/gun/projectile/revolver/lemat) at code/modules/projectiles/guns/projectile/revolver.dm:242
 /obj/item/gun/projectile/revolver/lemat/declared_entries(list/into)
 	..(into)
@@ -4140,6 +4579,15 @@
 	into += list(global.owns_many(nameof(secondary_loaded)))
 	into += entry_line(244)
 	into += list(global.owns_many(nameof(tertiary_loaded)))
+	into += entry_line(245)
+	into += list(global.op("lemat_verb_swap_firing_mode", global.menu(), global.label("Swap Firing Mode"), global.needs(global.carried()), global.then(PROC_REF(lemat_verb_swap_firing_mode))))
+
+/// CAPABILITIES(/obj/item/gun/projectile/shotgun/compact) at code/modules/projectiles/guns/projectile/shotgun.dm:313
+/obj/item/gun/projectile/shotgun/compact/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/projectile/shotgun.dm", 313, /obj/item/gun/projectile/shotgun/compact)
+	into += entry_line(314)
+	into += list(global.op("compact_shotgun_verb_toggle_stock", global.menu(), global.label("Toggle stock"), global.needs(global.carried()), global.then(PROC_REF(compact_shotgun_verb_toggle_stock))))
 
 /// CAPABILITIES(/obj/item/haircomb) at code/game/objects/items/weapons/cosmetics.dm:89
 /obj/item/haircomb/declared_entries(list/into)
@@ -4147,6 +4595,13 @@
 	into += entry_block("code/game/objects/items/weapons/cosmetics.dm", 89, /obj/item/haircomb)
 	into += entry_line(90)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+
+/// CAPABILITIES(/obj/item/healthanalyzer) at code/game/objects/items/devices/scanners/guide.dm:58
+/obj/item/healthanalyzer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/guide.dm", 58, /obj/item/healthanalyzer)
+	into += entry_line(59)
+	into += list(global.op("toggle_guide_effect", global.menu(), global.label("Toggle Guidance"), global.needs(global.carried()), global.then(PROC_REF(toggle_guide_effect))))
 
 /// CAPABILITIES(/obj/item/hoist_kit) at code/modules/multiz/hoist.dm:13
 /obj/item/hoist_kit/declared_entries(list/into)
@@ -4361,6 +4816,13 @@
 	into += entry_line(48)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
+/// CAPABILITIES(/obj/item/material/fishing_net/butterfly_net) at code/modules/fishing/fishing_net.dm:186
+/obj/item/material/fishing_net/butterfly_net/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/fishing/fishing_net.dm", 186, /obj/item/material/fishing_net/butterfly_net)
+	into += entry_line(187)
+	into += list(global.op("butterfly_net_self", global.in_hand(), global.label("Empty"), global.then(PROC_REF(butterfly_net_self))))
+
 /// CAPABILITIES(/obj/item/material/gravemarker) at code/game/objects/items/weapons/material/gravemarker.dm:84
 /obj/item/material/gravemarker/declared_entries(list/into)
 	..(into)
@@ -4436,6 +4898,13 @@
 	into += entry_block("code/game/objects/items/weapons/melee/misc.dm", 82, /obj/item/melee/cursedblade)
 	into += entry_line(83)
 	into += list(global.owns_many(nameof(voice_mobs)))
+
+/// CAPABILITIES(/obj/item/melee/fluffstuff) at code/modules/vore/fluffstuff/custom_items.dm:1100
+/obj/item/melee/fluffstuff/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1100, /obj/item/melee/fluffstuff)
+	into += entry_line(1101)
+	into += list(global.op("fluffstuff_toggle_self", global.in_hand(), global.label("Toggle"), global.then(PROC_REF(fluffstuff_toggle_self))))
 
 /// CAPABILITIES(/obj/item/melee/robotic/jaws/small) at code/modules/projectiles/guns/energy/cyborg.dm:181
 /obj/item/melee/robotic/jaws/small/declared_entries(list/into)
@@ -4715,6 +5184,13 @@
 	into += entry_block("code/game/objects/items/pizza_voucher.dm", 23, /obj/item/pizzavoucher)
 	into += entry_line(24)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+
+/// CAPABILITIES(/obj/item/poster/custom) at code/game/objects/effects/decals/posters/postersubtypes.dm:50
+/obj/item/poster/custom/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/decals/posters/postersubtypes.dm", 50, /obj/item/poster/custom)
+	into += entry_line(51)
+	into += list(global.op("select_poster_effect", global.menu(), global.label("Set Poster type"), global.needs(global.carried()), global.then(PROC_REF(select_poster_effect))))
 
 /// CAPABILITIES(/obj/item/projectile) at code/modules/projectiles/projectile.dm:162
 /obj/item/projectile/declared_entries(list/into)
@@ -5060,6 +5536,13 @@
 	into += entry_line(1742)
 	into += list(global.op("unwrap_cube", global.in_hand(), global.priority(OP_PRIORITY_PART), global.when(global.req(PROC_REF(cube_is_wrapped))), global.label("Unwrap it"), global.then(PROC_REF(cube_unwrapped))))
 
+/// CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit) at code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm:330
+/obj/item/reagent_containers/food/snacks/pitcher_fruit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm", 330, /obj/item/reagent_containers/food/snacks/pitcher_fruit)
+	into += entry_line(331)
+	into += list(global.op("pitcher_fruit_self", global.in_hand(), global.label("Plant"), global.then(PROC_REF(pitcher_fruit_self))))
+
 /// CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawcutlet) at code/modules/food/food/snacks.dm:4762
 /obj/item/reagent_containers/food/snacks/rawcutlet/declared_entries(list/into)
 	..(into)
@@ -5340,6 +5823,20 @@
 	into += entry_line(392)
 	into += list(global.op("item", global.item(/obj/item/pen), global.label("Label"), global.then(PROC_REF(interaction_item))))
 
+/// CAPABILITIES(/obj/item/remote_scene_tool) at code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm:189
+/obj/item/remote_scene_tool/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm", 189, /obj/item/remote_scene_tool)
+	into += entry_line(190)
+	into += list(global.op("remote_scene_tool_verb_summon", global.menu(), global.label("Summon Counterpart"), global.needs(global.carried()), global.then(PROC_REF(remote_scene_tool_verb_summon))))
+
+/// CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll) at code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm:62
+/obj/item/remote_scene_tool/voodoo_doll/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm", 62, /obj/item/remote_scene_tool/voodoo_doll)
+	into += entry_line(63)
+	into += list(global.op("voodoo_doll_verb_toggle_fun", global.menu(), global.label("Disable Special Rendering"), global.needs(global.carried()), global.then(PROC_REF(voodoo_doll_verb_toggle_fun))))
+
 /// CAPABILITIES(/obj/item/rig) at code/modules/clothing/spacesuits/rig/rig.dm:111
 /obj/item/rig/declared_entries(list/into)
 	..(into)
@@ -5584,6 +6081,13 @@
 	into += entry_line(25)
 	into += list(global.configure(global.storage(max_size = ITEMSIZE_LARGE)))
 
+/// CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:130
+/obj/item/storage/backpack/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 130, /obj/item/storage/backpack/chameleon/changeling)
+	into += entry_line(131)
+	into += list(global.op("changeling_backpack_shred_verb", global.menu(), global.label("Shred Backpack"), global.needs(global.carried()), global.then(PROC_REF(changeling_backpack_shred_verb))))
+
 /// CAPABILITIES(/obj/item/storage/backpack/dufflebag) at code/game/objects/items/weapons/storage/backpack.dm:192
 /obj/item/storage/backpack/dufflebag/declared_entries(list/into)
 	..(into)
@@ -5591,11 +6095,11 @@
 	into += entry_line(193)
 	into += list(global.op("tilt", global.menu(), global.label("Adjust Duffelbag Angle"), global.needs(global.carried(), global.req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), global.then(PROC_REF(dufflebag_tilt_effect))))
 
-/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1053
+/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1057
 /obj/item/storage/backpack/fluff/stunstaff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1053, /obj/item/storage/backpack/fluff/stunstaff)
-	into += entry_line(1054)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1057, /obj/item/storage/backpack/fluff/stunstaff)
+	into += entry_line(1058)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE)))
 
 /// CAPABILITIES(/obj/item/storage/backpack/holding) at code/game/objects/items/weapons/storage/backpack.dm:94
@@ -5793,6 +6297,13 @@
 	into += entry_line(534)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/ammo_casing/a12g, /obj/item/ammo_casing/a12g/pellet, /obj/item/ammo_casing/a12g/blank, /obj/item/ammo_casing/a12g/practice, /obj/item/ammo_casing/a12g/beanbag, /obj/item/ammo_casing/a12g/stunshell, /obj/item/ammo_casing/a12g/flash, /obj/item/ammo_casing/a12g/emp, /obj/item/ammo_casing/a12g/flechette), max_size = ITEMSIZE_TINY)))
 
+/// CAPABILITIES(/obj/item/storage/belt/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:231
+/obj/item/storage/belt/chameleon/changeling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm", 231, /obj/item/storage/belt/chameleon/changeling)
+	into += entry_line(232)
+	into += list(global.op("changeling_belt_shred_verb", global.menu(), global.label("Shred Belt"), global.needs(global.carried()), global.then(PROC_REF(changeling_belt_shred_verb))))
+
 /// CAPABILITIES(/obj/item/storage/belt/champion) at code/game/objects/items/weapons/storage/belt.dm:480
 /obj/item/storage/belt/champion/declared_entries(list/into)
 	..(into)
@@ -5969,11 +6480,11 @@
 	into += entry_line(44)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut))))
 
-/// CAPABILITIES(/obj/item/storage/box/dosimeter) at code/modules/clothing/accessories/badges.dm:415
+/// CAPABILITIES(/obj/item/storage/box/dosimeter) at code/modules/clothing/accessories/badges.dm:417
 /obj/item/storage/box/dosimeter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/badges.dm", 415, /obj/item/storage/box/dosimeter)
-	into += entry_line(416)
+	into += entry_block("code/modules/clothing/accessories/badges.dm", 417, /obj/item/storage/box/dosimeter)
+	into += entry_line(418)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film))))
 
 /// CAPABILITIES(/obj/item/storage/box/evidence) at code/modules/detectivework/tools/storage.dm:23
@@ -6046,11 +6557,11 @@
 	into += entry_line(8017)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake))))
 
-/// CAPABILITIES(/obj/item/storage/box/khcrystal) at code/modules/vore/fluffstuff/custom_items.dm:651
+/// CAPABILITIES(/obj/item/storage/box/khcrystal) at code/modules/vore/fluffstuff/custom_items.dm:653
 /obj/item/storage/box/khcrystal/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 651, /obj/item/storage/box/khcrystal)
-	into += entry_line(652)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 653, /obj/item/storage/box/khcrystal)
+	into += entry_line(654)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal))))
 
 /// CAPABILITIES(/obj/item/storage/box/lights) at code/game/objects/items/weapons/storage/boxes.dm:499
@@ -6222,6 +6733,12 @@
 	into += entry_block("code/modules/games/dice.dm", 218, /obj/item/storage/dicecup)
 	into += entry_line(219)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/dice))))
+	into += entry_line(220)
+	into += list(global.op("interaction_shake", global.in_hand(), global.label("Shake"), global.then(PROC_REF(interaction_shake))))
+	into += entry_line(221)
+	into += list(global.op("dicecup_verb_peek", global.menu(), global.label("Peek at Dice"), global.needs(global.carried()), global.then(PROC_REF(dicecup_verb_peek))))
+	into += entry_line(222)
+	into += list(global.op("dicecup_verb_reveal", global.menu(), global.label("Reveal Dice"), global.needs(global.carried()), global.then(PROC_REF(dicecup_verb_reveal))))
 
 /// CAPABILITIES(/obj/item/storage/excavation) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:122
 /obj/item/storage/excavation/declared_entries(list/into)
@@ -6279,11 +6796,11 @@
 	into += entry_line(65)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/egg, /obj/item/reagent_containers/food/snacks/boiledegg))))
 
-/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1354
+/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1360
 /obj/item/storage/fancy/fluff/charlotte/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1354, /obj/item/storage/fancy/fluff/charlotte)
-	into += entry_line(1355)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1360, /obj/item/storage/fancy/fluff/charlotte)
+	into += entry_line(1361)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt))))
 
 /// CAPABILITIES(/obj/item/storage/fancy/heartbox) at code/game/objects/items/weapons/storage/fancy.dm:572
@@ -6693,6 +7210,8 @@
 	into += entry_block("code/modules/casino/casino_items.dm", 8, /obj/item/storage/wallet/casino)
 	into += entry_line(9)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/spacecash, /obj/item/card, /obj/item/clothing/mask/smokable/cigarette/, /obj/item/flashlight/pen, /obj/item/tape, /obj/item/cartridge, /obj/item/encryptionkey, /obj/item/seeds, /obj/item/stack/medical, /obj/item/coin, /obj/item/dice, /obj/item/disk, /obj/item/implanter, /obj/item/flame/lighter, /obj/item/flame/match, /obj/item/forensics, /obj/item/glass_extra, /obj/item/haircomb, /obj/item/hand, /obj/item/key, /obj/item/lipstick, /obj/item/paper, /obj/item/pen, /obj/item/photo, /obj/item/reagent_containers/dropper, /obj/item/sample, /obj/item/tool/screwdriver, /obj/item/stamp, /obj/item/clothing/accessory/permit, /obj/item/clothing/accessory/badge, /obj/item/makeover, /obj/item/spacecasinocash, /obj/item/casino_platinum_chip, /obj/item/deck, /obj/item/book/codex/casino, /obj/item/storage/pill_bottle/dice, /obj/item/storage/pill_bottle/dice_nerd, /obj/item/storage/dicecup/loaded))))
+	into += entry_line(48)
+	into += list(global.op("casino_toggle_design_effect", global.menu(), global.label("Toggle design"), global.needs(global.carried()), global.then(PROC_REF(casino_toggle_design_effect))))
 
 /// CAPABILITIES(/obj/item/storage/wallet/poly) at code/game/objects/items/weapons/storage/wallets.dm:119
 /obj/item/storage/wallet/poly/declared_entries(list/into)
@@ -6791,6 +7310,8 @@
 	into += list(global.owns_many(nameof(spells)))
 	into += entry_line(37)
 	into += list(global.owns_many(nameof(summoned_mobs)))
+	into += entry_line(38)
+	into += list(global.op("technomancer_core_toggle_lock_effect", global.menu(), global.label("Toggle Core Lock"), global.needs(global.carried()), global.then(PROC_REF(technomancer_core_toggle_lock_effect))))
 
 /// CAPABILITIES(/obj/item/ticket_printer) at code/game/objects/items/devices/ticket_printer.dm:13
 /obj/item/ticket_printer/declared_entries(list/into)
@@ -8746,6 +9267,13 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(entopic), /datum/entopic))
 
+/// CAPABILITIES(/obj/machinery/vitals_monitor) at code/game/machinery/vitals_monitor.dm:153
+/obj/machinery/vitals_monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/vitals_monitor.dm", 153, /obj/machinery/vitals_monitor)
+	into += entry_line(154)
+	into += list(global.op("vitals_monitor_toggle_beep", global.menu(), global.label("Toggle Monitor Beeping"), global.then(PROC_REF(vitals_monitor_toggle_beep))))
+
 /// CAPABILITIES(/obj/machinery/vr_sleeper) at code/game/machinery/virtual_reality/vr_console.dm:37
 /obj/machinery/vr_sleeper/declared_entries(list/into)
 	..(into)
@@ -8833,6 +9361,8 @@
 	into += list(global.without("dismantle"))
 	into += entry_line(16)
 	into += list(global.op("unwire", global.tool(TOOL_WRENCH), global.wait(0), global.label("Unwire"), global.then(PROC_REF(back_to_chair))))
+	into += entry_line(17)
+	into += list(global.op("e_chair_toggle_effect", global.menu(), global.label("Toggle Electric Chair"), global.then(PROC_REF(e_chair_toggle_effect))))
 
 /// CAPABILITIES(/obj/structure/bed/chair/wheelchair) at code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm:140
 /obj/structure/bed/chair/wheelchair/declared_entries(list/into)

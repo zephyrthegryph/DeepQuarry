@@ -150,12 +150,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, TYPE_PROC_REF(/atom, appe
 		return "shallow"
 	return "erratic"
 
-EXTEND_INTERACTIONS(/obj/machinery/vitals_monitor, \
-	INTERACT_VERB("Toggle Monitor Beeping", PROC_REF(vitals_monitor_toggle_beep)), \
-)
+CAPABILITIES(/obj/machinery/vitals_monitor)
+	op("vitals_monitor_toggle_beep", menu(), label("Toggle Monitor Beeping"), then(PROC_REF(vitals_monitor_toggle_beep)))
 
 /// Old verb "Toggle Monitor Beeping".
-/obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!istype(user))
 		return
 
