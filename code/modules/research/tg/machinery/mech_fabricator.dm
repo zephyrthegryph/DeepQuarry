@@ -77,7 +77,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 		src, \
 		mapload, \
 		mat_container_events = list( \
-			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert) \
+			(/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert) \
 		)))
 	available_designs = list()
 	illegal_local_designs = list()
@@ -543,8 +543,9 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_remove_mat)
 	return TRUE
 
 /// Local material container hook (/datum/om/event/matcontainer_item_consumed).
-/obj/machinery/mecha_part_fabricator_tg/proc/on_material_insert(datum/source, datum/om/event/matcontainer_item_consumed/event)
+/obj/machinery/mecha_part_fabricator_tg/proc/on_material_insert(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/matcontainer_item_consumed/event = N
 	AfterMaterialInsert(event.item, event.primary_mat, event.material_amount)
 
 /obj/machinery/mecha_part_fabricator_tg/proc/AfterMaterialInsert(item_inserted, id_inserted, amount_inserted)

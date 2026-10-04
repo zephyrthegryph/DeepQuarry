@@ -129,12 +129,12 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	L.set_body_effect_factors(type, state.cloaked_factors)
 	L.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
 	observe(L, /datum/notice/mob_apply_damage, src, then(PROC_REF(damage_inflicted)))
-	om_hook(L, /datum/om/event/before/robot_item_attack, src, PROC_REF(attacked_in_cloak))
+	observe(L, /datum/notice/robot_item_attack, src, then(PROC_REF(attacked_in_cloak)))
 
 /datum/body_effect/robot_cloak/on_end(mob/living/L, expired)
 	L.clear_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK)
 	unobserve(L, /datum/notice/mob_apply_damage, src)
-	om_unhook(L, /datum/om/event/before/robot_item_attack, src)
+	unobserve(L, /datum/notice/robot_item_attack, src)
 	robot_cloak_remove_wibble(L, TRUE)
 
 /datum/body_effect/robot_cloak/on_tick(mob/living/L)
@@ -176,8 +176,9 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	apply_wibbly_filters(L, 0.5 SECONDS)
 	after(L, 0.5 SECONDS, GLOBAL_PROC_REF(robot_cloak_remove_wibble), with = list(L, FALSE))
 
-/datum/body_effect/robot_cloak/proc/attacked_in_cloak(mob/living/source, datum/om/event/before/robot_item_attack/event)
+/datum/body_effect/robot_cloak/proc/attacked_in_cloak(datum/act/notice/N)
 	EVENT_HANDLER
+	var/mob/living/source = N.target
 	if(!source.get_filter("wibbly-[1]")) //We're not wibbled at the moment.
 		var/alpha_to_show = CLAMP((source.alpha+(rand(50,200))), source.alpha, 255) //Become more visible by a significant margin, randomly.
 		flick_cloak(source, alpha_to_show)

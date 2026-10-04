@@ -50,7 +50,7 @@ DECLARE_REPEAT(/obj/machinery/rnd/production, "build_time_per_item", do_make_ite
 		src, \
 		mapload, \
 		mat_container_events = list( \
-			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert)
+			(/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert)
 		) \
 	))
 
@@ -174,8 +174,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appe
 	flick_overlay_view_atom(mutable_appearance('icons/obj/machines/research_vr.dmi', "protolathe_progress"), 1 SECONDS)
 
 ///When materials are instered into local storage
-/obj/machinery/rnd/production/proc/local_material_insert(datum/source, datum/om/event/matcontainer_item_consumed/event)
+/obj/machinery/rnd/production/proc/local_material_insert(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/matcontainer_item_consumed/event = N
 
 	process_item(event.item, event.mats_consumed, event.material_amount)
 

@@ -60,7 +60,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 			same++
 	connector_number = same + 1
 	rel_add(carrier, nameof(carrier.hose_connectors), src)
-	om_hook(carrier, /datum/om/event/examine, src, PROC_REF(on_examine))
+	observe(carrier, /datum/notice/examine, src, then(PROC_REF(on_examine)))
 	observe(carrier, /datum/notice/moved, src, then(PROC_REF(move_react)))
 	observe(carrier, /datum/notice/hose_forcepump, src, then(PROC_REF(on_force_pump)))
 	om_grant(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
@@ -196,8 +196,9 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 		reagents.trans_to_holder(connected_reagents(), reagents.maximum_volume)
 		reagents.clear_reagents() // Wipe it to avoid exploits
 
-/datum/hose_connector/proc/on_examine(datum/source, datum/om/event/examine/event)
+/datum/hose_connector/proc/on_examine(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/examine/event = N
 	var/list/examine_texts = event.texts
 	var/datum/hose_connector/hose_pair = my_hose?.get_pairing(src)
 	if(istype(hose_pair,/datum/hose_connector/inflation))

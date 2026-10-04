@@ -11,7 +11,7 @@
 	. = ..()
 	om_revoke(human_owner(), GRANT_VERB, /atom/proc/disconnect_hose, src)
 
-/datum/hose_connector/inflation/on_examine(datum/source, datum/om/event/examine/event)
+/datum/hose_connector/inflation/on_examine(datum/act/notice/N)
 	return
 
 /datum/hose_connector/inflation/proc/get_destination_name()
@@ -194,7 +194,7 @@
 	var/mob/living/silicon/robot/R = borg_owner()
 	return R?.vore_selected?.reagents
 
-/datum/hose_connector/input/borg/on_examine(datum/source, datum/om/event/examine/event)
+/datum/hose_connector/input/borg/on_examine(datum/act/notice/N)
 	return
 
 /// Pumps reagents into carrier
@@ -212,7 +212,7 @@
 	var/mob/living/silicon/robot/R = borg_owner()
 	return R?.vore_selected?.reagents
 
-/datum/hose_connector/output/borg/on_examine(datum/source, datum/om/event/examine/event)
+/datum/hose_connector/output/borg/on_examine(datum/act/notice/N)
 	return
 
 /// The human the hose connects to (our carrier).

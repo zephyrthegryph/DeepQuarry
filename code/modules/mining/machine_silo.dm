@@ -26,8 +26,8 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		INFINITY, \
 		MATCONTAINER_EXAMINE, \
 		container_events = list( \
-			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/ore_silo, on_item_consumed), \
-			(/datum/om/event/matcontainer_stack_retrieved) = TYPE_PROC_REF(/obj/machinery/ore_silo, log_sheets_ejected), \
+			(/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/ore_silo, on_item_consumed), \
+			(/datum/notice/matcontainer_stack_retrieved) = TYPE_PROC_REF(/obj/machinery/ore_silo, log_sheets_ejected), \
 		), \
 		allowed_items = /obj/item/stack \
 	))
@@ -53,8 +53,9 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	if(panel_open)
 		. += span_notice("The whole machine can be [span_bold("pried")] apart.")
 
-/obj/machinery/ore_silo/proc/on_item_consumed(datum/material_container/container, datum/om/event/matcontainer_item_consumed/event)
+/obj/machinery/ore_silo/proc/on_item_consumed(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/matcontainer_item_consumed/event = N
 	var/obj/item/item_inserted = event.item
 	var/mats_consumed = event.mats_consumed
 	var/amount_inserted = event.material_amount
@@ -62,8 +63,9 @@ CAPABILITIES(/obj/machinery/ore_silo)
 
 	silo_log(context, "deposited", amount_inserted, item_inserted.name, mats_consumed)
 
-/obj/machinery/ore_silo/proc/log_sheets_ejected(datum/material_container/container, datum/om/event/matcontainer_stack_retrieved/event)
+/obj/machinery/ore_silo/proc/log_sheets_ejected(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/matcontainer_stack_retrieved/event = N
 	var/obj/item/stack/material/sheets = event.new_stack
 	var/atom/context = event.context
 

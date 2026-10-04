@@ -14,7 +14,7 @@
 	on_target_delete = OM_END_DELETE_OTHER
 
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
-	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
+	unobserve(target, /datum/notice/living_turf_collision, source)
 	if(target.throwing == source)
 		rel_clear(target, nameof(target.throwing))
 
@@ -71,7 +71,7 @@
 /datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, callback, target_zone)
 	. = ..()
 	om_link(src, thrownthing, /datum/om/relation/throw_of)
-	om_hook(thrownthing, /datum/om/event/before/living_turf_collision, src, PROC_REF(hit_atom))
+	observe(thrownthing, /datum/notice/living_turf_collision, src, then(PROC_REF(hit_atom)))
 	rel_set(src, nameof(starting_turf), get_turf(thrownthing))
 	var/turf/target_turf = get_turf(target)
 	rel_set(src, nameof(target_turf), target_turf)
@@ -222,8 +222,9 @@
 
 	qdel(src)
 
-/datum/thrownthing/proc/hit_atom(datum/source, datum/om/event/before/living_turf_collision/event)
+/datum/thrownthing/proc/hit_atom(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/source = N.target
 	var/atom/A = source
 	finalize(hit=TRUE, t_target=A)
 

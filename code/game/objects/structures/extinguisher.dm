@@ -84,7 +84,7 @@
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
 			return TRUE
 	if(has_extinguisher)
-		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
+		unobserve(has_extinguisher, /datum/notice/qdeleting, src)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
 		own_take(src, nameof(has_extinguisher))
@@ -97,7 +97,7 @@
 /// Old attack_tk: pull the extinguisher out at range, or toggle the cabinet.
 /obj/structure/extinguisher_cabinet/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_extinguisher)
-		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
+		unobserve(has_extinguisher, /datum/notice/qdeleting, src)
 		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
 		own_take(src, nameof(has_extinguisher))

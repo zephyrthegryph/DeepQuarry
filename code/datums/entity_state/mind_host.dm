@@ -79,7 +79,7 @@ CAPABILITIES(/datum/mind_host)
 	if(tissue == new_tissue)
 		return
 	if(tissue)
-		om_unhook(tissue, /datum/om/event/qdeleting, src)
+		unobserve(tissue, /datum/notice/qdeleting, src)
 	rel_set(src, nameof(tissue), QDELETED(new_tissue) ? null : new_tissue)
 	if(tissue)
 		observe(tissue, /datum/notice/qdeleting, src, then(PROC_REF(on_tissue_deleted)))

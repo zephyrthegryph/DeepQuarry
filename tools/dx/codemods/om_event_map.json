@@ -8,7 +8,6 @@
    "old_severity"
   ],
   "listeners": [
-   "code/controllers/subsystems/contracts.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -86,7 +85,6 @@
    "new_dir"
   ],
   "listeners": [
-   "code/datums/entity_state/overlay_lighting.dm",
    "code/datums/entity_state/squeak.dm",
    "code/engine/_generated/event_twins.dm"
   ],
@@ -126,7 +124,6 @@
    "old_loc"
   ],
   "listeners": [
-   "code/datums/entity_state/squeak.dm",
    "code/datums/proximity_monitor/proximity_monitor.dm",
    "code/engine/_generated/event_twins.dm"
   ],
@@ -167,7 +164,6 @@
   ],
   "listeners": [
    "code/datums/proximity_monitor/proximity_monitor.dm",
-   "code/datums/recursive_move.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -206,9 +202,7 @@
    "pulse_source"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/game/turfs/simulated/floor_types.dm",
-   "code/game/turfs/simulated/wall_types.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "pulse_source"
@@ -225,7 +219,6 @@
    "old_color"
   ],
   "listeners": [
-   "code/datums/entity_state/overlay_lighting.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -243,7 +236,6 @@
    "old_flags"
   ],
   "listeners": [
-   "code/datums/entity_state/overlay_lighting.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -261,7 +253,6 @@
    "old_value"
   ],
   "listeners": [
-   "code/datums/entity_state/overlay_lighting.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -279,7 +270,6 @@
    "old_power"
   ],
   "listeners": [
-   "code/datums/entity_state/overlay_lighting.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -297,7 +287,6 @@
    "old_range"
   ],
   "listeners": [
-   "code/datums/entity_state/overlay_lighting.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -315,7 +304,6 @@
    "result_"
   ],
   "listeners": [
-   "code/datums/entity_state/overlay_lighting.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -361,11 +349,12 @@
   ],
   "fields": [],
   "listeners": [
-   "code/datums/status_effects/debuffs/fire_stacks.dm",
    "code/game/atom/_atom.dm"
   ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [],
   "reads_result": true,
-  "target": "review",
+  "target": "/datum/notice/atom_extinguish",
   "tests": []
  },
  "/datum/om/event/before/atom_pre_emp_act": {
@@ -395,11 +384,18 @@
    "attack_dir",
    "aurmor_penetration"
   ],
-  "listeners": [
-   "code/modules/materials/engineering/material_responses.dm"
+  "listeners": [],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "damage_amount",
+   "damage_type",
+   "damage_flag",
+   "sound_effect",
+   "attack_dir",
+   "aurmor_penetration"
   ],
   "reads_result": true,
-  "target": "review",
+  "target": "/datum/notice/atom_take_damage",
   "tests": []
  },
  "/datum/om/event/before/atom_tool_act": {
@@ -428,11 +424,14 @@
    "user"
   ],
   "listeners": [
-   "code/datums/behaviours/burning.dm",
-   "code/modules/xenoarcheaology/effect_master.dm"
+   "code/datums/behaviours/burning.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "user"
   ],
   "reads_result": true,
-  "target": "GUARD_ATTACK_HAND",
+  "target": "/datum/notice/attack_hand",
   "tests": []
  },
  "/datum/om/event/before/attack_self": {
@@ -443,13 +442,14 @@
    "user"
   ],
   "listeners": [
-   "code/datums/behaviours/tethered_item.dm",
-   "code/datums/entity_state/squeak.dm",
-   "code/modules/economy/service_invoices.dm",
-   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm"
+   "code/datums/behaviours/tethered_item.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "user"
   ],
   "reads_result": true,
-  "target": "GUARD_ATTACK_SELF",
+  "target": "/datum/notice/attack_self",
   "tests": []
  },
  "/datum/om/event/before/attackby": {
@@ -467,12 +467,16 @@
    "code/datums/entity_state/materials/material_container.dm",
    "code/datums/entity_state/materials/remote_materials.dm",
    "code/modules/body/plans/nanoform.dm",
-   "code/modules/materials/engineering/material_diagnostics.dm",
-   "code/modules/materials/engineering/material_responses.dm",
-   "code/modules/xenoarcheaology/effect_master.dm"
+   "code/modules/materials/engineering/material_diagnostics.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "item",
+   "user",
+   "params"
   ],
   "reads_result": true,
-  "target": "GUARD_ATTACKBY",
+  "target": "/datum/notice/attackby",
   "tests": []
  },
  "/datum/om/event/before/belly_update_vore_fx": {
@@ -483,10 +487,14 @@
    "volume"
   ],
   "listeners": [
-   "code/modules/vore/eating/soulcatcher.dm"
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "volume"
   ],
   "reads_result": false,
-  "target": "review",
+  "target": "/datum/notice/belly_update_vore_fx",
   "tests": []
  },
  "/datum/om/event/before/catch_throw": {
@@ -511,11 +519,13 @@
   "fields": [
    "mob"
   ],
-  "listeners": [
-   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm"
+  "listeners": [],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "mob"
   ],
   "reads_result": true,
-  "target": "GUARD_CLICK_ALT",
+  "target": "/datum/notice/click_alt",
   "tests": []
  },
  "/datum/om/event/before/dice_roll": {
@@ -654,14 +664,18 @@
    "insulation_to_target"
   ],
   "listeners": [
-   "code/datums/entity_state/geiger_sound.dm",
-   "code/game/objects/items/devices/geiger.dm",
-   "code/modules/materials/engineering/material_responses.dm",
-   "code/modules/power/singularity/collector.dm"
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "pulse_information",
+   "insulation_to_target"
   ],
   "reads_result": false,
-  "target": "GUARD_IRRADIATE",
-  "tests": []
+  "target": "/datum/notice/in_range_of_irradiation",
+  "tests": [
+   "code/modules/unit_tests/dq_hook_hand_tests.dm"
+  ]
  },
  "/datum/om/event/before/item_pre_attack": {
   "emits": [
@@ -673,11 +687,16 @@
    "params"
   ],
   "listeners": [
-   "code/datums/entity_state/effect_remover.dm",
    "code/modules/research/tg/experisci/handheld_scanner.dm"
   ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "target_",
+   "user",
+   "params"
+  ],
   "reads_result": true,
-  "target": "op",
+  "target": "/datum/notice/item_pre_attack",
   "tests": []
  },
  "/datum/om/event/before/living_body_status": {
@@ -740,11 +759,15 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/entity_state/remote_view.dm",
-   "code/datums/om/library.dm"
+   "code/datums/om/library.dm",
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "amount"
   ],
   "reads_result": false,
-  "target": "review",
+  "target": "/datum/notice/living_status_sleep",
   "tests": []
  },
  "/datum/om/event/before/living_turf_collision": {
@@ -755,11 +778,14 @@
    "t",
    "speed"
   ],
-  "listeners": [
-   "code/datums/thrownthing.dm"
+  "listeners": [],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "t",
+   "speed"
   ],
   "reads_result": true,
-  "target": "review",
+  "target": "/datum/notice/living_turf_collision",
   "tests": []
  },
  "/datum/om/event/before/mob_handle_hud": {
@@ -810,11 +836,14 @@
    "atom"
   ],
   "listeners": [
-   "code/datums/entity_state/squeak.dm",
-   "code/modules/xenoarcheaology/effect_master.dm"
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "atom"
   ],
   "reads_result": false,
-  "target": "review",
+  "target": "/datum/notice/movable_bump",
   "tests": []
  },
  "/datum/om/event/before/movable_pre_move": {
@@ -842,12 +871,15 @@
    "new_z"
   ],
   "listeners": [
-   "code/datums/entity_state/remote_view.dm",
-   "code/datums/proximity_monitor/proximity_monitor.dm",
-   "code/modules/tgui/modules/ntos-only/uav.dm"
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "old_z",
+   "new_z"
   ],
   "reads_result": false,
-  "target": "GUARD_Z_CHANGE",
+  "target": "/datum/notice/movable_z_changed",
   "tests": []
  },
  "/datum/om/event/before/robot_item_attack": {
@@ -860,10 +892,16 @@
    "params"
   ],
   "listeners": [
-   "code/modules/mob/living/silicon/robot/cloak.dm"
+   "code/engine/_generated/event_twins.dm"
+  ],
+  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
+  "notice_fields": [
+   "item",
+   "user",
+   "params"
   ],
   "reads_result": false,
-  "target": "op",
+  "target": "/datum/notice/robot_item_attack",
   "tests": []
  },
  "/datum/om/event/before/slot_pre_insert": {
@@ -937,7 +975,6 @@
    "added"
   ],
   "listeners": [
-   "code/controllers/subsystems/contracts.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -1198,12 +1235,8 @@
   ],
   "listeners": [
    "code/datums/behaviours/burning.dm",
-   "code/datums/entity_state/machinery/disposal_connection.dm",
-   "code/datums/entity_state/materials/material_container.dm",
-   "code/datums/entity_state/reagent_hose/connector.dm",
    "code/engine/_generated/event_twins.dm",
-   "code/modules/materials/engineering/material_diagnostics.dm",
-   "code/modules/materials/engineering/material_responses.dm"
+   "code/modules/materials/engineering/material_diagnostics.dm"
   ],
   "notice_fields": [
    "user",
@@ -1212,6 +1245,7 @@
   "reads_result": false,
   "target": "/datum/notice/examine",
   "tests": [
+   "code/modules/unit_tests/dq_hook_hand_tests.dm",
    "code/modules/unit_tests/dx_reactions_work_tests.dm"
   ]
  },
@@ -1316,8 +1350,7 @@
    "finished"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/instruments/piano_synth.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "finished"
@@ -1335,8 +1368,7 @@
    "player"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/instruments/piano_synth.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "starting_song",
@@ -1375,7 +1407,6 @@
    "user"
   ],
   "listeners": [
-   "code/datums/entity_state/remote_view.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -1394,8 +1425,6 @@
    "slot"
   ],
   "listeners": [
-   "code/datums/entity_state/remote_view.dm",
-   "code/datums/recursive_move.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -1414,8 +1443,7 @@
    "taker"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/lootpanel/search_object.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "taker"
@@ -1566,7 +1594,6 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/entity_state/remote_view.dm",
    "code/datums/om/library.dm",
    "code/engine/_generated/event_twins.dm"
   ],
@@ -1583,7 +1610,6 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/entity_state/remote_view.dm",
    "code/datums/om/library.dm",
    "code/engine/_generated/event_twins.dm"
   ],
@@ -1600,7 +1626,6 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/entity_state/remote_view.dm",
    "code/datums/om/library.dm",
    "code/engine/_generated/event_twins.dm"
   ],
@@ -1619,7 +1644,6 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/entity_state/remote_view.dm",
    "code/datums/om/library.dm",
    "code/engine/_generated/event_twins.dm"
   ],
@@ -1653,9 +1677,7 @@
    "scanned_atoms"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm",
-   "code/modules/research/tg/machinery/destructive_analyzer.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "scanned_atoms"
@@ -1676,8 +1698,7 @@
    "seconds_taken"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/game/machinery/doppler_array.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "epicenter",
@@ -1735,11 +1756,7 @@
   ],
   "listeners": [
    "code/datums/entity_state/materials/material_container.dm",
-   "code/engine/_generated/event_twins.dm",
-   "code/game/machinery/autolathe.dm",
-   "code/modules/mining/machine_silo.dm",
-   "code/modules/research/tg/machinery/_production.dm",
-   "code/modules/research/tg/machinery/mech_fabricator.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "item",
@@ -1762,8 +1779,7 @@
   ],
   "listeners": [
    "code/datums/entity_state/materials/material_container.dm",
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/mining/machine_silo.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "new_stack",
@@ -1867,7 +1883,6 @@
   "listeners": [
    "code/datums/entity_state/animations/dizzy.dm",
    "code/datums/entity_state/animations/jittery.dm",
-   "code/datums/entity_state/remote_view.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -1975,7 +1990,6 @@
   ],
   "fields": [],
   "listeners": [
-   "code/datums/progressbar.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [],
@@ -2071,8 +2085,7 @@
    "old_stat"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/game/machinery/camera/motion.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "new_stat",
@@ -2114,17 +2127,7 @@
   ],
   "listeners": [
    "code/datums/recursive_move.dm",
-   "code/engine/_generated/event_twins.dm",
-   "code/game/mecha/equipment/tools/shield_omni.dm",
-   "code/game/objects/items/devices/communicator/phone.dm",
-   "code/game/objects/items/devices/gps.dm",
-   "code/game/objects/items/weapons/storage/ore_bag.dm",
-   "code/modules/clothing/spacesuits/rig/modules/specific/pat_module.dm",
-   "code/modules/holomap/station_holomap.dm",
-   "code/modules/mob/living/bot/secbot.dm",
-   "code/modules/paperwork/paper_sticky.dm",
-   "code/modules/tgui/modules/appearance_changer.dm",
-   "code/modules/tgui/modules/camera.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "old_loc",
@@ -2143,7 +2146,6 @@
    "throwingdatum"
   ],
   "listeners": [
-   "code/datums/entity_state/squeak.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -2193,15 +2195,7 @@
    "code/datums/behaviours/slosh.dm",
    "code/datums/behaviours/swarming.dm",
    "code/datums/behaviours/tethered_item.dm",
-   "code/datums/connect_containers.dm",
-   "code/datums/connect_range.dm",
-   "code/datums/entity_state/geiger_sound.dm",
-   "code/datums/entity_state/overlay_lighting.dm",
-   "code/datums/entity_state/remote_view.dm",
-   "code/datums/proximity_monitor/proximity_monitor.dm",
-   "code/engine/_generated/event_twins.dm",
-   "code/game/machinery/camera/motion.dm",
-   "code/modules/lootpanel/search_object.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "old_loc",
@@ -2241,7 +2235,6 @@
    "disassembled"
   ],
   "listeners": [
-   "code/datums/entity_state/materials/material_container.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -2394,38 +2387,8 @@
    "force"
   ],
   "listeners": [
-   "code/datums/chat_message.dm",
-   "code/datums/connect_containers.dm",
-   "code/datums/connect_range.dm",
-   "code/datums/entity_state/mind_host.dm",
-   "code/datums/entity_state/overlay_lighting.dm",
-   "code/datums/entity_state/remote_view.dm",
-   "code/datums/proximity_monitor/proximity_monitor.dm",
-   "code/datums/recursive_move.dm",
    "code/engine/_generated/event_twins.dm",
-   "code/game/atoms_movable.dm",
-   "code/game/machinery/atmoalter/meter.dm",
-   "code/game/machinery/camera/motion.dm",
-   "code/game/objects/items.dm",
-   "code/game/objects/items/devices/radio/radio_service.dm",
-   "code/game/objects/items/weapons/capture_crystal.dm",
-   "code/game/objects/structures/extinguisher.dm",
-   "code/modules/events/carp_migration.dm",
-   "code/modules/events/gnat_migration.dm",
-   "code/modules/events/jellyfish_migration.dm",
-   "code/modules/events/ray_migration.dm",
-   "code/modules/events/shark_migration.dm",
-   "code/modules/events/spacefish_migration.dm",
-   "code/modules/gamemaster/event2/events/mob_spawning.dm",
-   "code/modules/holomap/station_holomap.dm",
-   "code/modules/integrated_electronics/subtypes/manipulation.dm",
-   "code/modules/lootpanel/contents.dm",
-   "code/modules/lootpanel/search_object.dm",
-   "code/modules/mob/living/silicon/robot/robot.dm",
-   "code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm",
-   "code/modules/overmap/ships/landable.dm",
-   "code/modules/shuttles/shuttle_autodock.dm",
-   "code/modules/tooltip/tooltip.dm"
+   "code/modules/mob/living/silicon/robot/robot.dm"
   ],
   "note": "most hooks only clear a reference: declare the relation and delete the hook",
   "notice_fields": [
@@ -2529,8 +2492,7 @@
   ],
   "fields": [],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/mob/living/silicon/robot/robot.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [],
   "reads_result": false,
@@ -2695,7 +2657,6 @@
    "trait"
   ],
   "listeners": [
-   "code/datums/status_effects/debuffs/fire_stacks.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -2713,7 +2674,6 @@
    "trait"
   ],
   "listeners": [
-   "code/datums/status_effects/debuffs/fire_stacks.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
@@ -2755,8 +2715,7 @@
    "action"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "usr_",
@@ -2813,9 +2772,7 @@
    "passing_entity"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/game/objects/items/ghost_hunting/trap.dm",
-   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "passing_entity"
@@ -2903,9 +2860,7 @@
    "shadow_wight"
   ],
   "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/game/objects/items/ghost_hunting/trap.dm",
-   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm"
+   "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [
    "shadow_wight"

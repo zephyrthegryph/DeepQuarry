@@ -135,7 +135,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 
 			rel_set(src, nameof(watching_mob), user)
 			dq_add_recursive_move(watching_mob())
-			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
+			observe(watching_mob(), /datum/notice/movable_attempted_move, src, then(PROC_REF(checkPosition)))
 			observe(watching_mob(), /datum/notice/qdeleting, src, then(PROC_REF(on_watcher_deleted)))
 			set_use_power(USE_POWER_ACTIVE)
 
@@ -151,7 +151,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 	if((!operable()) || !anchored || !watching_mob())
 		stopWatching()
 
-/obj/machinery/station_map/proc/checkPosition()
+/obj/machinery/station_map/proc/checkPosition(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!watching_mob() || (watching_mob().loc != loc) || (dir != watching_mob().dir))
 		stopWatching()
@@ -173,7 +173,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 				watcher.client.images -= holomap_datum.station_map // no timer on a dying mob
 			else
 				after(watcher, 5, /proc/remove_client_image, with = list(watcher, holomap_datum.station_map)) //we give it time to fade out
-		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
+		unobserve(watcher, /datum/notice/movable_attempted_move, src)
+		unobserve(watcher, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(watching_mob))
 	set_use_power(USE_POWER_IDLE)
 

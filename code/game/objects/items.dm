@@ -232,7 +232,7 @@
 	if(!action)
 		return
 
-	om_unhook(action, /datum/om/event/qdeleting, src)
+	unobserve(action, /datum/notice/qdeleting, src)
 	rel_remove(src, nameof(actions), action)
 	qdel(action)
 

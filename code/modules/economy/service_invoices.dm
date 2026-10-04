@@ -337,11 +337,12 @@
 	customer_department = _customer_department
 	provider_department = _provider_department
 	value = _value
-	om_hook(parent, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
+	observe(parent, /datum/notice/attack_self, src, then(PROC_REF(on_attack_self)))
 	observe(parent, /datum/notice/item_attack, src, then(PROC_REF(on_attack)))
 
-/datum/economic_adoption/proc/on_attack_self(obj/item/source, datum/om/event/before/attack_self/event)
+/datum/economic_adoption/proc/on_attack_self(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/attack_self/event = N
 	record_use(event.user)
 
 /datum/economic_adoption/proc/on_attack(datum/act/notice/A)

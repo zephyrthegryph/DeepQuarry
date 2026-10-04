@@ -63,7 +63,8 @@
 /datum/connect_range/proc/set_tracked(atom/new_tracked)
 	if(tracked()) //Unhook the old tracked and its surroundings
 		unregister_hooks(isturf(tracked()) ? tracked() : tracked().loc, turfs)
-		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
+		unobserve(tracked(), /datum/notice/moved, src)
+		unobserve(tracked(), /datum/notice/qdeleting, src)
 	rel_set(src, nameof(tracked), new_tracked)
 	if(!tracked())
 		return

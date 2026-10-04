@@ -306,25 +306,26 @@ CAPABILITIES(/obj/soulgem)
 // Updates the vore FX signal links to the new given belly
 /obj/soulgem/proc/update_linked_belly(obj/belly, skip_unreg = FALSE)
 	if(!belly && linked_belly())
-		om_unhook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src)
+		unobserve(linked_belly(), /datum/notice/belly_update_vore_fx, src)
 		rel_clear(src, nameof(linked_belly))
 		return
 	if(!isbelly(belly))
 		return
 	if(!linked_belly())
 		rel_set(src, nameof(linked_belly), belly)
-		om_hook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src, PROC_REF(on_belly_vore_fx_event))
+		observe(linked_belly(), /datum/notice/belly_update_vore_fx, src, then(PROC_REF(on_belly_vore_fx_event)))
 		return
 	if(belly != linked_belly())
 		if(!skip_unreg)
-			om_unhook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src)
+			unobserve(linked_belly(), /datum/notice/belly_update_vore_fx, src)
 		rel_set(src, nameof(linked_belly), belly)
-		om_hook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src, PROC_REF(on_belly_vore_fx_event))
+		observe(linked_belly(), /datum/notice/belly_update_vore_fx, src, then(PROC_REF(on_belly_vore_fx_event)))
 
 // Handles the vore fx updates for the captured souls
 /// Event wrapper: the linked belly refreshed its vore fx.
-/obj/soulgem/proc/on_belly_vore_fx_event(obj/belly/source, datum/om/event/before/belly_update_vore_fx/event)
+/obj/soulgem/proc/on_belly_vore_fx_event(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/belly_update_vore_fx/event = N
 	soulgem_show_vfx(event.volume)
 
 /obj/soulgem/proc/soulgem_show_vfx(severity = 0)

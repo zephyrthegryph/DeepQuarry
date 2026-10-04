@@ -66,16 +66,20 @@
 	src.start_experiment_spec = start_experiment_spec
 
 	for(var/event_path in experiment_events)
-		om_hook(owner, event_path, src, experiment_events[event_path])
+		if(ispath(event_path, /datum/notice))
+			observe(owner, event_path, src, then(experiment_events[event_path]))
+		else
+			// The handheld scanner's item_pre_attack handler vetoes the attack, which only the om event can carry.
+			om_hook(owner, event_path, src, experiment_events[event_path])
 
 	// Determine UI display mode
 	switch(config_mode)
 		if(EXPERIMENT_CONFIG_ATTACKSELF)
-			om_hook(owner, /datum/om/event/before/attack_self, src, PROC_REF(on_config_event))
+			observe(owner, /datum/notice/attack_self, src, then(PROC_REF(on_config_event)))
 		if(EXPERIMENT_CONFIG_ALTCLICK)
-			om_hook(owner, /datum/om/event/before/click_alt, src, PROC_REF(on_config_event))
+			observe(owner, /datum/notice/click_alt, src, then(PROC_REF(on_config_event)))
 		if(EXPERIMENT_CONFIG_UI)
-			om_hook(owner, /datum/om/event/ui_act, src, PROC_REF(ui_handle_experiment))
+			observe(owner, /datum/notice/ui_act, src, then(PROC_REF(ui_handle_experiment)))
 
 	// Auto connect to the first visible techweb (useful for always active handlers)
 	// Note this won't work at the moment for non-machines that have been included
@@ -150,8 +154,10 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hooks on destructive scans to try and run a destructive analyzer experiment.
  */
-/datum/experiment_handler/proc/try_run_destructive_experiment(obj/source, datum/om/event/machinery_destructive_scan/event)
+/datum/experiment_handler/proc/try_run_destructive_experiment(datum/act/notice/N)
 	EVENT_HANDLER
+	var/obj/source = N.target
+	var/datum/notice/machinery_destructive_scan/event = N
 	var/atom/scan_target = event.scanned_atoms
 
 	if(action_experiment(source, scan_target))
@@ -161,14 +167,15 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hooks on to RD server to try and run a spectral experiment.
  */
-/datum/experiment_handler/proc/try_run_spectral_experiment(obj/source, datum/om/event/event)
+/datum/experiment_handler/proc/try_run_spectral_experiment(datum/act/notice/N)
 	EVENT_HANDLER
+	var/obj/source = N.target
 	var/atom/scan_target
-	if(istype(event, /datum/om/event/world_ghost_captured))
-		var/datum/om/event/world_ghost_captured/ghost_event = event
+	if(istype(N, /datum/notice/world_ghost_captured))
+		var/datum/notice/world_ghost_captured/ghost_event = N
 		scan_target = ghost_event.passing_entity
-	else if(istype(event, /datum/om/event/world_wight_captured))
-		var/datum/om/event/world_wight_captured/wight_event = event
+	else if(istype(N, /datum/notice/world_wight_captured))
+		var/datum/notice/world_wight_captured/wight_event = N
 		scan_target = wight_event.shadow_wight
 
 	if(action_experiment(source, scan_target))
@@ -178,8 +185,10 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hooks on doppler array scans to try and run a explosive experiment.
  */
-/datum/experiment_handler/proc/try_run_ordinance_experiment(obj/source, datum/om/event/machinery_explosion_detected/event)
+/datum/experiment_handler/proc/try_run_ordinance_experiment(datum/act/notice/N)
 	EVENT_HANDLER
+	var/obj/source = N.target
+	var/datum/notice/machinery_explosion_detected/event = N
 
 	if(action_experiment(source, event.epicenter, event.devastation_range, event.heavy_impact_range, event.light_impact_range, event.seconds_taken))
 		play_sfx(source, SFX_MACHINES_PING, 0.5)
@@ -235,8 +244,9 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hook for handling UI interaction via signals
  */
-/datum/experiment_handler/proc/ui_handle_experiment(datum/source, datum/om/event/ui_act/event)
+/datum/experiment_handler/proc/ui_handle_experiment(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/ui_act/event = N
 	switch(event.action)
 		if("open_experiments")
 			configure_experiment(null, event.usr_)
@@ -247,14 +257,15 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  * Arguments:
  * * user - The user to show the experiment configuration panel to
  */
-/datum/experiment_handler/proc/on_config_event(datum/source, datum/om/event/event)
+/datum/experiment_handler/proc/on_config_event(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/source = N.target
 	var/mob/user
-	if(istype(event, /datum/om/event/before/attack_self))
-		var/datum/om/event/before/attack_self/self_event = event
+	if(istype(N, /datum/notice/attack_self))
+		var/datum/notice/attack_self/self_event = N
 		user = self_event.user
-	else if(istype(event, /datum/om/event/before/click_alt))
-		var/datum/om/event/before/click_alt/alt_event = event
+	else if(istype(N, /datum/notice/click_alt))
+		var/datum/notice/click_alt/alt_event = N
 		user = alt_event.mob
 	configure_experiment(source, user)
 

@@ -46,7 +46,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 /obj/item/gps/proc/update_holder()
 
 	if(holder_ref() && loc != holder_ref())
-		om_unhook(holder_ref(), /datum/om/event/movable_attempted_move, src)
+		unobserve(holder_ref(), /datum/notice/movable_attempted_move, src)
 		holder_ref().client?.screen -= compass
 		rel_clear(src, nameof(holder))
 

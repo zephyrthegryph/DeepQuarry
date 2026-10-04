@@ -61,7 +61,7 @@
 		add_prog_bar_image_to_client()
 
 	observe(user(), /datum/notice/qdeleting, src, then(PROC_REF(on_user_delete)))
-	om_hook(user(), /datum/om/event/mob_logout, src, PROC_REF(clean_user_client))
+	observe(user(), /datum/notice/mob_logout, src, then(PROC_REF(clean_user_client)))
 	observe(user(), /datum/notice/mob_login, src, then(PROC_REF(on_user_login)))
 
 	if(starting_amount)
@@ -99,7 +99,7 @@
 	qdel(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
-/datum/progressbar/proc/clean_user_client(datum/source, datum/om/event/mob_logout/event)
+/datum/progressbar/proc/clean_user_client(datum/act/notice/N)
 	EVENT_HANDLER
 
 	if(!user_client()) //Disconnected, already gone.

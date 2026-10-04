@@ -19,13 +19,13 @@
 
 /obj/item/instrument/piano_synth/headphones/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/instrument_start, src, PROC_REF(start_playing))
-	om_hook(src, /datum/om/event/instrument_end, src, PROC_REF(stop_playing))
+	observe(src, /datum/notice/instrument_start, src, then(PROC_REF(start_playing)))
+	observe(src, /datum/notice/instrument_end, src, then(PROC_REF(stop_playing)))
 
 /**
  * Called by a component signal when our song starts playing.
  */
-/obj/item/instrument/piano_synth/headphones/proc/start_playing(datum/source, datum/om/event/instrument_start/event)
+/obj/item/instrument/piano_synth/headphones/proc/start_playing(datum/act/notice/N)
 	EVENT_HANDLER
 
 	icon_state = "[initial(icon_state)]_on"
@@ -39,7 +39,7 @@
 /**
  * Called by a component signal when our song stops playing.
  */
-/obj/item/instrument/piano_synth/headphones/proc/stop_playing(datum/source, datum/om/event/instrument_end/event)
+/obj/item/instrument/piano_synth/headphones/proc/stop_playing(datum/act/notice/N)
 	EVENT_HANDLER
 
 	icon_state = "[initial(icon_state)]"

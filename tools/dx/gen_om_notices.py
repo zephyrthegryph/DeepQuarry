@@ -41,6 +41,24 @@ GUARDS = {
 }
 # After-facts whose listeners mostly only clear references: relations do that now (delete the hook).
 RELATION_CLEARED = {"qdeleting"}
+# Veto events whose remaining listeners only watch: they get a notice twin too (the twin is published when the event is emitted, before the
+# action, so a watcher hears it exactly when its om_hook did). The emit sites and the listeners that veto or accumulate stay as they are.
+NOTIFY_BEFORE = {
+    "before/in_range_of_irradiation": "in_range_of_irradiation",
+    "before/movable_z_changed": "movable_z_changed",
+    "before/living_status_sleep": "living_status_sleep",
+    "before/atom_extinguish": "atom_extinguish",
+    "before/living_turf_collision": "living_turf_collision",
+    "before/belly_update_vore_fx": "belly_update_vore_fx",
+    "before/atom_take_damage": "atom_take_damage",
+    "before/attack_self": "attack_self",
+    "before/click_alt": "click_alt",
+    "before/movable_bump": "movable_bump",
+    "before/robot_item_attack": "robot_item_attack",
+    "before/attack_hand": "attack_hand",
+    "before/item_pre_attack": "item_pre_attack",
+    "before/attackby": "attackby",
+}
 # Base /datum/notice fields an event field may not shadow.
 RESERVED = {"source", "data", "type", "parent_type", "vars", "tag", "pool_state", "pool_max_free", "holder", "target", "outcome", "cap", "activation", "op_key"}
 
@@ -134,8 +152,14 @@ def build():
             return sorted({site.rsplit(":", 1)[0] for site in sites})
         row = {"fields": fields, "emits": files(emits), "listeners": files(listeners), "tests": files(r.get("test", [])),
                "reads_result": reads_result(emits)}
-        if not listeners:
+        if not listeners and name not in NOTIFY_BEFORE:
             row["target"] = "delete" if not r.get("test") else "review"
+        elif name in NOTIFY_BEFORE:
+            notice = "/datum/notice/" + NOTIFY_BEFORE[name]
+            row["target"] = notice
+            row["notice_fields"] = [f if f not in RESERVED else f + "_" for f in fields]
+            row["note"] = "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event"
+            notices.append((notice, name, fields))
         elif name.startswith("before/"):
             row["target"] = GUARDS.get(name, "op" if name.split("/", 1)[1] in ("item_pre_attack", "robot_item_attack", "catch_throw") else "review")
         else:

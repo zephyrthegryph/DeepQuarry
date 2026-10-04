@@ -104,7 +104,7 @@ CAPABILITIES(/datum/event/spacefish_migration)
 	EVENT_HANDLER
 	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_fish), M)
-	om_unhook(M, /datum/om/event/qdeleting, src)
+	unobserve(M, /datum/notice/qdeleting, src)
 
 /datum/event/spacefish_migration/end()
 	. = ..()

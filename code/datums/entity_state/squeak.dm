@@ -43,8 +43,10 @@
 /datum/squeak/New(obj/item/clothing/shoes/owner, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
 	..()
 	rel_set(src, nameof(owner), owner)
-	om_hook(owner, list(/datum/om/event/atom_entered, /datum/om/event/before/movable_bump, /datum/om/event/movable_impact), src, PROC_REF(on_squeak_event))
-	om_hook(owner, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
+	observe(owner, /datum/notice/atom_entered, src, then(PROC_REF(on_squeak_event)))
+	observe(owner, /datum/notice/movable_bump, src, then(PROC_REF(on_squeak_event)))
+	observe(owner, /datum/notice/movable_impact, src, then(PROC_REF(on_squeak_event)))
+	observe(owner, /datum/notice/attack_self, src, then(PROC_REF(on_attack_self)))
 	observe(owner, /datum/notice/item_equipped, src, then(PROC_REF(on_equip)))
 	observe(owner, /datum/notice/item_dropped, src, then(PROC_REF(on_drop)))
 	observe(owner, on_notice(/datum/notice/shoes_step), src, PROC_REF(on_step))
@@ -61,7 +63,7 @@
 	if(isnum(extrarange))
 		sound_extra_range = extrarange
 
-/datum/squeak/proc/on_squeak_event(datum/source, datum/om/event/event)
+/datum/squeak/proc/on_squeak_event(datum/act/notice/N)
 	EVENT_HANDLER
 	play_squeak()
 
@@ -105,7 +107,7 @@
 	if(isturf(current_parent?.loc))
 		play_squeak()
 
-/datum/squeak/proc/on_attack_self(datum/source, datum/om/event/before/attack_self/event)
+/datum/squeak/proc/on_attack_self(datum/act/notice/N)
 	EVENT_HANDLER
 	use_squeak()
 

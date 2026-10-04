@@ -439,8 +439,8 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 //The clean up procs!
 /obj/item/capture_crystal/proc/mob_was_deleted(datum/act/notice/A)
 	EVENT_HANDLER
-	om_unhook(bound_mob, /datum/om/event/qdeleting, src)
-	om_unhook(owner, /datum/om/event/qdeleting, src)
+	unobserve(bound_mob, /datum/notice/qdeleting, src)
+	unobserve(owner, /datum/notice/qdeleting, src)
 	bound_mob.capture_caught = FALSE
 	rel_clear(src, nameof(bound_mob))
 	rel_clear(src, nameof(owner))
@@ -450,7 +450,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 
 /obj/item/capture_crystal/proc/owner_was_deleted(datum/act/notice/A)
 	EVENT_HANDLER
-	om_unhook(owner, /datum/om/event/qdeleting, src)
+	unobserve(owner, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(owner))
 	active = FALSE
 	update_icon()

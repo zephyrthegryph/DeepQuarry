@@ -92,11 +92,11 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 
 /datum/artifact_master/proc/DoRegistry()
 	var/atom/H = holder()
-	om_hook(H, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
+	observe(H, /datum/notice/attackby, src, then(PROC_REF(on_attackby)))
 	om_hook(H, /datum/om/event/before/atom_ex_act, src, PROC_REF(on_exact))
 	om_hook(H, /datum/om/event/before/atom_bullet_act, src, PROC_REF(on_bullet))
-	om_hook(H, /datum/om/event/before/attack_hand, src, PROC_REF(on_attack_hand))
-	om_hook(H, /datum/om/event/before/movable_bump, src, PROC_REF(on_bump))
+	observe(H, /datum/notice/attack_hand, src, then(PROC_REF(on_attack_hand)))
+	observe(H, /datum/notice/movable_bump, src, then(PROC_REF(on_bump)))
 	observe(H, /datum/notice/atom_bumped, src, then(PROC_REF(on_bumped)))
 	observe(H, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 	observe(H, /datum/notice/reagent_expose_obj, src, then(PROC_REF(on_reagent)))
@@ -104,6 +104,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 /datum/artifact_master/proc/do_unregister()
 	var/atom/H = holder()
 	if(H)
+		unobserve(H, null, src)
 		om_unhook(H, null, src)
 
 /datum/artifact_master/proc/get_active_effects()
@@ -263,8 +264,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 
 	return
 
-/datum/artifact_master/proc/on_bump(datum/source, datum/om/event/before/movable_bump/event)
+/datum/artifact_master/proc/on_bump(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/movable_bump/event = N
 	var/atom/bumped = event.atom
 	var/warn = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
@@ -316,8 +318,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(warn && isliving(M))
 		to_chat(M, span_filter_notice(span_bold("You accidentally touch \the [holder()].")))
 
-/datum/artifact_master/proc/on_attack_hand(datum/source, datum/om/event/before/attack_hand/event)
+/datum/artifact_master/proc/on_attack_hand(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/attack_hand/event = N
 	var/mob/living/user = event.user
 	if(!istype(user))
 		return
@@ -345,8 +348,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	else
 		to_chat(user, span_filter_notice(span_bold("You touch [holder()],") + " [pick("but nothing of note happens","but nothing happens","but nothing interesting happens","but you notice nothing different","but nothing seems to have happened")]."))
 
-/datum/artifact_master/proc/on_attackby(datum/source, datum/om/event/before/attackby/event)
+/datum/artifact_master/proc/on_attackby(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/attackby/event = N
 	var/obj/item/W = event.item
 
 	for(var/datum/artifact_effect/my_effect in my_effects)

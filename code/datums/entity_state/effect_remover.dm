@@ -27,10 +27,11 @@
 	src.on_clear_callback = on_clear_callback
 	src.effects_we_clear = typecacheof(effects_we_clear)
 	src.time_to_remove = time_to_remove
-	om_hook(owner, /datum/om/event/before/item_pre_attack, src, PROC_REF(try_remove_effect))
+	observe(owner, /datum/notice/item_pre_attack, src, then(PROC_REF(try_remove_effect)))
 
-/datum/effect_remover/proc/try_remove_effect(datum/source, datum/om/event/before/item_pre_attack/event)
+/datum/effect_remover/proc/try_remove_effect(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/item_pre_attack/event = N
 	var/atom/target = event.target
 	var/mob/living/user = event.user
 

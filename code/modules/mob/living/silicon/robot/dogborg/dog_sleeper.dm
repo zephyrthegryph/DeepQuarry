@@ -60,7 +60,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /obj/item/dogborg/sleeper/Initialize(mapload)
 	if(analyzer) //Destructive analysis
 		var/static/list/destructive_events = list(
-			/datum/om/event/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
+			/datum/notice/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
 		)
 		new /datum/experiment_handler(src, \
 			config_mode = EXPERIMENT_CONFIG_ALTCLICK, \

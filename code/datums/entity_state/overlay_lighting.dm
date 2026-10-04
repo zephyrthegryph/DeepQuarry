@@ -149,16 +149,14 @@ CAPABILITIES(/datum/overlay_lighting)
 	set_parent_attached_to(null)
 	set_holder(null)
 	clean_old_turfs()
-	om_unhook(owner, list(
-		/datum/om/event/moved,
-		/datum/om/event/atom_update_light_range,
-		/datum/om/event/atom_update_light_power,
-		/datum/om/event/atom_update_light_color,
-		/datum/om/event/atom_update_light_on,
-		/datum/om/event/atom_update_light_flags,
-		/datum/om/event/atom_used_in_craft,
-		/datum/om/event/atom_dir_change,
-		), src)
+	unobserve(owner, /datum/notice/moved, src)
+	unobserve(owner, /datum/notice/atom_update_light_range, src)
+	unobserve(owner, /datum/notice/atom_update_light_power, src)
+	unobserve(owner, /datum/notice/atom_update_light_color, src)
+	unobserve(owner, /datum/notice/atom_update_light_on, src)
+	unobserve(owner, /datum/notice/atom_update_light_flags, src)
+	unobserve(owner, /datum/notice/atom_used_in_craft, src)
+	unobserve(owner, /datum/notice/atom_dir_change, src)
 	if(overlay_lighting_flags & LIGHTING_ON)
 		turn_off()
 
@@ -237,13 +235,15 @@ CAPABILITIES(/datum/overlay_lighting)
 	rel_set(src, nameof(parent_attached_to), new_parent_attached_to)
 	if(.)
 		var/atom/movable/old_parent_attached_to = .
-		om_unhook(old_parent_attached_to, list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
+		unobserve(old_parent_attached_to, /datum/notice/qdeleting, src)
+		unobserve(old_parent_attached_to, /datum/notice/moved, src)
 		if(old_parent_attached_to == current_holder())
 			observe(old_parent_attached_to, /datum/notice/qdeleting, src, then(PROC_REF(on_holder_qdel)))
 			observe(old_parent_attached_to, /datum/notice/moved, src, then(PROC_REF(on_holder_moved)))
 	if(parent_attached_to())
 		if(parent_attached_to() == current_holder())
-			om_unhook(current_holder(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
+			unobserve(current_holder(), /datum/notice/qdeleting, src)
+			unobserve(current_holder(), /datum/notice/moved, src)
 		observe(parent_attached_to(), /datum/notice/qdeleting, src, then(PROC_REF(on_parent_attached_to_qdel)))
 		observe(parent_attached_to(), /datum/notice/moved, src, then(PROC_REF(on_parent_attached_to_moved)))
 	check_holder()
@@ -256,7 +256,8 @@ CAPABILITIES(/datum/overlay_lighting)
 		new_holder = null // Forbid crates from holding lights, this only applies to contents 'holding', when you put a flashlight into a crate for example. Not crates with lights... Not that there are any.
 	if(current_holder())
 		if(current_holder() != owner && current_holder() != parent_attached_to())
-			om_unhook(current_holder(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
+			unobserve(current_holder(), /datum/notice/qdeleting, src)
+			unobserve(current_holder(), /datum/notice/moved, src)
 			if(directional)
 				unobserve(current_holder(), /datum/notice/atom_dir_change, src)
 		if(overlay_lighting_flags & LIGHTING_ON)
@@ -292,7 +293,8 @@ CAPABILITIES(/datum/overlay_lighting)
 ///Called when the current_holder is qdeleted, to remove the light effect.
 /datum/overlay_lighting/proc/on_holder_qdel(datum/act/notice/A)
 	EVENT_HANDLER
-	om_unhook(current_holder(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
+	unobserve(current_holder(), /datum/notice/qdeleting, src)
+	unobserve(current_holder(), /datum/notice/moved, src)
 	if(directional)
 		unobserve(current_holder(), /datum/notice/atom_dir_change, src)
 	set_holder(null)
@@ -324,7 +326,8 @@ CAPABILITIES(/datum/overlay_lighting)
 ///Called when the current_holder is qdeleted, to remove the light effect.
 /datum/overlay_lighting/proc/on_parent_attached_to_qdel(datum/act/notice/A)
 	EVENT_HANDLER
-	om_unhook(parent_attached_to(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
+	unobserve(parent_attached_to(), /datum/notice/qdeleting, src)
+	unobserve(parent_attached_to(), /datum/notice/moved, src)
 	if(directional)
 		unobserve(parent_attached_to(), /datum/notice/atom_dir_change, src)
 	if(parent_attached_to() == current_holder())

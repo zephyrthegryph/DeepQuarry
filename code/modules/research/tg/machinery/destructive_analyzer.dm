@@ -30,7 +30,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 
 	//Destructive analysis
 	var/static/list/destructive_events = list(
-		/datum/om/event/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
+		/datum/notice/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
 	)
 
 	new /datum/experiment_handler(src, \

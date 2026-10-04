@@ -28,11 +28,9 @@
 		// Lest we find ourselves here again, this is intentionally stupid.
 		// It tracks items going out and user actions, otherwise they can refresh the lootpanel.
 		// If this is to be made to track everything, we'll need to make a new signal to specifically create/delete a search object
-		om_hook(item, list(
-			/datum/om/event/item_pickup,
-			/datum/om/event/moved,
-			/datum/om/event/qdeleting,
-			), src, PROC_REF(on_item_moved))
+		observe(item, /datum/notice/item_pickup, src, then(PROC_REF(on_item_moved)))
+		observe(item, /datum/notice/moved, src, then(PROC_REF(on_item_moved)))
+		observe(item, /datum/notice/qdeleting, src, then(PROC_REF(on_item_moved)))
 
 	// Icon generation conditions //////////////
 	// Condition 1: Icon is complex
@@ -63,7 +61,7 @@
 	icon = costly_icon2html(item(), owner, sourceonly = TRUE)
 
 /// Parent item has been altered, search object no longer valid
-/datum/search_object/proc/on_item_moved(atom/source, datum/om/event/event)
+/datum/search_object/proc/on_item_moved(datum/act/notice/N)
 	EVENT_HANDLER
 
 	if(QDELETED(src))

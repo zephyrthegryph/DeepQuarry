@@ -136,7 +136,7 @@ CAPABILITIES(/obj/item/shield_projector)
 	set_light(0)
 	active = FALSE
 
-/obj/item/shield_projector/proc/update_shield_positions()
+/obj/item/shield_projector/proc/update_shield_positions(datum/act/notice/N)
 	EVENT_HANDLER
 	for(var/obj/effect/directional_shield/S in active_shields)
 		S.relocate()

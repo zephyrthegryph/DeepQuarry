@@ -451,6 +451,7 @@
 #include "dq_e1_declare_tests.dm"
 #include "dq_e3_stats_tests.dm"
 #include "dq_e4_actions_tests.dm"
+#include "dq_hook_hand_tests.dm"
 #include "dq_e2_parts_tests.dm"
 #include "dq_lib_tests.dm"
 #include "dq_lib_structures_tests.dm"

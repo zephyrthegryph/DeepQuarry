@@ -96,22 +96,22 @@ UI_ACT_PROC(/datum/tgui_module/uav, ui_act_power_uav)
 
 	signal_strength = 0
 	if(current_uav())
-		om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
+		unobserve(current_uav(), /datum/notice/movable_z_changed, src)
 	rel_set(src, nameof(current_uav), U)
 	if(U)
-		om_hook(U, /datum/om/event/before/movable_z_changed, src, PROC_REF(current_uav_changed_z))
+		observe(U, /datum/notice/movable_z_changed, src, then(PROC_REF(current_uav_changed_z)))
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
 /datum/tgui_module/uav/proc/clear_current()
 	if(!current_uav())
 		return
 
-	om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
+	unobserve(current_uav(), /datum/notice/movable_z_changed, src)
 	signal_strength = 0
 	rel_clear(src, nameof(current_uav))
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
-/datum/tgui_module/uav/proc/current_uav_changed_z(datum/source, datum/om/event/before/movable_z_changed/event)
+/datum/tgui_module/uav/proc/current_uav_changed_z(datum/act/notice/N)
 	EVENT_HANDLER
 	signal_strength = get_signal_to(current_uav())
 	if(!signal_strength)

@@ -469,8 +469,10 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 
 /// affliction_severity_changed event: republish trial eligibility and emit
 /// the measured treatment outcome when a condition improves.
-/datum/system/contracts/proc/on_affliction_severity_changed(mob/living/carbon/human/patient, datum/om/event/affliction_severity_changed/event)
+/datum/system/contracts/proc/on_affliction_severity_changed(datum/act/notice/N)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/patient = N.target
+	var/datum/notice/affliction_severity_changed/event = N
 	var/datum/affliction/A = event.affliction
 	var/old_severity = event.old_severity
 	if(!istype(patient) || !affliction_reports_clinical_outcomes(A))
@@ -499,8 +501,10 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 /// body_afflictions_changed event: an affliction can join or leave a body
 /// without a severity change (an organ carrying afflictions is reattached, an
 /// affliction is cured or cleared outright). Keep eligibility in step.
-/datum/system/contracts/proc/on_body_afflictions_changed(mob/living/carbon/human/patient, datum/om/event/body_afflictions_changed/event)
+/datum/system/contracts/proc/on_body_afflictions_changed(datum/act/notice/N)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/patient = N.target
+	var/datum/notice/body_afflictions_changed/event = N
 	var/datum/affliction/A = event.affliction
 	var/added = event.added
 	if(!affliction_reports_clinical_outcomes(A))

@@ -137,6 +137,128 @@
 /datum/notice/atom_used_in_craft/fill(result_)
 	src.result_ = result_
 
+/// From /datum/om/event/before/atom_extinguish.
+/datum/notice/atom_extinguish
+
+/// From /datum/om/event/before/atom_take_damage.
+/datum/notice/atom_take_damage
+	var/damage_amount
+	var/damage_type
+	var/damage_flag
+	var/sound_effect
+	var/attack_dir
+	var/aurmor_penetration
+
+/datum/notice/atom_take_damage/fill(damage_amount, damage_type, damage_flag, sound_effect, attack_dir, aurmor_penetration)
+	src.damage_amount = damage_amount
+	src.damage_type = damage_type
+	src.damage_flag = damage_flag
+	src.sound_effect = sound_effect
+	src.attack_dir = attack_dir
+	src.aurmor_penetration = aurmor_penetration
+
+/// From /datum/om/event/before/attack_hand.
+/datum/notice/attack_hand
+	var/user
+
+/datum/notice/attack_hand/fill(user)
+	src.user = user
+
+/// From /datum/om/event/before/attack_self.
+/datum/notice/attack_self
+	var/user
+
+/datum/notice/attack_self/fill(user)
+	src.user = user
+
+/// From /datum/om/event/before/attackby.
+/datum/notice/attackby
+	var/item
+	var/user
+	var/params
+
+/datum/notice/attackby/fill(item, user, params)
+	src.item = item
+	src.user = user
+	src.params = params
+
+/// From /datum/om/event/before/belly_update_vore_fx.
+/datum/notice/belly_update_vore_fx
+	var/volume
+
+/datum/notice/belly_update_vore_fx/fill(volume)
+	src.volume = volume
+
+/// From /datum/om/event/before/click_alt.
+/datum/notice/click_alt
+	var/mob
+
+/datum/notice/click_alt/fill(mob)
+	src.mob = mob
+
+/// From /datum/om/event/before/in_range_of_irradiation.
+/datum/notice/in_range_of_irradiation
+	var/pulse_information
+	var/insulation_to_target
+
+/datum/notice/in_range_of_irradiation/fill(pulse_information, insulation_to_target)
+	src.pulse_information = pulse_information
+	src.insulation_to_target = insulation_to_target
+
+/// From /datum/om/event/before/item_pre_attack.
+/datum/notice/item_pre_attack
+	var/target_
+	var/user
+	var/params
+
+/datum/notice/item_pre_attack/fill(target_, user, params)
+	src.target_ = target_
+	src.user = user
+	src.params = params
+
+/// From /datum/om/event/before/living_status_sleep.
+/datum/notice/living_status_sleep
+	var/amount
+
+/datum/notice/living_status_sleep/fill(amount)
+	src.amount = amount
+
+/// From /datum/om/event/before/living_turf_collision.
+/datum/notice/living_turf_collision
+	var/t
+	var/speed
+
+/datum/notice/living_turf_collision/fill(t, speed)
+	src.t = t
+	src.speed = speed
+
+/// From /datum/om/event/before/movable_bump.
+/datum/notice/movable_bump
+	var/atom
+
+/datum/notice/movable_bump/fill(atom)
+	src.atom = atom
+
+/// From /datum/om/event/before/movable_z_changed.
+/datum/notice/movable_z_changed
+	var/old_z
+	var/new_z
+
+/datum/notice/movable_z_changed/fill(old_z, new_z)
+	src.old_z = old_z
+	src.new_z = new_z
+
+/// From /datum/om/event/before/robot_item_attack.
+/datum/notice/robot_item_attack
+	var/item
+	var/user
+	var/params
+
+/datum/notice/robot_item_attack/fill(item, user, params)
+	src.item = item
+	src.user = user
+	src.params = params
+
 /// From /datum/om/event/body_afflictions_changed.
 /datum/notice/body_afflictions_changed
 	var/affliction

@@ -34,7 +34,7 @@
 /**
  * Sets up the event hooks and fills the list of materials with the appropriate references.
  * container_events: list(event path = proc ref on new_owner), hooked on this container
- * (/datum/om/event/matcontainer_item_consumed, /datum/om/event/matcontainer_stack_retrieved).
+ * (/datum/notice/matcontainer_item_consumed, /datum/notice/matcontainer_stack_retrieved).
  */
 /datum/material_container/New(
 	atom/new_owner,
@@ -73,7 +73,7 @@
 
 	if(length(container_events))
 		for(var/event_path in container_events)
-			om_hook(src, event_path, owner, container_events[event_path])
+			observe(src, event_path, owner, then(container_events[event_path]))
 
 	// can we insert into this container
 	if(!(mat_container_flags & MATCONTAINER_NO_INSERT))
@@ -81,18 +81,19 @@
 
 	//to see available materials
 	if(mat_container_flags & MATCONTAINER_EXAMINE)
-		om_hook(owner, /datum/om/event/examine, src, PROC_REF(on_examine))
+		observe(owner, /datum/notice/examine, src, then(PROC_REF(on_examine)))
 
 	//drop sheets when object is deconstructed but not deleted
-	om_hook(owner, /datum/om/event/obj_deconstruct, src, PROC_REF(drop_sheets))
+	observe(owner, /datum/notice/obj_deconstruct, src, then(PROC_REF(drop_sheets)))
 
-/datum/material_container/proc/drop_sheets(datum/source, datum/om/event/obj_deconstruct/event)
+/datum/material_container/proc/drop_sheets(datum/act/notice/N)
 	EVENT_HANDLER
 
 	retrieve_all()
 
-/datum/material_container/proc/on_examine(datum/source, datum/om/event/examine/event)
+/datum/material_container/proc/on_examine(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/examine/event = N
 	var/list/examine_texts = event.texts
 
 	for(var/datum/material/M as anything in materials)
@@ -105,9 +106,9 @@
 	. = ..()
 	if(var_name == NAMEOF(src, mat_container_flags) && owner)
 		if(!(old_flags & MATCONTAINER_EXAMINE) && mat_container_flags & MATCONTAINER_EXAMINE)
-			om_hook(owner, /datum/om/event/examine, src, PROC_REF(on_examine))
+			observe(owner, /datum/notice/examine, src, then(PROC_REF(on_examine)))
 		else if(old_flags & MATCONTAINER_EXAMINE && !(mat_container_flags & MATCONTAINER_EXAMINE))
-			om_unhook(owner, /datum/om/event/examine, src)
+			unobserve(owner, /datum/notice/examine, src)
 
 		if(old_flags & MATCONTAINER_NO_INSERT && !(mat_container_flags & MATCONTAINER_NO_INSERT))
 			om_hook(owner, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))

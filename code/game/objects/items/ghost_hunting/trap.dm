@@ -31,8 +31,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 	rel_set(src, nameof(ghost_reporter), new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
 
 	var/static/list/ghost_events = list(
-		/datum/om/event/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
-		/datum/om/event/world_wight_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
+		/datum/notice/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
+		/datum/notice/world_wight_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
 	)
 
 	new /datum/experiment_handler(src, \

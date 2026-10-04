@@ -316,9 +316,9 @@ CAPABILITIES(/turf/simulated/shuttle)
 
 /turf/simulated/floor/tiled/material/uranium/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/atom_propagate_rad_pulse, src, PROC_REF(radiate))
+	observe(src, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(radiate)))
 
-/turf/simulated/floor/tiled/material/uranium/proc/radiate()
+/turf/simulated/floor/tiled/material/uranium/proc/radiate(datum/act/notice/N)
 	EVENT_HANDLER
 	if(active)
 		return

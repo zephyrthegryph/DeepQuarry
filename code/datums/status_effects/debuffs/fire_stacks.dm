@@ -271,7 +271,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
  */
 
 /// Hooked to before/atom_extinguish on the owner.
-/datum/status_effect/fire_handler/fire_stacks/proc/on_extinguish_event(datum/source, datum/om/event/before/atom_extinguish/event)
+/datum/status_effect/fire_handler/fire_stacks/proc/on_extinguish_event(datum/act/notice/N)
 	EVENT_HANDLER
 	extinguish()
 
@@ -293,7 +293,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 
 /datum/status_effect/fire_handler/fire_stacks/on_apply()
 	. = ..()
-	om_hook(owner, /datum/om/event/before/atom_extinguish, src, PROC_REF(on_extinguish_event))
+	observe(owner, /datum/notice/atom_extinguish, src, then(PROC_REF(on_extinguish_event)))
 	owner.update_fire()
 
 /datum/status_effect/fire_handler/fire_stacks/proc/add_fire_overlay(mob/living/source)
@@ -316,7 +316,8 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 
 /datum/status_effect/fire_handler/wet_stacks/on_apply()
 	. = ..()
-	om_hook(owner, list(/datum/om/event/trait_gained, /datum/om/event/trait_lost), src, PROC_REF(on_owner_trait_changed))
+	observe(owner, /datum/notice/trait_gained, src, then(PROC_REF(on_owner_trait_changed)))
+	observe(owner, /datum/notice/trait_lost, src, then(PROC_REF(on_owner_trait_changed)))
 	update_wet_stack_modifier()
 	if(has_trait(owner, TRAIT_SLIPPERY_WHEN_WET))
 		become_slippery()
@@ -332,16 +333,16 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 
 /// Trait gain/loss on the owner: TRAIT_WET_FOR_LONGER retunes the stack
 /// modifier, TRAIT_SLIPPERY_WHEN_WET toggles slipperiness.
-/datum/status_effect/fire_handler/wet_stacks/proc/on_owner_trait_changed(datum/source, datum/om/event/event)
+/datum/status_effect/fire_handler/wet_stacks/proc/on_owner_trait_changed(datum/act/notice/N)
 	EVENT_HANDLER
-	if(istype(event, /datum/om/event/trait_gained))
-		var/datum/om/event/trait_gained/gained = event
+	if(istype(N, /datum/notice/trait_gained))
+		var/datum/notice/trait_gained/gained = N
 		if(gained.trait == TRAIT_WET_FOR_LONGER)
 			update_wet_stack_modifier()
 		else if(gained.trait == TRAIT_SLIPPERY_WHEN_WET)
 			become_slippery()
-	else if(istype(event, /datum/om/event/trait_lost))
-		var/datum/om/event/trait_lost/lost = event
+	else if(istype(N, /datum/notice/trait_lost))
+		var/datum/notice/trait_lost/lost = N
 		if(lost.trait == TRAIT_WET_FOR_LONGER)
 			update_wet_stack_modifier()
 		else if(lost.trait == TRAIT_SLIPPERY_WHEN_WET)

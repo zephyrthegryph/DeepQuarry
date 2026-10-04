@@ -44,6 +44,6 @@
 /datum/lootpanel/proc/reset_contents()
 	for(var/datum/search_object/index as anything in searchables)
 		if(!QDELETED(index))
-			om_unhook(index, /datum/om/event/qdeleting, src)
+			unobserve(index, /datum/notice/qdeleting, src)
 	// the search objects are ours: deleting them also empties to_image (a relation list)
 	own_clear(src, nameof(searchables), OWN_DELETE)

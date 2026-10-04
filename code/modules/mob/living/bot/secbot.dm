@@ -251,12 +251,12 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 	var/atom/movable/moving_instance = A.target
 	if(get_dist(get_turf(src), get_turf(target)) >= 1)
 		awaiting_surrender = INFINITY	// Done waiting!
-		om_unhook(moving_instance, /datum/om/event/movable_attempted_move, src)
+		unobserve(moving_instance, /datum/notice/movable_attempted_move, src)
 
 /mob/living/bot/secbot/resetTarget()
 	..()
 	if(target)
-		om_unhook(target, /datum/om/event/movable_attempted_move, src)
+		unobserve(target, /datum/notice/movable_attempted_move, src)
 	awaiting_surrender = 0
 	attacked = FALSE
 	walk_to(src, 0)

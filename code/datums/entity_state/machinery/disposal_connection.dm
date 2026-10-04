@@ -25,7 +25,7 @@
 	om_hook(owner, /datum/om/event/before/disposal_flush, src, PROC_REF(on_flush))
 	observe(owner, /datum/notice/disposal_link, src, then(PROC_REF(link_to_trunk)))
 	observe(owner, /datum/notice/disposal_unlink, src, then(PROC_REF(unlink_from_trunk)))
-	om_hook(owner, /datum/om/event/examine, src, PROC_REF(on_examine))
+	observe(owner, /datum/notice/examine, src, then(PROC_REF(on_examine)))
 
 
 // Signal handling
@@ -65,8 +65,9 @@
 	var/obj/structure/disposalholder/packet = event.holder
 	return handle_expel(packet)
 
-/datum/disposal_system_connection/proc/on_examine(datum/source, datum/om/event/examine/event)
+/datum/disposal_system_connection/proc/on_examine(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/examine/event = N
 	var/list/examine_texts = event.texts
 	if(!visible_connection)
 		return

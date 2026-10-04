@@ -75,13 +75,13 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		item.create_reagents(material.reagent_porosity)
 	if(electrical_form && (material.radiovoltaic_efficiency > 0 || material.scintillation_efficiency > 0))
 		registry_join(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
-	om_hook(parent, /datum/om/event/examine, src, PROC_REF(on_examine))
-	om_hook(parent, /datum/om/event/before/atom_take_damage, src, PROC_REF(on_take_damage))
+	observe(parent, /datum/notice/examine, src, then(PROC_REF(on_examine)))
+	observe(parent, /datum/notice/atom_take_damage, src, then(PROC_REF(on_take_damage)))
 	om_hook(parent, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(on_pre_emp))
 	observe(parent, /datum/notice/atom_fire_act, src, then(PROC_REF(on_fire)))
 	observe(parent, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(on_propagated_radiation)))
-	om_hook(parent, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_radiation))
-	om_hook(parent, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
+	observe(parent, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_radiation)))
+	observe(parent, /datum/notice/attackby, src, then(PROC_REF(on_attackby)))
 	observe(parent, /datum/notice/material_surgery, src, then(PROC_REF(on_surgery)))
 
 // its owner leaves the radiovoltaic registry (hooks and the `parent` back link
@@ -117,8 +117,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	last_energy_settlement = now
 	return generated > 0 ? cell.give(min(generated, cell.amount_missing())) : 0
 
-/datum/material_response/proc/on_examine(datum/source, datum/om/event/examine/event)
+/datum/material_response/proc/on_examine(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/examine/event = N
 	var/list/examine_text = event.texts
 	settle_cell_energy()
 	var/datum/material/material = material()
@@ -132,7 +133,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(material.phase_change_capacity > 0 && armor_form)
 		examine_text += span_notice("Thermal buffer: [round(stored_phase_energy)]/[round(material.phase_change_capacity)] J.")
 
-/datum/material_response/proc/on_take_damage(datum/source, datum/om/event/before/atom_take_damage/event)
+/datum/material_response/proc/on_take_damage(datum/act/notice/N)
 	EVENT_HANDLER
 	var/datum/material/material = material()
 	if(!material)
@@ -167,8 +168,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	EVENT_HANDLER
 	apply_radiation_energy(25)
 
-/datum/material_response/proc/on_radiation(datum/source, datum/om/event/before/in_range_of_irradiation/event)
+/datum/material_response/proc/on_radiation(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/in_range_of_irradiation/event = N
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 	apply_radiation_energy(pulse_information?.strength || 1)
 
@@ -197,8 +199,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	else
 		item.set_light(0)
 
-/datum/material_response/proc/on_attackby(datum/source, datum/om/event/before/attackby/event)
+/datum/material_response/proc/on_attackby(datum/act/notice/N)
 	EVENT_HANDLER
+	var/datum/notice/attackby/event = N
 	var/obj/item/weapon = event.item
 	var/mob/living/user = event.user
 	var/datum/material/material = material()
