@@ -222,14 +222,16 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 				own_take(src, nameof(OutputBeaker))
 
 		if("adjust temp")
-			om_ask(user, /datum/om/prompt/number, PROC_REF(target_temp_entered), max = max_temp, min = min_temp, title = "Temperature.", message = "Choose a target temperature.", default = T20C, round_entry = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+			open_request(src, /datum/prompt/number, PROC_REF(target_temp_entered), answerer = user, max_value = max_temp, min_value = min_temp, title = "Temperature.", question = "Choose a target temperature.", default = T20C, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 
 	update_icon()
 	return TRUE
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/target_temp_entered(datum/om/prompt/number/ask)
-	if(isnum(ask.number) && !use_atmos)
-		target_temp = clamp(ask.number, min_temp, max_temp)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/target_temp_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(isnum(A.answer.answer_value) && !use_atmos)
+		target_temp = clamp(A.answer.answer_value, min_temp, max_temp)
 		update_icon()
 
 /datum/interaction/machine_item/distillery_install_beaker
@@ -253,16 +255,18 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 		update_icon()
 		return FALSE
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(install_beaker_chosen), choices = options, anchor = src, require_near = TRUE, subject = W) // No telekinetics.
+	open_request(src, /datum/prompt/choice, PROC_REF(install_beaker_chosen), answerer = user, choices = options, radial = TRUE, anchor = src, require_near = TRUE, autopick_single_option = TRUE, subject = W, timeout = 0) // No telekinetics.
 	return TRUE
 
-/// Answer to interaction_distillery_install_beaker(); ask.subject is the beaker.
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/install_beaker_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/reagent_containers/glass/W = ask.subject
+/// Answer to interaction_distillery_install_beaker(); the request's subject is the beaker.
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/install_beaker_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/reagent_containers/glass/W = A.request.subject
 	if(!user || !istype(W) || QDELETED(W) || W.loc != user || user.incapacitated() || !in_range(user, src))
 		return
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("install input")
 			if(!InputBeaker)
 				W.add_fingerprint(user)

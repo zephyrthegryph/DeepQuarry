@@ -74,11 +74,13 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 /obj/machinery/hologram/holopad/proc/interaction_request(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Carn: Hologram requests.
 	if(!istype(user))
 		return TRUE
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ai_request_answered), message = "Would you like to request an AI's presence?", title = "Request AI", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(ai_request_answered), answerer = user, title = "Request AI", question = "Would you like to request an AI's presence?", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/machinery/hologram/holopad/proc/ai_request_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/user = ask.answerer
+/obj/machinery/hologram/holopad/proc/ai_request_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/living/carbon/human/user = A.request.answerer
 	if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!
 		COOLDOWN_START(src, request_cooldown, 200)
 		to_chat(user, span_notice("You request an AI's presence."))

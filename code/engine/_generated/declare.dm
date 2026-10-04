@@ -2749,6 +2749,48 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/air_control_menu) at code/game/machinery/atmo_control.dm:285
+/datum/prompt/choice/air_control_menu/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 285, /datum/prompt/choice/air_control_menu)
+	into += entry_line(286)
+	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
+
+/// CAPABILITIES(/datum/prompt/choice/air_control_port) at code/game/machinery/atmo_control.dm:294
+/datum/prompt/choice/air_control_port/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 294, /datum/prompt/choice/air_control_port)
+	into += entry_line(295)
+	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
+
+/// CAPABILITIES(/datum/prompt/choice/air_control_sensors) at code/game/machinery/atmo_control.dm:301
+/datum/prompt/choice/air_control_sensors/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 301, /datum/prompt/choice/air_control_sensors)
+	into += entry_line(302)
+	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
+
+/// CAPABILITIES(/datum/prompt/choice/air_sensor_options) at code/game/machinery/atmo_control.dm:161
+/datum/prompt/choice/air_sensor_options/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 161, /datum/prompt/choice/air_sensor_options)
+	into += entry_line(162)
+	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/choice/camera_direction) at code/game/machinery/camera/camera_assembly.dm:157
+/datum/prompt/choice/camera_direction/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/camera/camera_assembly.dm", 157, /datum/prompt/choice/camera_direction)
+	into += entry_line(158)
+	into += list(global.ref_one(nameof(camera), /obj/machinery/camera))
+
+/// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:46
+/datum/prompt/choice/frame_type_wall/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/wall_frames.dm", 46, /datum/prompt/choice/frame_type_wall)
+	into += entry_line(47)
+	into += list(global.ref_one(nameof(wall_turf), /turf))
+
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:123
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
 	..(into)
@@ -2779,6 +2821,13 @@
 	into += entry_line(84)
 	into += list(global.ref_one(nameof(painting), /obj/item/floor_painter))
 
+/// CAPABILITIES(/datum/prompt/choice/protean_component) at code/game/machinery/protean_reconstitutor.dm:175
+/datum/prompt/choice/protean_component/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/protean_reconstitutor.dm", 175, /datum/prompt/choice/protean_component)
+	into += entry_line(176)
+	into += list(global.ref_one(nameof(tool), /obj/item))
+
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
 	..(into)
@@ -2793,11 +2842,39 @@
 	into += entry_line(352)
 	into += list(global.ref_one(nameof(brush), /obj/item/paint_brush))
 
+/// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:76
+/datum/prompt/number/cablelayer_cut/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/CableLayer.dm", 76, /datum/prompt/number/cablelayer_cut)
+	into += entry_line(77)
+	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/text/air_control_sensor_name) at code/game/machinery/atmo_control.dm:308
+/datum/prompt/text/air_control_sensor_name/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 308, /datum/prompt/text/air_control_sensor_name)
+	into += entry_line(309)
+	into += list(global.ref_one(nameof(device), /obj/machinery))
+
+/// CAPABILITIES(/datum/prompt/text/air_sensor_tag) at code/game/machinery/atmo_control.dm:168
+/datum/prompt/text/air_sensor_tag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 168, /datum/prompt/text/air_sensor_tag)
+	into += entry_line(169)
+	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
+
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/structures/gravemarker.dm", 23, /datum/prompt/text/grave_carving)
 	into += entry_line(24)
+	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/text/meter_id) at code/game/machinery/atmoalter/meter.dm:188
+/datum/prompt/text/meter_id/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmoalter/meter.dm", 188, /datum/prompt/text/meter_id)
+	into += entry_line(189)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/text/pandemic_release_reason) at code/game/machinery/pandemic.dm:104
@@ -2815,6 +2892,20 @@
 	into += list(global.ref_one(nameof(door), /obj/machinery/door/airlock))
 	into += entry_line(965)
 	into += list(global.ref_one(nameof(requester), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok) at code/game/machinery/camera/camera_assembly.dm:174
+/datum/prompt/yes_no/camera_direction_ok/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/camera/camera_assembly.dm", 174, /datum/prompt/yes_no/camera_direction_ok)
+	into += entry_line(175)
+	into += list(global.ref_one(nameof(camera), /obj/machinery/camera))
+
+/// CAPABILITIES(/datum/prompt/yes_no/cryo_consent) at code/game/machinery/cryopod.dm:718
+/datum/prompt/yes_no/cryo_consent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/cryopod.dm", 718, /datum/prompt/yes_no/cryo_consent)
+	into += entry_line(719)
+	into += list(global.ref_one(nameof(loader), /mob))
 
 /// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:83
 /datum/prompt/yes_no/pai_dna_sample/declared_entries(list/into)
@@ -11549,13 +11640,13 @@
 	into += entry_line(241)
 	into += list(global.op("set_id", global.tool(TOOL_MULTITOOL), global.label("Set the id"), global.wait(0), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(id_question)))), global.then(PROC_REF(id_entered))))
 
-/// CAPABILITIES(/obj/machinery/button/remote/noemag) at code/game/machinery/buttons.dm:124
+/// CAPABILITIES(/obj/machinery/button/remote/noemag) at code/game/machinery/buttons.dm:123
 /obj/machinery/button/remote/noemag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/buttons.dm", 124, /obj/machinery/button/remote/noemag)
-	into += entry_line(125)
+	into += entry_block("code/game/machinery/buttons.dm", 123, /obj/machinery/button/remote/noemag)
+	into += entry_line(124)
 	into += list(global.without(CAP_EMAG))
-	into += entry_line(126)
+	into += entry_line(125)
 	into += list(global.op("emag_refused", global.item(/obj/item/card/emag), global.priority(OP_PRIORITY_SUBVERT), global.wait(0), global.needs(global.req(PROC_REF(sequencer_welcome), because = MSG(button/no_emag))), global.then(PROC_REF(press_nothing))))
 
 /// CAPABILITIES(/obj/machinery/camera) at code/game/machinery/camera/camera.dm:45
@@ -11689,6 +11780,21 @@
 	into += entry_line(1272)
 	into += list(global.op("pointless", global.ui_act("pointless"), global.then(PROC_REF(ui_act_pointless))))
 
+/// CAPABILITIES(/obj/machinery/computer/area_atmos) at code/game/machinery/atmoalter/area_atmos_computer.dm:40
+/obj/machinery/computer/area_atmos/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmoalter/area_atmos_computer.dm", 40, /obj/machinery/computer/area_atmos)
+	into += entry_line(41)
+	into += list(global.interface("AreaScrubberControl"))
+	into += entry_line(42)
+	into += list(global.op("toggle", global.ui_act("toggle", global.arg("id", global.schema_text(4096))), global.then(PROC_REF(ui_act_toggle))))
+	into += entry_line(43)
+	into += list(global.op("allon", global.ui_act("allon"), global.then(PROC_REF(ui_act_allon))))
+	into += entry_line(44)
+	into += list(global.op("alloff", global.ui_act("alloff"), global.then(PROC_REF(ui_act_alloff))))
+	into += entry_line(45)
+	into += list(global.op("scan", global.ui_act("scan"), global.then(PROC_REF(ui_act_scan))))
+
 /// CAPABILITIES(/obj/machinery/computer/atmos_alert) at code/game/machinery/computer/atmos_alert.dm:27
 /obj/machinery/computer/atmos_alert/declared_entries(list/into)
 	..(into)
@@ -11809,6 +11915,70 @@
 	into += entry_block("code/modules/power/fusion/fuel_assembly/fuel_control.dm", 13, /obj/machinery/computer/fusion_fuel_control)
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(monitor), starts = /datum/tgui_module/rustfuel_control))
+
+/// CAPABILITIES(/obj/machinery/computer/general_air_control) at code/game/machinery/atmo_control.dm:245
+/obj/machinery/computer/general_air_control/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 245, /obj/machinery/computer/general_air_control)
+	into += entry_line(246)
+	into += list(global.interface("GeneralAtmoControl"))
+	into += entry_line(247)
+	into += list(ui_shape(sensors = global.list_of(global.row())))
+
+/// CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection) at code/game/machinery/atmo_control.dm:759
+/obj/machinery/computer/general_air_control/fuel_injection/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 759, /obj/machinery/computer/general_air_control/fuel_injection)
+	into += entry_line(760)
+	into += list(global.op("refresh_status", global.ui_act("refresh_status"), global.then(PROC_REF(ui_act_refresh_status))))
+	into += entry_line(761)
+	into += list(global.op("toggle_automation", global.ui_act("toggle_automation"), global.then(PROC_REF(ui_act_toggle_automation))))
+	into += entry_line(762)
+	into += list(global.op("toggle_injector", global.ui_act("toggle_injector"), global.then(PROC_REF(ui_act_toggle_injector))))
+	into += entry_line(763)
+	into += list(global.op("injection", global.ui_act("injection"), global.then(PROC_REF(ui_act_injection))))
+
+/// CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control) at code/game/machinery/atmo_control.dm:414
+/obj/machinery/computer/general_air_control/large_tank_control/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 414, /obj/machinery/computer/general_air_control/large_tank_control)
+	into += entry_line(415)
+	into += list(global.op("adj_pressure", global.ui_act("adj_pressure", global.arg("adj_pressure", global.num(0, 50*ONE_ATMOSPHERE))), global.then(PROC_REF(ui_act_adj_pressure))))
+	into += entry_line(416)
+	into += list(global.op("adj_input_flow_rate", global.ui_act("adj_input_flow_rate", global.arg("adj_input_flow_rate", global.num(0, ATMOS_DEFAULT_VOLUME_PUMP + 500))), global.then(PROC_REF(ui_act_adj_input_flow_rate))))
+	into += entry_line(417)
+	into += list(global.op("in_refresh_status", global.ui_act("in_refresh_status"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(418)
+	into += list(global.op("in_toggle_injector", global.ui_act("in_toggle_injector"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(419)
+	into += list(global.op("in_set_flowrate", global.ui_act("in_set_flowrate"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(420)
+	into += list(global.op("out_refresh_status", global.ui_act("out_refresh_status"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(421)
+	into += list(global.op("out_toggle_power", global.ui_act("out_toggle_power"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(422)
+	into += list(global.op("out_set_pressure", global.ui_act("out_set_pressure"), global.then(PROC_REF(ui_act_tank_command))))
+
+/// CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core) at code/game/machinery/atmo_control.dm:570
+/obj/machinery/computer/general_air_control/supermatter_core/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmo_control.dm", 570, /obj/machinery/computer/general_air_control/supermatter_core)
+	into += entry_line(571)
+	into += list(global.op("adj_pressure", global.ui_act("adj_pressure", global.arg("adj_pressure", global.num(0, 10*ONE_ATMOSPHERE))), global.then(PROC_REF(ui_act_adj_pressure))))
+	into += entry_line(572)
+	into += list(global.op("adj_input_flow_rate", global.ui_act("adj_input_flow_rate", global.arg("adj_input_flow_rate", global.num(0, ATMOS_DEFAULT_VOLUME_PUMP + 500))), global.then(PROC_REF(ui_act_adj_input_flow_rate))))
+	into += entry_line(573)
+	into += list(global.op("in_refresh_status", global.ui_act("in_refresh_status"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(574)
+	into += list(global.op("in_toggle_injector", global.ui_act("in_toggle_injector"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(575)
+	into += list(global.op("in_set_flowrate", global.ui_act("in_set_flowrate"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(576)
+	into += list(global.op("out_refresh_status", global.ui_act("out_refresh_status"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(577)
+	into += list(global.op("out_toggle_power", global.ui_act("out_toggle_power"), global.then(PROC_REF(ui_act_tank_command))))
+	into += entry_line(578)
+	into += list(global.op("out_set_pressure", global.ui_act("out_set_pressure"), global.then(PROC_REF(ui_act_tank_command))))
 
 /// CAPABILITIES(/obj/machinery/computer/guestpass) at code/game/machinery/computer/guestpass.dm:183
 /obj/machinery/computer/guestpass/declared_entries(list/into)
@@ -12263,6 +12433,61 @@
 	into += entry_block("code/game/machinery/computer/station_alert.dm", 12, /obj/machinery/computer/station_alert)
 	into += entry_line(13)
 	into += list(global.owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor))
+
+/// CAPABILITIES(/obj/machinery/computer/telecomms/monitor) at code/game/machinery/telecomms/telemonitor.dm:70
+/obj/machinery/computer/telecomms/monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/telecomms/telemonitor.dm", 70, /obj/machinery/computer/telecomms/monitor)
+	into += entry_line(71)
+	into += list(global.interface("TelecommsMachineBrowser"))
+	into += entry_line(72)
+	into += list(global.op("view", global.ui_act("view", global.arg("id")), global.then(PROC_REF(ui_act_view))))
+	into += entry_line(73)
+	into += list(global.op("mainmenu", global.ui_act("mainmenu"), global.then(PROC_REF(ui_act_mainmenu))))
+	into += entry_line(74)
+	into += list(global.op("release", global.ui_act("release"), global.then(PROC_REF(ui_act_release))))
+	into += entry_line(75)
+	into += list(global.op("scan", global.ui_act("scan"), global.then(PROC_REF(ui_act_scan))))
+	into += entry_line(76)
+	into += list(global.op("network", global.ui_act("network"), global.then(PROC_REF(ui_act_network))))
+	into += entry_line(77)
+	into += list(global.op("cleartemp", global.ui_act("cleartemp"), global.then(PROC_REF(ui_act_cleartemp))))
+	into += entry_line(78)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint), early = TRUE)))
+	into += entry_line(79)
+	into += list(global.emag(global.then(PROC_REF(on_emag))))
+
+/// CAPABILITIES(/obj/machinery/computer/telecomms/server) at code/game/machinery/telecomms/logbrowser.dm:85
+/obj/machinery/computer/telecomms/server/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/telecomms/logbrowser.dm", 85, /obj/machinery/computer/telecomms/server)
+	into += entry_line(86)
+	into += list(global.interface("TelecommsLogBrowser"))
+	into += entry_line(87)
+	into += list(global.op("view", global.ui_act("view", global.arg("id", global.schema_text(4096))), global.then(PROC_REF(ui_act_view))))
+	into += entry_line(88)
+	into += list(global.op("mainmenu", global.ui_act("mainmenu"), global.then(PROC_REF(ui_act_mainmenu))))
+	into += entry_line(89)
+	into += list(global.op("release", global.ui_act("release"), global.then(PROC_REF(ui_act_release))))
+	into += entry_line(90)
+	into += list(global.op("scan", global.ui_act("scan"), global.then(PROC_REF(ui_act_scan))))
+	into += entry_line(91)
+	into += list(global.op("delete", global.ui_act("delete", global.arg("id", global.num())), global.then(PROC_REF(ui_act_delete))))
+	into += entry_line(92)
+	into += list(global.op("network", global.ui_act("network"), global.then(PROC_REF(ui_act_network))))
+	into += entry_line(93)
+	into += list(global.op("cleartemp", global.ui_act("cleartemp"), global.then(PROC_REF(ui_act_cleartemp))))
+	into += entry_line(94)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint), early = TRUE)))
+	into += entry_line(95)
+	into += list(global.emag(global.then(PROC_REF(on_emag))))
+
+/// CAPABILITIES(/obj/machinery/computer/telecomms/traffic) at code/game/machinery/telecomms/traffic_control.dm:177
+/obj/machinery/computer/telecomms/traffic/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/telecomms/traffic_control.dm", 177, /obj/machinery/computer/telecomms/traffic)
+	into += entry_line(178)
+	into += list(global.emag(global.then(PROC_REF(on_emag))))
 
 /// CAPABILITIES(/obj/machinery/computer/teleporter) at code/game/machinery/teleporter.dm:16
 /obj/machinery/computer/teleporter/declared_entries(list/into)
@@ -12773,11 +12998,11 @@
 	into += entry_line(93)
 	into += list(global.emag(global.then(PROC_REF(on_emag))))
 
-/// CAPABILITIES(/obj/machinery/holoposter) at code/game/machinery/holoposter.dm:110
+/// CAPABILITIES(/obj/machinery/holoposter) at code/game/machinery/holoposter.dm:112
 /obj/machinery/holoposter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/holoposter.dm", 110, /obj/machinery/holoposter)
-	into += entry_line(111)
+	into += entry_block("code/game/machinery/holoposter.dm", 112, /obj/machinery/holoposter)
+	into += entry_line(113)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(holoposter_emp)))))
 
 /// CAPABILITIES(/obj/machinery/hyperpad/centre) at code/modules/telesci/hyper_pad.dm:28
@@ -12963,11 +13188,11 @@
 	into += entry_line(35)
 	into += list(global.op("purchase", global.ui_act("purchase", global.arg("index", global.num())), global.then(PROC_REF(ui_act_purchase))))
 
-/// CAPABILITIES(/obj/machinery/mass_driver) at code/game/machinery/mass_driver.dm:69
+/// CAPABILITIES(/obj/machinery/mass_driver) at code/game/machinery/mass_driver.dm:65
 /obj/machinery/mass_driver/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/mass_driver.dm", 69, /obj/machinery/mass_driver)
-	into += entry_line(70)
+	into += entry_block("code/game/machinery/mass_driver.dm", 65, /obj/machinery/mass_driver)
+	into += entry_line(66)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(mass_driver_emp)))))
 
 /// CAPABILITIES(/obj/machinery/material_furnace) at code/modules/materials/engineering/material_machines.dm:68
@@ -13192,11 +13417,11 @@
 	into += entry_line(98)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/organ_printer/flesh) at code/game/machinery/bioprinter.dm:335
+/// CAPABILITIES(/obj/machinery/organ_printer/flesh) at code/game/machinery/bioprinter.dm:333
 /obj/machinery/organ_printer/flesh/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/bioprinter.dm", 335, /obj/machinery/organ_printer/flesh)
-	into += entry_line(336)
+	into += entry_block("code/game/machinery/bioprinter.dm", 333, /obj/machinery/organ_printer/flesh)
+	into += entry_line(334)
 	into += list(global.op("flesh_printer_interaction_item", global.item(/obj/item), global.then(PROC_REF(flesh_printer_interaction_item))))
 
 /// CAPABILITIES(/obj/machinery/oxygen_pump) at code/game/machinery/oxygen_pump.dm:21
@@ -14109,16 +14334,72 @@
 	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 55, /obj/machinery/telecomms)
 	into += entry_line(56)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/tcomms))
+	into += entry_line(57)
+	into += list(global.interface("TelecommsMultitoolMenu"))
+	into += entry_line(58)
+	into += list(global.op("toggle", global.ui_act("toggle"), global.then(PROC_REF(ui_act_toggle))))
+	into += entry_line(59)
+	into += list(global.op("id", global.ui_act("id"), global.then(PROC_REF(ui_act_id))))
+	into += entry_line(60)
+	into += list(global.op("network", global.ui_act("network"), global.then(PROC_REF(ui_act_network))))
+	into += entry_line(61)
+	into += list(global.op("freq", global.ui_act("freq"), global.then(PROC_REF(ui_act_freq))))
+	into += entry_line(62)
+	into += list(global.op("delete", global.ui_act("delete", global.arg("delete", global.num())), global.then(PROC_REF(ui_act_delete))))
+	into += entry_line(63)
+	into += list(global.op("unlink", global.ui_act("unlink", global.arg("unlink", global.num())), global.then(PROC_REF(ui_act_unlink))))
+	into += entry_line(64)
+	into += list(global.op("link", global.ui_act("link"), global.then(PROC_REF(ui_act_link))))
+	into += entry_line(65)
+	into += list(global.op("buffer", global.ui_act("buffer"), global.then(PROC_REF(ui_act_buffer))))
+	into += entry_line(66)
+	into += list(global.op("flush", global.ui_act("flush"), global.then(PROC_REF(ui_act_flush))))
+	into += entry_line(67)
+	into += list(global.op("cleartemp", global.ui_act("cleartemp"), global.then(PROC_REF(ui_act_cleartemp))))
+	into += entry_line(68)
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint), early = TRUE)))
 
-/// CAPABILITIES(/obj/machinery/telecomms/server) at code/game/machinery/telecomms/telecomunications.dm:547
+/// CAPABILITIES(/obj/machinery/telecomms/broadcaster) at code/game/machinery/telecomms/machine_interactions.dm:231
+/obj/machinery/telecomms/broadcaster/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 231, /obj/machinery/telecomms/broadcaster)
+	into += entry_line(232)
+	into += list(global.op("range", global.ui_act("range", global.arg("range", global.num())), global.then(PROC_REF(ui_act_range))))
+
+/// CAPABILITIES(/obj/machinery/telecomms/bus) at code/game/machinery/telecomms/machine_interactions.dm:193
+/obj/machinery/telecomms/bus/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 193, /obj/machinery/telecomms/bus)
+	into += entry_line(194)
+	into += list(global.op("change_freq", global.ui_act("change_freq"), global.then(PROC_REF(ui_act_change_freq))))
+
+/// CAPABILITIES(/obj/machinery/telecomms/receiver) at code/game/machinery/telecomms/machine_interactions.dm:251
+/obj/machinery/telecomms/receiver/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 251, /obj/machinery/telecomms/receiver)
+	into += entry_line(252)
+	into += list(global.op("range", global.ui_act("range", global.arg("range", global.num())), global.then(PROC_REF(ui_act_range))))
+
+/// CAPABILITIES(/obj/machinery/telecomms/relay) at code/game/machinery/telecomms/machine_interactions.dm:160
+/obj/machinery/telecomms/relay/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/telecomms/machine_interactions.dm", 160, /obj/machinery/telecomms/relay)
+	into += entry_line(161)
+	into += list(global.op("receive", global.ui_act("receive"), global.then(PROC_REF(ui_act_receive))))
+	into += entry_line(162)
+	into += list(global.op("broadcast", global.ui_act("broadcast"), global.then(PROC_REF(ui_act_broadcast))))
+	into += entry_line(163)
+	into += list(global.op("change_listening", global.ui_act("change_listening"), global.then(PROC_REF(ui_act_change_listening))))
+
+/// CAPABILITIES(/obj/machinery/telecomms/server) at code/game/machinery/telecomms/telecomunications.dm:559
 /obj/machinery/telecomms/server/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 547, /obj/machinery/telecomms/server)
-	into += entry_line(548)
+	into += entry_block("code/game/machinery/telecomms/telecomunications.dm", 559, /obj/machinery/telecomms/server)
+	into += entry_line(560)
 	into += list(global.owns_one(nameof(Compiler), /datum/TCS_Compiler))
-	into += entry_line(549)
+	into += entry_line(561)
 	into += list(global.owns_one(nameof(server_radio), /obj/item/radio/headset))
-	into += entry_line(550)
+	into += entry_line(562)
 	into += list(global.owns_many(nameof(log_entries)))
 
 /// CAPABILITIES(/obj/machinery/turretid) at code/game/machinery/turret_control.dm:144

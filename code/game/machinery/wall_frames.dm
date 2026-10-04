@@ -29,30 +29,28 @@ CAPABILITIES(/obj/item/frame)
 	var/mob/user = A.actor
 	update_type_list()
 	if(!build_machine_type && !build_wall_only)
-		om_ask(user, /datum/om/prompt/choice/frame_type, PROC_REF(floor_frame_chosen), choices = frame_types_floor)
+		open_request(src, /datum/prompt/choice, PROC_REF(floor_frame_chosen), valid = PROC_REF(frame_type_open), answerer = user, title = "Frame type request", question = "What kind of frame would you like to make?", choices = frame_types_floor, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	build_on_floor(user, null)
 	return TRUE
 
-/// Picking what a generic frame becomes. Re-checked on the answer: still carried, and the
-/// frame hasn't been given a type meanwhile.
-/datum/om/prompt/choice/frame_type
-	title = "Frame type request"
-	message = "What kind of frame would you like to make?"
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/datum/om/prompt/choice/frame_type/valid()
-	var/obj/item/frame/F = subject
-	return F.build_machine_type ? "already set" : null
+/// Re-checked on the answer: the frame hasn't been given a type meanwhile.
+/obj/item/frame/proc/frame_type_open(datum/request/R)
+	return !build_machine_type
 
 /// The wall version also remembers where it goes.
-/datum/om/prompt/choice/frame_type/wall
+/datum/prompt/choice/frame_type_wall
 	var/turf/wall_turf
 	var/wall_dir
 
-/obj/item/frame/proc/floor_frame_chosen(datum/om/prompt/choice/frame_type/ask)
-	var/mob/user = ask.answerer
-	var/datum/frame/frame_types/frame_type = ask.choice
+CAPABILITIES(/datum/prompt/choice/frame_type_wall)
+	ref_one(nameof(wall_turf), /turf)
+
+/obj/item/frame/proc/floor_frame_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/datum/frame/frame_types/frame_type = A.answer.answer_value
 	build_machine_type = /obj/structure/frame
 	if(frame_type.frame_size != 5)
 		new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
@@ -100,17 +98,20 @@ CAPABILITIES(/obj/item/frame)
 		return
 
 	if(!build_machine_type)
-		om_ask(user, /datum/om/prompt/choice/frame_type/wall, PROC_REF(wall_frame_chosen), choices = frame_types_wall, wall_turf = loc, wall_dir = ndir)
+		open_request(src, /datum/prompt/choice/frame_type_wall, PROC_REF(wall_frame_chosen), valid = PROC_REF(frame_type_open), answerer = user, title = "Frame type request", question = "What kind of frame would you like to make?", choices = frame_types_wall, wall_turf = loc, wall_dir = ndir, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		return
 	build_on_wall(user, loc, ndir, null)
 
-/obj/item/frame/proc/wall_frame_chosen(datum/om/prompt/choice/frame_type/wall/ask)
-	var/mob/user = ask.answerer
-	var/datum/frame/frame_types/frame_type = ask.choice
+/obj/item/frame/proc/wall_frame_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/frame_type_wall/R = A.request
+	var/mob/user = R.answerer
+	var/datum/frame/frame_types/frame_type = A.answer.answer_value
 	build_machine_type = /obj/structure/frame
 	if(frame_type.frame_size != 5)
 		new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
-	build_on_wall(user, ask.wall_turf, ask.wall_dir, frame_type)
+	build_on_wall(user, R.wall_turf, R.wall_dir, frame_type)
 
 /obj/item/frame/proc/build_on_wall(mob/user, turf/loc, ndir, datum/frame/frame_types/frame_type)
 	var/obj/machinery/M = new build_machine_type(loc, ndir, 1, frame_type)

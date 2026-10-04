@@ -169,7 +169,7 @@
 
 /obj/machinery/meter/multitool_act(mob/user, obj/item/tool)
 	if(open)
-		om_ask(user, /datum/om/prompt/text/meter_id, PROC_REF(meter_id_entered), message = "Please insert an ID tag for [src], example 'exhaust_pipe'.", default = id, tool = tool)
+		open_request(src, /datum/prompt/text/meter_id, PROC_REF(meter_id_entered), valid = PROC_REF(meter_panel_open), answerer = user, title = "Set ID Tag", question = "Please insert an ID tag for [src], example 'exhaust_pipe'.", default = id, max_len = MAX_NAME_LEN, name_text = TRUE, tool = tool, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 		return ITEM_INTERACT_SUCCESS
 	for(var/obj/machinery/atmospherics/pipe/pipe in contents_of(loc))
 		rel_add(src, nameof(pipes_on_turf), pipe)
@@ -181,19 +181,23 @@
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target_ref()]."))
 	return ITEM_INTERACT_SUCCESS
 
-/datum/om/prompt/text/meter_id
-	title = "Set ID Tag"
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_ADJACENT
+/// Setting the meter's ID tag: the tool is kept on the question.
+/datum/prompt/text/meter_id
 	var/obj/item/tool
 
-/datum/om/prompt/text/meter_id/valid()
-	var/obj/machinery/meter/M = subject
-	return M.open ? null : "closed"
+CAPABILITIES(/datum/prompt/text/meter_id)
+	ref_one(nameof(tool), /obj/item)
 
-/obj/machinery/meter/proc/meter_id_entered(datum/om/prompt/text/meter_id/ask)
-	id = ask.text
-	var/obj/item/multitool/multitool = ask.tool.get_multitool()
+/// Re-checked on the answer: the maintenance panel is still open.
+/obj/machinery/meter/proc/meter_panel_open(datum/request/R)
+	return open
+
+/obj/machinery/meter/proc/meter_id_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/meter_id/R = A.request
+	id = A.answer.answer_value
+	var/obj/item/multitool/multitool = R.tool.get_multitool()
 	if(multitool)
 		rel_set(multitool, nameof(multitool.connectable), src)
 	return ITEM_INTERACT_SUCCESS

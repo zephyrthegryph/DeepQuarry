@@ -165,19 +165,23 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	if(!protean_brain && !protean_orchestrator && !protean_refactory)
 		to_chat(user, "\The [src] does not have any protean components you can retrieve.")
 		return ITEM_INTERACT_BLOCKING
-	om_ask(user, /datum/om/prompt/choice/protean_component, PROC_REF(component_chosen), choices = list(protean_brain, protean_orchestrator, protean_refactory), tool = tool)
+	open_request(src, /datum/prompt/choice/protean_component, PROC_REF(component_chosen), answerer = user, title = "Remove Component", question = "What component would you like to remove?", choices = list(protean_brain, protean_orchestrator, protean_refactory), tool = tool, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/om/prompt/choice/protean_component
-	title = "Remove Component"
-	message = "What component would you like to remove?"
-	requires = PROMPT_ADJACENT
+/// Which component to take out: the tool is kept on the question.
+/datum/prompt/choice/protean_component
 	var/obj/item/tool
 
-/obj/machinery/protean_reconstitutor/proc/component_chosen(datum/om/prompt/choice/protean_component/ask)
-	var/mob/user = ask.answerer
-	var/atom/movable/choice = ask.choice
-	var/obj/item/tool = ask.tool
+CAPABILITIES(/datum/prompt/choice/protean_component)
+	ref_one(nameof(tool), /obj/item)
+
+/obj/machinery/protean_reconstitutor/proc/component_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/protean_component/R = A.request
+	var/mob/user = R.answerer
+	var/atom/movable/choice = A.answer.answer_value
+	var/obj/item/tool = R.tool
 	if(processing_revive || choice.loc != src)
 		return
 	to_chat(user, "You fish \the [choice] out of \the [src].")

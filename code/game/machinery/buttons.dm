@@ -80,28 +80,27 @@
 	effect = /obj/machinery/button/mob_spawner_button/proc/interaction_spawn
 
 /obj/machinery/button/mob_spawner_button/proc/interaction_spawn(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(spawn_mob_chosen), choices = GLOB.vr_mob_spawner_options, title = "Mob spawn", message = "Which Mob do you want to spawn?", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(spawn_mob_chosen), answerer = user, choices = GLOB.vr_mob_spawner_options, title = "Mob spawn", question = "Which Mob do you want to spawn?", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/machinery/button/mob_spawner_button/proc/spawn_mob_chosen(datum/om/prompt/choice/ask)
-	var/mobtype = GLOB.vr_mob_spawner_options[ask.choice]
+/obj/machinery/button/mob_spawner_button/proc/spawn_mob_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mobtype = GLOB.vr_mob_spawner_options[A.answer.answer_value]
 	if(!mobtype)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/mob_spawner_faction, PROC_REF(spawn_choices_made), mobtype = mobtype)
+	open_request(src, /datum/prompt/choice/mob_spawner_faction, PROC_REF(spawn_choices_made), answerer = A.request.answerer, title = "Faction", question = "Do you want the mob's faction to remain the same or be passive?", choices = list("Normal", "Neutral"), buttons = TRUE, mobtype = mobtype, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/datum/om/prompt/confirm/mob_spawner_faction
-	title = "Faction"
-	message = "Do you want the mob's faction to remain the same or be passive?"
-	yes_text = "Neutral"
-	no_text = "Normal"
-	no_first = TRUE
-	answer_on_no = TRUE
-	requires = PROMPT_ADJACENT
+/// The mob to spawn is kept on the faction question.
+/datum/prompt/choice/mob_spawner_faction
 	var/mobtype
 
-/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(datum/om/prompt/confirm/mob_spawner_faction/ask)
-	var/neutral = ask.yes
-	var/mobtype = ask.mobtype
+/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/mob_spawner_faction/R = A.request
+	var/neutral = (A.answer.answer_value == "Neutral")
+	var/mobtype = R.mobtype
 	var/mob/living/simple_mob/old_mob = mobspawned()
 	rel_clear(src, nameof(mobspawned))
 	QDEL_NULL(old_mob)

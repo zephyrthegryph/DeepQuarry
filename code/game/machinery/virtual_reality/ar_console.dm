@@ -77,7 +77,12 @@
 		return
 
 	if(avatar())
-		om_ask(avatar(), /datum/om/prompt/confirm/leave_vr, PROC_REF(alien_exit))
+		ask_leave_vr(PROC_REF(alien_exit_confirmed))
+		return
+	alien_exit()
+
+/obj/machinery/vr_sleeper/alien/proc/alien_exit_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
 		return
 	alien_exit()
 
@@ -166,7 +171,7 @@
 
 		OM_EMIT(avatar(), /datum/om/event/human_dna_finalized)
 
-		om_ask(avatar(), /datum/om/prompt/text/vr_avatar_name, PROC_REF(alien_avatar_renamed), message = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar().name]. Would you like to change it to something else?")
+		open_request(src, /datum/prompt/text, PROC_REF(alien_avatar_renamed), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar().name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 
 		avatar().forceMove(T)
 		visible_message(span_alium("\The [src] [pick("gurgles", "churns", "sloshes")] before spitting out \the [avatar()]!"))
@@ -174,13 +179,13 @@
 	else
 
 		// There's only one body per one of these pods, so let's be kind.
-		om_ask(avatar(), /datum/om/prompt/text/vr_avatar_name, PROC_REF(alien_avatar_renamed), message = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it feels like it is [avatar().name]. Would you like to change it to something else?")
+		open_request(src, /datum/prompt/text, PROC_REF(alien_avatar_renamed), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it feels like it is [avatar().name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 		occupant.enter_vr(avatar())
 
-/obj/machinery/vr_sleeper/alien/proc/alien_avatar_renamed(datum/om/prompt/text/vr_avatar_name/ask)
-	if(ask.text)
-		avatar().real_name = ask.text
-		avatar().name = ask.text
+/obj/machinery/vr_sleeper/alien/proc/alien_avatar_renamed(datum/act/request/A)
+	if(A.answer && A.answer.answer_value)
+		avatar().real_name = A.answer.answer_value
+		avatar().name = A.answer.answer_value
 
 
 /*

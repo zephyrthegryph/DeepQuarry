@@ -29,19 +29,15 @@
 /obj/machinery/mass_driver/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	om_ask(user, /datum/om/prompt/number/mass_driver_id, PROC_REF(driver_id_entered), message = "[src] has an id of \"[id]\". What would you like it to be?", title = "[src] ID]", default = id)
+	open_request(src, /datum/prompt/number, PROC_REF(driver_id_entered), answerer = user, title = "[src] ID]", question = "[src] has an id of \"[id]\". What would you like it to be?", default = id, max_value = 9999, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/om/prompt/number/mass_driver_id
-	max = 9999
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/number/mass_driver_id/cancelled()
-	to_chat(answerer, "No input found please hang up and try your call again.")
-
-/obj/machinery/mass_driver/proc/driver_id_entered(datum/om/prompt/number/mass_driver_id/ask)
-	var/mob/user = ask.answerer
-	var/new_id = ask.number
+/obj/machinery/mass_driver/proc/driver_id_entered(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	if(!A.answer)
+		to_chat(user, "No input found please hang up and try your call again.")
+		return
+	var/new_id = A.answer.answer_value
 	if(!new_id)
 		to_chat(user, "No input found please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING

@@ -54,6 +54,18 @@
 
 CAPABILITIES(/obj/machinery/telecomms)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	interface("TelecommsMultitoolMenu")
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
+	op("network", ui_act("network"), then(PROC_REF(ui_act_network)))
+	op("freq", ui_act("freq"), then(PROC_REF(ui_act_freq)))
+	op("delete", ui_act("delete", arg("delete", num())), then(PROC_REF(ui_act_delete)))
+	op("unlink", ui_act("unlink", arg("unlink", num())), then(PROC_REF(ui_act_unlink)))
+	op("link", ui_act("link"), then(PROC_REF(ui_act_link)))
+	op("buffer", ui_act("buffer"), then(PROC_REF(ui_act_buffer)))
+	op("flush", ui_act("flush"), then(PROC_REF(ui_act_flush)))
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending

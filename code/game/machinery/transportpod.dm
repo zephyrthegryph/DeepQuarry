@@ -68,10 +68,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transportpod, MACHINE_PIPELINE, "in_transi
 
 /// cap_occupant()'s on_enter: whoever got in (by any path) is asked to confirm the launch.
 /obj/machinery/transportpod/proc/occupant_entered(mob/living/O)
-	om_ask(O, /datum/om/prompt/confirm, PROC_REF(launch_answered), title = "Transport Pod", message = "Are you sure you're ready to launch?", requires = list(/datum/om/check/inside_target), answer_on_no = TRUE, cancel_answer = "No")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(launch_answered), answerer = O, title = "Transport Pod", question = "Are you sure you're ready to launch?", ask_flags = ASK_INSIDE, timeout = 0)
 
-/obj/machinery/transportpod/proc/launch_answered(datum/om/prompt/confirm/ask)
-	if(ask.yes)
+/obj/machinery/transportpod/proc/launch_answered(datum/act/request/A)
+	if(A.answer && A.answer.answer_value)
 		set_in_transit(TRUE)
 		playsound(src, HYPERSPACE_WARMUP)
 	else

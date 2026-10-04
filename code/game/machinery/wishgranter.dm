@@ -42,13 +42,15 @@
 	else
 		chargesa--
 		insistinga = 0
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(wish_chosen), title = "Wish", message = "You want...", choices = list("Power","Wealth","Immortality","To Kill","Peace"), requires = PROMPT_ADJACENT)
+		open_request(src, /datum/prompt/choice, PROC_REF(wish_chosen), answerer = user, title = "Wish", question = "You want...", choices = list("Power","Wealth","Immortality","To Kill","Peace"), ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	return TRUE
 
-/obj/machinery/wish_granter/proc/wish_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/user = ask.answerer
-	switch(ask.choice)
+/obj/machinery/wish_granter/proc/wish_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("Power")
 			to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
 			to_chat(user, span_warning("The Wish Granter punishes you for your selfishness, claiming your soul."))

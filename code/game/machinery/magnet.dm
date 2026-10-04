@@ -266,16 +266,18 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 			if(speed <= 0)
 				speed = 1
 		if("setpath")
-			om_ask(user, /datum/om/prompt/text, PROC_REF(magnet_path_entered), message = "Please define a new path!", default = path, max_length = MAX_MESSAGE_LEN, requires = PROMPT_USABLE)
+			open_request(src, /datum/prompt/text, PROC_REF(magnet_path_entered), answerer = user, question = "Please define a new path!", default = path, max_len = MAX_MESSAGE_LEN, ask_flags = ASK_CAPABLE, timeout = 0)
 
 		if("togglemoving")
 			set_path_moving(!path_moving)
 
 	updateUsrDialog(user)
 
-/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/newpath = ask.text
+/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/newpath = A.answer.answer_value
 	updateUsrDialog(user)
 	if(newpath && newpath != "")
 		set_path_moving(FALSE) // stop moving

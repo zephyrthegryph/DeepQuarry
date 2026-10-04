@@ -81,13 +81,15 @@
 
 /obj/machinery/food_replicator/interact(mob/user)
 	if(!isemptylist(products))
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(dish_chosen), message = "What would you like to print?", title = "Print a dish", choices = products, requires = PROMPT_ADJACENT)
+		open_request(src, /datum/prompt/choice, PROC_REF(dish_chosen), answerer = user, question = "What would you like to print?", title = "Print a dish", choices = products, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	else
 		to_chat(user, span_warning("There is no food to replicate!"))
 
-/obj/machinery/food_replicator/proc/dish_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/machinery/food_replicator/proc/dish_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(printing || (!operable()))
 		return
 

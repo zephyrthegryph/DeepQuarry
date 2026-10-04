@@ -707,18 +707,22 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 		return
 
 	if(M.client)
-		om_ask(M, /datum/om/prompt/confirm/cryo_consent, PROC_REF(storage_consent_answered), loader = user)
+		open_request(src, /datum/prompt/yes_no/cryo_consent, PROC_REF(storage_consent_answered), answerer = M, title = "Cryopod", question = "Would you like to enter long-term storage?", loader = user, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 		return
 	finish_go_in(M, user, 1)
 
-/datum/om/prompt/confirm/cryo_consent
-	title = "Cryopod"
-	message = "Would you like to enter long-term storage?"
-	requires = PROMPT_ADJACENT
+/// Consent to long-term storage: whoever loaded the pod is kept on the question.
+/datum/prompt/yes_no/cryo_consent
 	var/mob/loader
 
-/obj/machinery/cryopod/proc/storage_consent_answered(datum/om/prompt/confirm/cryo_consent/ask)
-	finish_go_in(ask.answerer, ask.loader, TRUE)
+CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
+	ref_one(nameof(loader), /mob)
+
+/obj/machinery/cryopod/proc/storage_consent_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/yes_no/cryo_consent/R = A.request
+	finish_go_in(R.answerer, R.loader, TRUE)
 
 /obj/machinery/cryopod/proc/finish_go_in(mob/M, mob/user, willing)
 

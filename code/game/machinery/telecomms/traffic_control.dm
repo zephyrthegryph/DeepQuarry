@@ -100,7 +100,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 /obj/machinery/computer/telecomms/traffic/proc/traffic_set_network(mob/user)
 	if(!traffic_access(user))
 		return
-	om_ask(user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(network_entered), answerer = user, title = "Comm Monitor", question = "Which network do you want to view?", default = network, max_len = 15, ask_flags = ASK_CAPABLE, timeout = 0)
 	updateUsrDialog(user)
 
 /obj/machinery/computer/telecomms/traffic/proc/traffic_operation(mob/user, op)
@@ -158,9 +158,11 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 
 	updateUsrDialog(user)
 
-/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/newnet = ask.text
+/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/newnet = A.answer.answer_value
 	if(newnet && ((user in range(1, src)) || issilicon(user)))
 		if(length(newnet) > 15)
 			temp = span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -")
@@ -172,13 +174,16 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 			rel_clear(src, nameof(servers))
 			temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
 
-DECLARE_EMAG(/obj/machinery/computer/telecomms/traffic, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/telecomms/traffic/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
+	emag(then(PROC_REF(on_emag)))
+
+/obj/machinery/computer/telecomms/traffic/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	set_emagged(1)
 	to_chat(user, span_notice("You you disable the security protocols"))
 	updateUsrDialog(user)
-	return 1
+	return OP_OK
 
 /// editingcode (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/editingcode() as /mob

@@ -77,7 +77,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 		if(metal < 1)
 			to_chat(user, "\The [src] is empty.")
 			return TRUE
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(eject_answered), message = "Do you want to eject all the metal in \the [src]?", title = "Eject?", requires = PROMPT_ADJACENT)
+		open_request(src, /datum/prompt/yes_no, PROC_REF(eject_answered), answerer = user, question = "Do you want to eject all the metal in \the [src]?", title = "Eject?", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	set_on(!on)
 	rel_set(src, nameof(old_turf), get_turf(src))
@@ -85,8 +85,10 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	act_message(user, src, MSG_SELF(span_notice("You [!on?"de":""]activate %T%.")), MSG_OTHERS(span_notice("%U% has [!on?"de":""]activated %T%.")))
 	return TRUE
 
-/obj/machinery/pipelayer/proc/eject_answered(datum/om/prompt/confirm/ask)
-	var/mob/user = ask.answerer
+/obj/machinery/pipelayer/proc/eject_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/user = A.request.answerer
 	if(panel_open)
 		var/amount_ejected = eject_metal()
 		act_message(user, src, MSG_SELF(span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from %T%.")), \
@@ -138,12 +140,14 @@ CAPABILITIES(/obj/machinery/pipelayer)
 /obj/machinery/pipelayer/wrench_act(mob/user, obj/item/tool)
 	if(panel_open)
 		return ITEM_INTERACT_BLOCKING
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(pipe_type_chosen), message = "Choose pipe type", title = "Pipe type", choices = Pipes, requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(pipe_type_chosen), answerer = user, question = "Choose pipe type", title = "Pipe type", choices = Pipes, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/pipelayer/proc/pipe_type_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/machinery/pipelayer/proc/pipe_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	P_type_t = choice
 	P_type = Pipes[P_type_t]
 	act_message(user, src, MSG_SELF(span_notice("You set %T% to manufacture [P_type_t].")), \
