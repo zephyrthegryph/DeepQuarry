@@ -19,9 +19,6 @@
 	stasis_level = /datum/body_effect/stasis/light	// Lower than the normal cryobag, because it's not made for meat that dies. It's made for robots and is freezing.
 	var/obj/item/clothing/accessory/badge/corptag	// The tag on the bag.
 
-CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
-	owns_one(nameof(corptag), /obj/item/clothing/accessory/badge)
-
 /obj/structure/closet/body_bag/cryobag/robobag/examine(mob/user)
 	. = ..()
 	if(corptag && Adjacent(user))

@@ -7734,24 +7734,17 @@
 	into += entry_line(224)
 	into += list(global.op("remove_injector", global.tool(TOOL_SCREWDRIVER), global.label("Remove injector"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req(PROC_REF(injector_removable), because = PROC_REF(remove_refusal))), global.then(PROC_REF(injector_removed)), global.says(MSG(cryobag/injector_out))))
 
-/// CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag) at code/game/objects/items/robobag.dm:22
+/// CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag) at code/game/objects/items/robobag.dm:48
 /obj/structure/closet/body_bag/cryobag/robobag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/robobag.dm", 22, /obj/structure/closet/body_bag/cryobag/robobag)
-	into += entry_line(23)
+	into += entry_block("code/game/objects/items/robobag.dm", 48, /obj/structure/closet/body_bag/cryobag/robobag)
+	into += entry_line(49)
 	into += list(global.owns_one(nameof(corptag), /obj/item/clothing/accessory/badge))
-
-/// CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag) at code/game/objects/items/robobag.dm:51
-/obj/structure/closet/body_bag/cryobag/robobag/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/objects/items/robobag.dm", 51, /obj/structure/closet/body_bag/cryobag/robobag)
-	into += entry_line(52)
-	into += list(global.owns_one(nameof(corptag), /obj/item/clothing/accessory/badge))
-	into += entry_line(53)
+	into += entry_line(50)
 	into += list(global.op("scan_robot", global.item(/obj/item/robotanalyzer), global.label("Scan"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(robot_analyser_used))))
-	into += entry_line(54)
+	into += entry_line(51)
 	into += list(global.op("swap_tag", global.item(/obj/item/clothing/accessory/badge), global.label("Attach tag"), global.when(global.cond_not(nameof(opened))), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(tag_swapped))))
-	into += entry_line(55)
+	into += entry_line(52)
 	into += list(global.op("remove_tag", global.hand(), global.gesture(GESTURE_ALT), global.label("Remove tag"), global.when(global.req(PROC_REF(has_tag))), global.then(PROC_REF(tag_removed))))
 
 /// CAPABILITIES(/obj/structure/closet/coffin) at code/game/objects/structures/crates_lockers/closets/coffin.dm:11
