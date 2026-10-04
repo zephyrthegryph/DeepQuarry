@@ -2340,6 +2340,13 @@
 	into += entry_line(122)
 	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
 
+/// CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob) at code/game/objects/items/devices/mind_binder.dm:88
+/datum/prompt/choice/mindbinder/store_mob/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/mind_binder.dm", 88, /datum/prompt/choice/mindbinder/store_mob)
+	into += entry_line(89)
+	into += list(global.ref_one(nameof(victim), /mob/living))
+
 /// CAPABILITIES(/datum/prompt/choice/pai_access) at code/modules/mob/living/silicon/pai/pai.dm:336
 /datum/prompt/choice/pai_access/declared_entries(list/into)
 	..(into)

@@ -58,53 +58,74 @@
 
 // Handle placing a mind into a mob
 /// Mind binder "are you sure?"s.
-/datum/om/prompt/confirm/mindbinder
+/datum/prompt/choice/mindbinder
 	title = "Confirmation"
-	yes_text = "Continue"
-	no_text = "Cancel"
+	choices = list("Continue", "Cancel")
+	buttons = TRUE
+	timeout = 0
 
 /// Binding yourself into the subject (a mob or an item). Re-checked on the answer: still next to it.
-/datum/om/prompt/confirm/mindbinder/self_bind
-	requires = PROMPT_ADJACENT
+/datum/prompt/choice/mindbinder/self_bind
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
 /// ...and a mob must still be mindless.
-/datum/om/prompt/confirm/mindbinder/self_bind/mob
-	message = "This will bind YOUR mind to the target! You may not be able to go back without help. Continue?"
+/datum/prompt/choice/mindbinder/self_bind/mob
+	question = "This will bind YOUR mind to the target! You may not be able to go back without help. Continue?"
 
-/datum/om/prompt/confirm/mindbinder/self_bind/mob/valid()
+/datum/prompt/choice/mindbinder/self_bind/mob/recheck_extra()
 	var/mob/living/target = subject
 	return target.ckey ? "already sentient" : null
 
-/datum/om/prompt/confirm/mindbinder/self_bind/item
-	message = "This will bind YOUR mind to the target! You will not be able to go back without help. Continue?"
+/datum/prompt/choice/mindbinder/self_bind/item
+	question = "This will bind YOUR mind to the target! You will not be able to go back without help. Continue?"
 
 /// Downloading a mind. Re-checked on the answer: the binder is in hand and empty, the victim next to the user.
-/datum/om/prompt/confirm/mindbinder/store_mob
-	message = "This will download the target's mind into the device. Once their mind is loaded you can then bind it into an item. This will result in the target being stuck until you put them back in their original body. Please make sure OOC prefs align! Continue?"
-	requires = PROMPT_IN_HAND
+/datum/prompt/choice/mindbinder/store_mob
+	question = "This will download the target's mind into the device. Once their mind is loaded you can then bind it into an item. This will result in the target being stuck until you put them back in their original body. Please make sure OOC prefs align! Continue?"
+	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/mob/living/victim
 
-/datum/om/prompt/confirm/mindbinder/store_mob/valid()
-	var/obj/item/mindbinder/binder = subject
+CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
+	ref_one(nameof(victim), /mob/living)
+
+/datum/prompt/choice/mindbinder/store_mob/prepare(datum/act/A)
+	..()
+	var/mob/living/captured_victim = victim
+	rel_clear(src, nameof(victim))
+	rel_set(src, nameof(victim), captured_victim)
+
+/datum/prompt/choice/mindbinder/store_mob/recheck_extra()
+	if(QDELETED(victim))
+		return "gone"
+	var/obj/item/mindbinder/binder = owner
 	if(length(binder.possessed_voice) != 0 || !answerer.Adjacent(victim))
 		return "can't download"
 	return null
 
-/obj/item/mindbinder/proc/self_bind_mob_confirmed(datum/om/prompt/confirm/mindbinder/self_bind/mob/ask)
+/obj/item/mindbinder/proc/self_bind_mob_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Continue")
+		return
+	var/datum/prompt/choice/mindbinder/self_bind/mob/ask = A.answer
 	var/mob/user = ask.answerer
 	var/mob/living/target = ask.subject
 	act_message(user, src, MSG_SELF(span_notice("You begin to bind yourself into [target]!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]. The device beginning to let out a series of beeps!")))
 	log_and_message_admins("attempted to bind themselves to \an [target] with a Mind Binder.", user)
 	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
 
-/obj/item/mindbinder/proc/self_bind_item_confirmed(datum/om/prompt/confirm/mindbinder/self_bind/item/ask)
+/obj/item/mindbinder/proc/self_bind_item_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Continue")
+		return
+	var/datum/prompt/choice/mindbinder/self_bind/item/ask = A.answer
 	var/mob/user = ask.answerer
 	var/obj/item/item = ask.subject
 	log_and_message_admins("attempted to bind themselves to \an [item] with a Mind Binder.", user)
 	act_message(user, src, MSG_SELF(span_notice("You begin to bind yourself into [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
 	om_task_timed(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
 
-/obj/item/mindbinder/proc/store_mob_confirmed(datum/om/prompt/confirm/mindbinder/store_mob/ask)
+/obj/item/mindbinder/proc/store_mob_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Continue")
+		return
+	var/datum/prompt/choice/mindbinder/store_mob/ask = A.answer
 	var/mob/user = ask.answerer
 	var/mob/living/target = ask.victim
 	if(target.ckey && !target.client)
@@ -124,7 +145,7 @@
 		return
 
 	if(self_bind)
-		om_ask(user, /datum/om/prompt/confirm/mindbinder/self_bind/mob, PROC_REF(self_bind_mob_confirmed), subject = target)
+		open_request(src, /datum/prompt/choice/mindbinder/self_bind/mob, PROC_REF(self_bind_mob_confirmed), answerer = user, subject = target)
 		return
 
 	act_message(user, src, MSG_SELF(span_notice("You begin to bind someone's mind into [target]!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]. The device beginning to let out a series of beeps!")))
@@ -173,7 +194,7 @@
 		return
 
 	if(self_bind)
-		om_ask(user, /datum/om/prompt/confirm/mindbinder/self_bind/item, PROC_REF(self_bind_item_confirmed), subject = item)
+		open_request(src, /datum/prompt/choice/mindbinder/self_bind/item, PROC_REF(self_bind_item_confirmed), answerer = user, subject = item)
 		return
 
 	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [item] with a Mind Binder.", user)
@@ -205,7 +226,7 @@
 		to_chat(user,span_warning("The device beeps a warning that the target isn't sentient."))
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/mindbinder/store_mob, PROC_REF(store_mob_confirmed), victim = target)
+	open_request(src, /datum/prompt/choice/mindbinder/store_mob, PROC_REF(store_mob_confirmed), answerer = user, victim = target)
 
 	update_icon()
 
