@@ -2407,6 +2407,15 @@
 	into += entry_line(965)
 	into += list(global.ref_one(nameof(requester), /mob/living))
 
+/// CAPABILITIES(/datum/prompt/yes_no/holowarrant_authorize) at code/game/objects/items/devices/holowarrant.dm:51
+/datum/prompt/yes_no/holowarrant_authorize/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/holowarrant.dm", 51, /datum/prompt/yes_no/holowarrant_authorize)
+	into += entry_line(52)
+	into += list(global.ref_one(nameof(card), /obj/item/card/id))
+	into += entry_line(53)
+	into += list(global.ref_one(nameof(warrant), /datum/data/record/warrant))
+
 /// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:83
 /datum/prompt/yes_no/pai_dna_sample/declared_entries(list/into)
 	..(into)

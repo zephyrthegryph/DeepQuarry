@@ -40,13 +40,29 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 	open_request(src, /datum/prompt/choice, PROC_REF(warrant_chosen), answerer = user, title = "Warrant Selection", question = "Which warrant would you like to load?", choices = warrants, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
 /// Swiping an ID (the subject, still in hand) to authorize the loaded warrant.
-/datum/om/prompt/confirm/holowarrant_authorize
+/datum/prompt/yes_no/holowarrant_authorize
 	title = "Warrant authorization"
-	message = "Would you like to authorize this warrant?"
-	answer_on_no = TRUE
-	requires = PROMPT_IN_HAND
+	question = "Would you like to authorize this warrant?"
+	timeout = 0
+	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/obj/item/card/id/card
 	var/datum/data/record/warrant/warrant
+
+CAPABILITIES(/datum/prompt/yes_no/holowarrant_authorize)
+	ref_one(nameof(card), /obj/item/card/id)
+	ref_one(nameof(warrant), /datum/data/record/warrant)
+
+/datum/prompt/yes_no/holowarrant_authorize/prepare(datum/act/A)
+	..()
+	var/obj/item/card/id/captured_card = card
+	var/datum/data/record/warrant/captured_warrant = warrant
+	rel_clear(src, nameof(card))
+	rel_set(src, nameof(card), captured_card)
+	rel_clear(src, nameof(warrant))
+	rel_set(src, nameof(warrant), captured_warrant)
+
+/datum/prompt/yes_no/holowarrant_authorize/recheck_extra()
+	return QDELETED(card) || QDELETED(warrant) ? "gone" : null
 
 /obj/item/holowarrant/proc/warrant_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -56,10 +72,13 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 			rel_set(src, nameof(active), W)
 	update_icon()
 
-/obj/item/holowarrant/proc/authorize_answered(datum/om/prompt/confirm/holowarrant_authorize/ask)
+/obj/item/holowarrant/proc/authorize_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/yes_no/holowarrant_authorize/ask = A.answer
 	var/mob/user = ask.answerer
 	var/obj/item/card/id/I = ask.card
-	if(ask.yes && active() == ask.warrant)
+	if(ask.answer_value && active() == ask.warrant)
 		active().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 	act_message(user, src, MSG_SELF(span_notice("You swipe \the [I] through %T%.")), \
 		MSG_OTHERS(span_notice("%U% swipes \the [I] through %T%.")))
@@ -68,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 	if(active())
 		var/obj/item/card/id/I = W.GetIdCard()
 		if(I && (ACCESS_HOS in I.GetAccess()))
-			om_ask(user, /datum/om/prompt/confirm/holowarrant_authorize, PROC_REF(authorize_answered), subject = W, card = I, warrant = active())
+			open_request(src, /datum/prompt/yes_no/holowarrant_authorize, PROC_REF(authorize_answered), answerer = user, subject = W, card = I, warrant = active())
 			return TRUE
 		to_chat(user, span_warning("You don't have the access to do this!"))
 		return TRUE
