@@ -214,15 +214,17 @@ CAPABILITIES(/obj/structure/barricade/cutout)
 	var/mob/user = A.actor
 	var/obj/I = A.held
 	if(is_type_in_list(I, painters))
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(cutout_type_chosen), message = "What would you like to paint the cutout as?", title = "Cutout Painting", choices = cutout_types, subject = I, requires = PROMPT_IN_HAND)
+		open_request(src, /datum/prompt/choice, PROC_REF(cutout_type_chosen), answerer = user, question = "What would you like to paint the cutout as?", title = "Cutout Painting", choices = cutout_types, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 		return TRUE
 
 	else
 		return OP_DECLINE
 
-/obj/structure/barricade/cutout/proc/cutout_type_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/structure/barricade/cutout/proc/cutout_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(!Adjacent(user))
 		return
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))
