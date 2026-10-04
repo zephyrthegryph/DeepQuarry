@@ -2272,7 +2272,22 @@
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/datum_pipe_network.dm", 22, /datum/pipe_network)
 	into += entry_line(23)
+	into += list(global.entry_link("/datum/pipe_network::normal_members", "/obj/machinery/atmospherics::network_memberships", a_many = TRUE, b_many = TRUE))
+	into += entry_line(24)
+	into += list(global.entry_link("/datum/pipe_network::line_members", "/datum/pipeline::network_memberships", a_many = TRUE, b_many = TRUE))
+	into += entry_line(25)
 	into += list(global.owns_one(nameof(air), /datum/gas_mixture))
+
+/// CAPABILITIES(/datum/pipeline) at code/ATMOSPHERICS/datum_pipeline.dm:20
+/datum/pipeline/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/datum_pipeline.dm", 20, /datum/pipeline)
+	into += entry_line(21)
+	into += list(global.ref_one(nameof(network)))
+	into += entry_line(22)
+	into += list(global.entry_link("/datum/pipeline::members", "/obj/machinery/atmospherics/pipe::parent", a_many = TRUE))
+	into += entry_line(23)
+	into += list(global.entry_link("/datum/pipeline::edges", "/obj/machinery/atmospherics/pipe::edge_pipelines", a_many = TRUE, b_many = TRUE))
 
 /// CAPABILITIES(/datum/plane_holder) at code/modules/mob/mob_planes.dm:9
 /datum/plane_holder/declared_entries(list/into)
@@ -4289,15 +4304,15 @@
 	into += entry_line(28)
 	into += list(global.owns_one(nameof(robotact), starts = /datum/tgui_module/robot_ui))
 
-/// CAPABILITIES(/mob/living/silicon/robot/drone) at code/modules/mob/living/silicon/robot/drone/drone.dm:252
+/// CAPABILITIES(/mob/living/silicon/robot/drone) at code/modules/mob/living/silicon/robot/drone/drone.dm:259
 /mob/living/silicon/robot/drone/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/silicon/robot/drone/drone.dm", 252, /mob/living/silicon/robot/drone)
-	into += entry_line(253)
+	into += entry_block("code/modules/mob/living/silicon/robot/drone/drone.dm", 259, /mob/living/silicon/robot/drone)
+	into += entry_line(260)
 	into += list(global.op("hat", global.item(/obj/item/clothing/head), global.stance(I_HELP), global.label("Put on hat"), global.then(PROC_REF(hat_put_on))))
-	into += entry_line(254)
+	into += entry_line(261)
 	into += list(global.verb_entry(/mob/living/proc/ventcrawl))
-	into += entry_line(255)
+	into += entry_line(262)
 	into += list(global.verb_entry(/mob/living/proc/hide))
 
 /// CAPABILITIES(/mob/living/simple_mob) at code/modules/mob/living/simple_mob/simple_mob.dm:175
@@ -10930,6 +10945,10 @@
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/rust_pipenets.dm", 79, /obj/machinery/atmospherics)
 	into += entry_line(80)
+	into += list(global.ref_one(nameof(node1)))
+	into += entry_line(81)
+	into += list(global.ref_one(nameof(node2)))
+	into += entry_line(82)
 	into += list(global.owns_many(nameof(rust_unbound_port_air), /datum/gas_mixture))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm) at code/ATMOSPHERICS/components/binary_devices/algae_generator.dm:36

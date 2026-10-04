@@ -77,6 +77,8 @@
 	var/list/rust_flow_entities
 
 CAPABILITIES(/obj/machinery/atmospherics)
+	ref_one(nameof(node1))
+	ref_one(nameof(node2))
 	owns_many(nameof(rust_unbound_port_air), /datum/gas_mixture)
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_count()
