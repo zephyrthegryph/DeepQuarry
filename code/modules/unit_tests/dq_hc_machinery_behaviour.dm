@@ -279,3 +279,49 @@
 	settle()
 	TEST_ASSERT_EQUAL(C.canister_color, "blue", "the label paints the canister")
 	TEST_ASSERT_EQUAL(C.name, "Canister: \[O2\]", "and names it")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Window shapes: the keys of the data every converted machine window sends (captured from the legacy forms)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// The sorted keys of the window data `host` sends `viewer`, as text.
+/proc/hcs_window_keys(datum/host, mob/viewer)
+	var/list/data = hc_data(host, viewer)
+	var/list/keys = list()
+	for(var/key in data)
+		keys += "[key]"
+	sortTim(keys, GLOBAL_PROC_REF(cmp_text_asc))
+	return keys.Join(",")
+
+/datum/unit_test/dq_hc_struct/machinery_window_shapes
+/datum/unit_test/dq_hc_struct/machinery_window_shapes/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/list/expected = list(
+		"/obj/machinery/atmospherics/unary/cryo_cell" = "beakerLabel,beakerVolume,cellTemperature,cellTemperatureStatus,hasOccupant,isBeakerLoaded,isOperating,occupant",
+		"/obj/machinery/bodyscanner" = "occupant,occupied",
+		"/obj/machinery/alarm" = "atmos_alarm,danger_level,environment_data,fire_alarm,locked,rcon,remoteUser,siliconUser,target_temperature",
+		"/obj/machinery/autolathe" = "active,materialChoices,materials,materialsmax,materialtotal",
+		"/obj/machinery/bomb_tester" = "canister,mode,simulating,sim_canister_output,tank1,tank1ref,tank2,tank2ref",
+		"/obj/machinery/doppler_array" = "",
+		"/obj/machinery/exonet_node" = "allowCommunicators,allowNewscasters,allowPDAs,logs,on",
+		"/obj/machinery/media/jukebox" = "admin,current_genre,current_track,current_track_ref,loop_mode,percent,playing,tracks,volume",
+		"/obj/machinery/newscaster" = "active_num,channels,channel_name,company,c_locked,message_num,msg,paper_remaining,photo_data,securityCaster,temp,title,total_num,unit_no,user,viewing_channel,wanted_issue",
+		"/obj/machinery/nuclearbomb" = "anchored,auth,code_display,lighthack,safety,status_label,timeleft,timing,wires,wire_view,yes_code",
+		"/obj/machinery/gear_painter" = "activemode,buildhue,buildsat,buildval,item_name,item_preview,item_sprite,matrixcolors",
+		"/obj/machinery/partslathe" = "building,buildPercent,copyBoard,copyBoardReqComponents,error,materials,panelOpen,queue,recipies,SHEET_MATERIAL_AMOUNT",
+		"/obj/machinery/petrification" = "able_to_unpetrify,adjective,can_remote,discard_clothes,identifier,material,t,target,tint",
+		"/obj/machinery/porta_turret" = "check_weapons,lethal,lethal_is_configurable,locked,neutralize_all,neutralize_criminals,neutralize_down,neutralize_noaccess,neutralize_nonsynth,neutralize_norecord,neutralize_unidentified,on,targetting_is_configurable",
+		"/obj/machinery/requests_console" = "announceAuth,announcementConsole,assist_dept,department,info_dept,message,message_log,msgStamped,msgVerified,newmessagepriority,priority,recipient,screen,silent,supply_dept",
+		"/obj/machinery/robotic_fabricator" = "metal_amount,operating",
+		"/obj/machinery/suit_cycler" = "active,can_repair,damage,helmet,locked,max_uv_level,model_text,occupied,safeties,suit,userHasAccess,uv_active,uv_level",
+		"/obj/machinery/suit_storage_unit" = "broken,helmet,locked,mask,occupied,open,panelopen,safeties,storage,suit,uv_active,uv_super",
+		"/obj/machinery/turretid" = "access_is_configurable,check_weapons,lethal,lethal_is_configurable,locked,neutralize_all,neutralize_criminals,neutralize_down,neutralize_noaccess,neutralize_nonsynth,neutralize_norecord,neutralize_unidentified,on,one_access,selectedAccess,targetting_is_configurable",
+		"/obj/machinery/chem_master" = "beaker,bottlesprite,condi,loaded_pill_bottle,modal,mode,pillsprite,printing",
+		"/obj/machinery/chemical_analyzer" = "beakerMax,beakerTotal,scannedReagents",
+		"/obj/machinery/chemical_synthesizer" = "bottle_icon,busy,catalyst,catalystCurrentVolume,catalystMaxVolume,catalyst_reagents,chemicals,drug_substance,modal,panel_open,patch_icon,pill_icon,production_mode,queue,recipes,rxn_vessel,use_catalyst",
+		"/obj/machinery/chemical_dispenser" = "amount,beakerContents,beakerCurrentVolume,beakerMaxVolume,chemicals,glass,isBeakerLoaded,recipes,recordingRecipe",
+	)
+	for(var/type in expected)
+		var/obj/machinery/M = allocate(type, tile(3, 2))
+		M.stat_remove(NOPOWER | BROKEN)
+		TEST_ASSERT_EQUAL(hcs_window_keys(M, H), expected[type], "[type] sends the window data it always did")
