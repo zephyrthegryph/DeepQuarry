@@ -340,7 +340,7 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 //Same thing PDAs do
 /obj/item/communicator/MouseDrop(obj/over_object as obj)
 	var/mob/M = usr
-	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
+	if (!(src.loc == M) || (src.loc && src.loc.loc == M))
 		return
 	if(!istype(over_object, /atom/movable/screen))
 		return attack_self(M)
