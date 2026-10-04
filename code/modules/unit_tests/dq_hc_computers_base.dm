@@ -26,6 +26,8 @@
 /datum/unit_test/dq_hc_computers
 	abstract_type = /datum/unit_test/dq_hc_computers
 	var/list/hc_made
+	/// Records a test put in the data core.
+	var/list/hc_records
 
 /datum/unit_test/dq_hc_computers/Run()
 	test_driver_begin()
@@ -38,6 +40,10 @@
 			qdel(P)
 		for(var/obj/item/card/id/guest/G in T)
 			qdel(G)
+	for(var/datum/data/record/R as anything in hc_records)
+		if(!QDELETED(R))
+			qdel(R)
+	hc_records = null
 	for(var/atom/movable/AM as anything in hc_made)
 		if(!QDELETED(AM))
 			qdel(AM)
