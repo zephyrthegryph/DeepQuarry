@@ -111,7 +111,8 @@
 	var/turf/root_turf = get_turf(src)
 	var/image/client_only/electrify_notice/zap = new('icons/hud/screen_gen.dmi', root_turf, electrified_until ? "stamina_crit" : "stamina_dead", OBFUSCATION_LAYER, SOUTH)
 	zap.place_from_root(root_turf)
-	zap.append_client(user.client)
+	if(user.client)
+		zap.append_client(user.client)
 	return TRUE
 
 /obj/machinery/door/airlock/silicon_quick(mob/living/silicon/user) // Nothing, for cyborgs with or without access.
