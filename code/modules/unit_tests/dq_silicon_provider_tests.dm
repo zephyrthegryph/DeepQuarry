@@ -107,6 +107,9 @@
 	var/datum/op_result/breaker = test_ui(AI, A, "breaker")
 	TEST_ASSERT_EQUAL(breaker?.outcome, ACT_COMMITTED, "an AI works the breaker through its provider")
 	TEST_ASSERT_EQUAL(A.operating, !was, "and the breaker went over")
+	qdel(A) // it spills its cell as it goes: the test owns that
+	for(var/turf/spot in list(T, side, far))
+		own_turf_contents(spot)
 
 /// The airlock's control window opens for silicons by their remote() binding: an AI's click is that op, a human's the door's own.
 /datum/unit_test/dq_silicon/airlock_remote_control
