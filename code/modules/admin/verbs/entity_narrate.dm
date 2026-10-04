@@ -73,29 +73,56 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 
 //Proc for keeping our ref list relevant, deleting mobs that are no longer relevant for our event
 ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remove mobs you're no longer narrating from your list for easier work.", ADMIN_CATEGORY_FUN_NARRATE)
+	var/datum/entity_narrate/holder = current_holder(user)
+	if(!holder)
+		return
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/admin_narrate_remove, PROC_REF(removal_selected), answerer = answerer, choices = (holder.entity_names || list()) + "Clear All")
+
+/datum/admin_verb/remove_mob_for_narration/proc/current_holder(client/user)
 	if(!user.entity_narrate_holder)
 		user.entity_narrate_holder = new /datum/entity_narrate()
 		to_chat(user, "No references were added yet! First add references!")
 		return
 	if(!istype(user.entity_narrate_holder, /datum/entity_narrate))
 		return
-	var/datum/entity_narrate/holder = user.entity_narrate_holder
+	return user.entity_narrate_holder
 
-	var/options = (holder.entity_names || list()) + "Clear All"
-	var/removekey = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Choose which entity to remove", title = "remove reference", choices = options)
-	if(isnull(removekey))
+
+/datum/admin_verb/remove_mob_for_narration/proc/removal_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_selected_removal), context)
+	if(!result.ok)
+		stack_trace("om flow remove_mob_for_narration answer apply_selected_removal: [result.error]")
+
+/datum/admin_verb/remove_mob_for_narration/proc/apply_selected_removal(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	var/datum/entity_narrate/holder = current_holder(user)
+	if(!holder)
+		return
+	var/removekey = context.request.answer_value
 	if(removekey == "Clear All")
-		var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/choice/alert, message = "Do you really want to clear your entity list?", title = "confirm", choices = list("Yes", "No"))
-		if(isnull(_answer_a4))
-			return
-		if(_answer_a4 != "Yes")
-			return
-		holder.entity_names = list()
-		own_clear(holder, nameof(/datum/entity_narrate::entity_refs), OWN_DELETE)
+		open_request(src, /datum/prompt/choice/admin_narrate_clear, PROC_REF(clear_selected), answerer = user.mob)
 	else if(removekey)
 		holder.untrack(removekey)
 		LAZYREMOVE(holder.entity_names, removekey)
+
+/datum/admin_verb/remove_mob_for_narration/proc/clear_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_clear), context)
+	if(!result.ok)
+		stack_trace("om flow remove_mob_for_narration answer apply_clear: [result.error]")
+
+/datum/admin_verb/remove_mob_for_narration/proc/apply_clear(datum/act/request/context)
+	var/datum/entity_narrate/holder = current_holder(context.request.answerer.client)
+	if(!holder || context.request.answer_value != "Yes")
+		return
+	holder.entity_names = list()
+	own_clear(holder, nameof(/datum/entity_narrate::entity_refs), OWN_DELETE)
 
 //Planned to have TGUI functionality
 //For now brings up a list of all entities on our reference list and gives us the option to choose what we wanna do
@@ -367,3 +394,29 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 /// Stops tracking `unique_name`.
 /datum/entity_narrate/proc/untrack(unique_name)
 	rel_add(src, nameof(entity_refs), null, unique_name)
+
+/datum/prompt/choice/admin_narrate_remove
+	rights = R_FUN
+	timeout = 0
+	title = "remove reference"
+	question = "Choose which entity to remove"
+
+/datum/prompt/choice/admin_narrate_remove/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_narrate_clear
+	rights = R_FUN
+	timeout = 0
+	title = "confirm"
+	question = "Do you really want to clear your entity list?"
+	choices = list("Yes", "No")
+	buttons = TRUE
+
+/datum/prompt/choice/admin_narrate_clear/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
