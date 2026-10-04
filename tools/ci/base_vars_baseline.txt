@@ -1050,7 +1050,6 @@ list_init	code/modules/admin/spawn_panel/spawn_panel.dm	var/offset = list()
 list_init	code/modules/asset_cache/asset_list.dm	var/assets = list()
 list_init	code/modules/casino/casino.dm	var/lottery_tickets = list()
 list_init	code/modules/casino/casino.dm	var/lottery_tickets_ckeys = list()
-list_init	code/modules/casino/casino.dm	var/collar_list = list()
 list_init	code/modules/casino/casino.dm	var/sentientprizes_ckeys_list = list() //Same trick as lottery, to keep life simple
 list_init	code/modules/client/preferences/preferences_tg.dm	var/value_cache = list()
 list_init	code/modules/economy/cash.dm	var/access = list()
