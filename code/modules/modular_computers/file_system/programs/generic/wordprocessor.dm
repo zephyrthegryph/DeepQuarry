@@ -7,7 +7,6 @@
 	size = 4
 	requires_ntnet = FALSE
 	available_on_ntnet = TRUE
-	tgui_id = "NtosWordProcessor"
 
 	var/browsing = FALSE
 	var/open_file
@@ -30,7 +29,7 @@
 /datum/computer_file/program/wordprocessor/proc/open_file(filename)
 	var/datum/computer_file/data/F = get_file(filename)
 	if(F)
-		open_file = F.filename
+		set_open_file(F.filename)
 		loaded_data = F.stored_data
 		return TRUE
 
@@ -53,7 +52,7 @@
 		qdel(F) // detached by remove_file() and not stored again
 		return 0
 	qdel(backup)
-	is_edited = 0
+	set_is_edited(0)
 	return TRUE
 
 /datum/computer_file/program/wordprocessor/proc/create_file(newname, data = "")
@@ -72,15 +71,32 @@
 	if(HDD.store_file(F))
 		return F
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_txtrpeview", ui_act_prg_txtrpeview)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_txtrpeview)
+TRACKED(/datum/computer_file/program/wordprocessor, open_file)
+TRACKED(/datum/computer_file/program/wordprocessor, is_edited)
+
+CAPABILITIES(/datum/computer_file/program/wordprocessor)
+	interface("NtosWordProcessor")
+	op("PRG_txtrpeview", ui_act("PRG_txtrpeview"), then(PROC_REF(ui_act_prg_txtrpeview)))
+	op("PRG_taghelp", ui_act("PRG_taghelp"), then(PROC_REF(ui_act_prg_taghelp)))
+	op("PRG_closebrowser", ui_act("PRG_closebrowser"), then(PROC_REF(ui_act_prg_closebrowser)))
+	op("PRG_backtomenu", ui_act("PRG_backtomenu"), then(PROC_REF(ui_act_prg_backtomenu)))
+	op("PRG_loadmenu", ui_act("PRG_loadmenu"), then(PROC_REF(ui_act_prg_loadmenu)))
+	op("PRG_openfile", ui_act("PRG_openfile", arg("PRG_openfile", schema_text(4096))), asks(/datum/prompt/yes_no, fields = list("title" = "Save Changes", "question" = "Would you like to save your changes first?"), step = "save", when = PROC_REF(unsaved_changes)), then(PROC_REF(ui_act_prg_openfile)))
+	op("PRG_newfile", ui_act("PRG_newfile", arg("PRG_saveasfile", schema_text(4096))), asks(/datum/prompt/yes_no, fields = list("title" = "Save Changes", "question" = "Would you like to save your changes first?"), step = "save", when = PROC_REF(unsaved_changes)), asks(/datum/prompt/text, fields = list("title" = "New File", "question" = "Enter file name:"), step = "name"), then(PROC_REF(ui_act_prg_newfile)))
+	op("PRG_saveasfile", ui_act("PRG_saveasfile", arg("PRG_saveasfile", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "Save As", "question" = "Enter file name:")), then(PROC_REF(ui_act_prg_saveasfile)))
+	op("PRG_savefile", ui_act("PRG_savefile"), asks(/datum/prompt/text, fields = list("title" = "Save As", "question" = "Enter file name:"), step = "name", when = PROC_REF(no_open_file)), then(PROC_REF(ui_act_prg_savefile)))
+	op("PRG_editfile", ui_act("PRG_editfile"), asks(/datum/prompt/text, fields = list("title" = "Text Editor", "question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_default)), "max_len" = MAX_TEXTFILE_LENGTH, "multiline" = TRUE)), then(PROC_REF(ui_act_prg_editfile)))
+	op("PRG_printfile", ui_act("PRG_printfile"), then(PROC_REF(ui_act_prg_printfile)))
+
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_txtrpeview(datum/act/op/A)
+	var/mob/user = A.actor
 	// structured TGUI AdminReport.
-	dq_admin_report_html(ui.user, open_file, "[pencode2html(loaded_data)]")
+	dq_admin_report_html(user, open_file, "[pencode2html(loaded_data)]")
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_taghelp", ui_act_prg_taghelp)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_taghelp)
-	to_chat(ui.user, span_notice("The hologram of a googly-eyed paper clip helpfully tells you:"))
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_taghelp(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_notice("The hologram of a googly-eyed paper clip helpfully tells you:"))
 	var/help = {"
 	\[br\] : Creates a linebreak.
 	\[center\] - \[/center\] : Centers the text.
@@ -107,104 +123,95 @@ UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_taghelp)
 	\[redlogo\] - Inserts red NT logo image.
 	\[sglogo\] - Inserts Solgov insignia image."}
 
-	to_chat(ui.user, help)
+	to_chat(user, help)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_closebrowser", ui_act_prg_closebrowser)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_closebrowser)
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_closebrowser(datum/act/op/A)
 	browsing = 0
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_backtomenu", ui_act_prg_backtomenu)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_backtomenu)
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_backtomenu(datum/act/op/A)
 	error = null
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_loadmenu", ui_act_prg_loadmenu)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_loadmenu)
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_loadmenu(datum/act/op/A)
 	browsing = 1
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_openfile", ui_act_prg_openfile, UI_ARG_TEXT("PRG_openfile"))
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_openfile)
-	if(is_edited)
-		var/_answer_k126 = act_ask(ui.user, action, params, ui, "k126", /datum/om/prompt/choice/alert, message = "Would you like to save your changes first?", title = "Save Changes", choices = list("Yes","No"))
-		if(isnull(_answer_k126))
-			return
-		if(_answer_k126 == "Yes")
-			save_file(open_file)
+/// Unsaved changes are asked about before another file replaces them.
+/datum/computer_file/program/wordprocessor/proc/unsaved_changes(datum/act/op/A)
+	return !!is_edited
+
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_openfile(datum/act/op/A, PRG_openfile)
+	var/datum/prompt/save_answer = A.step_answer("save")
+	if(is_edited && save_answer?.value)
+		save_file(open_file)
 	browsing = 0
-	if(!open_file(params["PRG_openfile"]))
-		error = "I/O error: Unable to open file '[params["PRG_openfile"]]'."
+	if(!open_file(PRG_openfile))
+		error = "I/O error: Unable to open file '[PRG_openfile]'."
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_newfile", ui_act_prg_newfile, UI_ARG_TEXT("PRG_saveasfile"))
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_newfile)
-	if(is_edited)
-		var/_answer_k135 = act_ask(ui.user, action, params, ui, "k135", /datum/om/prompt/choice/alert, message = "Would you like to save your changes first?", title = "Save Changes", choices = list("Yes","No"))
-		if(isnull(_answer_k135))
-			return
-		if(_answer_k135 == "Yes")
-			save_file(open_file)
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_newfile(datum/act/op/A, PRG_saveasfile)
+	var/datum/prompt/save_answer = A.step_answer("save")
+	if(is_edited && save_answer?.value)
+		save_file(open_file)
 
-	var/newname = act_ask(ui.user, action, params, ui, "k138", /datum/om/prompt/text, message = "Enter file name:", title = "New File")
-	if(isnull(newname))
-		return
+	var/datum/prompt/name_answer = A.step_answer("name")
+	var/newname = name_answer?.value
 	if(!newname)
 		return TRUE
 	var/datum/computer_file/data/F = create_file(newname)
 	if(F)
-		open_file = F.filename
+		set_open_file(F.filename)
 		loaded_data = ""
 		return TRUE
 	else
-		error = "I/O error: Unable to create file '[params["PRG_saveasfile"]]'."
+		error = "I/O error: Unable to create file '[PRG_saveasfile]'."
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_saveasfile", ui_act_prg_saveasfile, UI_ARG_TEXT("PRG_saveasfile"))
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_saveasfile)
-	var/newname = act_ask(ui.user, action, params, ui, "k151", /datum/om/prompt/text, message = "Enter file name:", title = "Save As")
-	if(isnull(newname))
-		return
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_saveasfile(datum/act/op/A, PRG_saveasfile)
+	var/datum/prompt/P = A.answer
+	var/newname = P?.value
 	if(!newname)
 		return TRUE
 	var/datum/computer_file/data/F = create_file(newname, loaded_data)
 	if(F)
-		open_file = F.filename
+		set_open_file(F.filename)
 	else
-		error = "I/O error: Unable to create file '[params["PRG_saveasfile"]]'."
+		error = "I/O error: Unable to create file '[PRG_saveasfile]'."
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_savefile", ui_act_prg_savefile)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_savefile)
+/// A document with no name yet asks for one.
+/datum/computer_file/program/wordprocessor/proc/no_open_file(datum/act/op/A)
+	return !open_file
+
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_savefile(datum/act/op/A)
 	if(!open_file)
-		var/_answer_k163 = act_ask(ui.user, action, params, ui, "k163", /datum/om/prompt/text, message = "Enter file name:", title = "Save As")
-		if(isnull(_answer_k163))
-			return
-		open_file = _answer_k163
+		var/datum/prompt/name_answer = A.step_answer("name")
+		set_open_file(name_answer?.value)
 		if(!open_file)
 			return 0
 	if(!save_file(open_file))
 		error = "I/O error: Unable to save file '[open_file]'."
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_editfile", ui_act_prg_editfile)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_editfile)
-	var/oldtext = html_decode(loaded_data)
-	oldtext = replacetext(oldtext, "\[br\]", "\n")
+/datum/computer_file/program/wordprocessor/proc/edit_question(datum/act/op/A)
+	return "Editing file '[open_file]'. You may use most tags used in paper formatting:"
 
-	var/_answer_k174 = act_ask(ui.user, action, params, ui, "k174", /datum/om/prompt/text, message = "Editing file '[open_file]'. You may use most tags used in paper formatting:", title = "Text Editor", default = oldtext, max_length = MAX_TEXTFILE_LENGTH, multiline = TRUE)
-	if(isnull(_answer_k174))
-		return
-	var/newtext = replacetext(_answer_k174, "\n", "\[br\]")
+/datum/computer_file/program/wordprocessor/proc/edit_default(datum/act/op/A)
+	var/oldtext = html_decode(loaded_data)
+	return replacetext(oldtext, "\[br\]", "\n")
+
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_editfile(datum/act/op/A)
+	var/datum/prompt/P = A.answer
+	var/newtext = replacetext(P?.value, "\n", "\[br\]")
 	if(!newtext)
 		return
 	loaded_data = newtext
-	is_edited = 1
+	set_is_edited(1)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_printfile", ui_act_prg_printfile)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_printfile)
+/datum/computer_file/program/wordprocessor/proc/ui_act_prg_printfile(datum/act/op/A)
 	if(!computer().nano_printer)
 		error = "Missing Hardware: Your computer does not have the required hardware to complete this operation."
 		return TRUE
@@ -213,10 +220,7 @@ UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_printfile)
 		return TRUE
 	return TRUE
 
-UI_DATA_REPLACE(/datum/computer_file/program/wordprocessor, "merge:ui_data_datum_computer_file_program_wordprocessor{error:text,browsing:num,files:list,usbconnected:num,usbfiles:list,filedata:unknown,filename:unknown}")
-
-/// The computed part of /datum/computer_file/program/wordprocessor's window data (declared on its UI_DATA row).
-/datum/computer_file/program/wordprocessor/proc/ui_data_datum_computer_file_program_wordprocessor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/wordprocessor/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()
 
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive

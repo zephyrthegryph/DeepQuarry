@@ -9,7 +9,6 @@
 	size = 6							// Size in GQ. Integers only. Smaller sizes should be used for utility/low use programs (like this one), while large sizes are for important programs.
 	requires_ntnet = FALSE				// This particular program does not require NTNet network conectivity...
 	available_on_ntnet = TRUE			// ... but we want it to be available for download.
-	tgui_id = "NtosArcade"				// Path of relevant tgui template.js file.
 
 	///Returns TRUE if the game is being played.
 	var/game_active = TRUE
@@ -104,19 +103,30 @@
 /**
  * This provides all of the relevant data to the UI in a list().
  */
-UI_DATA_REPLACE(/datum/computer_file/program/game, "Hitpoints=boss_hp:num", "PlayerHitpoints=player_hp:num", "PlayerMP=player_mp:num", "TicketCount=ticket_count:num", "GameActive=game_active:num", "PauseState=pause_state:num", "Status=heads_up:text", "merge:ui_data_datum_computer_file_program_game{BossID:text}")
+CAPABILITIES(/datum/computer_file/program/game)
+	interface("NtosArcade")
+	op("Attack", ui_act("Attack"), then(PROC_REF(ui_act_attack)))
+	op("Heal", ui_act("Heal"), then(PROC_REF(ui_act_heal)))
+	op("Recharge_Power", ui_act("Recharge_Power"), then(PROC_REF(ui_act_recharge_power)))
+	op("Dispense_Tickets", ui_act("Dispense_Tickets"), then(PROC_REF(ui_act_dispense_tickets)))
+	op("Start_Game", ui_act("Start_Game"), then(PROC_REF(ui_act_start_game)))
 
-/// The computed part of /datum/computer_file/program/game's window data (declared on its UI_DATA row).
-/datum/computer_file/program/game/proc/ui_data_datum_computer_file_program_game(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/game/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()
+	data["Hitpoints"] = boss_hp
+	data["PlayerHitpoints"] = player_hp
+	data["PlayerMP"] = player_mp
+	data["TicketCount"] = ticket_count
+	data["GameActive"] = game_active
+	data["PauseState"] = pause_state
+	data["Status"] = heads_up
 	data["BossID"] = "boss[boss_id].gif"
 	return data
 
 /**
  * This is tgui's replacement for Topic(). It handles any user input from the UI.
  */
-UI_ACT(/datum/computer_file/program/game, "Attack", ui_act_attack)
-UI_ACT_PROC(/datum/computer_file/program/game, ui_act_attack)
+/datum/computer_file/program/game/proc/ui_act_attack(datum/act/op/A)
 	var/attackamt = 0 //Spam prevention.
 	if(pause_state == FALSE)
 		attackamt = rand(2,6) // + rand(0, gamerSkill)
@@ -127,8 +137,7 @@ UI_ACT_PROC(/datum/computer_file/program/game, ui_act_attack)
 	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/game, "Heal", ui_act_heal)
-UI_ACT_PROC(/datum/computer_file/program/game, ui_act_heal)
+/datum/computer_file/program/game/proc/ui_act_heal(datum/act/op/A)
 	var/healamt = 0 //More Spam Prevention.
 	var/healcost = 0
 	if(pause_state == FALSE)
@@ -143,8 +152,7 @@ UI_ACT_PROC(/datum/computer_file/program/game, ui_act_heal)
 	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/game, "Recharge_Power", ui_act_recharge_power)
-UI_ACT_PROC(/datum/computer_file/program/game, ui_act_recharge_power)
+/datum/computer_file/program/game/proc/ui_act_recharge_power(datum/act/op/A)
 	var/rechargeamt = 0 //As above.
 	if(pause_state == FALSE)
 		rechargeamt = rand(4,7) // + rand(0, gamerSkill)
@@ -155,30 +163,29 @@ UI_ACT_PROC(/datum/computer_file/program/game, ui_act_recharge_power)
 	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/game, "Dispense_Tickets", ui_act_dispense_tickets)
-UI_ACT_PROC(/datum/computer_file/program/game, ui_act_dispense_tickets)
+/datum/computer_file/program/game/proc/ui_act_dispense_tickets(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/computer_hardware/nano_printer/printer
 	if(computer())
 		printer = computer().nano_printer
 	if(!printer)
-		to_chat(ui.user, span_notice("Hardware error: A printer is required to redeem tickets."))
+		to_chat(user, span_notice("Hardware error: A printer is required to redeem tickets."))
 		return
 	if(printer.stored_paper <= 0)
-		to_chat(ui.user, span_notice("Hardware error: Printer is out of paper."))
+		to_chat(user, span_notice("Hardware error: Printer is out of paper."))
 		return
 	else
 		computer().visible_message(span_infoplain(span_bold("\The [computer()]") + " prints out paper."))
 		if(ticket_count >= 1)
 			new /obj/item/stack/arcadeticket((get_turf(computer())), 1)
-			to_chat(ui.user, span_notice("[src] dispenses a ticket!"))
+			to_chat(user, span_notice("[src] dispenses a ticket!"))
 			ticket_count -= 1
 			printer.stored_paper -= 1
 		else
-			to_chat(ui.user, span_notice("You don't have any stored tickets!"))
+			to_chat(user, span_notice("You don't have any stored tickets!"))
 		return TRUE
 
-UI_ACT(/datum/computer_file/program/game, "Start_Game", ui_act_start_game)
-UI_ACT_PROC(/datum/computer_file/program/game, ui_act_start_game)
+/datum/computer_file/program/game/proc/ui_act_start_game(datum/act/op/A)
 	game_active = TRUE
 	boss_hp = 45
 	player_hp = 30

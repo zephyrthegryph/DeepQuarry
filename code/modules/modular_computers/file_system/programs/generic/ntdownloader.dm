@@ -12,7 +12,6 @@
 	requires_ntnet_feature = NTNET_SOFTWAREDOWNLOAD
 	available_on_ntnet = FALSE
 	ui_header = "downloader_finished.gif"
-	tgui_id = "NtosNetDownloader"
 
 	var/datum/computer_file/program/downloaded_file = null
 	var/hacked_download = 0
@@ -31,6 +30,10 @@
 
 CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	owns_one(nameof(downloaded_file), /datum/computer_file/program)
+	interface("NtosNetDownloader")
+	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("filename", schema_text(4096))), then(PROC_REF(ui_act_prg_downloadfile)))
+	op("PRG_removequeued", ui_act("PRG_removequeued", arg("filename", schema_text(4096))), then(PROC_REF(ui_act_prg_removequeued)))
+	op("PRG_reseterror", ui_act("PRG_reseterror"), then(PROC_REF(ui_act_prg_reseterror)))
 
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()
@@ -115,21 +118,18 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 			download_netspeed = NTNETSPEED_ETHERNET
 	download_completion += download_netspeed
 
-UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_downloadfile", ui_act_prg_downloadfile, UI_ARG_TEXT("filename"))
-UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_downloadfile)
+/datum/computer_file/program/ntnetdownload/proc/ui_act_prg_downloadfile(datum/act/op/A, filename)
 	if(!downloaded_file)
-		begin_file_download(params["filename"])
-	else if(check_file_download(params["filename"]) && !LAZYFIND(downloads_queue, params["filename"]) && downloaded_file.filename != params["filename"])
-		LAZYADD(downloads_queue, params["filename"])
+		begin_file_download(filename)
+	else if(check_file_download(filename) && !LAZYFIND(downloads_queue, filename) && downloaded_file.filename != filename)
+		LAZYADD(downloads_queue, filename)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_removequeued", ui_act_prg_removequeued, UI_ARG_TEXT("filename"))
-UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_removequeued)
-	LAZYREMOVE(downloads_queue, params["filename"])
+/datum/computer_file/program/ntnetdownload/proc/ui_act_prg_removequeued(datum/act/op/A, filename)
+	LAZYREMOVE(downloads_queue, filename)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_reseterror", ui_act_prg_reseterror)
-UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_reseterror)
+/datum/computer_file/program/ntnetdownload/proc/ui_act_prg_reseterror(datum/act/op/A)
 	if(downloaderror)
 		download_completion = 0
 		download_netspeed = 0
@@ -137,10 +137,8 @@ UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_reseterror)
 		downloaderror = ""
 	return TRUE
 
-UI_DATA_REPLACE(/datum/computer_file/program/ntnetdownload, "merge:ui_data_datum_computer_file_program_ntnetdownload{downloading:bool,error:bool,downloadname:text,downloaddesc:text,downloadsize:num,downloadspeed:num,downloadcompletion:num,disk_size:num,disk_used:num,hackedavailable:bool,hacked_programs:list,downloadable_programs:list,downloads_queue:bool}")
-
-/// The computed part of /datum/computer_file/program/ntnetdownload's window data (declared on its UI_DATA row).
-/datum/computer_file/program/ntnetdownload/proc/ui_data_datum_computer_file_program_ntnetdownload(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/ntnetdownload/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	rel_set(src, nameof(my_computer), computer())
 	if(!istype(my_computer(), /obj/item/modular_computer))
 		return
@@ -201,7 +199,6 @@ UI_DATA_REPLACE(/datum/computer_file/program/ntnetdownload, "merge:ui_data_datum
 	if(P && P.is_supported_by_hardware(hardflag,0))
 		return "Compatible"
 	return "Incompatible!"
-
 
 /// The my_computer this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/ntnetdownload/proc/my_computer() as /obj/item/modular_computer

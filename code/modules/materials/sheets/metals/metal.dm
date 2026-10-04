@@ -20,14 +20,12 @@
 	default_type = MAT_PLASTEELREBAR
 	apply_colour = 1
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/material/plasteel/rebar, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/material/plasteel/rebar/appearance_overlays()
-	. = list()
-	var/amount = get_amount()
-	if((amount <= 5) && (amount > 0))
-		icon_state = "rods-[amount]"
-	else
-		icon_state = "rods"
+/// A few bars show their count; a pile shows the plain state.
+/obj/item/stack/material/plasteel/rebar/look_state()
+	var/count = get_amount()
+	if((count <= 5) && (count > 0))
+		return "rods-[count]"
+	return "rods"
 
 /obj/item/stack/material/durasteel
 	name = MAT_DURASTEEL

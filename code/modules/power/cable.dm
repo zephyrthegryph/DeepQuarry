@@ -467,8 +467,10 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 /obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
 	. = ..()
 	apply_blueprint_effects()
-	amount = length
+	set_amount(length, TRUE)
 	material_engineered_id_set(src, material_id)
+	if (!color)
+		color = pick(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)
 	if (param_color) // It should be red by default, so only recolor it if parameter was specified.
 		color = param_color
 	pixel_x = rand(-2,2)
@@ -526,20 +528,25 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 /obj/item/stack/cable_coil/proc/robo_repair_used(mob/living/user, use_amt)
 	use(use_amt)
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/cable_coil/appearance_overlays()
-	. = list()
-	if (!color)
-		color = pick(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)
+/// One or two lengths show as a piece, more as a coil.
+/obj/item/stack/cable_coil/look_state()
 	if(amount == 1)
-		icon_state = "coil1"
-		name = "cable piece"
-	else if(amount == 2)
-		icon_state = "coil2"
+		return "coil1"
+	if(amount == 2)
+		return "coil2"
+	return "coil"
+
+/// A piece of cable is named so, a coil keeps its own name.
+/obj/item/stack/cable_coil/proc/update_coil_name()
+	if(amount == 1 || amount == 2)
 		name = "cable piece"
 	else
-		icon_state = "coil"
 		name = initial(name)
+
+/obj/item/stack/cable_coil/set_amount(new_amount, no_limits = FALSE)
+	. = ..()
+	if(!QDELETED(src))
+		update_coil_name()
 
 /obj/item/stack/cable_coil/proc/set_cable_color(selected_color, user)
 	if(!selected_color)
@@ -764,7 +771,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 
 /obj/item/stack/cable_coil/cut/Initialize(mapload)
 	. = ..()
-	amount = rand(1,2)
+	set_amount(rand(1,2), TRUE)
 	pixel_x = rand(-2,2)
 	pixel_y = rand(-2,2)
 	update_icon()
@@ -850,7 +857,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 /obj/item/stack/cable_coil/random_belt/Initialize(mapload)
 	stacktype = /obj/item/stack/cable_coil
 	color = pick(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)
-	amount = 30
 	. = ..()
 
 //Endless alien cable coil
@@ -897,10 +903,9 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 			embed_chance = force/(w_class*3)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/cable_coil/alien/appearance_overlays()
-	. = list()
-	icon_state = initial(icon_state)
+/// An alien spool always shows its own state.
+/obj/item/stack/cable_coil/alien/look_state()
+	return initial(icon_state)
 
 /obj/item/stack/cable_coil/alien/can_use(used)
 	return 1
@@ -930,7 +935,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Tak
 			return TRUE
 		if(N && N <= amount)
 			var/obj/item/stack/cable_coil/CC = new/obj/item/stack/cable_coil(user.loc)
-			CC.amount = N
+			CC.set_amount(N, TRUE)
 			CC.update_icon()
 			to_chat(user,span_blue("You take [N] units of wire from the [src]."))
 			if (CC)

@@ -35,6 +35,7 @@
 /obj/item/stack/sandbags/Initialize(mapload, amt, bag_mat)
 	. = ..(mapload, amt)
 	recipes = GLOB.sandbag_recipes
+	update_slowdown()
 	update_icon()
 	if(bag_mat)
 		bag_material = bag_mat
@@ -43,12 +44,14 @@
 		return INITIALIZE_HINT_QDEL
 	color = M.icon_colour
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/sandbags/appearance_overlays()
-	. = list()
-	var/amount = get_amount()
+/// A bigger pile slows its carrier more.
+/obj/item/stack/sandbags/proc/update_slowdown()
+	slowdown = round(get_amount() / 10, 0.1)
 
-	slowdown = round(amount / 10, 0.1)
+/obj/item/stack/sandbags/set_amount(new_amount, no_limits = FALSE)
+	. = ..()
+	if(!QDELETED(src))
+		update_slowdown()
 
 /obj/item/stack/sandbags/produce_recipe(datum/stack_recipe/recipe, quantity, mob/user)
 	var/required = quantity*recipe.req_amount
@@ -99,7 +102,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearanc
 
 		if (istype(O, /obj/item/stack))
 			var/obj/item/stack/S = O
-			S.amount = produced
+			S.set_amount(produced, TRUE)
 			S.add_to_stacks(user)
 
 		if (istype(O, /obj/item/storage)) //BubbleWrap - so newly formed boxes are empty
@@ -134,7 +137,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearanc
 	pass_color = TRUE
 
 	var/bag_material = MAT_CLOTH
-	custom_handling = TRUE
 
 /obj/item/stack/emptysandbag/Initialize(mapload, amt, bag_mat)
 	. = ..(mapload, amt)
@@ -146,6 +148,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearanc
 	color = M.icon_colour
 
 CAPABILITIES(/obj/item/stack/emptysandbag)
+	without("ui_open")
 	op("emptysandbag_self", in_hand(), label("Fill"), then(PROC_REF(emptysandbag_self)))
 
 /// Old attack_self.

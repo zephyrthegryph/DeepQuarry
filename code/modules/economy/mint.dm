@@ -53,7 +53,7 @@
 /obj/machinery/mineral/mint/proc/press_sheet(datum/om/task/timed/mint_press_sheet/task)
 	var/mob/user = task.actor
 	var/obj/item/stack/material/M = task.M
-	M.amount--
+	M.set_amount(M.amount - 1, TRUE)
 	while(coinsToProduce-- > 0)
 		new M.coin_type(user.loc)
 	src.visible_message(span_notice("\The [src] rattles and dispenses several [M.default_type] coins!"))

@@ -404,14 +404,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	return transferred
 
 /// Every amount mutation on a stack (use/add/set_amount, hence split/merge/
-/// transfer) ends in update_icon(), so this is the one seam that keeps the
+/// transfer) ends in set_amount(), so this is the one seam that keeps the
 /// export value in step with the sheets actually present: a split can no
 /// longer leave both halves carrying the whole stack's value.
-DECLARE_APPEARANCE_PROC(/obj/item/stack/material/processed_alloy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/material/processed_alloy/appearance_overlays()
-	. = list()
-	. += ..()
-	refresh_export_value()
+/obj/item/stack/material/processed_alloy/set_amount(new_amount, no_limits = FALSE)
+	. = ..()
+	if(!QDELETED(src))
+		refresh_export_value()
 
 /obj/item/stack/material/processed_alloy/proc/refresh_export_value()
 	if(!export_value_per_sheet)

@@ -8,7 +8,6 @@
 	w_class = ITEMSIZE_TINY
 	max_amount = 240
 	force = 1 //Needs a token force to ensure you can attack because for some reason you can't attack with 0 force things
-	custom_handling = TRUE
 
 /obj/item/stack/telecrystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(amount >= 5)
@@ -19,6 +18,7 @@
 		to_chat(user, span_warning("There are not enough telecrystals to do that."))
 
 CAPABILITIES(/obj/item/stack/telecrystal)
+	without("ui_open")
 	op("redeem", in_hand(), then(PROC_REF(redeemed)))
 
 /// Using the crystals in the hand adds them to your balance.

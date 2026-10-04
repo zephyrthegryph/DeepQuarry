@@ -39,6 +39,10 @@
 
 CAPABILITIES(/datum/computer_file/program)
 	owns_one(nameof(TM), /datum/tgui_module)
+	ref_one(nameof(computer), /obj/item/modular_computer)
+	op("PC_exit", ui_act("PC_exit"), then(PROC_REF(ui_act_pc_exit)))
+	op("PC_shutdown", ui_act("PC_shutdown"), then(PROC_REF(ui_act_pc_shutdown)))
+	op("PC_minimize", ui_act("PC_minimize"), then(PROC_REF(ui_act_pc_minimize)))
 
 /datum/computer_file/program/New(obj/item/modular_computer/comp = null)
 	..()
@@ -166,8 +170,6 @@ CAPABILITIES(/datum/computer_file/program)
 		get_asset_datum(/datum/asset/simple/headers)
 	)
 
-DECLARE_UI(/datum/computer_file/program, UI_FROM_VAR("tgui_id"))
-
 /// An inactive program shows its computer; a program wrapping a tgui module shows the module.
 /datum/computer_file/program/ui_redirect(mob/user)
 	if(program_state != PROGRAM_STATE_ACTIVE)
@@ -193,24 +195,28 @@ DECLARE_UI(/datum/computer_file/program, UI_FROM_VAR("tgui_id"))
 // Calls beginning with "PRG_" are reserved for programs handling.
 // Calls beginning with "PC_" are reserved for computer handling (by whatever runs the program)
 // ALWAYS INCLUDE PARENT CALL ..() OR DIE IN FIRE.
-UI_ACT(/datum/computer_file/program, "PC_exit", ui_act_pc_exit)
-UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_exit)
+/// The answer to a question one of the program's buttons asked still counts: the window the program shows is still open and interactive for the one who answers.
+/datum/computer_file/program/proc/request_usable(datum/request/R)
+	return window_request_usable(src, R)
+
+/datum/computer_file/program/proc/ui_act_pc_exit(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(computer()))
 		return
 	computer().kill_program(FALSE, user)
-	ui.close()
+	SStgui.get_open_ui(user, src)?.close()
 	return 1
 
-UI_ACT(/datum/computer_file/program, "PC_shutdown", ui_act_pc_shutdown)
-UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_shutdown)
+/datum/computer_file/program/proc/ui_act_pc_shutdown(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(computer()))
 		return
 	computer().shutdown_computer()
-	ui.close()
+	SStgui.get_open_ui(user, src)?.close()
 	return 1
 
-UI_ACT(/datum/computer_file/program, "PC_minimize", ui_act_pc_minimize)
-UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_minimize)
+/datum/computer_file/program/proc/ui_act_pc_minimize(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(computer()))
 		return
 	if(!computer().active_program())
@@ -221,11 +227,10 @@ UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_minimize)
 
 	rel_clear(computer(), nameof(/obj/item/modular_computer::active_program))
 	computer().update_icon()
-	ui.close()
+	SStgui.get_open_ui(user, src)?.close()
 
 	if(istype(user))
 		computer().tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
-
 
 /// Device that runs this program. (a relation view: null once that is deleted).
 /datum/computer_file/program/proc/computer() as /obj/item/modular_computer

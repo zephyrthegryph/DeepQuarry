@@ -11,7 +11,9 @@
 	throw_range = 20
 	can_weld = TRUE
 	no_variants = FALSE
-	custom_handling = TRUE
+
+CAPABILITIES(/obj/item/stack/tile/maintenance_panel)
+	without("ui_open")
 
 EXTEND_INTERACTIONS(/obj/item/stack/tile/maintenance_panel, INTERACT_SELF("Build panel", PROC_REF(maintenance_panel_self), REQ_ON(PRED_ACTOR, /mob/proc/IsAdvancedToolUser, "this task is too complex for your clumsy hands")))
 

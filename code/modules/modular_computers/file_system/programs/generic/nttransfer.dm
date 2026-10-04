@@ -12,7 +12,6 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	requires_ntnet_feature = NTNET_PEERTOPEER
 	network_destination = "other device via P2P tunnel"
 	available_on_ntnet = TRUE
-	tgui_id = "NtosNetTransfer"
 	category = PROG_UTIL
 
 	var/error = ""										// Error screen
@@ -78,12 +77,17 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	rel_clear(src, nameof(remote))
 	download_completion = 0
 
-UI_DATA_REPLACE(/datum/computer_file/program/nttransfer, "error:text", "merge:ui_data_datum_computer_file_program_nttransfer{downloading:bool,download_size:num,download_progress:num,download_netspeed:num,download_name:text,uploading:bool,upload_uid:unknown,upload_clients:num,upload_haspassword:num,upload_filename:text,upload_filelist:list,servers:list}")
+CAPABILITIES(/datum/computer_file/program/nttransfer)
+	interface("NtosNetTransfer")
+	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("uid", num())), then(PROC_REF(ui_act_prg_downloadfile)))
+	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
+	op("PRG_setpassword", ui_act("PRG_setpassword"), then(PROC_REF(ui_act_prg_setpassword)))
+	op("PRG_uploadfile", ui_act("PRG_uploadfile", arg("uid", num())), then(PROC_REF(ui_act_prg_uploadfile)))
+	op("PRG_uploadmenu", ui_act("PRG_uploadmenu"), then(PROC_REF(ui_act_prg_uploadmenu)))
 
-/// The computed part of /datum/computer_file/program/nttransfer's window data (declared on its UI_DATA row).
-/datum/computer_file/program/nttransfer/proc/ui_data_datum_computer_file_program_nttransfer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/nttransfer/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()
-
+	data["error"] = error
 
 	data["downloading"] = !!downloaded_file
 	if(downloaded_file)
@@ -126,27 +130,35 @@ UI_DATA_REPLACE(/datum/computer_file/program/nttransfer, "error:text", "merge:ui
 
 	return data
 
-UI_ACT(/datum/computer_file/program/nttransfer, "PRG_downloadfile", ui_act_prg_downloadfile, UI_ARG_NUM("uid"))
-UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_downloadfile)
+/datum/computer_file/program/nttransfer/proc/ui_act_prg_downloadfile(datum/act/op/A, uid)
+	var/mob/user = A.actor
 	for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
-		if(P.unique_token == params["uid"])
+		if(P.unique_token == uid)
 			rel_set(src, nameof(/datum/computer_file/program/nttransfer::remote), P)
 			break
 	if(!remote() || !remote().provided_file())
 		return
 	if(remote().server_password)
-		var/pass = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/text, message = "Code 401 Unauthorized. Please enter password:", title = "Password required")
-		if(isnull(pass))
-			return
-		if(pass != remote().server_password)
-			error = "Incorrect Password"
-			return
-	rel_set(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), remote().provided_file().clone())
-	rel_add(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
+		open_request(src, /datum/prompt/text, PROC_REF(download_password_entered), valid = PROC_REF(request_usable), answerer = user, question = "Code 401 Unauthorized. Please enter password:", title = "Password required", timeout = 0)
+		return
+	start_download()
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/nttransfer, "PRG_reset", ui_act_prg_reset)
-UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_reset)
+/datum/computer_file/program/nttransfer/proc/download_password_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value) || !remote() || !remote().provided_file())
+		return
+	if(A.answer.answer_value != remote().server_password)
+		error = "Incorrect Password"
+		SStgui.update_uis(src)
+		return
+	start_download()
+	SStgui.update_uis(src)
+
+/datum/computer_file/program/nttransfer/proc/start_download()
+	rel_set(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), remote().provided_file().clone())
+	rel_add(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
+
+/datum/computer_file/program/nttransfer/proc/ui_act_prg_reset(datum/act/op/A)
 	error = ""
 	upload_menu = 0
 	finalize_download()
@@ -157,11 +169,13 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_reset)
 	rel_clear(src, nameof(/datum/computer_file/program/nttransfer::provided_file))
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/nttransfer, "PRG_setpassword", ui_act_prg_setpassword)
-UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_setpassword)
-	var/pass = act_ask(ui.user, action, params, ui, "k157", /datum/om/prompt/text, message = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none")
-	if(isnull(pass))
+/datum/computer_file/program/nttransfer/proc/ui_act_prg_setpassword(datum/act/op/A)
+	open_request(src, /datum/prompt/text, PROC_REF(prg_setpassword_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none", timeout = 0)
+
+/datum/computer_file/program/nttransfer/proc/prg_setpassword_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/pass = A.answer.answer_value
 	if(!pass)
 		return
 	if(pass == "none")
@@ -169,11 +183,11 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_setpassword)
 		return
 	server_password = pass
 	return TRUE
+	SStgui.update_uis(src)
 
-UI_ACT(/datum/computer_file/program/nttransfer, "PRG_uploadfile", ui_act_prg_uploadfile, UI_ARG_NUM("uid"))
-UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadfile)
+/datum/computer_file/program/nttransfer/proc/ui_act_prg_uploadfile(datum/act/op/A, uid)
 	for(var/datum/computer_file/F in computer().hard_drive.stored_files)
-		if(F.uid == params["uid"])
+		if(F.uid == uid)
 			if(F.unsendable)
 				error = "I/O Error: File locked."
 				return
@@ -183,11 +197,9 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadfile)
 	error = "I/O Error: Unable to locate file on hard drive."
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/nttransfer, "PRG_uploadmenu", ui_act_prg_uploadmenu)
-UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadmenu)
+/datum/computer_file/program/nttransfer/proc/ui_act_prg_uploadmenu(datum/act/op/A)
 	upload_menu = 1
 	return TRUE
-
 
 /// File which is provided to clients. (a relation view: null once that is deleted).
 /datum/computer_file/program/nttransfer/proc/provided_file() as /datum/computer_file

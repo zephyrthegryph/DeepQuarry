@@ -609,3 +609,84 @@
 	var/datum/tgui_module/robot_ui_decals/D = hct_track(new /datum/tgui_module/robot_ui_decals(R))
 	press(R, D, "toggle_decal", list("value" = "stripe"))
 	TEST_ASSERT(!LAZYLEN(R.robotdecal_on), "a robot with no sprite has no decals to switch")
+
+// ---- batch 6: programs of a modular computer (code/modules/modular_computers/file_system) ----
+
+/// A laptop with a real processor and drive, nothing else.
+/obj/item/modular_computer/hct_laptop
+	hardware_flag = PROGRAM_LAPTOP
+
+/obj/item/modular_computer/hct_laptop/install_default_hardware()
+	. = ..()
+	install_hardware(new /obj/item/computer_hardware/processor_unit/small(src))
+	install_hardware(new /obj/item/computer_hardware/hard_drive(src))
+
+/// A program of `type` run on a fresh laptop next to the person.
+/datum/unit_test/dq_hc_tgui/proc/hct_program(type)
+	var/obj/item/modular_computer/hct_laptop/L = allocate(/obj/item/modular_computer/hct_laptop, hct_spot())
+	var/datum/computer_file/program/P = hct_track(new type(L))
+	return P
+
+/// A text file stored on the program's computer.
+/datum/unit_test/dq_hc_tgui/proc/hct_file(datum/computer_file/program/P, name, data = "")
+	var/datum/computer_file/data/F = new /datum/computer_file/data()
+	F.filename = name
+	F.filetype = "TXT"
+	F.stored_data = data
+	F.calculate_size()
+	TEST_ASSERT(P.computer().hard_drive.store_file(F), "the drive stores the file")
+	return F
+
+/datum/unit_test/dq_hc_tgui/word_processor_files
+/datum/unit_test/dq_hc_tgui/word_processor_files/run_gate()
+	var/datum/computer_file/program/wordprocessor/P = hct_program(/datum/computer_file/program/wordprocessor)
+	var/mob/living/carbon/human/H = hct_actor()
+	var/datum/computer_file/data/doc = hct_file(P, "doc", "hello")
+	press(H, P, "PRG_openfile", list("PRG_openfile" = "doc"))
+	TEST_ASSERT_EQUAL(P.open_file, "doc", "the file is opened")
+	TEST_ASSERT_EQUAL(P.loaded_data, "hello", "and its text loaded")
+	P.loaded_data = "changed"
+	press(H, P, "PRG_savefile")
+	TEST_ASSERT_EQUAL(P.get_file("doc").stored_data, "changed", "saving writes the text back")
+	press(H, P, "PRG_newfile", list("PRG_saveasfile" = "x"))
+	TEST_ASSERT(p2cl_has_question(H), "a name is asked for")
+	p2cl_answer(H, "memo")
+	test_time(10 SECONDS)
+	TEST_ASSERT(P.get_file("memo"), "the new file is made")
+	TEST_ASSERT_EQUAL(P.open_file, "memo", "and opened")
+	press(H, P, "PRG_openfile", list("PRG_openfile" = "no such file"))
+	TEST_ASSERT(P.error, "opening a file that is not there is an error")
+	press(H, P, "PRG_backtomenu")
+	TEST_ASSERT_NULL(P.error, "the error is cleared")
+	P.loaded_data = "unsaved"
+	P.is_edited = TRUE
+	press(H, P, "PRG_openfile", list("PRG_openfile" = "doc"))
+	TEST_ASSERT(p2cl_has_question(H), "unsaved changes are asked about first")
+	p2cl_answer(H, FALSE)
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(P.get_file("memo").stored_data, "", "answering no does not save them")
+	TEST_ASSERT_EQUAL(P.open_file, "doc", "and the other file opens")
+	qdel(doc)
+
+/datum/unit_test/dq_hc_tgui/file_manager_files
+/datum/unit_test/dq_hc_tgui/file_manager_files/run_gate()
+	var/datum/computer_file/program/filemanager/P = hct_program(/datum/computer_file/program/filemanager)
+	var/mob/living/carbon/human/H = hct_actor()
+	var/datum/computer_file/data/F = hct_file(P, "notes", "text")
+	press(H, P, "PRG_openfile", list("uid" = F.uid))
+	TEST_ASSERT_EQUAL(P.open_file, F.uid, "the file is opened")
+	var/count = length(P.computer().hard_drive.stored_files)
+	press(H, P, "PRG_clone", list("uid" = F.uid))
+	TEST_ASSERT_EQUAL(length(P.computer().hard_drive.stored_files), count + 1, "a copy is stored")
+	press(H, P, "PRG_rename", list("uid" = F.uid, "new_name" = "renamed"))
+	TEST_ASSERT_EQUAL(F.filename, "renamed", "the file is renamed")
+	press(H, P, "PRG_newtextfile")
+	TEST_ASSERT(p2cl_has_question(H), "a file name is asked for")
+	p2cl_answer(H, "fresh")
+	test_time(10 SECONDS)
+	TEST_ASSERT(P.computer().hard_drive.find_file_by_name("fresh"), "the new file is stored")
+	press(H, P, "PRG_closefile")
+	TEST_ASSERT_NULL(P.open_file, "closing the file clears it")
+	var/uid = F.uid
+	press(H, P, "PRG_deletefile", list("uid" = uid))
+	TEST_ASSERT_NULL(P.computer().find_file_by_uid(uid), "the file is deleted")

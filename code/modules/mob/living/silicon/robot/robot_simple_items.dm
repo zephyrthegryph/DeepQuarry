@@ -231,7 +231,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, TYPE_PROC
 	gender = NEUTER
 	uses_charge = 1
 	charge_costs = list(1)
-	custom_handling = TRUE
 
 /// A synthesiser keeps its cable construction for the cable it lays, but is not
 /// made of recyclable material itself (it would dupe materials in a recycler).
@@ -239,6 +238,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, TYPE_PROC
 	return list()
 
 CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
+	without("ui_open")
 	op("cyborg_coil_self", in_hand(), label("Change colour"), then(PROC_REF(cyborg_coil_self)))
 
 /// Old attack_self.

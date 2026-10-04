@@ -31,29 +31,26 @@
 	recipes = GLOB.rods_recipes
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/rods, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/rods/appearance_overlays()
-	. = list()
-	var/amount = get_amount()
-	if((amount <= 5) && (amount > 0))
-		icon_state = "rods-[amount]"
-	else
-		icon_state = "rods"
+/// A few rods show their count; a pile shows the plain state.
+/obj/item/stack/rods/look_state()
+	var/count = get_amount()
+	if((count <= 5) && (count > 0))
+		return "rods-[count]"
+	return "rods"
 
-EXTEND_INTERACTIONS(/obj/item/stack/rods, INTERACT_ITEM(null, PROC_REF(rods_interaction_item)))
+CAPABILITIES(/obj/item/stack/rods)
+	op("splint", item(/obj/item/tape_roll), passes(), then(PROC_REF(taped_into_splint)))
 
-/// Old attackby.
-/obj/item/stack/rods/proc/rods_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if (istype(W, /obj/item/tape_roll))
-		var/obj/item/stack/medical/splint/ghetto/new_splint = new(get_turf(user))
-		new_splint.add_fingerprint(user)
+/// Tape wound round a rod makes a makeshift splint.
+/obj/item/stack/rods/proc/taped_into_splint(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/medical/splint/ghetto/new_splint = new(get_turf(user))
+	new_splint.add_fingerprint(user)
 
-		act_message(user, null, MSG_SELF(span_notice("You use make \a [new_splint] out of a [singular_name].")), \
-			MSG_OTHERS(span_infoplain(span_bold("%U%") + " constructs \a [new_splint] out of a [singular_name].")))
-		src.use(1)
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
+	act_message(user, null, MSG_SELF(span_notice("You use make \a [new_splint] out of a [singular_name].")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " constructs \a [new_splint] out of a [singular_name].")))
+	src.use(1)
+	return OP_OK
 
 /obj/item/stack/rods/welder_act(mob/user, obj/item/tool)
 	if(get_amount() < 2)

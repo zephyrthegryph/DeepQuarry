@@ -25,7 +25,9 @@
 	var/apply_colour //temp pending icon rewrite
 	drop_sound = SFX_ITEMS_DROP_AXE
 	pickup_sound = SFX_ITEMS_PICKUP_AXE
-	custom_handling = TRUE
+
+CAPABILITIES(/obj/item/stack/material)
+	without("ui_open")
 
 /obj/item/stack/material/Initialize(mapload, starting_amount)
 	. = ..(mapload, starting_amount)

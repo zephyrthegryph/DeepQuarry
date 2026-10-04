@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Converted the stack family (stacks, medical packs, sandbags, marker beacons, rods, cable coils, sheets) to the final op, request and look forms."
