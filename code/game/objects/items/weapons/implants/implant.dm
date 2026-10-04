@@ -290,29 +290,57 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 		t.hotspot_expose(3500,125)
 
 /obj/item/implant/explosive/post_implant(mob/source as mob, mob/user = null)
-	om_ask(user, /datum/om/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), source = source)
+	if(user && !QDELETED(user))
+		open_request(src, /datum/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), answerer = user, source = source)
 
 /// The explosive implant's yield, then its phrase; `source` is the implantee.
-/datum/om/prompt/choice/explosive_implant_level
+/datum/prompt/choice/explosive_implant_level
 	title = "Implant Intent"
-	message = "What sort of explosion would you prefer?"
-	choices = list("Localized Limb", "Destroy Body", "Full Explosion")
+	question = "What sort of explosion would you prefer?"
+	timeout = 0
 	buttons = TRUE
 	var/mob/source
 
-/datum/om/prompt/text/explosive_implant_phrase
-	message = "Choose activation phrase:"
+CAPABILITIES(/datum/prompt/choice/explosive_implant_level)
+	ref_one(nameof(source), /mob)
+
+/datum/prompt/choice/explosive_implant_level/prepare(datum/act/A)
+	..()
+	var/mob/captured_source = source
+	rel_clear(src, nameof(source))
+	rel_set(src, nameof(source), captured_source)
+	var/static/list/levels = list("Localized Limb", "Destroy Body", "Full Explosion")
+	choices = levels
+
+/datum/prompt/text/explosive_implant_phrase
+	question = "Choose activation phrase:"
+	timeout = 0
 	var/mob/source
 	var/level
 
-/obj/item/implant/explosive/proc/explosive_level_chosen(datum/om/prompt/choice/explosive_implant_level/ask)
-	om_ask(ask.answerer, /datum/om/prompt/text/explosive_implant_phrase, PROC_REF(explosive_configured), source = ask.source, level = ask.choice)
+CAPABILITIES(/datum/prompt/text/explosive_implant_phrase)
+	ref_one(nameof(source), /mob)
 
-/obj/item/implant/explosive/proc/explosive_configured(datum/om/prompt/text/explosive_implant_phrase/ask)
+/datum/prompt/text/explosive_implant_phrase/prepare(datum/act/A)
+	..()
+	var/mob/captured_source = source
+	rel_clear(src, nameof(source))
+	rel_set(src, nameof(source), captured_source)
+
+/obj/item/implant/explosive/proc/explosive_level_chosen(datum/act/request/A)
+	var/datum/prompt/choice/explosive_implant_level/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.source))
+		return
+	open_request(src, /datum/prompt/text/explosive_implant_phrase, PROC_REF(explosive_configured), answerer = ask.answerer, source = ask.source, level = ask.value)
+
+/obj/item/implant/explosive/proc/explosive_configured(datum/act/request/A)
+	var/datum/prompt/text/explosive_implant_phrase/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.source))
+		return
 	var/mob/user = ask.answerer
 	var/mob/source = ask.source
 	elevel = ask.level
-	phrase = ask.text
+	phrase = ask.value
 	var/list/replacechars = list("'" = "","\"" = "",">" = "","<" = "","(" = "",")" = "")
 	phrase = replace_characters(phrase, replacechars)
 	user.mind?.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.", 0, 0)
@@ -636,16 +664,30 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
 	activation_emote = pick(choices)
 	announce_activation(source)
-	om_ask(user, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
+	if(user && !QDELETED(user))
+		open_request(src, /datum/prompt/choice/implant_emote, PROC_REF(emote_chosen), answerer = user, choices = choices, source = source)
 
 /// An emote-triggered implant's activation emote (compressed matter, uplink); `source` is the implantee.
-/datum/om/prompt/choice/implant_emote
+/datum/prompt/choice/implant_emote
 	title = "Implant Activation"
-	message = "Choose activation emote. If you cancel this, one will be picked at random."
+	question = "Choose activation emote. If you cancel this, one will be picked at random."
+	timeout = 0
 	var/mob/source
 
-/obj/item/implant/compressed/proc/emote_chosen(datum/om/prompt/choice/implant_emote/ask)
-	activation_emote = ask.choice
+CAPABILITIES(/datum/prompt/choice/implant_emote)
+	ref_one(nameof(source), /mob)
+
+/datum/prompt/choice/implant_emote/prepare(datum/act/A)
+	..()
+	var/mob/captured_source = source
+	rel_clear(src, nameof(source))
+	rel_set(src, nameof(source), captured_source)
+
+/obj/item/implant/compressed/proc/emote_chosen(datum/act/request/A)
+	var/datum/prompt/choice/implant_emote/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.source))
+		return
+	activation_emote = ask.value
 	announce_activation(ask.source)
 
 /obj/item/implant/compressed/proc/announce_activation(mob/source)
@@ -656,7 +698,6 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 /obj/item/implant/compressed/islegal()
 	return 0
 
-// === merged from implant_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/implant/vrlanguage
 	name = "language"
 	desc = "Allows the user to understand and speak almost all known languages.."
@@ -810,22 +851,38 @@ DAMAGE_REACTION(/obj/item/implant/sizecontrol, DAMAGE_EMP, PROC_REF(sizecontrol_
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /// The compliance implant's laws. Re-checked on the answer: the implanter is still carried and still loaded with that implant.
-/datum/om/prompt/text/compliance_laws
+/datum/prompt/text/compliance_laws
+	timeout = 0
 	title = "Compliance Laws"
-	message = "Please Input Laws"
+	question = "Please Input Laws"
 	default = ""
 	multiline = TRUE
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 	var/obj/item/implant/compliance/implant
 
-/datum/om/prompt/text/compliance_laws/valid()
-	var/obj/item/implanter/compliance/implanter = subject
-	return implanter.imp == implant ? null : "implant changed"
+CAPABILITIES(/datum/prompt/text/compliance_laws)
+	ref_one(nameof(implant), /obj/item/implant/compliance)
 
-/obj/item/implanter/compliance/proc/laws_entered(datum/om/prompt/text/compliance_laws/ask)
+/datum/prompt/text/compliance_laws/prepare(datum/act/A)
+	..()
+	var/obj/item/implant/compliance/captured_implant = implant
+	rel_clear(src, nameof(implant))
+	rel_set(src, nameof(implant), captured_implant)
+
+/datum/prompt/text/compliance_laws/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/obj/item/implanter/compliance/implanter = owner
+	return !QDELETED(implanter) && !QDELETED(implant) && implanter.imp == implant ? null : "implant changed"
+
+/obj/item/implanter/compliance/proc/laws_entered(datum/act/request/A)
+	var/datum/prompt/text/compliance_laws/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.implant))
+		return
 	var/mob/user = ask.answerer
 	var/obj/item/implant/compliance/implant = ask.implant
-	var/newlaws = sanitize(ask.text, 2048)
+	var/newlaws = sanitize(ask.value, 2048)
 	if(newlaws)
 		to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
 		implant.laws = newlaws //Organic
@@ -838,7 +895,7 @@ CAPABILITIES(/obj/item/implanter/compliance)
 	var/mob/user = A.actor
 	if(istype(imp,/obj/item/implant/compliance))
 		var/obj/item/implant/compliance/implant = imp
-		om_ask(user, /datum/om/prompt/text/compliance_laws, PROC_REF(laws_entered), implant = implant)
+		open_request(src, /datum/prompt/text/compliance_laws, PROC_REF(laws_entered), answerer = user, implant = implant)
 	else //No using other implants.
 		to_chat(user,span_notice("A red warning pops up on the implanter's micro-screen: 'INVALID IMPLANT DETECTED.'"))
 
