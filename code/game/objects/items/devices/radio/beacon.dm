@@ -17,7 +17,7 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 
 /obj/item/radio/beacon/proc/alter_signal_effect(datum/act/op/A)
 	var/mob/user = A.actor
-	var/t = A.step_answer("beacon_signal").answer_value
+	var/t = A.step_value("beacon_signal")
 	// The old verb took the text as its argument; ask for it instead.
 	if(loc != user)
 		return

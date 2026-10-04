@@ -46,7 +46,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water, TYPE_PROC_REF(/atom, appear
 	return "water_shallow"
 
 CAPABILITIES(/turf/simulated/floor/water)
-	op("water_fishing", item(/obj/item/material/fishing_rod), label("Cast a line"), then(PROC_REF(water_fishing)))
+	op("water_fishing", item(/obj/item/material/fishing_rod), label("Cast a line"), priority(OP_PRIORITY_PART + 1), then(PROC_REF(water_fishing)))
 	op("water_fill", item(/obj/item), label("Fill"), then(PROC_REF(water_fill)))
 
 /// Old attackby: fill an open container or wet a mop.

@@ -65,7 +65,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 
 /obj/item/card/data/proc/data_label_effect(datum/act/op/A)
 	var/mob/user = A.actor
-	var/t = A.step_answer("data_card_label").answer_value
+	var/t = A.step_value("data_card_label")
 	// The old verb took the text as its argument; ask for it instead.
 	if(get(src, /mob) != user)
 		return

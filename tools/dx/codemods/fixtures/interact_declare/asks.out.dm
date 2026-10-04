@@ -7,7 +7,7 @@ CAPABILITIES(/obj/item/gap_card)
 	op("amount_verb", menu(), label("Set amount"), asks(/datum/prompt/choice, fields = list("question" = "Amount:", "choices" = nameof(possible_amounts), "timeout" = 0), step = "a1"), then(PROC_REF(amount_verb)))
 
 /obj/item/gap_card/proc/label_effect(datum/act/op/A)
-	var/t = A.step_answer("label").answer_value
+	var/t = A.step_value("label")
 	name = "card - [t]"
 	return TRUE
 
@@ -19,12 +19,12 @@ CAPABILITIES(/obj/item/gap_card)
 
 /obj/item/gap_card/proc/change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	disguise(GLOB.gap_choices[picked])
 
 /obj/item/gap_card/proc/amount_verb(datum/act/op/A)
-	var/N = A.step_answer("a1").answer_value
+	var/N = A.step_value("a1")
 	if(N)
 		amount = N

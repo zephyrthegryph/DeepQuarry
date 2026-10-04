@@ -242,7 +242,7 @@ CAPABILITIES(/obj/structure/stairs/bottom)
 CAPABILITIES(/obj/structure/stairs/middle)
 	links(/obj/structure/stairs/middle::top, /obj/structure/stairs/top::middle)
 	climb()
-	op("interaction_drag", item(/mob), gesture(GESTURE_DRAG), then(PROC_REF(interaction_drag)))
+	op("interaction_drag", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_PART + 1), then(PROC_REF(interaction_drag)))
 
 /obj/structure/stairs/middle/Initialize(mapload)
 	. = ..()

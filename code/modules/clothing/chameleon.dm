@@ -67,7 +67,7 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 
 /obj/item/clothing/under/chameleon/proc/chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_jumpsuit_choices[picked]))
@@ -111,7 +111,7 @@ CAPABILITIES(/obj/item/clothing/head/chameleon)
 
 /obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_head_choices[picked]))
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon)
 
 /obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_suit_choices[picked]))
@@ -196,7 +196,7 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon)
 
 /obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_shoe_choices[picked]))
@@ -240,7 +240,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 
 /obj/item/storage/backpack/chameleon/proc/backpack_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_back_choices[picked]))
@@ -298,7 +298,7 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon)
 
 /obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_glove_choices[picked]))
@@ -340,7 +340,7 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon)
 
 /obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_mask_choices[picked]))
@@ -381,7 +381,7 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon)
 /// Old verb "Change Glasses Appearance".
 /obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(clothing_choices[picked]))
@@ -425,7 +425,7 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 
 /obj/item/storage/belt/chameleon/proc/belt_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_belt_choices[picked]))
@@ -472,7 +472,7 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 
 /obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_accessory_choices[picked]))
@@ -561,7 +561,7 @@ CAPABILITIES(/obj/item/gun/energy/chameleon)
 
 /obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/picked = A.step_answer("a1").answer_value
+	var/picked = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.gun_choices[picked]))

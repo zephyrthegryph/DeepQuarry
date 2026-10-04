@@ -3459,21 +3459,21 @@
 	into += entry_line(175)
 	into += list(global.owns_many(nameof(gridSets)))
 
-/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:350
+/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:355
 /datum/pending_op/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/run.dm", 350, /datum/pending_op)
-	into += entry_line(351)
-	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(352)
-	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(353)
-	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(354)
-	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(355)
-	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
+	into += entry_block("code/engine/parts/run.dm", 355, /datum/pending_op)
 	into += entry_line(356)
+	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(357)
+	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(358)
+	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(359)
+	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(360)
+	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
+	into += entry_line(361)
 	into += list(global.owns_one(nameof(cog), /datum/cogbar))
 
 /// CAPABILITIES(/datum/perk_tree) at code/modules/mind_body/_perk_tree.dm:35
@@ -9579,7 +9579,7 @@
 	into += entry_line(20)
 	into += list(global.op("shibari_worn_hand", global.hand(), global.ungated(), global.then(PROC_REF(shibari_worn_hand))))
 	into += entry_line(21)
-	into += list(global.op("shibari_mode_self", global.in_hand(), global.label("Choose limbs"), global.asks(/datum/prompt/choice, fields = list("question" = "Which limbs would you like to restrain with the bindings?", "title" = "Shibari", "choices" = list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH), "timeout" = 0), step = "a1"), global.then(PROC_REF(shibari_mode_self))))
+	into += list(global.op("shibari_mode_self", global.in_hand(), global.label("Choose limbs"), global.asks(/datum/prompt/choice, fields = list("question" = "Which limbs would you like to restrain with the bindings?", "title" = "Shibari", "choices" = global.computed(PROC_REF(shibari_mode_self_choices)), "timeout" = 0), step = "a1"), global.then(PROC_REF(shibari_mode_self))))
 
 /// CAPABILITIES(/obj/item/clothing/suit/space) at code/modules/clothing/spacesuits/breaches.dm:24
 /obj/item/clothing/suit/space/declared_entries(list/into)
@@ -19210,7 +19210,7 @@
 	into += entry_line(244)
 	into += list(global.climb())
 	into += entry_line(245)
-	into += list(global.op("interaction_drag", global.item(/mob), global.gesture(GESTURE_DRAG), global.then(PROC_REF(interaction_drag))))
+	into += list(global.op("interaction_drag", global.item(/mob), global.gesture(GESTURE_DRAG), global.priority(OP_PRIORITY_PART + 1), global.then(PROC_REF(interaction_drag))))
 
 /// CAPABILITIES(/obj/structure/stripper_pole) at code/modules/casino/casino_items.dm:69
 /obj/structure/stripper_pole/declared_entries(list/into)
@@ -19435,7 +19435,7 @@
 	..(into)
 	into += entry_block("code/game/turfs/simulated/water.dm", 48, /turf/simulated/floor/water)
 	into += entry_line(49)
-	into += list(global.op("water_fishing", global.item(/obj/item/material/fishing_rod), global.label("Cast a line"), global.then(PROC_REF(water_fishing))))
+	into += list(global.op("water_fishing", global.item(/obj/item/material/fishing_rod), global.label("Cast a line"), global.priority(OP_PRIORITY_PART + 1), global.then(PROC_REF(water_fishing))))
 	into += entry_line(50)
 	into += list(global.op("water_fill", global.item(/obj/item), global.label("Fill"), global.then(PROC_REF(water_fill))))
 

@@ -18,7 +18,7 @@
 /// Old verb "Set Voice".
 /obj/item/clothing/mask/gas/voice/proc/voice_set_voice_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/new_name = A.step_answer("a1").answer_value
+	var/new_name = A.step_value("a1")
 	if(get(src, /mob) != user)
 		return
 	var/voice = sanitize(new_name, MAX_NAME_LEN)

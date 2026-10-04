@@ -171,7 +171,7 @@ Tests: `dq_gap/ask_a_refused_answer_asks_again`, `ask_fields_are_literal_var_or_
 
 | Old (first statements of the handler) | New |
 |---|---|
-| `var/x = rerun_ask(user, "k", PROC_REF(self), args, /datum/om/prompt/K, message = m, title = t, ...)` (also `list(user)` as the arguments) then `if(isnull(x))` / `return [value]` | `asks(/datum/prompt/K, fields = list("question" = m, "title" = t, ..., "timeout" = 0), step = "k")` before `then(PROC_REF(self))`; the guard goes; the handler starts `var/x = A.step_answer("k").answer_value` (when `x` is used) |
+| `var/x = rerun_ask(user, "k", PROC_REF(self), args, /datum/om/prompt/K, message = m, title = t, ...)` (also `list(user)` as the arguments) then `if(isnull(x))` / `return [value]` | `asks(/datum/prompt/K, fields = list("question" = m, "title" = t, ..., "timeout" = 0), step = "k")` before `then(PROC_REF(self))`; the guard goes; the handler starts `var/x = A.step_value("k")` (when `x` is used) |
 | `act_ask(ui.user, action, params, ui, "k", /datum/om/prompt/K, ...)` in a `UI_ACT_PROC` | the same step on the button's op |
 | `if(isnull(x) \|\| rest)` | the guard becomes `if(rest)` (the answer is never null now) |
 | kinds `text`, `number`, `choice`, `choice/alert` (`buttons = TRUE`), `color`, `confirm` (`yes_text`/`no_text`: "Yes/no labels") | `/datum/prompt/text`, `number`, `choice`, `color`, `yes_no`; the fields are renamed as in the om_ask table (`message` to `question`, `max_length` to `max_len` (with `name_text = TRUE` for `MAX_NAME_LEN`), `min`/`max` to `min_value`/`max_value`) |

@@ -241,7 +241,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 
 /obj/item/detective_scanner/proc/detective_scanner_wipe_effect(datum/act/op/A)
 	var/mob/user = A.actor
-	var/_answer_k217 = A.step_answer("k217").answer_value
+	var/_answer_k217 = A.step_value("k217")
 
 	if (_answer_k217 == "Yes")
 		own_clear(src, nameof(stored), OWN_DELETE)

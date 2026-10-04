@@ -8,7 +8,7 @@ CAPABILITIES(/obj/machinery/gap_dispenser)
 	op("set_amount", ui_act("set_amount"), asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(ui_act_set_amount_a2_question)), "title" = computed(PROC_REF(ui_act_set_amount_a2_title)), "default" = nameof(amount), "min_value" = 1, "max_value" = MAX_AMOUNT, "timeout" = 0), step = "a2"), then(PROC_REF(ui_act_set_amount)))
 
 /obj/machinery/gap_dispenser/proc/ui_act_clear_recipes(datum/act/op/A)
-	var/_answer_a1 = A.step_answer("a1").answer_value
+	var/_answer_a1 = A.step_value("a1")
 	if(_answer_a1 == "Yes")
 		saved_recipes = list()
 	. = TRUE
@@ -21,7 +21,7 @@ CAPABILITIES(/obj/machinery/gap_dispenser)
 
 /obj/machinery/gap_dispenser/proc/ui_act_set_amount(datum/act/op/A)
 	var/mob/user = A.actor
-	var/N = A.step_answer("a2").answer_value
+	var/N = A.step_value("a2")
 	if(!Adjacent(user))
 		return
 	amount = N

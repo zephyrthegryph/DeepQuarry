@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 
 /obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(datum/act/op/A)
 	var/mob/user = A.actor
-	var/genemask = A.step_answer("k108").answer_value
+	var/genemask = A.step_value("k108")
 
 	if(!genemask)
 		return

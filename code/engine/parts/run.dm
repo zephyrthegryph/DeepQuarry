@@ -51,6 +51,11 @@
 /datum/act/op/proc/step_answer(name)
 	return LAZYACCESS(step_answers, name)
 
+/// The value the step called `name` was answered with (the prompt's `value`), or null when that step was not asked or not answered.
+/datum/act/op/proc/step_value(name)
+	var/datum/prompt/P = LAZYACCESS(step_answers, name)
+	return P?.value
+
 /datum/act/op
 	/// step name -> the answered request (a handler reads it as A.step("name")).
 	var/list/step_answers

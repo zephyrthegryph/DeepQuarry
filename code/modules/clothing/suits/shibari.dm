@@ -18,7 +18,7 @@
 
 CAPABILITIES(/obj/item/clothing/suit/shibari)
 	op("shibari_worn_hand", hand(), ungated(), then(PROC_REF(shibari_worn_hand)))
-	op("shibari_mode_self", in_hand(), label("Choose limbs"), asks(/datum/prompt/choice, fields = list("question" = "Which limbs would you like to restrain with the bindings?", "title" = "Shibari", "choices" = list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH), "timeout" = 0), step = "a1"), then(PROC_REF(shibari_mode_self)))
+	op("shibari_mode_self", in_hand(), label("Choose limbs"), asks(/datum/prompt/choice, fields = list("question" = "Which limbs would you like to restrain with the bindings?", "title" = "Shibari", "choices" = computed(PROC_REF(shibari_mode_self_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(shibari_mode_self)))
 
 /// Old attack_hand: the wearer can't take it off themselves.
 /obj/item/clothing/suit/shibari/proc/shibari_worn_hand(datum/act/op/A)
@@ -30,9 +30,14 @@ CAPABILITIES(/obj/item/clothing/suit/shibari)
 			return TRUE
 	return OP_DECLINE
 
+GLOBAL_LIST_INIT(shibari_modes, list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH))
+
+/obj/item/clothing/suit/shibari/proc/shibari_mode_self_choices(datum/act/op/A)
+	return GLOB.shibari_modes
+
 /// Old attack_self: choose which limbs to bind.
 /obj/item/clothing/suit/shibari/proc/shibari_mode_self(datum/act/op/A)
-	var/_answer_a1 = A.step_answer("a1").answer_value
+	var/_answer_a1 = A.step_value("a1")
 	rope_mode = _answer_a1
 	if(!rope_mode)
 		rope_mode = SHIBARI_NONE

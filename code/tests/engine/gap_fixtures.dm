@@ -300,12 +300,12 @@ CAPABILITIES(/obj/gap_asker)
 	return "Name [src]"
 
 /obj/gap_asker/proc/picked(datum/act/op/A)
-	var/colour = A.step_answer("a1").answer_value
+	var/colour = A.step_value("a1")
 	LAZYADD(log, "picked:[colour]")
 	return OP_OK
 
 /obj/gap_asker/proc/named(datum/act/op/A)
-	LAZYADD(log, "named:[A.step_answer("k").answer_value]")
+	LAZYADD(log, "named:[A.step_value("k")]")
 	return OP_OK
 
 #endif

@@ -9,7 +9,7 @@ op's Wait, and the code after the question is the effect: `then(PROC_REF(self))`
     build_ask(question, ...)                                  ->  (asks text, helper procs, "") or (None, None, residue code)
 
 Only a question that stands first in the body (before any effect, check or local) moves: the op's requirements run before the question, the code before it
-would run after. The answer is `var/x = A.step_answer("k").answer_value` at the head of the new body, which keeps every later use of `x`. The guard that
+would run after. The answer is `var/x = A.step_value("k")` at the head of the new body, which keeps every later use of `x`. The guard that
 followed the question (`if(isnull(x)) return`) goes: an unanswered question ends the op. `if(isnull(x) || rest)` keeps `if(rest)`.
 """
 import re
@@ -68,8 +68,27 @@ def call_inner(line, name):
     return None
 
 
+_UNDEFS = None
+
+
+def local_macros():
+    """Every macro some file #undefs: a file-local constant, gone by the time code/engine/_generated/declare.dm (which copies the op's fields) compiles."""
+    global _UNDEFS
+    if _UNDEFS is None:
+        _UNDEFS = set()
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "code")
+        for d, _, files in os.walk(root):
+            for f in files:
+                if f.endswith(".dm"):
+                    with open(os.path.join(d, f), encoding="utf-8", errors="surrogateescape") as fh:
+                        _UNDEFS.update(re.findall(r"^\s*#undef\s+(\w+)", fh.read(), re.M))
+    return _UNDEFS
+
+
 def is_literal(text):
     t = text.strip()
+    if re.match(r"^[A-Z][A-Z0-9_]*$", t) and t in local_macros():
+        return False
     if LITERAL.match(t):
         return True
     m = re.match(r"^list\((.*)\)$", t, re.S)
@@ -209,4 +228,4 @@ def build_ask(ask, holder_vars, helper_prefix, holder_type, actor, held):
 
 def answer_local(ask):
     """The statement that gives the effect the answer the question used to return."""
-    return "var/%s%s = A.step_answer(\"%s\").answer_value" % (ask["type"], ask["name"], ask["key"])
+    return "var/%s%s = A.step_value(\"%s\")" % (ask["type"], ask["name"], ask["key"])

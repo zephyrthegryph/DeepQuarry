@@ -373,7 +373,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 
 /obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	var/choice = A.step_answer("a1").answer_value
+	var/choice = A.step_value("a1")
 	if(!choice)
 		return
 	icon_state = "moebiushelm_[choice]"
