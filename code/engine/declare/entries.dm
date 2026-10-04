@@ -92,19 +92,19 @@
 	kind = "line"
 	var/line
 	/// The section of the block the entry is written under, or null.
-	var/section
+	var/section_name
 
-/proc/entry_line(line, section = null)
+/proc/entry_line(line, section_name = null)
 	var/datum/entry/line/L = new
 	L.line = line
-	L.section = section
+	L.section_name = section_name
 	return L
 
 /// Where an entry was declared: "file:line" of its CAPABILITIES list (with " section <name>" when it sits in a section), or "?" when unknown.
-/proc/entry_origin_text(file, line, section = null)
+/proc/entry_origin_text(file, line, section_name = null)
 	if(!file)
 		return "?"
-	return section ? "[file]:[line] section [section]" : "[file]:[line]"
+	return section_name ? "[file]:[line] section [section_name]" : "[file]:[line]"
 
 // ---- constructors of the entries E1 owns ----
 
