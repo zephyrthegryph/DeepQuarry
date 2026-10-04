@@ -573,3 +573,13 @@ locker's door; written and green on the old gates first) and the existing APC, d
   A one-shot emag is refused on a holder subverted any other way too (an AI hack: `is_subverted()`), not only on one already emagged.
 * **Menus leave out every op behind a closed door**, as they left out the `when()`-gated ones: the APC's welder dismantle step no longer shows,
   greyed, in the menu of a closed APC (`dx_menu_order_golden.dm` updated for that one scenario).
+
+
+## Wires: the wires library replaces /datum/wires
+
+Pinned by `code/modules/unit_tests/dq_wires_behaviour.dm` (written and green on the legacy code first; only its adapter block changed in the
+conversion), with the holder tests that already drove wires (dq_p2_apc, dq_p2_door, dq_p2_vending, dq_p2_smes, interim_*_wire_*).
+
+* **A signaler on a wire works again.** `/obj/item/assembly/signaler` read the atom's `wires` var (the holder's legacy wire datum, null on a signaler)
+  where it meant its own `wires_type` flags, so an attached signaler never pulsed its wire, and no signaler took a radio signal at all
+  (`receive_signal()` refused every one). Both read `wires_type` now. Fixed on the legacy code first, so the tests pin the working behaviour.

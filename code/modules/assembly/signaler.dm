@@ -113,7 +113,7 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
 /obj/item/assembly/signaler/pulse(radio = 0)
 	if(is_jammed(src))
 		return FALSE
-	if(connected() && wires)
+	if(connected())
 		connected().pulse_assembly(src)
 	else if(holder())
 		holder().process_activation(src, 1, 0)
@@ -126,7 +126,7 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
 		return FALSE
 	if(signal.encryption != code)
 		return FALSE
-	if(!(src.wires & WIRE_RADIO_RECEIVE))
+	if(!(wires_type & WIRE_RADIO_RECEIVE))
 		return FALSE
 	if(is_jammed(src))
 		return FALSE
