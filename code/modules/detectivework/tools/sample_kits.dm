@@ -41,16 +41,31 @@
 	to_chat(user, span_notice("You overlay \the [src] and \the [supplied], combining the print records."))
 	return 1
 
-DECLARE_INTERACTIONS(/obj/item/sample, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/sample)
+	op("merge_sample", item(/obj/item/sample), label("Combine evidence"), when(req(PROC_REF(matching_sample))),
+		needs(req(PROC_REF(sample_releasable), because = PROC_REF(sample_release_refusal))), then(PROC_REF(sample_merged)))
 
-/// Old attackby.
-/obj/item/sample/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
-	if(O.type == src.type)
-		user.unEquip(O)
-		if(merge_evidence(O, user))
-			qdel(O)
-		return 1
-	return FALSE
+/// Compiled DM type identities are immutable; this helper reads no mutable entity state.
+/proc/forensic_sample_same_type(obj/item/sample/target, obj/item/sample/donor)
+	READS_FROM()
+	return target.type == donor.type
+
+/obj/item/sample/proc/matching_sample(datum/act/op/A)
+	return forensic_sample_same_type(src, A.held)
+
+/obj/item/sample/proc/sample_releasable(datum/act/op/A)
+	return isnull(A.held.loc?.release_refusal(A.held, A.actor)) // ALLOW(reads): current donor custody is queried without caching immediately before its checked release
+
+/obj/item/sample/proc/sample_release_refusal(datum/act/op/A)
+	return A.held.loc?.release_refusal(A.held, A.actor) || /datum/msg/op/not_available
+
+/obj/item/sample/proc/sample_merged(datum/act/op/A)
+	var/obj/item/sample/donor = A.held
+	if(!A.actor.unEquip(donor))
+		return OP_REFUSED
+	if(merge_evidence(donor, A.actor))
+		consume(donor, A.actor)
+	return OP_OK
 
 /obj/item/sample/fibers
 	name = "fiber bag"
