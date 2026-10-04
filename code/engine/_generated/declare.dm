@@ -7814,18 +7814,18 @@
 	into += entry_line(45)
 	into += list(global.op("ai_pda_self", global.in_hand(), global.then(PROC_REF(ai_pda_self))))
 
-/// CAPABILITIES(/obj/item/pen/crayon/marker/mime) at code/game/objects/items/crayons.dm:188
+/// CAPABILITIES(/obj/item/pen/crayon/marker/mime) at code/game/objects/items/crayons.dm:191
 /obj/item/pen/crayon/marker/mime/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/crayons.dm", 188, /obj/item/pen/crayon/marker/mime)
-	into += entry_line(189)
+	into += entry_block("code/game/objects/items/crayons.dm", 191, /obj/item/pen/crayon/marker/mime)
+	into += entry_line(192)
 	into += list(global.op("invert", global.in_hand(), global.label("Invert colours"), global.then(PROC_REF(interaction_invert))))
 
-/// CAPABILITIES(/obj/item/pen/crayon/marker/rainbow) at code/game/objects/items/crayons.dm:211
+/// CAPABILITIES(/obj/item/pen/crayon/marker/rainbow) at code/game/objects/items/crayons.dm:214
 /obj/item/pen/crayon/marker/rainbow/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/crayons.dm", 211, /obj/item/pen/crayon/marker/rainbow)
-	into += entry_line(212)
+	into += entry_block("code/game/objects/items/crayons.dm", 214, /obj/item/pen/crayon/marker/rainbow)
+	into += entry_line(215)
 	into += list(global.op("interaction_pick_colour", global.in_hand(), global.label("Pick colour"), global.then(PROC_REF(interaction_pick_colour))))
 
 /// CAPABILITIES(/obj/item/pen/crayon/mime) at code/game/objects/items/crayons.dm:9
