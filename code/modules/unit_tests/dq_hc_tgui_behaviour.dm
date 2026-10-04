@@ -455,3 +455,56 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
 	press(R, M, "auth")
 	TEST_ASSERT_EQUAL(M.authenticated, 0, "a cyborg cannot log in")
+
+// ---- batch 4: admin panels (the windows keep their rights: an admin state, per-action rights where the panel had them) ----
+
+/// The window state `D` opens with: its interface's, else its tgui_state().
+/datum/unit_test/dq_hc_tgui/proc/hct_state_of(datum/D, mob/user)
+	return interface_state(D) || D.tgui_state(user)
+
+/datum/unit_test/dq_hc_tgui/admin_panels_need_rights
+/datum/unit_test/dq_hc_tgui/admin_panels_need_rights/run_gate()
+	var/mob/living/carbon/human/H = hct_actor()
+	var/mob/living/carbon/human/T = allocate(/mob/living/carbon/human, hct_spot())
+	var/datum/eventkit/player_effects/E = hct_track(new /datum/eventkit/player_effects)
+	rel_set(E, nameof(/datum/accessory_stat_modifier::target), T)
+	var/datum/edit_player_panel/EP = hct_track(new /datum/edit_player_panel(null, T))
+	var/datum/newscaster_panel/NP = hct_track(new /datum/newscaster_panel(null))
+	for(var/datum/D in list(E, EP, NP))
+		var/datum/tgui_state/S = hct_state_of(D, H)
+		TEST_ASSERT(S != GLOB.tgui_default_state, "[D.type] has an admin state")
+		TEST_ASSERT(D.tgui_status(H, S) < STATUS_INTERACTIVE, "a player cannot work [D.type]")
+
+/datum/unit_test/dq_hc_tgui/player_effects_refuse_a_player
+/datum/unit_test/dq_hc_tgui/player_effects_refuse_a_player/run_gate()
+	var/mob/living/carbon/human/H = hct_actor()
+	var/mob/living/carbon/human/T = allocate(/mob/living/carbon/human, hct_spot())
+	var/datum/eventkit/player_effects/E = hct_track(new /datum/eventkit/player_effects)
+	rel_set(E, nameof(/datum/accessory_stat_modifier::target), T)
+	for(var/action in list("break_legs", "paralyse", "drop_all", "dust", "gib", "spin", "stasis"))
+		press(H, E, action)
+	var/obj/item/organ/external/leg = T.get_organ(BP_L_LEG)
+	TEST_ASSERT(!leg.is_broken(), "the target's leg is not broken by somebody without rights")
+	TEST_ASSERT(!QDELETED(T), "the target is still there")
+	TEST_ASSERT(!p2cl_has_question(H), "no question is asked of a player")
+	TEST_ASSERT_EQUAL(E.target(), T, "the target is unchanged")
+	var/list/data = E.tgui_static_data(H)
+	TEST_ASSERT_EQUAL(data["real_name"], T.name, "the static data names the target")
+
+/datum/unit_test/dq_hc_tgui/modify_robot_buttons
+/datum/unit_test/dq_hc_tgui/modify_robot_buttons/run_gate()
+	var/mob/living/carbon/human/H = hct_actor()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
+	var/datum/eventkit/modify_robot/M = hct_track(new /datum/eventkit/modify_robot)
+	rel_set(M, nameof(/datum/accessory_stat_modifier::target), R)
+	var/crisis = R.crisis_override
+	press(H, M, "toggle_crisis")
+	TEST_ASSERT_NOTEQUAL(R.crisis_override, crisis, "the crisis override is toggled")
+	press(H, M, "rename", list("new_name" = "Bolt"))
+	TEST_ASSERT_EQUAL(R.real_name, "Bolt", "the robot is renamed")
+	TEST_ASSERT_EQUAL(R.custom_name, "Bolt", "and its custom name is set")
+	var/mob/living/silicon/robot/R2 = allocate(/mob/living/silicon/robot, hct_spot())
+	press(H, M, "select_target", list("new_target" = "\ref[R2]"))
+	TEST_ASSERT_EQUAL(M.target(), R2, "another robot is selected")
+	press(H, M, "add_restriction", list("new_restriction" = "no such module"))
+	TEST_ASSERT(!length(R2.restrict_modules_to), "an unknown module is not added to the restrictions")

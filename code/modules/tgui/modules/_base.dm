@@ -89,11 +89,7 @@ CAPABILITIES(/datum/tgui_module)
 
 /// The answer to a question a button asked still counts: its window is still open and interactive for the one who answers.
 /datum/tgui_module/proc/request_usable(datum/request/R)
-	var/mob/user = R.answerer
-	if(QDELETED(src) || !istype(user))
-		return FALSE
-	var/datum/tgui/ui = SStgui.get_open_ui(user, src)
-	return !!ui && ui.status == STATUS_INTERACTIVE
+	return window_request_usable(src, R)
 
 /datum/tgui_module/proc/ui_act_pc_exit(datum/act/op/A)
 	var/obj/item/modular_computer/host = tgui_host()

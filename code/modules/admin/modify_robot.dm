@@ -17,10 +17,69 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
 	var/list/datum/ai_laws/law_list
 	var/tmp/obj/item/robotic_multibelt/multibelt_holder	//Currently selected multibelt.
+	/// The upgrade a question is open for.
+	var/pending_upgrade
+	/// The law a question about editing is open for (a view: the robot's laws own themselves).
+	var/tmp/datum/ai_law/editing_law
 
 CAPABILITIES(/datum/eventkit/modify_robot)
 	owns_many(nameof(law_list), /datum/ai_laws)
 	owns_one(nameof(source), /mob/living/silicon/robot)
+	ref_one(nameof(editing_law), /datum/ai_law)
+	interface("ModifyRobot", title = "Modify Robot", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	op("rename", ui_act("rename", arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_rename)))
+	op("select_target", ui_act("select_target", arg("new_target", schema_ref(null))), then(PROC_REF(ui_act_select_target)))
+	op("toggle_crisis", ui_act("toggle_crisis"), then(PROC_REF(ui_act_toggle_crisis)))
+	op("add_restriction", ui_act("add_restriction", arg("new_restriction", schema_text(4096))), then(PROC_REF(ui_act_add_restriction)))
+	op("remove_restriction", ui_act("remove_restriction", arg("rem_restriction", schema_text(4096))), then(PROC_REF(ui_act_remove_restriction)))
+	op("select_source", ui_act("select_source", arg("new_source")), then(PROC_REF(ui_act_select_source)))
+	op("reset_module", ui_act("reset_module"), then(PROC_REF(ui_act_reset_module)))
+	op("add_module", ui_act("add_module", arg("module", schema_ref(/obj/item))), then(PROC_REF(ui_act_add_module)))
+	op("rem_module", ui_act("rem_module", arg("module", schema_ref(/obj/item))), then(PROC_REF(ui_act_rem_module)))
+	op("swap_module", ui_act("swap_module"), then(PROC_REF(ui_act_swap_module)))
+	op("ert_toggle", ui_act("ert_toggle"), then(PROC_REF(ui_act_ert_toggle)))
+	op("add_compatibility", ui_act("add_compatibility", arg("upgrade", schema_path(/datum))), then(PROC_REF(ui_act_add_compatibility)))
+	op("rem_compatibility", ui_act("rem_compatibility", arg("upgrade", schema_path(/datum))), then(PROC_REF(ui_act_rem_compatibility)))
+	op("add_upgrade", ui_act("add_upgrade", arg("upgrade", schema_path(/datum))), then(PROC_REF(ui_act_add_upgrade)))
+	op("install_modkit", ui_act("install_modkit", arg("modkit", schema_path(/datum))), then(PROC_REF(ui_act_install_modkit)))
+	op("remove_modkit", ui_act("remove_modkit", arg("modkit", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_modkit)))
+	op("select_multibelt", ui_act("select_multibelt", arg("multibelt", schema_ref(null))), then(PROC_REF(ui_act_select_multibelt)))
+	op("install_tool", ui_act("install_tool", arg("tool", schema_path(/datum))), then(PROC_REF(ui_act_install_tool)))
+	op("remove_tool", ui_act("remove_tool", arg("tool", schema_ref(/datum/matter_synth))), then(PROC_REF(ui_act_remove_tool)))
+	op("add_channel", ui_act("add_channel", arg("channel", schema_text(4096))), then(PROC_REF(ui_act_add_channel)))
+	op("rem_channel", ui_act("rem_channel", arg("channel")), then(PROC_REF(ui_act_rem_channel)))
+	op("add_component", ui_act("add_component", arg("component"), arg("new_part", schema_path(/datum))), then(PROC_REF(ui_act_add_component)))
+	op("rem_component", ui_act("rem_component", arg("component")), then(PROC_REF(ui_act_rem_component)))
+	op("adjust_cell_charge", ui_act("adjust_cell_charge", arg("charge", num())), then(PROC_REF(ui_act_adjust_cell_charge)))
+	op("adjust_brute", ui_act("adjust_brute", arg("component"), arg("damage", num())), then(PROC_REF(ui_act_adjust_brute)))
+	op("adjust_electronics", ui_act("adjust_electronics", arg("component"), arg("damage", num())), then(PROC_REF(ui_act_adjust_electronics)))
+	op("add_access", ui_act("add_access", arg("access", num())), then(PROC_REF(ui_act_add_access)))
+	op("rem_access", ui_act("rem_access", arg("access", num())), then(PROC_REF(ui_act_rem_access)))
+	op("add_centcom", ui_act("add_centcom"), then(PROC_REF(ui_act_add_centcom)))
+	op("rem_centcom", ui_act("rem_centcom"), then(PROC_REF(ui_act_rem_centcom)))
+	op("add_station", ui_act("add_station"), then(PROC_REF(ui_act_add_station)))
+	op("rem_station", ui_act("rem_station"), then(PROC_REF(ui_act_rem_station)))
+	op("law_channel", ui_act("law_channel", arg("law_channel", schema_text(4096))), then(PROC_REF(ui_act_law_channel)))
+	op("state_law", ui_act("state_law", arg("ref"), arg("state_law", num())), then(PROC_REF(ui_act_state_law)))
+	op("add_zeroth_law", ui_act("add_zeroth_law"), then(PROC_REF(ui_act_add_zeroth_law)))
+	op("add_ion_law", ui_act("add_ion_law"), then(PROC_REF(ui_act_add_ion_law)))
+	op("add_inherent_law", ui_act("add_inherent_law"), then(PROC_REF(ui_act_add_inherent_law)))
+	op("add_supplied_law", ui_act("add_supplied_law"), then(PROC_REF(ui_act_add_supplied_law)))
+	op("change_zeroth_law", ui_act("change_zeroth_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_zeroth_law)))
+	op("change_ion_law", ui_act("change_ion_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_ion_law)))
+	op("change_inherent_law", ui_act("change_inherent_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_inherent_law)))
+	op("change_supplied_law", ui_act("change_supplied_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_supplied_law)))
+	op("change_supplied_law_position", ui_act("change_supplied_law_position"), asks(/datum/prompt/number, fields = list("title" = "Law Position", "question" = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "default" = computed(PROC_REF(law_position_default)), "max_value" = MAX_SUPPLIED_LAW_NUMBER, "min_value" = 1)), then(PROC_REF(ui_act_change_supplied_law_position)))
+	op("edit_law", ui_act("edit_law", arg("edit_law")), then(PROC_REF(ui_act_edit_law)))
+	op("delete_law", ui_act("delete_law", arg("delete_law")), then(PROC_REF(ui_act_delete_law)))
+	op("state_laws", ui_act("state_laws"), then(PROC_REF(ui_act_state_laws)))
+	op("state_law_set", ui_act("state_law_set", arg("state_law_set", schema_ref(/datum/ai_laws))), then(PROC_REF(ui_act_state_law_set)))
+	op("transfer_laws", ui_act("transfer_laws", arg("transfer_laws", schema_ref(/datum/ai_laws))), then(PROC_REF(ui_act_transfer_laws)))
+	op("notify_laws", ui_act("notify_laws"), then(PROC_REF(ui_act_notify_laws)))
+	op("select_ai", ui_act("select_ai", arg("new_ai")), then(PROC_REF(ui_act_select_ai)))
+	op("swap_sync", ui_act("swap_sync"), then(PROC_REF(ui_act_swap_sync)))
+	op("disconnect_ai", ui_act("disconnect_ai"), then(PROC_REF(ui_act_disconnect_ai)))
+	op("toggle_emag", ui_act("toggle_emag"), then(PROC_REF(ui_act_toggle_emag)))
 
 /datum/eventkit/modify_robot/New()
 	. = ..()
@@ -35,20 +94,20 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(source)
 		qdel(source)
 
-DECLARE_UI(/datum/eventkit/modify_robot, "ModifyRobot", UI_TITLE("Modify Robot"))
-
-
 /datum/eventkit/modify_robot/ui_assets(mob/user)
 	if(!target())
 		return list()
 	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = GLOB.robot_sprite_sheets[target().modtype]
 	return spritesheet ? list(spritesheet) : list()
 
-UI_DATA_REPLACE(/datum/eventkit/modify_robot, "ion_law:text", "zeroth_law:text", "inherent_law:text", "supplied_law:text", "supplied_law_position", "merge:ui_data_datum_eventkit_modify_robot{theme:unknown,target:list,model_options:list,cell:listmap,cell_options:unknown,camera_options:unknown,radio_options:unknown,actuator_options:unknown,diagnosis_options:unknown,comms_options:unknown,armour_options:unknown,current_gear:unknown,id_icon:text,access_options:list,source:list,all_robots:list,ion_law_nr:unknown,isAI:num,isMalf:unknown,isSlaved:unknown,active_ais:list,selected_ai:unknown,channel:unknown,channels:list,law_sets:unknown}")
-
-/// The computed part of /datum/eventkit/modify_robot's window data (declared on its UI_DATA row).
-/datum/eventkit/modify_robot/proc/ui_data_datum_eventkit_modify_robot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/eventkit/modify_robot/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	. = list()
+	.["ion_law"] = ion_law
+	.["zeroth_law"] = zeroth_law
+	.["inherent_law"] = inherent_law
+	.["supplied_law"] = supplied_law
+	.["supplied_law_position"] = supplied_law_position
 	// Target section for general data
 	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = target() ? GLOB.robot_sprite_sheets[target().modtype] : null
 
@@ -151,58 +210,50 @@ UI_DATA_REPLACE(/datum/eventkit/modify_robot, "ion_law:text", "zeroth_law:text",
 	.["channels"] = channels
 	.["law_sets"] = package_multiple_laws(law_list)
 
-DECLARE_UI_STATE(/datum/eventkit/modify_robot, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
-
-UI_ACT(/datum/eventkit/modify_robot, "rename", ui_act_rename, UI_ARG_TEXT("new_name"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rename)
-	target().name = params["new_name"]
-	target().custom_name = params["new_name"]
-	target().real_name = params["new_name"]
+/datum/eventkit/modify_robot/proc/ui_act_rename(datum/act/op/A, new_name)
+	target().name = new_name
+	target().custom_name = new_name
+	target().real_name = new_name
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "select_target", ui_act_select_target, UI_ARG_REF("new_target", null))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_target)
-	var/new_target = params["new_target"]
+/datum/eventkit/modify_robot/proc/ui_act_select_target(datum/act/op/A, new_target_arg)
+	var/new_target = new_target_arg
 	if(new_target != target())
-		rel_set(src, nameof(/datum/accessory_stat_modifier::target), params["new_target"])
+		rel_set(src, nameof(/datum/accessory_stat_modifier::target), new_target_arg)
 		log_and_message_admins("changed robot modifictation target to [target()]")
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "toggle_crisis", ui_act_toggle_crisis)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_toggle_crisis)
+/datum/eventkit/modify_robot/proc/ui_act_toggle_crisis(datum/act/op/A)
 	target().crisis_override = !target().crisis_override
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_restriction", ui_act_add_restriction, UI_ARG_TEXT("new_restriction"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_restriction)
-	var/new_restriction = params["new_restriction"]
+/datum/eventkit/modify_robot/proc/ui_act_add_restriction(datum/act/op/A, new_restriction_arg)
+	var/new_restriction = new_restriction_arg
 	if(!(new_restriction in GLOB.robot_modules))
 		return FALSE
 	var/mob/living/silicon/robot/robot_target = target()
 	LAZYOR(robot_target.restrict_modules_to, new_restriction)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "remove_restriction", ui_act_remove_restriction, UI_ARG_TEXT("rem_restriction"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_remove_restriction)
-	var/rem_restriction = params["rem_restriction"]
+/datum/eventkit/modify_robot/proc/ui_act_remove_restriction(datum/act/op/A, rem_restriction_arg)
+	var/rem_restriction = rem_restriction_arg
 	if(!(rem_restriction in GLOB.robot_modules))
 		return FALSE
 	var/mob/living/silicon/robot/robot_target = target()
 	LAZYREMOVE(robot_target.restrict_modules_to, rem_restriction)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "select_source", ui_act_select_source, UI_ARG_VALUE("new_source"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_source)
+/datum/eventkit/modify_robot/proc/ui_act_select_source(datum/act/op/A, new_source)
 	if(source)
 		qdel(source)
-	var/module_type = GLOB.robot_modules[params["new_source"]]
+	var/module_type = GLOB.robot_modules[new_source]
 	if(ispath(module_type, /obj/item/robot_module/robot/syndicate))
 		rel_set(src, nameof(source), new /mob/living/silicon/robot/syndicate(null))
 	else if(ispath(module_type, /obj/item/robot_module/robot/malf))
 		rel_set(src, nameof(source), new /mob/living/silicon/robot/malf(null))
 	else
 		rel_set(src, nameof(source), new /mob/living/silicon/robot(null))
-	source.modtype = params["new_source"]
+	source.modtype = new_source
 	var/obj/item/robot_module/robot/robot_type = new module_type(source)
 	proto_set(source, nameof(/datum/tgui_module/robot_ui_module::sprite_datum), pick(SSrobot_sprites.get_module_sprites(source.modtype, source)))
 	source.update_icon()
@@ -212,14 +263,12 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_source)
 		return TRUE
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "reset_module", ui_act_reset_module)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_reset_module)
+/datum/eventkit/modify_robot/proc/ui_act_reset_module(datum/act/op/A)
 	target().module_reset(FALSE)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_module", ui_act_add_module, UI_ARG_REF("module", null, /obj/item))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_module)
-	var/obj/item/selected_item = params["module"]
+/datum/eventkit/modify_robot/proc/ui_act_add_module(datum/act/op/A, module)
+	var/obj/item/selected_item = module
 	if(!selected_item)
 		return TRUE
 	if(istype(selected_item, /obj/item/card/id))
@@ -229,9 +278,8 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_module)
 	target().module.add_item(selected_item, target())
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_module", ui_act_rem_module, UI_ARG_REF("module", null, /obj/item))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_module)
-	var/obj/item/rem_item = params["module"]
+/datum/eventkit/modify_robot/proc/ui_act_rem_module(datum/act/op/A, module)
+	var/obj/item/rem_item = module
 	if(target().idcard == rem_item)
 		target().idcard = new /obj/item/card/id/synthetic(target())
 	target().uneq_all()
@@ -243,8 +291,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_module)
 	qdel(rem_item)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "swap_module", ui_act_swap_module)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_module)
+/datum/eventkit/modify_robot/proc/ui_act_swap_module(datum/act/op/A)
 	if(!source)
 		return FALSE
 	var/mod_type = source.modtype
@@ -269,38 +316,53 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_module)
 	target().hud_used?.update_robot_modules_display()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "ert_toggle", ui_act_ert_toggle)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_ert_toggle)
+/datum/eventkit/modify_robot/proc/ui_act_ert_toggle(datum/act/op/A)
 	target().crisis_override = !target().crisis_override
 	target().module_reset(FALSE)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_compatibility", ui_act_add_compatibility, UI_ARG_PATH("upgrade", /datum))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_compatibility)
+/datum/eventkit/modify_robot/proc/ui_act_add_compatibility(datum/act/op/A, upgrade)
 	var/mob/living/silicon/robot/robot_target = target()
-	LAZYOR(robot_target.module.supported_upgrades, params["upgrade"])
+	LAZYOR(robot_target.module.supported_upgrades, upgrade)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_compatibility", ui_act_rem_compatibility, UI_ARG_PATH("upgrade", /datum))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_compatibility)
+/datum/eventkit/modify_robot/proc/ui_act_rem_compatibility(datum/act/op/A, upgrade)
 	var/mob/living/silicon/robot/robot_target = target()
-	LAZYREMOVE(robot_target.module.supported_upgrades, params["upgrade"])
+	LAZYREMOVE(robot_target.module.supported_upgrades, upgrade)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_upgrade", ui_act_add_upgrade, UI_ARG_PATH("upgrade", /datum))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_upgrade)
-	var/new_upgrade = params["upgrade"]
-	if(new_upgrade == /obj/item/borg/upgrade/utility/reset)
-		var/obj/item/borg/upgrade/utility/reset/rmodul = new_upgrade
-		var/sure = act_ask(ui.user, action, params, ui, "reset", /datum/om/prompt/choice/alert, message = "Are you sure that you want to install [initial(rmodul.name)] and reset the robot's module?", title = "Confirm", choices = list("Yes","No"))
-		if(sure != "Yes")
-			return FALSE
-	var/new_name
-	if(new_upgrade == /obj/item/borg/upgrade/utility/rename)
-		var/obj/item/borg/upgrade/utility/rename/renamer = new_upgrade
-		new_name = act_ask(ui.user, action, params, ui, "name", /datum/om/prompt/text, message = "Enter new robot name", title = "Robot Reclassification", default = initial(renamer.heldname), max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(new_name))
-			return FALSE
+/// The answer to a question a button asked still counts (its window is still open and interactive for the one who answers).
+/datum/eventkit/modify_robot/proc/request_usable(datum/request/R)
+	return window_request_usable(src, R)
+
+/datum/eventkit/modify_robot/proc/ui_act_add_upgrade(datum/act/op/A, upgrade_arg)
+	var/mob/user = A.actor
+	if(upgrade_arg == /obj/item/borg/upgrade/utility/reset)
+		pending_upgrade = upgrade_arg
+		var/obj/item/borg/upgrade/utility/reset/rmodul = upgrade_arg
+		open_request(src, /datum/prompt/yes_no, PROC_REF(upgrade_reset_confirmed), valid = PROC_REF(request_usable), answerer = user, question = "Are you sure that you want to install [initial(rmodul.name)] and reset the robot's module?", title = "Confirm", timeout = 0)
+		return TRUE
+	if(upgrade_arg == /obj/item/borg/upgrade/utility/rename)
+		pending_upgrade = upgrade_arg
+		var/obj/item/borg/upgrade/utility/rename/renamer = upgrade_arg
+		open_request(src, /datum/prompt/text, PROC_REF(upgrade_renamed), valid = PROC_REF(request_usable), answerer = user, question = "Enter new robot name", title = "Robot Reclassification", default = initial(renamer.heldname), max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, timeout = 0)
+		return TRUE
+	return install_upgrade(user, upgrade_arg, null)
+
+/datum/eventkit/modify_robot/proc/upgrade_reset_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value || !ispath(pending_upgrade))
+		return
+	install_upgrade(A.request.answerer, pending_upgrade, null)
+	SStgui.update_uis(src)
+
+/datum/eventkit/modify_robot/proc/upgrade_renamed(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value) || !ispath(pending_upgrade))
+		return
+	install_upgrade(A.request.answerer, pending_upgrade, A.answer.answer_value)
+	SStgui.update_uis(src)
+
+/// Builds the upgrade and installs it in the target.
+/datum/eventkit/modify_robot/proc/install_upgrade(mob/user, new_upgrade, new_name)
 	var/obj/item/borg/upgrade/U = new new_upgrade(null)
 	if(new_upgrade == /obj/item/borg/upgrade/utility/rename)
 		var/obj/item/borg/upgrade/utility/rename/UN = U
@@ -311,57 +373,52 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_upgrade)
 	if(istype(U, /obj/item/borg/upgrade/restricted))
 		var/mob/living/silicon/robot/robot_target = target()
 		LAZYOR(robot_target.module.supported_upgrades, new_upgrade)
-	if(!U.action(ui.user, target()))
+	if(!U.action(user, target()))
 		return FALSE
 	U.forceMove(target())
 	target().hud_used?.update_robot_modules_display()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "install_modkit", ui_act_install_modkit, UI_ARG_PATH("modkit", /datum))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_install_modkit)
-	var/new_modkit = params["modkit"]
+/datum/eventkit/modify_robot/proc/ui_act_install_modkit(datum/act/op/A, modkit_arg)
+	var/new_modkit = modkit_arg
 	var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
 	var/obj/item/borg/upgrade/modkit/M = new new_modkit(null)
 	M.install(kin, target())
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "remove_modkit", ui_act_remove_modkit, UI_ARG_REF("modkit", null, /obj/item))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_remove_modkit)
+/datum/eventkit/modify_robot/proc/ui_act_remove_modkit(datum/act/op/A, modkit)
 	var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
-	var/obj/item/rem_kit = params["modkit"]
+	var/obj/item/rem_kit = modkit
 	rel_remove(kin, nameof(/obj/item/gun/energy/kinetic_accelerator::modkits), rem_kit)
 	qdel(rem_kit)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "select_multibelt", ui_act_select_multibelt, UI_ARG_REF("multibelt", null))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_multibelt)
-	rel_set(src, nameof(/datum/eventkit/modify_robot::multibelt_holder), params["multibelt"])
+/datum/eventkit/modify_robot/proc/ui_act_select_multibelt(datum/act/op/A, multibelt)
+	rel_set(src, nameof(/datum/eventkit/modify_robot::multibelt_holder), multibelt)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "install_tool", ui_act_install_tool, UI_ARG_PATH("tool", /datum))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_install_tool)
+/datum/eventkit/modify_robot/proc/ui_act_install_tool(datum/act/op/A, tool)
 	if(!istype(multibelt_holder(), /obj/item/robotic_multibelt))
 		return FALSE
 	if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
-		target().add_new_material(params["tool"])
+		target().add_new_material(tool)
 		return TRUE
-	var/new_tool = params["tool"]
+	var/new_tool = tool
 	if(new_tool in GLOB.all_borg_multitool_options)
 		multibelt_holder().cyborg_integrated_tools += new_tool //Make sure you don't add items directly to it, or you can't ever remove them.
 		multibelt_holder().generate_tools()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "remove_tool", ui_act_remove_tool, UI_ARG_REF("tool", null, /datum/matter_synth))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_remove_tool)
+/datum/eventkit/modify_robot/proc/ui_act_remove_tool(datum/act/op/A, tool)
 	if(!istype(multibelt_holder(), /obj/item/robotic_multibelt))
 		return FALSE
 	if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
-		var/datum/matter_synth/synth = params["tool"]
+		var/datum/matter_synth/synth = tool
 		target().module.synths -= synth
 		qdel(synth)
 		target().update_material_multibelts()
 		return TRUE
-	var/obj/item/rem_tool = params["tool"]
+	var/obj/item/rem_tool = tool
 	if(multibelt_holder().selected_item == rem_tool)
 		multibelt_holder().dropped() //Reset to original icon.
 	rem_tool.moveToNullspace()
@@ -371,9 +428,8 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_remove_tool)
 	qdel(rem_tool)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_channel", ui_act_add_channel, UI_ARG_TEXT("channel"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_channel)
-	var/selected_radio_channel = params["channel"]
+/datum/eventkit/modify_robot/proc/ui_act_add_channel(datum/act/op/A, channel)
+	var/selected_radio_channel = channel
 	if(selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM)
 		target().radio.centComm = 1
 	if(selected_radio_channel == CHANNEL_RAIDER)
@@ -389,9 +445,8 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_channel)
 	target().radio.secure_radio_connections[selected_radio_channel] = SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_channel", ui_act_rem_channel, UI_ARG_VALUE("channel"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_channel)
-	var/selected_radio_channel = params["channel"]
+/datum/eventkit/modify_robot/proc/ui_act_rem_channel(datum/act/op/A, channel)
+	var/selected_radio_channel = channel
 	if((selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM) && !(target().module.channels[CHANNEL_SPECIAL_OPS] || target().module.channels[CHANNEL_RESPONSE_TEAM]))
 		target().radio.centComm = 0
 	target().module.channels -= selected_radio_channel
@@ -406,12 +461,11 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_channel)
 	target().radio.secure_radio_connections -= selected_radio_channel
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_component", ui_act_add_component, UI_ARG_REF("component", "proc:ui_source_target_components", /datum/robot_component), UI_ARG_PATH("new_part", /datum))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_component)
-	var/datum/robot_component/C = params["component"]
+/datum/eventkit/modify_robot/proc/ui_act_add_component(datum/act/op/A, component, new_part)
+	var/datum/robot_component/C = ui_ref(component, ui_source_target_components(), /datum/robot_component)
 	if(!C || C.internal)
 		return FALSE
-	var/new_component = params["new_part"]
+	var/new_component = new_part
 	if(C.slot == ROBOT_SLOT_POWER)
 		if(!ispath(new_component, /obj/item/cell))
 			return FALSE
@@ -426,9 +480,8 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_component)
 	C.install(new new_component(target()))
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_component", ui_act_rem_component, UI_ARG_REF("component", "proc:ui_source_target_components", /datum/robot_component))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_component)
-	var/datum/robot_component/C = params["component"]
+/datum/eventkit/modify_robot/proc/ui_act_rem_component(datum/act/op/A, component)
+	var/datum/robot_component/C = ui_ref(component, ui_source_target_components(), /datum/robot_component)
 	if(!C?.wrapped || C.internal)
 		return FALSE
 	if(C.slot == ROBOT_SLOT_POWER)
@@ -437,204 +490,194 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_component)
 	qdel(C.uninstall())
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "adjust_cell_charge", ui_act_adjust_cell_charge, UI_ARG_NUM("charge"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_adjust_cell_charge)
+/datum/eventkit/modify_robot/proc/ui_act_adjust_cell_charge(datum/act/op/A, charge)
 	var/obj/item/cell/cell = target().cell
 	if(!cell)
 		return FALSE
-	var/delta = clamp(params["charge"], 0, cell.maxcharge) - cell.charge
+	var/delta = clamp(charge, 0, cell.maxcharge) - cell.charge
 	if(delta > 0)
 		target().add_power(ROBOT_CELL_JOULES(delta), src)
 	else if(delta < 0)
 		target().draw_power(ROBOT_CELL_JOULES(-delta), src, 0, TRUE)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "adjust_brute", ui_act_adjust_brute, UI_ARG_REF("component", "proc:ui_source_target_components", /datum/robot_component), UI_ARG_NUM("damage"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_adjust_brute)
-	var/datum/robot_component/C = params["component"]
+/datum/eventkit/modify_robot/proc/ui_act_adjust_brute(datum/act/op/A, component, damage)
+	var/datum/robot_component/C = ui_ref(component, ui_source_target_components(), /datum/robot_component)
 	if(!C)
 		return FALSE
-	C.set_located_damage(params["damage"], C.get_wiring_damage())
+	C.set_located_damage(damage, C.get_wiring_damage())
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "adjust_electronics", ui_act_adjust_electronics, UI_ARG_REF("component", "proc:ui_source_target_components", /datum/robot_component), UI_ARG_NUM("damage"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_adjust_electronics)
-	var/datum/robot_component/C = params["component"]
+/datum/eventkit/modify_robot/proc/ui_act_adjust_electronics(datum/act/op/A, component, damage)
+	var/datum/robot_component/C = ui_ref(component, ui_source_target_components(), /datum/robot_component)
 	if(!C)
 		return FALSE
-	C.set_located_damage(C.get_structural_damage(), params["damage"])
+	C.set_located_damage(C.get_structural_damage(), damage)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_access", ui_act_add_access, UI_ARG_NUM("access"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_access)
-	target().idcard.access += params["access"]
+/datum/eventkit/modify_robot/proc/ui_act_add_access(datum/act/op/A, access)
+	target().idcard.access += access
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_access", ui_act_rem_access, UI_ARG_NUM("access"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_access)
-	target().idcard.access -= params["access"]
+/datum/eventkit/modify_robot/proc/ui_act_rem_access(datum/act/op/A, access)
+	target().idcard.access -= access
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_centcom", ui_act_add_centcom)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_centcom)
+/datum/eventkit/modify_robot/proc/ui_act_add_centcom(datum/act/op/A)
 	target().idcard.access |= SSaccess.get_all_centcom_access()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_centcom", ui_act_rem_centcom)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_centcom)
+/datum/eventkit/modify_robot/proc/ui_act_rem_centcom(datum/act/op/A)
 	target().idcard.access -= SSaccess.get_all_centcom_access()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_station", ui_act_add_station)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_station)
+/datum/eventkit/modify_robot/proc/ui_act_add_station(datum/act/op/A)
 	target().idcard.access |= SSaccess.get_all_station_access()
 	target().idcard.access |= ACCESS_SYNTH
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_station", ui_act_rem_station)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_station)
+/datum/eventkit/modify_robot/proc/ui_act_rem_station(datum/act/op/A)
 	target().idcard.access -= SSaccess.get_all_station_access()
 	target().idcard.access -= ACCESS_SYNTH
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "law_channel", ui_act_law_channel, UI_ARG_TEXT("law_channel"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_law_channel)
-	if(params["law_channel"] in target().law_channels())
-		target().lawchannel = params["law_channel"]
+/datum/eventkit/modify_robot/proc/ui_act_law_channel(datum/act/op/A, law_channel)
+	if(law_channel in target().law_channels())
+		target().lawchannel = law_channel
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "state_law", ui_act_state_law, UI_ARG_REF("ref", "proc:ui_source_target_laws_all_laws", /datum/ai_law), UI_ARG_NUM("state_law"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_state_law)
-	var/datum/ai_law/AL = params["ref"]
+/datum/eventkit/modify_robot/proc/ui_act_state_law(datum/act/op/A, ref, state_law_arg)
+	var/datum/ai_law/AL = ui_ref(ref, ui_source_target_laws_all_laws(), /datum/ai_law)
 	if(AL)
-		var/state_law = params["state_law"]
+		var/state_law = state_law_arg
 		target().laws.set_state_law(AL, state_law)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_zeroth_law", ui_act_add_zeroth_law)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_zeroth_law)
+/datum/eventkit/modify_robot/proc/ui_act_add_zeroth_law(datum/act/op/A)
 	if(zeroth_law && !target().laws.zeroth_law)
 		target().set_zeroth_law(zeroth_law)
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_ion_law", ui_act_add_ion_law)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_ion_law)
+/datum/eventkit/modify_robot/proc/ui_act_add_ion_law(datum/act/op/A)
 	if(ion_law)
 		target().add_ion_law(ion_law)
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_inherent_law", ui_act_add_inherent_law)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_inherent_law)
+/datum/eventkit/modify_robot/proc/ui_act_add_inherent_law(datum/act/op/A)
 	if(inherent_law)
 		target().add_inherent_law(inherent_law)
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_supplied_law", ui_act_add_supplied_law)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_supplied_law)
+/datum/eventkit/modify_robot/proc/ui_act_add_supplied_law(datum/act/op/A)
 	if(supplied_law && supplied_law_position >= 1 && MIN_SUPPLIED_LAW_NUMBER <= MAX_SUPPLIED_LAW_NUMBER)
 		target().add_supplied_law(supplied_law_position, supplied_law)
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "change_zeroth_law", ui_act_change_zeroth_law, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_change_zeroth_law)
-	var/new_law = sanitize(params["val"])
+/datum/eventkit/modify_robot/proc/ui_act_change_zeroth_law(datum/act/op/A, val)
+	var/new_law = sanitize(val)
 	if(new_law && new_law != zeroth_law)
 		zeroth_law = new_law
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "change_ion_law", ui_act_change_ion_law, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_change_ion_law)
-	var/new_law = sanitize(params["val"])
+/datum/eventkit/modify_robot/proc/ui_act_change_ion_law(datum/act/op/A, val)
+	var/new_law = sanitize(val)
 	if(new_law && new_law != ion_law)
 		ion_law = new_law
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "change_inherent_law", ui_act_change_inherent_law, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_change_inherent_law)
-	var/new_law = sanitize(params["val"])
+/datum/eventkit/modify_robot/proc/ui_act_change_inherent_law(datum/act/op/A, val)
+	var/new_law = sanitize(val)
 	if(new_law && new_law != inherent_law)
 		inherent_law = new_law
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "change_supplied_law", ui_act_change_supplied_law, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_change_supplied_law)
-	var/new_law = sanitize(params["val"])
+/datum/eventkit/modify_robot/proc/ui_act_change_supplied_law(datum/act/op/A, val)
+	var/new_law = sanitize(val)
 	if(new_law && new_law != supplied_law)
 		supplied_law = new_law
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "change_supplied_law_position", ui_act_change_supplied_law_position)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_change_supplied_law_position)
-	var/new_position = act_ask(ui.user, action, params, ui, "position", /datum/om/prompt/number, message = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", title = "Law Position", default = supplied_law_position, max = MAX_SUPPLIED_LAW_NUMBER, min = 1)
+/datum/eventkit/modify_robot/proc/ui_act_change_supplied_law_position(datum/act/op/A)
+	var/datum/prompt/P = A.answer
+	var/new_position = P?.value
 	if(isnum(new_position))
 		supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "edit_law", ui_act_edit_law, UI_ARG_REF("edit_law", "proc:ui_source_target_laws_all_laws", /datum/ai_law))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_edit_law)
-	var/datum/ai_law/AL = params["edit_law"]
-	if(AL)
-		var/new_law = act_ask(ui.user, action, params, ui, "law", /datum/om/prompt/text, message = "Enter new law. Leaving the field blank will cancel the edit.", title = "Edit Law", default = AL.law)
-		if(new_law && new_law != AL.law)
-			AL.law = new_law
-			target().lawsync()
-		return TRUE
+/datum/eventkit/modify_robot/proc/law_position_default(datum/act/op/A)
+	return supplied_law_position
 
-UI_ACT(/datum/eventkit/modify_robot, "delete_law", ui_act_delete_law, UI_ARG_REF("delete_law", "proc:ui_source_target_laws_all_laws", /datum/ai_law))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_delete_law)
-	var/datum/ai_law/AL = params["delete_law"]
+/datum/eventkit/modify_robot/proc/ui_act_edit_law(datum/act/op/A, edit_law)
+	var/datum/ai_law/AL = ui_ref(edit_law, ui_source_target_laws_all_laws(), /datum/ai_law)
+	if(!AL)
+		return TRUE
+	rel_set(src, nameof(editing_law), AL)
+	open_request(src, /datum/prompt/text, PROC_REF(law_edited), valid = PROC_REF(request_usable), answerer = A.actor, question = "Enter new law. Leaving the field blank will cancel the edit.", title = "Edit Law", default = AL.law, timeout = 0)
+	return TRUE
+
+/datum/eventkit/modify_robot/proc/law_edited(datum/act/request/A)
+	var/datum/ai_law/AL = editing_law()
+	if(!A.answer || !AL || !(AL in ui_source_target_laws_all_laws()))
+		return
+	var/new_law = A.answer.answer_value
+	if(new_law && new_law != AL.law)
+		AL.law = new_law
+		target().lawsync()
+	SStgui.update_uis(src)
+
+/// The law a question about editing is open for.
+/datum/eventkit/modify_robot/proc/editing_law() as /datum/ai_law
+	return editing_law
+
+/datum/eventkit/modify_robot/proc/ui_act_delete_law(datum/act/op/A, delete_law)
+	var/datum/ai_law/AL = ui_ref(delete_law, ui_source_target_laws_all_laws(), /datum/ai_law)
 	if(AL)
 		target().delete_law(AL)
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "state_laws", ui_act_state_laws)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_state_laws)
+/datum/eventkit/modify_robot/proc/ui_act_state_laws(datum/act/op/A)
 	target().statelaws(target().laws)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "state_law_set", ui_act_state_law_set, UI_ARG_REF("state_law_set", "law_list", /datum/ai_laws))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_state_law_set)
-	var/datum/ai_laws/ALs = params["state_law_set"]
+/datum/eventkit/modify_robot/proc/ui_act_state_law_set(datum/act/op/A, state_law_set)
+	var/datum/ai_laws/ALs = state_law_set
 	if(ALs)
 		target().statelaws(ALs)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "transfer_laws", ui_act_transfer_laws, UI_ARG_REF("transfer_laws", "law_list", /datum/ai_laws))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_transfer_laws)
-	var/datum/ai_laws/ALs = params["transfer_laws"]
+/datum/eventkit/modify_robot/proc/ui_act_transfer_laws(datum/act/op/A, transfer_laws)
+	var/datum/ai_laws/ALs = transfer_laws
 	if(ALs)
 		ALs.sync(target(), 0)
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "notify_laws", ui_act_notify_laws)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_notify_laws)
+/datum/eventkit/modify_robot/proc/ui_act_notify_laws(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(target(), span_danger("Law Notice\n") + target().laws.get_formatted_laws())
 	if(isAI(target()))
 		var/mob/living/silicon/ai/our_ai = target()
 		for(var/mob/living/silicon/robot/R in our_ai.connected_robots)
 			to_chat(R, span_danger("Law Notice\n") + R.laws.get_formatted_laws())
-	if(ui.user != target())
-		to_chat(ui.user, span_notice("Laws displayed."))
+	if(user != target())
+		to_chat(user, span_notice("Laws displayed."))
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "select_ai", ui_act_select_ai, UI_ARG_VALUE("new_ai"))
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_ai)
-	selected_ai = params["new_ai"]
+/datum/eventkit/modify_robot/proc/ui_act_select_ai(datum/act/op/A, new_ai)
+	selected_ai = new_ai
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "swap_sync", ui_act_swap_sync)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_sync)
+/datum/eventkit/modify_robot/proc/ui_act_swap_sync(datum/act/op/A)
 	var/mob/living/silicon/ai/our_ai
 	for(var/mob/living/silicon/ai/ai in REGISTRY_MEMBERS(REGISTRY_AIS))
 		if(ai.name == selected_ai)
@@ -647,15 +690,13 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_sync)
 		target().connect_to_ai(our_ai)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "disconnect_ai", ui_act_disconnect_ai)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_disconnect_ai)
+/datum/eventkit/modify_robot/proc/ui_act_disconnect_ai(datum/act/op/A)
 	if(target().is_slaved())
 		target().disconnect_from_ai()
 		target().lawupdate = FALSE
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "toggle_emag", ui_act_toggle_emag)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_toggle_emag)
+/datum/eventkit/modify_robot/proc/ui_act_toggle_emag(datum/act/op/A)
 	if(target().emagged)
 		target().emagged = FALSE
 		target().clear_supplied_laws()
@@ -910,4 +951,3 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_toggle_emag)
 /// The target this refers to (a relation view: null once that is deleted).
 /datum/eventkit/modify_robot/proc/target() as /mob/living/silicon/robot
 	return target
-

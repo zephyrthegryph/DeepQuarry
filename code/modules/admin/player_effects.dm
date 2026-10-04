@@ -10,7 +10,88 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 /datum/eventkit/player_effects/New()
 	. = ..()
 
-DECLARE_UI(/datum/eventkit/player_effects, "PlayerEffects", UI_TITLE("Player Effects"))
+CAPABILITIES(/datum/eventkit/player_effects)
+	interface("PlayerEffects", title = "Player Effects", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	ref_one(nameof(target), /mob)
+	extend(TAG_UI, needs(req_rights(R_SPAWN)))
+	extend(TAG_UI, then(PROC_REF(ui_log_use), early = TRUE))
+	op("break_legs", ui_act("break_legs"), then(PROC_REF(ui_act_break_legs)))
+	op("bluespace_artillery", ui_act("bluespace_artillery"), then(PROC_REF(ui_act_bluespace_artillery)))
+	op("spont_combustion", ui_act("spont_combustion"), then(PROC_REF(ui_act_spont_combustion)))
+	op("lightning_strike", ui_act("lightning_strike"), then(PROC_REF(ui_act_lightning_strike)))
+	op("shadekin_attack", ui_act("shadekin_attack"), then(PROC_REF(ui_act_shadekin_attack)))
+	op("shadekin_vore", ui_act("shadekin_vore"), asks(/datum/prompt/choice, fields = list("title" = "Shadekin Type Choice", "question" = computed(PROC_REF(kin_question)), "choices" = computed(PROC_REF(kin_names))), step = "kin"), asks(/datum/prompt/choice, fields = list("title" = "Control Shadekin?", "question" = "Control the shadekin yourself or delete pred and prey after?", "choices" = list("Control", "Cancel", "Delete")), step = "control"), then(PROC_REF(ui_act_shadekin_vore)))
+	op("redspace_abduct", ui_act("redspace_abduct"), then(PROC_REF(ui_act_redspace_abduct)))
+	op("autosave", ui_act("autosave"), then(PROC_REF(ui_act_autosave)))
+	op("autosave2", ui_act("autosave2"), then(PROC_REF(ui_act_autosave2)))
+	op("adspam", ui_act("adspam"), then(PROC_REF(ui_act_adspam)))
+	op("peppernade", ui_act("peppernade"), then(PROC_REF(ui_act_peppernade)))
+	op("spicerequest", ui_act("spicerequest"), then(PROC_REF(ui_act_spicerequest)))
+	op("terror", ui_act("terror"), then(PROC_REF(ui_act_terror)))
+	op("terror_aoe", ui_act("terror_aoe"), then(PROC_REF(ui_act_terror_aoe)))
+	op("spin", ui_act("spin"), asks(/datum/prompt/number, fields = list("title" = "Speed", "question" = "Spin speed (minimum 0.1):"), step = "speed"), asks(/datum/prompt/number, fields = list("title" = "Loops", "question" = "Number of loops (-1 for infinite):"), step = "loops", when = PROC_REF(spin_speed_ok)), asks(/datum/prompt/choice, fields = list("title" = "Direction", "question" = "Clockwise or Anti-Clockwise", "choices" = list("Clockwise", "Anti-Clockwise", "Cancel")), step = "direction", when = PROC_REF(spin_speed_ok)), then(PROC_REF(ui_act_spin)))
+	op("squish", ui_act("squish"), then(PROC_REF(ui_act_squish)))
+	op("pie_splat", ui_act("pie_splat"), then(PROC_REF(ui_act_pie_splat)))
+	op("spicy_air", ui_act("spicy_air"), then(PROC_REF(ui_act_spicy_air)))
+	op("hot_dog", ui_act("hot_dog"), then(PROC_REF(ui_act_hot_dog)))
+	op("mob_tf", ui_act("mob_tf"), asks(/datum/prompt/choice, fields = list("title" = "Choose Beast Form", "question" = "Which form would you like to take?", "choices" = computed(PROC_REF(living_types)))), then(PROC_REF(ui_act_mob_tf)))
+	op("item_tf", ui_act("item_tf"), needs(req(PROC_REF(item_tf_ready), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Typepath", "question" = "Enter full or partial typepath.", "max_len" = MAX_TGUI_INPUT), step = "path"), asks(/datum/prompt/choice, fields = list("title" = "Typepath", "question" = "Which one?", "choices" = computed(PROC_REF(typepath_matches))), step = "pick", when = PROC_REF(typepath_ambiguous)), then(PROC_REF(ui_act_item_tf)))
+	op("elder_smite", ui_act("elder_smite"), then(PROC_REF(ui_act_elder_smite)))
+	op("wet_floors", ui_act("wet_floors"), asks(/datum/prompt/choice, fields = list("title" = "Reagent", "question" = "Which reagent do you want to place on the floors around them?", "choices" = list("Water", "Space Lube", "Other", "Cancel")), step = "reagent"), asks(/datum/prompt/choice, fields = list("title" = "Chemicals", "question" = "Which chemical would you like to use?", "choices" = computed(PROC_REF(reagent_types))), step = "chem", when = PROC_REF(wet_floors_other)), then(PROC_REF(ui_act_wet_floors)))
+	op("health_scan", ui_act("health_scan"), then(PROC_REF(ui_act_health_scan)))
+	op("appendicitis", ui_act("appendicitis"), then(PROC_REF(ui_act_appendicitis)))
+	op("damage_organ", ui_act("damage_organ"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Organs", "question" = "Choose an organ to damage:", "choices" = computed(PROC_REF(organ_choices))), step = "organ"), asks(/datum/prompt/choice, fields = list("title" = "Effect", "question" = "What do you want to do to the Organ", "choices" = list("Damage", "Kill", "Bruise", "Cancel")), step = "effect", when = PROC_REF(organ_chosen)), asks(/datum/prompt/number, fields = list("title" = "Damage", "question" = computed(PROC_REF(organ_damage_question))), step = "amount", when = PROC_REF(effect_is_damage)), then(PROC_REF(ui_act_damage_organ)))
+	op("assist_organ", ui_act("assist_organ"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Organs", "question" = "Choose an organ to become assisted:", "choices" = computed(PROC_REF(organ_choices)))), then(PROC_REF(ui_act_assist_organ)))
+	op("robot_organ", ui_act("robot_organ"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Organs", "question" = "Choose an organ to become robotic:", "choices" = computed(PROC_REF(organ_choices)))), then(PROC_REF(ui_act_robot_organ)))
+	op("repair_organ", ui_act("repair_organ"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Organs", "question" = "Choose an organ to heal:", "choices" = computed(PROC_REF(organ_choices))), step = "organ"), asks(/datum/prompt/choice, fields = list("title" = "Effect", "question" = "What do you want to do to the Organ", "choices" = list("Heal", "Rejuvenate", "Cancel")), step = "effect", when = PROC_REF(organ_chosen)), asks(/datum/prompt/number, fields = list("title" = "Damage", "question" = computed(PROC_REF(organ_damage_question))), step = "amount", when = PROC_REF(effect_is_heal)), then(PROC_REF(ui_act_repair_organ)))
+	op("drop_organ", ui_act("drop_organ"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Organs", "question" = "Choose an organ to damage:", "choices" = computed(PROC_REF(organ_choices)))), then(PROC_REF(ui_act_drop_organ)))
+	op("break_bone", ui_act("break_bone"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Organs", "question" = "Choose an bone to break:", "choices" = computed(PROC_REF(bone_choices)))), then(PROC_REF(ui_act_break_bone)))
+	op("stasis", ui_act("stasis"), then(PROC_REF(ui_act_stasis)))
+	op("give_chem", ui_act("give_chem"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Chemicals", "question" = "Which chemical would you like to add?", "choices" = computed(PROC_REF(reagent_types))), step = "chem"), asks(/datum/prompt/number, fields = list("title" = "Amount", "question" = "How much of the chemical would you like to add?", "default" = 5), step = "amount", when = PROC_REF(chem_chosen)), asks(/datum/prompt/choice, fields = list("title" = "Location", "question" = "Where do you want to add the chemical?", "choices" = list("Blood", "Stomach", "Skin", "Cancel")), step = "location", when = PROC_REF(chem_chosen)), then(PROC_REF(ui_act_give_chem)))
+	op("purge", ui_act("purge"), then(PROC_REF(ui_act_purge)))
+	op("medical_issue", ui_act("medical_issue"), then(PROC_REF(ui_act_medical_issue)))
+	op("clear_issue", ui_act("clear_issue"), then(PROC_REF(ui_act_clear_issue)))
+	op("vent_crawl", ui_act("vent_crawl"), then(PROC_REF(ui_act_vent_crawl)))
+	op("darksight", ui_act("darksight"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Darksight", "question" = computed(PROC_REF(darksight_question)))), then(PROC_REF(ui_act_darksight)))
+	op("cocoon", ui_act("cocoon"), then(PROC_REF(ui_act_cocoon)))
+	op("transformation", ui_act("transformation"), then(PROC_REF(ui_act_transformation)))
+	op("set_size", ui_act("set_size"), then(PROC_REF(ui_act_set_size)))
+	op("lleill_energy", ui_act("lleill_energy"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Max energy", "question" = computed(PROC_REF(lleill_max_question))), step = "max"), asks(/datum/prompt/number, fields = list("title" = "Max energy", "question" = computed(PROC_REF(lleill_now_question))), step = "now"), then(PROC_REF(ui_act_lleill_energy)))
+	op("lleill_invisibility", ui_act("lleill_invisibility"), then(PROC_REF(ui_act_lleill_invisibility)))
+	op("beast_form", ui_act("beast_form"), then(PROC_REF(ui_act_beast_form)))
+	op("lleill_transmute", ui_act("lleill_transmute"), then(PROC_REF(ui_act_lleill_transmute)))
+	op("lleill_alchemy", ui_act("lleill_alchemy"), then(PROC_REF(ui_act_lleill_alchemy)))
+	op("lleill_drain", ui_act("lleill_drain"), then(PROC_REF(ui_act_lleill_drain)))
+	op("brutal_pred", ui_act("brutal_pred"), then(PROC_REF(ui_act_brutal_pred)))
+	op("trash_eater", ui_act("trash_eater"), then(PROC_REF(ui_act_trash_eater)))
+	op("active_cloaking", ui_act("active_cloaking"), then(PROC_REF(ui_act_active_cloaking)))
+	op("colormate", ui_act("colormate"), then(PROC_REF(ui_act_colormate)))
+	op("be_event_invis", ui_act("be_event_invis"), then(PROC_REF(ui_act_be_event_invis)))
+	op("see_event_invis", ui_act("see_event_invis"), then(PROC_REF(ui_act_see_event_invis)))
+	op("drop_all", ui_act("drop_all"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/yes_no, fields = list("title" = "Message", "question" = computed(PROC_REF(drop_all_question)))), then(PROC_REF(ui_act_drop_all)))
+	op("drop_specific", ui_act("drop_specific"), needs(req(PROC_REF(target_human), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Drop Specific Item", "question" = "Choose item to force drop:", "choices" = computed(PROC_REF(equipped_choices)))), then(PROC_REF(ui_act_drop_specific)))
+	op("drop_held", ui_act("drop_held"), then(PROC_REF(ui_act_drop_held)))
+	op("list_all", ui_act("list_all"), then(PROC_REF(ui_act_list_all)))
+	op("give_item", ui_act("give_item"), then(PROC_REF(ui_act_give_item)))
+	op("equip_item", ui_act("equip_item"), then(PROC_REF(ui_act_equip_item)))
+	op("quick_nif", ui_act("quick_nif"), needs(req(PROC_REF(nif_target_ok), because = PROC_REF(nif_target_refusal))), asks(/datum/prompt/choice, fields = list("title" = "Quick NIF", "question" = "Pick the NIF type", "choices" = computed(PROC_REF(nif_choices))), when = PROC_REF(nif_needs_pick)), then(PROC_REF(ui_act_quick_nif)))
+	op("resize", ui_act("resize"), then(PROC_REF(ui_act_resize)))
+	op("teleport", ui_act("teleport"), asks(/datum/prompt/choice, fields = list("title" = "Where?", "question" = "Where to teleport?", "choices" = list("To Me", "To Mob", "To Area", "Cancel")), step = "where"), asks(/datum/prompt/choice, fields = list("title" = "Jump to mob", "question" = computed(PROC_REF(teleport_mob_question)), "choices" = computed(PROC_REF(teleport_mobs))), step = "mob", when = PROC_REF(teleport_to_mob)), asks(/datum/prompt/choice, fields = list("title" = "Jump to Area", "question" = computed(PROC_REF(teleport_area_question)), "choices" = computed(PROC_REF(teleport_areas))), step = "area", when = PROC_REF(teleport_to_area)), then(PROC_REF(ui_act_teleport)))
+	op("gib", ui_act("gib"), then(PROC_REF(ui_act_gib)))
+	op("dust", ui_act("dust"), then(PROC_REF(ui_act_dust)))
+	op("paralyse", ui_act("paralyse"), then(PROC_REF(ui_act_paralyse)))
+	op("subtle_message", ui_act("subtle_message"), then(PROC_REF(ui_act_subtle_message)))
+	op("direct_narrate", ui_act("direct_narrate"), then(PROC_REF(ui_act_direct_narrate)))
+	op("player_panel", ui_act("player_panel"), then(PROC_REF(ui_act_player_panel)))
+	op("view_variables", ui_act("view_variables"), then(PROC_REF(ui_act_view_variables)))
+	op("orbit", ui_act("orbit"), then(PROC_REF(ui_act_orbit)))
+	op("ai", ui_act("ai"), needs(req(PROC_REF(ai_target_ok), because = PROC_REF(ai_target_refusal))), asks(/datum/prompt/text, fields = list("title" = "AI faction", "question" = "Please input AI faction", "default" = "neutral"), step = "faction"), asks(/datum/prompt/choice, fields = list("title" = "AI combat mode", "question" = "Please choose AI combat mode", "choices" = list(I_HURT, I_HELP)), step = "stance"), asks(/datum/prompt/yes_no, fields = list("title" = "Wake mob?", "question" = "Make mob wake up? This is needed for carbon mobs."), step = "wake"), then(PROC_REF(ui_act_ai)))
+	op("cloaking", ui_act("cloaking"), then(PROC_REF(ui_act_cloaking)))
+	op("give_quest", ui_act("give_quest"), needs(req(PROC_REF(has_target), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Quest!", "question" = "Do you want to give a random quest or a personalised one?", "choices" = list("Random", "Personalised", "Cancel")), step = "kind"), asks(/datum/prompt/text, fields = list("title" = "Quest!!!", "question" = "What is their quest?"), step = "quest", when = PROC_REF(quest_personalised)), then(PROC_REF(ui_act_give_quest)))
+	op("rejuvenate", ui_act("rejuvenate"), then(PROC_REF(ui_act_rejuvenate)))
+	op("popup-box", ui_act("popup-box"), then(PROC_REF(ui_act_popup_box)))
+	op("stop-orbits", ui_act("stop-orbits"), then(PROC_REF(ui_act_stop_orbits)))
+	op("revert-mob-tf", ui_act("revert-mob-tf"), then(PROC_REF(ui_act_revert_mob_tf)))
 
 /datum/eventkit/player_effects/tgui_static_data(mob/user)
 	var/list/data = list()
@@ -21,8 +102,6 @@ DECLARE_UI(/datum/eventkit/player_effects, "PlayerEffects", UI_TITLE("Player Eff
 
 	return data
 
-DECLARE_UI_STATE(/datum/eventkit/player_effects, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
-
 /datum/om/prompt/text/admin_popup
 	title = "Reply"
 	/// key_name() of the sending admin.
@@ -32,18 +111,14 @@ DECLARE_UI_STATE(/datum/eventkit/player_effects, ADMIN_STATE(R_ADMIN|R_EVENT|R_D
 	if(ask.text)
 		log_and_message_admins("replied to [ask.admin_name]'s message: [ask.text].", ask.answerer)
 
-/// Every effect is logged once (answers to its questions re-run the action with om_reentry set).
-/datum/eventkit/player_effects/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!check_rights_for(user.client, R_SPAWN))
-		return FALSE
-	if(!GLOB.ui_rerun)
-		log_and_message_admins("used player effect: [action] on [target().ckey] playing [target().name]", user)
-	return TRUE
+/// Only somebody with the spawn right works a button, and every effect is logged once, as it is pressed.
+/datum/eventkit/player_effects/proc/ui_log_use(datum/act/op/A)
+	var/mob/user = A.actor
+	log_and_message_admins("used player effect: [A.oplan.key] on [target().ckey] playing [target().name]", user)
+	return OP_OK
 
-UI_ACT(/datum/eventkit/player_effects, "break_legs", ui_act_break_legs)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_break_legs)
+/datum/eventkit/player_effects/proc/ui_act_break_legs(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
@@ -55,14 +130,13 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_break_legs)
 	if(right_leg && right_leg.fracture())
 		broken_legs++
 	if(!broken_legs)
-		to_chat(ui.user,"[target()] didn't have any breakable legs, sorry.")
+		to_chat(user,"[target()] didn't have any breakable legs, sorry.")
 
-UI_ACT(/datum/eventkit/player_effects, "bluespace_artillery", ui_act_bluespace_artillery)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_bluespace_artillery)
-	bluespace_artillery(target(), ui.user)
+/datum/eventkit/player_effects/proc/ui_act_bluespace_artillery(datum/act/op/A)
+	var/mob/user = A.actor
+	bluespace_artillery(target(), user)
 
-UI_ACT(/datum/eventkit/player_effects, "spont_combustion", ui_act_spont_combustion)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_spont_combustion)
+/datum/eventkit/player_effects/proc/ui_act_spont_combustion(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
@@ -70,8 +144,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_spont_combustion)
 	Tar.ignite_mob()
 	Tar.visible_message(span_danger("[target()] bursts into flames!"))
 
-UI_ACT(/datum/eventkit/player_effects, "lightning_strike", ui_act_lightning_strike)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lightning_strike)
+/datum/eventkit/player_effects/proc/ui_act_lightning_strike(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
@@ -80,8 +153,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lightning_strike)
 	Tar.electrocute_act(75,def_zone = BP_HEAD)
 	target().visible_message(span_danger("[target()] is struck by lightning!"))
 
-UI_ACT(/datum/eventkit/player_effects, "shadekin_attack", ui_act_shadekin_attack)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_attack)
+/datum/eventkit/player_effects/proc/ui_act_shadekin_attack(datum/act/op/A)
 	var/turf/Tt = get_turf(target()) //Turf for target
 
 	if(target().loc != Tt)
@@ -111,9 +183,8 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_attack)
 	//Remove when done
 	after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
 
-UI_ACT(/datum/eventkit/player_effects, "shadekin_vore", ui_act_shadekin_vore)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_vore)
-	var/static/list/kin_types = list(
+/// The kinds of shadekin the smite can make, by the name the question shows.
+GLOBAL_LIST_INIT(shadekin_smite_types, list(
 		"Red Eyes (Dark)" =	/mob/living/simple_mob/shadekin/red/dark,
 		"Red Eyes (Light)" = /mob/living/simple_mob/shadekin/red/white,
 		"Red Eyes (Brown)" = /mob/living/simple_mob/shadekin/red/brown,
@@ -132,18 +203,26 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_vore)
 		"Orange Eyes (Dark)" = /mob/living/simple_mob/shadekin/orange/dark,
 		"Orange Eyes (Light)" = /mob/living/simple_mob/shadekin/orange/white,
 		"Orange Eyes (Brown)" = /mob/living/simple_mob/shadekin/orange/brown,
-		"Rivyr (Unique)" = /mob/living/simple_mob/shadekin/blue/rivyr)
-	var/kin_type = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice, message = "Select the type of shadekin for [target()] nomf", title = "Shadekin Type Choice", choices = kin_types)
-	if(isnull(kin_type))
-		return
-	if(!kin_type || !target())
-		return
+		"Rivyr (Unique)" = /mob/living/simple_mob/shadekin/blue/rivyr))
 
-	kin_type = kin_types[kin_type]
+/datum/eventkit/player_effects/proc/kin_types()
+	return GLOB.shadekin_smite_types
 
-	var/myself = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Control the shadekin yourself or delete pred and prey after?", title = "Control Shadekin?", choices = list("Control","Cancel","Delete"))
-	if(isnull(myself))
+/datum/eventkit/player_effects/proc/kin_names(datum/act/op/A)
+	var/list/names = list()
+	for(var/name in kin_types())
+		names += name
+	return names
+
+/datum/eventkit/player_effects/proc/kin_question(datum/act/op/A)
+	return "Select the type of shadekin for [target()] nomf"
+
+/datum/eventkit/player_effects/proc/ui_act_shadekin_vore(datum/act/op/A)
+	var/kin_name = answer_of(A, "kin")
+	if(!kin_name || !target())
 		return
+	var/kin_type = kin_types()[kin_name]
+	var/myself = answer_of(A, "control")
 	if(!myself || myself == "Cancel" || !target())
 		return
 
@@ -167,76 +246,68 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_vore)
 	//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
 	shadekin_smite_step(shadekin, target(), myself == "Control" ? target().ckey : null, 1)
 
-UI_ACT(/datum/eventkit/player_effects, "redspace_abduct", ui_act_redspace_abduct)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_redspace_abduct)
-	redspace_abduction(target(), ui.user)
+/datum/eventkit/player_effects/proc/ui_act_redspace_abduct(datum/act/op/A)
+	var/mob/user = A.actor
+	redspace_abduction(target(), user)
 
-UI_ACT(/datum/eventkit/player_effects, "autosave", ui_act_autosave)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_autosave)
-	fake_autosave(target(), ui.user)
+/datum/eventkit/player_effects/proc/ui_act_autosave(datum/act/op/A)
+	var/mob/user = A.actor
+	fake_autosave(target(), user)
 
-UI_ACT(/datum/eventkit/player_effects, "autosave2", ui_act_autosave2)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_autosave2)
-	fake_autosave(target(), ui.user, TRUE)
+/datum/eventkit/player_effects/proc/ui_act_autosave2(datum/act/op/A)
+	var/mob/user = A.actor
+	fake_autosave(target(), user, TRUE)
 
-UI_ACT(/datum/eventkit/player_effects, "adspam", ui_act_adspam)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_adspam)
+/datum/eventkit/player_effects/proc/ui_act_adspam(datum/act/op/A)
 	if(target().client)
 		target().client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 15)
 
-UI_ACT(/datum/eventkit/player_effects, "peppernade", ui_act_peppernade)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_peppernade)
+/datum/eventkit/player_effects/proc/ui_act_peppernade(datum/act/op/A)
 	var/obj/item/grenade/chem_grenade/teargas/grenade = new /obj/item/grenade/chem_grenade/teargas
 	grenade.forceMove(target().loc)
 	to_chat(target(),span_warning("GRENADE?!"))
 	grenade.detonate()
 
-UI_ACT(/datum/eventkit/player_effects, "spicerequest", ui_act_spicerequest)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_spicerequest)
+/datum/eventkit/player_effects/proc/ui_act_spicerequest(datum/act/op/A)
 	var/obj/item/reagent_containers/food/condiment/spacespice/spice = new /obj/item/reagent_containers/food/condiment/spacespice
 	spice.forceMove(target().loc)
 	to_chat(target(),"A bottle of spices appears at your feet... be careful what you wish for!")
 
-UI_ACT(/datum/eventkit/player_effects, "terror", ui_act_terror)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_terror)
+/datum/eventkit/player_effects/proc/ui_act_terror(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	Tar.fear = 200
+	Tar.set_fear(200)
 
-UI_ACT(/datum/eventkit/player_effects, "terror_aoe", ui_act_terror_aoe)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_terror_aoe)
+/datum/eventkit/player_effects/proc/ui_act_terror_aoe(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	for(var/mob/living/carbon/human/L in orange(Tar.client.view, Tar))
-		L.fear = 200
-	Tar.fear = 200
+		L.set_fear(200)
+	Tar.set_fear(200)
 
-UI_ACT(/datum/eventkit/player_effects, "spin", ui_act_spin)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_spin)
-	var/speed = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/number, message = "Spin speed (minimum 0.1):", title = "Speed")
-	if(isnull(speed))
+/// The loops and direction are asked only for a speed that spins.
+/datum/eventkit/player_effects/proc/spin_speed_ok(datum/act/op/A)
+	var/speed = answer_of(A, "speed")
+	return isnum(speed) && speed >= 0.1
+
+/datum/eventkit/player_effects/proc/ui_act_spin(datum/act/op/A)
+	var/speed = answer_of(A, "speed")
+	if(!spin_speed_ok(A))
 		return
-	if(speed < 0.1)
-		return
-	var/loops = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/number, message = "Number of loops (-1 for infinite):", title = "Loops")
-	if(isnull(loops))
-		return
-	var/direction_ask = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/choice/alert, message = "Clockwise or Anti-Clockwise", title = "Direction", choices = list("Clockwise", "Anti-Clockwise", "Cancel"))
-	if(isnull(direction_ask))
-		return
+	var/loops = answer_of(A, "loops")
+	var/direction_ask = answer_of(A, "direction")
 	var/direction
 	if(direction_ask == "Clockwise")
 		direction = 1
 	if(direction_ask == "Anti-Clockwise")
 		direction = 0
-	if(direction_ask == "Cancel")
+	if(direction_ask == "Cancel" || isnull(direction))
 		return
 	target().SpinAnimation(speed, loops, direction)
 
-UI_ACT(/datum/eventkit/player_effects, "squish", ui_act_squish)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_squish)
+/datum/eventkit/player_effects/proc/ui_act_squish(datum/act/op/A)
 	var/is_squished = target().tf_scale_x || target().tf_scale_y
 	play_sfx(target(), SFX_ITEMS_HOOH)
 	if(!is_squished)
@@ -245,15 +316,13 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_squish)
 		target().ClearTransform()
 		target().update_transform()
 
-UI_ACT(/datum/eventkit/player_effects, "pie_splat", ui_act_pie_splat)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_pie_splat)
+/datum/eventkit/player_effects/proc/ui_act_pie_splat(datum/act/op/A)
 	new/obj/effect/decal/cleanable/pie_smudge(get_turf(target()))
 	play_sfx(target(), SFX_EFFECTS_SLIME_SQUISH, 2, extrarange = get_rand_frequency(), falloff = 5)
 	target().status_at_least(EFFECT_WEAKENED, 1)
 	target().visible_message(span_danger("[target()] is struck by pie!"))
 
-UI_ACT(/datum/eventkit/player_effects, "spicy_air", ui_act_spicy_air)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_spicy_air)
+/datum/eventkit/player_effects/proc/ui_act_spicy_air(datum/act/op/A)
 	to_chat(target(), span_warning("Spice spice baby!"))
 	target().status_at_least(EFFECT_BLURRY, 25)
 	target().status_at_least(EFFECT_BLINDED, 10)
@@ -261,22 +330,20 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_spicy_air)
 	target().status_at_least(EFFECT_WEAKENED, 5)
 	play_sfx(target(), SFX_EFFECTS_SPRAY2, extrarange = get_rand_frequency(), falloff = 5)
 
-UI_ACT(/datum/eventkit/player_effects, "hot_dog", ui_act_hot_dog)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_hot_dog)
+/datum/eventkit/player_effects/proc/ui_act_hot_dog(datum/act/op/A)
 	hotdog_smite(target())
 
-UI_ACT(/datum/eventkit/player_effects, "mob_tf", ui_act_mob_tf)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_mob_tf)
+/datum/eventkit/player_effects/proc/living_types(datum/act/op/A)
+	return typesof(/mob/living)
+
+/datum/eventkit/player_effects/proc/ui_act_mob_tf(datum/act/op/A)
 	var/mob/living/M = target()
 
 	if(!istype(M))
 		return
 
-	var/list/types = typesof(/mob/living)
-	var/chosen_beast = act_ask(ui.user, action, params, ui, "a6", /datum/om/prompt/choice, message = "Which form would you like to take?", title = "Choose Beast Form", choices = types)
-	if(isnull(chosen_beast))
-		return
-
+	var/datum/prompt/P = A.answer
+	var/chosen_beast = P?.value
 	if(!chosen_beast)
 		return
 
@@ -284,8 +351,20 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_mob_tf)
 
 	M.tf_into(new_mob)
 
-UI_ACT(/datum/eventkit/player_effects, "item_tf", ui_act_item_tf)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_item_tf)
+/datum/eventkit/player_effects/proc/item_tf_ready(datum/act/op/A)
+	var/mob/living/M = target()
+	return istype(M) && M.ckey
+
+/// The types whose path contains the text of the first question.
+/datum/eventkit/player_effects/proc/typepath_matches(datum/act/op/A)
+	var/typed = answer_of(A, "path")
+	return istext(typed) ? om_prompt_typepaths(typed, /atom) : list()
+
+/datum/eventkit/player_effects/proc/typepath_ambiguous(datum/act/op/A)
+	return length(typepath_matches(A)) > 1
+
+/datum/eventkit/player_effects/proc/ui_act_item_tf(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/M = target()
 
 	if(!istype(M))
@@ -294,14 +373,15 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_item_tf)
 	if(!M.ckey)
 		return
 
-	var/obj/item/spawning = act_ask(ui.user, action, params, ui, "item_path", /datum/om/prompt/typepath, message = "Enter full or partial typepath.", title = "Typepath")
-	if(isnull(spawning))
+	var/list/matches = typepath_matches(A)
+	var/spawning = length(matches) == 1 ? matches[1] : answer_of(A, "pick")
+	if(!spawning)
 		return
 
-	to_chat(ui.user,span_warning("spawning is: [spawning]"))
+	to_chat(user,span_warning("spawning is: [spawning]"))
 
 	if(!ispath(spawning, /obj/item/))
-		to_chat(ui.user,span_warning("Can only spawn items."))
+		to_chat(user,span_warning("Can only spawn items."))
 		return
 
 	var/obj/item/spawned_obj = new spawning(M.loc)
@@ -309,19 +389,18 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_item_tf)
 
 	M.tf_into(spawned_obj, TRUE, original_name)
 
-UI_ACT(/datum/eventkit/player_effects, "elder_smite", ui_act_elder_smite)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_elder_smite)
+/datum/eventkit/player_effects/proc/ui_act_elder_smite(datum/act/op/A)
 	if(!target().ckey)
 		return
 	target().overlay_fullscreen("scrolls", /atom/movable/screen/fullscreen/scrolls, 1)
 	after(target(), 20 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("scrolls"))
 
-UI_ACT(/datum/eventkit/player_effects, "wet_floors", ui_act_wet_floors)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_wet_floors)
+/datum/eventkit/player_effects/proc/wet_floors_other(datum/act/op/A)
+	return answer_of(A, "reagent") == "Other"
+
+/datum/eventkit/player_effects/proc/ui_act_wet_floors(datum/act/op/A)
 	var/chem
-	var/reagent_choice = act_ask(ui.user, action, params, ui, "a7", /datum/om/prompt/choice/alert, message = "Which reagent do you want to place on the floors around them?", title = "Reagent", choices = list("Water", "Space Lube", "Other", "Cancel"))
-	if(isnull(reagent_choice))
-		return
+	var/reagent_choice = answer_of(A, "reagent")
 	if(!reagent_choice || (reagent_choice == "Cancel"))
 		return
 	if(reagent_choice ==  "Water")
@@ -329,10 +408,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_wet_floors)
 	if(reagent_choice == "Space Lube")
 		chem = REAGENT_ID_LUBE
 	if(reagent_choice == "Other")
-		var/list/chem_list = typesof(/datum/reagent)
-		var/datum/reagent/chemical = act_ask(ui.user, action, params, ui, "a8", /datum/om/prompt/choice, message = "Which chemical would you like to use?", title = "Chemicals", choices = chem_list)
-		if(isnull(chemical))
-			return
+		var/datum/reagent/chemical = answer_of(A, "chem")
 		if(!chemical)
 			return
 		chem = chemical.id
@@ -350,44 +426,46 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_wet_floors)
 
 ////////MEDICAL//////////////
 
-UI_ACT(/datum/eventkit/player_effects, "health_scan", ui_act_health_scan)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_health_scan)
+/datum/eventkit/player_effects/proc/ui_act_health_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
 	var/datum/diagnosis/D = Tar.diagnose(/datum/diagnostic_profile/admin)
 	if(D)
-		to_chat(ui.user, D.render_chat())
+		to_chat(user, D.render_chat())
 		qdel(D)
 
-UI_ACT(/datum/eventkit/player_effects, "appendicitis", ui_act_appendicitis)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_appendicitis)
+/datum/eventkit/player_effects/proc/ui_act_appendicitis(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(istype(Tar))
 		Tar.appendicitis()
 
-UI_ACT(/datum/eventkit/player_effects, "damage_organ", ui_act_damage_organ)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_damage_organ)
+/datum/eventkit/player_effects/proc/organ_chosen(datum/act/op/A)
+	return !!answer_of(A, "organ")
+
+/datum/eventkit/player_effects/proc/effect_is_damage(datum/act/op/A)
+	return answer_of(A, "effect") == "Damage"
+
+/datum/eventkit/player_effects/proc/effect_is_heal(datum/act/op/A)
+	return answer_of(A, "effect") == "Heal"
+
+/datum/eventkit/player_effects/proc/organ_damage_question(datum/act/op/A)
+	var/obj/item/organ/our_organ = answer_of(A, "organ")
+	return "Add how much damage? It is currently at [our_organ?.damage]."
+
+/datum/eventkit/player_effects/proc/ui_act_damage_organ(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	var/list/organs = list()
-	for(var/obj/item/organ/I in Tar.organs)
-		organs |= I
-	for(var/obj/item/organ/I in Tar.internal_organ_list())
-		organs |= I
-	var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a9", /datum/om/prompt/choice, message = "Choose an organ to damage:", title = "Organs", choices = organs)
-	if(isnull(our_organ))
-		return
+	var/obj/item/organ/our_organ = answer_of(A, "organ")
 	if(!our_organ)
 		return
-	var/effect = act_ask(ui.user, action, params, ui, "a10", /datum/om/prompt/choice/alert, message = "What do you want to do to the Organ", title = "Effect", choices = list("Damage", "Kill", "Bruise", "Cancel"))
-	if(isnull(effect))
-		return
+	var/effect = answer_of(A, "effect")
 	if(effect == "Cancel")
 		return
 	if(effect == "Damage")
-		var/organ_damage = act_ask(ui.user, action, params, ui, "a11", /datum/om/prompt/number, message = "Add how much damage? It is currently at [our_organ.damage].", title = "Damage")
+		var/organ_damage = answer_of(A, "amount")
 		if(isnull(organ_damage))
 			return
 		if(organ_damage > 0 && our_organ.owner == Tar)
@@ -397,62 +475,30 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_damage_organ)
 	if(effect == "Bruise")
 		our_organ.bruise()
 
-UI_ACT(/datum/eventkit/player_effects, "assist_organ", ui_act_assist_organ)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_assist_organ)
-	var/mob/living/carbon/human/Tar = target()
-	if(!istype(Tar))
-		return
-	var/list/organs = list()
-	for(var/obj/item/organ/I in Tar.organs)
-		organs |= I
-	for(var/obj/item/organ/I in Tar.internal_organ_list())
-		organs |= I
-	var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a12", /datum/om/prompt/choice, message = "Choose an organ to become assisted:", title = "Organs", choices = organs)
-	if(isnull(our_organ))
-		return
+/datum/eventkit/player_effects/proc/ui_act_assist_organ(datum/act/op/A)
+	var/obj/item/organ/our_organ = answer_of(A, "choice")
 	if(!our_organ)
 		return
 	our_organ.mechassist()
 
-UI_ACT(/datum/eventkit/player_effects, "robot_organ", ui_act_robot_organ)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_robot_organ)
-	var/mob/living/carbon/human/Tar = target()
-	if(!istype(Tar))
-		return
-	var/list/organs = list()
-	for(var/obj/item/organ/I in Tar.organs)
-		organs |= I
-	for(var/obj/item/organ/I in Tar.internal_organ_list())
-		organs |= I
-	var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a13", /datum/om/prompt/choice, message = "Choose an organ to become robotic:", title = "Organs", choices = organs)
-	if(isnull(our_organ))
-		return
+/datum/eventkit/player_effects/proc/ui_act_robot_organ(datum/act/op/A)
+	var/obj/item/organ/our_organ = answer_of(A, "choice")
 	if(!our_organ)
 		return
 	our_organ.robotize()
 
-UI_ACT(/datum/eventkit/player_effects, "repair_organ", ui_act_repair_organ)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_repair_organ)
+/datum/eventkit/player_effects/proc/ui_act_repair_organ(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	var/list/organs = list()
-	for(var/obj/item/organ/I in Tar.organs)
-		organs |= I
-	for(var/obj/item/organ/I in Tar.internal_organ_list())
-		organs |= I
-	var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a14", /datum/om/prompt/choice, message = "Choose an organ to heal:", title = "Organs", choices = organs)
-	if(isnull(our_organ))
-		return
+	var/obj/item/organ/our_organ = answer_of(A, "organ")
 	if(!our_organ)
 		return
-	var/effect = act_ask(ui.user, action, params, ui, "a15", /datum/om/prompt/choice/alert, message = "What do you want to do to the Organ", title = "Effect", choices = list("Heal", "Rejuvenate", "Cancel"))
-	if(isnull(effect))
-		return
+	var/effect = answer_of(A, "effect")
 	if(effect == "Cancel")
 		return
 	if(effect == "Heal")
-		var/organ_damage = act_ask(ui.user, action, params, ui, "a16", /datum/om/prompt/number, message = "Add how much damage? It is currently at [our_organ.damage].", title = "Damage")
+		var/organ_damage = answer_of(A, "amount")
 		if(isnull(organ_damage))
 			return
 		if(organ_damage > 0 && our_organ.owner == Tar)
@@ -460,40 +506,19 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_repair_organ)
 	if(effect == "Rejuvenate")
 		our_organ.rejuvenate()
 
-UI_ACT(/datum/eventkit/player_effects, "drop_organ", ui_act_drop_organ)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_drop_organ)
-	var/mob/living/carbon/human/Tar = target()
-	if(!istype(Tar))
-		return
-	var/list/organs = list()
-	for(var/obj/item/organ/I in Tar.organs)
-		organs |= I
-	for(var/obj/item/organ/I in Tar.internal_organ_list())
-		organs |= I
-	var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a17", /datum/om/prompt/choice, message = "Choose an organ to damage:", title = "Organs", choices = organs)
-	if(isnull(our_organ))
-		return
+/datum/eventkit/player_effects/proc/ui_act_drop_organ(datum/act/op/A)
+	var/obj/item/organ/our_organ = answer_of(A, "choice")
 	if(!our_organ)
 		return
 	our_organ.removed()
 
-UI_ACT(/datum/eventkit/player_effects, "break_bone", ui_act_break_bone)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_break_bone)
-	var/mob/living/carbon/human/Tar = target()
-	if(!istype(Tar))
-		return
-	var/list/organs = list()
-	for(var/obj/item/organ/external/E in Tar.organs)
-		organs |= E
-	var/obj/item/organ/external/our_organ = act_ask(ui.user, action, params, ui, "a18", /datum/om/prompt/choice, message = "Choose an bone to break:", title = "Organs", choices = organs)
-	if(isnull(our_organ))
-		return
+/datum/eventkit/player_effects/proc/ui_act_break_bone(datum/act/op/A)
+	var/obj/item/organ/external/our_organ = answer_of(A, "choice")
 	if(!our_organ)
 		return
 	our_organ.fracture()
 
-UI_ACT(/datum/eventkit/player_effects, "stasis", ui_act_stasis)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_stasis)
+/datum/eventkit/player_effects/proc/ui_act_stasis(datum/act/op/A)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
@@ -502,31 +527,21 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_stasis)
 	else
 		Tar.set_stasis(/datum/body_effect/stasis/total, null)
 
-UI_ACT(/datum/eventkit/player_effects, "give_chem", ui_act_give_chem)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_give_chem)
+/datum/eventkit/player_effects/proc/chem_chosen(datum/act/op/A)
+	return !!answer_of(A, "chem")
+
+/datum/eventkit/player_effects/proc/ui_act_give_chem(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	var/list/chem_list = typesof(/datum/reagent)
-	var/datum/reagent/chemical = act_ask(ui.user, action, params, ui, "a19", /datum/om/prompt/choice, message = "Which chemical would you like to add?", title = "Chemicals", choices = chem_list)
-	if(isnull(chemical))
-		return
-
+	var/datum/reagent/chemical = answer_of(A, "chem")
 	if(!chemical)
 		return
-
 	var/chem = chemical.id
-
-	var/amount = act_ask(ui.user, action, params, ui, "a20", /datum/om/prompt/number, message = "How much of the chemical would you like to add?", title = "Amount", default = 5)
-	if(isnull(amount))
-		return
+	var/amount = answer_of(A, "amount")
 	if(!amount)
 		return
-
-	var/location = act_ask(ui.user, action, params, ui, "a21", /datum/om/prompt/choice/alert, message = "Where do you want to add the chemical?", title = "Location", choices = list("Blood", "Stomach", "Skin", "Cancel"))
-	if(isnull(location))
-		return
-
+	var/location = answer_of(A, "location")
 	if(!location || location == "Cancel")
 		return
 	if(location == "Blood")
@@ -536,8 +551,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_give_chem)
 	if(location == "Skin")
 		Tar.touching.add_reagent(chem, amount)
 
-UI_ACT(/datum/eventkit/player_effects, "purge", ui_act_purge)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_purge)
+/datum/eventkit/player_effects/proc/ui_act_purge(datum/act/op/A)
 	var/mob/living/carbon/Tar = target()
 	if(!istype(Tar))
 		return
@@ -545,53 +559,50 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_purge)
 	Tar.ingested.clear_reagents()
 	Tar.touching.clear_reagents()
 
-UI_ACT(/datum/eventkit/player_effects, "medical_issue", ui_act_medical_issue)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_medical_issue)
+/datum/eventkit/player_effects/proc/ui_act_medical_issue(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	Tar.custom_medical_issue(ui.user)
+	Tar.custom_medical_issue(user)
 
-UI_ACT(/datum/eventkit/player_effects, "clear_issue", ui_act_clear_issue)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_clear_issue)
+/datum/eventkit/player_effects/proc/ui_act_clear_issue(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	Tar.clear_medical_issue(ui.user)
+	Tar.clear_medical_issue(user)
 
 ////////ABILITIES//////////////
 
 // Admin-given powers have no natural source datum: the target mob is its own source (a
 // permanent self-grant, as if the power came with what it is).
-UI_ACT(/datum/eventkit/player_effects, "vent_crawl", ui_act_vent_crawl)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_vent_crawl)
+/datum/eventkit/player_effects/proc/ui_act_vent_crawl(datum/act/op/A)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/proc/ventcrawl), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "darksight", ui_act_darksight)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_darksight)
+/datum/eventkit/player_effects/proc/darksight_question(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	return "What level do you wish to set their darksight to? It is currently [Tar?.species?.darksight]."
+
+/datum/eventkit/player_effects/proc/ui_act_darksight(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	var/current_darksight = Tar.species.darksight
-	var/change_sight = act_ask(ui.user, action, params, ui, "a22", /datum/om/prompt/number, message = "What level do you wish to set their darksight to? It is currently [current_darksight].", title = "Darksight")
-	if(isnull(change_sight))
-		return
+	var/change_sight = answer_of(A, "number")
 	if(change_sight)
 		var/datum/species/own_species = proto_private(Tar, nameof(/datum/dna::species)) // PROTO: private copy
 		own_species.darksight = change_sight
 
-UI_ACT(/datum/eventkit/player_effects, "cocoon", ui_act_cocoon)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_cocoon)
+/datum/eventkit/player_effects/proc/ui_act_cocoon(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/carbon/human/proc/enter_cocoon), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "transformation", ui_act_transformation)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_transformation)
+/datum/eventkit/player_effects/proc/ui_act_transformation(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
@@ -604,88 +615,83 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_transformation)
 	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_select_shape), Tar) //designed for non-shapeshifter mobs
 	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_select_colour), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "set_size", ui_act_set_size)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_set_size)
+/datum/eventkit/player_effects/proc/ui_act_set_size(datum/act/op/A)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/proc/set_size), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "lleill_energy", ui_act_lleill_energy)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_energy)
+/datum/eventkit/player_effects/proc/lleill_max_question(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	return "What should their max lleill energy be set to? It is currently [Tar?.species?.lleill_energy_max]."
+
+/datum/eventkit/player_effects/proc/lleill_now_question(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	return "What should their current lleill energy be set to? It is currently [Tar?.species?.lleill_energy]."
+
+/datum/eventkit/player_effects/proc/ui_act_lleill_energy(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	var/energy_max = act_ask(ui.user, action, params, ui, "a23", /datum/om/prompt/number, message = "What should their max lleill energy be set to? It is currently [Tar.species.lleill_energy_max].", title = "Max energy")
-	if(isnull(energy_max))
+	var/energy_max = answer_of(A, "max")
+	var/energy_new = answer_of(A, "now")
+	if(isnull(energy_max) || isnull(energy_new))
 		return
 	var/datum/species/own_species = proto_private(Tar, nameof(/datum/dna::species)) // PROTO: private copy
 	own_species.lleill_energy_max = energy_max
-	var/energy_new = act_ask(ui.user, action, params, ui, "a24", /datum/om/prompt/number, message = "What should their current lleill energy be set to? It is currently [Tar.species.lleill_energy].", title = "Max energy")
-	if(isnull(energy_new))
-		return
 	own_species = proto_private(Tar, nameof(/datum/dna::species))
 	own_species.lleill_energy = energy_new
 
-UI_ACT(/datum/eventkit/player_effects, "lleill_invisibility", ui_act_lleill_invisibility)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_invisibility)
+/datum/eventkit/player_effects/proc/ui_act_lleill_invisibility(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_invisibility), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "beast_form", ui_act_beast_form)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_beast_form)
+/datum/eventkit/player_effects/proc/ui_act_beast_form(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_beast_form), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "lleill_transmute", ui_act_lleill_transmute)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_transmute)
+/datum/eventkit/player_effects/proc/ui_act_lleill_transmute(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_transmute), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "lleill_alchemy", ui_act_lleill_alchemy)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_alchemy)
+/datum/eventkit/player_effects/proc/ui_act_lleill_alchemy(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_alchemy), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "lleill_drain", ui_act_lleill_drain)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_drain)
+/datum/eventkit/player_effects/proc/ui_act_lleill_drain(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_contact), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "brutal_pred", ui_act_brutal_pred)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_brutal_pred)
+/datum/eventkit/player_effects/proc/ui_act_brutal_pred(datum/act/op/A)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/proc/shred_limb), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "trash_eater", ui_act_trash_eater)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_trash_eater)
+/datum/eventkit/player_effects/proc/ui_act_trash_eater(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/proc/eat_trash), Tar)
 	grant(Tar, granted_verb(/mob/living/proc/toggle_trash_catching), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "active_cloaking", ui_act_active_cloaking)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_active_cloaking)
+/datum/eventkit/player_effects/proc/ui_act_active_cloaking(datum/act/op/A)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
 	grant(Tar, granted_verb(/mob/living/proc/toggle_active_cloaking), Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "colormate", ui_act_colormate)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_colormate)
+/datum/eventkit/player_effects/proc/ui_act_colormate(datum/act/op/A)
 	if(istype(target(),/mob/living/simple_mob))
 		var/mob/living/simple_mob/Tar = target()
 		grant(Tar, granted_verb(/mob/living/simple_mob/proc/ColorMate), Tar)
@@ -693,8 +699,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_colormate)
 		var/mob/living/silicon/robot/Tar = target()
 		Tar.grant_ability(ABILITY_ID_ROBOT_RECOLOUR, Tar)
 
-UI_ACT(/datum/eventkit/player_effects, "be_event_invis", ui_act_be_event_invis)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_be_event_invis)
+/datum/eventkit/player_effects/proc/ui_act_be_event_invis(datum/act/op/A)
 	var/mob/living/Tar = target()
 	if(!istype(Tar)) //Technically does not need this restriction, but prevents ghosts accidentally being placed in mob layer
 		return
@@ -709,8 +714,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_be_event_invis)
 			Tar.plane_holder.set_vis(VIS_EVENT_INVIS,FALSE)
 			Tar.vis_enabled -= VIS_EVENT_INVIS
 
-UI_ACT(/datum/eventkit/player_effects, "see_event_invis", ui_act_see_event_invis)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_see_event_invis)
+/datum/eventkit/player_effects/proc/ui_act_see_event_invis(datum/act/op/A)
 	if(!(VIS_EVENT_INVIS in target().vis_enabled))
 		target().plane_holder.set_vis(VIS_EVENT_INVIS,TRUE)
 		target().vis_enabled += VIS_EVENT_INVIS
@@ -720,15 +724,14 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_see_event_invis)
 
 ////////INVENTORY//////////////
 
-UI_ACT(/datum/eventkit/player_effects, "drop_all", ui_act_drop_all)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_drop_all)
+/datum/eventkit/player_effects/proc/drop_all_question(datum/act/op/A)
+	return "Make [target()] drop everything?"
+
+/datum/eventkit/player_effects/proc/ui_act_drop_all(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	var/confirm = act_ask(ui.user, action, params, ui, "a25", /datum/om/prompt/choice/alert, message = "Make [Tar] drop everything?", title = "Message", choices = list("Yes", "No"))
-	if(isnull(confirm))
-		return
-	if(confirm != "Yes")
+	if(!answer_of(A, "yes_no"))
 		return
 
 	for(var/obj/item/W in Tar)
@@ -736,54 +739,51 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_drop_all)
 			continue
 		Tar.drop_from_inventory(W)
 
-UI_ACT(/datum/eventkit/player_effects, "drop_specific", ui_act_drop_specific)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_drop_specific)
+/datum/eventkit/player_effects/proc/equipped_choices(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	return istype(Tar) ? Tar.get_equipped_items() : list()
+
+/datum/eventkit/player_effects/proc/ui_act_drop_specific(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-
-	var/list/items = Tar.get_equipped_items()
-	var/item_to_drop = act_ask(ui.user, action, params, ui, "a26", /datum/om/prompt/choice, message = "Choose item to force drop:", title = "Drop Specific Item", choices = items)
-	if(isnull(item_to_drop))
-		return
+	var/item_to_drop = answer_of(A, "choice")
 	if(item_to_drop)
 		Tar.drop_from_inventory(item_to_drop)
 
-UI_ACT(/datum/eventkit/player_effects, "drop_held", ui_act_drop_held)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_drop_held)
+/datum/eventkit/player_effects/proc/ui_act_drop_held(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	Tar.drop_l_hand()
 	Tar.drop_r_hand()
 
-UI_ACT(/datum/eventkit/player_effects, "list_all", ui_act_list_all)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_list_all)
+/datum/eventkit/player_effects/proc/ui_act_list_all(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	Tar.get_equipped_items()
 
-UI_ACT(/datum/eventkit/player_effects, "give_item", ui_act_give_item)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_give_item)
+/datum/eventkit/player_effects/proc/ui_act_give_item(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	if(!check_rights_for(ui.user.client, R_HOLDER))
+	if(!check_rights_for(user.client, R_HOLDER))
 		return
-	var/obj/item/X = ui.user.client.admin_datum().marked_datum()
+	var/obj/item/X = user.client.admin_datum().marked_datum()
 	if(!istype(X))
 		return
 	Tar.put_in_hands(X)
 
-UI_ACT(/datum/eventkit/player_effects, "equip_item", ui_act_equip_item)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_equip_item)
+/datum/eventkit/player_effects/proc/ui_act_equip_item(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	if(!check_rights_for(ui.user.client, R_HOLDER))
+	if(!check_rights_for(user.client, R_HOLDER))
 		return
-	var/obj/item/X = ui.user.client.admin_datum().marked_datum()
+	var/obj/item/X = user.client.admin_datum().marked_datum()
 	if(!istype(X))
 		return
 	if(Tar.equip_to_appropriate_slot(X))
@@ -793,168 +793,209 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_equip_item)
 
 ////////ADMIN//////////////
 
-UI_ACT(/datum/eventkit/player_effects, "quick_nif", ui_act_quick_nif)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_quick_nif)
+/// The target can take a NIF: a head, and none yet.
+/datum/eventkit/player_effects/proc/nif_target_ok(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	return istype(Tar) && Tar.get_organ(BP_HEAD) && !Tar.nif
+
+/datum/eventkit/player_effects/proc/nif_target_refusal(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	if(istype(Tar) && Tar.get_organ(BP_HEAD))
+		return /datum/msg/player_effects/nif_present
+	return /datum/msg/player_effects/nif_unsuitable
+
+MSG_DEF_SELF(player_effects/nif_unsuitable, "Target is unsuitable.")
+MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
+
+/// A target without DNA gets the bioadaptive NIF without a question.
+/datum/eventkit/player_effects/proc/nif_needs_pick(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	return istype(Tar) && !(Tar.species.flags & NO_DNA)
+
+/// The NIF types by capitalised name, sorted.
+/datum/eventkit/player_effects/proc/nif_types()
+	var/list/NIFs = list()
+	for(var/NIF_type in typesof(/obj/item/nif))
+		var/obj/item/nif/S = NIF_type
+		NIFs[capitalize(initial(S.name))] = NIF_type
+	return sortList(NIFs)
+
+/datum/eventkit/player_effects/proc/nif_choices(datum/act/op/A)
+	var/list/names = list()
+	for(var/name in nif_types())
+		names += name
+	return names
+
+/datum/eventkit/player_effects/proc/ui_act_quick_nif(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	var/input_NIF
 	if(!Tar.get_organ(BP_HEAD))
-		to_chat(ui.user,span_warning("Target is unsuitable."))
+		to_chat(user,span_warning("Target is unsuitable."))
 		return
 	if(Tar.nif)
-		to_chat(ui.user,span_warning("Target already has a NIF."))
+		to_chat(user,span_warning("Target already has a NIF."))
 		return
 	if(Tar.species.flags & NO_DNA)
 		var/obj/item/nif/S = /obj/item/nif/bioadap
 		input_NIF = initial(S.name)
 		new /obj/item/nif/bioadap(Tar)
 	else
-		var/list/NIF_types = typesof(/obj/item/nif)
-		var/list/NIFs = list()
-
-		for(var/NIF_type in NIF_types)
-			var/obj/item/nif/S = NIF_type
-			NIFs[capitalize(initial(S.name))] = NIF_type
-
-		var/list/show_NIFs = sortList(NIFs) // the list that will be shown to the user to pick from
-
-		var/_answer_a27 = act_ask(ui.user, action, params, ui, "a27", /datum/om/prompt/choice, message = "Pick the NIF type", title = "Quick NIF", choices = show_NIFs)
-		if(isnull(_answer_a27))
+		input_NIF = answer_of(A, "choice")
+		if(!input_NIF)
 			return
-		input_NIF = _answer_a27
-		var/chosen_NIF = NIFs[capitalize(input_NIF)]
+		var/chosen_NIF = nif_types()[capitalize(input_NIF)]
 
 		if(chosen_NIF)
 			new chosen_NIF(Tar)
 		else
 			new /obj/item/nif(Tar)
-	log_and_message_admins("Quick NIF'd [Tar.real_name] with a [input_NIF].", ui.user)
+	log_and_message_admins("Quick NIF'd [Tar.real_name] with a [input_NIF].", user)
 
-UI_ACT(/datum/eventkit/player_effects, "resize", ui_act_resize)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_resize)
-	SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/resize, target())
+/datum/eventkit/player_effects/proc/ui_act_resize(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/resize, target())
 
-UI_ACT(/datum/eventkit/player_effects, "teleport", ui_act_teleport)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_teleport)
-	var/where = act_ask(ui.user, action, params, ui, "a28", /datum/om/prompt/choice/alert, message = "Where to teleport?", title = "Where?", choices = list("To Me", "To Mob", "To Area", "Cancel"))
-	if(isnull(where))
-		return
-	if(where == "Cancel")
+/datum/eventkit/player_effects/proc/teleport_to_mob(datum/act/op/A)
+	return answer_of(A, "where") == "To Mob"
+
+/datum/eventkit/player_effects/proc/teleport_to_area(datum/act/op/A)
+	return answer_of(A, "where") == "To Area"
+
+/datum/eventkit/player_effects/proc/teleport_mob_question(datum/act/op/A)
+	return "Select a mob to jump [target()] to:"
+
+/datum/eventkit/player_effects/proc/teleport_area_question(datum/act/op/A)
+	return "Pick an area to teleport [target()] to:"
+
+/datum/eventkit/player_effects/proc/teleport_mobs(datum/act/op/A)
+	return REGISTRY_MEMBERS(REGISTRY_MOBS)
+
+/datum/eventkit/player_effects/proc/teleport_areas(datum/act/op/A)
+	return return_sorted_areas()
+
+/datum/eventkit/player_effects/proc/ui_act_teleport(datum/act/op/A)
+	var/mob/user = A.actor
+	var/where = answer_of(A, "where")
+	if(!where || where == "Cancel")
 		return
 	if(where == "To Me")
-		SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/Getmob, target())
+		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/Getmob, target())
 	if(where == "To Mob")
-		var/mob/selection = act_ask(ui.user, action, params, ui, "a29", /datum/om/prompt/choice, message = "Select a mob to jump [target()] to:", title = "Jump to mob", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
-		if(isnull(selection))
+		var/mob/selection = answer_of(A, "mob")
+		if(!selection)
 			return
 		target().on_mob_jump()
 		target().forceMove(get_turf(selection))
-		log_admin("[key_name(ui.user)] jumped [target()] to [selection]")
+		log_admin("[key_name(user)] jumped [target()] to [selection]")
 	if(where == "To Area")
-		var/area/A
-		var/_answer_a30 = act_ask(ui.user, action, params, ui, "a30", /datum/om/prompt/choice, message = "Pick an area to teleport [target()] to:", title = "Jump to Area", choices = return_sorted_areas())
-		if(isnull(_answer_a30))
+		var/area/where_to = answer_of(A, "area")
+		if(!where_to)
 			return
-		A = _answer_a30
 		target().on_mob_jump()
-		target().forceMove(pick(get_area_turfs(A)))
-		log_admin("[key_name(ui.user)] jumped [target()] to [A]")
+		target().forceMove(pick(get_area_turfs(where_to)))
+		log_admin("[key_name(user)] jumped [target()] to [where_to]")
 
-UI_ACT(/datum/eventkit/player_effects, "gib", ui_act_gib)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_gib)
-	var/death = act_ask(ui.user, action, params, ui, "a31", /datum/om/prompt/choice/alert, message = "Are you sure you want to destroy [target()]?", title = "Gib?", choices = list("KILL", "Cancel"))
-	if(isnull(death))
+/datum/eventkit/player_effects/proc/ui_act_gib(datum/act/op/A)
+	open_request(src, /datum/prompt/choice, PROC_REF(gib_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Are you sure you want to destroy [target()]?", title = "Gib?", choices = list("KILL", "Cancel"), timeout = 0)
+
+/datum/eventkit/player_effects/proc/gib_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/death = A.answer.answer_value
 	if(death == "KILL")
 		target().gib()
 
-UI_ACT(/datum/eventkit/player_effects, "dust", ui_act_dust)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_dust)
-	var/death = act_ask(ui.user, action, params, ui, "a32", /datum/om/prompt/choice/alert, message = "Are you sure you want to destroy [target()]?", title = "Dust?", choices = list("KILL", "Cancel"))
-	if(isnull(death))
+/datum/eventkit/player_effects/proc/ui_act_dust(datum/act/op/A)
+	open_request(src, /datum/prompt/choice, PROC_REF(dust_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Are you sure you want to destroy [target()]?", title = "Dust?", choices = list("KILL", "Cancel"), timeout = 0)
+
+/datum/eventkit/player_effects/proc/dust_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/death = A.answer.answer_value
 	if(death == "KILL")
 		target().dust()
 
-UI_ACT(/datum/eventkit/player_effects, "paralyse", ui_act_paralyse)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_paralyse)
+/datum/eventkit/player_effects/proc/ui_act_paralyse(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(target()))
 		return
-	SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/paralyze_mob, target())
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/paralyze_mob, target())
 
-UI_ACT(/datum/eventkit/player_effects, "subtle_message", ui_act_subtle_message)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_subtle_message)
-	SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/cmd_admin_subtle_message, target())
+/datum/eventkit/player_effects/proc/ui_act_subtle_message(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/cmd_admin_subtle_message, target())
 
-UI_ACT(/datum/eventkit/player_effects, "direct_narrate", ui_act_direct_narrate)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_direct_narrate)
-	SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/cmd_admin_direct_narrate, target())
+/datum/eventkit/player_effects/proc/ui_act_direct_narrate(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/cmd_admin_direct_narrate, target())
 
-UI_ACT(/datum/eventkit/player_effects, "player_panel", ui_act_player_panel)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_player_panel)
-	SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_player_panel, target())
+/datum/eventkit/player_effects/proc/ui_act_player_panel(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, target())
 
-UI_ACT(/datum/eventkit/player_effects, "view_variables", ui_act_view_variables)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_view_variables)
-	ui.user.client.debug_variables(target())
+/datum/eventkit/player_effects/proc/ui_act_view_variables(datum/act/op/A)
+	var/mob/user = A.actor
+	user.client.debug_variables(target())
 
-UI_ACT(/datum/eventkit/player_effects, "orbit", ui_act_orbit)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_orbit)
-	if(!ui.user.client.admin_datum().marked_datum())
+/datum/eventkit/player_effects/proc/ui_act_orbit(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user.client.admin_datum().marked_datum())
 		return
-	var/atom/movable/X = ui.user.client.admin_datum().marked_datum()
+	var/atom/movable/X = user.client.admin_datum().marked_datum()
 	X.orbit(target())
 
-UI_ACT(/datum/eventkit/player_effects, "ai", ui_act_ai)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_ai)
-	if(!isliving(target()))
-		to_chat(ui.user, span_notice("This can only be used on instances of type /mob/living"))
-		return
+/// A living mob nobody plays.
+/datum/eventkit/player_effects/proc/ai_target_ok(datum/act/op/A)
 	var/mob/living/L = target()
-	if(L.client || L.teleop)
-		to_chat(ui.user, span_warning("This cannot be used on player mobs!"))
-		return
+	return istype(L) && !L.client && !L.teleop
 
-	// Everything is asked first: the answers re-run this action, so nothing changes until the last one.
-	var/faction = act_ask(ui.user, action, params, ui, "a33", /datum/om/prompt/text, message = "Please input AI faction", title = "AI faction", default = "neutral")
+/datum/eventkit/player_effects/proc/ai_target_refusal(datum/act/op/A)
+	return isliving(target()) ? /datum/msg/player_effects/ai_player : /datum/msg/player_effects/ai_not_living
+
+MSG_DEF_SELF(player_effects/ai_not_living, "This can only be used on instances of type /mob/living")
+MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
+
+/datum/eventkit/player_effects/proc/ui_act_ai(datum/act/op/A)
+	var/mob/living/L = target()
+	if(!istype(L))
+		return
+	// Everything is asked first, so nothing changes until the last answer.
+	var/faction = answer_of(A, "faction")
 	if(isnull(faction))
 		return
-	var/stance = act_ask(ui.user, action, params, ui, "a34", /datum/om/prompt/choice, message = "Please choose AI combat mode", title = "AI combat mode", choices = list(I_HURT, I_HELP))
-	if(isnull(stance))
-		return
-	var/wake = act_ask(ui.user, action, params, ui, "a35", /datum/om/prompt/choice/alert, message = "Make mob wake up? This is needed for carbon mobs.", title = "Wake mob?", choices = list("Yes", "No"))
-	if(isnull(wake))
-		return
+	var/stance = answer_of(A, "stance")
 	if(L.ai_brain)	//Cleaning up the original ai
 		own_clear(L, nameof(/mob/living::ai_brain), OWN_DELETE)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 	L.initialize_ai_brain()
 	L.faction = faction
 	if(stance)
 		L.set_use_stance(stance)
-	if(wake == "Yes")
+	if(answer_of(A, "wake"))
 		L.status_adjust(EFFECT_SLEEPING, -100)
 
-UI_ACT(/datum/eventkit/player_effects, "cloaking", ui_act_cloaking)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_cloaking)
+/datum/eventkit/player_effects/proc/ui_act_cloaking(datum/act/op/A)
 	if(dq_get_cloaked(target()))
 		target().uncloak()
 	else if(!dq_get_cloaked(target()))
 		target().cloak()
 
-UI_ACT(/datum/eventkit/player_effects, "give_quest", ui_act_give_quest)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_give_quest)
+/datum/eventkit/player_effects/proc/has_target(datum/act/op/A)
+	return !!target()
+
+/datum/eventkit/player_effects/proc/quest_personalised(datum/act/op/A)
+	return answer_of(A, "kind") == "Personalised"
+
+/datum/eventkit/player_effects/proc/ui_act_give_quest(datum/act/op/A)
 	if(!target())
 		return
-	var/admin_quest =  act_ask(ui.user, action, params, ui, "a36", /datum/om/prompt/choice/alert, message = "Do you want to give a random quest or a personalised one?", title = "Quest!", choices = list("Random", "Personalised", "Cancel"))
-	if(isnull(admin_quest))
-		return
+	var/admin_quest = answer_of(A, "kind")
 	if(!admin_quest || (admin_quest == "Cancel"))
 		return
 	if(admin_quest == "Personalised")
-		var/specific_quest = act_ask(ui.user, action, params, ui, "a37", /datum/om/prompt/text, message = "What is their quest?", title = "Quest!!!")
-		if(isnull(specific_quest))
-			return
+		var/specific_quest = answer_of(A, "quest")
 		if(!specific_quest)
 			return
 		quest_from_above(target(), specific_quest)
@@ -963,35 +1004,75 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_give_quest)
 
 ////////FIXES//////////////
 
-UI_ACT(/datum/eventkit/player_effects, "rejuvenate", ui_act_rejuvenate)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_rejuvenate)
+/datum/eventkit/player_effects/proc/ui_act_rejuvenate(datum/act/op/A)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
 	Tar.rejuvenate()
 
-UI_ACT(/datum/eventkit/player_effects, "popup-box", ui_act_popup_box)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_popup_box)
-	var/message = act_ask(ui.user, action, params, ui, "a38", /datum/om/prompt/text, message = "Write a message to send to the user with a space for them to reply without using the text box:", title = "Message")
-	if(isnull(message))
+/datum/eventkit/player_effects/proc/ui_act_popup_box(datum/act/op/A)
+	open_request(src, /datum/prompt/text, PROC_REF(popup_box_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Write a message to send to the user with a space for them to reply without using the text box:", title = "Message", timeout = 0)
+
+/datum/eventkit/player_effects/proc/popup_box_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/mob/user = A.request.answerer
+	var/message = A.answer.answer_value
 	if(!message)
 		return
-	log_admin("[key_name(ui.user)] sent message to [target()]: [message]")
+	log_admin("[key_name(user)] sent message to [target()]: [message]")
 	// The player answers in their own time; the reply doesn't need this panel open.
-	om_ask(target(), /datum/om/prompt/text/admin_popup, PROC_REF(popup_replied), message = "An admin has sent you a message: [message]", admin_name = key_name(ui.user))
+	om_ask(target(), /datum/om/prompt/text/admin_popup, PROC_REF(popup_replied), message = "An admin has sent you a message: [message]", admin_name = key_name(user))
 
-UI_ACT(/datum/eventkit/player_effects, "stop-orbits", ui_act_stop_orbits)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_stop_orbits)
+/datum/eventkit/player_effects/proc/ui_act_stop_orbits(datum/act/op/A)
 	target().stop_orbiters()
 
-UI_ACT(/datum/eventkit/player_effects, "revert-mob-tf", ui_act_revert_mob_tf)
-UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_revert_mob_tf)
+/datum/eventkit/player_effects/proc/ui_act_revert_mob_tf(datum/act/op/A)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
 	Tar.revert_mob_tf()
 
 /// The target of the effects (a relation view: null once that is deleted).
+/// The target's organs (every organ a player effect may pick), for the organ questions.
+/// The answer to a question a button asked still counts (its window is still open and interactive for the one who answers).
+/datum/eventkit/player_effects/proc/request_usable(datum/request/R)
+	return window_request_usable(src, R)
+
+/datum/eventkit/player_effects/proc/organ_choices(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	var/list/organs = list()
+	if(!istype(Tar))
+		return organs
+	for(var/obj/item/organ/I in Tar.organs)
+		organs |= I
+	for(var/obj/item/organ/I in Tar.internal_organ_list())
+		organs |= I
+	return organs
+
+/// The target's external organs (the bones), for the bone question.
+/datum/eventkit/player_effects/proc/bone_choices(datum/act/op/A)
+	var/mob/living/carbon/human/Tar = target()
+	var/list/organs = list()
+	if(!istype(Tar))
+		return organs
+	for(var/obj/item/organ/external/E in Tar.organs)
+		organs |= E
+	return organs
+
+/datum/eventkit/player_effects/proc/reagent_types(datum/act/op/A)
+	return typesof(/datum/reagent)
+
+/// The step `name` of the op as the answer given, or null.
+/datum/eventkit/player_effects/proc/answer_of(datum/act/op/A, name)
+	var/datum/prompt/P = A.step_answer(name)
+	return P?.value
+
+/datum/eventkit/player_effects/proc/target_human(datum/act/op/A)
+	return istype(target(), /mob/living/carbon/human)
+
+/datum/eventkit/player_effects/proc/target_living(datum/act/op/A)
+	return istype(target(), /mob/living)
+
 /datum/eventkit/player_effects/proc/target() as /mob
 	return target

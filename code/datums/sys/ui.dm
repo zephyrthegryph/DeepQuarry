@@ -215,6 +215,15 @@ GLOBAL_LIST_EMPTY(ui_decls)
 		return vars[decl.interface_var]
 	return decl?.interface || present_interface(src)?.args["window"] || tgui_id
 
+/// The answer to a question one of `host`'s window buttons asked still counts: the window the answerer works it through is still open and
+/// interactive. A window host with no reach rule of its own says `request_usable(R)` as `return window_request_usable(src, R)`.
+/proc/window_request_usable(datum/host, datum/request/R)
+	var/mob/user = R.answerer
+	if(QDELETED(host) || !istype(user))
+		return FALSE
+	var/datum/tgui/ui = SStgui.get_open_ui(user, host)
+	return !!ui && ui.status == STATUS_INTERACTIVE
+
 /// The tgui interface this type opens (a type var, dx_conventions.md §5), e.g. "SupplyConsole".
 /datum/var/tgui_id
 /// The tgui state its window uses, or null for the default.

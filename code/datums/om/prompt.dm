@@ -114,6 +114,7 @@
 
 /// Types under `root` whose path contains `text`, for the typepath kind.
 /proc/om_prompt_typepaths(text, root)
+	READS_FROM() // reads the type tree, which no state changes at run time
 	var/list/matches = list()
 	for(var/path in typesof(root))
 		if(findtext("[path]", text))
