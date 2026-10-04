@@ -2492,6 +2492,13 @@
 	into += entry_line(45)
 	into += list(global.owns_many(nameof(transaction_log)))
 
+/// CAPABILITIES(/datum/morph_review) at code/modules/mob/living/carbon/human/human.dm:855
+/datum/morph_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 855, /datum/morph_review)
+	into += entry_line(856)
+	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/n_Interpreter) at code/modules/scripting/Interpreter/Interpreter.dm:59
 /datum/n_Interpreter/declared_entries(list/into)
 	..(into)
@@ -2869,11 +2876,11 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1044
+/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1076
 /datum/prompt/choice/admin_drop_pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1044, /datum/prompt/choice/admin_drop_pod)
-	into += entry_line(1045)
+	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1076, /datum/prompt/choice/admin_drop_pod)
+	into += entry_line(1077)
 	into += list(global.ref_one(nameof(drop_mob), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:197

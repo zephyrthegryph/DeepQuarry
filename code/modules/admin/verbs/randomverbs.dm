@@ -774,28 +774,60 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_rejuvenate, R_ADMIN|R_FUN|R_MOD, "Rejuvena
 	feedback_add_details("admin_verb","REJU") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_create_centcom_report, R_ADMIN|R_SERVER|R_FUN, "Create Command Report", "Creates a centcom report and sends it globally.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	om_flow_start(/datum/om/flow/centcom_report, user.mob, null, requires = PROMPT_ADMIN(permissions))
+	user.mob?.ask_command_report(permissions)
 
-/// A command report: its text, an optional title, and whether to announce it.
-/datum/om/flow/centcom_report
-	name = "command report"
+/// Command report text and optional title retain the actual initiating admin mob and rights.
+/datum/prompt/text/command_report
+	timeout = 0
+	var/report
+
+/datum/prompt/text/command_report/begin()
+	var/reason = request_recheck(src)
+	if(reason)
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/command_report
+	timeout = 0
+	title = "Show world?"
+	question = "Should this be announced to the general population?"
+	buttons = TRUE
+	choices = list("Yes", "No")
 	var/report
 	var/customname
 
-/datum/om/flow/centcom_report/start()
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(report_entered), title = "What?", message = "Please enter anything you want. Anything. Serious.", max_length = MAX_MESSAGE_LEN, multiline = TRUE)
+/mob/proc/ask_command_report(rights)
+	open_request(src, /datum/prompt/text/command_report, PROC_REF(command_report_entered), answerer = src, rights = rights, title = "What?", question = "Please enter anything you want. Anything. Serious.", max_len = MAX_MESSAGE_LEN, multiline = TRUE)
 
-/datum/om/flow/centcom_report/proc/report_entered(datum/om/prompt/text/ask)
-	report = ask.text
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(title_entered), title = "Title", message = "Pick a title for the report.", encode = FALSE, cancel_answer = "")
+/mob/proc/command_report_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	open_request(src, /datum/prompt/text/command_report, PROC_REF(command_report_title_entered), answerer = src, rights = A.request.rights, report = A.answer.answer_value, title = "Title", question = "Pick a title for the report.", encode = FALSE)
 
-/datum/om/flow/centcom_report/proc/title_entered(datum/om/prompt/text/ask)
-	customname = ask.text
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(report_answered), title = "Show world?", message = "Should this be announced to the general population?", answer_on_no = TRUE)
+/mob/proc/command_report_title_entered(datum/act/request/A)
+	var/datum/prompt/text/command_report/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	var/customname = ask.answer_value
+	if(!A.answer || isnull(customname))
+		if(ask.outcome != REQ_CANCELLED && !A.answer)
+			return
+		if(!isnull(customname))
+			return
+		// Old cancel_answer="" continues after the flow's rights recheck, even on explicit cancellation.
+		if(request_recheck(ask))
+			return
+		customname = ""
+	open_request(src, /datum/prompt/choice/command_report, PROC_REF(command_report_answered), answerer = src, rights = ask.rights, report = ask.report, customname = customname)
 
-/datum/om/flow/centcom_report/proc/report_answered(datum/om/prompt/confirm/ask)
-	var/mob/user = actor
-	var/input = report
+/mob/proc/command_report_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/command_report/ask = A.answer
+	var/mob/user = src
+	var/input = ask.report
+	var/customname = ask.customname
 	customname = sanitizeSafe(customname)
 	if(!customname)
 		customname = "[using_map.company_name] Update"
@@ -803,7 +835,7 @@ ADMIN_VERB(cmd_admin_create_centcom_report, R_ADMIN|R_SERVER|R_FUN, "Create Comm
 	//New message handling
 	post_comm_message(customname, replacetext(input, "\n", "<br/>"))
 
-	if(ask.yes)
+	if(ask.answer_value == "Yes")
 		GLOB.command_announcement.Announce(input, customname, new_sound = ANNOUNCER_MSG_NEW_COMMAND_REPORT, msg_sanitized = 1);
 	else
 		to_chat(world, span_boldannounce("New [using_map.company_name] Update available at all communication consoles."))
