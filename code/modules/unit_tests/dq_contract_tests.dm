@@ -892,6 +892,7 @@
 	var/datum/contract_subject_identity/withdrawing_identity = SScontracts.subject_identity(withdrawing_subject)
 	var/datum/medical_trial_participant/withdrawing_participant = trial.participants[withdrawing_identity.id]
 	TEST_ASSERT(withdrawing_participant, "second consenting subject was not enrolled")
+	TEST_ASSERT_EQUAL(owner_of(withdrawing_participant), trial, "real enrollment gives the trial custody of the withdrawing record")
 	TEST_ASSERT(trial.print_consent_revocation(test_turf, withdrawing_identity.id, owner.account_number), "unsubmitted participant could not obtain a withdrawal form")
 	var/obj/item/paper/unsubmitted_withdrawal
 	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
@@ -903,6 +904,8 @@
 	var/consent_evidence_id = withdrawing_participant.consent_evidence_id
 	TEST_ASSERT(process_contract_fax(unsubmitted_withdrawal, CONTRACT_FAX_VEYMED, owner.account_number), "unsubmitted consent withdrawal was rejected")
 	TEST_ASSERT(!trial.participants[withdrawing_identity.id], "withdrawn unsubmitted participant still occupied a cohort slot")
+	TEST_ASSERT(QDELETED(withdrawing_participant), "actual fax withdrawal retires the exact enrolled record")
+	TEST_ASSERT(!QDELETED(participant) && trial.participants[identity.id] == participant, "withdrawing another subject preserves the exact submitted control record")
 	var/datum/contract_evidence/voided_consent = SScontracts.evidence_by_id[consent_evidence_id]
 	TEST_ASSERT(voided_consent?.void_reason, "withdrawal did not void the prior consent evidence")
 
