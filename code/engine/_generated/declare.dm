@@ -4280,11 +4280,11 @@
 	into += entry_line(82)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
-/// CAPABILITIES(/datum/prompt/number/eftpos_settings) at code/modules/economy/EFTPOS.dm:390
+/// CAPABILITIES(/datum/prompt/number/eftpos_settings) at code/modules/economy/EFTPOS.dm:441
 /datum/prompt/number/eftpos_settings/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/economy/EFTPOS.dm", 390, /datum/prompt/number/eftpos_settings)
-	into += entry_line(391)
+	into += entry_block("code/modules/economy/EFTPOS.dm", 441, /datum/prompt/number/eftpos_settings)
+	into += entry_line(442)
 	into += list(global.ref_one(nameof(eftpos_ui), /datum/tgui))
 
 /// CAPABILITIES(/datum/prompt/number/excavation_depth) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:244
@@ -4446,11 +4446,11 @@
 	into += entry_line(333)
 	into += list(global.ref_one(nameof(captured_tool), /obj/item))
 
-/// CAPABILITIES(/datum/prompt/text/eftpos_settings) at code/modules/economy/EFTPOS.dm:358
+/// CAPABILITIES(/datum/prompt/text/eftpos_settings) at code/modules/economy/EFTPOS.dm:408
 /datum/prompt/text/eftpos_settings/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/economy/EFTPOS.dm", 358, /datum/prompt/text/eftpos_settings)
-	into += entry_line(359)
+	into += entry_block("code/modules/economy/EFTPOS.dm", 408, /datum/prompt/text/eftpos_settings)
+	into += entry_line(409)
 	into += list(global.ref_one(nameof(eftpos_ui), /datum/tgui))
 
 /// CAPABILITIES(/datum/prompt/text/electronics_rename) at code/modules/integrated_electronics/core/integrated_circuit.dm:102
