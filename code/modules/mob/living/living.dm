@@ -89,22 +89,28 @@
 	set name = "Succumb to death"
 	set category = VERB_CAT_IC_GAME
 	set desc = "Press this button if you are in crit and wish to die. Use this sparingly (ending a scene, no medical, etc.)"
-	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_ask_again), title = "Confirm wish to succumb", message = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?", no_first = TRUE)
+	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_ask_again), answerer = src, choices = list("No", "Yes"), title = "Confirm wish to succumb", question = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?")
 
 /// One of the two succumb confirmations. A no or a cancel keeps the mob alive.
-/datum/om/prompt/confirm/succumb
+/datum/prompt/choice/succumb
+	timeout = 0
+	buttons = TRUE
 
-/datum/om/prompt/confirm/succumb/declined()
-	to_chat(answerer, span_blue("You chose to live another day."))
-
-/datum/om/prompt/confirm/succumb/cancelled()
-	to_chat(answerer, span_blue("You chose to live another day."))
-
-/mob/living/proc/succumb_ask_again(datum/om/prompt/confirm/succumb/ask)
+/mob/living/proc/succumb_ask_again(datum/act/request/A)
+	var/datum/prompt/choice/succumb/ask = A.request
+	if(!A.answer || ask.value != "Yes")
+		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+			to_chat(src, span_blue("You chose to live another day."))
+		return
 	//Swapped answers to protect from accidental double clicks.
-	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_answered), title = "Are you sure?", message = "Pressing this buttom will really kill you, no going back")
+	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_answered), answerer = src, choices = list("Yes", "No"), title = "Are you sure?", question = "Pressing this buttom will really kill you, no going back")
 
-/mob/living/proc/succumb_answered(datum/om/prompt/confirm/succumb/ask)
+/mob/living/proc/succumb_answered(datum/act/request/A)
+	var/datum/prompt/choice/succumb/ask = A.request
+	if(!A.answer || ask.value != "Yes")
+		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+			to_chat(src, span_blue("You chose to live another day."))
+		return
 	if (is_critical() && stat != DEAD)
 		src.death()
 		to_chat(src, span_blue("You have given up life and succumbed to death."))
@@ -1191,7 +1197,6 @@ SETTER(/mob/living, nutrition)
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
 	return FALSE
 
-// === merged from living_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /mob/living/Check_Shoegrip()
 	if(flying)
 		return 1
@@ -1205,8 +1210,9 @@ SETTER(/mob/living, nutrition)
 	if(src.client)
 		open_request(src, /datum/prompt/choice, PROC_REF(custom_say_verb_chosen), answerer = src, title = "Select Verb", question = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE, timeout = 0)
 
-/// A custom speech verb. `say_var` is the mob var it sets.
-/datum/om/prompt/text/custom_say
+/// A custom speech verb; the selector is one of the four speech fields below.
+/datum/prompt/text/custom_say
+	timeout = 0
 	var/say_var
 
 /mob/living/proc/custom_say_verb_chosen(datum/act/request/A)
@@ -1214,16 +1220,28 @@ SETTER(/mob/living, nutrition)
 		return
 	switch(A.answer.answer_value)
 		if("Say")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Say", message = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Say", question = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
 		if("Whisper")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Whisper", message = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Whisper", question = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
 		if("Ask (?)")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Ask", message = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Ask", question = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
 		if("Exclaim/Shout/Yell (!)")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Exclaim", message = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Exclaim", question = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
 
-/mob/living/proc/custom_say_entered(datum/om/prompt/text/custom_say/ask)
-	vars[ask.say_var] = lowertext(ask.text)
+/mob/living/proc/custom_say_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/custom_say/ask = A.request
+	var/custom_verb = lowertext(ask.value)
+	switch(ask.say_var)
+		if("custom_say")
+			custom_say = custom_verb
+		if("custom_whisper")
+			custom_whisper = custom_verb
+		if("custom_ask")
+			custom_ask = custom_verb
+		if("custom_exclaim")
+			custom_exclaim = custom_verb
 
 /mob/living/verb/set_metainfo()
 	set name = "Set OOC Metainfo"
@@ -1266,24 +1284,26 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/ask_metainfo(mob/user, field, reopen = TRUE, list/chain)
 	var/list/F = metainfo_field(field)
 	var/message = F[3] ? "Enter any information you'd like others to see relating to your [F[3]] roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty." : "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!"
-	om_ask(src, /datum/om/prompt/text/metainfo, PROC_REF(metainfo_entered), message = message, default = html_decode(identity().vars[F[1]]), field = field, reopen = reopen, chain = chain)
+	open_request(src, /datum/prompt/text/metainfo, PROC_REF(metainfo_entered), answerer = src, question = message, default = html_decode(identity().vars[F[1]]), field = field, reopen = reopen, chain = chain)
 
 /// One OOC note field. A cancel skips to the next field of the chain.
-/datum/om/prompt/text/metainfo
+/datum/prompt/text/metainfo
+	timeout = 0
 	title = "Game Preference"
 	multiline = TRUE
 	var/field
 	var/reopen = TRUE
 	var/list/chain
 
-/datum/om/prompt/text/metainfo/cancelled()
-	var/mob/living/L = answerer
-	L?.metainfo_skipped(src)
-
-/mob/living/proc/metainfo_entered(datum/om/prompt/text/metainfo/ask)
+/mob/living/proc/metainfo_entered(datum/act/request/A)
+	var/datum/prompt/text/metainfo/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value))
+			metainfo_skipped(ask)
+		return
 	var/field = ask.field
 	var/list/F = metainfo_field(field)
-	var/new_metadata = strip_html_simple(ask.text)
+	var/new_metadata = strip_html_simple(ask.value)
 	if(new_metadata && CanUseTopic(src))
 		if(F[3] && new_metadata == "!clear")
 			new_metadata = ""
@@ -1296,7 +1316,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	metainfo_skipped(ask)
 
 /// Asks the next field of the chain, if any.
-/mob/living/proc/metainfo_skipped(datum/om/prompt/text/metainfo/ask)
+/mob/living/proc/metainfo_skipped(datum/prompt/text/metainfo/ask)
 	var/list/chain = ask.chain
 	if(!length(chain))
 		return
@@ -1368,10 +1388,12 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 
 	if(usr != src)
 		return
-	om_ask(src, /datum/om/prompt/text, PROC_REF(custom_link_entered), title = "Custom Link", message = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(custom_link), max_length = 100)
+	open_request(src, /datum/prompt/text, PROC_REF(custom_link_entered), answerer = src, title = "Custom Link", question = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(custom_link), max_len = 100, timeout = 0)
 
-/mob/living/proc/custom_link_entered(datum/om/prompt/text/ask)
-	var/new_link = strip_html_simple(ask.text)
+/mob/living/proc/custom_link_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_link = strip_html_simple(A.answer.answer_value)
 	if(new_link && CanUseTopic(src))
 		if(length(new_link) > 100)
 			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
@@ -1387,10 +1409,13 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	var/static/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_freq_preset_chosen), title = "Voice Frequency", message = "What would you like to set your voice frequency to?", choices = preset_voice_freqs)
+	open_request(src, /datum/prompt/choice, PROC_REF(voice_freq_preset_chosen), answerer = src, title = "Voice Frequency", question = "What would you like to set your voice frequency to?", choices = preset_voice_freqs, timeout = 0)
 
-/mob/living/proc/voice_freq_preset_chosen(datum/om/prompt/choice/ask)
-	var/choice = ask.choices[ask.choice]
+/mob/living/proc/voice_freq_preset_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	var/choice = ask.choices[ask.value]
 	if(choice == 1)
 		open_request(src, /datum/prompt/number, PROC_REF(voice_freq_entered), answerer = src, title = "Custom Voice Frequency", question = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max_value = MAX_VOICE_FREQ, min_value = MIN_VOICE_FREQ, timeout = 0)
 		return
@@ -1412,20 +1437,24 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	set desc = "Sets your voice style!"
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 
-	om_ask(src, /datum/om/prompt/choice/voice_type, PROC_REF(voice_type_chosen), choices = SSsounds.ready().talk_sound_sets())
+	var/list/sound_choices = SSsounds.ready().talk_sound_sets()
+	// The original empty list opened nothing and did not reset the voice.
+	if(length(sound_choices))
+		open_request(src, /datum/prompt/choice/voice_type, PROC_REF(voice_type_chosen), answerer = src, choices = sound_choices)
 
 /// A cancel resets the voice to the default sounds.
-/datum/om/prompt/choice/voice_type
+/datum/prompt/choice/voice_type
+	timeout = 0
 	title = "Voice Sounds"
-	message = "Which set of sounds would you like to use for your character's speech sounds?"
+	question = "Which set of sounds would you like to use for your character's speech sounds?"
 
-/datum/om/prompt/choice/voice_type/cancelled()
-	var/mob/living/L = answerer
-	if(L)
-		L.voice_sounds_list = DEFAULT_TALK_SOUNDS
-
-/mob/living/proc/voice_type_chosen(datum/om/prompt/choice/voice_type/ask)
-	voice_sounds_list = get_talk_sound(ask.choice)
+/mob/living/proc/voice_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/R = A.request
+		if(R.outcome == REQ_CANCELLED && isnull(R.answer_value))
+			voice_sounds_list = DEFAULT_TALK_SOUNDS
+		return
+	voice_sounds_list = get_talk_sound(A.answer.answer_value)
 
 /mob/living/proc/save_private_notes(mob/user)
 	if(user != src)

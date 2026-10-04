@@ -68,25 +68,31 @@
 		return TRUE
 
 	// A single available option is answered at once (autopick_single_option); otherwise the player picks.
-	om_ask(user, /datum/om/prompt/choice/radial/deskbell, PROC_REF(option_chosen), stance = stance, choices = options, anchor = src, require_near = !issilicon(user))
+	open_request(src, /datum/prompt/choice/deskbell, PROC_REF(option_chosen), answerer = user, stance = stance, choices = options, anchor = src, require_near = !issilicon(user))
 	return TRUE
 
 /// The bell's radial remembers the stance it was opened in, so "use" rings (or hammers) accordingly.
-/datum/om/prompt/choice/radial/deskbell
+/datum/prompt/choice/deskbell
+	radial = TRUE
+	autopick_single_option = TRUE
+	timeout = 0
 	var/stance = I_HELP
 
-/obj/item/deskbell/proc/option_chosen(datum/om/prompt/choice/radial/deskbell/ask)
-	var/mob/user = ask.answerer
+/obj/item/deskbell/proc/option_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/deskbell/request = A.request
+	var/mob/user = request.answerer
 	if(!user || user.incapacitated())
 		return
 	// Once the player has decided their option, choose the behaviour that will happen under said option.
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("examine")
 			user.examinate(src)
 
 		if("use")
 			if(check_ability(user))
-				ring(user, ask.stance)
+				ring(user, request.stance)
 				add_fingerprint(user)
 
 		if("pick up")

@@ -89,22 +89,30 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	if(!possible_targets.len)
 		return FALSE
 	act_message(user, src, MSG_SELF(span_notice("You look through %T%'s fur...")), MSG_OTHERS(span_warning("%U% reaches for something in %T%'s fur...")))
-	om_ask(user, /datum/om/prompt/choice/stardog_fur_pick, PROC_REF(fur_pick_chosen), choices = possible_targets)
+	open_request(src, /datum/prompt/choice/stardog_fur_pick, PROC_REF(fur_pick_chosen), answerer = user, choices = possible_targets)
 	return TRUE
 
 /// Re-checked on the answer: next to the stardog and able, and the one picked is still in its fur.
-/datum/om/prompt/choice/stardog_fur_pick
+/datum/prompt/choice/stardog_fur_pick
+	timeout = 0
 	title = "Select a mob to grab!"
-	message = "Select a mob:"
+	question = "Select a mob:"
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/datum/om/prompt/choice/stardog_fur_pick/valid()
-	var/mob/living/that_one = choice
+/datum/prompt/choice/stardog_fur_pick/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
+	var/mob/living/that_one = answer_value
+	if(QDELETED(that_one))
+		return "gone"
 	return istype(that_one.loc, /turf/simulated/floor/outdoors/fur) ? null : "not in the fur"
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(datum/om/prompt/choice/stardog_fur_pick/ask)
-	var/mob/living/user = ask.answerer
-	var/mob/living/that_one = ask.choice
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	var/mob/living/that_one = A.answer.answer_value
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
@@ -357,7 +365,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 		if(!destinations.len)
 			to_chat(src, span_warning("There is nowhere nearby to land! You need to get closer to somewhere else that you can transition to before you can transition."))
 			return
-		om_ask(src, /datum/om/prompt/choice/stardog_transition, PROC_REF(transition_destination_chosen), choices = destinations)
+		open_request(src, /datum/prompt/choice/stardog_transition, PROC_REF(transition_destination_chosen), answerer = src, choices = destinations)
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
@@ -365,17 +373,21 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 		return
 
 /// Where to land. A cancel (or the timeout) decides not to.
-/datum/om/prompt/choice/stardog_transition
+/datum/prompt/choice/stardog_transition
 	title = "Transition"
-	message = "Where would you like to try to go?"
+	question = "Where would you like to try to go?"
 	timeout = 15 SECONDS
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/stardog_transition/cancelled()
-	to_chat(answerer, span_warning("You decide not to transition."))
-
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(datum/om/prompt/choice/stardog_transition/ask)
-	var/obj/effect/overmap/visitable/our_dest = ask.choice
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/R = A.request
+		if((R.outcome == REQ_CANCELLED || R.outcome == REQ_TIMED_OUT) && isnull(R.answer_value))
+			to_chat(src, span_warning("You decide not to transition."))
+		return
+	var/obj/effect/overmap/visitable/our_dest = A.answer.answer_value
+	if(QDELETED(our_dest))
+		return
 	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
 	om_task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
 

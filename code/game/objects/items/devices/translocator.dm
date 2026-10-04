@@ -463,10 +463,12 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 /obj/item/perfect_tele_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_belly), title = "Eat beacon?", message = "You COULD eat the beacon...", yes_text = "Eat it!", no_text = "No, thanks.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(ask_belly), answerer = user, title = "Eat beacon?", question = "You COULD eat the beacon...", choices = list("Eat it!", "No, thanks."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/perfect_tele_beacon/proc/ask_belly(datum/om/prompt/confirm/ask)
-	var/mob/living/user = ask.answerer
+/obj/item/perfect_tele_beacon/proc/ask_belly(datum/act/request/A)
+	if(A.answer?.answer_value != "Eat it!")
+		return
+	var/mob/living/user = A.request.answerer
 	open_request(src, /datum/prompt/choice, PROC_REF(belly_chosen), answerer = user, title = "Select A Belly", question = "Which belly?", choices = user.vore_organs, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
 /obj/item/perfect_tele_beacon/proc/belly_chosen(datum/act/request/A)

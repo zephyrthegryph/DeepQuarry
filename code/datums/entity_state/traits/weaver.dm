@@ -39,41 +39,64 @@
 /datum/trait_state/weaver/proc/weave_item()
 	if(!owner?.client)
 		return
-	om_ask(owner, /datum/om/prompt/choice/weave, PROC_REF(weave_choice_made), choices = GLOB.all_weavable)
+	open_request(src, /datum/prompt/choice/weave, PROC_REF(weave_choice_made), answerer = owner, choices = GLOB.all_weavable)
 
 /// Picking a weaver recipe. Re-checked on the answer: conscious, and a real recipe.
-/datum/om/prompt/choice/weave
+/datum/prompt/choice/weave
 	title = "Weave Choice"
-	message = "What would you like to weave?"
+	question = "What would you like to weave?"
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 
-/datum/om/prompt/choice/weave/valid()
-	return istype(GLOB.all_weavable[choice], /datum/weaver_recipe/item) ? null : "not a recipe"
+/datum/prompt/choice/weave/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
+	return istype(GLOB.all_weavable[answer_value], /datum/weaver_recipe/item) ? null : "not a recipe"
 
 /// "Weave this?"; a no goes back to the recipe list.
-/datum/om/prompt/confirm/weave
+/datum/prompt/choice/weave_confirmation
 	title = "Confirmation"
 	ask_flags = ASK_CONSCIOUS
-	answer_on_no = TRUE
+	timeout = 0
+	buttons = TRUE
 	var/datum/weaver_recipe/item/recipe
 
-/datum/om/prompt/confirm/weave/prepare()
-	message = "Are you sure you want to weave [recipe.title]? It will cost you [recipe.cost] silk."
-	return TRUE
+CAPABILITIES(/datum/prompt/choice/weave_confirmation)
+	ref_one(nameof(recipe), /datum/weaver_recipe/item)
 
-/datum/trait_state/weaver/proc/weave_choice_made(datum/om/prompt/choice/weave/ask)
-	om_ask(owner, /datum/om/prompt/confirm/weave, PROC_REF(weave_confirmed), recipe = GLOB.all_weavable[ask.choice])
+/datum/prompt/choice/weave_confirmation/prepare(datum/act/A)
+	..()
+	var/datum/weaver_recipe/item/captured_recipe = recipe
+	rel_clear(src, nameof(recipe))
+	rel_set(src, nameof(recipe), captured_recipe)
+	var/static/list/confirmation_buttons = list("Yes", "No")
+	choices = confirmation_buttons
+	question = "Are you sure you want to weave [recipe.title]? It will cost you [recipe.cost] silk."
 
-/datum/trait_state/weaver/proc/weave_confirmed(datum/om/prompt/confirm/weave/ask)
-	if(!ask.yes)
+/datum/trait_state/weaver/proc/weave_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	open_request(src, /datum/prompt/choice/weave_confirmation, PROC_REF(weave_confirmed), answerer = owner, recipe = GLOB.all_weavable[A.answer.answer_value])
+
+/datum/trait_state/weaver/proc/weave_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/weave_confirmation/ask = A.answer
+	if(QDELETED(ask.recipe))
+		return
+	if(ask.value != "Yes")
 		weave_item()
 		return
 	weave_check(ask.recipe.cost, ask.recipe.result_type)
 
-/datum/trait_state/weaver/proc/silk_color_picked(datum/om/prompt/color/ask)
-	if(!ask.picked_color)
+/datum/trait_state/weaver/proc/silk_color_picked(datum/act/request/A)
+	if(!A.answer)
 		return
-	silk_color = ask.picked_color
+	var/datum/prompt/color/ask = A.answer
+	if(ask.value)
+		silk_color = ask.value
+	SStgui.update_uis(src)
 
 //TGUI Weaver Panel
 CAPABILITIES(/datum/trait_state/weaver)
@@ -126,7 +149,7 @@ CAPABILITIES(/datum/trait_state/weaver)
 
 /datum/trait_state/weaver/proc/ui_act_new_silk_color(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/color, PROC_REF(silk_color_picked), message = "Select a color you wish your silk to be!", default = silk_color, ui_refresh = src, title = "Color Selector")
+	open_request(src, /datum/prompt/color, PROC_REF(silk_color_picked), answerer = user, question = "Select a color you wish your silk to be!", default = silk_color, title = "Color Selector", timeout = 0)
 	return FALSE
 
 /datum/trait_state/weaver/proc/ui_act_toggle_silk_production(datum/act/op/A)

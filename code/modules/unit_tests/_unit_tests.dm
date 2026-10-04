@@ -502,6 +502,9 @@
 #include "dq_p2_reagent_misc_behaviour.dm"
 #include "dq_p2_reagent_rag_behaviour.dm"
 #include "dq_eg2_gap_tests.dm"
+#include "interim_voice_type_request.dm"
+#include "interim_faction_request_refs.dm"
+#include "interim_human_native_pose_chain.dm"
 #include "dq_p2_reagent_drink_behaviour.dm"
 #include "dq_p2_food_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
@@ -942,6 +945,7 @@
 #include "interim_implantcase_native_label_request.dm"
 #include "interim_observer_native_sprite_chain.dm"
 #include "interim_bluespace_crystal_sticky_self.dm"
+#include "interim_shield_telecom_reference_pairs.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

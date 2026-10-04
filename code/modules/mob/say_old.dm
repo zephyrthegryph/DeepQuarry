@@ -6,21 +6,23 @@
 	if(typing)
 		client?.start_thinking()
 		client?.start_typing()
-	om_ask(src, /datum/om/prompt/text/chat_line, PROC_REF(chat_line_entered), title = title, message = message, multiline = multiline, action = action)
+	open_request(src, /datum/prompt/text/chat_line, PROC_REF(chat_line_entered), answerer = src, title = title, question = message, multiline = multiline, action = action)
 
 /// An old-style chat line; `action` is the mob proc the line is handed to.
-/datum/om/prompt/text/chat_line
+/datum/prompt/text/chat_line
 	encode = FALSE
+	timeout = 0
 	var/action
 
-/datum/om/prompt/text/chat_line/cancelled()
-	unpark()
-	answerer?.client?.stop_thinking()
-
-/mob/proc/chat_line_entered(datum/om/prompt/text/chat_line/ask)
+/mob/proc/chat_line_entered(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			client?.stop_thinking()
+		return
+	var/datum/prompt/text/chat_line/prompt = A.answer
 	client?.stop_thinking()
-	if(ask.text)
-		call(src, ask.action)(ask.text)
+	if(A.answer.answer_value)
+		call(src, prompt.action)(A.answer.answer_value)
 
 /mob/verb/say_verb_old()
 	set name = "Say Old"

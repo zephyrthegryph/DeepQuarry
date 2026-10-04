@@ -52,9 +52,10 @@
 	/// keeping every network node in the two-second machinery roster.
 	EXPIRY_DECLARE(last_thermal_check)
 
+// Links are symmetric membership: linking A to B lists each in the other's links, and a dying
+// machine leaves every partner's list (the framework clears both sides).
 CAPABILITIES(/obj/machinery/telecomms)
-	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
-	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	interface("TelecommsMultitoolMenu")
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
@@ -180,11 +181,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	soundloop.start()
 
 
-// Links are symmetric membership: linking A to B lists each in the other's links, and a dying
-// machine leaves every partner's list (the framework clears both sides).
-/obj/machinery/telecomms/relations()
-	. = ..()
-	. += rel_many(nameof(links), back = nameof(/obj/machinery/telecomms::links))
 
 // Used in auto linking
 /obj/machinery/telecomms/proc/add_link(obj/machinery/telecomms/T)

@@ -69,18 +69,30 @@ CAPABILITIES(/mob/living/dominated_brain)
 		unobserve(pred_body, /datum/notice/qdeleting, src)
 		rel_clear(src, nameof(pred_body))
 
+/// A no-first confirmation; only Yes invokes the original continuation.
+/datum/prompt/choice/dominated_brain_confirm
+	buttons = TRUE
+	timeout = 0
+
+/datum/prompt/choice/dominated_brain_confirm/prepare(datum/act/A)
+	..()
+	var/static/list/confirmation_buttons = list("No", "Yes")
+	choices = confirmation_buttons
+
 /mob/living/dominated_brain/process_resist()
 	//Resisting control by an alien mind.
 	if(pred_mind && pred_body.mind == pred_mind)
 		dominate_predator()
 		return
 	if(mind == pred_mind && pred_body.prey_controlled)
-		om_ask(src, /datum/om/prompt/confirm, PROC_REF(resist_domination_confirmed), title = "Regain Control", message = "Do you want to wrest control over your body back from \the [prey_name]?", no_first = TRUE)
+		open_request(src, /datum/prompt/choice/dominated_brain_confirm, PROC_REF(resist_domination_confirmed), answerer = src, title = "Regain Control", question = "Do you want to wrest control over your body back from \the [prey_name]?")
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
 		..()
 
-/mob/living/dominated_brain/proc/resist_domination_confirmed(datum/om/prompt/confirm/ask)
+/mob/living/dominated_brain/proc/resist_domination_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
 	if(mind != pred_mind || !pred_body?.prey_controlled)
 		return
 	to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
@@ -97,11 +109,13 @@ CAPABILITIES(/mob/living/dominated_brain)
 /mob/living/dominated_brain/proc/restore_control(ask = TRUE)
 
 	if(ask && disconnect_time || client && ((client.inactivity / 10) / 60 > 10))
-		om_ask(src, /datum/om/prompt/confirm, PROC_REF(restore_control_confirmed), title = "Release Control", message = "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?", no_first = TRUE)
+		open_request(src, /datum/prompt/choice/dominated_brain_confirm, PROC_REF(restore_control_confirmed), answerer = src, title = "Release Control", question = "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?")
 		return
 	restore_control_now()
 
-/mob/living/dominated_brain/proc/restore_control_confirmed(datum/om/prompt/confirm/ask)
+/mob/living/dominated_brain/proc/restore_control_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
 	restore_control_now()
 
 /mob/living/dominated_brain/proc/restore_control_now()

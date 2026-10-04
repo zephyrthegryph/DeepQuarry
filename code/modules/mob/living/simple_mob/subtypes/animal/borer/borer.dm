@@ -342,24 +342,33 @@
 // This is awful but its literally say code.
 /// The mob a hostless borer's psionic pulse makes speak. Re-checked on the answer: the borer is
 /// still hostless, and the speaker is conscious and within 7 tiles. A cancel: nothing heard it.
-/datum/om/prompt/choice/borer_psychic_speaker
+/datum/prompt/choice/borer_psychic_speaker
+	timeout = 0
 	title = "Target Choice"
-	message = "Choose a target speaker:"
+	question = "Choose a target speaker:"
 	/// What the speaker is made to say.
 	var/said_text
 
-/datum/om/prompt/choice/borer_psychic_speaker/cancelled()
-	to_chat(answerer, span_alien("..But nothing heard it.."))
-
-/datum/om/prompt/choice/borer_psychic_speaker/valid()
+/datum/prompt/choice/borer_psychic_speaker/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
 	var/mob/living/simple_mob/animal/borer/B = answerer
-	var/mob/living/speaker = choice
+	var/mob/living/speaker = answer_value
+	if(QDELETED(speaker))
+		return "gone"
 	if(B.borer_host() || speaker.stat || get_dist(B, speaker) > 7)
 		return "unable"
 	return null
 
-/mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(datum/om/prompt/choice/borer_psychic_speaker/ask)
-	var/mob/living/speaker = ask.choice
+/mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/R = A.request
+		if(R.outcome == REQ_CANCELLED && isnull(R.answer_value))
+			to_chat(src, span_alien("..But nothing heard it.."))
+		return
+	var/datum/prompt/choice/borer_psychic_speaker/ask = A.answer
+	var/mob/living/speaker = ask.value
 	var/message = ask.said_text
 	log_admin("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
 	message_admins("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
@@ -401,7 +410,7 @@
 				if(!LM.stat)
 					nearby_mobs += LM
 			if(nearby_mobs.len)
-				om_ask(src, /datum/om/prompt/choice/borer_psychic_speaker, PROC_REF(psychic_speaker_chosen), choices = nearby_mobs, said_text = message)
+				open_request(src, /datum/prompt/choice/borer_psychic_speaker, PROC_REF(psychic_speaker_chosen), answerer = src, choices = nearby_mobs, said_text = message)
 				return
 			to_chat(src, span_alien("..But nothing heard it.."))
 		else

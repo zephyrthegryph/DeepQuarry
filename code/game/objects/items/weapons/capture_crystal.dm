@@ -64,7 +64,7 @@
 			to_chat(M, span_notice("\The [bound_mob] is now [AI.get_hostile() ? "hostile" : "passive"]."))
 			log_admin("[key_name_admin(M)] set [bound_mob] to [AI.get_hostile()].")
 	else if(bound_mob.client)
-		om_ask(user, /datum/om/prompt/text/crystal_command, PROC_REF(command_entered))
+		open_request(src, /datum/prompt/text/crystal_command, PROC_REF(command_entered), answerer = user)
 	else
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is unresponsive."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
@@ -141,24 +141,25 @@
 
 //Let's make inviting ghosts be an option you can do instead of an automatic thing!
 /// A command to the bound mob. Re-checked on the answer: the crystal is still carried by its owner and still bound.
-/datum/om/prompt/text/crystal_command
+/datum/prompt/text/crystal_command
 	title = "Command"
-	message = "What is your command?"
+	question = "What is your command?"
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	timeout = 0
 
-/datum/om/prompt/text/crystal_command/valid()
-	var/obj/item/capture_crystal/crystal = subject
+/datum/prompt/text/crystal_command/recheck_extra()
+	var/obj/item/capture_crystal/crystal = owner
 	if(answerer != crystal.owner || !crystal.bound_mob)
 		return "not the owner"
 	return null
 
-/datum/om/prompt/text/crystal_command/cancelled()
-	to_chat(answerer, span_notice("You decided against it."))
-	return ..()
-
-/obj/item/capture_crystal/proc/command_entered(datum/om/prompt/text/crystal_command/ask)
-	var/mob/living/M = ask.answerer
-	var/transmit_msg = ask.text
+/obj/item/capture_crystal/proc/command_entered(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			to_chat(A.request.answerer, span_notice("You decided against it."))
+		return
+	var/mob/living/M = A.request.answerer
+	var/transmit_msg = A.answer.answer_value
 	if(length(transmit_msg) >= MAX_MESSAGE_LEN)
 		to_chat(M, span_danger("Your message was TOO LONG!:[transmit_msg]"))
 		return

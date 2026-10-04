@@ -118,7 +118,7 @@ BUNDLE(modify_robot_laws)
 /datum/eventkit/modify_robot/tgui_close()
 	rel_clear(src, nameof(target))
 	if(source)
-		qdel(source)
+		own_clear(src, nameof(source), OWN_DELETE)
 
 /datum/eventkit/modify_robot/ui_assets(mob/user)
 	if(!target())

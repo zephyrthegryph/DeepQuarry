@@ -12,7 +12,6 @@ dx_raw_delay	code/game/objects/items/devices/flashlight.dm	after(src, rand(5,15)
 dx_raw_delay	code/game/objects/structures/crates_lockers/__closets.dm	after(src, 1, TYPE_PROC_REF(/datum, om_qdel_self))
 dx_raw_delay	code/game/objects/structures/electricchair.dm	COOLDOWN_START(src, shock_cooldown, 50)
 dx_raw_delay	code/modules/admin/verbs/smite.dm	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))
-dx_raw_delay	code/modules/busy_space/organizations.dm	after(src, 1, PROC_REF(forget_current_map_destination)) // BYOND shenanigans means using_map is not initialized yet. Wait a tick.
 dx_raw_delay	code/modules/casino/casino_prize_vendor.dm	after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
 dx_raw_delay	code/modules/flufftext/Hallucination.dm	after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), PROC_REF(trigger))
 dx_raw_delay	code/modules/food/food/snacks.dm	after(user, 5, /proc/food_finished_emote, with = list(user, !reagents?.total_volume))

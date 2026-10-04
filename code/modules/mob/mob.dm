@@ -399,38 +399,39 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	// Final chance to abort "respawning"
 	if(mind && timeofdeath) // They had spawned before
-		om_ask(src, /datum/om/prompt/confirm/abandon_mob, PROC_REF(abandon_mob_confirmed))
+		open_request(src, /datum/prompt/choice/abandon_mob, PROC_REF(abandon_mob_confirmed), answerer = src)
 		return
 	abandon_mob_finish(FALSE)
 
 /// Leaving for the lobby: only while still dead.
-/datum/om/prompt/confirm/abandon_mob
+/datum/prompt/choice/abandon_mob
 	title = "Confirmation"
-	message = "Returning to the menu will prevent your character from being revived in-round. Are you sure?"
-	yes_text = "Yes, leave"
-	no_text = "No, wait"
-	no_first = TRUE
+	question = "Returning to the menu will prevent your character from being revived in-round. Are you sure?"
+	choices = list("No, wait", "Yes, leave")
+	buttons = TRUE
+	timeout = 0
 
-/datum/om/prompt/confirm/abandon_mob/valid()
+/datum/prompt/choice/abandon_mob/recheck_extra()
 	return answerer.stat == DEAD ? null : "not dead"
 
 /// Quitting the round on the way out; no still returns to the lobby.
-/datum/om/prompt/confirm/abandon_mob/quit_round
+/datum/prompt/choice/abandon_mob/quit_round
 	title = "Quit This Round"
-	message = "Do you want to Quit This Round before you return to lobby? This will properly remove you from manifest, as well as prevent resleeving. BEWARE: Pressing 'NO' will STILL return you to lobby!"
-	yes_text = "Quit Round"
-	no_text = "No"
-	no_first = FALSE
-	answer_on_no = TRUE
+	question = "Do you want to Quit This Round before you return to lobby? This will properly remove you from manifest, as well as prevent resleeving. BEWARE: Pressing 'NO' will STILL return you to lobby!"
+	choices = list("Quit Round", "No")
 
-/mob/proc/abandon_mob_confirmed(datum/om/prompt/confirm/abandon_mob/ask)
+/mob/proc/abandon_mob_confirmed(datum/act/request/A)
+	if(A.answer?.answer_value != "Yes, leave")
+		return
 	if(mind?.assigned_role)
-		om_ask(src, /datum/om/prompt/confirm/abandon_mob/quit_round, PROC_REF(abandon_mob_quit_answered))
+		open_request(src, /datum/prompt/choice/abandon_mob/quit_round, PROC_REF(abandon_mob_quit_answered), answerer = src)
 		return
 	abandon_mob_finish(FALSE)
 
-/mob/proc/abandon_mob_quit_answered(datum/om/prompt/confirm/abandon_mob/quit_round/ask)
-	abandon_mob_finish(ask.yes)
+/mob/proc/abandon_mob_quit_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	abandon_mob_finish(A.answer.answer_value == "Quit Round")
 
 /// Leaves the body for the lobby; `quit_round` also frees the job and removes the records.
 /mob/proc/abandon_mob_finish(quit_round)

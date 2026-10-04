@@ -132,10 +132,12 @@
 	power_draw_per_use = 4
 
 /obj/item/integrated_circuit/input/colorpad/ask_for_input(mob/user)
-	om_ask(user, /datum/om/prompt/color/circuit, PROC_REF(color_entered), title = "Color pad", message = "Enter a color, please.", default = get_pin_data(IC_OUTPUT, 1))
+	open_request(src, /datum/prompt/color/circuit, PROC_REF(color_entered), answerer = user, title = "Color pad", question = "Enter a color, please.", default = get_pin_data(IC_OUTPUT, 1))
 
-/obj/item/integrated_circuit/input/colorpad/proc/color_entered(datum/om/prompt/color/circuit/ask)
-	set_pin_data(IC_OUTPUT, 1, ask.picked_color)
+/obj/item/integrated_circuit/input/colorpad/proc/color_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	set_pin_data(IC_OUTPUT, 1, A.answer.answer_value)
 	push_data()
 	activate_pin(1)
 

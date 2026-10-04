@@ -95,7 +95,6 @@
 	var/max_universal_equip = 2
 	var/max_special_equip = 1
 
-	var/list/starting_equipment = null	// List containing starting tools.
 
 // Mech Components, similar to Cyborg, but Bigger.
 	var/list/internal_components = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
@@ -196,6 +195,8 @@ CAPABILITIES(/obj/mecha)
 	owns_one(nameof(cloak_action), /datum/action/innate/mecha/mech_toggle_cloaking, starts = /datum/action/innate/mecha/mech_toggle_cloaking)
 	owns_one(nameof(smoke_system), /datum/effect/effect/system/smoke_spread, starts = /datum/effect/effect/system/smoke_spread)
 
+TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
+
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull, \
 		/obj/item/mecha_parts/component/actuator, \
@@ -216,8 +217,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		var/obj/item/mecha_parts/component/C = new path(src)
 		C.attach(src)
 
-	if(starting_equipment && LAZYLEN(starting_equipment))
-		for(var/path in starting_equipment)
+	var/list/starting_equipment_types = TYPE_TABLE_GET(src, mecha_starting_equipment)
+	if(starting_equipment_types && LAZYLEN(starting_equipment_types))
+		for(var/path in starting_equipment_types)
 			var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
 			ME.attach(src)
 

@@ -448,30 +448,43 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 				LAZYSET(options, option, I)
 		else
 			return
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_chosen), choices = options, anchor = src, radius = 90, subject = part)
+	open_request(src, /datum/prompt/choice/bigdragon_style, PROC_REF(style_chosen), answerer = src, choices = options, anchor = src, radius = 90, part = part)
 
 /// Second radial answer: pick the colour for the chosen style.
-/mob/living/simple_mob/vore/bigdragon/proc/style_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/datum/prompt/choice/bigdragon_style
+	radial = TRUE
+	autopick_single_option = TRUE
+	timeout = 0
+	var/part
+
+/mob/living/simple_mob/vore/bigdragon/proc/style_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/bigdragon_style/ask = A.answer
+	var/choice = ask.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
-	var/part = ask.subject
+	var/part = ask.part
 	var/static/list/titles = list("Underbelly" = "Underbelly", "Body" = "Body", "Ears" = "Ear", "Mane" = "Mane", "Horns" = "Horn", "Eyes" = "Eye")
 	var/label = titles[part]
 	if(!label)
 		return
-	om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick [lowertext(label)] color:", title = "[label] Color", default = overlay_colors[part], overlay = part, style = choice)
+	open_request(src, /datum/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick [lowertext(label)] color:", title = "[label] Color", default = overlay_colors[part], overlay = part, style = choice)
 
 /// One of the dragon's overlay colours, picked after its style. The style lands with the colour.
-/datum/om/prompt/color/bigdragon_overlay
+/datum/prompt/color/bigdragon_overlay
 	ask_flags = ASK_CAPABLE
+	timeout = 0
 	/// The overlay_colors key: "Underbelly", "Body", "Ears", "Mane", "Horns" or "Eyes".
 	var/overlay
 	/// The style picked for that overlay.
 	var/style
 
-/mob/living/simple_mob/vore/bigdragon/proc/overlay_color_picked(datum/om/prompt/color/bigdragon_overlay/ask)
-	if(!ask.picked_color)
+/mob/living/simple_mob/vore/bigdragon/proc/overlay_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/bigdragon_overlay/ask = A.answer
+	if(!ask.value)
 		return
 	switch(ask.overlay)
 		if("Underbelly")
@@ -488,7 +501,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 			eyes = ask.style
 		else
 			return
-	overlay_colors[ask.overlay] = ask.picked_color
+	overlay_colors[ask.overlay] = ask.value
 	build_icons()
 
 ///

@@ -685,35 +685,56 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	for(var/option in options)
 		var/image/I = new /image('icons/mob/synx_modular.dmi', "[state_prefix][option]", dir = 2)
 		LAZYSET(options, option, I)
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_chosen), choices = options, anchor = src, radius = 90, subject = part)
+	open_request(src, /datum/prompt/choice/synx_style, PROC_REF(style_chosen), answerer = src, choices = options, anchor = src, radius = 90, part = part)
 
 /// Second radial answer: pick the colour for the chosen style.
-/mob/living/simple_mob/animal/synx/proc/style_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/datum/prompt/choice/synx_style
+	radial = TRUE
+	autopick_single_option = TRUE
+	timeout = 0
+	var/part
+
+/mob/living/simple_mob/animal/synx/proc/style_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/synx_style/ask = A.answer
+	var/choice = ask.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
-	switch(ask.subject)
+	switch(ask.part)
 		if("Body")
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Body Color", message = "Pick body color:", default = overlay_colors["Body"], part = "Body", style_var = "body_style", style = choice)
+			open_request(src, /datum/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), answerer = src, title = "Body Color", question = "Pick body color:", default = overlay_colors["Body"], part = "Body", style_var = "body_style", style = choice)
 		if("Horns")
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Horn Color", message = "Pick horn color:", default = overlay_colors["Horns"], part = "Horns", style_var = "horns", style = choice)
+			open_request(src, /datum/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), answerer = src, title = "Horn Color", question = "Pick horn color:", default = overlay_colors["Horns"], part = "Horns", style_var = "horns", style = choice)
 		if("Marks")
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Marking Color", message = "Pick marking color:", default = overlay_colors["Marks"], part = "Marks", style_var = "markings", style = choice)
+			open_request(src, /datum/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), answerer = src, title = "Marking Color", question = "Pick marking color:", default = overlay_colors["Marks"], part = "Marks", style_var = "markings", style = choice)
 		if("Eyes")
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Eye Color", message = "Pick eye color:", default = overlay_colors["Eyes"], part = "Eyes", style_var = "eyes", style = choice)
+			open_request(src, /datum/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), answerer = src, title = "Eye Color", question = "Pick eye color:", default = overlay_colors["Eyes"], part = "Eyes", style_var = "eyes", style = choice)
 
 /// The colour for a part picked in the customisation menu; the part's style is set with it.
-/datum/om/prompt/color/synx_part
+/datum/prompt/color/synx_part
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 	/// The overlay_colors key.
 	var/part
 	/// The mob var holding the part's style, and the style picked.
 	var/style_var
 	var/style
 
-/mob/living/simple_mob/animal/synx/proc/synx_part_color_chosen(datum/om/prompt/color/synx_part/ask)
-	vars[ask.style_var] = ask.style
-	overlay_colors[ask.part] = ask.picked_color
+/mob/living/simple_mob/animal/synx/proc/synx_part_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/synx_part/ask = A.answer
+	switch(ask.style_var)
+		if("body_style")
+			body_style = ask.style
+		if("horns")
+			horns = ask.style
+		if("markings")
+			markings = ask.style
+		if("eyes")
+			eyes = ask.style
+	overlay_colors[ask.part] = ask.value
 	build_icons()
 
 ////////////////////////////////////////
@@ -912,35 +933,45 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	name = "Syntox"
 	desc = "ERROR Connection to translation server could not be established!"
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename()
 	set name = "rename"
 	set desc = "Renames the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Renaming", message = "What would you like to change name to?", var_name = "name")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Renaming", question = "What would you like to change name to?", var_name = "name")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc()
 	set name = "redesc"
 	set desc = "Redescribes the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Redescribing", message = "What would you like to change desc to?", var_name = "desc")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Redescribing", question = "What would you like to change desc to?", var_name = "desc")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite()
 	set name = "resprite"
 	set desc = "Resprite the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Respriting", message = "What would you like to change icon_state to?", var_name = "icon_state")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Respriting", question = "What would you like to change icon_state to?", var_name = "icon_state")
 
 /// A debug synx var edit. `var_name` is the var set.
-/datum/om/prompt/text/synx_debug_var
+/datum/prompt/text/synx_debug_var
+	timeout = 0
 	var/var_name
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(datum/om/prompt/text/synx_debug_var/ask)
-	vars[ask.var_name] = ask.text
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/synx_debug_var/request = A.request
+	switch(request.var_name)
+		if("name")
+			name = A.answer.answer_value
+		if("desc")
+			desc = A.answer.answer_value
+		if("icon_state")
+			set_icon_state(A.answer.answer_value)
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc)
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/Initialize(mapload)
 	. = ..(mapload, TRUE)

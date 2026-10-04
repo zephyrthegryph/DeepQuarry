@@ -25,19 +25,27 @@
 	if(!length(choices))
 		to_chat(src, "There is nothing nearby to merge with.")
 		return
-	om_ask(src, /datum/om/prompt/choice/diona_merge, PROC_REF(merge_target_chosen), choices = choices)
+	open_request(src, /datum/prompt/choice/diona_merge, PROC_REF(merge_target_chosen), answerer = src, choices = choices)
 
 /// Re-checked on the answer: still conscious and not already merged into someone.
-/datum/om/prompt/choice/diona_merge
+/datum/prompt/choice/diona_merge
 	title = "Merge Choice"
-	message = "Who do you wish to merge with?"
+	question = "Who do you wish to merge with?"
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 
-/datum/om/prompt/choice/diona_merge/valid()
+/datum/prompt/choice/diona_merge/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
 	return istype(answerer.loc, /mob/living/carbon) ? "already merged" : null
 
-/mob/living/carbon/alien/diona/proc/merge_target_chosen(datum/om/prompt/choice/diona_merge/ask)
-	var/mob/living/M = ask.choice
+/mob/living/carbon/alien/diona/proc/merge_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/M = A.answer.answer_value
+	if(QDELETED(M))
+		return
 	if(!do_merge(M))
 		to_chat(src, "You fail to merge with \the [M]...")
 
