@@ -714,29 +714,115 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		to_chat(src, span_warning("There is no blood to use nearby."))
 		return
 
-	om_flow_start(/datum/om/flow/bloody_doodle, src, null, choices = choices)
+	var/datum/ghost_doodle_review/review = new
+	rel_set(review, nameof(review.ghost), src)
+	review.choices = choices
+	review.start()
 
 /// A ghost writing in blood: which blood, which tile, then the message.
-/datum/om/flow/bloody_doodle
-	name = "bloody doodle"
+/datum/ghost_doodle_review
+	parent_type = /datum/prompt_workflow
+	var/mob/observer/dead/ghost
 	var/list/choices
 	var/obj/effect/decal/cleanable/blood/blood
+	var/blood_selected = FALSE
 	var/direction
 
-/datum/om/flow/bloody_doodle/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(blood_picked), title = "Blood Choice", message = "What blood would you like to use?", choices = choices)
+CAPABILITIES(/datum/ghost_doodle_review)
+	ref_one(nameof(ghost), /mob/observer/dead)
+	ref_one(nameof(blood), /obj/effect/decal/cleanable/blood)
 
-/datum/om/flow/bloody_doodle/proc/blood_picked(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(blood), ask.choice)
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(direction_picked), title = "Tile selection", message = "Which way?", choices = list("Here","North","South","East","West"))
+/datum/prompt/choice/ghost_doodle
+	timeout = 0
 
-/datum/om/flow/bloody_doodle/proc/direction_picked(datum/om/prompt/choice/ask)
-	direction = ask.choice
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(message_written), title = "Blood writing", message = "Write a message. It cannot be longer than 50 characters.", default = "", max_length = 50)
+/datum/prompt/choice/ghost_doodle/begin()
+	var/datum/ghost_doodle_review/review = owner
+	if(review.why_not())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
 
-/datum/om/flow/bloody_doodle/proc/message_written(datum/om/prompt/text/ask)
-	var/mob/observer/dead/ghost = actor
-	ghost.bloody_doodle_written(blood, direction, ask.text)
+/datum/prompt/choice/ghost_doodle/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	var/datum/ghost_doodle_review/review = owner
+	return review.why_not()
+
+/datum/prompt/text/ghost_doodle
+	title = "Blood writing"
+	timeout = 0
+	max_len = 50
+	// Old text max_length50 falls within MAX_NAME_LEN52, so it strips name tokens.
+	name_text = TRUE
+	default = ""
+
+/datum/prompt/text/ghost_doodle/begin()
+	var/datum/ghost_doodle_review/review = owner
+	if(review.why_not())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/ghost_doodle/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/ghost_doodle_review/review = owner
+	return review.why_not()
+
+/datum/ghost_doodle_review/proc/why_not()
+	return QDELETED(ghost) || (blood_selected && QDELETED(blood)) ? "gone" : null
+
+/datum/ghost_doodle_review/proc/start()
+	if(why_not())
+		retire()
+		return
+	run_step(PROC_REF(start_step))
+
+/datum/ghost_doodle_review/proc/run_step(step, datum/act/request/A)
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("bloody doodle step [step]: [result.error]")
+		retire()
+
+/datum/ghost_doodle_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/ghost_doodle, PROC_REF(blood_picked), answerer = ghost, title = "Blood Choice", question = "What blood would you like to use?", choices = choices)
+
+/datum/ghost_doodle_review/proc/blood_picked(datum/act/request/A)
+	run_step(PROC_REF(blood_picked_step), A)
+
+/datum/ghost_doodle_review/proc/blood_picked_step(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	rel_set(src, nameof(blood), A.request.answer_value)
+	blood_selected = TRUE
+	if(QDELETED(blood))
+		retire()
+		return
+	open_request(src, /datum/prompt/choice/ghost_doodle, PROC_REF(direction_picked), answerer = ghost, title = "Tile selection", question = "Which way?", choices = list("Here","North","South","East","West"))
+
+/datum/ghost_doodle_review/proc/direction_picked(datum/act/request/A)
+	run_step(PROC_REF(direction_picked_step), A)
+
+/datum/ghost_doodle_review/proc/direction_picked_step(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	direction = A.request.answer_value
+	open_request(src, /datum/prompt/text/ghost_doodle, PROC_REF(message_written), answerer = ghost, question = "Write a message. It cannot be longer than 50 characters.")
+
+/datum/ghost_doodle_review/proc/message_written(datum/act/request/A)
+	run_step(PROC_REF(message_written_step), A)
+
+/datum/ghost_doodle_review/proc/message_written_step(datum/act/request/A)
+	if(A.answer && !why_not())
+		ghost.bloody_doodle_written(blood, direction, A.request.answer_value)
+	retire()
 
 /mob/observer/dead/proc/bloody_doodle_written(obj/effect/decal/cleanable/blood/choice, direction, message)
 	var/turf/simulated/T = src.loc

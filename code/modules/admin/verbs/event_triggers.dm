@@ -2,32 +2,51 @@
 Eventkit verb to be used to spawn the obj/effect/landmarks defined under code\game\objects\effects\landmarks_events.dm
 */
 ADMIN_VERB(manage_event_triggers, R_FUN, "Manage Event Triggers", "Open dialogue to create or delete narration/notification triggers", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	om_flow_start(/datum/om/flow/event_triggers, user.mob, null)
+	user.mob?.ask_manage_event_triggers()
 
-/// Managing event triggers: pick a mode, then a trigger list (yours or someone else's), then
-/// teleport to or delete one (or all). The admin keeps R_FUN on every step.
-/datum/om/flow/event_triggers
-	name = "manage event triggers"
-	requires = PROMPT_ADMIN(R_FUN)
-	/// Whose triggers are listed.
+/// Managing event triggers keeps the initiating admin and selected landmark across each answer.
+/datum/prompt/choice/manage_event_triggers
+	rights = R_FUN
+	timeout = 0
 	var/owner_ckey
 	var/obj/effect/landmark/event_trigger/trigger
+	var/needs_trigger = FALSE
 
-/datum/om/flow/event_triggers/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(mode_picked), title = "Manage Event Triggers", message = "What do you wish to do?", default = "Cancel", choices = list(
-		"Create Notification Trigger",
-		"Create Narration Trigger",
-		"Manage Personal Triggers",
-		"Manage Other's Triggers",
-		"Cancel"
-	))
+CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
+	ref_one(nameof(trigger), /obj/effect/landmark/event_trigger)
 
-/datum/om/flow/event_triggers/proc/mode_picked(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	if(ask.choice == "Cancel")
+/datum/prompt/choice/manage_event_triggers/prepare(datum/act/A)
+	..()
+	var/obj/effect/landmark/event_trigger/captured_trigger = trigger
+	needs_trigger = !isnull(captured_trigger)
+	rel_clear(src, nameof(trigger))
+	rel_set(src, nameof(trigger), captured_trigger)
+
+/datum/prompt/choice/manage_event_triggers/recheck_extra()
+	return needs_trigger && QDELETED(trigger) ? "gone" : null
+
+/datum/prompt/choice/manage_event_triggers/begin()
+	var/reason = request_recheck(src)
+	if(reason)
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/mob/proc/ask_manage_event_triggers()
+	ask_event_trigger_choice(PROC_REF(event_trigger_mode_picked), null, null, "Manage Event Triggers", "What do you wish to do?", list("Create Notification Trigger", "Create Narration Trigger", "Manage Personal Triggers", "Manage Other's Triggers", "Cancel"), FALSE, "Cancel")
+
+/mob/proc/ask_event_trigger_choice(next, owner_ckey, obj/effect/landmark/event_trigger/trigger, title, question, list/choices, buttons = FALSE, default = null)
+	open_request(src, /datum/prompt/choice/manage_event_triggers, next, answerer = src, owner_ckey = owner_ckey, trigger = trigger, title = title, question = question, choices = choices, buttons = buttons, default = default)
+
+/mob/proc/event_trigger_mode_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.answer_value
+	var/mob/user = src
+	if(choice == "Cancel")
 		return
 	feedback_add_details("admin_verb","EventTriggerManage")
-	switch(ask.choice)
+	switch(choice)
 		if("Create Notification Trigger")
 			var/obj/effect/landmark/event_trigger/ET = new /obj/effect/landmark/event_trigger(user.loc)
 			ET.set_vars(user)
@@ -35,89 +54,108 @@ ADMIN_VERB(manage_event_triggers, R_FUN, "Manage Event Triggers", "Open dialogue
 			var/obj/effect/landmark/event_trigger/auto_narrate/AN = new /obj/effect/landmark/event_trigger/auto_narrate(user.loc)
 			AN.set_vars(user)
 		if("Manage Personal Triggers")
-			list_triggers(user.ckey)
+			list_event_triggers(user.ckey)
 		if("Manage Other's Triggers")
-			om_ask(user, /datum/om/prompt/text, PROC_REF(other_entered), title = "CKEY", message = "input trigger owner's ckey", default = "", max_length = MAX_MESSAGE_LEN)
+			open_request(src, /datum/prompt/text, PROC_REF(event_trigger_other_entered), answerer = src, rights = R_FUN, timeout = 0, title = "CKEY", question = "input trigger owner's ckey", default = "", max_len = MAX_MESSAGE_LEN)
 
-/datum/om/flow/event_triggers/proc/other_entered(datum/om/prompt/text/ask)
-	list_triggers(ask.text)
+/mob/proc/event_trigger_other_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	list_event_triggers(A.answer.answer_value)
 
-/// Lists `ckey`'s triggers to teleport to or delete.
-/datum/om/flow/event_triggers/proc/list_triggers(ckey)
-	var/mob/user = actor
-	owner_ckey = ckey
+/mob/proc/list_event_triggers(owner_ckey)
+	var/mob/user = src
 	var/list/triggers = GLOB.event_triggers[owner_ckey]
 	if(!LAZYLEN(triggers))
 		to_chat(user, span_notice(owner_ckey == user.ckey ? "You don't have any landmarks to manage!" : "[owner_ckey] doesn't have any landmarks to manage!"))
 		return
 	var/list/choices = triggers.Copy()
 	choices |= list("Cancel", "Delete All")
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(trigger_picked), title = "Manage Personal Triggers", message = "Select a landmark to choose between teleporting to it or deleting it, select delete all to clear them.", choices = choices)
+	ask_event_trigger_choice(PROC_REF(event_trigger_picked), owner_ckey, null, "Manage Personal Triggers", "Select a landmark to choose between teleporting to it or deleting it, select delete all to clear them.", choices)
 
 /// The owner is logged in and was active in the last 30 minutes (someone else's triggers only).
-/datum/om/flow/event_triggers/proc/owner_active()
-	var/mob/user = actor
-	if(owner_ckey == user.ckey)
+/mob/proc/event_trigger_owner_active(owner_ckey)
+	if(owner_ckey == ckey)
 		return null
 	var/client/owner = GLOB.directory[owner_ckey]
 	var/mob/stat_mob = owner?.statobj
 	if(stat_mob?.client && stat_mob.client.inactivity < 30 MINUTES)
 		return stat_mob
 
-/// Asks to force-delete while the owner is active, else the plain confirmation.
-/datum/om/flow/event_triggers/proc/ask_delete(sure_text, sure_message, next)
-	var/mob/stat_mob = owner_active()
+/mob/proc/ask_delete_event_trigger(owner_ckey, obj/effect/landmark/event_trigger/trigger, sure_text, sure_message, next)
+	var/mob/stat_mob = event_trigger_owner_active(owner_ckey)
 	if(stat_mob)
-		om_ask(actor, /datum/om/prompt/choice, next, buttons = TRUE, title = "Force Delete", message = "[stat_mob] has only been inactive for [stat_mob.client.inactivity / (1 MINUTE)] minutes.\n \
+		ask_event_trigger_choice(next, owner_ckey, trigger, "Force Delete", "[stat_mob] has only been inactive for [stat_mob.client.inactivity / (1 MINUTE)] minutes.\n \
 			If you want to delete their event triggers, ask them in asay or discord to do it themselves or wait 30 minutes. \n \
-			Only proceed if you are absolutely certain.", choices = list("Confirm", "Cancel"))
+			Only proceed if you are absolutely certain.", list("Confirm", "Cancel"), TRUE)
 		return
-	om_ask(actor, /datum/om/prompt/choice, next, buttons = TRUE, title = "CONFIRM", message = sure_message, choices = list("Go Back", sure_text))
+	ask_event_trigger_choice(next, owner_ckey, trigger, "CONFIRM", sure_message, list("Go Back", sure_text), TRUE)
 
-/datum/om/flow/event_triggers/proc/trigger_picked(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/mob/proc/event_trigger_picked(datum/act/request/A)
+	if(!A.answer)
 		return
-	if(ask.choice == "Delete All")
-		ask_delete("Delete all my event triggers", "ARE YOU SURE? THERE IS NO GOING BACK", PROC_REF(delete_all))
+	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
+	if(ask.answer_value == "Cancel")
 		return
-	rel_set(src, nameof(trigger), ask.choice)
-	if(!istype(trigger))
+	if(ask.answer_value == "Delete All")
+		ask_delete_event_trigger(ask.owner_ckey, null, "Delete all my event triggers", "ARE YOU SURE? THERE IS NO GOING BACK", PROC_REF(event_triggers_delete_all))
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(manage), buttons = TRUE, title = "Manage [trigger.name]", message = "Teleport to Landmark or Delete it?", choices = list("Teleport", "Delete"))
+	var/obj/effect/landmark/event_trigger/trigger = ask.answer_value
+	if(!istype(trigger) || QDELETED(trigger))
+		return
+	ask_event_trigger_choice(PROC_REF(event_trigger_manage), ask.owner_ckey, trigger, "Manage [trigger.name]", "Teleport to Landmark or Delete it?", list("Teleport", "Delete"), TRUE)
 
-/datum/om/flow/event_triggers/proc/delete_all(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	if(ask.choice != "Confirm" && ask.choice != "Delete all my event triggers")
+/mob/proc/event_triggers_delete_all(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
+	var/owner_ckey = ask.owner_ckey
+	var/choice = ask.answer_value
+	var/mob/user = src
+	if(choice != "Confirm" && choice != "Delete all my event triggers")
 		return
 	for(var/obj/effect/landmark/event_trigger/ET in GLOB.event_triggers[owner_ckey])
 		ET.delete_me = TRUE
 		qdel(ET)
 	if(owner_ckey != user.ckey)
-		log_and_message_admins("[user.ckey] deleted all of [owner_ckey]'s event triggers[ask.choice == "Confirm" ? " while [owner_ckey] was active" : ". [owner_ckey] was either inactive or disconnected at this time."]", user)
+		log_and_message_admins("[user.ckey] deleted all of [owner_ckey]'s event triggers[choice == "Confirm" ? " while [owner_ckey] was active" : ". [owner_ckey] was either inactive or disconnected at this time."]", user)
 
-/datum/om/flow/event_triggers/proc/manage(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	if(ask.choice == "Teleport")
+/mob/proc/event_trigger_manage(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
+	var/obj/effect/landmark/event_trigger/trigger = ask.trigger
+	var/mob/user = src
+	if(ask.answer_value == "Teleport")
 		if(isobserver(user))
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(teleport_confirmed), buttons = TRUE, title = "You're not a ghost", message = "You're not a ghost! Admin-ghost?", choices = list("Cancel", "Teleport me with my character"))
+			ask_event_trigger_choice(PROC_REF(event_trigger_teleport_confirmed), ask.owner_ckey, trigger, "You're not a ghost", "You're not a ghost! Admin-ghost?", list("Cancel", "Teleport me with my character"), TRUE)
 			return
 		user.forceMove(get_turf(trigger))
 		return
-	if(ask.choice != "Delete")
+	if(ask.answer_value != "Delete")
 		return
-	ask_delete("Delete it!", "ARE YOU SURE? THERE IS NO GOING BACK FROM DELETING [trigger.name]", PROC_REF(delete_one))
+	ask_delete_event_trigger(ask.owner_ckey, trigger, "Delete it!", "ARE YOU SURE? THERE IS NO GOING BACK FROM DELETING [trigger.name]", PROC_REF(event_trigger_delete_one))
 
-/datum/om/flow/event_triggers/proc/teleport_confirmed(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	if(ask.choice == "Teleport me with my character")
-		user.forceMove(get_turf(trigger))
+/mob/proc/event_trigger_teleport_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
+	var/mob/user = src
+	if(ask.answer_value == "Teleport me with my character")
+		user.forceMove(get_turf(ask.trigger))
 
-/datum/om/flow/event_triggers/proc/delete_one(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	if(ask.choice != "Confirm" && ask.choice != "Delete it!")
+/mob/proc/event_trigger_delete_one(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
+	var/owner_ckey = ask.owner_ckey
+	var/obj/effect/landmark/event_trigger/trigger = ask.trigger
+	var/choice = ask.answer_value
+	var/mob/user = src
+	if(choice != "Confirm" && choice != "Delete it!")
 		return
 	var/trigger_name = trigger.name
 	trigger.delete_me = TRUE
 	qdel(trigger)
 	if(owner_ckey != user.ckey)
-		log_and_message_admins("[user.ckey] deleted event trigger [trigger_name][ask.choice == "Confirm" ? " while [owner_ckey] is active." : ", [owner_ckey] is either disconnected or inactive."]", user)
+		log_and_message_admins("[user.ckey] deleted event trigger [trigger_name][choice == "Confirm" ? " while [owner_ckey] is active." : ", [owner_ckey] is either disconnected or inactive."]", user)

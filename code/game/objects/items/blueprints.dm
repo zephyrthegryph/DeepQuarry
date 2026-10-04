@@ -341,19 +341,36 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 /obj/item/areaeditor/proc/edit_area(mob/user)
 	var/area/A = get_area(user)
-	om_ask(user, /datum/om/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), area_to_rename = A)
+	open_request(src, /datum/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), answerer = user, area_to_rename = A)
 
 /// Re-checked on the answer: the blueprint is still in hand.
-/datum/om/prompt/text/blueprint_rename_area
+/datum/prompt/text/blueprint_rename_area
 	title = "Area Creation"
-	message = "New area name"
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_IN_HAND
+	question = "New area name"
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	timeout = 0
 	var/area/area_to_rename
 
-/obj/item/areaeditor/proc/area_renamed(datum/om/prompt/text/blueprint_rename_area/ask)
+CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
+	ref_one(nameof(area_to_rename), /area)
+
+/datum/prompt/text/blueprint_rename_area/prepare(datum/act/A)
+	..()
+	var/area/captured_area = area_to_rename
+	rel_clear(src, nameof(area_to_rename))
+	rel_set(src, nameof(area_to_rename), captured_area)
+
+/datum/prompt/text/blueprint_rename_area/recheck_extra()
+	return QDELETED(area_to_rename) ? "gone" : null
+
+/obj/item/areaeditor/proc/area_renamed(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/blueprint_rename_area/ask = context.answer
 	var/mob/user = ask.answerer
-	var/str = ask.text
+	var/str = ask.answer_value
 	var/area/A = ask.area_to_rename
 	var/prevname = "[A.name]"
 	if(!str || !length(str) || str==prevname) //cancel

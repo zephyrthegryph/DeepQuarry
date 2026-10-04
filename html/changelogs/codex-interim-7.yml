@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated legacy prompt workflows and ordinary atmos reference declarations to the current engine."
+  - bugfix: "Destroyed casino prize collars no longer remain in the selection list."

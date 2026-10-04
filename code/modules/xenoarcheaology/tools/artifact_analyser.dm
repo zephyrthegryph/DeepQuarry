@@ -7,7 +7,6 @@
 	density = TRUE
 	bubble_icon = "science"
 	var/scan_in_progress = 0
-	var/scan_num = 0
 	var/tmp/obj/scanned_obj
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	EXPIRY_DECLARE(scan_completion_time)

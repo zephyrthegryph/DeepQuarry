@@ -227,30 +227,51 @@ CAPABILITIES(/obj/machinery/petrification)
 	var/mob/living/carbon/human/H = ask.choices[ask.choice]
 	if(!ishuman(H) || !is_valid_target(H))
 		return
-	om_flow_start(/datum/om/flow/petrify_consent, ask.answerer, H, machine = src)
+	open_request(src, /datum/prompt/choice/petrify_consent, PROC_REF(first_confirmed), answerer = H, operator = ask.answerer, question = "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.")
 
 /// The chosen target confirms twice; a no or a cancel at either step tells the operator (actor).
-/datum/om/flow/petrify_consent
-	name = "petrify consent"
-	var/obj/machinery/petrification/machine
+/datum/prompt/choice/petrify_consent
+	title = "Petrification Target"
+	choices = list("Confirm", "Cancel")
+	buttons = TRUE
+	timeout = 0
+	var/mob/operator
 
-/datum/om/flow/petrify_consent/start()
-	om_ask(target, /datum/om/prompt/confirm, PROC_REF(first_confirmed), title = "Petrification Target", message = "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.", yes_text = "Confirm", no_text = "Cancel")
+CAPABILITIES(/datum/prompt/choice/petrify_consent)
+	ref_one(nameof(operator), /mob)
 
-/datum/om/flow/petrify_consent/proc/first_confirmed()
-	om_ask(target, /datum/om/prompt/confirm, PROC_REF(second_confirmed), title = "Petrification Target", message = "This is your last warning, are you -certain-?", yes_text = "Confirm", no_text = "Cancel")
+/datum/prompt/choice/petrify_consent/prepare(datum/act/A)
+	..()
+	var/mob/captured_operator = operator
+	rel_clear(src, nameof(operator))
+	rel_set(src, nameof(operator), captured_operator)
 
-/datum/om/flow/petrify_consent/proc/second_confirmed()
-	if(!machine.is_valid_target(target))
-		machine.popup_msg(actor, "They declined the request.", FALSE)
+/datum/prompt/choice/petrify_consent/recheck_extra()
+	return QDELETED(operator) ? "gone" : null
+
+/obj/machinery/petrification/proc/first_confirmed(datum/act/request/A)
+	var/datum/prompt/choice/petrify_consent/ask = A.request
+	var/mob/living/carbon/human/H = ask.answerer
+	if(QDELETED(ask.operator) || !istype(H) || QDELETED(H))
 		return
-	rel_set(machine, nameof(machine.target), target)
-	SStgui.update_uis(machine)
-
-/datum/om/flow/petrify_consent/ended(reason)
-	if(reason == "gone" || !machine)
+	if(!A.answer || ask.answer_value != "Confirm")
+		popup_msg(ask.operator, "They declined the request.", FALSE)
 		return
-	machine.popup_msg(actor, "They declined the request.", FALSE)
+	open_request(src, /datum/prompt/choice/petrify_consent, PROC_REF(second_confirmed), answerer = H, operator = ask.operator, question = "This is your last warning, are you -certain-?")
+
+/obj/machinery/petrification/proc/second_confirmed(datum/act/request/A)
+	var/datum/prompt/choice/petrify_consent/ask = A.request
+	var/mob/living/carbon/human/H = ask.answerer
+	if(QDELETED(ask.operator) || !istype(H) || QDELETED(H))
+		return
+	if(!A.answer || ask.answer_value != "Confirm")
+		popup_msg(ask.operator, "They declined the request.", FALSE)
+		return
+	if(!is_valid_target(H))
+		popup_msg(ask.operator, "They declined the request.", FALSE)
+		return
+	rel_set(src, nameof(target), H)
+	SStgui.update_uis(src)
 
 
 /obj/machinery/petrification/proc/ui_act_set_option(datum/act/op/A, option)

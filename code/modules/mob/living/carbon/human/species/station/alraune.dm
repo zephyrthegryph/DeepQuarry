@@ -201,18 +201,34 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 	if(!fruit_gland)
 		to_chat(src, span_notice("You lack the organ required to produce fruit."))
 		return
-	om_ask(src, /datum/om/prompt/choice/fruit_gland, PROC_REF(alraune_fruit_chosen), message = "Choose your character's fruit type. Choosing nothing will result in a default of apples.", title = "Fruit Type", choices = GLOB.acceptable_fruit_types, gland = fruit_gland)
+	open_request(src, /datum/prompt/choice/fruit_gland, PROC_REF(alraune_fruit_chosen), answerer = src, question = "Choose your character's fruit type. Choosing nothing will result in a default of apples.", title = "Fruit Type", choices = GLOB.acceptable_fruit_types, gland = fruit_gland)
 
 /// A fruit gland setting. Re-checked on the answer: the gland is still in the answerer.
-/datum/om/prompt/choice/fruit_gland
+/datum/prompt/choice/fruit_gland
+	timeout = 0
 	var/obj/item/organ/internal/fruitgland/gland
 
-/datum/om/prompt/choice/fruit_gland/valid()
-	return gland.loc == answerer ? null : "gland gone"
+CAPABILITIES(/datum/prompt/choice/fruit_gland)
+	ref_one(nameof(gland), /obj/item/organ/internal/fruitgland)
 
-/mob/living/carbon/human/proc/alraune_fruit_chosen(datum/om/prompt/choice/fruit_gland/ask)
+/datum/prompt/choice/fruit_gland/prepare(datum/act/context)
+	. = ..()
+	var/obj/item/organ/internal/fruitgland/captured = gland
+	rel_clear(src, nameof(gland))
+	rel_set(src, nameof(gland), captured)
+
+/datum/prompt/choice/fruit_gland/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return !QDELETED(gland) && gland.loc == answerer ? null : "gland gone"
+
+/mob/living/carbon/human/proc/alraune_fruit_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/fruit_gland/ask = A.request
 	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.gland
-	fruit_gland.fruit_type = ask.choice
+	fruit_gland.fruit_type = ask.answer_value
 	grant(src, granted_verb(/mob/living/carbon/human/proc/alraune_fruit_pick), src)
 	grant(src, granted_verb(/mob/living/carbon/human/proc/alraune_fruit_reagent), src)
 	rel_set(fruit_gland, nameof(fruit_gland.organ_owner), src)
@@ -280,11 +296,16 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 
 	if(fruit_gland)
 		// A cancel answers "" and clears the poison.
-		om_ask(src, /datum/om/prompt/choice/fruit_gland, PROC_REF(alraune_poison_chosen), message = "Choose which reagent to poison your fruit with! Be aware, this option is intended for use in scenes and ERP. This is not for use as pranks or to change the gender of unsuspecting crew, and you must be aware of the preferences of the people who eat it. Do not just leave it out unattended.", title = "Select reagent", choices = TYPE_TABLE_GET(fruit_gland, poison_options), ask_flags = ASK_CONSCIOUS, cancel_answer = "", gland = fruit_gland)
+		open_request(src, /datum/prompt/choice/fruit_gland, PROC_REF(alraune_poison_chosen), answerer = src, question = "Choose which reagent to poison your fruit with! Be aware, this option is intended for use in scenes and ERP. This is not for use as pranks or to change the gender of unsuspecting crew, and you must be aware of the preferences of the people who eat it. Do not just leave it out unattended.", title = "Select reagent", choices = TYPE_TABLE_GET(fruit_gland, poison_options), ask_flags = ASK_CONSCIOUS, gland = fruit_gland)
 
-/mob/living/carbon/human/proc/alraune_poison_chosen(datum/om/prompt/choice/fruit_gland/ask)
+/mob/living/carbon/human/proc/alraune_poison_chosen(datum/act/request/A)
+	var/datum/prompt/choice/fruit_gland/ask = A.request
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		return
 	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.gland
-	var/poison_choice = ask.choice
+	if(QDELETED(fruit_gland))
+		return
+	var/poison_choice = A.answer ? ask.answer_value : ""
 	if(!poison_choice)
 		to_chat(src, span_notice("You have chosen no poison to add, any previously chosen poisons have been cleared and no poison will be added to produced fruits."))
 		fruit_gland.poison_reagent = null
@@ -301,4 +322,3 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 // MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
 /obj/item/organ/internal/fruitgland/life_step_idle()
 	return FALSE
-

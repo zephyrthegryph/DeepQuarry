@@ -92,3 +92,8 @@
 /// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 /datum/event2/event/brand_intelligence/proc/vender_zero() as /obj/machinery/vending
 	return vender_zero
+
+CAPABILITIES(/datum/event2/event/brand_intelligence)
+	ref_many(nameof(vending_machines))
+	ref_many(nameof(infected_vending_machines))
+	ref_one(nameof(vender_zero))

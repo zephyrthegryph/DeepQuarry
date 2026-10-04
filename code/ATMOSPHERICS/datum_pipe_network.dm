@@ -20,6 +20,8 @@
 	var/rust_authoritative = FALSE
 
 CAPABILITIES(/datum/pipe_network)
+	links(/datum/pipe_network::normal_members, /obj/machinery/atmospherics::network_memberships, a_many = TRUE, b_many = TRUE)
+	links(/datum/pipe_network::line_members, /datum/pipeline::network_memberships, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(air), /datum/gas_mixture)
 
 
@@ -265,10 +267,3 @@ CAPABILITIES(/datum/pipe_network)
 /// arena handle, so there is nothing to reconcile.
 /datum/pipe_network/proc/reconcile_air()
 	return
-
-// Rosters: two-sided with each member's network_memberships (ownership.md §4.1).
-/datum/pipe_network/relations()
-	. = ..()
-	. += rel_many(nameof(normal_members), back = nameof(/obj/machinery/atmospherics::network_memberships))
-	. += rel_many(nameof(line_members), back = nameof(/datum/pipeline::network_memberships))
-

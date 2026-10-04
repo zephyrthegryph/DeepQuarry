@@ -13,7 +13,7 @@
 	var/manipulator_rating = 0 //How good are the manipulators inside us?
 	var/assembled = 1 //Are we closed up?
 	var/list/guncomponents //Generate our list of components.
-	var/accepted_components = list(
+	var/static/list/accepted_components = list(
 		/obj/item/stock_parts/capacitor/,
 		/obj/item/stock_parts/capacitor,
 		/obj/item/stock_parts/capacitor,

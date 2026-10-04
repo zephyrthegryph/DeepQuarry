@@ -44,12 +44,34 @@
 	open_request(src, /datum/prompt/choice, PROC_REF(bloodsuck_target_chosen), answerer = src, title = "Suck Blood", question = "Who do you wish to bite? Select yourself to bring up configuration for privacy and bleeding. Beware! Configuration resets on new round!", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// A pop-up bloodsuck question (Yes/No); carries the target and the privacy answer.
-/datum/om/prompt/choice/bloodsuck
+/datum/prompt/choice/bloodsuck
+	timeout = 0
 	choices = list("Yes", "No")
 	buttons = TRUE
 	ask_flags = ASK_CONSCIOUS
 	var/mob/living/carbon/human/target
 	var/subtle
+
+CAPABILITIES(/datum/prompt/choice/bloodsuck)
+	ref_one(nameof(target), /mob/living/carbon/human)
+
+/datum/prompt/choice/bloodsuck/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured)
+
+/datum/prompt/choice/bloodsuck/begin()
+	if(QDELETED(target))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/bloodsuck/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(target) ? "target gone" : null
 
 /mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -67,7 +89,7 @@
 		if("always subtle")
 			noise = FALSE
 		if("pop-up")
-			om_ask(src, /datum/om/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_subtle), message = "Do you want to be subtle?", title = "Privacy", target = B)
+			open_request(src, /datum/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_subtle), answerer = src, question = "Do you want to be subtle?", title = "Privacy", target = B)
 			return
 		if("stance")
 			/*
@@ -95,13 +117,19 @@
 	if(mode == "stance") //We are printing to chat for better readability
 		to_chat(src, span_notice("You've chosen to use your stance for blood draining.\n Combat mode off - Loud, No Bleeding\n Disarm held - Subtle, Causes bleeding\n Grab held - Subtle, No Bleeding\n Combat mode on - Loud, Causes Bleeding"))
 
-/mob/living/carbon/human/proc/bloodsuck_popup_subtle(datum/om/prompt/choice/bloodsuck/ask)
-	om_ask(src, /datum/om/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_answered), message = "Do you want your target to keep bleeding?", title = "Continue Bleeding", target = ask.target, subtle = ask.choice)
+/mob/living/carbon/human/proc/bloodsuck_popup_subtle(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/bloodsuck/ask = A.request
+	open_request(src, /datum/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_answered), answerer = src, question = "Do you want your target to keep bleeding?", title = "Continue Bleeding", target = ask.target, subtle = A.answer.answer_value)
 
-/mob/living/carbon/human/proc/bloodsuck_popup_answered(datum/om/prompt/choice/bloodsuck/ask)
+/mob/living/carbon/human/proc/bloodsuck_popup_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/bloodsuck/ask = A.request
 	var/mob/living/carbon/human/B = ask.target
 	if(bloodsuck_can(B))
-		bloodsuck_begin(B, ask.subtle != "Yes", ask.choice == "Yes")
+		bloodsuck_begin(B, ask.subtle != "Yes", A.answer.answer_value == "Yes")
 
 /// Whether we can bite B right now (next to us, not on cooldown, has blood); says why not.
 /mob/living/carbon/human/proc/bloodsuck_can(mob/living/carbon/human/B)
@@ -514,52 +542,153 @@
 
 /// Asks which organs to shred (and where to swallow them), then starts on T.
 /mob/living/proc/shred_limb_begin(mob/living/carbon/human/T)
-	om_flow_start(/datum/om/flow/shred_limb, src, T)
+	var/datum/shred_limb_review/review = new
+	rel_set(review, nameof(review.actor), src)
+	rel_set(review, nameof(review.target), T)
+	review.start()
 
 /// Which external organ (confirmed when vital), which internal one if any (likewise), and a
 /// belly to swallow it into if any. The actor stays conscious throughout.
-/datum/om/flow/shred_limb
-	requires = PROMPT_CONSCIOUS
+/datum/shred_limb_review
+	parent_type = /datum/prompt_workflow
+	var/mob/living/actor
+	var/mob/living/carbon/human/target
 	var/obj/item/organ/external/T_ext
 	var/obj/item/organ/internal/T_int
 	var/obj/belly/B
+	var/external_selected = FALSE
+	var/internal_selected = FALSE
 
-/datum/om/flow/shred_limb/start()
-	//Let them pick any of the target's external organs. Picking something here is critical.
-	var/mob/living/carbon/human/T = target
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(external_chosen), message = "What do you wish to severely damage?", choices = T.organs, title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+CAPABILITIES(/datum/shred_limb_review)
+	ref_one(nameof(actor), /mob/living)
+	ref_one(nameof(target), /mob/living/carbon/human)
+	ref_one(nameof(T_ext), /obj/item/organ/external)
+	ref_one(nameof(T_int), /obj/item/organ/internal)
+	ref_one(nameof(B), /obj/belly)
 
-/datum/om/flow/shred_limb/proc/external_chosen(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(T_ext), ask.choice)
+/datum/prompt/choice/shred_limb
+	timeout = 0
+
+/datum/prompt/choice/shred_limb/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	var/datum/shred_limb_review/review = owner
+	return review.why_not()
+
+/datum/prompt/yes_no/shred_limb
+	timeout = 0
+
+/datum/prompt/yes_no/shred_limb/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/shred_limb_review/review = owner
+	return review.why_not()
+
+/datum/shred_limb_review/proc/why_not()
+	if(QDELETED(actor) || QDELETED(target) || (external_selected && QDELETED(T_ext)) || (internal_selected && QDELETED(T_int)))
+		return "gone"
+	return actor.stat != CONSCIOUS ? "not conscious" : null
+
+/datum/shred_limb_review/proc/start()
+	if(why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		failed_step("start", result.error)
+
+/datum/shred_limb_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/shred_limb, PROC_REF(external_chosen), answerer = actor, asker = actor, question = "What do you wish to severely damage?", choices = target.organs, title = "Organ Choice")
+
+/datum/shred_limb_review/proc/failed_step(step, error)
+	stack_trace("shred limb step [step]: [error]")
+	retire()
+
+/datum/shred_limb_review/proc/external_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(external_chosen_step), A)
+	if(!result.ok)
+		failed_step("external", result.error)
+
+/datum/shred_limb_review/proc/external_chosen_step(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	rel_set(src, nameof(T_ext), A.request.answer_value)
+	external_selected = TRUE
+	if(QDELETED(T_ext))
+		retire()
+		return
 	if(T_ext.vital)
-		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_internal), message = "Are you sure you wish to severely damage their [T_ext]? It will likely kill [target]...", title = "Shred Limb", ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/yes_no/shred_limb, PROC_REF(external_confirmed), answerer = actor, asker = actor, question = "Are you sure you wish to severely damage their [T_ext]? It will likely kill [target]...", title = "Shred Limb")
 		return
 	ask_internal()
 
-//Any internal organ, if there are any
-/datum/om/flow/shred_limb/proc/ask_internal()
+/datum/shred_limb_review/proc/external_confirmed(datum/act/request/A)
+	if(!A.answer || A.request.answer_value != TRUE)
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(ask_internal))
+	if(!result.ok)
+		failed_step("external confirmation", result.error)
+
+/datum/shred_limb_review/proc/ask_internal()
 	var/list/T_organs = T_ext.held_organs()
 	if(!length(T_organs))
 		ask_belly()
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(internal_chosen), message = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", choices = T_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice/shred_limb, PROC_REF(internal_chosen), answerer = actor, asker = actor, question = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", choices = T_organs, title = "Organ Choice")
 
-/datum/om/flow/shred_limb/proc/internal_chosen(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(T_int), ask.choice || null)
+/datum/shred_limb_review/proc/internal_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(internal_chosen_step), A)
+	if(!result.ok)
+		failed_step("internal", result.error)
+
+/datum/shred_limb_review/proc/internal_chosen_step(datum/act/request/A)
+	// Closing this optional question supplied an empty answer then rechecked the flow.
+	if(why_not() || (!A.answer && !isnull(A.request.answer_value)))
+		retire()
+		return
+	rel_set(src, nameof(T_int), A.answer ? A.request.answer_value : null)
+	if(A.answer && QDELETED(T_int))
+		retire()
+		return
+	internal_selected = !isnull(T_int)
 	if(T_int?.vital)
-		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_belly), message = "Are you sure you wish to severely damage their [T_int]? It will likely kill [target]...", title = "Shred Limb", ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/yes_no/shred_limb, PROC_REF(internal_confirmed), answerer = actor, asker = actor, question = "Are you sure you wish to severely damage their [T_int]? It will likely kill [target]...", title = "Shred Limb")
 		return
 	ask_belly()
 
-//And a belly, if they want
-/datum/om/flow/shred_limb/proc/ask_belly()
-	var/mob/living/L = actor
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(belly_chosen), message = "To where do you wish to swallow the organ if you tear if out? If not at all, click 'cancel'", choices = L.vore_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+/datum/shred_limb_review/proc/internal_confirmed(datum/act/request/A)
+	if(!A.answer || A.request.answer_value != TRUE)
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(ask_belly))
+	if(!result.ok)
+		failed_step("internal confirmation", result.error)
 
-/datum/om/flow/shred_limb/proc/belly_chosen(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(B), ask.choice || null)
-	var/mob/living/L = actor
-	L.shred_limb_answered(target, T_ext, T_int, B)
+/datum/shred_limb_review/proc/ask_belly()
+	open_request(src, /datum/prompt/choice/shred_limb, PROC_REF(belly_chosen), answerer = actor, asker = actor, question = "To where do you wish to swallow the organ if you tear if out? If not at all, click 'cancel'", choices = actor.vore_organs, title = "Organ Choice")
+
+/datum/shred_limb_review/proc/belly_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(belly_chosen_step), A)
+	if(!result.ok)
+		failed_step("belly", result.error)
+
+/datum/shred_limb_review/proc/belly_chosen_step(datum/act/request/A)
+	if(why_not() || (!A.answer && !isnull(A.request.answer_value)))
+		retire()
+		return
+	rel_set(src, nameof(B), A.answer ? A.request.answer_value : null)
+	if(A.answer && QDELETED(B))
+		retire()
+		return
+	actor.shred_limb_answered(target, T_ext, T_int, B)
+	retire()
 
 /mob/living/proc/shred_limb_answered(mob/living/carbon/human/T, obj/item/organ/external/T_ext, obj/item/organ/internal/T_int, obj/belly/B)
 	if(can_shred(T) != T || T_ext.owner != T || (T_int && T_int.owner != T) || (B && B.owner != src))
@@ -807,25 +936,42 @@
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice/victim/underwater, PROC_REF(underwater_devour_target_chosen), choices = targets)
+	open_request(src, /datum/prompt/choice/victim/underwater, PROC_REF(underwater_devour_target_chosen), answerer = src, choices = targets)
 
 /// Picking a victim for a vore ability. Re-checked on the answer: conscious.
-/datum/om/prompt/choice/victim
+/datum/prompt/choice/victim
+	timeout = 0
 	title = "Victim"
-	message = "Please select a target."
+	question = "Please select a target."
 	ask_flags = ASK_CONSCIOUS
 
-/// Also re-checked: still stealthed underwater, and the target is still next to us.
-/datum/om/prompt/choice/victim/underwater
+/datum/prompt/choice/victim/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	return null
 
-/datum/om/prompt/choice/victim/underwater/valid()
+/// Also re-checked: still stealthed underwater, and the target is still next to us.
+/datum/prompt/choice/victim/underwater
+
+/datum/prompt/choice/victim/underwater/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/L = answerer
-	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, choice) > 1)
+	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, answer_value) > 1)
 		return "lost the chance"
 	return null
 
-/mob/living/carbon/human/proc/underwater_devour_target_chosen(datum/om/prompt/choice/victim/underwater/ask)
-	var/mob/living/target = ask.choice
+/mob/living/carbon/human/proc/underwater_devour_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
 	var/starting_loc = target.loc
 
@@ -895,7 +1041,7 @@
 			if(!(targets.len))
 				to_chat(src, span_notice("No eligible targets found."))
 				return
-			om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(long_vore_target_chosen), choices = targets)
+			open_request(src, /datum/prompt/choice/victim, PROC_REF(long_vore_target_chosen), answerer = src, choices = targets)
 
 /mob/living/proc/appendage_color_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -907,8 +1053,12 @@
 		return
 	appendage_alt_setting = (A.answer.answer_value != "Pull target to self")
 
-/mob/living/proc/long_vore_target_chosen(datum/om/prompt/choice/victim/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/long_vore_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
@@ -1102,15 +1252,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice/victim/lunge, PROC_REF(target_lunge_chosen), choices = targets, leap_warmup = leap_warmup, leap_sound = leap_sound)
+		open_request(src, /datum/prompt/choice/victim/lunge, PROC_REF(target_lunge_chosen), answerer = src, choices = targets, leap_warmup = leap_warmup, leap_sound = leap_sound)
 
 /// Carries the lunge's warm-up and sound.
-/datum/om/prompt/choice/victim/lunge
+/datum/prompt/choice/victim/lunge
 	var/leap_warmup
 	var/leap_sound
 
-/mob/living/proc/target_lunge_chosen(datum/om/prompt/choice/victim/lunge/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/target_lunge_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/victim/lunge/ask = A.request
+	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
@@ -1256,10 +1411,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(injection_target_chosen), choices = targets)
+		open_request(src, /datum/prompt/choice/victim, PROC_REF(injection_target_chosen), answerer = src, choices = targets)
 
-/mob/living/proc/injection_target_chosen(datum/om/prompt/choice/victim/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/injection_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !Adjacent(target))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
@@ -1339,26 +1498,53 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		return
 
 	COOLDOWN_START(src, last_special, 60 SECONDS)
-	om_ask(src, /datum/om/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), grab = G, target = T)
+	open_request(src, /datum/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), answerer = src, grab = G, target = T)
 
 /// Re-checked on the answer: conscious, and still holding the target by the neck.
-/datum/om/prompt/choice/succubus_bite
+/datum/prompt/choice/succubus_bite
+	timeout = 0
 	title = "Reagent"
-	message = "What do you wish to inject?"
+	question = "What do you wish to inject?"
 	choices = list(REAGENT_APHRODISIAC, "Numbing", "Paralyzing")
 	ask_flags = ASK_CONSCIOUS
 	var/obj/item/grab/grab
 	var/mob/living/carbon/human/target
 
-/datum/om/prompt/choice/succubus_bite/valid()
-	if(answerer.get_active_hand() != grab || grab.grab_target() != target || grab.state != GRAB_NECK)
-		to_chat(answerer, span_warning("You must have a tighter grip to bite this creature."))
-		return "lost grip"
-	return null
+CAPABILITIES(/datum/prompt/choice/succubus_bite)
+	ref_one(nameof(grab), /obj/item/grab)
+	ref_one(nameof(target), /mob/living/carbon/human)
 
-/mob/living/proc/succubus_bite_chosen(datum/om/prompt/choice/succubus_bite/ask)
+/datum/prompt/choice/succubus_bite/prepare(datum/act/A)
+	..()
+	var/obj/item/grab/captured_grab = grab
+	var/mob/living/carbon/human/captured_target = target
+	rel_clear(src, nameof(grab))
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(grab), captured_grab)
+	rel_set(src, nameof(target), captured_target)
+
+/datum/prompt/choice/succubus_bite/begin()
+	if(QDELETED(grab) || QDELETED(target))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/succubus_bite/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(grab) || QDELETED(target))
+		return "gone"
+	return answerer.get_active_hand() != grab || grab.grab_target() != target || grab.state != GRAB_NECK ? "lost grip" : null
+
+/mob/living/proc/succubus_bite_chosen(datum/act/request/A)
+	var/datum/prompt/choice/succubus_bite/ask = A.request
+	if(!A.answer)
+		if(!isnull(ask.answer_value) && ask.last_error == "lost grip")
+			to_chat(src, span_warning("You must have a tighter grip to bite this creature."))
+		return
 	var/mob/living/carbon/human/T = ask.target
-	var/choice = ask.choice
+	var/choice = A.answer.answer_value
 	act_message(src, T, others = span_bolddanger("%U% moves their head next to %T%'s neck, seemingly looking for something!"))
 
 	om_task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
@@ -1486,22 +1672,33 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	var/list/victims = list()
 	for(var/mob/living/carbon/C in oview(1))
 		victims += C
-	om_ask(src, /datum/om/prompt/choice/insect_sting, PROC_REF(insect_sting_chosen), choices = victims)
+	open_request(src, /datum/prompt/choice/insect_sting, PROC_REF(insect_sting_chosen), answerer = src, choices = victims)
 
 /// Re-checked on the answer: conscious, off cooldown, and next to the target.
-/datum/om/prompt/choice/insect_sting
+/datum/prompt/choice/insect_sting
+	timeout = 0
 	title = "Target"
-	message = "Who will we sting?"
+	question = "Who will we sting?"
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/insect_sting/valid()
+/datum/prompt/choice/insect_sting/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = answer_value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
 	var/mob/living/L = answerer
-	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(choice))
+	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(answer_value))
 		return "can't reach"
 	return null
 
-/mob/living/proc/insect_sting_chosen(datum/om/prompt/choice/insect_sting/ask)
-	var/mob/living/carbon/T = ask.choice
+/mob/living/proc/insect_sting_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/T = A.answer.answer_value
+	if(T && QDELETED(T))
+		return
 	if(HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
@@ -1530,22 +1727,44 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	if(!(targets.len))
 		to_chat(src, span_notice("No eligible targets found."))
 		return
-	om_ask(src, /datum/om/prompt/choice/victim/absorbed, PROC_REF(absorb_devour_chosen), choices = targets, belly = belly)
+	open_request(src, /datum/prompt/choice/victim/absorbed, PROC_REF(absorb_devour_chosen), answerer = src, choices = targets, belly = belly)
 
 /// An absorbed prey picking a victim for its pred's belly. Re-checked on the answer: still
 /// absorbed in that belly, inside a living pred. (No consciousness check.)
-/datum/om/prompt/choice/victim/absorbed
+/datum/prompt/choice/victim/absorbed
 	ask_flags = NONE
 	var/obj/belly/belly
 
-/datum/om/prompt/choice/victim/absorbed/valid()
+CAPABILITIES(/datum/prompt/choice/victim/absorbed)
+	ref_one(nameof(belly), /obj/belly)
+
+/datum/prompt/choice/victim/absorbed/prepare(datum/act/A)
+	..()
+	var/obj/belly/captured = belly
+	rel_clear(src, nameof(belly))
+	rel_set(src, nameof(belly), captured)
+
+/datum/prompt/choice/victim/absorbed/begin()
+	if(QDELETED(belly))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/victim/absorbed/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/L = answerer
-	if(!L.absorbed || L.loc != belly || !isliving(belly.loc))
+	if(QDELETED(belly) || !L.absorbed || L.loc != belly || !isliving(belly.loc))
 		return "not absorbed"
 	return null
 
-/mob/living/proc/absorb_devour_chosen(datum/om/prompt/choice/victim/absorbed/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/absorb_devour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.answer_value
+	if(target && QDELETED(target))
+		return
 	var/mob/living/pred = loc.loc
 	var/obj/belly/belly = loc
 	if(!isliving(target)) //Safety.

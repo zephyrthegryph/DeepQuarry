@@ -474,30 +474,45 @@
 
 	open_request(src, /datum/prompt/choice, PROC_REF(hand_games_partner_chosen), answerer = src, title = "Hand games", question = "Choose a game partner:", choices = nearby, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/// Which game to play; carries the partner.
-/datum/om/prompt/choice/hand_game
+/// Which game to play; carries the partner without retaining either participant.
+/datum/prompt/choice/hand_game
 	title = "Hand games"
 	choices = list("Rock, Paper, Scissors", "Arm Wrestling", "Slap Hands", "Thumb Wars", "Cancel")
 	buttons = TRUE
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 	var/mob/living/carbon/human/partner
 
-/datum/om/prompt/choice/hand_game/prepare()
-	message = "Choose a game to play with [partner]?"
-	return TRUE
+CAPABILITIES(/datum/prompt/choice/hand_game)
+	ref_one(nameof(partner), /mob/living/carbon/human)
+
+/datum/prompt/choice/hand_game/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured_partner = partner
+	rel_clear(src, nameof(partner))
+	rel_set(src, nameof(partner), captured_partner)
+	question = "Choose a game to play with [partner]?"
+
+/datum/prompt/choice/hand_game/recheck_extra()
+	return QDELETED(partner) ? "gone" : null
 
 /mob/living/carbon/human/proc/hand_games_partner_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	om_ask(src, /datum/om/prompt/choice/hand_game, PROC_REF(hand_games_chosen), partner = A.answer.answer_value)
-
-/mob/living/carbon/human/proc/hand_games_chosen(datum/om/prompt/choice/hand_game/ask)
-	if(ask.choice == "Cancel")
+	var/mob/living/carbon/human/partner = A.answer.answer_value
+	if(!istype(partner) || QDELETED(partner))
 		return
-	hand_game_invite(ask.partner, ask.choice)
+	open_request(src, /datum/prompt/choice/hand_game, PROC_REF(hand_games_chosen), answerer = src, partner = partner)
+
+/mob/living/carbon/human/proc/hand_games_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/hand_game/ask = A.answer
+	if(ask.answer_value == "Cancel" || QDELETED(ask.partner))
+		return
+	hand_game_invite(ask.partner, ask.answer_value)
 
 // Checks to make sure everything is fine to continue playing.
-
 /mob/living/carbon/human/proc/hand_games_check(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
 	if(!istype(player1) || !istype(player2))
 		return 0
@@ -505,81 +520,142 @@
 		return 0
 	if(!(player2 in range(player1,2))) //Just make sure they're within 2 spaces still.
 		return 0
-
 	return 1
 
-// A hand game is a flow: player 1 (the actor) invites player 2 (the target); then, for the
-// games with a choice, player 1 and player 2 choose in turn. hand_games_check() is re-checked
-// before every step.
-
+/// Each answered step rechecks the original pair; cancellation is a decline even after movement.
 /mob/living/carbon/human/proc/hand_game_invite(mob/living/carbon/human/player2, game)
-	om_flow_start(/datum/om/flow/hand_game, src, player2, game = game)
+	open_request(src, /datum/prompt/choice/hand_game_invite, PROC_REF(hand_game_invitation_answered), answerer = player2, asker = src, partner = player2, game = game)
 
-/datum/om/flow/hand_game
+/datum/prompt/choice/hand_game_move
+	buttons = TRUE
+	timeout = 0
+	var/mob/living/carbon/human/partner
 	var/game
-	/// Player 1's move.
 	var/choice1
+	var/second_move = FALSE
 
-/datum/om/flow/hand_game/valid()
-	var/mob/living/carbon/human/player1 = actor
-	return player1.hand_games_check(actor, target) ? null : "can't play"
+CAPABILITIES(/datum/prompt/choice/hand_game_move)
+	ref_one(nameof(partner), /mob/living/carbon/human)
 
-/datum/om/flow/hand_game/ended(reason)
-	if(actor && target && (reason == "declined" || reason == "cancelled"))
-		to_chat(actor, span_warning("[target] declines to play the game."))
+/datum/prompt/choice/hand_game_move/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured_partner = partner
+	rel_clear(src, nameof(partner))
+	rel_set(src, nameof(partner), captured_partner)
 
-/// Player 2 is asked to play.
-/datum/om/prompt/confirm/hand_game_invite
-	yes_text = "Play"
-	no_text = "Refuse"
-	var/game
+/datum/prompt/choice/hand_game_move/recheck_extra()
+	var/mob/living/carbon/human/player1 = owner
+	if(QDELETED(player1) || QDELETED(partner))
+		return "gone"
+	return player1.hand_games_check(player1, partner) ? null : "can't play"
 
-/datum/om/prompt/confirm/hand_game_invite/prepare()
+/datum/prompt/choice/hand_game_invite
+	parent_type = /datum/prompt/choice/hand_game_move
+	choices = list("Play", "Refuse")
+	var/initial_refusal
+
+/datum/prompt/choice/hand_game_invite/begin()
+	initial_refusal = request_recheck(src)
+	if(initial_refusal)
+		request_end(src, REQ_CANCELLED, null)
+		return
+	var/mob/living/carbon/human/player1 = owner
+	to_chat(player1, span_notice("Asking [partner] if they want to play [game]!"))
+	return ..()
+
+/datum/prompt/choice/hand_game_invite/prepare(datum/act/A)
+	..()
 	title = game
-	message = "[asker] wants to play [game]."
-	return TRUE
+	question = "[asker] wants to play [game]."
 
-/datum/om/flow/hand_game/start()
-	var/mob/living/carbon/human/player1 = actor
-	to_chat(player1, span_notice("Asking [target] if they want to play [game]!"))
-	om_ask(target, /datum/om/prompt/confirm/hand_game_invite, PROC_REF(invite_answered), game = game)
+/datum/prompt/choice/hand_game_invite/recheck_extra()
+	// A refused legacy confirm stops before the flow's continuation recheck.
+	if(answer_value == "Refuse")
+		return null
+	return ..()
 
-/// Asks `player` for their move in this game; `next` gets the prompt.
-/datum/om/flow/hand_game/proc/ask_move(mob/living/carbon/human/player, next)
+/datum/prompt/number/hand_game_move
+	min_value = 1
+	max_value = 10
+	step = 1
+	default = 5
+	timeout = 0
+	var/mob/living/carbon/human/partner
+	var/game
+	var/choice1
+	var/second_move = FALSE
+
+CAPABILITIES(/datum/prompt/number/hand_game_move)
+	ref_one(nameof(partner), /mob/living/carbon/human)
+
+/datum/prompt/number/hand_game_move/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured_partner = partner
+	rel_clear(src, nameof(partner))
+	rel_set(src, nameof(partner), captured_partner)
+
+/datum/prompt/number/hand_game_move/recheck_extra()
+	var/mob/living/carbon/human/player1 = owner
+	if(QDELETED(player1) || QDELETED(partner))
+		return "gone"
+	return player1.hand_games_check(player1, partner) ? null : "can't play"
+
+/mob/living/carbon/human/proc/hand_game_invitation_answered(datum/act/request/A)
+	var/datum/prompt/choice/hand_game_invite/ask = A.request
+	if(ask.initial_refusal || QDELETED(ask.partner) || QDELETED(ask.answerer))
+		return
+	if(ask.answer_value == "Refuse" || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		to_chat(src, span_warning("[ask.partner] declines to play the game."))
+		return
+	if(!A.answer)
+		return
+	hand_game_invite_answered(ask.partner, ask.game)
+	if(ask.game != "Thumb Wars")
+		ask_hand_game_move(ask.partner, ask.game, null, FALSE)
+
+/// Move questions remain integer-valued or literal choices, including the playable "Cancel" choice.
+/mob/living/carbon/human/proc/ask_hand_game_move(mob/living/carbon/human/player2, game, choice1, second_move)
+	var/mob/living/carbon/human/player = second_move ? player2 : src
 	switch(game)
 		if("Rock, Paper, Scissors")
-			om_ask(player, /datum/om/prompt/choice, next, message = "Choose your attack!", title = "Rock, Paper, Scissors", choices = list("Rock", "Paper", "Scissors", "Cancel"), buttons = TRUE)
+			open_request(src, /datum/prompt/choice/hand_game_move, PROC_REF(hand_game_move_answered), answerer = player, asker = src, partner = player2, game = game, choice1 = choice1, second_move = second_move, question = "Choose your attack!", title = "Rock, Paper, Scissors", choices = list("Rock", "Paper", "Scissors", "Cancel"))
 		if("Arm Wrestling")
-			om_ask(player, /datum/om/prompt/number, next, message = "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong).", title = "Strength", min = 1, max = 10, default = 5)
+			open_request(src, /datum/prompt/number/hand_game_move, PROC_REF(hand_game_move_answered), answerer = player, asker = src, partner = player2, game = game, choice1 = choice1, second_move = second_move, question = "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong).", title = "Strength")
 		if("Slap Hands")
-			om_ask(player, /datum/om/prompt/number, next, message = "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast).", title = "Speed", min = 1, max = 10, default = 5)
+			open_request(src, /datum/prompt/number/hand_game_move, PROC_REF(hand_game_move_answered), answerer = player, asker = src, partner = player2, game = game, choice1 = choice1, second_move = second_move, question = "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast).", title = "Speed")
 
-/// The move a move prompt answered.
-/datum/om/flow/hand_game/proc/move_of(datum/om/prompt/ask)
-	if(istype(ask, /datum/om/prompt/choice))
-		var/datum/om/prompt/choice/pick = ask
-		return pick.choice
-	var/datum/om/prompt/number/amount = ask
-	return amount.number
-
-/datum/om/flow/hand_game/proc/invite_answered(datum/om/prompt/confirm/hand_game_invite/ask)
-	var/mob/living/carbon/human/player1 = actor
-	var/mob/living/carbon/human/player2 = target
-	player1.hand_game_invite_answered(player2, game)
-	if(game != "Thumb Wars")
-		ask_move(player1, PROC_REF(first_choice))
-
-/datum/om/flow/hand_game/proc/first_choice(datum/om/prompt/ask)
-	var/mob/living/carbon/human/player1 = actor
-	choice1 = move_of(ask)
+/mob/living/carbon/human/proc/hand_game_move_answered(datum/act/request/A)
+	var/datum/request/request = A.request
+	var/mob/living/carbon/human/player2
+	var/game
+	var/choice1
+	var/second_move
+	if(istype(request, /datum/prompt/choice/hand_game_move))
+		var/datum/prompt/choice/hand_game_move/pick = request
+		player2 = pick.partner
+		game = pick.game
+		choice1 = pick.choice1
+		second_move = pick.second_move
+	else
+		var/datum/prompt/number/hand_game_move/amount = request
+		player2 = amount.partner
+		game = amount.game
+		choice1 = amount.choice1
+		second_move = amount.second_move
+	if(QDELETED(player2) || QDELETED(request.answerer))
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && isnull(request.answer_value))
+			to_chat(src, span_warning("[player2] declines to play the game."))
+		return
+	if(second_move)
+		hand_game_second_choice(player2, game, choice1, request.answer_value)
+		return
+	choice1 = request.answer_value
 	if(choice1 == "Cancel")
-		act_message(player1, null, others = span_notice("%U% chickens out!"))
-	to_chat(player1, span_warning("[target] is [game == "Rock, Paper, Scissors" ? "deciding" : "getting ready"]."))
-	ask_move(target, PROC_REF(second_choice))
-
-/datum/om/flow/hand_game/proc/second_choice(datum/om/prompt/ask)
-	var/mob/living/carbon/human/player1 = actor
-	player1.hand_game_second_choice(target, game, choice1, move_of(ask))
+		act_message(src, null, others = span_notice("%U% chickens out!"))
+	to_chat(src, span_warning("[player2] is [game == "Rock, Paper, Scissors" ? "deciding" : "getting ready"]."))
+	ask_hand_game_move(player2, game, choice1, TRUE)
 
 /mob/living/carbon/human/proc/hand_game_invite_answered(mob/living/carbon/human/player2, game)
 	switch(game)
