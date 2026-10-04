@@ -116,7 +116,11 @@ enters, leaves or is created on reads its own bucket (`RANGE_WATCH()`, behind on
 | handler `h(datum/om/prompt/text/ask)` | `h(datum/act/request/A)` starting with the guard of the old trigger: `if(!A.answer) return`, and for a confirm without `answer_on_no` also `|| !A.answer.answer_value`; `ask.<answer>` -> `A.answer.answer_value`, `ask.answerer` -> `A.request.answerer` |
 
 `/datum/prompt/text` gained `encode` (default TRUE, what its window always did); the old kind's `encode = FALSE` is passed through.
-A subtype of a kind with its own state (`/choice/radial`, `/color/<subtype>`, `/text/<subtype>`) is residue: the radial kind has `autopick_single_option`, `require_near`, `click_on_hover`, `user_space` and `uniqueid` and the new choice prompt's radial ring has none of them. `ask_flags` and `requires` re-check the roles when the answer arrives (code/datums/om/ask.dm, `ASK_*`); the request's equivalent is `valid = PROC_REF(x)`, which has no flag helper yet, so those sites wait for one. The same for the 130 sites in a `/datum/om/flow`.
+`/datum/om/prompt/choice/radial` (literally) becomes `/datum/prompt/choice` with `radial = TRUE` and the ring's options under the same names (`anchor`, `radius`, `tooltips`, `radial_slice_icon`, `autopick_single_option`, `entry_animation`, `click_on_hover`, `user_space`, `require_near`, `uniqueid`); the answer is `choice`, as for any choice. The old kind differs from the new defaults in two places, so the codemod writes both when they are not given: `anchor = src` (the old ring is anchored on the receiver when that is an atom; outside an atom the site is residue `radial_anchor_unknown`) and `autopick_single_option = TRUE` (a lone choice answers itself; the new kind's default is off so converted callers keep what they had). A radial site needs no `message`.
+
+`ask_flags` and `requires` become request fields re-checked when the answer arrives (`request_recheck()`, code/engine/kernel/requests.dm; a failure ends the request cancelled, so the handler's `if(!A.answer) return` guard drops it, as the old prompt dropped the answer): `ask_flags = ASK_*` is passed through unchanged; `requires = PROMPT_ADMIN(r)` becomes `rights = r`; `requires = PROMPT_USABLE_BY("state")` becomes `usable_state = "state"` (an atom owner only); `list(/datum/om/check/inside_target)` adds `ASK_INSIDE`; `list(/datum/om/check/not_incapacitated)` adds `ASK_CAPABLE`. The asker defaults to the answerer and the subject to the owner when it is an atom, as in the old roles; a site that names `asker`, `subject` or `receiver` stays residue. Any other `requires` is residue `requires_unknown`.
+
+A subtype of a kind with its own state (`/color/<subtype>`, `/text/<subtype>`, `/choice/<subtype>`) is residue: it carries state and checks of its own. The same for the sites in a `/datum/om/flow`.
 
 Residue: `argc`, `kind_unsupported` (a subtype of a kind carries its own state and checks), `roles_or_checks` (`asker`, `subject`, `receiver`, `requires`, `ask_flags`,
 `optional`, any `cancel_*`, `yes_text`, `no_text`, `ui_refresh`, `key`), `unsupported_param`, `no_message`, `name_text_unknown`, `handler_expr`, `comment_in_call`, `value_used`,
@@ -183,8 +187,9 @@ into several ops (a `when()` for each branch); the codemod never splits a handle
 
 Evidence for the verb: the duffelbag tilt (`241131f467`), `INTERACT_VERB("Adjust Duffelbag Angle", ..., REQ_IN_INVENTORY)` -> `op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried()), then(...))`. A verb's `held` parameter is not the actor's held item in a menu input, so a verb handler that reads it stays residue (`body_uses`); a verb's return is ignored like a USE.
 
-Why the returns matter: an old HAND, INSERT or ITEM effect that returned falsy let the next candidate (or the type's default) have the input, and an op cannot decline once its handler runs. So these three convert only when the
-handler never returns anything but `TRUE` and ends with `return TRUE`; an `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` is the `passes()` part and stays residue.
+Why the returns matter: an old HAND, INSERT or ITEM effect that returned falsy let the next candidate (or the type's default) have the input. The op form says the same with `OP_DECLINE` (next section): every
+falsy return (`return FALSE`, `return 0`, `return null`, a bare `return`) becomes `return OP_DECLINE`, and a handler converts only when every return is one of those or `TRUE` and the last statement is a return (a handler that falls off its end
+answered falsy before and would commit now: residue `handler_returns`). An `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` is the `passes()` part and stays residue.
 
 A type converts only when:
 - it is not in a hierarchy with a type that REPLACES what it inherits (a `DECLARE_INTERACTIONS` or a `get_interactions` / `declare_interactions` override that does not call `..()`): ops accumulate down the tree, so a replacement would stop meaning anything. `EXTEND_INTERACTIONS` only adds and never blocks;
@@ -194,3 +199,18 @@ A type converts only when:
 
 Residue codes: `interaction_forms` (an `EXTEND_INTERACTIONS`, a `declare_interactions` override or a datum interaction type, a second row, a name or effect that is not a literal), `interaction_related`, `interaction_kind` (`INTERACT_HAND_UNGATED`, `INTERACT_ALT`, `INTERACT_SELF`, `INTERACT_VERB`,
 the `_AS`, `_HOSTILE`, `_PEACEFUL`, `_DEFAULT`, `INTERACT_SILICON`, `ROBOT`, `TK`, `OBSERVER` shapes), `requires`, `effect_expr`, `handler_shape`, `handler_shared`, `handler_returns`, `body_uses`, `key_clash`.
+
+## OP_DECLINE: an op handler that is not handled
+
+An op's `then(PROC_REF(h))` handler (or any effect proc) that answers `OP_DECLINE` says "not handled after all": the op ends `ACT_DECLINED` with nothing committed (reservations released, so no cost), nothing told to the actor, no notice
+published and no game-log line, and the click goes on to the next candidate whose `when()` holds, then the next, and on to the legacy click handling when none is left. It is the op form of the veto hooks' `HOOK_DECLINE`.
+
+| Old | New |
+|---|---|
+| an old interaction or attack handler that answered falsy to let the next candidate or the default have the input (`return FALSE`, `return 0`, `return null`, bare `return`) | `return OP_DECLINE` |
+| a handler that answered `TRUE` | `return OP_OK` (or `TRUE`; the engine reads both as committed) |
+
+Rules. Decline from the first statement that knows, before anything is written: effects that already ran are not undone (the old code had the same property: its writes before the falsy return stayed). The decline result is
+`ACT_DECLINED` (never a filter, not in `ACT_ANY`); `perform_op()` and the test driver return it in `/datum/op_result` when every candidate declined, a player's click returns null (the mob's own click handling runs). An op that is waiting
+(`wait()` steps) and declines at its final effect has already spent the wait: decline is for immediate ops. `interact_declare.py` applies the table to `INTERACT_HAND`, `INTERACT_INSERT` and `INTERACT_ITEM` handlers
+(tools/dx/codemods/interact_declare.py); the wave that lands it converted 24 types (26 ops). Tests: `dq_gap/op_decline_falls_through`, `dq_gap/op_decline_alone_is_not_handled`.

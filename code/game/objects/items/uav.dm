@@ -86,14 +86,16 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		"(Dis)Assemble" = radial_wrench,
 		"Toggle Power" = radial_power,
 		"Pairing Mode" = radial_pair)
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(option_chosen), choices = options, anchor = src, require_near = !issilicon(user))
+	open_request(src, /datum/prompt/choice, PROC_REF(option_chosen), answerer = user, choices = options, anchor = src, require_near = !issilicon(user), radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 	return TRUE
 
-/obj/item/uav/proc/option_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
+/obj/item/uav/proc/option_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
 	if(!user || user.incapacitated() || !isturf(loc))
 		return
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		// Can pick up when off or packed
 		if("Pick Up")
 			if(state == UAV_OFF || state == UAV_PACKED)
@@ -132,14 +134,16 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
 
 	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
-		om_ask(user, /datum/om/prompt/text, PROC_REF(nickname_entered), title = "Nickname", message = "Enter a nickname for [src]", default = nickname, max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(nickname_entered), answerer = user, title = "Nickname", question = "Enter a nickname for [src]", default = nickname, max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/uav/proc/nickname_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/tmp_label = ask.text
+/obj/item/uav/proc/nickname_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/tmp_label = A.answer.answer_value
 	if(length(tmp_label) > 50 || length(tmp_label) < 3)
 		to_chat(user, span_notice("The nickname must be between 3 and 50 characters."))
 	else

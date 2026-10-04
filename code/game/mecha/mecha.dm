@@ -601,12 +601,14 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		"View Stats" = radial_image_statpanel
 	)
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(occupant_option_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(occupant_option_chosen), answerer = user, choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/mecha/proc/occupant_option_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
+/obj/mecha/proc/occupant_option_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	var/choice = ask.choice
+	var/choice = A.answer.answer_value
 	if(!check_occupant_radial(user))
 		return
 	if(!choice)
@@ -2424,7 +2426,7 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 /obj/mecha/proc/topic_change_name(mob/user, list/args)
 	if(!topic_is_pilot(user))
 		return
-	om_ask(user, /datum/om/prompt/text, PROC_REF(exosuit_renamed), default = initial(name), title = "Rename exosuit", message = "Choose new exosuit name", max_length = MAX_NAME_LEN, encode = FALSE, requires = list(/datum/om/check/inside_target))
+	open_request(src, /datum/prompt/text, PROC_REF(exosuit_renamed), answerer = user, title = "Rename exosuit", question = "Choose new exosuit name", default = initial(name), max_len = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_INSIDE, name_text = TRUE, timeout = 0)
 
 /obj/mecha/proc/topic_toggle_id_upload(mob/user, list/args)
 	if(!topic_is_pilot(user))
@@ -2511,12 +2513,14 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 		T.Entered(O)
 	mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - length(cargo)]")
 
-/obj/mecha/proc/exosuit_renamed(datum/om/prompt/text/ask)
-	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/obj/mecha/proc/exosuit_renamed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newname = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
 	if(newname)
 		name = newname
 	else
-		tgui_alert_async(ask.answerer, "nope.avi")
+		tgui_alert_async(A.request.answerer, "nope.avi")
 
 /// Maintenance-panel settings: re-checked on the answer, still next to the mech with its bolts exposed.
 /datum/om/prompt/number/mecha_maint

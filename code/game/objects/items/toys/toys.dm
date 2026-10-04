@@ -213,11 +213,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_ove
 	if(!in_range(src, user))	//Basic checks to prevent abuse
 		return TRUE
 
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(ask_blade_color), answerer = user, title = "Confirm Recolor", question = "Are you sure you want to recolor your blade?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/toy/sword/proc/ask_blade_color(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+/obj/item/toy/sword/proc/ask_blade_color(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	om_ask(A.request.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
 /obj/item/toy/sword/proc/blade_recolored(datum/om/prompt/color/ask)
 	if(ask.picked_color)
@@ -912,11 +914,13 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	if(!M.mind)
 		return 0
 
-	om_ask(M, /datum/om/prompt/text, PROC_REF(plushie_named), message = "What do you want to name the plushie?", default = "", max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(plushie_named), answerer = M, question = "What do you want to name the plushie?", default = "", max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
 
-/obj/item/toy/plushie/proc/plushie_named(datum/om/prompt/text/ask)
-	var/mob/M = ask.answerer
-	var/input = ask.text
+/obj/item/toy/plushie/proc/plushie_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/M = A.request.answerer
+	var/input = A.answer.answer_value
 	if(input)
 		name = input
 		// Rename possessed voices too

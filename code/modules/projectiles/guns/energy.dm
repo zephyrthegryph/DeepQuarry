@@ -181,14 +181,16 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 	. = ..()
 	load_ammo(A, user)
 
-DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/gun/energy)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/gun/energy/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/energy/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		unload_ammo(user)
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/gun/energy/proc/get_external_power_supply()

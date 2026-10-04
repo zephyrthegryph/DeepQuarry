@@ -2120,8 +2120,8 @@ world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)
 world_reads	code/game/objects/items/devices/e_beacon.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
 world_reads	code/game/objects/items/devices/pipe_painter.dm	for(var/C in GLOB.pipe_colors)
-world_reads	code/game/objects/items/devices/radio/intercom.dm	channels = GLOB.radiochannels.Copy()
 world_reads	code/game/objects/items/devices/radio/intercom.dm	internal_channels = GLOB.default_medbay_channels.Copy()
+world_reads	code/game/objects/items/devices/radio/intercom.dm	channels = GLOB.radiochannels.Copy()
 world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_internal_channels.Copy()
 world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()

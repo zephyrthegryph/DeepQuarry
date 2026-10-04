@@ -5,10 +5,13 @@
 	w_class = ITEMSIZE_COST_LARGE
 	resistance_flags = FIRE_PROOF | UNACIDABLE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT_INSERT(/obj/item/assembly/signaler/anomaly, PROC_REF(reactive_shell_insert_core), "Insert anomaly core"))
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive_armor_shell)
+	op("reactive_shell_insert_core", item(/obj/item/assembly/signaler/anomaly), label("Insert anomaly core"), then(PROC_REF(reactive_shell_insert_core)))
 
 /// Old attackby: install an anomaly core.
-/obj/item/clothing/suit/armor/reactive_armor_shell/proc/reactive_shell_insert_core(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/suit/armor/reactive_armor_shell/proc/reactive_shell_insert_core(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/static/list/anomaly_armour_types = list(
 		/obj/effect/anomaly/grav = /obj/item/clothing/suit/armor/reactive/repulse,
 		/obj/effect/anomaly/flux = /obj/item/clothing/suit/armor/reactive/tesla,
@@ -29,7 +32,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT
 		replace_with(src, armour_path)
 		consume(anomaly, user)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/suit/armor/reactive
 	name = "reactive armor"

@@ -720,11 +720,13 @@ VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_ad
 	 * "gearlist" = array of types (yes the types are not valid json, byond parses them into real types.)
 	 * "req_one_access" = array of numbers (accesses)
 	 */
-	om_ask(user, /datum/om/prompt/text, PROC_REF(gear_pack_entered), message = "Paste new gear pack JSON below. See example/code comments.", title = "Admin-load Dispenser", default = example, multiline = TRUE, requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
+	open_request(src, /datum/prompt/text, PROC_REF(gear_pack_entered), answerer = user, title = "Admin-load Dispenser", question = "Paste new gear pack JSON below. See example/code comments.", default = example, multiline = TRUE, rights = R_DEBUG|R_FUN, timeout = 0)
 
-/obj/machinery/gear_dispenser/proc/gear_pack_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/input = ask.text
+/obj/machinery/gear_dispenser/proc/gear_pack_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/input = A.answer.answer_value
 
 	var/list/parsed = json_decode(input)
 

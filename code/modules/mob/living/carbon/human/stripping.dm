@@ -1,6 +1,8 @@
-/mob/living/carbon/human/proc/strip_underwear_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/datum/category_group/underwear/UWC = ask.choice
+/mob/living/carbon/human/proc/strip_underwear_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/datum/category_group/underwear/UWC = A.answer.answer_value
 	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(user, span_notice("\The [src] does not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
@@ -51,7 +53,7 @@
 			om_task_start(/datum/om/task/timed/human_handle_strip_human, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, suit = suit, A = A)
 			return
 		if("underwear")
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(strip_underwear_chosen), title = "Show/hide underwear", message = "Choose underwear. (Do not do this without OOC permission from the other player)", choices = GLOB.global_underwear.categories, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice, PROC_REF(strip_underwear_chosen), answerer = user, title = "Show/hide underwear", question = "Choose underwear. (Do not do this without OOC permission from the other player)", choices = GLOB.global_underwear.categories, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 			return
 
 	// Are we placing or stripping?

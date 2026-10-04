@@ -48,26 +48,16 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 		return FALSE
 
 	. = TRUE
-	om_ask(user, /datum/om/prompt/confirm/platform_control, PROC_REF(ghost_control_answered))
+	open_request(src, /datum/prompt/yes_no, PROC_REF(ghost_control_answered), answerer = user, valid = PROC_REF(ghost_control_askable), title = "Platform Control", question = "Do you wish to take control of \the [src]?", timeout = 0)
 
-/// A ghost takes a platform. Re-checked on the answer: still a ghost, and the platform is
-/// still empty, alive, and the round is running.
-/datum/om/prompt/confirm/platform_control
-	title = "Platform Control"
-	no_first = TRUE
+/// A ghost takes a platform. Re-checked on the answer: still a ghost, and the platform is still empty, alive, and the round is running.
+/mob/living/silicon/robot/platform/proc/ghost_control_askable(datum/request/R)
+	return isobserver(R.answerer) && !client && !key && stat != DEAD && SSticker && SSticker.mode
 
-/datum/om/prompt/confirm/platform_control/prepare()
-	message = "Do you wish to take control of \the [subject]?"
-	return TRUE
-
-/datum/om/prompt/confirm/platform_control/valid()
-	var/mob/living/silicon/robot/platform/P = subject
-	if(!isobserver(answerer) || P.client || P.key || P.stat == DEAD || !SSticker || !SSticker.mode)
-		return "unavailable"
-	return null
-
-/mob/living/silicon/robot/platform/proc/ghost_control_answered(datum/om/prompt/confirm/platform_control/ask)
-	var/mob/observer/dead/user = ask.answerer
+/mob/living/silicon/robot/platform/proc/ghost_control_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/observer/dead/user = A.request.answerer
 
 	if(jobban_isbanned(user, "Robot"))
 		to_chat(user, span_warning("You are banned from synthetic roles and cannot take control of \the [src]."))

@@ -109,15 +109,15 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 		options[Iname] = integrated_tool_images[Iname]
 
 	// A single tool is picked at once (autopick_single_option).
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(tool_chosen), choices = options, anchor = src, radius = 40, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(tool_chosen), answerer = user, radial = TRUE, choices = options, anchor = src, radius = 40, require_near = TRUE, autopick_single_option = TRUE, timeout = 0)
 	return TRUE
 
 /// Tool radial answer.
-/obj/item/robotic_multibelt/proc/tool_chosen(datum/om/prompt/choice/radial/ask)
-	if(!ask.choice)
+/obj/item/robotic_multibelt/proc/tool_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
 	cut_overlays()
-	assume_selected_item(integrated_tool_named(ask.choice))
+	assume_selected_item(integrated_tool_named(A.answer.answer_value))
 
 /obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
 	if(!chosen_item)
@@ -249,10 +249,12 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	set name = "Change Colour"
 	set category = VERB_CAT_OBJECT
 
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(cable_colour_chosen), title = "Cable Colour", message = "Pick new colour.", choices = GLOB.possible_cable_coil_colours, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(cable_colour_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Cable Colour", question = "Pick new colour.", choices = GLOB.possible_cable_coil_colours, timeout = 0)
 
-/obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(datum/om/prompt/choice/ask)
-	set_cable_color(ask.choice, ask.answerer)
+/obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	set_cable_color(A.answer.answer_value, A.request.answerer)
 	if(isrobotmultibelt(loc))
 		var/obj/item/robotic_multibelt/our_belt = loc
 		var/image/cable_image = our_belt.integrated_tool_images[name]

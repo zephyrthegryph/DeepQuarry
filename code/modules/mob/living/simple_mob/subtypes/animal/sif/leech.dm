@@ -242,12 +242,14 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 			to_chat(user, span_warning("There are no viable hosts within range..."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(infest_target_answered), title = "Target Choice", message = "Who do we wish to infest?", choices = choices, ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/choice, PROC_REF(infest_target_answered), answerer = src, title = "Target Choice", question = "Who do we wish to infest?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 	infest_target_chosen(user, M)
 
-/mob/living/simple_mob/animal/sif/leech/proc/infest_target_answered(datum/om/prompt/choice/ask)
-	infest_target_chosen(ask.answerer, ask.choice)
+/mob/living/simple_mob/animal/sif/leech/proc/infest_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	infest_target_chosen(A.request.answerer, A.answer.answer_value)
 
 /mob/living/simple_mob/animal/sif/leech/proc/infest_target_chosen(mob/living/user, mob/living/carbon/M)
 	if(!M || host) return
@@ -361,7 +363,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 			to_chat(src, span_warning("There are no viable hosts within range..."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(poison_inject_answered), title = "Target Choice", message = "Who do we wish to inject?", choices = choices, ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/choice, PROC_REF(poison_inject_answered), answerer = src, title = "Target Choice", question = "Who do we wish to inject?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 
 	if(!M || stat)
@@ -369,8 +371,10 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 
 	poison_inject(src, M)
 
-/mob/living/simple_mob/animal/sif/leech/proc/poison_inject_answered(datum/om/prompt/choice/ask)
-	poison_inject(ask.answerer, ask.choice)
+/mob/living/simple_mob/animal/sif/leech/proc/poison_inject_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	poison_inject(A.request.answerer, A.answer.answer_value)
 
 /mob/living/simple_mob/animal/sif/leech/proc/poison_inject(mob/living/user, mob/living/carbon/L)
 	if(!L || !Adjacent(L) || stat)

@@ -414,9 +414,11 @@ CAPABILITIES(/obj/item/rectape)
 	LAZYADD(storedinfo, "*\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
 
 
-/obj/item/rectape/proc/label_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_name = sanitizeSafe(ask.text)
+/obj/item/rectape/proc/label_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/new_name = sanitizeSafe(A.answer.answer_value)
 	if(new_name)
 		name = "tape - '[new_name]'"
 		to_chat(user, span_notice("You label the tape '[new_name]'."))
@@ -427,7 +429,7 @@ CAPABILITIES(/obj/item/rectape)
 /obj/item/rectape/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	if(loc == user && !user.incapacitated())
-		om_ask(user, /datum/om/prompt/text, PROC_REF(label_entered), title = "Tape labeling", message = "What would you like to label the tape?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(label_entered), answerer = user, title = "Tape labeling", question = "What would you like to label the tape?", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
 /obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)

@@ -30,7 +30,7 @@ use crate::tree::{SourceFile, Tree, CODE_DM};
 
 /// The roles, checks and options of the old prompt that the new request has no field for.
 const ROLES_OR_CHECKS: &[&str] = &[
-    "asker", "subject", "receiver", "requires", "ask_flags", "optional", "cancel_answer", "cancel_text", "cancel_choice", "hold_strong", "ui_refresh", "ui_refresh_if_true",
+    "asker", "subject", "receiver", "optional", "cancel_answer", "cancel_text", "cancel_choice", "hold_strong", "ui_refresh", "ui_refresh_if_true",
     "key", "yes_text", "no_text", "no_first", "round_entry", "answer_proc",
 ];
 
@@ -41,6 +41,7 @@ enum Kind {
     Number,
     Choice,
     Color,
+    Radial,
 }
 
 impl Kind {
@@ -51,6 +52,7 @@ impl Kind {
             "/datum/om/prompt/number" => Some(Kind::Number),
             "/datum/om/prompt/choice" => Some(Kind::Choice),
             "/datum/om/prompt/color" => Some(Kind::Color),
+            "/datum/om/prompt/choice/radial" => Some(Kind::Radial),
             _ => None,
         }
     }
@@ -59,7 +61,7 @@ impl Kind {
             Kind::Confirm => "/datum/prompt/yes_no",
             Kind::Text => "/datum/prompt/text",
             Kind::Number => "/datum/prompt/number",
-            Kind::Choice => "/datum/prompt/choice",
+            Kind::Choice | Kind::Radial => "/datum/prompt/choice",
             Kind::Color => "/datum/prompt/color",
         }
     }
@@ -69,7 +71,7 @@ impl Kind {
             Kind::Confirm => "yes",
             Kind::Text => "text",
             Kind::Number => "number",
-            Kind::Choice => "choice",
+            Kind::Choice | Kind::Radial => "choice",
             Kind::Color => "picked_color",
         }
     }
@@ -81,6 +83,19 @@ impl Kind {
             Kind::Number => &[("default", "default"), ("min", "min_value"), ("max", "max_value")],
             Kind::Choice => &[("choices", "choices"), ("default", "default"), ("buttons", "buttons")],
             Kind::Color => &[("default", "default")],
+            Kind::Radial => &[
+                ("choices", "choices"),
+                ("anchor", "anchor"),
+                ("radius", "radius"),
+                ("tooltips", "tooltips"),
+                ("radial_slice_icon", "radial_slice_icon"),
+                ("autopick_single_option", "autopick_single_option"),
+                ("entry_animation", "entry_animation"),
+                ("click_on_hover", "click_on_hover"),
+                ("user_space", "user_space"),
+                ("require_near", "require_near"),
+                ("uniqueid", "uniqueid"),
+            ],
         }
     }
 }
@@ -170,6 +185,51 @@ fn named_params<'a>(text: &'a str, node: &scan::CallNode) -> Result<Vec<(String,
     Ok(out)
 }
 
+/// `ASK_A | ASK_B`: the old flags, spelled the same on the request.
+fn is_ask_flags(value: &str) -> bool {
+    let v = value.trim();
+    !v.is_empty() && v.split('|').all(|p| {
+        let p = p.trim();
+        p.starts_with("ASK_") && p.chars().all(|c| c.is_ascii_uppercase() || c == '_')
+    })
+}
+
+/// What an old `requires` list becomes on the request: more ask flags, admin rights, a tgui state.
+#[derive(Default, Debug, PartialEq)]
+struct RequiresFields {
+    flags: Vec<&'static str>,
+    rights: Option<String>,
+    usable: Option<String>,
+}
+
+fn requires_fields(value: &str) -> Option<RequiresFields> {
+    let v = value.trim();
+    let mut out = RequiresFields::default();
+    if let Some(inner) = v.strip_prefix("PROMPT_ADMIN(").and_then(|r| r.strip_suffix(')')) {
+        out.rights = Some(inner.trim().to_string());
+        return Some(out);
+    }
+    if let Some(inner) = v.strip_prefix("PROMPT_USABLE_BY(").and_then(|r| r.strip_suffix(')')) {
+        let name = inner.trim();
+        if name.len() > 2 && name.starts_with('"') && name.ends_with('"') && name[1..name.len() - 1].chars().all(|c| c.is_ascii_lowercase() || c == '_') {
+            out.usable = Some(name.to_string());
+            return Some(out);
+        }
+        return None;
+    }
+    if let Some(inner) = v.strip_prefix("list(").and_then(|r| r.strip_suffix(')')) {
+        for item in split_args(inner) {
+            match item.trim() {
+                "/datum/om/check/inside_target" => out.flags.push("ASK_INSIDE"),
+                "/datum/om/check/not_incapacitated" => out.flags.push("ASK_CAPABLE"),
+                _ => return None,
+            }
+        }
+        return if out.flags.is_empty() { None } else { Some(out) };
+    }
+    None
+}
+
 /// The shape of one site, independent of its handler.
 fn judge(text: &str, node: &scan::CallNode, owner: &str) -> (Option<Kind>, Guard, Option<&'static str>) {
     let mut guard = Guard::Answered;
@@ -188,7 +248,12 @@ fn judge(text: &str, node: &scan::CallNode, owner: &str) -> (Option<Kind>, Guard
         Ok(p) => p,
         Err(why) => return (Some(kind), guard, Some(why)),
     };
-    let allowed: BTreeSet<&str> = ["title", "message", "timeout"].into_iter().chain(kind.params().iter().map(|(o, _)| *o)).chain(if kind == Kind::Confirm { Some("answer_on_no") } else { None }).collect();
+    let atom_owner = ["/atom", "/obj", "/mob", "/turf", "/area"].iter().any(|r| owner == *r || owner.starts_with(&format!("{}/", r)));
+    if kind == Kind::Radial && !atom_owner {
+        // the old ring's default anchor is the receiver when that is an atom: the new one has to be told
+        return (Some(kind), guard, Some("radial_anchor_unknown"));
+    }
+    let allowed: BTreeSet<&str> = ["title", "message", "timeout", "ask_flags", "requires"].into_iter().chain(kind.params().iter().map(|(o, _)| *o)).chain(if kind == Kind::Confirm { Some("answer_on_no") } else { None }).collect();
     let mut message = false;
     for (name, value) in &params {
         if ROLES_OR_CHECKS.contains(&name.as_str()) {
@@ -196,6 +261,16 @@ fn judge(text: &str, node: &scan::CallNode, owner: &str) -> (Option<Kind>, Guard
         }
         if !allowed.contains(name.as_str()) {
             return (Some(kind), guard, Some("unsupported_param"));
+        }
+        if name == "ask_flags" && !is_ask_flags(value) {
+            return (Some(kind), guard, Some("unsupported_param"));
+        }
+        if name == "requires" {
+            match requires_fields(value) {
+                None => return (Some(kind), guard, Some("requires_unknown")),
+                Some(r) if r.usable.is_some() && !atom_owner => return (Some(kind), guard, Some("requires_unknown")),
+                Some(_) => {}
+            }
         }
         if name == "message" {
             message = true;
@@ -210,7 +285,7 @@ fn judge(text: &str, node: &scan::CallNode, owner: &str) -> (Option<Kind>, Guard
     if kind == Kind::Confirm && !params.iter().any(|(n, _)| n == "answer_on_no") {
         guard = Guard::Yes;
     }
-    if !message {
+    if !message && kind != Kind::Radial {
         return (Some(kind), guard, Some("no_message"));
     }
     if kind == Kind::Text {
@@ -577,12 +652,45 @@ pub fn rewrite(cx: &Ctx) -> Outcome {
     if let Some(t) = get("title") {
         fields.push(("title".into(), t));
     }
-    fields.push(("question".into(), get("message").unwrap_or_default()));
+    if kind != Kind::Radial || get("message").is_some() {
+        fields.push(("question".into(), get("message").unwrap_or_default()));
+    }
+    let mut flags: Vec<String> = Vec::new();
     for (name, value) in &params {
-        if matches!(name.as_str(), "title" | "message" | "timeout" | "answer_on_no") {
-            continue;
+        match name.as_str() {
+            "title" | "message" | "timeout" | "answer_on_no" => continue,
+            "ask_flags" => {
+                flags.push(value.trim().to_string());
+                continue;
+            }
+            "requires" => {
+                if let Some(r) = requires_fields(value) {
+                    flags.extend(r.flags.iter().map(|f| f.to_string()));
+                    if let Some(x) = r.rights {
+                        fields.push(("rights".into(), x));
+                    }
+                    if let Some(x) = r.usable {
+                        fields.push(("usable_state".into(), x));
+                    }
+                }
+                continue;
+            }
+            _ => {}
         }
         fields.push(new_field_value(kind, name, value));
+    }
+    if !flags.is_empty() {
+        fields.push(("ask_flags".into(), flags.join(" | ")));
+    }
+    if kind == Kind::Radial {
+        fields.push(("radial".into(), "TRUE".into()));
+        // the old ring is anchored on the receiver (an atom here) unless told otherwise, and answers a lone choice itself unless told not to
+        if get("anchor").is_none() {
+            fields.push(("anchor".into(), "src".into()));
+        }
+        if get("autopick_single_option").is_none() {
+            fields.push(("autopick_single_option".into(), "TRUE".into()));
+        }
     }
     if kind == Kind::Text && get("name_text").is_none() && get("max_length").as_deref() == Some("MAX_NAME_LEN") {
         fields.push(("name_text".into(), "TRUE".into()));

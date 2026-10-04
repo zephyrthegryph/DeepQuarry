@@ -26,8 +26,10 @@ impl Codemod for OmAsk {
     fn reasons(&self) -> &'static [(&'static str, &'static str)] {
         &[
             ("argc", "fewer than (answerer, prompt, handler), or a positional argument after them"),
-            ("kind_unsupported", "not literally /datum/om/prompt/confirm, text, number or choice (a subtype carries its own state and checks)"),
-            ("roles_or_checks", "asker, subject, receiver, requires, ask_flags, a cancel option or another option the new request has no field for"),
+            ("kind_unsupported", "not literally /datum/om/prompt/confirm, text, number, choice, color or choice/radial (a subtype carries its own state and checks)"),
+            ("roles_or_checks", "asker, subject, receiver, a cancel option or another option the new request has no field for"),
+            ("requires_unknown", "requires is not PROMPT_ADMIN(..), PROMPT_USABLE_BY(\"state\") or a list of inside_target / not_incapacitated checks (the ones the request re-checks), or a usable_by check outside an atom"),
+            ("radial_anchor_unknown", "a ring outside an atom: the old ring is anchored on the receiver when that is an atom, and the new one has to be told where"),
             ("unsupported_param", "a parameter the kind does not take, or answer_on_no that is not TRUE"),
             ("no_message", "no message: the old window showed nothing, the new kind has a default question"),
             ("name_text_unknown", "max_length is not MAX_NAME_LEN and name_text is not given, so whether the answer is name-stripped is not known"),

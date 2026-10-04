@@ -184,7 +184,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	COOLDOWN_START(src, last_special, 50)
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(shapeshifter_gender_picked), message = "Please select a gender.", title = "Shapeshifter Gender", choices = list(FEMALE, MALE, NEUTER, PLURAL), ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(shapeshifter_gender_picked), answerer = src, title = "Shapeshifter Gender", question = "Please select a gender.", choices = list(FEMALE, MALE, NEUTER, PLURAL), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// The gender identity; carries the gender picked first.
 /datum/om/prompt/choice/shapeshift_identity
@@ -194,8 +194,10 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	ask_flags = ASK_CONSCIOUS
 	var/new_gender
 
-/mob/living/carbon/human/proc/shapeshifter_gender_picked(datum/om/prompt/choice/ask)
-	om_ask(src, /datum/om/prompt/choice/shapeshift_identity, PROC_REF(shapeshifter_gender_chosen), new_gender = ask.choice)
+/mob/living/carbon/human/proc/shapeshifter_gender_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	om_ask(src, /datum/om/prompt/choice/shapeshift_identity, PROC_REF(shapeshifter_gender_chosen), new_gender = A.answer.answer_value)
 
 /mob/living/carbon/human/proc/shapeshifter_gender_chosen(datum/om/prompt/choice/shapeshift_identity/ask)
 	act_message(src, null, others = span_notice("%U%'s form contorts subtly."))
@@ -249,10 +251,12 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	COOLDOWN_START(src, last_special, 50)
 
-	om_ask(src, /datum/om/prompt/color, PROC_REF(shapeshifter_colour_chosen), title = "Shapeshifter Colour", message = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/shapeshifter_colour_chosen(datum/om/prompt/color/ask)
-	shapeshifter_set_colour(ask.picked_color)
+/mob/living/carbon/human/proc/shapeshifter_colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	shapeshifter_set_colour(A.answer.answer_value)
 
 /mob/living/carbon/human/proc/shapeshifter_set_colour(new_skin)
 
@@ -280,18 +284,24 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	COOLDOWN_START(src, last_special, 50)
 
 	// Each colour applies as soon as it is picked; a cancel stops there.
-	om_ask(src, /datum/om/prompt/color, PROC_REF(shapeshifter_hair_color_step), message = "Please select a new hair color.", title = "Hair Colour", ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_hair_color_step), answerer = src, title = "Hair Colour", question = "Please select a new hair color.", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/shapeshifter_hair_color_step(datum/om/prompt/color/ask)
-	shapeshifter_set_hair_color(ask.picked_color)
-	om_ask(src, /datum/om/prompt/color, PROC_REF(shapeshifter_grad_color_step), message = "Please select a new hair gradient color.", title = "Hair Gradient Colour", ask_flags = ASK_CONSCIOUS)
+/mob/living/carbon/human/proc/shapeshifter_hair_color_step(datum/act/request/A)
+	if(!A.answer)
+		return
+	shapeshifter_set_hair_color(A.answer.answer_value)
+	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_grad_color_step), answerer = src, title = "Hair Gradient Colour", question = "Please select a new hair gradient color.", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/shapeshifter_grad_color_step(datum/om/prompt/color/ask)
-	shapeshifter_set_grad_color(ask.picked_color)
-	om_ask(src, /datum/om/prompt/color, PROC_REF(shapeshifter_hair_colors_done), message = "Please select a new facial hair color.", title = "Facial Hair Color", ask_flags = ASK_CONSCIOUS)
+/mob/living/carbon/human/proc/shapeshifter_grad_color_step(datum/act/request/A)
+	if(!A.answer)
+		return
+	shapeshifter_set_grad_color(A.answer.answer_value)
+	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_hair_colors_done), answerer = src, title = "Facial Hair Color", question = "Please select a new facial hair color.", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/shapeshifter_hair_colors_done(datum/om/prompt/color/ask)
-	shapeshifter_set_facial_color(ask.picked_color)
+/mob/living/carbon/human/proc/shapeshifter_hair_colors_done(datum/act/request/A)
+	if(!A.answer)
+		return
+	shapeshifter_set_facial_color(A.answer.answer_value)
 
 /mob/living/carbon/human/proc/shapeshifter_set_hair_color(new_hair)
 
@@ -363,10 +373,12 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	COOLDOWN_START(src, last_special, 50)
 
 	var/current_color = rgb(r_eyes,g_eyes,b_eyes)
-	om_ask(src, /datum/om/prompt/color, PROC_REF(shapeshifter_eye_colour_chosen), message = "Pick a new color for your eyes.", title = "Eye Color", default = current_color, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_eye_colour_chosen), answerer = src, title = "Eye Color", question = "Pick a new color for your eyes.", default = current_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/shapeshifter_eye_colour_chosen(datum/om/prompt/color/ask)
-	shapeshifter_set_eye_color(ask.picked_color)
+/mob/living/carbon/human/proc/shapeshifter_eye_colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	shapeshifter_set_eye_color(A.answer.answer_value)
 
 /mob/living/carbon/human/proc/shapeshifter_set_eye_color(new_eyes)
 

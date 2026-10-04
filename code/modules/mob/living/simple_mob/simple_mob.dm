@@ -907,10 +907,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		choices += M
 	choices -= src
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(leap_target_chosen), title = "Target Choice", message = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(leap_target_chosen), answerer = src, title = "Target Choice", question = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/simple_mob/proc/leap_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/T = ask.choice
+/mob/living/simple_mob/proc/leap_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/T = A.answer.answer_value
 
 	if(get_dist(get_turf(T), get_turf(src)) > 3) return
 

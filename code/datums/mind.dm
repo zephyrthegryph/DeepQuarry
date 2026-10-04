@@ -153,7 +153,7 @@ CAPABILITIES(/datum/mind)
 TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC_RIGHTS(R_FUN))
 
 /datum/mind/proc/topic_set_crystals(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(telecrystals_set), message = "Amount of telecrystals for [key]", default = tcrystals, requires = PROMPT_ADMIN(R_FUN))
+	open_request(src, /datum/prompt/number, PROC_REF(telecrystals_set), answerer = user, question = "Amount of telecrystals for [key]", default = tcrystals, rights = R_FUN, timeout = 0)
 	edit_memory(user)
 	return TRUE
 
@@ -329,9 +329,11 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 		own_remove(src, nameof(objectives), objective)
 	rel_add(src, nameof(objectives), new_objective)
 
-/datum/mind/proc/telecrystals_set(datum/om/prompt/number/ask)
-	tcrystals = ask.number
-	edit_memory(ask.answerer)
+/datum/mind/proc/telecrystals_set(datum/act/request/A)
+	if(!A.answer)
+		return
+	tcrystals = A.answer.answer_value
+	edit_memory(A.request.answerer)
 
 /datum/mind/proc/find_syndicate_uplink()
 	var/list/L = current.get_contents()

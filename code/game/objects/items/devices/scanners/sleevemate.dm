@@ -98,13 +98,15 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 	return TRUE
 
 /obj/item/sleevemate/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(stored_mind_action), title = "Stored: [stored_mind().name]", message = "What would you like to do?", choices = list("Delete","Backup","Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(stored_mind_action), answerer = user, title = "Stored: [stored_mind().name]", question = "What would you like to do?", choices = list("Delete","Backup","Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 
-/obj/item/sleevemate/proc/stored_mind_action(datum/om/prompt/choice/ask)
+/obj/item/sleevemate/proc/stored_mind_action(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(!stored_mind())
 		return
-	var/mob/living/user = ask.answerer
-	switch(ask.choice)
+	var/mob/living/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("Delete")
 			to_chat(user,span_notice("Internal copy of [stored_mind().name] deleted."))
 			clear_mind()
@@ -414,12 +416,14 @@ APPEARANCE_TEMPLATE(/obj/item/sleevemate, "{initial(icon_state)}{appearance_has_
 DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
 /obj/item/sleevemate/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	var/list/choices = list("Body Snatcher","Mind Binder")
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(hack_chosen), message = "How would you like to modify the [src]?", choices = choices, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(hack_chosen), answerer = user, question = "How would you like to modify the [src]?", choices = choices, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return 1
 
-/obj/item/sleevemate/proc/hack_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/sleevemate/proc/hack_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(!(choice in list("Body Snatcher","Mind Binder")))
 		return
 	to_chat(user,span_danger("You hack [src]!"))

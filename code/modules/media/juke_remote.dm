@@ -40,7 +40,8 @@
 	return ..()
 
 /// Old Reset Pairing verb: Unpair this speaker from a jukebox.
-/obj/item/juke_remote/proc/juke_remote_verb_reset(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/juke_remote/proc/juke_remote_verb_reset(datum/act/op/A)
+	var/mob/user = A.actor
 	unpair_juke(user)
 
 // Deploying
@@ -49,16 +50,15 @@
 	if(paired_juke() && !anchored && isturf(loc))
 		anchor()
 
-DECLARE_INTERACTIONS(/obj/item/juke_remote, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_VERB("Reset Pairing", PROC_REF(juke_remote_verb_reset), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/juke_remote)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("juke_remote_verb_reset", menu(), label("Reset Pairing"), needs(carried()), then(PROC_REF(juke_remote_verb_reset)))
 
 /// Old attack_hand.
-/obj/item/juke_remote/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/juke_remote/proc/interaction_hand(datum/act/op/A)
 	if(anchored)
 		unanchor()
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/juke_remote/proc/anchor()
 	if(anchored)

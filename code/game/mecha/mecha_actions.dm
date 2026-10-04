@@ -367,10 +367,12 @@
 /obj/mecha/proc/query_damtype(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(melee_damtype_chosen), title = "Damage Type", message = "Melee Damage Type", choices = list("Brute","Fire","Toxic"), buttons = TRUE, requires = list(/datum/om/check/inside_target))
+	open_request(src, /datum/prompt/choice, PROC_REF(melee_damtype_chosen), answerer = user, title = "Damage Type", question = "Melee Damage Type", choices = list("Brute","Fire","Toxic"), buttons = TRUE, ask_flags = ASK_INSIDE, timeout = 0)
 
-/obj/mecha/proc/melee_damtype_chosen(datum/om/prompt/choice/ask)
-	var/new_damtype = ask.choice
+/obj/mecha/proc/melee_damtype_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_damtype = A.answer.answer_value
 	switch(new_damtype)
 		if("Brute")
 			melee_injury_kind = INJURY_BLUNT

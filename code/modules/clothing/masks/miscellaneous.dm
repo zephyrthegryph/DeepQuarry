@@ -361,11 +361,13 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	if(!istype(user) || user.incapacitated())
 		return
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(papermask_design_chosen), choices = papermask_designs || list(), anchor = src, radius = 36, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(papermask_design_chosen), answerer = user, choices = papermask_designs || list(), anchor = src, radius = 36, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/item/clothing/mask/paper/proc/papermask_design_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/clothing/mask/paper/proc/papermask_design_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	var/static/list/options = list("Blank" = "papermask", "Neutral" = "neutralmask", "Eyes" = "eyemask",
 							"Sleeping" ="sleepingmask", "Heart" = "heartmask", "Core" = "coremask",
 							"Plus" = "plusmask", "Square" ="squaremask", "Bullseye" = "bullseyemask",
@@ -411,11 +413,13 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	if(!istype(user) || user.incapacitated())
 		return
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(emotion_mask_design_chosen), choices = joymask_designs, anchor = src, radius = 36, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(emotion_mask_design_chosen), answerer = user, choices = joymask_designs, anchor = src, radius = 36, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/item/clothing/mask/emotions/proc/emotion_mask_design_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/clothing/mask/emotions/proc/emotion_mask_design_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	var/static/list/options = list("Joy" = "joy", "Flushed" = "flushed", "Pensive" = "pensive","Angry" ="angry")
 	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]

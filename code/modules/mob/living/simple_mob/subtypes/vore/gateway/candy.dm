@@ -619,19 +619,20 @@ DECLARE_LOOT(/obj/random/mob/candycritter, LOOT_TABLE(\
 
 	endurance = 10
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
-	INTERACT_ITEM(null, PROC_REF(peppermint_interaction_item)), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
+	op("peppermint_interaction_item", item(/obj/item), then(PROC_REF(peppermint_interaction_item)))
 
 /// Old attackby: the shell deflects most hits; forceless items only tap it. FALSE = the hit lands (hit_with_item).
-/mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(O.force)
 		if(prob(80))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% deflects %T% with its shell!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return TRUE
-		return FALSE
+		return OP_DECLINE
 	to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 	act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 	return TRUE

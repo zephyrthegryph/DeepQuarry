@@ -41,7 +41,7 @@
 			choices += M
 
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(bloodsuck_target_chosen), message = "Who do you wish to bite? Select yourself to bring up configuration for privacy and bleeding. Beware! Configuration resets on new round!", title = "Suck Blood", choices = choices, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(bloodsuck_target_chosen), answerer = src, title = "Suck Blood", question = "Who do you wish to bite? Select yourself to bring up configuration for privacy and bleeding. Beware! Configuration resets on new round!", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// A pop-up bloodsuck question (Yes/No); carries the target and the privacy answer.
 /datum/om/prompt/choice/bloodsuck
@@ -51,8 +51,10 @@
 	var/mob/living/carbon/human/target
 	var/subtle
 
-/mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/B = ask.choice
+/mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/B = A.answer.answer_value
 	if(B == src) //We are using this to minimize the amount of pop-ups or buttons.
 		open_request(src, /datum/prompt/choice, PROC_REF(bloodsuck_mode_chosen), answerer = src, title = "Configure Bloodsuck", question = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and stance modes. Choosing stance prints controls to chat.", choices = list("always loud", "pop-up", "stance", "always subtle"), default = "always loud", timeout = 0)
 		return
@@ -489,10 +491,12 @@
 	if(!choices.len)
 		to_chat(src,span_warning("There's nobody nearby to use this on."))
 		return
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(shred_target_picked), message = "Who do you wish to target?", title = "Damage/Remove Prey's Organ", choices = choices, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(shred_target_picked), answerer = src, title = "Damage/Remove Prey's Organ", question = "Who do you wish to target?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/proc/shred_target_picked(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/T = ask.choice
+/mob/living/proc/shred_target_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/T = A.answer.answer_value
 	if(can_shred(T) == T)
 		shred_limb_begin(T)
 
@@ -1437,10 +1441,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		return
 
 	COOLDOWN_START(src, last_special, 600)
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(mobegglaying_chosen), message = "What do you want to do?", title = "Egg Option", choices = list("Make a Egg", "lay your Eggs"), ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(mobegglaying_chosen), answerer = src, title = "Egg Option", question = "What do you want to do?", choices = list("Make a Egg", "lay your Eggs"), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/proc/mobegglaying_chosen(datum/om/prompt/choice/ask)
-	om_task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, ask.choice))
+/mob/living/proc/mobegglaying_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	om_task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, A.answer.answer_value))
 
 /mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
 	if(choice == "Make a Egg" && eggs > 5)

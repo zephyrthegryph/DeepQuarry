@@ -7,11 +7,12 @@
 	w_class = ITEMSIZE_HUGE
 
 // The package's own unwrap replaces the parent's: the old override ran both and handed out two items.
-// ALLOW(interactions): its Unwrap replaces the parent's (both ran and handed out two items)
-DECLARE_INTERACTIONS(/obj/item/contraband/package, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap_package)))
+CAPABILITIES(/obj/item/contraband/package)
+	op("unwrap_package", in_hand(), label("Unwrap"), then(PROC_REF(interaction_unwrap_package)))
 
 /// Old attack_self.
-/obj/item/contraband/package/proc/interaction_unwrap_package(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/contraband/package/proc/interaction_unwrap_package(datum/act/op/A)
+	var/mob/user = A.actor
 	var/contraband = pick(
 		/obj/item/reagent_containers/glass/beaker/vial/macrocillin,
 		/obj/item/reagent_containers/glass/beaker/vial/microcillin,

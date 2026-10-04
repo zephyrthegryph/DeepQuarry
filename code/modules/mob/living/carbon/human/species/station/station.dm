@@ -2012,11 +2012,13 @@
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/mob/alien.dmi', option)) // based off 'icons/effects/thinktank_labels.dmi'
 
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(resin_weak_chosen), choices = options, anchor = src, radius = 42, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(resin_weak_chosen), answerer = src, choices = options, anchor = src, radius = 42, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// Radial answer: secrete the picked resin structure in front of us.
-/mob/living/carbon/human/proc/resin_weak_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/mob/living/carbon/human/proc/resin_weak_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.answer_value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
 

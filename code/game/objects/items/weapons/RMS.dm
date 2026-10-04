@@ -276,12 +276,14 @@ CAPABILITIES(/obj/item/rms)
 		"Random" = radial_image_random
 	)
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(mode_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(mode_chosen), answerer = user, choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 	return TRUE
 
-/obj/item/rms/proc/mode_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/rms/proc/mode_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(!check_menu(user))
 		return
 	switch(choice)

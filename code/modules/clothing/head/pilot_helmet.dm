@@ -158,12 +158,14 @@ CAPABILITIES(/obj/item/clothing/head/pilot)
 /// Old verb "Alter HUD color".
 /obj/item/clothing/head/pilot/proc/pilot_hud_colors_verb(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/color, PROC_REF(hud_color_picked), title = "HUD Color", message = "Pick a color!", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color, PROC_REF(hud_color_picked), answerer = user, title = "HUD Color", question = "Pick a color!", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/clothing/head/pilot/proc/hud_color_picked(datum/om/prompt/color/ask)
+/obj/item/clothing/head/pilot/proc/hud_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
 	for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
 		var/image/I = images[img]
-		I.color = ask.picked_color
+		I.color = A.answer.answer_value
 
 
 // its HUD images are detached.

@@ -29,10 +29,12 @@
 
 /obj/structure/generic_structure/var/delay_passed = FALSE
 
-DECLARE_INTERACTIONS(/obj/structure/generic_structure, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/generic_structure)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/structure/generic_structure/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/generic_structure/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(activatable_hand)
 		if(!on)
 			if(delay_time && !delay_passed)
@@ -107,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/structure/generic_structure, INTERACT_HAND(null, PROC_
 				icon = 'icons/obj/props/decor.dmi'
 			src.visible_message(span_notice("[text_deactivated]"))
 			update_icon()
-	return FALSE
+	return OP_DECLINE
 
 /obj/structure/generic_structure/wrench_act(mob/user, obj/item/tool)
 	if(!wrenchable)

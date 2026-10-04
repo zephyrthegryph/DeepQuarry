@@ -534,9 +534,11 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	// So, they should block stuff like lasers at that time.
 	return opacity
 
-/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/t = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
 	if(t)
 		src.id = t
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'."))
@@ -554,7 +556,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 		// Otherwise fall back to asking them... and remind them what the current ID is.
 		if(id)
 			to_chat(user, "The window's current ID is [id].")
-		om_ask(user, /datum/om/prompt/text, PROC_REF(window_id_entered), title = name, default = id, message = "Enter the new ID for the window.", encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(window_id_entered), answerer = user, title = name, question = "Enter the new ID for the window.", default = id, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	return ..()
 

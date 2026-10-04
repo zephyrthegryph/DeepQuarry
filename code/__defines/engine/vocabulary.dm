@@ -16,6 +16,9 @@
 #define ACT_REPLACED (1<<2)
 /// Filter only: a committed op whose chance() failed. An act's own outcome is never this value.
 #define ACT_ROLL_FAILED (1<<3)
+/// An op handler answered OP_DECLINE: the op did not apply after all, nothing was committed, told or published, and the click goes on to the next
+/// candidate. An act's own outcome only; no filter selects it and ACT_ANY does not include it.
+#define ACT_DECLINED (1<<4)
 /// Filter only: every outcome.
 #define ACT_ANY (ACT_COMMITTED | ACT_REFUSED | ACT_REPLACED | ACT_ROLL_FAILED)
 /// ACT_TRY's shared "nothing hooks this action" constant (section 8). Carries no fields; act_done()/act_cancel() ignore it.
@@ -28,6 +31,10 @@
 #define OP_REFUSED 2
 #define OP_REPLACED 3
 #define OP_FAILED 4
+/// A then() handler or effect proc answers this to say "not handled": the op ends ACT_DECLINED with no cost committed, no notice and no message, and a click
+/// resolves on to the next candidate (the veto hooks' HOOK_DECLINE, for an op). Effects that ran before the declining one are not undone: decline from the
+/// first effect, before anything is written.
+#define OP_DECLINE 5
 
 // ---- Origins: where an input arrived (section 8). Bits, so acts_via can be a mask (at most 24). ----
 #define ORIGIN_NONE 0

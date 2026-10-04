@@ -221,11 +221,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance
 /obj/item/shield/energy/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!in_range(src, user))	//Basic checks to prevent abuse
 		return TRUE
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_shield_color), message = "Are you sure you want to recolor your shield?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(ask_shield_color), answerer = user, title = "Confirm Recolor", question = "Are you sure you want to recolor your shield?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/shield/energy/proc/ask_shield_color(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(shield_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+/obj/item/shield/energy/proc/ask_shield_color(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	om_ask(A.request.answerer, /datum/om/prompt/color, PROC_REF(shield_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
 /obj/item/shield/energy/proc/shield_recolored(datum/om/prompt/color/ask)
 	if(ask.picked_color)

@@ -16,13 +16,15 @@
 	make_tethered(handset_path)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/bluespaceradio, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/bluespaceradio)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// See important note in code/datums/behaviours/tethered_item.dm
-/obj/item/bluespaceradio/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespaceradio/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(tether_swap(user))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/bluespaceradio/MouseDrop()
 	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.

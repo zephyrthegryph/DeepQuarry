@@ -13,11 +13,13 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-/obj/item/universal_translator/proc/language_chosen(datum/om/prompt/choice/ask)
+/obj/item/universal_translator/proc/language_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(listening)
 		return
-	var/mob/user = ask.answerer
-	langset_static = ask.choice
+	var/mob/user = A.request.answerer
+	langset_static = A.answer.answer_value
 	if(langset() && ((langset().flags & NONVERBAL) || (langset().flags & HIVEMIND) || (!langset().machine_understands)))
 		//Nonverbal means no spoken words to translate, so I didn't see the need to remove it.
 		to_chat(user, span_warning("\The [src] cannot output that language."))
@@ -34,7 +36,7 @@ CAPABILITIES(/obj/item/universal_translator)
 /obj/item/universal_translator/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!listening) //Turning ON
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(language_chosen), title = "Language Selection", message = "Translate to which of your languages?", choices = user.languages, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(language_chosen), answerer = user, title = "Language Selection", question = "Translate to which of your languages?", choices = user.languages, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	else	//Turning OFF
 		listening = 0
 		registry_leave(REGISTRY_LISTENING_OBJECTS, src)

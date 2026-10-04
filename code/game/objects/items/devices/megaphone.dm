@@ -50,14 +50,16 @@ TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!"
 
 /// The self-use op: asks what to shout (the prompt checks the broadcast again when it is answered).
 /obj/item/megaphone/proc/shout(mob/user)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(shout_entered), title = "Megaphone", message = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(shout_entered), answerer = user, title = "Megaphone", question = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/megaphone/proc/shout_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	if(!ask.text)
+/obj/item/megaphone/proc/shout_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/message = capitalize(ask.text)
+	var/mob/user = A.request.answerer
+	if(!A.answer.answer_value)
+		return
+	var/message = capitalize(A.answer.answer_value)
 
 	if(!can_broadcast(user))
 		return

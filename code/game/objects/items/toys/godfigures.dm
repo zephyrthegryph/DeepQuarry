@@ -121,11 +121,13 @@
 	var/mob/M = user
 	if(!M.mind)	return 0
 
-	om_ask(M, /datum/om/prompt/text, PROC_REF(figure_named), message = "What do you want to name the icon?", default = "", max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(figure_named), answerer = M, question = "What do you want to name the icon?", default = "", max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
 
-/obj/item/godfig/proc/figure_named(datum/om/prompt/text/ask)
-	var/mob/M = ask.answerer
-	var/input = ask.text
+/obj/item/godfig/proc/figure_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/M = A.request.answerer
+	var/input = A.answer.answer_value
 	if(input)
 		name = "icon of " + input
 		to_chat(M, "You name the figure. Glory to [input]!.")

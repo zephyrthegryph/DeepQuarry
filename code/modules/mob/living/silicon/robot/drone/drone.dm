@@ -357,26 +357,19 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 
 /mob/living/silicon/robot/drone/proc/question(client/C)
 	if(!C || jobban_isbanned(C,JOB_CYBORG))	return
-	om_ask(C, /datum/om/prompt/choice/drone_reboot, PROC_REF(question_answered))
+	open_request(src, /datum/prompt/choice, PROC_REF(question_answered), answerer = C.mob, valid = PROC_REF(question_askable), title = "Maintenance drone reboot", question = "Someone is attempting to reboot a maintenance drone. Would you like to play as one?", choices = list("Yes", "No", "Never for this round"), buttons = TRUE, timeout = 0)
 
-/// A ghost is offered a rebooting drone. Re-checked on the answer: still has a client, and
-/// the drone is still unoccupied.
-/datum/om/prompt/choice/drone_reboot
-	title = "Maintenance drone reboot"
-	message = "Someone is attempting to reboot a maintenance drone. Would you like to play as one?"
-	buttons = TRUE
+/// A ghost is offered a rebooting drone. Re-checked on the answer: still has a client, and the drone is still unoccupied.
+/mob/living/silicon/robot/drone/proc/question_askable(datum/request/R)
+	var/mob/answerer = R.answerer
+	return answerer.client && !ckey
 
-/datum/om/prompt/choice/drone_reboot/prepare()
-	choices = list("Yes", "No", "Never for this round")
-	return TRUE
-
-/datum/om/prompt/choice/drone_reboot/valid()
-	var/mob/living/silicon/robot/drone/D = subject
-	return (!answerer.client || D.ckey) ? "taken" : null
-
-/mob/living/silicon/robot/drone/proc/question_answered(datum/om/prompt/choice/drone_reboot/ask)
-	var/client/C = ask.answerer.client
-	var/response = ask.choice
+/mob/living/silicon/robot/drone/proc/question_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/answerer = A.request.answerer
+	var/client/C = answerer.client
+	var/response = A.answer.answer_value
 	if(response == "Yes")
 		transfer_personality(C)
 	else if (response == "Never for this round")

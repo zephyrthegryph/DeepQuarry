@@ -101,13 +101,15 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 		act_message(user, src, others = span_rose("Without even breaking stride, %U% flips open %T% in one smooth movement."))
 
 	else if(lit && detonator_mode)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(detonator_action), title = "Lighter", message = "What would you like to do?", choices = list("Press the button.", "Close the lighter."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(detonator_action), answerer = user, title = "Lighter", question = "What would you like to do?", choices = list("Press the button.", "Close the lighter."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/flame/lighter/zippo/c4detonator/proc/detonator_action(datum/om/prompt/choice/ask)
+/obj/item/flame/lighter/zippo/c4detonator/proc/detonator_action(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(!lit || !detonator_mode)
 		return
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+	var/mob/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("Press the button.")
 			to_chat(user, span_warning("You press the button."))
 			icon_state = "[base_state]click"

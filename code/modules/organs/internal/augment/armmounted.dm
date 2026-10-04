@@ -286,13 +286,15 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 			select_integrated_tool(integrated_tool_named(key))
 		return ..()
 
-	om_ask(owner, /datum/om/prompt/choice/radial, PROC_REF(integrated_tool_chosen), choices = options, anchor = owner)
+	open_request(src, /datum/prompt/choice, PROC_REF(integrated_tool_chosen), answerer = owner, choices = options, anchor = owner, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// Answer to augment_action(): set the picked tool and run the deploy (the old ..()).
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/integrated_tool_chosen(datum/om/prompt/choice/radial/ask)
-	if(!owner || ask.answerer != owner || is_broken())
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/integrated_tool_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	select_integrated_tool(integrated_tool_named(ask.choice))
+	if(!owner || A.request.answerer != owner || is_broken())
+		return
+	select_integrated_tool(integrated_tool_named(A.answer.answer_value))
 	tool_picked = TRUE
 	augment_action()
 

@@ -363,17 +363,17 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 	visible_message(span_boldwarning("The [new_mimic] suddenly growls beneath you as it turns out to be a mimic!"))
 	replace_with(src, new_mimic)
 
-EXTEND_INTERACTIONS(/obj/effect/floormimic, INTERACT_ITEM(null, PROC_REF(floormimic_awaken_item)))
-
 /// Old attackby: prodding an active mimic wakes it.
-/obj/effect/floormimic/proc/floormimic_awaken_item(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/floormimic/proc/floormimic_awaken_item(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(mimic_active)
 		awaken(user)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 CAPABILITIES(/obj/effect/floormimic)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
+	op("floormimic_awaken_item", item(/obj/item), then(PROC_REF(floormimic_awaken_item)))
 
 /// Any blast destroys the mimic outright.
 /obj/effect/floormimic/proc/blasted_away(datum/act/A)

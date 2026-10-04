@@ -193,9 +193,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), nu
 		topple()
 
 /// Old attack_hand: stand a toppled cutout back up (behind the structure gate, as before).
-/obj/structure/barricade/cutout/proc/cutout_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/barricade/cutout/proc/cutout_interaction_hand(datum/act/op/A)
 	if(!toppled)
-		return FALSE
+		return OP_DECLINE
 	untopple()
 	return TRUE
 
@@ -205,19 +205,20 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), nu
 	if(Adjacent(user))
 		. += span_notice("... from this distance, they seem to be made of [material.name] ...")
 
-EXTEND_INTERACTIONS(/obj/structure/barricade/cutout, \
-	INTERACT_HAND("Stand up", PROC_REF(cutout_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(cutout_interaction_item)), \
-)
+CAPABILITIES(/obj/structure/barricade/cutout)
+	op("cutout_interaction_hand", hand(), label("Stand up"), then(PROC_REF(cutout_interaction_hand)))
+	op("cutout_interaction_item", item(/obj/item), then(PROC_REF(cutout_interaction_item)))
 
 /// Old attackby.
-/obj/structure/barricade/cutout/proc/cutout_interaction_item(mob/user, obj/I, datum/interaction/interaction)
+/obj/structure/barricade/cutout/proc/cutout_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/I = A.held
 	if(is_type_in_list(I, painters))
 		om_ask(user, /datum/om/prompt/choice, PROC_REF(cutout_type_chosen), message = "What would you like to paint the cutout as?", title = "Cutout Painting", choices = cutout_types, subject = I, requires = PROMPT_IN_HAND)
 		return TRUE
 
 	else
-		return FALSE
+		return OP_DECLINE
 
 /obj/structure/barricade/cutout/proc/cutout_type_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer

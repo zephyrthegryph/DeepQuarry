@@ -297,13 +297,15 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	rel_set(src, nameof(avatar), occupant.vr_link)
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
 	if(avatar())
-		om_ask(occupant, /datum/om/prompt/confirm, PROC_REF(vr_reuse_answered), message = "You already have a [avatar().stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", title = "New avatar", answer_on_no = TRUE, requires = list(/datum/om/check/inside_target))
+		open_request(src, /datum/prompt/yes_no, PROC_REF(vr_reuse_answered), answerer = occupant, title = "New avatar", question = "You already have a [avatar().stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", ask_flags = ASK_INSIDE, timeout = 0)
 		return
 	vr_choose_avatar(occupant)
 
-/obj/machinery/vr_sleeper/proc/vr_reuse_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/occupant = ask.answerer
-	if(ask.yes && avatar())
+/obj/machinery/vr_sleeper/proc/vr_reuse_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/occupant = A.request.answerer
+	if(A.answer.answer_value && avatar())
 		vr_reenter(occupant)
 		return
 	// Delink the mob

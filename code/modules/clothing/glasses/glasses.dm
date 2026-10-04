@@ -785,11 +785,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	if(!istype(user) || user.incapacitated())
 		return
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(tactical_sec_vis_pattern_chosen), choices = tac_sec_vis_anim, anchor = src, radius = 36, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(tactical_sec_vis_pattern_chosen), answerer = user, choices = tac_sec_vis_anim, anchor = src, radius = 36, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	var/static/list/options = list("Scanning pattern 1" = "tacsecvis1", "Scanning pattern 2" = "tacsecvis2", "Scanning pattern 3" = "tacsecvis3","Scanning pattern 4" ="tacsecvis4")
 	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]

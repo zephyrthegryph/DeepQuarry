@@ -151,10 +151,12 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 	..()
 
 /obj/mecha/combat/phazon/janus/query_damtype()
-	om_ask(src?.slot_item(MECHA_SLOT_PILOT), /datum/om/prompt/choice, PROC_REF(janus_damtype_chosen), title = "Damage Type", message = "Gauntlet Phase Emitter Mode", choices = list("Force","Energy","Stun"), buttons = TRUE, requires = list(/datum/om/check/inside_target))
+	open_request(src, /datum/prompt/choice, PROC_REF(janus_damtype_chosen), answerer = src?.slot_item(MECHA_SLOT_PILOT), title = "Damage Type", question = "Gauntlet Phase Emitter Mode", choices = list("Force","Energy","Stun"), buttons = TRUE, ask_flags = ASK_INSIDE, timeout = 0)
 
-/obj/mecha/combat/phazon/janus/proc/janus_damtype_chosen(datum/om/prompt/choice/ask)
-	var/new_damtype = ask.choice
+/obj/mecha/combat/phazon/janus/proc/janus_damtype_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_damtype = A.answer.answer_value
 	switch(new_damtype)
 		if("Force")
 			melee_injury_kind = INJURY_BLUNT

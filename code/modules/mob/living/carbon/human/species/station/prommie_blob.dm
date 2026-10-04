@@ -129,10 +129,12 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 	COOLDOWN_START(src, last_special, 2.5 SECONDS)
-	om_ask(src, /datum/om/prompt/color, PROC_REF(prommie_colour_chosen), message = "Please select a new body color.", title = "Shapeshifter Colour", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/color, PROC_REF(prommie_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/prommie_colour_chosen(datum/om/prompt/color/ask)
-	if(!ask.picked_color)
+/mob/living/carbon/human/proc/prommie_colour_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	shapeshifter_set_colour(ask.picked_color)
+	if(!A.answer.answer_value)
+		return
+	shapeshifter_set_colour(A.answer.answer_value)
 	get_forms()?.refresh_appearance()

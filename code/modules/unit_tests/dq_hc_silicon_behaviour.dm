@@ -263,3 +263,240 @@
 	settle()
 	TEST_ASSERT(!P.software[target.id], "a pAI that spent its RAM meanwhile installs nothing")
 	TEST_ASSERT_EQUAL(P.ram, 0, "and pays nothing")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Cyborgs and drones
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_silicon/proc/make_borg()
+	return allocate(/mob/living/silicon/robot, test_floor())
+
+/datum/unit_test/dq_hc_silicon/cloak_level_is_a_percentage
+
+/datum/unit_test/dq_hc_silicon/cloak_level_is_a_percentage/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	var/obj/item/borg/cloak/cloak = allocate(/obj/item/borg/cloak, test_floor())
+	cloak.forceMove(R)
+	cloak.set_cloaking_level(R)
+	hci_answer(R, 40)
+	settle()
+	TEST_ASSERT_EQUAL(cloak.cloak_strength, 0.4, "the answer in percent is the cloak's strength")
+	cloak.set_cloaking_level(R)
+	hci_answer(R, 100)
+	settle()
+	TEST_ASSERT_EQUAL(cloak.cloak_strength, 1, "a full level is kept")
+
+/datum/unit_test/dq_hc_silicon/cloak_level_dropped_when_cloak_leaves_the_borg
+
+/datum/unit_test/dq_hc_silicon/cloak_level_dropped_when_cloak_leaves_the_borg/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	var/obj/item/borg/cloak/cloak = allocate(/obj/item/borg/cloak, test_floor())
+	cloak.forceMove(R)
+	var/before = cloak.cloak_strength
+	cloak.set_cloaking_level(R)
+	cloak.forceMove(test_floor())
+	hci_answer(R, 10)
+	settle()
+	TEST_ASSERT_EQUAL(cloak.cloak_strength, before, "a cloak that left the borg is not changed")
+
+/datum/unit_test/dq_hc_silicon/robot_name_is_picked_once
+
+/datum/unit_test/dq_hc_silicon/robot_name_is_picked_once/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	R.custom_name = ""
+	R.dq_do_pick_name(R, null, null)
+	hci_answer(R, "Bolt-9")
+	settle()
+	TEST_ASSERT_EQUAL(R.custom_name, "Bolt-9", "the answer is the borg's name")
+
+/// The first external component a borg's pry question offers: its name and the component.
+/datum/unit_test/dq_hc_silicon/proc/first_prying_target(mob/living/silicon/robot/R)
+	for(var/datum/robot_component/C as anything in R.components)
+		if(C.internal || C.slot == ROBOT_SLOT_POWER || C.installed == ROBOT_PART_MISSING || !C.wrapped)
+			continue
+		return C
+	return null
+
+/datum/unit_test/dq_hc_silicon/robot_pry_component_takes_the_part_out
+
+/datum/unit_test/dq_hc_silicon/robot_pry_component_takes_the_part_out/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, get_step(H, EAST))
+	R.opened = TRUE
+	R.cell = null
+	var/datum/robot_component/target = first_prying_target(R)
+	TEST_ASSERT(target, "the borg has an external component to pry out")
+	R.pry_component(H)
+	hci_answer(H, "[target.name]")
+	settle()
+	TEST_ASSERT_EQUAL(target.installed, ROBOT_PART_MISSING, "the chosen component is out of its slot")
+
+/datum/unit_test/dq_hc_silicon/robot_pry_component_dropped_when_borg_closes
+
+/datum/unit_test/dq_hc_silicon/robot_pry_component_dropped_when_borg_closes/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, get_step(H, EAST))
+	R.opened = TRUE
+	R.cell = null
+	var/datum/robot_component/target = first_prying_target(R)
+	R.pry_component(H)
+	R.opened = FALSE
+	hci_answer(H, "[target.name]")
+	settle()
+	TEST_ASSERT_NOTEQUAL(target.installed, ROBOT_PART_MISSING, "a borg that closed meanwhile keeps its part")
+
+/datum/unit_test/dq_hc_silicon/shield_level_is_chosen_in_percent
+
+/datum/unit_test/dq_hc_silicon/shield_level_is_chosen_in_percent/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	var/obj/item/borg/combat/shield/shield = allocate(/obj/item/borg/combat/shield, test_floor())
+	shield.forceMove(R)
+	shield.borg_shield_verb_set_level(R, null, null)
+	hci_answer(R, "75")
+	settle()
+	TEST_ASSERT_EQUAL(shield.shield_level, 0.75, "the chosen level is the shield's")
+
+/datum/unit_test/dq_hc_silicon/cyborg_cable_colour_is_picked
+
+/datum/unit_test/dq_hc_silicon/cyborg_cable_colour_is_picked/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	var/obj/item/stack/cable_coil/cyborg/coil = allocate(/obj/item/stack/cable_coil/cyborg, test_floor())
+	coil.forceMove(R)
+	coil.set_colour(R)
+	hci_answer(R, "Cyan")
+	settle()
+	TEST_ASSERT_EQUAL(coil.color, GLOB.possible_cable_coil_colours["Cyan"], "the picked colour is the coil's")
+
+/datum/unit_test/dq_hc_silicon/robopen_colour_and_mode
+
+/datum/unit_test/dq_hc_silicon/robopen_colour_and_mode/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/pen/robopen/pen = allocate(/obj/item/pen/robopen, test_floor())
+	hci_click(H, pen, pen)
+	settle()
+	hci_answer(H, "Colour")
+	hci_answer(H, "green")
+	settle()
+	TEST_ASSERT_EQUAL(pen.colour, "green", "the second question picks the ink colour")
+
+/datum/unit_test/dq_hc_silicon/robopen_mode_flips
+
+/datum/unit_test/dq_hc_silicon/robopen_mode_flips/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/pen/robopen/pen = allocate(/obj/item/pen/robopen, test_floor())
+	var/mode = pen.mode
+	hci_click(H, pen, pen)
+	settle()
+	hci_answer(H, "Mode")
+	settle()
+	TEST_ASSERT_NOTEQUAL(pen.mode, mode, "Mode flips the printing mode")
+
+/datum/unit_test/dq_hc_silicon/robopen_cancel_changes_nothing
+
+/datum/unit_test/dq_hc_silicon/robopen_cancel_changes_nothing/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/pen/robopen/pen = allocate(/obj/item/pen/robopen, test_floor())
+	var/mode = pen.mode
+	hci_click(H, pen, pen)
+	settle()
+	hci_answer(H, "Cancel")
+	settle()
+	TEST_ASSERT_EQUAL(pen.mode, mode, "Cancel changes nothing")
+
+/datum/unit_test/dq_hc_silicon/robopen_labels_paper
+
+/datum/unit_test/dq_hc_silicon/robopen_labels_paper/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/pen/robopen/pen = allocate(/obj/item/pen/robopen, test_floor())
+	var/obj/item/paper/paper = allocate(/obj/item/paper, get_step(H, EAST))
+	pen.RenamePaper(H, paper)
+	hci_answer(H, "Memo")
+	settle()
+	TEST_ASSERT(findtext(paper.name, "Memo"), "the label is the paper's name")
+
+/datum/unit_test/dq_hc_silicon/form_printer_prints_a_chosen_form
+
+/datum/unit_test/dq_hc_silicon/form_printer_prints_a_chosen_form/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	var/obj/item/form_printer/printer = allocate(/obj/item/form_printer, test_floor())
+	printer.forceMove(R)
+	var/turf/T = test_floor()
+	var/before = 0
+	for(var/obj/item/paper/P in T)
+		before++
+	printer.deploy_paper(R)
+	hci_answer(R, "Paper")
+	settle()
+	var/after_blank = 0
+	for(var/obj/item/paper/P in T)
+		after_blank++
+	TEST_ASSERT_EQUAL(after_blank, before + 1, "a blank page is dispensed")
+	printer.deploy_paper(R)
+	hci_answer(R, "Form")
+	hci_answer(R, "Security")
+	hci_answer(R, "SEC-1003: Incident Report")
+	settle()
+	var/after_form = 0
+	for(var/obj/item/paper/P in T)
+		after_form++
+	TEST_ASSERT_EQUAL(after_form, after_blank + 1, "the chosen form is dispensed")
+
+/datum/unit_test/dq_hc_silicon/mining_scanner_range_is_picked
+
+/datum/unit_test/dq_hc_silicon/mining_scanner_range_is_picked/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	var/obj/item/mining_scanner/robot/scanner = allocate(/obj/item/mining_scanner/robot, test_floor())
+	scanner.forceMove(R)
+	scanner.upgrade(R)
+	scanner.change_size(R)
+	hci_answer(R, 5)
+	settle()
+	TEST_ASSERT_EQUAL(scanner.range, 5, "the picked range is the scanner's")
+
+/datum/unit_test/dq_hc_silicon/lost_drone_keeps_or_rerolls_laws
+
+/datum/unit_test/dq_hc_silicon/lost_drone_keeps_or_rerolls_laws/run_gate()
+	var/mob/living/silicon/robot/malf/lost/randomlaws/R = allocate(/mob/living/silicon/robot/malf/lost/randomlaws, test_floor())
+	R.law_retries = 2
+	R.repick_laws()
+	hci_answer(R, "Reroll (2)")
+	hci_answer(R, "Keep")
+	settle()
+	TEST_ASSERT_EQUAL(R.law_retries, 0, "keeping ends the rerolls")
+	R.law_retries = 3
+	R.repick_laws()
+	hci_answer(R, null, TRUE)
+	settle()
+	TEST_ASSERT_EQUAL(R.law_retries, 0, "closing the window keeps the laws")
+
+/datum/unit_test/dq_hc_silicon/drone_mail_tag_is_set_and_cleared
+
+/datum/unit_test/dq_hc_silicon/drone_mail_tag_is_set_and_cleared/run_gate()
+	var/mob/living/silicon/robot/drone/D = allocate(/mob/living/silicon/robot/drone, test_floor())
+	var/list/saved_locations = GLOB.tagger_locations
+	GLOB.tagger_locations = list("Disposals" = 1)
+	var/tag = "Disposals"
+	D.dq_do_set_mail_tag(D, null, null)
+	hci_answer(D, tag)
+	settle()
+	TEST_ASSERT_EQUAL(D.mail_destination, tag, "the picked destination is the drone's tag")
+	D.dq_do_set_mail_tag(D, null, null)
+	hci_answer(D, null, TRUE)
+	settle()
+	GLOB.tagger_locations = saved_locations
+	TEST_ASSERT_EQUAL(D.mail_destination, "", "a cancel clears the tag")
+
+/datum/unit_test/dq_hc_silicon/platform_paint_colours_a_part
+
+/datum/unit_test/dq_hc_silicon/platform_paint_colours_a_part/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/robot/platform/P = allocate(/mob/living/silicon/robot/platform, get_step(H, EAST))
+	var/obj/item/floor_painter/painter = allocate(/obj/item/floor_painter, test_floor())
+	H.put_in_active_hand(painter)
+	painter.paint_colour = "#123456"
+	var/obj/item/robot_module/robot/platform/tank_module = P.module
+	TEST_ASSERT(istype(tank_module), "the platform has its module")
+	P.try_paint(painter, H)
+	hci_answer(H, "Eyes")
+	settle()
+	TEST_ASSERT_EQUAL(tank_module.eye_color, "#123456", "the painter's colour is the eyes'")

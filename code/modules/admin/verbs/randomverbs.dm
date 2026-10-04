@@ -235,14 +235,16 @@ ADMIN_VERB(cmd_admin_add_random_ai_law, R_ADMIN|R_FUN, "Add Random AI Law", "Add
 	om_ask(user, /datum/om/prompt/confirm, PROC_REF(law_confirmed), title = "Confirm", message = "You sure?", requires = PROMPT_ADMIN(permissions))
 
 /datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_confirmed(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm, PROC_REF(law_answered), title = "Message", message = "Show ion message?", answer_on_no = TRUE, requires = PROMPT_ADMIN(permissions))
+	open_request(src, /datum/prompt/yes_no, PROC_REF(law_answered), answerer = ask.answerer, title = "Message", question = "Show ion message?", rights = permissions, timeout = 0)
 
-/datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_answered(datum/om/prompt/confirm/ask)
-	var/client/user = ask.answerer.client
+/datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer.client
 	log_admin("[key_name(user)] has added a random AI law.")
 	message_admins("[key_name_admin(user)] has added a random AI law.")
 
-	if(ask.yes)
+	if(A.answer.answer_value)
 		GLOB.command_announcement.Announce("Ion storm detected near \the [station_name()]. Please check all AI-controlled equipment for errors.", "Anomaly Alert", new_sound = ANNOUNCER_MSG_IONSTORM)
 
 	IonStorm(0)

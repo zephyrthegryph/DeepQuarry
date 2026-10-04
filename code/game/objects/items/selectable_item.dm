@@ -17,11 +17,13 @@ CAPABILITIES(/obj/item/selectable_item)
 /// Old attack_self.
 /obj/item/selectable_item/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(preface_confirmed), title = preface_title, message = preface_string, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(preface_confirmed), answerer = user, title = preface_title, question = preface_string, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/selectable_item/proc/preface_confirmed(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(item_selected), title = selection_title, message = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/obj/item/selectable_item/proc/preface_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	om_ask(A.request.answerer, /datum/om/prompt/choice, PROC_REF(item_selected), title = selection_title, message = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/selectable_item/proc/item_selected(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer

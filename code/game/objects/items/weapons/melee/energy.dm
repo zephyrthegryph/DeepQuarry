@@ -217,11 +217,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 	if(!in_range(src, user))	//Basic checks to prevent abuse
 		return TRUE
 
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(ask_blade_color), answerer = user, title = "Confirm Recolor", question = "Are you sure you want to recolor your blade?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/melee/energy/proc/ask_blade_color(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+/obj/item/melee/energy/proc/ask_blade_color(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	om_ask(A.request.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
 /obj/item/melee/energy/proc/blade_recolored(datum/om/prompt/color/ask)
 	if(ask.picked_color)

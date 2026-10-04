@@ -233,12 +233,14 @@
 		return "[booze_options[ourborg.sprite_extra_customization["boozehound"]]]-rest"
 
 /datum/robot_sprite/dogborg/service/booze/handle_extra_customization(mob/living/silicon/robot/ourborg)
-	om_ask(ourborg, /datum/om/prompt/choice, PROC_REF(drink_chosen), title = "Drink Choice", message = "Choose your drink!", choices = booze_options, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(drink_chosen), answerer = ourborg, ask_flags = ASK_CONSCIOUS, title = "Drink Choice", question = "Choose your drink!", choices = booze_options, timeout = 0)
 	return 1
 
-/datum/robot_sprite/dogborg/service/booze/proc/drink_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/silicon/robot/ourborg = ask.answerer
-	var/choice = ask.choice
+/datum/robot_sprite/dogborg/service/booze/proc/drink_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/robot/ourborg = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(ourborg.sprite_datum == src)
 		LAZYSET(ourborg.sprite_extra_customization, "boozehound", choice)
 		play_sfx(ourborg.loc, SFX_EFFECTS_BUBBLES, 2, vary = FALSE, extrarange = 4)

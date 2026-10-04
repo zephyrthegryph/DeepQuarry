@@ -35,8 +35,10 @@ SYSTEM_DEF(transfer)
 		timerbuffer = timerbuffer + CONFIG_GET(number/vote_autotransfer_interval)
 	return STEP_DONE
 
-/datum/system/transfer/proc/hard_end_entered(datum/om/prompt/number/ask)
-	var/new_shift_end = ask.number
+/datum/system/transfer/proc/hard_end_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_shift_end = A.answer.answer_value
 	if(!new_shift_end)
 		return
 

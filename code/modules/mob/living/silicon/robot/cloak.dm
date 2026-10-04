@@ -61,11 +61,13 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	if(!isrobot(R)) //sod off
 		return
 
-	om_ask(R, /datum/om/prompt/number, PROC_REF(cloaking_level_chosen), title = "Cloak Level", message = "How obscured do you want to be? In %", default = cloak_strength*100, max = 100, min = 0, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/number, PROC_REF(cloaking_level_chosen), answerer = R, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Cloak Level", question = "How obscured do you want to be? In %", default = cloak_strength*100, max_value = 100, min_value = 0, timeout = 0)
 
-/obj/item/borg/cloak/proc/cloaking_level_chosen(datum/om/prompt/number/ask)
-	var/mob/living/silicon/robot/R = ask.answerer
-	var/N = ask.number
+/obj/item/borg/cloak/proc/cloaking_level_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/robot/R = A.request.answerer
+	var/N = A.answer.answer_value
 	if(!isnull(N) && N >= 0 && N <= 100)
 		set_cloak_strength(N/100)
 		to_chat(R, span_warning("You will now be [N]% obscured when the cloak is active."))

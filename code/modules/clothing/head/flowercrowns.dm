@@ -5,15 +5,18 @@
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = 0
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/woodcirclet, INTERACT_INSERT(/obj/item/reagent_containers/food/snacks/grown, PROC_REF(circlet_add_flower), "Add flower"))
+CAPABILITIES(/obj/item/clothing/head/woodcirclet)
+	op("circlet_add_flower", item(/obj/item/reagent_containers/food/snacks/grown), label("Add flower"), then(PROC_REF(circlet_add_flower)))
 
 /// Old attackby: weave a flower into a crown.
-/obj/item/clothing/head/woodcirclet/proc/circlet_add_flower(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clothing/head/woodcirclet/proc/circlet_add_flower(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/complete
 	if(istype(W, /obj/item/reagent_containers/food/snacks/grown))
 		var/obj/item/reagent_containers/food/snacks/grown/G = W
 		if(!G.seed())
-			return FALSE
+			return OP_DECLINE
 		if(G.seed().kitchen_tag == PLANT_POPPIES)
 			to_chat(user, "You attach the poppy to the circlet and create a beautiful flower crown.")
 			complete = new /obj/item/clothing/head/poppy_crown(get_turf(user))
@@ -27,14 +30,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/woodcirclet, INTERACT_INSERT(/obj/it
 			to_chat(user, "You attach the rose to the circlet and create a beautiful flower crown.")
 			complete = new /obj/item/clothing/head/rose_crown(get_turf(user))
 		if(!complete)
-			return FALSE
+			return OP_DECLINE
 		user.drop_from_inventory(W)
 		user.drop_from_inventory(src)
 		consume(W, user)
 		consume(src, user)
 		user.put_in_hands(complete)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 //Flower crowns
 

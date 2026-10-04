@@ -105,30 +105,21 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	in_radial_menu = TRUE
 	// optional: a cancel still answers (with no choice) and falls through to the wrapped item.
 	// Not shown at all (no client, or the same menu toggled shut): the gripper is free again.
-	if(!om_ask(user,/datum/om/prompt/choice/radial/gripper_pocket, PROC_REF(pocket_chosen), choices = options, anchor = src, radius = 40, require_near = TRUE, autopick_single_option = FALSE, optional = TRUE))
+	var/datum/request/pocket_question = open_request(src, /datum/prompt/choice, PROC_REF(pocket_chosen), answerer = user, radial = TRUE, choices = options, anchor = src, radius = 40, require_near = TRUE, autopick_single_option = FALSE, timeout = 0)
+	if(!pocket_question || !user.client)
 		in_radial_menu = FALSE
 	return TRUE
 
-/// The gripper's pocket picker; a dropped answer still frees the gripper.
-/datum/om/prompt/choice/radial/gripper_pocket
-
-/datum/om/prompt/choice/radial/gripper_pocket/refused(reason)
-	var/obj/item/gripper/gripper = receiver
-	if(istype(gripper))
-		gripper.in_radial_menu = FALSE
-	return ..()
-
-/datum/om/prompt/choice/radial/gripper_pocket/cancelled()
-	var/obj/item/gripper/gripper = receiver
-	if(istype(gripper))
-		gripper.in_radial_menu = FALSE
-	return ..()
-
-/// Pocket radial answer: select the pocket, or use the held item when cancelled.
-/obj/item/gripper/proc/pocket_chosen(datum/om/prompt/choice/radial/gripper_pocket/ask)
+/// Pocket radial answer: select the pocket, or use the held item when the ring is closed. A ring that was never shown (the same menu toggled
+/// shut) or an answer dropped out of reach only frees the gripper; a dropped answer is the request's last_error.
+/obj/item/gripper/proc/pocket_chosen(datum/act/request/A)
 	in_radial_menu = FALSE
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+	var/mob/user = A.request.answerer
+	if(QDELETED(user))
+		return
+	if(!A.answer && A.request.last_error)
+		return
+	var/choice = A.answer ? A.answer.answer_value : null
 	var/obj/item/wrapped = get_wrapped_item()
 	if(choice)
 		var/obj/item/storage/internal/gripper/selected_pocket = pocket_choice_target(choice)

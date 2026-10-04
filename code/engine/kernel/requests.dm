@@ -32,7 +32,7 @@
 	/// and ending it deletes the request, so the reference is held a second past the owner's death at most.
 	var/datum/owner
 	/// Who answers a prompt: a mob. Null for a backend request.
-	var/datum/answerer
+	var/mob/answerer
 	/// TRUE when the request was opened with an answerer: its death ends the request (REQ_CANCELLED).
 	var/answerer_expected = FALSE
 	/// What the answerer gave, or the backend's answer. Read it through A.answer.

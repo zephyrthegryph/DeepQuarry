@@ -42,12 +42,14 @@
 
 /obj/structure/foodcart/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents_count(src))
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(food_chosen), choices = contents, title = "Grab Choice", message = "What would you like to grab from the cart?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(food_chosen), answerer = user, title = "Grab Choice", question = "What would you like to grab from the cart?", choices = contents, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/structure/foodcart/proc/food_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/reagent_containers/food/choice = ask.choice
+/obj/structure/foodcart/proc/food_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/reagent_containers/food/choice = A.answer.answer_value
 	if(choice.loc == src)
 		if(!user.canmove)
 			return

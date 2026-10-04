@@ -182,14 +182,14 @@ init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state
 init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "shrubber[rand(0,2)]"
 init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "lbarrelcacti[rand(0,2)]"
 init_visuals	code/game/objects/structures/electricchair.dm	add_overlay(image('icons/obj/objects.dmi', src, "echair_over", MOB_LAYER + 1, dir))
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,2)]"
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,3)]"
 init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "snowbush[rand(1, 6)]"
 init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = bush_icon
 init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "firstbush_[rand(1, 4)]"
 init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "sunnybush_[rand(1, 3)]"
 init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "genericbush_[rand(1, 4)]"
 init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "mush[rand(1,4)]"
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,2)]"
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,3)]"
 init_visuals	code/game/objects/structures/flora/grass.dm	icon_state = grass_icon
 init_visuals	code/game/objects/structures/flora/moretrees.dm	add_overlay(i)
 init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = choose_icon_state()

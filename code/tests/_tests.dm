@@ -19,6 +19,7 @@
 #include "engine\p2_fixtures.dm"
 #include "engine\s1_fixtures.dm"
 #include "engine\p2_storage_fixtures.dm"
+#include "engine\gap_fixtures.dm"
 #include "engine\eg2_wait_fixtures.dm"
 #include "engine\eg2_fixtures.dm"
 #endif

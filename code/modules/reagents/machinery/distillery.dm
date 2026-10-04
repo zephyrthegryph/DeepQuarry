@@ -185,15 +185,17 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	if(length(options) < 1)
 		return TRUE
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(distillery_radial_chosen), choices = options, anchor = src, require_near = !issilicon(user))
+	open_request(src, /datum/prompt/choice, PROC_REF(distillery_radial_chosen), answerer = user, choices = options, anchor = src, require_near = !issilicon(user), radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 	return TRUE
 
 /// Answer to interaction_distillery_radial().
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/distillery_radial_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/distillery_radial_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
 	if(!user)
 		return
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("examine")
 			user.examinate(src)
 

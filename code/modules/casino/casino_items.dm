@@ -66,13 +66,15 @@ CAPABILITIES(/obj/item/storage/wallet/casino)
 	layer = BELOW_MOB_LAYER
 	density = 0
 
-DECLARE_INTERACTIONS(/obj/structure/stripper_pole, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/stripper_pole)
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/structure/stripper_pole/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/stripper_pole/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	dance(user)
 	user.spin(32,2)
-	return FALSE
+	return OP_DECLINE
 
 /obj/structure/stripper_pole/proc/dance(mob/user)
 	if(layer == BELOW_MOB_LAYER)

@@ -146,11 +146,13 @@ CAPABILITIES(/obj/item/royal_spider_egg)
 /// Old attack_self.
 /obj/item/royal_spider_egg/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(release_confirmed), title = "Royal Spider Egg", message = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(release_confirmed), answerer = user, title = "Royal Spider Egg", question = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/royal_spider_egg/proc/release_confirmed(datum/om/prompt/confirm/ask)
-	var/mob/user = ask.answerer
+/obj/item/royal_spider_egg/proc/release_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/user = A.request.answerer
 	var/turf/drop_loc = user.loc
 	if(istype(drop_loc))
 		var/obj/effect/spider/spiderling/princess/royalty = new(drop_loc)

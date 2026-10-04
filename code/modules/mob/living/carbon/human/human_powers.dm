@@ -20,10 +20,12 @@
 			var/datum/sprite_accessory/hair/test = GLOB.hair_styles_list[hair_string]
 			if(test.flags & HAIR_TIEABLE)
 				valid_hairstyles.Add(hair_string)
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(tie_hair_chosen), message = "Select a new hairstyle", title = "Your hairstyle", choices = valid_hairstyles, ask_flags = ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(tie_hair_chosen), answerer = src, title = "Your hairstyle", question = "Select a new hairstyle", choices = valid_hairstyles, ask_flags = ASK_CAPABLE, timeout = 0)
 
-/mob/living/carbon/human/proc/tie_hair_chosen(datum/om/prompt/choice/ask)
-	var/selected_string = ask.choice
+/mob/living/carbon/human/proc/tie_hair_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/selected_string = A.answer.answer_value
 	if(selected_string && h_style != selected_string)
 		h_style = selected_string
 		regenerate_icons()
@@ -470,7 +472,7 @@
 	if(!nearby.len)
 		to_chat(src, span_warning("There is nobody nearby to play games with!"))
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(hand_games_partner_chosen), message = "Choose a game partner:", title = "Hand games", choices = nearby, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(hand_games_partner_chosen), answerer = src, title = "Hand games", question = "Choose a game partner:", choices = nearby, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// Which game to play; carries the partner.
 /datum/om/prompt/choice/hand_game
@@ -484,8 +486,10 @@
 	message = "Choose a game to play with [partner]?"
 	return TRUE
 
-/mob/living/carbon/human/proc/hand_games_partner_chosen(datum/om/prompt/choice/ask)
-	om_ask(src, /datum/om/prompt/choice/hand_game, PROC_REF(hand_games_chosen), partner = ask.choice)
+/mob/living/carbon/human/proc/hand_games_partner_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	om_ask(src, /datum/om/prompt/choice/hand_game, PROC_REF(hand_games_chosen), partner = A.answer.answer_value)
 
 /mob/living/carbon/human/proc/hand_games_chosen(datum/om/prompt/choice/hand_game/ask)
 	if(ask.choice == "Cancel")

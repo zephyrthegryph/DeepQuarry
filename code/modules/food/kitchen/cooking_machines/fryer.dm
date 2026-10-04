@@ -39,6 +39,7 @@
 CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer)
 	owns_one(nameof(oil), /datum/reagents/oil_reagents)
+	op("fryer_interaction_oil", item(/obj/item), then(PROC_REF(fryer_interaction_oil)))
 
 ///Reagent subtype for the fryer.
 /datum/reagents/oil_reagents
@@ -264,10 +265,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 
 	fry_loop.stop()
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/fryer, INTERACT_ITEM(null, PROC_REF(fryer_interaction_oil)))
-
 /// Old attackby: scooping or pouring oil, else the appliance's own handling.
-/obj/machinery/appliance/cooker/fryer/proc/fryer_interaction_oil(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/appliance/cooker/fryer/proc/fryer_interaction_oil(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/reagent_containers) && !istype(I, /obj/item/reagent_containers/food) && I.reagents)
 		if(istype(I, /obj/item/reagent_containers/glass)) //Scooping stuff out with a glass.
 			if(I.reagents.total_volume <= 0 && oil)
@@ -294,4 +295,4 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/fryer, INTERACT_ITEM(null, P
 				MSG_BLIND(span_notice("You hear something viscous being poured into a metal container.")))
 			return TRUE
 	//If neither of the above returned, then call parent as normal
-	return FALSE
+	return OP_DECLINE

@@ -1409,7 +1409,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		to_chat(src, span_warning("You cannot reach the floor."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(bloody_doodle_direction_chosen), message = "Which way?", title = "Tile selection", choices = list("Here","North","South","East","West"), ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(bloody_doodle_direction_chosen), answerer = src, title = "Tile selection", question = "Which way?", choices = list("Here","North","South","East","West"), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// The blood writing's message; carries the direction picked.
 /datum/om/prompt/text/bloody_doodle
@@ -1436,8 +1436,10 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return null
 	return T
 
-/mob/living/carbon/human/proc/bloody_doodle_direction_chosen(datum/om/prompt/choice/ask)
-	var/direction = ask.choice
+/mob/living/carbon/human/proc/bloody_doodle_direction_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/direction = A.answer.answer_value
 	if(!bloody_doodle_turf(direction))
 		return
 	var/max_length = bloody_hands * 30 //tweeter style
@@ -1719,10 +1721,12 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	set category = VERB_CAT_OBJECT
 
 	if(stat) return
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(toggle_underwear_chosen), message = "Choose underwear:", title = "Show/hide underwear", choices = GLOB.global_underwear.categories, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(toggle_underwear_chosen), answerer = src, title = "Show/hide underwear", question = "Choose underwear:", choices = GLOB.global_underwear.categories, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/toggle_underwear_chosen(datum/om/prompt/choice/ask)
-	var/datum/category_group/underwear/UWC = ask.choice
+/mob/living/carbon/human/proc/toggle_underwear_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/category_group/underwear/UWC = A.answer.answer_value
 	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
@@ -1995,7 +1999,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_AI, PROC_REF(vv_topic_turn_
 VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_turn_robot), TOPIC_RIGHTS(R_SPAWN))
 
 /mob/living/carbon/human/proc/vv_topic_set_species(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(vv_species_chosen), message = "Please choose a new species", title = "Species", choices = sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc)), requires = PROMPT_ADMIN(R_SPAWN))
+	open_request(src, /datum/prompt/choice, PROC_REF(vv_species_chosen), answerer = user, title = "Species", question = "Please choose a new species", choices = sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc)), rights = R_SPAWN, timeout = 0)
 	return TRUE
 
 /mob/living/carbon/human/proc/vv_topic_turn_skeleton(mob/user, list/args)
@@ -2019,9 +2023,11 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 	vv_confirm_transform(user, "robot")
 	return TRUE
 
-/mob/living/carbon/human/proc/vv_species_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/result = ask.choice
+/mob/living/carbon/human/proc/vv_species_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/result = A.answer.answer_value
 	var/newtype = GLOB.all_species[result]
 	admin_ticket_log("[key_name_admin(user)] has modified the bodyparts of [src] to [result]")
 	set_species(newtype)
