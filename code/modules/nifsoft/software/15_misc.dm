@@ -128,6 +128,9 @@
 /datum/nifsoft/sizechange
 	var/tmp/datum/prompt/number/size_prompt
 
+CAPABILITIES(/datum/nifsoft/sizechange)
+	ref_one(nameof(size_prompt), /datum/prompt/number)
+
 /datum/nifsoft/sizechange/activate()
 	if((. = ..()))
 		var/obj/item/nif/implant = nif()

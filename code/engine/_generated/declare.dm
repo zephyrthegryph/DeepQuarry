@@ -2072,6 +2072,13 @@
 	into += entry_line(11)
 	into += list(global.owns_one(nameof(arscreen), /datum/tgui_module/crew_monitor/nif))
 
+/// CAPABILITIES(/datum/nifsoft/sizechange) at code/modules/nifsoft/software/15_misc.dm:131
+/datum/nifsoft/sizechange/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/nifsoft/software/15_misc.dm", 131, /datum/nifsoft/sizechange)
+	into += entry_line(132)
+	into += list(global.ref_one(nameof(size_prompt), /datum/prompt/number))
+
 /// CAPABILITIES(/datum/nifsoft/soulcatcher) at code/modules/nifsoft/software/13_soulcatcher.dm:16
 /datum/nifsoft/soulcatcher/declared_entries(list/into)
 	..(into)
