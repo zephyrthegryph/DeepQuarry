@@ -2277,6 +2277,15 @@
 	into += entry_line(78)
 	into += list(global.owns_many(nameof(symptoms)))
 
+/// CAPABILITIES(/datum/lleill_contact_review) at code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm:392
+/datum/lleill_contact_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm", 392, /datum/lleill_contact_review)
+	into += entry_line(393)
+	into += list(global.ref_one(nameof(actor), /mob/living/carbon/human))
+	into += entry_line(394)
+	into += list(global.ref_one(nameof(chosen_target), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/log_category) at code/modules/logging/log_category.dm:40
 /datum/log_category/declared_entries(list/into)
 	..(into)

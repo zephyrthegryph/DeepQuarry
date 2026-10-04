@@ -373,46 +373,146 @@
 	if(!targets.len)
 		to_chat(src, span_warning("There is nobody next to you."))
 		return
-	om_flow_start(/datum/om/flow/lleill_contact, src, null, targets = targets, contact_options = contact_options)
+	var/datum/lleill_contact_review/contact = new
+	rel_set(contact, nameof(contact.actor), src)
+	contact.targets = targets
+	contact.contact_options = contact_options
+	contact.start()
 
 /// Pick who, pick how (and describe it, for Custom), then they consent. The actor stays
 /// conscious throughout.
-/datum/om/flow/lleill_contact
-	requires = PROMPT_CONSCIOUS
+/datum/lleill_contact_review
+	var/mob/living/carbon/human/actor
 	var/list/targets
 	var/list/contact_options
 	var/mob/living/carbon/human/chosen_target
 	var/contact_type
 	var/custom_text
 
-/datum/om/flow/lleill_contact/ended(reason)
-	if(actor && chosen_target && (reason == "declined" || reason == "cancelled"))
+CAPABILITIES(/datum/lleill_contact_review)
+	ref_one(nameof(actor), /mob/living/carbon/human)
+	ref_one(nameof(chosen_target), /mob/living/carbon/human)
+
+/datum/prompt/choice/lleill_contact
+	timeout = 0
+
+/datum/prompt/choice/lleill_contact/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/lleill_contact_review/contact = owner
+	return contact.why_not()
+
+/datum/prompt/text/lleill_contact
+	timeout = 0
+
+/datum/prompt/text/lleill_contact/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/lleill_contact_review/contact = owner
+	return contact.why_not()
+
+/datum/prompt/yes_no/lleill_contact
+	timeout = 0
+
+/datum/prompt/yes_no/lleill_contact/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/lleill_contact_review/contact = owner
+	if(QDELETED(contact.actor) || QDELETED(contact.chosen_target))
+		return "gone"
+	// Refusing the invitation used to stop the flow before its consciousness check.
+	return answer_value == FALSE ? null : contact.why_not()
+
+/datum/lleill_contact_review/proc/why_not()
+	return QDELETED(actor) ? "gone" : actor.stat != CONSCIOUS ? "not conscious" : null
+
+/datum/lleill_contact_review/proc/start()
+	// flow_begin checked the actor before starting; it did not call ended on failure.
+	if(why_not())
+		consume(src)
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		failed_step("start", result.error)
+
+/datum/lleill_contact_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/lleill_contact, PROC_REF(target_chosen), answerer = actor, asker = actor, title = "Make contact", question = "Who do you wish to take energy from?", choices = targets)
+
+/datum/lleill_contact_review/proc/stopped(declined = FALSE)
+	if(declined && !QDELETED(actor) && !QDELETED(chosen_target))
 		to_chat(actor, span_warning("\The [chosen_target] refuses the contact."))
+	consume(src)
 
-/datum/om/flow/lleill_contact/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(target_chosen), message = "Who do you wish to take energy from?", title = "Make contact", choices = targets)
+/datum/lleill_contact_review/proc/failed_step(step, error)
+	stack_trace("lleill contact step [step]: [error]")
+	consume(src)
 
-/datum/om/flow/lleill_contact/proc/target_chosen(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(chosen_target), ask.choice)
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_chosen), message = "How do you wish to make contact with \the [chosen_target]?", title = "Contact type", choices = contact_options)
+/datum/lleill_contact_review/proc/target_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(target_chosen_step), A)
+	if(!result.ok)
+		failed_step("target", result.error)
 
-/datum/om/flow/lleill_contact/proc/type_chosen(datum/om/prompt/choice/ask)
-	contact_type = ask.choice
+/datum/lleill_contact_review/proc/target_chosen_step(datum/act/request/A)
+	if(!A.answer)
+		stopped()
+		return
+	rel_set(src, nameof(chosen_target), A.request.answer_value)
+	if(QDELETED(chosen_target))
+		stopped()
+		return
+	open_request(src, /datum/prompt/choice/lleill_contact, PROC_REF(type_chosen), answerer = actor, asker = actor, title = "Contact type", question = "How do you wish to make contact with \the [chosen_target]?", choices = contact_options)
+
+/datum/lleill_contact_review/proc/type_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(type_chosen_step), A)
+	if(!result.ok)
+		failed_step("type", result.error)
+
+/datum/lleill_contact_review/proc/type_chosen_step(datum/act/request/A)
+	if(QDELETED(chosen_target) || !A.answer)
+		stopped(isnull(A.request.answer_value))
+		return
+	contact_type = A.request.answer_value
 	if(contact_type == "Custom")
-		om_ask(actor, /datum/om/prompt/text, PROC_REF(custom_entered), message = "Write a description of how you make contact with \the [chosen_target], from a third person perspective.", title = "Custom contact", cancel_answer = "")
+		open_request(src, /datum/prompt/text/lleill_contact, PROC_REF(custom_entered), answerer = actor, asker = actor, title = "Custom contact", question = "Write a description of how you make contact with \the [chosen_target], from a third person perspective.")
 		return
 	ask_consent()
 
-/datum/om/flow/lleill_contact/proc/custom_entered(datum/om/prompt/text/ask)
-	custom_text = ask.text
+/datum/lleill_contact_review/proc/custom_entered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(custom_entered_step), A)
+	if(!result.ok)
+		failed_step("custom", result.error)
+
+/datum/lleill_contact_review/proc/custom_entered_step(datum/act/request/A)
+	// Closing the old custom prompt supplied an empty answer, then resumed the flow.
+	if(QDELETED(chosen_target) || why_not())
+		stopped()
+		return
+	if(!A.answer && !isnull(A.request.answer_value))
+		stopped()
+		return
+	custom_text = A.answer ? A.request.answer_value : ""
 	ask_consent()
 
-/datum/om/flow/lleill_contact/proc/ask_consent()
-	om_ask(chosen_target, /datum/om/prompt/confirm, PROC_REF(consented), message = "Do you accept the [contact_type] physical contact from \the [actor]?", title = "Actions")
+/datum/lleill_contact_review/proc/ask_consent()
+	open_request(src, /datum/prompt/yes_no/lleill_contact, PROC_REF(consented), answerer = chosen_target, asker = actor, title = "Actions", question = "Do you accept the [contact_type] physical contact from \the [actor]?")
 
-/datum/om/flow/lleill_contact/proc/consented(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/H = actor
-	H.lleill_contact_answered(chosen_target, contact_type, custom_text)
+/datum/lleill_contact_review/proc/consented(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(consented_step), A)
+	if(!result.ok)
+		failed_step("consent", result.error)
+
+/datum/lleill_contact_review/proc/consented_step(datum/act/request/A)
+	if(QDELETED(actor) || QDELETED(chosen_target))
+		stopped()
+		return
+	if(!A.answer || A.request.answer_value != TRUE)
+		stopped(isnull(A.request.answer_value) || A.answer)
+		return
+	actor.lleill_contact_answered(chosen_target, contact_type, custom_text)
+	consume(src)
 
 /mob/living/carbon/human/proc/lleill_contact_answered(mob/living/carbon/human/chosen_target, contact_type, custom_text)
 	if(get_dist(src,chosen_target) > 1)
