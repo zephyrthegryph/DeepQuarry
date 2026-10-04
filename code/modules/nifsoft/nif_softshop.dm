@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 		if(!has_stat(NOPOWER))
 			entopic.show()
 		else
-			after(src, rand(0, 15), PROC_REF(lose_power))
+			after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
 /obj/machinery/vending/nifsoft_shop/malfunction()
 	atom_break()

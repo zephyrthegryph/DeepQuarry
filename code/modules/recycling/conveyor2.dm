@@ -140,7 +140,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	if(!length(movable_contents))
 		return PROCESS_KILL
 	affecting = movable_contents
-	after(src, 1, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
+	after(src, 0.1 SECONDS, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
 
 /obj/machinery/conveyor/declare_interactions(list/into)
 	into += list(

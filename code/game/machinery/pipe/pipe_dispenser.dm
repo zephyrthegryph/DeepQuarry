@@ -110,7 +110,7 @@ UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_dispense_pipe)
 			return
 
 		created_object.add_fingerprint(ui.user)
-		COOLDOWN_START(src, wait, 15)
+		COOLDOWN_START(src, wait, 1.5 SECONDS)
 
 
 /datum/interaction/machine_item/pipedispenser_return

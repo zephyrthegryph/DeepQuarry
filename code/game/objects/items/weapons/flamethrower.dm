@@ -99,7 +99,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 			set_lit(FALSE)
 			update_icon()
 		// prevent spam
-		COOLDOWN_START(src, operating, 15)
+		COOLDOWN_START(src, operating, 1.5 SECONDS)
 	return
 
 /obj/item/flamethrower/proc/thrower_spew_percent()

@@ -22,7 +22,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(prob(10+extra_delay))
 		set_light(10, 10, "#[num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)]")
-	after(src, 10, PROC_REF(grenade_blast))
+	after(src, 1 SECONDS, PROC_REF(grenade_blast))
 
 /obj/item/grenade/anti_photon/proc/grenade_blast()
 	PRIVATE_PROC(TRUE)

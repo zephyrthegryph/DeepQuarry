@@ -347,7 +347,7 @@
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_followup(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/imperiontesla(get_turf(src))
 	P.launch_projectile(target, BP_TORSO, src)
-	after(src, 1.5, PROC_REF(microsingularity_second), with = list(target, prob(50) ? /obj/item/projectile/bullet/imperionblaster : /obj/item/projectile/bullet/imperionspear))
+	after(src, 0.15 SECONDS, PROC_REF(microsingularity_second), with = list(target, prob(50) ? /obj/item/projectile/bullet/imperionblaster : /obj/item/projectile/bullet/imperionspear))
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_second(atom/target, shot_type)
 	var/obj/item/projectile/B = new shot_type(get_turf(src))

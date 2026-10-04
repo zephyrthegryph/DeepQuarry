@@ -101,7 +101,7 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	pressed(user, stance)
 	if(floor == lift().current_floor() && !(lift().target_floor()))	//Make sure we're not going anywhere before opening doors
 		lift().open_doors()
-		after(src, 3, PROC_REF(reset))
+		after(src, 0.3 SECONDS, PROC_REF(reset))
 		return
 	lift().queue_move_to(floor)
 

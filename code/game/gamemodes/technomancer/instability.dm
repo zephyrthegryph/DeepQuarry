@@ -93,7 +93,7 @@
 	EXPIRY_STAMP(src, last_instability_event, CLOCK_WORLD)
 	var/image/instability_flash = image('icons/obj/spells.dmi',"instability")
 	add_overlay(instability_flash)
-	after(src, 4, PROC_REF(instability_flash_clear), with = list(instability_flash))
+	after(src, 0.4 SECONDS, PROC_REF(instability_flash_clear), with = list(instability_flash))
 
 /mob/living/proc/instability_flash_clear(image/instability_flash)
 	cut_overlay(instability_flash)

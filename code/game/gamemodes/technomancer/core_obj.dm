@@ -125,7 +125,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 			var/mob/living/L = A
 			if(L.stat == DEAD)
 				own_take_member(src, nameof(summoned_mobs), L) // detached; fade_away deletes it
-				after(L, 1, TYPE_PROC_REF(/mob/living, fade_away))
+				after(L, 0.1 SECONDS, TYPE_PROC_REF(/mob/living, fade_away))
 
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()

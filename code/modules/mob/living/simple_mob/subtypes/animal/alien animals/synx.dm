@@ -493,8 +493,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 
 /mob/living/simple_mob/animal/synx/proc/handle_mimic()
 	name = pick(voices)
-	after(src, 2, TYPE_PROC_REF(/mob, say), with = list(pick(speak)))
-	after(src, 5, PROC_REF(end_mimic))
+	after(src, 0.2 SECONDS, TYPE_PROC_REF(/mob, say), with = list(pick(speak)))
+	after(src, 0.5 SECONDS, PROC_REF(end_mimic))
 
 //lo- procs adjusted to mobs.
 

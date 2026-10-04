@@ -120,7 +120,7 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 		playsound(src, "sound/machines/copier.ogg", 100, 1)
 		audible_message(span_notice("You can hear [src] whirring as it attempts to scan."), runemessage = "whirr")
 		// Sit with your bare ass on the copier for a random time, feel like a fool, get stared at.
-		after(src, rand(20,45), PROC_REF(copy_ass_scan), with = list(user, left))
+		after(src, rand(2 SECONDS,4.5 SECONDS), PROC_REF(copy_ass_scan), with = list(user, left))
 	else
 		to_chat(user, span_warning("\The [copyitem] can't be copied by [src]."))
 		playsound(src, "sound/machines/buzz-two.ogg", 100)

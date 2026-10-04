@@ -449,7 +449,7 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 /obj/item/weldingtool/experimental/periodic_step()
 	..()
 	if(get_fuel() < get_max_fuel() && COOLDOWN_FINISHED(src, nextrefueltick))
-		COOLDOWN_START(src, nextrefueltick, 10)
+		COOLDOWN_START(src, nextrefueltick, 1 SECONDS)
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 
 /obj/item/weldingtool/experimental/hybrid

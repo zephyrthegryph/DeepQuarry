@@ -277,7 +277,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_announce)
 			to_chat(ui.user, span_warning("Message '[input]' is too short. [COMM_MSGLEN_MINIMUM] character minimum."))
 			return
 		crew_announcement.Announce(input)
-		COOLDOWN_START(src, message_cooldown, 600) //One minute
+		COOLDOWN_START(src, message_cooldown, 60 SECONDS) //One minute
 
 UI_ACT(/datum/tgui_module/communications, "callshuttle", ui_act_callshuttle)
 UI_ACT_PROC(/datum/tgui_module/communications, ui_act_callshuttle)
@@ -391,7 +391,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_messagecentcom)
 		CentCom_announce(input, ui.user)
 		to_chat(ui.user, span_blue("Message transmitted."))
 		log_game("[key_name(ui.user)] has made an IA [using_map.boss_short] announcement: [input]")
-		COOLDOWN_START(src, centcomm_message_cooldown, 300) // 30 seconds
+		COOLDOWN_START(src, centcomm_message_cooldown, 30 SECONDS) // 30 seconds
 	setMenuState(ui.user, COMM_SCREEN_MAIN)
 
 // OMG SYNDICATE ...LETTERHEAD
@@ -414,7 +414,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_messagesyndicate)
 		Syndicate_announce(input, ui.user)
 		to_chat(ui.user, span_blue("Message transmitted."))
 		log_game("[key_name(ui.user)] has made an illegal announcement: [input]")
-		COOLDOWN_START(src, centcomm_message_cooldown, 300) // 30 seconds
+		COOLDOWN_START(src, centcomm_message_cooldown, 30 SECONDS) // 30 seconds
 
 UI_ACT(/datum/tgui_module/communications, "RestoreBackup", ui_act_restorebackup)
 UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)

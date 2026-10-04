@@ -314,7 +314,7 @@
 	var/mob/living/carbon/human/victim = owner
 	if(iscarbon(victim))
 		name = "[victim.real_name]'s head"
-		after(victim, 1, TYPE_PROC_REF(/mob/living/carbon/human, update_hair))
+		after(victim, 0.1 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, update_hair))
 	get_icon()
 	return ..()
 

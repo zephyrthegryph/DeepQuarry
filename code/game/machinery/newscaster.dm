@@ -217,7 +217,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
 /obj/machinery/newscaster/tgui_status(mob/user)
 	if(!ispowered || (has_stat(BROKEN)))

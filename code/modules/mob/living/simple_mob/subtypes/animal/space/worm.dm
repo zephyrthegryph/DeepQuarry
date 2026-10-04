@@ -213,7 +213,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 
 /mob/living/simple_mob/animal/space/space_worm/head/Bump(atom/obstacle)
 	if(open_maw && !stat && obstacle != previous)
-		after(src, 1, PROC_REF(bump_eat), with = list(obstacle)) // a tick later, after the bump settles
+		after(src, 0.1 SECONDS, PROC_REF(bump_eat), with = list(obstacle)) // a tick later, after the bump settles
 	else
 		rel_clear(src, nameof(currentlyEating))
 		. = ..(obstacle)
