@@ -108,7 +108,7 @@
 	return TRUE
 
 /obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	if(source != has_extinguisher)
 		return

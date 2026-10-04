@@ -52,9 +52,13 @@ DECLARE_APPEARANCE(/obj/structure/dispenser, "appearance_phoron", list("1" = lis
 
 DECLARE_UI_STATE(/obj/structure/dispenser, GLOB.tgui_physical_state)
 
-DECLARE_UI(/obj/structure/dispenser, "TankDispenser")
+CAPABILITIES(/obj/structure/dispenser)
+	interface("TankDispenser")
+	op("phoron", ui_act("phoron"), then(PROC_REF(ui_act_phoron)))
+	op("oxygen", ui_act("oxygen"), then(PROC_REF(ui_act_oxygen)))
 
-UI_DATA_REPLACE(/obj/structure/dispenser, "oxygen=oxygentanks", "phoron=phorontanks")
+/obj/structure/dispenser/ui_data(datum/act/eval/A)
+	return list("oxygen" = oxygentanks, "phoron" = phorontanks)
 
 /// Old attackby: store a tank, or take a hit on harm intent.
 /datum/interaction/entry_item/dispenser_item
@@ -102,25 +106,25 @@ UI_DATA_REPLACE(/obj/structure/dispenser, "oxygen=oxygentanks", "phoron=phoronta
 
 #undef TANK_DISPENSER_CAPACITY
 
-UI_ACT(/obj/structure/dispenser, "phoron", ui_act_phoron)
-UI_ACT_PROC(/obj/structure/dispenser, ui_act_phoron)
+/obj/structure/dispenser/proc/ui_act_phoron(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/tank/phoron/tank = locate_within(src, /obj/item/tank/phoron)
-	if(tank && Adjacent(ui.user))
-		ui.user.put_in_hands(tank)
+	if(tank && Adjacent(user))
+		user.put_in_hands(tank)
 		phorontanks--
 	. = TRUE
 	play_sfx(src, SFX_ITEMS_DROP_GASCAN)
 	update_icon()
 
-UI_ACT(/obj/structure/dispenser, "oxygen", ui_act_oxygen)
-UI_ACT_PROC(/obj/structure/dispenser, ui_act_oxygen)
+/obj/structure/dispenser/proc/ui_act_oxygen(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/tank/tank = null
 	for(var/obj/item/tank/T in contents_of(src))
 		if(istype(T, /obj/item/tank/oxygen) || istype(T, /obj/item/tank/air) || istype(T, /obj/item/tank/anesthetic))
 			tank = T
 			break
-	if(tank && Adjacent(ui.user))
-		ui.user.put_in_hands(tank)
+	if(tank && Adjacent(user))
+		user.put_in_hands(tank)
 		oxygentanks--
 	. = TRUE
 	play_sfx(src, SFX_ITEMS_DROP_GASCAN)

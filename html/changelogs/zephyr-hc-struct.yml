@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Converted structure hit reactions, emags, windows (janitorial cart, safe, tank dispenser, underwear dresser) and in-hand uses (rubber duckies, torn inflatables) to the final op and hook forms."

@@ -85,30 +85,32 @@ APPEARANCE_TEMPLATE(/obj/structure/safe, "{initial(icon_state)}{open?-open:}")
 	name = "Use"
 	effect = /atom/proc/interaction_open_ui
 
-DECLARE_UI(/obj/structure/safe, "Safe")
+CAPABILITIES(/obj/structure/safe)
+	interface("Safe")
+	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
+	op("decrement", ui_act("decrement"), then(PROC_REF(ui_act_decrement)))
+	op("increment", ui_act("increment"), then(PROC_REF(ui_act_increment)))
+	op("retrieve", ui_act("retrieve", arg("ref")), then(PROC_REF(ui_act_retrieve)))
+	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(safe/not_human))))
 
-UI_DATA_REPLACE(/obj/structure/safe, "dial:num", "merge:ui_data_obj_structure_safe{open:bool,contents:list}")
+MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 
-/// The computed part of /obj/structure/safe's window data (declared on its UI_DATA row).
-/obj/structure/safe/proc/ui_data_obj_structure_safe(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// Only a human works the dial.
+/obj/structure/safe/proc/user_is_human(datum/act/op/A)
+	return ishuman(A.actor)
+
+/obj/structure/safe/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["dial"] = dial
 	data["open"] = !!open
 	var/list/c = list()
 	FOR_REAL_CONTENTS(var/obj/item/P, src)
-		c += list(list("ref" = "\ref[P]", "name" = P.name))
+		c += list(list("ref" = "ef[P]", "name" = P.name))
 	data["contents"] = c
 	return data
 
-/obj/structure/safe/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!ishuman(user))
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/structure/safe, "open", ui_act_open)
-UI_ACT_PROC(/obj/structure/safe, ui_act_open)
-	var/mob/living/carbon/human/human_user = user
+/obj/structure/safe/proc/ui_act_open(datum/act/op/A)
+	var/mob/living/carbon/human/human_user = A.actor
 	if(check_unlocked())
 		to_chat(human_user, span_notice("You [open ? "close" : "open"] [src]."))
 		open = !open
@@ -117,9 +119,8 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_open)
 		to_chat(human_user, span_notice("You can't [open ? "close" : "open"] [src], the lock is engaged!"))
 	return TRUE
 
-UI_ACT(/obj/structure/safe, "decrement", ui_act_decrement)
-UI_ACT_PROC(/obj/structure/safe, ui_act_decrement)
-	var/mob/living/carbon/human/human_user = user
+/obj/structure/safe/proc/ui_act_decrement(datum/act/op/A)
+	var/mob/living/carbon/human/human_user = A.actor
 	var/canhear = 0
 	if(human_user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
@@ -127,18 +128,17 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_decrement)
 	if(dial == tumbler_1_pos + 1 || dial == tumbler_1_pos - 71)
 		tumbler_1_pos = decrement(tumbler_1_pos)
 		if(canhear)
-			to_chat(human_user, span_notice("You hear a [pick("clack", "scrape", "clank")] from \the [src]."))
+			to_chat(human_user, span_notice("You hear a [pick("clack", "scrape", "clank")] from 	he [src]."))
 		if(tumbler_1_pos == tumbler_2_pos + 37 || tumbler_1_pos == tumbler_2_pos - 35)
 			tumbler_2_pos = decrement(tumbler_2_pos)
 			if(canhear)
-				to_chat(human_user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
+				to_chat(human_user, span_notice("You hear a [pick("click", "chink", "clink")] from 	he [src]."))
 				play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 		check_unlocked(human_user, canhear)
 	return TRUE
 
-UI_ACT(/obj/structure/safe, "increment", ui_act_increment)
-UI_ACT_PROC(/obj/structure/safe, ui_act_increment)
-	var/mob/living/carbon/human/human_user = user
+/obj/structure/safe/proc/ui_act_increment(datum/act/op/A)
+	var/mob/living/carbon/human/human_user = A.actor
 	var/canhear = 0
 	if(human_user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
@@ -146,19 +146,19 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_increment)
 	if(dial == tumbler_1_pos - 1 || dial == tumbler_1_pos + 71)
 		tumbler_1_pos = increment(tumbler_1_pos)
 		if(canhear)
-			to_chat(human_user, span_notice("You hear a [pick("clack", "scrape", "clank")] from \the [src]."))
+			to_chat(human_user, span_notice("You hear a [pick("clack", "scrape", "clank")] from 	he [src]."))
 		if(tumbler_1_pos == tumbler_2_pos - 37 || tumbler_1_pos == tumbler_2_pos + 35)
 			tumbler_2_pos = increment(tumbler_2_pos)
 			if(canhear)
-				to_chat(human_user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
+				to_chat(human_user, span_notice("You hear a [pick("click", "chink", "clink")] from 	he [src]."))
 				play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 		check_unlocked(human_user, canhear)
 	return TRUE
 
-UI_ACT(/obj/structure/safe, "retrieve", ui_act_retrieve, UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/structure/safe, ui_act_retrieve)
-	var/mob/living/carbon/human/human_user = user
-	var/obj/item/P = params["ref"]
+/// The window hands back one of the things it listed.
+/obj/structure/safe/proc/ui_act_retrieve(datum/act/op/A, ref)
+	var/mob/living/carbon/human/human_user = A.actor
+	var/obj/item/P = ui_ref(ref, contents_of(src), /obj/item)
 	if(open && P && in_range(src, human_user))
 		var/was_stored = P.loc == src
 		human_user.put_in_hands(P)

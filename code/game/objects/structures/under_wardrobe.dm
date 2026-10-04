@@ -7,6 +7,11 @@
 
 CAPABILITIES(/obj/structure/undies_wardrobe)
 	climb()
+	interface("UndiesWardrobe", title = "Underwear Dresser")
+	op("remove_underwear", ui_act("remove_underwear", arg("category")), then(PROC_REF(ui_act_remove_underwear)))
+	op("change_underwear", ui_act("change_underwear", arg("category")), then(PROC_REF(ui_act_change_underwear)))
+	op("tweak", ui_act("tweak", arg("category"), arg("tweak")), then(PROC_REF(ui_act_tweak)))
+	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(undies_wardrobe/not_human))))
 
 /obj/structure/undies_wardrobe/declare_interactions(list/into)
 	into += list(
@@ -35,12 +40,14 @@ CAPABILITIES(/obj/structure/undies_wardrobe)
 /obj/structure/undies_wardrobe/interact(mob/living/carbon/human/H)
 	tgui_interact(H)
 
-DECLARE_UI(/obj/structure/undies_wardrobe, "UndiesWardrobe", UI_TITLE("Underwear Dresser"))
+MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 
-UI_DATA_REPLACE(/obj/structure/undies_wardrobe, "merge:ui_data_obj_structure_undies_wardrobe{categories:list}")
+/// Only a human works the window.
+/obj/structure/undies_wardrobe/proc/user_is_human(datum/act/op/A)
+	return ishuman(A.actor)
 
-/// The computed part of /obj/structure/undies_wardrobe's window data (declared on its UI_DATA row).
-/obj/structure/undies_wardrobe/proc/ui_data_obj_structure_undies_wardrobe(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/structure/undies_wardrobe/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	var/list/cats = list()
 	if(!ishuman(user))
@@ -92,66 +99,64 @@ UI_DATA_REPLACE(/obj/structure/undies_wardrobe, "merge:ui_data_obj_structure_und
 
 	return ..()
 
-// Topic switch lifted into tgui_act with stable action names.
-/datum/om/prompt/choice/underwear
+/// The choice of an item for one underwear category; `category` is the name of the category the question is about.
+/datum/prompt/choice/underwear
 	title = "Choose underwear"
-	message = "Choose underwear:"
-	requires = PROMPT_USABLE
+	question = "Choose underwear:"
 	var/category
 
-/obj/structure/undies_wardrobe/proc/underwear_chosen(datum/om/prompt/choice/underwear/ask)
-	var/mob/living/carbon/human/H = ask.answerer
-	var/datum/category_item/underwear/selected_underwear = ask.choice
+/// The wardrobe stands and the person is next to it and can still wear underwear.
+/obj/structure/undies_wardrobe/proc/request_usable(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && !QDELETED(src) && in_range(src, M) && human_who_can_use_underwear(M)
+
+/obj/structure/undies_wardrobe/proc/underwear_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/underwear/R = A.request
+	var/mob/living/carbon/human/H = R.answerer
 	if(!istype(H))
 		return
-	var/category = ask.category
+	var/category = R.category
+	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[category]
+	var/datum/category_item/underwear/selected_underwear = UWC?.items_by_name[A.answer.answer_value]
+	if(!selected_underwear)
+		return
 	LAZYSET(H.all_underwear, category, selected_underwear)
 	H.hide_underwear[category] = FALSE
 	H.update_underwear()
 
-/obj/structure/undies_wardrobe/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!ishuman(user))
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/structure/undies_wardrobe, "remove_underwear", ui_act_remove_underwear, UI_ARG_TEXT("category"))
-UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_remove_underwear)
-	var/mob/living/carbon/human/H = user
+/obj/structure/undies_wardrobe/proc/ui_act_remove_underwear(datum/act/op/A, category)
+	var/mob/living/carbon/human/H = A.actor
 	var/changed = FALSE
-	if(params["category"] in H.all_underwear)
-		LAZYREMOVE(H.all_underwear, params["category"])
+	if(category in H.all_underwear)
+		LAZYREMOVE(H.all_underwear, category)
 		changed = TRUE
 	if(changed)
 		H.update_underwear()
 	return TRUE
 
-UI_ACT(/obj/structure/undies_wardrobe, "change_underwear", ui_act_change_underwear, UI_ARG_TEXT("category"))
-UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_change_underwear)
-	var/mob/living/carbon/human/H = user
-	var/changed = FALSE
-	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
+/obj/structure/undies_wardrobe/proc/ui_act_change_underwear(datum/act/op/A, category)
+	var/mob/living/carbon/human/H = A.actor
+	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[category]
 	if(!UWC)
 		return TRUE
-	om_ask(H, /datum/om/prompt/choice/underwear, PROC_REF(underwear_chosen), choices = UWC.items, default = LAZYACCESS(H.all_underwear, UWC.name), category = UWC.name)
-	if(changed)
-		H.update_underwear()
+	var/list/names = list()
+	for(var/datum/category_item/underwear/UWI in UWC.items)
+		names += UWI.name
+	var/datum/category_item/underwear/current = LAZYACCESS(H.all_underwear, UWC.name)
+	open_request(src, /datum/prompt/choice/underwear, PROC_REF(underwear_chosen), valid = PROC_REF(request_usable), answerer = H, choices = names, default = current?.name, category = UWC.name, timeout = 0)
 	return TRUE
 
-UI_ACT(/obj/structure/undies_wardrobe, "tweak", ui_act_tweak, UI_ARG_TEXT("category"), UI_ARG_REF("tweak", null, /datum/gear_tweak))
-UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_tweak)
-	var/mob/living/carbon/human/H = user
-	var/changed = FALSE
-	var/underwear = params["category"]
+/obj/structure/undies_wardrobe/proc/ui_act_tweak(datum/act/op/A, category, tweak)
+	var/mob/living/carbon/human/H = A.actor
+	var/underwear = category
 	if(!(underwear in H.all_underwear))
 		return TRUE
-	var/datum/gear_tweak/gt = params["tweak"]
+	var/datum/gear_tweak/gt = ui_ref(tweak, null, /datum/gear_tweak)
 	if(!gt)
 		return TRUE
 	gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/underwear(underwear, gt), PROMPT_USABLE)
-	if(changed)
-		H.update_underwear()
 	return TRUE
 
 /// An underwear gear tweak change: which underwear category and tweak it is for.

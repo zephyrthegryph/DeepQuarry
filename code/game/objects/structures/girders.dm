@@ -137,11 +137,13 @@ DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_o
 		return receive_projectile(P, def_zone, girder_material.reflectivity)
 	return receive_projectile(P, def_zone)
 
-DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
+CAPABILITIES(/obj/structure/girder)
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(girder_blob))))
+
 /// A blob pulls the girder apart.
-/obj/structure/girder/proc/girder_blob(datum/damage_packet/packet)
+/obj/structure/girder/proc/girder_blob(datum/act/hit/blob/A)
 	dismantle()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/structure/girder/proc/reset_girder()
 	name = "[girder_material.display_name] [initial(name)]"

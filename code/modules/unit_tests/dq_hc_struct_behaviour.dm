@@ -226,6 +226,18 @@
 	press(H, W, "remove_underwear", list("category" = UWC.name))
 	TEST_ASSERT(!(UWC.name in H.all_underwear), "the remove button takes the item off")
 
+// Added with the conversion: the legacy question was asked with a window-state requirement no player-less test can satisfy.
+/datum/unit_test/dq_hc_struct/undies_wardrobe_change_asks_for_a_choice
+/datum/unit_test/dq_hc_struct/undies_wardrobe_change_asks_for_a_choice/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/structure/undies_wardrobe/W = allocate(/obj/structure/undies_wardrobe, tile(3, 2))
+	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories[1]
+	var/datum/category_item/underwear/chosen = UWC.items[length(UWC.items)]
+	press(H, W, "change_underwear", list("category" = UWC.name))
+	test_answer(H, chosen.name)
+	settle()
+	TEST_ASSERT_EQUAL(LAZYACCESS(H.all_underwear, UWC.name), chosen, "the chosen item is worn")
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Held things used in hand
 // ---------------------------------------------------------------------------------------------------------------------

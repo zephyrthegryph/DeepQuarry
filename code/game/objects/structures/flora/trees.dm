@@ -141,11 +141,13 @@
 	cut_overlays() // For the Sif tree and other future glowy trees.
 	set_light(0)
 
-DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast))
+CAPABILITIES(/obj/structure/flora/tree)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tree_blast))))
+
 /// A blast tears into the tree through its own health, ruining some of the wood.
-/obj/structure/flora/tree/proc/tree_blast(datum/damage_packet/packet)
-	adjust_health(-(max_integrity / packet.severity), TRUE)
-	return DAMAGE_REACTION_BLOCK
+/obj/structure/flora/tree/proc/tree_blast(datum/act/hit/explosion/A)
+	adjust_health(-(max_integrity / A.packet.severity), TRUE)
+	return TRUE
 
 /obj/structure/flora/tree/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())

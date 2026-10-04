@@ -89,12 +89,16 @@
 	var/plant_icon = icon(icon, state)
 	return getHologramIcon(plant_icon, 0)
 
-DECLARE_EMAG(/obj/machinery/holoplant, PROC_REF(on_emag), null, null)
-/obj/machinery/holoplant/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/machinery/holoplant)
+	emag(then(PROC_REF(on_emag)))
+
+/// The sequencer swaps the plant for the corrupted one.
+/obj/machinery/holoplant/proc/on_emag(datum/act/op/A)
 	set_emagged(TRUE)
 	if(plant)
 		deactivate()
 	activate()
+	return OP_OK
 
 /obj/machinery/holoplant/Crossed(mob/living/L)
 	if(!interference && plant && istype(L))
