@@ -66,9 +66,6 @@ usr_outside_verb	code/controllers/admin.dm	usr.client.debug_variables(target)
 usr_outside_verb	code/controllers/admin.dm	message_admins("Admin [key_name_admin(usr)] is debugging the [target] [class].")
 usr_outside_verb	code/controllers/configuration/config_entry.dm	log_admin("[key_name(usr)] attempted to reset locked config entry [type] to its default")
 usr_outside_verb	code/controllers/configuration/config_entry.dm	log_admin("[key_name(usr)] attempted to set locked config entry [type] to '[str_val]'")
-usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("[key_name_admin(usr)] has forcefully reloaded the configuration from disk.")
-usr_outside_verb	code/controllers/configuration/configuration.dm	message_admins("[key_name_admin(usr)] has forcefully reloaded the configuration from disk.")
-usr_outside_verb	code/controllers/configuration/configuration.dm	to_chat(usr, span_warning("Another user is already reloading the config!"))
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config access of [entry_type] attempted by [key_name(usr)]")
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config rewrite of [entry_type] to [new_val] attempted by [key_name(usr)]")
 usr_outside_verb	code/controllers/measure/synthetic.dm	var/mob/saved_user = usr
@@ -146,12 +143,6 @@ usr_outside_verb	code/modules/admin/admin_attack_log.dm	/proc/log_and_message_ad
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."), confidential = TRUE)
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
-usr_outside_verb	code/modules/admin/admin_verbs.dm	to_chat(usr, span_warning("Error: warn(): You can't warn admins."))
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	var/lastusr = usr
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	usr = handler
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	usr = lastusr
@@ -179,8 +170,6 @@ usr_outside_verb	code/modules/admin/holder2.dm	if(check_rights_for(usr.client, R
 usr_outside_verb	code/modules/admin/holder2.dm	return usr.client.holder.check_if_greater_rights_than_holder(other.holder)
 usr_outside_verb	code/modules/admin/holder2.dm	if(!forceGlobal && usr)
 usr_outside_verb	code/modules/admin/holder2.dm	var/client/C = usr.client
-usr_outside_verb	code/modules/admin/topic.dm	message_admins("[key_name_admin(usr)] clicked an href with [msg] authorization key!")
-usr_outside_verb	code/modules/admin/topic.dm	log_admin("[key_name(usr)] clicked an href with [msg] authorization key! [href]")
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2.dm	usr.client.debug_variables(REGISTRY_MEMBERS(REGISTRY_SDQL2_QUERIES))
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	/proc/_hearers(Depth = world.view, Center = usr)
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	/proc/_ohearers(Dist, Center = usr)
@@ -205,13 +194,9 @@ usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/pro
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	ask_path(usr, "objholder")
 usr_outside_verb	code/modules/admin/view_variables/debug_variables.dm	usr << browse_rsc(icon_value, rname)
 usr_outside_verb	code/modules/admin/view_variables/get_variables.dm	.["value"] = input(usr, "Pick file:", "File") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
-usr_outside_verb	code/modules/admin/view_variables/get_variables.dm	tgui_alert_async(usr,"Invalid ref!")
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(usr?.client)
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(rerun_ask(usr, "sure", PROC_REF(find_references), args, /datum/om/prompt/choice/alert, message = "Running this will lock everything up for about 5 minutes. Would you like to begin the search?", title = "Find References", choices = list("Yes", "No")) != "Yes")
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(!usr?.client && !dq_refsearch_allowed(src))
-usr_outside_verb	code/modules/admin/view_variables_panel.dm	if(!usr.client || !check_rights_for(usr.client, R_HOLDER))
-usr_outside_verb	code/modules/admin/view_variables_panel.dm	to_chat(usr, span_danger("You need to be an administrator to access this."), confidential = TRUE)
-usr_outside_verb	code/modules/admin/view_variables_panel.dm	dq_vv_panel.tgui_interact(usr)
 usr_outside_verb	code/modules/client/client procs.dm	if(!usr || usr != mob) //stops us calling Topic for somebody else's client. Also helps prevent usr=null
 usr_outside_verb	code/modules/client/client procs.dm	message_admins("[ADMIN_LOOKUPFLW(usr)] [ADMIN_KICK(usr)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
 usr_outside_verb	code/modules/client/client procs.dm	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
@@ -289,7 +274,6 @@ usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
-usr_outside_verb	code/modules/tgui/helpers.dm	log_tgui(usr, "Error: Invalid JSON")
 usr_outside_verb	code/modules/tgui/modules/overmap.dm	CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
 usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
@@ -300,8 +284,6 @@ usr_outside_verb	code/modules/tgui_input/keycombo.dm	/proc/tgui_input_keycombo(m
 usr_outside_verb	code/modules/tgui_input/list.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/matrix.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/number.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/say_modal/speech.dm	CRASH("[usr] entered in a null payload to the chat window.")
-usr_outside_verb	code/modules/tgui_input/say_modal/speech.dm	CRASH("[usr] has entered more characters than allowed into a TGUI-Say")
 usr_outside_verb	code/modules/tgui_input/text.dm	user = usr
 usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(M != usr) return
 usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(usr == src) return

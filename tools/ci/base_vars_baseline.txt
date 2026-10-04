@@ -825,7 +825,6 @@ base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/is_ventcrawling = F
 base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/var/next_play_vent = 0
 base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/ventcrawl_layer = 3
 base_var	code/modules/vore/appearance/preferences.dm	var/tmp/datum/sprite_accessory/hair_accessory/hair_accessory_style_static
-base_var	code/modules/vore/eating/living.dm	var/showvoreprefs = TRUE // Determines if the mechanical vore preferences button will be displayed on the mob or not.
 base_var	code/modules/vore/eating/living.dm	var/list/temp_language_sources //Absorbs add languages to the pred. Lazy.
 base_var	code/modules/vore/eating/living.dm	var/list/temp_languages // Absorbs add languages to the pred. Lazy.
 base_var	code/modules/vore/eating/living.dm	var/prey_controlled = FALSE // If the mob is currently controlled by their prey.

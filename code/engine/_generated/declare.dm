@@ -1503,6 +1503,78 @@
 	into += entry_line(15)
 	into += list(global.owns_one(nameof(ref_value)))
 
+/// CAPABILITIES(/datum/edit_memory_panel) at code/modules/admin/edit_memory_panel.dm:141
+/datum/edit_memory_panel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/edit_memory_panel.dm", 141, /datum/edit_memory_panel)
+	into += entry_line(142)
+	into += list(global.op("obj_announce", global.ui_act(), global.then(PROC_REF(native_memory_ui_obj_announce))))
+	into += entry_line(143)
+	into += list(global.op("obj_add", global.ui_act(), global.then(PROC_REF(native_memory_ui_obj_add))))
+	into += entry_line(144)
+	into += list(global.op("refresh_antags", global.ui_act(), global.then(PROC_REF(native_memory_ui_refresh_antags))))
+
+/// CAPABILITIES(/datum/edit_player_panel) at code/modules/admin/edit_player_panel.dm:176
+/datum/edit_player_panel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/edit_player_panel.dm", 176, /datum/edit_player_panel)
+	into += entry_line(177)
+	into += list(global.op("revive", global.ui_act(), global.then(PROC_REF(native_player_ui_revive))))
+	into += entry_line(178)
+	into += list(global.op("vv", global.ui_act(), global.then(PROC_REF(native_player_ui_vv))))
+	into += entry_line(179)
+	into += list(global.op("traitor", global.ui_act(), global.then(PROC_REF(native_player_ui_traitor))))
+	into += entry_line(180)
+	into += list(global.op("priv_msg", global.ui_act(), global.then(PROC_REF(native_player_ui_priv_msg))))
+	into += entry_line(181)
+	into += list(global.op("subtlemessage", global.ui_act(), global.then(PROC_REF(native_player_ui_subtlemessage))))
+	into += entry_line(182)
+	into += list(global.op("jumpto", global.ui_act(), global.then(PROC_REF(native_player_ui_jumpto))))
+	into += entry_line(183)
+	into += list(global.op("getmob", global.ui_act(), global.then(PROC_REF(native_player_ui_getmob))))
+	into += entry_line(184)
+	into += list(global.op("sendmob", global.ui_act(), global.then(PROC_REF(native_player_ui_sendmob))))
+	into += entry_line(185)
+	into += list(global.op("narrateto", global.ui_act(), global.then(PROC_REF(native_player_ui_narrateto))))
+	into += entry_line(186)
+	into += list(global.op("boot2", global.ui_act(), global.then(PROC_REF(native_player_ui_boot2))))
+	into += entry_line(187)
+	into += list(global.op("warn", global.ui_act(), global.then(PROC_REF(native_player_ui_warn))))
+	into += entry_line(188)
+	into += list(global.op("newban", global.ui_act(), global.then(PROC_REF(native_player_ui_newban))))
+	into += entry_line(189)
+	into += list(global.op("jobban2", global.ui_act(), global.then(PROC_REF(native_player_ui_jobban2))))
+	into += entry_line(190)
+	into += list(global.op("notes", global.ui_act(), global.then(PROC_REF(native_player_ui_notes))))
+	into += entry_line(191)
+	into += list(global.op("sendtoprison", global.ui_act(), global.then(PROC_REF(native_player_ui_sendtoprison))))
+	into += entry_line(192)
+	into += list(global.op("sendbacktolobby", global.ui_act(), global.then(PROC_REF(native_player_ui_sendbacktolobby))))
+	into += entry_line(193)
+	into += list(global.op("forcespeech", global.ui_act(), global.then(PROC_REF(native_player_ui_forcespeech))))
+	into += entry_line(194)
+	into += list(global.op("turn_monkey", global.ui_act(), global.then(PROC_REF(native_player_ui_turn_monkey))))
+	into += entry_line(195)
+	into += list(global.op("corgione", global.ui_act(), global.then(PROC_REF(native_player_ui_corgione))))
+	into += entry_line(196)
+	into += list(global.op("turn_ai", global.ui_act(), global.then(PROC_REF(native_player_ui_turn_ai))))
+	into += entry_line(197)
+	into += list(global.op("turn_robot", global.ui_act(), global.then(PROC_REF(native_player_ui_turn_robot))))
+	into += entry_line(198)
+	into += list(global.op("turn_alien", global.ui_act(), global.then(PROC_REF(native_player_ui_turn_alien))))
+	into += entry_line(199)
+	into += list(global.op("makeanimal", global.ui_act(), global.then(PROC_REF(native_player_ui_makeanimal))))
+	into += entry_line(200)
+	into += list(global.op("respawn", global.ui_act(), global.then(PROC_REF(native_player_ui_respawn))))
+	into += entry_line(201)
+	into += list(global.op("tdome1", global.ui_act(), global.then(PROC_REF(native_player_ui_tdome1))))
+	into += entry_line(202)
+	into += list(global.op("tdome2", global.ui_act(), global.then(PROC_REF(native_player_ui_tdome2))))
+	into += entry_line(203)
+	into += list(global.op("tdomeadmin", global.ui_act(), global.then(PROC_REF(native_player_ui_tdomeadmin))))
+	into += entry_line(204)
+	into += list(global.op("tdomeobserve", global.ui_act(), global.then(PROC_REF(native_player_ui_tdomeobserve))))
+
 /// CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem) at code/game/objects/effects/chem/chemsmoke.dm:41
 /datum/effect/effect/system/smoke_spread/chem/declared_entries(list/into)
 	..(into)
@@ -2266,6 +2338,49 @@
 	into += entry_line(25)
 	into += list(global.owns_many(nameof(errors)))
 
+/// CAPABILITIES(/datum/newscaster_panel) at code/modules/admin/admin_newscaster_panel.dm:121
+/datum/newscaster_panel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_newscaster_panel.dm", 121, /datum/newscaster_panel)
+	into += entry_line(122)
+	into += list(global.op("refresh", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_refresh))))
+	into += entry_line(123)
+	into += list(global.op("close", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_close))))
+	into += entry_line(124)
+	into += list(global.op("view_wanted", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_view_wanted))))
+	into += entry_line(125)
+	into += list(global.op("create_channel", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_create_channel))))
+	into += entry_line(126)
+	into += list(global.op("view_channels", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_view_channels))))
+	into += entry_line(127)
+	into += list(global.op("create_story", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_create_story))))
+	into += entry_line(128)
+	into += list(global.op("menu_wanted", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_menu_wanted))))
+	into += entry_line(129)
+	into += list(global.op("menu_censor_story", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_menu_censor_story))))
+	into += entry_line(130)
+	into += list(global.op("menu_censor_channel", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_menu_censor_channel))))
+	into += entry_line(131)
+	into += list(global.op("set_signature", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_set_signature))))
+	into += entry_line(132)
+	into += list(global.op("set_channel_name", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_set_channel_name))))
+	into += entry_line(133)
+	into += list(global.op("set_channel_lock", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_set_channel_lock))))
+	into += entry_line(134)
+	into += list(global.op("submit_new_channel", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_submit_new_channel))))
+	into += entry_line(135)
+	into += list(global.op("set_channel_receiving", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_set_channel_receiving))))
+	into += entry_line(136)
+	into += list(global.op("set_new_message", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_set_new_message))))
+	into += entry_line(137)
+	into += list(global.op("submit_new_message", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_submit_new_message))))
+	into += entry_line(138)
+	into += list(global.op("set_wanted_name", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_set_wanted_name))))
+	into += entry_line(139)
+	into += list(global.op("set_wanted_desc", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_set_wanted_desc))))
+	into += entry_line(140)
+	into += list(global.op("cancel_wanted", global.ui_act(), global.then(PROC_REF(native_admincaster_ui_cancel_wanted))))
+
 /// CAPABILITIES(/datum/nifsoft/alarmmonitor) at code/modules/nifsoft/software/06_screens.dm:39
 /datum/nifsoft/alarmmonitor/declared_entries(list/into)
 	..(into)
@@ -2455,6 +2570,23 @@
 	into += entry_block("code/modules/mind_body/_perk_tree.dm", 35, /datum/perk_tree)
 	into += entry_line(36)
 	into += list(global.owns_many(nameof(perks)))
+
+/// CAPABILITIES(/datum/permissions_panel) at code/modules/admin/permissions_panel.dm:327
+/datum/permissions_panel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/permissions_panel.dm", 327, /datum/permissions_panel)
+	into += entry_line(328)
+	into += list(global.op("nav_permissions", global.ui_act(), global.then(PROC_REF(native_permissions_ui_nav_permissions))))
+	into += entry_line(329)
+	into += list(global.op("nav_ranks", global.ui_act(), global.then(PROC_REF(native_permissions_ui_nav_ranks))))
+	into += entry_line(330)
+	into += list(global.op("nav_logging", global.ui_act(), global.then(PROC_REF(native_permissions_ui_nav_logging))))
+	into += entry_line(331)
+	into += list(global.op("nav_housekeeping", global.ui_act(), global.then(PROC_REF(native_permissions_ui_nav_housekeeping))))
+	into += entry_line(332)
+	into += list(global.op("admin_add", global.ui_act(), global.then(PROC_REF(native_permissions_ui_admin_add))))
+	into += entry_line(333)
+	into += list(global.op("ranks_create", global.ui_act(), global.then(PROC_REF(native_permissions_ui_ranks_create))))
 
 /// CAPABILITIES(/datum/personal_crafting) at code/datums/entity_state/crafting/crafting.dm:550
 /datum/personal_crafting/declared_entries(list/into)
@@ -4546,11 +4678,11 @@
 	into += entry_line(26)
 	into += list(global.owns_one(nameof(visuals), /atom/movable/weather_visuals))
 
-/// CAPABILITIES(/obj/effect/floormimic) at code/modules/mob/living/simple_mob/subtypes/vore/mimic.dm:376
+/// CAPABILITIES(/obj/effect/floormimic) at code/modules/mob/living/simple_mob/subtypes/vore/mimic.dm:375
 /obj/effect/floormimic/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/mimic.dm", 376, /obj/effect/floormimic)
-	into += entry_line(377)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/mimic.dm", 375, /obj/effect/floormimic)
+	into += entry_line(376)
 	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(blasted_away)))))
 
 /// CAPABILITIES(/obj/effect/fusion_em_field) at code/modules/power/fusion/core/core_field.dm:48
@@ -6495,11 +6627,11 @@
 	into += entry_line(30)
 	into += list(global.owns_one(nameof(bcell), /obj/item/cell))
 
-/// CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:983
+/// CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:982
 /obj/item/melee/baton/fluff/stunstaff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 983, /obj/item/melee/baton/fluff/stunstaff)
-	into += entry_line(984)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 982, /obj/item/melee/baton/fluff/stunstaff)
+	into += entry_line(983)
 	into += list(global.owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon))
 
 /// CAPABILITIES(/obj/item/melee/baton/loaded) at code/game/objects/items/weapons/stunbaton.dm:74
@@ -6516,11 +6648,11 @@
 	into += entry_line(83)
 	into += list(global.owns_many(nameof(voice_mobs)))
 
-/// CAPABILITIES(/obj/item/melee/fluffstuff) at code/modules/vore/fluffstuff/custom_items.dm:1101
+/// CAPABILITIES(/obj/item/melee/fluffstuff) at code/modules/vore/fluffstuff/custom_items.dm:1100
 /obj/item/melee/fluffstuff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1101, /obj/item/melee/fluffstuff)
-	into += entry_line(1102)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1100, /obj/item/melee/fluffstuff)
+	into += entry_line(1101)
 	into += list(global.op("fluffstuff_toggle_self", global.in_hand(), global.label("Toggle"), global.then(PROC_REF(fluffstuff_toggle_self))))
 
 /// CAPABILITIES(/obj/item/melee/robotic/jaws/small) at code/modules/projectiles/guns/energy/cyborg.dm:181
@@ -7823,11 +7955,11 @@
 	into += entry_line(193)
 	into += list(global.op("tilt", global.menu(), global.label("Adjust Duffelbag Angle"), global.needs(global.carried(), global.req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), global.then(PROC_REF(dufflebag_tilt_effect))))
 
-/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1058
+/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1057
 /obj/item/storage/backpack/fluff/stunstaff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1058, /obj/item/storage/backpack/fluff/stunstaff)
-	into += entry_line(1059)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1057, /obj/item/storage/backpack/fluff/stunstaff)
+	into += entry_line(1058)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE)))
 
 /// CAPABILITIES(/obj/item/storage/backpack/holding) at code/game/objects/items/weapons/storage/backpack.dm:94
@@ -8524,11 +8656,11 @@
 	into += entry_line(65)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/egg, /obj/item/reagent_containers/food/snacks/boiledegg))))
 
-/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1361
+/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1360
 /obj/item/storage/fancy/fluff/charlotte/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1361, /obj/item/storage/fancy/fluff/charlotte)
-	into += entry_line(1362)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1360, /obj/item/storage/fancy/fluff/charlotte)
+	into += entry_line(1361)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt))))
 
 /// CAPABILITIES(/obj/item/storage/fancy/heartbox) at code/game/objects/items/weapons/storage/fancy.dm:572
@@ -9558,6 +9690,15 @@
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(Beacon), /obj/item/radio/beacon))
 
+/// CAPABILITIES(/obj/machinery/bodyscanner) at code/game/machinery/adv_med.dm:193
+/obj/machinery/bodyscanner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/adv_med.dm", 193, /obj/machinery/bodyscanner)
+	into += entry_line(194)
+	into += list(global.op("ejectify", global.ui_act(), global.then(PROC_REF(native_bodyscanner_ui_ejectify))))
+	into += entry_line(195)
+	into += list(global.op("print_p", global.ui_act(), global.then(PROC_REF(native_bodyscanner_ui_print_p))))
+
 /// CAPABILITIES(/obj/machinery/bomb_tester) at code/game/machinery/bomb_tester.dm:37
 /obj/machinery/bomb_tester/declared_entries(list/into)
 	..(into)
@@ -10156,6 +10297,10 @@
 	into += entry_block("code/modules/flight_operations/flight_console.dm", 224, /obj/machinery/computer/ship)
 	into += entry_line(225)
 	into += list(global.owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui))
+	into += entry_line(226)
+	into += list(global.op("sync", global.ui_act(), global.then(PROC_REF(native_ship_ui_sync))))
+	into += entry_line(227)
+	into += list(global.op("close", global.ui_act(), global.then(PROC_REF(native_ship_ui_close))))
 
 /// CAPABILITIES(/obj/machinery/computer/ship/helm) at code/modules/overmap/ships/computers/helm.dm:28
 /obj/machinery/computer/ship/helm/declared_entries(list/into)
@@ -10178,11 +10323,11 @@
 	into += entry_line(11)
 	into += list(global.owns_one(nameof(monitor), starts = /datum/tgui_module/shutoff_monitor))
 
-/// CAPABILITIES(/obj/machinery/computer/shuttle_control/explore) at code/modules/flight_operations/flight_console.dm:242
+/// CAPABILITIES(/obj/machinery/computer/shuttle_control/explore) at code/modules/flight_operations/flight_console.dm:244
 /obj/machinery/computer/shuttle_control/explore/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/flight_operations/flight_console.dm", 242, /obj/machinery/computer/shuttle_control/explore)
-	into += entry_line(243)
+	into += entry_block("code/modules/flight_operations/flight_console.dm", 244, /obj/machinery/computer/shuttle_control/explore)
+	into += entry_line(245)
 	into += list(global.owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui))
 
 /// CAPABILITIES(/obj/machinery/computer/skills) at code/game/machinery/computer/skills.dm:249
