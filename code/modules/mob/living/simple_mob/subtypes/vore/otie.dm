@@ -321,8 +321,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 	set_resting(0)
 	icon_state = icon_dead
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/otie, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/otie, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/otie)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/otie/Login()
 	. = ..()

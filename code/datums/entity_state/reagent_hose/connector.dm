@@ -63,7 +63,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	observe(carrier, /datum/notice/examine, src, then(PROC_REF(on_examine)))
 	observe(carrier, /datum/notice/moved, src, then(PROC_REF(move_react)))
 	observe(carrier, /datum/notice/hose_forcepump, src, then(PROC_REF(on_force_pump)))
-	om_grant(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
+	grant(carrier, granted_verb(/atom/proc/disconnect_hose), src)
 	return TRUE
 
 // A hose is shared by its two connectors, so neither owns it: it lives while both
@@ -75,7 +75,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	if(my_hose)
 		qdel(my_hose)
 	if(carrier)
-		om_revoke(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
+		revoke(carrier, granted_verb(/atom/proc/disconnect_hose), src)
 		// carrier.hose_connectors owns us: a dying connector leaves it in phase 2.
 
 /datum/hose_connector/proc/get_carrier()

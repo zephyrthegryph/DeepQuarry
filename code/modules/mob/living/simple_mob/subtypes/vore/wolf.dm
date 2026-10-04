@@ -110,9 +110,10 @@
 	buckle_lying = FALSE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/wolf/direwolf, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/wolf/direwolf, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/wolf/direwolf, /mob/living/simple_mob/proc/pick_color)
+CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
 
 /mob/living/simple_mob/vore/wolf/direwolf/Login()
 	. = ..()

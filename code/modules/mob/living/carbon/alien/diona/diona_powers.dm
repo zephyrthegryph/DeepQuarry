@@ -9,7 +9,7 @@
 		return
 
 	if(istype(src.loc,/mob/living/carbon))
-		om_revoke(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/merge, src)
+		revoke(src, granted_verb(/mob/living/carbon/alien/diona/proc/merge), src)
 		return
 
 	var/list/choices = list()
@@ -47,8 +47,8 @@
 	to_chat(H, "You feel your being twine with that of \the [src] as it merges with your biomass.")
 	to_chat(src, "You feel your being twine with that of \the [H] as you merge with its biomass.")
 	forceMove(H)
-	om_grant(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/split, src)
-	om_revoke(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/merge, src)
+	grant(src, granted_verb(/mob/living/carbon/alien/diona/proc/split), src)
+	revoke(src, granted_verb(/mob/living/carbon/alien/diona/proc/merge), src)
 	return 1
 
 /mob/living/carbon/alien/diona/proc/split()
@@ -61,7 +61,7 @@
 		return
 
 	if(!(istype(src.loc,/mob/living/carbon)))
-		om_revoke(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/split, src)
+		revoke(src, granted_verb(/mob/living/carbon/alien/diona/proc/split), src)
 		return
 
 	to_chat(src.loc, "You feel a pang of loss as [src] splits away from your biomass.")
@@ -70,8 +70,8 @@
 	var/mob/living/M = src.loc
 
 	forceMove(get_turf(src))
-	om_revoke(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/split, src)
-	om_grant(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/merge, src)
+	revoke(src, granted_verb(/mob/living/carbon/alien/diona/proc/split), src)
+	grant(src, granted_verb(/mob/living/carbon/alien/diona/proc/merge), src)
 
 	if(istype(M))
 		for(var/atom/A in contents_of(M))

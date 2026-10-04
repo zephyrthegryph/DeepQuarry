@@ -55,8 +55,9 @@
 	pain_emote_1p = list("squeak", "squik")
 	pain_emote_1p = list("squeaks", "squiks")
 
-DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/space/mouse_army/Initialize(mapload)
 	. = ..()

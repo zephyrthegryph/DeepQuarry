@@ -160,8 +160,8 @@ CAPABILITIES(/obj/soulgem)
 		brainmob.parent_mob = TRUE
 		rel_set(src, nameof(own_mind), brainmob.mind)
 		om_grant(brainmob, GRANT_VERB_HIDE, /mob/proc/enter_soulcatcher, brainmob) //No recursive self capturing...
-		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self, brainmob)
-		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body, brainmob)
+		grant(brainmob, granted_verb(/mob/living/carbon/brain/caught_soul/vore/proc/transfer_self), brainmob)
+		grant(brainmob, granted_verb(/mob/living/carbon/brain/caught_soul/vore/proc/reenter_body), brainmob)
 
 	if(isliving(M))
 		if(ishuman(M))

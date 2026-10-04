@@ -150,7 +150,7 @@
 		occupant.enter_vr(avatar())
 		if(spawn_with_clothing)
 			SSjob.equip_rank(avatar(),"Visitor", 1, FALSE)
-		om_grant(avatar(), GRANT_VERB, /mob/living/carbon/human/proc/perform_exit_vr, avatar())
+		grant(avatar(), granted_verb(/mob/living/carbon/human/proc/perform_exit_vr), avatar())
 		avatar().set_virtual_reality_mob(FALSE) //THIS IS THE BIG DIFFERENCE WITH ALIEN VR PODS. THEY ARE NOT VR, THEY ARE REAL.
 
 		//This handles all the 'We make it look like ourself' code.

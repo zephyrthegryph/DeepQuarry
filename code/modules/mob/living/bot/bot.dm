@@ -603,13 +603,13 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 
 /mob/living/bot/Login()
 	no_vore = FALSE // ROBOT VORE
-	om_grant(src, GRANT_VERB, /mob/proc/insidePanel, src)
+	grant(src, granted_verb(/mob/proc/insidePanel), src)
 
 	return ..()
 
 /mob/living/bot/Logout()
 	release_vore_contents()
-	om_revoke(src, GRANT_VERB, /mob/proc/insidePanel, src)
+	revoke(src, granted_verb(/mob/proc/insidePanel), src)
 	no_vore = TRUE
 	devourable = FALSE
 	feeding = FALSE

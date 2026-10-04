@@ -34,8 +34,6 @@
 /obj/item/clothing/proc/update_clothing_icon()
 	return
 
-DECLARE_VERB_IF(/obj/item/clothing, /obj/item/clothing/proc/change_color, "polychromic")
-
 /obj/item/clothing/Initialize(mapload)
 	. = ..()
 	if(starting_accessories)

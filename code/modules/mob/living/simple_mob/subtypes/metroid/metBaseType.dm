@@ -66,7 +66,8 @@
 	pain_emote_1p = list("skree")
 	pain_emote_3p = list("skrees")
 
-DECLARE_VERB(/mob/living/simple_mob/metroid, /mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
+CAPABILITIES(/mob/living/simple_mob/metroid)
+	verb_entry(/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
 
 /mob/living/simple_mob/metroid/Initialize(mapload)
 	set_nutrition(100) //Have them start off pretty hungry still.

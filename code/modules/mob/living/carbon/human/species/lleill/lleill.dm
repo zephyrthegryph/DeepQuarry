@@ -204,7 +204,7 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 		rel_set(H, nameof(H.ability_master), new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
 	for(var/datum/power/lleill/P in lleill_ability_datums)
 		if(!(P.verbpath in H.verbs))
-			om_grant(H, GRANT_VERB, P.verbpath, src)
+			grant(H, granted_verb(P.verbpath), src)
 			H.ability_master.add_lleill_ability(
 					object_given = H,
 					verb_given = P.verbpath,

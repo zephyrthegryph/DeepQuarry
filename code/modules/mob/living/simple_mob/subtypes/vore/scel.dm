@@ -82,12 +82,13 @@
 	vore_bump_emote = "tries to devour"
 	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/glow_toggle)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/glow_color)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/long_vore)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/target_lunge)
+CAPABILITIES(/mob/living/simple_mob/vore/scel)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/proc/glow_toggle, login = TRUE)
+	verb_entry(/mob/living/proc/glow_color, login = TRUE)
+	verb_entry(/mob/living/proc/long_vore, login = TRUE)
+	verb_entry(/mob/living/proc/target_lunge, login = TRUE)
 
 /mob/living/simple_mob/vore/scel/Login()
 	. = ..()

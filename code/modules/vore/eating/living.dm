@@ -1410,7 +1410,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_client_login)))
 	if(owner.client)
 		create_mob_button(owner)
-	om_grant(owner, GRANT_VERB, /mob/proc/insidePanel, src)
+	grant(owner, granted_verb(/mob/proc/insidePanel), src)
 	if(!owner.vorePanel)
 		rel_set(owner, nameof(owner.vorePanel), new /datum/vore_look(owner))
 

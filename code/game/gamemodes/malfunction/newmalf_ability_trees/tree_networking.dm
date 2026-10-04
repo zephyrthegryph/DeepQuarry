@@ -213,7 +213,7 @@
 	user.hacking = 0
 	user.system_override = 2
 	// Granted by the AI's malf research (the AI itself if it has none).
-	om_grant(user, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_destroy_station, user.research || user)
+	grant(user, granted_verb(/datum/game_mode/malfunction/verb/ai_destroy_station), user.research || user)
 
 
 // END ABILITY VERBS

@@ -211,11 +211,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	name = initial(name) + " ([tmr.time] secs)"
 
 	if(loc)
-		om_grant(loc, GRANT_VERB, /obj/item/assembly_holder/timer_igniter/verb/configure, src)
+		grant(loc, granted_verb(/obj/item/assembly_holder/timer_igniter/verb/configure), src)
 
 /obj/item/assembly_holder/timer_igniter/detached()
 	if(loc)
-		om_revoke(loc, GRANT_VERB, /obj/item/assembly_holder/timer_igniter/verb/configure, src)
+		revoke(loc, granted_verb(/obj/item/assembly_holder/timer_igniter/verb/configure), src)
 	..()
 
 /obj/item/assembly_holder/timer_igniter/verb/configure()

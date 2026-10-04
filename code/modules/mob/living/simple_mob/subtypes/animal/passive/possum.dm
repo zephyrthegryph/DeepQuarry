@@ -95,8 +95,9 @@ MAP_RESOLVER_VARS(/obj/item/animal_spawner, "critter_type")
 /mob/living/simple_mob/animal/passive/opossum/proc/respond_to_damage()
 	return
 
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/opossum, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/opossum, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/opossum)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/opossum/poppy
 	name = "Poppy the Safety Possum"
@@ -116,5 +117,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/possum, mob_organ_hit_zones, list("head",
 /datum/decl/mob_organ_names/poppy
 TYPE_TABLE(/datum/decl/mob_organ_names/poppy, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "pouch", "cute little jacket"))
 
-DECLARE_VERB_HIDE(/mob/living/simple_mob/animal/passive/opossum/beastmode, /mob/living/proc/ventcrawl) //No ventcrawl for hanner
+CAPABILITIES(/mob/living/simple_mob/animal/passive/opossum/beastmode)
+	verb_entry(/mob/living/proc/ventcrawl, hidden = TRUE) //No ventcrawl for hanner
 

@@ -106,9 +106,10 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		/obj/item/perfect_tele_beacon, \
 		))
 
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/hide)
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/ownership()
 	. = ..()
@@ -293,9 +294,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	var/siemens_coefficient = 1 		//Referenced later by others.
 	can_wear_hat = FALSE
 
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/proc/hide)
-DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color) //Most of these have custom sprites with colour already, so we'll not let them have this.
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, hidden = TRUE) //Most of these have custom sprites with colour already, so we'll not let them have this.
 
 /datum/category_item/catalogue/fauna/catslug/custom/spaceslug
 	name = "Alien Wildlife - Catslug - Miros"
@@ -1007,7 +1009,8 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/impostor
 	is_impostor = TRUE
 
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/suslug, /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/Initialize(mapload)
 	. = ..()

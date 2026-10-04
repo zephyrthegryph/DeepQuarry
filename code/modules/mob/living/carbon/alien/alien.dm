@@ -21,9 +21,6 @@
 	var/adult_name
 	var/instance_num
 
-DECLARE_VERB(/mob/living/carbon/alien, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/carbon/alien, /mob/living/proc/hide)
-
 /mob/living/carbon/alien/Initialize(mapload)
 	. = ..()
 

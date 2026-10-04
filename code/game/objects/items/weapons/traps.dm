@@ -421,12 +421,12 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
 		if(H.get_equipped_item(SLOT_ID_MASK) == src)
-			om_grant(H, GRANT_VERB, /mob/living/proc/shred_limb_temp, src)
+			grant(H, granted_verb(/mob/living/proc/shred_limb_temp), src)
 		else
-			om_revoke(H, GRANT_VERB, /mob/living/proc/shred_limb_temp, src)
+			revoke(H, granted_verb(/mob/living/proc/shred_limb_temp), src)
 	..()
 
 /obj/item/beartrap/dropped(mob/user, equipping, slot)
 	if(user)
-		om_revoke(user, GRANT_VERB, /mob/living/proc/shred_limb_temp, src)
+		revoke(user, granted_verb(/mob/living/proc/shred_limb_temp), src)
 	..()

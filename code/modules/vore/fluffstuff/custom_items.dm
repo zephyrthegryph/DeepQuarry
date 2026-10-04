@@ -791,7 +791,7 @@ CAPABILITIES(/obj/item/fluff/dragor_dot)
 /obj/item/fluff/dragor_dot/proc/dragor_dot_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(user.ckey == "pontifexminimus")
-		om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_gender, user)
+		grant(user, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_gender), user)
 	else
 		return
 

@@ -115,8 +115,8 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 		else
 			changelingID = "[rand(1,999)]"
 
-		om_grant(owner, GRANT_VERB, /mob/proc/EvolutionMenu, src)
-		om_grant(owner, GRANT_VERB, /mob/proc/changeling_respec, src)
+		grant(owner, granted_verb(/mob/proc/EvolutionMenu), src)
+		grant(owner, granted_verb(/mob/proc/changeling_respec), src)
 		owner.add_language("Changeling")
 
 //Former /datum/changeling procs
@@ -175,7 +175,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 			if(lesser_form && !P.allowduringlesserform)
 				continue
 			if(!(P in src.verbs))
-				om_grant(src, GRANT_VERB, P.verbpath, comp)
+				grant(src, granted_verb(P.verbpath), comp)
 			if(P.make_hud_button)
 				if(!src.ability_master)
 					rel_set(src, nameof(ability_master), new /atom/movable/screen/movable/ability_master(src))
@@ -192,7 +192,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 
 	var/mob/living/carbon/human/H = src
 	if(istype(H))
-		om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/innate_shapeshifting, comp)
+		grant(H, granted_verb(/mob/living/carbon/human/proc/innate_shapeshifting), comp)
 		var/saved_dna = H.dna.Clone() /// Prevent transform from breaking.
 		var/datum/absorbed_dna/newDNA = new(H.real_name, saved_dna, H.species.name, H.languages, H.identifying_gender, H.flavor_texts, H.identity()?.genetic_effects?.Copy())
 		absorbDNA(newDNA)
@@ -215,7 +215,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 		return
 	for(var/datum/power/changeling/P in comp.purchased_powers)
 		if(P.isVerb)
-			om_revoke(src, GRANT_VERB, P.verbpath, comp)
+			revoke(src, granted_verb(P.verbpath), comp)
 			var/atom/movable/screen/ability/verb_based/changeling/C = ability_master.get_ability_by_proc_ref(P.verbpath)
 			if(C)
 				ability_master.remove_ability(C)

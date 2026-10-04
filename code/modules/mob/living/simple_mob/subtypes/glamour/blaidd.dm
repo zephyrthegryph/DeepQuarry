@@ -44,9 +44,10 @@
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis)
+CAPABILITIES(/mob/living/simple_mob/vore/blaidd)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/blaidd/proc/blaidd_invis, login = TRUE)
 
 /mob/living/simple_mob/vore/blaidd/Login()
 	. = ..()

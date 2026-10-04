@@ -1351,8 +1351,8 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 			working.pixel_y = tail_style.offset_y
 			if(taurtype.can_ride && !riding_datum)
 				rel_set(src, nameof(riding_datum), new /datum/riding/taur(src))
-				om_grant(src, GRANT_VERB, /mob/living/carbon/human/proc/taur_mount, src)
-				om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
+				grant(src, granted_verb(/mob/living/carbon/human/proc/taur_mount), src)
+				grant(src, granted_verb(/mob/living/proc/toggle_rider_reins), src)
 		else if(islongtail(tail_style))
 			working.pixel_x = tail_style.offset_x
 			working.pixel_y = tail_style.offset_y

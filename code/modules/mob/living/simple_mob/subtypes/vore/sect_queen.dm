@@ -85,7 +85,8 @@
 
 	allow_mind_transfer = TRUE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sect_queen, /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color)
+CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
+	verb_entry(/mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color, login = TRUE)
 
 /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color()
 	set name = "Set Glow Color"

@@ -23,7 +23,7 @@ CAPABILITIES(/datum/xenochimera)
 	observe(owner, /datum/notice/human_dna_finalized, src, then(PROC_REF(on_dna_finalized)))
 	if(owner.dna)
 		handle_record()
-	om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/reconstitute_form, src)
+	grant(owner, granted_verb(/mob/living/carbon/human/proc/reconstitute_form), src)
 
 /mob/living/carbon/human/var/datum/xenochimera/xenochimera
 
@@ -31,7 +31,7 @@ CAPABILITIES(/datum/xenochimera)
 /datum/xenochimera/lifecycle_prerelease()
 	..()
 	if(owner)
-		om_revoke(owner, GRANT_VERB, /mob/living/carbon/human/proc/reconstitute_form, src)
+		revoke(owner, granted_verb(/mob/living/carbon/human/proc/reconstitute_form), src)
 
 /datum/xenochimera/proc/on_dna_finalized(datum/act/notice/A)
 	EVENT_HANDLER
@@ -362,7 +362,7 @@ CAPABILITIES(/datum/xenochimera)
 		to_chat(owner, span_notice("Consciousness begins to stir as your new body awakens, ready to hatch.."))
 	else
 		to_chat(owner, span_warning("Consciousness begins to stir as your battered body struggles to recover from its ordeal.."))
-	om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/hatch, src)
+	grant(owner, granted_verb(/mob/living/carbon/human/proc/hatch), src)
 	revive_ready = REVIVING_DONE
 	owner << sound('sound/effects/mob_effects/xenochimera/hatch_notification.ogg',0,0,0,30)
 	owner.clear_alert("regen")
@@ -382,7 +382,7 @@ CAPABILITIES(/datum/xenochimera)
 	// Was dead, still dead.
 	else
 		to_chat(owner, span_notice("Consciousness begins to stir as your new body awakens, ready to hatch."))
-		om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/hatch, src)
+		grant(owner, granted_verb(/mob/living/carbon/human/proc/hatch), src)
 		revive_ready = REVIVING_DONE
 		owner << sound('sound/effects/mob_effects/xenochimera/hatch_notification.ogg',0,0,0,30)
 		owner.clear_alert("regen")
@@ -444,7 +444,7 @@ CAPABILITIES(/datum/xenochimera)
 			has_braindamage = TRUE
 
 		// Finalize!
-		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/hatch, xc)
+		revoke(src, granted_verb(/mob/living/carbon/human/proc/hatch), xc)
 		clear_alert("hatch")
 		xc.chimera_hatch((reload_slot == "From Slot" && client))
 		act_message(src, null, others = span_warning(span_huge("%U% rises to %THEIR% feet."))) //Bloody hell...
@@ -456,7 +456,7 @@ CAPABILITIES(/datum/xenochimera)
 	if(!owner)
 		return
 
-	om_revoke(owner, GRANT_VERB, /mob/living/carbon/human/proc/hatch, src)
+	revoke(owner, granted_verb(/mob/living/carbon/human/proc/hatch), src)
 	to_chat(owner, span_notice("Your new body awakens, bursting free from your old skin."))
 	//Modify and record values (half nutrition and braindamage)
 	var/old_nutrition = owner.nutrition

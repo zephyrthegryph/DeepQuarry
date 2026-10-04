@@ -223,8 +223,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD, volume = 50)
 	..()
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/aggressive/rat/Login()
 	. = ..()

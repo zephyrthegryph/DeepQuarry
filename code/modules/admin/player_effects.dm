@@ -568,7 +568,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_vent_crawl)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/proc/ventcrawl, Tar)
+	grant(Tar, granted_verb(/mob/living/proc/ventcrawl), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "darksight", ui_act_darksight)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_darksight)
@@ -588,28 +588,28 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_cocoon)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/enter_cocoon, Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/enter_cocoon), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "transformation", ui_act_transformation)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_transformation)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_hair, Tar)
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_hair_colors, Tar)
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_gender, Tar)
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_wings, Tar)
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_tail, Tar)
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_ears, Tar)
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_select_shape, Tar) //designed for non-shapeshifter mobs
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_select_colour, Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_hair), Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_hair_colors), Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_gender), Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_wings), Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_tail), Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_ears), Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_select_shape), Tar) //designed for non-shapeshifter mobs
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_select_colour), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "set_size", ui_act_set_size)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_set_size)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/proc/set_size, Tar)
+	grant(Tar, granted_verb(/mob/living/proc/set_size), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "lleill_energy", ui_act_lleill_energy)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_energy)
@@ -632,63 +632,63 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_invisibility)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_invisibility, Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_invisibility), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "beast_form", ui_act_beast_form)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_beast_form)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_beast_form, Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_beast_form), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "lleill_transmute", ui_act_lleill_transmute)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_transmute)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_transmute, Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_transmute), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "lleill_alchemy", ui_act_lleill_alchemy)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_alchemy)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_alchemy, Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_alchemy), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "lleill_drain", ui_act_lleill_drain)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_drain)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/carbon/human/proc/lleill_contact, Tar)
+	grant(Tar, granted_verb(/mob/living/carbon/human/proc/lleill_contact), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "brutal_pred", ui_act_brutal_pred)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_brutal_pred)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/proc/shred_limb, Tar)
+	grant(Tar, granted_verb(/mob/living/proc/shred_limb), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "trash_eater", ui_act_trash_eater)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_trash_eater)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/proc/eat_trash, Tar)
-	om_grant(Tar, GRANT_VERB, /mob/living/proc/toggle_trash_catching, Tar)
+	grant(Tar, granted_verb(/mob/living/proc/eat_trash), Tar)
+	grant(Tar, granted_verb(/mob/living/proc/toggle_trash_catching), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "active_cloaking", ui_act_active_cloaking)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_active_cloaking)
 	var/mob/living/Tar = target()
 	if(!istype(Tar))
 		return
-	om_grant(Tar, GRANT_VERB, /mob/living/proc/toggle_active_cloaking, Tar)
+	grant(Tar, granted_verb(/mob/living/proc/toggle_active_cloaking), Tar)
 
 UI_ACT(/datum/eventkit/player_effects, "colormate", ui_act_colormate)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_colormate)
 	if(istype(target(),/mob/living/simple_mob))
 		var/mob/living/simple_mob/Tar = target()
-		om_grant(Tar, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, Tar)
+		grant(Tar, granted_verb(/mob/living/simple_mob/proc/ColorMate), Tar)
 	if(istype(target(),/mob/living/silicon/robot))
 		var/mob/living/silicon/robot/Tar = target()
 		Tar.grant_ability(ABILITY_ID_ROBOT_RECOLOUR, Tar)

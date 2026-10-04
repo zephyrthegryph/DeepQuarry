@@ -767,9 +767,9 @@
 		new_mob.faction = faction
 		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.lleill_energy -= energy_cost
-		om_grant(new_mob, GRANT_VERB, /mob/living/proc/revert_beast_form, new_mob)
-		om_grant(new_mob, GRANT_VERB, /mob/living/proc/set_size, new_mob)
-		om_grant(new_mob, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, new_mob)
+		grant(new_mob, granted_verb(/mob/living/proc/revert_beast_form), new_mob)
+		grant(new_mob, granted_verb(/mob/living/proc/set_size), new_mob)
+		grant(new_mob, granted_verb(/mob/living/simple_mob/proc/ColorMate), new_mob)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))
 

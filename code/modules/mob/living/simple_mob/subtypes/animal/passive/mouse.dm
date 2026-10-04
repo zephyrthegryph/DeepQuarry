@@ -52,9 +52,8 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	owns_many(nameof(rat_diseases), /datum/affliction/contagion)
-
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/mouse/Initialize(mapload, keep_parent_data)
 	. = ..()
@@ -323,8 +322,9 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	name = "Cooper"
 	desc = "A lonely miner's best friend."
 
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse/mining, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse/mining, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/mining)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/mouse/mining/Initialize(mapload)
 	. = ..()
@@ -347,7 +347,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse/mining, /mob/living/pro
 /mob/living/simple_mob/animal/passive/mouse/beastmode
 	body_color = "white" // Always set white so it can be easily recoloured
 
-DECLARE_VERB_HIDE(/mob/living/simple_mob/animal/passive/mouse/beastmode, /mob/living/proc/ventcrawl) //No ventcrawl for hanner
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/beastmode)
+	verb_entry(/mob/living/proc/ventcrawl, hidden = TRUE) //No ventcrawl for hanner
 
 // The rat's own disease strains; exposure passes on copies (expose_contagion()).
 

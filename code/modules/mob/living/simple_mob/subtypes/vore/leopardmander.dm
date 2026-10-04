@@ -64,8 +64,9 @@
 	The Va'aen has been hunted to near extinction by poachers due to its secretions' unusual healing properties, and its beautiful hide; encountering one has become very rare."
 	value = CATALOGUER_REWARD_HARD
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/leopardmander/Login()
 	. = ..()
@@ -178,7 +179,8 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/proc/t
 
 	set_glow_toggle(!glow_toggle)
 
-DECLARE_VERB(/mob/living/simple_mob/vore/leopardmander/exotic, /mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow)
+CAPABILITIES(/mob/living/simple_mob/vore/leopardmander/exotic)
+	verb_entry(/mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow)
 
 /mob/living/simple_mob/vore/leopardmander/exotic/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)

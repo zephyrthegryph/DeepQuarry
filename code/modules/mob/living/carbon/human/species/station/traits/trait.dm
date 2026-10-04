@@ -77,7 +77,7 @@
 		H.disabilities |= disability // bitflag
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/trait_tutorial, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/trait_tutorial), src)
 	if(H)
 		changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
 	if(special_env)

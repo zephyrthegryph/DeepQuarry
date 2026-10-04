@@ -778,11 +778,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		real_name = name
 	if(!teppi_adult)
 		set_nutrition(0)
-		om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-		om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
+		grant(src, granted_verb(/mob/living/proc/ventcrawl), src)
+		grant(src, granted_verb(/mob/living/proc/hide), src)
 	else
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring, src)
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring, src)
+		grant(src, granted_verb(/mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring), src)
+		grant(src, granted_verb(/mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring), src)
 	teppi_setup()
 
 // the population cap counts it out.

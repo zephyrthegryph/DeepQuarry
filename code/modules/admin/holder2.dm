@@ -119,7 +119,7 @@ CAPABILITIES(/datum/admins)
 
 	if (!isnull(client))
 		disassociate()
-		om_grant(client, GRANT_VERB, /client/proc/readmin, src)
+		grant(client, granted_verb(/client/proc/readmin), src)
 
 /datum/admins/proc/associate(client/client)
 	if(IsAdminAdvancedProcCall())
@@ -141,7 +141,7 @@ CAPABILITIES(/datum/admins)
 	rel_set(src, nameof(owner), client)
 	owner().holder = src
 	owner().add_admin_verbs()
-	om_revoke(owner(), GRANT_VERB, /client/proc/readmin, src)
+	revoke(owner(), granted_verb(/client/proc/readmin), src)
 	owner().init_verbs() //re-initialize the verb list
 	GLOB.admins |= client
 

@@ -114,9 +114,6 @@
 
 			return FALSE
 
-DECLARE_VERB(/mob/living/simple_mob/animal/sif/tymisian, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/sif/tymisian, /mob/living/proc/hide)
-
 
 /datum/om/stage/life/special/animal/sif/tymisian
 	of = /mob/living/simple_mob/animal/sif/tymisian
@@ -141,4 +138,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/moth, mob_organ_hit_zones, list("head", "
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/tymisian)
 	owns_one(nameof(smoke_spore), starts = /datum/effect/effect/system/smoke_spread/mothspore)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 

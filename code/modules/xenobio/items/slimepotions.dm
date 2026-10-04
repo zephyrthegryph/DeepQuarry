@@ -516,7 +516,7 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 	xenobio_slime.ghostjoin = 1
 	registry_join(REGISTRY_GHOST_PODS, xenobio_slime)
 	if(!xenobio_slime.vore_active)
-		om_grant(xenobio_slime, GRANT_VERB, /mob/living/simple_mob/proc/animal_nom, xenobio_slime)
+		grant(xenobio_slime, granted_verb(/mob/living/simple_mob/proc/animal_nom), xenobio_slime)
 	xenobio_slime.ghostjoin_icon()
 	log_and_message_admins("used a sapience potion on a simple mob: [xenobio_slime]. [ADMIN_FLW(src)]", user)
 	play_sfx(src, SFX_EFFECTS_BUBBLES)

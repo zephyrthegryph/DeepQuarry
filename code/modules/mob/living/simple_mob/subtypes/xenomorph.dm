@@ -62,8 +62,9 @@
 	sight |= SEE_MOBS
 
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch, /mob/living/simple_mob/xeno_ch/proc/xeno_build) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch, /mob/living/simple_mob/verb/toggle_speech_sounds) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/xeno_ch)
+	verb_entry(/mob/living/simple_mob/xeno_ch/proc/xeno_build, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/verb/toggle_speech_sounds, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/Login()
 	. = ..()
@@ -90,9 +91,10 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch, /mob/living/simple_mob/verb/t
 	icon_pounce_x = -32
 	icon_pounce_y = -32
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/hunter, /mob/living/simple_mob/proc/pounce_toggle) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/hunter, /mob/living/proc/ventcrawl) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/hunter, /mob/living/proc/hide) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/xeno_ch/hunter)
+	verb_entry(/mob/living/simple_mob/proc/pounce_toggle, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/ventcrawl, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/hide, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/hunter/Login()
 	. = ..()
@@ -118,11 +120,12 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/hunter, /mob/living/proc/hide)
 	icon_pounce_x = -32
 	icon_pounce_y = -32
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_mob/proc/pounce_toggle) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/proc/hide) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_mob/proc/neurotoxin) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_mob/proc/acidspit) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_mob/proc/corrosive_acid) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/xeno_ch/sentinel)
+	verb_entry(/mob/living/simple_mob/proc/pounce_toggle, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/hide, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/neurotoxin, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/acidspit, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/corrosive_acid, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/sentinel/Login()
 	. = ..()
@@ -151,10 +154,11 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_m
 
 	movement_cooldown = 2
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/proc/neurotoxin) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/proc/acidspit) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/proc/corrosive_acid) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/proc/speen) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/xeno_ch/queen)
+	verb_entry(/mob/living/simple_mob/proc/neurotoxin, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/acidspit, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/corrosive_acid, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/speen, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/queen/Login()
 	. = ..()

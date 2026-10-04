@@ -45,8 +45,9 @@
 
 	allow_mind_transfer = TRUE
 
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mothroach, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mothroach, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/mothroach/Initialize(mapload)
 	. = ..()

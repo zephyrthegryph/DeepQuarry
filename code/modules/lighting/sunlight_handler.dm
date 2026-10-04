@@ -4,6 +4,7 @@
 
 CAPABILITIES(/turf/simulated)
 	owns_one(nameof(shandler), /datum/sunlight_handler)
+	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))
 
 /turf/simulated/Initialize(mapload)
 	. = ..()

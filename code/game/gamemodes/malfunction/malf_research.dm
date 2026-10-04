@@ -35,7 +35,7 @@ CAPABILITIES(/datum/malf_research)
 	if(!get_focus())
 		return
 	to_chat(owner_ref(), span_bold("Research Completed") + ": [get_focus().name]")
-	om_grant(owner_ref(), GRANT_VERB, get_focus().ability, get_focus())
+	grant(owner_ref(), granted_verb(get_focus().ability), get_focus())
 	var/datum/malf_research_ability/done = get_focus()
 	own_transfer(src, nameof(available_abilities), src, nameof(unlocked_abilities), done)
 	if(done.next)

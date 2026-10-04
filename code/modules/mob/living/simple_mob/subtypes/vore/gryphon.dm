@@ -139,8 +139,9 @@
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/gryphon, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/gryphon, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/gryphon/Login()
 	. = ..()

@@ -42,7 +42,7 @@
 	// Vore stuff
 
 	if(!no_vore)
-		om_grant(src, GRANT_VERB, /mob/living/proc/vorebelly_printout, src)
+		grant(src, granted_verb(/mob/living/proc/vorebelly_printout), src)
 		if(!vorePanel)
 			add_vore_panel_button()
 

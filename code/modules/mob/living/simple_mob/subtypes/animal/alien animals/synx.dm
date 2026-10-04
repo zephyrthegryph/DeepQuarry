@@ -190,15 +190,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	)
 */
 
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/distend_stomach)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/proc/contort)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/sonar_ping)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/proc/shred_limb)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/disguise)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/randomspeech)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/set_style)
-
 /mob/living/simple_mob/animal/synx/Initialize(mapload, is_pet) //this is really cool. Should be able to ventcrawl canonicaly, contort, and make random speech.
 //some things should be here that arent tho.
 	. = ..()
@@ -946,9 +937,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(datum/om/prompt/text/synx_debug_var/ask)
 	vars[ask.var_name] = ask.text
 
-DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/Initialize(mapload)
 	. = ..(mapload, TRUE)
@@ -995,4 +987,12 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx)
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/distend_stomach)
+	verb_entry(/mob/living/simple_mob/proc/contort)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/sonar_ping)
+	verb_entry(/mob/living/proc/shred_limb)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style)
 

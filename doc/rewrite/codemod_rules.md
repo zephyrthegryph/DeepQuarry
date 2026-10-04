@@ -245,3 +245,24 @@ A declaration converts only when:
 Residue codes: `decl_form`, `machine_pipeline`, `cadence`, `non_atom`, `related_decl`, `handler_shape`, `ancestor_handler`, `handler_called`, `manual_start`, `handler_kill`, `body_uses`, `name_clash`, `field_kind`, `field_shared`, `derived_expr`, `repeat_stop`, `handler_params`, `delay_var`.
 Evidence: the hand conversions of the chargers, airlock and light flicker (`7bce9a692a`). Tests: `dq_gap/every_parks_and_wakes`, `every_starts_when_true`, `every_with_a_proc_gate_polls`, `periodic_pinpointer_steps_while_active`, `periodic_jammer_drains_while_on`.
 
+## DECLARE_VERB and GRANT_VERB -> verb_entry() and granted_verb()
+
+The target (doc section 13): a verb a type has is `verb_entry(path, login =, when =, hidden =)` in its `CAPABILITIES(T)` block; a verb granted at run time is `grant(E, granted_verb(path), source)` (the activation ends with `revoke()`, with the source or with the capability that brought it). The engine is code/engine/present/verbs.dm; the verb store (code/datums/om/grant_verbs.dm) stays the only writer of a `verbs` list, and a granted verb shows under the verb's own `set category` tab in the client's stat panel because the store tells the panel on every add and remove. `tools/dx/codemods/verb_decl.py`.
+
+| Old | New |
+|---|---|
+| `DECLARE_VERB(T, path)` | `verb_entry(path)` in `CAPABILITIES(T)`: on every instance from init |
+| `DECLARE_LOGIN_VERB(T, path)` | `verb_entry(path, login = TRUE)`: on a mob once a player has had it |
+| `DECLARE_VERB_IF(T, path, "var")` | `verb_entry(path, when = nameof(var))`: while the condition holds; the entry re-evaluates through an `on_change` hook when the var publishes (a `TRACKED` setter or `OM_FIELD`); a `verb_store_refresh()` after a direct write still works |
+| `DECLARE_VERB_HIDE(T, path)` | `verb_entry(path, hidden = TRUE)`: never on an instance (it hides what the type inherits) |
+| `om_grant(E, GRANT_VERB, path, source)` | `grant(E, granted_verb(path), source)` |
+| `om_revoke(E, GRANT_VERB, path, source)` | `revoke(E, granted_verb(path), source)` |
+| `VERB_NAMED(path, "Name", "Desc")` as the id | `granted_verb(path, verb_name = "Name", verb_desc = "Desc")` |
+| an item's own verb while carried (`held_verb`) | `held_verb(path, slots)` = `while_slotted(slots, granted_verb(path, on = ON_SOURCE))`: the verb is on the item, held by the carrier |
+| `grant(E, hidden_verb(path), source)` | unchanged (`hidden_verb()` is the store form; `granted_verb(path, hidden = TRUE)` is the capability one) |
+
+A `verb_entry()` inside a capability is a grant: on while the capability's activation lives and gone with it (`login` and `when` are refused there: use an enclosing `when()` block). `on = ON_SOURCE` puts the verb on the activation's source (an item's verb, listed while a mob carries it).
+
+A declaration converts when T is under `/atom` (`non_atom`), its verb is a path literal (`verb_expr`) and the macro is one line (`decl_form`). A grant statement converts only when it is a statement of its own (its value unused), its source is a datum expression (a text source is `grant_shared`: the old `om_grant` took one), and every site that names the same path converts too: a path another site grants or revokes through `om_grant_each`, `om_revoke_each`, `om_revoke_all_of`, `om_grant_for` or a text source is `grant_shared`, and any such site is `grant_form`. Reason: a verb granted by `grant()` leaves a live activation, so a revoke of the same verb through the old store call would leave it behind and the next `grant()` from that source would find it and do nothing.
+
+Residue codes: `decl_form`, `non_atom`, `verb_expr`, `grant_shared`, `grant_form`. A gameplay ability that a verb starts is an op under "Abilities" (`menu()`), a conversion by hand; a verb entry is for what the client does (doc section 13: the layering lint will reject it under `code/content`). Tests: `dq_gap/verb_entries_follow_their_conditions`, `granted_verb_follows_its_source`, `verb_entry_in_a_capability_is_a_grant`, `dq_eg2/held_verb_follows_the_carrier`.

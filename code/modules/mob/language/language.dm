@@ -132,7 +132,7 @@
 /datum/language/proc/broadcast(mob/living/speaker,message,speaker_mask)
 	speaker.log_talk("(HIVE) [message]", LOG_SAY)
 
-	om_grant(speaker, GRANT_VERB, /mob/proc/adjust_hive_range, src)
+	grant(speaker, granted_verb(/mob/proc/adjust_hive_range), src)
 
 	if(!speaker_mask) speaker_mask = speaker.real_name
 	message = "[get_spoken_verb(message)], \"[format_message(message, get_spoken_verb(message))]\""
@@ -204,7 +204,7 @@
 
 	languages.Add(new_language)
 	if(new_language.flags & HIVEMIND)
-		om_grant(src, GRANT_VERB, /mob/proc/adjust_hive_range, new_language)
+		grant(src, granted_verb(/mob/proc/adjust_hive_range), new_language)
 
 	return 1
 

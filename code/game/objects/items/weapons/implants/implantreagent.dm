@@ -17,8 +17,8 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
 	om_task_periodic(src, PERIODIC_SLOW)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	om_grant(source, GRANT_VERB, implant_verb_key(), src) // TGPanel
-	om_grant(source, GRANT_VERB, /mob/living/carbon/human/proc/toggle_cascade, src) // TGPanel
+	grant(source, granted_verb(implant_verb_key()), src) // TGPanel
+	grant(source, granted_verb(/mob/living/carbon/human/proc/toggle_cascade), src) // TGPanel
 	return 1
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg()
@@ -196,7 +196,7 @@ DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
 /obj/item/implant/reagent_generator/post_implant(mob/living/carbon/source)
 	om_task_periodic(src, PERIODIC_SLOW)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	om_grant(source, GRANT_VERB, implant_verb_key(), src)
+	grant(source, granted_verb(implant_verb_key()), src)
 	return 1
 
 /obj/item/implant/reagent_generator/periodic_step()
@@ -210,7 +210,7 @@ DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
 		else
 			return
 	else
-		om_revoke(imp_in(), GRANT_VERB, implant_verb_key(), src)
+		revoke(imp_in(), granted_verb(implant_verb_key()), src)
 		return
 
 	if(reagents)

@@ -114,8 +114,9 @@
 	set_resting(0)
 	icon_state = icon_dead
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/corrupthound, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/corrupthound, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/Login()
 	. = ..()
@@ -356,8 +357,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/corrupthound, /mob/liv
 	set_resting(0)
 	icon_state = icon_dead
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/Login()
 	. = ..()

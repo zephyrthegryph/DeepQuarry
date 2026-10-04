@@ -11,7 +11,7 @@
 /obj/item/organ/internal/eyes/robotize()
 	..()
 	name = "optical sensor"
-	om_grant(src, GRANT_VERB, /obj/item/organ/internal/eyes/proc/change_eye_color, src)
+	grant(src, granted_verb(/obj/item/organ/internal/eyes/proc/change_eye_color), src)
 	organ_verbs = list(/obj/item/organ/internal/eyes/proc/change_eye_color)
 	handle_organ_mod_special()
 

@@ -1,5 +1,7 @@
 CAPABILITIES(/mob/living/carbon/alien)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(alien_blast)))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /// Aliens take the blast through their own ladder (the mob explosion entry delivers no damage).
 /mob/living/carbon/alien/proc/alien_blast(datum/act/A)

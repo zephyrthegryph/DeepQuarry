@@ -755,8 +755,9 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 
 	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/Login()
 	. = ..()
@@ -793,8 +794,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fire
 
 	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/noodle/Login()
 	. = ..()
@@ -832,8 +834,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/p
 
 	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/tesh/Login()
 	. = ..()
@@ -870,8 +873,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/pro
 
 	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/castertesh, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/castertesh, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/Login()
 	. = ..()
