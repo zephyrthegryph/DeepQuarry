@@ -736,7 +736,15 @@ ADMIN_VERB(debug_statpanel, R_DEBUG, "Debug Stat Panel", "Toggles local debug of
 	user.stat_panel.send_message("create_debug")
 
 ADMIN_VERB(spawn_reagent, R_DEBUG|R_EVENT, "Spawn Reagent", "Spawn any reagent.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/datum/reagent/new_reagent = verb_ask(user, "a22", args, /datum/om/prompt/choice, message = "Select a reagent to spawn", title = "Reagent Spawner", choices = subtypesof(/datum/reagent))
+	return reagent_spawn_stage(user, list())
+
+/datum/admin_verb/spawn_reagent/proc/reagent_spawn_stage(client/user, list/reagent_answers)
+	if(!("a22" in reagent_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/admin_reagent_spawn, PROC_REF(reagent_spawn_answered), answerer = user.mob, choices = subtypesof(/datum/reagent))
+		return
+	var/datum/reagent/new_reagent = reagent_answers["a22"]
 	if(isnull(new_reagent))
 		return
 	if(!new_reagent)
@@ -1126,3 +1134,35 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	var/list/ticket_answers = ask.ticket_answers.Copy()
 	ticket_answers[ask.ticket_key] = ask.answer_value
 	return security_ticket_stage(user, ticket_answers)
+
+/datum/prompt/choice/admin_reagent_spawn
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_DEBUG|R_EVENT
+	question = "Select a reagent to spawn"
+	title = "Reagent Spawner"
+
+/datum/prompt/choice/admin_reagent_spawn/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+
+/proc/reagent_spawn_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/spawn_reagent/proc/reagent_spawn_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(reagent_spawn_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	return reagent_spawn_stage(user, list("a22" = context.answer.answer_value))

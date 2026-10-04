@@ -31,19 +31,21 @@ CAPABILITIES(/obj/item/rig_module/voice)
 	if(!..())
 		return 0
 
-	om_ask(user, /datum/om/prompt/choice/rig_voice, PROC_REF(voice_choice_made))
+	open_request(src, /datum/prompt/choice/rig_voice, PROC_REF(voice_choice_made), answerer = user)
 	return 1
 
 /// Toggling the voice synthesiser or naming it. Re-checked on the answer: conscious, and still
 /// wearing the suit the module is in.
-/datum/om/prompt/choice/rig_voice
-	message = "Would you like to toggle the synthesiser or set the name?"
+/datum/prompt/choice/rig_voice
+	question = "Would you like to toggle the synthesiser or set the name?"
+	timeout = 0
+	recheck_on_open = TRUE
 	buttons = TRUE
 	choices = list("Enable","Disable","Set Name","Cancel")
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/rig_voice/valid()
-	var/obj/item/rig_module/voice/module = subject
+/datum/prompt/choice/rig_voice/recheck_extra()
+	var/obj/item/rig_module/voice/module = owner
 	return (module.holder && module.holder.wearer() == answerer) ? null : "not wearing the suit"
 
 /datum/prompt/text/rig_voice_name
@@ -60,9 +62,11 @@ CAPABILITIES(/obj/item/rig_module/voice)
 		return "no name"
 	return (module.holder && module.holder.wearer() == answerer) ? null : "not wearing the suit"
 
-/obj/item/rig_module/voice/proc/voice_choice_made(datum/om/prompt/choice/rig_voice/ask)
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+/obj/item/rig_module/voice/proc/voice_choice_made(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/mob/user = context.request.answerer
+	switch(context.answer.answer_value)
 		if("Enable")
 			active = 1
 			voice_holder.active = 1

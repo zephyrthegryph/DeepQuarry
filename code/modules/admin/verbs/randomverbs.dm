@@ -1,11 +1,15 @@
 GLOBAL_VAR_INIT(global_vantag_hud, 0)
 
 ADMIN_VERB(drop_everything, R_ADMIN, "Drop Everything", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/living/dropee in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(confirmed), title = "Message", message = "Make [dropee] drop everything?", requires = PROMPT_ADMIN(permissions), subject = dropee)
+	if(!user.mob || QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/choice/drop_everything_review, PROC_REF(confirmed), answerer = user.mob, title = "Message", question = "Make [dropee] drop everything?", subject = dropee)
 
-/datum/admin_verb/drop_everything/proc/confirmed(datum/om/prompt/confirm/ask)
-	var/client/user = ask.answerer.client
-	var/mob/living/dropee = ask.subject
+/datum/admin_verb/drop_everything/proc/confirmed(datum/act/request/context)
+	if(context.answer?.answer_value != "Yes")
+		return
+	var/client/user = context.request.answerer.client
+	var/mob/living/dropee = context.request.subject
 
 	for(var/obj/item/W in dropee)
 		if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif))	//There's basically no reason to remove either of these
@@ -338,24 +342,36 @@ Ccomp's first proc.
 	return mobs
 
 ADMIN_VERB(allow_character_respawn, R_ADMIN|R_MOD|R_FUN, "Allow player to respawn", "Let a player bypass the wait to respawn or allow them to re-enter their corpse.", ADMIN_CATEGORY_GAME)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(target_picked), title = "Allow Respawn Selector", message = "Select a ckey to allow to rejoin", choices = GLOB.respawn_timers, requires = PROMPT_ADMIN(permissions))
-
-/datum/admin_verb/allow_character_respawn/proc/target_picked(datum/om/prompt/choice/ask)
-	if(GLOB.respawn_timers[ask.choice] == -1) // Their respawn timer is set to -1, which is 'not allowed to respawn'
-		om_ask(ask.answerer, /datum/om/prompt/confirm/allow_impossible_respawn, PROC_REF(impossible_confirmed), requires = PROMPT_ADMIN(permissions), target = ask.choice)
+	if(!user.mob || QDELETED(user.mob))
 		return
-	respawn_allowed(ask.answerer.client, ask.choice)
+	open_request(src, /datum/prompt/choice/allow_respawn_target, PROC_REF(target_picked), answerer = user.mob, title = "Allow Respawn Selector", question = "Select a ckey to allow to rejoin", choices = GLOB.respawn_timers)
+
+/datum/admin_verb/allow_character_respawn/proc/target_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/selected = context.answer.answer_value
+	if(GLOB.respawn_timers[selected] == -1) // Their respawn timer is set to -1, which is 'not allowed to respawn'
+		open_request(src, /datum/prompt/choice/allow_impossible_respawn, PROC_REF(impossible_confirmed), answerer = context.request.answerer, target = selected)
+		return
+	respawn_allowed(context.request.answerer.client, selected)
 
 /// Allowing a respawn that is normally not allowed (its timer is -1).
-/datum/om/prompt/confirm/allow_impossible_respawn
+/datum/prompt/choice/allow_impossible_respawn
 	title = "Allow impossible respawn?"
-	message = "Are you sure you wish to allow this individual to respawn? They would normally not be able to."
-	no_first = TRUE
+	question = "Are you sure you wish to allow this individual to respawn? They would normally not be able to."
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_MOD|R_FUN
 	/// The ckey.
 	var/target
 
-/datum/admin_verb/allow_character_respawn/proc/impossible_confirmed(datum/om/prompt/confirm/allow_impossible_respawn/ask)
-	respawn_allowed(ask.answerer.client, ask.target)
+/datum/admin_verb/allow_character_respawn/proc/impossible_confirmed(datum/act/request/context)
+	if(context.answer?.answer_value != "Yes")
+		return
+	var/datum/prompt/choice/allow_impossible_respawn/ask = context.answer
+	respawn_allowed(context.request.answerer.client, ask.target)
 
 /datum/admin_verb/allow_character_respawn/proc/respawn_allowed(client/user, target)
 	GLOB.respawn_timers -= target
@@ -875,20 +891,39 @@ CAPABILITIES(/datum/respawn_review)
 	after(new_character, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable, end_fall))
 
 ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a custom law to a silicon.", ADMIN_CATEGORY_FUN_SILICON)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(law_entered), title = "What?", message = "Please enter anything you want the AI to do. Anything. Serious.", max_length = MAX_MESSAGE_LEN, requires = PROMPT_ADMIN(permissions))
+	if(!user.mob || QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/text/freeform_ai_law, PROC_REF(law_entered), answerer = user.mob, title = "What?", question = "Please enter anything you want the AI to do. Anything. Serious.")
 
-/datum/admin_verb/cmd_admin_add_freeform_ai_law/proc/law_entered(datum/om/prompt/text/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/ion_message, PROC_REF(law_answered), requires = PROMPT_ADMIN(permissions), law = ask.text)
+/datum/admin_verb/cmd_admin_add_freeform_ai_law/proc/law_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ion_message/confirmation = open_request(src, /datum/prompt/choice/ion_message, PROC_REF(law_answered), answerer = A.request.answerer, law = A.answer.answer_value)
+	if(confirmation?.is_open())
+		confirmation.presented = TRUE
 
-/// Whether to announce an ion storm for an admin-added law (a cancel is a no).
-/datum/om/prompt/confirm/ion_message
+/// The original close-as-No behavior applies only after the confirmation opened.
+/datum/prompt/choice/ion_message
 	title = "Message"
-	message = "Show ion message?"
-	answer_on_no = TRUE
-	cancel_answer = "No"
+	question = "Show ion message?"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
 	var/law
+	var/presented = FALSE
 
-/datum/admin_verb/cmd_admin_add_freeform_ai_law/proc/law_answered(datum/om/prompt/confirm/ion_message/ask)
+/datum/prompt/choice/ion_message/recheck_extra()
+	var/mob/admin = answerer
+	return admin_can(admin?.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/cmd_admin_add_freeform_ai_law/proc/law_answered(datum/act/request/A)
+	var/datum/prompt/choice/ion_message/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	if(!A.answer && (!ask.presented || !isnull(ask.answer_value) || ask.outcome != REQ_CANCELLED))
+		return
 	var/client/user = ask.answerer.client
 	var/input = ask.law
 	for(var/mob/living/silicon/ai/target_ai in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -905,7 +940,7 @@ ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a cu
 	log_admin("Admin [key_name(user)] has added a new AI law - [input]")
 	message_admins("Admin [key_name_admin(user)] has added a new AI law - [input]", 1)
 
-	if(ask.yes)
+	if(A.answer?.answer_value == "Yes")
 		GLOB.command_announcement.Announce("Ion storm detected near the [station_name()]. Please check all AI-controlled equipment for errors.", "Anomaly Alert", new_sound = ANNOUNCER_MSG_IONSTORM)
 	feedback_add_details("admin_verb","IONC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -1541,3 +1576,40 @@ ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/R
 	question = "Message:"
 	recheck_on_open = TRUE
 
+
+/datum/prompt/text/freeform_ai_law
+	max_len = MAX_MESSAGE_LEN
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/text/freeform_ai_law/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/freeform_ai_law/recheck_extra()
+	var/mob/admin = answerer
+	return admin_can(admin?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/drop_everything_review
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN
+
+/datum/prompt/choice/drop_everything_review/recheck_extra()
+	var/mob/living/dropee = subject
+	if(QDELETED(dropee))
+		return "gone"
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/allow_respawn_target
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_MOD|R_FUN
+
+/datum/prompt/choice/allow_respawn_target/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/allow_impossible_respawn/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"

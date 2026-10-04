@@ -3,3 +3,4 @@ delete-after: true
 changes:
   - code_imp: "Moved crayon drawing choices to native requests with checks when opening and answering."
   - code_imp: "Moved generic spawn setup, map tools and environment message choices to native requests while preserving admin checks and logging."
+  - code_imp: "Moved vote setup, respawn approvals, AI law entry, reagent selection, blade colors and voice settings to native requests."
