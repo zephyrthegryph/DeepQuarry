@@ -155,11 +155,11 @@
 	TEST_ASSERT(answerer_holds(R, ANSWER_ADJACENT, other), "a person on the next tile is adjacent")
 	asker.forceMove(locate(test_floor().x + 5, test_floor().y, test_floor().z))
 	TEST_ASSERT(!answerer_holds(R, ANSWER_ADJACENT, other), "far away is not adjacent")
-	asker.stat = UNCONSCIOUS
+	asker.set_stat(UNCONSCIOUS)
 	TEST_ASSERT(!answerer_holds(R, ANSWER_CONSCIOUS), "an unconscious answerer fails")
 	TEST_ASSERT(answerer_holds(R, ANSWER_ALIVE), "but is alive")
-	asker.stat = DEAD
+	asker.set_stat(DEAD)
 	TEST_ASSERT(!answerer_holds(R, ANSWER_ALIVE), "a dead one is not alive")
-	asker.stat = CONSCIOUS
+	asker.set_stat(CONSCIOUS)
 	TEST_ASSERT(!answerer_holds(R, ANSWER_HELD, null), "a missing subject is never held")
 	request_end(R, REQ_CANCELLED, null)
