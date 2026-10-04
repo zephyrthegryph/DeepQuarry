@@ -571,3 +571,5 @@ locker's door; written and green on the old gates first) and the existing APC, d
   emag on an unpowered or broken machine that had no such gate (portable turrets, turret controls, jukeboxes, gear dispensers, suit cyclers,
   cloning pods, deployable barriers, telecomms consoles, vending machines, door controls, light replacers): it is refused with "It isn't working."
   A one-shot emag is refused on a holder subverted any other way too (an AI hack: `is_subverted()`), not only on one already emagged.
+* **Menus leave out every op behind a closed door**, as they left out the `when()`-gated ones: the APC's welder dismantle step no longer shows,
+  greyed, in the menu of a closed APC (`dx_menu_order_golden.dm` updated for that one scenario).
