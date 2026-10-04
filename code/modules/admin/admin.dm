@@ -799,18 +799,46 @@ ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyz
 		log_and_message_admins(msg)
 
 ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to change telecrystals of a user.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-	var/crystals = verb_ask(user, "a16", args, /datum/om/prompt/number, message = "Amount of telecrystals for [human_mob.ckey], currently [human_mob.mind.tcrystals].")
-	if(isnull(crystals))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/number/admin_telecrystals, PROC_REF(set_crystals), answerer = answerer, question = "Amount of telecrystals for [human_mob.ckey], currently [human_mob.mind.tcrystals].", human_target = human_mob)
+
+/datum/admin_verb/set_tcrystals/proc/set_crystals(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(crystals_answered), A)
+	if(!result.ok)
+		stack_trace("om flow set_tcrystals answer crystals_answered: [result.error]")
+
+/datum/admin_verb/set_tcrystals/proc/crystals_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/admin_telecrystals/ask = A.request
+	var/mob/living/carbon/human/human_mob = ask.human_target
+	var/client/user = ask.answerer.client
+	var/crystals = ask.answer_value
 	if (!isnull(crystals))
 		human_mob.mind.tcrystals = crystals
 		var/msg = "[key_name(user)] has modified [human_mob.ckey]'s telecrystals to [crystals]."
 		message_admins(msg)
 
 ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to change telecrystals of a user by addition.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-	var/crystals = verb_ask(user, "a17", args, /datum/om/prompt/number, message = "Amount of telecrystals to give to [human_mob.ckey], currently [human_mob.mind.tcrystals].")
-	if(isnull(crystals))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/number/admin_telecrystals, PROC_REF(add_crystals), answerer = answerer, question = "Amount of telecrystals to give to [human_mob.ckey], currently [human_mob.mind.tcrystals].", human_target = human_mob)
+
+/datum/admin_verb/add_tcrystals/proc/add_crystals(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(crystals_answered), A)
+	if(!result.ok)
+		stack_trace("om flow add_tcrystals answer crystals_answered: [result.error]")
+
+/datum/admin_verb/add_tcrystals/proc/crystals_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/admin_telecrystals/ask = A.request
+	var/mob/living/carbon/human/human_mob = ask.human_target
+	var/client/user = ask.answerer.client
+	var/crystals = ask.answer_value
 	if (!isnull(crystals))
 		human_mob.mind.tcrystals += crystals
 		var/msg = "[key_name(user)] has added [crystals] to [human_mob.ckey]'s telecrystals."
@@ -938,3 +966,38 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(user)] has given [traitor_human.ckey] an uplink.")
+
+/datum/prompt/number/admin_telecrystals
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	min_value = 0
+	max_value = INFINITY
+	step = 1
+	var/mob/living/carbon/human/human_target
+
+CAPABILITIES(/datum/prompt/number/admin_telecrystals)
+	ref_one(nameof(human_target), /mob/living/carbon/human)
+
+/datum/prompt/number/admin_telecrystals/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/carbon/human/captured = human_target
+	rel_clear(src, nameof(human_target))
+	rel_set(src, nameof(human_target), captured)
+
+/datum/prompt/number/admin_telecrystals/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(human_target) ? "target is gone" : null
+
+/datum/prompt/number/admin_telecrystals/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/number/admin_telecrystals/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
