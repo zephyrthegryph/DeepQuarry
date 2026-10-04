@@ -84,6 +84,7 @@
 
 CAPABILITIES(/datum/techweb)
 	owns_many(nameof(available_experiments), /datum/experiment)
+	owns_many(nameof(completed_experiments), /datum/experiment)
 
 /datum/techweb/New()
 	for(var/i in SSresearch.techweb_nodes_starting)
@@ -313,7 +314,7 @@ CAPABILITIES(/datum/techweb)
  */
 /datum/techweb/proc/complete_experiment(datum/experiment/completed_experiment)
 	own_take_member(src, nameof(available_experiments), completed_experiment)
-	own_put(src, nameof(completed_experiments), completed_experiment.type, completed_experiment)
+	rel_add(src, nameof(completed_experiments), completed_experiment, completed_experiment.type)
 
 	var/result_text = "[completed_experiment] has been completed"
 	var/refund = LAZYACCESS(skipped_experiment_types, completed_experiment.type) || 0

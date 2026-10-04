@@ -117,7 +117,7 @@
 	toytype["Bosun's whistle"] = /obj/item/toy/bosunwhistle
 	toytype["Magic 8 Ball"] = /obj/item/toy/eight_ball
 	toytype["Magic Conch shell"] = /obj/item/toy/eight_ball/conch
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(toytype))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(toytype))
 */
 
 /datum/gear/flask

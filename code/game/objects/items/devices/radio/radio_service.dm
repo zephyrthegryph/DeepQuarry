@@ -68,6 +68,9 @@ SYSTEM_DEF(radio)
 	needs = list(/datum/system/atoms)
 	var/list/datum/radio_frequency/frequencies = list()
 
+CAPABILITIES(/datum/system/radio)
+	owns_many(nameof(frequencies), /datum/radio_frequency)
+
 /// The system owns its frequencies (keyed by frequency text).
 
 /datum/system/radio/initialize()

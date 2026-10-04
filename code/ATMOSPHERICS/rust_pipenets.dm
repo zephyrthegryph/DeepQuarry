@@ -76,6 +76,9 @@
 	/// N-edge counterpart).
 	var/list/rust_flow_entities
 
+CAPABILITIES(/obj/machinery/atmospherics)
+	owns_many(nameof(rust_unbound_port_air), /datum/gas_mixture)
+
 /obj/machinery/atmospherics/proc/rust_pipe_port_count()
 	return 0
 
@@ -90,7 +93,7 @@
 	var/datum/gas_mixture/air = rust_unbound_port_air?["[index]"]
 	if(!air)
 		air = new(max(rust_pipe_port_volume(index), 1))
-		own_put(src, nameof(rust_unbound_port_air), "[index]", air)
+		rel_add(src, nameof(rust_unbound_port_air), air, "[index]")
 	return air
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_volume(index)
@@ -111,7 +114,7 @@
 /obj/machinery/atmospherics/proc/rust_bind_pipe_port(index, datum/pipe_network/network, datum/gas_mixture/network_air)
 	var/datum/gas_mixture/old_air = rust_unbound_port_air?["[index]"]
 	if(old_air && old_air != network_air)
-		own_put(src, nameof(rust_unbound_port_air), "[index]", null)
+		rel_add(src, nameof(rust_unbound_port_air), null, "[index]")
 	return FALSE
 
 /obj/machinery/atmospherics/proc/rust_allocate_pipe_ports()

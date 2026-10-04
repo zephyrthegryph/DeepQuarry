@@ -182,16 +182,14 @@
 
 // ---------------------------------------------------------------- accessors
 
-/// Adopts `value` into holder's one-shape owned var. The previous value is disposed of by
-/// policy (destroyed, spilled, or left contained). Returns `value`, or null when refused.
+/// Adopts `value` into holder's one-shape owned var (rel_set() is the public verb). The previous value is
+/// disposed of by policy (destroyed, spilled, or left contained). Returns `value`, or null when refused.
 ///
-/// A movable somewhere else is transferred in first, in the same call (transfer.dm): checked
-/// (it can leave its hand, equip slot, storage or other holder, and enter this one), released
-/// from there, moved in (`slot`: which of the holder's ledger slots) and adopted. `user`: who does
-/// it -- told why on a refusal, and the transfer is recorded as a dispatched call (changed(), the
-/// fingerprint, the `log` line). `into`: TRUE moves it in even off a turf, FALSE never moves it.
-/// `force`: skips the checks (admin undress, a worn item swallowing the one under it).
-/proc/own_set(datum/holder, var_name, datum/value, mob/user = null, into = null, slot = null, force = FALSE, log = null)
+/// A CONTAINED var, or a value inside something else (a mob, a storage, a machine), is moved into the holder first
+/// (own_wants_transfer(), transfer.dm); `into = FALSE` never moves it (own_transfer / own_move re-own in place). Putting
+/// a thing somewhere on a player's or a script's behalf, with the checks, the release, the record and the log, is
+/// move_into() (code/engine/declare/transfer.dm); the transfer arguments (user, slot, force, log) are gone from here.
+/proc/own_set(datum/holder, var_name, datum/value, into = null)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN)
 	var/old = holder.vars[var_name]
 	if(old == value)
@@ -200,7 +198,7 @@
 		return null
 	if(!own_type_ok(holder, var_name, entry, value))
 		return null
-	if(!isnull(value) && !own_bring_in(holder, var_name, value, entry, user, into, slot, force))
+	if(!isnull(value) && !own_bring_in(holder, var_name, value, entry, null, into, null, FALSE))
 		return null
 	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
 		return null
@@ -209,8 +207,6 @@
 	own_mark_changed(holder, var_name) // review 2 M8: every accessor write marks the holder
 	if(entry && isdatum(old))
 		own_dispose(holder, var_name, old, entry)
-	if(user && !isnull(value))
-		own_transfer_record(holder, value, user, log)
 	return value
 
 /// Detaches and returns holder.var_name's value, now unowned: the caller adopts it
@@ -226,10 +222,17 @@
 	own_unstamp(value)
 	return value
 
+/// The one first write that may declare its own var: a starting occupant (DECLARE_DEFAULT_CHILD declares `owns(v, policy = OWN_NONE, starts = ...)`,
+/// no kind, and DECLARE_GAS declares nothing) adopts its child here, and the var learns the default OWN_DELETE entry on this write. A var
+/// declared owns_one / owns_many with `starts =` needs none of this: it is adopted by its declaration. Returns the child, or null when refused.
+/proc/own_adopt_start(datum/holder, var_name, datum/child, as_list)
+	if(as_list)
+		return own_add(holder, var_name, child)
+	return own_set(holder, var_name, child)
+
 /// Adds `value` to holder's owned list (created on first use). Returns `value`, or null when refused.
-/// A movable somewhere else is transferred in first: see own_set() for `user`, `into`, `slot`,
-/// `force` and `log`.
-/proc/own_add(datum/holder, var_name, datum/value, mob/user = null, into = null, slot = null, force = FALSE, log = null)
+/// A movable somewhere else is moved in first: see own_set() for `into`.
+/proc/own_add(datum/holder, var_name, datum/value, into = null)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN, TRUE)
 	if(isnull(value))
 		return null
@@ -237,7 +240,7 @@
 		return null
 	if(!own_type_ok(holder, var_name, entry, value))
 		return null
-	if(!own_bring_in(holder, var_name, value, entry, user, into, slot, force))
+	if(!own_bring_in(holder, var_name, value, entry, null, into, null, FALSE))
 		return null
 	if(entry && !own_stamp(value, holder, var_name))
 		return null
@@ -248,8 +251,6 @@
 		own_field_changed(holder, var_name)
 	L |= value
 	own_mark_changed(holder, var_name)
-	if(user)
-		own_transfer_record(holder, value, user, log)
 	return value
 
 /// Removes `value` from holder's owned list and disposes of it by policy.
@@ -268,8 +269,8 @@
 	return TRUE
 
 /// Values shape: holder.var_name[key] = value, disposing of the value it replaces. A movable
-/// somewhere else is transferred in first: see own_set() for `user`, `into`, `slot`, `force`, `log`.
-/proc/own_put(datum/holder, var_name, key, datum/value, mob/user = null, into = null, slot = null, force = FALSE, log = null)
+/// somewhere else is moved in first: see own_set() for `into`.
+/proc/own_put(datum/holder, var_name, key, datum/value, into = null)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN, TRUE)
 	if(!isnull(value) && !own_guard(holder, value, "own_put([var_name])")) // the one teardown guard (guard.dm)
 		return null
@@ -280,7 +281,7 @@
 		return null
 	if(islist(L) && L[key] == value)
 		return value
-	if(!isnull(value) && !own_bring_in(holder, var_name, value, entry, user, into, slot, force))
+	if(!isnull(value) && !own_bring_in(holder, var_name, value, entry, null, into, null, FALSE))
 		return null
 	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
 		return null
@@ -296,8 +297,6 @@
 	own_mark_changed(holder, var_name)
 	if(entry && isdatum(old))
 		own_dispose(holder, var_name, old, entry)
-	if(user && !isnull(value))
-		own_transfer_record(holder, value, user, log)
 	return value
 
 /// List or values shape: detaches one member (a value, or the value under a key) and returns it unowned.

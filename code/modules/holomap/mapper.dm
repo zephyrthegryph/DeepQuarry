@@ -47,6 +47,8 @@ CAPABILITIES(/obj/item/mapping_unit)
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder)
 	owns_one(nameof(hud_datum), /datum/mini_hud/mapper)
+	owns_many(nameof(icon_image_cache))
+	owns_many(nameof(map_image_cache))
 
 /obj/item/mapping_unit/deathsquad
 	name = "deathsquad mapping unit"
@@ -96,14 +98,14 @@ CAPABILITIES(/obj/item/mapping_unit)
 	mark.icon = 'icons/effects/64x64.dmi'
 	mark.icon_state = "mapper_none"
 	mark.layer = 10
-	own_put(src, nameof(icon_image_cache), "bad", mark)
+	rel_add(src, nameof(icon_image_cache), mark, "bad")
 
 	var/atom/movable/screen/mapper/map/tmp = new()
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
 	tmp.icon = canvas
-	own_put(src, nameof(map_image_cache), "bad", tmp)
+	rel_add(src, nameof(map_image_cache), tmp, "bad")
 
 	if(uses_power && cell_type)
 		rel_set(src, nameof(cell), new cell_type(src))
@@ -284,7 +286,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 
 			var/atom/movable/screen/mapper/map/tmp = new()
 			tmp.appearance = map_app
-			own_put(src, nameof(map_image_cache), map_cache_key, tmp)
+			rel_add(src, nameof(map_image_cache), tmp, map_cache_key)
 
 	bgmap = LAZYACCESS(map_image_cache, map_cache_key)
 
@@ -340,7 +342,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
 				mark.icon_state = "[HC.marker_prefix][mob_indicator]"
-				own_put(src, nameof(icon_image_cache), marker_cache_key, mark)
+				rel_add(src, nameof(icon_image_cache), mark, marker_cache_key)
 				switch(mob_indicator)
 					if(HOLOMAP_YOU)
 						mark.layer = 3 // Above the other markers
@@ -368,7 +370,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 			var/atom/movable/screen/mapper/marker/mark = new()
 			mark.icon_state = "beacon"
 			mark.layer = 1
-			own_put(src, nameof(icon_image_cache), marker_cache_key, mark)
+			rel_add(src, nameof(icon_image_cache), mark, marker_cache_key)
 
 		var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
 		handle_marker(mark,TB.x,TB.y)

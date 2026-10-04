@@ -23,7 +23,7 @@
 // Loaded rockets sit in the launcher's contents.
 /obj/item/gun/launcher/rocket/ownership()
 	. = ..()
-	. += owns(nameof(rockets), policy = OWN_CONTAINED)
+	. += owns(nameof(rockets), policy = OWN_CONTAINED, is_list = TRUE)
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
 /obj/item/gun/launcher/rocket/gun_item(mob/user, obj/item/I, datum/interaction/interaction)

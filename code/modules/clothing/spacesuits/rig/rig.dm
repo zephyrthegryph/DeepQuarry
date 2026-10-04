@@ -1041,7 +1041,7 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 	. = ..()
 	. += owns(nameof(air_supply), policy = OWN_CONTAINED)
 	. += owns(nameof(cell), policy = OWN_CONTAINED)
-	. += owns(nameof(installed_modules), policy = OWN_CONTAINED)
+	. += owns(nameof(installed_modules), policy = OWN_CONTAINED, is_list = TRUE)
 	. += owns(nameof(rig_storage), policy = OWN_CONTAINED)
 
 /// The person currently wearing the rig. (a relation view: null once it is deleted).

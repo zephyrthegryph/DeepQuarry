@@ -323,6 +323,7 @@ CAPABILITIES(/datum/generated_station_spec)
 	owns_many(nameof(layout_edges))
 	owns_many(nameof(layout_nodes))
 	owns_many(nameof(network_blueprint))
+	owns_many(nameof(maintenance_doors))
 
 /datum/generated_station_spec/New()
 	..()

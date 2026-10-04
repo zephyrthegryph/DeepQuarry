@@ -32,6 +32,11 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 	/// Path → /datum/perk singleton. Populated at init.
 	var/list/perks
 
+/// A global datum: its New() writes this var before the engine tables exist (a CAPABILITIES entry is not readable yet), so the legacy table proc declares it.
+/datum/perk_tree/ownership()
+	. = ..()
+	. += owns(nameof(perks), is_list = TRUE)
+
 // ─── Body trees (one per category, named the same as the category) ──────────────────
 
 /datum/perk_tree/body
@@ -219,4 +224,4 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 		if(!P.category)
 			P.category = T.category
 		.[path] = P
-		own_put(T, nameof(T.perks), path, P)
+		rel_add(T, nameof(T.perks), P, path)

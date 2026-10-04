@@ -326,6 +326,9 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	var/static/image/radial_image_grillewind = image(icon = 'icons/mob/radial.dmi', icon_state = "grillewindow")
 	var/static/image/radial_image_floorwall = image(icon = 'icons/mob/radial.dmi', icon_state = "wallfloor")
 
+CAPABILITIES(/obj/item/rcd)
+	owns_many(nameof(effects))
+
 // Ammo for the (non-electric) RCDs.
 /obj/item/rcd_ammo
 	name = "compressed matter cartridge"
@@ -353,11 +356,11 @@ APPEARANCE_TEMPLATE(/obj/item/rcd, "{initial(icon_state)}{appearance_matter_empt
 APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "{initial(icon_state)}_charge%d")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
-	own_put(src, nameof(effects), A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
+	rel_add(src, nameof(effects), new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]), A)
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)
-		own_put(src, nameof(effects), A, null) // drops the key and disposes of (deletes) the owned effect
+		rel_add(src, nameof(effects), null, A) // drops the key and disposes of (deletes) the owned effect
 
 /obj/item/rcd/proc/check_menu(mob/living/user)
 	if(!istype(user))

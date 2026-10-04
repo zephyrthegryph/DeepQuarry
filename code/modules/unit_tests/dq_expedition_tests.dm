@@ -345,7 +345,7 @@
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time - EXP_DEPLOY_GRACE - 1
 	site.last_occupied = world.time - EXP_AUTO_RELEASE_GRACE - 1
-	own_put(SSexpedition, nameof(/datum/system/expedition::sites), "assignment-lifecycle-test", site)
+	rel_add(SSexpedition, nameof(/datum/system/expedition::sites), site, "assignment-lifecycle-test")
 	defer_cleanup(null, GLOBAL_PROC_REF(dq_test_take_expedition_site), "assignment-lifecycle-test")
 	SSexpedition.poll_sites(0)
 	TEST_ASSERT(SSexpedition.sites["assignment-lifecycle-test"] == site, "An empty active site was released while its incomplete assignment was still held by the shuttle console")

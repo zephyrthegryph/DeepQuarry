@@ -27,6 +27,9 @@
 	/// Admin var to disable seeing wire descriptions
 	var/force_hide_wires = FALSE
 
+CAPABILITIES(/datum/wires)
+	owns_many(nameof(assemblies))
+
 /datum/wires/New(atom/_holder)
 	..()
 	// A null holder is the state materializer building a bare instance
@@ -497,7 +500,7 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
 /datum/wires/proc/attach_assembly(color, obj/item/assembly/signaler/S)
 	if(S && istype(S) && !is_attached(color))
 		S.forceMove(holder)
-		own_put(src, nameof(assemblies), color, S) // we hold it (dropped by detach_assembly()); S.connected is the back view
+		rel_add(src, nameof(assemblies), S, color) // we hold it (dropped by detach_assembly()); S.connected is the back view
 		rel_set(S, nameof(S.connected), src)
 		return S
 

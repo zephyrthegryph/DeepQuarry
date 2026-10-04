@@ -6,6 +6,9 @@
 	var/mob/my_mob
 	var/list/plane_masters[VIS_COUNT] // ALLOW(instance_list): d: fixed-size list/x[VIS_COUNT] indexed by plane slot; every plane holder fills it
 
+CAPABILITIES(/datum/plane_holder)
+	owns_many(nameof(plane_masters), /atom/movable/screen/plane_master)
+
 /datum/plane_holder/New(mob/this_guy)
 	ASSERT(ismob(this_guy))
 	rel_set(src, nameof(my_mob), this_guy)
@@ -14,51 +17,51 @@
 	//Note, if you're adding a new plane master, please update code\modules\tgui\modules\camera.dm.
 
 	// 'Utility' planes
-	own_put(src, nameof(plane_masters), VIS_FULLBRIGHT, new /atom/movable/screen/plane_master/fullbright) //Lighting system (lighting_overlay objects)
-	own_put(src, nameof(plane_masters), VIS_LIGHTING, new /atom/movable/screen/plane_master/lighting) //Lighting system (but different!)
-	own_put(src, nameof(plane_masters), VIS_O_LIGHT, new /atom/movable/screen/plane_master/o_light_visual) //Object lighting (using masks)
-	own_put(src, nameof(plane_masters), VIS_EMISSIVE, new /atom/movable/screen/plane_master/emissive) //Emissive overlays
-	own_put(src, nameof(plane_masters), VIS_OPENSPACE, new /atom/movable/screen/plane_master/openspace) //Openspace drop shadows mostly
-	own_put(src, nameof(plane_masters), VIS_GHOSTS, new /atom/movable/screen/plane_master/ghosts) //Ghosts!
-	own_put(src, nameof(plane_masters), VIS_AI_EYE, new /atom/movable/screen/plane_master{plane = PLANE_AI_EYE}) //AI Eye!
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/fullbright, VIS_FULLBRIGHT) //Lighting system (lighting_overlay objects)
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/lighting, VIS_LIGHTING) //Lighting system (but different!)
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/o_light_visual, VIS_O_LIGHT) //Object lighting (using masks)
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/emissive, VIS_EMISSIVE) //Emissive overlays
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/openspace, VIS_OPENSPACE) //Openspace drop shadows mostly
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/ghosts, VIS_GHOSTS) //Ghosts!
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_AI_EYE}, VIS_AI_EYE) //AI Eye!
 
-	own_put(src, nameof(plane_masters), VIS_CH_STATUS, new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS}) //Status is the synth/human icon left side of medhuds
-	own_put(src, nameof(plane_masters), VIS_CH_HEALTH, new /atom/movable/screen/plane_master{plane = PLANE_CH_HEALTH}) //Health bar
-	own_put(src, nameof(plane_masters), VIS_CH_LIFE, new /atom/movable/screen/plane_master{plane = PLANE_CH_LIFE}) //Alive-or-not icon
-	own_put(src, nameof(plane_masters), VIS_CH_ID, new /atom/movable/screen/plane_master{plane = PLANE_CH_ID}) //Job ID icon
-	own_put(src, nameof(plane_masters), VIS_CH_WANTED, new /atom/movable/screen/plane_master{plane = PLANE_CH_WANTED}) //Wanted status
-	own_put(src, nameof(plane_masters), VIS_CH_IMPLOYAL, new /atom/movable/screen/plane_master{plane = PLANE_CH_IMPLOYAL}) //Loyalty implants
-	own_put(src, nameof(plane_masters), VIS_CH_IMPTRACK, new /atom/movable/screen/plane_master{plane = PLANE_CH_IMPTRACK}) //Tracking implants
-	own_put(src, nameof(plane_masters), VIS_CH_IMPCHEM, new /atom/movable/screen/plane_master{plane = PLANE_CH_IMPCHEM}) //Chemical implants
-	own_put(src, nameof(plane_masters), VIS_CH_SPECIAL, new /atom/movable/screen/plane_master{plane = PLANE_CH_SPECIAL}) //"Special" role stuff
-	own_put(src, nameof(plane_masters), VIS_CH_STATUS_OOC, new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS_OOC}) //OOC status HUD
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS}, VIS_CH_STATUS) //Status is the synth/human icon left side of medhuds
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_HEALTH}, VIS_CH_HEALTH) //Health bar
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_LIFE}, VIS_CH_LIFE) //Alive-or-not icon
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_ID}, VIS_CH_ID) //Job ID icon
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_WANTED}, VIS_CH_WANTED) //Wanted status
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_IMPLOYAL}, VIS_CH_IMPLOYAL) //Loyalty implants
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_IMPTRACK}, VIS_CH_IMPTRACK) //Tracking implants
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_IMPCHEM}, VIS_CH_IMPCHEM) //Chemical implants
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_SPECIAL}, VIS_CH_SPECIAL) //"Special" role stuff
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS_OOC}, VIS_CH_STATUS_OOC) //OOC status HUD
 
-	own_put(src, nameof(plane_masters), VIS_STATUS, new /atom/movable/screen/plane_master{plane = PLANE_STATUS}) //Status indicators that show over mob heads.
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_STATUS}, VIS_STATUS) //Status indicators that show over mob heads.
 
-	own_put(src, nameof(plane_masters), VIS_ADMIN1, new /atom/movable/screen/plane_master{plane = PLANE_ADMIN1}) //For admin use
-	own_put(src, nameof(plane_masters), VIS_ADMIN2, new /atom/movable/screen/plane_master{plane = PLANE_ADMIN2}) //For admin use
-	own_put(src, nameof(plane_masters), VIS_ADMIN3, new /atom/movable/screen/plane_master{plane = PLANE_ADMIN3}) //For admin use
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_ADMIN1}, VIS_ADMIN1) //For admin use
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_ADMIN2}, VIS_ADMIN2) //For admin use
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_ADMIN3}, VIS_ADMIN3) //For admin use
 
-	own_put(src, nameof(plane_masters), VIS_MESONS, new /atom/movable/screen/plane_master{plane = PLANE_MESONS}) //Meson-specific things like open ceilings.
-	own_put(src, nameof(plane_masters), VIS_JANHUD, new /atom/movable/screen/plane_master{plane = PLANE_JANHUD}) //Meson-specific things like open ceilings.
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_MESONS}, VIS_MESONS) //Meson-specific things like open ceilings.
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_JANHUD}, VIS_JANHUD) //Meson-specific things like open ceilings.
 
-	own_put(src, nameof(plane_masters), VIS_BUILDMODE, new /atom/movable/screen/plane_master{plane = PLANE_BUILDMODE}) //Things that only show up while in build mode
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_BUILDMODE}, VIS_BUILDMODE) //Things that only show up while in build mode
 
 	// Real tangible stuff planes
-	own_put(src, nameof(plane_masters), VIS_TURFS, new /atom/movable/screen/plane_master/main{plane = TURF_PLANE})
-	own_put(src, nameof(plane_masters), VIS_OBJS, new /atom/movable/screen/plane_master/main{plane = OBJ_PLANE})
-	own_put(src, nameof(plane_masters), VIS_MOBS, new /atom/movable/screen/plane_master/main{plane = MOB_PLANE})
-	own_put(src, nameof(plane_masters), VIS_CLOAKED, new /atom/movable/screen/plane_master/cloaked) //Cloaked atoms!
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/main{plane = TURF_PLANE}, VIS_TURFS)
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/main{plane = OBJ_PLANE}, VIS_OBJS)
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/main{plane = MOB_PLANE}, VIS_MOBS)
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/cloaked, VIS_CLOAKED) //Cloaked atoms!
 
-	own_put(src, nameof(plane_masters), VIS_CH_STATUS_R, new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS_R}) //Right-side status icon
-	own_put(src, nameof(plane_masters), VIS_CH_HEALTH_VR, new /atom/movable/screen/plane_master{plane = PLANE_CH_HEALTH_VR}) //Health bar but transparent at 100
-	own_put(src, nameof(plane_masters), VIS_CH_BACKUP, new /atom/movable/screen/plane_master{plane = PLANE_CH_BACKUP}) //Backup implant status
-	own_put(src, nameof(plane_masters), VIS_CH_VANTAG, new /atom/movable/screen/plane_master{plane = PLANE_CH_VANTAG}) //Vore Antags
-	own_put(src, nameof(plane_masters), VIS_CH_STOMACH, new /atom/movable/screen/plane_master{plane = PLANE_CH_STOMACH}) //Stomach
-	own_put(src, nameof(plane_masters), VIS_SOULCATCHER, new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}) // Soulcatcher
-	own_put(src, nameof(plane_masters), VIS_EVENT_INVIS, new /atom/movable/screen/plane_master{plane = PLANE_INVIS_EVENT}) //Things only specific players can see at any time.
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS_R}, VIS_CH_STATUS_R) //Right-side status icon
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_HEALTH_VR}, VIS_CH_HEALTH_VR) //Health bar but transparent at 100
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_BACKUP}, VIS_CH_BACKUP) //Backup implant status
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_VANTAG}, VIS_CH_VANTAG) //Vore Antags
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_CH_STOMACH}, VIS_CH_STOMACH) //Stomach
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}, VIS_SOULCATCHER) // Soulcatcher
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_INVIS_EVENT}, VIS_EVENT_INVIS) //Things only specific players can see at any time.
 
-	own_put(src, nameof(plane_masters), VIS_AUGMENTED, new /atom/movable/screen/plane_master/augmented(null, my_mob)) //Augmented reality
+	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/augmented(null, my_mob), VIS_AUGMENTED) //Augmented reality
 
 	..()
 

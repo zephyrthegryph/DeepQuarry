@@ -11,7 +11,7 @@
 	if(!frequency)
 		frequency = new
 		frequency.frequency = new_frequency
-		own_put(src, nameof(frequencies), f_text, frequency)
+		rel_add(src, nameof(frequencies), frequency, f_text)
 
 	frequency.add_listener(device, radio_filter)
 	return frequency
@@ -24,7 +24,7 @@
 		frequency.remove_listener(device)
 
 		if(!length(frequency.devices))
-			own_put(src, nameof(frequencies), f_text, null) // disposes of (deletes) the emptied frequency
+			rel_add(src, nameof(frequencies), null, f_text) // disposes of (deletes) the emptied frequency
 
 	return 1
 
@@ -35,6 +35,6 @@
 	if(!frequency)
 		frequency = new
 		frequency.frequency = new_frequency
-		own_put(src, nameof(frequencies), f_text, frequency)
+		rel_add(src, nameof(frequencies), frequency, f_text)
 
 	return frequency

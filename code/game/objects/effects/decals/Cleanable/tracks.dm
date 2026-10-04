@@ -141,7 +141,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/tracks, TYPE_PROC_REF(
 
 		track.fresh=0
 		track.overlay=I
-		own_put(src, nameof(stack), stack_idx, track)
+		rel_add(src, nameof(stack), track, stack_idx)
 		. += I
 	updatedtracks=0 // Clear our memory of updated tracks.
 	. += add_janitor_hud_overlay()

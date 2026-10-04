@@ -471,7 +471,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 			return FALSE
 
 	wear(new_soft.wear)
-	own_put(src, nameof(nifsofts), new_soft.list_pos, new_soft)
+	rel_add(src, nameof(nifsofts), new_soft, new_soft.list_pos)
 	power_usage += new_soft.p_drain
 
 	if(new_soft.tick_flags == NIF_ALWAYSTICK)

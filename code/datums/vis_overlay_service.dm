@@ -9,6 +9,9 @@ SYSTEM_DEF(vis_overlays)
 	/// TRUE while a sweep that ran out of budget waits to resume.
 	VAR_PRIVATE/resuming = FALSE
 
+CAPABILITIES(/datum/system/vis_overlays)
+	owns_many(nameof(vis_overlay_cache))
+
 /datum/system/vis_overlays/reactions()
 	. = ..()
 	. += every(1 MINUTE, PROC_REF(expire_overlays), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)

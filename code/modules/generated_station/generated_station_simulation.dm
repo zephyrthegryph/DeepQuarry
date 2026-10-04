@@ -38,6 +38,9 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 	var/dirty = TRUE
 	var/revision = 0
 
+CAPABILITIES(/datum/generated_station_simulation)
+	owns_many(nameof(departments))
+
 /datum/generated_station_simulation/New(datum/generated_station_spec/new_spec)
 	..()
 	rel_set(src, nameof(spec), new_spec)
@@ -45,7 +48,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 	capabilities = list()
 	power_areas = list()
 	for(var/datum/generated_station_department_instance/department in spec()?.departments)
-		own_put(src, nameof(departments), department.id, new /datum/generated_station_department_runtime(department))
+		rel_add(src, nameof(departments), new /datum/generated_station_department_runtime(department), department.id)
 	configure_default_resources()
 	// Joins the runtime registry (filed by station id) now that the spec is set; the destroy
 	// transaction leaves it in phase 2.

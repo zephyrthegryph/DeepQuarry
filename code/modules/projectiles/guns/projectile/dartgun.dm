@@ -67,7 +67,7 @@
 // Slotted beakers sit in the gun's contents; mixing is a subset of them.
 /obj/item/gun/projectile/dartgun/ownership()
 	. = ..()
-	. += owns(nameof(beakers), policy = OWN_CONTAINED)
+	. += owns(nameof(beakers), policy = OWN_CONTAINED, is_list = TRUE)
 
 /obj/item/gun/projectile/dartgun/relations()
 	. = ..()

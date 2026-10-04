@@ -24,6 +24,9 @@
 		"N"
 	)
 
+CAPABILITIES(/obj/compass_holder)
+	owns_many(nameof(compass_waypoints))
+
 /obj/compass_holder/Initialize(mapload, ...)
 	. = ..()
 	if(show_heading)
@@ -77,7 +80,7 @@ DECLARE_APPEARANCE_PROC(/obj/compass_holder, TYPE_PROC_REF(/atom, appearance_ove
 	. += set_overlays// ???
 
 /obj/compass_holder/proc/clear_waypoint(id)
-	own_put(src, nameof(compass_waypoints), id, null) // removes and disposes of it
+	rel_add(src, nameof(compass_waypoints), null, id) // removes and disposes of it
 	rebuild_overlay_lists(TRUE)
 
 /obj/compass_holder/proc/set_waypoint(id, label, heading_x, heading_y, heading_z, label_color)
@@ -85,7 +88,7 @@ DECLARE_APPEARANCE_PROC(/obj/compass_holder, TYPE_PROC_REF(/atom, appearance_ove
 	if(!wp)
 		wp = new /datum/compass_waypoint()
 	wp.set_values(label, heading_x, heading_y, heading_z, label_color)
-	own_put(src, nameof(compass_waypoints), id, wp)
+	rel_add(src, nameof(compass_waypoints), wp, id)
 	rebuild_overlay_lists(TRUE)
 
 /obj/compass_holder/proc/recalculate_heading(rebuild_icon = TRUE)

@@ -60,7 +60,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 	if(entry_count <= CONFIG_MAX_CACHED_LOG_ENTRIES)
 		rel_add(src, nameof(log_ring), entry)
 	else
-		own_put(src, nameof(log_ring), ring_write_index, entry)
+		rel_add(src, nameof(log_ring), entry, ring_write_index)
 	ring_write_index++
 	if(ring_write_index > CONFIG_MAX_CACHED_LOG_ENTRIES)
 		ring_write_index = 1

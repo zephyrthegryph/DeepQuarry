@@ -62,6 +62,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 CAPABILITIES(/datum/error_viewer/error_cache)
 	owns_many(nameof(errors))
+	owns_many(nameof(error_sources))
 
 /datum/error_viewer/error_cache/show_to(user, datum/error_viewer/back_to, linear)
 	var/html = build_header()
@@ -88,7 +89,7 @@ CAPABILITIES(/datum/error_viewer/error_cache)
 	var/datum/error_viewer/error_source/error_source = LAZYACCESS(error_sources, erroruid)
 	if (!error_source)
 		error_source = new(e)
-		own_put(src, nameof(error_sources), erroruid, error_source)
+		rel_add(src, nameof(error_sources), error_source, erroruid)
 
 	var/datum/error_viewer/error_entry/error_entry = new(e, desclines, skip_count)
 	rel_set(error_entry, nameof(error_entry.error_source), error_source)

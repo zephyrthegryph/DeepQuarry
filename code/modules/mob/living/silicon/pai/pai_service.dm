@@ -17,6 +17,9 @@ SYSTEM_DEF(pai)
 	/// TRUE while a candidate refresh that ran out of budget waits to resume.
 	VAR_PRIVATE/refresh_resuming = FALSE
 
+CAPABILITIES(/datum/system/pai)
+	owns_many(nameof(pai_chassis_sprites), /datum/pai_sprite)
+
 /datum/system/pai/initialize()
 	if(initialized)
 		return
@@ -32,7 +35,7 @@ SYSTEM_DEF(pai)
 	for(var/datum/pai_sprite/sprite as anything in subtypesof(/datum/pai_sprite))
 		if(!initial(sprite.sprite_icon) || initial(sprite.hidden))
 			continue
-		own_put(src, nameof(pai_chassis_sprites), initial(sprite.name), new sprite())
+		rel_add(src, nameof(pai_chassis_sprites), new sprite(), initial(sprite.name))
 
 	log_world("pAI service initialized: [length(GLOB.pai_software_by_key)] software, [length(pai_chassis_sprites)] chassis.")
 

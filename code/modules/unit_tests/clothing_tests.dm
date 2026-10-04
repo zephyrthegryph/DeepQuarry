@@ -30,7 +30,7 @@
 		var/mob/living/carbon/human/H = new(human_storage)
 		H.set_species(body_type)
 		observe(H, /datum/notice/unittest_data, src, then(PROC_REF(get_signal_data)))
-		own_put(src, nameof(test_humans), body_type, H)
+		rel_add(src, nameof(test_humans), H, body_type)
 	#endif
 
 	var/list/scan = subtypesof(/obj/item/clothing)

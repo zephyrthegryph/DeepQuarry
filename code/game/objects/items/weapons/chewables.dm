@@ -380,4 +380,4 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGEN
 
 /obj/item/clothing/mask/chewable/candy/lolli/ownership()
 	. = ..()
-	. += owns(nameof(victims), policy = OWN_SPILL)
+	. += owns(nameof(victims), policy = OWN_SPILL, is_list = TRUE)

@@ -45,7 +45,7 @@
 
 	for(var/datum/alarm_handler/AH in all_alarm_handlers())
 		AH.register_alarm(src, /mob/living/silicon/proc/receive_alarm)
-		own_put(src, nameof(queued_alarms), "[AH.type]", new /datum/silicon_alarm_queue(AH.category))	// Makes sure alarms remain listed in consistent order
+		rel_add(src, nameof(queued_alarms), new /datum/silicon_alarm_queue(AH.category), "[AH.type]")	// Makes sure alarms remain listed in consistent order
 
 /********************
 *	Alarm Monitor	*

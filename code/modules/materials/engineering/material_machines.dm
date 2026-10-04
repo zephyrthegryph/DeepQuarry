@@ -62,8 +62,8 @@
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
 /obj/machinery/material_furnace/ownership()
 	. = ..()
-	. += owns(nameof(feedstock), policy = OWN_CONTAINED)
-	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED)
+	. += owns(nameof(feedstock), policy = OWN_CONTAINED, is_list = TRUE)
+	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED, is_list = TRUE)
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)

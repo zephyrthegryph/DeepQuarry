@@ -2,6 +2,7 @@
 	var/datum/managed_browser/feedback_form/feedback_form = null
 
 CAPABILITIES(/client)
+	owns_one(nameof(verb_store), /datum/client_verbs)
 	owns_one(nameof(feedback_form), /datum/managed_browser/feedback_form)
 	owns_one(nameof(feedback_viewer), /datum/managed_browser/feedback_viewer)
 	owns_one(nameof(interaction_menu), /datum/interaction_menu)

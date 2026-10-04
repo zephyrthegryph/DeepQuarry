@@ -39,7 +39,7 @@ CAPABILITIES(/obj/machinery/washing_machine)
 
 /obj/machinery/washing_machine/ownership()
 	. = ..()
-	. += owns(nameof(washing), policy = OWN_SPILL)
+	. += owns(nameof(washing), policy = OWN_SPILL, is_list = TRUE)
 
 /obj/machinery/washing_machine/declare_interactions(list/into)
 	into += list(

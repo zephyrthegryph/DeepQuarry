@@ -191,6 +191,8 @@ CAPABILITIES(/datum/generated_station_materialization)
 	owns_many(nameof(room_solutions))
 	owns_many(nameof(service_endpoints))
 	owns_many(nameof(service_routes))
+	owns_many(nameof(department_areas))
+	owns_many(nameof(module_areas))
 
 /datum/generated_station_materialization/New()
 	..()
@@ -356,7 +358,7 @@ CAPABILITIES(/datum/generated_station_materializer)
 			department_area.station_id = spec().id
 			department_area.department_id = department.id
 			department_area.name = "[spec().name] [department.definition().name]"
-			own_put(result, nameof(result.department_areas), node.id, department_area)
+			rel_add(result, nameof(result.department_areas), department_area, node.id)
 		generation_checkpoint("Allocating station areas", 25)
 	return TRUE
 
@@ -931,7 +933,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		var/datum/generated_station_room_allocation/allocation = room_allocation_for_module(module)
 		var/base_name = allocation?.area_name || "[spec().name] [department_name] [role_name]"
 		A.name = designation_number > 1 ? "[base_name] [designation_number]" : base_name
-		own_put(result, nameof(result.module_areas), module.id, A)
+		rel_add(result, nameof(result.module_areas), A, module.id)
 	return TRUE
 
 /datum/generated_station_materializer/proc/room_allocation_for_module(datum/generated_station_module/module)

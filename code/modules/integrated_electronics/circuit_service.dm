@@ -11,6 +11,10 @@ SYSTEM_DEF(circuit)
 	var/list/all_circuits = list()									// Associative list of [circuit_name]:[circuit_path] pairs
 	var/list/circuit_fabricator_recipe_list = list()				// Associative list of [category_name]:[list_of_circuit_paths] pairs
 
+CAPABILITIES(/datum/system/circuit)
+	owns_many(nameof(prototype_assemblies))
+	owns_many(nameof(prototype_components))
+
 /datum/system/circuit/boots_in_dag()
 	return FALSE
 
@@ -32,7 +36,7 @@ SYSTEM_DEF(circuit)
 	for(var/obj/item/integrated_circuit/IC as anything in typesof(/obj/item/integrated_circuit))
 		var/path = IC
 		all_components[initial(IC.name)] = path // Populating the component lists
-		own_put(src, nameof(prototype_components), path, new path)
+		rel_add(src, nameof(prototype_components), new path, path)
 
 		if(!(initial(IC.spawn_flags) & (IC_SPAWN_DEFAULT | IC_SPAWN_RESEARCH)))
 			continue
@@ -46,7 +50,7 @@ SYSTEM_DEF(circuit)
 	for(var/obj/item/electronic_assembly/A as anything in typesof(/obj/item/electronic_assembly))
 		var/path = A
 		all_assemblies[initial(A.name)] = path
-		own_put(src, nameof(prototype_assemblies), path, new path)
+		rel_add(src, nameof(prototype_assemblies), new path, path)
 
 
 	circuit_fabricator_recipe_list["Assemblies"] = list(

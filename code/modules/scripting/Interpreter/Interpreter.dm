@@ -383,7 +383,7 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 	if(istext(value) || isnum(value) || isnull(value))	value = new/datum/node/expression/value/literal(value)
 	else if(!istype(value) && isobject(value))			value = new/datum/node/expression/value/reference(value)
 	//TODO: check for invalid name
-	own_put(S, nameof(S.variables), "[name]", value)
+	rel_add(S, nameof(S.variables), value, "[name]")
 
 #undef RETURNING
 #undef BREAKING

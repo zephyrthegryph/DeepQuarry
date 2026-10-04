@@ -19,6 +19,9 @@
 	var/mob/living/carbon/human/target
 	var/list/remotes
 
+CAPABILITIES(/obj/machinery/petrification)
+	owns_many(nameof(remotes))
+
 /obj/machinery/petrification/Initialize(mapload)
 	. = ..()
 	if(!pixel_x && !pixel_y)
@@ -272,7 +275,7 @@ UI_ACT_PROC(/obj/machinery/petrification, ui_act_remote)
 		P.able_to_unpetrify = able_to_unpetrify
 		P.discard_clothes = discard_clothes
 		rel_set(P, nameof(/datum/accessory_stat_modifier::target), target_ref())
-		own_put(src, nameof(/obj/machinery/petrification::remotes), target_ref(), P)
+		rel_add(src, nameof(/obj/machinery/petrification::remotes), P, target_ref())
 		ui.user.put_in_hands(P)
 	return TRUE
 

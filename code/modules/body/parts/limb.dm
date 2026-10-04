@@ -16,6 +16,7 @@
 
 CAPABILITIES(/obj/item/organ)
 	owns_many(nameof(detached_afflictions))
+	owns_many(nameof(autopsy_data))
 
 /obj/item/organ/external
 	/// Cached sum of non-internal physical wound damage. Read via get_trauma().

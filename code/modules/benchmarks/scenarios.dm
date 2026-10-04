@@ -925,7 +925,7 @@
 	var/relationship_errors = 0
 	if(!actor.put_in_active_hand(tool))
 		relationship_errors++
-	own_set(actor, nameof(actor.aiming), new /obj/aiming_overlay(actor))
+	rel_set(actor, nameof(actor.aiming), new /obj/aiming_overlay(actor))
 	var/obj/aiming_overlay/aim = actor.aiming
 	begin_window()
 	start = REALTIMEOFDAY

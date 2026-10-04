@@ -382,8 +382,8 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	return span_italics("[tt_desc]")
 
 /mob/living/simple_mob/make_hud_overlays()
-	own_put(src, nameof(hud_list), STATUS_HUD, gen_hud_image(GLOB.buildmode_hud, src, "ai_0", plane = PLANE_BUILDMODE))
-	own_put(src, nameof(hud_list), LIFE_HUD, gen_hud_image(GLOB.buildmode_hud, src, "ais_1", plane = PLANE_BUILDMODE))
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.buildmode_hud, src, "ai_0", plane = PLANE_BUILDMODE), STATUS_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.buildmode_hud, src, "ais_1", plane = PLANE_BUILDMODE), LIFE_HUD)
 	add_overlay(hud_list)
 
 //Makes it so that simplemobs can understand galcomm without being able to speak it.

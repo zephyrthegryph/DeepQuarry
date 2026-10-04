@@ -316,6 +316,8 @@ CAPABILITIES(/mob)
 	owns_one(nameof(zone_sel), /atom/movable/screen/zone_sel)
 	owns_many(nameof(spell_masters), /atom/movable/screen/movable/spell_master)
 	owns_many(nameof(vore_organs))
+	owns_many(nameof(alerts))
+	owns_many(nameof(screens))
 
 
 /mob

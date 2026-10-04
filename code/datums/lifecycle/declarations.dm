@@ -286,7 +286,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
  * which expands to them): for each declared var, the var itself wins (a path in it, a map edit, is made; an
  * instance in it makes nothing), else the declared spec is made (a var name reads the instance's var, so
  * `starts = nameof(cell_type)` follows a map or subtype override). A list var takes a list of paths or
- * list(path = count). Children are created with `new type(D)` and adopted through own_set() / own_add().
+ * list(path = count). Children are created with `new type(D)` and adopted through own_adopt_start().
  */
 /proc/own_init_starts(datum/D, datum/own_table/T)
 	if(!T)
@@ -336,10 +336,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /// this first write; a movable child in contents may be CONTAINED), then wires the child's back relation
 /// when its type names one (default_child_backref()).
 /proc/lifecycle_decl_adopt_child(datum/D, var_name, datum/child, as_list)
-	if(as_list)
-		own_add(D, var_name, child)
-	else
-		own_set(D, var_name, child)
+	own_adopt_start(D, var_name, child, as_list)
 	var/back = child.default_child_backref()
 	if(back)
 		rel_set(child, back, D)
@@ -359,7 +356,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/gases = gas[4]
 	for(var/gas_id in gases)
 		mix.adjust_gas(gas_id, gases[gas_id] * volume / (R_IDEAL_GAS_EQUATION * temperature))
-	own_set(D, var_name, mix) // the holder owns its mixture (its arena slot goes with it)
+	own_adopt_start(D, var_name, mix, FALSE) // the holder owns its mixture (its arena slot goes with it)
 
 /datum/lifecycle_decls/proc/create_reagents_on(atom/A)
 	var/volume = lifecycle_decl_value(A, reagent_volume)

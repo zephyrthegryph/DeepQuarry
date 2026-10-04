@@ -31,7 +31,7 @@
 // Fitted parts sit in the gun's contents.
 /obj/item/gun/energy/modular/ownership()
 	. = ..()
-	. += owns(nameof(guncomponents), policy = OWN_CONTAINED)
+	. += owns(nameof(guncomponents), policy = OWN_CONTAINED, is_list = TRUE)
 
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()

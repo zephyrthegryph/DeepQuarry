@@ -34,6 +34,9 @@ CAPABILITIES(/mob/living)
 	owns_many(nameof(owned_soul_links), /datum/soul_link)
 	owns_many(nameof(status_effects))
 	owns_many(nameof(trait_states))
+	owns_many(nameof(body_effect_origins))
+	owns_many(nameof(hud_list))
+	owns_many(nameof(stasis_sources))
 
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as

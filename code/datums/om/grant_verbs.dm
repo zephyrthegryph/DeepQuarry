@@ -90,7 +90,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 		return target
 	var/client/C = target
 	if(!C.verb_store && create)
-		own_set(C, nameof(/client::verb_store), new /datum/client_verbs(C)) // its grants die with the client
+		rel_set(C, nameof(/client::verb_store), new /datum/client_verbs(C)) // its grants die with the client
 	return C.verb_store
 
 // ---------------------------------------------------------------- queries

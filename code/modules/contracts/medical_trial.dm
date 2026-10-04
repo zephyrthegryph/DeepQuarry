@@ -65,6 +65,7 @@
 
 CAPABILITIES(/datum/contract/medical_trial)
 	owns_one(nameof(profile), /datum/medical_trial_profile)
+	owns_many(nameof(participants))
 
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
@@ -154,7 +155,7 @@ CAPABILITIES(/datum/contract/medical_trial)
 		if(matching_class >= 2)
 			return FALSE
 	var/datum/medical_trial_participant/participant = new(identity.id, baseline, is_healthy, clinician_account)
-	own_put(src, nameof(participants), identity.id, participant)
+	rel_add(src, nameof(participants), participant, identity.id)
 	observe(subject, /datum/notice/mob_death, src, then(PROC_REF(on_participant_death)))
 	medical_trial_offer_patient_advocate(src, participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject.real_name] consented and baseline telemetry was recorded.")

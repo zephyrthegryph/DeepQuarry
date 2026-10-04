@@ -75,7 +75,7 @@
 	TEST_ASSERT_EQUAL(taken, B, "own_take returns the value")
 	TEST_ASSERT(isnull(H.child) && isnull(owner_of(B)), "own_take detaches and unstamps")
 	own_add(H, nameof(H.children), B)
-	own_put(H, nameof(H.values), "a", new /datum/own_test_child)
+	rel_add(H, nameof(H.values), new /datum/own_test_child, "a")
 	TEST_ASSERT(B in H.children, "own_add adds to the owned list")
 	var/datum/own_test_holder/H2 = new
 	own_transfer(H, nameof(H.children), H2, nameof(H2.child), B)

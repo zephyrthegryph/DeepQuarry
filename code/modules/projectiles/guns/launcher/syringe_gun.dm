@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 // Loaded cartridges sit in the gun's contents; next is a view of the one on the bolt.
 /obj/item/gun/launcher/syringe/ownership()
 	. = ..()
-	. += owns(nameof(darts), policy = OWN_CONTAINED)
+	. += owns(nameof(darts), policy = OWN_CONTAINED, is_list = TRUE)
 
 /obj/item/gun/launcher/syringe/consume_next_projectile()
 	if(next())

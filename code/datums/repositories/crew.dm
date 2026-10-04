@@ -3,6 +3,9 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 /datum/repository/crew
 	var/list/cache_data
 
+CAPABILITIES(/datum/repository/crew)
+	owns_many(nameof(cache_data))
+
 /datum/repository/crew/New()
 	..()
 
@@ -15,7 +18,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 	var/datum/cache_entry/cache_entry = cache_data?[z_level]
 	if(!cache_entry)
 		cache_entry = new/datum/cache_entry
-		own_put(src, nameof(cache_data), z_level, cache_entry)
+		rel_add(src, nameof(cache_data), cache_entry, z_level)
 
 	if(EXPIRY_ACTIVE(cache_entry, timestamp, CLOCK_WORLD))
 		return cache_entry.data

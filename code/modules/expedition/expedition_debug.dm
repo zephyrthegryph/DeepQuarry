@@ -72,7 +72,7 @@
 	site.status = EXP_STATUS_ACTIVE
 	EXPIRY_STAMP(site, deployed_at, CLOCK_WORLD)
 	EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
-	own_put(src, nameof(sites), "[z]", site)
+	rel_add(src, nameof(sites), site, "[z]")
 	demand()
 	return site
 

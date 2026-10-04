@@ -70,7 +70,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 	for(var/path in cyborg_integrated_tools)
 		if(ispath(path)) //Some things like the materials printer makes its own tools and it won't be a path.
 			if(!cyborg_integrated_tools[path])
-				own_put(src, nameof(cyborg_integrated_tools), path, new path(src))
+				rel_add(src, nameof(cyborg_integrated_tools), new path(src), path)
 		var/obj/item/I = integrated_tool_at(path)
 		I.canremove = FALSE
 

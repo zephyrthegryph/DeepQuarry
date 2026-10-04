@@ -348,6 +348,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 )
 
 /// Old attackby.
+CAPABILITIES(/obj/machinery/computer/scan_consolenew)
+	owns_many(nameof(buffers), /datum/transhuman/body_record)
+
 /obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	// Traitgenes body record disks are used instead of a unique disk
 	if(!istype(I, /obj/item/disk/body_record)) //INSERT SOME diskS
@@ -373,7 +376,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 		R.mydna.dna = new
 		R.mydna.dna.ResetUI()
 		R.mydna.dna.ResetSE()
-		own_put(src, nameof(buffers), i+1, R)
+		rel_add(src, nameof(buffers), R, i+1)
 	// Traitgenes don't alter direction of computer as this scans for neighbour
 	for(var/dirfind in GLOB.cardinal)
 		rel_set(src, nameof(connected), locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
@@ -623,7 +626,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 					var/mob/living/carbon/human/H = WC
 					databuf.mydna.dna.real_name = H.dna.real_name
 					databuf.mydna.gender = H.gender
-				own_put(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), bufferId, databuf)
+				rel_add(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), databuf, bufferId)
 			return TRUE
 		if("clear")
 			play_sfx(src, SFX_KEYBOARD)
@@ -633,7 +636,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 			R.mydna.dna = new
 			R.mydna.dna.ResetUI()
 			R.mydna.dna.ResetSE()
-			own_put(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), bufferId, R)
+			rel_add(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), R, bufferId)
 			return TRUE
 		if("changeLabel")
 			play_sfx(src, SFX_KEYBOARD)
@@ -666,7 +669,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 			var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
 			databuf.init_from_br(disk.stored)
 			databuf.mydna.types = DNA2_BUF_SE // structurals only
-			own_put(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), bufferId, databuf)
+			rel_add(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), databuf, bufferId)
 		if("saveDisk")
 			play_sfx(src, SFX_KEYBOARD)
 			if(isnull(disk)) // Traitgenes Removed readonly

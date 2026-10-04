@@ -249,15 +249,15 @@
 		set_cell(new cell_type(src))
 
 /mob/living/silicon/robot/proc/setup_hud_images()
-	own_put(src, nameof(hud_list), HEALTH_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH))
-	own_put(src, nameof(hud_list), STATUS_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_STATUS))
-	own_put(src, nameof(hud_list), LIFE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_LIFE))
-	own_put(src, nameof(hud_list), ID_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_ID))
-	own_put(src, nameof(hud_list), WANTED_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_WANTED))
-	own_put(src, nameof(hud_list), IMPLOYAL_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPLOYAL))
-	own_put(src, nameof(hud_list), IMPCHEM_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPCHEM))
-	own_put(src, nameof(hud_list), IMPTRACK_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPTRACK))
-	own_put(src, nameof(hud_list), SPECIALROLE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_SPECIAL))
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH), HEALTH_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_STATUS), STATUS_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_LIFE), LIFE_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_ID), ID_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_WANTED), WANTED_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPLOYAL), IMPLOYAL_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPCHEM), IMPCHEM_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPTRACK), IMPTRACK_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_SPECIAL), SPECIALROLE_HUD)
 
 /// The sprite datum is never null after Initialize: the module default, or
 /// the generic default when the sprite subsystem isn't ready.

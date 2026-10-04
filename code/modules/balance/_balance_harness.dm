@@ -42,6 +42,11 @@
 	/// Everything this scenario spawned, deleted by cleanup().
 	var/list/spawned
 
+/// Not in the main .dme, so it cannot carry a generated CAPABILITIES declaration: the table proc declares what it spawned.
+/datum/balance_scenario/ownership()
+	. = ..()
+	. += owns(nameof(spawned), is_list = TRUE)
+
 /datum/balance_scenario/on_destroy(force) // the scenario owns what it spawned; cleanup() removes it.
 	cleanup()
 	..()
@@ -72,7 +77,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 /// Spawns `type` at the scenario site and tracks it for cleanup.
 /datum/balance_scenario/proc/spawn_thing(type)
 	var/atom/movable/thing = new type(site)
-	own_add(src, nameof(spawned), thing) // test-only harness: not in the main .dme, so it can't carry a generated declaration
+	rel_add(src, nameof(spawned), thing)
 	return thing
 
 /// Deletes everything the scenario spawned (between trials and at the end).

@@ -903,7 +903,7 @@
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
 	rel_set(record, nameof(record.agent_mind), owner_mind)
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	own_put(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[owner_account.account_number]", record)
+	rel_add(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), record, "[owner_account.account_number]")
 	TEST_ASSERT(SSsupply.market_counterparty_visible(syndicate_broker, owner), "accredited agent could not see their principal market")
 	TEST_ASSERT(SSsupply.market_true_identity_visible(syndicate_broker, owner), "principal account could not identify its own counterparty")
 	TEST_ASSERT(!SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "unsigned Cargo contact could see the private feed")
@@ -1055,7 +1055,7 @@
 	record.account_number = principal_account.account_number
 	record.faction_id = REPUTATION_FACTION_ECLIPSE
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	own_put(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[principal_account.account_number]", record)
+	rel_add(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), record, "[principal_account.account_number]")
 	var/datum/contract/faction_agent/contract = new
 	contract.definition_id = "agent_confidential_brokerage"
 	contract.title = "Physical freight integration"

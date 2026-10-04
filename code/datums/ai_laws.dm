@@ -39,6 +39,7 @@ CAPABILITIES(/datum/ai_laws)
 	owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero)
 	owns_many(nameof(inherent_laws), /datum/ai_law)
 	owns_many(nameof(ion_laws), /datum/ai_law/ion)
+	owns_many(nameof(supplied_laws))
 
 /datum/ai_laws/New()
 	..()
@@ -173,7 +174,7 @@ CAPABILITIES(/datum/ai_laws)
 			state_supplied += 1
 
 	var/new_law = new/datum/ai_law/supplied(law, number)
-	own_put(src, nameof(supplied_laws), number, new_law)
+	rel_add(src, nameof(supplied_laws), new_law, number)
 	if(state_supplied.len < length(supplied_laws))
 		state_supplied += 1
 
@@ -200,7 +201,7 @@ CAPABILITIES(/datum/ai_laws)
 /datum/ai_law/supplied/delete_law(datum/ai_laws/laws)
 	var/index = laws.supplied_laws.Find(src)
 	if(index)
-		own_put(laws, nameof(laws.supplied_laws), index, "")
+		rel_add(laws, nameof(laws.supplied_laws), "", index)
 		laws.state_supplied[index] = 1
 
 /// Deletes `law` from this set's owned law list `var_name`, shifting its state flags down.
