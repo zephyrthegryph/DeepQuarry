@@ -784,19 +784,35 @@ ADMIN_VERB(force_mode_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Mode Spawn", "For
 	SSticker.mode.try_latespawn()
 
 ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_MOBS))
+	return toggle_paralyze(user, living_target)
+
+/datum/admin_verb/paralyze_mob/proc/paralyze_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_paralyze_confirm/ask = A.request
+	var/datum/result/result = safe_call(PROC_REF(toggle_paralyze), ask.answerer.client, ask.target, ask.answer_value, TRUE)
+	if(!result.ok)
+		stack_trace("om flow paralyze_mob answer paralyze_answered: [result.error]")
+
+/datum/admin_verb/paralyze_mob/proc/toggle_paralyze(client/user, mob/living/living_target, _answer_a15 = null, answered = FALSE)
 	var/msg
 	if (!living_target.has_status(EFFECT_PARALYZED))
 		living_target.status_set(EFFECT_PARALYZED, 8000)
 		msg = "has paralyzed [key_name(living_target)]."
-		log_and_message_admins(msg)
+		log_and_message_admins(msg, user)
 		return
-	var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice/alert, message = "[key_name(living_target)] is paralyzed, would you like to unparalyze them?", title = "Paralyze Mob", choices = list("Yes","No"))
+	if(!answered)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/choice/admin_paralyze_confirm, PROC_REF(paralyze_answered), answerer = answerer, question = "[key_name(living_target)] is paralyzed, would you like to unparalyze them?", target = living_target)
+		return
 	if(isnull(_answer_a15))
 		return
 	if(_answer_a15 == "Yes")
 		living_target.status_set(EFFECT_PARALYZED, 0)
 		msg = "has unparalyzed [key_name(living_target)]."
-		log_and_message_admins(msg)
+		log_and_message_admins(msg, user)
 
 ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to change telecrystals of a user.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	var/mob/answerer = user.mob
@@ -1001,3 +1017,32 @@ CAPABILITIES(/datum/prompt/number/admin_telecrystals)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
+
+/datum/prompt/choice/admin_paralyze_confirm
+	rights = R_ADMIN|R_MOD|R_EVENT
+	timeout = 0
+	title = "Paralyze Mob"
+	buttons = TRUE
+	choices = list("Yes", "No")
+	var/mob/living/target
+
+CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
+	ref_one(nameof(target), /mob/living)
+
+/datum/prompt/choice/admin_paralyze_confirm/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/captured = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured)
+
+/datum/prompt/choice/admin_paralyze_confirm/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(target) ? "target is gone" : null
+
+/datum/prompt/choice/admin_paralyze_confirm/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
