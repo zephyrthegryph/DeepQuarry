@@ -206,6 +206,10 @@ orchestrates; `tools/build/build.sh <target>` is the POSIX front end.
   another checkout's `verdigris.dll` by hand (`DQ_PREBUILT_VERDIGRIS=1`); a DLL built from other
   sources fails that check and loses every shard. If you do build Rust in a worktree, its
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
+- **Production build:** `tools/build/build.sh dm` compiles without `UNIT_TESTS` (CI's Compile Checks job
+  runs it). Test-only code (`code/tests/`, `code/modules/unit_tests/`) must stay behind
+  `#if defined(UNIT_TESTS)`; generators do this via `sem::gen::test_only`, and `analyze gen --check`
+  fails on a generated line naming a test-only type outside the guard.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 

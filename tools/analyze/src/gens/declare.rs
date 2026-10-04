@@ -419,11 +419,11 @@ impl Generator for Declare {
         let caps = capabilities(cx, out);
         let globals = global_constructors(cx, &caps);
         section(cx, out, &caps, &globals, false);
-        // What the test fixtures declare (files under code/tests/) is compiled in test builds only.
+        // What the test fixtures declare (files under code/tests/ and code/modules/unit_tests/, see `test_only`) is compiled in test builds only.
         let mut tests = GenOut::default();
         section(cx, &mut tests, &caps, &globals, true);
         if !tests.text().trim().is_empty() {
-            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
+            out.line(crate::sem::gen::TEST_GUARD);
             out.blank();
             out.line(tests.text().trim_end());
             out.blank();
@@ -443,7 +443,7 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
     use std::cell::RefCell;
     let rows: RefCell<BTreeMap<String, (String, bool)>> = RefCell::new(BTreeMap::new());
     for m in cx.markers("CAPABILITIES") {
-        let test_only = m.rel.starts_with("code/tests/");
+        let test_only = crate::sem::gen::test_only(&m.rel);
         for a in m.args.iter().skip(1) {
             for name in ["ref_one", "ref_many"] {
                 rewrite_calls(a, name, &|args| {
@@ -464,7 +464,7 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
     out.line("	. = list()");
     for (ty, (var, test_only)) in &rows {
         if *test_only {
-            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
+            out.line(crate::sem::gen::TEST_GUARD);
         }
         out.line(format!("	.[{}] = {}", ty, quote(var)));
         if *test_only {
@@ -476,7 +476,7 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
 
 /// The declarations of the files in one half of the tree: the engine and the game (`test_only` false), or the test fixtures.
 fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String>, test_only: bool) {
-    let in_half = |rel: &str| rel.starts_with("code/tests/") == test_only;
+    let in_half = |rel: &str| crate::sem::gen::test_only(&rel) == test_only;
         // Capabilities: the datum's param vars, the constructor, the registration row.
         for cap in caps.iter().filter(|c| in_half(&c.rel)) {
             out.doc(format!("{}({}, {}) at {}:{}", if cap.is_def { "CAPABILITY_DEF" } else { "CAPABILITY_TYPE" }, cap.name, cap.id, cap.rel, cap.line));

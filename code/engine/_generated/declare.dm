@@ -1817,33 +1817,12 @@
 	into += entry_line(21)
 	into += list(global.owns_one(nameof(dna), /datum/dna))
 
-/// CAPABILITIES(/datum/dq_diag_owner_a) at code/modules/unit_tests/dq_lifecycle_diag_tests.dm:14
-/datum/dq_diag_owner_a/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_lifecycle_diag_tests.dm", 14, /datum/dq_diag_owner_a)
-	into += entry_line(15)
-	into += list(global.owns_one(nameof(b)))
-
-/// CAPABILITIES(/datum/dq_diag_owner_b) at code/modules/unit_tests/dq_lifecycle_diag_tests.dm:20
-/datum/dq_diag_owner_b/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_lifecycle_diag_tests.dm", 20, /datum/dq_diag_owner_b)
-	into += entry_line(21)
-	into += list(global.owns_one(nameof(a)))
-
 /// CAPABILITIES(/datum/dq_rx_node) at code/datums/rules/world_adapter.dm:92
 /datum/dq_rx_node/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/datums/rules/world_adapter.dm", 92, /datum/dq_rx_node)
 	into += entry_line(93)
 	into += list(global.owns_many(nameof(watches)))
-
-/// CAPABILITIES(/datum/dq_state_probe) at code/modules/unit_tests/dq_state_tests.dm:14
-/datum/dq_state_probe/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_state_tests.dm", 14, /datum/dq_state_probe)
-	into += entry_line(15)
-	into += list(global.owns_one(nameof(ref_value)))
 
 /// CAPABILITIES(/datum/edit_player_panel) at code/modules/admin/edit_player_panel.dm:35
 /datum/edit_player_panel/declared_entries(list/into)
@@ -2874,17 +2853,6 @@
 	into += entry_line(51)
 	into += list(global.owns_one(nameof(whitense), /atom/movable/screen))
 
-/// CAPABILITIES(/datum/guard_test_holder) at code/modules/unit_tests/dq_destroy_guard_tests.dm:14
-/datum/guard_test_holder/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_destroy_guard_tests.dm", 14, /datum/guard_test_holder)
-	into += entry_line(15)
-	into += list(global.owns_one(nameof(child)))
-	into += entry_line(16)
-	into += list(global.owns_many(nameof(kids)))
-	into += entry_line(17)
-	into += list(global.owns_many(nameof(values)))
-
 /// CAPABILITIES(/datum/hallucinations) at code/modules/flufftext/Hallucination.dm:29
 /datum/hallucinations/declared_entries(list/into)
 	..(into)
@@ -3403,24 +3371,6 @@
 	into += list(global.owns_one(nameof(directional_atom), /obj/effect/abstract/directional_lighting))
 	into += entry_line(83)
 	into += list(global.owns_one(nameof(visible_mask), /obj/effect/overlay/light_visible))
-
-/// CAPABILITIES(/datum/own_test_child) at code/modules/unit_tests/dq_ownership_tests.dm:43
-/datum/own_test_child/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_ownership_tests.dm", 43, /datum/own_test_child)
-	into += entry_line(44)
-	into += list(global.owns_one(nameof(grandchild)))
-
-/// CAPABILITIES(/datum/own_test_holder) at code/modules/unit_tests/dq_ownership_tests.dm:14
-/datum/own_test_holder/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_ownership_tests.dm", 14, /datum/own_test_holder)
-	into += entry_line(15)
-	into += list(global.owns_one(nameof(child)))
-	into += entry_line(16)
-	into += list(global.owns_many(nameof(children)))
-	into += entry_line(17)
-	into += list(global.owns_many(nameof(values)))
 
 /// CAPABILITIES(/datum/pai_software) at code/modules/mob/living/silicon/pai/software_modules.dm:23
 /datum/pai_software/declared_entries(list/into)
@@ -6130,59 +6080,6 @@
 	into += entry_line(22)
 	into += list(global.owns_many(nameof(floors)))
 
-/// CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid) at code/modules/unit_tests/clothing_tests.dm:20
-/datum/unit_test/all_clothing_shall_be_valid/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/clothing_tests.dm", 20, /datum/unit_test/all_clothing_shall_be_valid)
-	into += entry_line(21)
-	into += list(global.owns_one(nameof(human_storage)))
-	into += entry_line(22)
-	into += list(global.owns_many(nameof(test_humans)))
-
-/// CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict) at code/modules/unit_tests/reagent_tests.dm:117
-/datum/unit_test/chemical_reactions_shall_not_conflict/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/reagent_tests.dm", 117, /datum/unit_test/chemical_reactions_shall_not_conflict)
-	into += entry_line(118)
-	into += list(global.owns_one(nameof(fake_beaker)))
-	into += entry_line(119)
-	into += list(global.owns_one(nameof(instant_beaker)))
-
-/// CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz) at code/modules/unit_tests/dq_containment_tests.dm:119
-/datum/unit_test/dq_containment_conservation_fuzz/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_containment_tests.dm", 119, /datum/unit_test/dq_containment_conservation_fuzz)
-	into += entry_line(120)
-	into += list(global.owns_many(nameof(made)))
-
-/// CAPABILITIES(/datum/unit_test/dq_latency_fuzz) at code/modules/unit_tests/dq_latency_policy_tests.dm:272
-/datum/unit_test/dq_latency_fuzz/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_latency_policy_tests.dm", 272, /datum/unit_test/dq_latency_fuzz)
-	into += entry_line(273)
-	into += list(global.owns_many(nameof(made)))
-
-/// CAPABILITIES(/datum/unit_test/dq_stock_sheets) at code/modules/unit_tests/dq_stock_tests.dm:171
-/datum/unit_test/dq_stock_sheets/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_stock_tests.dm", 171, /datum/unit_test/dq_stock_sheets)
-	into += entry_line(172)
-	into += list(global.owns_many(nameof(made)))
-
-/// CAPABILITIES(/datum/unit_test/dq_stock_smartfridge) at code/modules/unit_tests/dq_stock_tests.dm:109
-/datum/unit_test/dq_stock_smartfridge/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_stock_tests.dm", 109, /datum/unit_test/dq_stock_smartfridge)
-	into += entry_line(110)
-	into += list(global.owns_many(nameof(made)))
-
-/// CAPABILITIES(/datum/unit_test/dq_stock_vending) at code/modules/unit_tests/dq_stock_tests.dm:31
-/datum/unit_test/dq_stock_vending/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_stock_tests.dm", 31, /datum/unit_test/dq_stock_vending)
-	into += entry_line(32)
-	into += list(global.owns_many(nameof(made)))
-
 /// CAPABILITIES(/datum/universal_icon) at code/modules/asset_cache/iconforge/universal_icon.dm:12
 /datum/universal_icon/declared_entries(list/into)
 	..(into)
@@ -6270,13 +6167,6 @@
 	into += entry_block("code/modules/combat_ai/world_model/world_model.dm", 158, /datum/world_model)
 	into += entry_line(159)
 	into += list(global.ref_many(nameof(hazard_atoms)))
-
-/// CAPABILITIES(/datum/world_test_gauge) at code/modules/unit_tests/dq_om_world_watch_tests.dm:342
-/datum/world_test_gauge/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_om_world_watch_tests.dm", 342, /datum/world_test_gauge)
-	into += entry_line(343)
-	into += list(global.owns_one(nameof(watch)))
 
 /// CAPABILITIES(/datum/xenochimera) at code/datums/entity_state/species/xenochimera.dm:14
 /datum/xenochimera/declared_entries(list/into)
@@ -7023,13 +6913,6 @@
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite))
 	into += entry_line(974)
 	into += list(global.verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc))
-
-/// CAPABILITIES(/mob/living/simple_mob/dq_damage_probe) at code/modules/unit_tests/dq_damage_packet_tests.dm:69
-/mob/living/simple_mob/dq_damage_probe/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_damage_packet_tests.dm", 69, /mob/living/simple_mob/dq_damage_probe)
-	into += entry_line(70)
-	into += list(global.owns_one(nameof(last)))
 
 /// CAPABILITIES(/mob/living/simple_mob/horror/BigTim) at code/modules/mob/living/simple_mob/subtypes/horror/shittytim.dm:36
 /mob/living/simple_mob/horror/BigTim/declared_entries(list/into)
@@ -9757,24 +9640,6 @@
 	into += list(global.owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper))
 	into += entry_line(57)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
-
-/// CAPABILITIES(/obj/item/dq_decl_probe) at code/modules/unit_tests/dq_decl_lifecycle_tests.dm:65
-/obj/item/dq_decl_probe/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_decl_lifecycle_tests.dm", 65, /obj/item/dq_decl_probe)
-	into += entry_line(66)
-	into += list(global.owns_one(nameof(air_contents), /datum/gas_mixture))
-	into += entry_line(67)
-	into += list(global.owns_one(nameof(helper), starts = /datum/dq_decl_owned_child))
-	into += entry_line(68)
-	into += list(global.owns_many(nameof(spares), starts = list(/obj/item/dq_decl_part = 2)))
-
-/// CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:31
-/obj/item/dq_destroy_transaction_phase_probe/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_destroy_transaction_tests.dm", 31, /obj/item/dq_destroy_transaction_phase_probe)
-	into += entry_line(32)
-	into += list(global.owns_one(nameof(child), /datum/dq_destroy_transaction_owned_child))
 
 /// CAPABILITIES(/obj/item/electronic_assembly) at code/modules/integrated_electronics/core/assemblies.dm:25
 /obj/item/electronic_assembly/declared_entries(list/into)
@@ -15918,34 +15783,6 @@
 	into += entry_line(31)
 	into += list(ui_shape(explosions = global.list_of(global.row(index = global.int(), time = global.schema_text(), x = global.int(), y = global.int(), z = global.int(), devastation_range = global.num(), heavy_impact_range = global.num(), light_impact_range = global.num(), seconds_taken = global.num()))))
 
-/// CAPABILITIES(/obj/machinery/dq_damage_probe) at code/modules/unit_tests/dq_damage_packet_tests.dm:50
-/obj/machinery/dq_damage_probe/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_damage_packet_tests.dm", 50, /obj/machinery/dq_damage_probe)
-	into += entry_line(51)
-	into += list(global.owns_one(nameof(last)))
-
-/// CAPABILITIES(/obj/machinery/dq_emp_probe) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:105
-/obj/machinery/dq_emp_probe/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 105, /obj/machinery/dq_emp_probe)
-	into += entry_line(106)
-	into += list(global.emp_disable(30 SECONDS))
-
-/// CAPABILITIES(/obj/machinery/dq_emp_probe/extends) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:111
-/obj/machinery/dq_emp_probe/extends/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 111, /obj/machinery/dq_emp_probe/extends)
-	into += entry_line(112)
-	into += list(global.configure(global.emp_disable(30 SECONDS, extends = TRUE)))
-
-/// CAPABILITIES(/obj/machinery/dq_emp_probe/resists) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:117
-/obj/machinery/dq_emp_probe/resists/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 117, /obj/machinery/dq_emp_probe/resists)
-	into += entry_line(118)
-	into += list(global.configure(global.emp_disable(30 SECONDS, resist = 100)))
-
 /// CAPABILITIES(/obj/machinery/embedded_controller) at code/game/machinery/embedded_controller/embedded_controller_base.dm:11
 /obj/machinery/embedded_controller/declared_entries(list/into)
 	..(into)
@@ -18742,13 +18579,6 @@
 	into += entry_line(14)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/structure/p2_bare_seat) at code/modules/unit_tests/dq_p2_seating_behaviour.dm:504
-/obj/structure/p2_bare_seat/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/unit_tests/dq_p2_seating_behaviour.dm", 504, /obj/structure/p2_bare_seat)
-	into += entry_line(505)
-	into += list(global.buckle())
-
 /// CAPABILITIES(/obj/structure/particle_accelerator) at code/modules/power/singularity/particle_accelerator/particle_accelerator.dm:74
 /obj/structure/particle_accelerator/declared_entries(list/into)
 	..(into)
@@ -19238,6 +19068,27 @@
 /datum/graph_decl/g_graph_door_assembly/spec()
 	return list(GRAPH_DOOR_ASSEMBLY, global.start(STAGE_DOOR_FRAME), global.stage(STAGE_DOOR_WIRED, global.stack(/obj/item/stack/cable_coil, 5)), global.stage(STAGE_DOOR_BOARDED, global.item(/obj/item/e0_fixture/board), global.put_in(SLOT_CONSTRUCTION)), global.stage(STAGE_DOOR_FINISHED, global.tool(TOOL_SCREWDRIVER), global.wait(0), from = STAGE_DOOR_BOARDED), global.stage(STAGE_DOOR_FINISHED, global.item(/obj/item/e0_fixture/door_kit), global.consumes(), from = STAGE_DOOR_WIRED, key = "kit", undo = list(global.tool(TOOL_CROWBAR), global.wait(0))), global.dismantle(global.tool(TOOL_WELDER)))
 
+/// CAPABILITIES(/datum/dq_diag_owner_a) at code/modules/unit_tests/dq_lifecycle_diag_tests.dm:14
+/datum/dq_diag_owner_a/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_lifecycle_diag_tests.dm", 14, /datum/dq_diag_owner_a)
+	into += entry_line(15)
+	into += list(global.owns_one(nameof(b)))
+
+/// CAPABILITIES(/datum/dq_diag_owner_b) at code/modules/unit_tests/dq_lifecycle_diag_tests.dm:20
+/datum/dq_diag_owner_b/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_lifecycle_diag_tests.dm", 20, /datum/dq_diag_owner_b)
+	into += entry_line(21)
+	into += list(global.owns_one(nameof(a)))
+
+/// CAPABILITIES(/datum/dq_state_probe) at code/modules/unit_tests/dq_state_tests.dm:14
+/datum/dq_state_probe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_state_tests.dm", 14, /datum/dq_state_probe)
+	into += entry_line(15)
+	into += list(global.owns_one(nameof(ref_value)))
+
 /// CAPABILITIES(/datum/e0_chain_node) at code/tests/engine/fixtures.dm:320
 /datum/e0_chain_node/declared_entries(list/into)
 	..(into)
@@ -19268,12 +19119,41 @@
 	into += entry_line(69)
 	into += list(global.e1_solo())
 
+/// CAPABILITIES(/datum/guard_test_holder) at code/modules/unit_tests/dq_destroy_guard_tests.dm:14
+/datum/guard_test_holder/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_destroy_guard_tests.dm", 14, /datum/guard_test_holder)
+	into += entry_line(15)
+	into += list(global.owns_one(nameof(child)))
+	into += entry_line(16)
+	into += list(global.owns_many(nameof(kids)))
+	into += entry_line(17)
+	into += list(global.owns_many(nameof(values)))
+
 /// CAPABILITIES(/datum/om_test_entity/e4_twin) at code/tests/engine/e4_fixtures.dm:154
 /datum/om_test_entity/e4_twin/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/tests/engine/e4_fixtures.dm", 154, /datum/om_test_entity/e4_twin)
 	into += entry_line(155)
 	into += list(global.on_notice(/datum/notice/atom_bumped, global.then(PROC_REF(notice_heard))))
+
+/// CAPABILITIES(/datum/own_test_child) at code/modules/unit_tests/dq_ownership_tests.dm:43
+/datum/own_test_child/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_ownership_tests.dm", 43, /datum/own_test_child)
+	into += entry_line(44)
+	into += list(global.owns_one(nameof(grandchild)))
+
+/// CAPABILITIES(/datum/own_test_holder) at code/modules/unit_tests/dq_ownership_tests.dm:14
+/datum/own_test_holder/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_ownership_tests.dm", 14, /datum/own_test_holder)
+	into += entry_line(15)
+	into += list(global.owns_one(nameof(child)))
+	into += entry_line(16)
+	into += list(global.owns_many(nameof(children)))
+	into += entry_line(17)
+	into += list(global.owns_many(nameof(values)))
 
 /// CAPABILITIES(/datum/p2_panel) at code/tests/engine/p2_fixtures.dm:368
 /datum/p2_panel/declared_entries(list/into)
@@ -19293,6 +19173,66 @@
 	into += entry_line(167)
 	into += list(global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 6)))
 
+/// CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid) at code/modules/unit_tests/clothing_tests.dm:20
+/datum/unit_test/all_clothing_shall_be_valid/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/clothing_tests.dm", 20, /datum/unit_test/all_clothing_shall_be_valid)
+	into += entry_line(21)
+	into += list(global.owns_one(nameof(human_storage)))
+	into += entry_line(22)
+	into += list(global.owns_many(nameof(test_humans)))
+
+/// CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict) at code/modules/unit_tests/reagent_tests.dm:117
+/datum/unit_test/chemical_reactions_shall_not_conflict/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/reagent_tests.dm", 117, /datum/unit_test/chemical_reactions_shall_not_conflict)
+	into += entry_line(118)
+	into += list(global.owns_one(nameof(fake_beaker)))
+	into += entry_line(119)
+	into += list(global.owns_one(nameof(instant_beaker)))
+
+/// CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz) at code/modules/unit_tests/dq_containment_tests.dm:119
+/datum/unit_test/dq_containment_conservation_fuzz/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_containment_tests.dm", 119, /datum/unit_test/dq_containment_conservation_fuzz)
+	into += entry_line(120)
+	into += list(global.owns_many(nameof(made)))
+
+/// CAPABILITIES(/datum/unit_test/dq_latency_fuzz) at code/modules/unit_tests/dq_latency_policy_tests.dm:272
+/datum/unit_test/dq_latency_fuzz/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_latency_policy_tests.dm", 272, /datum/unit_test/dq_latency_fuzz)
+	into += entry_line(273)
+	into += list(global.owns_many(nameof(made)))
+
+/// CAPABILITIES(/datum/unit_test/dq_stock_sheets) at code/modules/unit_tests/dq_stock_tests.dm:171
+/datum/unit_test/dq_stock_sheets/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_stock_tests.dm", 171, /datum/unit_test/dq_stock_sheets)
+	into += entry_line(172)
+	into += list(global.owns_many(nameof(made)))
+
+/// CAPABILITIES(/datum/unit_test/dq_stock_smartfridge) at code/modules/unit_tests/dq_stock_tests.dm:109
+/datum/unit_test/dq_stock_smartfridge/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_stock_tests.dm", 109, /datum/unit_test/dq_stock_smartfridge)
+	into += entry_line(110)
+	into += list(global.owns_many(nameof(made)))
+
+/// CAPABILITIES(/datum/unit_test/dq_stock_vending) at code/modules/unit_tests/dq_stock_tests.dm:31
+/datum/unit_test/dq_stock_vending/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_stock_tests.dm", 31, /datum/unit_test/dq_stock_vending)
+	into += entry_line(32)
+	into += list(global.owns_many(nameof(made)))
+
+/// CAPABILITIES(/datum/world_test_gauge) at code/modules/unit_tests/dq_om_world_watch_tests.dm:342
+/datum/world_test_gauge/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_om_world_watch_tests.dm", 342, /datum/world_test_gauge)
+	into += entry_line(343)
+	into += list(global.owns_one(nameof(watch)))
+
 /// CAPABILITIES(/mob/gap_verb_mob) at code/tests/engine/gap_fixtures.dm:80
 /mob/gap_verb_mob/declared_entries(list/into)
 	..(into)
@@ -19305,6 +19245,13 @@
 	into += list(global.verb_entry(/mob/gap_verb_mob/proc/gv_when, when = nameof(flag)))
 	into += entry_line(84)
 	into += list(global.verb_entry(/mob/gap_verb_mob/verb/gv_inherited, hidden = TRUE))
+
+/// CAPABILITIES(/mob/living/simple_mob/dq_damage_probe) at code/modules/unit_tests/dq_damage_packet_tests.dm:69
+/mob/living/simple_mob/dq_damage_probe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_damage_packet_tests.dm", 69, /mob/living/simple_mob/dq_damage_probe)
+	into += entry_line(70)
+	into += list(global.owns_one(nameof(last)))
 
 /// CAPABILITIES(/mob/living/simple_mob/e0_fixture) at code/tests/engine/fixtures.dm:113
 /mob/living/simple_mob/e0_fixture/declared_entries(list/into)
@@ -19825,6 +19772,24 @@
 	into += entry_line(124)
 	into += list(global.op("noop", global.ui_act("noop"), global.then(PROC_REF(noop))))
 
+/// CAPABILITIES(/obj/item/dq_decl_probe) at code/modules/unit_tests/dq_decl_lifecycle_tests.dm:65
+/obj/item/dq_decl_probe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_decl_lifecycle_tests.dm", 65, /obj/item/dq_decl_probe)
+	into += entry_line(66)
+	into += list(global.owns_one(nameof(air_contents), /datum/gas_mixture))
+	into += entry_line(67)
+	into += list(global.owns_one(nameof(helper), starts = /datum/dq_decl_owned_child))
+	into += entry_line(68)
+	into += list(global.owns_many(nameof(spares), starts = list(/obj/item/dq_decl_part = 2)))
+
+/// CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:31
+/obj/item/dq_destroy_transaction_phase_probe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_destroy_transaction_tests.dm", 31, /obj/item/dq_destroy_transaction_phase_probe)
+	into += entry_line(32)
+	into += list(global.owns_one(nameof(child), /datum/dq_destroy_transaction_owned_child))
+
 /// CAPABILITIES(/obj/item/e2_cloth) at code/tests/engine/e2_fixtures.dm:28
 /obj/item/e2_cloth/declared_entries(list/into)
 	..(into)
@@ -20034,6 +19999,34 @@
 	into += entry_block("code/tests/library/fixtures.dm", 84, /obj/lib_fixture/tap)
 	into += entry_line(85)
 	into += list(global.reagent_container(volume = 100, transfer = list(10), lid = TRUE))
+
+/// CAPABILITIES(/obj/machinery/dq_damage_probe) at code/modules/unit_tests/dq_damage_packet_tests.dm:50
+/obj/machinery/dq_damage_probe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_damage_packet_tests.dm", 50, /obj/machinery/dq_damage_probe)
+	into += entry_line(51)
+	into += list(global.owns_one(nameof(last)))
+
+/// CAPABILITIES(/obj/machinery/dq_emp_probe) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:105
+/obj/machinery/dq_emp_probe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 105, /obj/machinery/dq_emp_probe)
+	into += entry_line(106)
+	into += list(global.emp_disable(30 SECONDS))
+
+/// CAPABILITIES(/obj/machinery/dq_emp_probe/extends) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:111
+/obj/machinery/dq_emp_probe/extends/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 111, /obj/machinery/dq_emp_probe/extends)
+	into += entry_line(112)
+	into += list(global.configure(global.emp_disable(30 SECONDS, extends = TRUE)))
+
+/// CAPABILITIES(/obj/machinery/dq_emp_probe/resists) at code/modules/unit_tests/dq_emp_disable_behaviour.dm:117
+/obj/machinery/dq_emp_probe/resists/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_emp_disable_behaviour.dm", 117, /obj/machinery/dq_emp_probe/resists)
+	into += entry_line(118)
+	into += list(global.configure(global.emp_disable(30 SECONDS, resist = 100)))
 
 /// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:129
 /obj/machinery/p2_box/declared_entries(list/into)
@@ -20270,6 +20263,13 @@
 	into += entry_block("code/tests/engine/s1_fixtures.dm", 217, /obj/s1_fixture/ticker/fast)
 	into += entry_line(218)
 	into += list(global.every(5, global.then(PROC_REF(fast_tick))))
+
+/// CAPABILITIES(/obj/structure/p2_bare_seat) at code/modules/unit_tests/dq_p2_seating_behaviour.dm:504
+/obj/structure/p2_bare_seat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_p2_seating_behaviour.dm", 504, /obj/structure/p2_bare_seat)
+	into += entry_line(505)
+	into += list(global.buckle())
 
 #endif
 /// declared_keyed_targets(): target type -> the id var a keyed relation (by =) matches it on, read once before the first ownership table.
