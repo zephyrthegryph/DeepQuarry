@@ -11,11 +11,16 @@
 	set_density(0)
 	return ..()
 
-DAMAGE_REACTION(/obj/structure/alien, DAMAGE_THROWN, PROC_REF(alien_thrown_at))
-/// A throw squelches into the resin.
-/obj/structure/alien/proc/alien_thrown_at(datum/damage_packet/packet)
-	visible_message(span_danger("\The [src] was hit by \the [packet.source]."))
+CAPABILITIES(/obj/structure/alien)
+	extend(/datum/act/hit, instead(then(PROC_REF(alien_thrown_at))))
+
+/// A throw squelches into the resin before it lands. A thrown thing is the generic hit, so the squelch checks the entry; the hit goes on either way.
+/obj/structure/alien/proc/alien_thrown_at(datum/act/hit/A)
+	if(A.packet.entry != DAMAGE_ENTRY_THROWN)
+		return HOOK_DECLINE
+	visible_message(span_danger("\The [src] was hit by \the [A.packet.source]."))
 	play_sfx(loc, SFX_EFFECTS_ATTACKBLOB, 2)
+	return HOOK_DECLINE
 
 /obj/structure/alien/attack_generic(mob/user, damage, attack_verb)
 	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))

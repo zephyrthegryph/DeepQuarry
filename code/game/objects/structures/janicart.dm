@@ -29,6 +29,14 @@ CAPABILITIES(/obj/structure/janitorialcart)
 	owns_one(nameof(myspray), /obj/item/reagent_containers/spray)
 	climb()
 	owns_one(nameof(mybucket), /obj/structure/mopbucket)
+	interface("JanitorCart")
+	op("bag", ui_act("bag"), then(PROC_REF(ui_act_bag)))
+	op("mop", ui_act("mop"), then(PROC_REF(ui_act_mop)))
+	op("spray", ui_act("spray"), then(PROC_REF(ui_act_spray)))
+	op("replacer", ui_act("replacer"), then(PROC_REF(ui_act_replacer)))
+	op("sign", ui_act("sign"), then(PROC_REF(ui_act_sign)))
+	op("bucket", ui_act("bucket"), then(PROC_REF(ui_act_bucket)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(janicart_blast))))
 
 /obj/structure/janitorialcart/proc/equip_janicart_item(mob/user, obj/item/I)
 	if(!equippable_item_whitelist)
@@ -238,12 +246,7 @@ CAPABILITIES(/obj/structure/janitorialcart)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/structure/janitorialcart, "JanitorCart")
-
-UI_DATA(/obj/structure/janitorialcart, "merge:ui_data_obj_structure_janitorialcart{mybag:text,mybucket:text,mymop:text,myspray:text,myreplacer:text,signs:text,icons:bool}")
-
-/// The computed part of /obj/structure/janitorialcart's window data (declared on its UI_DATA row).
-/obj/structure/janitorialcart/proc/ui_data_obj_structure_janitorialcart(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/structure/janitorialcart/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["mybag"] = mybag ? capitalize(mybag.name) : null
@@ -256,85 +259,85 @@ UI_DATA(/obj/structure/janitorialcart, "merge:ui_data_obj_structure_janitorialca
 	data["icons"] = (tgui_icons || list())
 	return data
 
-UI_ACT(/obj/structure/janitorialcart, "bag", ui_act_bag)
-UI_ACT_PROC(/obj/structure/janitorialcart, ui_act_bag)
-	var/obj/item/I = ui.user.get_active_hand()
+/obj/structure/janitorialcart/proc/ui_act_bag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = user.get_active_hand()
 	if(mybag)
-		ui.user.put_in_hands(mybag)
-		ui.user.balloon_alert(ui.user, "you take [mybag] from [src].")
+		user.put_in_hands(mybag)
+		user.balloon_alert(user, "you take [mybag] from [src].")
 		own_take(src, nameof(/obj/structure/janitorialcart::mybag))
 		nullTguiIcon("mybag")
 	else if(is_type_in_typecache(I, equippable_item_whitelist))
-		equip_janicart_item(ui.user, I)
+		equip_janicart_item(user, I)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/structure/janitorialcart, "mop", ui_act_mop)
-UI_ACT_PROC(/obj/structure/janitorialcart, ui_act_mop)
-	var/obj/item/I = ui.user.get_active_hand()
+/obj/structure/janitorialcart/proc/ui_act_mop(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = user.get_active_hand()
 	if(mymop)
-		ui.user.put_in_hands(mymop)
-		ui.user.balloon_alert(ui.user, "you take [mymop] from [src].")
+		user.put_in_hands(mymop)
+		user.balloon_alert(user, "you take [mymop] from [src].")
 		own_take(src, nameof(/obj/structure/janitorialcart::mymop))
 		nullTguiIcon("mymop")
 	else if(is_type_in_typecache(I, equippable_item_whitelist))
-		equip_janicart_item(ui.user, I)
+		equip_janicart_item(user, I)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/structure/janitorialcart, "spray", ui_act_spray)
-UI_ACT_PROC(/obj/structure/janitorialcart, ui_act_spray)
-	var/obj/item/I = ui.user.get_active_hand()
+/obj/structure/janitorialcart/proc/ui_act_spray(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = user.get_active_hand()
 	if(myspray)
-		ui.user.put_in_hands(myspray)
-		ui.user.balloon_alert(ui.user, "you take [myspray] from [src].")
+		user.put_in_hands(myspray)
+		user.balloon_alert(user, "you take [myspray] from [src].")
 		own_take(src, nameof(/obj/structure/janitorialcart::myspray))
 		nullTguiIcon("myspray")
 	else if(is_type_in_typecache(I, equippable_item_whitelist))
-		equip_janicart_item(ui.user, I)
+		equip_janicart_item(user, I)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/structure/janitorialcart, "replacer", ui_act_replacer)
-UI_ACT_PROC(/obj/structure/janitorialcart, ui_act_replacer)
-	var/obj/item/I = ui.user.get_active_hand()
+/obj/structure/janitorialcart/proc/ui_act_replacer(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = user.get_active_hand()
 	if(myreplacer)
-		ui.user.put_in_hands(myreplacer)
-		ui.user.balloon_alert(ui.user, "you take [myreplacer] from [src].")
+		user.put_in_hands(myreplacer)
+		user.balloon_alert(user, "you take [myreplacer] from [src].")
 		own_take(src, nameof(/obj/structure/janitorialcart::myreplacer))
 		nullTguiIcon("myreplacer")
 	else if(is_type_in_typecache(I, equippable_item_whitelist))
-		equip_janicart_item(ui.user, I)
+		equip_janicart_item(user, I)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/structure/janitorialcart, "sign", ui_act_sign)
-UI_ACT_PROC(/obj/structure/janitorialcart, ui_act_sign)
-	var/obj/item/I = ui.user.get_active_hand()
+/obj/structure/janitorialcart/proc/ui_act_sign(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = user.get_active_hand()
 	if(istype(I, /obj/item/clothing/suit/caution) && signs < 4)
-		equip_janicart_item(ui.user, I)
+		equip_janicart_item(user, I)
 	else if(signs)
 		var/obj/item/clothing/suit/caution/sign = locate_within(src, /obj/item/clothing/suit/caution)
 		if(sign)
-			ui.user.put_in_hands(sign)
-			ui.user.balloon_alert(ui.user, "you take \a [sign] from [src].")
+			user.put_in_hands(sign)
+			user.balloon_alert(user, "you take  [sign] from [src].")
 			signs--
 			if(!signs)
 				nullTguiIcon("signs")
 	else
-		ui.user.balloon_alert(ui.user, "[src] doesn't have any signs left.")
+		user.balloon_alert(user, "[src] doesn't have any signs left.")
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/structure/janitorialcart, "bucket", ui_act_bucket)
-UI_ACT_PROC(/obj/structure/janitorialcart, ui_act_bucket)
+/obj/structure/janitorialcart/proc/ui_act_bucket(datum/act/op/A)
+	var/mob/user = A.actor
 	if(mybucket)
-		mybucket.forceMove(get_turf(ui.user))
-		ui.user.balloon_alert(ui.user, "you unmount [mybucket] from [src].")
+		mybucket.forceMove(get_turf(user))
+		user.balloon_alert(user, "you unmount [mybucket] from [src].")
 		own_take(src, nameof(/obj/structure/janitorialcart::mybucket))
 		nullTguiIcon("mybucket")
 	else
-		to_chat(ui.user, span_notice("((Drag and drop a mop bucket onto [src] to equip it.))"))
+		to_chat(user, span_notice("((Drag and drop a mop bucket onto [src] to equip it.))"))
 		return FALSE
 	update_icon()
 	return TRUE
@@ -411,7 +414,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/janitorialcart, TYPE_PROC_REF(/atom, appe
 		dismantled = 1
 		replace_with(src, /obj/item/stack/rods, 20)
 
-DAMAGE_REACTION(/obj/structure/janitorialcart, DAMAGE_EXPLOSION, PROC_REF(janicart_blast))
-/// A blast spills the bucket.
-/obj/structure/janitorialcart/proc/janicart_blast(datum/damage_packet/packet)
-	spill(100 / packet.severity)
+/// A blast spills the gear before it lands; the hit goes on.
+/obj/structure/janitorialcart/proc/janicart_blast(datum/act/hit/explosion/A)
+	spill(100 / A.packet.severity)
+	return HOOK_DECLINE

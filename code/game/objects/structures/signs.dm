@@ -1643,10 +1643,10 @@
 
 CAPABILITIES(/obj/structure/sign/flag)
 	links(/obj/structure/sign/flag::linked_flag, /obj/structure/sign/flag::linked_flag)
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(flag_blast)))
 
-DAMAGE_REACTION_AFTER(/obj/structure/sign/flag, DAMAGE_EXPLOSION, PROC_REF(flag_blast))
 /// A flag that survives a blast is torn.
-/obj/structure/sign/flag/proc/flag_blast(datum/damage_packet/packet)
+/obj/structure/sign/flag/proc/flag_blast(datum/act/A)
 	rip()
 
 /obj/structure/sign/flag/unfasten(mob/user)

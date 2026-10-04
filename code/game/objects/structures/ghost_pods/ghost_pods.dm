@@ -36,7 +36,7 @@ CAPABILITIES(/obj/structure/ghost_pod)
 	Q.query()
 
 /obj/structure/ghost_pod/proc/get_winner(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	busy = FALSE
 	if(length(Q.candidates))
 		var/mob/observer/dead/D = Q.candidates[1]

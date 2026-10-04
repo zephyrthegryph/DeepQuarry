@@ -400,7 +400,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	rel_clear(src, nameof(currently_held_objects)) //Clear the list.
 
 /obj/structure/toilet/proc/toilet_reflux(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/disposal_receive/event = A
 	var/list/received_items = event.items
 	var/datum/gas_mixture/gas = event.gas
@@ -780,15 +780,17 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_o
 	var/honk_count = 0
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/red, INTERACT_USE("Squeeze", PROC_REF(duck_red_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/red)
+	op("squeeze_red", in_hand(), label("Squeeze"), then(PROC_REF(duck_red_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/red/proc/duck_red_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/red/proc/duck_red_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(honk_count >= 3)
 		var/turf/epicenter = get_turf(src)
 		explosion(epicenter, 0, 0, 1, 3)
 		consume(src, user)
-		return
+		return OP_OK
 	else if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -796,7 +798,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/red, INTERACT_USE("Squeeze", 
 		if(honk_text)
 			audible_message(span_maroon("[honk_text]"))
 		honk_count++
-	return
+	return OP_OK
 
 /obj/item/bikehorn/rubberducky/blue
 	name = "rubber ducky"
@@ -807,10 +809,12 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/red, INTERACT_USE("Squeeze", 
 	honk_sound = SFX_EFFECTS_BUBBLES
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/blue, INTERACT_USE("Squeeze", PROC_REF(duck_blue_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/blue)
+	op("squeeze_blue", in_hand(), label("Squeeze"), then(PROC_REF(duck_blue_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/blue/proc/duck_blue_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/blue/proc/duck_blue_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -819,7 +823,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/blue, INTERACT_USE("Squeeze",
 			audible_message(span_maroon("[honk_text]"))
 		var/turf/simulated/whereweare = get_turf(src)
 		whereweare.wet_floor(2)
-	return
+	return OP_OK
 
 /obj/item/bikehorn/rubberducky/pink
 	name = "rubber ducky"
@@ -830,14 +834,16 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/blue, INTERACT_USE("Squeeze",
 	honk_sound = SFX_VORE_SUNESOUND_PRED_INSERTION_01
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/pink, INTERACT_USE("Squeeze", PROC_REF(duck_pink_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/pink)
+	op("squeeze_pink", in_hand(), label("Squeeze"), then(PROC_REF(duck_pink_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/pink/proc/duck_pink_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/pink/proc/duck_pink_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		if(!user.devourable)
 			to_chat(user, span_vnotice("You can't bring yourself to squeeze it..."))
-			return
+			return OP_OK
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
 		add_fingerprint(user)
@@ -846,6 +852,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/pink, INTERACT_USE("Squeeze",
 		user.drop_item()
 		user.forceMove(src)
 		to_chat(user, span_vnotice("You have been swallowed alive by the rubber ducky. Your entire body compacted up and squeezed into the tiny space that makes up the oddly realistic and not at all rubbery stomach. The walls themselves are kneading over you, grinding some sort of fluids into your trapped body. You can even hear the sound of bodily functions echoing around you..."))
+	return OP_OK
 
 /obj/item/bikehorn/rubberducky/pink/container_resist(mob/living/escapee)
 	if(isdisposalpacket(loc))
@@ -863,10 +870,12 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/pink, INTERACT_USE("Squeeze",
 	honk_sound = SFX_EFFECTS_GHOST
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/grey, INTERACT_USE("Squeeze", PROC_REF(duck_grey_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/grey)
+	op("squeeze_grey", in_hand(), label("Squeeze"), then(PROC_REF(duck_grey_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/grey/proc/duck_grey_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/grey/proc/duck_grey_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -881,7 +890,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/grey, INTERACT_USE("Squeeze",
 		user.drop_item()
 		var/turf/T = locate(rand(1, 140), rand(1, 140), user.z)
 		forceMove(T)
-	return
+	return OP_OK
 
 /obj/item/bikehorn/rubberducky/green
 	name = "rubber ducky"
@@ -908,10 +917,12 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/grey, INTERACT_USE("Squeeze",
 						/obj/structure/flora/ausbushes/fullgrass)
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/green, INTERACT_USE("Squeeze", PROC_REF(duck_green_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/green)
+	op("squeeze_green", in_hand(), label("Squeeze"), then(PROC_REF(duck_green_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/green/proc/duck_green_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/green/proc/duck_green_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -921,7 +932,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/green, INTERACT_USE("Squeeze"
 		var/turf/simulated/whereweare = get_turf(src)
 		var/obj/P = pick(flora)
 		new P(whereweare)
-	return
+	return OP_OK
 
 /obj/item/bikehorn/rubberducky/white
 	name = "rubber ducky"
@@ -932,10 +943,12 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/green, INTERACT_USE("Squeeze"
 	honk_sound = SFX_EFFECTS_LIGHTNINGSHOCK
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze", PROC_REF(duck_white_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/white)
+	op("squeeze_white", in_hand(), label("Squeeze"), then(PROC_REF(duck_white_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/white/proc/duck_white_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/white/proc/duck_white_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -944,7 +957,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze"
 			audible_message(span_maroon("[honk_text]"))
 		lightning_strike(get_turf(src), 1)
 		consume(src, user)
-	return
+	return OP_OK
 
 /obj/item/grenade/anti_photon/rubberducky/black
 	desc = "Good work NanoTrasen Employee, you struck fear within the Syndicate."
@@ -964,10 +977,12 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze"
 	honk_sound = SFX_VOICE_QUACK_REVERB
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/gold, INTERACT_USE("Squeeze", PROC_REF(duck_gold_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/gold)
+	op("squeeze_gold", in_hand(), label("Squeeze"), then(PROC_REF(duck_gold_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/gold/proc/duck_gold_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/gold/proc/duck_gold_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -979,7 +994,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/gold, INTERACT_USE("Squeeze",
 			U.dust()
 		user.drop_item()
 		consume(src, user)
-	return
+	return OP_OK
 
 /obj/item/bikehorn/rubberducky/viking
 	name = "rubber ducky"
@@ -991,10 +1006,12 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/gold, INTERACT_USE("Squeeze",
 	honk_text = "DUK ROH DAH!"
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/viking, INTERACT_USE("Squeeze", PROC_REF(duck_viking_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/viking)
+	op("squeeze_viking", in_hand(), label("Squeeze"), then(PROC_REF(duck_viking_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/viking/proc/duck_viking_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/viking/proc/duck_viking_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -1003,7 +1020,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/viking, INTERACT_USE("Squeeze
 			audible_message(span_maroon("[honk_text]"))
 		user.drop_item()
 		user.throw_at_random(FALSE,9,2)
-	return
+	return OP_OK
 
 /obj/item/bikehorn/rubberducky/galaxy
 	name = "rubber ducky"
@@ -1014,10 +1031,12 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/viking, INTERACT_USE("Squeeze
 	honk_sound = SFX_EFFECTS_TELEPORT
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze", PROC_REF(duck_galaxy_self)))
+CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
+	op("squeeze_galaxy", in_hand(), label("Squeeze"), then(PROC_REF(duck_galaxy_self)))
 
-/// Old attack_self.
-/obj/item/bikehorn/rubberducky/galaxy/proc/duck_galaxy_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Squeezed in hand.
+/obj/item/bikehorn/rubberducky/galaxy/proc/duck_galaxy_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -1031,7 +1050,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 			possible_orbiters += M
 		var/atom/movable/selected_orbiter = pick(possible_orbiters)
 		selected_orbiter.orbit(user,32,TRUE,20,36)
-	return
+	return OP_OK
 
 //////////////////////////////SINKS//////////////////////////////
 
@@ -1353,13 +1372,17 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 		else
 			choice.forceMove(get_turf(src))
 
-DECLARE_EMAG_REPEATABLE(/obj/structure/biowaste_tank, PROC_REF(on_emag), null)
-/obj/structure/biowaste_tank/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/structure/biowaste_tank)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+
+/// The sequencer shorts the grinder's safety: a muffin monster at work is let out.
+/obj/structure/biowaste_tank/proc/on_emag(datum/act/op/A)
 	if(muffinmonster() && muffin_mode)
 		muffinmonster().name = "Muffin Monster"
 		muffinmonster().forceMove(get_turf(src))
 		rel_clear(src, nameof(muffinmonster))
 		muffin_mode = FALSE
+	return OP_OK
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
 	name = "Muffin Monster"

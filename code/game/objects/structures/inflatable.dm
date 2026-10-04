@@ -47,11 +47,13 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
 
-DAMAGE_REACTION(/obj/structure/inflatable, DAMAGE_BLOB, PROC_REF(inflatable_blob))
+CAPABILITIES(/obj/structure/inflatable)
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(inflatable_blob))))
+
 /// A blob punctures the inflatable.
-/obj/structure/inflatable/proc/inflatable_blob(datum/damage_packet/packet)
+/obj/structure/inflatable/proc/inflatable_blob(datum/act/hit/blob/A)
 	puncture()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/structure/inflatable/declare_interactions(list/into)
 	into += list(
@@ -259,12 +261,15 @@ APPEARANCE_TEMPLATE(/obj/structure/inflatable/door, "door_{state?open:closed}")
 	icon_state = "folded_wall_torn"
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/inflatable/torn, INTERACT_USE("Inflate", PROC_REF(torn_inflatable_self)))
+CAPABILITIES(/obj/item/inflatable/torn)
+	op("torn_inflate", in_hand(), label("Inflate"), then(PROC_REF(torn_inflatable_self)))
 
-/// Old attack_self.
-/obj/item/inflatable/torn/proc/torn_inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Used in hand: it is too torn to inflate.
+/obj/item/inflatable/torn/proc/torn_inflatable_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("The inflatable wall is too torn to be inflated!"))
 	add_fingerprint(user)
+	return OP_OK
 
 /obj/item/inflatable/door/torn
 	name = "torn inflatable door"
@@ -273,12 +278,15 @@ EXTEND_INTERACTIONS(/obj/item/inflatable/torn, INTERACT_USE("Inflate", PROC_REF(
 	icon_state = "folded_door_torn"
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/inflatable/door/torn, INTERACT_USE("Inflate", PROC_REF(torn_door_inflatable_self)))
+CAPABILITIES(/obj/item/inflatable/door/torn)
+	op("torn_door_inflate", in_hand(), label("Inflate"), then(PROC_REF(torn_door_inflatable_self)))
 
-/// Old attack_self.
-/obj/item/inflatable/door/torn/proc/torn_door_inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Used in hand: it is too torn to inflate.
+/obj/item/inflatable/door/torn/proc/torn_door_inflatable_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("The inflatable door is too torn to be inflated!"))
 	add_fingerprint(user)
+	return OP_OK
 
 /obj/item/storage/briefcase/inflatable
 	name = "inflatable barrier box"
