@@ -15,6 +15,9 @@
 	equip_cooldown = 10
 	required_type = list(/obj/mecha/medical)
 
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
+	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
+
 DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
 /// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
 OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, list, processed_reagents, null, CHANGE_EXPLICIT)

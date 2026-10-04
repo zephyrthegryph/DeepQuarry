@@ -115,6 +115,7 @@
 	var/list/result_reactions
 
 CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
+	owns_one(nameof(fake_beaker))
 	owns_one(nameof(instant_beaker))
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/Run()

@@ -66,6 +66,9 @@ CAPABILITIES(/obj/machinery/dq_damage_probe)
 	var/datum/dq_packet_record/last
 	var/received = 0
 
+CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
+	owns_one(nameof(last))
+
 /mob/living/simple_mob/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
 	own_clear(src, nameof(last), OWN_DELETE)

@@ -53,6 +53,7 @@
 	var/rewarded = FALSE
 
 CAPABILITIES(/datum/expedition_site)
+	owns_one(nameof(overmap_sector), /obj/effect/overmap/visitable/sector/expedition)
 	owns_one(nameof(landing_waypoint), /obj/effect/shuttle_landmark/automatic/clearing/expedition)
 	owns_one(nameof(mission), /datum/expedition_mission)
 	owns_one(nameof(station_defense), /datum/generated_station_defense_runtime)

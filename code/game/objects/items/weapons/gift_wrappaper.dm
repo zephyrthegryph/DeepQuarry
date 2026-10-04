@@ -29,6 +29,7 @@
 		icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
 CAPABILITIES(/obj/item/gift)
+	owns_one(nameof(gift), /obj/item)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

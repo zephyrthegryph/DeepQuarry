@@ -13,6 +13,9 @@
 	flags = REMOTEVIEW_ON_ENTER
 	dir = 0
 
+CAPABILITIES(/obj/structure/disposalholder)
+	owns_one(nameof(gas), /datum/gas_mixture)
+
 // C11: one slot, accepting anything (a holder in transit carries whatever was
 // flushed into it). Legacy forceMove()s into and out of the holder (move(),
 // the disposal machine's flush, pipe transit) are still accounted for by

@@ -24,6 +24,9 @@
 	/// The z's turfs, in wipe order, while the job runs.
 	var/tmp/list/turfs
 
+CAPABILITIES(/datum/expedition_teardown_job)
+	owns_one(nameof(site), /datum/expedition_site)
+
 /datum/expedition_teardown_job/New(datum/expedition_site/new_site, new_reason)
 	..()
 	own_move(new_site, src, nameof(site))
