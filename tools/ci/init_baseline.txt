@@ -958,7 +958,6 @@ initialize	code/game/shuttle_engines.dm	/obj/structure/shuttle/window/Initialize
 initialize	code/game/turfs/flooring/seasonal.dm	/turf/simulated/floor/outdoors/grass/seasonal/Initialize(mapload)
 initialize	code/game/turfs/simulated.dm	/turf/simulated/Initialize(mapload)
 initialize	code/game/turfs/simulated/dungeon/wall.dm	/turf/simulated/wall/solidrock/Initialize(mapload)
-initialize	code/game/turfs/simulated/dungeon/wall.dm	/turf/simulated/wall/solidrock/mossyrockpoi/Initialize(mapload)
 initialize	code/game/turfs/simulated/fancy_shuttles.dm	/obj/effect/fancy_shuttle/Initialize(mapload) // has to be very early so others can grab it
 initialize	code/game/turfs/simulated/fancy_shuttles.dm	/turf/simulated/wall/fancy_shuttle/Initialize(mapload, materialtype, rmaterialtype, girdertype)
 initialize	code/game/turfs/simulated/floor.dm	/turf/simulated/floor/Initialize(mapload, floortype)

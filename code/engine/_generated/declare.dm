@@ -1103,11 +1103,13 @@
 /datum/contract/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/contracts/contract.dm", 242, /datum/contract)
-	into += entry_line(243)
-	into += list(global.owns_many(nameof(audit_log)))
 	into += entry_line(244)
-	into += list(global.owns_many(nameof(requirements)))
+	into += list(global.entry_link("/datum/contract::parent", "/datum/contract::children", b_many = TRUE))
 	into += entry_line(245)
+	into += list(global.owns_many(nameof(audit_log)))
+	into += entry_line(246)
+	into += list(global.owns_many(nameof(requirements)))
+	into += entry_line(247)
 	into += list(global.owns_many(nameof(negotiation_clauses)))
 
 /// CAPABILITIES(/datum/contract/medical_trial) at code/modules/contracts/medical_trial.dm:66
@@ -1472,6 +1474,20 @@
 	into += entry_line(38)
 	into += list(global.owns_many(nameof(objectives)))
 
+/// CAPABILITIES(/datum/expedition_objective) at code/modules/expedition/expedition_objective.dm:481
+/datum/expedition_objective/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/expedition/expedition_objective.dm", 481, /datum/expedition_objective)
+	into += entry_line(482)
+	into += list(global.ref_many(nameof(tracked)))
+
+/// CAPABILITIES(/datum/expedition_objective/commission_engine) at code/modules/expedition/expedition_objective.dm:484
+/datum/expedition_objective/commission_engine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/expedition/expedition_objective.dm", 484, /datum/expedition_objective/commission_engine)
+	into += entry_line(485)
+	into += list(global.ref_many(nameof(generators)))
+
 /// CAPABILITIES(/datum/expedition_objective/destroy) at code/modules/expedition/expedition_objective.dm:389
 /datum/expedition_objective/destroy/declared_entries(list/into)
 	..(into)
@@ -1524,6 +1540,13 @@
 	into += list(global.owns_one(nameof(wanted_issue_owned), /datum/feed_message))
 	into += entry_line(67)
 	into += list(global.owns_many(nameof(network_channels), /datum/feed_channel))
+
+/// CAPABILITIES(/datum/flight_destination) at code/modules/flight_operations/flight_types.dm:272
+/datum/flight_destination/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/flight_operations/flight_types.dm", 272, /datum/flight_destination)
+	into += entry_line(273)
+	into += list(global.ref_many(nameof(active_plans)))
 
 /// CAPABILITIES(/datum/flight_vessel) at code/modules/flight_operations/flight_types.dm:79
 /datum/flight_vessel/declared_entries(list/into)
@@ -4178,6 +4201,13 @@
 	into += entry_line(1121)
 	into += list(global.op("dog_teleport", global.hand(), global.then(PROC_REF(interaction_dog_teleport))))
 
+/// CAPABILITIES(/obj/effect/fake_attacker) at code/modules/flufftext/fake_attacker.dm:217
+/obj/effect/fake_attacker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/flufftext/fake_attacker.dm", 217, /obj/effect/fake_attacker)
+	into += entry_line(218)
+	into += list(global.ref_many(nameof(clients)))
+
 /// CAPABILITIES(/obj/effect/fake_sun) at code/modules/lighting/lighting_fake_sun.dm:24
 /obj/effect/fake_sun/declared_entries(list/into)
 	..(into)
@@ -4209,6 +4239,20 @@
 	into += entry_block("code/game/objects/effects/map_effects/effect_emitter.dm", 10, /obj/effect/map_effect/interval/effect_emitter)
 	into += entry_line(11)
 	into += list(global.owns_one(nameof(effect_system), /datum/effect/effect/system))
+
+/// CAPABILITIES(/obj/effect/map_effect/portal) at code/game/objects/effects/map_effects/portal.dm:64
+/obj/effect/map_effect/portal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/map_effects/portal.dm", 64, /obj/effect/map_effect/portal)
+	into += entry_line(65)
+	into += list(global.entry_link("/obj/effect/map_effect/portal::counterpart", "/obj/effect/map_effect/portal::counterpart"))
+
+/// CAPABILITIES(/obj/effect/map_effect/portal/line) at code/game/objects/effects/map_effects/portal.dm:308
+/obj/effect/map_effect/portal/line/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/map_effects/portal.dm", 308, /obj/effect/map_effect/portal/line)
+	into += entry_line(309)
+	into += list(global.entry_link("/obj/effect/map_effect/portal/line::my_master", "/obj/effect/map_effect/portal/master::portal_lines", b_many = TRUE))
 
 /// CAPABILITIES(/obj/effect/mine) at code/game/objects/effects/mines.dm:24
 /obj/effect/mine/declared_entries(list/into)
@@ -6025,15 +6069,15 @@
 	into += entry_line(82)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/juke_remote) at code/modules/media/juke_remote.dm:53
+/// CAPABILITIES(/obj/item/juke_remote) at code/modules/media/juke_remote.dm:54
 /obj/item/juke_remote/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/media/juke_remote.dm", 53, /obj/item/juke_remote)
-	into += entry_line(54)
-	into += list(global.entry_link("/obj/item/juke_remote::paired_juke", "/obj/machinery/media/jukebox::remotes", b_many = TRUE))
+	into += entry_block("code/modules/media/juke_remote.dm", 54, /obj/item/juke_remote)
 	into += entry_line(55)
-	into += list(global.op("interaction_hand", global.hand(), global.then(PROC_REF(interaction_hand))))
+	into += list(global.entry_link("/obj/item/juke_remote::paired_juke", "/obj/machinery/media/jukebox::remotes", b_many = TRUE))
 	into += entry_line(56)
+	into += list(global.op("interaction_hand", global.hand(), global.then(PROC_REF(interaction_hand))))
+	into += entry_line(57)
 	into += list(global.op("juke_remote_verb_reset", global.menu(), global.label("Reset Pairing"), global.needs(global.carried()), global.then(PROC_REF(juke_remote_verb_reset))))
 
 /// CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets) at code/modules/mining/kinetic_crusher.dm:228
@@ -12203,6 +12247,13 @@
 	into += entry_line(31)
 	into += list(global.owns_one(nameof(mybucket), /obj/structure/mopbucket))
 
+/// CAPABILITIES(/obj/structure/ladder) at code/modules/multiz/ladders.dm:34
+/obj/structure/ladder/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/multiz/ladders.dm", 34, /obj/structure/ladder)
+	into += entry_line(35)
+	into += list(global.entry_link("/obj/structure/ladder::target_down", "/obj/structure/ladder::target_up"))
+
 /// CAPABILITIES(/obj/structure/ledge) at code/game/objects/structures/ledges.dm:13
 /obj/structure/ledge/declared_entries(list/into)
 	..(into)
@@ -12403,10 +12454,21 @@
 	into += entry_line(1645)
 	into += list(global.entry_link("/obj/structure/sign/flag::linked_flag", "/obj/structure/sign/flag::linked_flag"))
 
-/// CAPABILITIES(/obj/structure/stairs/middle) at code/modules/multiz/stairs.dm:243
+/// CAPABILITIES(/obj/structure/stairs/bottom) at code/modules/multiz/stairs.dm:77
+/obj/structure/stairs/bottom/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/multiz/stairs.dm", 77, /obj/structure/stairs/bottom)
+	into += entry_line(78)
+	into += list(global.entry_link("/obj/structure/stairs/bottom::top", "/obj/structure/stairs/top::bottom"))
+	into += entry_line(79)
+	into += list(global.entry_link("/obj/structure/stairs/bottom::middle", "/obj/structure/stairs/middle::bottom"))
+
+/// CAPABILITIES(/obj/structure/stairs/middle) at code/modules/multiz/stairs.dm:242
 /obj/structure/stairs/middle/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/multiz/stairs.dm", 243, /obj/structure/stairs/middle)
+	into += entry_block("code/modules/multiz/stairs.dm", 242, /obj/structure/stairs/middle)
+	into += entry_line(243)
+	into += list(global.entry_link("/obj/structure/stairs/middle::top", "/obj/structure/stairs/top::middle"))
 	into += entry_line(244)
 	into += list(global.climb())
 
