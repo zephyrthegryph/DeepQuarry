@@ -3,4 +3,3 @@
 vars_write	code/datums/om/flow.dm	vars[key] = value
 vars_write	code/datums/om/prompt_helpers.dm	vars[ask.var_name] = value
 vars_write	code/game/machinery/machinery.dm	vars[ask.var_name] = ask.text
-vars_write	code/modules/mob/living/living.dm	vars[ask.say_var] = lowertext(ask.text)
