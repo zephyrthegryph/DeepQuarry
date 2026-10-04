@@ -51,7 +51,7 @@
 					if(!(B.flags & ATOM_INITIALIZED))
 						B.delete_me = TRUE
 					else
-						qdel(B)
+						consume(B)
 
 DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/blood/appearance_overlays()

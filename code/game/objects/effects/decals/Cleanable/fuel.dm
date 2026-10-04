@@ -78,7 +78,7 @@
 			if(new_pool_amount > 0.1)
 				var/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/F = new(O, new_pool_amount, d)
 				if(F.amount < 0.025) //Safety.
-					qdel(F)
+					consume(F)
 					return
 			O.hotspot_expose((T20C*2) + 380,500) //Light flamethrower fuel on fire immediately.
 
