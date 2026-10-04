@@ -3251,6 +3251,15 @@
 	into += entry_line(84)
 	into += list(global.ref_one(nameof(painting), /obj/item/floor_painter))
 
+/// CAPABILITIES(/datum/prompt/choice/pneumatic_pressure) at code/modules/projectiles/guns/launcher/pneumatic.dm:277
+/datum/prompt/choice/pneumatic_pressure/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/launcher/pneumatic.dm", 277, /datum/prompt/choice/pneumatic_pressure)
+	into += entry_line(278)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(279)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/choice/protean_component) at code/game/machinery/protean_reconstitutor.dm:175
 /datum/prompt/choice/protean_component/declared_entries(list/into)
 	..(into)
