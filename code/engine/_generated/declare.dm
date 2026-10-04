@@ -2283,6 +2283,22 @@
 	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
+/// CAPABILITIES(/datum/prompt/choice/pai_access) at code/modules/mob/living/silicon/pai/pai.dm:336
+/datum/prompt/choice/pai_access/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/pai/pai.dm", 336, /datum/prompt/choice/pai_access)
+	into += entry_line(337)
+	into += list(global.ref_one(nameof(card), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/choice/pai_invite) at code/modules/mob/living/silicon/pai/pai_service.dm:84
+/datum/prompt/choice/pai_invite/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/pai/pai_service.dm", 84, /datum/prompt/choice/pai_invite)
+	into += entry_line(85)
+	into += list(global.ref_one(nameof(card), /obj/item/paicard))
+	into += entry_line(86)
+	into += list(global.ref_one(nameof(inquirer), /mob))
+
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:962
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
 	..(into)
@@ -2291,6 +2307,13 @@
 	into += list(global.ref_one(nameof(door), /obj/machinery/door/airlock))
 	into += entry_line(964)
 	into += list(global.ref_one(nameof(requester), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:83
+/datum/prompt/yes_no/pai_dna_sample/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/pai/software_modules.dm", 83, /datum/prompt/yes_no/pai_dna_sample)
+	into += entry_line(84)
+	into += list(global.ref_one(nameof(pai), /mob/living/silicon/pai))
 
 /// CAPABILITIES(/datum/prompt/yes_no/record_notes_delete) at code/game/machinery/computer/medical.dm:430
 /datum/prompt/yes_no/record_notes_delete/declared_entries(list/into)
