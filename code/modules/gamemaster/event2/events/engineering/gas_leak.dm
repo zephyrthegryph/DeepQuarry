@@ -54,3 +54,6 @@
 /// Accessor for the chosen_turf var.
 /datum/event2/event/gas_leak/proc/chosen_turf() as /turf
 	return chosen_turf
+
+CAPABILITIES(/datum/event2/event/gas_leak)
+	ref_one(nameof(chosen_turf))

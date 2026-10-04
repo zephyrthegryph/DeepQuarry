@@ -112,3 +112,6 @@
 /// Accessor for the targeted_account var.
 /datum/event2/event/money_hacker/proc/targeted_account() as /datum/money_account
 	return targeted_account
+
+CAPABILITIES(/datum/event2/event/money_hacker)
+	ref_one(nameof(targeted_account))

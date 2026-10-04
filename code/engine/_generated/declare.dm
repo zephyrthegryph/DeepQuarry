@@ -1561,12 +1561,90 @@
 	into += entry_line(14)
 	into += list(global.owns_many(nameof(required_items)))
 
+/// CAPABILITIES(/datum/event2/event/brand_intelligence) at code/modules/gamemaster/event2/events/engineering/brand_intelligence.dm:96
+/datum/event2/event/brand_intelligence/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/engineering/brand_intelligence.dm", 96, /datum/event2/event/brand_intelligence)
+	into += entry_line(97)
+	into += list(global.ref_many(nameof(vending_machines)))
+	into += entry_line(98)
+	into += list(global.ref_many(nameof(infected_vending_machines)))
+	into += entry_line(99)
+	into += list(global.ref_one(nameof(vender_zero)))
+
+/// CAPABILITIES(/datum/event2/event/electrical_fault) at code/modules/gamemaster/event2/events/everyone/electrical_fault.dm:97
+/datum/event2/event/electrical_fault/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/everyone/electrical_fault.dm", 97, /datum/event2/event/electrical_fault)
+	into += entry_line(98)
+	into += list(global.ref_many(nameof(valid_apcs)))
+
+/// CAPABILITIES(/datum/event2/event/gas_leak) at code/modules/gamemaster/event2/events/engineering/gas_leak.dm:58
+/datum/event2/event/gas_leak/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/engineering/gas_leak.dm", 58, /datum/event2/event/gas_leak)
+	into += entry_line(59)
+	into += list(global.ref_one(nameof(chosen_turf)))
+
+/// CAPABILITIES(/datum/event2/event/gravity) at code/modules/gamemaster/event2/events/everyone/gravity.dm:47
+/datum/event2/event/gravity/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/everyone/gravity.dm", 47, /datum/event2/event/gravity)
+	into += entry_line(48)
+	into += list(global.ref_many(nameof(generators)))
+
 /// CAPABILITIES(/datum/event2/event/legacy) at code/modules/gamemaster/event2/events/legacy/legacy.dm:13
 /datum/event2/event/legacy/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/gamemaster/event2/events/legacy/legacy.dm", 13, /datum/event2/event/legacy)
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(legacy_event), /datum/event))
+
+/// CAPABILITIES(/datum/event2/event/mob_spawning) at code/modules/gamemaster/event2/events/mob_spawning.dm:8
+/datum/event2/event/mob_spawning/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/mob_spawning.dm", 8, /datum/event2/event/mob_spawning)
+	into += entry_line(9)
+	into += list(global.ref_many(nameof(spawned_mobs)))
+
+/// CAPABILITIES(/datum/event2/event/money_hacker) at code/modules/gamemaster/event2/events/command/money_hacker.dm:116
+/datum/event2/event/money_hacker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/command/money_hacker.dm", 116, /datum/event2/event/money_hacker)
+	into += entry_line(117)
+	into += list(global.ref_one(nameof(targeted_account)))
+
+/// CAPABILITIES(/datum/event2/event/pda_spam) at code/modules/gamemaster/event2/events/everyone/pda_spam.dm:152
+/datum/event2/event/pda_spam/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/everyone/pda_spam.dm", 152, /datum/event2/event/pda_spam)
+	into += entry_line(153)
+	into += list(global.ref_one(nameof(MS)))
+	into += entry_line(154)
+	into += list(global.ref_one(nameof(node)))
+
+/// CAPABILITIES(/datum/event2/event/surprise_carp) at code/modules/gamemaster/event2/events/security/surprise_carp.dm:77
+/datum/event2/event/surprise_carp/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/security/surprise_carp.dm", 77, /datum/event2/event/surprise_carp)
+	into += entry_line(78)
+	into += list(global.ref_one(nameof(victim)))
+
+/// CAPABILITIES(/datum/event2/event/wallrot) at code/modules/gamemaster/event2/events/engineering/wallrot.dm:49
+/datum/event2/event/wallrot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/engineering/wallrot.dm", 49, /datum/event2/event/wallrot)
+	into += entry_line(50)
+	into += list(global.ref_one(nameof(origin)))
+
+/// CAPABILITIES(/datum/event2/event/window_break) at code/modules/gamemaster/event2/events/engineering/window_break.dm:158
+/datum/event2/event/window_break/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/gamemaster/event2/events/engineering/window_break.dm", 158, /datum/event2/event/window_break)
+	into += entry_line(159)
+	into += list(global.ref_one(nameof(chosen_turf_with_windows)))
+	into += entry_line(160)
+	into += list(global.ref_one(nameof(chosen_window)))
 
 /// CAPABILITIES(/datum/event_container) at code/modules/events/event_container.dm:14
 /datum/event_container/declared_entries(list/into)
