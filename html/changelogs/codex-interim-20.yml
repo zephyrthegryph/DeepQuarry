@@ -1,0 +1,5 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated equipment, reagent-machine, RCD and character prompts to native requests while preserving their existing behavior."
+  - code_imp: "Moved additional borrowed references and effect contents declarations to native relations."
