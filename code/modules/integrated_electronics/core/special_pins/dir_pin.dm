@@ -19,7 +19,7 @@
 	if(!A.answer)
 		return
 	var/datum/prompt/number/typed_pin_dir/request = A.request
-	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : A.actor
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
 		return
 	var/new_data = A.answer.answer_value

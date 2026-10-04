@@ -221,7 +221,7 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 	if(why_not())
 		retire()
 		return
-	var/datum/integrated_io/list/list_pin = pin
+	var/datum/integrated_io/list_pin = pin
 	var/list/my_list = list_pin.data
 	var/title
 	var/question
@@ -248,26 +248,26 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 	if(!selected)
 		retire()
 		return
-	var/datum/integrated_io/list/list_pin = pin
+	var/datum/integrated_io/list_pin = pin
 	var/mob/user = original_client_ckey ? GLOB.directory[original_client_ckey] : actor
 	switch(action)
 		if("remove")
-			list_pin.remove_from_list(user, selected)
+			call(list_pin, TYPE_PROC_REF(/datum/integrated_io/list, remove_from_list))(user, selected)
 		if("edit")
-			list_pin.edit_in_list(user, selected)
+			call(list_pin, TYPE_PROC_REF(/datum/integrated_io/list, edit_in_list))(user, selected)
 		if("swap")
 			if(!selecting_second)
 				capture_default(selected)
 				if(entry_value())
-					list_pin.swap_inside_list(user, default_value(), entry_value())
+					call(list_pin, TYPE_PROC_REF(/datum/integrated_io/list, swap_inside_list))(user, default_value(), entry_value())
 				else
 					var/list/my_list = list_pin.data
 					if(my_list.len <= 1)
-						list_pin.swap_inside_list(user)
+						call(list_pin, TYPE_PROC_REF(/datum/integrated_io/list, swap_inside_list))(user)
 					else
 						selecting_second = TRUE
 						open_selection()
 						return
 			else
-				list_pin.swap_inside_list(user, default_value(), selected)
+				call(list_pin, TYPE_PROC_REF(/datum/integrated_io/list, swap_inside_list))(user, default_value(), selected)
 	retire()

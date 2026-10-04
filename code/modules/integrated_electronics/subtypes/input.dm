@@ -100,7 +100,7 @@
 	if(!A.answer)
 		return
 	var/datum/prompt/number/circuit_numberpad/request = A.request
-	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : A.actor
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
 		return
 	var/new_input = A.answer.answer_value
@@ -138,7 +138,7 @@
 	if(!A.answer)
 		return
 	var/datum/prompt/text/circuit_textpad/request = A.request
-	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : A.actor
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
 		return
 	var/new_input = sanitizeSafe(A.answer.answer_value, MAX_KEYPAD_INPUT_LEN, 0, 0)
