@@ -45,6 +45,10 @@
 CAPABILITIES(/obj/machinery/camera)
 	owns_one(nameof(assembly), /obj/item/camera_assembly)
 
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
+
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
@@ -72,6 +76,13 @@ CAPABILITIES(/obj/machinery/camera)
 
 	if (dir == NORTH)
 		layer = ABOVE_MOB_LAYER
+
+	if(TYPE_TABLE_GET(src, camera_initial_emp_proof))
+		upgradeEmpProof()
+	if(TYPE_TABLE_GET(src, camera_initial_xray))
+		upgradeXRay()
+	if(TYPE_TABLE_GET(src, camera_initial_motion))
+		upgradeMotion()
 
 /// Cameras with the same network set share one list. Shared lists are
 /// read-only: camera procs replace `network` rather than mutate it.
