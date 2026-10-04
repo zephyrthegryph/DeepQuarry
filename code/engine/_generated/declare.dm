@@ -810,6 +810,15 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(landing), /atom/movable/screen/action_landing))
 
+/// CAPABILITIES(/datum/admin_edit_appearance_review) at code/modules/admin/verbs/change_appearance.dm:49
+/datum/admin_edit_appearance_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/verbs/change_appearance.dm", 49, /datum/admin_edit_appearance_review)
+	into += entry_line(50)
+	into += list(global.ref_one(nameof(actor), /mob))
+	into += entry_line(51)
+	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/admin_report) at code/modules/admin/admin_report_panel.dm:37
 /datum/admin_report/declared_entries(list/into)
 	..(into)
@@ -3158,6 +3167,13 @@
 	into += entry_line(47)
 	into += list(global.ref_one(nameof(wall_turf), /turf))
 
+/// CAPABILITIES(/datum/prompt/choice/hud_status) at code/modules/mob/living/carbon/human/human.dm:652
+/datum/prompt/choice/hud_status/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 652, /datum/prompt/choice/hud_status)
+	into += entry_line(653)
+	into += list(global.ref_one(nameof(record), /datum/data/record))
+
 /// CAPABILITIES(/datum/prompt/choice/implant_emote) at code/game/objects/items/weapons/implants/implant.dm:665
 /datum/prompt/choice/implant_emote/declared_entries(list/into)
 	..(into)
@@ -3201,6 +3217,17 @@
 	into += entry_block("code/game/machinery/protean_reconstitutor.dm", 175, /datum/prompt/choice/protean_component)
 	into += entry_line(176)
 	into += list(global.ref_one(nameof(tool), /obj/item))
+
+/// CAPABILITIES(/datum/prompt/choice/replicator_consent) at code/modules/xenoarcheaology/artifacts/replicator.dm:766
+/datum/prompt/choice/replicator_consent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/artifacts/replicator.dm", 766, /datum/prompt/choice/replicator_consent)
+	into += entry_line(767)
+	into += list(global.ref_one(nameof(instigator), /mob))
+	into += entry_line(768)
+	into += list(global.ref_one(nameof(source_item), /obj/item))
+	into += entry_line(769)
+	into += list(global.ref_one(nameof(insertion), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
 /datum/prompt/choice/shuttle_authorization/declared_entries(list/into)
@@ -3258,6 +3285,13 @@
 	into += entry_line(24)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/text/hud_comment) at code/modules/mob/living/carbon/human/human.dm:680
+/datum/prompt/text/hud_comment/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 680, /datum/prompt/text/hud_comment)
+	into += entry_line(681)
+	into += list(global.ref_one(nameof(record), /datum/data/record))
+
 /// CAPABILITIES(/datum/prompt/text/meter_id) at code/game/machinery/atmoalter/meter.dm:188
 /datum/prompt/text/meter_id/declared_entries(list/into)
 	..(into)
@@ -3271,6 +3305,13 @@
 	into += entry_block("code/game/machinery/pandemic.dm", 104, /datum/prompt/text/pandemic_release_reason)
 	into += entry_line(105)
 	into += list(global.ref_one(nameof(affliction), /datum/affliction/contagion/engineered))
+
+/// CAPABILITIES(/datum/prompt/text/remotesay) at code/modules/mob/living/carbon/human/human.dm:1027
+/datum/prompt/text/remotesay/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/carbon/human/human.dm", 1027, /datum/prompt/text/remotesay)
+	into += entry_line(1028)
+	into += list(global.ref_one(nameof(recipient), /mob))
 
 /// CAPABILITIES(/datum/prompt/yes_no/ai_door_request) at code/modules/mob/living/silicon/ai/ai.dm:963
 /datum/prompt/yes_no/ai_door_request/declared_entries(list/into)
