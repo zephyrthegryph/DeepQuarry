@@ -271,12 +271,12 @@ UI_ACT_PROC(/obj/machinery/telecomms/receiver, ui_act_range)
 	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/telecomms, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_toggle)
+/obj/machinery/telecomms/proc/native_ui_act_toggle(datum/act/op/A)
+	add_fingerprint(A.actor)
 	src.toggled = !src.toggled
 	set_temp("-% [src] has been [src.toggled ? "activated" : "deactivated"].", "average")
 	update_power()
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/telecomms, "id", ui_act_id)
 UI_ACT_PROC(/obj/machinery/telecomms, ui_act_id)
@@ -341,11 +341,10 @@ UI_ACT_PROC(/obj/machinery/telecomms, ui_act_flush)
 		rel_clear(P, nameof(/obj/item/debugger::buffer))
 	. = TRUE
 
-UI_ACT(/obj/machinery/telecomms, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/telecomms, ui_act_cleartemp)
+/obj/machinery/telecomms/proc/native_ui_act_cleartemp(datum/act/op/A)
+	add_fingerprint(A.actor)
 	temp = null
-	. = TRUE
-
+	return OP_OK
 
 /// A telecomms machine setting; re-checked on the answer: the answerer can still access the machine.
 /datum/om/prompt/text/telecomms_setting

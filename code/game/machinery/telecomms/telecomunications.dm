@@ -53,6 +53,8 @@
 	EXPIRY_DECLARE(last_thermal_check)
 
 CAPABILITIES(/obj/machinery/telecomms)
+	op("toggle", ui_act(), then(PROC_REF(native_ui_act_toggle)))
+	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)

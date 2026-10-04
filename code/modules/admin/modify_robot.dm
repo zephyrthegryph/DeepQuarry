@@ -19,6 +19,16 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/tmp/obj/item/robotic_multibelt/multibelt_holder	//Currently selected multibelt.
 
 CAPABILITIES(/datum/eventkit/modify_robot)
+	op("toggle_crisis", ui_act(), then(PROC_REF(native_ui_act_toggle_crisis)))
+	op("reset_module", ui_act(), then(PROC_REF(native_ui_act_reset_module)))
+	op("ert_toggle", ui_act(), then(PROC_REF(native_ui_act_ert_toggle)))
+	op("add_centcom", ui_act(), then(PROC_REF(native_ui_act_add_centcom)))
+	op("rem_centcom", ui_act(), then(PROC_REF(native_ui_act_rem_centcom)))
+	op("add_station", ui_act(), then(PROC_REF(native_ui_act_add_station)))
+	op("rem_station", ui_act(), then(PROC_REF(native_ui_act_rem_station)))
+	op("state_laws", ui_act(), then(PROC_REF(native_ui_act_state_laws)))
+	op("disconnect_ai", ui_act(), then(PROC_REF(native_ui_act_disconnect_ai)))
+	op("toggle_emag", ui_act(), then(PROC_REF(native_ui_act_toggle_emag)))
 	owns_many(nameof(law_list), /datum/ai_laws)
 	owns_one(nameof(source), /mob/living/silicon/robot)
 
@@ -168,10 +178,9 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_target)
 		log_and_message_admins("changed robot modifictation target to [target()]")
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "toggle_crisis", ui_act_toggle_crisis)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_toggle_crisis)
+/datum/eventkit/modify_robot/proc/native_ui_act_toggle_crisis(datum/act/op/A)
 	target().crisis_override = !target().crisis_override
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/eventkit/modify_robot, "add_restriction", ui_act_add_restriction, UI_ARG_TEXT("new_restriction"))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_restriction)
@@ -212,10 +221,9 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_source)
 		return TRUE
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "reset_module", ui_act_reset_module)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_reset_module)
+/datum/eventkit/modify_robot/proc/native_ui_act_reset_module(datum/act/op/A)
 	target().module_reset(FALSE)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/eventkit/modify_robot, "add_module", ui_act_add_module, UI_ARG_REF("module", null, /obj/item))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_module)
@@ -269,11 +277,10 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_module)
 	target().hud_used?.update_robot_modules_display()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "ert_toggle", ui_act_ert_toggle)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_ert_toggle)
+/datum/eventkit/modify_robot/proc/native_ui_act_ert_toggle(datum/act/op/A)
 	target().crisis_override = !target().crisis_override
 	target().module_reset(FALSE)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/eventkit/modify_robot, "add_compatibility", ui_act_add_compatibility, UI_ARG_PATH("upgrade", /datum))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_compatibility)
@@ -475,27 +482,23 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_access)
 	target().idcard.access -= params["access"]
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_centcom", ui_act_add_centcom)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_centcom)
+/datum/eventkit/modify_robot/proc/native_ui_act_add_centcom(datum/act/op/A)
 	target().idcard.access |= SSaccess.get_all_centcom_access()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_centcom", ui_act_rem_centcom)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_centcom)
+/datum/eventkit/modify_robot/proc/native_ui_act_rem_centcom(datum/act/op/A)
 	target().idcard.access -= SSaccess.get_all_centcom_access()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/eventkit/modify_robot, "add_station", ui_act_add_station)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_station)
+/datum/eventkit/modify_robot/proc/native_ui_act_add_station(datum/act/op/A)
 	target().idcard.access |= SSaccess.get_all_station_access()
 	target().idcard.access |= ACCESS_SYNTH
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/eventkit/modify_robot, "rem_station", ui_act_rem_station)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_station)
+/datum/eventkit/modify_robot/proc/native_ui_act_rem_station(datum/act/op/A)
 	target().idcard.access -= SSaccess.get_all_station_access()
 	target().idcard.access -= ACCESS_SYNTH
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/eventkit/modify_robot, "law_channel", ui_act_law_channel, UI_ARG_TEXT("law_channel"))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_law_channel)
@@ -597,10 +600,9 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_delete_law)
 		target().lawsync()
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "state_laws", ui_act_state_laws)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_state_laws)
+/datum/eventkit/modify_robot/proc/native_ui_act_state_laws(datum/act/op/A)
 	target().statelaws(target().laws)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/eventkit/modify_robot, "state_law_set", ui_act_state_law_set, UI_ARG_REF("state_law_set", "law_list", /datum/ai_laws))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_state_law_set)
@@ -647,15 +649,13 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_sync)
 		target().connect_to_ai(our_ai)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "disconnect_ai", ui_act_disconnect_ai)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_disconnect_ai)
+/datum/eventkit/modify_robot/proc/native_ui_act_disconnect_ai(datum/act/op/A)
 	if(target().is_slaved())
 		target().disconnect_from_ai()
 		target().lawupdate = FALSE
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/eventkit/modify_robot, "toggle_emag", ui_act_toggle_emag)
-UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_toggle_emag)
+/datum/eventkit/modify_robot/proc/native_ui_act_toggle_emag(datum/act/op/A)
 	if(target().emagged)
 		target().emagged = FALSE
 		target().clear_supplied_laws()
@@ -675,7 +675,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_toggle_emag)
 				target().bolt.malfunction = MALFUNCTION_PERMANENT
 		to_chat(target(), span_danger("Laws updated!\n") + target().laws.get_formatted_laws())
 		target().hud_used?.update_robot_modules_display()
-	return TRUE
+	return OP_OK
 
 /// The list the UI_ARG_REF rows resolve refs in.
 /datum/eventkit/modify_robot/proc/ui_source_target_components()

@@ -195,10 +195,16 @@ UI_DATA_REPLACE(/obj/machinery/computer/secure_data, "temp:text", "authenticated
 		rel_clear(src, nameof(active2))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/secure_data, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_cleartemp)
-	. = TRUE
+CAPABILITIES(/obj/machinery/computer/secure_data)
+	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
+
+/obj/machinery/computer/secure_data/proc/native_ui_act_cleartemp(datum/act/op/A)
+	if(!(active1() in GLOB.data_core.general))
+		rel_clear(src, nameof(active1))
+	if(!(active2() in GLOB.data_core.security))
+		rel_clear(src, nameof(active2))
 	temp = null
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/secure_data, "scan", ui_act_scan)
 UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_scan)

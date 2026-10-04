@@ -28,6 +28,7 @@
 	var/static/list/field_edit_choices
 
 CAPABILITIES(/obj/machinery/computer/med_data)
+	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
 	owns_one(nameof(scan), /obj/item/card/id)
 
 /obj/machinery/computer/med_data/Initialize(mapload)
@@ -178,10 +179,13 @@ UI_DATA_REPLACE(/obj/machinery/computer/med_data, "temp:text", "authenticated", 
 		rel_clear(src, nameof(active2))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/med_data, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_cleartemp)
-	. = TRUE
+/obj/machinery/computer/med_data/proc/native_ui_act_cleartemp(datum/act/op/A)
+	if(!(active1() in GLOB.data_core.general))
+		rel_clear(src, nameof(active1))
+	if(!(active2() in GLOB.data_core.medical))
+		rel_clear(src, nameof(active2))
 	temp = null
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/med_data, "scan", ui_act_scan)
 UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_scan)

@@ -1,3 +1,7 @@
+CAPABILITIES(/datum/whitelist_editor)
+	op("reload_alienwhitelist", ui_act(), then(PROC_REF(native_ui_act_reload_alienwhitelist)))
+	op("reload_jobwhitelist", ui_act(), then(PROC_REF(native_ui_act_reload_jobwhitelist)))
+
 #define WHITELISTFILE "data/whitelist.txt"
 #define VALID_KINDS list("job", "species", "language", "robot")
 
@@ -124,15 +128,13 @@ UI_ACT_PROC(/datum/whitelist_editor, ui_act_remove_alienwhitelist)
 		/proc/whitelist_edit_done, ui.user.ckey, "remove [ckey] from the [role] [kind] whitelist", "removed [ckey]'s [role] entry from [kind] whitelsit.")
 	return TRUE
 
-UI_ACT(/datum/whitelist_editor, "reload_alienwhitelist", ui_act_reload_alienwhitelist)
-UI_ACT_PROC(/datum/whitelist_editor, ui_act_reload_alienwhitelist)
+/datum/whitelist_editor/proc/native_ui_act_reload_alienwhitelist(datum/act/op/A)
 	reload_alienwhitelist()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/whitelist_editor, "reload_jobwhitelist", ui_act_reload_jobwhitelist)
-UI_ACT_PROC(/datum/whitelist_editor, ui_act_reload_jobwhitelist)
+/datum/whitelist_editor/proc/native_ui_act_reload_jobwhitelist(datum/act/op/A)
 	reload_jobwhitelist()
-	return TRUE
+	return OP_OK
 
 /// om_io() callback for the whitelist editor's writes: reports and logs the outcome.
 /proc/whitelist_edit_done(list/result, error, admin_ckey, what, done_message)

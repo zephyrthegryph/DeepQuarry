@@ -161,6 +161,12 @@ UI_ACT_PROC(/datum/tgui_module/ship/nav, ui_act_viewing)
 	var/tmp/obj/machinery/shipsensors/sensors
 
 CAPABILITIES(/datum/tgui_module/ship/fullmonty)
+	op("reset", ui_act(), then(PROC_REF(native_ui_act_reset)))
+	op("brake", ui_act(), then(PROC_REF(native_ui_act_brake)))
+	op("apilot", ui_act(), then(PROC_REF(native_ui_act_apilot)))
+	op("apilot_lock", ui_act(), then(PROC_REF(native_ui_act_apilot_lock)))
+	op("global_toggle", ui_act(), then(PROC_REF(native_ui_act_global_toggle)))
+	op("toggle_sensor", ui_act(), then(PROC_REF(native_ui_act_toggle_sensor)))
 	owns_many(nameof(known_sectors))
 
 DECLARE_UI_STATE(/datum/tgui_module/ship/fullmonty, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
@@ -377,11 +383,10 @@ UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_setds)
 	dy = params["y"]
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "reset", ui_act_reset)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_reset)
+/datum/tgui_module/ship/fullmonty/proc/native_ui_act_reset(datum/act/op/A)
 	dx = 0
 	dy = 0
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/ship/fullmonty, "speedlimit", ui_act_speedlimit)
 UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_speedlimit)
@@ -408,24 +413,21 @@ UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_move)
 	linked().relaymove(ui.user, ndir, accellimit)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "brake", ui_act_brake)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_brake)
+/datum/tgui_module/ship/fullmonty/proc/native_ui_act_brake(datum/act/op/A)
 	linked().decelerate()
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "apilot", ui_act_apilot)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_apilot)
+/datum/tgui_module/ship/fullmonty/proc/native_ui_act_apilot(datum/act/op/A)
 	if(autopilot_disabled)
 		autopilot = FALSE
 	else
 		autopilot = !autopilot
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "apilot_lock", ui_act_apilot_lock)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_apilot_lock)
+/datum/tgui_module/ship/fullmonty/proc/native_ui_act_apilot_lock(datum/act/op/A)
 	autopilot_disabled = !autopilot_disabled
 	autopilot = FALSE
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/ship/fullmonty, "manual", ui_act_manual)
 UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_manual)
@@ -439,13 +441,12 @@ UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_manual)
 // END HELM
 // ENGINES
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "global_toggle", ui_act_global_toggle)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_global_toggle)
+/datum/tgui_module/ship/fullmonty/proc/native_ui_act_global_toggle(datum/act/op/A)
 	linked().engines_state = !linked().engines_state
 	for(var/datum/ship_engine/E in linked().engines)
 		if(linked().engines_state == !E.is_on())
 			E.toggle()
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/ship/fullmonty, "set_global_limit", ui_act_set_global_limit)
 UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_set_global_limit)
@@ -503,10 +504,9 @@ UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_range)
 		sensors().set_range(CLAMP(nrange, 1, world.view))
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "toggle_sensor", ui_act_toggle_sensor)
-UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_toggle_sensor)
+/datum/tgui_module/ship/fullmonty/proc/native_ui_act_toggle_sensor(datum/act/op/A)
 	sensors().toggle()
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/ship/fullmonty, "viewing", ui_act_viewing)
 UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_viewing)

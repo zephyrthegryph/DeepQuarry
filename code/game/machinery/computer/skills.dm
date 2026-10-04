@@ -465,10 +465,15 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_scan)
 		if(istype(I, /obj/item/card/id))
 			move_into(src, nameof(src.scan), I, ui.user)
 
-UI_ACT(/obj/machinery/computer/skills, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_cleartemp)
-	. = TRUE
+CAPABILITIES(/obj/machinery/computer/skills)
+	op("cleartemp", ui_act(), then(PROC_REF(native_ui_act_cleartemp)))
+
+/obj/machinery/computer/skills/proc/native_ui_act_cleartemp(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(!(active1() in GLOB.data_core.general))
+		rel_clear(src, nameof(active1))
 	temp = null
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/skills, "login", ui_act_login, UI_ARG_NUM("login_type"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_login)

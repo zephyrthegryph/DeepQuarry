@@ -40,15 +40,17 @@ UI_DATA_REPLACE(/datum/tgui_module/power_monitor, "merge:ui_data_datum_tgui_modu
 
 	return data
 
-UI_ACT(/datum/tgui_module/power_monitor, "clear", ui_act_clear)
-UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_clear)
-	active_sensor = null
-	. = TRUE
+CAPABILITIES(/datum/tgui_module/power_monitor)
+	op("clear", ui_act(), then(PROC_REF(native_ui_act_clear)))
+	op("refresh", ui_act(), then(PROC_REF(native_ui_act_refresh)))
 
-UI_ACT(/datum/tgui_module/power_monitor, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_refresh)
+/datum/tgui_module/power_monitor/proc/native_ui_act_clear(datum/act/op/A)
+	active_sensor = null
+	return OP_OK
+
+/datum/tgui_module/power_monitor/proc/native_ui_act_refresh(datum/act/op/A)
 	refresh_sensors()
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/power_monitor, "setsensor", ui_act_setsensor, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_setsensor)

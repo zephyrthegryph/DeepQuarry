@@ -547,15 +547,17 @@ UI_ACT(/datum/personal_crafting, "make", ui_act_make, UI_ARG_VALUE("materialSlot
 UI_ACT_PROC(/datum/personal_crafting, ui_act_make)
 	do_make(ui.user, params["recipe"], params["materialSlots"])
 
-UI_ACT(/datum/personal_crafting, "toggle_recipes", ui_act_toggle_recipes)
-UI_ACT_PROC(/datum/personal_crafting, ui_act_toggle_recipes)
-	display_craftable_only = !display_craftable_only
-	. = TRUE
+CAPABILITIES(/datum/personal_crafting)
+	op("toggle_recipes", ui_act(), then(PROC_REF(native_ui_act_toggle_recipes)))
+	op("toggle_compact", ui_act(), then(PROC_REF(native_ui_act_toggle_compact)))
 
-UI_ACT(/datum/personal_crafting, "toggle_compact", ui_act_toggle_compact)
-UI_ACT_PROC(/datum/personal_crafting, ui_act_toggle_compact)
+/datum/personal_crafting/proc/native_ui_act_toggle_recipes(datum/act/op/A)
+	display_craftable_only = !display_craftable_only
+	return OP_OK
+
+/datum/personal_crafting/proc/native_ui_act_toggle_compact(datum/act/op/A)
 	display_compact = !display_compact
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/datum/personal_crafting, "set_category", ui_act_set_category, UI_ARG_TEXT("category"), UI_ARG_TEXT("subcategory"))
 UI_ACT_PROC(/datum/personal_crafting, ui_act_set_category)

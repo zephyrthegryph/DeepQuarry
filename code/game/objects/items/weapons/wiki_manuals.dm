@@ -1,3 +1,6 @@
+CAPABILITIES(/obj/item/book/manual/wiki)
+	op("open_wiki", ui_act(), then(PROC_REF(native_ui_act_open_wiki)))
+
 // Wiki books that are linked to the configured wiki link.
 //
 // TGUI migration. TGUI cannot host external iframes the
@@ -43,12 +46,11 @@ UI_DATA_REPLACE(/obj/item/book/manual/wiki, "merge:ui_data_obj_item_book_manual_
 		"url" = get_wiki_url(),
 	)
 
-UI_ACT(/obj/item/book/manual/wiki, "open_wiki", ui_act_open_wiki)
-UI_ACT_PROC(/obj/item/book/manual/wiki, ui_act_open_wiki)
+/obj/item/book/manual/wiki/proc/native_ui_act_open_wiki(datum/act/op/A)
 	var/url = get_wiki_url()
-	if(url && ui.user?.client)
-		ui.user.client << link(url)
-	return TRUE
+	if(url && A.actor?.client)
+		A.actor.client << link(url)
+	return OP_OK
 
 /obj/item/book/manual/wiki/engineering_construction
 	name = "Station Repairs and Construction"

@@ -25,6 +25,12 @@
 	var/tmp/datum/computer_file/data/email_message/current_message
 
 CAPABILITIES(/datum/tgui_module/email_client)
+	op("login", ui_act(), then(PROC_REF(native_ui_act_login)))
+	op("logout", ui_act(), then(PROC_REF(native_ui_act_logout)))
+	op("reset", ui_act(), then(PROC_REF(native_ui_act_reset)))
+	op("new_message", ui_act(), then(PROC_REF(native_ui_act_new_message)))
+	op("cancel", ui_act(), then(PROC_REF(native_ui_act_cancel)))
+	op("addressbook", ui_act(), then(PROC_REF(native_ui_act_addressbook)))
 	owns_one(nameof(downloading), /datum/computer_file)
 	owns_one(nameof(msg_attachment), /datum/computer_file)
 
@@ -241,38 +247,38 @@ UI_DATA(/datum/tgui_module/email_client, "merge:ui_data_datum_tgui_module_email_
 	check_for_new_messages(1)		// Any actual interaction (button pressing) is considered as acknowledging received message, for the purpose of notification icons.
 	return TRUE
 
-UI_ACT(/datum/tgui_module/email_client, "login", ui_act_login)
-UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_login)
+/datum/tgui_module/email_client/proc/native_ui_act_login(datum/act/op/A)
+	check_for_new_messages(1)
 	log_in()
-	return 1
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/email_client, "logout", ui_act_logout)
-UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_logout)
+/datum/tgui_module/email_client/proc/native_ui_act_logout(datum/act/op/A)
+	check_for_new_messages(1)
 	log_out()
-	return 1
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/email_client, "reset", ui_act_reset)
-UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_reset)
+/datum/tgui_module/email_client/proc/native_ui_act_reset(datum/act/op/A)
+	check_for_new_messages(1)
 	error = ""
-	return 1
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/email_client, "new_message", ui_act_new_message)
-UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_new_message)
+/datum/tgui_module/email_client/proc/native_ui_act_new_message(datum/act/op/A)
+	check_for_new_messages(1)
 	new_message = TRUE
-	return 1
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/email_client, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_cancel)
+/datum/tgui_module/email_client/proc/native_ui_act_cancel(datum/act/op/A)
+	check_for_new_messages(1)
 	if(addressbook)
 		addressbook = FALSE
 	else
 		clear_message()
-	return 1
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/email_client, "addressbook", ui_act_addressbook)
-UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_addressbook)
+/datum/tgui_module/email_client/proc/native_ui_act_addressbook(datum/act/op/A)
+	check_for_new_messages(1)
 	addressbook = TRUE
-	return 1
+	return OP_OK
 
 UI_ACT(/datum/tgui_module/email_client, "set_recipient", ui_act_set_recipient, UI_ARG_TEXT("set_recipient"))
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_set_recipient)

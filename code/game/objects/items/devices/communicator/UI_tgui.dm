@@ -10,6 +10,12 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	op("toggle_visibility", ui_act(), then(PROC_REF(native_ui_act_toggle_visibility)))
+	op("toggle_ringer", ui_act(), then(PROC_REF(native_ui_act_toggle_ringer)))
+	op("selfie_mode", ui_act(), then(PROC_REF(native_ui_act_selfie_mode)))
+	op("clear_target_address", ui_act(), then(PROC_REF(native_ui_act_clear_target_address)))
+	op("endvideo", ui_act(), then(PROC_REF(native_ui_act_endvideo)))
+	op("hang_up", ui_act(), then(PROC_REF(native_ui_act_hang_up)))
 	owns_one(nameof(cam_background), /atom/movable/screen/background)
 	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
 	owns_one(nameof(exonet), /datum/exonet_protocol)
@@ -389,9 +395,8 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_rename)
 	. = TRUE
 	om_ask(ui.user, /datum/om/prompt/text/communicator/name, PROC_REF(name_entered), default = ui.user.name)
 
-UI_ACT(/obj/item/communicator, "toggle_visibility", ui_act_toggle_visibility)
-UI_ACT_PROC(/obj/item/communicator, ui_act_toggle_visibility)
-	. = TRUE
+/obj/item/communicator/proc/native_ui_act_toggle_visibility(datum/act/op/A)
+	add_fingerprint(A.actor)
 	switch(network_visibility)
 		if(1) //Visible, becoming invisbile
 			network_visibility = 0
@@ -401,21 +406,22 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_toggle_visibility)
 			network_visibility = 1
 			if(camera)
 				camera.add_network(NETWORK_COMMUNICATORS)
+	return OP_OK
 
-UI_ACT(/obj/item/communicator, "toggle_ringer", ui_act_toggle_ringer)
-UI_ACT_PROC(/obj/item/communicator, ui_act_toggle_ringer)
-	. = TRUE
+/obj/item/communicator/proc/native_ui_act_toggle_ringer(datum/act/op/A)
+	add_fingerprint(A.actor)
 	ringer = !ringer
+	return OP_OK
 
 UI_ACT(/obj/item/communicator, "set_ringer_tone", ui_act_set_ringer_tone)
 UI_ACT_PROC(/obj/item/communicator, ui_act_set_ringer_tone)
 	. = TRUE
 	om_ask(ui.user, /datum/om/prompt/text/communicator/ringtone, PROC_REF(ringtone_entered))
 
-UI_ACT(/obj/item/communicator, "selfie_mode", ui_act_selfie_mode)
-UI_ACT_PROC(/obj/item/communicator, ui_act_selfie_mode)
-	. = TRUE
+/obj/item/communicator/proc/native_ui_act_selfie_mode(datum/act/op/A)
+	add_fingerprint(A.actor)
 	selfie_mode = !selfie_mode
+	return OP_OK
 
 UI_ACT(/obj/item/communicator, "add_hex", ui_act_add_hex, UI_ARG_TEXT("add_hex"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_add_hex)
@@ -428,10 +434,10 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_write_target_address)
 	. = TRUE
 	target_address = sanitizeSafe(params["val"])
 
-UI_ACT(/obj/item/communicator, "clear_target_address", ui_act_clear_target_address)
-UI_ACT_PROC(/obj/item/communicator, ui_act_clear_target_address)
-	. = TRUE
+/obj/item/communicator/proc/native_ui_act_clear_target_address(datum/act/op/A)
+	add_fingerprint(A.actor)
 	target_address = ""
+	return OP_OK
 
 UI_ACT(/obj/item/communicator, "dial", ui_act_dial, UI_ARG_TEXT("dial"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_dial)
@@ -475,11 +481,11 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_startvideo)
 	if(comm)
 		connect_video(ui.user, comm)
 
-UI_ACT(/obj/item/communicator, "endvideo", ui_act_endvideo)
-UI_ACT_PROC(/obj/item/communicator, ui_act_endvideo)
-	. = TRUE
+/obj/item/communicator/proc/native_ui_act_endvideo(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(video_source)
 		end_video()
+	return OP_OK
 
 UI_ACT(/obj/item/communicator, "copy", ui_act_copy, UI_ARG_TEXT("copy"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_copy)
@@ -491,13 +497,13 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_copy_name)
 	. = TRUE
 	target_address_name = params["copy_name"]
 
-UI_ACT(/obj/item/communicator, "hang_up", ui_act_hang_up)
-UI_ACT_PROC(/obj/item/communicator, ui_act_hang_up)
-	. = TRUE
+/obj/item/communicator/proc/native_ui_act_hang_up(datum/act/op/A)
+	add_fingerprint(A.actor)
 	for(var/mob/living/voice/V in contents)
-		close_connection(ui.user, V, "[ui.user] hung up")
+		close_connection(A.actor, V, "[A.actor] hung up")
 	for(var/obj/item/communicator/comm in communicating)
-		close_connection(ui.user, comm, "[ui.user] hung up")
+		close_connection(A.actor, comm, "[A.actor] hung up")
+	return OP_OK
 
 UI_ACT(/obj/item/communicator, "switch_tab", ui_act_switch_tab, UI_ARG_NUM("switch_tab"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_switch_tab)

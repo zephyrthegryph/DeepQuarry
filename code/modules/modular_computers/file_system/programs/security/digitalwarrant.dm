@@ -57,10 +57,12 @@ UI_DATA_REPLACE(/datum/computer_file/program/digitalwarrant, "merge:ui_data_datu
 
 	return data
 
-UI_ACT(/datum/computer_file/program/digitalwarrant, "back", ui_act_back)
-UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_back)
-	. = TRUE
+CAPABILITIES(/datum/computer_file/program/digitalwarrant)
+	op("back", ui_act(), then(PROC_REF(native_ui_act_back)))
+
+/datum/computer_file/program/digitalwarrant/proc/native_ui_act_back(datum/act/op/A)
 	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/digitalwarrant, "editwarrant", ui_act_editwarrant, UI_ARG_NUM("id"))
 UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_editwarrant)
