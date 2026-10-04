@@ -863,7 +863,6 @@ base_var	code/modules/vore/appearance/preferences.dm	var/r_acc3 = 30
 base_var	code/modules/vore/appearance/preferences.dm	var/g_acc3 = 30
 base_var	code/modules/vore/appearance/preferences.dm	var/b_acc3 = 30
 base_var	code/modules/vore/eating/living.dm	var/showvoreprefs = TRUE // Determines if the mechanical vore preferences button will be displayed on the mob or not.
-base_var	code/modules/vore/eating/living.dm	var/list/temp_language_sources //Absorbs add languages to the pred. Lazy.
 base_var	code/modules/vore/eating/living.dm	var/list/temp_languages // Absorbs add languages to the pred. Lazy.
 base_var	code/modules/vore/eating/living.dm	var/prey_controlled = FALSE // If the mob is currently controlled by their prey.
 base_var	code/modules/vore/eating/living.dm	var/weight = 137 // Weight for mobs for weightgain system
