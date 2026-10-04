@@ -30,9 +30,38 @@
 
 // The admin holder owns this panel (dq_newscaster_panel); holder is a plain relation back.
 
-DECLARE_UI_STATE(/datum/newscaster_panel, ADMIN_STATE(R_ADMIN|R_EVENT))
-
-DECLARE_UI(/datum/newscaster_panel, "AdminNewscaster", UI_TITLE("Admin Newscaster"))
+CAPABILITIES(/datum/newscaster_panel)
+	ref_one(nameof(holder), /datum/admins)
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	interface("AdminNewscaster", title = "Admin Newscaster", rights = R_ADMIN|R_EVENT)
+	op("set_screen", ui_act("set_screen", arg("screen", schema_text(4096))), then(PROC_REF(ui_act_set_screen)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("view_wanted", ui_act("view_wanted"), then(PROC_REF(ui_act_view_wanted)))
+	op("create_channel", ui_act("create_channel"), then(PROC_REF(ui_act_create_channel)))
+	op("view_channels", ui_act("view_channels"), then(PROC_REF(ui_act_view_channels)))
+	op("create_story", ui_act("create_story"), then(PROC_REF(ui_act_create_story)))
+	op("menu_wanted", ui_act("menu_wanted"), then(PROC_REF(ui_act_menu_wanted)))
+	op("menu_censor_story", ui_act("menu_censor_story"), then(PROC_REF(ui_act_menu_censor_story)))
+	op("menu_censor_channel", ui_act("menu_censor_channel"), then(PROC_REF(ui_act_menu_censor_channel)))
+	op("set_signature", ui_act("set_signature"), then(PROC_REF(ui_act_set_signature)))
+	op("show_channel", ui_act("show_channel", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_show_channel)))
+	op("pick_censor_channel", ui_act("pick_censor_channel", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_pick_censor_channel)))
+	op("pick_d_notice", ui_act("pick_d_notice", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_pick_d_notice)))
+	op("set_channel_name", ui_act("set_channel_name"), then(PROC_REF(ui_act_set_channel_name)))
+	op("set_channel_lock", ui_act("set_channel_lock"), then(PROC_REF(ui_act_set_channel_lock)))
+	op("submit_new_channel", ui_act("submit_new_channel"), then(PROC_REF(ui_act_submit_new_channel)))
+	op("set_channel_receiving", ui_act("set_channel_receiving"), then(PROC_REF(ui_act_set_channel_receiving)))
+	op("set_new_message", ui_act("set_new_message"), then(PROC_REF(ui_act_set_new_message)))
+	op("submit_new_message", ui_act("submit_new_message"), then(PROC_REF(ui_act_submit_new_message)))
+	op("censor_channel_author", ui_act("censor_channel_author", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_censor_channel_author)))
+	op("censor_story_body", ui_act("censor_story_body", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_censor_story_body)))
+	op("censor_story_author", ui_act("censor_story_author", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_censor_story_author)))
+	op("toggle_d_notice", ui_act("toggle_d_notice", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_toggle_d_notice)))
+	op("set_wanted_name", ui_act("set_wanted_name"), then(PROC_REF(ui_act_set_wanted_name)))
+	op("set_wanted_desc", ui_act("set_wanted_desc"), then(PROC_REF(ui_act_set_wanted_desc)))
+	op("submit_wanted", ui_act("submit_wanted", arg("end_param", schema_text(4096))), then(PROC_REF(ui_act_submit_wanted)))
+	op("cancel_wanted", ui_act("cancel_wanted"), then(PROC_REF(ui_act_cancel_wanted)))
 
 /datum/newscaster_panel/proc/pack_channel(datum/feed_channel/CHANNEL)
 	if(!CHANNEL)
@@ -58,10 +87,7 @@ DECLARE_UI(/datum/newscaster_panel, "AdminNewscaster", UI_TITLE("Admin Newscaste
 		"has_image" = !!MSG.img,
 	)
 
-UI_DATA_REPLACE(/datum/newscaster_panel, "merge:ui_data_datum_newscaster_panel{screen:num,signature:unknown,company_name:text,has_wanted:bool,channel:unknown,message:unknown,channels:list,channel_messages:list,wanted_issue:list}")
-
-/// The computed part of /datum/newscaster_panel's window data (declared on its UI_DATA row).
-/datum/newscaster_panel/proc/ui_data_datum_newscaster_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/newscaster_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!holder)
 		return data
@@ -104,191 +130,195 @@ UI_DATA_REPLACE(/datum/newscaster_panel, "merge:ui_data_datum_newscaster_panel{s
 		return
 	forward_holder_topic(holder, qs)
 
-/datum/newscaster_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!holder)
-		return FALSE
-	return TRUE
+/// The answer to a question a button asked still counts (its window is still open and interactive for the one who answers).
+/datum/newscaster_panel/proc/request_usable(datum/request/R)
+	return window_request_usable(src, R)
 
-UI_ACT(/datum/newscaster_panel, "set_screen", ui_act_set_screen, UI_ARG_TEXT("screen"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_set_screen)
-	var/screen = "[params["screen"]]"
-	forward_topic(ui.user, "ac_setScreen=[screen]")
+/// The admin this refers to (a relation view: null once that is deleted).
+/datum/newscaster_panel/proc/holder() as /datum/admins
+	return holder
+
+/// A panel whose admin is gone answers nothing (silently).
+/datum/newscaster_panel/proc/ui_gate(datum/act/op/A)
+	return !!holder()
+
+/datum/newscaster_panel/proc/ui_act_set_screen(datum/act/op/A, screen_arg)
+	var/mob/user = A.actor
+	var/screen = "[screen_arg]"
+	forward_topic(user, "ac_setScreen=[screen]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_refresh)
-	forward_topic(ui.user, "ac_refresh=1")
+/datum/newscaster_panel/proc/ui_act_refresh(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_refresh=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "close", ui_act_close)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_close)
+/datum/newscaster_panel/proc/ui_act_close(datum/act/op/A)
 	SStgui.close_uis(src)
 	return TRUE
 // Main menu / channel actions.
 
-UI_ACT(/datum/newscaster_panel, "view_wanted", ui_act_view_wanted)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_view_wanted)
-	forward_topic(ui.user, "ac_view_wanted=1")
+/datum/newscaster_panel/proc/ui_act_view_wanted(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_view_wanted=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "create_channel", ui_act_create_channel)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_create_channel)
-	forward_topic(ui.user, "ac_create_channel=1")
+/datum/newscaster_panel/proc/ui_act_create_channel(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_create_channel=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "view_channels", ui_act_view_channels)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_view_channels)
-	forward_topic(ui.user, "ac_view=1")
+/datum/newscaster_panel/proc/ui_act_view_channels(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_view=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "create_story", ui_act_create_story)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_create_story)
-	forward_topic(ui.user, "ac_create_feed_story=1")
+/datum/newscaster_panel/proc/ui_act_create_story(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_create_feed_story=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "menu_wanted", ui_act_menu_wanted)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_menu_wanted)
-	forward_topic(ui.user, "ac_menu_wanted=1")
+/datum/newscaster_panel/proc/ui_act_menu_wanted(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_menu_wanted=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "menu_censor_story", ui_act_menu_censor_story)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_menu_censor_story)
-	forward_topic(ui.user, "ac_menu_censor_story=1")
+/datum/newscaster_panel/proc/ui_act_menu_censor_story(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_menu_censor_story=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "menu_censor_channel", ui_act_menu_censor_channel)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_menu_censor_channel)
-	forward_topic(ui.user, "ac_menu_censor_channel=1")
+/datum/newscaster_panel/proc/ui_act_menu_censor_channel(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_menu_censor_channel=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "set_signature", ui_act_set_signature)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_set_signature)
-	forward_topic(ui.user, "ac_set_signature=1")
+/datum/newscaster_panel/proc/ui_act_set_signature(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_set_signature=1")
 	SStgui.update_uis(src)
 	return TRUE
 // Channel selection.
 
-UI_ACT(/datum/newscaster_panel, "show_channel", ui_act_show_channel, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_show_channel)
-	var/ref = "[params["ref"]]"
-	forward_topic(ui.user, "ac_show_channel=[ref]")
+/datum/newscaster_panel/proc/ui_act_show_channel(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	var/ref = "[ref_arg]"
+	forward_topic(user, "ac_show_channel=[ref]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "pick_censor_channel", ui_act_pick_censor_channel, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_pick_censor_channel)
-	var/ref = "[params["ref"]]"
-	forward_topic(ui.user, "ac_pick_censor_channel=[ref]")
+/datum/newscaster_panel/proc/ui_act_pick_censor_channel(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	var/ref = "[ref_arg]"
+	forward_topic(user, "ac_pick_censor_channel=[ref]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "pick_d_notice", ui_act_pick_d_notice, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_pick_d_notice)
-	var/ref = "[params["ref"]]"
-	forward_topic(ui.user, "ac_pick_d_notice=[ref]")
+/datum/newscaster_panel/proc/ui_act_pick_d_notice(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	var/ref = "[ref_arg]"
+	forward_topic(user, "ac_pick_d_notice=[ref]")
 	SStgui.update_uis(src)
 	return TRUE
 // Channel create form.
 
-UI_ACT(/datum/newscaster_panel, "set_channel_name", ui_act_set_channel_name)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_set_channel_name)
-	forward_topic(ui.user, "ac_set_channel_name=1")
+/datum/newscaster_panel/proc/ui_act_set_channel_name(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_set_channel_name=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "set_channel_lock", ui_act_set_channel_lock)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_set_channel_lock)
-	forward_topic(ui.user, "ac_set_channel_lock=1")
+/datum/newscaster_panel/proc/ui_act_set_channel_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_set_channel_lock=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "submit_new_channel", ui_act_submit_new_channel)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_submit_new_channel)
-	forward_topic(ui.user, "ac_submit_new_channel=1")
+/datum/newscaster_panel/proc/ui_act_submit_new_channel(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_submit_new_channel=1")
 	SStgui.update_uis(src)
 	return TRUE
 // Story create form.
 
-UI_ACT(/datum/newscaster_panel, "set_channel_receiving", ui_act_set_channel_receiving)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_set_channel_receiving)
-	forward_topic(ui.user, "ac_set_channel_receiving=1")
+/datum/newscaster_panel/proc/ui_act_set_channel_receiving(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_set_channel_receiving=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "set_new_message", ui_act_set_new_message)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_set_new_message)
-	forward_topic(ui.user, "ac_set_new_message=1")
+/datum/newscaster_panel/proc/ui_act_set_new_message(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_set_new_message=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "submit_new_message", ui_act_submit_new_message)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_submit_new_message)
-	forward_topic(ui.user, "ac_submit_new_message=1")
+/datum/newscaster_panel/proc/ui_act_submit_new_message(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_submit_new_message=1")
 	SStgui.update_uis(src)
 	return TRUE
 // Censorship.
 
-UI_ACT(/datum/newscaster_panel, "censor_channel_author", ui_act_censor_channel_author, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_censor_channel_author)
-	var/ref = "[params["ref"]]"
-	forward_topic(ui.user, "ac_censor_channel_author=[ref]")
+/datum/newscaster_panel/proc/ui_act_censor_channel_author(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	var/ref = "[ref_arg]"
+	forward_topic(user, "ac_censor_channel_author=[ref]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "censor_story_body", ui_act_censor_story_body, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_censor_story_body)
-	var/ref = "[params["ref"]]"
-	forward_topic(ui.user, "ac_censor_channel_story_body=[ref]")
+/datum/newscaster_panel/proc/ui_act_censor_story_body(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	var/ref = "[ref_arg]"
+	forward_topic(user, "ac_censor_channel_story_body=[ref]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "censor_story_author", ui_act_censor_story_author, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_censor_story_author)
-	var/ref = "[params["ref"]]"
-	forward_topic(ui.user, "ac_censor_channel_story_author=[ref]")
+/datum/newscaster_panel/proc/ui_act_censor_story_author(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	var/ref = "[ref_arg]"
+	forward_topic(user, "ac_censor_channel_story_author=[ref]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "toggle_d_notice", ui_act_toggle_d_notice, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_toggle_d_notice)
-	var/ref = "[params["ref"]]"
-	forward_topic(ui.user, "ac_toggle_d_notice=[ref]")
+/datum/newscaster_panel/proc/ui_act_toggle_d_notice(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	var/ref = "[ref_arg]"
+	forward_topic(user, "ac_toggle_d_notice=[ref]")
 	SStgui.update_uis(src)
 	return TRUE
 // Wanted issue.
 
-UI_ACT(/datum/newscaster_panel, "set_wanted_name", ui_act_set_wanted_name)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_set_wanted_name)
-	forward_topic(ui.user, "ac_set_wanted_name=1")
+/datum/newscaster_panel/proc/ui_act_set_wanted_name(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_set_wanted_name=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "set_wanted_desc", ui_act_set_wanted_desc)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_set_wanted_desc)
-	forward_topic(ui.user, "ac_set_wanted_desc=1")
+/datum/newscaster_panel/proc/ui_act_set_wanted_desc(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_set_wanted_desc=1")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "submit_wanted", ui_act_submit_wanted, UI_ARG_TEXT("end_param"))
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_submit_wanted)
-	var/end = "[params["end_param"]]"
-	forward_topic(ui.user, "ac_submit_wanted=[end]")
+/datum/newscaster_panel/proc/ui_act_submit_wanted(datum/act/op/A, end_param)
+	var/mob/user = A.actor
+	var/end = "[end_param]"
+	forward_topic(user, "ac_submit_wanted=[end]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/newscaster_panel, "cancel_wanted", ui_act_cancel_wanted)
-UI_ACT_PROC(/datum/newscaster_panel, ui_act_cancel_wanted)
-	forward_topic(ui.user, "ac_cancel_wanted=1")
+/datum/newscaster_panel/proc/ui_act_cancel_wanted(datum/act/op/A)
+	var/mob/user = A.actor
+	forward_topic(user, "ac_cancel_wanted=1")
 	SStgui.update_uis(src)
 	return TRUE
