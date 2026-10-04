@@ -72,31 +72,70 @@
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
-	om_ask_sequence(/datum/om/flow/ask_sequence/armalis_commune, src, null, steps = list(/datum/om/prompt/choice/armalis_commune_target, /datum/om/prompt/text/armalis_commune_text), on_done = PROC_REF(message_mob_answered))
+	var/datum/armalis_commune_review/review = new
+	rel_set(review, nameof(review.actor), src)
+	review.start()
 
-/datum/om/flow/ask_sequence/armalis_commune
-	/// The chosen mob's getmobs() name.
+/datum/armalis_commune_review
+	var/mob/living/simple_mob/vox/armalis/actor
+	/// The chosen mob's getmobs() name, resolved again after the text is entered.
 	var/recipient
-	var/message_text
 
-/datum/om/prompt/choice/armalis_commune_target
-	key = "recipient"
+CAPABILITIES(/datum/armalis_commune_review)
+	ref_one(nameof(actor), /mob/living/simple_mob/vox/armalis)
+
+/datum/prompt/choice/armalis_commune_target
+	timeout = 0
 	title = "Speak to creature"
-	message = "Select a creature!"
+	question = "Select a creature!"
 
-/datum/om/prompt/choice/armalis_commune_target/prepare()
+/datum/prompt/choice/armalis_commune_target/prepare(datum/act/A)
 	choices = getmobs()
-	return TRUE
+	return ..()
 
-/datum/om/prompt/text/armalis_commune_text
-	key = "message_text"
+/datum/prompt/text/armalis_commune_text
+	timeout = 0
 	title = "Speak to creature"
-	message = "What would you like to say?"
+	question = "What would you like to say?"
 
-/mob/living/simple_mob/vox/armalis/proc/message_mob_answered(datum/om/flow/ask_sequence/armalis_commune/seq)
-	var/text = seq.message_text
+/datum/armalis_commune_review/proc/start()
+	if(QDELETED(actor))
+		consume(src)
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		stack_trace("Armalis commune start: [result.error]")
+		consume(src)
+
+/datum/armalis_commune_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/armalis_commune_target, PROC_REF(recipient_entered), answerer = actor, asker = actor)
+
+/datum/armalis_commune_review/proc/run_step(step, datum/act/request/A)
+	if(!A.answer || QDELETED(actor))
+		consume(src)
+		return
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("Armalis commune step [step]: [result.error]")
+		consume(src)
+
+/datum/armalis_commune_review/proc/recipient_entered(datum/act/request/A)
+	run_step(PROC_REF(recipient_step), A)
+
+/datum/armalis_commune_review/proc/recipient_step(datum/act/request/A)
+	recipient = A.answer.answer_value
+	open_request(src, /datum/prompt/text/armalis_commune_text, PROC_REF(text_entered), answerer = actor, asker = actor)
+
+/datum/armalis_commune_review/proc/text_entered(datum/act/request/A)
+	run_step(PROC_REF(text_step), A)
+
+/datum/armalis_commune_review/proc/text_step(datum/act/request/A)
+	actor.message_mob_answered(recipient, A.answer.answer_value)
+	consume(src)
+
+/mob/living/simple_mob/vox/armalis/proc/message_mob_answered(recipient, text)
 	var/list/targets = getmobs()
-	var/mob/M = targets[seq.recipient]
+	var/mob/M = targets[recipient]
 	if(!M)
 		return
 

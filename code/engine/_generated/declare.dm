@@ -929,6 +929,13 @@
 	into += entry_line(89)
 	into += list(global.owns_many(nameof(global_objectives), /datum/objective))
 
+/// CAPABILITIES(/datum/armalis_commune_review) at code/modules/mob/living/simple_mob/subtypes/animal/vox.dm:84
+/datum/armalis_commune_review/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/vox.dm", 84, /datum/armalis_commune_review)
+	into += entry_line(85)
+	into += list(global.ref_one(nameof(actor), /mob/living/simple_mob/vox/armalis))
+
 /// CAPABILITIES(/datum/artifact_effect/forcefield) at code/modules/xenoarcheaology/effects/forcefield.dm:10
 /datum/artifact_effect/forcefield/declared_entries(list/into)
 	..(into)
