@@ -34,7 +34,7 @@
 	COOLDOWN_DECLARE(panic_flush)
 
 CAPABILITIES(/obj/structure/toilet)
-	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin)
+	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
 
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()
@@ -1380,8 +1380,6 @@ DECLARE_EMAG_REPEATABLE(/obj/structure/biowaste_tank, PROC_REF(on_emag), null)
 /obj/structure/toilet/ownership()
 	. = ..()
 	. += owns(nameof(teleplumb_crystal), policy = OWN_CONTAINED)
-
-DECLARE_DEFAULT_CHILD(/obj/structure/toilet, "bin", null)
 
 /// Relation view: muffinmonster (reads null once it is gone).
 /obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound

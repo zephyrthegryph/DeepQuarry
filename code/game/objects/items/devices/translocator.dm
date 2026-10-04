@@ -37,7 +37,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/perfect_tele)
-	owns_one(nameof(power_source), /obj/item/cell)
+	owns_one(nameof(power_source), /obj/item/cell, starts = nameof(cell_type))
 
 /obj/item/perfect_tele/Initialize(mapload)
 	. = ..()
@@ -46,8 +46,6 @@ CAPABILITIES(/obj/item/perfect_tele)
 	if(!power_source) // no cell_type
 		rel_set(src, nameof(power_source), new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
 	rebuild_radial_images()
-
-DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
 
 // Relation list view of beacons (a premade beacon may be listed by several translocators, so
 // no pair); each beacon names its maker one-sided (tele_hand), cleared when the maker dies.

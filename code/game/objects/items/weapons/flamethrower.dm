@@ -34,21 +34,20 @@
 CAPABILITIES(/obj/item/flamethrower)
 	owns_one(nameof(igniter), /obj/item/assembly/igniter)
 	owns_one(nameof(ptank), /obj/item/tank/phoron)
-	owns_one(nameof(weldtool), /obj/item/weldingtool)
+	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool)
 
 /obj/item/flamethrower/Initialize(mapload)
 	. = ..()
 	weldtool.status = 0 // for disassembly
 	update_icon()
 
-DECLARE_DEFAULT_CHILD(/obj/item/flamethrower/full, "igniter", /obj/item/assembly/igniter)
+CAPABILITIES(/obj/item/flamethrower/full)
+	owns_one(nameof(igniter), /obj/item/assembly/igniter, starts = /obj/item/assembly/igniter)
 
 /obj/item/flamethrower/full/Initialize(mapload)
 	. = ..()
 	igniter.set_secured(FALSE) // for disassembly
 	status = TRUE
-
-DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
 
 /// On or off: while lit it heats its turf every 2 s.
 OM_FIELD(/obj/item/flamethrower, lit, FALSE, CHANGE_EXPLICIT)

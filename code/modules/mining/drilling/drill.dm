@@ -96,7 +96,7 @@
 CAPABILITIES(/obj/machinery/mining/drill)
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
 	climb()
-	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()
@@ -115,8 +115,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 			. += "The drill is upgraded and is capable of mining [(exotic_drilling == 1)? "moderately further" : "as deep as possible"]!"
 		if(capacity && current_capacity)
 			. += "The drill currently has [current_capacity] capacity taken up and can fit [capacity - current_capacity] more ore."
-
-DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 
 /obj/machinery/mining/drill/Initialize(mapload)
 	. = ..()

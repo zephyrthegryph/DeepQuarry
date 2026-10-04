@@ -114,9 +114,8 @@ CAPABILITIES(/obj/item/rig)
 	owns_one(nameof(gloves), /obj/item/clothing/gloves/gauntlets/rig)
 	owns_one(nameof(helmet), /obj/item/clothing/head/helmet/space/rig)
 	owns_one(nameof(minihud), /datum/mini_hud/rig)
-
-DECLARE_DEFAULT_CHILD(/obj/item/rig, "power_system", /datum/rig_power_system)
-DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_registry)
+	owns_one(nameof(power_system), starts = /datum/rig_power_system)
+	owns_one(nameof(component_registry), starts = /datum/rig_component_registry)
 
 /obj/item/rig/Initialize(mapload)
 	. = ..()

@@ -287,7 +287,7 @@
 	COOLDOWN_DECLARE(slip_protect)
 
 CAPABILITIES(/mob)
-	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master)
+	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
 	owns_one(nameof(autowhisper_display), /atom/movable/screen)
 	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
 	owns_one(nameof(borer_chem_display), /atom/movable/screen/borer/chems)

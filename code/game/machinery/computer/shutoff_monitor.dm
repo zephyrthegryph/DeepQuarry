@@ -7,7 +7,8 @@
 	circuit = /obj/item/circuitboard/shutoff_monitor
 	var/datum/tgui_module/shutoff_monitor/monitor
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/shutoff_monitor, "monitor", /datum/tgui_module/shutoff_monitor)
+CAPABILITIES(/obj/machinery/computer/shutoff_monitor)
+	owns_one(nameof(monitor), starts = /datum/tgui_module/shutoff_monitor)
 
 
 /obj/machinery/computer/shutoff_monitor/declare_interactions(list/into)

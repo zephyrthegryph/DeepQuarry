@@ -17,6 +17,10 @@
 	var/obj/human_storage
 
 
+CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
+	owns_one(nameof(human_storage))
+	owns_many(nameof(test_humans))
+
 /datum/unit_test/all_clothing_shall_be_valid/Run()
 	var/failed = 0
 	var/obj/storage = new()
@@ -24,7 +28,7 @@
 	#ifdef UNIT_TESTS
 	// Build one human per body type up-front. set_species runs once per species here
 	// instead of once per (species × clothing item).
-	own_set(src, nameof(human_storage), new /obj())
+	rel_set(src, nameof(human_storage), new /obj())
 	own_take_all(src, nameof(test_humans))
 	for(var/body_type in list(SPECIES_HUMAN, SPECIES_VOX, SPECIES_TESHARI))
 		var/mob/living/carbon/human/H = new(human_storage)

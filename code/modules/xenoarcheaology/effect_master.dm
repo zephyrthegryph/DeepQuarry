@@ -34,6 +34,7 @@
 CAPABILITIES(/atom)
 	owns_one(nameof(artifact_master), /datum/artifact_master)
 	owns_one(nameof(forensic_data), /datum/forensics_crime)
+	owns_one(nameof(ledger), /datum/ledger)
 	owns_one(nameof(light), /datum/light_source)
 	owns_one(nameof(reagents), /datum/reagents)
 	owns_one(nameof(rx_node), /datum/dq_rx_node)

@@ -27,7 +27,8 @@
 														// analyzer with a force_divisor of 10 hit with a damage multiplier of 3000+.
 	special_handling = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/item/storage)
+CAPABILITIES(/obj/item/gun/launcher/pneumatic)
+	owns_one(nameof(item_storage), starts = /obj/item/storage)
 
 /obj/item/gun/launcher/pneumatic/Initialize(mapload)
 	. = ..()

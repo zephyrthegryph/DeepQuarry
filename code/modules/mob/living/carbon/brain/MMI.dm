@@ -23,6 +23,7 @@
 
 CAPABILITIES(/obj/item/mmi)
 	owns_one(nameof(body_backup), /mob/living)
+	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)
 
 /obj/item/mmi/Initialize(mapload)
 	. = ..()
@@ -395,7 +396,6 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	icon_state = "mainboard"
 	w_class = ITEMSIZE_NORMAL
 
-DECLARE_DEFAULT_CHILD(/obj/item/mmi, "radio", /obj/item/radio/headset/mmi_radio)
 // The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
 /obj/item/mmi/ownership()
 	. = ..()

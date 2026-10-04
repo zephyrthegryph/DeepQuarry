@@ -58,8 +58,6 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/security/engine, "cell", /obj/item/cell/high)
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/security/engine, "key", "key_type")
 
 /obj/vehicle/train/security/engine/Initialize(mapload)
 	. = ..()
@@ -344,7 +342,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 
 /obj/vehicle/train/security/engine/ownership()
 	. = ..()
-	. += owns(nameof(key), policy = OWN_CONTAINED)
+	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/security/engine/proc/pred_security_engine_running(mob/actor, atom/target, obj/item/held)

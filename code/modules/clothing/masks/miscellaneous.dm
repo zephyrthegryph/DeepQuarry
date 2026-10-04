@@ -231,7 +231,8 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	body_parts_covered = 0
 	var/mob/observer/eye/aiEye/eye
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/ai, "eye", /mob/observer/eye/aiEye)
+CAPABILITIES(/obj/item/clothing/mask/ai)
+	owns_one(nameof(eye), starts = /mob/observer/eye/aiEye)
 
 /obj/item/clothing/mask/ai/equipped(mob/user, slot)
 	..(user, slot)

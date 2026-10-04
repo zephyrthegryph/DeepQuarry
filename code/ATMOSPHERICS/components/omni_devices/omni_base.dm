@@ -22,7 +22,7 @@
 	var/overlays_error[2]
 	var/underlays_current[4]
 
-	/// The device's four ports, in GLOB.cardinal order (owned: own_add in Initialize()).
+	/// The device's four ports, in GLOB.cardinal order (owned: rel_add in Initialize()).
 	var/list/datum/omni_port/ports
 
 CAPABILITIES(/obj/machinery/atmospherics/omni)

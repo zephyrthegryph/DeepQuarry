@@ -58,7 +58,8 @@
 			var/datum/gas_mixture/env = T.return_air()
 			. += span_notice("Pressure: [env.return_pressure()]kPa / Temperature: [env.return_temperature()]K ")
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/watch/survival, "gps", /obj/item/gps/watch)
+CAPABILITIES(/obj/item/clothing/accessory/watch/survival)
+	owns_one(nameof(gps), starts = /obj/item/gps/watch)
 
 /obj/item/gps/watch
 	gps_tag = "SRV-WTCH"

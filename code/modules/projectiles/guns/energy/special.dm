@@ -59,8 +59,6 @@
 		list(mode_name="prune reagents", projectile_type=/obj/item/projectile/energy/floraprune, modifystate="floramut"),
 		)
 
-DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_parts/micro_laser)
-
 /obj/item/gun/energy/floragun/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
@@ -598,7 +596,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 
 /obj/item/gun/energy/floragun/ownership()
 	. = ..()
-	. += owns(nameof(emitter), policy = OWN_CONTAINED)
+	. += owns(nameof(emitter), policy = OWN_CONTAINED, starts = /obj/item/stock_parts/micro_laser)
 
 /// A shared definition/flyweight (never cleared).
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene

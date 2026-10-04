@@ -299,13 +299,11 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff)
 	overlay_state = "dosimeter"
 	slot_flags = SLOT_TIE
 
-/// The loaded film (set at init by DECLARE_DEFAULT_CHILD).
+/// The loaded film (set at init by its owns_one starts).
 OM_FIELD_VIEW(/obj/item/clothing/accessory/dosimeter, obj/item/dosimeter_film, current_film, CHANGE_EXPLICIT)
 
 CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
-	owns_one(nameof(current_film), /obj/item/dosimeter_film)
-
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/dosimeter, "current_film", /obj/item/dosimeter_film)
+	owns_one(nameof(current_film), /obj/item/dosimeter_film, starts = /obj/item/dosimeter_film)
 
 /// A film that can still darken is loaded: it reads the wearer's radiation.
 OM_DERIVE_FIELD(/obj/item/clothing/accessory/dosimeter, film_live, list("current_film", "current_film.state"))

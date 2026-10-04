@@ -10,7 +10,9 @@
 
 OM_FIELD(/obj/item/shield_diffuser, enabled, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/shield_diffuser, PERIODIC_SLOW, "enabled")
-DECLARE_DEFAULT_CHILD(/obj/item/shield_diffuser, "cell", /obj/item/cell/device)
+CAPABILITIES(/obj/item/shield_diffuser)
+	owns_one(nameof(cell), starts = /obj/item/cell/device)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 
 /obj/item/shield_diffuser/get_cell()
@@ -29,9 +31,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/shield_diffuser, "cell", /obj/item/cell/device)
 				qdel(S)
 
 APPEARANCE_TEMPLATE(/obj/item/shield_diffuser, "hdiffuser_{enabled?on:off}")
-
-CAPABILITIES(/obj/item/shield_diffuser)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/shield_diffuser/proc/interaction_self(datum/act/op/A)

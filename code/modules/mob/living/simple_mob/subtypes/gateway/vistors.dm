@@ -215,7 +215,8 @@ TYPE_TABLE(/obj/item/grenade/shooter/energy/homing, shooter_grenade_projectiles,
 	loot_list = list(/obj/item/clothing/suit/armor/alien/vistor = 100
 			)
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange, "shields", /obj/item/shield_projector/rectangle/automatic/orange)
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/orange)
 
 /obj/item/shield_projector/rectangle/automatic/orange
 	max_integrity = 10

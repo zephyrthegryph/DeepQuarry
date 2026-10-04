@@ -10,7 +10,8 @@
 	var/scan_range = 25
 	var/datum/tgui_module/rustfuel_control/monitor
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_fuel_control, "monitor", /datum/tgui_module/rustfuel_control)
+CAPABILITIES(/obj/machinery/computer/fusion_fuel_control)
+	owns_one(nameof(monitor), starts = /datum/tgui_module/rustfuel_control)
 
 /obj/machinery/computer/fusion_fuel_control/Initialize(mapload)
 	. = ..()

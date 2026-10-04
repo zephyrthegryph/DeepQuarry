@@ -48,7 +48,7 @@
 /datum/unit_test/dq_rust_pipenet_volume_reads_the_mixture/Run()
 	var/datum/pipe_network/net = new
 	TEST_ASSERT_EQUAL(net.volume(), 0, "a network with no air has volume")
-	own_set(net, "air", new /datum/gas_mixture(70))
+	rel_set(net, "air", new /datum/gas_mixture(70))
 	TEST_ASSERT_EQUAL(net.volume(), 70, "volume() did not read the mixture")
 	net.air.set_volume(90)
 	TEST_ASSERT_EQUAL(net.volume(), 90, "volume() lagged a Rust volume change")

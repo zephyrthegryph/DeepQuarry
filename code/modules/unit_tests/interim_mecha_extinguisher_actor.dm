@@ -19,7 +19,7 @@
 	var/obj/structure/reagent_dispensers/dispenser = allocate(/obj/structure/reagent_dispensers, T)
 	var/datum/reagents/interim_mecha_refill_probe/source = allocate(/datum/reagents/interim_mecha_refill_probe, 300)
 	own_clear(dispenser, nameof(dispenser.reagents))
-	own_set(dispenser, nameof(dispenser.reagents), source)
+	rel_set(dispenser, nameof(dispenser.reagents), source)
 	rel_set(source, nameof(source.my_atom), dispenser)
 	source.add_reagent(REAGENT_ID_WATER, 300)
 	rel_set(mech, nameof(mech.active_caller), dispenser)

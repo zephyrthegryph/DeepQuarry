@@ -11,8 +11,14 @@
 /datum/dq_diag_owner_a
 	var/datum/dq_diag_owner_b/b
 
+CAPABILITIES(/datum/dq_diag_owner_a)
+	owns_one(nameof(b))
+
 /datum/dq_diag_owner_b
 	var/datum/dq_diag_owner_a/a
+
+CAPABILITIES(/datum/dq_diag_owner_b)
+	owns_one(nameof(a))
 
 /// A holder that deletes its members in Destroy() but keeps its list of them,
 /// while each member keeps a reference back: after both are deleted, neither
@@ -85,8 +91,8 @@
 /datum/unit_test/dq_lifecycle_diag_mutual_ownership/Run()
 	var/datum/dq_diag_owner_a/A = new
 	var/datum/dq_diag_owner_b/B = new
-	own_set(A, nameof(A.b), B)
-	own_set(B, nameof(B.a), A)
+	rel_set(A, nameof(A.b), B)
+	rel_set(B, nameof(B.a), A)
 	TEST_ASSERT_EQUAL(owner_of(B), A, "B is owned by A")
 	TEST_ASSERT_EQUAL(owner_of(A), B, "A is owned by B")
 	qdel(A)

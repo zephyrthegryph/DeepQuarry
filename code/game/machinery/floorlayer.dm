@@ -8,8 +8,6 @@
 	var/obj/item/stack/tile/T
 	var/list/work_modes = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor)
-
 /obj/machinery/floorlayer/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 
@@ -152,7 +150,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 /obj/machinery/floorlayer/ownership()
 	. = ..()
-	. += owns(nameof(T), policy = OWN_CONTAINED)
+	. += owns(nameof(T), policy = OWN_CONTAINED, starts = /obj/item/stack/tile/floor)
 
 /// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/floorlayer/proc/old_turf() as /turf

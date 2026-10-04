@@ -19,15 +19,13 @@
 	active_power_usage = 120 // No idea what the realistic amount would be.
 
 CAPABILITIES(/obj/machinery/oxygen_pump)
-	owns_one(nameof(tank), /obj/item/tank)
+	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
+	owns_one(nameof(contained), starts = nameof(mask_type))
 
 /// Who wears the mask (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
 /// Keeps the mask and internals right while a mask is on someone.
 DECLARE_PERIODIC_WHILE(/obj/machinery/oxygen_pump, MACHINE_PIPELINE, "breather")
-
-DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "tank", "spawn_type")
-DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "contained", "mask_type")
 
 
 // the mask retracts from its breather.

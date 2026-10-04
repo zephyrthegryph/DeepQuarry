@@ -54,7 +54,8 @@
 		"haste"				= /obj/item/spell/modifier/haste
 		)
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "core", /obj/item/technomancer_core/golem)
+CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
+	owns_one(nameof(core), starts = /obj/item/technomancer_core/golem)
 
 
 /mob/living/simple_mob/mechanical/technomancer_golem

@@ -104,7 +104,8 @@ DECLARE_UI_STATE(/obj/machinery/computer/security, GLOB.tgui_camera_view)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, REGISTRY_ENTERTAINMENT_SCREENS)
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment, "radio", /obj/item/radio)
+CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
+	owns_one(nameof(radio), starts = /obj/item/radio)
 
 /obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
 

@@ -15,7 +15,8 @@
 	var/current_tag = null
 	var/datum/tgui_module/rcon/rcon
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/rcon, "rcon", /datum/tgui_module/rcon)
+CAPABILITIES(/obj/machinery/computer/rcon)
+	owns_one(nameof(rcon), starts = /datum/tgui_module/rcon)
 
 
 /obj/machinery/computer/rcon/declare_interactions(list/into)

@@ -30,8 +30,6 @@ CAPABILITIES(/obj/item/electronic_assembly)
 /// Entered()/Exited(); null until first computed.
 OM_FIELD_TYPED(/obj/item/electronic_assembly, tmp, power_relevant, null, CHANGE_EXPLICIT)
 
-DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/device)
-
 /// Has power-relevant work (a battery plus a circuit that makes or draws idle power).
 OM_DERIVE_FIELD(/obj/item/electronic_assembly, has_power_work, list("power_relevant"))
 DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_work")
@@ -154,7 +152,7 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
 	return TRUE
 
 /// The assembly's export window, a second window next to its editor. Owned by the assembly
-/// (implicit OWN through own_set), so it goes with it.
+/// (implicit OWN through rel_set), so it goes with it.
 /datum/ic_export_view
 	/// Relation view: the assembly this window exports.
 	var/tmp/obj/item/electronic_assembly/host_assembly
@@ -587,7 +585,7 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 
 /obj/item/electronic_assembly/ownership()
 	. = ..()
-	. += owns(nameof(battery), policy = OWN_CONTAINED)
+	. += owns(nameof(battery), policy = OWN_CONTAINED, starts = /obj/item/cell/device)
 
 /// ID card for door access (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id

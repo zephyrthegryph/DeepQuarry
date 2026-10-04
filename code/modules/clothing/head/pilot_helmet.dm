@@ -22,7 +22,9 @@
 	var/last_status
 	resistance_flags = FIRE_PROOF
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/head/pilot, "pilot_hud", /atom/movable/screen)
+CAPABILITIES(/obj/item/clothing/head/pilot)
+	owns_one(nameof(pilot_hud), starts = /atom/movable/screen)
+	op("pilot_hud_colors_verb", menu(), label("Alter HUD color"), needs(carried()), then(PROC_REF(pilot_hud_colors_verb)))
 
 /obj/item/clothing/head/pilot/Initialize(mapload)
 	. = ..()
@@ -152,9 +154,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/head/pilot, "pilot_hud", /atom/movable/
 		I = images["charging"]
 		I.icon_state = ""
 		animate(pilot_hud,alpha=0,time=3 SECONDS)
-
-CAPABILITIES(/obj/item/clothing/head/pilot)
-	op("pilot_hud_colors_verb", menu(), label("Alter HUD color"), needs(carried()), then(PROC_REF(pilot_hud_colors_verb)))
 
 /// Old verb "Alter HUD color".
 /obj/item/clothing/head/pilot/proc/pilot_hud_colors_verb(datum/act/op/A)

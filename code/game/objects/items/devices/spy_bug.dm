@@ -19,7 +19,7 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/camerabug)
-	owns_one(nameof(camera), /obj/machinery/camera/bug)
+	owns_one(nameof(camera), /obj/machinery/camera/bug, starts = nameof(camtype))
 
 
 /obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -286,8 +286,6 @@ CAPABILITIES(/obj/item/bug_monitor)
 	. = ..()
 	name = "DV-136ZB #[rand(1000,9999)]"
 	c_tag = name
-
-DECLARE_DEFAULT_CHILD(/obj/item/camerabug, "camera", "camtype")
 
 /// Relation view: linkedmonitor (reads null once it is gone).
 /obj/item/camerabug/proc/linkedmonitor() as /obj/item/bug_monitor

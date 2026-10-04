@@ -23,8 +23,8 @@
 	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 CAPABILITIES(/obj/item/radio/headset)
-	owns_one(nameof(keyslot2), /obj/item/encryptionkey)
-	owns_one(nameof(keyslot1), /obj/item/encryptionkey)
+	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
+	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
@@ -32,9 +32,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	// Compute channels but don't register with SSradio yet (C5): on_materialize()
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
-
-DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot1", "ks1type")
-DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot2", "ks2type")
 
 /obj/item/radio/headset/list_channels(mob/user)
 	return list_secure_channels()

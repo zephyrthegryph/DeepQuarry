@@ -27,7 +27,7 @@
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
 	var/obj/item/circuitboard/arcade/battle/interim_construct_actor_probe/board = allocate(/obj/item/circuitboard/arcade/battle/interim_construct_actor_probe, T)
-	own_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type))
+	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type))
 	frame.set_dir(WEST)
 	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, T, 6)
 	var/obj/item/stack/material/glass/glass = allocate(/obj/item/stack/material/glass, T, 3)

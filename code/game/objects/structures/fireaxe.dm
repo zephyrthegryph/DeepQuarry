@@ -16,8 +16,6 @@
 	/// The axe it starts with (a declared default child), or null for an empty cabinet.
 	var/fireaxe_type = /obj/item/material/twohanded/fireaxe
 
-DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
-
 /obj/structure/fireaxecabinet/Initialize(mapload)
 	. = ..()
 	update_icon()
@@ -209,4 +207,4 @@ APPEARANCE_TEMPLATE(/obj/structure/fireaxecabinet, "fireaxe{appearance_hasaxe}{o
 
 /obj/structure/fireaxecabinet/ownership()
 	. = ..()
-	. += owns(nameof(fireaxe), policy = OWN_CONTAINED)
+	. += owns(nameof(fireaxe), policy = OWN_CONTAINED, starts = nameof(fireaxe_type))

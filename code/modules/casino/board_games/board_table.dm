@@ -15,9 +15,7 @@
 	)
 
 CAPABILITIES(/obj/structure/casino_table/board_game)
-	owns_one(nameof(game_ui), /datum/board_game)
-
-DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/board_game, "game_ui", "game_ui")
+	owns_one(nameof(game_ui), /datum/board_game, starts = nameof(game_ui))
 
 
 EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \

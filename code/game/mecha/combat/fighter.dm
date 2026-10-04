@@ -50,7 +50,8 @@ TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
 		))
 
 
-DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
+CAPABILITIES(/obj/mecha/combat/fighter)
+	owns_one(nameof(ion_trail), starts = /datum/effect/effect/system/ion_trail_follow)
 
 /obj/mecha/combat/fighter/Initialize(mapload)
 	. = ..()

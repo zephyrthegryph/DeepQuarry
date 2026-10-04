@@ -21,7 +21,7 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/taperecorder)
-	owns_one(nameof(mytape), /obj/item/rectape)
+	owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape))
 
 /obj/item/taperecorder/Initialize(mapload)
 	. = ..()
@@ -34,7 +34,6 @@ CAPABILITIES(/obj/item/taperecorder)
 OM_FIELD(/obj/item/taperecorder, recording, 0, CHANGE_EXPLICIT)
 // The tape fills one second at a time while recording.
 DECLARE_REPEAT(/obj/item/taperecorder, 1 SECOND, record_tick, "recording")
-DECLARE_DEFAULT_CHILD(/obj/item/taperecorder, "mytape", null)
 
 /// A recorder hears what is said around it (the listening registry).
 /obj/item/taperecorder/capabilities()

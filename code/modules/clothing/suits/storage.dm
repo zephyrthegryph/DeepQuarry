@@ -2,7 +2,8 @@
 	name = DEVELOPER_WARNING_NAME
 	var/obj/item/storage/internal/pockets // owned: the internal storage object that holds the pockets' contents
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/storage, "pockets", /obj/item/storage/internal)
+CAPABILITIES(/obj/item/clothing/suit/storage)
+	owns_one(nameof(pockets), starts = /obj/item/storage/internal)
 
 /obj/item/clothing/suit/storage/Initialize(mapload)
 	. = ..()

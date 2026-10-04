@@ -16,7 +16,8 @@
 	loot_list = list(/obj/item/prop/alien/junk = 20
 			)
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/hivebot/precusor, "shields", /obj/item/shield_projector/rectangle/automatic/hivebot_drone)
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/precusor)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/hivebot_drone)
 
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/machinegun

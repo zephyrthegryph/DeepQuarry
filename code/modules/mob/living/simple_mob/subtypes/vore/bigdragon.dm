@@ -969,4 +969,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 			eyes = input_style_list[12]
 			build_icons()
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/bigdragon, "mob_radio", /obj/item/radio/headset/mob_headset)
+CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+

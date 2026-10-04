@@ -51,7 +51,7 @@
 	var/obj/item/card/id/head_id = new(console)
 	head_id.rank = JOB_CHIEF_ENGINEER
 	head_id.assignment = JOB_CHIEF_ENGINEER
-	own_set(console, nameof(console.scan), head_id)
+	rel_set(console, nameof(console.scan), head_id)
 	TEST_ASSERT(console.can_view_department(DEPARTMENT_ENGINEERING), "Chief Engineer could not view Engineering finances")
 	TEST_ASSERT(!console.can_view_department(DEPARTMENT_MEDICAL), "Chief Engineer could view Medical finances")
 	TEST_ASSERT(!console.can_allocate_station_budget(), "Chief Engineer could allocate Station funds")
@@ -215,7 +215,7 @@
 	var/obj/machinery/account_database/terminal = new(test_turf)
 	var/obj/item/card/id/authorizer = new(terminal)
 	authorizer.registered_name = "Account Test Captain"
-	own_set(terminal, nameof(terminal.held_card), authorizer)
+	rel_set(terminal, nameof(terminal.held_card), authorizer)
 	var/list/preexisting_packages = list()
 	for(var/obj/item/smallDelivery/existing_package in turf_contents_of_type(test_turf, /obj/item/smallDelivery))
 		preexisting_packages += existing_package
@@ -562,7 +562,7 @@
 	customer_id.registered_name = customer_account.owner_name
 	customer_id.associated_account_number = customer_account.account_number
 	var/obj/item/pda/customer_pda = new(customer)
-	own_set(customer_pda, nameof(customer_pda.id), customer_id)
+	rel_set(customer_pda, nameof(customer_pda.id), customer_id)
 
 	var/obj/machinery/cash_register/civilian/register = new(test_turf)
 	rel_set(register, nameof(register.linked_account), service)
@@ -1156,7 +1156,7 @@
 		"cargo_percent" = 20,
 		"producer_percentages" = list(),
 	)
-	own_set(crate, nameof(crate.shipping_ledger), ledger)
+	rel_set(crate, nameof(crate.shipping_ledger), ledger)
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
 	TEST_ASSERT(crate.shipping_ledger_valid(), "an unchanged sealed freight ledger was rejected")
 	var/datum/exported_crate/export = new
@@ -1167,7 +1167,7 @@
 	TEST_ASSERT(!crate.apply_shipping_ledger(export), "tampered freight retained authenticated routing")
 	TEST_ASSERT(!ledger.shipping_ledger_data["valid"], "tampered freight ledger was not visibly voided")
 	ledger.shipping_ledger_data["valid"] = TRUE
-	own_set(crate, nameof(crate.shipping_ledger), ledger)
+	rel_set(crate, nameof(crate.shipping_ledger), ledger)
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
 	crate.open()
 	TEST_ASSERT(!ledger.shipping_ledger_data["valid"], "opening certified freight did not void its paper ledger")

@@ -25,7 +25,8 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
-DECLARE_DEFAULT_CHILD(/obj/mecha/working/hoverpod, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
+CAPABILITIES(/obj/mecha/working/hoverpod)
+	owns_one(nameof(ion_trail), starts = /datum/effect/effect/system/ion_trail_follow)
 
 /obj/mecha/working/hoverpod/Initialize(mapload)
 	. = ..()

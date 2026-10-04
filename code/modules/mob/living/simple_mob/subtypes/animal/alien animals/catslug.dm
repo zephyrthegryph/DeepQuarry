@@ -1128,7 +1128,15 @@ DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/suslug, /mob/livin
 	color = COLOR_WHEAT
 */
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug, "mob_radio", /obj/item/radio/headset/mob_headset)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug, "mob_radio", /obj/item/radio/headset/mob_headset)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug, "mob_radio", /obj/item/radio/headset/mob_headset)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug, "mob_radio", /obj/item/radio/headset/mob_headset)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+

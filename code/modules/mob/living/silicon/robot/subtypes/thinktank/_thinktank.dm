@@ -170,4 +170,7 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 				recharge_complete = TRUE
 				act_message(src, null, others = span_infoplain("[span_bold("%U%")] beeps and flashes a green light above \his recharging port."))
 
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot/platform, "mmi", /obj/item/mmi/digital/robot)
+/mob/living/silicon/robot/platform/ownership()
+	. = ..()
+	. += owns(nameof(mmi), policy = OWN_CONTAINED, starts = /obj/item/mmi/digital/robot)
+

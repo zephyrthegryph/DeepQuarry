@@ -333,7 +333,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	var/datum/affliction/A = new /datum/affliction/synthetic/coolant_leak(arm)
-	own_add(arm, nameof(arm.detached_afflictions), A)
+	rel_add(arm, nameof(arm.detached_afflictions), A)
 	H.body.attach_part(arm)
 	TEST_ASSERT(!H.body.has_affliction(/datum/affliction/synthetic/coolant_leak), "a coolant leak can't be carried onto an organic arm")
 

@@ -190,11 +190,11 @@ CAPABILITY(/obj/item/dq_forms_flask/replaced/topped, refine(CAP_REAGENTS, add = 
 	var/obj/machinery/power/apc/dx_test/none = allocate(/obj/machinery/power/apc/dx_test, T)
 	TEST_ASSERT_NULL(none.cell, "cell_type = null starts no cell")
 
-/// DECLARE_DEFAULT_CHILD is a thin wrapper over the starts annotation.
+/// owns_one(starts =) lands in the ownership table's starting occupants and makes the child.
 /datum/unit_test/dq_forms_default_child_wrapper/Run()
 	var/obj/item/dq_decl_probe/probe = allocate(/obj/item/dq_decl_probe, dq_containment_floor())
 	var/list/starts = own_table_of(probe).start_vars
-	TEST_ASSERT(starts?[nameof(probe.part)], "DECLARE_DEFAULT_CHILD lands in the ownership table's starting occupants")
+	TEST_ASSERT(starts?[nameof(probe.part)], "owns_one(starts =) lands in the ownership table's starting occupants")
 	TEST_ASSERT(istype(probe.part, /obj/item/dq_decl_part), "and the child is made")
 	TEST_ASSERT(istype(probe.mapped_part, /obj/item/dq_decl_part/better), "a path held in the var still wins")
 

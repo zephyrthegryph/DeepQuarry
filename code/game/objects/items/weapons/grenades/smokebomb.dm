@@ -15,7 +15,8 @@
 	. = ..()
 	smoke.attach(src)
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/smokebomb, "smoke", /datum/effect/effect/system/smoke_spread/bad)
+CAPABILITIES(/obj/item/grenade/smokebomb)
+	owns_one(nameof(smoke), starts = /datum/effect/effect/system/smoke_spread/bad)
 
 /obj/item/grenade/smokebomb/detonate()
 	start_effect_sprayer(smoke, smoke_strength, 'sound/effects/smoke.ogg', smoke_color)

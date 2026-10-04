@@ -7,7 +7,7 @@
 	var/mob/observer/dead/observer = allocate(/mob/observer/dead, T)
 	observer.forceMove(T)
 	var/atom/movable/screen/movable/ability_master/master = allocate(/atom/movable/screen/movable/ability_master, actor)
-	own_set(actor, nameof(actor.ability_master), master)
+	rel_set(actor, nameof(actor.ability_master), master)
 	var/obj/item/technomancer_core/universal/core = allocate(/obj/item/technomancer_core/universal, T)
 	core.add_spell(/obj/item/spell/warp_strike, "Test warp", "tech_warpstrike")
 	TEST_ASSERT_EQUAL(length(core.spells), 1, "the actual core adds one owned spell button")

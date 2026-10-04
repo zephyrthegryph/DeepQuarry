@@ -66,7 +66,8 @@
 	var/tmp/datum/topturfcrossed/topturfcrossed
 
 
-DECLARE_DEFAULT_CHILD(/obj/item/bikehorn/topturf_testing, "topturfcrossed", /datum/topturfcrossed)
+CAPABILITIES(/obj/item/bikehorn/topturf_testing)
+	owns_one(nameof(topturfcrossed), starts = /datum/topturfcrossed)
 
 /obj/item/bikehorn/topturf_testing/Crossed(atom/movable/AM)
 	. = ..()

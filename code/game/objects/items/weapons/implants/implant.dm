@@ -776,7 +776,10 @@ DAMAGE_REACTION(/obj/item/implant/sizecontrol, DAMAGE_EMP, PROC_REF(sizecontrol_
 	name = "size control implant"
 	desc = "Implant which allows to control host size via voice commands."
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/sizecontrol, "imp", /obj/item/implant/sizecontrol)
+/obj/item/implanter/sizecontrol/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/sizecontrol)
+
 /obj/item/implanter/sizecontrol
 	icon_state = "implanter1_1" // loaded: what update() would show
 
@@ -795,7 +798,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/sizecontrol, "imp", /obj/item/implant/
 	with the shape of a star on it, the letters 'KE' in black text on it."
 	special_handling = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/compliance, "imp", /obj/item/implant/compliance)
+/obj/item/implanter/compliance/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/compliance)
+
 /obj/item/implanter/compliance
 	icon_state = "implanter1_1" // loaded: what update() would show
 

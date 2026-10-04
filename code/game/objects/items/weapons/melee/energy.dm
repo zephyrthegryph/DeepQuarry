@@ -277,7 +277,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 	use_cell = TRUE
 	hitcost = 120
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/item/cell/device/weapon)
+/obj/item/melee/energy/axe/charge/loaded/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
 /*
  * Energy Sword
@@ -422,7 +424,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 
 	hitcost = 75
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/item/cell/device/weapon)
+/obj/item/melee/energy/sword/charge/loaded/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
 //Energy Blade (ninja uses this)
 

@@ -111,7 +111,9 @@
 		src.add_fingerprint(user)
 	return TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/shock_maul/loaded, "bcell", /obj/item/cell/device/weapon)
+/obj/item/melee/shock_maul/loaded/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
 /obj/item/melee/shock_maul/loaded/Initialize(mapload) //this one starts with a cell pre-installed.
 	. = ..()

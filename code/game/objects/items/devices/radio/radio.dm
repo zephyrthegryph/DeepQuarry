@@ -43,7 +43,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 
 	var/datum/radio_frequency/radio_connection
 	/// Channel name -> the radio service's shared frequency datum (not owned; rebuilt on materialize).
-	var/list/datum/radio_frequency/secure_radio_connections
+	var/tmp/list/datum/radio_frequency/secure_radio_connections // SSradio's live subscriptions (shared frequency datums the radio does not own)
 
 	///If we're a syndicate beacon or not.
 	var/beacon = FALSE
@@ -877,7 +877,6 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	bs_tx_preload_id = "cryogaia_rx" //Transmit to a receiver
 	bs_rx_preload_id = "cryogaia_tx" //Recveive from a transmitter
 
-DECLARE_DEFAULT_CHILD(/obj/item/radio, "secure_radio_connections", list())
 DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
 /obj/item/radio/borg/ownership()
 	. = ..()

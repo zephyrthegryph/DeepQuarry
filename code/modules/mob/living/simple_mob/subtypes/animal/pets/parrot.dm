@@ -98,8 +98,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 	if(my_headset)
 		. += "It is wearing \a [my_headset]."
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_headset", null)
-
 // Subtypes.
 
 // Best Bird
@@ -247,4 +245,4 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_hea
 // The worn headset sits in the parrot's contents.
 /mob/living/simple_mob/animal/passive/bird/parrot/ownership()
 	. = ..()
-	. += owns(nameof(my_headset), policy = OWN_CONTAINED)
+	. += owns(nameof(my_headset), policy = OWN_CONTAINED, starts = nameof(my_headset))

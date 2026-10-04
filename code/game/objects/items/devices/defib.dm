@@ -20,7 +20,7 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/defib_kit)
-	owns_one(nameof(bcell), /obj/item/cell)
+	owns_one(nameof(bcell), /obj/item/cell, starts = nameof(bcell))
 
 /obj/item/defib_kit/get_cell()
 	return bcell
@@ -29,8 +29,6 @@ CAPABILITIES(/obj/item/defib_kit)
 	make_tethered(paddle_path)
 	. = ..()
 	update_icon()
-
-DECLARE_DEFAULT_CHILD(/obj/item/defib_kit, "bcell", null)
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc

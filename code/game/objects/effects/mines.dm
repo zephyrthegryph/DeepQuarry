@@ -21,7 +21,9 @@
 	if(camo_net)
 		alpha = 50
 
-DECLARE_DEFAULT_CHILD(/obj/effect/mine, "trap", null)
+CAPABILITIES(/obj/effect/mine)
+	owns_one(nameof(trap), starts = nameof(trap))
+
 DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "landmine_armed")))
 
 /// Phase 2: leaves the dangerous-to-step index.

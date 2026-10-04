@@ -117,7 +117,6 @@ UI_ACT_FORWARD(/obj/machinery/sleep_console, ui_forward_to_sleeper)
 	idle_power_usage = 15
 	active_power_usage = 200 //builtin health analyzer, dialysis machine, injectors.
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/sleeper, "beaker", /obj/item/reagent_containers/glass/beaker/large)
 OM_DERIVE_FIELD(/obj/machinery/sleeper, sleeper_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/sleeper, MACHINE_PIPELINE, list("operable", "sleeper_occupied"))
 
@@ -133,7 +132,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/sleeper, MACHINE_PIPELINE, list("opera
 
 /obj/machinery/sleeper/ownership()
 	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+	. += owns(nameof(beaker), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/beaker/large)
 
 /obj/machinery/sleeper/relations()
 	. = ..()

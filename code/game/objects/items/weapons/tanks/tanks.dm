@@ -51,6 +51,7 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
 CAPABILITIES(/obj/item/tank)
+	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_one(nameof(proxyassembly), /obj/item/tankassemblyproxy)
 
 /obj/item/tank/proc/init_proxy()

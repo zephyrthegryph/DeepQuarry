@@ -12,7 +12,8 @@
 	var/obj/item/mining_scanner/my_scanner = null
 	var/exact_scan = FALSE
 
-DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/tool/orescanner, "my_scanner", /obj/item/mining_scanner)
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/orescanner)
+	owns_one(nameof(my_scanner), starts = /obj/item/mining_scanner)
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/proc/scan_done(atom/target)

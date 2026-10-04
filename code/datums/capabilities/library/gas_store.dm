@@ -6,7 +6,7 @@
 //		. += gas_store(nameof(air_contents), CELL_VOLUME, T20C, list(GAS_O2 = O2STANDARD * ONE_ATMOSPHERE * 2, GAS_N2 = N2STANDARD * ONE_ATMOSPHERE))
 //
 // At init the holder var gets a new /datum/gas_mixture of `volume` litres at `temp` kelvin holding `gases`
-// (list(GAS_X = kPa): moles = P * V / (R * T)), owned by the holder (own_set: its arena slot goes with it). A var
+// (list(GAS_X = kPa): moles = P * V / (R * T)), owned by the holder (rel_set: its arena slot goes with it). A var
 // already holding a mixture is kept. `volume` and `temp` may name holder vars (nameof(volume)), read per instance.
 // A subtype with other gases declares gas_store() again on the same var: it replaces the parent's (one per var).
 

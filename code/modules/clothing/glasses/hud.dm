@@ -78,7 +78,8 @@
 	specialty_goggles = TRUE
 	var/hud_goggles = FALSE
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/glasses/omnihud, "tgarscreen", "tgarscreen_path")
+CAPABILITIES(/obj/item/clothing/glasses/omnihud)
+	owns_one(nameof(tgarscreen), starts = nameof(tgarscreen_path))
 
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)

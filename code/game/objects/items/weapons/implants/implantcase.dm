@@ -73,7 +73,9 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing a tracking implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/tracking, "imp", /obj/item/implant/tracking)
+/obj/item/implantcase/tracking/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/tracking)
 
 
 /obj/item/implantcase/explosive
@@ -81,7 +83,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/tracking, "imp", /obj/item/implant/t
 	desc = "A case containing an explosive implant."
 	icon_state = "implantcase-r"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/explosive, "imp", /obj/item/implant/explosive)
+/obj/item/implantcase/explosive/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/explosive)
 
 
 /obj/item/implantcase/chem
@@ -89,7 +93,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/explosive, "imp", /obj/item/implant/
 	desc = "A case containing a chemical implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/chem, "imp", /obj/item/implant/chem)
+/obj/item/implantcase/chem/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/chem)
 
 
 /obj/item/implantcase/loyalty
@@ -97,7 +103,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/chem, "imp", /obj/item/implant/chem)
 	desc = "A case containing a loyalty implant."
 	icon_state = "implantcase-r"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/loyalty, "imp", /obj/item/implant/loyalty)
+/obj/item/implantcase/loyalty/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/loyalty)
 
 
 /obj/item/implantcase/death_alarm
@@ -105,7 +113,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/loyalty, "imp", /obj/item/implant/lo
 	desc = "A case containing a death alarm implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/death_alarm, "imp", /obj/item/implant/death_alarm)
+/obj/item/implantcase/death_alarm/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/death_alarm)
 
 
 /obj/item/implantcase/freedom
@@ -113,7 +123,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/death_alarm, "imp", /obj/item/implan
 	desc = "A case containing a freedom implant."
 	icon_state = "implantcase-r"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/freedom, "imp", /obj/item/implant/freedom)
+/obj/item/implantcase/freedom/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/freedom)
 
 
 /obj/item/implantcase/adrenalin
@@ -121,7 +133,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/freedom, "imp", /obj/item/implant/fr
 	desc = "A case containing an adrenalin implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/adrenalin, "imp", /obj/item/implant/adrenalin)
+/obj/item/implantcase/adrenalin/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/adrenalin)
 
 
 /obj/item/implantcase/dexplosive
@@ -129,7 +143,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/adrenalin, "imp", /obj/item/implant/
 	desc = "A case containing an explosive."
 	icon_state = "implantcase-r"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/dexplosive, "imp", /obj/item/implant/dexplosive)
+/obj/item/implantcase/dexplosive/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/dexplosive)
 
 
 /obj/item/implantcase/health
@@ -137,119 +153,153 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/dexplosive, "imp", /obj/item/implant
 	desc = "A case containing a health tracking implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/health, "imp", /obj/item/implant/health)
+/obj/item/implantcase/health/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/health)
 
 /obj/item/implantcase/language
 	name = "glass case - 'GalCom'"
 	desc = "A case containing a GalCom language implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/language, "imp", /obj/item/implant/language)
+/obj/item/implantcase/language/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/language)
 
 /obj/item/implantcase/language/eal
 	name = "glass case - 'EAL'"
 	desc = "A case containing an Encoded Audio Language implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/language/eal, "imp", /obj/item/implant/language/eal)
+/obj/item/implantcase/language/eal/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/language/eal)
 
 /obj/item/implantcase/shades
 	name = "glass case - 'Integrated Shades'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/shades, "imp", /obj/item/implant/organ)
+/obj/item/implantcase/shades/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ)
 
 /obj/item/implantcase/taser
 	name = "glass case - 'Taser'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/taser, "imp", /obj/item/implant/organ/limbaugment)
+/obj/item/implantcase/taser/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment)
 
 /obj/item/implantcase/laser
 	name = "glass case - 'Laser'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/laser, "imp", /obj/item/implant/organ/limbaugment/laser)
+/obj/item/implantcase/laser/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/laser)
 
 /obj/item/implantcase/dart
 	name = "glass case - 'Dart'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/dart, "imp", /obj/item/implant/organ/limbaugment/dart)
+/obj/item/implantcase/dart/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/dart)
 
 /obj/item/implantcase/toolkit
 	name = "glass case - 'Toolkit'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/toolkit, "imp", /obj/item/implant/organ/limbaugment/upperarm)
+/obj/item/implantcase/toolkit/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/upperarm)
 
 /obj/item/implantcase/medkit
 	name = "glass case - 'Toolkit'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/medkit, "imp", /obj/item/implant/organ/limbaugment/upperarm/medkit)
+/obj/item/implantcase/medkit/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/upperarm/medkit)
 
 /obj/item/implantcase/surge
 	name = "glass case - 'Muscle Overclocker'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/surge, "imp", /obj/item/implant/organ/limbaugment/upperarm/surge)
+/obj/item/implantcase/surge/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/upperarm/surge)
 
 /obj/item/implantcase/analyzer
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/analyzer, "imp", /obj/item/implant/organ/limbaugment/wrist)
+/obj/item/implantcase/analyzer/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/wrist)
 
 /obj/item/implantcase/sword
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/sword, "imp", /obj/item/implant/organ/limbaugment/wrist/sword)
+/obj/item/implantcase/sword/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/wrist/sword)
 
 /obj/item/implantcase/sprinter
 	name = "glass case - 'Sprinter'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/sprinter, "imp", /obj/item/implant/organ/pelvic/sprint)
+/obj/item/implantcase/sprinter/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/pelvic/sprint)
 
 /obj/item/implantcase/med_scanner
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/med_scanner, "imp", /obj/item/implant/organ/pelvic/scanner)
+/obj/item/implantcase/med_scanner/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/pelvic/scanner)
 
 /obj/item/implantcase/armblade
 	name = "glass case - 'Armblade'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/armblade, "imp", /obj/item/implant/organ/limbaugment/upperarm/blade)
+/obj/item/implantcase/armblade/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/upperarm/blade)
 
 /obj/item/implantcase/handblade
 	name = "glass case - 'Handblade'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/handblade, "imp", /obj/item/implant/organ/limbaugment/wrist/blade)
+/obj/item/implantcase/handblade/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/wrist/blade)
 
 /obj/item/implantcase/restrainingbolt
 	name = "glass case - 'Restraining Bolt'"
 	desc = "A case containing a restraining bolt."
 	icon_state = "implantcase-b"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/restrainingbolt, "imp", /obj/item/implant/restrainingbolt)
+/obj/item/implantcase/restrainingbolt/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/restrainingbolt)
 
 
 /obj/item/implantcase/vrlanguage
@@ -257,7 +307,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/restrainingbolt, "imp", /obj/item/im
 	desc = "A case containing a language implant."
 	icon_state = "implantcase-r"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implantcase/vrlanguage, "imp", /obj/item/implant/vrlanguage)
+/obj/item/implantcase/vrlanguage/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/vrlanguage)
 
 /obj/item/implantcase/proc/inject_from(obj/item/reagent_containers/syringe/I, mob/user)
 	I.reagents.trans_to_obj(imp, 5)

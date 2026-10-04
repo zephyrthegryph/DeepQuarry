@@ -14,7 +14,8 @@
 	aspect = ASPECT_FIRE
 	var/obj/item/weldingtool/spell/welder = null
 
-DECLARE_DEFAULT_CHILD(/obj/item/spell/flame_tongue, "welder", /obj/item/weldingtool/spell)
+CAPABILITIES(/obj/item/spell/flame_tongue)
+	owns_one(nameof(welder), starts = /obj/item/weldingtool/spell)
 
 /obj/item/spell/flame_tongue/Initialize(mapload, coreless)
 	. = ..()

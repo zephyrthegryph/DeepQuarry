@@ -115,7 +115,14 @@
 	var/datum/gun_firemode_selector/firemode_selector = null
 
 CAPABILITIES(/obj/item/gun)
-	owns_many(nameof(firemodes))
+	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
+	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
+
+/// The gun's firemodes: one /datum/firemode per settings row the gun (or a map edit) put in `firemodes`.
+/obj/item/gun/proc/starting_firemodes(list/settings)
+	. = list()
+	for(var/i in 1 to length(settings))
+		. += new /datum/firemode(src, settings[i])
 
 /obj/item/gun/item_ctrl_click(mob/user)
 	if(can_flashlight && ishuman(user) && loc == user && !user.incapacitated(INCAPACITATION_ALL))
@@ -134,13 +141,8 @@ CAPABILITIES(/obj/item/gun)
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 25, vary = FALSE)
 	update_icon()
 
-DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_selector)
-
 /obj/item/gun/Initialize(mapload)
 	. = ..()
-	for(var/i in 1 to length(firemodes))
-		own_put(src, nameof(firemodes), i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
-
 	if(isnull(scoped_accuracy))
 		scoped_accuracy = accuracy
 

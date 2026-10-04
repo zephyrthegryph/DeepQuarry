@@ -132,7 +132,8 @@
 /obj/item/clothing/gloves/ring/buzzer/get_cell()
 	return battery
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/ring/buzzer, "battery", "battery_type")
+CAPABILITIES(/obj/item/clothing/gloves/ring/buzzer)
+	owns_one(nameof(battery), starts = nameof(battery_type))
 
 /obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT, mob/user)
 	if(proximity && istype(user, /mob/living/carbon/human))

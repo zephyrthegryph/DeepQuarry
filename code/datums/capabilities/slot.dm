@@ -15,7 +15,7 @@
 // (data["caps"][ui_key]["item"] = {name, ref} or null). Insert and eject run through cap_dispatch(),
 // so an ask_*() inside a slot hook re-validates and the dispatcher records the action once. The item
 // moves with one ownership transfer: out of the hand, slot or container it is in, into the holder,
-// adopted with own_set() (own_take() on the way out). The slot owns its var (owned():
+// adopted with rel_set() (own_take() on the way out). The slot owns its var (owned():
 // owns(var, policy = OWN_CONTAINED)): the holder type declares nothing for it in ownership(). Hooks: procs of the slot
 // capability that take the holder (refusal(), inserted(), ejected()); a holder that reacts declares a slot subtype
 // overriding them and passes it as cap_slot(..., slot_type = /datum/capability/slot/<x>). From code:

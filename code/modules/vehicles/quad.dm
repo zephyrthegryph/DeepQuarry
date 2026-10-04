@@ -27,7 +27,9 @@
 
 	var/outdoors_speed_mod = 0.7 //The general 'outdoors' speed. I.E., the general difference you'll be at when driving outside.
 
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/quadbike, "key", "key_type")
+/obj/vehicle/train/engine/quadbike/ownership()
+	. = ..()
+	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
 
 /obj/vehicle/train/engine/quadbike/Initialize(mapload, assembly)
 	. = ..()

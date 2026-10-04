@@ -86,7 +86,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 	if(holder_ref())
 		update_compass(src, TRUE)
 
-DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
+CAPABILITIES(/obj/item/gps)
+	owns_one(nameof(compass), starts = /obj/compass_holder)
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)

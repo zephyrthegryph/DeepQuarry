@@ -57,9 +57,8 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void, fit_spec, list(REQ_FITS_BODYTYPES
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))))
 // A path in boots/hood/tank is created in the suit; null deploys nothing.
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "boots", "boots")
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "hood", "hood")
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
+CAPABILITIES(/obj/item/clothing/suit/space/void)
+	owns_one(nameof(hood), /obj/item/clothing/head, starts = nameof(hood))
 
 /obj/item/clothing/suit/space/void/examine(mob/user)
 	. = ..()
@@ -491,6 +490,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 
 /obj/item/clothing/suit/space/void/ownership()
 	. = ..()
-	. += owns(nameof(boots), policy = OWN_CONTAINED)
-	. += owns(nameof(tank), policy = OWN_CONTAINED)
+	. += owns(nameof(boots), policy = OWN_CONTAINED, starts = nameof(boots))
+	. += owns(nameof(tank), policy = OWN_CONTAINED, starts = nameof(tank))
 	. += owns(nameof(cooler), policy = OWN_CONTAINED)

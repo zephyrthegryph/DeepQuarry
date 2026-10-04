@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Starting occupants (default children) are declared owns_one / owns_many with starts =; DECLARE_DEFAULT_CHILD is gone and an owned var written without a declaration is reported."
+  - refactor: "The declaration tables build lazily on first lookup, so global datums (loremaster, perk trees, faction relations) use declared owned vars with keys."
+  - code_imp: "own_set / own_add / own_put are the engine's private _own_* accessors; content calls rel_set / rel_add."

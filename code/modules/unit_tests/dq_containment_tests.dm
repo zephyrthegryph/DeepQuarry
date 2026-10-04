@@ -116,6 +116,9 @@
 	var/moves_done = 0
 	var/moves_refused = 0
 
+CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
+	owns_many(nameof(made))
+
 /datum/unit_test/dq_containment_conservation_fuzz/Run()
 	rel_set(src, nameof(floor), dq_containment_floor())
 	var/list/holder_types = list(/obj/structure/closet, /obj/structure/closet/crate, /obj/item/folder, /obj/item/dq_containment_box, /obj/item/storage/backpack)
@@ -159,7 +162,7 @@
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/add_holder(path)
 	var/atom/movable/H = new path(floor)
-	own_add(src, nameof(made), H)
+	rel_add(src, nameof(made), H)
 	rel_add(src, nameof(holders), H)
 	rel_add(src, nameof(things), H)
 	if(istype(H, /obj/structure/closet))
@@ -174,7 +177,7 @@
 	else
 		path = pick(/obj/item/dq_containment_test, /obj/item/dq_containment_test/glass, /obj/item/dq_containment_test/wood, /obj/item/paper)
 	var/atom/movable/T = new path(where || floor)
-	own_add(src, nameof(made), T)
+	rel_add(src, nameof(made), T)
 	rel_add(src, nameof(things), T)
 	return T
 

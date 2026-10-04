@@ -20,7 +20,8 @@
 	. = ..()
 	max_known_targets = 5 + rand(1,3)
 
-DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_state/default/must_hack)
+CAPABILITIES(/obj/item/multitool/hacktool)
+	owns_one(nameof(hack_state), starts = /datum/tgui_state/default/must_hack)
 
 // known_targets is a relation list (newest last): the framework drops a target when it dies.
 

@@ -45,8 +45,6 @@ DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_RE
 CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 
-DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/roulette_table, "ball", /obj/item/roulette_ball)
-
 /obj/structure/casino_table/roulette_table/Initialize(mapload)
 	.=..()
 	return
@@ -1034,4 +1032,4 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 
 /obj/structure/casino_table/roulette_table/ownership()
 	. = ..()
-	. += owns(nameof(ball), policy = OWN_CONTAINED)
+	. += owns(nameof(ball), policy = OWN_CONTAINED, starts = /obj/item/roulette_ball)

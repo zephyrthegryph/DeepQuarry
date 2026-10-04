@@ -10,15 +10,13 @@
 	var/loading = FALSE
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed)
-	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator)
+	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))
 
 /obj/item/gun/magnetic/matfed/proc/update_rating_mod()
 	if(capacitor && manipulator)
 		rating_modifier = capacitor.get_rating() + manipulator.get_rating()
 	else
 		rating_modifier = FALSE
-
-DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic/matfed, "manipulator", "manipulator")
 
 /obj/item/gun/magnetic/matfed/Initialize(mapload)
 	. = ..()

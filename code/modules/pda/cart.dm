@@ -144,7 +144,8 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	desc = "A data cartridge with an integrated radio signaler module."
 	programs = list(new/datum/data/pda/app/signaller)
 
-DECLARE_DEFAULT_CHILD(/obj/item/cartridge/signal, "radio", /obj/item/radio/integrated/signal)
+CAPABILITIES(/obj/item/cartridge/signal)
+	owns_one(nameof(radio), starts = /obj/item/radio/integrated/signal)
 
 /obj/item/cartridge/signal/science
 	name = "\improper Signal Ace 2 cartridge"
@@ -228,7 +229,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/cartridge/signal, "radio", /obj/item/radio/integ
 
 		new/datum/data/pda/app/status_display)
 
-DECLARE_DEFAULT_CHILD(/obj/item/cartridge/rd, "radio", /obj/item/radio/integrated/signal)
+CAPABILITIES(/obj/item/cartridge/rd)
+	owns_one(nameof(radio), starts = /obj/item/radio/integrated/signal)
 
 /obj/item/cartridge/captain
 	name = "\improper Value-PAK cartridge"
@@ -326,7 +328,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/cartridge/rd, "radio", /obj/item/radio/integrate
 	var/slots = 1
 	var/obj/item/storage/internal/hold
 
-DECLARE_DEFAULT_CHILD(/obj/item/cartridge/storage, "hold", /obj/item/storage/internal)
+CAPABILITIES(/obj/item/cartridge/storage)
+	owns_one(nameof(hold), starts = /obj/item/storage/internal)
 
 /obj/item/cartridge/storage/Initialize(mapload)
 	. = ..()

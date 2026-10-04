@@ -507,7 +507,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		for(var/reactant in react_pool)
 			AddParticles(reactant, react_pool[reactant])
 
-// The core owns its field (own_set in fusion_core/Startup()); the field names its core back.
+// The core owns its field (rel_set in fusion_core/Startup()); the field names its core back.
 /obj/effect/fusion_em_field/relations()
 	. = ..()
 	. += rel_one(nameof(owned_core))

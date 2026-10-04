@@ -35,5 +35,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/voice, \
 	changer.voice = null
 	to_chat(user, span_notice("You have reset your voice changer's mimicry feature."))
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/gas/voice, "changer", /obj/item/voice_changer)
+/obj/item/clothing/mask/gas/voice/ownership()
+	. = ..()
+	. += owns(nameof(changer), starts = /obj/item/voice_changer)
 

@@ -119,9 +119,8 @@ DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit
 CAPABILITIES(/obj/machinery/shieldgen)
 	owns_many(nameof(deployed_shields))
 	climb()
-	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 
 // its shields collapse.

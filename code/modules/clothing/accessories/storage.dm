@@ -12,7 +12,9 @@
 	var/hide_on_roll = FALSE
 	special_handling = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/storage, "hold", /obj/item/storage/internal)
+/obj/item/clothing/accessory/storage/ownership()
+	. = ..()
+	. += owns(nameof(hold), starts = /obj/item/storage/internal)
 
 /obj/item/clothing/accessory/storage/Initialize(mapload)
 	. = ..()

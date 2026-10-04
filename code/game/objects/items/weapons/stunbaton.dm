@@ -71,7 +71,8 @@ CAPABILITIES(/obj/item/melee/baton)
 		src.add_fingerprint(user)
 	return TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/loaded, "bcell", /obj/item/cell/device/weapon) //this one starts with a cell pre-installed.
+CAPABILITIES(/obj/item/melee/baton/loaded)
+	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon) //this one starts with a cell pre-installed.
 
 /obj/item/melee/baton/proc/deductcharge()
 	if(status == 1)		//Only deducts charge when it's on

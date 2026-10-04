@@ -175,6 +175,7 @@
 
 CAPABILITIES(/obj/item/grab)
 	op("tighten", in_hand(), label("Tighten grip"), then(PROC_REF(interaction_tighten)))
+	owns_one(nameof(hud), starts = /atom/movable/screen/grab)
 
 /// Old attack_self: upgrade the grab.
 /obj/item/grab/proc/interaction_tighten(datum/act/op/A)
@@ -403,8 +404,6 @@ CAPABILITIES(/obj/item/grab)
 //returns the number of size categories between affecting and assailant, rounded. Positive means A is larger than B
 /obj/item/grab/proc/size_difference(mob/A, mob/B)
 	return mob_size_difference(A.mob_size, B.mob_size)
-
-DECLARE_DEFAULT_CHILD(/obj/item/grab, "hud", /atom/movable/screen/grab)
 
 #undef UPGRADE_KILL_TIMER
 

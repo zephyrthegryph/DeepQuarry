@@ -325,4 +325,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 // Select an obj if no mobs are around.
 
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, "Vac", /obj/item/vac_attachment/swoopie)
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
+	owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie)
+

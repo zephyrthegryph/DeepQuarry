@@ -115,7 +115,7 @@
 		else
 			return null
 
-// The omni device owns its ports (own_add in omni/Initialize()); a port names its device back.
+// The omni device owns its ports (rel_add in omni/Initialize()); a port names its device back.
 /datum/omni_port/ownership()
 	. = ..()
 	. += rel_one(nameof(air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

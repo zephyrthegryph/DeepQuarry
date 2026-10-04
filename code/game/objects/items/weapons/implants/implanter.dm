@@ -95,21 +95,30 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 /obj/item/implanter/loyalty
 	name = "implanter-loyalty"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/loyalty, "imp", /obj/item/implant/loyalty)
+/obj/item/implanter/loyalty/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/loyalty)
+
 /obj/item/implanter/loyalty
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/explosive
 	name = "implanter (E)"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/explosive, "imp", /obj/item/implant/explosive)
+/obj/item/implanter/explosive/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/explosive)
+
 /obj/item/implanter/explosive
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/adrenalin
 	name = "implanter-adrenalin"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/adrenalin, "imp", /obj/item/implant/adrenalin)
+/obj/item/implanter/adrenalin/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/adrenalin)
+
 /obj/item/implanter/adrenalin
 	icon_state = "implanter1_1" // loaded: what update() would show
 
@@ -117,7 +126,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/adrenalin, "imp", /obj/item/implant/ad
 	name = "implanter (C)"
 	icon_state = "cimplanter1"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/compressed, "imp", /obj/item/implant/compressed)
+/obj/item/implanter/compressed/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/compressed)
+
 /obj/item/implanter/compressed
 	icon_state = "implanter1_1" // loaded: what update() would show
 
@@ -170,7 +182,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/compressed, "imp", /obj/item/implant/c
 /obj/item/implanter/restrainingbolt
 	name = "implanter (bolt)"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/restrainingbolt, "imp", /obj/item/implant/restrainingbolt)
+/obj/item/implanter/restrainingbolt/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/restrainingbolt)
+
 /obj/item/implanter/restrainingbolt
 	icon_state = "implanter1_1" // loaded: what update() would show
 
@@ -180,7 +195,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/restrainingbolt, "imp", /obj/item/impl
 /obj/item/implanter/vrlanguage
 	name = "implanter-language"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/vrlanguage, "imp", /obj/item/implant/vrlanguage)
+/obj/item/implanter/vrlanguage/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/vrlanguage)
+
 /obj/item/implanter/vrlanguage
 	icon_state = "implanter1_1" // loaded: what update() would show
 

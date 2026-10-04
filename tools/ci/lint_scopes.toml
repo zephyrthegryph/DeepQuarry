@@ -304,6 +304,10 @@ damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 2
 
+[lint.legacy_forms]
+# The engine's own accessors (_own_set / _own_add / _own_put) are called only by the declaration engine and the ownership store.
+exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
+
 [lint.legacy_forms.lists]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
@@ -313,4 +317,10 @@ banned = [
   "om_hooked = ask the activation: nothing replaces it",
   "hooks_in = the OM hook table is gone: observe() grants a hook capability",
   "hooks_out = the OM hook table is gone: observe() grants a hook capability",
+  "own_set = rel_set(holder, nameof(v), value): the engine's accessor is _own_set, never called from content",
+  "own_add = rel_add(holder, nameof(v), value): the engine's accessor is _own_add, never called from content",
+  "_own_set = rel_set(holder, nameof(v), value): the accessor is private to code/engine and code/datums/ownership",
+  "_own_add = rel_add(holder, nameof(v), value): the accessor is private to code/engine and code/datums/ownership",
+  "_own_put = rel_add(holder, nameof(v), value, key): the accessor is private to code/engine and code/datums/ownership",
+  "own_put = rel_add(holder, nameof(v), value, key): the engine's accessor is _own_put, never called from content",
 ]

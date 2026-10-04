@@ -201,7 +201,8 @@ DECLARE_REAGENTS(/obj/item/integrated_circuit/passive/power/chemical_cell, "volu
 	var/obj/machinery/power/circuit_io/IO = null // Dummy power machine to move energy in/out without a bunch of code duplication.
 	var/throughput = 10000 // Give/take up to 10kW.
 
-DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/passive/power/powernet, "IO", /obj/machinery/power/circuit_io)
+CAPABILITIES(/obj/item/integrated_circuit/passive/power/powernet)
+	owns_one(nameof(IO), starts = /obj/machinery/power/circuit_io)
 
 
 /obj/item/integrated_circuit/passive/power/powernet/on_anchored()

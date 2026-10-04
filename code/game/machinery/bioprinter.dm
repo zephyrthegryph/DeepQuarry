@@ -306,7 +306,9 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	icon_state = "bioprinter"
 	circuit = /obj/item/circuitboard/bioprinter
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj/item/reagent_containers/glass/bottle/biomass)
+/obj/machinery/organ_printer/flesh/full/ownership()
+	. = ..()
+	. += owns(nameof(container), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/bottle/biomass)
 
 /obj/machinery/organ_printer/flesh/dismantle()
 	var/turf/T = get_turf(src)

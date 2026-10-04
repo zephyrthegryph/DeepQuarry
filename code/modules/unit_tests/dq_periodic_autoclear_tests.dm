@@ -22,7 +22,7 @@
 /datum/unit_test/periodic_autoclear_fusion_owned_field/Run()
 	var/obj/machinery/power/fusion_core/core = allocate(/obj/machinery/power/fusion_core, test_floor())
 	TEST_ASSERT(!sys_periodic_allows(core, MACHINE_PIPELINE), "a core with no field is gated off")
-	own_set(core, nameof(core.owned_field), new /obj/effect/fusion_em_field(core.loc, core))
+	rel_set(core, nameof(core.owned_field), new /obj/effect/fusion_em_field(core.loc, core))
 	TEST_ASSERT_NOTNULL(core.owned_field, "the core owns its new field")
 	TEST_ASSERT(sys_periodic_allows(core, MACHINE_PIPELINE), "owning a field opens the machine step")
 	qdel(core.owned_field)

@@ -383,7 +383,6 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
-DECLARE_DEFAULT_CHILD(/obj/item/communicator, "camera", /obj/machinery/camera/communicator)
 /obj/item/communicator/ownership()
 	. = ..()
 	. += owns(nameof(id), policy = OWN_SPILL)
@@ -440,5 +439,3 @@ APPEARANCE_TEMPLATE(/obj/item/communicator, "{initial(icon_state)}{appearance_co
 #undef WTHRTAB
 #undef MANITAB
 #undef SETTTAB
-
-DECLARE_DEFAULT_CHILD(/mob/observer/dead, "exonet", /datum/exonet_protocol)

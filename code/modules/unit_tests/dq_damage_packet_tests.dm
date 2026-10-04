@@ -47,10 +47,13 @@
 	var/datum/dq_packet_record/last
 	var/received = 0
 
+CAPABILITIES(/obj/machinery/dq_damage_probe)
+	owns_one(nameof(last))
+
 /obj/machinery/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
 	own_clear(src, nameof(last), OWN_DELETE)
-	own_set(src, nameof(last), new /datum/dq_packet_record(packet))
+	rel_set(src, nameof(last), new /datum/dq_packet_record(packet))
 	return 0
 
 
@@ -66,7 +69,7 @@
 /mob/living/simple_mob/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
 	own_clear(src, nameof(last), OWN_DELETE)
-	own_set(src, nameof(last), new /datum/dq_packet_record(packet))
+	rel_set(src, nameof(last), new /datum/dq_packet_record(packet))
 	return 0
 
 

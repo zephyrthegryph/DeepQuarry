@@ -35,7 +35,7 @@
 		qdel(ctx) // ALLOW(lifecycle): entity_clone disposes of its scratch serializer context
 	if(clone && new_owner && slot)
 		if(islist(new_owner.vars[slot]))
-			own_add(new_owner, slot, clone)
+			_own_add(new_owner, slot, clone)
 		else
-			own_set(new_owner, slot, clone)
+			_own_set(new_owner, slot, clone)
 	return clone

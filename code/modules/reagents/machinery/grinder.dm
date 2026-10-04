@@ -21,8 +21,6 @@
 CAPABILITIES(/obj/machinery/reagentgrinder)
 	owns_many(nameof(holdingitems))
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent_containers/glass/beaker/large)
-
 /obj/machinery/reagentgrinder/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -242,4 +240,4 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 
 /obj/machinery/reagentgrinder/ownership()
 	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+	. += owns(nameof(beaker), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/beaker/large)

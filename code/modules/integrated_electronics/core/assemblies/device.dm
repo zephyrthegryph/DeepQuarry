@@ -8,7 +8,8 @@
 
 	special_handling = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/assembly/electronic_assembly, "EA", /obj/item/electronic_assembly/device)
+CAPABILITIES(/obj/item/assembly/electronic_assembly)
+	owns_one(nameof(EA), starts = /obj/item/electronic_assembly/device)
 
 /obj/item/assembly/electronic_assembly/Initialize(mapload)
 	. = ..()

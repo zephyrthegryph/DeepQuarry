@@ -112,6 +112,8 @@ CAPABILITIES(/mob/living/silicon/ai)
 	owns_one(nameof(psupply), /obj/machinery/ai_powersupply)
 	owns_one(nameof(research), /datum/malf_research)
 	owns_one(nameof(track), /datum/trackable)
+	owns_one(nameof(aiMulti), starts = /obj/item/multitool)
+	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam, starts = /obj/item/camera/siliconcam/ai_camera)
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	om_grant_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
@@ -252,8 +254,6 @@ CAPABILITIES(/mob/living/silicon/ai)
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiMulti", /obj/item/multitool)
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/siliconcam/ai_camera)
 // GLOB.default_ai_icon or one of the shared icon sets (a custom one is only ever held here).
 
 // the AI's eyes go with it: the active one and any other still linked to it (the eye

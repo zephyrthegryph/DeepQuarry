@@ -24,7 +24,8 @@ OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, obj/item/c
 /// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
 DECLARE_PERIODIC_WHILE(/obj/machinery/computer/security/telescreen/bodycamera, MACHINE_PIPELINE, "showing")
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", /obj/item/radio)
+CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
+	owns_one(nameof(bradio), starts = /obj/item/radio)
 
 /obj/machinery/computer/security/telescreen/bodycamera/Initialize(mapload)
 

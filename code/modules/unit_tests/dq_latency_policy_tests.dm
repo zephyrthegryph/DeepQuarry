@@ -171,10 +171,10 @@
 	dq_ledger(box)
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
 	TEST_ASSERT(latent_ok(item), "should be eligible with no viewers: [GLOB.latency_last_ineligible]")
-	own_add(box, nameof(box.open_tguis), new /datum) // stand in for an open tgui/browse window
+	LAZYADD(box.open_tguis, new /datum) // stand in for an open tgui/browse window
 	TEST_ASSERT(!latent_ok(item), "an open window on the holder must block collapse")
 	qdel(box.open_tguis[1])
-	own_take_all(box, nameof(box.open_tguis))
+	box.open_tguis = null
 	TEST_ASSERT(latent_ok(item), "closing the window should restore eligibility: [GLOB.latency_last_ineligible]")
 	qdel(box)
 
@@ -269,6 +269,9 @@
 	var/collapses = 0
 	var/materializes = 0
 
+CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
+	owns_many(nameof(made))
+
 /datum/unit_test/dq_latency_fuzz/Run()
 	own_take_all(src, nameof(made))
 	rel_set(src, nameof(floor), dq_latency_floor())
@@ -276,7 +279,7 @@
 	var/list/boxes = list()
 	for(var/i in 1 to 4)
 		var/obj/item/dq_latency_test_box/box = new(floor)
-		own_add(src, nameof(made), box)
+		rel_add(src, nameof(made), box)
 		boxes += box
 		dq_ledger(box)
 		for(var/j in 1 to 3)

@@ -244,4 +244,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "
 	return ..()
 
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "powermachine", /obj/machinery/abstract_grub_machine)
+CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
+	owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine)
+

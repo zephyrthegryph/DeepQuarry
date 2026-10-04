@@ -332,7 +332,7 @@
 	TEST_ASSERT_NULL(A.partner, "and nothing was written")
 	TEST_ASSERT_NULL(rel_link(A, nameof(A.others), S), "a rel_many write of another type is refused")
 	TEST_ASSERT(!length(A.others), "and nothing was added")
-	TEST_ASSERT_NULL(own_set(A, nameof(A.kept), S), "an owned write of another type is refused")
+	TEST_ASSERT_NULL(rel_set(A, nameof(A.kept), S), "an owned write of another type is refused")
 	TEST_ASSERT_NULL(A.kept, "and nothing was owned")
 	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT_EQUAL(length(capture), 3, "each refusal was reported: [json_encode(capture)]")

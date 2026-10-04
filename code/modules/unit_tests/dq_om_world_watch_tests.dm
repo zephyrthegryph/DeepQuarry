@@ -339,8 +339,11 @@
 	var/last_pressure
 	var/datum/native_watch/world/watch
 
+CAPABILITIES(/datum/world_test_gauge)
+	owns_one(nameof(watch))
+
 /datum/world_test_gauge/New(cell)
-	own_set(src, nameof(watch), om_world_on_change(src, WORLD_PROBE(cell), CH_BIT(CH_PROBE_PRESSURE), PROC_REF(on_pressure)))
+	rel_set(src, nameof(watch), om_world_on_change(src, WORLD_PROBE(cell), CH_BIT(CH_PROBE_PRESSURE), PROC_REF(on_pressure)))
 
 
 

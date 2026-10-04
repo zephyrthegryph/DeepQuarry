@@ -127,7 +127,7 @@ CAPABILITIES(/datum/gear)
 		return GLOB.tail_styles_list[tail_style]
 	return null
 
-// Each catalog entry owns its gear_tweaks (own_add of a fresh tweak): one kind for the whole list,
+// Each catalog entry owns its gear_tweaks (rel_add of a fresh tweak): one kind for the whole list,
 // instead of mixing the GLOB.gear_tweak_* singletons with per-entry variant tweaks.
 
 /datum/gear/New()

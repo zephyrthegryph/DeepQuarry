@@ -42,7 +42,6 @@
 
 // The cell comes from cell_type (null: none); icon_state follows state, the open-hatch overlay
 // panel_open (doc/rewrite/declarative_lifecycle.md).
-DECLARE_DEFAULT_CHILD(/obj/machinery/space_heater, "cell", "cell_type")
 // Rows by state: SHEATER_OFF, SHEATER_STANDBY, SHEATER_HEAT, SHEATER_COOL.
 DECLARE_APPEARANCE(/obj/machinery/space_heater, "state", list( 	"0" = list(APPEARANCE_ICON_STATE = "sheater0"), 	"1" = list(APPEARANCE_ICON_STATE = "sheater1"), 	"2" = list(APPEARANCE_ICON_STATE = "sheater2"), 	"3" = list(APPEARANCE_ICON_STATE = "sheater3") ))
 DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("sheater-open"))))
@@ -281,4 +280,4 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
 
 /obj/machinery/space_heater/ownership()
 	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = nameof(cell_type))

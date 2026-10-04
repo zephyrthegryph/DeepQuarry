@@ -64,7 +64,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pda)
-	owns_one(nameof(cartridge), /obj/item/cartridge)
+	owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge))
 	owns_one(nameof(pai), /obj/item/paicard)
 
 /obj/item/pda/examine(mob/user)
@@ -119,8 +119,6 @@ CAPABILITIES(/obj/item/pda)
 	return 0
 
 REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
-
-DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 /obj/item/pda/Initialize(mapload)
 	. = ..()

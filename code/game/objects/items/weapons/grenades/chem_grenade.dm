@@ -228,8 +228,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoa
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b, null, list(REAGENT_ID_FOAMINGAGENT = 10, REAGENT_ID_PACID = 10))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/metalfoam, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/metalfoam, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/metalfoam)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/incendiary
 	name = "incendiary grenade"
@@ -247,8 +248,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendia
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b, null, list(REAGENT_ID_PHORON = 15, REAGENT_ID_SACID = 15))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/incendiary, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/incendiary, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/incendiary)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/antiweed
 	icon_state = "grenade"
@@ -266,8 +268,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b, null, list(REAGENT_ID_PHOSPHORUS = 25, REAGENT_ID_SUGAR = 25))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/antiweed, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/antiweed, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/antiweed)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/cleaner
 	name = "cleaner grenade"
@@ -285,8 +288,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b, null, list(REAGENT_ID_WATER = 40, REAGENT_ID_CLEANER = 10))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/cleaner, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/cleaner, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/cleaner)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/teargas
 	name = "tear gas grenade"
@@ -304,8 +308,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_te
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b, null, list(REAGENT_ID_SUGAR = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 80))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/teargas, "beakers", list(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/teargas, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/teargas)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/proc/sync_det_time()
 	if(istimer(detonator.a_left)) //Make sure description reflects that the timer has been reset

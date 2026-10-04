@@ -132,5 +132,4 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 
 /obj/item/cane/concealed/ownership()
 	. = ..()
-	. += owns(nameof(concealed_blade), policy = OWN_CONTAINED)
-DECLARE_DEFAULT_CHILD(/obj/item/cane/concealed, "concealed_blade", /obj/item/material/sword/katana/caneblade)
+	. += owns(nameof(concealed_blade), policy = OWN_CONTAINED, starts = /obj/item/material/sword/katana/caneblade)

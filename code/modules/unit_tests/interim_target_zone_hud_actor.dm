@@ -19,7 +19,7 @@
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/observer/dead/observer = allocate(/mob/observer/dead, run_loc_floor_bottom_left)
 	var/atom/movable/screen/zone_sel/interim_actor_probe/button = allocate(/atom/movable/screen/zone_sel/interim_actor_probe)
-	own_set(actor, nameof(actor.zone_sel), button)
+	rel_set(actor, nameof(actor.zone_sel), button)
 	TEST_ASSERT_EQUAL(actor.zone_sel, button, "the actual target selector belongs to the initiating mob")
 	TEST_ASSERT_EQUAL(button.selecting, BP_TORSO, "the actual target selector starts on the torso")
 	var/datum/om/rec/actor_rec = om_rec_of(actor)

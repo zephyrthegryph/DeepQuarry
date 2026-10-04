@@ -29,9 +29,7 @@
 
 /// The destroy transaction: on_holder_destroy of each capability, then every activation ends (activations_teardown).
 /proc/engine_holder_destroy(datum/holder)
-	if(!islist(GLOB?.type_table_of_type))
-		return
-	var/datum/type_table/T = GLOB.type_table_of_type[holder.type]
+	var/datum/type_table/T = type_table_cache()[holder.type]
 	if(!T)
 		return
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
@@ -88,9 +86,9 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
  * same step.
  */
 /proc/activations_relation_changed(datum/holder, var_name, init = FALSE)
-	if(!holder || (QDELETED(holder) && !init) || !islist(GLOB?.type_table_of_type))
+	if(!holder || (QDELETED(holder) && !init))
 		return
-	var/datum/type_table/T = GLOB.type_table_of_type[holder.type]
+	var/datum/type_table/T = type_table_cache()[holder.type]
 	if(!T)
 		if(!init)
 			return
@@ -144,7 +142,7 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 /// item with the holder as source, both for exactly the item's time in the slot and bound to it. A type with no while_slotted entry costs two
 /// flag reads.
 /proc/activations_slot_enter(datum/item, datum/holder, slot_id)
-	if(!islist(GLOB?.type_table_of_type) || QDELETED(item) || QDELETED(holder))
+	if(QDELETED(item) || QDELETED(holder))
 		return
 	var/datum/type_table/item_table = table_of(item)
 	if(item_table.has_slotted)
@@ -165,8 +163,6 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 
 /// `item` left `holder`'s slot `slot_id`, however it left: everything the slot scoped goes at once.
 /proc/activations_slot_exit(datum/item, datum/holder, slot_id)
-	if(!islist(GLOB?.type_table_of_type))
-		return
 	// Only what a while_slotted entry could have made is looked for: a type that declares none holds none.
 	if(holder.rx?.activations && table_of(item).has_slotted)
 		for(var/datum/activation/A as anything in holder.rx.activations.Copy())

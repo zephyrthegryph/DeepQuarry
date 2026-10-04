@@ -1907,7 +1907,6 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 /mob/living/silicon/robot/proc/supports_upgrade(given_type)
 	return (given_type in module.supported_upgrades)
 
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot, "robotact", /datum/tgui_module/robot_ui)
 /mob/living/silicon/robot/ownership()
 	. = ..()
 	. += owns(nameof(hat), policy = OWN_SPILL)

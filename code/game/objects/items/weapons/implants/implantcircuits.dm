@@ -12,7 +12,8 @@
 	. = ..()
 	rel_set(IC, nameof(IC.implant), src)
 
-DECLARE_DEFAULT_CHILD(/obj/item/implant/integrated_circuit, "IC", /obj/item/electronic_assembly/implant)
+CAPABILITIES(/obj/item/implant/integrated_circuit)
+	owns_one(nameof(IC), starts = /obj/item/electronic_assembly/implant)
 
 /obj/item/implant/integrated_circuit/get_data()
 	var/dat = {"

@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
 	var/obj/item/circuitboard/board = allocate(board_type, T)
-	own_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type))
+	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type))
 	frame.set_dir(WEST)
 	frame.pixel_x = 7
 	frame.pixel_y = -3
