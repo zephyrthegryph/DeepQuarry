@@ -3612,11 +3612,11 @@
 	into += entry_line(854)
 	into += list(global.ref_one(nameof(controlled_mob), /mob))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1249
+/// CAPABILITIES(/datum/prompt/choice/admin_drop_pod) at code/modules/admin/verbs/randomverbs.dm:1262
 /datum/prompt/choice/admin_drop_pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1249, /datum/prompt/choice/admin_drop_pod)
-	into += entry_line(1250)
+	into += entry_block("code/modules/admin/verbs/randomverbs.dm", 1262, /datum/prompt/choice/admin_drop_pod)
+	into += entry_line(1263)
 	into += list(global.ref_one(nameof(drop_mob), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_gib_target) at code/modules/admin/verbs/adminfun.dm:92
