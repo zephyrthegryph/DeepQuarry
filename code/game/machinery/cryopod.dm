@@ -29,14 +29,12 @@
 
 	req_one_access = list(ACCESS_HEADS)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/cryopod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/cryopod/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/machinery/computer/cryopod/draw(datum/look/look)
+	..()
 	if((has_stat(NOPOWER)) || (has_stat(BROKEN)))
-		icon_state = "[initial(icon_state)]-p"
+		look.state("[initial(icon_state)]-p")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 /obj/machinery/computer/cryopod/robot
 	name = "robotic storage console"

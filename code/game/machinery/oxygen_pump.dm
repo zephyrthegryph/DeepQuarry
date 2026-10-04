@@ -23,6 +23,9 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	owns_one(nameof(contained), starts = nameof(mask_type))
 	interface("Tank")
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
+	op("oxygen_pump_hand", hand(), ungated(), needs(req(PROC_REF(can_use_pump), because = MSG(oxygen_pump/no_tank))), then(PROC_REF(oxygen_pump_interaction_hand)))
+	op("oxygen_pump_item", item(/obj/item), then(PROC_REF(oxygen_pump_interaction_item)))
+	op("oxygen_pump_settings", menu(), label("Show Tank Settings"), then(PROC_REF(oxygen_pump_settings)))
 
 /// Who wears the mask (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
@@ -60,22 +63,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/oxygen_pump, MACHINE_PIPELINE, "breather")
 	attach_mask(target)
 	src.add_fingerprint(user)
 
-EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(oxygen_pump_interaction_hand), REQ_TARGET_STATE(/obj/machinery/oxygen_pump/proc/can_use_pump)), \
-	INTERACT_ITEM(null, PROC_REF(oxygen_pump_interaction_item)), \
-	INTERACT_VERB("Show Tank Settings", PROC_REF(oxygen_pump_settings)), \
-)
+MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 
 /// Requirement: the mask needs a tank behind it (removing the tank in maintenance is always fine).
-/obj/machinery/oxygen_pump/proc/can_use_pump(mob/user, atom/target, obj/item/held)
-	if(user.is_incorporeal() || has_stat(MAINT))
-		return TRUE
-	if(!tank)
-		return "there is no tank in it"
-	return TRUE
+/obj/machinery/oxygen_pump/proc/can_use_pump(datum/act/op/A)
+	return A.actor.is_incorporeal() || has_stat(MAINT) || tank
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.is_incorporeal())
 		return TRUE
 	if((has_stat(MAINT)) && tank)
@@ -156,7 +152,9 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 	return 1
 
 /// Old attackby. It never called ..(), so every item stops here.
-/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(user.is_incorporeal())
 		return TRUE
 	if(istype(W, /obj/item/tank) && (has_stat(MAINT)))
@@ -210,8 +208,8 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 				breather().internals.icon_state = "internal0"
 
 //Create rightclick to view tank settings
-/obj/machinery/oxygen_pump/proc/oxygen_pump_settings(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
+/obj/machinery/oxygen_pump/proc/oxygen_pump_settings(datum/act/op/A)
+	tgui_interact(A.actor)
 
 /obj/machinery/oxygen_pump/ui_prepare(mob/user, datum/tgui/ui)
 	if(!tank)

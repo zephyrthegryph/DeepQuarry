@@ -754,3 +754,18 @@
 	TEST_ASSERT_NOTNULL(cam, "the camera is built")
 	TEST_ASSERT_EQUAL(C.state, 4, "and the assembly is closed up")
 	TEST_ASSERT(asked(H), "then for a direction")
+
+/datum/unit_test/dq_hc_struct/oxygen_pump_tank_is_swapped_in_maintenance
+/datum/unit_test/dq_hc_struct/oxygen_pump_tank_is_swapped_in_maintenance/run_gate()
+	var/mob/living/carbon/human/H = person(tile(3, 3))
+	var/obj/machinery/oxygen_pump/P = mach(/obj/machinery/oxygen_pump/anesthetic, tile(3, 2))
+	var/obj/item/tank/T = P.tank
+	TEST_ASSERT_NOTNULL(T, "the pump starts with a tank")
+	P.stat_add(MAINT)
+	hci_click(H, P, null)
+	settle()
+	TEST_ASSERT_NULL(P.tank, "a bare hand takes the tank out in maintenance")
+	TEST_ASSERT(T in H.get_all_held_items(), "and holds it")
+	hci_click(H, P, T)
+	settle()
+	TEST_ASSERT_EQUAL(P.tank, T, "the same tank goes back in")

@@ -3196,11 +3196,11 @@
 	into += entry_line(845)
 	into += list(global.ref_one(nameof(victim), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/yes_no/cryo_consent) at code/game/machinery/cryopod.dm:718
+/// CAPABILITIES(/datum/prompt/yes_no/cryo_consent) at code/game/machinery/cryopod.dm:716
 /datum/prompt/yes_no/cryo_consent/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/cryopod.dm", 718, /datum/prompt/yes_no/cryo_consent)
-	into += entry_line(719)
+	into += entry_block("code/game/machinery/cryopod.dm", 716, /datum/prompt/yes_no/cryo_consent)
+	into += entry_line(717)
 	into += list(global.ref_one(nameof(loader), /mob))
 
 /// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:83
@@ -12237,13 +12237,13 @@
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(crew_monitor), starts = /datum/tgui_module/crew_monitor))
 
-/// CAPABILITIES(/obj/machinery/computer/cryopod) at code/game/machinery/cryopod.dm:95
+/// CAPABILITIES(/obj/machinery/computer/cryopod) at code/game/machinery/cryopod.dm:93
 /obj/machinery/computer/cryopod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/cryopod.dm", 95, /obj/machinery/computer/cryopod)
-	into += entry_line(96)
+	into += entry_block("code/game/machinery/cryopod.dm", 93, /obj/machinery/computer/cryopod)
+	into += entry_line(94)
 	into += list(global.interface("CryoStorage"))
-	into += entry_line(97)
+	into += entry_line(95)
 	into += list(ui_shape(allow_items = global.bool(), real_name = global.schema_text(), crew = global.list_of(global.schema_text()), items = global.list_of(global.schema_text())))
 
 /// CAPABILITIES(/obj/machinery/computer/fusion_core_control) at code/modules/power/fusion/core/core_control.dm:14
@@ -13789,6 +13789,12 @@
 	into += list(global.interface("Tank"))
 	into += entry_line(25)
 	into += list(global.op("pressure", global.ui_act("pressure", global.arg("pressure")), global.then(PROC_REF(ui_act_pressure))))
+	into += entry_line(26)
+	into += list(global.op("oxygen_pump_hand", global.hand(), global.ungated(), global.needs(global.req(PROC_REF(can_use_pump), because = MSG(oxygen_pump/no_tank))), global.then(PROC_REF(oxygen_pump_interaction_hand))))
+	into += entry_line(27)
+	into += list(global.op("oxygen_pump_item", global.item(/obj/item), global.then(PROC_REF(oxygen_pump_interaction_item))))
+	into += entry_line(28)
+	into += list(global.op("oxygen_pump_settings", global.menu(), global.label("Show Tank Settings"), global.then(PROC_REF(oxygen_pump_settings))))
 
 /// CAPABILITIES(/obj/machinery/papershredder) at code/modules/paperwork/papershredder.dm:29
 /obj/machinery/papershredder/declared_entries(list/into)
@@ -15125,6 +15131,13 @@
 	into += entry_line(24)
 	into += list(global.owns_one(nameof(Q), /datum/ghost_query))
 
+/// CAPABILITIES(/obj/structure/bonfire) at code/game/objects/structures/bonfire.dm:23
+/obj/structure/bonfire/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/bonfire.dm", 23, /obj/structure/bonfire)
+	into += entry_line(24)
+	into += list(global.every(2 SECONDS, global.then(PROC_REF(bonfire_step)), when = nameof(burning)))
+
 /// CAPABILITIES(/obj/structure/bookcase) at code/modules/library/lib_items.dm:23
 /obj/structure/bookcase/declared_entries(list/into)
 	..(into)
@@ -15615,6 +15628,13 @@
 	into += list(global.op("unglaze", global.tool(TOOL_WELDER), global.label("Take the glass out"), global.when(nameof(glass)), global.priority(global.above("construction.dismantle")), global.wait(4 SECONDS), global.then(PROC_REF(glass_out))))
 	into += entry_line(42)
 	into += list(global.extend("construction.dismantle", global.needs(global.req_is(nameof(anchored), FALSE, because = MSG(firedoor_assembly/bolted_down)))))
+
+/// CAPABILITIES(/obj/structure/fireplace) at code/game/objects/structures/bonfire.dm:330
+/obj/structure/fireplace/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/bonfire.dm", 330, /obj/structure/fireplace)
+	into += entry_line(331)
+	into += list(global.every(2 SECONDS, global.then(PROC_REF(fireplace_step)), when = nameof(burning)))
 
 /// CAPABILITIES(/obj/structure/fitness/boxing_ropes) at code/game/objects/structures/fitness.dm:115
 /obj/structure/fitness/boxing_ropes/declared_entries(list/into)
