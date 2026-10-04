@@ -19,6 +19,7 @@ MSG_DEF_SELF(chair/padded, "Take the padding off first.")
 CAPABILITIES(/obj/structure/bed/chair)
 	op("shock_kit", item(/obj/item/assembly/shock_kit), label("Attach kit"),
 		needs(req(PROC_REF(kit_ready), because = MSG(chair/kit_unready)), req(PROC_REF(unpadded_chair), because = MSG(chair/padded))), then(PROC_REF(electrified)))
+	op("interaction_tk", tk(), label("Rotate"), then(PROC_REF(interaction_tk)))
 
 /obj/structure/bed/chair/proc/kit_ready(datum/act/op/A)
 	var/obj/item/assembly/shock_kit/SK = A.held
@@ -41,12 +42,10 @@ CAPABILITIES(/obj/structure/bed/chair)
 	replace_with(src, E)
 	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(interaction_tk)))
-
 /// Old attack_tk: spin an empty chair at range; an occupied one ignores telekinesis.
-/obj/structure/bed/chair/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bed/chair/proc/interaction_tk(datum/act/op/A)
 	if(has_buckled_mobs())
-		return FALSE
+		return OP_DECLINE
 	rotate_clockwise()
 	return TRUE
 

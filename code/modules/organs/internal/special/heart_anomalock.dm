@@ -22,6 +22,7 @@
 
 CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock)
 	owns_one(nameof(core), /obj/item/assembly/signaler/anomaly)
+	op("anomalock_interaction_item", item(/obj/item), then(PROC_REF(anomalock_interaction_item)))
 
 
 /obj/item/organ/internal/heart/machine/anomalock/handle_organ_mod_special(removed)
@@ -86,29 +87,29 @@ CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock)
 	EVENT_HANDLER
 	add_lightning_overlay(10 SECONDS)
 
-EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_ITEM(null, PROC_REF(anomalock_interaction_item)))
-
 /// Old attackby.
-/obj/item/organ/internal/heart/machine/anomalock/proc/anomalock_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/organ/internal/heart/machine/anomalock/proc/anomalock_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, required_anomaly))
 		if(core)
 			balloon_alert(user, "core already in!")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(install_core), list(user, W))
 		return TRUE
 
 	if(W.has_tool_quality(IS_SCREWDRIVER))
 		if(!core)
 			balloon_alert(user, "no core!")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!core_removable)
 			balloon_alert(user, "can't remove core!")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		balloon_alert(user, "removing core...")
 		om_task_start(/datum/om/task/timed/anomalock_remove_core, user, src, receiver = src)
 		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/install_core(mob/user, obj/item/W)
 	if(core || W.loc != user)

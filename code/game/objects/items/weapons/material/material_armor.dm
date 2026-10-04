@@ -384,18 +384,21 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 	name = "wooden bucket"
 	icon_state = "woodbucket"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/bucket, INTERACT_INSERT(/obj/item/stack/material, PROC_REF(bucket_helmet_material), "Reinforce"))
+CAPABILITIES(/obj/item/clothing/head/helmet/bucket)
+	op("bucket_helmet_material", item(/obj/item/stack/material), label("Reinforce"), then(PROC_REF(bucket_helmet_material)))
 
 /// Old attackby: two sheets of material make a makeshift helmet.
-/obj/item/clothing/head/helmet/bucket/proc/bucket_helmet_material(mob/user, obj/item/stack/material/S, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/bucket/proc/bucket_helmet_material(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/S = A.held
 	if(S.use(2))
 		to_chat(user, span_notice("You apply some [S.material.use_name] to \the [src].  Hopefully it'll make the makeshift helmet stronger."))
 		var/obj/item/clothing/head/helmet/material/makeshift/helmet = new(null, S.material.name)
 		user.put_in_hands(helmet)
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, span_warning("You don't have enough material to build a helmet!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/head/helmet/material
 	name = "helmet"

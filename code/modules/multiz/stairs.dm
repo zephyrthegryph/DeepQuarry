@@ -242,6 +242,7 @@
 
 CAPABILITIES(/obj/structure/stairs/middle)
 	climb()
+	op("interaction_drag", item(/mob), gesture(GESTURE_DRAG), then(PROC_REF(interaction_drag)))
 
 /obj/structure/stairs/middle/Initialize(mapload)
 	. = ..()
@@ -305,13 +306,12 @@ CAPABILITIES(/obj/structure/stairs/middle)
 	src.dir = T.dir
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
-
 /// Old MouseDrop_T.
-/obj/structure/stairs/middle/proc/interaction_drag(mob/user, mob/target, datum/interaction/interaction)
+/obj/structure/stairs/middle/proc/interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(check_integrity())
 		user.forceMove(get_turf(top)) // You can't really drag things when you have to climb up the gap in the stairs yourself
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/stairs/middle/Bumped(mob/user)
 	if(check_integrity() && bottom && (bottom in get_turf(user))) // Bottom must be enforced because the middle stairs don't actually need the bottom

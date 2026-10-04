@@ -11,7 +11,8 @@
 	special_handling = TRUE
 
 /// Old attack_self: set the pillow down.
-/obj/item/bedsheet/pillow/proc/pillow_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bedsheet/pillow/proc/pillow_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.drop_item()
 	if(icon_state == initial(icon_state))
 		icon_state = "[icon_state]_placed"
@@ -21,13 +22,14 @@
 	..()
 	icon_state = initial(icon_state)
 
-EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
-	INTERACT_USE("Place", PROC_REF(pillow_self)), \
-	INTERACT_ITEM(null, PROC_REF(pillow_interaction_item)), \
-)
+CAPABILITIES(/obj/item/bedsheet/pillow)
+	op("pillow_self", in_hand(), label("Place"), then(PROC_REF(pillow_self)))
+	op("pillow_interaction_item", item(/obj/item), then(PROC_REF(pillow_interaction_item)))
 
 /// Old attackby.
-/obj/item/bedsheet/pillow/proc/pillow_interaction_item(mob/user, obj/item/component, datum/interaction/interaction)
+/obj/item/bedsheet/pillow/proc/pillow_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/component = A.held
 	if (istype(component,src))
 		to_chat(user, span_notice("You assemble a pillow pile!"))
 		user.drop_item()
@@ -37,7 +39,7 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 		consume(src, user)
 	else
 		to_chat(user, span_notice("You can't assemble a pillow pile out of mismatched stuff, it'd look hideous!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 //Pillow Piles, they're piles of pillows! 	layer = BELOW_MOB_LAYER
 

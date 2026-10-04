@@ -450,12 +450,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet, INTERACT_INSERT(/obj/item/as
 	construction_graph = /datum/construction_graph/secbot_assembly
 
 // Renaming the finished bot is not construction: keep it a plain interaction.
-EXTEND_INTERACTIONS(/obj/item/secbot_assembly, INTERACT_INSERT(/obj/item/pen, PROC_REF(secbot_assembly_rename), "Rename"))
+CAPABILITIES(/obj/item/secbot_assembly)
+	op("secbot_assembly_rename", item(/obj/item/pen), label("Rename"), then(PROC_REF(secbot_assembly_rename)))
 
 /// Old attackby: name the bot with a pen.
-/obj/item/secbot_assembly/proc/secbot_assembly_rename(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/secbot_assembly/proc/secbot_assembly_rename(datum/act/op/A)
+	var/mob/user = A.actor
 	ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /**
  * The Securitron assembly: a helmet welded open, then a signaler (added by

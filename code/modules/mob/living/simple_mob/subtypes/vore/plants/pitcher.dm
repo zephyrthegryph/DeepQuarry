@@ -179,13 +179,13 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				fruit = FALSE //No admeming this to spawn endless pitchers.
 				adjust_nutrition(-NUTRITION_PITCHER)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pick fruit", PROC_REF(pitcher_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(pitcher_interaction_item)), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
+	op("pitcher_interaction_hand", hand(), ungated(), stance(I_HELP), label("Pick fruit"), then(PROC_REF(pitcher_interaction_hand)))
+	op("pitcher_interaction_item", item(/obj/item), then(PROC_REF(pitcher_interaction_item)))
 
 /// Old attack_hand: a help-touch picks the fruit; anything else is the normal touch.
-/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(fruit)
 		to_chat(user, span_infoplain("You pick a fruit from \the [src]."))
 		var/obj/F = new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(user)) //Drops at the user's feet if put_in_hands fails
@@ -212,7 +212,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		to_chat(user, span_notice("The victim slips from your grasp!"))
 
 /// Old attackby: feed meat, fish victims out with cable (the hit still lands, as before), newspaper does nothing.
-/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/reagent_containers/food/snacks/meat))
 		if(meat > NUTRITION_FRUIT - NUTRITION_MEAT) //Can't exceed 250
 			to_chat(user, span_infoplain("The [src] is full!"))
@@ -232,7 +234,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		act_message(user, src, MSG_SELF(span_notice("You whap %T% with a rolled up newspaper.")), MSG_OTHERS(span_notice("%U% baps %T%, but it doesn't seem to do anything.")))
 		to_chat(user, span_notice("Weird. That usually works. Maybe you can fish out its victim with some string or wire or something? Or maybe kill the thing with some plant-b-gone. Both would probably be safer than hacking it up with a person still inside."))
 		return TRUE // You can't newspaper people to freedom like you do with other mobs, but since that doesn't work, fucking tell people.
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/pitcher_plant/proc/vore_checks()
 	if(ckey) //This isn't intended to be a playable mob but skip all of this if it's player-controlled.

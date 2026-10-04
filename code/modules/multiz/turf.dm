@@ -99,32 +99,35 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/open, TYPE_PROC_REF(/atom, appearance_ov
 	. += GLOB.openspace_backdrop_one_for_all //Special grey square for projecting backdrop darkness filter on it.
 
 // Straight copy from space.
-EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_space_build)))
+CAPABILITIES(/turf/simulated/open)
+	op("open_space_build", item(/obj/item), label("Build"), then(PROC_REF(open_space_build)))
 
 /// Old attackby, a straight copy from space: rods build a lattice, tiles plate it, cable is laid.
-/turf/simulated/open/proc/open_space_build(mob/user, obj/item/C, datum/interaction/interaction)
+/turf/simulated/open/proc/open_space_build(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	if (istype(C, /obj/item/stack/rods))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			ReplaceWithLattice()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if (istype(C, /obj/item/stack/tile/floor))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			qdel(L)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			to_chat(user, span_warning("The plating is going to need some support."))
 
@@ -132,8 +135,8 @@ EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_s
 	if(istype(C, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/coil = C
 		coil.turf_place(src, user)
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 //Most things use is_plating to test if there is a cover tile on top (like regular floors)
 /turf/simulated/open/is_plating()

@@ -41,15 +41,15 @@
 			. += "\The [src] is set for instant detonation."
 
 // EXTEND, not DECLARE: subtypes DECLARE item interactions of their own, which this must not replace.
-EXTEND_INTERACTIONS(/obj/item/grenade, \
-	INTERACT_SELF("Prime", PROC_REF(grenade_interaction_self)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(grenade_interaction_hand)), \
-)
+CAPABILITIES(/obj/item/grenade)
+	op("grenade_interaction_self", in_hand(), label("Prime"), then(PROC_REF(grenade_interaction_self)))
+	op("grenade_interaction_hand", hand(), ungated(), then(PROC_REF(grenade_interaction_hand)))
 
 /// Old attack_self. FALSE (special handling) moves on to a subtype's own self-use.
-/obj/item/grenade/proc/grenade_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/grenade/proc/grenade_interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(!active)
 		if(clown_check(user))
 			to_chat(user, span_warning("You prime \the [name]! [det_time/10] seconds!"))
@@ -98,9 +98,9 @@ EXTEND_INTERACTIONS(/obj/item/grenade, \
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_hand: stops any throw walk, then the touch goes on to the gate and pickup.
-/obj/item/grenade/proc/grenade_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/grenade/proc/grenade_interaction_hand(datum/act/op/A)
 	walk(src, null, null)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/grenade/vendor_action(obj/machinery/vending/V)
 	activate(V)

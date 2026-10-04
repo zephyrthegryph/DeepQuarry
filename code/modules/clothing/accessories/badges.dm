@@ -118,10 +118,13 @@ DECLARE_EMAG(/obj/item/clothing/accessory/badge/holo, PROC_REF(on_emag), null, "
 	to_chat(user, span_danger("You crack the holobadge security checks."))
 	return 1
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null, PROC_REF(holobadge_imprint_item)))
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
+	op("holobadge_imprint_item", item(/obj/item), then(PROC_REF(holobadge_imprint_item)))
 
 /// Old attackby: imprint ID details.
-/obj/item/clothing/accessory/badge/holo/proc/holobadge_imprint_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/clothing/accessory/badge/holo/proc/holobadge_imprint_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/card/id) || istype(O, /obj/item/pda))
 
 		var/obj/item/card/id/id_card = null
@@ -141,8 +144,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null,
 				break
 		if(!found)
 			to_chat(user, "[src] rejects your insufficient access rights.")
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/storage/box/holobadge
 	name = "holobadge box"

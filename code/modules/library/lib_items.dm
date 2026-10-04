@@ -113,17 +113,20 @@ Book Cart
 	anchored = FALSE
 	opacity = 0
 
-EXTEND_INTERACTIONS(/obj/structure/bookcase/bookcart, INTERACT_ITEM(null, PROC_REF(bookcart_interaction_item)))
+CAPABILITIES(/obj/structure/bookcase/bookcart)
+	op("bookcart_interaction_item", item(/obj/item), then(PROC_REF(bookcart_interaction_item)))
 
 /// Old attackby.
-/obj/structure/bookcase/bookcart/proc/bookcart_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/structure/bookcase/bookcart/proc/bookcart_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/book))
 		user.drop_item()
 		O.forceMove(src)
 		update_icon()
 	else
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 APPEARANCE_TEMPLATE(/obj/structure/bookcase/bookcart, "bookcart-{appearance_books}")
 

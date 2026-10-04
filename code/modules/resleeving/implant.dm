@@ -60,6 +60,8 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 
 CAPABILITIES(/obj/item/backup_implanter)
 	owns_many(nameof(imps), /obj/item/implant/backup)
+	op("backup_implanter_interaction_eject", in_hand(), label("Eject implant"), then(PROC_REF(backup_implanter_interaction_eject)))
+	op("backup_implanter_interaction_load", item(/obj/item/implant/backup), label("Load implant"), then(PROC_REF(backup_implanter_interaction_load)))
 
 /obj/item/backup_implanter/Initialize(mapload)
 	. = ..()
@@ -73,13 +75,9 @@ CAPABILITIES(/obj/item/backup_implanter)
 	icon_state = "[initial(icon_state)][LAZYLEN(imps)]"
 	germ_level = 0
 
-EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
-	INTERACT_USE("Eject implant", PROC_REF(backup_implanter_interaction_eject)), \
-	INTERACT_INSERT(/obj/item/implant/backup, PROC_REF(backup_implanter_interaction_load), "Load implant"), \
-)
-
 /// Old attack_self.
-/obj/item/backup_implanter/proc/backup_implanter_interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/backup_implanter/proc/backup_implanter_interaction_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!istype(user))
 		return
 
@@ -96,16 +94,18 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 	return
 
 /// Old attackby.
-/obj/item/backup_implanter/proc/backup_implanter_interaction_load(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/backup_implanter/proc/backup_implanter_interaction_load(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(LAZYLEN(imps) < max_implants)
 		if(!move_into(src, nameof(src.imps), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		W.germ_level = 0
 		update()
 		to_chat(user, span_notice("You load \the [W] into \the [src]."))
 	else
 		to_chat(user, span_warning("\The [src] is already full!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /datum/om/task/timed/backup_implanter_backup_implant
 	complete_proc = /obj/item/backup_implanter/proc/backup_implant_done
@@ -180,15 +180,15 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 	germ_level = 0
 
 //Click to get implant.
-EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
-	INTERACT_HAND("Get implanted", PROC_REF(backup_implanter_ch_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(backup_implanter_ch_interaction_item)), \
-)
+CAPABILITIES(/obj/structure/backup_implanter_ch)
+	op("backup_implanter_ch_interaction_hand", hand(), label("Get implanted"), then(PROC_REF(backup_implanter_ch_interaction_hand)))
+	op("backup_implanter_ch_interaction_item", item(/obj/item), then(PROC_REF(backup_implanter_ch_interaction_item)))
 
 /// Old attack_hand (its ..() first was the hand gate).
-/obj/structure/backup_implanter_ch/proc/backup_implanter_ch_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/backup_implanter_ch/proc/backup_implanter_ch_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!istype(user, /mob/living/carbon))
-		return FALSE
+		return OP_DECLINE
 
 	if(user)
 		act_message(user, null, others = span_notice("%U% is injecting a backup implant into %U%."))
@@ -214,7 +214,9 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 		qdel(imp)
 
 /// Old attackby.
-/obj/structure/backup_implanter_ch/proc/backup_implanter_ch_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/structure/backup_implanter_ch/proc/backup_implanter_ch_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(O.has_tool_quality(TOOL_WRENCH))
 
 		if(anchored)
@@ -222,15 +224,15 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 			playsound(src, O.usesound, 50, 1)
 
 			om_task_timed(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, FALSE))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		else
 			to_chat(user, span_notice("You start to wrench the implanter into place."))
 			playsound(src, O.usesound, 50, 1)
 
 			om_task_timed(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, TRUE))
-			return INTERACTION_HANDLED_PASS
-	return FALSE
+			return OP_PASS
+	return OP_DECLINE
 
 /obj/structure/backup_implanter_ch/proc/wrench_done(mob/user, anchoring)
 	to_chat(user, span_notice(anchoring ? "You wrench the implanter into place." : "You unwrench the implanter."))

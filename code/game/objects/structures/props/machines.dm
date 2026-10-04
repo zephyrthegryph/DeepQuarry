@@ -644,21 +644,24 @@
 	AM.vis_flags = contents_vis_flags
 	AM.pixel_y = contents_original_pixel_y
 
-EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+CAPABILITIES(/obj/structure/prop/machine/nt_pod)
+	op("interaction_drag", item(/atom/movable), gesture(GESTURE_DRAG), then(PROC_REF(interaction_drag)))
 
 /// Old MouseDrop_T.
-/obj/structure/prop/machine/nt_pod/proc/interaction_drag(mob/user, atom/movable/AM, datum/interaction/interaction)
+/obj/structure/prop/machine/nt_pod/proc/interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/AM = A.held
 	if(contents_count(src))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(!ismovable(AM))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(!check_rights_for(user.client, R_HOLDER))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(changing_state)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	AM.forceMove(src)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/prop/machine/nt_pod/change_state(state)
 	. = ..()

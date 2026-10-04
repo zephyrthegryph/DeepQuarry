@@ -15,6 +15,9 @@ SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", 
 ROW = re.compile(r"^(DECLARE_UI|DECLARE_UI_STATE|UI_[A-Z_]+)\((/[\w/]+)(.*)$")
 OVERRIDES = ("ui_act_allowed", "tgui_data", "tgui_act", "ui_status", "tgui_interact", "ui_data", "ui_interact")
 RESERVED = {"in", "as", "to", "step", "if", "else", "for", "while", "do", "set", "var", "new", "del", "null", "return", "src", "usr", "args", "list", "text", "num", "user", "A", "ui", "state", "action", "params"}
+# Questions at the head of a button's handler (act_ask) become asks() steps of its op (leading_asks.py). --asks / --no-asks override the default.
+ASKS_DEFAULT = False
+LA = None
 SETTINGS = ("EVENT_HANDLER", "SHOULD_", "PRIVATE_PROC", "PROTECTED_PROC", "RETURN_TYPE", "CAN_BE_REDEFINED")
 
 
@@ -182,11 +185,49 @@ def rename_local_a(line, new):
     return "".join(out)
 
 
+def collect_vars(files):
+    """type -> the var names its block declares (a holder var named in a question's field is read through nameof())."""
+    vars_by_type = defaultdict(set)
+    var_head = re.compile(r"^(/[\w/]+)\s*(//.*)?$")
+    var_line = re.compile(r"^" + chr(9) + r"+var/(?:[\w/]+/)?(\w+)")
+    var_path = re.compile(r"^(/[\w/]+)/var/(?:[\w/]+/)?(\w+)")
+    for f in files.values():
+        cur = None
+        for l in f.lines:
+            if not l:
+                continue
+            if l[0] == "/":
+                hm = var_head.match(l)
+                cur = hm.group(1) if hm else None
+                vm0 = var_path.match(l)
+                if vm0:
+                    vars_by_type[vm0.group(1)].add(vm0.group(2))
+            elif cur and l[0] == chr(9):
+                vm = var_line.match(l)
+                if vm:
+                    vars_by_type[cur].add(vm.group(1))
+    return vars_by_type
+
+
+def holder_vars_of(vars_by_type, t):
+    out = set()
+    for u, vs in vars_by_type.items():
+        if t == u or t.startswith(u + "/"):
+            out |= vs
+    return out
+
+
 def words_in(text, name):
     return [m.start() for m in re.finditer(r"(?<![\w./])" + re.escape(name) + r"(?![\w])", text)]
 
 
 def main():
+    global LA
+    asks_on = ("--no-asks" not in sys.argv) and (ASKS_DEFAULT or "--asks" in sys.argv)
+    if asks_on:
+        import leading_asks as LA_module
+
+        LA = LA_module
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     check = "--check" in sys.argv
     sites = "--sites" in sys.argv
@@ -222,6 +263,7 @@ def main():
     types = set(rows)
     residue = {}  # type -> reason
     plans = {}
+    vars_by_type = collect_vars(files) if asks_on else None
     all_code = "\n".join(code_text.values())
     # Mentions that are neither a UI row nor a definition: calls, PROC_REFs, whatever could depend on a handler's signature.
     other_mentions = "\n".join(
@@ -429,6 +471,20 @@ def main():
             f = files[rel]
             first, last = body_range(f.lines, i)
             body_lines = f.lines[first : last + 1]
+            # questions at the head of the handler (act_ask) become asks() steps of the op; the rest of the body is the effect
+            asks = []
+            if asks_on and any(LA.ASK_CALL.search(strip_code(l)) for l in body_lines):
+                asks, why_ask = LA.parse_leading(f.lines, first, last, a["proc"], "user", ("act_ask",))
+                if asks is None:
+                    bad = why_ask
+                    break
+                if not asks:
+                    bad = "ask_not_first"
+                    break
+                body_lines = LA.edited_lines(f.lines, first, last, asks)
+                if any(LA.ASK_CALL.search(strip_code(l)) for l in body_lines):
+                    bad = "ask_later"
+                    break
             body = "\n".join(strip_code(l) for l in body_lines)
             # references elsewhere: the row, the definition and nothing else
             occ = len(words_in(other_mentions, a["proc"]))
@@ -485,10 +541,39 @@ def main():
                     break
             if bad:
                 break
-            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a, "local_names": local_names})
+            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a, "local_names": local_names, "asks": asks, "body": body})
         if bad:
             residue[t] = bad
             continue
+        # ---- the questions of the handlers
+        if asks_on:
+            holder_vars = holder_vars_of(vars_by_type, t)
+            for h in plan["handlers"]:
+                h["ask_parts"] = []
+                h["helpers"] = []
+                for ask in h["asks"]:
+                    text, helpers, why_ask = LA.build_ask(ask, holder_vars, "%s_%s" % (h["act"]["proc"], ask["key"]), t, "user", None)
+                    if why_ask:
+                        bad = why_ask
+                        break
+                    for hp in helpers:
+                        hname = re.match(r"^/[\w/]+/proc/(\w+)\(", hp).group(1)
+                        if re.search(r"\b" + hname + r"\b", tree_text):
+                            bad = "name_clash"
+                            break
+                    if bad:
+                        break
+                    h["ask_parts"].append(text)
+                    h["helpers"] += helpers
+                if bad:
+                    break
+            if bad:
+                residue[t] = bad
+                continue
+        else:
+            for h in plan["handlers"]:
+                h["ask_parts"] = []
+                h["helpers"] = []
         # ---- the data proc
         if data:
             helper_bad = False
@@ -549,30 +634,42 @@ def main():
                     parts.append('arg("%s", %s(%s))' % (name, fn, ", ".join(bounds)))
             ui = 'ui_act("%s"%s)' % (a["action"], "".join(", " + p for p in parts[1:]))
             need = ", needs(req(PROC_REF(ui_gate), silent = TRUE))" if plan["pred"] else ""
-            entries.append('op("%s", %s%s, then(PROC_REF(%s)))' % (a["action"], ui, need, a["proc"]))
+            hh = next(h for h in plan["handlers"] if h["act"] is a)
+            asks_text = "".join(", " + x for x in hh["ask_parts"])
+            entries.append('op("%s", %s%s%s, then(PROC_REF(%s)))' % (a["action"], ui, need, asks_text, a["proc"]))
         # handlers
         for h in plan["handlers"]:
             a = h["act"]
             f = files[h["rel"]]
             declared = [s[1] for s in a["specs"]]
+            # the questions' statements and guards go; what they returned is a local read from the answered step
+            for ask in h["asks"]:
+                for k in ask["remove"]:
+                    f.lines[k] = None
+                for k, txt in ask["rewrite"].items():
+                    f.lines[k] = txt
             for k in range(h["first"], h["last"] + 1):
                 l = f.lines[k]
+                if l is None:
+                    continue
                 for d in declared:
                     l = re.sub(r"\bparams\s*\[\s*\"" + d + r"\"\s*\]", h["local_names"][d], l)
                 l = re.sub(r"(?<![\w.])ui\.user\b", "user", l)
                 if h.get("rename_a"):
                     l = rename_local_a(l, h["rename_a"])
                 f.lines[k] = l
-            body = "\n".join(strip_code(l) for l in f.lines[h["first"] : h["last"] + 1])
+            body = "\n".join(strip_code(l or "") for l in f.lines[h["first"] : h["last"] + 1])
             sig = t + "/proc/" + a["proc"] + "(datum/act/op/A" + "".join(", " + h["local_names"][d] for d in declared) + ")"
+            if h["helpers"]:
+                sig = "\n\n".join(h["helpers"]) + "\n\n" + sig
             # insert `user` after the leading settings
             extra = ""
-            heads = (["var/mob/user = A.actor"] if words_in(body, "user") else []) + (["add_fingerprint(A.actor)"] if plan["fp"] else [])
+            heads = (["var/mob/user = A.actor"] if words_in(body, "user") else []) + (["add_fingerprint(A.actor)"] if plan["fp"] else []) + [LA.answer_local(ask) for ask in h["asks"] if words_in(body, ask["name"])]
             if heads:
                 after = h["idx"]
                 k = h["first"]
                 while k <= h["last"]:
-                    s = strip_code(f.lines[k]).strip()
+                    s = strip_code(f.lines[k] or "").strip()
                     if s == "":
                         k += 1
                         continue
@@ -583,7 +680,7 @@ def main():
                     break
                 indent = "\t"
                 for k2 in range(h["first"], h["last"] + 1):
-                    if f.lines[k2].strip():
+                    if f.lines[k2] and f.lines[k2].strip():
                         indent = re.match(r"^[ \t]*", f.lines[k2]).group(0)
                         break
                 line = ("\n").join(indent + hl for hl in heads)

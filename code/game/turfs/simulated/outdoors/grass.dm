@@ -100,19 +100,21 @@
 // end
 
 // Other tiles have ways to build on them, sif grass doesn't, so this snowflake is just on sif grass.
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/grass/sif, INTERACT_ITEM("Plate", PROC_REF(sif_grass_plate)))
+CAPABILITIES(/turf/simulated/floor/outdoors/grass/sif)
+	op("sif_grass_plate", item(/obj/item), label("Plate"), then(PROC_REF(sif_grass_plate)))
 
 /// Old attackby: floor tiles plate the grass.
-/turf/simulated/floor/outdoors/grass/sif/proc/sif_grass_plate(mob/user, obj/item/C, datum/interaction/interaction)
+/turf/simulated/floor/outdoors/grass/sif/proc/sif_grass_plate(datum/act/op/A)
+	var/obj/item/C = A.held
 	if(istype(C, /obj/item/stack/tile/floor))
 		var/obj/item/stack/tile/floor/S = C
 		if (S.get_amount() < 1)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		play_sfx(src, SFX_WEAPONS_GENHIT)
 		ChangeTurf(/turf/simulated/floor)
 		S.use(1)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 // end
 
 

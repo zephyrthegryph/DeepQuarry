@@ -45,13 +45,14 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water, TYPE_PROC_REF(/atom, appear
 /turf/simulated/floor/water/get_edge_icon_state()
 	return "water_shallow"
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
-	INTERACT_INSERT(/obj/item/material/fishing_rod, PROC_REF(water_fishing), "Cast a line"), \
-	INTERACT_ITEM("Fill", PROC_REF(water_fill)), \
-)
+CAPABILITIES(/turf/simulated/floor/water)
+	op("water_fishing", item(/obj/item/material/fishing_rod), label("Cast a line"), then(PROC_REF(water_fishing)))
+	op("water_fill", item(/obj/item), label("Fill"), then(PROC_REF(water_fill)))
 
 /// Old attackby: fill an open container or wet a mop.
-/turf/simulated/floor/water/proc/water_fill(mob/user, obj/item/O, datum/interaction/interaction)
+/turf/simulated/floor/water/proc/water_fill(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
 		RG.reagents.add_reagent(reagent_type, min(RG.reagents.get_free_space(), reagent_transfer_amount(RG)))
@@ -64,7 +65,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 		play_sfx(src, SFX_EFFECTS_SLOSH)
 		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 
 /turf/simulated/floor/water/return_air_for_internal_lifeform(mob/living/L)
 	if(L && L.lying)

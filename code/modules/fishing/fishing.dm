@@ -121,23 +121,25 @@ DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosiv
 		fish_type = null
 
 /// Old attackby: cast a fishing rod's line into water that has fish. Spec in water.dm.
-/turf/simulated/floor/water/proc/water_fishing(mob/user, obj/item/P, datum/interaction/interaction)
+/turf/simulated/floor/water/proc/water_fishing(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 	//If you use a fishing rod on an open body of water that var/has_fish enabled
 	if(!om_busy(src))
 		var/obj/item/material/fishing_rod/R = P
 		if(!R.strung)
 			to_chat(user, span_notice("It is hard to go fishing without any line!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(R.cast)
 			to_chat(user, span_notice("You can only cast one line at a time!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
 		to_chat(user,"You cast \the [P.name] into \the [src].")
 		R.cast = TRUE
 		var/fishing_time = rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
 		om_task_start(/datum/om/task/timed/fishing, user, null, duration = fishing_time, rod = R, busy = src)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /// A line in the water until something bites; the water is busy meanwhile.
 /datum/om/task/timed/fishing

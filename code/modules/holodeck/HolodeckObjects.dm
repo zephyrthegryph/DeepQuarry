@@ -177,12 +177,15 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(null, PROC_REF(holowindow_interaction_item)))
+CAPABILITIES(/obj/structure/window/reinforced/holowindow)
+	op("holowindow_interaction_item", item(/obj/item), then(PROC_REF(holowindow_interaction_item)))
 
 /// Old attackby: slam a grabbed mob against it, or take a hit; then the window's own handling.
-/obj/structure/window/reinforced/holowindow/proc/holowindow_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/window/reinforced/holowindow/proc/holowindow_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
 		if(isliving(G?.grab_target()))
@@ -205,9 +208,9 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 					M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_PAIN, 20, null, src)
 					hit(50)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
-	if(W.flags & NOBLUDGEON) return INTERACTION_HANDLED_PASS
+	if(W.flags & NOBLUDGEON) return OP_PASS
 
 	if(W.obj_damage_type())
 		hit(W.force)
@@ -217,7 +220,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 			step(src, get_dir(user, src))
 	else
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
-	return FALSE
+	return OP_DECLINE
 
 /obj/structure/window/reinforced/holowindow/screwdriver_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("It's a holowindow, you can't unfasten it!"))

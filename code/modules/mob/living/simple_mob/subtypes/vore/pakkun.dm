@@ -91,17 +91,17 @@
 			vore_selected.digest_mode = vore_default_mode
 		ai_brain.go_wake()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Shake awake", PROC_REF(pakkun_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(pakkun_interaction_item)), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
+	op("pakkun_interaction_hand", hand(), ungated(), stance(I_HELP), label("Shake awake"), then(PROC_REF(pakkun_interaction_hand)))
+	op("pakkun_interaction_item", item(/obj/item), then(PROC_REF(pakkun_interaction_item)))
 
 /// Old attack_hand: a help-touch shakes a resting pakkun awake; anything else is the normal touch.
-/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(stat == DEAD)
-		return FALSE
+		return OP_DECLINE
 	if(!resting)
-		return FALSE
+		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	act_message(user, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("%U% shakes %T% awake.")))
 	lay_down()
@@ -128,9 +128,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	B.digest_mode = DM_SELECT
 
 /// Old attackby: if they're newspapered, they'll spit out any junk they've eaten for whatever reason.
-/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!istype(O, /obj/item/newspaper) || ckey || !isturf(user.loc))
-		return FALSE
+		return OP_DECLINE
 	act_message(user, src, null, MSG_OTHERS(span_info("%U% swats %T% with %I%!")), item = O)
 	release_vore_contents()
 	for(var/mob/living/L in living_mobs(0))

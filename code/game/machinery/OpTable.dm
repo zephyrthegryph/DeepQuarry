@@ -28,6 +28,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/optable, MACHINE_PIPELINE, "victim")
 
 CAPABILITIES(/obj/machinery/optable)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(optable_blast))))
+	op("optable_interaction_hand", hand(), ungated(), then(PROC_REF(optable_interaction_hand)))
+	op("optable_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), label("Lay on table"), then(PROC_REF(optable_interaction_drag)))
+	op("optable_interaction_item", item(/obj/item), then(PROC_REF(optable_interaction_item)))
+	op("optable_climb_onto", menu(), label("Climb On Table"), then(PROC_REF(optable_climb_onto)))
 
 /// A light blast may knock the table flat.
 /obj/machinery/optable/proc/optable_blast(datum/act/hit/explosion/A)
@@ -36,15 +40,9 @@ CAPABILITIES(/obj/machinery/optable)
 		set_density(FALSE)
 	return HOOK_DECLINE
 
-EXTEND_INTERACTIONS(/obj/machinery/optable, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(optable_interaction_hand)), \
-	INTERACT_DRAG("Lay on table", PROC_REF(optable_interaction_drag)), \
-	INTERACT_ITEM(null, PROC_REF(optable_interaction_item)), \
-	INTERACT_VERB("Climb On Table", PROC_REF(optable_climb_onto)), \
-)
-
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/optable/proc/optable_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/optable/proc/optable_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.has_mutation(HULK))
 		act_message(user, src, others = span_danger("%U% destroys %T%!"))
 		set_density(FALSE)
@@ -106,28 +104,33 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 		icon_state = "table2-idle"
 
 /// Old MouseDrop_T.
-/obj/machinery/optable/proc/optable_interaction_drag(mob/living/user, mob/living/carbon/target, datum/interaction/interaction)
+/obj/machinery/optable/proc/optable_interaction_drag(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/target = A.held
 	if(!istype(target) || !istype(user))
-		return FALSE
+		return OP_DECLINE
 
 	if(!Adjacent(target) || !Adjacent(user))
-		return FALSE
+		return OP_DECLINE
 
 	if(user.incapacitated() || !check_table(target, user))
-		return FALSE
+		return OP_DECLINE
 
 	take_victim(target, user)
 	return TRUE
 
 /// Old verb "Climb On Table".
-/obj/machinery/optable/proc/optable_climb_onto(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/optable/proc/optable_climb_onto(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!istype(user) || user.incapacitated() || !check_table(user, user))
 		return
 
 	take_victim(user, user)
 
 /// Old attackby. It never called ..(), so every item stops here.
-/obj/machinery/optable/proc/optable_interaction_item(mob/living/carbon/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/optable/proc/optable_interaction_item(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
 		if(iscarbon(G?.grab_target()) && check_table(G?.grab_target(), user))

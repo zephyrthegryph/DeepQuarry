@@ -9,12 +9,13 @@
 	max_integrity = 10
 
 //similar to weeds, but only barfed out by nurses manually
-EXTEND_INTERACTIONS(/obj/effect/spider, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_web)), \
-)
+CAPABILITIES(/obj/effect/spider)
+	op("hit_web", item(/obj/item), then(PROC_REF(interaction_hit_web)))
 
 /// Old attackby: any item hits the web (afterattack still follows, as before).
-/obj/effect/spider/proc/interaction_hit_web(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/spider/proc/interaction_hit_web(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
@@ -24,7 +25,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider, \
 		act_message(src, user, others = span_warning("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
 
 	receive_weapon_hit(W, user, W.force / 4)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/effect/spider/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/welder = tool.get_welder()

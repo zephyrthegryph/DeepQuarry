@@ -102,6 +102,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers)
 
 CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
 	climb()
+	op("watertank_interaction_item", item(/obj/item), then(PROC_REF(watertank_interaction_item)))
 
 /obj/structure/reagent_dispensers/watertank/high
 	name = "high-capacity water tank"

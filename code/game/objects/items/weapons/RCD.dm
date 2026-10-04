@@ -282,12 +282,14 @@ CAPABILITIES(/obj/item/rcd/electric)
 /obj/item/rcd/debug/consume_resources(amount)
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/item/rcd/debug, INTERACT_INSERT(/obj/item/rcd_ammo, PROC_REF(debug_rcd_refuse_ammo), "Load"))
+CAPABILITIES(/obj/item/rcd/debug)
+	op("debug_rcd_refuse_ammo", item(/obj/item/rcd_ammo), label("Load"), then(PROC_REF(debug_rcd_refuse_ammo)))
 
 /// Old attackby: refuses cartridges; anything else falls through to the RCD's loading.
-/obj/item/rcd/debug/proc/debug_rcd_refuse_ammo(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/rcd/debug/proc/debug_rcd_refuse_ammo(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("\The [src] makes its own material, no need to add more."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/rcd/debug/display_resources()
 	return "It has UNLIMITED POWER!"
@@ -328,6 +330,8 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 
 CAPABILITIES(/obj/item/rcd)
 	owns_many(nameof(effects))
+	op("rcd_item", item(/obj/item), label("Load"), then(PROC_REF(rcd_item)))
+	op("rcd_self", in_hand(), label("Select mode"), then(PROC_REF(rcd_self)))
 
 // Ammo for the (non-electric) RCDs.
 /obj/item/rcd_ammo

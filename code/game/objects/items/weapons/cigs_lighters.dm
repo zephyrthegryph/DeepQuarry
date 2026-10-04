@@ -679,14 +679,16 @@ OM_FIELD(/obj/item/flame/lighter, detonator_mode, 0, CHANGE_EXPLICIT)
 	I.color = pick(available_colors)
 	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
-EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighter_self)))
+CAPABILITIES(/obj/item/flame/lighter)
+	op("lighter_self", in_hand(), then(PROC_REF(lighter_self)))
 
 /// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
-/obj/item/flame/lighter/proc/lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flame/lighter/proc/lighter_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(special_variant)
-		return FALSE
+		return OP_DECLINE
 	if(detonator_mode)
-		return FALSE
+		return OP_DECLINE
 	if(!lit)
 		set_lit(TRUE)
 		icon_state = "lighteron"
