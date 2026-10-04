@@ -2,3 +2,4 @@ author: "Codex"
 delete-after: true
 changes:
   - code_imp: "Moved crayon drawing choices to native requests with checks when opening and answering."
+  - code_imp: "Moved generic spawn setup, map tools and environment message choices to native requests while preserving admin checks and logging."
