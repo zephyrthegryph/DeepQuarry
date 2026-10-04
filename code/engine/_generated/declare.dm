@@ -3308,14 +3308,12 @@
 	into += entry_line(77)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
-/// CAPABILITIES(/datum/prompt/number/excavation_depth) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:245
+/// CAPABILITIES(/datum/prompt/number/excavation_depth) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:247
 /datum/prompt/number/excavation_depth/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 245, /datum/prompt/number/excavation_depth)
-	into += entry_line(246)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 247, /datum/prompt/number/excavation_depth)
+	into += entry_line(248)
 	into += list(global.ref_one(nameof(captured_item), /obj/item))
-	into += entry_line(247)
-	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/text/air_control_sensor_name) at code/game/machinery/atmo_control.dm:308
 /datum/prompt/text/air_control_sensor_name/declared_entries(list/into)
@@ -3347,11 +3345,11 @@
 	into += entry_line(843)
 	into += list(global.ref_one(nameof(implant), /obj/item/implant/compliance))
 
-/// CAPABILITIES(/datum/prompt/text/drill_label) at code/modules/mining/drilling/drill.dm:323
+/// CAPABILITIES(/datum/prompt/text/drill_label) at code/modules/mining/drilling/drill.dm:334
 /datum/prompt/text/drill_label/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mining/drilling/drill.dm", 323, /datum/prompt/text/drill_label)
-	into += entry_line(324)
+	into += entry_block("code/modules/mining/drilling/drill.dm", 334, /datum/prompt/text/drill_label)
+	into += entry_line(335)
 	into += list(global.ref_one(nameof(captured_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/text/explosive_implant_phrase) at code/game/objects/items/weapons/implants/implant.dm:309
@@ -9554,6 +9552,13 @@
 	into += entry_line(21)
 	into += list(global.op("fire", global.in_hand(), global.wait(0), global.needs(global.req(PROC_REF(can_fire), because = MSG(petrifier/beeps))), global.then(PROC_REF(fired))))
 
+/// CAPABILITIES(/obj/item/pickaxe/excavationdrill) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:168
+/obj/item/pickaxe/excavationdrill/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 168, /obj/item/pickaxe/excavationdrill)
+	into += entry_line(169)
+	into += list(global.op("depth", global.in_hand(), global.label("Set excavation depth"), global.then(PROC_REF(depth_used))))
+
 /// CAPABILITIES(/obj/item/pinpointer) at code/game/gamemodes/nuclear/pinpointer.dm:23
 /obj/item/pinpointer/declared_entries(list/into)
 	..(into)
@@ -14193,11 +14198,11 @@
 	into += entry_line(41)
 	into += list(global.op("release_stack", global.ui_act("release_stack", global.arg("stack", global.schema_text(4096))), global.then(PROC_REF(ui_act_release_stack))))
 
-/// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:545
+/// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:556
 /obj/machinery/mining/brace/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mining/drilling/drill.dm", 545, /obj/machinery/mining/brace)
-	into += entry_line(546)
+	into += entry_block("code/modules/mining/drilling/drill.dm", 556, /obj/machinery/mining/brace)
+	into += entry_line(557)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/mining/drill) at code/modules/mining/drilling/drill.dm:96
@@ -14209,6 +14214,8 @@
 	into += entry_line(98)
 	into += list(global.climb())
 	into += entry_line(99)
+	into += list(global.op("label", global.tool(TOOL_MULTITOOL), global.label("Assign ID number"), global.needs(global.req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), global.then(PROC_REF(label_tool_used))))
+	into += entry_line(100)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell)))
 
 /// CAPABILITIES(/obj/machinery/navbeacon) at code/game/machinery/navbeacon.dm:94
