@@ -7447,11 +7447,11 @@
 	into += entry_line(187)
 	into += list(global.op("butterfly_net_self", global.in_hand(), global.label("Empty"), global.then(PROC_REF(butterfly_net_self))))
 
-/// CAPABILITIES(/obj/item/material/gravemarker) at code/game/objects/items/weapons/material/gravemarker.dm:84
+/// CAPABILITIES(/obj/item/material/gravemarker) at code/game/objects/items/weapons/material/gravemarker.dm:91
 /obj/item/material/gravemarker/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/material/gravemarker.dm", 84, /obj/item/material/gravemarker)
-	into += entry_line(85)
+	into += entry_block("code/game/objects/items/weapons/material/gravemarker.dm", 91, /obj/item/material/gravemarker)
+	into += entry_line(92)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/material/whip) at code/game/objects/items/weapons/material/misc.dm:200
