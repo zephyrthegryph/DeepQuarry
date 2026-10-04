@@ -486,6 +486,7 @@
 		if(O.oplan.key == OP_KEY_STORAGE_PUT_IN)
 			has_catch_all = TRUE
 			break
+	var/list/chained = null
 	for(var/datum/op_cand/C as anything in sorted.Copy())
 		var/list/rel = C.oplan.priority_rel
 		var/datum/op_cand/anchor = null
@@ -496,6 +497,9 @@
 				if(O != C && O.oplan.key == rel[2])
 					anchor = O
 					break
+		else if(C.oplan.click_below)
+			LAZYADD(chained, C)
+			continue
 		else if(has_catch_all && C.item_type)
 			anchor = op_default_anchor(C, sorted)
 		if(!anchor)
@@ -503,7 +507,37 @@
 		sorted -= C
 		var/at = sorted.Find(anchor)
 		sorted.Insert(placement == "above" ? at : at + 1, C)
+	// canonical click orders (click_order()): the lowest rank first, so each op lands just above one already in its place and an order's ops end up
+	// together, top to bottom
+	while(length(chained))
+		var/datum/op_cand/C = chained[1]
+		for(var/datum/op_cand/other as anything in chained)
+			if(op_click_depth(other) < op_click_depth(C))
+				C = other
+		chained -= C
+		var/datum/op_cand/anchor = op_click_anchor(C, sorted)
+		if(!anchor)
+			continue
+		sorted -= C
+		sorted.Insert(sorted.Find(anchor), C)
 	R.ordered = sorted
+
+/// How many ranks a click order puts below the candidate (the fewest, over its orders).
+/proc/op_click_depth(datum/op_cand/C)
+	. = INFINITY
+	for(var/list/chain as anything in C.oplan.click_below)
+		. = min(., length(chain) - 1)
+
+/// The candidate a canonical click_order() puts C just above: of the same holder, answering the order's input, the nearest key after C's in the
+/// order (the next one the holder has). null: none.
+/proc/op_click_anchor(datum/op_cand/C, list/sorted)
+	for(var/list/chain as anything in C.oplan.click_below)
+		var/input = chain[1]
+		for(var/i in 2 to length(chain))
+			for(var/datum/op_cand/O as anything in sorted)
+				if(O != C && O.holder == C.holder && op_key_matches(O.oplan.key, chain[i]) && op_plan_takes_input(O.oplan, input))
+					return O
+	return null
 
 /// The default relative priority of a candidate, so an op never needs priority(above(key)) just to hold its place in a menu or a click (an
 /// explicit priority() still says an exception). Today one rule: the storage catch-all "storage.put_in" takes any item, so an op of the same holder
