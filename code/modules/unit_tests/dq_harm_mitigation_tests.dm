@@ -151,7 +151,7 @@
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
 	vest.set_armor(dq_armor(list("melee" = 40, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
-	var/obj/item/cell/cell = allocate(/obj/item/cell/high)
+	var/obj/item/cell/cell = allocate(/obj/item/cell/device/weapon) // the generator takes device cells only
 	dq_equip_shield(H, /datum/body_effect/shield_projection/bruteburn/weak, cell)
 	H.apply_body_effect(/datum/body_effect/dq_test_physical_half)
 	observe(H, /datum/notice/living_injury_explained, src, then(PROC_REF(on_explained)))
