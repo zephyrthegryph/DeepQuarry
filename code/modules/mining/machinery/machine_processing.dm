@@ -34,6 +34,7 @@
 CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	op("showAllOres", ui_act(), then(PROC_REF(native_ui_act_showallores)))
 	op("speed_toggle", ui_act(), then(PROC_REF(native_ui_act_speed_toggle)))
+	op("power", ui_act(), then(PROC_REF(native_ui_act_power)))
 	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
 
 /obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
@@ -132,10 +133,10 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_togglesmeltin
 	LAZYSET(unit.ores_processing, ore, new_setting)
 	. = TRUE
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_power)
+/obj/machinery/mineral/processing_unit_console/proc/native_ui_act_power(datum/act/op/A)
+	add_fingerprint(A.actor)
 	machine().set_active(!machine().active)
-	. = TRUE
+	return OP_OK
 
 /obj/machinery/mineral/processing_unit_console/proc/native_ui_act_showallores(datum/act/op/A)
 	add_fingerprint(A.actor)

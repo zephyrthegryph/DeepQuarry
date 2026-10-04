@@ -179,12 +179,17 @@ UI_ACT_PROC(/obj/item/toy/plushie/customizable, ui_act_import_config)
 			added_overlays[overlay["icon_state"]] = list(color = new_color, alpha = new_alpha)
 	update_icon()
 
-UI_ACT(/obj/item/toy/plushie/customizable, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/item/toy/plushie/customizable, ui_act_clear)
-	. = TRUE
+CAPABILITIES(/obj/item/toy/plushie/customizable)
+	op("clear", ui_act(), then(PROC_REF(native_ui_act_clear)))
+
+/obj/item/toy/plushie/customizable/proc/native_ui_act_clear(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(!added_overlays)
+		added_overlays = list()
 	added_overlays.Cut()
 	base_color = "#FFFFFF"
 	update_icon()
+	return OP_OK
 
 UI_ACT(/obj/item/toy/plushie/customizable, "rename", ui_act_rename, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/item/toy/plushie/customizable, ui_act_rename)

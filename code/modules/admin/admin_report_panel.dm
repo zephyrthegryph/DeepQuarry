@@ -56,11 +56,13 @@ UI_ACT_PROC(/datum/admin_report, ui_act_forward_topic)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/admin_report, "close", ui_act_close)
-UI_ACT_PROC(/datum/admin_report, ui_act_close)
+CAPABILITIES(/datum/admin_report)
+	op("close", ui_act(), then(PROC_REF(native_ui_act_close)))
+
+/datum/admin_report/proc/native_ui_act_close(datum/act/op/A)
 	SStgui.close_uis(src)
 	qdel(src)
-	return TRUE
+	return OP_OK
 
 /// Show a report with a list of preformatted lines.
 /proc/dq_admin_report_lines(mob/user, title, list/lines, intro_html = "", datum/host = null)

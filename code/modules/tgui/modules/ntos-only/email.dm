@@ -31,6 +31,8 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	op("new_message", ui_act(), then(PROC_REF(native_ui_act_new_message)))
 	op("cancel", ui_act(), then(PROC_REF(native_ui_act_cancel)))
 	op("addressbook", ui_act(), then(PROC_REF(native_ui_act_addressbook)))
+	op("canceldownload", ui_act(), then(PROC_REF(native_ui_act_canceldownload)))
+	op("remove_attachment", ui_act(), then(PROC_REF(native_ui_act_remove_attachment)))
 	owns_one(nameof(downloading), /datum/computer_file)
 	owns_one(nameof(msg_attachment), /datum/computer_file)
 
@@ -513,16 +515,16 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_downloadattachment)
 	download_progress = 0
 	return 1
 
-UI_ACT(/datum/tgui_module/email_client, "canceldownload", ui_act_canceldownload)
-UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_canceldownload)
+/datum/tgui_module/email_client/proc/native_ui_act_canceldownload(datum/act/op/A)
+	check_for_new_messages(1)
 	own_take(src, nameof(/datum/tgui_module/email_client::downloading))
 	download_progress = 0
-	return 1
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/email_client, "remove_attachment", ui_act_remove_attachment)
-UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_remove_attachment)
+/datum/tgui_module/email_client/proc/native_ui_act_remove_attachment(datum/act/op/A)
+	check_for_new_messages(1)
 	own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
-	return 1
+	return OP_OK
 
 
 /// The current_account this refers to (a relation view: null once that is deleted).

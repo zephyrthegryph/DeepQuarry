@@ -785,10 +785,12 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_r
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/general_air_control/fuel_injection, "toggle_automation", ui_act_toggle_automation)
-UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_toggle_automation)
+CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
+	op("toggle_automation", ui_act(), then(PROC_REF(native_ui_act_toggle_automation)))
+
+/obj/machinery/computer/general_air_control/fuel_injection/proc/native_ui_act_toggle_automation(datum/act/op/A)
 	set_automation(!automation)
-	. = TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/general_air_control/fuel_injection, "toggle_injector", ui_act_toggle_injector)
 UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_toggle_injector)

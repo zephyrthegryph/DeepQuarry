@@ -60,9 +60,11 @@ UI_ACT_PROC(/obj/item/gun/projectile/dartgun, ui_act_eject_beaker)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/item/gun/projectile/dartgun, "eject_cart", ui_act_eject_cart)
-UI_ACT_PROC(/obj/item/gun/projectile/dartgun, ui_act_eject_cart)
-	add_fingerprint(ui.user)
-	unload_ammo(ui.user)
+CAPABILITIES(/obj/item/gun/projectile/dartgun)
+	op("eject_cart", ui_act(), then(PROC_REF(native_ui_act_eject_cart)))
+
+/obj/item/gun/projectile/dartgun/proc/native_ui_act_eject_cart(datum/act/op/A)
+	add_fingerprint(A.actor)
+	unload_ammo(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK

@@ -55,6 +55,7 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	var/datum/announcement/announcement
 
 CAPABILITIES(/obj/machinery/requests_console)
+	op("toggleSilent", ui_act(), then(PROC_REF(native_ui_act_togglesilent)))
 	owns_one(nameof(announcement), /datum/announcement)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
@@ -226,10 +227,10 @@ UI_ACT_PROC(/obj/machinery/requests_console, ui_act_setscreen)
 
 //Handle silencing the console
 
-UI_ACT(/obj/machinery/requests_console, "toggleSilent", ui_act_togglesilent)
-UI_ACT_PROC(/obj/machinery/requests_console, ui_act_togglesilent)
+/obj/machinery/requests_console/proc/native_ui_act_togglesilent(datum/act/op/A)
+	add_fingerprint(A.actor)
 	silent = !silent
-	. = TRUE
+	return OP_OK
 
 			//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
 

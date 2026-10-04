@@ -42,11 +42,13 @@ UI_DATA_REPLACE(/obj/machinery/computer/telecomms/traffic, "temp:text", "network
 		data["autoruncode"] = !!SelectedServer().autoruncode
 	return data
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "clear_temp", ui_act_clear_temp)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_clear_temp)
+CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
+	op("clear_temp", ui_act(), then(PROC_REF(native_ui_act_clear_temp)))
+
+/obj/machinery/computer/telecomms/traffic/proc/native_ui_act_clear_temp(datum/act/op/A)
 	temp = ""
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/computer/telecomms/traffic, "set_network", ui_act_set_network)
 UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_set_network)

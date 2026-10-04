@@ -57,10 +57,12 @@ UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_get_log)
 		stored_data = MT.get_mecha_log()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/mecha, "clear_log", ui_act_clear_log)
-UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_clear_log)
+CAPABILITIES(/obj/machinery/computer/mecha)
+	op("clear_log", ui_act(), then(PROC_REF(native_ui_act_clear_log)))
+
+/obj/machinery/computer/mecha/proc/native_ui_act_clear_log(datum/act/op/A)
 	stored_data = null
-	return TRUE
+	return OP_OK
 
 /datum/om/prompt/text/mecha_tracker_message
 	title = "Transmit message"

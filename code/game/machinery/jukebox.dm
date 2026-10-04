@@ -32,6 +32,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 
 CAPABILITIES(/obj/machinery/media/jukebox)
 	climb()
+	op("stop", ui_act(), then(PROC_REF(native_ui_act_stop)))
 
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
@@ -223,10 +224,9 @@ UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_volume)
 	update_music() // To broadcast volume change without restarting song
 	return TRUE
 
-UI_ACT(/obj/machinery/media/jukebox, "stop", ui_act_stop)
-UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_stop)
+/obj/machinery/media/jukebox/proc/native_ui_act_stop(datum/act/op/A)
 	StopPlaying()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/media/jukebox, "play", ui_act_play)
 UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_play)
