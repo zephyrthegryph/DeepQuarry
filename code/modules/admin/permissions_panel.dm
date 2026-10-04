@@ -324,34 +324,32 @@ UI_DATA_REPLACE(/datum/permissions_panel, "merge:ui_data_datum_permissions_panel
 		return FALSE
 	return TRUE
 
-CAPABILITIES(/datum/permissions_panel)
-	op("nav_permissions", ui_act(), then(PROC_REF(native_permissions_ui_nav_permissions)))
-	op("nav_ranks", ui_act(), then(PROC_REF(native_permissions_ui_nav_ranks)))
-	op("nav_logging", ui_act(), then(PROC_REF(native_permissions_ui_nav_logging)))
-	op("nav_housekeeping", ui_act(), then(PROC_REF(native_permissions_ui_nav_housekeeping)))
-	op("admin_add", ui_act(), then(PROC_REF(native_permissions_ui_admin_add)))
-	op("ranks_create", ui_act(), then(PROC_REF(native_permissions_ui_ranks_create)))
-
-/datum/permissions_panel/proc/native_permissions_ui_nav_permissions(datum/act/op/A)
+UI_ACT(/datum/permissions_panel, "nav_permissions", ui_act_nav_permissions)
+UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_permissions)
 	forward_topic("editrightsbrowser=1")
-	return OP_OK
+	return TRUE
 
-/datum/permissions_panel/proc/native_permissions_ui_nav_ranks(datum/act/op/A)
+UI_ACT(/datum/permissions_panel, "nav_ranks", ui_act_nav_ranks)
+UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_ranks)
 	forward_topic("editrightsbrowserranks=1")
-	return OP_OK
+	return TRUE
 
-/datum/permissions_panel/proc/native_permissions_ui_nav_logging(datum/act/op/A)
+UI_ACT(/datum/permissions_panel, "nav_logging", ui_act_nav_logging)
+UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_logging)
 	forward_topic("editrightsbrowserlogging=1;editrightslogpage=0")
-	return OP_OK
+	return TRUE
 
-/datum/permissions_panel/proc/native_permissions_ui_nav_housekeeping(datum/act/op/A)
+UI_ACT(/datum/permissions_panel, "nav_housekeeping", ui_act_nav_housekeeping)
+UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_housekeeping)
 	forward_topic("editrightsbrowserhousekeep=1")
-	return OP_OK
+	return TRUE
+
 // Permissions page row actions.
 
-/datum/permissions_panel/proc/native_permissions_ui_admin_add(datum/act/op/A)
+UI_ACT(/datum/permissions_panel, "admin_add", ui_act_admin_add)
+UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_add)
 	forward_topic("editrights=add")
-	return OP_OK
+	return TRUE
 
 UI_ACT(/datum/permissions_panel, "admin_remove", ui_act_admin_remove, UI_ARG_TEXT("key"))
 UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_remove)
@@ -390,9 +388,10 @@ UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_sync)
 	return TRUE
 // Ranks page actions.
 
-/datum/permissions_panel/proc/native_permissions_ui_ranks_create(datum/act/op/A)
+UI_ACT(/datum/permissions_panel, "ranks_create", ui_act_ranks_create)
+UI_ACT_PROC(/datum/permissions_panel, ui_act_ranks_create)
 	forward_topic("editrightsbrowserranks=1;editrightsaddrank=1")
-	return OP_OK
+	return TRUE
 
 UI_ACT(/datum/permissions_panel, "ranks_edit", ui_act_ranks_edit, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/datum/permissions_panel, ui_act_ranks_edit)

@@ -106,13 +106,15 @@ TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 		interface_interact(user)
 	return TRUE
 
-/obj/machinery/computer/ship/proc/native_ship_ui_sync(datum/act/op/A)
-	sync_linked(A.actor)
-	return OP_OK
+UI_ACT(/obj/machinery/computer/ship, "sync", ui_act_sync)
+UI_ACT_PROC(/obj/machinery/computer/ship, ui_act_sync)
+	sync_linked(ui.user)
+	return TRUE
 
-/obj/machinery/computer/ship/proc/native_ship_ui_close(datum/act/op/A)
-	A.actor.reset_perspective()
-	return OP_OK
+UI_ACT(/obj/machinery/computer/ship, "close", ui_act_close)
+UI_ACT_PROC(/obj/machinery/computer/ship, ui_act_close)
+	ui.user.reset_perspective()
+	return TRUE
 
 // Management of mob view displacement. look to shift view to the ship on the overmap; unlook to shift back.
 

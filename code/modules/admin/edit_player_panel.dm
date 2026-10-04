@@ -173,125 +173,113 @@ UI_ACT_PROC(/datum/edit_player_panel, ui_act_editrights)
 	SStgui.update_uis(src)
 	return TRUE
 
-CAPABILITIES(/datum/edit_player_panel)
-	op("revive", ui_act(), then(PROC_REF(native_player_ui_revive)))
-	op("vv", ui_act(), then(PROC_REF(native_player_ui_vv)))
-	op("traitor", ui_act(), then(PROC_REF(native_player_ui_traitor)))
-	op("priv_msg", ui_act(), then(PROC_REF(native_player_ui_priv_msg)))
-	op("subtlemessage", ui_act(), then(PROC_REF(native_player_ui_subtlemessage)))
-	op("jumpto", ui_act(), then(PROC_REF(native_player_ui_jumpto)))
-	op("getmob", ui_act(), then(PROC_REF(native_player_ui_getmob)))
-	op("sendmob", ui_act(), then(PROC_REF(native_player_ui_sendmob)))
-	op("narrateto", ui_act(), then(PROC_REF(native_player_ui_narrateto)))
-	op("boot2", ui_act(), then(PROC_REF(native_player_ui_boot2)))
-	op("warn", ui_act(), then(PROC_REF(native_player_ui_warn)))
-	op("newban", ui_act(), then(PROC_REF(native_player_ui_newban)))
-	op("jobban2", ui_act(), then(PROC_REF(native_player_ui_jobban2)))
-	op("notes", ui_act(), then(PROC_REF(native_player_ui_notes)))
-	op("sendtoprison", ui_act(), then(PROC_REF(native_player_ui_sendtoprison)))
-	op("sendbacktolobby", ui_act(), then(PROC_REF(native_player_ui_sendbacktolobby)))
-	op("forcespeech", ui_act(), then(PROC_REF(native_player_ui_forcespeech)))
-	op("turn_monkey", ui_act(), then(PROC_REF(native_player_ui_turn_monkey)))
-	op("corgione", ui_act(), then(PROC_REF(native_player_ui_corgione)))
-	op("turn_ai", ui_act(), then(PROC_REF(native_player_ui_turn_ai)))
-	op("turn_robot", ui_act(), then(PROC_REF(native_player_ui_turn_robot)))
-	op("turn_alien", ui_act(), then(PROC_REF(native_player_ui_turn_alien)))
-	op("makeanimal", ui_act(), then(PROC_REF(native_player_ui_makeanimal)))
-	op("respawn", ui_act(), then(PROC_REF(native_player_ui_respawn)))
-	op("tdome1", ui_act(), then(PROC_REF(native_player_ui_tdome1)))
-	op("tdome2", ui_act(), then(PROC_REF(native_player_ui_tdome2)))
-	op("tdomeadmin", ui_act(), then(PROC_REF(native_player_ui_tdomeadmin)))
-	op("tdomeobserve", ui_act(), then(PROC_REF(native_player_ui_tdomeobserve)))
-
-/datum/edit_player_panel/proc/native_player_ui_revive(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "revive", ui_act_revive)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_revive)
 	var/tref = "[REF(target())]"
 	forward_topic("revive=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_vv(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "vv", ui_act_vv)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_vv)
 	var/tref = "[REF(target())]"
-	A.actor.client?.vv_topic(list("Vars" = tref), TRUE)
-	return OP_OK
+	ui.user.client?.vv_topic(list("Vars" = tref), TRUE)
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_traitor(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "traitor", ui_act_traitor)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_traitor)
 	var/tref = "[REF(target())]"
 	forward_topic("traitor=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_priv_msg(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "priv_msg", ui_act_priv_msg)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_priv_msg)
 	var/tref = "[REF(target())]"
 	forward_topic("priv_msg=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_subtlemessage(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "subtlemessage", ui_act_subtlemessage)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_subtlemessage)
 	var/tref = "[REF(target())]"
 	forward_topic("subtlemessage=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_jumpto(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "jumpto", ui_act_jumpto)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_jumpto)
 	var/tref = "[REF(target())]"
 	forward_topic("jumpto=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_getmob(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "getmob", ui_act_getmob)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_getmob)
 	var/tref = "[REF(target())]"
 	forward_topic("getmob=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_sendmob(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "sendmob", ui_act_sendmob)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_sendmob)
 	var/tref = "[REF(target())]"
 	forward_topic("sendmob=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_narrateto(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "narrateto", ui_act_narrateto)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_narrateto)
 	var/tref = "[REF(target())]"
 	forward_topic("narrateto=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_boot2(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "boot2", ui_act_boot2)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_boot2)
 	var/tref = "[REF(target())]"
 	forward_topic("boot2=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_warn(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "warn", ui_act_warn)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_warn)
 	forward_topic("warn=[target().ckey]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_newban(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "newban", ui_act_newban)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_newban)
 	var/tref = "[REF(target())]"
 	forward_topic("newban=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_jobban2(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "jobban2", ui_act_jobban2)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_jobban2)
 	var/tref = "[REF(target())]"
 	forward_topic("jobban2=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_notes(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "notes", ui_act_notes)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_notes)
 	var/tref = "[REF(target())]"
 	forward_topic("notes=show;mob=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_sendtoprison(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "sendtoprison", ui_act_sendtoprison)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_sendtoprison)
 	var/tref = "[REF(target())]"
 	forward_topic("sendtoprison=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_sendbacktolobby(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "sendbacktolobby", ui_act_sendbacktolobby)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_sendbacktolobby)
 	var/tref = "[REF(target())]"
 	forward_topic("sendbacktolobby=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_forcespeech(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "forcespeech", ui_act_forcespeech)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_forcespeech)
 	var/tref = "[REF(target())]"
 	forward_topic("forcespeech=[tref]")
-	return OP_OK
+	return TRUE
+
 // Mute toggles
 
 UI_ACT(/datum/edit_player_panel, "mute", ui_act_mute, UI_ARG_TEXT("mute_type"))
@@ -303,48 +291,56 @@ UI_ACT_PROC(/datum/edit_player_panel, ui_act_mute)
 	return TRUE
 // Transformation
 
-/datum/edit_player_panel/proc/native_player_ui_turn_monkey(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "turn_monkey", ui_act_turn_monkey)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_turn_monkey)
 	var/tref = "[REF(target())]"
 	forward_topic("turn_monkey=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_corgione(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "corgione", ui_act_corgione)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_corgione)
 	var/tref = "[REF(target())]"
 	forward_topic("corgione=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_turn_ai(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "turn_ai", ui_act_turn_ai)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_turn_ai)
 	var/tref = "[REF(target())]"
 	forward_topic("turn_ai=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_turn_robot(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "turn_robot", ui_act_turn_robot)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_turn_robot)
 	var/tref = "[REF(target())]"
 	forward_topic("turn_robot=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_turn_alien(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "turn_alien", ui_act_turn_alien)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_turn_alien)
 	var/tref = "[REF(target())]"
 	forward_topic("turn_alien=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_makeanimal(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "makeanimal", ui_act_makeanimal)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_makeanimal)
 	var/tref = "[REF(target())]"
 	forward_topic("makeanimal=[tref]")
 	SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_respawn(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "respawn", ui_act_respawn)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_respawn)
 	var/cref = target().client ? "[REF(target().client)]" : null
 	if(cref)
 		forward_topic("respawn=[cref]")
 		SStgui.update_uis(src)
-	return OP_OK
+	return TRUE
+
 // DNA gene toggle
 
 UI_ACT(/datum/edit_player_panel, "togmutate", ui_act_togmutate, UI_ARG_TEXT("block"))
@@ -369,25 +365,30 @@ UI_ACT_PROC(/datum/edit_player_panel, ui_act_simplemake)
 	return TRUE
 // Thunderdome
 
-/datum/edit_player_panel/proc/native_player_ui_tdome1(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "tdome1", ui_act_tdome1)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_tdome1)
 	var/tref = "[REF(target())]"
 	forward_topic("tdome1=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_tdome2(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "tdome2", ui_act_tdome2)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_tdome2)
 	var/tref = "[REF(target())]"
 	forward_topic("tdome2=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_tdomeadmin(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "tdomeadmin", ui_act_tdomeadmin)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_tdomeadmin)
 	var/tref = "[REF(target())]"
 	forward_topic("tdomeadmin=[tref]")
-	return OP_OK
+	return TRUE
 
-/datum/edit_player_panel/proc/native_player_ui_tdomeobserve(datum/act/op/A)
+UI_ACT(/datum/edit_player_panel, "tdomeobserve", ui_act_tdomeobserve)
+UI_ACT_PROC(/datum/edit_player_panel, ui_act_tdomeobserve)
 	var/tref = "[REF(target())]"
 	forward_topic("tdomeobserve=[tref]")
-	return OP_OK
+	return TRUE
+
 // Language
 
 UI_ACT(/datum/edit_player_panel, "toglang", ui_act_toglang, UI_ARG_TEXT("lang"))
