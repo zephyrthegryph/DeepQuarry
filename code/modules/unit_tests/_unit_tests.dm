@@ -993,6 +993,8 @@
 
 #include "round2_crayon_native_drawing.dm"
 
+#include "round2_tele_beacon_native_warning.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
