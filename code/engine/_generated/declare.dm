@@ -2470,6 +2470,13 @@
 	into += entry_line(30)
 	into += list(global.owns_one(nameof(halitem), /obj))
 
+/// CAPABILITIES(/datum/hcic_trap_listener) at code/modules/unit_tests/dq_hc_items2_C.dm:323
+/datum/hcic_trap_listener/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_hc_items2_C.dm", 323, /datum/hcic_trap_listener)
+	into += entry_line(324)
+	into += list(global.ref_one(nameof(heard_entity), /datum))
+
 /// CAPABILITIES(/datum/hose) at code/datums/entity_state/reagent_hose/datum.dm:16
 /datum/hose/declared_entries(list/into)
 	..(into)
@@ -3294,6 +3301,20 @@
 	into += entry_block("code/game/machinery/cryopod.dm", 716, /datum/prompt/yes_no/cryo_consent)
 	into += entry_line(717)
 	into += list(global.ref_one(nameof(loader), /mob))
+
+/// CAPABILITIES(/datum/prompt/yes_no/crystal_capture) at code/game/objects/items/weapons/capture_crystal.dm:412
+/datum/prompt/yes_no/crystal_capture/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/capture_crystal.dm", 412, /datum/prompt/yes_no/crystal_capture)
+	into += entry_line(413)
+	into += list(global.ref_one(nameof(capturer), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/yes_no/crystal_ghost_invite) at code/game/objects/items/weapons/capture_crystal.dm:214
+/datum/prompt/yes_no/crystal_ghost_invite/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/capture_crystal.dm", 214, /datum/prompt/yes_no/crystal_ghost_invite)
+	into += entry_line(215)
+	into += list(global.ref_one(nameof(bound), /mob/living/simple_mob))
 
 /// CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample) at code/modules/mob/living/silicon/pai/software_modules.dm:82
 /datum/prompt/yes_no/pai_dna_sample/declared_entries(list/into)
@@ -7054,6 +7075,21 @@
 	into += entry_line(115)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(canvas_open), because = MSG(canvas/finished)))))
 
+/// CAPABILITIES(/obj/item/capture_crystal) at code/game/objects/items/weapons/capture_crystal.dm:33
+/obj/item/capture_crystal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/capture_crystal.dm", 33, /obj/item/capture_crystal)
+	into += entry_line(34)
+	into += list(global.op("crystal_use", global.in_hand(), global.then(PROC_REF(crystal_used))))
+	into += entry_line(35)
+	into += list(global.op("toggle_follow", global.menu(), global.label("Toggle Follow"), global.needs(global.carried()), global.then(PROC_REF(follow_owner_effect))))
+	into += entry_line(36)
+	into += list(global.op("destroy_crystal", global.menu(), global.label("Destroy Crystal"), global.needs(global.carried()), global.then(PROC_REF(destroy_crystal_effect))))
+	into += entry_line(37)
+	into += list(global.op("release_ownership", global.menu(), global.label("Release Ownership"), global.needs(global.carried()), global.then(PROC_REF(release_ownership_effect))))
+	into += entry_line(38)
+	into += list(global.op("invite_ghost", global.menu(), global.label("Enhance (Toggle Ghost Join)"), global.needs(global.carried()), global.then(PROC_REF(invite_ghost_effect))))
+
 /// CAPABILITIES(/obj/item/card/id/syndicate) at code/game/objects/items/weapons/id cards/syndicate_ids.dm:23
 /obj/item/card/id/syndicate/declared_entries(list/into)
 	..(into)
@@ -8057,12 +8093,24 @@
 	into += entry_line(29)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/ghost_trap) at code/game/objects/items/ghost_hunting/trap.dm:19
+/// CAPABILITIES(/obj/item/ghost_trap) at code/game/objects/items/ghost_hunting/trap.dm:23
 /obj/item/ghost_trap/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/ghost_hunting/trap.dm", 19, /obj/item/ghost_trap)
-	into += entry_line(20)
+	into += entry_block("code/game/objects/items/ghost_hunting/trap.dm", 23, /obj/item/ghost_trap)
+	into += entry_line(24)
 	into += list(global.owns_one(nameof(ghost_reporter), /obj/item/radio/intercom/science))
+	into += entry_line(25)
+	into += list(global.ref_one(nameof(captured_entity), /mob))
+	into += entry_line(27)
+	into += list(global.every(2 SECONDS, global.then(PROC_REF(ghost_trap_step)), when = nameof(captured_entity)))
+	into += entry_line(28)
+	into += list(global.op("trap_hand", global.hand(), global.then(PROC_REF(trap_hand))))
+	into += entry_line(29)
+	into += list(global.op("trap_use", global.in_hand(), global.then(PROC_REF(trap_used))))
+	into += entry_line(30)
+	into += list(global.op("release_entity", global.menu(), global.label("Relase Entity"), global.then(PROC_REF(release_occupant_effect))))
+	into += entry_line(31)
+	into += list(global.op("eat_entity", global.menu(), global.label("Eat Entity"), global.then(PROC_REF(ghost_trap_hidden_vore_effect))))
 
 /// CAPABILITIES(/obj/item/gift) at code/game/objects/items/weapons/gift_wrappaper.dm:31
 /obj/item/gift/declared_entries(list/into)
@@ -9360,11 +9408,11 @@
 	into += entry_line(20)
 	into += list(global.owns_many(nameof(trails)))
 
-/// CAPABILITIES(/obj/item/proton_pack) at code/game/objects/items/ghost_hunting/weapons.dm:191
+/// CAPABILITIES(/obj/item/proton_pack) at code/game/objects/items/ghost_hunting/weapons.dm:196
 /obj/item/proton_pack/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/ghost_hunting/weapons.dm", 191, /obj/item/proton_pack)
-	into += entry_line(192)
+	into += entry_block("code/game/objects/items/ghost_hunting/weapons.dm", 196, /obj/item/proton_pack)
+	into += entry_line(197)
 	into += list(global.op("interaction_hand", global.hand(), global.then(PROC_REF(interaction_hand))))
 
 /// CAPABILITIES(/obj/item/pupscrubber) at code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:269

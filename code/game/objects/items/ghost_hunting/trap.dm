@@ -13,16 +13,22 @@
 	center_of_mass_y = 0
 	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
-	var/deployed = FALSE
 	var/obj/item/radio/intercom/science/ghost_reporter
+
+/obj/item/ghost_trap/var/deployed = FALSE
+/// The entity we currently have captured.
+/obj/item/ghost_trap/var/mob/captured_entity
+TRACKED(/obj/item/ghost_trap, deployed)
 
 CAPABILITIES(/obj/item/ghost_trap)
 	owns_one(nameof(ghost_reporter), /obj/item/radio/intercom/science)
-
-///The entity we currently have captured (a relation view).
-OM_FIELD_VIEW(/obj/item/ghost_trap, mob, captured_entity, CHANGE_EXPLICIT)
-/// Watches its catch every 2 s while it holds one; empty, it sleeps.
-DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
+	ref_one(nameof(captured_entity), /mob)
+	// Watches its catch every 2 s while it holds one; empty, it sleeps.
+	every(2 SECONDS, then(PROC_REF(ghost_trap_step)), when = nameof(captured_entity))
+	op("trap_hand", hand(), then(PROC_REF(trap_hand)))
+	op("trap_use", in_hand(), then(PROC_REF(trap_used)))
+	op("release_entity", menu(), label("Relase Entity"), then(PROC_REF(release_occupant_effect)))
+	op("eat_entity", menu(), label("Eat Entity"), then(PROC_REF(ghost_trap_hidden_vore_effect)))
 
 /obj/item/ghost_trap/Initialize(mapload)
 	. = ..()
@@ -50,8 +56,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 		our_entity.forceMove(get_turf(src))
 	..()
 
-/obj/item/ghost_trap/proc/release_occupant_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	release_entity(user)
+/obj/item/ghost_trap/proc/release_occupant_effect(datum/act/op/A)
+	release_entity(A.actor)
+	return OP_OK
 
 /obj/item/ghost_trap/proc/release_entity(mob/living/user)
 	if(!isliving(user)) //no ghosts
@@ -73,30 +80,21 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 	to_chat(user, span_info("There appears to be nothing in the trap!"))
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ghost_trap/appearance_overlays()
-	. = list()
-	. += ..()
-
+/obj/item/ghost_trap/draw(datum/look/look)
+	..()
 	if(deployed)
-		icon_state = "on"
-		return .
-
+		look.state("on")
+		return
 	if(captured_entity)
-		var/mob/our_entity = captured_entity
-		if(our_entity)
-			icon_state = "item_captured"
-			return .
-
-		icon_state = initial(icon_state)
-		return .
-	icon_state = initial(icon_state)
+		look.state("item_captured")
+		return
+	look.state(initial(icon_state))
 
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
 
 /// Watches its catch every 2 s while it holds one (declared above); empty, it sleeps.
-/obj/item/ghost_trap/periodic_step()
+/obj/item/ghost_trap/proc/ghost_trap_step(datum/act/timer/A)
 	if(captured_entity)
 		var/mob/our_entity = captured_entity
 		if(our_entity && our_entity.loc != src)
@@ -114,27 +112,28 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 	return (user.IsAdvancedToolUser() && !isAI(user) && !user.stat && !user.restrained())
 
 /// Old attack_self.
-/obj/item/ghost_trap/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ghost_trap/proc/trap_used(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(captured_entity)
 		var/mob/our_entity = captured_entity
 		if(our_entity)
 			to_chat(user, "You are unable to use \the [src]! It beeps that it an entity contained inside!")
-			return TRUE
+			return OP_OK
 
 	if(!deployed && can_use(user))
 		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
 			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")))
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/item/ghost_trap/proc/attack_self_timed_done(mob/user)
 	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
 		MSG_OTHERS(span_danger("%U% has deployed %T%.")))
 	play_sfx(src, SFX_MACHINES_CLICK, 1.4)
 
-	deployed = TRUE
+	set_deployed(TRUE)
 	user.drop_from_inventory(src)
 	update_icon()
 	set_anchored(TRUE)
@@ -154,13 +153,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
 	update_icon()
 
-DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
 /// Old attack_hand.
-/obj/item/ghost_trap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ghost_trap/proc/trap_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_buckled_mobs() && can_use(user))
 		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free something from %T%.")), \
 			MSG_OTHERS(span_notice("%U% begins freeing something from %T%.")))
@@ -172,19 +167,19 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /obj/item/ghost_trap/proc/attack_hand_timed_done(mob/user)
 	act_message(user, src, others = span_notice("Something has been freed from %T% by %U%."))
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
 	set_anchored(FALSE)
-	deployed = FALSE
+	set_deployed(FALSE)
 /obj/item/ghost_trap/proc/attack_hand_timed_done2(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You have deactivated %T%!")), \
 		MSG_OTHERS(span_danger("%U% has deactivated %T%.")))
-	deployed = FALSE
+	set_deployed(FALSE)
 	set_anchored(FALSE)
 	update_icon()
 
@@ -207,12 +202,12 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	if(isobserver(passing_entity))
 		to_chat(passing_entity, span_info("((You are incapable of moving or 'jumping' to turf by clicking, but can still escape via teleport or orbit!))"))
 
-	OM_EMIT(src, /datum/om/event/world_ghost_captured, passing_entity)
+	PUBLISH_LEGACY(src, /datum/notice/world_ghost_captured, passing_entity)
 
 /obj/item/ghost_trap/Crossed(atom/movable/AM)
 
 	if(istype(AM, /obj/effect/shadow_wight))
-		OM_EMIT(src, /datum/om/event/world_wight_captured, AM)
+		PUBLISH_LEGACY(src, /datum/notice/world_wight_captured, AM)
 		visible_message(span_danger("A flurry of beams shoot into the air from \the [src] and into [AM], capturing and disintegrating it!"))
 		return
 
@@ -234,13 +229,14 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		visible_message(span_danger("A flurry of beams shoot into the air from \the [src]!"))
 		SSmotiontracker.ping(src,100) // Clunk!
 		catch_ghost(passing_entity)
-		deployed = FALSE
+		set_deployed(FALSE)
 		set_anchored(FALSE)
 		update_icon()
 		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
 
-/obj/item/ghost_trap/proc/ghost_trap_hidden_vore_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	eat_entity(user)
+/obj/item/ghost_trap/proc/ghost_trap_hidden_vore_effect(datum/act/op/A)
+	eat_entity(A.actor)
+	return OP_OK
 
 /obj/item/ghost_trap/proc/eat_entity(mob/living/user)
 	if(!isliving(user)) //no ghosts
@@ -260,9 +256,3 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 
 	to_chat(user, span_info("There appears to be nothing in the trap to eat!"))
 	return
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/ghost_trap, \
-	INTERACT_VERB("Relase Entity", PROC_REF(release_occupant_effect)), \
-	INTERACT_VERB("Eat Entity", PROC_REF(ghost_trap_hidden_vore_effect)), \
-)

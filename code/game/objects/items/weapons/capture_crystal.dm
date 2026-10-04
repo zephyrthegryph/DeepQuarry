@@ -21,6 +21,21 @@
 	var/spawn_mob_name = "A mob"
 	var/capture_chance_modifier = 1		//So we can have special subtypes with different capture rates!
 	var/loadout = FALSE
+	/// The bound mob is inside the crystal (what the look shows).
+	var/mob_inside = FALSE
+	/// The activation cooldown is running (the busy look).
+	var/busy = FALSE
+
+TRACKED(/obj/item/capture_crystal, spawn_mob_type)
+TRACKED(/obj/item/capture_crystal, mob_inside)
+TRACKED(/obj/item/capture_crystal, busy)
+
+CAPABILITIES(/obj/item/capture_crystal)
+	op("crystal_use", in_hand(), then(PROC_REF(crystal_used)))
+	op("toggle_follow", menu(), label("Toggle Follow"), needs(carried()), then(PROC_REF(follow_owner_effect)))
+	op("destroy_crystal", menu(), label("Destroy Crystal"), needs(carried()), then(PROC_REF(destroy_crystal_effect)))
+	op("release_ownership", menu(), label("Release Ownership"), needs(carried()), then(PROC_REF(release_ownership_effect)))
+	op("invite_ghost", menu(), label("Enhance (Toggle Ghost Join)"), needs(carried()), then(PROC_REF(invite_ghost_effect)))
 
 /obj/item/capture_crystal/Initialize(mapload)
 	. = ..()
@@ -64,15 +79,16 @@
 			to_chat(M, span_notice("\The [bound_mob] is now [AI.get_hostile() ? "hostile" : "passive"]."))
 			log_admin("[key_name_admin(M)] set [bound_mob] to [AI.get_hostile()].")
 	else if(bound_mob.client)
-		om_ask(user, /datum/om/prompt/text/crystal_command, PROC_REF(command_entered))
+		open_request(src, /datum/prompt/text, PROC_REF(command_entered), answerer = user, title = "Command", question = "What is your command?", ask_flags = ASK_CARRIED | ASK_CAPABLE, valid = PROC_REF(command_still_valid), timeout = 0)
 	else
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is unresponsive."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
 //Lets the owner get AI controlled bound mobs to follow them, or tells player controlled mobs to follow them.
-/obj/item/capture_crystal/proc/follow_owner_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/capture_crystal/proc/follow_owner_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ismob(loc))
-		return
+		return OP_OK
 	var/mob/living/M = src.loc
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
@@ -86,7 +102,7 @@
 		if(!bound_mob.ai_brain)
 			to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to follow your command."))
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
-			return
+			return OP_OK
 		var/datum/ai_brain/AI = bound_mob.ai_brain
 		var/mob/current_leader = AI.get_leader()
 		if(current_leader)
@@ -101,7 +117,7 @@
 		if(!bound_mob.ai_brain)
 			to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to follow your command."))
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
-			return
+			return OP_OK
 		var/datum/ai_brain/AI = bound_mob.ai_brain
 		var/mob/current_leader = AI.get_leader()
 		if(current_leader)
@@ -110,12 +126,14 @@
 		else
 			AI.set_follow(M)
 			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] started following [M]."))
+	return OP_OK
 
 //Don't really want people 'haha funny' capturing and releasing one another willy nilly. So! If you wanna release someone, you gotta destroy the thingy.
 //(Which is consistent with how it works with digestion anyway.)
-/obj/item/capture_crystal/proc/destroy_crystal_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/capture_crystal/proc/destroy_crystal_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ismob(loc))
-		return
+		return OP_OK
 	var/mob/living/M = src.loc
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] is too hard for you to break."))
@@ -125,11 +143,13 @@
 		var/others_message = msg_fill("%U% crushes %T% into dust...", M, src)
 		if(consume(src, user))
 			act_message(M, null, MSG_SELF(self_message), MSG_OTHERS(others_message))
+	return OP_OK
 
 //If you catch something/someone and want to give it to someone else though, that's fine.
-/obj/item/capture_crystal/proc/release_ownership_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/capture_crystal/proc/release_ownership_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ismob(loc))
-		return
+		return OP_OK
 	var/mob/living/M = src.loc
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
@@ -138,27 +158,19 @@
 		act_message(M, src, MSG_SELF("%T% flickers in your hand and emits a little tone."), MSG_OTHERS("%T% flickers in %U%'s hand and emits a little tone."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
 		rel_clear(src, nameof(owner))
+	return OP_OK
 
 //Let's make inviting ghosts be an option you can do instead of an automatic thing!
 /// A command to the bound mob. Re-checked on the answer: the crystal is still carried by its owner and still bound.
-/datum/om/prompt/text/crystal_command
-	title = "Command"
-	message = "What is your command?"
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
+/obj/item/capture_crystal/proc/command_still_valid(datum/request/R)
+	return R.answerer == owner && bound_mob
 
-/datum/om/prompt/text/crystal_command/valid()
-	var/obj/item/capture_crystal/crystal = subject
-	if(answerer != crystal.owner || !crystal.bound_mob)
-		return "not the owner"
-	return null
-
-/datum/om/prompt/text/crystal_command/cancelled()
-	to_chat(answerer, span_notice("You decided against it."))
-	return ..()
-
-/obj/item/capture_crystal/proc/command_entered(datum/om/prompt/text/crystal_command/ask)
-	var/mob/living/M = ask.answerer
-	var/transmit_msg = ask.text
+/obj/item/capture_crystal/proc/command_entered(datum/act/request/A)
+	var/mob/living/M = A.request.answerer
+	if(!A.answer)
+		to_chat(M, span_notice("You decided against it."))
+		return
+	var/transmit_msg = A.answer.answer_value
 	if(length(transmit_msg) >= MAX_MESSAGE_LEN)
 		to_chat(M, span_danger("Your message was TOO LONG!:[transmit_msg]"))
 		return
@@ -170,75 +182,77 @@
 	to_chat(M, span_notice("Your command has been transmitted, '[transmit_msg]'"))
 	log_admin("[key_name_admin(M)] sent the command, '[transmit_msg]' to [bound_mob].")
 
-/obj/item/capture_crystal/proc/invite_ghost_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/capture_crystal/proc/invite_ghost_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ismob(loc))
-		return
+		return OP_OK
 	var/mob/living/U = src.loc
 	if(!bound_mob)
 		to_chat(U, span_notice("\The [src] emits an unpleasant tone... There is nothing to enhance."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
-		return
+		return OP_OK
 	else if(U != owner)
 		to_chat(U, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
-		return
+		return OP_OK
 	else if(bound_mob.client || !isanimal(bound_mob))
 		to_chat(U, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not eligable for enhancement."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_PROBLEM)
-		return		//Need to type cast the mob so it can detect ghostjoin
+		return OP_OK//Need to type cast the mob so it can detect ghostjoin
 	var/mob/living/simple_mob/M = bound_mob
 	if(M.ghostjoin)
 		M.ghostjoin = FALSE
 		to_chat(U, span_notice("\The [bound_mob] is no longer eligable to be joined by ghosts."))
 	else
-		om_ask(U, /datum/om/prompt/confirm/crystal_ghost_invite, PROC_REF(ghost_invite_answered), message = "Do you want to offer your [bound_mob] up to ghosts to play as? There is no way undo this once a ghost takes over.", bound = M)
+		open_request(src, /datum/prompt/yes_no/crystal_ghost_invite, PROC_REF(ghost_invite_answered), answerer = U, title = "Invite ghosts?", question = "Do you want to offer your [bound_mob] up to ghosts to play as? There is no way undo this once a ghost takes over.", bound = M, ask_flags = ASK_CARRIED | ASK_CAPABLE, valid = PROC_REF(ghost_invite_still_valid), timeout = 0)
+	return OP_OK
 
 /// Offering the bound mob to ghosts. Re-checked on the answer: the crystal is still carried by its owner, still bound to that mob, which has no player.
-/datum/om/prompt/confirm/crystal_ghost_invite
-	title = "Invite ghosts?"
-	no_first = TRUE
-	answer_on_no = TRUE
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
+/datum/prompt/yes_no/crystal_ghost_invite
 	var/mob/living/simple_mob/bound
 
-/datum/om/prompt/confirm/crystal_ghost_invite/valid()
-	var/obj/item/capture_crystal/crystal = subject
-	if(bound != crystal.bound_mob || answerer != crystal.owner || bound.client)
-		return "not eligible"
-	return null
+CAPABILITIES(/datum/prompt/yes_no/crystal_ghost_invite)
+	ref_one(nameof(bound), /mob/living/simple_mob)
 
-/datum/om/prompt/confirm/crystal_ghost_invite/refused(reason)
-	to_chat(answerer, span_notice("You decided against it."))
-	return ..()
+/obj/item/capture_crystal/proc/ghost_invite_still_valid(datum/request/R)
+	var/datum/prompt/yes_no/crystal_ghost_invite/P = R
+	var/mob/living/simple_mob/bound = P.bound
+	return bound == bound_mob && R.answerer == owner && !bound.client
 
-/obj/item/capture_crystal/proc/ghost_invite_answered(datum/om/prompt/confirm/crystal_ghost_invite/ask)
-	var/mob/living/U = ask.answerer
-	var/mob/living/simple_mob/M = ask.bound
-	if(!ask.yes)
+/obj/item/capture_crystal/proc/ghost_invite_answered(datum/act/request/A)
+	var/datum/prompt/yes_no/crystal_ghost_invite/R = A.request
+	var/mob/living/U = R.answerer
+	var/mob/living/simple_mob/M = R.bound
+	if(!A.answer || !A.answer.answer_value)
 		to_chat(U, span_notice("You decided against it."))
 		return
 	M.ghostjoin = TRUE
 	to_chat(U, span_notice("\The [bound_mob] is now eligable to be joined by ghosts. It will need to be out of the crystal to be able to be joined."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/capture_crystal, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/capture_crystal/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/capture_crystal/draw(datum/look/look)
+	..()
+	var/state
 	if(spawn_mob_type)
-		icon_state = full_icon
+		state = full_icon
 	else if(!bound_mob)
-		icon_state = "inactive"
-	else if(bound_mob in contents)
-		icon_state = full_icon
+		state = "inactive"
+	else if(mob_inside)
+		state = full_icon
 	else
-		icon_state = empty_icon
-	if(!cooldown_check())
-		icon_state = "[icon_state]-busy"
+		state = empty_icon
+	if(busy)
+		state = "[state]-busy"
+	look.state(state)
 
 /// Starts the activation cooldown; the busy sprite is fixed once, when it ends.
 /obj/item/capture_crystal/proc/start_activate_cooldown()
 	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
-	after(src, activate_cooldown, TYPE_PROC_REF(/atom, update_icon), key = "cooldown_icon")
+	set_busy(TRUE)
+	after(src, activate_cooldown, PROC_REF(cooldown_ended), key = "cooldown_icon")
+
+/// The activation cooldown is over: the busy look ends.
+/obj/item/capture_crystal/proc/cooldown_ended()
+	set_busy(FALSE)
 
 /obj/item/capture_crystal/proc/cooldown_check()
 	if(!COOLDOWN_FINISHED(src, activate_cooldown_until))
@@ -267,27 +281,28 @@ DECLARE_APPEARANCE_PROC(/obj/item/capture_crystal, TYPE_PROC_REF(/atom, appearan
 		return ITEM_INTERACT_FAILURE
 
 //Tries to unleash or recall your stored mob
-DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/capture_crystal/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/capture_crystal/proc/crystal_used(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(loadout && !bound_mob)
 		to_chat(user, span_notice("\The [src] emits an unpleasant tone... It is not ready yet."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_PROBLEM)
-		return TRUE
+		return OP_OK
 	if(bound_mob && !owner)
 		if(bound_mob == user)
 			to_chat(user, span_notice("\The [src] emits an unpleasant tone... It does not activate for you."))
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
-			return TRUE
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(claim_answered), title = "Claim ownership", message = "\The [src] hasn't got an owner. It has \the [bound_mob] registered to it. Would you like to claim this as yours?", no_first = TRUE, answer_on_no = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-		return TRUE
+			return OP_OK
+		open_request(src, /datum/prompt/yes_no, PROC_REF(claim_answered), answerer = user, title = "Claim ownership", question = "\The [src] hasn't got an owner. It has \the [bound_mob] registered to it. Would you like to claim this as yours?", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+		return OP_OK
 	use_crystal(user)
-	return TRUE
+	return OP_OK
 
-/obj/item/capture_crystal/proc/claim_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/user = ask.answerer
-	if(ask.yes && !owner && bound_mob && bound_mob != user)
+/obj/item/capture_crystal/proc/claim_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	if(A.answer.answer_value && !owner && bound_mob && bound_mob != user)
 		rel_set(src, nameof(owner), user)
 	use_crystal(user)
 
@@ -383,7 +398,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else
-		om_ask(M, /datum/om/prompt/confirm/crystal_capture, PROC_REF(ask_capture_sure), message = "Would you like to be caught by in [src] by [U]? You will be bound to their will.", capturer = U)
+		open_request(src, /datum/prompt/yes_no/crystal_capture, PROC_REF(ask_capture_sure), answerer = M, title = "Become Caught", question = "Would you like to be caught by in [src] by [U]? You will be bound to their will.", capturer = U, ask_flags = ASK_CONSCIOUS, valid = PROC_REF(capture_still_valid), timeout = 0)
 		return
 	to_chat(U, span_warning("This creature is too strong willed to be captured."))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
@@ -391,65 +406,53 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /// Consent to being caught, asked twice. Re-checked on each answer: still conscious, the crystal
 /// still empty, still catchable, the capturer within 7 tiles. A no, a cancel or a failed check
 /// tells the capturer they were refused.
-/datum/om/prompt/confirm/crystal_capture
-	title = "Become Caught"
-	no_first = TRUE
-	requires = list(/datum/om/check/conscious)
+/datum/prompt/yes_no/crystal_capture
 	var/mob/living/capturer
 
-/datum/om/prompt/confirm/crystal_capture/valid()
-	var/obj/item/capture_crystal/crystal = subject
-	var/mob/living/M = answerer
-	if(crystal.bound_mob || !M.capture_crystal || M.capture_caught || get_dist(capturer, M) > 7)
-		return "not catchable"
-	return null
+CAPABILITIES(/datum/prompt/yes_no/crystal_capture)
+	ref_one(nameof(capturer), /mob/living)
 
-/datum/om/prompt/confirm/crystal_capture/declined()
-	unpark()
-	tell_refused()
-	return ..()
+/obj/item/capture_crystal/proc/capture_still_valid(datum/request/R)
+	var/datum/prompt/yes_no/crystal_capture/P = R
+	var/mob/living/M = R.answerer
+	return !(bound_mob || !M.capture_crystal || M.capture_caught || get_dist(P.capturer, M) > 7)
 
-/datum/om/prompt/confirm/crystal_capture/cancelled()
-	tell_refused()
-	return ..()
-
-/datum/om/prompt/confirm/crystal_capture/refused(reason)
-	tell_refused()
-	return ..()
-
-/datum/om/prompt/confirm/crystal_capture/proc/tell_refused()
-	var/obj/item/capture_crystal/crystal = subject
-	crystal?.capture_refused(capturer)
-
-/obj/item/capture_crystal/proc/ask_capture_sure(datum/om/prompt/confirm/crystal_capture/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/crystal_capture, PROC_REF(capture_answered), message = "Are you really sure? The only way to undo this is to OOC escape while you're in the crystal.", capturer = ask.capturer)
+/obj/item/capture_crystal/proc/ask_capture_sure(datum/act/request/A)
+	var/datum/prompt/yes_no/crystal_capture/R = A.request
+	if(!A.answer || !A.answer.answer_value)
+		capture_refused(R.capturer)
+		return
+	open_request(src, /datum/prompt/yes_no/crystal_capture, PROC_REF(capture_answered), answerer = R.answerer, title = "Become Caught", question = "Are you really sure? The only way to undo this is to OOC escape while you're in the crystal.", capturer = R.capturer, ask_flags = ASK_CONSCIOUS, valid = PROC_REF(capture_still_valid), timeout = 0)
 
 /obj/item/capture_crystal/proc/capture_refused(mob/living/U)
 	if(U)
 		to_chat(U, span_warning("This creature is too strong willed to be captured."))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
-/obj/item/capture_crystal/proc/capture_answered(datum/om/prompt/confirm/crystal_capture/ask)
-	var/mob/living/M = ask.answerer
-	var/mob/living/U = ask.capturer
+/obj/item/capture_crystal/proc/capture_answered(datum/act/request/A)
+	var/datum/prompt/yes_no/crystal_capture/R = A.request
+	if(!A.answer || !A.answer.answer_value)
+		capture_refused(R.capturer)
+		return
+	var/mob/living/M = R.answerer
+	var/mob/living/U = R.capturer
 	log_admin("[key_name(M)] has agreed to become caught by [key_name(U)].")
 	capture(M, U)
 	recall(U)
 
 //The clean up procs!
 /obj/item/capture_crystal/proc/mob_was_deleted(datum/act/notice/A)
-	EVENT_HANDLER
 	unobserve(bound_mob, /datum/notice/qdeleting, src)
 	unobserve(owner, /datum/notice/qdeleting, src)
 	bound_mob.capture_caught = FALSE
 	rel_clear(src, nameof(bound_mob))
 	rel_clear(src, nameof(owner))
+	set_mob_inside(FALSE)
 	active = FALSE
 	persist_storable = TRUE
 	update_icon()
 
 /obj/item/capture_crystal/proc/owner_was_deleted(datum/act/notice/A)
-	EVENT_HANDLER
 	unobserve(owner, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(owner))
 	active = FALSE
@@ -463,8 +466,9 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		return
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
 		rel_set(src, nameof(bound_mob), new spawn_mob_type(src)) //Well let's spawn it then!
+		set_mob_inside(TRUE)
 		bound_mob.faction = user.faction
-		spawn_mob_type = null
+		set_spawn_mob_type(null)
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
 		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
@@ -543,6 +547,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			var/mob/living/simple_mob/M = bound_mob
 			M.ai_brain.go_sleep()	//AI doesn't need to think when it's in the crystal
 		bound_mob.forceMove(src)
+		set_mob_inside(TRUE)
 		start_activate_cooldown()
 		act_message(bound_mob, src, MSG_SELF("%T% pulls you back into confinement in a flash of light!!!"), MSG_OTHERS("\The [user]'s [src] flashes, disappearing %U% in an instant!!!"))
 		animate_action(turfmemory)
@@ -558,11 +563,13 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		var/drop_loc = get_turf(src)
 		if (drop_loc)
 			bound_mob.forceMove(drop_loc)
+			set_mob_inside(FALSE)
 		return
 	if(!target)						//We know who wants to let us out, but they didn't say where, so let's drop us on them
 		bound_mob.forceMove(user.drop_location())
 	else							//We got thrown! Let's go where we got thrown
 		bound_mob.forceMove(target.drop_location())
+	set_mob_inside(FALSE)
 	start_activate_cooldown()
 	if(isanimal(bound_mob))
 		var/mob/living/simple_mob/M = bound_mob
@@ -591,6 +598,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	if(bound_mob)
 		if((bound_mob in contents) && !bound_mob.devourable)
 			bound_mob.forceMove(src.drop_location())
+			set_mob_inside(FALSE)
 	return ..()
 
 //We got thrown! Let's figure out what to do
@@ -962,7 +970,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/random/Initialize(mapload)
 	var/subchoice = pickweight(possible_mob_types)		//Some of the lists have nested lists, so let's pick one of them
 	var/choice = pickweight(subchoice)					//And then we'll pick something from whatever's left
-	spawn_mob_type = choice								//Now when someone uses this, we'll spawn whatever we picked!
+	set_spawn_mob_type(choice)								//Now when someone uses this, we'll spawn whatever we picked!
 	return ..()
 
 /mob/living
@@ -1013,8 +1021,9 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		return
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
 		rel_set(src, nameof(bound_mob), new spawn_mob_type(src)) //Well let's spawn it then!
+		set_mob_inside(TRUE)
 		bound_mob.faction = user.faction
-		spawn_mob_type = null
+		set_spawn_mob_type(null)
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
 		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
@@ -1059,12 +1068,3 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	//The target is not a mob, so let's not do anything.
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/capture_crystal, \
-	INTERACT_VERB("Toggle Follow", PROC_REF(follow_owner_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Destroy Crystal", PROC_REF(destroy_crystal_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Release Ownership", PROC_REF(release_ownership_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Enhance (Toggle Ghost Join)", PROC_REF(invite_ghost_effect), REQ_IN_INVENTORY), \
-)
-

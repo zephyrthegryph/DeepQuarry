@@ -23,10 +23,13 @@
 	// Make ghosts/phased entities slow when grabbed
 	// Make it so it searches in an AOE and grabs thing.
 
-/obj/item/ghost_catcher/proc/appearance_busy()
-	return om_busy(src) ? TRUE : FALSE
+/// The beam is holding an entity (the busy look).
+/obj/item/ghost_catcher/var/grabbing = FALSE
+TRACKED(/obj/item/ghost_catcher, grabbing)
 
-APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_busy?_active:}")
+/obj/item/ghost_catcher/draw(datum/look/look)
+	..()
+	look.state(grabbing ? "[initial(icon_state)]_active" : initial(icon_state))
 
 /obj/item/ghost_catcher/update_held_icon()
 	var/mob/living/M = loc
@@ -123,6 +126,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	if(istext(started))
 		grab_ended(target, user, effects)
 		return
+	set_grabbing(TRUE)
 	update_icon()
 
 /// Holding a ghost in the beam, up to a minute; the catcher is busy until it ends.
@@ -139,6 +143,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 
 /// The grab is over (broken or done): clean up the effects and start the cooldown.
 /obj/item/ghost_catcher/proc/grab_ended(atom/target, mob/user, list/effects)
+	set_grabbing(FALSE)
 	update_icon()
 	var/datum/beam/scan_beam = effects[1]
 	if(!QDELETED(scan_beam))

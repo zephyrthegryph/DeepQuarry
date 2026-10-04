@@ -60,6 +60,18 @@
 	. = ..()
 	. += drawn_from(nameof(anchored))
 
+/obj/item/capture_crystal/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(bound_mob), nameof(busy), nameof(empty_icon), nameof(full_icon), nameof(mob_inside), nameof(spawn_mob_type))
+
+/obj/item/ghost_catcher/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(grabbing))
+
+/obj/item/ghost_trap/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(captured_entity), nameof(deployed))
+
 /obj/item/light/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(base_state), nameof(status))

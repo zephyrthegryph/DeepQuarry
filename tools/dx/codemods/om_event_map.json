@@ -2435,9 +2435,7 @@
   "tests": []
  },
  "/datum/om/event/world_ghost_captured": {
-  "emits": [
-   "code/game/objects/items/ghost_hunting/trap.dm"
-  ],
+  "emits": [],
   "fields": [
    "passing_entity"
   ],
@@ -2523,9 +2521,7 @@
   "tests": []
  },
  "/datum/om/event/world_wight_captured": {
-  "emits": [
-   "code/game/objects/items/ghost_hunting/trap.dm"
-  ],
+  "emits": [],
   "fields": [
    "shadow_wight"
   ],

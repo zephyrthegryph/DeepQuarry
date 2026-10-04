@@ -171,13 +171,13 @@
 /proc/hcic_crystal_menu(obj/item/capture_crystal/C, mob/user, entry)
 	switch(entry)
 		if("follow")
-			C.follow_owner_effect(user, null, null)
+			test_op_handler(C, "follow_owner_effect", user)
 		if("destroy")
-			C.destroy_crystal_effect(user, null, null)
+			test_op_handler(C, "destroy_crystal_effect", user)
 		if("release")
-			C.release_ownership_effect(user, null, null)
+			test_op_handler(C, "release_ownership_effect", user)
 		if("ghost")
-			C.invite_ghost_effect(user, null, null)
+			test_op_handler(C, "invite_ghost_effect", user)
 
 /// A crystal with a mouse already bound to it and inside it.
 /datum/unit_test/dq_hc_items/proc/bound_crystal(turf/T, mob/owner_mob)
@@ -190,7 +190,7 @@
 
 /// Adapter: one watch step of a trap.
 /proc/hcic_trap_step(obj/item/ghost_trap/T)
-	T.periodic_step()
+	T.ghost_trap_step(null)
 
 /datum/unit_test/dq_hc_items/c_crystal_activates_unleashes_and_recalls
 
@@ -220,6 +220,7 @@
 	idle.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(idle.icon_state, "inactive", "a crystal with nothing bound is inactive")
+	qdel(M)
 
 /datum/unit_test/dq_hc_items/c_crystal_claim_question
 
@@ -331,9 +332,9 @@ CAPABILITIES(/datum/hcic_trap_listener)
 /// Adapters: the trap's two menu entries.
 /proc/hcic_trap_menu(obj/item/ghost_trap/T, mob/user, entry)
 	if(entry == "release")
-		T.release_occupant_effect(user, null, null)
+		test_op_handler(T, "release_occupant_effect", user)
 	else
-		T.ghost_trap_hidden_vore_effect(user, null, null)
+		test_op_handler(T, "ghost_trap_hidden_vore_effect", user)
 
 /datum/unit_test/dq_hc_items/c_ghost_trap_deploys_catches_and_releases
 
@@ -387,3 +388,15 @@ CAPABILITIES(/datum/hcic_trap_listener)
 	test_time(7 SECONDS)
 	TEST_ASSERT(!T.deployed, "an empty hand deactivates a deployed trap after a delay")
 	TEST_ASSERT(!T.anchored, "and unanchors it")
+
+/datum/unit_test/dq_hc_items/c_ghost_trap_watch_runs_on_its_own_clock
+
+/datum/unit_test/dq_hc_items/c_ghost_trap_watch_runs_on_its_own_clock/run_gate()
+	var/obj/item/ghost_trap/T = allocate(/obj/item/ghost_trap, tile(2, 2))
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, tile(4, 4))
+	T.catch_ghost(ghost)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(T.captured_entity, ghost, "a catch that stays inside is kept")
+	ghost.forceMove(tile(4, 4))
+	test_time(5 SECONDS)
+	TEST_ASSERT_NULL(T.captured_entity, "a catch that got out is noticed by the trap's own watch")

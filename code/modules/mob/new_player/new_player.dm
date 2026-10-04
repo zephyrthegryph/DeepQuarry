@@ -180,7 +180,8 @@
 			var/mob/living/carrier = join_props["carrier"]
 			var/vorgans = join_props["vorgans"]
 			rel_set(cryst, nameof(cryst.bound_mob), new cryst.spawn_mob_type(cryst))
-			cryst.spawn_mob_type = null
+			cryst.set_spawn_mob_type(null)
+			cryst.set_mob_inside(TRUE)
 			cryst.bound_mob.key = src.key
 			log_and_message_admins("[key_name_admin(src)] joined [cryst.bound_mob] inside a capture crystal [ADMIN_FLW(cryst.bound_mob)]")
 			if(vorgans)
