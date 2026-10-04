@@ -145,6 +145,10 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	return TRUE
 
 /datum/computer_file/program/nttransfer/proc/download_password_entered(datum/act/request/A)
+	download_password_entered_apply(A)
+	SStgui.update_uis(src)
+
+/datum/computer_file/program/nttransfer/proc/download_password_entered_apply(datum/act/request/A)
 	if(!A.answer || isnull(A.answer.answer_value) || !remote() || !remote().provided_file())
 		return
 	if(A.answer.answer_value != remote().server_password)
@@ -152,7 +156,6 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 		SStgui.update_uis(src)
 		return
 	start_download()
-	SStgui.update_uis(src)
 
 /datum/computer_file/program/nttransfer/proc/start_download()
 	rel_set(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), remote().provided_file().clone())
@@ -173,6 +176,10 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	open_request(src, /datum/prompt/text, PROC_REF(prg_setpassword_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none", timeout = 0)
 
 /datum/computer_file/program/nttransfer/proc/prg_setpassword_answered(datum/act/request/A)
+	prg_setpassword_answered_apply(A)
+	SStgui.update_uis(src)
+
+/datum/computer_file/program/nttransfer/proc/prg_setpassword_answered_apply(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/pass = A.answer.answer_value
@@ -183,7 +190,6 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 		return
 	server_password = pass
 	return TRUE
-	SStgui.update_uis(src)
 
 /datum/computer_file/program/nttransfer/proc/ui_act_prg_uploadfile(datum/act/op/A, uid)
 	for(var/datum/computer_file/F in computer().hard_drive.stored_files)

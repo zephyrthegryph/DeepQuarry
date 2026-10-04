@@ -204,7 +204,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " empties %I% into %T%."), item = A)
 			for(var/obj/item/O in contents_of(A))
 				O.forceMove(src)
-			A.update_icon()
+			A.sync_butts()
 			update_icon()
 			return TRUE
 

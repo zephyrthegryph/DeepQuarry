@@ -46,6 +46,7 @@
 	test_driver_end()
 
 /datum/unit_test/interim_empty_content_init/ecig/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clothing/mask/smokable/ecig/simple/ecig = allocate(/obj/item/clothing/mask/smokable/ecig/simple, T)
@@ -57,16 +58,17 @@
 	TEST_ASSERT_EQUAL(cartridge.reagents.get_reagent_amount(REAGENT_ID_WATER), 15, "actual cartridge starts with fifteen water units")
 	TEST_ASSERT(!ecig.active, "actual ecig starts off")
 	TEST_ASSERT(user.equip_to_slot_if_possible(ecig, SLOT_ID_MASK), "actual actor wears its initialized ecig")
-	TEST_ASSERT_EQUAL(ecig.ecig_self(user, ecig, null), FALSE, "actual self-use retains its documented clothing fallthrough")
+	TEST_ASSERT_EQUAL(test_op_handler(ecig, "toggled", user, ecig), OP_DECLINE, "actual self-use retains its documented clothing fallthrough")
 	TEST_ASSERT(ecig.active, "actual self-use activates its ecig")
 	var/ingested_before = user.ingested.total_volume
-	ecig.periodic_step()
+	test_time(3 SECONDS)
 	TEST_ASSERT(abs(cartridge.reagents.total_volume - (20 - REM)) < 0.001, "actual worn vaping debits its exact original reagent effect amount")
 	TEST_ASSERT(abs(user.ingested.total_volume - ingested_before - REM * 0.4) < 0.001, "actual worn vaping transfers the original retained fraction into its real ingest holder")
 	TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_MASK), ecig, "actual vaping preserves its original worn ecig")
 	TEST_ASSERT(consume(ecig, user), "actual worn ecig can be consumed through checked removal")
 	TEST_ASSERT(QDELETED(ecig) && QDELETED(cartridge), "actual ecig cleanup deletes its exact owned cartridge")
 	TEST_ASSERT_NULL(user.get_equipped_item(SLOT_ID_MASK), "actual ecig cleanup clears its wearer slot")
+	test_driver_end()
 
 /datum/unit_test/interim_empty_content_init/rpd/Run()
 	var/turf/T = run_loc_floor_bottom_left

@@ -67,15 +67,14 @@
 			T.dismantle_wall(1)
 	qdel(src)
 
-DECLARE_INTERACTIONS(/obj/item/syndie/c4explosive, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/syndie/c4explosive)
+	op("link_detonator", item(/obj/item/flame/lighter/zippo/c4detonator), passes(), then(PROC_REF(detonator_linked)))
 
-/// Old attackby.
-/obj/item/syndie/c4explosive/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/flame/lighter/zippo/c4detonator))
-		var/obj/item/flame/lighter/zippo/c4detonator/D = W
-		rel_set(D, nameof(D.bomb), src)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/// A detonator used on the charge is linked to it (and the click goes on).
+/obj/item/syndie/c4explosive/proc/detonator_linked(datum/act/op/A)
+	var/obj/item/flame/lighter/zippo/c4detonator/D = A.held
+	rel_set(D, nameof(D.bomb), src)
+	return OP_OK
 
 /*Detonator, disguised as a lighter*/
 /*Click it when closed to open, when open to bring up a prompt asking you if you want to close it or press the button.*/
@@ -84,15 +83,17 @@ DECLARE_INTERACTIONS(/obj/item/syndie/c4explosive, INTERACT_ITEM(null, PROC_REF(
 	var/obj/item/syndie/c4explosive/bomb
 
 /// Opened as a detonator it is not a flame: it burns only while lit as a zippo.
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/flame/lighter/zippo/c4detonator, PERIODIC_SLOW, list("lit", "!detonator_mode"))
+/obj/item/flame/lighter/zippo/c4detonator/flame_step(datum/act/timer/A)
+	if(detonator_mode)
+		return
+	..()
 
-EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(null, PROC_REF(c4detonator_self)))
-
-/// Old attack_self. FALSE (not in detonator mode) falls to the zippo's own self-use.
-/obj/item/flame/lighter/zippo/c4detonator/proc/c4detonator_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// In detonator mode, using it opens or asks about the button; otherwise it is the zippo's own use.
+/obj/item/flame/lighter/zippo/c4detonator/toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!detonator_mode)
-		return FALSE
-	. = TRUE
+		return ..()
+	. = OP_OK
 
 	if(!lit)
 		base_state = icon_state
