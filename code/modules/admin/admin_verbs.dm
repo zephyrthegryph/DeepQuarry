@@ -224,10 +224,16 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 #undef AUTOBANTIME
 
 ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strength at your location.", ADMIN_CATEGORY_FUN_DO_NOT) // Some admin dickery that can probably be done better -- TLE
+	advance_bomb(user)
+
+/datum/admin_verb/drop_bomb/proc/advance_bomb(client/user, stage = 0, choice = null, devastation_range = null, heavy_impact_range = null, light_impact_range = null, flash_range = null)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
 	var/turf/epicenter = user.mob.loc
 	var/list/choices = list("Small Bomb", "Medium Bomb", "Big Bomb", "Maxcap Bomb", "SM Blast", "Custom Bomb", "Cancel")
-	var/choice = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "What size explosion would you like to produce?", title = "Explosion Choice", choices = choices)
-	if(isnull(choice))
+	if(stage <= 0)
+		open_request(src, /datum/prompt/choice/admin_drop_bomb, PROC_REF(bomb_question_answered), answerer = answerer, question = "What size explosion would you like to produce?", title = "Explosion Choice", choices = choices)
 		return
 	switch(choice)
 		if(null)
@@ -245,21 +251,78 @@ ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strengt
 		if("SM Blast")
 			explosion(epicenter, 8, 16, 24, 32)
 		if("Custom Bomb")
-			var/devastation_range = verb_ask(user, "a4", args, /datum/om/prompt/number, message = "Devastation range (in tiles):")
-			if(isnull(devastation_range))
+			if(stage <= 1)
+				open_request(src, /datum/prompt/number/admin_drop_bomb, PROC_REF(bomb_question_answered), answerer = answerer, question = "Devastation range (in tiles):", stage = 1, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range)
 				return
-			var/heavy_impact_range = verb_ask(user, "a5", args, /datum/om/prompt/number, message = "Heavy impact range (in tiles):")
-			if(isnull(heavy_impact_range))
+			if(stage <= 2)
+				open_request(src, /datum/prompt/number/admin_drop_bomb, PROC_REF(bomb_question_answered), answerer = answerer, question = "Heavy impact range (in tiles):", stage = 2, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range)
 				return
-			var/light_impact_range = verb_ask(user, "a6", args, /datum/om/prompt/number, message = "Light impact range (in tiles):")
-			if(isnull(light_impact_range))
+			if(stage <= 3)
+				open_request(src, /datum/prompt/number/admin_drop_bomb, PROC_REF(bomb_question_answered), answerer = answerer, question = "Light impact range (in tiles):", stage = 3, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range)
 				return
-			var/flash_range = verb_ask(user, "a7", args, /datum/om/prompt/number, message = "Flash range (in tiles):")
-			if(isnull(flash_range))
+			if(stage <= 4)
+				open_request(src, /datum/prompt/number/admin_drop_bomb, PROC_REF(bomb_question_answered), answerer = answerer, question = "Flash range (in tiles):", stage = 4, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range)
 				return
 			explosion(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 	message_admins(span_blue("[user.ckey] creating an admin explosion at [epicenter.loc]."))
 	feedback_add_details("admin_verb","DB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_drop_bomb
+	rights = R_FUN
+	timeout = 0
+
+/datum/prompt/choice/admin_drop_bomb/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/number/admin_drop_bomb
+	rights = R_FUN
+	timeout = 0
+	min_value = 0
+	max_value = INFINITY
+	step = 1
+	var/stage
+	var/devastation_range
+	var/heavy_impact_range
+	var/light_impact_range
+
+/datum/prompt/number/admin_drop_bomb/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/admin_verb/drop_bomb/proc/bomb_question_answered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(bomb_answer), A)
+	if(!result.ok)
+		stack_trace("om flow drop_bomb answer bomb_answer: [result.error]")
+
+/datum/admin_verb/drop_bomb/proc/bomb_answer(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	if(istype(A.request, /datum/prompt/choice/admin_drop_bomb))
+		return advance_bomb(user, 1, A.request.answer_value)
+	var/datum/prompt/number/admin_drop_bomb/ask = A.request
+	switch(ask.stage)
+		if(1)
+			return advance_bomb(user, 2, "Custom Bomb", ask.answer_value)
+		if(2)
+			return advance_bomb(user, 3, "Custom Bomb", ask.devastation_range, ask.answer_value)
+		if(3)
+			return advance_bomb(user, 4, "Custom Bomb", ask.devastation_range, ask.heavy_impact_range, ask.answer_value)
+		if(4)
+			return advance_bomb(user, 5, "Custom Bomb", ask.devastation_range, ask.heavy_impact_range, ask.light_impact_range, ask.answer_value)
+
+/datum/prompt/number/admin_drop_bomb/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
 
 ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or stronger by adding a specific modifier to them.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/living_target)
 	if(!living_target)
