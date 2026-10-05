@@ -133,6 +133,10 @@ CAPABILITIES(/datum/prompt)
 /datum/prompt/yes_no/normalize(given)
 	return !!given
 
+/// A "no" spends nothing (a request's costs go with a yes).
+/datum/prompt/yes_no/confirmed()
+	return !!answer_value
+
 /datum/prompt/yes_no/inline_type()
 	return "boolean"
 

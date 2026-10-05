@@ -23,42 +23,66 @@
 	for(var/datum/malf_hardware/H in hardware_list)
 		possible_choices += H.name
 
-	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hardware_chosen), receiver = user, title = "Hardware Choice", message = "Select desired hardware. You may only choose one hardware piece!: ", choices = possible_choices, options = hardware_list)
+	open_request(user, /datum/prompt/choice, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hardware_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hardware Choice", question = "Select desired hardware. You may only choose one hardware piece!: ", choices = possible_choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/// A malfunctioning AI's question. Re-checked: conscious, and, when `price` is set, that the
-/// AI can still use the ability (ability_prechecks(), which does not spend the CPU).
-/datum/om/prompt/confirm/malf
+// ---- what a malfunctioning AI's abilities cost ----
+//
+// An ability that asks first (a confirmation, a pick) opens a plain request with `costs = list(RES_CPU = price)`: the AI is not asked when it
+// cannot pay, its CPU is set aside when it answers yes (or picks), and spent only when the ability went through (the handler did not return
+// OP_REFUSED). valid = malf_able() re-checks the rest of ability_prechecks() when the answer arrives (busy hacking, on backup power).
+
+MSG_DEF_SELF(malf/cpu_short, "You do not have enough CPU power stored. Please wait a moment.")
+MSG_DEF_SELF(malf/cpu_storage, "Your CPU storage is not large enough to use this ability. Hack more APCs to continue.")
+
+/// RES_CPU: a malfunctioning AI's stored CPU time (its research datum).
+/datum/resource/cpu
+	res_id = RES_CPU
+	name = "CPU"
+
+/datum/resource/cpu/available(datum/act/op/A)
+	var/mob/living/silicon/ai/AI = A.actor
+	if(!istype(AI) || !AI.research)
+		return 0
+	return AI.research.stored_cpu
+
+/datum/resource/cpu/refusal(datum/act/op/A, n)
+	var/mob/living/silicon/ai/AI = A.actor
+	if(istype(AI) && AI.research && AI.research.max_cpu < n)
+		return /datum/msg/malf/cpu_storage
+	return /datum/msg/malf/cpu_short
+
+/datum/resource/cpu/commit(datum/reservation/R)
+	var/mob/living/silicon/ai/AI = R.actor
+	if(!istype(AI) || !AI.research || AI.research.stored_cpu < R.amount)
+		return OP_FAILED
+	AI.research.stored_cpu -= R.amount
+	return OP_OK
+
+/// The AI can still use an ability when its answer arrives: it malfunctions, has its research, and is neither hacking nor on backup power. Reads only.
+/mob/living/silicon/ai/proc/malf_able(datum/request/R)
+	return malfunctioning && research && !hacking && !APU_power
+
+/// malf_able() for an ability that works while the AI is busy or on backup power (the core self-destruct).
+/mob/living/silicon/ai/proc/malf_able_overridden(datum/request/R)
+	return malfunctioning && research
+
+/// The hardware confirmation carries the piece the AI picked.
+/datum/prompt/yes_no/malf_hardware
+	title = "Hardware selection"
 	ask_flags = ASK_CONSCIOUS
-	var/price
-	var/precheck_override = 0
-	/// The silicon or machine the ability is used on.
-	var/atom/malf_target
-	/// The hardware piece being confirmed (made for the question: held strongly).
-	var/datum/malf_hardware/hardware
+	timeout = 0
+	/// The hardware type picked.
+	var/hardware_type
 
-/datum/om/prompt/confirm/malf/valid()
-	if(!isnull(price) && !ability_prechecks(answerer, price, precheck_override))
-		return "can't use the ability"
-	return null
-
-/datum/om/prompt/choice/malf
-	ask_flags = ASK_CONSCIOUS
-	var/price
-	var/atom/malf_target
-	/// The datums the choices name (the hardware pieces, the cyborgs).
-	var/list/options
-
-/datum/om/prompt/choice/malf/valid()
-	if(!isnull(price) && !ability_prechecks(answerer, price))
-		return "can't use the ability"
-	return null
-
-/mob/living/silicon/ai/proc/malf_hardware_chosen(datum/om/prompt/choice/malf/ask)
+/mob/living/silicon/ai/proc/malf_hardware_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
 	var/mob/living/silicon/ai/user = src
 	var/datum/malf_hardware/C
-	for (var/datum/malf_hardware/H in ask.options)
-		if(H.name == ask.choice)
-			C = H
+	for(var/H in typesof(/datum/malf_hardware))
+		var/datum/malf_hardware/HW = new H
+		if(HW.name == A.answer.answer_value)
+			C = HW
 			break
 	if(!C)
 		to_chat(user, "This hardware does not exist! Probably a bug in game. Please report this.")
@@ -66,17 +90,18 @@
 	if(!C.desc)
 		log_world("## ERROR Hardware without description: [C]")
 		return
-	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hardware_confirmed), receiver = user, title = "Hardware selection", message = "[C.desc] - Is this what you want?", answer_on_no = TRUE, hardware = C, hold_strong = list("hardware"))
+	open_request(user, /datum/prompt/yes_no/malf_hardware, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hardware_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), question = "[C.desc] - Is this what you want?", hardware_type = C.type)
 
-/mob/living/silicon/ai/proc/malf_hardware_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_hardware_confirmed(datum/act/request/A)
 	var/mob/living/silicon/ai/user = src
-	if(!ask.yes)
+	var/datum/prompt/yes_no/malf_hardware/ask = A.answer
+	if(!ask || !ask.answer_value)
 		to_chat(user, "Selection cancelled. Use command again to select")
 		return
 	if(user.hardware)
 		to_chat(user, "You have already selected your hardware.")
 		return
-	var/datum/malf_hardware/C = ask.hardware
+	var/datum/malf_hardware/C = new ask.hardware_type
 	rel_set(C, nameof(C.owner), user)
 	C.install()
 
@@ -149,27 +174,6 @@
 	if(user.APU_power && !override)
 		to_chat(user, "Low power. Unable to proceed.")
 		return 0
-	return 1
-
-// Proc: ability_pay()
-// Parameters 2 - (user - User from which we deduct CPU from, price - Amount of CPU power to use)
-// Description: Uses up certain amount of CPU power. Returns 1 on success, 0 on failure.
-/proc/ability_pay(mob/living/silicon/ai/user = null, price = 0)
-	if(!user)
-		return 0
-	if(user.APU_power)
-		to_chat(user, "Low power. Unable to proceed.")
-		return 0
-	if(!user.research)
-		to_chat(user, "GAME ERROR: No research datum detected. Please report this.")
-		return 0
-	if(user.research.max_cpu < price)
-		to_chat(user, "Your CPU storage is not large enough to use this ability. Hack more APCs to continue.")
-		return 0
-	if(user.research.stored_cpu < price)
-		to_chat(user, "You do not have enough CPU power stored. Please wait a moment.")
-		return 0
-	user.research.stored_cpu -= price
 	return 1
 
 // Proc: announce_hack_failure()

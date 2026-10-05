@@ -1131,3 +1131,18 @@ Pinned by `code/modules/unit_tests/dq_mfo_dna_console.dm` (green on DECLARE_UI/U
 * **The block answer must be one of the offered blocks**: the legacy modal took any text with a number before a colon.
 * **A refused button says why** (no scanner connected, the console irradiating, the user not standing at it) instead of doing nothing; opening the
   window from inside the scanner is refused with a reason. A silicon works the buttons over its link (it was refused for not standing on a tile).
+
+## Missing forms: priced requests (the malfunctioning AI)
+
+Pinned by `code/modules/unit_tests/dq_mfo_malf_costs.dm` (green on the custom malf prompt kinds first).
+
+* **A malf ability's price is a cost of its request**: `open_request(..., costs = list("[RES_CPU]" = price))` with the plain prompt kinds (yes_no,
+  choice, text). The CPU is checked when the AI is asked, set aside when it says yes (or picks), and spent once the ability went through. The
+  `/datum/om/prompt/{confirm,choice,text}/malf` kinds and `ability_pay()` are gone (`ability_pay` is hard-banned); abilities that ask nothing spend
+  with `res_spend(user, RES_CPU, price)`.
+* **The answer re-checks the AI** (`malf_able()`: still malfunctioning, not hacking, not on backup power), as the old prompts' `valid()` did.
+* **An AI that cannot pay is told why when the question would open**, and one whose CPU ran short by the answer is told and pays nothing (the old
+  answer was dropped silently).
+* **Unlocking a cyborg is checked against its 125 CPU when asked** (the old confirmation carried no price and only failed at payment).
+* **A camera hack that changes nothing costs nothing** (as before); the AI's hardware pick, the core and station self-destructs and the hack
+  confirmations of cyborgs and AIs are plain requests.
