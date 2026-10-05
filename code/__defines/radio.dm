@@ -125,6 +125,10 @@ On the map:
 #define RADIO_FROM_AIRALARM "radio_airalarm_rcvr" //devices interested in recieving signals from air alarms
 /// Area-scoped device-control channel; prevents every vent status from visiting every alarm station-wide.
 #define AIRALARM_AREA_FILTER(base_filter, area_id) "[base_filter]:[area_id]"
+/// The kinds of air device an area keeps for its air alarms (area_air_device(), code/domains/atmos/area_air_device.dm), as the device field of
+/// their status packets.
+#define AREA_AIR_VENT "AVP"
+#define AREA_AIR_SCRUBBER "AScr"
 #define RADIO_CHAT "radio_telecoms"
 #define RADIO_ATMOSIA "radio_atmos"
 #define RADIO_NAVBEACONS "radio_navbeacon"

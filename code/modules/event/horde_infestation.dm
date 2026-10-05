@@ -18,7 +18,7 @@ CAPABILITIES(/datum/event/horde_infestation)
 		var/area/in_area = get_area(temp_vent)
 		if(in_area.flag_check(AREA_FORBID_EVENTS))
 			continue
-		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels)) //No spawns on welded vents
+		if(!is_welded(temp_vent) && temp_vent.network && (temp_vent.loc.z in using_map.station_levels)) //No spawns on welded vents
 			if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
 				rel_add(src, nameof(vents), temp_vent)
 
@@ -47,7 +47,7 @@ CAPABILITIES(/datum/event/horde_infestation)
 			var/area/in_area = get_area(temp_vent)
 			if(in_area.flag_check(AREA_FORBID_EVENTS))
 				continue
-			if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
+			if(!is_welded(temp_vent) && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
 				if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change to 10 from 50 in order for spawns to work.
 					var/area/A = get_area(temp_vent)
 					if(!(A.flag_check(AREA_FORBID_EVENTS)))

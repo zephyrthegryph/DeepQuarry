@@ -867,3 +867,24 @@ was marked LEGACY there and edited in the commit that changed it). The library p
   whoever was inside when it fired.
 * **The window opens unpowered** (as before) and **its buttons leave fingerprints**; slimes and pAIs are refused the eject button by a requirement.
 * **The tube is drawn by `draw()`**: the old shared fluid image had its colour mutated on every redraw.
+## Atmospherics machines: the vent pump and the scrubber
+
+Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first) and the existing `dq_atmos_tests.dm` flow tests.
+
+* **The area names its air devices, numbered per kind and never reused** (`area_air_device()`): a vent placed after another one went no longer takes
+  a number still in use ("#len+1" made two "Vent Pump #2"s).
+* **A device's tag goes through one setter, and the area follows it**: a tag set with the multitool (or by an airlock controller's mapping helper)
+  moves the device's name and status to the new tag; the old one used to stay registered and the new one stayed unknown to the alarms. The
+  blueprints' rename no longer gives the room's vents and scrubbers new tags (it renamed and re-keyed them; now it renames their entries).
+* **A scrubber told `panic_siphon = 0` stops siphoning** (the value was tested for truth, so the air alarm window's panic switch could not turn it off).
+* **A radio command runs when its key carries a value**; a bare key (no value) is ignored, except "status". The air alarm sends its pressure resets
+  with a value now (they were the only bare keys on the air).
+* **The vent's internal check is part of its flow law**: the atmospherics siphon (internal check only, 2000 kPa) stops filling its pipe at the
+  ceiling (it siphoned the room without bound), and a vent with both checks never drains its pipe below the internal bound. The internal bound is
+  pushed to Rust when it changes.
+* **A welded vent cannot be unwrenched** (the scrubber already refused; the vent did not). The wrench, the weld and the multitool are ops: the
+  wrench waits four seconds, the weld the welder profile's three (two before).
+* **The multitool settings are the library's** (`multitool_settings()`): the first question also offers "None", and a frequency or a tag is asked
+  with the library's question text.
+* **The vent's flow stays volume-limited** (its pipe volume times fifty litres a second, as since the flow law moved to Rust): `power_rating` is what
+  it draws, not its limit. A power-limited flow would change every station's ventilation rate; this is recorded rather than changed.

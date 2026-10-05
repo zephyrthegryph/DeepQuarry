@@ -66,7 +66,7 @@
 	return 1
 
 /obj/machinery/atmospherics/unary/can_crawl_through()
-	if(welded)
+	if(is_welded(src))
 		return 0
 
 	. = ..()

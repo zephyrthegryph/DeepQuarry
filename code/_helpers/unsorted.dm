@@ -1674,7 +1674,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in start_vent.network.normal_members)
 		if(vent == start_vent)
 			continue
-		if(vent.welded)
+		if(is_welded(vent))
 			continue
 		var/area/A = get_area(vent)
 		if(A.flag_check(AREA_FORBID_EVENTS))

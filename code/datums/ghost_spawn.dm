@@ -166,7 +166,7 @@ UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_vr_spawn)
 		timedifference_mouse_text = time2text(CONFIG_GET(number/mouse_respawn_time) MINUTES - timedifference_mouse,"mm:ss")
 	var/found_vents = FALSE
 	for(var/obj/machinery/atmospherics/unary/vent_pump/v in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!v.welded && v.z == T.z && v.network && v.network.normal_members.len > MOUSE_VENT_NETWORK_LENGTH)
+		if(!is_welded(v) && v.z == T.z && v.network && v.network.normal_members.len > MOUSE_VENT_NETWORK_LENGTH)
 			found_vents = TRUE
 			break
 

@@ -21,6 +21,19 @@
 /datum/capdef_decl/c_anchor/spec()
 	return list(CAP_ANCHOR, /datum/capability/lib/anchor, NONE, STACK, "anchor", "tool, empty")
 
+/// CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE) at code/domains/atmos/area_air_device.dm:19
+/datum/capability/lib/area_air_device
+	var/kind = null
+	var/commands = null
+	var/status = null
+	var/tag_var = "id_tag"
+	var/frequency_var = "frequency"
+/proc/area_air_device(kind, commands, status, tag_var, frequency_var)
+	RETURN_TYPE(/datum/capability/lib/area_air_device)
+	return cap_construct(CAP_AREA_AIR_DEVICE, /datum/capability/lib/area_air_device, list(kind, commands, status, tag_var, frequency_var), "kind, commands, status, tag_var, frequency_var")
+/datum/capdef_decl/c_area_air_device/spec()
+	return list(CAP_AREA_AIR_DEVICE, /datum/capability/lib/area_air_device, NONE, STACK, "area_air_device", "kind, commands, status, tag_var, frequency_var")
+
 /// CAPABILITY_TYPE(beaker_bay, CAP_BEAKER_BAY) at code/library/containers/beaker_bay.dm:22
 /datum/capability/lib/beaker_bay
 	var/slot_var = null
@@ -322,7 +335,7 @@
 /datum/capdef_decl/c_maintenance_hatch/spec()
 	return list(CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, NONE, STACK, "maintenance_hatch", "cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say, lock_wire")
 
-/// CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS) at code/library/machine/multitool_settings.dm:13
+/// CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS) at code/library/machine/multitool_settings.dm:15
 /datum/capability/lib/multitool_settings
 	var/settings = null
 /proc/multitool_settings(settings)
@@ -3977,18 +3990,18 @@
 	into += entry_line(56)
 	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/choice/blueprint_expand) at code/game/objects/items/blueprints.dm:1023
+/// CAPABILITIES(/datum/prompt/choice/blueprint_expand) at code/game/objects/items/blueprints.dm:1022
 /datum/prompt/choice/blueprint_expand/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/blueprints.dm", 1023, /datum/prompt/choice/blueprint_expand)
-	into += entry_line(1024)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1022, /datum/prompt/choice/blueprint_expand)
+	into += entry_line(1023)
 	into += list(global.ref_one(nameof(editor), /obj/item/areaeditor))
 
-/// CAPABILITIES(/datum/prompt/choice/blueprint_whole_confirm) at code/game/objects/items/blueprints.dm:1129
+/// CAPABILITIES(/datum/prompt/choice/blueprint_whole_confirm) at code/game/objects/items/blueprints.dm:1128
 /datum/prompt/choice/blueprint_whole_confirm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/blueprints.dm", 1129, /datum/prompt/choice/blueprint_whole_confirm)
-	into += entry_line(1130)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1128, /datum/prompt/choice/blueprint_whole_confirm)
+	into += entry_line(1129)
 	into += list(global.ref_one(nameof(chosen_area), /area))
 
 /// CAPABILITIES(/datum/prompt/choice/botany_disk_wipe) at code/modules/hydroponics/seed_machines.dm:424
@@ -4820,11 +4833,11 @@
 	into += entry_line(324)
 	into += list(global.ref_one(nameof(config_tool), /obj/item))
 
-/// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1063
+/// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1062
 /datum/prompt/text/blueprint_area_name/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/blueprints.dm", 1063, /datum/prompt/text/blueprint_area_name)
-	into += entry_line(1064)
+	into += entry_block("code/game/objects/items/blueprints.dm", 1062, /datum/prompt/text/blueprint_area_name)
+	into += entry_line(1063)
 	into += list(global.ref_one(nameof(editor), /obj/item/areaeditor))
 
 /// CAPABILITIES(/datum/prompt/text/blueprint_rename_area) at code/game/objects/items/blueprints.dm:381
@@ -15741,77 +15754,77 @@
 	into += entry_line(197)
 	into += list(global.op("cycle", global.hand(), global.label("Use"), global.wait(0), global.then(PROC_REF(cycle_asked))))
 
-/// CAPABILITIES(/obj/machinery/alarm) at code/game/machinery/air_alarm.dm:132
+/// CAPABILITIES(/obj/machinery/alarm) at code/game/machinery/air_alarm.dm:128
 /obj/machinery/alarm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/air_alarm.dm", 132, /obj/machinery/alarm)
-	into += entry_line(133)
+	into += entry_block("code/game/machinery/air_alarm.dm", 128, /obj/machinery/alarm)
+	into += entry_line(129)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm))
-	into += entry_line(134)
+	into += entry_line(130)
 	into += list(global.interface("AirAlarm"))
-	into += entry_line(136)
+	into += entry_line(132)
 	into += list(global.op("rcon", global.ui_act("rcon", global.arg("rcon", global.enum(list(RCON_NO, RCON_AUTO, RCON_YES)))), global.then(PROC_REF(ui_act_rcon))))
-	into += entry_line(137)
+	into += entry_line(133)
 	into += list(global.op("temperature", global.ui_act("temperature"), global.then(PROC_REF(ui_act_temperature))))
-	into += entry_line(138)
+	into += entry_line(134)
 	into += list(global.op("lock", global.ui_act("lock"), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_lock))))
-	into += entry_line(139)
+	into += entry_line(135)
 	into += list(global.op("power", global.ui_act("power", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(140)
+	into += entry_line(136)
 	into += list(global.op("o2_scrub", global.ui_act("o2_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(141)
+	into += entry_line(137)
 	into += list(global.op("n2_scrub", global.ui_act("n2_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(142)
+	into += entry_line(138)
 	into += list(global.op("co2_scrub", global.ui_act("co2_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(143)
+	into += entry_line(139)
 	into += list(global.op("tox_scrub", global.ui_act("tox_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(144)
+	into += entry_line(140)
 	into += list(global.op("n2o_scrub", global.ui_act("n2o_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(145)
+	into += entry_line(141)
 	into += list(global.op("fuel_scrub", global.ui_act("fuel_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(146)
+	into += entry_line(142)
 	into += list(global.op("ch4_scrub", global.ui_act("ch4_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(147)
+	into += entry_line(143)
 	into += list(global.op("panic_siphon", global.ui_act("panic_siphon", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(148)
+	into += entry_line(144)
 	into += list(global.op("scrubbing", global.ui_act("scrubbing", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(149)
+	into += entry_line(145)
 	into += list(global.op("direction", global.ui_act("direction", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(150)
+	into += entry_line(146)
 	into += list(global.op("excheck", global.ui_act("excheck", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(151)
+	into += entry_line(147)
 	into += list(global.op("incheck", global.ui_act("incheck", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
-	into += entry_line(152)
+	into += entry_line(148)
 	into += list(global.op("set_external_pressure", global.ui_act("set_external_pressure", global.arg("id_tag", global.schema_text(64)), global.arg("value", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_set_pressure))))
-	into += entry_line(153)
+	into += entry_line(149)
 	into += list(global.op("set_internal_pressure", global.ui_act("set_internal_pressure", global.arg("id_tag", global.schema_text(64)), global.arg("value", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_set_pressure))))
-	into += entry_line(154)
+	into += entry_line(150)
 	into += list(global.op("reset_external_pressure", global.ui_act("reset_external_pressure", global.arg("id_tag", global.schema_text(64))), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_reset_pressure))))
-	into += entry_line(155)
+	into += entry_line(151)
 	into += list(global.op("reset_internal_pressure", global.ui_act("reset_internal_pressure", global.arg("id_tag", global.schema_text(64))), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_reset_pressure))))
-	into += entry_line(156)
+	into += entry_line(152)
 	into += list(global.op("threshold", global.ui_act("threshold", global.arg("env", global.schema_text(64)), global.arg("var", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_threshold))))
-	into += entry_line(157)
+	into += entry_line(153)
 	into += list(global.op("mode", global.ui_act("mode", global.arg("mode", global.int())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_mode))))
-	into += entry_line(158)
+	into += entry_line(154)
 	into += list(global.op("alarm", global.ui_act("alarm"), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_alarm))))
-	into += entry_line(159)
+	into += entry_line(155)
 	into += list(global.op("reset", global.ui_act("reset"), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_reset))))
-	into += entry_line(160)
+	into += entry_line(156)
 	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
-	into += entry_line(161)
+	into += entry_line(157)
 	into += list(global.wires(name = "Air alarm", count = 5, tools = FALSE, status_lines = PROC_REF(wire_lights)))
-	into += entry_line(162)
+	into += entry_line(158)
 	into += list(global.power_wires(stat = STAT_SHORTED, pulse_lasts = 20 MINUTES, shock = 50))
-	into += entry_line(163)
+	into += entry_line(159)
 	into += list(global.ai_control(stat = STAT_AIDISABLED, pulse_lasts = 10 SECONDS))
-	into += entry_line(164)
+	into += entry_line(160)
 	into += list(global.on_change(nameof(shorted), ANY, global.then(PROC_REF(shorted_changed))))
-	into += entry_line(165)
+	into += entry_line(161)
 	into += list(global.on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed)))
-	into += entry_line(166)
+	into += entry_line(162)
 	into += list(global.on_wire(WIRE_SYPHON, cut = PROC_REF(syphon_wire_cut), pulse = PROC_REF(syphon_wire_pulsed)))
-	into += entry_line(167)
+	into += entry_line(163)
 	into += list(global.on_wire(WIRE_AALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed)))
 
 /// CAPABILITIES(/obj/machinery/anomaly_harvester) at code/modules/anomalies/anomaly_harvester.dm:1
@@ -16093,12 +16106,14 @@
 	into += entry_line(175)
 	into += list(global.op("filter", global.ui_act("filter", global.arg("filterset", global.num())), global.then(PROC_REF(ui_act_filter))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary) at code/ATMOSPHERICS/components/unary/unary_base.dm:172
+/// CAPABILITIES(/obj/machinery/atmospherics/unary) at code/ATMOSPHERICS/components/unary/unary_base.dm:209
 /obj/machinery/atmospherics/unary/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/unary_base.dm", 172, /obj/machinery/atmospherics/unary)
-	into += entry_line(173)
+	into += entry_block("code/ATMOSPHERICS/components/unary/unary_base.dm", 209, /obj/machinery/atmospherics/unary)
+	into += entry_line(210)
 	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(211)
+	into += list(global.op("power_toggle", global.hand(), global.gesture(GESTURE_CTRL), global.label("Toggle power"), global.wait(0), global.when(PROC_REF(ctrl_power_offered)), global.needs(global.req(PROC_REF(actor_allowed), because = MSG(lock/denied))), global.then(PROC_REF(ctrl_power_toggled))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell) at code/game/machinery/cryo.dm:63
 /obj/machinery/atmospherics/unary/cryo_cell/declared_entries(list/into)
@@ -16179,6 +16194,40 @@
 	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
 	into += entry_line(5)
 	into += list(global.op("setPower", global.ui_act("setPower", global.arg("value", global.num())), global.then(PROC_REF(ui_act_setpower))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump) at code/ATMOSPHERICS/components/unary/vent_pump.dm:51
+/obj/machinery/atmospherics/unary/vent_pump/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/unary/vent_pump.dm", 51, /obj/machinery/atmospherics/unary/vent_pump)
+	into += entry_line(52)
+	into += list(global.area_air_device(AREA_AIR_VENT, status = PROC_REF(status_fields), commands = list( "purge" = PROC_REF(cmd_purge), "stabalize" = PROC_REF(cmd_stabilize), "power" = PROC_REF(cmd_power), "power_toggle" = PROC_REF(cmd_power_toggle), "checks" = PROC_REF(cmd_checks), "checks_toggle" = PROC_REF(cmd_checks_toggle), "direction" = PROC_REF(cmd_direction), "set_internal_pressure" = PROC_REF(cmd_set_internal), "set_external_pressure" = PROC_REF(cmd_set_external), "adjust_internal_pressure" = PROC_REF(cmd_adjust_internal), "adjust_external_pressure" = PROC_REF(cmd_adjust_external), "reset_external_pressure" = PROC_REF(cmd_reset_external), "reset_internal_pressure" = PROC_REF(cmd_reset_internal))))
+	into += entry_line(66)
+	into += list(global.weld_shut())
+	into += entry_line(67)
+	into += list(global.multitool_settings(list( list("ID Tag", "id_tag", "text", 30), list("Frequency", "frequency", "frequency", null, "Note, [PUMPS_FREQ] will only hail Air Alarms for this device."), list("Direction", PROC_REF(flip_direction), "action"), list("-SAVE TO BUFFER-", PROC_REF(save_to_buffer), "action"))))
+	into += entry_line(72)
+	into += list(air_device_unwrench())
+	into += entry_line(73)
+	into += list(global.examine_line(PROC_REF(gauge_text)))
+	into += entry_line(74)
+	into += list(global.on_change(WELD_SHUT_WELDED, ANY, global.then(PROC_REF(running_changed))))
+	into += entry_line(75)
+	into += list(global.on_change(nameof(use_power), ANY, global.then(PROC_REF(running_changed))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber) at code/ATMOSPHERICS/components/unary/vent_scrubber.dm:37
+/obj/machinery/atmospherics/unary/vent_scrubber/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/unary/vent_scrubber.dm", 37, /obj/machinery/atmospherics/unary/vent_scrubber)
+	into += entry_line(38)
+	into += list(global.area_air_device(AREA_AIR_SCRUBBER, status = PROC_REF(status_fields), commands = list( "power" = PROC_REF(cmd_power), "power_toggle" = PROC_REF(cmd_power_toggle), "panic_siphon" = PROC_REF(cmd_panic), "toggle_panic_siphon" = PROC_REF(cmd_panic_toggle), "scrubbing" = PROC_REF(cmd_scrubbing), "toggle_scrubbing" = PROC_REF(cmd_scrubbing_toggle), "o2_scrub" = PROC_REF(cmd_filter), "toggle_o2_scrub" = PROC_REF(cmd_filter_toggle), "n2_scrub" = PROC_REF(cmd_filter), "toggle_n2_scrub" = PROC_REF(cmd_filter_toggle), "co2_scrub" = PROC_REF(cmd_filter), "toggle_co2_scrub" = PROC_REF(cmd_filter_toggle), "tox_scrub" = PROC_REF(cmd_filter), "toggle_tox_scrub" = PROC_REF(cmd_filter_toggle), "n2o_scrub" = PROC_REF(cmd_filter), "toggle_n2o_scrub" = PROC_REF(cmd_filter_toggle), "fuel_scrub" = PROC_REF(cmd_filter), "toggle_fuel_scrub" = PROC_REF(cmd_filter_toggle), "ch4_scrub" = PROC_REF(cmd_filter), "toggle_ch4_scrub" = PROC_REF(cmd_filter_toggle))))
+	into += entry_line(52)
+	into += list(global.weld_shut())
+	into += entry_line(53)
+	into += list(air_device_unwrench())
+	into += entry_line(54)
+	into += list(global.examine_line(PROC_REF(gauge_text)))
+	into += entry_line(55)
+	into += list(global.on_change(WELD_SHUT_WELDED, ANY, global.then(PROC_REF(weld_changed))))
 
 /// CAPABILITIES(/obj/machinery/autolathe) at code/game/machinery/autolathe.dm:47
 /obj/machinery/autolathe/declared_entries(list/into)

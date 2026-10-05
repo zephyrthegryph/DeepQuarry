@@ -106,7 +106,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_target_selector
 		return FALSE
 	if(istype(M, /obj/machinery/atmospherics/unary/vent_pump))
 		var/obj/machinery/atmospherics/unary/vent_pump/V = M
-		return !V.welded
+		return !is_welded(V)
 	if(is_type_in_list(M, LV.ignored_machine_types))
 		return FALSE
 	if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
