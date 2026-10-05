@@ -1101,6 +1101,8 @@
 
 #include "round2_matrix_active_colour.dm"
 
+#include "round2_event_trigger_initial_denial.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

@@ -10,7 +10,6 @@ dx_raw_delay	code/modules/admin/verbs/smite.dm	after(shadekin, step == 5 ? 2 SEC
 dx_raw_delay	code/modules/casino/casino_prize_vendor.dm	after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
 dx_raw_delay	code/modules/flufftext/Hallucination.dm	after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), PROC_REF(trigger))
 dx_raw_delay	code/modules/food/food/snacks.dm	after(user, 5, /proc/food_finished_emote, with = list(user, !reagents?.total_volume))
-dx_raw_delay	code/modules/gamemaster/event2/events/engineering/airlock_failure.dm	after(src, 1, PROC_REF(break_door), with = list(door)) // Emagging proc is actually a blocking proc and that's bad for the ticker.
 dx_raw_delay	code/modules/integrated_electronics/subtypes/input.dm	after(src, 40, PROC_REF(set_frequency), with = list(frequency))
 dx_raw_delay	code/modules/planet/planet_service.dm	after(src, 3, PROC_REF(weather_disco_step), with = list(count - 1))
 dx_raw_delay	code/modules/power/fusion/core/_core.dm	after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
@@ -21,4 +20,3 @@ dx_raw_delay	code/modules/power/power_grid.dm	om_after_replace(null, max(duratio
 dx_raw_delay	code/modules/power/singularity/singularity.dm	after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), with = list(movement_dir))
 dx_raw_delay	code/modules/power/supermatter/supermatter.dm	after(null, 5, /proc/leave_broken_supermatter, with = list(TS))
 dx_raw_delay	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	after(src, recipes[r_id][step + 1] * delay_modifier, PROC_REF(perform_reaction), with = list(r_id, step))
-dx_raw_delay	code/modules/spells/aoe_turf/knock.dm	after(door, 1, TYPE_PROC_REF(/obj/machinery/door, knocked_open))
