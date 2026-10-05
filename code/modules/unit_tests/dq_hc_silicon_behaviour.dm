@@ -569,8 +569,7 @@
 	var/obj/item/mining_scanner/robot/scanner = allocate(/obj/item/mining_scanner/robot, test_floor())
 	scanner.upgrade(H)
 	hci_click(H, scanner, scanner, I_HELP, "alt=1")
-	settle()
-	hci_answer(H, 6)
+	hci_answer(H, 6) // answered at once: a settle() first would leave the actor unconscious on the airless test floor, and the answer re-checks it
 	settle()
 	TEST_ASSERT_EQUAL(scanner.range, 6, "an alt-click on the upgraded scanner asks its range")
 

@@ -10455,7 +10455,7 @@
 	into += entry_line(26)
 	into += list(global.owns_many(nameof(breaches)))
 	into += entry_line(27)
-	into += list(global.op("space_suit_patch_item", global.item(/obj/item), global.then(PROC_REF(space_suit_patch_item))))
+	into += list(global.op("space_suit_patch_item", global.item(/obj/item/stack/material), global.then(PROC_REF(space_suit_patch_item))))
 
 /// CAPABILITIES(/obj/item/clothing/suit/space/void) at code/modules/clothing/spacesuits/void/void.dm:60
 /obj/item/clothing/suit/space/void/declared_entries(list/into)

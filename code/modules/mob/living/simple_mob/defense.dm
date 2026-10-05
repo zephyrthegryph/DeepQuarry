@@ -286,7 +286,7 @@
 /// A thrown thing is the generic hit: the sound is for this entry alone.
 /mob/living/simple_mob/proc/thrown_reaction_sound(datum/act/A)
 	var/datum/notice/hit/N = A
-	if(N.packet.entry == DAMAGE_ENTRY_THROWN)
+	if(N.packet?.entry == DAMAGE_ENTRY_THROWN)
 		play_reaction_sound(A)
 
 /mob/living/simple_mob/proc/play_reaction_sound(datum/act/A)

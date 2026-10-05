@@ -197,8 +197,8 @@
 
 /// maintenance_hatch() declares once which op a tool picks when several could (click_order(), code/engine/parts/plan.dm), and a construction placed
 /// at(SPACE_HATCH) offers its undo steps only with the hatch open (a step behind a shut cover is set aside): the APC writes no priority(above(...)) or when(COVER_OPEN) of its own.
-///   screwdriver: a construction step, then the panel; wirecutters: the construction undo, then the wires; multitool: the subversion reset, then
-///   the wires; empty hand: the construction undo, then the wires window, then the APC's own window.
+///   screwdriver: a construction step, then the panel; wirecutters: the construction undo, then the wires; multitool: the subversion reset
+///   (in the hatch, so only with the cover open, as the old APC asked), else the wires; empty hand: the construction undo, then the wires window, then the APC's own window.
 /datum/unit_test/dx_apc_click_order
 
 /datum/unit_test/dx_apc_click_order/Run()
@@ -218,11 +218,13 @@
 	TEST_ASSERT(assert_resolves(H, A, wirecutters, GESTURE_CLICK, "wires.cut"), "panel open: wirecutters go to the wires")
 	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "wires.pulse"), "panel open: a multitool goes to the wires")
 	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "wires.open"), "panel open: an empty hand opens the wires before the window")
+	// subverted, the cover shut: the reset sits in the hatch behind the cover (set aside), so the multitool still pulses a wire
 	cap_key_set(A, EMAG_EMAGGED, TRUE, null)
-	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "subversion_reset.use"), "subverted: the multitool resets it before it pulses a wire")
-	cap_key_set(A, EMAG_EMAGGED, FALSE, null)
+	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "wires.pulse"), "subverted, cover shut: the multitool pulses a wire: [explain_click(H, A, multitool)]")
 	// the cover open: the build ladder's steps come first
 	cap_key_set(A, COVER_OPEN, TRUE, null)
+	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "subversion_reset.use"), "subverted, cover open: the multitool resets it: [explain_click(H, A, multitool)]")
+	cap_key_set(A, EMAG_EMAGGED, FALSE, null)
 	TEST_ASSERT(assert_resolves(H, A, screwdriver, GESTURE_CLICK, "construction.undo:apc_secured"), "cover open: the screwdriver unfastens the electronics before the panel")
 	graph_undo(A)
 	TEST_ASSERT_EQUAL(graph_current(A), STAGE_APC_WIRED, "back at the wired stage")
