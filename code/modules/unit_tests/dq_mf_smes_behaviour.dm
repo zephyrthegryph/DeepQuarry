@@ -6,7 +6,7 @@
 
 /// The unit does not work now (broken, or set aside for any other reason a player can see: dark and idle).
 /proc/p2_smes_unworking(obj/machinery/power/smes/S)
-	return !!S.has_stat(BROKEN)
+	return !!(S.has_stat(BROKEN) || S.unwired)
 
 /// The safety circuit is on.
 /proc/p2_smes_safeties(obj/machinery/power/smes/buildable/S)
@@ -14,8 +14,7 @@
 
 /// The units an RCON console lists now.
 /proc/p2_rcon_units(datum/tgui_module/rcon/R)
-	R.FindDevices()
-	return R.known_SMESs ? R.known_SMESs.Copy() : list()
+	return R.known_smes()
 
 
 /// What the unit shows of its flows: the window's inputting/outputting and the input-available and output-used readings, and the hum. A unit on a
@@ -36,12 +35,11 @@
 	p2_apc_resync(A)
 	p2_steps(5)
 	var/list/data = p2_smes_data(S, H)
-	// Legacy: power_poll() never read Rust back, so the window and the overlays show no flow whatever moves.
-	TEST_ASSERT_EQUAL(data["inputting"], 0, "the window shows no input flowing")
-	TEST_ASSERT_EQUAL(data["inputAvailable"], 0, "and no supply at the terminal")
-	TEST_ASSERT_EQUAL(data["outputUsed"], 0, "and no output used")
+	TEST_ASSERT_EQUAL(data["inputting"], 2, "the window shows input flowing")
+	TEST_ASSERT(data["inputAvailable"] > 0, "and the supply the terminal sees ([data["inputAvailable"]])")
+	TEST_ASSERT(data["outputUsed"] >= 0, "the output used is a reading ([data["outputUsed"]])")
 	var/list/keys = p2_smes_overlay_keys(S)
-	TEST_ASSERT_EQUAL(keys[2], "0", "the input overlay shows input on but idle")
+	TEST_ASSERT_EQUAL(keys[2], "2", "the input overlay shows it charging")
 	press(H, S, "tryinput", list())
 	p2_steps(3)
 	data = p2_smes_data(S, H)
@@ -59,7 +57,7 @@
 	press(H, S, "tryinput", list())
 	p2_steps(3)
 	var/list/data = p2_smes_data(S, H)
-	TEST_ASSERT_EQUAL(data["inputting"], 0, "legacy: the window shows 0 whatever the switch")
+	TEST_ASSERT_EQUAL(data["inputting"], 1, "trying, with nothing to take")
 	TEST_ASSERT_EQUAL(data["inputAvailable"], 0, "nothing available")
 
 /// An output that feeds a load hums; one that feeds nothing is silent.
@@ -79,10 +77,9 @@
 	p2_apc_resync(A)
 	p2_steps(5)
 	var/list/data = p2_smes_data(S, H)
-	// Legacy: outputting is the switch (1), never 2, so the hum never starts and the window shows no output used.
-	TEST_ASSERT_EQUAL(data["outputting"], 1, "the output shows only the switch")
-	TEST_ASSERT_EQUAL(data["outputUsed"], 0, "and no output used")
-	TEST_ASSERT(!p2_smes_noisy(S), "and the unit never hums")
+	TEST_ASSERT_EQUAL(data["outputting"], 2, "the output is flowing")
+	TEST_ASSERT(data["outputUsed"] > 0, "into the load ([data["outputUsed"]])")
+	TEST_ASSERT(p2_smes_noisy(S), "and the unit hums")
 	p2_apc_load(A, -20000)
 	load_area.requires_power = requires
 	qdel(A)
@@ -103,7 +100,7 @@
 	coil.amount = 30
 	touch(H, S, coil)
 	TEST_ASSERT_EQUAL(length(p2_smes_terminals(S)), 2, "(a second terminal was built)")
-	TEST_ASSERT(!p2_smes_broken(S), "legacy: building the terminal cleared every stat bit, mending the broken unit")
+	TEST_ASSERT(p2_smes_broken(S), "the terminal does not mend a broken unit")
 
 /// A unit placed with no terminal works once a terminal is built for it.
 /datum/unit_test/dq_p2_smes/mf_terminal_build_wakes_an_unwired_unit
@@ -165,4 +162,4 @@
 /datum/unit_test/dq_p2_smes/mf_grid_checker_reaches_the_unit/run_gate()
 	var/obj/machinery/power/smes/S = p2_smes()
 	S.do_grid_check()
-	TEST_ASSERT(!S.grid_check, "legacy: the SMES has no do_grid_check() of its own, so a grid check never suspends it")
+	TEST_ASSERT(S.grid_check, "the grid check suspends the unit")

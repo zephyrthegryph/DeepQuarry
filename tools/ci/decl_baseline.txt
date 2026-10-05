@@ -434,13 +434,6 @@ init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_sc
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
 init_new_child	code/modules/paperwork/paperplane.dm	rel_set(src, nameof(internalPaper), new /obj/item/paper(src))
 init_new_child	code/modules/power/generator.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
-init_new_child	code/modules/power/smes.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-init_new_child	code/modules/power/smes_construction.dm	rel_add(src, nameof(component_parts), new /obj/item/smes_coil/weak(src))
-init_new_child	code/modules/power/smes_construction.dm	rel_add(src, nameof(component_parts), new /obj/item/smes_coil/super_io(src))
-init_new_child	code/modules/power/smes_construction.dm	rel_add(src, nameof(component_parts), new /obj/item/smes_coil/super_io(src))
-init_new_child	code/modules/power/smes_construction.dm	rel_add(src, nameof(component_parts), new /obj/item/smes_coil(src))
-init_new_child	code/modules/power/smes_construction.dm	rel_add(src, nameof(component_parts), new /obj/item/stack/cable_coil(src,30))
-init_new_child	code/modules/power/smes_construction.dm	rel_add(src, nameof(component_parts), new /obj/item/smes_coil(src))
 init_new_child	code/modules/power/supermatter/supermatter.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/supermatter(list(src), TRUE))
 init_new_child	code/modules/power/turbine.dm	rel_set(src, nameof(gas_contained), new /datum/gas_mixture())
 init_new_child	code/modules/projectiles/ammunition.dm	rel_add(src, nameof(stored_ammo), new ammo_type(src))

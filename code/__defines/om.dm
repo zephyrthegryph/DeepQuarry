@@ -489,24 +489,24 @@
 /// (the external AST linter tools/dm-health may model an OM_FIELD field as
 /// `tracked(setter=set_F)`; tools/ci/field_write_lint.py enforces it today). Don't change the
 /// naming without updating both.
-#define OM_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
+#define OM_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
 /// OM_FIELD() for a var with a declared type or modifier: VT is what goes between `var/` and the
 /// name (`tmp`, `obj/item/cell`, `tmp/mob/living`). Expands to `T/var/VT/F = D`; otherwise
 /// identical, including the `set_F` naming.
-#define OM_FIELD_TYPED(T, VT, F, D, C) T/var/VT/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
+#define OM_FIELD_TYPED(T, VT, F, D, C) T/var/VT/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
 /// A declared bitfield (doc/rewrite/systems.md Â§2). Declares `T/var/F = D` and generates
 /// `set_F(v)` (whole value), `F_add(bits)`, `F_remove(bits)` and `has_F(bits)` (TRUE when any of
 /// `bits` is set). Every writer raises C, and only when the value actually changed; each returns
 /// TRUE on a change. Registered like OM_FIELD (field_def), so stages may `reads = list("F")`.
-#define OM_FLAG_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/F##_add(bits) { if((F & bits) == bits) { return FALSE } else { F |= bits; changed(src, C); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/F##_remove(bits) { if(!(F & bits)) { return FALSE } else { F &= ~bits; changed(src, C); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
+#define OM_FLAG_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/F##_add(bits) { if((F & bits) == bits) { return FALSE } else { F |= bits; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/F##_remove(bits) { if(!(F & bits)) { return FALSE } else { F &= ~bits; changed(src, C); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
 /// OM_FLAG_FIELD() with a channel per bit: BITS is `list("[BIT]" = CHANNEL, ...)` (text keys, as
 /// DM needs for numeric keys) and ALL is the union of those channels (the registered channel).
 /// A write raises only the channels of the bits that changed; a changed bit with no row raises
 /// ALL. The table is a proc-local static built once per type.
-#define OM_FLAG_FIELD_BITS(T, F, D, ALL, BITS) T/var/F = D;T/proc/F##_bit_channels() { var/static/list/table = BITS; return table };T/proc/set_##F(value) { var/flipped = F ^ value; if(!flipped) { return FALSE } else { F = value; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/F##_add(bits) { var/flipped = bits & ~F; if(!flipped) { return FALSE } else { F |= bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/F##_remove(bits) { var/flipped = F & bits; if(!flipped) { return FALSE } else { F &= ~bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = ALL }
+#define OM_FLAG_FIELD_BITS(T, F, D, ALL, BITS) T/var/F = D;T/proc/F##_bit_channels() { var/static/list/table = BITS; return table };T/proc/set_##F(value) { var/flipped = F ^ value; if(!flipped) { return FALSE } else { F = value; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/F##_add(bits) { var/flipped = bits & ~F; if(!flipped) { return FALSE } else { F |= bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/F##_remove(bits) { var/flipped = F & bits; if(!flipped) { return FALSE } else { F &= ~bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); om_field_written(src, #F); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = ALL }
 
 /// Registers an existing var F of T, with its existing hand-written setter `T/proc/set_F(value)`,
 /// as a declared field raising C (set_anchored, set_density). The setter must raise C on a real

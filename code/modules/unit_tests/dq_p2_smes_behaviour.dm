@@ -25,7 +25,7 @@
 
 /// The unit is broken (its overlays dark, its input and output off).
 /proc/p2_smes_broken(obj/machinery/power/smes/S)
-	return !!S.has_stat(BROKEN)
+	return !!(S.has_stat(BROKEN) || S.unwired)
 
 /// The charge held, in SMES units.
 /proc/p2_smes_charge(obj/machinery/power/smes/S)
@@ -139,7 +139,6 @@
 
 /// The test SMES: a real one, except that a test mob has no client and the type records who opened its window.
 /obj/machinery/power/smes/p2_test
-	should_be_mapped = 1
 	var/list/p2_opened
 
 /obj/machinery/power/smes/p2_test/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)

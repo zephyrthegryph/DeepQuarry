@@ -21,13 +21,11 @@
 	var/RCon_tag = "NO_TAG"
 	var/update_locked = 0
 
-// the cables it switched go with it; RCON consoles rescan.
+// the cables it switched go with it (an RCON console reads its breakers live, so it needs no rescan).
 /obj/machinery/power/breakerbox/on_destroy(force)
 	for(var/obj/structure/cable/C in src.loc)
 		qdel(C)
 	..()
-	for(var/datum/tgui_module/rcon/R in SStgui.all_uis)
-		R.FindDevices()
 
 /obj/machinery/power/breakerbox/Initialize(mapload)
 	. = ..()

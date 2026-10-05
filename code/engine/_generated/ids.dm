@@ -51,6 +51,7 @@
 #define STAT_SHORTED 100045
 #define STAT_SUPPLYING 100046
 #define STAT_SUSPENDED 100047
+#define STAT_WORKING 100048
 
 /// Capability ids: the CAP_X of each CAPABILITY_TYPE/DEF whose id no hand-written define gives, from 300.
 #define CAP_AI_CONTROL 300

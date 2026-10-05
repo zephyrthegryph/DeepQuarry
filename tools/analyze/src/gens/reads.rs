@@ -25,8 +25,9 @@ use crate::sem::gen::{GenCx, GenOut, Generator};
 use crate::sem::graph::DepGraph;
 use crate::sem::reads::{Annotations, ReadKind, ReadsEngine};
 
-/// Engine-internal directories the walk does not enter.
-pub const OPAQUE: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/"];
+/// Engine-internal directories the walk does not enter. The Verdigris bindings (code/__defines/verdigris/) read Rust-owned values: a condition that
+/// asks one (a SMES's charge) is re-asked when a requirement is checked or a gate is polled, never subscribed.
+pub const OPAQUE: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
 
 struct Reads;
 

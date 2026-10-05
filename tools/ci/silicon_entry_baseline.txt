@@ -74,7 +74,6 @@ handler_actor_check	code/modules/mob/living/silicon/pai/software_modules.dm	retu
 handler_actor_check	code/modules/mob/living/silicon/robot/cloak.dm	if(isrobot(loc.loc)) //The robot
 handler_actor_check	code/modules/mob/living/silicon/robot/cloak.dm	else if(isrobot(src.loc)) //We are in a robot.
 handler_actor_check	code/modules/power/apc.dm	if(!istype(held) || !user || issilicon(user))
-handler_actor_check	code/modules/power/smes_construction.dm	if(panel_open && user && !isAI(user))
 handler_actor_check	code/modules/projectiles/guns/projectile/shotgun.dm	if(issilicon(user))
 handler_actor_check	code/modules/reagents/machinery/grinder.dm	if(!user || om_busy(src) || (isAI(user) && has_stat(NOPOWER)) || user.incapacitated())
 handler_actor_check	code/modules/tables/flipping.dm	return !isAI(user)
@@ -171,7 +170,6 @@ legacy_entry	code/modules/power/breaker_box.dm	INTERACT_SILICON("Toggle", PROC_R
 legacy_entry	code/modules/power/port_gen.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/modules/power/port_gen.dm	INTERACT_SILICON("Toggle power", PROC_REF(large_altevian_silicon_toggle)),
 legacy_entry	code/modules/power/privacy_switch.dm	silicon_use = SILICON_USE_HAND
-legacy_entry	code/modules/power/smes.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/modules/power/supermatter/supermatter.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/modules/random_map/drop/droppod_doors.dm	INTERACT_SILICON("Open", PROC_REF(droppod_door_silicon_use)), \
 legacy_entry	code/modules/reagents/machinery/pump.dm	silicon_use = ROBOT_USE_HAND | SILICON_USE_HAND

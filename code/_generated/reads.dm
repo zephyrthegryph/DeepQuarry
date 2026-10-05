@@ -227,7 +227,7 @@
 
 /obj/machinery/power/smes/generated_reads()
 	. = ..()
-	. += rust_push(nameof(capacity), nameof(grid_check), nameof(input_attempt), nameof(input_cut), nameof(input_level), nameof(input_pulsed), nameof(output_attempt), nameof(output_cut), nameof(output_level), nameof(output_pulsed), nameof(vg_entity))
+	. += rust_push(nameof(capacity), nameof(input_attempt), nameof(input_cut), nameof(input_level), nameof(output_attempt), nameof(output_cut), nameof(output_level), nameof(vg_entity), nameof(working))
 
 /obj/machinery/recharger/generated_reads()
 	. = ..()
