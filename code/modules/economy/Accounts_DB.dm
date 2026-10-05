@@ -161,12 +161,14 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_add_funds)
 	var/access_level = get_access_level()
 	if(access_level < 2)
 		return FALSE
-	var/amount = act_ask(ui.user, action, params, ui, "k161", /datum/om/prompt/number, message = "Enter the amount you wish to add", title = "Silently add funds")
-	if(isnull(amount))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
+	open_request(ui, /datum/prompt/number/account_ui_funds/add, TYPE_PROC_REF(/datum/tgui, account_add_funds_answered), subject = src, answerer = ui.user)
+
+/obj/machinery/account_database/proc/apply_ui_add_funds(mob/user, amount)
 	if(detailed_account_view() && isnum(amount) && amount > 0)
 		var/allowed_amount = min(amount, fund_cap - detailed_account_view().money)
-		detailed_account_view().credit(allowed_amount, ui.user.real_name, "Authorized account adjustment", machine_id)
+		detailed_account_view().credit(allowed_amount, user.real_name, "Authorized account adjustment", machine_id)
 	return TRUE
 
 UI_ACT(/obj/machinery/account_database, "remove_funds", ui_act_remove_funds)
@@ -174,11 +176,13 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_remove_funds)
 	var/access_level = get_access_level()
 	if(access_level < 2)
 		return FALSE
-	var/amount = act_ask(ui.user, action, params, ui, "k169", /datum/om/prompt/number, message = "Enter the amount you wish to remove", title = "Silently remove funds")
-	if(isnull(amount))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
+	open_request(ui, /datum/prompt/number/account_ui_funds/remove, TYPE_PROC_REF(/datum/tgui, account_remove_funds_answered), subject = src, answerer = ui.user)
+
+/obj/machinery/account_database/proc/apply_ui_remove_funds(mob/user, amount)
 	if(detailed_account_view() && isnum(amount) && amount > 0)
-		detailed_account_view().debit(min(amount, detailed_account_view().money), ui.user.real_name, "Authorized account adjustment", machine_id)
+		detailed_account_view().debit(min(amount, detailed_account_view().money), user.real_name, "Authorized account adjustment", machine_id)
 	return TRUE
 
 UI_ACT(/obj/machinery/account_database, "toggle_suspension", ui_act_toggle_suspension)
@@ -334,3 +338,46 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_print)
 /// the detailed_account_view this refers to (a relation view: null once it is deleted).
 /obj/machinery/account_database/proc/detailed_account_view() as /datum/money_account
 	return detailed_account_view
+
+// Original account-terminal windows own these scalar continuations.
+/datum/tgui/proc/account_add_funds_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/account_database/terminal = context.request.subject
+	if(terminal.apply_ui_add_funds(user, context.answer.answer_value))
+		SStgui.update_uis(terminal)
+
+/datum/tgui/proc/account_remove_funds_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/account_database/terminal = context.request.subject
+	if(terminal.apply_ui_remove_funds(user, context.answer.answer_value))
+		SStgui.update_uis(terminal)
+
+/datum/prompt/number/account_ui_funds
+	timeout = 0
+	recheck_on_open = TRUE
+	var/action_key
+
+/datum/prompt/number/account_ui_funds/add
+	title = "Silently add funds"
+	question = "Enter the amount you wish to add"
+	action_key = "add_funds"
+
+/datum/prompt/number/account_ui_funds/remove
+	title = "Silently remove funds"
+	question = "Enter the amount you wish to remove"
+	action_key = "remove_funds"
+
+/datum/prompt/number/account_ui_funds/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	var/obj/machinery/account_database/terminal = subject
+	if(!istype(original_ui) || QDELETED(original_ui) || !istype(terminal) || QDELETED(terminal) || QDELETED(answerer))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!terminal.ui_act_allowed(original_ui.user, action_key, original_ui, original_ui.state()))
+		return "the account action is unavailable"
+	if(terminal.get_access_level() < 2)
+		return "the account action requires central command access"
+	return null
