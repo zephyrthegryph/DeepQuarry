@@ -339,13 +339,13 @@
 /datum/unit_test/dq_hc_struct/cryo_cell_is_switched_through_the_window/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/atmospherics/unary/cryo_cell/C = mach(/obj/machinery/atmospherics/unary/cryo_cell, tile(3, 2))
-	TEST_ASSERT(!C.on, "starts off")
+	TEST_ASSERT(!C.cooling, "starts off")
 	press(H, C, "switchOn")
-	TEST_ASSERT(C.on, "the on button switches it on")
+	TEST_ASSERT(C.cooling, "the on button switches it on")
 	var/list/data = hc_data(C, H)
 	TEST_ASSERT(data["isOperating"], "the window shows it")
 	press(H, C, "switchOff")
-	TEST_ASSERT(!C.on, "and the off button switches it off")
+	TEST_ASSERT(!C.cooling, "and the off button switches it off")
 
 /datum/unit_test/dq_hc_struct/body_scanner_prints_a_sheet
 /datum/unit_test/dq_hc_struct/body_scanner_prints_a_sheet/run_gate()

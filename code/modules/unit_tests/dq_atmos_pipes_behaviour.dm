@@ -615,3 +615,59 @@
 	am_set_air(T)
 	am_set_air(pipe_turf)
 	dq_atmos_test_restore_walls()
+
+// =====================================================================================================================
+// The heater and the freezer
+// =====================================================================================================================
+
+/// A unary device of `type` on a capped pipe in the room: returns it (its pipe is the cap on the tile east of it).
+/datum/unit_test/dq_atmos_m/pipes/proc/capped_device(type, dx = 1, dy = 4)
+	var/obj/machinery/atmospherics/unary/U = allocate(type, tile(dx, dy))
+	U.set_dir(EAST)
+	U.init_dir()
+	var/obj/machinery/atmospherics/pipe/cap/visible/P = allocate(/obj/machinery/atmospherics/pipe/cap/visible, tile(dx + 1, dy))
+	P.set_dir(WEST)
+	P.init_dir()
+	U.atmos_init()
+	P.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(U, P))
+	U.stat_remove(NOPOWER | BROKEN)
+	LAZYADD(ap_lines, list(P, U))
+	am_settle()
+	return U
+
+/// Switched on with cold gas in its loop, a heater heats it toward its thermostat; switched off, it stops.
+/datum/unit_test/dq_atmos_m/pipes/heater_heats
+/datum/unit_test/dq_atmos_m/pipes/heater_heats/run_gate()
+	var/obj/machinery/atmospherics/unary/heater/U = capped_device(/obj/machinery/atmospherics/unary/heater)
+	var/mob/living/carbon/human/H = person()
+	U.air_contents.adjust_gas(GAS_N2, 50)
+	heat_set(U.air_contents, 250, HEAT_SOURCE_OTHER)
+	gas_touched(U.air_contents)
+	ap_press(src, H, U, "setGasTemperature", list("temp" = 400))
+	ap_press(src, H, U, "toggleStatus")
+	TEST_ASSERT(U.use_power, "the button switches it on")
+	for(var/i in 1 to 6)
+		am_settle()
+		SSair.run_gas_frames(1)
+	TEST_ASSERT(U.air_contents.return_temperature() > 255, "it heats its loop ([U.air_contents.return_temperature()] K)")
+	ap_press(src, H, U, "toggleStatus")
+	am_settle()
+	TEST_ASSERT(!U.pumping, "switched off, it stops")
+	take_down_lines()
+
+/// A freezer cools its loop toward its thermostat.
+/datum/unit_test/dq_atmos_m/pipes/freezer_cools
+/datum/unit_test/dq_atmos_m/pipes/freezer_cools/run_gate()
+	var/obj/machinery/atmospherics/unary/freezer/U = capped_device(/obj/machinery/atmospherics/unary/freezer)
+	var/mob/living/carbon/human/H = person()
+	U.air_contents.adjust_gas(GAS_N2, 50)
+	heat_set(U.air_contents, T20C, HEAT_SOURCE_OTHER)
+	gas_touched(U.air_contents)
+	ap_press(src, H, U, "setGasTemperature", list("temp" = 100))
+	ap_press(src, H, U, "toggleStatus")
+	for(var/i in 1 to 6)
+		am_settle()
+		SSair.run_gas_frames(1)
+	TEST_ASSERT(U.air_contents.return_temperature() < T20C - 5, "it cools its loop ([U.air_contents.return_temperature()] K)")
+	take_down_lines()

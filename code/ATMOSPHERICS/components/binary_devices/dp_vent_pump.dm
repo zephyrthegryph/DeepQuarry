@@ -66,25 +66,20 @@
 	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/binary/dp_vent_pump/appearance_overlays()
-	. = list()
-
-	var/vent_icon = "vent"
-
+/obj/machinery/atmospherics/binary/dp_vent_pump/draw(datum/look/look)
+	..()
 	var/turf/T = get_turf(src)
 	if(!istype(T))
-		return .
-
-	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe))
+		return
+	var/vent_icon = "vent"
+	// ALLOW(sys_dx_untracked_read): a pipe's level and a floor's plating are fixed while the vent stands on them; a change of either rebuilds the pipes
+	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipes come or go
 		vent_icon += "h"
-
-	if(!powered())
+	if(!operable() || !use_power)
 		vent_icon += "off"
 	else
-		vent_icon += "[use_power ? "[pump_direction ? "out" : "in"]" : "off"]"
-
-	. += GLOB.icon_manager.get_atmos_icon("device", , , vent_icon)
+		vent_icon += pump_direction ? "out" : "in"
+	look.overlay(GLOB.icon_manager.get_atmos_icon("device", , , vent_icon))
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/update_underlays()
 	..()
@@ -171,16 +166,17 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PR
 	if(power_w > 0)
 		use_power(power_w)
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, input_pressure_min, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, output_pressure_max, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pump_direction)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, external_pressure_bound)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, input_pressure_min)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, output_pressure_max)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/dp_vent_pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(input_pressure_min), nameof(output_pressure_max), nameof(pressure_checks))
+	. += drawn_from(nameof(use_power), nameof(pump_direction))
 
 //Radio remote control
 
@@ -213,10 +209,14 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks
 
 	return 1
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/examine(mob/user)
-	. = ..()
-	if(Adjacent(user))
-		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
+CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
+	examine_line(PROC_REF(gauge_text))
+
+/// The gauge, to someone beside it.
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/gauge_text(datum/act/eval/A)
+	var/mob/viewer = A.actor
+	if(viewer && Adjacent(viewer))
+		return "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))
