@@ -23,7 +23,10 @@
 		icon_state = "[icon_state]"
 		base_state = icon_state
 
-APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
+/// The look: its base state ("left", "right", ...), with "open" after it while it stands open.
+/obj/machinery/door/window/draw(datum/look/look)
+	..()
+	look.state("[base_state][density ? "" : "open"]")
 
 /obj/machinery/door/window/proc/shatter(display_message = 1)
 	new /obj/item/material/shard(src.loc)
@@ -226,7 +229,6 @@ CAPABILITIES(/obj/machinery/door/window)
 /// A welder has mended it in full.
 /obj/machinery/door/window/proc/repaired(datum/act/op/A)
 	repair_damage(max_integrity)
-	update_icon()
 	return OP_OK
 
 /// What it flashes: its own sprites for the spark and the denial.

@@ -1125,15 +1125,6 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing 
 
 // ---- the look ----
 
-// The door template the base door declares (door.dm) doesn't apply: draw() below is the look.
-APPEARANCE_NONE(/obj/machinery/door/airlock)
-
-/// Bridge while door.dm's other doors still draw through update_icon(): its shared procs (and the declared appearance watch on stat and density)
-/// call update_icon(), which marks the airlock changed so draw() runs.
-// ALLOW(sys_update_icon): bridge only; it draws nothing, it marks the airlock so draw() runs
-/obj/machinery/door/airlock/update_icon()
-	changed(src)
-
 /obj/machinery/door/airlock/draw(datum/look/look)
 	..()
 	// doorint.dmi and its kin have no wires, broken or dark states: the sparks below show damage. The bolts show as

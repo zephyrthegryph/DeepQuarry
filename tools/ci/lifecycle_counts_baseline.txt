@@ -233,8 +233,6 @@ qdel	code/game/machinery/partslathe.dm	qdel(I)
 qdel	code/game/machinery/petrification.dm	qdel(PE)
 qdel	code/game/machinery/pipe/construction.dm	qdel(temp)
 qdel	code/game/machinery/portable_turret.dm	qdel(flick_holder)
-qdel	code/game/machinery/portable_turret.dm	qdel(flick_holder)
-qdel	code/game/machinery/portable_turret.dm	qdel(I) //delete the gun :(
 qdel	code/game/machinery/protean_reconstitutor.dm	qdel(O)
 qdel	code/game/machinery/protean_reconstitutor.dm	qdel(O)
 qdel	code/game/machinery/protean_reconstitutor.dm	qdel(P)

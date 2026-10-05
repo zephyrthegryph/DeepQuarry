@@ -109,16 +109,6 @@ init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_CO2, (star
 init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_PHORON, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_N2O, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_O2, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_O2, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_N2O, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_N2, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_CO2, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_CH4, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_N2, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_CO2, MolesForPressure())
-init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
 init_registry	code/modules/holomap/mapper.dm	registry_join(REGISTRY_MAPPING_BEACONS, src)
@@ -152,7 +142,6 @@ init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
 init_visuals	code/game/machinery/event/christmas.dm	icon_state = "gift[pick("1", "2", "3")]_[pick("g", "r", "b", "y", "p")]"
 init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
 init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
-init_visuals	code/game/machinery/portable_turret.dm	add_overlay(turret_opened_overlay)
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"

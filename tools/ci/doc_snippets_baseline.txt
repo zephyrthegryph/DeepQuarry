@@ -27,7 +27,6 @@ doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, sourc
 doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, attacker)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_name(name)
 doc_unknown_name	doc/rewrite/migration_guide.md	if(do_after(user, 6, target = src))
-doc_unknown_name	doc/rewrite/migration_guide.md	look.gauge("can-o", level = pressure_band(), levels = 4) // can-o0..can-o3
 doc_unknown_name	doc/rewrite/migration_guide.md	var/why_not = shuttle_api_why_cant_call()
 doc_unknown_name	doc/rewrite/migration_guide.md	shuttle_api_call_evac(caller = user)
 doc_unknown_name	doc/rewrite/migration_guide.md	release_or_move_site(site, new_name = descriptor_name) // emits site_moved

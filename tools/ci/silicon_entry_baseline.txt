@@ -86,7 +86,6 @@ handler_actor_check	code/modules/tgui/modules/crew_monitor.dm	data["isAI"] = isA
 handler_actor_check	code/modules/tgui/modules/law_manager.dm	if(isAI(owner()))
 handler_actor_check	code/modules/tgui/modules/law_manager.dm	data["isAI"] = isAI(owner())
 handler_actor_check	code/modules/tgui/modules/overmap.dm	if(user && !isAI(user))
-siliconaccess	code/game/machinery/portable_turret.dm	if((!emagged && siliconaccess(L) && check_all == FALSE) || (issilicon(L) && !check_access && !check_all)) // Don't target silica, unless told to neutralize everything.
 siliconaccess	code/modules/power/apc.dm	"siliconUser" = user && (siliconaccess(user) || (isobserver(user) && is_admin(user))),
 legacy_entry	code/ATMOSPHERICS/components/shutoff.dm	silicon_use = SILICON_USE_HAND
 legacy_entry	code/ATMOSPHERICS/components/tvalve.dm	silicon_use = NONE
@@ -114,13 +113,10 @@ legacy_entry	code/game/machinery/jukebox.dm	silicon_use = NONE // silicons can't
 legacy_entry	code/game/machinery/machinery.dm	silicon_use = SILICON_USE_HAND
 legacy_entry	code/game/machinery/navbeacon.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/game/machinery/oxygen_pump.dm	silicon_use = SILICON_USE_UI
-legacy_entry	code/game/machinery/portable_turret.dm	silicon_use = SILICON_USE_UI
-legacy_entry	code/game/machinery/portable_turret.dm	silicon_use = NONE // silicons can't use the frame
 legacy_entry	code/game/machinery/status_display_ai.dm	into += dq_interaction_from_spec(type, INTERACT_SILICON("Set status", PROC_REF(ai_status_display_silicon_use)))
 legacy_entry	code/game/machinery/supplybeacon.dm	silicon_use = ROBOT_USE_HAND_ADJACENT
 legacy_entry	code/game/machinery/syndicatebeacon.dm	silicon_use = NONE // silicons can't use it
 legacy_entry	code/game/machinery/teleporter.dm	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(teleporter_computer_silicon_use)))
-legacy_entry	code/game/machinery/turret_control.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/game/objects/items.dm	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
 legacy_entry	code/game/objects/items/devices/radio/intercom.dm	INTERACT_SILICON("Use", PROC_REF(interaction_hand)), \
 legacy_entry	code/game/objects/structures/catwalk.dm	silicon_use = ROBOT_USE_HAND_ADJACENT

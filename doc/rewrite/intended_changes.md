@@ -1085,3 +1085,12 @@ Pinned by `code/modules/unit_tests/dq_mfo_blast_contents.dm` (green on the overr
   explosion service reads it (`explosion_contents_severity_of()`). Every `explosion_contents_severity()` override is gone (body scanner, clone pod,
   DNA scanner, pAI card, closet, statue, morgue, transit tube pod, bookcase, APC, atmospherics machinery) and the name is a hard ban.
 * No change in numbers: the DNA scanner declared two overrides, and the later one (the full blast) is what ran.
+
+## Missing forms: door looks
+
+Pinned by the look tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on the templates first).
+
+* **Every door draws through draw(look)**: the base door (`door1`/`door0`), the blast door (its type's open and closed states) and the windoor (its base
+  state, `open` after it) replace their `APPEARANCE_TEMPLATE`s; the airlock's and firedoor's `update_icon()` -> `changed()` bridges and their
+  `APPEARANCE_NONE` lines are gone. A swing, a weld, a hatch and damage redraw through their tracked vars; the firedoor's alert lights and the angled
+  bay airlock's built icon (no tracked vars) mark the door changed by hand. No look changes.
