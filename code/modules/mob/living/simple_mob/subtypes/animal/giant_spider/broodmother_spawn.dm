@@ -155,9 +155,8 @@ TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/webslinger/broodling, broo
 
 TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/broodling, broodling_initial_scale, 0.75)
 
-/mob/living/simple_mob/animal/giant_spider/broodling/Initialize(mapload)
-	. = ..()
-	after(src, 2 MINUTES, PROC_REF(death), key = "deathtimer")
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/broodling)
+	after_init(2 MINUTES, then(PROC_REF(brood_expire)))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/broodling/replace_death(gibbed)

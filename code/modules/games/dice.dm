@@ -210,15 +210,16 @@ CAPABILITIES(/obj/item/dice)
 	drop_sound = SFX_ITEMS_DROP_HAT
 	pickup_sound = SFX_ITEMS_PICKUP_HAT
 
-/obj/item/storage/pill_bottle/dice_nerd/Initialize(mapload)
-	. = ..()
-	new /obj/item/dice/d4(src)
-	new /obj/item/dice(src)
-	new /obj/item/dice/d8(src)
-	new /obj/item/dice/d10(src)
-	new /obj/item/dice/d12(src)
-	new /obj/item/dice/d20(src)
-	new /obj/item/dice/d100(src)
+/obj/item/storage/pill_bottle/dice_nerd
+	starts_with = list(
+		/obj/item/dice/d4 = 1,
+		/obj/item/dice = 1,
+		/obj/item/dice/d8 = 1,
+		/obj/item/dice/d10 = 1,
+		/obj/item/dice/d12 = 1,
+		/obj/item/dice/d20 = 1,
+		/obj/item/dice/d100 = 1,
+	)
 
 /*
  *Liar's Dice cup

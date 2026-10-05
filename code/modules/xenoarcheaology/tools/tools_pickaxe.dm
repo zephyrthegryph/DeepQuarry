@@ -108,6 +108,15 @@
 // Pack for holding pickaxes
 
 /obj/item/storage/excavation
+	starts_with = list(
+		/obj/item/pickaxe/brush = 1,
+		/obj/item/pickaxe/one_pick = 1,
+		/obj/item/pickaxe/two_pick = 1,
+		/obj/item/pickaxe/three_pick = 1,
+		/obj/item/pickaxe/four_pick = 1,
+		/obj/item/pickaxe/five_pick = 1,
+		/obj/item/pickaxe/six_pick = 1,
+	)
 	name = "excavation pick set"
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "excavation"
@@ -129,16 +138,6 @@ CAPABILITIES(/obj/item/storage/excavation)
 		/obj/item/pickaxe/five_pick,
 		/obj/item/pickaxe/six_pick,
 		/obj/item/pickaxe/hand)))
-
-/obj/item/storage/excavation/Initialize(mapload)
-	. = ..()
-	new /obj/item/pickaxe/brush(src)
-	new /obj/item/pickaxe/one_pick(src)
-	new /obj/item/pickaxe/two_pick(src)
-	new /obj/item/pickaxe/three_pick(src)
-	new /obj/item/pickaxe/four_pick(src)
-	new /obj/item/pickaxe/five_pick(src)
-	new /obj/item/pickaxe/six_pick(src)
 
 /// Picks show smallest first; anything else after them.
 /obj/item/storage/excavation/hud_order(list/items)

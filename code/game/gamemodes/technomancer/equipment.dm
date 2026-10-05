@@ -105,19 +105,18 @@
 	obj_path = /obj/item/storage/belt/medical/technomancer
 
 /obj/item/storage/belt/medical/technomancer
+	starts_with = list(
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/brute = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/burn = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/toxin = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/oxy = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/purity = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/pain = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/organ = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/combat = 1,
+	)
 	name = "hypo belt"
 	desc = "A medical belt designed to carry autoinjectors and other medical equipment."
-
-/obj/item/storage/belt/medical/technomancer/Initialize(mapload)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/brute(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/burn(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/toxin(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/oxy(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/purity(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/pain(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/organ(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/combat(src)
-	. = ..()
 
 /datum/technomancer/equipment/belt_of_holding
 	name = "Belt of Holding"

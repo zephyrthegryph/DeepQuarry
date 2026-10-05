@@ -94,16 +94,15 @@
 
 //ivymoomoo:Ivy Baladeva
 /obj/item/storage/backpack/messenger/sec/fluff/ivymoomoo
+	starts_with = list(
+		/obj/item/clothing/head/beretg = 1,
+		/obj/item/fluff/id_kit_ivy = 1,
+		/obj/item/storage/fancy/cigarettes/dromedaryco = 1,
+		/obj/item/storage/box/matches = 1,
+		/obj/item/reagent_containers/food/snacks/sliceable/plaincake = 1,
+	)
 	name = "Ivy's Courier"
 	desc = "A bag resembling something used by college students. Contains items for ''MooMoo''."
-
-/obj/item/storage/backpack/messenger/sec/fluff/ivymoomoo/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/head/beretg(src)
-	new /obj/item/fluff/id_kit_ivy(src)
-	new /obj/item/storage/fancy/cigarettes/dromedaryco(src)
-	new /obj/item/storage/box/matches(src)
-	new /obj/item/reagent_containers/food/snacks/sliceable/plaincake(src)
 
 // jemli:Cirra Mayhem
 /obj/item/storage/box/fluff/cirra
@@ -129,6 +128,16 @@
 
 //joanrisu:Joan Risu
 /obj/item/storage/backpack/dufflebag/sec/fluff/joanrisu
+	starts_with = list(
+		/obj/item/clothing/accessory/holster/hip = 1,
+		/obj/item/clothing/suit/storage/fluff/modernfedcoat = 1,
+		/obj/item/clothing/head/caphat/formal/fedcover = 1,
+		/obj/item/clothing/suit/armor/det_suit = 1,
+		/obj/item/flame/lighter/zippo/fluff/joan = 1,
+		/obj/item/clothing/under/rank/internalaffairs/fluff/joan = 1,
+		/obj/item/clothing/head/helmet/space/fluff/joan = 1,
+		/obj/item/clothing/suit/space/fluff/joan = 1,
+	)
 	name = "Joan's Workbag"
 	desc = "A bag Joan uses to carry her work equipment. It has the 82nd Battle Group Insignia on it."
 	icon_state = "joanbag"
@@ -137,31 +146,19 @@
 	slowdown = 0
 	can_tilt = 0
 
-/obj/item/storage/backpack/dufflebag/sec/fluff/joanrisu/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/accessory/holster/hip(src)
-	new /obj/item/clothing/suit/storage/fluff/modernfedcoat(src)
-	new /obj/item/clothing/head/caphat/formal/fedcover(src)
-	new /obj/item/clothing/suit/armor/det_suit(src)
-	new /obj/item/flame/lighter/zippo/fluff/joan(src)
-	new /obj/item/clothing/under/rank/internalaffairs/fluff/joan(src)
-	new /obj/item/clothing/head/helmet/space/fluff/joan(src)
-	new /obj/item/clothing/suit/space/fluff/joan(src)
-
 //joanrisu:Katarina Eine
 /obj/item/storage/backpack/dufflebag/sec/fluff/katarina
+	starts_with = list(
+		/obj/item/clothing/accessory/holster/hip = 1,
+		/obj/item/clothing/suit/storage/fluff/fedcoat = 1,
+		/obj/item/clothing/suit/armor/det_suit = 1,
+		/obj/item/clothing/accessory/storage/black_vest = 1,
+		/obj/item/material/knife/tacknife/combatknife/fluff/katarina = 1,
+		/obj/item/clothing/under/rank/internalaffairs/fluff/joan = 1,
+	)
 	name = "Katarina's Workbag"
 	desc = "A duffle bag Katarina uses to carry her tools."
 	slowdown = 0
-
-/obj/item/storage/backpack/dufflebag/sec/fluff/katarina/Initialize(mapload)
-	. = ..()
-	new /obj/item/clothing/accessory/holster/hip(src)
-	new /obj/item/clothing/suit/storage/fluff/fedcoat(src)
-	new /obj/item/clothing/suit/armor/det_suit(src)
-	new /obj/item/clothing/accessory/storage/black_vest(src)
-	new /obj/item/material/knife/tacknife/combatknife/fluff/katarina(src)
-	new /obj/item/clothing/under/rank/internalaffairs/fluff/joan(src)
 
 //Razerwing:Archer Maximus
 /obj/item/storage/box/fluff/archermaximus

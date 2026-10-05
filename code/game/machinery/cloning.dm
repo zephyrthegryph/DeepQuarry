@@ -552,18 +552,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
  */
 
 /obj/item/storage/box/disks
+	starts_with = list(
+		/obj/item/disk/body_record = 7,
+	)
 	name = "Diskette Box"
 	icon_state = "disk_kit"
-
-/obj/item/storage/box/disks/Initialize(mapload)
-	. = ..()
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
 
 /*
  *	Manual -- A big ol' manual.
