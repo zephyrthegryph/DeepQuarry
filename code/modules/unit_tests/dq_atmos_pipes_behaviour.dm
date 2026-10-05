@@ -19,6 +19,12 @@
 /proc/ap_pump_on(obj/machinery/atmospherics/binary/pump/P)
 	return !!P.use_power
 
+/// The injector's own work happens once (what a gas tick of its flow does).
+/proc/ap_injector_tick(obj/machinery/atmospherics/unary/outlet_injector/I)
+	I.machine_step()
+	SSmachines.flush_pump_transfers()
+	SSair.run_gas_frames(1)
+
 /// A radio command packet to a pipe device with radio tag `tag` (its `id`).
 /proc/ap_radio(obj/machinery/atmospherics/D, tag, list/command)
 	var/datum/signal/signal = new
@@ -540,3 +546,72 @@
 	TEST_ASSERT(canister_moles > 1, "and keeps its share ([canister_moles])")
 	qdel(C)
 	take_down_lines()
+
+// =====================================================================================================================
+// The outlet injector
+// =====================================================================================================================
+
+/// A hand switches the injector; the radio sets its power and rate; its multitool sets its tag and frequency; a ctrl-click on a running
+/// injector with another rate puts the rate back to its default; the wrench takes it off.
+/datum/unit_test/dq_atmos_m/pipes/injector_controls
+/datum/unit_test/dq_atmos_m/pipes/injector_controls/run_gate()
+	var/obj/machinery/atmospherics/unary/outlet_injector/I = pipe_device(/obj/machinery/atmospherics/unary/outlet_injector)
+	var/mob/living/carbon/human/H = person()
+	ap_click(H, I)
+	TEST_ASSERT(I.use_power, "a hand switches it on")
+	ap_click(H, I)
+	TEST_ASSERT(!I.use_power, "and off")
+	I.id = "ap_inj"
+	ap_radio(I, "ap_inj", list("power" = "1", "set_volume_rate" = "30"))
+	TEST_ASSERT(I.use_power, "the radio switches it on")
+	TEST_ASSERT_EQUAL(I.volume_rate, 30, "and sets its rate")
+	ap_click(H, I, null, GESTURE_CTRL)
+	TEST_ASSERT_EQUAL(I.volume_rate, ATMOS_DEFAULT_VOLUME_PUMP + 500, "a ctrl-click puts the rate back")
+	var/obj/item/multitool/M = tool(/obj/item/multitool)
+	ap_click(H, I, M)
+	am_answer(H, "ID Tag")
+	am_answer(H, "ap_new_inj")
+	TEST_ASSERT_EQUAL(I.id, "ap_new_inj", "the multitool sets its tag")
+	ap_click(H, I, M)
+	am_answer(H, "Frequency")
+	am_answer(H, 1441)
+	TEST_ASSERT_EQUAL(I.frequency, 1441, "and its frequency")
+	ap_click(H, I, tool(/obj/item/tool/wrench))
+	TEST_ASSERT(QDELETED(I), "the wrench takes it off")
+	sweep_pipe_items()
+
+/// A running injector puts its pipe's gas into the room.
+/datum/unit_test/dq_atmos_m/pipes/injector_injects
+/datum/unit_test/dq_atmos_m/pipes/injector_injects/run_gate()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run")
+	var/turf/simulated/floor/T = run[1]
+	var/turf/simulated/floor/pipe_turf = run[2]
+	var/direction = get_dir(T, pipe_turf)
+	dq_atmos_test_isolate_pair(T, pipe_turf)
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_snapshot_air(pipe_turf)
+	am_set_air(T)
+	am_set_air(pipe_turf)
+	var/obj/machinery/atmospherics/unary/outlet_injector/I = allocate(/obj/machinery/atmospherics/unary/outlet_injector, T)
+	I.set_dir(direction)
+	I.init_dir()
+	var/obj/machinery/atmospherics/pipe/cap/visible/P = allocate(/obj/machinery/atmospherics/pipe/cap/visible, pipe_turf)
+	P.set_dir(REVERSE_DIR(direction))
+	P.init_dir()
+	I.atmos_init()
+	P.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(I, P))
+	I.stat_remove(NOPOWER | BROKEN)
+	I.air_contents.adjust_gas(GAS_N2, 200)
+	gas_touched(I.air_contents)
+	var/before = T.return_air().total_moles()
+	I.set_use_power(USE_POWER_IDLE)
+	for(var/i in 1 to 5)
+		ap_injector_tick(I)
+	TEST_ASSERT(T.return_air().total_moles() > before + 1, "the room gains its gas: [before] -> [T.return_air().total_moles()]")
+	qdel(P)
+	qdel(I)
+	am_set_air(T)
+	am_set_air(pipe_turf)
+	dq_atmos_test_restore_walls()
