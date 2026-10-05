@@ -218,7 +218,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_add)
 		return
 	var/obj/machinery/computer/ship/helm/helm = src_object()
 	var/list/answers = A.request.captured.Copy()
-	answers[A.request.step_name] = A.answer.answer_value
+	answers[A.request.step_name] = A.answer.value
 	if(helm.helm_navigation_entry_stage(src, answers, A.request))
 		SStgui.update_uis(helm)
 
