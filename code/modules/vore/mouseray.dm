@@ -30,7 +30,8 @@
 		pick_type(user)
 
 /obj/item/gun/energy/mouseray/proc/pick_type(mob/user)
-	open_request(src, /datum/prompt/choice/mouseray_type, PROC_REF(type_picked), answerer = user, title = name, choices = tf_possible_types?.Copy())
+	var/list/offered_types = tf_possible_types
+	open_request(src, /datum/prompt/choice/mouseray_type, PROC_REF(type_picked), answerer = user, title = name, choices = offered_types?.Copy())
 
 /obj/item/gun/energy/mouseray/proc/type_picked(datum/act/request/context)
 	if(!context.answer)
