@@ -39,7 +39,6 @@ CAPABILITIES(/obj/machinery/rnd)
 	extend("anchor.toggle", wait(2 SECONDS), needs(req_closed(SPACE_PANEL)))
 	on_change(nameof(/atom/movable::anchored), ANY, then(PROC_REF(anchor_moved)))
 	part_replacement()
-	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 	extend(TAG_UI, needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 
 /obj/machinery/rnd/Initialize(mapload)

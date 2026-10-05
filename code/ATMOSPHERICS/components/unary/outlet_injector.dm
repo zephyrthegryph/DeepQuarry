@@ -153,7 +153,9 @@ MSG_DEF_SELF(outlet_injector/rate_reset, "You set the injector back to its defau
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
 	op("toggle", hand(), label("Toggle"), wait(0), says(MSG(outlet_injector/toggled)), then(PROC_REF(toggled)))
-	op("reset_rate", hand(), gesture(GESTURE_CTRL), label("Reset the rate"), wait(0), when(PROC_REF(rate_resettable)), says(MSG(outlet_injector/rate_reset)),
+	// Above the unary base's ctrl-click power_toggle, which an injector never offers (ctrl_power_offered()): the
+	// static clash check cannot see that, and reported the two at boot.
+	op("reset_rate", hand(), gesture(GESTURE_CTRL), label("Reset the rate"), wait(0), when(PROC_REF(rate_resettable)), priority(above("power_toggle")), says(MSG(outlet_injector/rate_reset)),
 		then(PROC_REF(rate_reset)))
 	multitool_settings(list(
 		list("ID Tag", "id", "text", MAX_NAME_LEN),

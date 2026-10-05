@@ -43,6 +43,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 		build_time = PROC_REF(design_build_time), department = DEPARTMENT_RESEARCH, eject = TRUE, eject_power = TRUE)
 	examine_line(PROC_REF(build_time_text))
 	interface("Fabricator")
+	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 	ui_shape(busy = bool(), materials = list_of(row()), materialChoices = list_of(row()), onHold = bool(), materialMaximum = num(), queue = list_of(row()))
 
 /obj/machinery/rnd/production/Initialize(mapload)

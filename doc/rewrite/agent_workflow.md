@@ -69,3 +69,9 @@ two branches that each add an `#include` at the same spot both keep theirs inste
 Union cannot tell an edit from an addition, so after a merge that touched either file, build: an
 include of a file the other side deleted fails the compile ("cannot find"), and a duplicate `#include`
 is harmless. Keep the lists sorted.
+
+## 4. Boot must be clean
+
+Every unit-test run fails when the world logged a runtime or a `WARNING()` (or a refused `move_into()`)
+before its first test, and the build prints `BOOT GATE:` with the first lines. It is the boot's fault, so
+fix it where it is logged (`doc/rewrite/boot_gate.md`). `bash tools/dq_focused_test.sh --boot` checks boot alone.

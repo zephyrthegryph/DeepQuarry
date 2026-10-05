@@ -77,7 +77,16 @@ bash tools/dq_focused_test.sh --repeat=5 belly_damage                  # N runs,
 bash tools/dq_focused_test.sh --list 'dq_e0_proof/*'                    # print what the names/globs expand to (about 1 s, runs nothing)
 bash tools/dq_focused_test.sh --dm-version=516.1682 belly_damage        # any other --flag is forwarded to dm-test
 DQ_WIP_TREE=1 bash tools/dq_focused_test.sh /datum/unit_test/<name>   # tree with someone else's unfinished includes
+bash tools/dq_focused_test.sh --boot                                   # boot only (the boot gate below)
 ```
+
+**The boot gate.** Every run, focused or full, fails when the world logged a runtime or a `WARNING()` (or a refused
+`move_into()`) before its first test: `tests.log` says `Boot gate`, the build prints `BOOT GATE:` with the first
+warnings, and `data/logs/runN/boot_report.json` holds the counts. It is the boot's fault, not your test's, unless
+your change runs at boot. `doc/rewrite/boot_gate.md`.
+
+A long list of names (a broad glob) reaches `dm-test` as `--focus=@file`, since a Windows command line stops at
+8191 characters.
 
 A glob (a name with `*`, `?` or `[`) is matched against the `/datum/unit_test/...`
 type definitions under `code/` and fails if nothing matches. `--repeat=N` reruns the

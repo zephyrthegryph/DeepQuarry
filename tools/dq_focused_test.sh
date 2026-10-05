@@ -8,6 +8,10 @@
 #   bash tools/dq_focused_test.sh --full-map /datum/unit_test/...          # boot Southern Cross instead of the test map
 #   bash tools/dq_focused_test.sh --some-flag=x name                       # any other --flag goes to dm-test
 #   bash tools/dq_focused_test.sh --profile-tests name                     # per-test proc profile (data/logs/runN/profile/)
+#   bash tools/dq_focused_test.sh --boot                                   # boot only: fails on any boot runtime or warning
+#
+# Every run fails when the world logged a runtime or a warning before its first test (the boot gate,
+# doc/rewrite/boot_gate.md); the build prints "BOOT GATE" with the first warnings when it trips.
 #
 # A named test runs whatever its tier: an exhaustive sweep (tier =
 # TEST_TIER_EXHAUSTIVE, normally only in CI via dm-test --tier=all) runs here
@@ -59,6 +63,7 @@ for arg in "$@"; do
 			[[ "$repeat" =~ ^[1-9][0-9]*$ ]] || { echo "--repeat needs a positive integer, got '$repeat'" >&2; exit 2; }
 			;;
 		--list) list_only=1 ;;
+		--boot) tests+=("dq_boot_gate") ;;
 		-h|--help) usage ;;
 		--*) args+=("$arg") ;;
 		-*) echo "unknown argument: $arg" >&2; usage ;;
@@ -98,7 +103,19 @@ fi
 # Short names (no leading slash): Git Bash would rewrite "/datum/..." into a
 # Windows path on its way to cmd.exe. dm-test adds the /datum/unit_test/ prefix back.
 focus="$(IFS=,; echo "${tests[*]}")"
-echo "Focused on (${#tests[@]}): $focus"
+if [ ${#tests[@]} -gt 20 ]; then
+	echo "Focused on (${#tests[@]}): ${tests[*]:0:20} ..."
+else
+	echo "Focused on (${#tests[@]}): $focus"
+fi
+# A long list goes through a file (--focus=@file): a Windows command line stops at 8191 characters.
+if [ ${#focus} -gt 1500 ]; then
+	mkdir -p data/focus-lists
+	focus_file="data/focus-lists/focus.$$.txt"
+	printf '%s\n' "${tests[@]}" >"$focus_file"
+	trap 'rm -f "$focus_file"' EXIT
+	focus="@$focus_file"
+fi
 
 run_once() {
 	case "$(uname -s)" in
