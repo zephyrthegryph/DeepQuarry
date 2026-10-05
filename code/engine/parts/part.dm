@@ -442,9 +442,9 @@
 /datum/entry/part/effect/then
 	part_name = "then"
 
-/// toggles(KEY): flips a tracked boolean var (nameof(v)) or a capability state key on the holder.
-/proc/toggles(key)
-	return part_make(/datum/entry/part/effect/toggles, list("key" = key))
+/// toggles(KEY, when =): flips a tracked boolean var (nameof(v)) or a capability state key on the holder; with `when`, the op exists only while it holds.
+/proc/toggles(key, when = null)
+	return part_make(/datum/entry/part/effect/toggles, list("key" = key, "when" = when))
 
 /datum/entry/part/effect/toggles
 	part_name = "toggles"

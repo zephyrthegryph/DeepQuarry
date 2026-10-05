@@ -15,16 +15,56 @@
 	opacity = 0
 	var/datum/entopic/entopic
 
-/obj/machinery/vending/nifsoft_shop/Initialize(mapload)
-	. = ..()
-
-	rel_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
-
 MSG_DEF(nifsoft_shop/shorted, "You short out %T%'s access lock & stock restrictions.", "%U% shorts out %T%'s access lock.")
+MSG_DEF_SELF(nifsoft_shop/no_nif, "It seems unable to connect to your NIF...")
+MSG_DEF_SELF(nifsoft_shop/unauthorized, "You aren't authorized to buy that software.")
 
 CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 	configure(emag(parts = then(PROC_REF(on_emag)), say = MSG(nifsoft_shop/shorted)))
-	owns_one(nameof(entopic), /datum/entopic)
+	owns_one(nameof(entopic), /datum/entopic, starts = PROC_REF(make_entopic))
+	// Software goes straight into the buyer's NIF: a buyer needs a working one that can take it, and the software's own access.
+	extend("vend", needs(
+		req(PROC_REF(nif_ready), because = MSG(nifsoft_shop/no_nif)),
+		req(PROC_REF(nif_can_take), because = PROC_REF(nif_take_reason)),
+		req(PROC_REF(nif_soft_access), because = MSG(nifsoft_shop/unauthorized))))
+
+/// The projection the shop shows itself as (owned: made with the shop, deleted with it).
+/obj/machinery/vending/nifsoft_shop/proc/make_entopic(datum/act/A)
+	return new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon")
+
+/// The software the purchase names.
+/obj/machinery/vending/nifsoft_shop/proc/soft_of(datum/act/op/A)
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
+	return R?.item_path
+
+/// needs: the buyer has a working NIF.
+/obj/machinery/vending/nifsoft_shop/proc/nif_ready(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	return istype(H) && H.nif?.stat == NIF_WORKING // ALLOW(reads): a NIF's state is asked when the software is chosen, never cached
+
+/// needs: the buyer's NIF can take the software.
+/obj/machinery/vending/nifsoft_shop/proc/nif_can_take(datum/act/op/A)
+	return isnull(nif_take_reason(A))
+
+/// Why the buyer's NIF cannot take the software, or null.
+/obj/machinery/vending/nifsoft_shop/proc/nif_take_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	if(!istype(H) || !H.nif)
+		return null
+	return H.nif.install_refusal(soft_of(A))
+
+/// needs: software with an access of its own goes only to someone with it (unless the shop is emagged or does not scan).
+/obj/machinery/vending/nifsoft_shop/proc/nif_soft_access(datum/act/op/A)
+	var/datum/nifsoft/path = soft_of(A)
+	if(!path || !initial(path.access) || !scan_id || emag_emagged(src))
+		return TRUE
+	return has_access(list(initial(path.access)), list(), A.actor.GetAccess())
+
+/// A purchase the shop turned away flashes on its projection as well.
+/obj/machinery/vending/nifsoft_shop/vend_turned_away(datum/act/notice/A)
+	..()
+	if(A.refusal in list(/datum/msg/nif/already_installed, /datum/msg/nif/not_for_chassis, /datum/msg/nif/not_for_organics, /datum/msg/nifsoft_shop/unauthorized))
+		flick("[icon_state]-deny", entopic.my_image)
 
 /obj/machinery/vending/nifsoft_shop/ui_data(datum/act/eval/A)
 	. = ..()
@@ -38,9 +78,10 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 		entopic.hide()
 	else
 		if(!has_stat(NOPOWER))
+			cancel_after(src, "power_loss") // power came back before the projection went out
 			entopic.show()
 		else
-			after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
+			after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power), key = "power_loss")
 
 /obj/machinery/vending/nifsoft_shop/malfunction()
 	atom_break()
@@ -89,59 +130,17 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 
 			rel_add(src, nameof(product_records), product)
 
-/obj/machinery/vending/nifsoft_shop/can_buy(datum/stored_item/vending_product/R, mob/user)
-	. = ..()
-	if(.)
-		var/datum/nifsoft/path = R.item_path
-		if(!ishuman(user))
-			return FALSE
-
-		var/mob/living/carbon/human/H = user
-		if(!H.nif || H.nif.stat != NIF_WORKING)
-			to_chat(H, span_warning("[src] seems unable to connect to your NIF..."))
-			return FALSE
-
-		if(!H.nif.can_install(path))
-			flick("[icon_state]-deny", entopic.my_image)
-			return FALSE
-
-		if(initial(path.access))
-			var/list/soft_access = list(initial(path.access))
-			var/list/usr_access = user.GetAccess()
-			if(scan_id && !has_access(soft_access, list(), usr_access) && !is_emagged(src))
-				to_chat(user, span_warning("You aren't authorized to buy [initial(path.name)]."))
-				flick("[icon_state]-deny", entopic.my_image)
-				return FALSE
-
-// Also special treatment!
-/obj/machinery/vending/nifsoft_shop/vend(datum/stored_item/vending_product/R, mob/user)
-	var/mob/living/carbon/human/H = user
-	if(!can_buy(R, user))	//For SECURE VENDING MACHINES YEAH
-		to_chat(user, span_warning("Purchase not allowed."))	//Unless emagged of course
-		flick("[icon_state]-deny",entopic.my_image)
-		return
-	set_vend_ready(FALSE) //One thing at a time!!
-
+// Also special treatment! The software is written straight into the buyer's NIF once the vend delay is over.
+/obj/machinery/vending/nifsoft_shop/start_vend(datum/stored_item/vending_product/R, mob/user)
+	set_vend_ready(FALSE) // One thing at a time!!
+	rel_set(src, nameof(currently_vending), R)
 	if(R.category & CAT_COIN)
-		if(!coin)
-			to_chat(user, span_notice("You need to insert a coin to get this item."))
-			return
-		if(coin.string_attached)
-			if(prob(50))
-				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
-			else
-				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				own_clear(src, nameof(coin), OWN_DELETE)
-		else
-			own_clear(src, nameof(coin), OWN_DELETE)
-
+		swallow_coin(user)
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
 		speak(vend_reply)
 		COOLDOWN_START(src, reply_cooldown, vend_delay + 20 SECONDS)
-
 	use_power(vend_power_usage)	//actuators and stuff
-	after(src, vend_delay, PROC_REF(finish_nifsoft_vend), with = list(R, H, user))
-	return 1
+	after(src, vend_delay, PROC_REF(finish_nifsoft_vend), key = "vend", with = list(R, user, user))
 
 //Can't throw intangible software at people.
 /obj/machinery/vending/nifsoft_shop/throw_item()

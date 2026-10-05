@@ -1090,6 +1090,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return
 	var/datum/notice/op_done/N = notice_take(/datum/notice/op_done)
 	N.op_key = A.key
+	N.refusal = A.reason // a listener of refusals (on_op(..., outcome = ACT_REFUSED)) reads why
 	notice_publish(holder, N, outcome)
 
 /// delayed(t, parts...): schedules more parts on the holder's clock with only the holder and the snapshot names.

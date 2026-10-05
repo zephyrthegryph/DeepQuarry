@@ -242,14 +242,14 @@
 /datum/stat_decl/obj/machinery/suit_cycler/__safeties/spec()
 	return list(/obj/machinery/suit_cycler, /obj/machinery/suit_cycler/proc/__stat_safeties)
 
-/// STAT(/obj/machinery/vending, scan_id, TOP) at code/modules/economy/vending.dm:114
+/// STAT(/obj/machinery/vending, scan_id, TOP) at code/modules/economy/vending.dm:120
 /obj/machinery/vending/var/scan_id = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/vending/proc/__stat_scan_id()
 	return list("scan_id", "TOP", list(id = STAT_SCAN_ID, base = TRUE))
 /datum/stat_decl/obj/machinery/vending/__scan_id/spec()
 	return list(/obj/machinery/vending, /obj/machinery/vending/proc/__stat_scan_id)
 
-/// STAT(/obj/machinery/vending, shoot_inventory, ANY) at code/modules/economy/vending.dm:116
+/// STAT(/obj/machinery/vending, shoot_inventory, ANY) at code/modules/economy/vending.dm:122
 /obj/machinery/vending/var/shoot_inventory = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/vending/proc/__stat_shoot_inventory()
 	return list("shoot_inventory", "ANY", list(id = STAT_SHOOT_INVENTORY))

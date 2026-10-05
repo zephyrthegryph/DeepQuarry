@@ -888,3 +888,16 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
   with the library's question text.
 * **The vent's flow stays volume-limited** (its pipe volume times fifty litres a second, as since the flow law moved to Rust): `power_rating` is what
   it draws, not its limit. A power-limited flow would change every station's ventilation rate; this is recorded rather than changed.
+## Vending machines (rewrite/machines-full)
+
+- **One vend op.** Buying is `op("vend")` with its refusals as requirements (stock, power, the product's access, a NIF's readiness for the
+  NIFSoft shop), the PIN as `asks()` and the price as `costs(RES_CREDITS, vend_price)`: the credits are reserved after the last answer and
+  taken after the effects, so a vend refused or cancelled half way never charges. A refused vend says why (the notice's `refusal`).
+- **Coins.** The coin button is `req_on_authority(AUTH_PHYSICAL)`: anyone standing at the vendor, a cyborg included, takes the coin out;
+  a silicon over its link does not (before, a cyborg at the vendor was refused).
+- **Logs** need the logs to exist and the log access (`check_logs` is gated, no longer a no-op button).
+- **Rotation** is the library `rotatable()` capability (`rotatable.clockwise` / `rotatable.counterclockwise`), replacing the vendor's own verbs.
+- **Slogans and timed work** run on `every(..., when = STAT_OPERABLE + wanted)`: an unpowered or broken vendor no longer polls; slogans start
+  after init and the slogan delay is a time define (10 minutes, unchanged).
+- The cigarette machine's Mauser lives in its product table instead of an `Initialize()` override.
+- Library: `credits_resource.dm` (the RES_CREDITS adapter: the payer is the actor's credits source), `rotatable()`, `toggles(key, when =)`.
