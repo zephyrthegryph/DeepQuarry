@@ -3368,11 +3368,11 @@
 	into += entry_line(281)
 	into += list(global.owns_one(nameof(material_graph), /datum/material_power_graph))
 
-/// CAPABILITIES(/datum/media_manager) at code/modules/media/mediamanager.dm:146
+/// CAPABILITIES(/datum/media_manager) at code/modules/media/mediamanager.dm:148
 /datum/media_manager/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/media/mediamanager.dm", 146, /datum/media_manager)
-	into += entry_line(147)
+	into += entry_block("code/modules/media/mediamanager.dm", 148, /datum/media_manager)
+	into += entry_line(149)
 	into += list(global.owns_one(nameof(media_window), /datum/tgui_window))
 
 /// CAPABILITIES(/datum/mind) at code/datums/mind.dm:70
