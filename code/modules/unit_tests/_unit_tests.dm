@@ -521,6 +521,7 @@
 #include "dq_fwg3_windows.dm"
 #include "dq_atmos_machines_behaviour.dm"
 #include "dq_atmos_gas_api_tests.dm"
+#include "dq_atmos_pipes_behaviour.dm"
 #include "dq_fwg3_modals.dm"
 #include "dq_fwg3_asks.dm"
 #include "dq_eg2_wait_tests.dm"

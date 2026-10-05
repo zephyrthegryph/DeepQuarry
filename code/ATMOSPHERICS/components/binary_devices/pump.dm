@@ -53,9 +53,6 @@ Thus, the two variables affect pump operation are set in New():
 	if(frequency)
 		set_frequency(frequency)
 
-/obj/machinery/atmospherics/binary/pump/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
-
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::Pump). rust_bind_pipe_port fires once per port,
 // after that port's region exists in Rust, so re-publishing once the
@@ -134,11 +131,6 @@ Thus, the two variables affect pump operation are set in New():
 
 	return 1
 
-/obj/machinery/atmospherics/binary/pump/ui_prepare(mob/user, datum/tgui/ui)
-	if(!operable())
-		return FALSE
-	return TRUE
-
 /// The window's data.
 /obj/machinery/atmospherics/binary/pump/ui_data(datum/act/eval/A)
 	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
@@ -182,41 +174,11 @@ Thus, the two variables affect pump operation are set in New():
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/pump/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/pump_open_ui,
-		/datum/interaction/machine_alt/pump_max_output,
-	)
-	..()
-
-/// Old attack_hand: `if(..()) return; add_fingerprint(user); if(!allowed(user)) ...; tgui_interact(user)`.
-/datum/interaction/machine_hand/pump_open_ui
-	id = "pump_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/pump/proc/lets_in, "access denied"))
-	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl
-
-/obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
-
-/// Old click_alt: sets the pump to max output.
-/datum/interaction/machine_alt/pump_max_output
-	id = "pump_max_output"
-	name = "Set to max output"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/pump/proc/lets_in, "access denied"))
-	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_max_output
-
-/obj/machinery/atmospherics/binary/pump/proc/interaction_max_output(mob/user, obj/item/held, datum/interaction/interaction)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	to_chat(user, span_notice("You set the [name] to max output"))
-	set_target_pressure(max_pressure_setting)
-	add_fingerprint(user)
-	return TRUE
-
 CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
-	interface("GasPump")
+	pipe_device_window("GasPump")
+	pipe_device_switch()
+	pipe_device_max(PROC_REF(max_output_set))
+	pipe_device_unwrench()
 	op("power", ui_act("power"), then(PROC_REF(power_switched)))
 	// "set" asks for the value; "min" and "max" set it at once
 	op("set_press", ui_act("set_press", arg("press", schema_text(4096))),
@@ -224,9 +186,17 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
 		then(PROC_REF(ui_act_set_press)))
 
 /obj/machinery/atmospherics/binary/pump/proc/power_switched(datum/act/op/A)
-	set_use_power(!use_power)
+	toggle_power()
+	return OP_OK
+
+/// The switch also sets the pump's Rust-owned on flag.
+/obj/machinery/atmospherics/binary/pump/toggle_power()
+	..()
 	set_on(!!use_power)
-	add_fingerprint(A.actor)
+
+/// The alt-click's highest output.
+/obj/machinery/atmospherics/binary/pump/proc/max_output_set(datum/act/op/A)
+	set_target_pressure(max_pressure_setting)
 	return OP_OK
 
 /obj/machinery/atmospherics/binary/pump/proc/press_is_set(datum/act/op/A)
@@ -247,9 +217,8 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
 		if("set")
 			var/new_pressure = A.step_value("k231")
 			set_target_pressure(between(0, new_pressure, max_pressure_setting))
-	. = TRUE
-	add_fingerprint(A.actor)
 	update_icon()
+	return OP_OK
 
 /obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
 	update_icon()
@@ -303,41 +272,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 	use_power = USE_POWER_IDLE
 	init_on = TRUE
 
-/obj/machinery/atmospherics/binary/pump/wrench_act(mob/user, obj/item/W)
-	if (!has_stat(NOPOWER) && use_power)
-		to_chat(user, span_warning("You cannot unwrench this [src], turn it off first."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench this [src], it too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/binary/pump/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear ratchet."))
-	atom_deconstruct()
-
-// click_alt is now /datum/interaction/machine_alt/pump_max_output (above),
-// from the interaction-framework conversion landed on master.
-/obj/machinery/atmospherics/binary/pump/click_ctrl(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return CLICK_ACTION_BLOCKING
-
-	set_use_power(!use_power)
-	set_on(!!use_power)
-	// The device state is not an appearance-watched field; the icon is refreshed procedurally
-	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
-	update_icon()
-	add_fingerprint(user)
-	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
-
-	return CLICK_ACTION_SUCCESS
-
 /obj/machinery/atmospherics/binary/pump/high_power
 	icon = 'icons/atmos/volume_pump.dmi'
 	icon_state = "map_off"
@@ -362,55 +296,3 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "{appear
 /obj/machinery/atmospherics/binary/pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev))
-
-/datum/tgui/proc/atmos_scalar_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/number/atmos_scalar/ask = context.answer
-	switch(ask.setting_kind)
-		if("gate_pressure")
-			var/obj/machinery/atmospherics/binary/passive_gate/machine = src_object()
-			machine.apply_gate_pressure_answer(user, ask.answer_value)
-		if("gate_flow")
-			var/obj/machinery/atmospherics/binary/passive_gate/machine = src_object()
-			machine.apply_gate_flow_answer(user, ask.answer_value)
-	SStgui.update_uis(src_object())
-
-/datum/prompt/number/atmos_scalar
-	timeout = 0
-	recheck_on_open = TRUE
-	var/setting_kind
-	var/action_key = "set_press"
-	var/machine_type
-	var/display_max
-
-/datum/prompt/number/atmos_scalar/normalize(given)
-	return isnum(given) ? given : null
-
-/datum/prompt/number/atmos_scalar/present(mob/user)
-	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, display_max, 0, timeout, TRUE, GLOB.tgui_always_state)
-	rel_set(box, nameof(box.prompt), src)
-	box.tgui_interact(user)
-	return box
-
-/datum/prompt/number/atmos_scalar/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/obj/machinery/machine = original_ui.src_object()
-	if(!istype(machine, machine_type) || QDELETED(machine))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!machine.ui_act_allowed(original_ui.user, action_key, original_ui, original_ui.state()))
-		return "the atmos setting is unavailable"
-	return null
-
-/datum/prompt/number/atmos_scalar/gate_pressure
-	setting_kind = "gate_pressure"
-	machine_type = /obj/machinery/atmospherics/binary/passive_gate
-
-/datum/prompt/number/atmos_scalar/gate_flow
-	setting_kind = "gate_flow"
-	action_key = "set_flow_rate"
-	machine_type = /obj/machinery/atmospherics/binary/passive_gate

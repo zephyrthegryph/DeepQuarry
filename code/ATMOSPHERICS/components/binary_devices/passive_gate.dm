@@ -156,42 +156,32 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/passive_gate, "{appearanc
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/passive_gate/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/passive_gate_open_ui,
-	)
-	..()
+// ---- the controls ----
 
-/// The old attack_hand's access check.
-/datum/interaction/machine_hand/passive_gate_open_ui
-	id = "passive_gate_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/passive_gate/proc/lets_in, "access denied"))
-	effect = /obj/machinery/atmospherics/binary/passive_gate/proc/interaction_open_ui_impl
+CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
+	pipe_device_window("PressureRegulator")
+	pipe_device_unwrench()
+	op("toggle_valve", ui_act("toggle_valve"), then(PROC_REF(valve_switched)))
+	op("regulate_mode", ui_act("regulate_mode", arg("mode", schema_text(16))), then(PROC_REF(ui_set_regulate_mode)))
+	// "set" asks for the value; "min" and "max" set it at once
+	op("set_press", ui_act("set_press", arg("press", schema_text(16))),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_press_question)), "title" = "Pressure Control", "default" = nameof(target_pressure), "max_value" = nameof(max_pressure_setting), "timeout" = 0), step = "gate_press", when = PROC_REF(press_is_set)),
+		then(PROC_REF(ui_set_press)))
+	op("set_flow_rate", ui_act("set_flow_rate", arg("press", schema_text(16))),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_flow_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = computed(PROC_REF(flow_limit)), "timeout" = 0), step = "gate_flow", when = PROC_REF(press_is_set)),
+		then(PROC_REF(ui_set_flow_rate)))
 
-/obj/machinery/atmospherics/binary/passive_gate/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
+/// A regulator runs while its valve is open: the wrench waits for it to be shut.
+/obj/machinery/atmospherics/binary/passive_gate/pipe_device_idle(datum/act/A)
+	return !unlocked
 
-/obj/machinery/atmospherics/binary/passive_gate/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
+/// It needs no power: its window opens unless it is broken.
+/obj/machinery/atmospherics/binary/passive_gate/device_works(datum/act/A)
+	return !has_stat(BROKEN)
 
-DECLARE_UI(/obj/machinery/atmospherics/binary/passive_gate, "PressureRegulator")
-
-/obj/machinery/atmospherics/binary/passive_gate/ui_prepare(mob/user, datum/tgui/ui)
-	if(has_stat(BROKEN))
-		return FALSE
-	return TRUE
-
-UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/passive_gate, "merge:ui_data_obj_machinery_atmospherics_binary_passive_gate{}")
-
-/// The computed part of /obj/machinery/atmospherics/binary/passive_gate's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/binary/passive_gate/proc/ui_data_obj_machinery_atmospherics_binary_passive_gate(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	// this is the data which will be sent to the ui
-	var/list/data = list()
-
-	data = list(
+/// The window's data.
+/obj/machinery/atmospherics/binary/passive_gate/ui_data(datum/act/eval/A)
+	return list(
 		"on" = unlocked,
 		"pressure_set" = round(target_pressure*100),	//Nano UI can't handle rounded non-integers, apparently.
 		"max_pressure" = max_pressure_setting,
@@ -202,75 +192,56 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/passive_gate, "merge:ui_data_
 		"last_flow_rate" = round(last_flow_rate*10),
 	)
 
-	return data
-
-CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
-	op("toggle_valve", ui_act("toggle_valve"), then(PROC_REF(valve_switched)))
-
 /obj/machinery/atmospherics/binary/passive_gate/proc/valve_switched(datum/act/op/A)
 	set_unlocked(!unlocked)
 	update_icon()
-	add_fingerprint(A.actor)
 	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "regulate_mode", ui_act_regulate_mode, UI_ARG_TEXT("mode"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_regulate_mode)
-	. = TRUE
-	switch(params["mode"])
-		if("off") set_regulate_mode(REGULATE_NONE)
-		if("input") set_regulate_mode(REGULATE_INPUT)
-		if("output") set_regulate_mode(REGULATE_OUTPUT)
+/obj/machinery/atmospherics/binary/passive_gate/proc/ui_set_regulate_mode(datum/act/op/A, mode)
+	switch(mode)
+		if("off")
+			set_regulate_mode(REGULATE_NONE)
+		if("input")
+			set_regulate_mode(REGULATE_INPUT)
+		if("output")
+			set_regulate_mode(REGULATE_OUTPUT)
 	update_icon()
-	add_fingerprint(ui.user)
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_press)
-	. = TRUE
-	switch(params["press"])
+/obj/machinery/atmospherics/binary/passive_gate/proc/press_is_set(datum/act/op/A)
+	return A.args["press"] == "set"
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/set_press_question(datum/act/op/A)
+	return "Enter new output pressure (0-[max_pressure_setting]kPa)"
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/set_flow_question(datum/act/op/A)
+	return "Enter new flow rate limit (0-[flow_limit(A)]L/s)"
+
+/// The most the flow limit can be: the input side's volume.
+/obj/machinery/atmospherics/binary/passive_gate/proc/flow_limit(datum/act/A)
+	return air1.return_volume()
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/ui_set_press(datum/act/op/A, press)
+	switch(press)
 		if("min")
 			set_target_pressure(0)
 		if("max")
 			set_target_pressure(max_pressure_setting)
 		if("set")
-			if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-				return
-			open_request(ui, /datum/prompt/number/atmos_scalar/gate_pressure, TYPE_PROC_REF(/datum/tgui, atmos_scalar_answered), answerer = ui.user, question = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure Control", default = src.target_pressure, display_max = max_pressure_setting)
-			return
+			set_target_pressure(between(0, A.step_value("gate_press"), max_pressure_setting))
 	update_icon()
-	add_fingerprint(ui.user)
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "set_flow_rate", ui_act_set_flow_rate, UI_ARG_TEXT("press"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_flow_rate)
-	. = TRUE
-	switch(params["press"])
+/obj/machinery/atmospherics/binary/passive_gate/proc/ui_set_flow_rate(datum/act/op/A, press)
+	switch(press)
 		if("min")
 			set_set_flow_rate(0)
 		if("max")
 			set_set_flow_rate(air1.return_volume())
 		if("set")
-			if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-				return
-			open_request(ui, /datum/prompt/number/atmos_scalar/gate_flow, TYPE_PROC_REF(/datum/tgui, atmos_scalar_answered), answerer = ui.user, question = "Enter new flow rate limit (0-[air1.return_volume()]L/s)", title = "Flow Rate Control", default = src.set_flow_rate, display_max = air1.return_volume())
-			return
+			set_set_flow_rate(between(0, A.step_value("gate_flow"), air1.return_volume()))
 	update_icon()
-	add_fingerprint(ui.user)
-
-/obj/machinery/atmospherics/binary/passive_gate/wrench_act(mob/user, obj/item/W)
-	if (unlocked)
-		to_chat(user, span_warning("You cannot unwrench \the [src], turn it off first."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/binary/passive_gate/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear ratchet."))
-	atom_deconstruct()
+	return OP_OK
 
 #undef REGULATE_NONE
 #undef REGULATE_INPUT
@@ -281,22 +252,12 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_flow_rat
 	icon_state = "on"
 
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, unlocked, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, target_pressure, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, set_flow_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, unlocked)
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, target_pressure)
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, set_flow_rate)
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/passive_gate/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(unlocked), nameof(target_pressure), nameof(set_flow_rate), nameof(regulate_mode))
-
-/obj/machinery/atmospherics/binary/passive_gate/proc/apply_gate_pressure_answer(mob/user, value)
-	set_target_pressure(between(0, value, max_pressure_setting))
-	update_icon()
-	add_fingerprint(user)
-
-/obj/machinery/atmospherics/binary/passive_gate/proc/apply_gate_flow_answer(mob/user, value)
-	set_set_flow_rate(between(0, value, air1.return_volume()))
-	update_icon()
-	add_fingerprint(user)

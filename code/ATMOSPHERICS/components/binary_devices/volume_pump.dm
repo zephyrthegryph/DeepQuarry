@@ -173,11 +173,6 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_o
 
 	return TRUE
 
-/obj/machinery/atmospherics/binary/volume_pump/ui_prepare(mob/user, datum/tgui/ui)
-	if(!operable())
-		return FALSE
-	return TRUE
-
 /// The window's data.
 /obj/machinery/atmospherics/binary/volume_pump/ui_data(datum/act/eval/A)
 	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
@@ -217,29 +212,15 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_o
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/volume_pump/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/volume_pump_open_ui,
-		/datum/interaction/machine_alt/volume_pump_max_output,
-	)
-	..()
-
-/// Old attack_hand: fingerprint, access check, then the UI.
-/datum/interaction/machine_hand/volume_pump_open_ui
-	id = "volume_pump_open_ui"
-	name = "Use"
-	effect = /obj/machinery/atmospherics/binary/volume_pump/proc/interaction_volume_pump_open_ui
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/interaction_volume_pump_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return TRUE
-	tgui_interact(user)
-	return TRUE
+MSG_DEF_SELF(volume_pump/overclocked, "The pump makes a grinding noise and air starts to hiss out as you disable its pressure limits.")
+MSG_DEF_SELF(volume_pump/limited, "The pump quiets down as you turn its limiters back on.")
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
-	interface("GasPump")
+	pipe_device_window("GasPump")
+	pipe_device_switch()
+	pipe_device_max(PROC_REF(max_output_set))
+	pipe_device_unwrench()
+	op("overclock", tool(TOOL_MULTITOOL), label("Toggle pressure limiter"), wait(0), says(PROC_REF(overclock_message)), then(PROC_REF(overclock_toggled)))
 	op("power", ui_act("power"), then(PROC_REF(power_switched)))
 	// "set" asks for the value; "min" and "max" set it at once
 	op("set_press", ui_act("set_press", arg("press", schema_text(4096))),
@@ -247,9 +228,22 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 		then(PROC_REF(ui_act_set_press)))
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/power_switched(datum/act/op/A)
-	set_use_power(!use_power)
-	add_fingerprint(A.actor)
+	toggle_power()
 	return OP_OK
+
+/// The alt-click's highest rate.
+/obj/machinery/atmospherics/binary/volume_pump/proc/max_output_set(datum/act/op/A)
+	set_transfer_rate(max_transfer_rate)
+	return OP_OK
+
+/// The multitool lifts the pump's pressure limiter, or puts it back.
+/obj/machinery/atmospherics/binary/volume_pump/proc/overclock_toggled(datum/act/op/A)
+	set_overclocked(!overclocked)
+	update_icon()
+	return OP_OK
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/overclock_message(datum/act/A)
+	return overclocked ? /datum/msg/volume_pump/overclocked : /datum/msg/volume_pump/limited
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/press_is_set(datum/act/op/A)
 	return A.args["press"] == "set"
@@ -269,9 +263,8 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 		if("set")
 			var/new_rate = A.step_value("k269")
 			set_transfer_rate(between(0, new_rate, max_transfer_rate))
-	. = TRUE
-	add_fingerprint(A.actor)
 	update_icon()
+	return OP_OK
 
 /obj/machinery/atmospherics/binary/volume_pump/examine(mob/user)
 	. = ..()
@@ -282,70 +275,13 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 	if(overclocked)
 		. += "Its warning light is on[use_power ? " and it's spewing gas!" : "."]"
 
-/obj/machinery/atmospherics/binary/volume_pump/wrench_act(mob/user, obj/item/W)
-	if (!has_stat(NOPOWER) && use_power)
-		to_chat(user, span_warning("You cannot unwrench this [src], turn it off first."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench this [src], it too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear ratchet."))
-	atom_deconstruct()
-
-/obj/machinery/atmospherics/binary/volume_pump/multitool_act(mob/user, obj/item/W)
-	if(!overclocked)
-		set_overclocked(TRUE)
-		to_chat(user, span_notice("The pump makes a grinding noise and air starts to hiss out as you disable its pressure limits."))
-	else
-		set_overclocked(FALSE)
-		to_chat(user, span_notice("The pump quiets down as you turn its limiters back on."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/datum/interaction/machine_alt/volume_pump_max_output
-	id = "volume_pump_max_output"
-	name = "Set to max output"
-	effect = /obj/machinery/atmospherics/binary/volume_pump/proc/interaction_max_output
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/interaction_max_output(mob/user, obj/item/held, datum/interaction/interaction)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return TRUE
-
-	to_chat(user, span_notice("You set the [name] to max output"))
-	set_transfer_rate(max_transfer_rate)
-	add_fingerprint(user)
-	return TRUE
-
-/obj/machinery/atmospherics/binary/volume_pump/click_ctrl(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return CLICK_ACTION_BLOCKING
-
-	set_use_power(!use_power)
-	// The device state is not an appearance-watched field; the icon is refreshed procedurally
-	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
-	update_icon()
-	add_fingerprint(user)
-	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
-	return CLICK_ACTION_SUCCESS
-
 // (No #undef here: VOLUME_PUMP_MAX_OUTPUT_PRESSURE / VOLUME_PUMP_LEAK_AMOUNT are
 // globals from __defines/atmospherics_linda/atmos_piping.dm now; undef'ing them
 // from a component file would break any later include that uses them.)
 
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/volume_pump, overclocked, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate)
+TRACKED(/obj/machinery/atmospherics/binary/volume_pump, overclocked)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/volume_pump/derived()
