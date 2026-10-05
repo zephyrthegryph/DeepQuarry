@@ -49,17 +49,62 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/explore, ui_act_plot_expedit
 
 UI_ACT(/obj/machinery/computer/shuttle_control/explore, "pick", ui_act_pick)
 UI_ACT_PROC(/obj/machinery/computer/shuttle_control/explore, ui_act_pick)
+	return explore_destination_stage(ui, FALSE)
+
+/obj/machinery/computer/shuttle_control/explore/proc/explore_destination_stage(datum/tgui/ui, answered, selected, datum/request/request)
 	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
 	var/list/possible_d = shuttle.get_possible_destinations()
-	var/D
+	var/destination_key
 	if(possible_d.len)
-		var/_answer_k52 = act_ask(ui.user, action, params, ui, "k52", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = possible_d)
-		if(isnull(_answer_k52))
+		if(!answered)
+			var/list/labels = list()
+			for(var/label in possible_d)
+				labels += label
+			open_request(ui, /datum/prompt/choice/explore_shuttle_destination, TYPE_PROC_REF(/datum/tgui, explore_shuttle_destination_entered), answerer = ui.user, choices = labels, captured = list())
 			return
-		D = _answer_k52
+		destination_key = selected
 	else
 		to_chat(ui.user,span_warning("No valid landing sites in range."))
 	possible_d = shuttle.get_possible_destinations()
-	if(CanInteract(ui.user, GLOB.tgui_default_state) && (D in possible_d))
-		shuttle.set_destination(possible_d[D])
+	// CanUseTopic may emit Access Denied even when there was no selected destination.
+	var/usable = CanInteract(ui.user, GLOB.tgui_default_state)
+	var/refusal = explore_destination_refusal(usable, destination_key, possible_d)
+	if(request)
+		request.captured["late_refusal"] = refusal
+		refusal = request_recheck(request)
+	if(!refusal)
+		shuttle.set_destination(possible_d[destination_key])
 	return TRUE
+
+/datum/tgui/proc/explore_shuttle_destination_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/obj/machinery/computer/shuttle_control/explore/console = src_object()
+	var/allowed = console.ui_act_allowed(user, "pick", src, state())
+	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
+	if(request_recheck(A.request))
+		return
+	if(console.explore_destination_stage(src, TRUE, A.answer.answer_value, A.request))
+		SStgui.update_uis(console)
+
+/proc/explore_destination_refusal(usable, destination_key, list/possible_d)
+	if(!usable || !(destination_key in possible_d))
+		return "the destination cannot be selected"
+	return null
+
+/datum/prompt/choice/explore_shuttle_destination
+	question = "Choose shuttle destination"
+	title = "Shuttle Destination"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/explore_shuttle_destination/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/shuttle_control/explore/console = original_ui.src_object()
+	if(!istype(console) || QDELETED(console))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	return captured?["late_refusal"]
