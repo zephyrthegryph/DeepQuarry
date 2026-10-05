@@ -1110,6 +1110,41 @@ GLOBAL_VAR(dq_test_select_names)
 	returnable_list += typesof(/obj/item/dq_diag_init_refuser)
 	return returnable_list
 
+/// Why the boot was not clean (the boot gate), or null. FinishTestRun() fails the run on it.
+GLOBAL_VAR(boot_unclean)
+
+/**
+ * The boot gate (doc/rewrite/boot_gate.md): the world must boot with no runtime and no logged warning
+ * ("## WARNING", a refused MOVE_INTO) before the first test starts. Whatever the boot logged is the boot's
+ * fault, not the test's, so it is reported on its own: data/logs/<run>/boot_report.json, a loud line in
+ * tests.log, and a failed run ("Boot was not clean") however the tests did. Every focused run checks it,
+ * so whoever adds a boot runtime sees it in their next run.
+ */
+/proc/unit_test_boot_gate()
+	var/runtimes = GLOB.total_runtimes
+	var/noise = GLOB.boot_noise_count
+	var/list/report = list(
+		"runtimes" = runtimes,
+		"warnings" = noise,
+		"first_warnings" = GLOB.boot_noise_first.Copy(),
+		"runtime_log" = "[GLOB.log_directory]/runtime-errors.log",
+	)
+	rustg_file_write(json_encode(report), "[GLOB.log_directory]/boot_report.json")
+	if(!runtimes && !noise)
+		log_test("Boot gate: clean (0 runtimes, 0 warnings before the first test).")
+		return
+	GLOB.boot_unclean = "Boot was not clean: [runtimes] runtime(s) and [noise] warning(s) before the first test (data/logs/<run>/boot_report.json, runtime-errors.log)"
+	log_test("::error title=Boot gate::[GLOB.boot_unclean]")
+	for(var/line in GLOB.boot_noise_first)
+		log_test("  boot warning: [line]")
+
+/// The round-start callback that starts the suite. The suite sleeps between tests (it waits on the kernel), and a
+/// scheduler callback that sleeps is reported as "OM: SLEPT" and stalls its caller; this returns at once and the suite
+/// runs on its own.
+/proc/start_unit_tests()
+	set waitfor = FALSE
+	RunUnitTests()
+
 /proc/RunUnitTests()
 	#ifdef BENCHMARK
 	RunBenchmarks()
@@ -1182,6 +1217,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/total_tests = length(tests_to_run)
 	var/current_test_index = 0
 	log_test("Unit-test suite starting: [total_tests] test types[LAZYLEN(focused_tests) ? " (focused run)" : ""].")
+	unit_test_boot_gate()
 
 	// Ownership framework checks (doc/rewrite/ownership.md): snapshot every frozen shared
 	// definition and start the periodic owner-stamp audit before the first test. A finding is

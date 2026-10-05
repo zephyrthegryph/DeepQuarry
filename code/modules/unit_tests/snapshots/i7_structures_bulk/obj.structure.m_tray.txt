@@ -1,0 +1,4 @@
+/obj/structure/m_tray|human|none => m_tray_hand,m_tray_drag|
+/obj/structure/m_tray|robot|none => m_tray_hand,m_tray_drag|
+/obj/structure/m_tray|ai|none => |
+/obj/structure/m_tray|ghost|none => |

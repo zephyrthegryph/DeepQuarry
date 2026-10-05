@@ -1,0 +1,4 @@
+/obj/structure/mirror|human|none => mirror_open_ui,mirror_item|
+/obj/structure/mirror|robot|none => mirror_open_ui,mirror_item,gen_silicon_mirror_silicon_use|
+/obj/structure/mirror|ai|none => gen_silicon_mirror_silicon_use|
+/obj/structure/mirror|ghost|none => |

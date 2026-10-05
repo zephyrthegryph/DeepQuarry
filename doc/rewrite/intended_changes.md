@@ -1211,6 +1211,18 @@ handle, with the thermal stock's phase plateau) and move it through heat links R
 * **Precision.** The heat crosses to DM as f32: the conservation pins compare to a millionth of the assembly's energy and a buffer to a tenth
   of a millikelvin's worth, not to 0.01 J.
 
+## Gas reaction energy in Rust (rewrite/heat-followups)
+
+Pins: `code/modules/unit_tests/dq_gas_reaction_energy_behaviour.dm` (every reaction once on a test mixture; golden temperatures and moles
+measured on the DM maths, green before and after) and the existing fire tests.
+
+* **A reaction's heat is Rust's.** DM's reaction procs keep their rates and stoichiometry and call `gas_react(air, GAS_REACTION_*, extent,
+  deltas, aux)`; `vg_gas::reaction_energy::react` applies the mole changes and settles the energy (thermal energy before + enthalpy × extent,
+  over the new heat capacity, floored at TCMB, left alone below `MINIMUM_HEAT_CAPACITY`) in one step, booked under `HEAT_SOURCE_REACTION`.
+  The enthalpies (`FIRE_PLASMA_ENERGY_RELEASED`, `N2O_DECOMPOSITION_ENERGY`, ...) and freon formation's temperature curve live in
+  `verdigris/domains/gas/src/reaction_energy.rs` and reach DM as generated defines. Outcomes unchanged (to 0.05 %).
+* **Dry heat sterilization** was an authority write of `T + 0.002 K per mole`; it is now the energy that rise takes, booked as a reaction.
+
 ## Missing forms: the DNA modifier console's window
 
 Pinned by `code/modules/unit_tests/dq_mfo_dna_console.dm` (green on DECLARE_UI/UI_ACT and the tgui modals first).

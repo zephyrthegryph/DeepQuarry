@@ -1,0 +1,4 @@
+/obj/structure/barricade|human|none => barricade_item|
+/obj/structure/barricade|robot|none => barricade_item|
+/obj/structure/barricade|ai|none => |
+/obj/structure/barricade|ghost|none => |

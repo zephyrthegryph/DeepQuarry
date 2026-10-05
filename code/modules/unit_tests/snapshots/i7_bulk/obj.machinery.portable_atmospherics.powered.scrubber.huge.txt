@@ -1,0 +1,5 @@
+/obj/machinery/portable_atmospherics/powered/scrubber/huge|human|none => scrubber_huge_no_hand,machine_open_ui_ungated|scrubber_huge_reject_cell_tank:needs a power cell or a tank
+/obj/machinery/portable_atmospherics/powered/scrubber/huge|robot|none => scrubber_huge_no_hand,machine_open_ui_ungated|gen_robot_interaction_swallow:not possible right now,scrubber_huge_reject_cell_tank:needs a power cell or a tank
+/obj/machinery/portable_atmospherics/powered/scrubber/huge|ai|none => |
+/obj/machinery/portable_atmospherics/powered/scrubber/huge|ghost|none => gen_observer_interaction_as_touch|
+/obj/machinery/portable_atmospherics/powered/scrubber/huge|human|/obj/item/cell => scrubber_huge_no_hand,scrubber_huge_reject_cell_tank,machine_open_ui_ungated|

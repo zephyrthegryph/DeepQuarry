@@ -1,0 +1,7 @@
+/obj/machinery/atmospherics/pipe/tank|human|none => gen_drag_interaction_drag_buckle|tank_swallow_attackby:needs an item,pipe_painter_passthrough:needs a pipe painter,atmospherics_fit_material:needs an item,atmospherics_pipe_painter:needs a pipe painter
+/obj/machinery/atmospherics/pipe/tank|robot|none => gen_drag_interaction_drag_buckle|gen_robot_interaction_swallow:not possible right now,tank_swallow_attackby:needs an item,pipe_painter_passthrough:needs a pipe painter,atmospherics_fit_material:needs an item,atmospherics_pipe_painter:needs a pipe painter
+/obj/machinery/atmospherics/pipe/tank|ai|none => |
+/obj/machinery/atmospherics/pipe/tank|ghost|none => |
+/obj/machinery/atmospherics/pipe/tank|human|/obj/item => tank_swallow_attackby,gen_drag_interaction_drag_buckle|pipe_painter_passthrough:needs a pipe painter,atmospherics_fit_material:needs an item,atmospherics_pipe_painter:needs a pipe painter
+/obj/machinery/atmospherics/pipe/tank|human|/obj/item/pipe_painter => tank_swallow_attackby,atmospherics_pipe_painter,gen_drag_interaction_drag_buckle|pipe_painter_passthrough:not possible right now,atmospherics_fit_material:needs an item
+/obj/machinery/atmospherics/pipe/tank|human|/obj/item/stack/material => tank_swallow_attackby,atmospherics_fit_material,gen_drag_interaction_drag_buckle|pipe_painter_passthrough:needs a pipe painter,atmospherics_pipe_painter:needs a pipe painter

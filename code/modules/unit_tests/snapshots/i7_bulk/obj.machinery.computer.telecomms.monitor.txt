@@ -1,0 +1,4 @@
+/obj/machinery/computer/telecomms/monitor|human|none => |
+/obj/machinery/computer/telecomms/monitor|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/telecomms/monitor|ai|none => |
+/obj/machinery/computer/telecomms/monitor|ghost|none => |

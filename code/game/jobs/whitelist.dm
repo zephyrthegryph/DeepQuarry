@@ -259,6 +259,10 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 		else
 			var/lines = splittext(text, "\n") // Now we've got a bunch of "ckey = something" strings in a list
 			for(var/line in lines)
+				line = trim(line)
+				// Blank lines and `#` comments (the example file documents its format in them) are not entries.
+				if(!length(line) || copytext(line, 1, 2) == "#")
+					continue
 				var/list/left_and_right = splittext(line, " - ") // Split it on the dash into left and right
 				if(LAZYLEN(left_and_right) != 2)
 					WARNING("Job whitelist entry is invalid: [line]") // If we didn't end up with a left and right, the line is bad

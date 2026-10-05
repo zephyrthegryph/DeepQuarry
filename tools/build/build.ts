@@ -1275,6 +1275,33 @@ async function runIsolatedTestWorld(
   }
 }
 
+/**
+ * The boot gate's verdict (unit_test_boot_gate(), doc/rewrite/boot_gate.md): a world that logged a runtime or a
+ * warning before its first test fails the run, and this says so on its own line so the author of a focused run
+ * does not take it for their test's failure. Returns whether the boot was clean (true when no report was written).
+ */
+function reportBootGate(logDir: string): boolean {
+  const file = `${logDir}/boot_report.json`;
+  if (!fs.existsSync(file)) return true;
+  try {
+    const report = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    if (!report.runtimes && !report.warnings) return true;
+    Juke.logger.error(
+      `BOOT GATE: the world logged ${report.runtimes} runtime(s) and ${report.warnings} warning(s) before the first test. `
+        + `This fails every run until fixed; it is not your test (unless your change runs at boot). See ${file}`
+        + (report.runtimes ? ` and ${logDir}/runtime-errors.log` : '')
+        + '.',
+    );
+    for (const line of report.first_warnings || []) console.error(`  boot warning: ${line}`);
+    if (report.runtimes && fs.existsSync(`${logDir}/runtime-errors.log`)) {
+      console.error(fs.readFileSync(`${logDir}/runtime-errors.log`, 'utf-8').split(/\r?\n/).slice(0, 40).join('\n'));
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 function printLogTails(logDir = 'data/logs/ci', lineCount = 80): void {
   for (const logFile of [`${logDir}/tests.log`, `${logDir}/runtime.log`, `${logDir}/world.log`]) {
     if (!fs.existsSync(logFile)) continue;
@@ -1305,8 +1332,10 @@ export const FocusParameter = new Juke.Parameter({ type: 'string[]' });
 
 function focusedTestNames(get: any): string[] | null {
   // Accepts full paths or bare names (dq_foo, which is what tools/dq_focused_test.sh passes).
+  // `--focus=@file` reads the names from a file, one per line (or comma separated): tools/dq_focused_test.sh
+  // passes a long list that way, since a Windows command line stops at 8191 characters.
   const names = (get(FocusParameter) as string[])
-    .flatMap((s) => s.split(','))
+    .flatMap((s) => (s.startsWith('@') ? fs.readFileSync(s.slice(1), 'utf-8').split(/[\r\n,]+/) : s.split(',')))
     .map((s) => s.trim())
     .filter(Boolean)
     .map((s) => (s.startsWith('/datum/unit_test/') ? s : `/datum/unit_test/${s.replace(/^\/+/, '')}`));
@@ -1659,6 +1688,12 @@ function tierIncludes(tier: TestTier, exhaustive: boolean, e0 = false): boolean 
 function testWorldParams(get: any): Record<string, string> {
   const params: Record<string, string> = { 'test-tier': resolveTier(get) };
   if (get(ProfileTestsParameter)) params['test-profile'] = '1';
+  // `tools/dq_focused_test.sh --bless`: snapshot tests write their current rows over the recorded files
+  // (code/modules/unit_tests/dq_snapshot_files.dm) instead of failing.
+  if (process.env.DQ_SNAPSHOT_BLESS === '1') {
+    params['snapshot-bless'] = '1';
+    Juke.logger.warn('DQ_SNAPSHOT_BLESS=1: snapshot tests rewrite their recorded files; review the diff before committing.');
+  }
   return params;
 }
 
@@ -1975,6 +2010,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     if (!run.clean) {
       Juke.logger.error(`Shard ${run.index} (logs in ${run.logDir}) was not clean:`);
       printLogTails(run.logDir, 40);
+      reportBootGate(run.logDir);
     }
   }
   const { results, clean, totalCpuSeconds } = mergeShardResults(runs);
@@ -2068,7 +2104,10 @@ export const DmTestTarget = new Juke.Target({
     if (!focus) Juke.logger.info(`dm-test: single world, tier ${worldParams['test-tier']}.`);
     const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus);
     fs.rmSync(`${SHARD_DIR}/${process.pid}`, { recursive: true, force: true });
-    if (!run.clean) printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
+    if (!run.clean) {
+      printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
+      reportBootGate(run.logDir);
+    }
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
     // Keep deepquarry.test.dmb/.rsc (only drop the derived .dme text) so an
     // unchanged rerun -- a flake recheck, a focused rerun while iterating --

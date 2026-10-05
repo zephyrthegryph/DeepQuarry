@@ -1,0 +1,4 @@
+/obj/structure/flora|human|none => flora_item|
+/obj/structure/flora|robot|none => flora_item|
+/obj/structure/flora|ai|none => |
+/obj/structure/flora|ghost|none => |

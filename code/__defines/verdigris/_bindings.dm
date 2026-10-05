@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "d7750d6d8d6e019f"
+#define VERDIGRIS_ABI "1d1c61d72c9d9c37"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -43,10 +43,38 @@
 // verdigris/domains/heat/src/consts.rs
 #define BODYTEMP_NORMAL 310.15
 
+/// BZ formation, per mole of BZ made.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define BZ_FORMATION_ENERGY 80000.0
+
+/// Carbon combustion (fire spreading on objects), per mole.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_CARBON_ENERGY_RELEASED 100000.0
+
+/// Freon combustion absorbs this per mole of freon burned.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_FREON_ENERGY_CONSUMED 300000.0
+
+/// Hydrogen combustion, per mole of hydrogen burned.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_HYDROGEN_ENERGY_RELEASED 2800000.0
+
 /// Lowest temperature a fire exists at, and phoron's ignition point, K
 /// (100 °C).
 // verdigris/domains/heat/src/consts.rs
 #define FIRE_MINIMUM_TEMPERATURE_TO_EXIST 373.15
+
+/// Plasma combustion, per mole of plasma burned.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_PLASMA_ENERGY_RELEASED 3000000.0
+
+/// Tritium combustion, per mole of tritium burned (tritium burns as hydrogen).
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_TRITIUM_ENERGY_RELEASED 2800000.0
+
+/// Freon formation (a scale; its energy follows the temperature, [`freon_formation_absorbed`]).
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FREON_FORMATION_ENERGY 100.0
 
 // verdigris/ffi/src/gas/mix.rs
 #define GAS_DEPENDENCY_COMPOSITION 4
@@ -162,10 +190,92 @@
 // verdigris/domains/gas/src/gas/ids.rs
 #define GAS_ID_ZAUKER 16
 
+/// Extent: BZ formed; `aux`: the fraction of nitrous oxide that decomposed instead.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_BZ_FORMATION 8
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_FREON_FIRE 4
+
+/// Extent: freon formed (the energy absorbed follows the temperature).
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_FREON_FORMATION 12
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_HALON_COMBUSTION 14
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_HEALIUM_FORMATION 15
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_HYDROGEN_FIRE 2
+
+/// No enthalpy: the moles change and the mixture keeps its thermal energy over its new heat capacity.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_KEEP_TEMPERATURE 0
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_N2O_DECOMPOSITION 7
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_N2O_FORMATION 6
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_NITRIUM_DECOMPOSITION 11
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_NITRIUM_FORMATION 10
+
+/// Extent: noblium formed; `aux`: the BZ present.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_NOBLIUM_FORMATION 13
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PLASMA_FIRE 1
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PLUOXIUM_FORMATION 9
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PN_BZ_RESPONSE 21
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PN_FORMATION 18
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PN_HYDROGEN_RESPONSE 19
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PN_TRITIUM_RESPONSE 20
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_STERILIZATION 5
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_TRITIUM_FIRE 3
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_ZAUKER_DECOMPOSITION 17
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_ZAUKER_FORMATION 16
+
 /// Floats per mixture in `read_mixtures`: pressure, temperature, volume,
 /// total moles, heat capacity, then the moles of every gas by ID.
 // verdigris/ffi/src/gas/binds.rs
 #define GAS_READ_HEADER 5
+
+/// Halon's oxygen removal absorbs this per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define HALON_COMBUSTION_ENERGY 2500.0
+
+/// Halon formation, per mole.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define HALON_FORMATION_ENERGY 91232.1
+
+/// Healium formation, per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define HEALIUM_FORMATION_ENERGY 9000.0
 
 /// Heat capacity DM gives vacuum (`HEAT_CAPACITY_VACUUM`), J/K: the capacity
 /// of a space or planet reservoir cell.
@@ -310,6 +420,18 @@
 // verdigris/domains/heat/src/consts.rs
 #define HUMAN_HEAT_CAPACITY 280000.0
 
+/// Dry heat sterilization: the temperature rise per mole of miasma cleaned, K.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define MIASTER_STERILIZATION_ENERGY 0.002
+
+/// Nitrous oxide decomposition, per mole decomposed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define N2O_DECOMPOSITION_ENERGY 200000.0
+
+/// Nitrous oxide formation, per mole formed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define N2O_FORMATION_ENERGY 10000.0
+
 /// A crossing record (set entry) carries two detail numbers, a wake four.
 // verdigris/ffi/src/frame.rs
 #define NATIVE_CROSSED_SET_DETAIL 2
@@ -335,6 +457,38 @@
 /// Record kind: something happened (`entity`, `header`, fields).
 // verdigris/ffi/src/frame.rs
 #define NATIVE_REC_NOTICE 2
+
+/// Nitrium decomposition, per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define NITRIUM_DECOMPOSITION_ENERGY 30000.0
+
+/// Nitrium formation absorbs this per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define NITRIUM_FORMATION_ENERGY 100000.0
+
+/// Hyper-noblium formation, per mole formed (divided by the BZ present).
+// verdigris/domains/gas/src/reaction_energy.rs
+#define NOBLIUM_FORMATION_ENERGY 20000000.0
+
+/// Pluoxium formation, per mole formed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PLUOXIUM_FORMATION_ENERGY 250.0
+
+/// Proto-nitrate's BZ response, per mole consumed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PN_BZASE_ENERGY 60000.0
+
+/// Proto-nitrate formation, per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PN_FORMATION_ENERGY 650.0
+
+/// Proto-nitrate's hydrogen response absorbs this per mole converted.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PN_HYDROGEN_CONVERSION_ENERGY 2500.0
+
+/// Proto-nitrate's tritium response, per mole converted.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PN_TRITIUM_CONVERSION_ENERGY 10000.0
 
 /// Node kinds in the graph (an opaque tag `NetworkHost` stores per node;
 /// power does not read it back, only DM's own bookkeeping might).
@@ -451,6 +605,14 @@
 /// `subscriber, lane, reason, source, source_kind`.
 // verdigris/ffi/src/sched.rs
 #define WORLD_WAKE_STRIDE 5
+
+/// Zauker decomposition, per mole decomposed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define ZAUKER_DECOMPOSITION_ENERGY 460.0
+
+/// Zauker formation absorbs this per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define ZAUKER_FORMATION_ENERGY 5000.0
 
 // Binds.
 
@@ -835,6 +997,19 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:fuel_amount_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
+
+/// Applies a gas reaction to a mixture in one step
+/// (`vg_gas::reaction_energy::react`): `deltas` is a flat list of
+/// `GAS_ID_*, moles, ...`; the energy the reaction of `kind`
+/// (`GAS_REACTION_*`) releases for its `extent` (with its `aux` value) is
+/// computed here and settled into the mixture, booked under
+/// `HEAT_SOURCE_REACTION`. Returns the joules released (negative: absorbed),
+/// or null for an unknown kind (nothing applied).
+// /proc/gas_reaction_apply (verdigris/ffi/src/heat_net.rs)
+/proc/vg_gas_reaction_apply(mixture, kind, extent, aux, deltas)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_reaction_apply_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(mixture, kind, extent, aux, deltas)
 
 /// Frees every main-owned slot whose datum is not in `mixtures` (a list of
 /// every live `/datum/gas_mixture`); `/world/New()` calls it once. Returns

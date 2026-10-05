@@ -235,7 +235,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 
 - **While developing, run only the tests you touch:**
   `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]` (works from a worktree; the
-  compile plus about 25 s). `--full-map` runs on Southern Cross.
+  compile plus about 25 s). `--full-map` runs on Southern Cross. Every run fails when the world logged a
+  runtime or a `WARNING()` before its first test (the boot gate, `doc/rewrite/boot_gate.md`; `--boot` checks
+  boot alone).
 - **Agents never run `tools/build/build.sh dm-test`:** it compiles AND runs the full sharded suite.
   Use `tools/dq_focused_test.sh` for every run. The full suite runs only at integration or when the
   user asks: `tools/build/build.sh dm-test` (normal tier, sharded; `--shards=1` for one world). CI and nightly add the exhaustive tier

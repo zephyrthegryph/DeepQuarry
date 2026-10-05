@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Refuses a push to master that did not come from tools/dq_push_master.sh, which sets DQ_PUSH_VERIFIED to the
+# sha it built and checked (doc/rewrite/agent_workflow.md). Install: bash tools/hooks/install_pre_push.sh.
+# stdin: <local ref> <local sha> <remote ref> <remote sha> per pushed ref.
+while read -r _local_ref local_sha remote_ref _remote_sha; do
+	[ "$remote_ref" = "refs/heads/master" ] || continue
+	if [ "${DQ_PUSH_VERIFIED:-}" != "$local_sha" ]; then
+		echo "pre-push: REFUSED: push to master only through 'bash tools/dq_push_master.sh' (it builds and checks the exact merged HEAD first)." >&2
+		exit 1
+	fi
+done
+exit 0

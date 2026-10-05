@@ -1,0 +1,4 @@
+/obj/structure/janitorialcart|human|none => janitorialcart_item,janitorialcart_alt,janitorialcart_hand,janitorialcart_drag|
+/obj/structure/janitorialcart|robot|none => janitorialcart_item,janitorialcart_alt,janitorialcart_hand,janitorialcart_drag|
+/obj/structure/janitorialcart|ai|none => |
+/obj/structure/janitorialcart|ghost|none => |

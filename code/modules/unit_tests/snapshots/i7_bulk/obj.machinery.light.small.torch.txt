@@ -1,0 +1,4 @@
+/obj/machinery/light/small/torch|human|none => |
+/obj/machinery/light/small/torch|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/light/small/torch|ai|none => |
+/obj/machinery/light/small/torch|ghost|none => |
