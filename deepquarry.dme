@@ -674,7 +674,6 @@
 #include "code\datums\capabilities\library\presets.dm"
 #include "code\datums\capabilities\library\panel.dm"
 #include "code\datums\capabilities\library\powered.dm"
-#include "code\datums\capabilities\library\powered_by.dm"
 #include "code\datums\capabilities\library\reach.dm"
 #include "code\datums\capabilities\library\reagents.dm"
 #include "code\datums\capabilities\library\rotate.dm"

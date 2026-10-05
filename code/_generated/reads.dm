@@ -217,6 +217,10 @@
 	. = ..()
 	. += drawn_from(nameof(anchored), nameof(charging))
 
+/obj/machinery/computer/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(icon_keyboard), nameof(light_power_on), nameof(light_range_on))
+
 /obj/machinery/computer/supplycomp/generated_reads()
 	. = ..()
 	. += ui_from(nameof(authorization), nameof(can_order_contraband))

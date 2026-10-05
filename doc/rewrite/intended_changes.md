@@ -1153,3 +1153,27 @@ first: no click reached the legacy `wrench_act()`).
 
 * **A wrench takes a loose wall or machine frame apart again** (op `frame.refund`, a `tool(TOOL_WRENCH)` op on the frame item): the frame becomes its
   `refund_amt` of `refund_type` (five sheets of steel by default). It was broken in play.
+## Consoles: the console base, the ID console and the communications console (rewrite/machines-full)
+
+- **Console base.** A console joins `REGISTRY_COMPUTERS`; an APC's overload finds the consoles of its area there (`area_consoles()`), so the
+  legacy `powered_by(POWERED_BY_AREA)` capability, `caps_area_changed()` and `area_members()` are gone. It draws through `draw(look)`: the
+  joined desk, the keyboard (off without power), and the screen as a glowing part that lights the room while powered (the light now comes
+  from the look, not from a `power_change()` override). The terminal sounds follow STAT_OPERABLE. A pulse (`on_notice(hit/emp)`) breaks it
+  one time in five over severity and a blob hit is `instead()` a medium blast, as before. The screwdriver is op `disconnect` (2 s; a broken
+  one drops its glass), a gripper holding something is op `use_gripper`, and any other item is op `use_item` (the hand's use), at the
+  default tier so a type's own item ops come first. `decode()` and `Initialize()` are gone. The message monitor's "too hot" and the AI
+  restorer's stuck screws are `extend("disconnect", needs(...))`; the message monitor's hack screen is `screen_state()` (no longer written
+  from the appearance proc); the atmospheric alert console sets its screen and plays its alert sounds when the alarms change, not when it is
+  drawn (and its repeat sound is one keyed timer).
+- **ID console.** An ID card used on it is op `insert_id` (then the window opens); "Eject ID Card" is op `eject` (operator's card first). Every
+  change to the loaded card (access, assignment, name, account, dismissal, custom title) needs an authenticated operator and a card: pressing
+  one with no card loaded is refused instead of a runtime. An unknown job and an invalid name are refusals. The access report no longer
+  runtimes without an operator card ("Prepared By: Unknown"), the card's name is rebuilt by `update_name()` after every button, and the
+  printer is a tracked state (no `SStgui.update_uis`).
+- **Communications.** A login is the person's own (`logins`, per actor): someone else at the same console is not logged in by it. The
+  announcement's signature is taken from the announcer's ID when they announce. Deleting a message deletes the message whose button was
+  pressed (by its id), not whichever message is open when the confirmation is answered; a console's station-wide list cannot be deleted
+  from (refused up front). The status display takes one of its presets (an enum; the dead "alert" branch is gone). The emag is the console's
+  `emag()`; the module reads it (`routing_scrambled()`), and "Restore Backup" clears it, so the console and its window can no longer disagree.
+  The shuttle-call grace periods are measured from the round's start (`ELAPSED(SSticker, round_start_time)`), not from server start, and are
+  named (10 and 90 minutes; the old comment said 30).

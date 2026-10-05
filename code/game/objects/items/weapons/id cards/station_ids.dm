@@ -97,7 +97,7 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 	return TRUE
 
 /obj/item/card/id/GetAccess()
-	return access
+	return access // ALLOW(reads): a card's access is asked when the card is used, never cached
 
 /obj/item/card/id/GetID()
 	return src
