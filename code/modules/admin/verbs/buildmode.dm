@@ -848,21 +848,27 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 /// Asks for a typepath (typed in part, then picked from the matches) and stores it in `var_name`.
 /obj/effect/bmode/buildmode/proc/ask_path(mob/user, var_name, default_path)
-	om_ask(user, /datum/om/prompt/text/buildmode, PROC_REF(ask_path_match), title = "Typepath", message = "Enter full or partial typepath.", default = "[default_path]", step = var_name)
+	open_request(src, /datum/prompt/text/buildmode_path, PROC_REF(ask_path_match), answerer = user, title = "Typepath", question = "Enter full or partial typepath.", default = "[default_path]", path_var = var_name)
 
-/obj/effect/bmode/buildmode/proc/ask_path_match(datum/om/prompt/text/buildmode/ask)
+/obj/effect/bmode/buildmode/proc/ask_path_match(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/buildmode_path/ask = context.answer
 	var/mob/user = ask.answerer
-	var/list/matches = paths_matching(ask.text)
+	var/list/matches = paths_matching(ask.answer_value)
 	if(!matches.len)
 		tgui_alert_async(user, "No results found.  Sorry.")
 		return
 	if(matches.len == 1)
-		path_answered(user, ask.step, matches[1])
+		path_answered(user, ask.path_var, matches[1])
 		return
-	om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(path_picked), title = "Spawn Atom", message = "Select an atom type", choices = matches, step = ask.step)
+	open_request(src, /datum/prompt/choice/buildmode_path, PROC_REF(path_picked), answerer = user, title = "Spawn Atom", question = "Select an atom type", choices = matches, path_var = ask.path_var)
 
-/obj/effect/bmode/buildmode/proc/path_picked(datum/om/prompt/choice/buildmode/ask)
-	path_answered(ask.answerer, ask.step, ask.choice)
+/obj/effect/bmode/buildmode/proc/path_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_path/ask = context.answer
+	path_answered(ask.answerer, ask.path_var, ask.answer_value)
 
 /obj/effect/bmode/buildmode/proc/path_answered(mob/user, var_name, result)
 	log_admin("BUILDMODE/ITEM GENERATION: [key_name(user)] selected [result] to be spawned.")
@@ -1036,3 +1042,24 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /// The master this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/proc/master() as /obj/effect/bmode/buildholder
 	return master
+
+/datum/prompt/text/buildmode_path
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BUILDMODE
+	var/path_var
+
+/datum/prompt/text/buildmode_path/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/buildmode_path/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/buildmode_path
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BUILDMODE
+	var/path_var
+
+/datum/prompt/choice/buildmode_path/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
