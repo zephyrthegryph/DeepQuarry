@@ -259,10 +259,13 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 		if (ai.mind == malfai)
 			return 1
 
-EXTEND_INTERACTIONS(/obj/structure/AIcore/deactivated, INTERACT_ITEM(null, PROC_REF(deactivated_interaction_item)))
+CAPABILITIES(/obj/structure/AIcore/deactivated)
+	op("deactivated_interaction_item", item(/obj/item), then(PROC_REF(deactivated_interaction_item)))
 
 /// Old attackby.
-/obj/structure/AIcore/deactivated/proc/deactivated_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/AIcore/deactivated/proc/deactivated_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 
 	if(istype(W, /obj/item/aicard))
 		var/obj/item/aicard/card = W
@@ -271,9 +274,9 @@ EXTEND_INTERACTIONS(/obj/structure/AIcore/deactivated, INTERACT_ITEM(null, PROC_
 			load_ai(transfer,card,user)
 		else
 			to_chat(user, span_danger("ERROR:") + " Unable to locate artificial intelligence.")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/structure/AIcore/deactivated/wrench_act(mob/user, obj/item/tool)
 	if(anchored)

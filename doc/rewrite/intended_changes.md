@@ -583,3 +583,29 @@ conversion), with the holder tests that already drove wires (dq_p2_apc, dq_p2_do
 * **A signaler on a wire works again.** `/obj/item/assembly/signaler` read the atom's `wires` var (the holder's legacy wire datum, null on a signaler)
   where it meant its own `wires_type` flags, so an attached signaler never pulsed its wire, and no signaler took a radio signal at all
   (`receive_signal()` refused every one). Both read `wires_type` now. Fixed on the legacy code first, so the tests pin the working behaviour.
+
+
+## fw-gaps3 (input kinds)
+
+* **Telekinesis is a provider, and it does any hand op in sight.** `/mob` declares `telekinetic_reach()`: `provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE)` while the mob is `tk_ready()` (a TK mutation or powered kinesis gloves,
+  not through a remote view). The old reach was the types that declared an `INTERACT_TK` (structures refused a plain grab); under the design a telekinetic actor presses a button or opens a door it sees within 15 tiles through any `hand()` op, compartments and requirements
+  still applying. An `INTERACT_TK` entry becomes a `tk()` op: the hand touch for a target no hand reaches, one tier above the hand ops, so at range it is what a telekinetic actor does. Unconverted legacy types keep the telekinesis adapter's own click (`tk_grab`).
+* **An alt-click op is `hand()` + `gesture(GESTURE_ALT)` + `ungated()`**: the actor half of the hand gate (unconscious or stunned actors are refused) is new for `INTERACT_ALT`, which had `REQ_INTERACTION_REACH` only; the machine half is not applied, as before.
+* **A dragged-onto op needs the actor to have an `AFF_MANIPULATE` provider** (`item(T)` does): the old `INTERACT_DRAG` asked for reach only, so a handless mob could drag a body into a cryo cell; it cannot now (design section 8: a hand op needs a hand).
+* **`INTERACTION_HANDLED_PASS` is `OP_PASS`**, per return; behaviour is the same (the op commits, the next candidate or the mob's own click handling follows).
+
+### fw-gaps3 content: cryo cell, body scanner, reagent tanks, bedsheets, linen bin, inflatables
+
+Pinned by `code/modules/unit_tests/dq_fwg3_inputs.dm` (run on the legacy interactions first, through the player's own drag and click paths).
+
+* **`item(T)` no longer answers an item used on itself.** The binding matched a self-use (held == target), so an item with both an `in_hand()` and an `item(/obj/item)` op could run the item op on itself: a pillow used in the hand
+  built a pillow pile out of itself. A self-use reaches only `in_hand()` ops, as the old `attackby` never ran on itself.
+* **Cryo cell.** The hand, item, drag ("Put inside") and the two menu entries are ops. With the panel open the hand is refused with "Close the maintenance panel first." (it said "Use: close the maintenance panel first.").
+* **Body scanner.** The grab and the drag are ops whose refusals are requirements (`insert_allowed`/`drag_allowed`, the old `can_insert_grabbed`/`can_drag_inside`); the reasons are sentences ("It's already occupied.") where they were fragments after the interaction's name.
+  A drag only matches a human (`item(/mob/living/carbon/human)`): another mob dragged onto it goes on to the legacy drag handling, which ignored it before as well. Whether it is occupied is read through `occupant_in()`, which follows `OCCUPANT_KEY`
+  (every occupant slot publishes it when someone gets in or out). The console keeps its legacy entries (its observer view has no op form here).
+* **Reagent tanks.** Alt-click is the alt-click op (an unconscious or stunned actor no longer toggles the input). "Set transfer amount" is a menu op with an `asks()` step: an answer that is not one of the amounts asks again, and the entry is
+  hidden (`when()`) on a tank with no amounts. The tank's pass-through item use is the type's default (`OP_PRIORITY_DEFAULT`), so a kind's own item op (the fuel tank's rigging, the water tank's) answers first; the water cooler's item use replaces it.
+* **Bedsheets.** Laying a sheet out is the `lay_out` op; a pillow re-declares `lay_out` and `use_item`, so the sheet's own layering never runs for a pillow (it did through the `special_handling` chain, which is gone). The exercise mat's item use passes, as before.
+* **Linen bin.** The hand, item and telekinesis ("Take sheet") are ops; a telekinetic actor pulls a sheet out onto the bin's tile from range.
+* **Inflatables.** Inflating is the `inflate` op (a torn one re-declares it). The wall's hand, item and "Deflate" are ops; ctrl-click and the menu share `deflate_by()`. The door re-declares the hand and drops the item use (`without("use_item")`), as its old list did; its silicon "Open" stays a legacy entry until silicon entry points are ops.

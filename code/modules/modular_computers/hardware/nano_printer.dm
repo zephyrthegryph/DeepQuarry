@@ -52,14 +52,17 @@
 		fields++
 	return fields
 
-EXTEND_INTERACTIONS(/obj/item/computer_hardware/nano_printer, INTERACT_ITEM(null, PROC_REF(nano_printer_interaction_item)))
+CAPABILITIES(/obj/item/computer_hardware/nano_printer)
+	op("nano_printer_interaction_item", item(/obj/item), then(PROC_REF(nano_printer_interaction_item)))
 
 /// Old attackby.
-/obj/item/computer_hardware/nano_printer/proc/nano_printer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/computer_hardware/nano_printer/proc/nano_printer_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/paper))
 		if(stored_paper >= max_paper)
 			to_chat(user, "You try to add \the [W] into \the [src], but its paper bin is full.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		to_chat(user, "You insert \the [W] into [src].")
 		consume(W, user)
@@ -69,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/item/computer_hardware/nano_printer, INTERACT_ITEM(null
 		var/num_of_pages_added = 0
 		if(stored_paper >= max_paper)
 			to_chat(user, "You try to add \the [W] into \the [src], but its paper bin is full.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		for(var/obj/item/bundleitem in B) //loop through items in bundle
 			if(istype(bundleitem, /obj/item/paper)) //if item is paper (and not photo), add into the bin
 				rel_remove(B, nameof(B.pages), bundleitem)
@@ -88,5 +91,5 @@ EXTEND_INTERACTIONS(/obj/item/computer_hardware/nano_printer, INTERACT_ITEM(null
 		else //if at least two items remain, just update the bundle icon
 			B.update_icon()
 		to_chat(user, "You add [num_of_pages_added] papers from \the [W] into \the [src].")
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 

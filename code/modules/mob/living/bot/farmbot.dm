@@ -364,10 +364,10 @@ CAPABILITIES(/mob/living/bot/farmbot)
 		O.forceMove(src)
 		own_move(O, src, nameof(tank))
 
-EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(null, PROC_REF(watertank_interaction_item)))
-
 /// Old attackby.
-/obj/structure/reagent_dispensers/watertank/proc/watertank_interaction_item(mob/user, obj/item/S, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/watertank/proc/watertank_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/S = A.held
 	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
 	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
 	var/is_robotic_organ = FALSE
@@ -376,14 +376,14 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(n
 		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
 
 	if(!is_robot_arm && !is_robotic_organ)
-		return FALSE
+		return OP_DECLINE
 
 	to_chat(user, "You add the robot arm to [src].")
 
 	consume(S, user)
 
 	new /obj/item/farmbot_arm_assembly(loc, src)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attackby.
 /obj/item/farmbot_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

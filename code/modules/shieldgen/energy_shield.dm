@@ -154,13 +154,12 @@
 	alpha = 100
 	animate(src, alpha = initial(alpha), time = 1 SECOND)
 
-EXTEND_INTERACTIONS(/obj/effect/shield, \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_shield)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_shield)), \
-)
+CAPABILITIES(/obj/effect/shield)
+	op("touch_shield", hand(), then(PROC_REF(interaction_touch_shield)))
+	op("hit_shield", item(/obj/item), then(PROC_REF(interaction_hit_shield)))
 
 /// Old attack_hand, just for fun: the touched segments flash.
-/obj/effect/shield/proc/interaction_touch_shield(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/shield/proc/interaction_touch_shield(datum/act/op/A)
 	flash_adjacent_segments(3)
 	return TRUE
 
@@ -267,7 +266,9 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 		take_damage(proj.get_structure_damage(), SHIELD_DAMTYPE_EM)
 
 /// Old attackby: attacks with hand tools, blocked by the Hyperkinetic flag (afterattack still follows, as before).
-/obj/effect/shield/proc/interaction_hit_shield(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/shield/proc/interaction_hit_shield(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/I = held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
@@ -282,7 +283,7 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 			take_damage(I.force, SHIELD_DAMTYPE_EM)
 	else
 		act_message(user, src, others = span_danger("%U% tries to attack %T% with %I%, but it passes through!"), item = I)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // Special treatment for meteors because they would otherwise penetrate right through the shield.
 /obj/effect/shield/Bumped(atom/movable/mover)

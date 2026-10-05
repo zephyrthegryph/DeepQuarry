@@ -213,10 +213,13 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 	if(C) // If for some reason they logged out mid-scan the box will be gone anyways.
 		delete_box(box_segments, C)
 
-EXTEND_INTERACTIONS(/obj/item/slow_sizegun, 	INTERACT_USE("Switch mode", PROC_REF(slow_sizegun_mode_self)), 	INTERACT_ALT("Toggle size trading", PROC_REF(slow_sizegun_trading_alt)), )
+CAPABILITIES(/obj/item/slow_sizegun)
+	op("slow_sizegun_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(slow_sizegun_mode_self)))
+	op("slow_sizegun_trading_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle size trading"), then(PROC_REF(slow_sizegun_trading_alt)))
 
 /// Old attack_self: stop a scan in progress, or swap between growing and shrinking.
-/obj/item/slow_sizegun/proc/slow_sizegun_mode_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/slow_sizegun/proc/slow_sizegun_mode_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(busy)
 		sizegun_finish()
 	else
@@ -301,7 +304,8 @@ EXTEND_INTERACTIONS(/obj/item/slow_sizegun, 	INTERACT_USE("Switch mode", PROC_RE
 //Alt click to activate size trading
 
 /// Old click_alt: toggle size trading.
-/obj/item/slow_sizegun/proc/slow_sizegun_trading_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/slow_sizegun/proc/slow_sizegun_trading_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if (trading == 0)
 		trading = 1
 		to_chat(user, span_notice("\The [src] will now trade your targets size for your own."))

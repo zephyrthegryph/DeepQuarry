@@ -58,22 +58,17 @@ DAMAGE_REACTION(/obj/item/clothing/under/chameleon, DAMAGE_EMP, PROC_REF(chamele
 	update_icon()
 	update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon, \
-	INTERACT_VERB("Change Jumpsuit Appearance", PROC_REF(chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/under/chameleon)
+	op("chameleon_change_verb", menu(), label("Change Jumpsuit Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(chameleon_change_verb)))
 
 /// Old verb "Change Jumpsuit Appearance".
-/obj/item/clothing/under/chameleon/proc/chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_jumpsuit_choices, timeout = 0)
+/obj/item/clothing/under/chameleon/proc/chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_jumpsuit_choices
 
-/obj/item/clothing/under/chameleon/proc/chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/under/chameleon/proc/chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/clothing/under/chameleon/proc/chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_jumpsuit_choices[picked]))
 		return
@@ -107,22 +102,17 @@ DAMAGE_REACTION(/obj/item/clothing/head/chameleon, DAMAGE_EMP, PROC_REF(chameleo
 	update_icon()
 	update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon, \
-	INTERACT_VERB("Change Hat/Helmet Appearance", PROC_REF(head_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/head/chameleon)
+	op("head_chameleon_change_verb", menu(), label("Change Hat/Helmet Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(head_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(head_chameleon_change_verb)))
 
 /// Old verb "Change Hat/Helmet Appearance".
-/obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(head_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_head_choices, timeout = 0)
+/obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_head_choices
 
-/obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = head_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_head_choices[picked]))
 		return
@@ -155,22 +145,17 @@ DAMAGE_REACTION(/obj/item/clothing/suit/chameleon, DAMAGE_EMP, PROC_REF(chameleo
 	update_icon()
 	update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon, \
-	INTERACT_VERB("Change Oversuit Appearance", PROC_REF(suit_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/chameleon)
+	op("suit_chameleon_change_verb", menu(), label("Change Oversuit Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(suit_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(suit_chameleon_change_verb)))
 
 /// Old verb "Change Oversuit Appearance".
-/obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(suit_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_suit_choices, timeout = 0)
+/obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_suit_choices
 
-/obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = suit_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_suit_choices[picked]))
 		return
@@ -202,22 +187,17 @@ DAMAGE_REACTION(/obj/item/clothing/shoes/chameleon, DAMAGE_EMP, PROC_REF(chamele
 	update_icon()
 	update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon, \
-	INTERACT_VERB("Change Footwear Appearance", PROC_REF(shoes_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/shoes/chameleon)
+	op("shoes_chameleon_change_verb", menu(), label("Change Footwear Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(shoes_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(shoes_chameleon_change_verb)))
 
 /// Old verb "Change Footwear Appearance".
-/obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(shoes_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_shoe_choices, timeout = 0)
+/obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_shoe_choices
 
-/obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = shoes_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_shoe_choices[picked]))
 		return
@@ -251,14 +231,17 @@ DAMAGE_REACTION(/obj/item/storage/backpack/chameleon, DAMAGE_EMP, PROC_REF(chame
 		var/mob/M = src.loc
 		M.update_inv_back()
 
-EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon, \
-	INTERACT_VERB("Change Backpack Appearance", PROC_REF(backpack_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/storage/backpack/chameleon)
+	op("backpack_chameleon_change_verb", menu(), label("Change Backpack Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(backpack_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(backpack_chameleon_change_verb)))
 
 /// Old verb "Change Backpack Appearance".
-/obj/item/storage/backpack/chameleon/proc/backpack_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(backpack_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_back_choices)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/storage/backpack/chameleon/proc/backpack_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_back_choices
+
+/obj/item/storage/backpack/chameleon/proc/backpack_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_back_choices[picked]))
 		return
@@ -306,22 +289,17 @@ DAMAGE_REACTION(/obj/item/clothing/gloves/chameleon, DAMAGE_EMP, PROC_REF(chamel
 	update_icon()
 	update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon, \
-	INTERACT_VERB("Change Gloves Appearance", PROC_REF(gloves_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/gloves/chameleon)
+	op("gloves_chameleon_change_verb", menu(), label("Change Gloves Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(gloves_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(gloves_chameleon_change_verb)))
 
 /// Old verb "Change Gloves Appearance".
-/obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(gloves_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_glove_choices, timeout = 0)
+/obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_glove_choices
 
-/obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = gloves_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_glove_choices[picked]))
 		return
@@ -353,22 +331,17 @@ DAMAGE_REACTION(/obj/item/clothing/mask/chameleon, DAMAGE_EMP, PROC_REF(chameleo
 	update_icon()
 	update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon, \
-	INTERACT_VERB("Change Mask Appearance", PROC_REF(mask_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/mask/chameleon)
+	op("mask_chameleon_change_verb", menu(), label("Change Mask Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(mask_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(mask_chameleon_change_verb)))
 
 /// Old verb "Change Mask Appearance".
-/obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(mask_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_mask_choices, timeout = 0)
+/obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_mask_choices
 
-/obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = mask_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_mask_choices[picked]))
 		return
@@ -402,22 +375,14 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/chameleon, DAMAGE_EMP, PROC_REF(chame
 	update_icon()
 	update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon, \
-	INTERACT_VERB("Change Glasses Appearance", PROC_REF(glasses_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/chameleon)
+	op("glasses_chameleon_change_verb", menu(), label("Change Glasses Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = nameof(clothing_choices), "timeout" = 0), step = "a1"), then(PROC_REF(glasses_chameleon_change_verb)))
 
 /// Old verb "Change Glasses Appearance".
-/obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(glasses_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = clothing_choices, timeout = 0)
-
-/obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = glasses_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(clothing_choices[picked]))
 		return
@@ -451,14 +416,17 @@ DAMAGE_REACTION(/obj/item/storage/belt/chameleon, DAMAGE_EMP, PROC_REF(chameleon
 		var/mob/M = src.loc
 		M.update_inv_belt()
 
-EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon, \
-	INTERACT_VERB("Change Belt Appearance", PROC_REF(belt_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/storage/belt/chameleon)
+	op("belt_chameleon_change_verb", menu(), label("Change Belt Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(belt_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(belt_chameleon_change_verb)))
 
 /// Old verb "Change Belt Appearance".
-/obj/item/storage/belt/chameleon/proc/belt_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/picked = rerun_ask(user, "a1", PROC_REF(belt_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_belt_choices)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/storage/belt/chameleon/proc/belt_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_belt_choices
+
+/obj/item/storage/belt/chameleon/proc/belt_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_belt_choices[picked]))
 		return
@@ -495,22 +463,17 @@ DAMAGE_REACTION(/obj/item/clothing/accessory/chameleon, DAMAGE_EMP, PROC_REF(cha
 	update_icon()
 	update_clothing_icon()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/chameleon, \
-	INTERACT_VERB("Change Accessory Appearance", PROC_REF(accessory_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/accessory/chameleon)
+	op("accessory_chameleon_change_verb", menu(), label("Change Accessory Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(accessory_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(accessory_chameleon_change_verb)))
 
 /// Old verb "Change Accessory Appearance".
-/obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(accessory_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_accessory_choices, timeout = 0)
+/obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.chamelion_accessory_choices
 
-/obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = accessory_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.chamelion_accessory_choices[picked]))
 		return
@@ -589,22 +552,17 @@ DAMAGE_REACTION(/obj/item/gun/energy/chameleon, DAMAGE_EMP, PROC_REF(chameleon_e
 	else
 		copy_projectile = null
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/chameleon, \
-	INTERACT_VERB("Change Gun Appearance", PROC_REF(energy_chameleon_change_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/gun/energy/chameleon)
+	op("energy_chameleon_change_verb", menu(), label("Change Gun Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(energy_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(energy_chameleon_change_verb)))
 
 /// Old verb "Change Gun Appearance".
-/obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(energy_chameleon_change_verb_chosen), answerer = user, question = "Choose an appearance.", title = "Chameleon", choices = GLOB.gun_choices, timeout = 0)
+/obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb_a1_choices(datum/act/op/A)
+	return GLOB.gun_choices
 
-/obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = energy_chameleon_change_verb_apply(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb_apply(mob/user, picked)
-	if(isnull(picked) || get(src, /mob) != user)
+/obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("a1")
+	if(get(src, /mob) != user)
 		return
 	if(!ispath(GLOB.gun_choices[picked]))
 		return

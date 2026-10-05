@@ -10,24 +10,23 @@
 
 CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	owns_one(nameof(EA), starts = /obj/item/electronic_assembly/device)
+	op("electronic_assembly_interaction_item", item(/obj/item), then(PROC_REF(electronic_assembly_interaction_item)))
+	op("device_assembly_verb_toggle", menu(), label("Open/Close Device Assembly"), needs(carried()), then(PROC_REF(device_assembly_verb_toggle)))
 
 /obj/item/assembly/electronic_assembly/Initialize(mapload)
 	. = ..()
 	rel_set(EA, nameof(EA.holder), src)
 
 
-EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
-	INTERACT_ITEM(null, PROC_REF(electronic_assembly_interaction_item)), \
-	INTERACT_VERB("Open/Close Device Assembly", PROC_REF(device_assembly_verb_toggle), REQ_IN_INVENTORY), \
-)
-
 /// Old attackby.
-/obj/item/assembly/electronic_assembly/proc/electronic_assembly_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/assembly/electronic_assembly/proc/electronic_assembly_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(opened)
 		EA.attackby(I, user)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/assembly/electronic_assembly/crowbar_act(mob/user, obj/item/tool)
 	toggle_open(user)
@@ -65,7 +64,8 @@ APPEARANCE_TEMPLATE(/obj/item/assembly/electronic_assembly, "{initial(icon_state
 			. += IC.external_examine(user)
 
 /// Old Open/Close Device Assembly verb: Open or close device assembly!
-/obj/item/assembly/electronic_assembly/proc/device_assembly_verb_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly/electronic_assembly/proc/device_assembly_verb_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_open(user)
 
 /obj/item/electronic_assembly/device

@@ -154,11 +154,11 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	op("use", hand(), label("Use"), priority(OP_PRIORITY_PART), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work), because = MSG(firedoor/dead)),
 			req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
-		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)))), then(PROC_REF(used)))
+		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
 	op("remote_use", ai(), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work), because = MSG(firedoor/dead)),
 			req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
-		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)))), then(PROC_REF(used)))
+		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
 	op("force_claws", hand(), label("Force"), when(req(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)), then(PROC_REF(claws_forced)))
 	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced)))
 	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_CLAW + 5), wait(0), then(PROC_REF(nothing_done)))
@@ -198,6 +198,10 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	return !(density && lockdown && alarmed() && !allowed(A.actor)) // ALLOW(reads): the alarm and the lockdown are read when the question is asked and again when it is answered
 
 /// What is asked: to open or close it, with the warning that opening it in an alarm is on whoever does.
+/// The yes button names what it does.
+/obj/machinery/door/firedoor/proc/use_yes(datum/act/A)
+	return "Yes, [density ? "open" : "close"]"
+
 /obj/machinery/door/firedoor/proc/use_question(datum/act/A)
 	var/doing = density ? "open" : "close"
 	return "Would you like to [doing] this [name]?[ alarmed() && density ? "\nNote that by doing so, you acknowledge any damages from opening this\n[name] as being your own fault, and you will be held accountable under the law." : ""]"

@@ -60,6 +60,7 @@ TYPE_TABLE_DECLARE(/obj/item/oar, oar_forced_material, null)
 
 CAPABILITIES(/obj/vehicle/boat)
 	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
+	op("boat_board", item(/atom/movable), gesture(GESTURE_DRAG), label("Board"), then(PROC_REF(interaction_boat_board)))
 
 TYPE_TABLE_DECLARE(/obj/vehicle/boat, boat_forced_material, null)
 
@@ -77,12 +78,13 @@ TYPE_TABLE_DECLARE(/obj/vehicle/boat, boat_forced_material, null)
 	return INITIALIZE_HINT_NORMAL
 
 // Boarding.
-EXTEND_INTERACTIONS(/obj/vehicle/boat, INTERACT_DRAG("Board", PROC_REF(interaction_boat_board)))
 
 /// Old MouseDrop_T: drop a mob on the boat to seat it.
-/obj/vehicle/boat/proc/interaction_boat_board(mob/user, atom/movable/C, datum/interaction/interaction)
+/obj/vehicle/boat/proc/interaction_boat_board(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(!ismob(C))
-		return FALSE
+		return OP_DECLINE
 	user_buckle_mob(C, user)
 	return TRUE
 

@@ -176,15 +176,15 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/sleeper, MACHINE_PIPELINE, list("opera
 			LAZYADD(available_chemicals, new_chemicals)
 		return
 
-EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(sleeper_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(sleeper_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(sleeper_interaction_drag)), \
-	INTERACT_VERB("Eject occupant", PROC_REF(sleeper_move_eject)), \
-)
+CAPABILITIES(/obj/machinery/sleeper)
+	op("sleeper_interaction_hand", hand(), ungated(), then(PROC_REF(sleeper_interaction_hand)))
+	op("sleeper_interaction_item", item(/obj/item), then(PROC_REF(sleeper_interaction_item)))
+	op("sleeper_interaction_drag", item(/mob), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(sleeper_interaction_drag)))
+	op("sleeper_move_eject", menu(), label("Eject occupant"), then(PROC_REF(sleeper_move_eject)))
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/sleeper/proc/sleeper_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/sleeper/proc/sleeper_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(controls_inside && user == occupant)
 		tgui_interact(user)
@@ -416,7 +416,9 @@ UI_ACT_PROC(/obj/machinery/sleeper, ui_act_auto_eject_dead_off)
 APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_{appearance_occupied}")
 
 /// Old attackby. It never called ..(), so every item stops here.
-/obj/machinery/sleeper/proc/sleeper_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/sleeper/proc/sleeper_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	add_fingerprint(user)
 	if(istype(I, /obj/item/grab))
@@ -445,7 +447,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_{appearance_occupied}")
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /// Old verb "Eject occupant".
-/obj/machinery/sleeper/proc/sleeper_move_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/sleeper/proc/sleeper_move_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(user == occupant)
 		switch(user.stat)
@@ -466,9 +469,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_{appearance_occupied}")
 	go_out()
 
 /// Old MouseDrop_T.
-/obj/machinery/sleeper/proc/sleeper_interaction_drag(mob/user, mob/target, datum/interaction/interaction)
+/obj/machinery/sleeper/proc/sleeper_interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/target = A.held
 	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user) || !ishuman(target))
-		return FALSE
+		return OP_DECLINE
 	go_in(target, user)
 	return TRUE
 

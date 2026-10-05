@@ -76,19 +76,22 @@
 	color = "#6f432a"
 	plank_type = /obj/item/stack/material/wood/hard
 
-EXTEND_INTERACTIONS(/obj/item/stack/material/log, INTERACT_ITEM(null, PROC_REF(log_interaction_item)))
+CAPABILITIES(/obj/item/stack/material/log)
+	op("log_interaction_item", item(/obj/item), then(PROC_REF(log_interaction_item)))
 
 /// Old attackby.
-/obj/item/stack/material/log/proc/log_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/stack/material/log/proc/log_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W) || W.force <= 0)
-		return FALSE
+		return OP_DECLINE
 	if(W.sharp && W.edge)
 		var/time = (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
 		user.setClickCooldown(time)
 		om_task_timed(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/stack/material/log/proc/cut_planks_done(mob/user, our_material_name)
 	if(!use(1))

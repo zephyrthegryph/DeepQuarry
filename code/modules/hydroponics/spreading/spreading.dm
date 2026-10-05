@@ -61,6 +61,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 CAPABILITIES(/obj/effect/plant)
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
+	op("hit_plant", item(/obj/item), then(PROC_REF(interaction_hit_plant)))
+	op("touch_plant", hand(), then(PROC_REF(interaction_touch_plant)))
 
 // neighbouring plants resume spreading.
 /obj/effect/plant/on_destroy(force)
@@ -232,13 +234,10 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 	floor = 1
 	return 1
 
-EXTEND_INTERACTIONS(/obj/effect/plant, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_plant)), \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_plant)), \
-)
-
 /// Old attackby: a scalpel takes a sample, anything else hacks at the plant. The item's normal handling still follows.
-/obj/effect/plant/proc/interaction_hit_plant(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/plant/proc/interaction_hit_plant(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	user.setClickCooldown(user.get_attack_speed(held))
 	SSplants.add_plant(src)
 
@@ -246,10 +245,11 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 		take_plant_sample(user)
 	else if(held.force)
 		health -= held.force
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attack_hand: pull free whoever the plant has entangled.
-/obj/effect/plant/proc/interaction_touch_plant(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/plant/proc/interaction_touch_plant(datum/act/op/A)
+	var/mob/user = A.actor
 	manual_unbuckle(user)
 	return TRUE
 

@@ -149,6 +149,10 @@
 	part_name = "clicks"
 	bind_kind = BIND_CLICKS
 
+/datum/entry/part/bind/tk
+	part_name = "tk"
+	bind_kind = BIND_TK
+
 /// hand(): the actor's hand on the target.
 /proc/hand()
 	return part_make(/datum/entry/part/bind/hand)
@@ -198,6 +202,14 @@
 /// the input a player uses for the op an AI behaviour reaches by key.
 /proc/clicks()
 	return part_make(/datum/entry/part/bind/clicks)
+
+/// tk(): the hand's touch of a target the actor reaches only with its mind: out of every hand's reach, in sight, within TK_RANGE (the old INTERACT_TK; an
+/// attack_tk() override). The telekinesis provider (AFF_TELEKINESIS, tk_ready(): a TK mutation, or powered kinesis gloves) does it, so the actor half of the hand gate
+/// holds (a conscious actor who is not stunned) and the machine half never does: a mind has no posture or dexterity, and a machine's power is the op's own business.
+/// The op sits one tier above hand ops, because a TK actor's other providers also reach what it sees (design: any hand op at range): at range the op
+/// that means telekinesis goes first, and next to the actor the hand's op does.
+/proc/tk()
+	return part_make(/datum/entry/part/bind/tk)
 
 /// ui_act(args...) or ui_act("name", args...): a window button. The window action is the op's key unless a name is given. The arguments
 /// are arg(name, schema) parts.
@@ -710,9 +722,11 @@
 /// and use it): `nameof(GLOB.tgui_physical_state)`, the name of a state global (read when the window opens, so the declaration never depends on the global init
 /// order), or a /datum/tgui_state; `rights` (an R_* mask, at least one of them) with no state is ADMIN_STATE(rights). Neither: the default state, or the
 /// host's own `tgui_window_state` var / `ui_rights` (interface_state() in code/datums/sys/ui.dm). A state that depends on the instance stays a
-/// tgui_state() override.
-/proc/interface(window, title = null, rights = null, host = null, input = null, state = null)
-	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
+/// tgui_state() override. `forwards` (nameof(var): a var of the holder that holds the datum, or a list of them) is where a window action the holder has no
+/// op for goes: the sleeper console's window is its sleeper's panel, so every button of it is an op of the sleeper (the old UI_ACT_FORWARD). The target's
+/// op answers as if its own window sent the button; the actor's reach to the target is not asked (a window's ops have none).
+/proc/interface(window, title = null, rights = null, host = null, input = null, state = null, forwards = null)
+	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state, "forwards" = forwards)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
 
 /// ui_shape(operating, channels = list_of(row(...))): the declared shape of the window's data. `analyze gen ui_types` reads the declaration from source and
 /// writes the TypeScript type of the window (each field's schema range as the doc comment of its field); at runtime the entry carries no data. It is a

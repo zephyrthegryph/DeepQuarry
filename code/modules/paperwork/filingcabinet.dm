@@ -157,20 +157,19 @@ UI_ACT_PROC(/obj/structure/filingcabinet, ui_act_remove_object)
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
 
-EXTEND_INTERACTIONS(/obj/structure/filingcabinet/security, \
-	INTERACT_HAND(null, PROC_REF(security_interaction_hand)), \
-	INTERACT_TK(null, PROC_REF(security_interaction_tk)), \
-)
+CAPABILITIES(/obj/structure/filingcabinet/security)
+	op("security_interaction_hand", hand(), then(PROC_REF(security_interaction_hand)))
+	op("security_interaction_tk", tk(), then(PROC_REF(security_interaction_tk)))
 
 /// Old attack_hand.
-/obj/structure/filingcabinet/security/proc/security_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/filingcabinet/security/proc/security_interaction_hand(datum/act/op/A)
 	populate()
-	return FALSE
+	return OP_DECLINE
 
 /// Old attack_tk: fill the records first, then the base cabinet's telekinetic rummage.
-/obj/structure/filingcabinet/security/proc/security_interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/filingcabinet/security/proc/security_interaction_tk(datum/act/op/A)
 	populate()
-	return FALSE
+	return OP_DECLINE
 
 /*
  * Medical Record Cabinets
@@ -201,17 +200,16 @@ EXTEND_INTERACTIONS(/obj/structure/filingcabinet/security, \
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
 
-EXTEND_INTERACTIONS(/obj/structure/filingcabinet/medical, \
-	INTERACT_HAND(null, PROC_REF(medical_interaction_hand)), \
-	INTERACT_TK(null, PROC_REF(medical_interaction_tk)), \
-)
+CAPABILITIES(/obj/structure/filingcabinet/medical)
+	op("medical_interaction_hand", hand(), then(PROC_REF(medical_interaction_hand)))
+	op("medical_interaction_tk", tk(), then(PROC_REF(medical_interaction_tk)))
 
 /// Old attack_hand.
-/obj/structure/filingcabinet/medical/proc/medical_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/filingcabinet/medical/proc/medical_interaction_hand(datum/act/op/A)
 	populate()
-	return FALSE
+	return OP_DECLINE
 
 /// Old attack_tk: fill the records first, then the base cabinet's telekinetic rummage.
-/obj/structure/filingcabinet/medical/proc/medical_interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/filingcabinet/medical/proc/medical_interaction_tk(datum/act/op/A)
 	populate()
-	return FALSE
+	return OP_DECLINE

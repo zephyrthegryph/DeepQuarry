@@ -1851,17 +1851,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/borgplushie/drake, TYPE_PROC_REF(/
 		to_chat(user, span_notice(" You insert bread into the toaster. "))
 		play_sfx(loc, SFX_MACHINES_DING)
 
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_interaction_item)))
+CAPABILITIES(/obj/item/toy/plushie/ipc)
+	op("ipc_interaction_item", item(/obj/item), then(PROC_REF(ipc_interaction_item)))
 
 /// Old attackby.
-/obj/item/toy/plushie/ipc/proc/ipc_interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/toy/plushie/ipc/proc/ipc_interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/material/kitchen/utensil))
 		to_chat(user, span_notice(" You insert the [I] into the toaster. "))
 		fx_sparks(src, 5)
 		user.electrocute_act(15,src,0.75)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/toy/plushie/ipc/toaster
 	name = "toaster plushie"
@@ -1979,12 +1982,15 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_
 	icon_state = "rock"
 	attack_verb = list("grug'd", "unga'd")
 
-DECLARE_INTERACTIONS(/obj/item/toy/rock, INTERACT_INSERT(/obj/item/pen, PROC_REF(interaction_draw_face), "Draw a face"))
+CAPABILITIES(/obj/item/toy/rock)
+	op("draw_face", item(/obj/item/pen), label("Draw a face"), then(PROC_REF(interaction_draw_face)))
 
 /// Old attackby.
-/obj/item/toy/rock/proc/interaction_draw_face(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/toy/rock/proc/interaction_draw_face(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	open_request(src, /datum/prompt/choice, PROC_REF(face_chosen), answerer = user, title = "Faces", question = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/toy/rock/proc/face_chosen(datum/act/request/A)
 	if(!A.answer)

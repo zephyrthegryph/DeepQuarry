@@ -11,6 +11,12 @@
 /datum/unit_test/dq_gap/proc/run_gap()
 	return
 
+/// A conscious person with hands.
+/datum/unit_test/dq_gap/proc/person(turf/T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T || run_loc_floor_bottom_left)
+	H.enable_godmode()
+	return H
+
 /// A handler that answers OP_DECLINE leaves the click to the next candidate; one that does not decline is the only one that runs.
 /datum/unit_test/dq_gap/op_decline_falls_through
 /datum/unit_test/dq_gap/op_decline_falls_through/run_gap()
@@ -188,3 +194,208 @@
 	D.set_detect_state("")
 	test_time(2)
 	TEST_ASSERT_EQUAL(D.icon_state, "[base]", "and back")
+
+/// drag(): an item(T) op pinned to GESTURE_DRAG answers a mob dragged onto its holder, the dragged mob is A.held, and OP_DECLINE leaves the drag to the next taker.
+/datum/unit_test/dq_gap/input_drag_puts_the_dragged_mob_in_held
+/datum/unit_test/dq_gap/input_drag_puts_the_dragged_mob_in_held/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/victim = person()
+	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
+	var/datum/op_result/R = test_drag(H, victim, target)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the drag committed")
+	TEST_ASSERT_EQUAL(target.ran_text(), "drag", "only the drag op ran (the hand ops are not a drag's)")
+	TEST_ASSERT_EQUAL(target.dragged_what, victim, "the dragged mob was A.held")
+	target.forget_ran()
+	target.powered = FALSE
+	R = test_drag(H, victim, target)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_DECLINED, "an op that declines is not handled")
+	TEST_ASSERT(!length(target.ran), "and ran nothing")
+
+/// alt_click: a hand() op pinned to GESTURE_ALT answers an alt-click, and a plain click does not reach it.
+/datum/unit_test/dq_gap/input_alt_is_a_pinned_hand_op
+/datum/unit_test/dq_gap/input_alt_is_a_pinned_hand_op/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
+	var/datum/op_result/R = test_click(H, target, null, GESTURE_ALT)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the alt-click committed")
+	TEST_ASSERT_EQUAL(target.ran_text(), "alt", "the alt op ran")
+	target.forget_ran()
+	test_click(H, target, null, GESTURE_CLICK)
+	TEST_ASSERT_EQUAL(target.ran_text(), "pet", "a plain click is the hand's Use, not the alt-click")
+	// an unconscious actor is refused by the actor half of the hand gate, ungated() or not
+	target.forget_ran()
+	H.set_stat(UNCONSCIOUS)
+	test_click(H, target, null, GESTURE_ALT)
+	TEST_ASSERT(!length(target.ran), "an unconscious actor alt-clicks nothing")
+
+/// A stance variant is the same op with stance(): the actor's stance picks the one that answers, and two ops of disjoint stances are no clash.
+/datum/unit_test/dq_gap/input_stance_picks_the_variant
+/datum/unit_test/dq_gap/input_stance_picks_the_variant/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_inputs/target = allocate(/obj/gap_inputs, run_loc_floor_bottom_left)
+	test_click(H, target, null)
+	TEST_ASSERT_EQUAL(target.ran_text(), "pet", "peaceful: the stance(I_HELP) op")
+	target.forget_ran()
+	H.set_combat_mode(TRUE)
+	test_click(H, target, null)
+	TEST_ASSERT_EQUAL(target.ran_text(), "bite", "hostile: the stance(I_HURT) op")
+
+/// tk(): a telekinetic actor does a tk() op on what its hands do not reach, and only then; a hand op is reached at range through the same provider.
+/datum/unit_test/dq_gap/input_tk_is_a_provider_for_what_no_hand_reaches
+/datum/unit_test/dq_gap/input_tk_is_a_provider_for_what_no_hand_reaches/run_gap()
+	var/turf/home = run_loc_floor_bottom_left
+	var/turf/away = locate(home.x + 3, home.y, home.z)
+	TEST_ASSERT_NOTNULL(away, "a turf three tiles away")
+	var/mob/living/carbon/human/H = person(home)
+	var/obj/gap_inputs/far = allocate(/obj/gap_inputs, away)
+	var/obj/gap_touch/far_both = allocate(/obj/gap_touch, away)
+	test_click(H, far, null)
+	TEST_ASSERT(!length(far.ran), "without telekinesis nothing reaches three tiles")
+	H.add_mutation(TK)
+	TEST_ASSERT(H.tk_ready(), "the mutation makes the actor tk_ready()")
+	var/datum/op_result/R = test_click(H, far, null)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "with it the click committed")
+	TEST_ASSERT_EQUAL(far.ran_text(), "tk", "the tk op went first, ahead of the hand ops the same provider reaches")
+	test_click(H, far_both, null)
+	TEST_ASSERT_EQUAL(far_both.ran_text(), "touch", "with no tk op, the hand op is done through the telekinesis provider")
+	// next to the actor the hand's op answers and the tk op is not offered
+	var/obj/gap_inputs/near = allocate(/obj/gap_inputs, home)
+	test_click(H, near, null)
+	TEST_ASSERT_EQUAL(near.ran_text(), "pet", "adjacent: the hand's op, not the tk one")
+	H.remove_mutation(TK)
+	far.forget_ran()
+	test_click(H, far, null)
+	TEST_ASSERT(!length(far.ran), "without the mutation it is out of reach again")
+	// an unconscious telekinetic actor does nothing: the actor half of the hand gate holds for tk()
+	H.add_mutation(TK)
+	far.forget_ran()
+	H.set_stat(UNCONSCIOUS)
+	test_click(H, far, null)
+	TEST_ASSERT(!length(far.ran), "an unconscious actor reaches with nothing")
+
+/// OP_PASS: handled, the input not used up: the op commits and the next candidate answers too; a handler that does not pass ends the click.
+/datum/unit_test/dq_gap/op_pass_hands_the_click_on
+/datum/unit_test/dq_gap/op_pass_hands_the_click_on/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_pass/target = allocate(/obj/gap_pass, run_loc_floor_bottom_left)
+	var/obj/item/pen/thing = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	H.put_in_active_hand(thing)
+	var/datum/op_result/R = test_click(H, target, thing)
+	TEST_ASSERT_EQUAL(target.first, 1, "the first op ran")
+	TEST_ASSERT_EQUAL(target.second, 1, "and, having passed, so did the second")
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the chain's last result committed")
+	target.passes_it = FALSE
+	test_click(H, target, thing)
+	TEST_ASSERT_EQUAL(target.first, 2, "the first op ran again")
+	TEST_ASSERT_EQUAL(target.second, 1, "not passing, it took the click and the second did not run")
+
+/// ui_act("*") answers every window action no op names (an embedded controller's program commands); the named button wins, and the op's own requirement
+/// says which of the rest it takes. A.window_action() is the action that reached it.
+/datum/unit_test/dq_gap/ui_fallback_answers_the_actions_nothing_names
+/datum/unit_test/dq_gap/ui_fallback_answers_the_actions_nothing_names/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_window/W = allocate(/obj/gap_window, run_loc_floor_bottom_left)
+	test_ui(H, W, "named")
+	test_ui(H, W, "alpha")
+	test_ui(H, W, "gamma")
+	TEST_ASSERT_EQUAL(W.log_text(), "named,program:alpha", "the named button ran, the fallback took the listed action and left the unlisted one alone")
+
+/// A window action the holder has no op for goes to the unit its interface forwards to (the sleeper console); a subtype's own handler overrides the type's.
+/datum/unit_test/dq_gap/ui_forward_and_override_route_the_button
+/datum/unit_test/dq_gap/ui_forward_and_override_route_the_button/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_window/W = allocate(/obj/gap_window, run_loc_floor_bottom_left)
+	var/obj/gap_window/locked/L = allocate(/obj/gap_window/locked, run_loc_floor_bottom_left)
+	var/obj/gap_console/C = allocate(/obj/gap_console, run_loc_floor_bottom_left)
+	rel_set(C, nameof(C.unit), W)
+	test_ui(H, C, "named")
+	TEST_ASSERT_EQUAL(W.log_text(), "named", "the console's button was the unit's op")
+	test_ui(H, C, "alpha")
+	TEST_ASSERT_EQUAL(W.log_text(), "named,program:alpha", "and so was its fallback")
+	test_ui(H, C, "nothing_names_this")
+	TEST_ASSERT_EQUAL(W.log_text(), "named,program:alpha", "an action neither knows does nothing")
+	test_ui(H, L, "named")
+	TEST_ASSERT_EQUAL(L.log_text(), "locked", "the subtype's own handler answered the type's op")
+
+/// A modal is a question shown in the window: modal_open runs the op named "modal:<id>", the question is the window's data["modal"], the window's modal_answer
+/// answers it and modal_close cancels it; a yes/no carries its own labels.
+/datum/unit_test/dq_gap/modal_is_a_question_in_the_window
+/datum/unit_test/dq_gap/modal_is_a_question_in_the_window/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_window/W = allocate(/obj/gap_window, run_loc_floor_bottom_left)
+	test_ui(H, W, OP_UI_MODAL_OPEN, list("id" = "note", "arguments" = list("x" = 1)))
+	var/list/modal = tgui_modal_data(W)
+	TEST_ASSERT_NOTNULL(modal, "the question is the window's modal")
+	TEST_ASSERT_EQUAL(modal["id"], "note", "under the id the client opened")
+	TEST_ASSERT_EQUAL(modal["type"], "input", "a text question is an input modal")
+	TEST_ASSERT_EQUAL(modal["text"], "Note?", "asking its question")
+	TEST_ASSERT_EQUAL(modal["value"], "none", "with its default")
+	TEST_ASSERT_EQUAL(modal["args"]["x"], 1, "and the arguments the client passed")
+	var/list/window_data = list()
+	present_tgui_data(W, H, window_data)
+	TEST_ASSERT_NOTNULL(window_data["modal"], "present_tgui_data() puts it in the window's data")
+	W.act_modal_answer(H, "note", "hello", null)
+	TEST_ASSERT_EQUAL(W.log_text(), "note:hello", "the answer ran the op")
+	TEST_ASSERT_NULL(tgui_modal_data(W), "and the modal is gone")
+	test_ui(H, W, OP_UI_MODAL_OPEN, list("id" = "note"))
+	W.act_modal_close(H, "note")
+	TEST_ASSERT_EQUAL(W.log_text(), "note:hello", "closed without an answer, nothing ran")
+	TEST_ASSERT_NULL(tgui_modal_data(W), "and the modal is gone")
+	test_ui(H, W, OP_UI_MODAL_OPEN, list("id" = "style"))
+	modal = tgui_modal_data(W)
+	TEST_ASSERT_EQUAL(modal["type"], "bentospritesheet", "a bento choice is a bento modal")
+	TEST_ASSERT_EQUAL(length(modal["choices"]), 3, "with its choices")
+	W.act_modal_answer(H, "style", "9", null)
+	TEST_ASSERT_EQUAL(W.log_text(), "note:hello", "an index outside the choices answers nothing")
+	TEST_ASSERT_NOTNULL(tgui_modal_data(W), "and the question stays")
+	W.act_modal_answer(H, "style", "2", null)
+	TEST_ASSERT_EQUAL(W.log_text(), "note:hello,style:b", "the index is the choice at it")
+	test_ui(H, W, OP_UI_MODAL_OPEN, list("id" = "confirm"))
+	modal = tgui_modal_data(W)
+	TEST_ASSERT_EQUAL(modal["type"], "boolean", "a yes/no is a boolean modal")
+	TEST_ASSERT_EQUAL(modal["yes_text"], "Do it", "with its own yes label")
+	TEST_ASSERT_EQUAL(modal["no_text"], "Leave it", "and its own no label")
+	W.act_modal_answer(H, "confirm", "1", null)
+	TEST_ASSERT_EQUAL(W.log_text(), "note:hello,style:b,confirmed:1", "yes was answered")
+
+/// The yes/no kind answers by its own labels: the button with the yes label is a yes.
+/datum/unit_test/dq_gap/yes_no_carries_its_labels
+/datum/unit_test/dq_gap/yes_no_carries_its_labels/run_gap()
+	var/datum/prompt/yes_no/gap_labelled/labelled = new
+	TEST_ASSERT(labelled.answer_of_button("Launch"), "the yes label is a yes")
+	TEST_ASSERT(!labelled.answer_of_button("Cancel"), "the no label is a no")
+	TEST_ASSERT(!labelled.answer_of_button("Yes"), "the default label is not the button any more")
+	var/datum/prompt/yes_no/plain = new
+	TEST_ASSERT(plain.answer_of_button("Yes"), "a prompt with no labels keeps Yes")
+	TEST_ASSERT(!plain.answer_of_button("No"), "and No")
+	qdel(labelled)
+	qdel(plain)
+
+/// A question of an op is asked again until the answer is one the kind takes: a choice that is not on the list leaves the op waiting, no handler loop.
+/datum/unit_test/dq_gap/ask_a_refused_answer_asks_again
+/datum/unit_test/dq_gap/ask_a_refused_answer_asks_again/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_asker/asker = allocate(/obj/gap_asker, run_loc_floor_bottom_left)
+	H.put_in_active_hand(asker)
+	var/datum/op_result/R = test_click(H, asker, asker)
+	TEST_ASSERT_NULL(R?.outcome, "the op waits for the answer")
+	test_answer(H, "green")
+	TEST_ASSERT_NULL(R.outcome, "an answer that is not one of the choices leaves the question open")
+	test_answer(H, "blue")
+	TEST_ASSERT_EQUAL(R.outcome, ACT_COMMITTED, "a choice answers it and the effect runs once")
+	TEST_ASSERT_EQUAL(asker.log_text(), "picked:blue", "with the answer of the step")
+
+/// The fields of a step: a literal as written, a var of the holder as nameof(var) (what the player saw when it was asked), anything else computed.
+/datum/unit_test/dq_gap/ask_fields_are_literal_var_or_computed
+/datum/unit_test/dq_gap/ask_fields_are_literal_var_or_computed/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_asker/asker = allocate(/obj/gap_asker, run_loc_floor_bottom_left)
+	test_menu(H, asker, "name")
+	var/datum/prompt/text/P = SSrequests.open_for(H)
+	TEST_ASSERT_NOTNULL(P, "the question is open")
+	TEST_ASSERT_EQUAL(P.question, "Name?", "a literal field")
+	TEST_ASSERT_EQUAL(P.default, "Bae", "a var of the holder")
+	TEST_ASSERT_EQUAL(P.title, "Name [asker]", "a computed field")
+	TEST_ASSERT(P.name_text, "name_text as declared")
+	test_answer(H, "Rex")
+	TEST_ASSERT_EQUAL(asker.log_text(), "named:Rex", "the answer reaches the effect")

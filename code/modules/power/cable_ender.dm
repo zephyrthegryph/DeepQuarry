@@ -23,16 +23,19 @@
 				if (!powernetless_only || !target.material_overlay)
 					. |= target
 
-EXTEND_INTERACTIONS(/obj/structure/cable/ender, INTERACT_ITEM(null, PROC_REF(ender_interaction_item)))
+CAPABILITIES(/obj/structure/cable/ender)
+	op("ender_interaction_item", item(/obj/item), then(PROC_REF(ender_interaction_item)))
 
 /// Old attackby.
-/obj/structure/cable/ender/proc/ender_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/cable/ender/proc/ender_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	src.add_fingerprint(user)
 	if(istype(W, /obj/item/stack/cable_coil))
 		to_chat(user,  span_notice(" You will need heavier cables to connect to these."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else
-		return FALSE
+		return OP_DECLINE
 
 /obj/structure/cable/ender/wirecutter_act(mob/user, obj/item/W)
 	to_chat(user, span_notice("These cables are too tough to be cut with those [W.name]."))

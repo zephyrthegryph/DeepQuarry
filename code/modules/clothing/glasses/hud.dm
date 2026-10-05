@@ -80,6 +80,9 @@
 
 CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	owns_one(nameof(tgarscreen), starts = nameof(tgarscreen_path))
+	op("omnihud_display_self", in_hand(), then(PROC_REF(omnihud_display_self)))
+	op("omnihud_chromatize_verb", menu(), label("Toggle AR Glasses Shading"), needs(carried()), then(PROC_REF(omnihud_chromatize_verb)))
+	op("omnihud_toggle_ar_planes_verb", menu(), label("Toggle AR Heads-Up Display"), needs(carried()), then(PROC_REF(omnihud_toggle_ar_planes_verb)))
 
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)
@@ -133,18 +136,13 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud
 		name = "[initial(name)]"
 		icon_state = "[initial(icon_state)]"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
-	INTERACT_SELF(null, PROC_REF(omnihud_display_self)), \
-	INTERACT_VERB("Toggle AR Glasses Shading", PROC_REF(omnihud_chromatize_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle AR Heads-Up Display", PROC_REF(omnihud_toggle_ar_planes_verb), REQ_IN_INVENTORY), \
-)
-
 /// Old attack_self: show the AR display. FALSE where the old body fell through or returned nothing.
-/obj/item/clothing/glasses/omnihud/proc/omnihud_display_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_display_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
-		return FALSE
+		return OP_DECLINE
 	if(hud_goggles)
-		return FALSE
+		return OP_DECLINE
 
 	var/mob/living/carbon/human/H = user
 	if(!H.get_equipped_item(SLOT_ID_EYES) || !(H.get_equipped_item(SLOT_ID_EYES) == src))
@@ -152,11 +150,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
 	else
 		if(!ar_interact(H))
 			to_chat(user, span_warning("The [src] does not have any kind of special display."))
-	return FALSE
+	return OP_DECLINE
 
 //cosmetic shading, doesn't enhance eye protection
 /// Old verb "Toggle AR Glasses Shading".
-/obj/item/clothing/glasses/omnihud/proc/omnihud_chromatize_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_chromatize_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(icon_state == "3d")
@@ -197,7 +196,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
 	update_clothing_icon()
 
 /// Old verb "Toggle AR Heads-Up Display".
-/obj/item/clothing/glasses/omnihud/proc/omnihud_toggle_ar_planes_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_toggle_ar_planes_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	//We do not check if user can move or not, since this system is inspired to help see chat bubbles during scenes primarily.
 	//Preventing turning off the HUD could get in the way of scene flow.
 	if(ar_toggled)

@@ -10,8 +10,9 @@
 //   the intent the gesture means, and the binding's own input (the held item is of the type item(T) names, a tool of quality Q);
 //   the op's when conditions hold.
 //
-// Order: the bind profile's intent list, then the op's tier, then relative priority (above/below), then target before held before actor, then
-// declaration order. The first candidate runs through Require, Wait and Do. If Require refuses the player sees the reason and the input never
+// Order: the bind profile's intent list, then the op's tier, then target before held before actor, then the more specific held-item binding
+// (an item type narrower than /obj/item, then a tool quality, then a broad item), then declaration order; an explicit priority(above/below)
+// or click_order() moves an op over all of that. The first candidate runs through Require, Wait and Do. If Require refuses the player sees the reason and the input never
 // falls through; only Match failures fall through. If nothing survives and a gate dropped something, the engine shows the best near-miss's reason.
 //
 // Two passes keep the cost flat as candidates grow: pass 1 builds the ordered list with the cheap gates and runs no requirement code, pass 2
@@ -41,6 +42,8 @@
 	var/tier = OP_PRIORITY_NORMAL
 	/// The type its item() or stack() binding takes, or null.
 	var/item_type
+	/// How specific its binding is about the held item (op_binding_specificity): 0 for a binding that names no held item.
+	var/specificity = 0
 	var/seq = 0
 
 /// What one resolution found: every candidate with the filter that dropped it, the ordered survivors and the winner.
@@ -163,7 +166,8 @@
 					return TRUE
 			return FALSE
 		if(BIND_ITEM, BIND_STACK)
-			return side == CAND_TARGET && !isnull(held) && istype(held, B.args["type"])
+			// an item used on itself is its in_hand() use, never an item() of its own (the old attackby never ran on itself)
+			return side == CAND_TARGET && !isnull(held) && held != target && istype(held, B.args["type"])
 		if(BIND_IN_HAND)
 			return !isnull(held) && held == holder && target == held
 		if(BIND_AT_TARGET)
@@ -175,6 +179,12 @@
 			return side == CAND_TARGET
 		if(BIND_HAND, BIND_REMOTE)
 			return side == CAND_TARGET
+		if(BIND_TK)
+			// telekinesis answers what no hand reaches: a target next to the actor (or on it) is the hand's, as the old tk adapter ran only for a ranged click
+			if(side != CAND_TARGET || !actor || !isatom(target))
+				return FALSE
+			var/atom/far = target
+			return far.loc != actor && !far.Adjacent(actor)
 		if(BIND_MENU, BIND_AI)
 			return TRUE // chosen by key: the actor's own op (an ability, a natural weapon) is reached from either side
 		if(BIND_CLICKS)
@@ -320,6 +330,7 @@
 	C.tier = P.tier
 	if(B.bind_kind == BIND_ITEM || B.bind_kind == BIND_STACK)
 		C.item_type = B.args["type"]
+	C.specificity = op_binding_specificity(B)
 	C.seq = seq
 	R.all += C // ALLOW(ownership): a transient record of one resolution: dropped with it
 	op_cand_pass1(R, C, gesture)
@@ -470,7 +481,8 @@
 	var/static/list/depth = list(GATE_ACTOR = 1, GATE_ORIGIN = 2, GATE_PROVIDER = 3, GATE_REACH = 4)
 	return (depth[A.dropped_by] || 0) > (depth[B.dropped_by] || 0)
 
-/// Sorts the survivors: intent rank, tier, then target before held before actor, then declaration order; then relative priorities (explicit, else op_default_anchor).
+/// Sorts the survivors: intent rank, tier, then target before held before actor, then binding specificity, then declaration order; then explicit
+/// relative priorities and click orders, which win over all of these.
 /proc/op_resolution_sort(datum/op_resolution/R)
 	var/list/sorted = list()
 	for(var/datum/op_cand/C as anything in R.ordered)
@@ -480,12 +492,8 @@
 				position = i
 				break
 		sorted.Insert(position, C)
+	op_specificity_sort(sorted)
 	// priority(above(key)) / priority(below(key)): moved next to the named candidate whatever the tiers
-	var/has_catch_all = FALSE
-	for(var/datum/op_cand/O as anything in sorted)
-		if(O.oplan.key == OP_KEY_STORAGE_PUT_IN)
-			has_catch_all = TRUE
-			break
 	var/list/chained = null
 	for(var/datum/op_cand/C as anything in sorted.Copy())
 		var/list/rel = C.oplan.priority_rel
@@ -500,8 +508,6 @@
 		else if(C.oplan.click_below)
 			LAZYADD(chained, C)
 			continue
-		else if(has_catch_all && C.item_type)
-			anchor = op_default_anchor(C, sorted)
 		if(!anchor)
 			continue
 		sorted -= C
@@ -539,17 +545,57 @@
 					return O
 	return null
 
-/// The default relative priority of a candidate, so an op never needs priority(above(key)) just to hold its place in a menu or a click (an
-/// explicit priority() still says an exception). Today one rule: the storage catch-all "storage.put_in" takes any item, so an op of the same holder
-/// for a narrower item (strike(item(match)), label(item(pen)), a gather of another storage) answers just above it, whatever the tiers. Returns
-/// the candidate to sit above, or null.
-/proc/op_default_anchor(datum/op_cand/C, list/sorted)
-	for(var/datum/op_cand/O as anything in sorted)
-		if(O.oplan.key != OP_KEY_STORAGE_PUT_IN || O.holder != C.holder || O == C || !O.item_type || O.item_type == C.item_type)
-			continue
-		if(ispath(C.item_type, O.item_type))
-			return O
-	return null
+/// How specific a binding is about the held item, for op_specificity_sort: of two candidates answering one input at one intent and tier, on
+/// one side, the more specific binding answers first. 0: the binding names no held item (hand(), in_hand(), at_target(), ...), and is not
+/// compared. 1: a broad item (item(/obj/item), stack(/obj/item)), whatever when() or acceptance proc gates it (stock's stockable, the
+/// airlock's prying_weapon: opaque, so they rank as what they bind). 2: a tool quality (tool(Q), any_of_tools(...)). 4 and up: an item
+/// or stack type narrower than /obj/item, ranked by path depth (item(/obj/item/pen) is 4, item(/obj/item/stack/material/plasteel) 6). So:
+/// exact item type > tool quality > broad item type.
+/proc/op_binding_specificity(datum/entry/part/bind/B)
+	switch(B.bind_kind)
+		if(BIND_TOOL)
+			return 2
+		if(BIND_ITEM, BIND_STACK)
+			var/type = B.args["type"]
+			if(!ispath(type, /obj/item))
+				return 0 // a mob or structure dragged in (climb_in's item(/mob/living)): not a held item
+			if(type == /obj/item)
+				return 1
+			return length(splittext("[type]", "/")) // "/obj/item/pen" -> 4 pieces ("", obj, item, pen): /obj/item/X is 4, one more per level
+	return 0
+
+/// Binding specificity: within each run of candidates tied on intent rank, tier and side, the held-item bindings (op_binding_specificity
+/// above 0) are reordered most specific first, stably, in the slots they already hold; a binding that names no held item keeps its slot, so
+/// specificity orders only held-item bindings against each other and the order stays a total one.
+/proc/op_specificity_sort(list/sorted)
+	var/n = length(sorted)
+	var/start = 1
+	while(start <= n)
+		var/datum/op_cand/first = sorted[start]
+		var/stop = start
+		while(stop < n)
+			var/datum/op_cand/next = sorted[stop + 1]
+			if(next.rank != first.rank || next.tier != first.tier || next.side != first.side)
+				break
+			stop++
+		if(stop > start)
+			var/list/slots = list()
+			var/list/held = list()
+			for(var/i in start to stop)
+				var/datum/op_cand/C = sorted[i]
+				if(C.specificity)
+					slots += i
+					// stable insertion: after every candidate at least as specific
+					var/at = length(held) + 1
+					for(var/j in 1 to length(held))
+						var/datum/op_cand/O = held[j]
+						if(C.specificity > O.specificity)
+							at = j
+							break
+					held.Insert(at, C)
+			for(var/k in 1 to length(slots))
+				sorted[slots[k]] = held[k]
+		start = stop + 1
 
 /// Does candidate A come before B?
 /proc/op_cand_precedes(datum/op_cand/A, datum/op_cand/B)

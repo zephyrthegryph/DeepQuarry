@@ -40,11 +40,9 @@
 		else if(det_time == null)
 			. += "\The [src] is set for instant detonation."
 
-// Keep the inherited hand touch separate from subtype item interactions.
-EXTEND_INTERACTIONS(/obj/item/grenade, INTERACT_HAND_UNGATED(null, PROC_REF(grenade_interaction_hand)))
-
 CAPABILITIES(/obj/item/grenade)
 	op("prime", in_hand(), when(cond_not(nameof(special_handling))), label("Prime"), then(PROC_REF(grenade_primed)))
+	op("grenade_interaction_hand", hand(), ungated(), then(PROC_REF(grenade_interaction_hand)))
 
 /obj/item/grenade/proc/grenade_primed(datum/act/op/A)
 	var/mob/user = A.actor
@@ -96,9 +94,9 @@ CAPABILITIES(/obj/item/grenade)
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_hand: stops any throw walk, then the touch goes on to the gate and pickup.
-/obj/item/grenade/proc/grenade_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/grenade/proc/grenade_interaction_hand(datum/act/op/A)
 	walk(src, null, null)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/grenade/vendor_action(obj/machinery/vending/V)
 	activate(V)

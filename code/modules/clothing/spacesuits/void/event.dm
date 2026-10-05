@@ -364,31 +364,16 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/mercenary, suit_storage_spe
 
 	armor_spec = "melee=30;bullet=30;laser=30;energy=20;bomb=20;bio=100;rad=20;cold=60"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/aether, \
-	INTERACT_VERB("Helmet Color", PROC_REF(aether_select_color_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
+	op("aether_select_color_verb", menu(), label("Helmet Color"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Select a new color:", "title" = computed(PROC_REF(aether_select_color_verb_a1_title)), "choices" = list("White", "Blue", "Purple", "Yellow", "Red", "Green"), "timeout" = 0), step = "a1"), then(PROC_REF(aether_select_color_verb)))
 
 /// Old verb "Helmet Color".
-/obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/original_client_ckey
-	if(istype(user, /client))
-		var/client/C = user
-		original_client_ckey = C.ckey
-		user = C.mob
-	if(!ismob(user) || QDELETED(user))
-		return
-	open_request(src, /datum/prompt/choice/aether_helmet_color, PROC_REF(aether_color_chosen), answerer = user, title = "[src] Color", original_client_ckey = original_client_ckey)
+/obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb_a1_title(datum/act/op/A)
+	return "[src] Color"
 
-/obj/item/clothing/head/helmet/space/void/aether/proc/aether_color_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	apply_aether_color(A)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/head/helmet/space/void/aether/proc/apply_aether_color(datum/act/request/A)
-	var/datum/prompt/choice/aether_helmet_color/request = A.request
-	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	var/choice = A.answer.answer_value
+/obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/choice = A.step_value("a1")
 	if(!choice)
 		return
 	icon_state = "moebiushelm_[choice]"
@@ -453,16 +438,3 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker, suit_stor
 
 	armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"
 
-/datum/prompt/choice/aether_helmet_color
-	question = "Select a new color:"
-	timeout = 0
-	choices = list("White", "Blue", "Purple", "Yellow", "Red", "Green")
-	var/original_client_ckey
-
-/datum/prompt/choice/aether_helmet_color/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if(original_client_ckey && !GLOB.directory[original_client_ckey])
-		return "gone"
-	return null

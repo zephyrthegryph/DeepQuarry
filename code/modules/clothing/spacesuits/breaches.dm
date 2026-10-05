@@ -24,6 +24,7 @@
 CAPABILITIES(/obj/item/clothing/suit/space)
 	ref_many(nameof(supporting_limbs))
 	owns_many(nameof(breaches))
+	op("space_suit_patch_item", item(/obj/item), then(PROC_REF(space_suit_patch_item)))
 
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
@@ -160,10 +161,10 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 
 //Handles repairs (and also upgrades).
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space, INTERACT_ITEM(null, PROC_REF(space_suit_patch_item)))
-
 /// Old attackby: patch burn breaches with steel or plastic.
-/obj/item/clothing/suit/space/proc/space_suit_patch_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clothing/suit/space/proc/space_suit_patch_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/material))
 		var/repair_power = 0
 		switch(W.get_material_name())
@@ -173,23 +174,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space, INTERACT_ITEM(null, PROC_REF(
 				repair_power = 1
 
 		if(!repair_power)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(isliving(src.loc))
 			to_chat(user, span_warning("How do you intend to patch a hardsuit while someone is wearing it?"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(!damage || !burn_damage)
 			to_chat(user, "There is no surface damage on \the [src] to repair.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		var/obj/item/stack/P = W
 		var/use_amt = min(P.get_amount(), 3)
 		if(use_amt && P.use(use_amt))
 			repair_breaches(BURN, use_amt * repair_power, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/suit/space/welder_act(mob/user, obj/item/tool)
 	if(isliving(src.loc))

@@ -32,6 +32,8 @@
 #define BIND_AI "ai"
 /// The actor's own op, reached by the actor clicking something (a natural weapon): the op sits on the actor, and the clicked thing is its target.
 #define BIND_CLICKS "clicks"
+/// Telekinesis: the hand's touch of a target out of every hand's reach, done by the telekinesis provider (an old INTERACT_TK).
+#define BIND_TK "tk"
 
 /// The op tiers (section 8), highest first. OP_PRIORITY_* master values are kept; ATTACK is the one master lacks.
 #ifndef OP_PRIORITY_ATTACK
@@ -42,6 +44,15 @@
 #define CAND_TARGET 1
 #define CAND_HELD 2
 #define CAND_ACTOR 3
+
+/// The window action names the engine gives a meaning: ui_act("*") answers every window action no op names, `modal_open` is how a client opens a modal of its
+/// window (the op's ui_act is "modal:<id>"), and the action that reached an op is A.args["window_action"] (A.window_action()).
+#define OP_UI_ANY "*"
+#define OP_UI_MODAL_OPEN "modal_open"
+#define OP_UI_MODAL_PREFIX "modal:"
+#define OP_UI_WINDOW_ACTION "window_action"
+/// How many windows deep a window action is forwarded (interface(forwards = ...)).
+#define OP_UI_FORWARD_DEPTH 3
 
 /// The refusal reason an engine gate reports when no binding of an op accepts the origin it was given.
 #define GATE_ORIGIN "origin"

@@ -69,10 +69,13 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/bath, TYPE_PROC_REF(/atom, appearance
 		icon_state = "bath3"
 	return .
 
-EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_interaction_item)))
+CAPABILITIES(/obj/structure/bed/bath)
+	op("bath_interaction_item", item(/obj/item), then(PROC_REF(bath_interaction_item)))
 
 /// Old attackby.
-/obj/structure/bed/bath/proc/bath_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/bed/bath/proc/bath_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/mop) || istype(I, /obj/item/soap)) // "Allows soap and rags to be used on mopbuckets"
 		if(reagents.total_volume < 1)
 			to_chat(user, span_warning("\The [src] is out of water!"))
@@ -82,16 +85,16 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_i
 			play_sfx(src, SFX_EFFECTS_SLOSH)
 	if(istype(I, /obj/item/reagent_containers/glass))
 		update_icon()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		var/mob/living/affecting = G?.grab_target()
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		act_message(user, src, others = span_notice("%U% attempts to buckle [affecting] into %T%!"))
 		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, G?.grab_target(), receiver = src, I = I, affecting = affecting)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /datum/om/task/timed/bath_bath_buckle
 	duration = 2 SECONDS

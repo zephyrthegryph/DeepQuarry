@@ -18,6 +18,7 @@
 /obj/item/clothing/gloves/telekinetic/proc/use_grip_power(mob/user,play_sound)
 	if(cell)
 		cell.checked_use(use_power_amount)
+		user?.tk_refresh() // the power left may be too little for the next reach
 		if(play_sound)
 			if(cell.charge < use_power_amount)
 				to_chat(user,span_danger("\The [src] bwoop as it runs out of power."))
@@ -25,13 +26,13 @@
 			else
 				play_sfx(src, SFX_MACHINES_GENERATOR_GENERATOR_END)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(telekinetic_remove_cell_hand)), \
-	INTERACT_INSERT(/obj/item/cell, PROC_REF(telekinetic_insert_cell), "Insert cell"), \
-)
+CAPABILITIES(/obj/item/clothing/gloves/telekinetic)
+	op("telekinetic_remove_cell_hand", hand(), ungated(), then(PROC_REF(telekinetic_remove_cell_hand)))
+	op("telekinetic_insert_cell", item(/obj/item/cell), label("Insert cell"), then(PROC_REF(telekinetic_insert_cell)))
 
 /// Old attack_hand: take the cell out while holding the gloves in the other hand.
-/obj/item/clothing/gloves/telekinetic/proc/telekinetic_remove_cell_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/gloves/telekinetic/proc/telekinetic_remove_cell_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(cell)
 			cell.update_icon()
@@ -40,21 +41,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			play_sfx(src, SFX_MACHINES_BUTTON)
 			return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /// Old attackby: install a device cell.
-/obj/item/clothing/gloves/telekinetic/proc/telekinetic_insert_cell(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clothing/gloves/telekinetic/proc/telekinetic_insert_cell(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell/device))
 		if(!cell)
 			if(!move_into(src, nameof(src.cell), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			play_sfx(src, SFX_MACHINES_BUTTON)
 		else
 			to_chat(user, span_warning("\The [src] already has a cell."))
 	else
 		to_chat(user, span_warning("\The [src] cannot use that type of cell."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/gloves/telekinetic/examine(mob/user)
 	. = ..()

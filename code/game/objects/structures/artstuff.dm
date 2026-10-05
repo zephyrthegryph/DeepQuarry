@@ -629,7 +629,7 @@ CAPABILITIES(/datum/prompt/color/paint_palette)
 	else
 		open_request(src, /datum/prompt/yes_no, PROC_REF(lateload_list_confirmed), answerer = admin, rights = R_HOLDER, title = "Generate list?", question = "No painting list ID was given. You may obtain such by debugging SSPersistence and checking the all_paintings entry. \
 			If you do not wish to do that, you may request a list to be generated of painting titles. This might be resource intensive. \
-			Proceed? It will likely have over 500 entries", timeout = 0)
+			Proceed? It will likely have over 500 entries", yes_text = "Proceed!", no_text = "Cancel", timeout = 0)
 
 /// The admin's pick of a painting to spawn: the index of the painting is kept on the question.
 /datum/prompt/yes_no/painting_lateload

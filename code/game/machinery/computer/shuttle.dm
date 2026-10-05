@@ -99,6 +99,8 @@ CAPABILITIES(/datum/prompt/choice/shuttle_authorization)
 /datum/prompt/yes_no/shuttle_emag_launch
 	title = "Shuttle control"
 	question = "Would you like to launch the shuttle?"
+	yes_text = "Launch"
+	no_text = "Cancel"
 	var/obj/item/card/card
 
 CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch)

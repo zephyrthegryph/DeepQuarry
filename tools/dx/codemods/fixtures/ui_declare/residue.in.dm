@@ -21,3 +21,15 @@ UI_ACT_PROC(/obj/machinery/guarded, guarded_go)
 	return TRUE
 /obj/machinery/guarded/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	return TRUE
+
+/obj/machinery/gap_late
+
+DECLARE_UI(/obj/machinery/gap_late, "GapLate")
+
+UI_ACT(/obj/machinery/gap_late, "later", ui_act_later)
+UI_ACT_PROC(/obj/machinery/gap_late, ui_act_later)
+	var/ok = prob(50)
+	var/_answer_a3 = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/text, message = "Name?")
+	if(isnull(_answer_a3))
+		return
+	return TRUE

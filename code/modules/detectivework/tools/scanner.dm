@@ -19,6 +19,8 @@
 
 CAPABILITIES(/obj/item/detective_scanner)
 	owns_many(nameof(stored))
+	op("examine_data_effect", menu(), label("Examine Forensic Data"), then(PROC_REF(examine_data_effect)))
+	op("detective_scanner_wipe_effect", menu(), label("Wipe Forensic Data"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(detective_scanner_wipe_effect_k217_question)), "title" = "Wipe Data", "choices" = list("Yes","No"), "buttons" = TRUE, "timeout" = 0), step = "k217"), then(PROC_REF(detective_scanner_wipe_effect)))
 
 /obj/item/detective_scanner/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!ishuman(M))
@@ -181,7 +183,8 @@ CAPABILITIES(/obj/item/detective_scanner)
 		. = 1
 	rel_add(src, nameof(stored), fresh, "\ref [A]")
 
-/obj/item/detective_scanner/proc/examine_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/detective_scanner/proc/examine_data_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	//to_world("user is [user]") //why was this a thing? -KK.
 	display_data(user)
@@ -233,52 +236,16 @@ CAPABILITIES(/obj/item/detective_scanner)
 			for(var/bloodsample in bloods)
 				to_chat(user, " - " + span_warning("[bloodsample]") + " Type: [bloods[bloodsample]]")
 
-/obj/item/detective_scanner/proc/detective_scanner_wipe_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice/detective_scanner_wipe, PROC_REF(detective_scanner_wipe_answered), answerer = user, question = "Are you sure you want to wipe all data from [src]?", held_item = held, interaction_context = interaction)
+/obj/item/detective_scanner/proc/detective_scanner_wipe_effect_k217_question(datum/act/op/A)
+	return "Are you sure you want to wipe all data from [src]?"
 
-/obj/item/detective_scanner/proc/detective_scanner_wipe_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	apply_detective_scanner_wipe(context)
-	SStgui.update_uis(src)
+/obj/item/detective_scanner/proc/detective_scanner_wipe_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/_answer_k217 = A.step_value("k217")
 
-/obj/item/detective_scanner/proc/apply_detective_scanner_wipe(datum/act/request/context)
-	if(context.request.answer_value == "Yes")
+	if (_answer_k217 == "Yes")
 		own_clear(src, nameof(stored), OWN_DELETE)
-		to_chat(context.request.answerer, span_notice("Forensic data erase complete."))
-
-/datum/prompt/choice/detective_scanner_wipe
-	title = "Wipe Data"
-	choices = list("Yes", "No")
-	buttons = TRUE
-	timeout = 0
-	var/obj/item/held_item
-	var/datum/interaction/interaction_context
-	var/expected_held = FALSE
-	var/expected_interaction = FALSE
-	recheck_on_open = TRUE
-
-CAPABILITIES(/datum/prompt/choice/detective_scanner_wipe)
-	ref_one(nameof(held_item), /obj/item)
-	ref_one(nameof(interaction_context), /datum/interaction)
-
-/datum/prompt/choice/detective_scanner_wipe/prepare(datum/act/A)
-	..()
-	var/obj/item/captured_held = held_item
-	var/datum/interaction/captured_interaction = interaction_context
-	expected_held = !isnull(captured_held)
-	expected_interaction = !isnull(captured_interaction)
-	rel_clear(src, nameof(held_item))
-	rel_set(src, nameof(held_item), captured_held)
-	rel_clear(src, nameof(interaction_context))
-	rel_set(src, nameof(interaction_context), captured_interaction)
-
-/datum/prompt/choice/detective_scanner_wipe/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if((expected_held && QDELETED(held_item)) || (expected_interaction && QDELETED(interaction_context)))
-		return "The original erase interaction is no longer available."
+		to_chat(user, span_notice("Forensic data erase complete."))
 
 /obj/item/detective_scanner/advanced
 	name = "advanced forensic scanner"
@@ -293,7 +260,3 @@ CAPABILITIES(/datum/prompt/choice/detective_scanner_wipe)
 
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/detective_scanner, \
-	INTERACT_VERB("Examine Forensic Data", PROC_REF(examine_data_effect)), \
-	INTERACT_VERB("Wipe Forensic Data", PROC_REF(detective_scanner_wipe_effect)), \
-)

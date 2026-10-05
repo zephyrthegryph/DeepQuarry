@@ -35,6 +35,9 @@
 /// resolves on to the next candidate (the veto hooks' HOOK_DECLINE, for an op). Effects that ran before the declining one are not undone: decline from the
 /// first effect, before anything is written.
 #define OP_DECLINE 5
+/// A then() handler or effect proc answers this to say "handled, but the input is not used up": the op commits, and the click goes on to the next candidate
+/// whose conditions hold, then on to the mob's own click handling (afterattack, the loot panel). The per-return form of the passes() part (the old INTERACTION_HANDLED_PASS).
+#define OP_PASS 6
 
 // ---- Origins: where an input arrived (section 8). Bits, so acts_via can be a mask (at most 24). ----
 #define ORIGIN_NONE 0

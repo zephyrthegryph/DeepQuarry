@@ -294,6 +294,7 @@ CAPABILITIES(/datum/material/processed_alloy)
 
 CAPABILITIES(/obj/item/stack/material/processed_alloy)
 	owns_one(nameof(batch_state), /datum/material_batch)
+	op("processed_alloy_item", item(/obj/item), then(PROC_REF(processed_alloy_item)))
 
 // INIT: this stack's material, colour, export value and a batch copy sized to its amount
 // ALLOW(init): the material is a per-instance argument and the batch copy is sized to this stack

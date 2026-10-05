@@ -408,20 +408,17 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	to_chat(user, span_warning("You short out the safeties on \the [src]'s construction limiter"))
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/rcd, \
-	INTERACT_ITEM("Load", PROC_REF(rcd_item)), \
-	INTERACT_USE("Select mode", PROC_REF(rcd_self)), \
-)
-
 /// Old attackby: load matter cartridges or sheets, then fall through as its ..() did.
-/obj/item/rcd/proc/rcd_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/rcd/proc/rcd_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/loaded = 0
 	if(istype(W, /obj/item/rcd_ammo))
 		var/obj/item/rcd_ammo/cartridge = W
 		var/can_store = min(max_stored_matter - stored_matter, cartridge.remaining)
 		if(can_store <= 0)
 			to_chat(user, span_warning("There's either no space or \the [cartridge] is empty!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		stored_matter += can_store
 		cartridge.remaining -= can_store
 		if(!cartridge.remaining)
@@ -450,7 +447,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		play_sfx(src, SFX_MACHINES_CLICK)
 		update_icon()
 		to_chat(user, span_notice("The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/rcd/proc/loadwithsheets(obj/item/stack/S, value, mob/user)
 	var/maxsheets = round((max_stored_matter-stored_matter)/value)    //calculate the max number of sheets that will fit in RCD
@@ -464,7 +461,8 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	return 0
 
 /// Old attack_self: the mode radial menu.
-/obj/item/rcd/proc/rcd_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rcd/proc/rcd_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	var/list/choices = list(
 		"Floors & Walls" = radial_image_floorwall,
 		"Airlock" = radial_image_airlock,

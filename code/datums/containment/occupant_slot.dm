@@ -30,6 +30,20 @@
 	radiation_transmission = 1
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
+/// Someone got in or out: what reads the occupant (a requirement that refuses an occupied machine) is told.
+/datum/om/relation/slot/occupant/on_link(datum/source, datum/target, datum/om/edge/edge)
+	PUBLISH_CHANGE(target, OCCUPANT_KEY)
+
+/datum/om/relation/slot/occupant/on_unlink(datum/source, datum/target, datum/om/edge/edge)
+	PUBLISH_CHANGE(target, OCCUPANT_KEY)
+
+/// Who is in the holder's occupant slot `slot_id`, as a condition or requirement reads it: the reader follows OCCUPANT_KEY, which the slot
+/// publishes when someone gets in or out.
+/atom/proc/occupant_in(slot_id)
+	return slot_item(slot_id)
+
+READS_AS(/atom/proc/occupant_in, OCCUPANT_KEY)
+
 /// Share (0..1) of an explosion's severity that reaches `holder`'s contents,
 /// from its declared slots' own DAMAGE_BLAST share, attenuated the same way
 /// dq_path_step() attenuates any other damage kind (holder armour, then outer

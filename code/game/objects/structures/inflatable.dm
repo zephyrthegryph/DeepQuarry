@@ -6,17 +6,15 @@
 	drop_sound = SFX_ITEMS_DROP_RUBBER
 	w_class = ITEMSIZE_NORMAL
 	var/deploy_path = /obj/structure/inflatable
-	///Var used for attack_self chain
-	var/special_handling = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inflatable_self)))
+CAPABILITIES(/obj/item/inflatable)
+	op("inflate", in_hand(), label("Inflate"), then(PROC_REF(inflatable_self)))
 
-/// Old attack_self: inflate here. Subtypes with special_handling fall through.
-/obj/item/inflatable/proc/inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+/// Old attack_self: inflate here. A torn one re-declares the op.
+/obj/item/inflatable/proc/inflatable_self(datum/act/op/A)
+	var/mob/user = A.actor
 	inflate(user,user.loc)
-	return TRUE
+	return OP_OK
 
 /obj/item/inflatable/afterattack(atom/A, mob/user)
 	..(A, user)
@@ -49,37 +47,24 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 
 CAPABILITIES(/obj/structure/inflatable)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(inflatable_blob))))
+	op("use_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("use_item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("deflate", menu(), label("Deflate"), then(PROC_REF(hand_deflate_effect)))
 
 /// A blob punctures the inflatable.
 /obj/structure/inflatable/proc/inflatable_blob(datum/act/hit/blob/A)
 	puncture()
 	return TRUE
 
-/obj/structure/inflatable/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/inflatable_hand,
-		/datum/interaction/entry_item/inflatable_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_VERB("Deflate", PROC_REF(hand_deflate_effect)))
-	..()
-
 /// Old attack_hand: just leaves a fingerprint.
-/datum/interaction/entry_hand/inflatable_hand
-	id = "inflatable_hand"
-	name = "Use"
-	effect = /obj/structure/inflatable/proc/interaction_hand
-
-/obj/structure/inflatable/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	return TRUE
+/obj/structure/inflatable/proc/interaction_hand(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /// Old attackby: puncture with a sharp item, or take a weapon hit.
-/datum/interaction/entry_item/inflatable_item
-	id = "inflatable_item"
-	name = "Use"
-	effect = /obj/structure/inflatable/proc/interaction_item
-
-/obj/structure/inflatable/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/inflatable/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (can_puncture(W))
 		act_message(user, src, others = span_danger("%U% pierces %T% with [W]!"))
 		puncture()
@@ -89,7 +74,7 @@ CAPABILITIES(/obj/structure/inflatable)
 	return TRUE
 
 /obj/structure/inflatable/click_ctrl(mob/user)
-	hand_deflate_effect(user)
+	deflate_by(user)
 
 /obj/item/inflatable/proc/inflate(mob/user,location)
 	play_sfx(location, SFX_ITEMS_ZIP)
@@ -116,8 +101,12 @@ CAPABILITIES(/obj/structure/inflatable)
 	src.transfer_fingerprints_to(R)
 	replace_with(src, R)
 
-/obj/structure/inflatable/proc/hand_deflate_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old verb "Deflate".
+/obj/structure/inflatable/proc/hand_deflate_effect(datum/act/op/A)
+	deflate_by(A.actor)
 
+/// `user` lets the air out (ctrl-click, the Deflate pick): once, by someone free and next to it.
+/obj/structure/inflatable/proc/deflate_by(mob/user)
 	if(isobserver(user) || user.restrained() || !user.Adjacent(src))
 		return
 
@@ -167,23 +156,19 @@ CAPABILITIES(/obj/structure/inflatable)
 		TryToSwitchState(user)
 	return TRUE
 
-// The door's Use replaces (doesn't chain to) the base inflatable's fingerprint-only one.
+// The door's Use replaces the base inflatable's fingerprint-only one, and it has no item use of its own (the old door's list left it out).
+CAPABILITIES(/obj/structure/inflatable/door)
+	op("use_hand", hand(), then(PROC_REF(interaction_door_hand)))
+	without("use_item")
+
+// The silicon's remote open stays a legacy entry until silicon entry points are ops.
 /obj/structure/inflatable/door/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/inflatable_door_hand,
-	)
 	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(inflatable_door_silicon_use)))
-	into += dq_interaction_from_spec(type, INTERACT_VERB("Deflate", PROC_REF(hand_deflate_effect)))
 
 /// Old attack_hand: open/close the door.
-/datum/interaction/entry_hand/inflatable_door_hand
-	id = "inflatable_door_hand"
-	name = "Use"
-	effect = /obj/structure/inflatable/door/proc/interaction_door_hand
-
-/obj/structure/inflatable/door/proc/interaction_door_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	TryToSwitchState(user)
-	return TRUE
+/obj/structure/inflatable/door/proc/interaction_door_hand(datum/act/op/A)
+	TryToSwitchState(A.actor)
+	return OP_OK
 
 /obj/structure/inflatable/door/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/effect/beam))
@@ -259,10 +244,9 @@ APPEARANCE_TEMPLATE(/obj/structure/inflatable/door, "door_{state?open:closed}")
 	desc = "A folded membrane which rapidly expands into a large cubical shape on activation. It is too torn to be usable."
 	icon = 'icons/obj/inflatable.dmi'
 	icon_state = "folded_wall_torn"
-	special_handling = TRUE
 
 CAPABILITIES(/obj/item/inflatable/torn)
-	op("torn_inflate", in_hand(), label("Inflate"), then(PROC_REF(torn_inflatable_self)))
+	op("inflate", in_hand(), label("Inflate"), then(PROC_REF(torn_inflatable_self)))
 
 /// Used in hand: it is too torn to inflate.
 /obj/item/inflatable/torn/proc/torn_inflatable_self(datum/act/op/A)
@@ -276,10 +260,9 @@ CAPABILITIES(/obj/item/inflatable/torn)
 	desc = "A folded membrane which rapidly expands into a simple door on activation. It is too torn to be usable."
 	icon = 'icons/obj/inflatable.dmi'
 	icon_state = "folded_door_torn"
-	special_handling = TRUE
 
 CAPABILITIES(/obj/item/inflatable/door/torn)
-	op("torn_door_inflate", in_hand(), label("Inflate"), then(PROC_REF(torn_door_inflatable_self)))
+	op("inflate", in_hand(), label("Inflate"), then(PROC_REF(torn_door_inflatable_self)))
 
 /// Used in hand: it is too torn to inflate.
 /obj/item/inflatable/door/torn/proc/torn_door_inflatable_self(datum/act/op/A)

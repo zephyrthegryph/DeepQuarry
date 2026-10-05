@@ -18,18 +18,19 @@
 
 CAPABILITIES(/obj/structure/casino_table)
 	climb()
-
-DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_REF(interaction_place)))
+	op("interaction_place", item(/obj/item), label("Place"), then(PROC_REF(interaction_place)))
 
 /// Old attackby: put the held item on the table.
-/obj/structure/casino_table/proc/interaction_place(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/casino_table/proc/interaction_place(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!item_place)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(user.unEquip(W, 0, loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
 		auto_align(W, dq_interaction_click_params(user)) // Precisely place item like this is a normal table
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	user.drop_item(loc)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/casino_table/roulette_table
 	name = "roulette"

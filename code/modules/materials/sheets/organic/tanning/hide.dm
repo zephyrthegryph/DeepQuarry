@@ -13,10 +13,13 @@
 	no_variants = TRUE
 
 //Step one - dehairing.
-EXTEND_INTERACTIONS(/obj/item/stack/animalhide, INTERACT_ITEM(null, PROC_REF(animalhide_interaction_item)))
+CAPABILITIES(/obj/item/stack/animalhide)
+	op("animalhide_interaction_item", item(/obj/item), then(PROC_REF(animalhide_interaction_item)))
 
 /// Old attackby.
-/obj/item/stack/animalhide/proc/animalhide_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/stack/animalhide/proc/animalhide_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(has_edge(W) || is_sharp(W))
 		//visible message on mobs is defined as visible_message(var/message, var/self_message, var/blind_message)
 		act_message(user, src, MSG_SELF(span_notice("You start cutting the hair off %T%")), \
@@ -25,8 +28,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/animalhide, INTERACT_ITEM(null, PROC_REF(ani
 		if(amount > 0)
 			om_task_start(/datum/om/task/timed/scrape_hides, user, null, duration = 2.5 SECONDS)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /// Scraping the stack one hide every 2.5 seconds until it is used up or the user stops.
 /datum/om/task/timed/scrape_hides

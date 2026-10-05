@@ -15,23 +15,17 @@
 
 	var/open_top = FALSE
 
-DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_VERB("Set transfer amount", PROC_REF(reagent_dispenser_set_aptft), REQ_ON(PRED_TARGET, /obj/structure/reagent_dispensers/proc/pred_dispenser_has_transfer_amounts, null)), \
-)
-
 /// What one transfer from the tank moves: its own setting (a container with a tap draws that much).
 /obj/structure/reagent_dispensers/legacy_transfer_amount()
 	return amount_per_transfer_from_this
 
 /// Requirement: the dispenser offers transfer amounts (the old Initialize dropped the set_APTFT verb without them).
-/obj/structure/reagent_dispensers/proc/pred_dispenser_has_transfer_amounts(mob/actor, atom/target, obj/item/held)
-	return !!possible_transfer_amounts
+/obj/structure/reagent_dispensers/proc/has_transfer_amounts(datum/act/op/A)
+	return !!possible_transfer_amounts // ALLOW(reads): the amounts are a type constant no code changes at run time
 
-/// Old attackby.
-/obj/structure/reagent_dispensers/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+/// Old attackby: an item is not used on the tank itself; the click goes on (a container fills from the tank in its own afterattack).
+/obj/structure/reagent_dispensers/proc/interaction_item(datum/act/op/A)
+	return OP_PASS
 
 /// The tank's reagents: 5000 units, filled by each kind of tank (refine(CAP_REAGENTS, add =) adds to what it inherits).
 /obj/structure/reagent_dispensers/capabilities()
@@ -55,14 +49,18 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 			. += span_notice("Nothing.")
 
 /// Old verb "Set transfer amount": set amount_per_transfer_from_this.
-/obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft(mob/user, obj/item/held, datum/interaction/interaction)
-	var/N = rerun_ask(user, "a1", PROC_REF(reagent_dispenser_set_aptft), args, /datum/om/prompt/choice, message = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
-	if(isnull(N))
-		return
+/obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft(datum/act/op/A)
+	var/N = A.step_value("a1")
 	if (N)
 		amount_per_transfer_from_this = N
 
+/obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft_a1_title(datum/act/op/A)
+	return "[src]"
+
 CAPABILITIES(/obj/structure/reagent_dispensers)
+	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_item)))
+	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
+	op("reagent_dispenser_set_aptft", menu(), label("Set transfer amount"), when(PROC_REF(has_transfer_amounts)), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(reagent_dispenser_set_aptft_a1_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "a1"), then(PROC_REF(reagent_dispenser_set_aptft)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(dispenser_blob_burst))))
 
 /// A blob bursts the tank outright.
@@ -71,7 +69,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers)
 	return TRUE
 
 /// Old click_alt.
-/obj/structure/reagent_dispensers/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
 		return TRUE
 
@@ -102,6 +101,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers)
 
 CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
 	climb()
+	op("watertank_interaction_item", item(/obj/item), then(PROC_REF(watertank_interaction_item)))
 
 /obj/structure/reagent_dispensers/watertank/high
 	name = "high-capacity water tank"
@@ -377,6 +377,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 
 CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	climb()
+	op("interaction_hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	// the cooler's own item use replaces the tank's pass-through (the old most specific entry won)
+	op("interaction_item", item(/obj/item), then(PROC_REF(water_cooler_interaction_item)))
 
 /obj/structure/reagent_dispensers/water_cooler/Initialize(mapload)
 	. = ..()
@@ -391,7 +394,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 		. += span_notice("There are [cups] cups in the cup dispenser.")
 
 /// Old attackby.
-/obj/structure/reagent_dispensers/water_cooler/proc/water_cooler_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/water_cooler/proc/water_cooler_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/reagent_containers/glass/cooler_bottle))
 		src.add_fingerprint(user)
 		if(!bottle)
@@ -417,8 +422,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
 		else
 			to_chat(user, span_warning("There is already a cup dispenser there!"))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(mob/user, obj/item/reagent_containers/glass/cooler_bottle/G)
 	if(bottle || !anchored)
@@ -488,13 +493,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	replace_with(src, /obj/item/stack/material/plastic, 4)
 	return ITEM_INTERACT_SUCCESS
 
-EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(water_cooler_interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/structure/reagent_dispensers/water_cooler/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/water_cooler/proc/interaction_hand(datum/act/op/A)
 	if(cups)
 		new /obj/item/reagent_containers/food/drinks/sillycup(src.loc)
 		cups--

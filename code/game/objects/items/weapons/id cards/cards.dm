@@ -63,22 +63,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 	drop_sound = SFX_ITEMS_DROP_DISK
 	pickup_sound = SFX_ITEMS_PICKUP_DISK
 
-/obj/item/card/data/proc/data_label_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/data/proc/data_label_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/t = A.step_value("data_card_label")
 	// The old verb took the text as its argument; ask for it instead.
-	open_request(src, /datum/prompt/text/card_data_label, PROC_REF(data_label_entered), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "Enter a label for the card.", title = "Label Card", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
-
-/obj/item/card/data/proc/data_label_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/text/card_data_label/request = A.request
-	if(request.captures_gone())
-		return
-	. = apply_data_label(A.request.answerer, A.answer.answer_value)
-	SStgui.update_uis(src)
-
-/obj/item/card/data/proc/apply_data_label(mob/user, t)
-	if(isnull(t))
-		return
 	if(get(src, /mob) != user)
 		return
 	if (t)
@@ -348,36 +336,5 @@ CAPABILITIES(/obj/item/card_fluff)
 	return robot_owner
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/card/data, \
-	INTERACT_VERB("Label Card", PROC_REF(data_label_effect), REQ_IN_INVENTORY), \
-)
-
-/datum/prompt/text/card_data_label
-	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
-	var/item_expected = FALSE
-	var/interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/text/card_data_label)
-	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
-
-/datum/prompt/text/card_data_label/prepare(datum/act/A)
-	. = ..()
-	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
-	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
-	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
-
-/datum/prompt/text/card_data_label/proc/captures_gone()
-	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
-
-/datum/prompt/text/card_data_label/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if(captures_gone())
-		return "gone"
-	return null
+CAPABILITIES(/obj/item/card/data)
+	op("data_label_effect", menu(), label("Label Card"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Enter a label for the card.", "title" = "Label Card", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "data_card_label"), then(PROC_REF(data_label_effect)))

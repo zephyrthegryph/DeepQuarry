@@ -1116,17 +1116,20 @@ UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock/bluespace, ui_act_size)
 /obj/item/clothing/accessory/collar/shock/bluespace/relaymove(mob/living/user,direction)
 	return //For some reason equipping this item was triggering this proc, putting the wearer inside of the collars belly for some reason.
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace, INTERACT_INSERT(/obj/item/assembly/signaler, PROC_REF(bluespace_collar_wire_signaler), "Wire signaler"))
+CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace)
+	op("bluespace_collar_wire_signaler", item(/obj/item/assembly/signaler), label("Wire signaler"), then(PROC_REF(bluespace_collar_wire_signaler)))
 
 /// Old attackby: wire a signaler in, making a modified collar.
-/obj/item/clothing/accessory/collar/shock/bluespace/proc/bluespace_collar_wire_signaler(mob/user, obj/item/component, datum/interaction/interaction)
+/obj/item/clothing/accessory/collar/shock/bluespace/proc/bluespace_collar_wire_signaler(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/component = A.held
 	to_chat(user, span_notice("You wire the signaler into the [src]."))
 	user.drop_item()
 	consume(component, user)
 	var/turf/T = get_turf(src)
 	new /obj/item/clothing/accessory/collar/shock/bluespace/modified(T)
 	consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/accessory/collar/shock/bluespace/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You crack the bluespace crystal [src]."))

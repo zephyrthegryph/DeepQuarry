@@ -79,30 +79,27 @@
 			rel_set(P, nameof(P.connected), src)
 			P.name = "[initial(P.name)] #[num++]"
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
-	INTERACT_ITEM(null, PROC_REF(resleeving_console_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(resleeving_console_interaction_hand)), \
-)
-
 /// Old attackby.
-/obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/disk/transcore) && !our_db().core_dumped)
 		if(!move_into(src, nameof(src.disk), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	if(istype(W, /obj/item/disk/body_record))
 		var/obj/item/disk/body_record/brDisk = W
 		if(!brDisk.stored)
 			to_chat(user, span_warning("\The [W] does not contain a stored body record."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.unEquip(W)
 		W.forceMove(get_turf(src)) // Drop on top of us
 		rel_set(src, nameof(current_br), brDisk.stored)
 		to_chat(user, span_notice("\The [src] loads the body record from \the [W] before ejecting it."))
 		attack_hand(user)
 		view_b_rec(REF(brDisk.stored))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/machinery/computer/transhuman/resleeving/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
@@ -115,7 +112,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_hand.
-/obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	if(!operable())
@@ -620,6 +618,8 @@ CAPABILITIES(/obj/item/cmo_disk_holder)
 // Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
 // back relation. Either end dying drops the link.
 CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
+	op("resleeving_console_interaction_item", item(/obj/item), then(PROC_REF(resleeving_console_interaction_item)))
+	op("resleeving_console_interaction_hand", hand(), ungated(), then(PROC_REF(resleeving_console_interaction_hand)))
 	op("clear_b_rec", ui_act(), then(PROC_REF(ui_act_clear_b_rec)))
 	op("clear_m_rec", ui_act(), then(PROC_REF(ui_act_clear_m_rec)))
 	op("ejectdisk", ui_act(), then(PROC_REF(ui_act_ejectdisk)))

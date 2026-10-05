@@ -425,6 +425,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 /datum/prompt/yes_no/record_notes_delete
 	title = "Confirm Delete"
 	question = "Are you sure you want to delete the current record's notes?"
+	yes_text = "Delete"
 	var/datum/data/record/record
 
 CAPABILITIES(/datum/prompt/yes_no/record_notes_delete)

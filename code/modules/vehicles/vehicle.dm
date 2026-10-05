@@ -52,6 +52,7 @@ STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/vehicle)
 	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine)
+	op("vehicle_item", item(/obj/item), then(PROC_REF(interaction_vehicle_item)))
 	emp_disable(PROC_REF(emp_outage))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
@@ -107,10 +108,10 @@ CAPABILITIES(/obj/vehicle)
 	if(load && !(load in src?.buckled_mob_list()) && !istype(load, /datum/vehicle_dummy_load))
 		load.forceMove(loc)
 
-DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehicle_item)))
-
 /// Old attackby: mechanical vehicles take cells (and swallow every other item); others take weapon hits.
-/obj/vehicle/proc/interaction_vehicle_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/vehicle/proc/interaction_vehicle_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/hand_labeler))
 		return TRUE
 	if(mechanical)
@@ -124,8 +125,8 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 				receive_weapon_hit(W, user, W.force * fire_dam_coeff, INJURY_BURN, silent = FALSE)
 			if(BRUTE)
 				receive_weapon_hit(W, user, W.force * brute_dam_coeff, silent = FALSE)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /// Shared paint step (bike, quad bike, trailer): a multitool on an open panel picks a new paint colour.
 /// Old attackby branch copied across those types; falls through when not applicable or cancelled.

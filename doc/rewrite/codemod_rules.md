@@ -153,15 +153,74 @@ The window itself is opened through the `tgui_interact(user)` bridge (`ui_open()
 
 A type converts only when:
 - it has exactly one `DECLARE_UI` and no `UI_WATCH`, `UI_PINNED`, `UI_AUTOUPDATE`, `UI_PREINITIALIZED`, `UI_STATE`, `UI_FROM_VAR` or any other option;
-- no other form is used for it: `UI_SUBACT*`, `UI_ACT_NESTED`, `UI_ACT_FORWARD`, `UI_ACT_FALLBACK`, `UI_ACT_OVERRIDE`, `UI_ACT_PREF_PROC`, a second `UI_DATA`;
-- no type related to it by path (an ancestor or a descendant) declares any UI row, and it has no `ui_act_allowed`, `tgui_data`, `tgui_act`, `ui_status` or `tgui_interact` override of its own;
+- no other form is used for it: `UI_SUBACT*`, `UI_ACT_NESTED`, `UI_ACT_PREF_PROC`, a second `UI_DATA` (`UI_ACT_FORWARD`, `UI_ACT_FALLBACK` and a descendant's `UI_ACT_OVERRIDE` convert with the window: "Window routing" below);
+- no type related to it by path (an ancestor or a descendant) declares any UI row (a descendant that only has `UI_ACT_OVERRIDE` rows of this window's handlers is part of the unit), and it has no `ui_act_allowed`, `tgui_data`, `tgui_act`, `ui_status` or `tgui_interact` override of its own;
 - every `UI_ACT` has a literal action name matching `^[a-z0-9_]+$`, a proc with a `UI_ACT_PROC` under it, and argument kinds in {`NUM`, `INT`, `VALUE`} with literal or define bounds;
 - every proc is referenced only by its row and its definition, and its body uses none of `ui`, `state`, `action`, `params` other than `params["declared"]`, and `return` or `.` only as null, `TRUE`, `FALSE`, 0 or 1;
 - `A` is not a name in the body, and the declared argument names are plain identifiers that are not names used in the body.
 
 `DECLARE_UI_STATE(T, state)` is carried by `interface()`: `DECLARE_UI_STATE(T, GLOB.tgui_physical_state)` becomes `interface("Window", state = nameof(GLOB.tgui_physical_state))` (the name of the state global, read when the window opens, so the declaration never depends on the global init order) and `DECLARE_UI_STATE(T, ADMIN_STATE(R_ADMIN | R_EVENT))` becomes `interface("Window", rights = R_ADMIN | R_EVENT)` (`rights` with no `state` is `ADMIN_STATE(rights)`); the row is deleted. `ui_open()` reads it through `interface_state()` (code/datums/sys/ui.dm), before the host's own `tgui_window_state` var and `ui_rights`, which still apply to a type that sets them (a state that depends on the instance stays a `tgui_state()` override, and a `DECLARE_UI_STATE` of any other expression keeps its row, which `ui_open()` still reads through the legacy marker). Test: `dq_gap/interface_carries_its_state`.  A `ui_act_allowed` override is not run by the op path (`present_ui_act` runs a window button as an op before the legacy dispatch), so a type that overrides it is residue (`ui_override`) except for the one shape that is exactly `if(!..()) return FALSE`, `add_fingerprint(ui.user)` (or `user`), `return TRUE` with no related type defining one: that guard is always TRUE, the override is deleted and `add_fingerprint(A.actor)` becomes the first statement of every converted handler (the same effect, once per press, before anything else). A `ui_act_allowed` that is `if(!..()) return FALSE`, then a pure test of the viewer and host (no `action`, `state`, other `ui`, no effects, no assignments but locals), then `return TRUE`, becomes one silent requirement: `/T/proc/ui_gate(datum/act/op/A)` (the same body, `ui.user` read as `user` from `A.actor`) and `needs(req(PROC_REF(ui_gate), silent = TRUE))` on every op of the type (`silent` is the empty refusal reason, so the viewer is told nothing, as the old bare `return FALSE` did). The `reads` lint judges the body like any requirement: a guard reading an untracked var is residue (`--skip TYPE`, counted as `ui_gate_reads`; run the codemod with `MSYS_NO_PATHCONV=1` on Windows). A `/datum` window converts like an atom (`ui_data` is on `/datum`; a window's buttons have no reach to check); `ui.user` in a handler is `user`; a local named `A` in a handler is renamed `A2` (the act is `A`).
 
-Residue codes: `ui_options`, `ui_state`, `ui_forms` (a form outside the list), `ui_related` (a related type declares UI), `ui_override`, `act_name`, `arg_kind`, `proc_missing`, `proc_shared`, `body_uses` (`ui`, `state`, `action`, other `params`, an odd return), `name_clash`, `data_rows`.
+Residue codes: `ui_options`, `ui_state`, `ui_forms` (a form outside the list), `ui_related` (a related type declares UI), `ui_override`, `ui_override_other` (a descendant overrides a proc that is not one of the window's handlers), `ui_forward_expr` (the forwarding proc is not `return <var of the holder>`), `act_name`, `arg_kind`, `proc_missing`, `proc_shared`, `body_uses` (`ui`, `state`, `action`, other `params`, an odd return), `name_clash`, `data_rows`.
+
+## rerun_ask and act_ask -> asks()
+
+A handler that asked its question by re-running itself (`rerun_ask`, and `act_ask` in a window button's handler: the re-run keeps the answers, runs the handler again and the same call then returns the answer) is an op whose question is a workflow step. The step is `asks(/datum/prompt/<kind>, fields = list(...), step = "<key>")` in the op's Wait,
+the code after the question is the effect, and the re-run is built in: the op's `when` and `needs` are asked again when the answer arrives, and an answer the kind refuses (`refusal()`: a number the kind will not take, a choice that is not on the list) leaves the question open, so the player is asked again without any handler loop.
+Tests: `dq_gap/ask_a_refused_answer_asks_again`, `ask_fields_are_literal_var_or_computed` and the codemod fixtures `interact_declare/asks`, `ui_declare/asks`.
+
+| Old (first statements of the handler) | New |
+|---|---|
+| `var/x = rerun_ask(user, "k", PROC_REF(self), args, /datum/om/prompt/K, message = m, title = t, ...)` (also `list(user)` as the arguments) then `if(isnull(x))` / `return [value]` | `asks(/datum/prompt/K, fields = list("question" = m, "title" = t, ..., "timeout" = 0), step = "k")` before `then(PROC_REF(self))`; the guard goes; the handler starts `var/x = A.step_value("k")` (when `x` is used) |
+| `act_ask(ui.user, action, params, ui, "k", /datum/om/prompt/K, ...)` in a `UI_ACT_PROC` | the same step on the button's op |
+| `if(isnull(x) \|\| rest)` | the guard becomes `if(rest)` (the answer is never null now) |
+| kinds `text`, `number`, `choice`, `choice/alert` (`buttons = TRUE`), `color`, `confirm` (`yes_text`/`no_text`: "Yes/no labels") | `/datum/prompt/text`, `number`, `choice`, `color`, `yes_no`; the fields are renamed as in the om_ask table (`message` to `question`, `max_length` to `max_len` (with `name_text = TRUE` for `MAX_NAME_LEN`), `min`/`max` to `min_value`/`max_value`) |
+| a field that is a literal | written as it is |
+| a field that is a var of the holder (`choices = possible_transfer_amounts`) | `nameof(var)`: read from the capture when the question opens |
+| a field that is any other expression (`choices = GLOB.x`, `title = "[src]"`) | `computed(PROC_REF(<handler>_<key>_<field>))`, a generated proc `x(datum/act/op/A)` returning the expression (`var/mob/user = A.actor` and the held item are declared when it reads them) |
+
+A handler's own falsy returns stay as they are in an op with a question (`OP_DECLINE` is for an op that has not waited), and its `PROC_REF(self)` mentions in the questions no longer make the handler `handler_shared`.
+The question has to be first: the requirements run before it, whatever stood before it would run after. Residue codes: `ask_not_first` (a statement stands before the first question), `ask_later` (another question after the first effect), `ask_guard` (the question is not followed by `if(isnull(x))` and a return), `ask_kind`
+(a prompt kind or subtype this table does not name), `ask_key`, `ask_actor` (the asker is not the actor), `ask_rerun` (the re-run names another proc or other arguments), `ask_fields`, `ask_field_<name>` (a field the new kind has no name for), `name_text_unknown`, `name_clash` (a generated proc's name is taken), `ask_expr`.
+Not converted: `verb_ask` and `client_ask` (an admin verb or a client proc is not an op: its code after the question moves into a `request()` callback by hand), `topic_ask`, `flow_ask`/`prompt_flow`, and a handler whose later question depends on an earlier answer (a hand conversion: `asks(..., when = PROC_REF(x))` skips a step by the earlier answer).
+
+## Window routing: UI_ACT_FALLBACK, UI_ACT_FORWARD, UI_ACT_OVERRIDE
+
+The three forms that decided which handler a window action reaches, as op forms (tests `dq_gap/ui_fallback_answers_the_actions_nothing_names`, `ui_forward_and_override_route_the_button`; `ui_declare.py`, fixture `routing`).
+
+| Old | New |
+|---|---|
+| `UI_ACT_FALLBACK(T, proc)` (every window action no `UI_ACT` row names: an embedded controller's program commands) | `op("key", ui_act("*"), then(PROC_REF(proc)))`: `ui_act("*")` answers every window action no op of the holder names (the named op always wins); the handler is `proc(datum/act/op/A)` and reads which action reached it with `A.window_action()` (`var/action = A.window_action()`). A fallback that must take only some of the actions says so with a requirement, `needs(req(PROC_REF(known), silent = TRUE))`, which also reads `A.window_action()` |
+| `UI_ACT_FORWARD(T, proc)` with `proc(mob/user, action)` returning the datum (the sleeper console's window is its sleeper's panel) | `interface("Window", forwards = nameof(var))`: a window action the holder has no op for goes to the datum(s) in `var` (a var of the holder holding one datum or a list); the first target with an op for it answers, as if its own window had sent the button. At most `OP_UI_FORWARD_DEPTH` windows deep. A proc that is not `return <var>` is residue `ui_forward_expr` |
+| `UI_ACT_OVERRIDE(U, proc)` (a descendant replaces the handler of a parent's button) | nothing to declare: `then(PROC_REF(proc))` is looked up on the holder, so `/U/proc(datum/act/op/A, args...)` (an override, no `proc/`) is the handler of the parent's op. A descendant that re-declares the button (`UI_ACT` of the same action) re-declares the op: a later declaration of a key replaces the earlier |
+
+A window with a forward and no button is typed from its `ui_shape()` (the typed window needs one: `interface("Window", forwards = ...)` with neither `ui_shape()` nor a `ui_act()` op has nothing to type, an `analyze gen` diagnostic). The tgui `modal_open` / `modal_answer` / `modal_close` actions
+have their own rule, "Modals" below.
+
+## Modals: ui_modal_* -> asks(..., inline)
+
+A tgui modal (code/modules/tgui/modal.dm: `ui_modal_opened()` builds it by id, `ui_modal_answered()` uses the answer) is a question shown inside the window. The new form is the question itself: `asks()` with the field `inline = TRUE` shows the prompt as a modal of the asking
+holder's window (code/engine/present/prompt_modals.dm) instead of a window of its own, and the op that opens it is bound to the window action `"modal:<id>"` (the engine maps the client's `modal_open` of id `<id>` to it). The client needs no change: it reads `data["modal"]` (added by
+`present_tgui_data()`), answers with `modal_answer` and closes with `modal_close`. Test: `dq_gap/modal_is_a_question_in_the_window`.
+
+| Old | New |
+|---|---|
+| `ui_modal_opened(user, "id", arguments, ...)` case that calls `tgui_modal_input(src, "id", text, delegate, arguments, value, max_length)` | `op("id", ui_act("modal:id", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = text, "default" = value, "max_len" = n, "inline" = TRUE), step = "id"), then(PROC_REF(x)))` |
+| `tgui_modal_choice(src, "id", text, delegate, arguments, value, choices)` | `asks(/datum/prompt/choice, fields = list("question" = text, "choices" = ..., "default" = value, "inline" = TRUE))` (a list shown as a dropdown; a radial choice has no inline form) |
+| `tgui_modal_boolean(src, "id", text, delegate, delegate_no, arguments, yes_text, no_text)` | `asks(/datum/prompt/yes_no, fields = list("question" = text, "yes_text" = ..., "no_text" = ..., "inline" = TRUE))`; "no" answers FALSE (use `confirms()` semantics with `confirms("text")` when a no should end the op) |
+| `tgui_modal_bento(src, "id", text, delegate, arguments, value, choices)`, `tgui_modal_bento_spritesheet` | `asks(/datum/prompt/choice, fields = list("question" = text, "choices" = ..., "default" = value, "bento" = "spritesheet", "inline" = TRUE))` (`"bento" = TRUE` for the image grid): the window answers with an index and the answer is the choice at it |
+| `tgui_modal_message(src, "id", text, delegate, arguments)` (a message whose body the client draws from `arguments`) | no question to ask: the `modal:` op's `then()` calls `tgui_modal_message(src, "id", text, null, A.args["arguments"])` (the op replaces the `ui_modal_opened()` case; `modal_close` clears it) |
+| `ui_modal_answered(user, "id", answer, arguments, ...)` case | the `then()` handler of the op: `A.answer.answer_value` is the answer (number for a number kind), `A.args["arguments"]` what the client passed |
+| chained modals (an answer opens the next one, passing `arguments` on) | one op with several `asks()` steps, each `inline`; the steps replace each other as the window's modal |
+
+One modal per window at a time, as before: opening another ends the first question cancelled, and closing the modal cancels the op (nothing was spent). Kinds with an inline form: text, number, choice (a dropdown or a bento grid; a radial ring has none), yes_no. `"modal_id" = "x"` names the modal of a step when it is not the op's (several steps of one op each their own modal).
+
+## Yes/no labels
+
+`/datum/prompt/yes_no` has `yes_text` and `no_text` ("Yes" / "No"): `asks(/datum/prompt/yes_no, fields = list("question" = ..., "yes_text" = "Confirm", "no_text" = "Cancel"))`, `open_request(src, /datum/prompt/yes_no, PROC_REF(h), yes_text = "Launch", no_text = "Cancel", ...)`, or a kind
+with the labels as its defaults (`/datum/prompt/yes_no/x` with `yes_text = "Launch"`). A label that depends on the asker is `computed(PROC_REF(x))`. The labels are the alert window's buttons, the inline modal's `yes_text` / `no_text`, and what `answer_of_button()` calls a yes. The old
+`om_ask(..., yes_text = ..., no_text = ...)` is residue `roles_or_checks` of the om_ask codemod (analyze); the labels the hand conversions dropped were restored: the newscaster ("Confirm" / "Cancel"), the records "Delete", the shuttle "Launch", the toilet crystal, the trash pile, the canvas.
+Test: `dq_gap/yes_no_carries_its_labels`.
 
 ## DECLARE_INTERACTIONS -> op()
 
@@ -176,6 +235,12 @@ Unit: one host type `T` with exactly one `DECLARE_INTERACTIONS(T, specs...)` or 
 | `INTERACT_HAND_UNGATED(name, PROC_REF(h))` (a touch whose old `attack_hand` never called `..()`: no `hand_gate()`) | `op("key", hand(), ungated(), label(name), then(PROC_REF(h)))` |
 | `INTERACT_VERB(name, PROC_REF(h))` (an object verb: the Menu only, no click) | `op("key", menu(), label(name), then(PROC_REF(h)))` |
 | `INTERACT_VERB(name, PROC_REF(h), REQ_IN_INVENTORY)` (the old `set src in usr`) | `op("key", menu(), label(name), needs(carried()), then(PROC_REF(h)))` |
+| `INTERACT_SELF(name, PROC_REF(h))` (use in hand; unlike USE its return counts) | `op("key", in_hand(), label(name), then(PROC_REF(h)))`, falsy returns `OP_DECLINE` |
+| `INTERACT_ALT(name, PROC_REF(h))` (alt-click on the holder; the old `click_alt` ran no `hand_gate()`) | `op("key", hand(), ungated(), gesture(GESTURE_ALT), label(name), then(PROC_REF(h)))`, falsy returns `OP_DECLINE` |
+| `INTERACT_DRAG(name, PROC_REF(h))` (a mob or item dragged onto the holder; the handler's second parameter is the dragged atom) | `op("key", item(/<the parameter's type, /atom/movable if untyped>), gesture(GESTURE_DRAG), label(name), then(PROC_REF(h)))`, the dragged atom is `A.held`, falsy returns `OP_DECLINE` |
+| `INTERACT_TK(name, PROC_REF(h))` (a telekinetic use at range, the old `attack_tk`) | `op("key", tk(), label(name), then(PROC_REF(h)))`, falsy returns `OP_DECLINE` (below) |
+| `INTERACT_<kind>_AS(I_X, ...)`, `_HOSTILE` (`I_HURT`), `_PEACEFUL` (`I_HELP`) | the same op with `stance(I_X)` added (`_AS` takes the stance first: `INTERACT_INSERT_AS(I_X, /held, h, name)`) |
+| `INTERACT_<kind>_DEFAULT`, `_DEFAULT_AS` (the type's default for the input, tried after everything else it offers) | the same op with `priority(OP_PRIORITY_DEFAULT)` (and `stance()`) |
 | a `null` name | no `label()` (the old name was derived from the proc name) |
 | handler `h(mob/a, obj/item/w, datum/interaction/i)` | `h(datum/act/op/A)`; `var/mob/a = A.actor` and `var/<w's type>/w = A.held` as the first body lines (after the leading settings) when used |
 
@@ -192,7 +257,8 @@ Evidence for the verb: the duffelbag tilt (`241131f467`), `INTERACT_VERB("Adjust
 
 Why the returns matter: an old HAND, INSERT or ITEM effect that returned falsy let the next candidate (or the type's default) have the input. The op form says the same with `OP_DECLINE` (next section): every
 falsy return (`return FALSE`, `return 0`, `return null`, a bare `return`) becomes `return OP_DECLINE`, and a handler converts only when every return is one of those or `TRUE` and the last statement is a return (a handler that falls off its end
-answered falsy before and would commit now: residue `handler_returns`). An `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` is the `passes()` part and stays residue.
+answered falsy before and would commit now: residue `handler_returns`). An `INTERACT_USE` ignores its return (always handled), so any handler converts. `INTERACTION_HANDLED_PASS` (handled, the input not used up: the old caller let `afterattack` or the loot panel follow) is `return OP_PASS`
+(`OP_PASS`, below), in every kind; the constant read any other way (compared, stored) is residue `body_uses`.
 
 **Hierarchies.** `DECLARE_INTERACTIONS` replaces only the specs list (`get_interactions`) of its ancestors, while an `EXTEND_INTERACTIONS` chain (`declare_interactions` calling `..()`) reaches every descendant, DECLARE or not. So an `EXTEND` converts whatever its ancestors declare (155 of the 205 types the old rule held back were an `EXTEND` under a `DECLARE`); it conflicts only with a descendant whose `declare_interactions` override drops the chain (no `..()`), because ops would flow into it. A `DECLARE` conflicts with any related replacer (a `DECLARE` or an override without `..()`): converted, it would inherit the ops of what it replaced. The design's way out is `without(key)` of the parent's ops plus the child's own ops, but it covers 7 types today (a `DECLARE` under or over another), so the codemod leaves them to hand work (`interaction_related`).
 
@@ -200,10 +266,21 @@ A type converts only when:
 - it is not in conflict with a replacer, as the paragraph above defines it;
 - every spec is one of the four kinds above with no requirement argument (`REQ_*`), a literal or `null` name, and `PROC_REF(h)` / `TYPE_PROC_REF(T, h)` as the effect;
 - each handler is defined once on `T` with three parameters, no related type defines the same name, and nothing else mentions it (a call, a `PROC_REF`, a `..()`);
-- the body does not use the third parameter, `INTERACTION_HANDLED_PASS`, `..()` or a local named `A`.
+- the body does not use the third parameter, `INTERACTION_HANDLED_PASS` other than as `return INTERACTION_HANDLED_PASS`, `..()` or a local named `A`;
+- no two ops of the type take the same input at the same tier for a stance in common (the clash rule of the table build; two `stance()` ops of disjoint stances, or a `_DEFAULT` beside a plain one, do not clash): residue `interaction_overlap`.
 
-Residue codes: `interaction_forms` (an `EXTEND_INTERACTIONS`, a `declare_interactions` override or a datum interaction type, a second row, a name or effect that is not a literal), `interaction_related`, `interaction_kind` (`INTERACT_HAND_UNGATED`, `INTERACT_ALT`, `INTERACT_SELF`, `INTERACT_VERB`,
-the `_AS`, `_HOSTILE`, `_PEACEFUL`, `_DEFAULT`, `INTERACT_SILICON`, `ROBOT`, `TK`, `OBSERVER` shapes), `requires`, `effect_expr`, `handler_shape`, `handler_shared`, `handler_returns`, `body_uses`, `key_clash`.
+Residue codes: `interaction_forms` (an `EXTEND_INTERACTIONS`, a `declare_interactions` override or a datum interaction type, a second row, a name, stance or effect that is not a literal), `interaction_related`, `interaction_kind` (`INTERACT_SILICON`, `ROBOT`, `OBSERVER`
+shapes, and any spec the table above does not name), `interaction_overlap`, `requires`, `effect_expr`, `handler_shape`, `handler_shared`, `handler_returns`, `body_uses`, `key_clash`.
+
+**The input forms behind the table** (tests `dq_gap/input_drag_puts_the_dragged_mob_in_held`, `input_alt_is_a_pinned_hand_op`, `input_stance_picks_the_variant`, `input_tk_is_a_provider_for_what_no_hand_reaches`, `op_pass_hands_the_click_on`).
+- **drag.** A drag onto the holder resolves as a click with gesture `GESTURE_DRAG` whose held atom is the dragged one, so `item(T)` is the binding (T the dragged thing's type: `/mob/living` for a body scanner) and `gesture(GESTURE_DRAG)` the pin; a drag answers only drag ops, never the hand's.
+- **alt-click.** `hand()` pinned to `GESTURE_ALT`. A `hand()` binding applies the hand gate (an unconscious or stunned actor is refused, and on a machine one that does not work, an actor who is lying or cannot use their hands); the old alt-click never ran `hand_gate()`, so the op says `ungated()` (the actor half always holds).
+- **stance.** `stance(I_X, ...)` drops the op from a click whose actor's `input_stance()` is not listed (menu picks and `perform_op()` by key ignore it); ops of disjoint stances never clash.
+- **telekinesis.** `tk()` is a hand touch that only the telekinesis provider does, and only on a target no hand reaches (next to the actor, or on it, the hand's op answers: the old tk adapter ran for ranged clicks only). The provider is `telekinetic_reach()`,
+  declared on `/mob`: `provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE)` while `tk_ready()` (a TK mutation, or powered kinesis gloves, and not through a remote view); `add_mutation(TK)`, `remove_mutation(TK)` and a glove's power spent call
+  `tk_refresh()`. As the design says, it is a plain `AFF_MANIPULATE` provider, so a telekinetic actor does any `hand()` op on a target it sees within `TK_RANGE` (the old reach was only the types that declared an `INTERACT_TK`); a `tk()` op sits one tier above hand ops so that at range
+  the op that means telekinesis goes first. Compartments, requirements and the actor half of the hand gate apply; the machine half never does (a mind has no posture or dexterity).
+- **pass-through.** `OP_PASS`, below.
 
 ## OP_DECLINE: an op handler that is not handled
 
@@ -219,6 +296,19 @@ Rules. Decline from the first statement that knows, before anything is written: 
 `ACT_DECLINED` (never a filter, not in `ACT_ANY`); `perform_op()` and the test driver return it in `/datum/op_result` when every candidate declined, a player's click returns null (the mob's own click handling runs). An op that is waiting
 (`wait()` steps) and declines at its final effect has already spent the wait: decline is for immediate ops. `interact_declare.py` applies the table to `INTERACT_HAND`, `INTERACT_INSERT` and `INTERACT_ITEM` handlers
 (tools/dx/codemods/interact_declare.py); the wave that lands it converted 24 types (26 ops). Tests: `dq_gap/op_decline_falls_through`, `dq_gap/op_decline_alone_is_not_handled`.
+
+## OP_PASS: handled, the input not used up
+
+A `then()` handler that answers `OP_PASS` commits the op (its costs, notice and feedback happen) and says the input is not used up: the click goes on to the next candidate whose conditions hold, then the next, and, when the chain ends on a pass, to the
+mob's own click handling (a player's click returns null; a driver-built click returns the last result, whose `passed` is TRUE when it ended on a pass). It is the per-return form of the `passes()` part, which passes after every commit. The effects after the one that answered
+still run.
+
+| Old | New |
+|---|---|
+| `return INTERACTION_HANDLED_PASS` in an interaction handler | `return OP_PASS` |
+| an op that always passes | `passes()` |
+
+Test: `dq_gap/op_pass_hands_the_click_on`.
 
 ## DECLARE_PERIODIC_WHILE and DECLARE_REPEAT -> every()
 

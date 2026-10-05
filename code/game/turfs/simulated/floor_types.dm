@@ -403,35 +403,38 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_P
 		set_light(3,3,"#26c5a9")
 		after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
 
-EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM("Build", PROC_REF(carry_plating_item)))
+CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
+	op("carry_plating_item", item(/obj/item), label("Build"), then(PROC_REF(carry_plating_item)))
 
 /// Old attackby: rods build a lattice, floor tiles plate it. This is gross.
-/turf/simulated/shuttle/plating/airless/carry/proc/carry_plating_item(mob/user, obj/item/C, datum/interaction/interaction)
+/turf/simulated/shuttle/plating/airless/carry/proc/carry_plating_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	if (istype(C, /obj/item/stack/rods))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			new/obj/structure/lattice(src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if (istype(C, /obj/item/stack/tile/floor))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			qdel(L)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			to_chat(user, span_warning("The plating is going to need some support."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /turf/simulated/shuttle/plating/airless/carry/is_solid_structure()
 	return locate(/obj/structure/lattice, src)

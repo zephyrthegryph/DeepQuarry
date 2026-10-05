@@ -376,10 +376,12 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
 	. = ..()
 	. += span_notice("Alt-click to toggle modes.")
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/bigshot, INTERACT_ALT("Toggle AR", PROC_REF(bigshot_ar_alt)))
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/bigshot)
+	op("bigshot_ar_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle AR"), then(PROC_REF(bigshot_ar_alt)))
 
 /// Old click_alt: toggle the AR mode. It never reached the clothing alt-click.
-/obj/item/clothing/glasses/sunglasses/bigshot/proc/bigshot_ar_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/sunglasses/bigshot/proc/bigshot_ar_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.ar)
 			src.ar = !src.ar

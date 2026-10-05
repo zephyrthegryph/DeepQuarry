@@ -138,12 +138,13 @@ APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 		return 0
 	return blob_damage(P.damage, damage_type)
 
-EXTEND_INTERACTIONS(/obj/effect/blob, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_blob)), \
-)
+CAPABILITIES(/obj/effect/blob)
+	op("hit_blob", item(/obj/item), then(PROC_REF(interaction_hit_blob)))
 
 /// Old attackby: any item hits the blob (afterattack still follows, as before).
-/obj/effect/blob/proc/interaction_hit_blob(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/blob/proc/interaction_hit_blob(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/W = held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
@@ -153,7 +154,7 @@ EXTEND_INTERACTIONS(/obj/effect/blob, \
 		playsound(src, W.usesound, 100, 1)
 	if(damage_type == BRUTE || damage_type == BURN)
 		blob_damage(W.force, damage_type)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/effect/blob/core
 	name = "blob core"

@@ -27,6 +27,9 @@ GLOBAL_LIST(tgui_modals)
 	answer = tgui_modal_preprocess_answer(src, ui_text(answer, TGUI_MODAL_INPUT_MAX_LENGTH))
 	// A current modal whose delegate handled the answer needs nothing more.
 	var/delegated = tgui_modal_answer(src, id, answer)
+	// A question of an op (asks(..., inline)) that refused the answer stays open for another try: answered, it is gone already.
+	if(istype(LAZYACCESS(GLOB.tgui_modals, REF(src)), /datum/tgui_modal/prompt))
+		return TRUE
 	tgui_modal_clear(src)
 	if(delegated)
 		return TRUE
@@ -80,6 +83,7 @@ GLOBAL_LIST(tgui_modals)
 			break
 
 	SStgui.update_uis(source)
+	previous.closed()
 	return TRUE
 
 /**
@@ -200,8 +204,10 @@ GLOBAL_LIST(tgui_modals)
 
 	rel_set(modal, nameof(modal.owning_source), source)
 
-	// Previous one should get GC'd
+	// Previous one should get GC'd (a question it showed ends cancelled)
 	LAZYSET(GLOB.tgui_modals, REF(source), modal)
+	if(previous && previous != modal)
+		previous.closed()
 	if(instant_update)
 		SStgui.update_uis(source)
 	return TRUE
@@ -388,6 +394,10 @@ GLOBAL_LIST(tgui_modals)
 	. = ..()
 	.["yes_text"] = yes_text
 	.["no_text"] = no_text
+
+/// The modal went away without an answer (cleared, closed by the client, replaced): a question it showed ends cancelled.
+/datum/tgui_modal/proc/closed()
+	return
 
 /// The owning_source this refers to (a relation view: null once that is deleted).
 /datum/tgui_modal/proc/owning_source() as /datum

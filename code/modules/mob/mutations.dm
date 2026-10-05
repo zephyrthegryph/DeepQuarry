@@ -20,6 +20,8 @@
 	update_mutation_immunities(mut)
 	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
+	if(mut == TK)
+		tk_refresh()
 
 /// Removes every occurrence of the given mutation from this mob.
 /mob/proc/remove_mutation(mut)
@@ -29,6 +31,8 @@
 	update_mutation_immunities(mut)
 	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
+	if(mut == TK)
+		tk_refresh()
 
 /// Returns the number of mutations currently active on this mob.
 /mob/proc/mutation_count()

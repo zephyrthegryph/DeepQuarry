@@ -13,6 +13,13 @@
 // reaches the request layer through request_submit() (a window) or request_answer() (the test driver), so both go through normalize() and refusal().
 
 /datum/prompt
+	/// asks(..., fields = list("inline" = TRUE)): the question is shown inside the window of the holder that asked, as a tgui modal of that window (doc section 13,
+	/// "Transport"), not in a window of its own. The text, number, list (not radial) and yes_no kinds have an inline form; any other opens its own window as before.
+	var/inline = FALSE
+	/// The inline modal's id (the client's ComplexModal reads it: "analyze", "add_to_buffer"): the op's window action without its `modal:` prefix by default.
+	var/modal_id
+	/// What the client passed to the modal and takes back (modal_open's `arguments`: how windows chain modals); the op's arg("arguments") by default.
+	var/list/modal_args
 	/// What the answerer is asked.
 	var/question
 	/// The window's title (null: the kind's own).
@@ -28,6 +35,9 @@ CAPABILITIES(/datum/prompt)
 /// The prompt asks its answerer: a player with a client sees the kind's window; anything else (a test driver, an AI) answers through request_answer().
 /datum/prompt/begin()
 	var/mob/user = answerer
+	if(inline && inline_type() && istype(user))
+		begin_inline(user)
+		return
 	if(!istype(user) || !user.client)
 		return
 	var/datum/shown = present(user)
@@ -44,7 +54,16 @@ CAPABILITIES(/datum/prompt)
 
 /// Fills the prompt from the asking op's act, before it is shown. `A` is null for a request opened outside an op.
 /datum/prompt/prepare(datum/act/A)
-	return
+	if(!inline || !istype(A, /datum/act/op))
+		return
+	var/datum/act/op/OA = A
+	if(isnull(modal_id))
+		var/action = OA.oplan?.ui_action || OA.key
+		modal_id = copytext(action, 1, length(OP_UI_MODAL_PREFIX) + 1) == OP_UI_MODAL_PREFIX ? copytext(action, length(OP_UI_MODAL_PREFIX) + 1) : action
+	if(isnull(modal_args))
+		var/list/passed = OA.args?["arguments"]
+		if(islist(passed))
+			modal_args = passed.Copy()
 
 /// The kind's window for `user`, or null when there is nothing to ask. The kinds override it.
 /datum/prompt/proc/present(mob/user)
@@ -53,6 +72,8 @@ CAPABILITIES(/datum/prompt)
 /// The window goes away: the request ended (answered, cancelled, timed out). A kind with another window overrides it.
 /datum/prompt/proc/dismiss()
 	var/datum/shown = window
+	if(istype(shown, /datum/tgui_modal/prompt))
+		return dismiss_inline()
 	rel_clear(src, nameof(window))
 	if(shown && !QDELETED(shown))
 		SStgui.close_uis(shown)
@@ -60,12 +81,34 @@ CAPABILITIES(/datum/prompt)
 /// A window's answer was refused: the question stays open, so it is shown again (a prompt with no client to show it to just waits).
 /datum/prompt/proc/reopen()
 	var/mob/user = answerer
+	if(inline && inline_type() && istype(user) && is_open())
+		dismiss_inline()
+		begin_inline(user)
+		return
 	if(!istype(user) || !user.client || !is_open())
 		return
 	dismiss()
 	var/datum/shown = present(user)
 	if(!isnull(shown))
 		rel_set(src, nameof(window), shown)
+
+// ---- the inline form: a modal of the asking holder's window (code/engine/present/prompt_modals.dm) ----
+
+/// The modal type that shows this kind inline ("input", "choice", "boolean"), or null when the kind has none (it opens its own window).
+/datum/prompt/proc/inline_type()
+	return null
+
+/// The answer from the client's text, before it reaches the modal's check (a boolean modal answers 0 or 1).
+/datum/prompt/proc/inline_preprocess(answer)
+	return answer
+
+/// The value the client's answer means for this kind, or null when it means none (the modal stays open).
+/datum/prompt/proc/inline_answer(answer)
+	return answer
+
+/// The fields this kind adds to its modal's data (value, choices, labels).
+/datum/prompt/proc/inline_data(list/data)
+	return
 
 /// What a button of the kind's alert window answers (the button's own text by default).
 /datum/prompt/proc/answer_of_button(button)
@@ -83,15 +126,31 @@ CAPABILITIES(/datum/prompt)
 /datum/prompt/yes_no
 	question = "Are you sure?"
 	timeout = 30 SECONDS
+	/// The labels of the two buttons ("Confirm" / "Cancel", "Launch" / "Cancel"). A label that depends on the asking op is computed(PROC_REF(x)).
+	var/yes_text = "Yes"
+	var/no_text = "No"
 
 /datum/prompt/yes_no/normalize(given)
 	return !!given
 
+/datum/prompt/yes_no/inline_type()
+	return "boolean"
+
+/datum/prompt/yes_no/inline_preprocess(answer)
+	return text2num(answer) || FALSE
+
+/datum/prompt/yes_no/inline_answer(answer)
+	return !!answer
+
+/datum/prompt/yes_no/inline_data(list/data)
+	data["yes_text"] = yes_text
+	data["no_text"] = no_text
+
 /datum/prompt/yes_no/answer_of_button(button)
-	return button == "Yes"
+	return button == yes_text
 
 /datum/prompt/yes_no/present(mob/user)
-	var/datum/tgui_alert/prompt/alert = new(user, question, title || "Confirm", list("Yes", "No"), timeout, TRUE, GLOB.tgui_always_state)
+	var/datum/tgui_alert/prompt/alert = new(user, question, title || "Confirm", list(yes_text, no_text), timeout, TRUE, GLOB.tgui_always_state)
 	rel_set(alert, nameof(alert.prompt), src)
 	alert.tgui_interact(user)
 	return alert
@@ -119,6 +178,12 @@ CAPABILITIES(/datum/prompt)
 	if(max_len && length(given) > max_len)
 		given = copytext(given, 1, max_len + 1)
 	return given
+
+/datum/prompt/text/inline_type()
+	return "input"
+
+/datum/prompt/text/inline_data(list/data)
+	data["value"] = default
 
 /datum/prompt/text/present(mob/user)
 	var/datum/tgui_input_text/prompt/box = new(user, question, title || "Text Input", default, max_len, multiline, encode, timeout, GLOB.tgui_always_state)
@@ -152,6 +217,15 @@ CAPABILITIES(/datum/prompt)
 
 /datum/prompt/number/refusal(given)
 	return isnum(given) ? null : "that is not a number"
+
+/datum/prompt/number/inline_type()
+	return "input"
+
+/datum/prompt/number/inline_answer(answer)
+	return text2num(answer)
+
+/datum/prompt/number/inline_data(list/data)
+	data["value"] = "[default]"
 
 /datum/prompt/number/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, isnull(step), GLOB.tgui_always_state)

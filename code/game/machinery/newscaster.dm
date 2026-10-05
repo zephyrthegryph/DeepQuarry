@@ -501,7 +501,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 		set_temp("Error: Could not submit wanted issue to network: Author unverified.", "danger", FALSE)
 		return TRUE
 
-	open_request(src, /datum/prompt/yes_no, PROC_REF(wanted_change_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Security Handler", question = "Please confirm Wanted Issue change.", timeout = 0)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(wanted_change_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Security Handler", question = "Please confirm Wanted Issue change.", yes_text = "Confirm", no_text = "Cancel", timeout = 0)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_cancel_wanted(datum/act/op/A)
@@ -511,7 +511,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	if(GLOB.news_network.wanted_issue().is_admin_message)
 		tgui_alert_async(user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot take it down.")
 		return
-	open_request(src, /datum/prompt/yes_no, PROC_REF(wanted_removal_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Security Handler", question = "Please confirm Wanted Issue removal", timeout = 0)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(wanted_removal_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Security Handler", question = "Please confirm Wanted Issue removal", yes_text = "Confirm", no_text = "Cancel", timeout = 0)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_censor_channel_author(datum/act/op/A, raw_ref)
@@ -595,6 +595,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	return TRUE
 
 /datum/prompt/yes_no/news_channel_create
+	yes_text = "Confirm"
+	no_text = "Cancel"
 	var/author
 	var/channel
 	var/locked = FALSE

@@ -135,23 +135,24 @@
 		to_chat(P,span_warning("Your rigsuit can only assimilate a backpack into itself. If you are seeing this message, and you do not have a rigsuit, tell a coder."))
 
 /// Old verb "Remove Stored Bag".
-/obj/item/rig/protean/proc/protean_removebag_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/protean/proc/protean_removebag_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(rig_storage)
 		var/obj/item/storage/backpack/removed_bag = own_take(src, nameof(rig_storage))
 		user.put_in_hands(removed_bag)
 	else
 		to_chat(user, "This Rig does not have a bag installed. Use a bag on it to install one.")
 
-EXTEND_INTERACTIONS(/obj/item/rig/protean, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(protean_rig_hand)), \
-	INTERACT_ITEM(null, PROC_REF(protean_rig_item)), \
-	INTERACT_VERB("Remove Stored Bag", PROC_REF(protean_removebag_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove Assimilated Rig", PROC_REF(protean_removerig_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/rig/protean)
+	op("protean_rig_hand", hand(), ungated(), then(PROC_REF(protean_rig_hand)))
+	op("protean_rig_item", item(/obj/item), then(PROC_REF(protean_rig_item)))
+	op("protean_removebag_verb", menu(), label("Remove Stored Bag"), needs(carried()), then(PROC_REF(protean_removebag_verb)))
+	op("protean_removerig_verb", menu(), label("Remove Assimilated Rig"), needs(carried()), then(PROC_REF(protean_removerig_verb)))
 
 /// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch
 /// (the old ..(), which used to run before the closing).
-/obj/item/rig/protean/proc/protean_rig_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/protean/proc/protean_rig_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	src.add_fingerprint(user)
 	if (src.loc == user)
 		if(rig_storage)
@@ -160,7 +161,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	for(var/mob/M in range(1))
 		if (M.s_active == src)
 			src.rig_storage.close(M)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/head/helmet/space/rig/protean
 	name = "mass"
@@ -299,26 +300,28 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, fit_spec, list(REQ_FITS_BO
 
 TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))))
 /// Old attackby. It never fell through to the rig's own.
-/obj/item/rig/protean/proc/protean_rig_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/rig/protean/proc/protean_rig_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
 	if(dormancy)
 		dormancy.repair_with(W, user, src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W,/obj/item/rig))
 		if(!assimilated_rig)
 			AssimilateRig(user,W)
 	if(istype(W,/obj/item/tank)) //Todo, some kind of check for suits without integrated air supplies.
 		if(air_supply)
 			to_chat(user, "\The [src] already has a tank installed.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 
 		if(!move_into(src, nameof(src.air_supply), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 		// Check if this is a hardsuit upgrade or a modification.
 	else if(istype(W,/obj/item/rig_module))
@@ -334,14 +337,14 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		return TRUE
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(rig_storage)
 		var/obj/item/storage/backpack = rig_storage
 		backpack.insert_item(W, user)
 	else
 		if(istype(W,/obj/item/storage/backpack))
 			AssimilateBag(user,0,W)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /datum/om/task/timed/protean_attackby_protean
 	duration = 4 SECONDS
@@ -686,7 +689,8 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	offline_slowdown = slowdown
 
 /// Old verb "Remove Assimilated Rig".
-/obj/item/rig/protean/proc/protean_removerig_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/protean/proc/protean_removerig_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(assimilated_rig)
 		rigsuit_max_pressure = initial(rigsuit_max_pressure)
 		for(var/obj/item/piece in list(gloves,helmet,boots,chest))

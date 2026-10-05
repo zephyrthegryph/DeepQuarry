@@ -1053,17 +1053,18 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 	armor_spec = "melee=5"
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
-	INTERACT_USE("Toggle", PROC_REF(caution_toggle_self)), \
-	INTERACT_ALT("Toggle", PROC_REF(caution_toggle_alt)), \
-)
+CAPABILITIES(/obj/item/clothing/suit/caution)
+	op("caution_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(caution_toggle_self)))
+	op("caution_toggle_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle"), then(PROC_REF(caution_toggle_alt)))
 
 /// Old attack_self.
-/obj/item/clothing/suit/caution/proc/caution_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/caution/proc/caution_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle(user)
 
 /// Old click_alt. It never reached the clothing alt-click.
-/obj/item/clothing/suit/caution/proc/caution_toggle_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/caution/proc/caution_toggle_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle(user)
 	return TRUE
 

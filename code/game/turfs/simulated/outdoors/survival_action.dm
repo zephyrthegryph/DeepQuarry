@@ -1,13 +1,15 @@
 GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATED_AS(I_HELP, "Dig", PROC_REF(newdirt_hand)))
+CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
+	op("newdirt_hand", hand(), ungated(), stance(I_HELP), label("Dig"), then(PROC_REF(newdirt_hand)))
 
 /// Old attack_hand: loosen rocks, or pile the dirt into a growplot. Outside combat mode only (the interaction's stance); pulling or out of reach, the turf's own touch.
-/turf/simulated/floor/outdoors/newdirt/proc/newdirt_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/simulated/floor/outdoors/newdirt/proc/newdirt_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user?.pulling_target())
-		return FALSE
+		return OP_DECLINE
 	if(!Adjacent(user))
-		return FALSE
+		return OP_DECLINE
 	if(icon_state in GLOB.has_rocks)
 		act_message(user, src, MSG_SELF("You loosen rocks from %T%..."), MSG_OTHERS("%U% loosens rocks from %T%..."))
 		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))

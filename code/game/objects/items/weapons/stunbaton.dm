@@ -247,22 +247,25 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 	slot_flags = null
 	grip_safety = FALSE
 
-EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_REF(cattleprod_interaction_item)))
+CAPABILITIES(/obj/item/melee/baton/cattleprod)
+	op("cattleprod_interaction_item", item(/obj/item), then(PROC_REF(cattleprod_interaction_item)))
 
 /// Old attackby.
-/obj/item/melee/baton/cattleprod/proc/cattleprod_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/melee/baton/cattleprod/proc/cattleprod_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(!istype(W, /obj/item/cell/device))
 			if(!bcell)
 				if(!move_into(src, nameof(src.bcell), W, user))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/melee/baton/get_description_interaction()
 	var/list/results = list()
