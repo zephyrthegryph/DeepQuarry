@@ -61,9 +61,9 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 	var/thermal_protection = H.get_heat_protection(env_temp)	// ... unless you've got a good suit.
 
 	if(thermal_protection < 0.99)		//For some reason, < 1 returns false if the value is 1.
-		temp_adj = min(H.bodytemperature - max(thermostat, env_temp), max_cooling)
+		temp_adj = min(H.body_temperature() - max(thermostat, env_temp), max_cooling)
 	else
-		temp_adj = min(H.bodytemperature - thermostat, max_cooling)
+		temp_adj = min(H.body_temperature() - thermostat, max_cooling)
 
 	if (temp_adj < 0.5)	//only cools, doesn't heat, also we don't need extreme precision
 		return

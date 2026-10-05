@@ -184,7 +184,7 @@
 		var/datum/gas_mixture/affected = location.air.remove_ratio(volume/location.air.return_volume())
 		if(affected) //in case volume is 0
 			reference = affected // Our color and volume will depend on this small sparked gasmix
-			affected.set_temperature(temperature)
+			heat_set(affected, temperature, HEAT_SOURCE_FIRE)
 			affected.react(src)
 			location.assume_air(affected)
 

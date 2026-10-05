@@ -63,8 +63,8 @@
 	if(has_mutation(FAT))
 		. += 1.5
 
-	if (bodytemperature < species.cold_level_1)
-		. += (species.cold_level_1 - bodytemperature) / 10 * 1.75
+	if (body_temperature() < species.cold_level_1)
+		. += (species.cold_level_1 - body_temperature()) / 10 * 1.75
 
 	// Turf related slowdown
 	var/turf/T = get_turf(src)

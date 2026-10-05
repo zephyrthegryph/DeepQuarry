@@ -262,10 +262,29 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 		to_chat(src, span_danger("Error: You cannot request spice (muted from adminhelps)."))
 		return
 
-	var/_answer_k176 = rerun_ask(src, "k176", VERB_REF(adminspice), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to request the admins spice things up for you? You accept the consequences if you do.", title = "Spicy!", choices = list("Yes","No"))
-	if(isnull(_answer_k176))
+	open_request(src, /datum/prompt/choice/adminspice, PROC_REF(adminspice_answered), answerer = mob)
+
+/datum/prompt/choice/adminspice
+	title = "Spicy!"
+	question = "Are you sure you want to request the admins spice things up for you? You accept the consequences if you do."
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/adminspice/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	var/client/user = owner
+	if(user.prefs.muted & MUTE_ADMINHELP)
+		return "muted"
+
+/client/proc/adminspice_answered(datum/act/request/context)
+	if(!context.answer)
+		if(!isnull(context.request.answer_value) && context.request.last_error == "muted")
+			to_chat(src, span_danger("Error: You cannot request spice (muted from adminhelps)."))
 		return
-	if(_answer_k176 == "Yes")
+	if(context.answer.answer_value == "Yes")
 		message_admins("[ADMIN_FULLMONTY(src)] has requested the round be spiced up a little.")
 		to_chat(src, span_notice("You have requested some more spice in your round."))
 	else

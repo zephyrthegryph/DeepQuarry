@@ -124,20 +124,28 @@ CAPABILITIES(/datum/event_container)
 	log_game("Next event of severity [GLOB.severity_to_string[severity]] in [(next_event_time - world.time)/600] minutes.")
 
 /datum/event_container/proc/SelectEvent(mob/user)
-	om_ask(user, /datum/om/prompt/choice/queue_event, PROC_REF(event_selected), choices = available_events, subject = src)
+	open_request(src, /datum/prompt/choice/queue_event, PROC_REF(event_selected), answerer = user, choices = available_events?.Copy())
 
-/// Picking the next event of a container (subject). Re-checked on the answer: still available.
-/datum/om/prompt/choice/queue_event
+/// Picking the next event of its owner container: still available when answered.
+/datum/prompt/choice/queue_event
 	title = "Event Selection"
-	message = "Select an event to queue up."
+	question = "Select an event to queue up."
+	timeout = 0
+	recheck_on_open = TRUE
 
-/datum/om/prompt/choice/queue_event/valid()
-	var/datum/event_container/container = subject
-	return (choice && (choice in container.available_events)) ? null : "not available"
+/datum/prompt/choice/queue_event/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	if(isnull(answer_value))
+		return null
+	var/datum/event_container/container = owner
+	return (answer_value && (answer_value in container.available_events)) ? null : "not available"
 
-/datum/event_container/proc/event_selected(datum/om/prompt/choice/queue_event/ask)
-	var/mob/user = ask.answerer
-	var/datum/event_meta/EM = ask.choice
+/datum/event_container/proc/event_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/mob/user = context.request.answerer
+	var/datum/event_meta/EM = context.answer.answer_value
 	if(next_event())
 		rel_add(src, nameof(available_events), next_event())
 	rel_remove(src, nameof(available_events), EM)

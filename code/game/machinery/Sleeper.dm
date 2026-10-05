@@ -325,7 +325,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 		qdel(D)
 		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
 		occupantData["hasBlood"] = 0
-		occupantData["bodyTemperature"] = occupant.bodytemperature
+		occupantData["bodyTemperature"] = occupant.body_temperature()
 		occupantData["maxTemp"] = SLEEPER_TEMPERATURE_BAR_MAX
 		// Because we can put simple_animals in here, we need to do something tricky to get things working nice
 		occupantData["temperatureSuitability"] = 0 // 0 is the baseline
@@ -333,27 +333,27 @@ CAPABILITIES(/obj/machinery/sleeper)
 			// I wanna do something where the bar gets bluer as the temperature gets lower
 			// For now, I'll just use the standard format for the temperature status
 			var/datum/species/sp = occupant.species
-			if(occupant.bodytemperature < sp.cold_level_3)
+			if(occupant.body_temperature() < sp.cold_level_3)
 				occupantData["temperatureSuitability"] = -3
-			else if(occupant.bodytemperature < sp.cold_level_2)
+			else if(occupant.body_temperature() < sp.cold_level_2)
 				occupantData["temperatureSuitability"] = -2
-			else if(occupant.bodytemperature < sp.cold_level_1)
+			else if(occupant.body_temperature() < sp.cold_level_1)
 				occupantData["temperatureSuitability"] = -1
-			else if(occupant.bodytemperature > sp.heat_level_3)
+			else if(occupant.body_temperature() > sp.heat_level_3)
 				occupantData["temperatureSuitability"] = 3
-			else if(occupant.bodytemperature > sp.heat_level_2)
+			else if(occupant.body_temperature() > sp.heat_level_2)
 				occupantData["temperatureSuitability"] = 2
-			else if(occupant.bodytemperature > sp.heat_level_1)
+			else if(occupant.body_temperature() > sp.heat_level_1)
 				occupantData["temperatureSuitability"] = 1
 		else if(isanimal(occupant))
 			var/mob/living/simple_mob/silly = occupant
-			if(silly.bodytemperature < silly.minbodytemp)
+			if(silly.body_temperature() < silly.minbodytemp)
 				occupantData["temperatureSuitability"] = -3
-			else if(silly.bodytemperature > silly.maxbodytemp)
+			else if(silly.body_temperature() > silly.maxbodytemp)
 				occupantData["temperatureSuitability"] = 3
 		// Blast you, imperial measurement system
-		occupantData["btCelsius"] = occupant.bodytemperature - T0C
-		occupantData["btFaren"] = ((occupant.bodytemperature - T0C) * (9.0/5.0))+ 32
+		occupantData["btCelsius"] = occupant.body_temperature() - T0C
+		occupantData["btFaren"] = ((occupant.body_temperature() - T0C) * (9.0/5.0))+ 32
 
 		// I'm not sure WHY you'd want to put a simple_animal in a sleeper, but precedent is precedent
 		// Runtime is aptly named, isn't she?

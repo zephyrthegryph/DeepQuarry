@@ -594,46 +594,127 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(
 /// still replaced through the normal processed-stack path, exercising material
 /// registration and every downstream consumer exactly as gameplay does.
 ADMIN_VERB(debug_apply_material_treatment, R_DEBUG, "Apply Material Treatment", "Apply a material treatment to held or nearby alloy sheets for testing.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/static/list/treatments = list(
-		"Particle conditioned" = MATERIAL_FIELD_PARTICLE,
-		"Magnetically aligned" = MATERIAL_FIELD_MAGNETIC,
-		"Emitter charged" = MATERIAL_FIELD_EMITTER,
-		"Fusion stabilized" = MATERIAL_FIELD_FUSION,
-		"Radiation hardened" = MATERIAL_FIELD_RADIATION_HARDENED,
-		"Field-energy storage" = MATERIAL_FIELD_ENERGY_STORAGE,
-		"Carbon coating" = MATERIAL_SURFACE_CARBON,
-		"Metal slime coating" = MATERIAL_SURFACE_SLIME_METAL,
-		"Cryogenic slime coating" = MATERIAL_SURFACE_SLIME_CRYO,
-		"Thermal slime coating" = MATERIAL_SURFACE_SLIME_THERMAL,
-		"Conductive slime coating" = MATERIAL_SURFACE_SLIME_CONDUCTIVE,
-		"Corrosion-resistant slime coating" = MATERIAL_SURFACE_SLIME_CORROSION,
-		"Catalytic slime coating" = MATERIAL_SURFACE_SLIME_CATALYTIC,
-		"Bluespace slime coating" = MATERIAL_SURFACE_SLIME_BLUESPACE,
-	)
 	var/mob/operator = user.mob
 	if(!operator)
 		return
 	var/obj/item/stack/material/processed_alloy/stock = operator.get_active_hand()
-	if(!istype(stock))
-		var/list/nearby_stock = list()
-		for(var/obj/item/stack/material/processed_alloy/candidate in view(operator))
-			nearby_stock += candidate
+	if(istype(stock))
+		open_treatment(operator)
+	else
+		var/list/nearby_stock = nearby_choices(operator)
 		if(!length(nearby_stock))
 			to_chat(operator, span_warning("Hold alloy sheets in your active hand or stand near a stack."))
 			return
-		var/_answer_k597 = verb_ask(operator, "k597", args, /datum/om/prompt/choice, message = "Choose nearby alloy sheets.", title = "Material Treatment", choices = nearby_stock)
-		if(isnull(_answer_k597))
-			return
-		stock = _answer_k597
-	var/selection = verb_ask(operator, "k598", args, /datum/om/prompt/choice, message = "Choose a treatment to apply at full test strength.", title = "Material Treatment", choices = treatments)
-	if(isnull(selection))
+		open_stock(operator, nearby_stock)
+
+GLOBAL_LIST_INIT(material_debug_treatments, list(
+	"Particle conditioned" = MATERIAL_FIELD_PARTICLE,
+	"Magnetically aligned" = MATERIAL_FIELD_MAGNETIC,
+	"Emitter charged" = MATERIAL_FIELD_EMITTER,
+	"Fusion stabilized" = MATERIAL_FIELD_FUSION,
+	"Radiation hardened" = MATERIAL_FIELD_RADIATION_HARDENED,
+	"Field-energy storage" = MATERIAL_FIELD_ENERGY_STORAGE,
+	"Carbon coating" = MATERIAL_SURFACE_CARBON,
+	"Metal slime coating" = MATERIAL_SURFACE_SLIME_METAL,
+	"Cryogenic slime coating" = MATERIAL_SURFACE_SLIME_CRYO,
+	"Thermal slime coating" = MATERIAL_SURFACE_SLIME_THERMAL,
+	"Conductive slime coating" = MATERIAL_SURFACE_SLIME_CONDUCTIVE,
+	"Corrosion-resistant slime coating" = MATERIAL_SURFACE_SLIME_CORROSION,
+	"Catalytic slime coating" = MATERIAL_SURFACE_SLIME_CATALYTIC,
+	"Bluespace slime coating" = MATERIAL_SURFACE_SLIME_BLUESPACE,
+))
+
+/datum/admin_verb/debug_apply_material_treatment/proc/nearby_choices(mob/operator)
+	var/list/nearby_stock = list()
+	for(var/obj/item/stack/material/processed_alloy/candidate in view(operator))
+		nearby_stock += candidate
+	return nearby_stock
+
+/datum/admin_verb/debug_apply_material_treatment/proc/current_stock(mob/operator, atom/nearby, nearby_answered)
+	var/obj/item/stack/material/processed_alloy/stock = operator.get_active_hand()
+	if(istype(stock))
+		return stock
+	return nearby_answered ? nearby : null
+
+/datum/admin_verb/debug_apply_material_treatment/proc/open_stock(mob/operator, list/nearby_stock, selected_treatment)
+	open_request(src, /datum/prompt/choice/material_debug_stock, PROC_REF(stock_answered), answerer = operator, choices = nearby_stock, selected_treatment = selected_treatment)
+
+/datum/admin_verb/debug_apply_material_treatment/proc/open_treatment(mob/operator, atom/nearby, nearby_answered = FALSE)
+	open_request(src, /datum/prompt/choice/material_debug_treatment, PROC_REF(treatment_answered), answerer = operator, subject = nearby, nearby_answered = nearby_answered, choices = GLOB.material_debug_treatments)
+
+/datum/prompt/choice/material_debug_stock
+	rights = R_DEBUG
+	timeout = 0
+	recheck_on_open = TRUE
+	title = "Material Treatment"
+	question = "Choose nearby alloy sheets."
+	var/selected_treatment
+
+/datum/prompt/choice/material_debug_stock/recheck_extra()
+	if(QDELETED(answerer) || !answerer.client)
+		return "gone"
+	var/datum/admin_verb/debug_apply_material_treatment/helper = owner
+	var/obj/item/stack/material/processed_alloy/held = answerer.get_active_hand()
+	if(!istype(held) && !length(helper.nearby_choices(answerer)))
+		return "nearby"
+	var/obj/item/stack/material/processed_alloy/selected_stock = answer_value
+	if(!isnull(answer_value) && !istype(held) && QDELETED(selected_stock))
+		return "stock"
+	if(!isnull(answer_value) && !isnull(selected_treatment))
+		var/obj/item/stack/material/processed_alloy/stock = helper.current_stock(answerer, answer_value, TRUE)
+		if(QDELETED(stock) || !answerer.Adjacent(stock))
+			return "stock"
+
+/datum/prompt/choice/material_debug_treatment
+	rights = R_DEBUG
+	timeout = 0
+	recheck_on_open = TRUE
+	title = "Material Treatment"
+	question = "Choose a treatment to apply at full test strength."
+	var/nearby_answered = FALSE
+
+/datum/prompt/choice/material_debug_treatment/recheck_extra()
+	if(QDELETED(answerer) || !answerer.client)
+		return "gone"
+	var/datum/admin_verb/debug_apply_material_treatment/helper = owner
+	var/obj/item/stack/material/processed_alloy/held = answerer.get_active_hand()
+	if(!istype(held) && !length(helper.nearby_choices(answerer)))
+		return "nearby"
+	if(!isnull(answer_value) && (istype(held) || nearby_answered))
+		var/obj/item/stack/material/processed_alloy/stock = helper.current_stock(answerer, subject, nearby_answered)
+		if(!answer_value || QDELETED(stock) || !answerer.Adjacent(stock))
+			return "stock"
+
+/datum/admin_verb/debug_apply_material_treatment/proc/stock_answered(datum/act/request/context)
+	var/datum/prompt/choice/material_debug_stock/request = context.request
+	if(!context.answer)
+		if(!isnull(request.answer_value) && request.last_error == "nearby")
+			to_chat(request.answerer, span_warning("Hold alloy sheets in your active hand or stand near a stack."))
 		return
-	if(!selection || QDELETED(stock) || !operator.Adjacent(stock))
+	if(isnull(request.selected_treatment))
+		open_treatment(request.answerer, request.answer_value, TRUE)
+	else
+		var/obj/item/stack/material/processed_alloy/stock = current_stock(request.answerer, request.answer_value, TRUE)
+		apply_treatment(request.answerer, stock, request.selected_treatment)
+
+/datum/admin_verb/debug_apply_material_treatment/proc/treatment_answered(datum/act/request/context)
+	var/datum/prompt/choice/material_debug_treatment/request = context.request
+	if(!context.answer)
+		if(!isnull(request.answer_value) && request.last_error == "nearby")
+			to_chat(request.answerer, span_warning("Hold alloy sheets in your active hand or stand near a stack."))
 		return
+	var/obj/item/stack/material/processed_alloy/held = request.answerer.get_active_hand()
+	if(!istype(held) && !request.nearby_answered)
+		open_stock(request.answerer, nearby_choices(request.answerer), request.answer_value)
+	else
+		var/obj/item/stack/material/processed_alloy/stock = current_stock(request.answerer, request.subject, request.nearby_answered)
+		apply_treatment(request.answerer, stock, request.answer_value)
+
+/datum/admin_verb/debug_apply_material_treatment/proc/apply_treatment(mob/operator, obj/item/stack/material/processed_alloy/stock, selection)
 	var/datum/material_batch/batch = stock.physical_batch()?.copy_batch()
 	if(!batch)
 		return
-	var/treatment = treatments[selection]
+	var/treatment = GLOB.material_debug_treatments[selection]
 	if(findtext(treatment, "lattice") || (treatment in list(MATERIAL_FIELD_RADIATION_HARDENED, MATERIAL_FIELD_ENERGY_STORAGE)))
 		batch.add_field_treatment(treatment, 100)
 	else

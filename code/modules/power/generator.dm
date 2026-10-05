@@ -142,21 +142,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 	last_circ2_gen = 0
 
 	if(air1 && air2)
-		var/air1_heat_capacity = air1.heat_capacity()
-		var/air2_heat_capacity = air2.heat_capacity()
-		var/delta_temperature = abs(air2.return_temperature() - air1.return_temperature())
-
-		if(delta_temperature > 0 && air1_heat_capacity > 0 && air2_heat_capacity > 0)
-			var/energy_transfer = delta_temperature*air2_heat_capacity*air1_heat_capacity/(air2_heat_capacity+air1_heat_capacity)
-			var/heat = energy_transfer*(1-thermal_efficiency)
-			last_thermal_gen = energy_transfer*thermal_efficiency
-
-			if(air2.return_temperature() > air1.return_temperature())
-				air2.set_temperature(air2.return_temperature() - energy_transfer/air2_heat_capacity)
-				air1.set_temperature(air1.return_temperature() + heat/air1_heat_capacity)
-			else
-				air2.set_temperature(air2.return_temperature() + heat/air2_heat_capacity)
-				air1.set_temperature(air1.return_temperature() - energy_transfer/air1_heat_capacity)
+		// The circulators' gas meets across the junction: the hot side's heat flows to the cold side and thermal_efficiency of it, never
+		// more than Carnot allows, leaves as electricity (Rust books it).
+		last_thermal_gen = heat_engine_once(air1, air2, thermal_efficiency)
 
 	//Transfer the air
 	if (air1)
@@ -165,10 +153,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 		circ2().air2.merge(air2)
 
 	//Update the gas networks
-	if(circ1().network2)
-		circ1().network2.mark_dirty()
-	if(circ2().network2)
-		circ2().network2.mark_dirty()
+	gas_touched(circ1().air2)
+	gas_touched(circ2().air2)
 
 	//Exceeding maximum power leads to some power loss
 	if(effective_gen > max_power && prob(5))

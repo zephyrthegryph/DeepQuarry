@@ -76,12 +76,12 @@
 /datum/unit_test/dq_heat_gas_container_readers_parity/Run()
 	var/turf/T = test_floor()
 	var/obj/item/tank/oxygen/tank = allocate(/obj/item/tank/oxygen, T)
-	tank.air_contents.set_temperature(250)
+	heat_set(tank.air_contents, 250, HEAT_SOURCE_OTHER)
 	TEST_ASSERT_EQUAL(tank.get_interior_temperature(), tank.air_contents.return_temperature(), "tank interior")
 	TEST_ASSERT(abs(tank.get_interior_temperature() - 250) < 0.01, "tank reads [tank.get_interior_temperature()] K")
 
 	var/obj/machinery/portable_atmospherics/canister/air/canister = allocate(/obj/machinery/portable_atmospherics/canister/air, T)
-	canister.air_contents.set_temperature(400)
+	heat_set(canister.air_contents, 400, HEAT_SOURCE_OTHER)
 	TEST_ASSERT_EQUAL(canister.get_interior_temperature(), canister.air_contents.return_temperature(), "canister interior")
 	TEST_ASSERT(abs(canister.get_interior_temperature() - 400) < 0.01, "canister reads [canister.get_interior_temperature()] K")
 

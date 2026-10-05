@@ -316,7 +316,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 				open_request(src, /datum/prompt/choice/buildmode_room_setting, PROC_REF(ask_area_name), answerer = user, title = "Room Builder", question = "Would you like to generate a new area as well?", choices = list("No", "Yes"), buttons = TRUE)
 
 			if(BUILDMODE_LIGHTS)
-				om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
+				open_request(src, /datum/prompt/choice/buildmode_light, PROC_REF(ask_light_value), answerer = user, title = "Light Maker", question = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
 			if(BUILDMODE_DROP)
 				ask_path(user, "objholder")
 	return 1
@@ -747,21 +747,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			log_admin("[key_name(user)] selected [i] mobs. x:[low_x] y:[low_y]- x:[hi_x] y:[hi_y] z:[z].")
 			return
 
-/// Buildmode's questions (title, message and choices set at each call); `step` carries the
-/// answer before (the var name being edited, the light setting being changed, the var a path goes to).
-/datum/om/prompt/text/buildmode
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/step
-
-/datum/om/prompt/number/buildmode
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/step
-
+/// Remaining world-reference question; `step` carries the variable being edited.
 /datum/om/prompt/choice/buildmode
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/step
-
-/datum/om/prompt/color/buildmode
 	requires = PROMPT_ADMIN(R_BUILDMODE)
 	var/step
 
@@ -845,20 +832,29 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 		if("Wall")
 			ask_path(ask.answerer, "wall_holder", /turf/simulated/wall)
 
-/obj/effect/bmode/buildmode/proc/ask_light_value(datum/om/prompt/choice/buildmode/ask)
-	switch(ask.choice)
+/obj/effect/bmode/buildmode/proc/ask_light_value(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_light/ask = context.answer
+	switch(ask.answer_value)
 		if("Range")
-			om_ask(ask.answerer, /datum/om/prompt/number/buildmode, PROC_REF(light_number_entered), title = "Light Maker", message = "New light range.", default = 3, step = ask.choice)
+			open_request(src, /datum/prompt/number/buildmode_light, PROC_REF(light_number_entered), answerer = ask.answerer, title = "Light Maker", question = "New light range.", default = 3, light_setting = ask.answer_value)
 		if("Power")
-			om_ask(ask.answerer, /datum/om/prompt/number/buildmode, PROC_REF(light_number_entered), title = "Light Maker", message = "New light power.", default = 3, step = ask.choice)
+			open_request(src, /datum/prompt/number/buildmode_light, PROC_REF(light_number_entered), answerer = ask.answerer, title = "Light Maker", question = "New light power.", default = 3, light_setting = ask.answer_value)
 		if("Color")
-			om_ask(ask.answerer, /datum/om/prompt/color/buildmode, PROC_REF(light_color_picked), title = "Light Maker", message = "New light color.", default = new_light_color, step = ask.choice)
+			open_request(src, /datum/prompt/color/buildmode_light, PROC_REF(light_color_picked), answerer = ask.answerer, title = "Light Maker", question = "New light color.", default = new_light_color, light_setting = ask.answer_value)
 
-/obj/effect/bmode/buildmode/proc/light_number_entered(datum/om/prompt/number/buildmode/ask)
-	lights_answered(ask.answerer, ask.step, ask.number)
+/obj/effect/bmode/buildmode/proc/light_number_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/buildmode_light/ask = context.answer
+	lights_answered(ask.answerer, ask.light_setting, ask.answer_value)
 
-/obj/effect/bmode/buildmode/proc/light_color_picked(datum/om/prompt/color/buildmode/ask)
-	lights_answered(ask.answerer, ask.step, ask.picked_color)
+/obj/effect/bmode/buildmode/proc/light_color_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/color/buildmode_light/ask = context.answer
+	lights_answered(ask.answerer, ask.light_setting, ask.answer_value)
 
 /obj/effect/bmode/buildmode/proc/lights_answered(mob/user, what, input)
 	if(!input)
@@ -1193,3 +1189,56 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 		if(!istype(picked) || QDELETED(picked))
 			return "gone"
 	return null
+
+/datum/prompt/choice/buildmode_light
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/buildmode_light/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/number/buildmode_light
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/light_setting
+
+/datum/prompt/number/buildmode_light/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/color/buildmode_light
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/light_setting
+
+/datum/prompt/color/buildmode_light/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/number/buildmode_light/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default || 0, INFINITY, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/color/buildmode_light/normalize(given)
+	return given
+
+/datum/prompt/color/buildmode_light/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title || "Pick a color", default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker

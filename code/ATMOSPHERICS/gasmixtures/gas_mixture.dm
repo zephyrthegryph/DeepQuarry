@@ -10,7 +10,7 @@
  * OPAQUE HANDLE (/tg/ auxmos model): there is NO public temperature/volume var. The
  * Rust arena is the single source of truth. READ via return_temperature()/return_volume()
  * (each crosses the FFI boundary — cache in a local in hot loops); WRITE via
- * set_temperature()/set_volume(). A stale-mirror read is impossible and a raw
+ * heat_set() (code/domains/heat/) / set_volume(). A stale-mirror read is impossible and a raw
  * `GM.temperature = x` is a compile error.
  *
  * Gas identity: gas binds take numeric GAS_ID_* IDs (generated from verdigris
@@ -252,10 +252,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 /datum/gas_mixture/proc/set_gas(gas_specie, amount)
 	return vg_set_moles_hook(src, GAS_IDX(gas_specie), amount)
 
-/datum/gas_mixture/proc/set_temperature(target_temp)
-	// Arena is authoritative (and clamps to TCMB). No DM mirror to refresh.
-	return vg_set_temperature_hook(src, target_temp)
-
 /datum/gas_mixture/proc/set_volume(vol)
 	return vg_set_volume_hook(src, vol)
 
@@ -309,7 +305,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	if(amount <= 0)
 		return null
 	var/datum/gas_mixture/removed = new type
-	removed.set_temperature(return_temperature())
+	heat_set(removed, return_temperature())
 	vg_set_moles_hook(removed, GAS_IDX(gas_id), amount)
 	vg_adjust_moles_hook(src, GAS_IDX(gas_id), -amount)
 	return removed
@@ -319,7 +315,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 		return null
 	ratio = min(ratio, 1)
 	var/datum/gas_mixture/removed = new type
-	removed.set_temperature(return_temperature())
+	heat_set(removed, return_temperature())
 	var/amount = QUANTIZE(vg_get_moles_hook(src, GAS_IDX(gas_id)) * ratio)
 	vg_set_moles_hook(removed, GAS_IDX(gas_id), amount)
 	vg_adjust_moles_hook(src, GAS_IDX(gas_id), -amount)

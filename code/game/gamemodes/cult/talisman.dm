@@ -81,11 +81,6 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 	)
 	open_request(src, /datum/prompt/choice/talisman_chant, PROC_REF(talisman_chant_chosen), answerer = user, title = "Talisman", question = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", choices = rune_options)
 
-/// A pick made with an item the answerer carries (a talisman, a pinpointer, a technomancer
-/// device or spell): re-checked that it's still carried and they're able.
-/datum/om/prompt/choice/carried_item
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
 /obj/item/paper/talisman/proc/talisman_chant_chosen(datum/act/request/context)
 	if(!context.answer)
 		return

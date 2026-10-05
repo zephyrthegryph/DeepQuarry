@@ -149,28 +149,49 @@ TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_mes
 
 
 /datum/data/pda/app/messenger/proc/create_message(mob/living/U, obj/item/pda/P)
-	var/t = rerun_ask(U, "k127", PROC_REF(create_message), args, /datum/om/prompt/text, message = "Please enter message", title = name)
-	if(isnull(t))
-		return
-	if(!t)
-		return
-	t = readd_quotes(t)
-	if(!t || !istype(P))
-		return
-	if(!in_range(pda(), U) && pda().loc != U)
-		return
+	open_request(src, /datum/prompt/text/pda_message, PROC_REF(message_entered), answerer = U, subject = P, target_expected = !isnull(P), title = name)
 
-	var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
+/datum/prompt/text/pda_message
+	question = "Please enter message"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/target_expected = FALSE
 
-	if(!PM || PM.toff || toff)
+/datum/prompt/text/pda_message/recheck_extra()
+	var/datum/data/pda/app/messenger/program = owner
+	if(!istype(program) || QDELETED(program) || !answerer || QDELETED(answerer))
+		return "gone"
+	if(target_expected && (!subject || QDELETED(subject)))
+		return "gone"
+	// These are answer-time guards: the old entry opened before checking them.
+	if(isnull(answer_value))
 		return
+	if(!answer_value || !readd_quotes(answer_value) || !istype(subject, /obj/item/pda))
+		return "not sent"
+	var/obj/item/pda/sender = program.pda()
+	if(!sender || QDELETED(sender))
+		return "no sender"
+	if(!in_range(sender, answerer) && sender.loc != answerer)
+		return "not sent"
+	var/obj/item/pda/target = subject
+	var/datum/data/pda/app/messenger/recipient = target.find_program(/datum/data/pda/app/messenger)
+	if(!recipient || recipient.toff || program.toff)
+		return "not sent"
+	if(!COOLDOWN_FINISHED(program, text_cooldown))
+		return "not sent"
+	if(!sender.can_use(answerer))
+		return "not sent"
 
-	if(!COOLDOWN_FINISHED(src, text_cooldown))
+/datum/data/pda/app/messenger/proc/message_entered(datum/act/request/A)
+	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
 		return
+	SStgui.update_uis(src)
+	if(A.answer)
+		var/obj/item/pda/P = A.request.subject
+		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
+		send_message_answered(A.request.answerer, P, PM, readd_quotes(A.answer.answer_value))
 
-	if(!pda().can_use(U))
-		return
-
+/datum/data/pda/app/messenger/proc/send_message_answered(mob/living/U, obj/item/pda/P, datum/data/pda/app/messenger/PM, t)
 	COOLDOWN_START(src, text_cooldown, 0.5 SECONDS)
 	// check if telecomms I/O route 1459 is stable
 	//var/telecomms_intact = telecomms_process(P.owner, owner, t)

@@ -825,7 +825,6 @@ qdel	code/modules/projectiles/gun.dm	qdel(in_chamber)
 qdel	code/modules/projectiles/guns/energy/special.dm	qdel(beam)
 qdel	code/modules/projectiles/guns/launcher/pneumatic.dm	qdel(removed)
 qdel	code/modules/projectiles/guns/projectile/shotgun.dm	qdel(chambered) // Delete casing
-qdel	code/modules/projectiles/projectile.dm	qdel(beam_index())
 qdel	code/modules/projectiles/projectile/change.dm	qdel(W)
 qdel	code/modules/projectiles/projectile/change.dm	qdel(M)
 qdel	code/modules/random_map/drop/droppod.dm	qdel(AM)

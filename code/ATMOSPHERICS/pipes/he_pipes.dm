@@ -17,6 +17,8 @@
 	var/surface = 2	//surface area in m^2
 	var/icon_temperature = T20C //stop small changes in temperature causing an icon refresh
 	var/stable_temperature_cycles = 0
+	/// It lies on space and radiates (set when it joins its pipeline: a pipe does not move).
+	var/in_space = FALSE
 
 	minimum_temperature_difference = 20
 	thermal_conductivity = OPEN_HEAT_TRANSFER_COEFFICIENT
@@ -30,6 +32,15 @@
 #define HE_PIPE_GAS_CONDUCTANCE 100
 /// Shell-to-surroundings conductance (W/K) at the open-air conductivity.
 #define HE_PIPE_SURFACE_CONDUCTANCE 50
+/// The sky an HE pipe in space radiates against: the temperature at which the sunlight on its edge-on surface balances what it radiates
+/// (about 130 K), so a radiator in space settles there, as it always did.
+#define HE_PIPE_SKY_TEMPERATURE ((AVERAGE_SOLAR_RADIATION * RADIATOR_EXPOSED_SURFACE_AREA_RATIO / STEFAN_BOLTZMANN_CONSTANT) ** 0.25 + TCMB)
+
+CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
+	// In space the pipeline's gas radiates through the pipe's surface (Stefan-Boltzmann, integrated exactly in Rust).
+	when(nameof(in_space), heat_link(HEAT_PORT(1), HEAT_SKY(HE_PIPE_SKY_TEMPERATURE), 0, 1, nameof(surface)))
+
+TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 
 /// The pipe's shell is its heat body: it couples to its turf like any atom's (slot 0) and to its pipeline's gas (slot 1).
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/thermal_properties()
@@ -56,6 +67,7 @@
 	. = ..()
 	if(index == 1)
 		couple_to_pipeline()
+		set_in_space(istype(loc, /turf/space))
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/Initialize(mapload)
 	. = ..()
@@ -178,15 +190,11 @@
 				can_hibernate = FALSE
 		else if(istype(loc, /turf/space/))
 			if(abs(pipe_temperature - TCMB) > minimum_temperature_difference)
-				can_hibernate = FALSE
-				parent.radiate_heat_to_space(surface, 1)
+				can_hibernate = FALSE // the radiation is its heat link (CAPABILITIES); this step keeps the glow up to date
 
 		if(has_buckled_mobs())
 			for(var/mob/living/L as anything in src?.buckled_mob_list())
-				var/hc = pipe_air.heat_capacity()
-				var/avg_temp = (pipe_air.return_temperature() * hc + L.bodytemperature * HUMAN_HEAT_CAPACITY) / (hc + HUMAN_HEAT_CAPACITY)
-				pipe_air.set_temperature(avg_temp)
-				L.set_bodytemperature(avg_temp)
+				heat_equalize(pipe_air, L) // the body lying on it and the gas inside meet, conserving
 
 				var/heat_limit = 1000
 

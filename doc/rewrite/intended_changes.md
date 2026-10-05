@@ -963,7 +963,6 @@ the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Ea
   (`electrify(duration, source, user)` is now a hold), `lock()`/`unlock()` (the bolts library's `drop_bolts`/`raise_bolts`, through `set_bolted()`).
 * Moved, behaviour intact: the SCP door to `airlock_subtypes.dm`, the cyborg's water reserve and refill verb to `robot.dm`, the cyborg-use rows to
   `atmos_control.dm`, `computer/robot.dm`, `turret_control.dm` and `portable_turret.dm` (its cyborg `isLocked()` branch folded into the turret's own).
-=======
 
 ## Atmospherics machines: the air alarm and the remote atmospherics console
 
@@ -1120,6 +1119,30 @@ wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_be
 * **One-off writes are booked.** Every gas temperature or energy write outside the gas and heat domains became `heat_set()` (an authority write:
   spawn temperatures, admin, events, tests) or `heat_add()` with a `HEAT_SOURCE_*` (fire, reactions, spells, devices, materials). Values are
   unchanged; `heat_books()` now accounts for them. The radiance spell and the supermatter keep their 10 000 K clamp as an authority write.
+* **Cryo cell.** The occupant and the cell's gas share one declared `heat_link` (`HUMAN_HEAT_CAPACITY / 2` W/K, about a full settle per
+  service interval) while the cell is on, works and holds them; the old explicit settle per interval (`gas_body_heat_exchange`) is gone.
+  Pins unchanged (`dq_medpod/cryo_*`, `dq_cryo_cell_cools_mob`).
+* **Air alarm thermostat.** `/datum/gas_heater` is deleted; the thermostat is a `heat_pump` on the room's air (500 W, i.e. its old 1000 J per
+  service interval, resistive heating and cooling at no better than 1:1) while `regulating_temperature` says it works. Its start/stop
+  hysteresis (2 K / 0.5 K, no work below 1 kPa or on an unsafe target) is unchanged. It now works continuously between scans instead of in
+  one 1000 J lump per scan; `alarm_thermostat_heats_and_cools` still reads 3000 J over three intervals.
+* **Heat exchangers** are one `heat_link` (5000 W/K, scaled by an engineered material's conductance as before) between the pair's pipelines,
+  declared by the first of the pair; they no longer step in DM. Before: full mix per SSair tick; after: the loops meet within about a second.
+* **HE pipes in space** radiate through a `heat_link` to a 130 K sky (the temperature at which the old solar gain balanced the radiation),
+  emissivity 1 over their surface; the old scaling of radiation by the gas's density is dropped (radiation leaves the shell, not the gas).
+  A body buckled to one meets the pipe's gas through `heat_equalize` (it was a DM average with a fixed body capacity).
+* **Thermoelectric generator.** `heat_engine_once()` per step: the same equalizing transfer, with `thermal_efficiency` now capped at Carnot
+  (`1 − T_cold/T_hot`); with stock efficiency 0.65 the cap matters only for loops within a factor of ~2.9 of each other.
+* **Gas turbine.** Its adiabatic temperature drop is a booked device write (`heat_set`), unchanged in value.
+* **Exosuit cabin.** A 1000 W resistive `heat_pump` toward 20 °C against the outside air, paid from the cell, while temperature control runs
+  (was 25 % of the gap, capped at 10 K, per 2 s with no energy). Before: 305.85 K after four regulations from 333.15 K.
+* **Mob bodies.** `bodytemperature` is only the starting value; `body_temperature()` reads the mob's Rust heat body (`HUMAN_HEAT_CAPACITY`).
+  Convection is the conductance of the body's coupling to its surroundings (`C·(1−protection)·density / (divisor · 2 s)`, the old per-run rate),
+  zero inside the comfort range; radiation in space is a link to space over `HUMAN_EXPOSED_SURFACE_AREA`; thermoregulation, passive heat and
+  prosthetic heating are the body's metabolic power (the old per-run kelvin steps as watts over 2 s). Heat is conserved, so cold air chills a
+  body only as fast as the air (and what it touches) can take its heat: a human in a single cell of 50 K nitrogen warms the cell instead of
+  freezing. `dq_extreme_cold_damages_human` now chills the body against a thousand cells of 50 K gas before checking frostbite.
+* **Test clock.** `test_time()` advances the heat network's edges with it (`vg_heat_net_advance`), so heat-flow pins use the kernel clock.
 * **Material batches** keep their own DM heat model; the proc is renamed `add_batch_heat()` so it is not mistaken for a gas write.
 
 ## Missing forms: the DNA modifier console's window
@@ -1154,3 +1177,27 @@ first: no click reached the legacy `wrench_act()`).
 
 * **A wrench takes a loose wall or machine frame apart again** (op `frame.refund`, a `tool(TOOL_WRENCH)` op on the frame item): the frame becomes its
   `refund_amt` of `refund_type` (five sheets of steel by default). It was broken in play.
+## Consoles: the console base, the ID console and the communications console (rewrite/machines-full)
+
+- **Console base.** A console joins `REGISTRY_COMPUTERS`; an APC's overload finds the consoles of its area there (`area_consoles()`), so the
+  legacy `powered_by(POWERED_BY_AREA)` capability, `caps_area_changed()` and `area_members()` are gone. It draws through `draw(look)`: the
+  joined desk, the keyboard (off without power), and the screen as a glowing part that lights the room while powered (the light now comes
+  from the look, not from a `power_change()` override). The terminal sounds follow STAT_OPERABLE. A pulse (`on_notice(hit/emp)`) breaks it
+  one time in five over severity and a blob hit is `instead()` a medium blast, as before. The screwdriver is op `disconnect` (2 s; a broken
+  one drops its glass), a gripper holding something is op `use_gripper`, and any other item is op `use_item` (the hand's use), at the
+  default tier so a type's own item ops come first. `decode()` and `Initialize()` are gone. The message monitor's "too hot" and the AI
+  restorer's stuck screws are `extend("disconnect", needs(...))`; the message monitor's hack screen is `screen_state()` (no longer written
+  from the appearance proc); the atmospheric alert console sets its screen and plays its alert sounds when the alarms change, not when it is
+  drawn (and its repeat sound is one keyed timer).
+- **ID console.** An ID card used on it is op `insert_id` (then the window opens); "Eject ID Card" is op `eject` (operator's card first). Every
+  change to the loaded card (access, assignment, name, account, dismissal, custom title) needs an authenticated operator and a card: pressing
+  one with no card loaded is refused instead of a runtime. An unknown job and an invalid name are refusals. The access report no longer
+  runtimes without an operator card ("Prepared By: Unknown"), the card's name is rebuilt by `update_name()` after every button, and the
+  printer is a tracked state (no `SStgui.update_uis`).
+- **Communications.** A login is the person's own (`logins`, per actor): someone else at the same console is not logged in by it. The
+  announcement's signature is taken from the announcer's ID when they announce. Deleting a message deletes the message whose button was
+  pressed (by its id), not whichever message is open when the confirmation is answered; a console's station-wide list cannot be deleted
+  from (refused up front). The status display takes one of its presets (an enum; the dead "alert" branch is gone). The emag is the console's
+  `emag()`; the module reads it (`routing_scrambled()`), and "Restore Backup" clears it, so the console and its window can no longer disagree.
+  The shuttle-call grace periods are measured from the round's start (`ELAPSED(SSticker, round_start_time)`), not from server start, and are
+  named (10 and 90 minutes; the old comment said 30).

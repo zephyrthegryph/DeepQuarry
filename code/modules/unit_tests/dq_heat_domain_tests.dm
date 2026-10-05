@@ -5,7 +5,7 @@
 /// Makes `T` an isolated solid cell (no air coupling) at `temperature`.
 /proc/heat_test_solid(turf/T, capacity, conductivity, temperature, emissivity = THERMAL_EMISSIVITY_DEFAULT)
 	vg_heat_set_turf(T, HEAT_CELL_SOLID, capacity, conductivity, emissivity, temperature, FALSE)
-	T.set_temperature(temperature)
+	heat_set_solid(T, temperature)
 
 /// A floor with air whose east neighbour is also a floor, for heat tests (the
 /// test map has no unit-test landmarks).
@@ -48,7 +48,7 @@
 /// Gives `T` its own heat cell back, at room temperature.
 /proc/heat_test_restore(turf/T)
 	T.update_heat_cell()
-	T.set_temperature(T20C)
+	heat_set_solid(T, T20C)
 
 /datum/unit_test/dq_heat_hot_wall_conducts_to_its_neighbour
 

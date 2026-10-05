@@ -15,11 +15,12 @@
 	var/datum/comm_message_listener/message_core
 
 CAPABILITIES(/datum/computer_file/program/comm)
-	owns_one(nameof(message_core), /datum/comm_message_listener)
+	owns_one(nameof(message_core), /datum/comm_message_listener, starts = /datum/comm_message_listener)
 
+/// A program is a plain datum: its declared starting occupants (the message list) are made here.
 /datum/computer_file/program/comm/New(obj/item/modular_computer/comp = null)
 	..()
-	rel_set(src, nameof(message_core), new /datum/comm_message_listener)
+	lifecycle_decls_init(src)
 
 /datum/computer_file/program/comm/clone()
 	var/datum/computer_file/program/comm/temp = ..()

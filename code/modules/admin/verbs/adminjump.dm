@@ -46,12 +46,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptoturf, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to 
 ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Mob", "Jump to the selected mob.", ADMIN_CATEGORY_GAME, mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	user.do_jumptomob(M)
 
-/// An admin jump/send pick (title, message and choices set at the call).
-/datum/om/prompt/choice/admin_jump
-	requires = PROMPT_ADMIN(R_ADMIN|R_MOD|R_DEBUG|R_EVENT)
-	/// Send Mob: the area picked first.
-	var/area/area
-
 /datum/prompt/choice/admin_jump_mob
 	timeout = 0
 	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT

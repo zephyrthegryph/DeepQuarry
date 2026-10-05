@@ -355,13 +355,25 @@ fn write_energy(r: Res, joules: f64) {
 /// Steps every edge over the world time since the last step. Called by the
 /// frame after the world paced (outside the world borrow: gas loads take it).
 pub(crate) fn step(now: f64, first_dt: f64) {
-    let edges: Vec<(usize, Edge<Res>)> = NET.with_borrow(|n| {
-        n.slots.iter().enumerate().filter_map(|(i, s)| s.as_ref().map(|s| (i, s.edge))).collect()
-    });
     let dt = NET.with_borrow_mut(|n| {
         let dt = n.last_now.map_or(first_dt, |t| (now - t).max(0.0));
         n.last_now = Some(now);
         dt
+    });
+    step_dt(dt);
+}
+
+/// Advances the heat network alone by `seconds` (the unit-test kernel clock, which does not pace the native world). Returns nothing.
+#[auxmacros::bind("/proc/heat_net_advance")]
+fn heat_net_advance(seconds: ByondValue) -> Result<ByondValue> {
+    step_dt(f(&seconds)?.max(0.0));
+    Ok(ByondValue::null())
+}
+
+/// Steps every edge over `dt` seconds.
+fn step_dt(dt: f64) {
+    let edges: Vec<(usize, Edge<Res>)> = NET.with_borrow(|n| {
+        n.slots.iter().enumerate().filter_map(|(i, s)| s.as_ref().map(|s| (i, s.edge))).collect()
     });
     if edges.is_empty() || dt <= 0.0 {
         return;
@@ -787,15 +799,24 @@ fn heat_move_to_temperature(kind: ByondValue, r: ByondValue, temperature: ByondV
     let res = Res::from_dm(&kind, &r)?;
     let t = f(&temperature)?;
     let source = source_index(&source)?;
-    // An empty mixture holds no energy, but the temperature it keeps is what gas added to it later arrives at: set it directly.
-    if let Some(m) = empty_mixture(res) {
-        if let Some(before) = mix::load(m) {
-            let mut after = before.clone();
-            #[allow(clippy::cast_possible_truncation)]
-            after.set_temperature((t as f32).max(vg_heat::consts::TCMB));
-            mix::store(m, &before, &after);
+    // A gas is set the way the gas domain sets a temperature (one read-modify-write of the mixture, through the same path every gas write
+    // takes, so pending turf commands compose), and the joules it took are booked. An empty mixture keeps the temperature for gas added later.
+    if let Some(m) = gas_mixture(res) {
+        let Some(before) = mix::load(m) else { return Ok(0.0f32.into()) };
+        if before.is_immutable() {
+            return Ok(0.0f32.into());
         }
-        return Ok(0.0f32.into());
+        let mut after = before.clone();
+        #[allow(clippy::cast_possible_truncation)]
+        after.set_temperature((t as f32).max(vg_heat::consts::TCMB));
+        let added = f64::from(after.heat_capacity()) * (f64::from(after.get_temperature()) - f64::from(before.get_temperature()));
+        mix::store(m, &before, &after);
+        NET.with_borrow_mut(|n| {
+            if added >= 0.0 { n.total.external_in += added } else { n.total.external_out -= added }
+        });
+        book_source(source, added);
+        #[allow(clippy::cast_possible_truncation)]
+        return Ok((added as f32).into());
     }
     let applied = one_off(&[res], |c, b| {
         let Some(s) = c.state(res) else { return 0.0 };
@@ -830,15 +851,32 @@ fn heat_set_energy(kind: ByondValue, r: ByondValue, joules: ByondValue, source: 
     Ok((applied as f32).into())
 }
 
-/// The mixture behind a gas reservoir when it is empty (too little gas to hold heat).
-fn empty_mixture(r: Res) -> Option<MixRef> {
-    let m = match r {
-        Res::Mix(id) => MixRef::from_id(id)?,
-        Res::Port(bits) => port_mix(bits)?,
-        _ => return None,
-    };
-    let mix = mix::load(m)?;
-    (!mix.is_immutable() && f64::from(mix.heat_capacity()) < MIN_CAPACITY).then_some(m)
+/// The mixture behind a gas reservoir.
+fn gas_mixture(r: Res) -> Option<MixRef> {
+    match r {
+        Res::Mix(id) => MixRef::from_id(id),
+        Res::Port(bits) => port_mix(bits),
+        _ => None,
+    }
+}
+
+/// One heat-engine pass between two reservoirs (a thermoelectric generator
+/// on the gas its circulators moved this step): the energy that would bring
+/// them to a common temperature flows from the hotter to the colder, and
+/// `efficiency` of it (capped at Carnot, `1 - T_cold/T_hot`) leaves as
+/// electrical work, booked out. Returns the work, J.
+#[auxmacros::bind("/proc/heat_engine_once")]
+fn heat_engine_once(a_kind: ByondValue, a_ref: ByondValue, b_kind: ByondValue, b_ref: ByondValue, efficiency: ByondValue) -> Result<ByondValue> {
+    let (a, b) = (Res::from_dm(&a_kind, &a_ref)?, Res::from_dm(&b_kind, &b_ref)?);
+    let efficiency = f(&efficiency)?;
+    let mut work = 0.0;
+    one_off(&[a, b], |c, books| {
+        let edge = Edge { a, b, kind: EdgeKind::Engine { efficiency, conductance: f64::INFINITY } };
+        work = transfer::step_edge(c, books, &edge, 1.0).work_out;
+        0.0
+    });
+    #[allow(clippy::cast_possible_truncation)]
+    Ok((work as f32).into())
 }
 
 /// Reads a reservoir: `list(temperature K, heat capacity J/K (-1: infinite))`,

@@ -40,7 +40,7 @@ UI_ACT(/obj/machinery/computer/mecha, "send_message", ui_act_send_message, UI_AR
 UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_send_message)
 	var/obj/item/mecha_parts/mecha_tracking/MT = params["mt"]
 	if(istype(MT))
-		om_ask(ui.user, /datum/om/prompt/text/mecha_tracker_message, PROC_REF(mecha_message_entered), tracker = MT)
+		open_request(src, /datum/prompt/text/mecha_tracker_message, PROC_REF(mecha_message_entered), answerer = ui.user, subject = MT)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/mecha, "shock", ui_act_shock, UI_ARG_REF("mt", null, /obj/item/mecha_parts/mecha_tracking))
@@ -64,17 +64,27 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 	stored_data = null
 	return OP_OK
 
-/datum/om/prompt/text/mecha_tracker_message
+/datum/prompt/text/mecha_tracker_message
 	title = "Transmit message"
-	message = "Input message"
+	question = "Input message"
 	default = ""
-	requires = PROMPT_USABLE
-	var/obj/item/mecha_parts/mecha_tracking/tracker
+	timeout = 0
+	recheck_on_open = TRUE
 
-/obj/machinery/computer/mecha/proc/mecha_message_entered(datum/om/prompt/text/mecha_tracker_message/ask)
-	var/obj/mecha/M = ask.tracker.in_mecha()
-	if(ask.text && M)
-		M.occupant_message(ask.text)
+/datum/prompt/text/mecha_tracker_message/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer) || QDELETED(subject))
+		return "gone"
+	if(!isnull(answer_value) && GLOB.tgui_default_state.can_use_topic(owner, answerer) < STATUS_INTERACTIVE)
+		return "can't use it"
+	return null
+
+/obj/machinery/computer/mecha/proc/mecha_message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/item/mecha_parts/mecha_tracking/tracker = A.request.subject
+	var/obj/mecha/M = tracker.in_mecha()
+	if(A.answer.answer_value && M)
+		M.occupant_message(A.answer.answer_value)
 
 /obj/item/mecha_parts/mecha_tracking
 	name = "Exosuit tracking beacon"

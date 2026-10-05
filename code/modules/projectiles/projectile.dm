@@ -498,8 +498,6 @@ CAPABILITIES(/obj/item/projectile)
 
 /obj/item/projectile/proc/cleanup_beam_segments()
 	own_clear(src, nameof(beam_segments), OWN_DELETE) // beam_index names one of these: its view clears
-	if(beam_index())
-		qdel(beam_index())
 
 /obj/item/projectile/proc/vol_by_damage()
 	if(damage || agony)

@@ -154,8 +154,8 @@ UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "merge:ui_da
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 	data["diagnosis"] = D?.report_data()
 	qdel(D)
-	data["body_temp_c"] = round(occupant.bodytemperature - T0C, 0.1)
-	data["body_temp_f"] = round(occupant.bodytemperature * 1.8 - 459.67, 0.1)
+	data["body_temp_c"] = round(occupant.body_temperature() - T0C, 0.1)
+	data["body_temp_f"] = round(occupant.body_temperature() * 1.8 - 459.67, 0.1)
 	var/list/rlist = list()
 	if(occupant.reagents)
 		for(var/datum/reagent/R in occupant.reagents.reagent_list)
@@ -237,8 +237,8 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, ui_act_inject)
 	text += "<br />"
 
 	var/mob/living/_tmp_occ_4 = src?.slot_item(MECHA_SLOT_PILOT)
-	entry = span_bold("Core Temperature:") + " [_tmp_occ_4.bodytemperature-T0C]&deg;C ([_tmp_occ_4.bodytemperature*1.8-459.67]&deg;F)"
-	text += occupant.bodytemperature > 50 ? span_blue(entry) : span_red(entry)
+	entry = span_bold("Core Temperature:") + " [_tmp_occ_4.body_temperature()-T0C]&deg;C ([_tmp_occ_4.body_temperature()*1.8-459.67]&deg;F)"
+	text += occupant.body_temperature() > 50 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)

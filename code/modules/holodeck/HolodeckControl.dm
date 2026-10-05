@@ -395,7 +395,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 /obj/machinery/computer/HolodeckControl/proc/atmos_test_ignite(turf/T)
 	fx_sparks(T, 2)
 	if(T)
-		T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
+		heat_set_solid(T, 5000)  // arena-authoritative; not the stale DM mirror
 		T.hotspot_expose(50000,50000,1)
 
 /// the linkedholodeck this refers to (a relation view: it reads null once the target is deleted).

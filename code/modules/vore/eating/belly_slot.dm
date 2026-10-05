@@ -54,7 +54,7 @@
 /obj/belly/get_interior_temperature()
 	var/mob/living/pred = owner
 	if(istype(pred))
-		return pred.bodytemperature
+		return pred.body_temperature()
 	return ..()
 
 /// Seconds per cycle for this belly: the baseline, or a third of it in turbo mode.

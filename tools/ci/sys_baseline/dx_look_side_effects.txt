@@ -16,11 +16,6 @@ dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.d
 dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	item_state = normal_icon_state
 dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	set_light(0, 0, l_color = "#000000")
 dx_appearance_side_effect	code/game/gamemodes/technomancer/spells/illusion.dm	temp_image.transform = M
-dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = "alert:2"
-dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = "alert:1"
-dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = initial(icon_screen)
-dx_appearance_side_effect	code/game/machinery/computer/message.dm	icon_screen = hack_icon
-dx_appearance_side_effect	code/game/machinery/computer/message.dm	icon_screen = initial(icon_screen)
 dx_appearance_side_effect	code/game/machinery/computer/~computer.dm	icon_screen = "broken"
 dx_appearance_side_effect	code/game/machinery/computer/~computer.dm	icon_screen = "power_monitor_warn"
 dx_appearance_side_effect	code/game/machinery/computer/~computer.dm	icon_screen = "power_monitor"

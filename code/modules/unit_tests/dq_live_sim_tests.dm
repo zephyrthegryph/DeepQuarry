@@ -70,7 +70,7 @@
 /datum/unit_test/livesim_gas_threshold_watch/Run()
 	var/datum/world_threshold_subscriber/sub = allocate(/datum/world_threshold_subscriber)
 	var/datum/gas_mixture/tank = new(70)
-	tank.set_temperature(T20C)
+	heat_set(tank, T20C, HEAT_SOURCE_OTHER)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	var/limit = tank.return_pressure() + 500
 	var/datum/native_watch/world/watch = om_watch_gas(sub, tank, CH_GAS_PRESSURE, WORLD_CMP_ABOVE, limit, TYPE_PROC_REF(/datum/world_threshold_subscriber, on_cross), 50, LANE_URGENT)
@@ -144,10 +144,10 @@
 
 /datum/unit_test/livesim_watches_gas_capability/Run()
 	var/datum/gas_mixture/first = new(70)
-	first.set_temperature(T20C)
+	heat_set(first, T20C, HEAT_SOURCE_OTHER)
 	first.adjust_gas(/datum/gas/oxygen, 10)
 	var/datum/gas_mixture/second = new(70)
-	second.set_temperature(T20C)
+	heat_set(second, T20C, HEAT_SOURCE_OTHER)
 	second.adjust_gas(/datum/gas/oxygen, 10)
 	var/obj/test_gas_holder/holder = allocate(/obj/test_gas_holder)
 	holder.set_air(first)

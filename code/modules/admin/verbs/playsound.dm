@@ -94,14 +94,20 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	sounds += "--CANCEL--"
 	sounds += GLOB.sounds_cache
 
-	var/melody = verb_ask(user, "a5", args, /datum/om/prompt/choice, message = "Select a sound from the server to play", title = "Server sound list", choices = sounds, default = "--CANCEL--")
-	if(isnull(melody))
-		return
+	open_request(src, /datum/prompt/choice/admin_server_sound, PROC_REF(server_sound_answered), answerer = user.mob, choices = sounds, default = "--CANCEL--")
 
-	if(!melody || melody == "--CANCEL--")
-		return
+/datum/prompt/choice/admin_server_sound
+	rights = R_SOUNDS
+	timeout = 0
+	recheck_on_open = TRUE
+	question = "Select a sound from the server to play"
+	title = "Server sound list"
 
-	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/play_sound, melody)
+/datum/admin_verb/play_server_sound/proc/server_sound_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value || A.answer.answer_value == "--CANCEL--")
+		return
+	var/client/user = A.request.answerer.client
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/play_sound, A.answer.answer_value)
 	feedback_add_details("admin_verb", "Play Server Sound") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ///Takes an input from either proc/play_web_sound or the request manager and runs it through youtube-dl and prompts the user before playing it to the server.

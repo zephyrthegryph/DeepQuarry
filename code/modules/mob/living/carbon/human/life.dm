@@ -724,7 +724,7 @@
 	var/inhaled_gas_used = inhaling/6
 	breath.adjust_gas(breath_type, -inhaled_gas_used, update = 0) //update afterwards
 	if(self.species.exhale_type)
-		breath.adjust_gas_temp(self.species.exhale_type, inhaled_gas_used, self.bodytemperature, update = 0) //update afterwards
+		breath.adjust_gas_temp(self.species.exhale_type, inhaled_gas_used, self.body_temperature(), update = 0) //update afterwards
 
 /// Too much of the species' exhale gas in the air: hypercapnia crowds out the breath.
 /// Returns the quality multiplier.
@@ -841,7 +841,7 @@
 			self.clear_alert("temp")
 
 	//breathing in hot/cold air also heats/cools you a bit
-	var/temp_adj = breath_temperature - self.bodytemperature
+	var/temp_adj = breath_temperature - self.body_temperature()
 	if (temp_adj < 0)
 		temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 	else
@@ -912,7 +912,7 @@
 		return FALSE
 	if(LAZYLEN(self.species.env_traits) || is_type_in_typecache(self.species, active_environment_species))
 		return FALSE
-	return self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1
+	return self.body_temperature() < self.species.heat_level_1 && self.body_temperature() > self.species.cold_level_1
 
 /datum/om/stage/life/environment/carbon/human/rewake_delay(mob/living/carbon/human/self)
 	return ENVIRONMENT_STEADY_RESAMPLE
@@ -934,12 +934,15 @@
 	var/adjusted_pressure = self.calculate_affecting_pressure(pressure)
 
 	if(istype(self.loc, /turf/space)) //No FBPs overheating on space turfs inside mechs or people.
+		self.set_environment_conductance(0)
 		radiate_to_space(self)
 	else
+		self.stop_radiating()
 		var/loc_temp = location_temperature(self, environment)
-		if(adjusted_pressure < self.species.warning_high_pressure && adjusted_pressure > self.species.warning_low_pressure && abs(loc_temp - self.bodytemperature) < 20 && self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1 && (!isbelly(self.loc) || !self.allowtemp))
+		if(adjusted_pressure < self.species.warning_high_pressure && adjusted_pressure > self.species.warning_low_pressure && abs(loc_temp - self.body_temperature()) < 20 && self.body_temperature() < self.species.heat_level_1 && self.body_temperature() > self.species.cold_level_1 && (!isbelly(self.loc) || !self.allowtemp))
 			self.clear_alert("pressure")
 			self.environment_steady = TRUE
+			self.set_environment_conductance(0) // inside its comfort range the body trades no heat with the room (intended_changes.md)
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 		convect(self, loc_temp, environment)
 
@@ -952,13 +955,14 @@
 		return
 	pressure_harm(self, adjusted_pressure)
 
-/// Thermal radiation into space.
+/// Thermal radiation into space: a radiative heat link from the body to space (Stefan-Boltzmann over its exposed surface, integrated in Rust),
+/// kept while it is on a space turf.
 /datum/om/stage/life/environment/carbon/human/proc/radiate_to_space(mob/living/carbon/human/self)
-	//Don't bother if the temperature drop is less than 0.1 anyways. Hopefully BYOND is smart enough to turn this constant expression into a constant
-	if(self.bodytemperature <= (0.1 * HUMAN_HEAT_CAPACITY/(HUMAN_EXPOSED_SURFACE_AREA*STEFAN_BOLTZMANN_CONSTANT))**(1/4) + TCMB)
+	if(!self.body || self.body.space_radiation_edge)
 		return
-	var/heat_loss = HUMAN_EXPOSED_SURFACE_AREA * STEFAN_BOLTZMANN_CONSTANT * ((self.bodytemperature - TCMB)**4)
-	self.adjust_bodytemperature(-(heat_loss/HUMAN_HEAT_CAPACITY))
+	var/h = self.mob_heat_body()
+	if(h)
+		self.body.space_radiation_edge = vg_heat_link_create(HEAT_TARGET_BODY, h, HEAT_TARGET_SPACE, TCMB, 0, 1, HUMAN_EXPOSED_SURFACE_AREA)
 
 /// The temperature the body is exposed to where it is (mech cabin, cryo cell, belly or the air).
 /datum/om/stage/life/environment/carbon/human/proc/location_temperature(mob/living/carbon/human/self, datum/gas_mixture/environment)
@@ -976,21 +980,17 @@
 		return clamp(b.get_interior_temperature(), self.species.cold_discomfort_level, self.species.heat_discomfort_level)
 	return environment.return_temperature()
 
-/// Body temperature follows the surroundings through clothing (convection), scaled by gas density.
+/// Body temperature follows the surroundings through clothing (convection), scaled by gas density: the conductance of the body's coupling to
+/// its surroundings, at the old rate (BODYTEMP_*_DIVISOR of the gap per environment run), with the heat going to the air.
 /datum/om/stage/life/environment/carbon/human/proc/convect(mob/living/carbon/human/self, loc_temp, datum/gas_mixture/environment)
-	var/temp_adj = 0
-	if(loc_temp < self.bodytemperature)			//Place is colder than we are
-		var/thermal_protection = self.get_cold_protection(loc_temp) //This returns a 0 - 1 value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
-		if(thermal_protection < 0.99)	//For some reason, < 1 returns false if the value is 1.
-			temp_adj = (1-thermal_protection) * ((loc_temp - self.bodytemperature) / BODYTEMP_COLD_DIVISOR)	//this will be negative
-	else if (loc_temp > self.bodytemperature)			//Place is hotter than we are
-		var/thermal_protection = self.get_heat_protection(loc_temp) //This returns a 0 - 1 value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
-		if(thermal_protection < 0.99)	//For some reason, < 1 returns false if the value is 1.
-			temp_adj = (1-thermal_protection) * ((loc_temp - self.bodytemperature) / BODYTEMP_HEAT_DIVISOR)
-
-	//Use heat transfer as proportional to the gas density. However, we only care about the relative density vs standard 101 kPa/20 C air. Therefore we can use mole ratios
-	var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD // XGM var → LINDA proc
-	self.adjust_bodytemperature(between(BODYTEMP_COOLING_MAX, temp_adj*relative_density, BODYTEMP_HEATING_MAX))
+	var/body = self.body_temperature()
+	var/thermal_protection = loc_temp < body ? self.get_cold_protection(loc_temp) : self.get_heat_protection(loc_temp)
+	if(thermal_protection >= 0.99)
+		self.set_environment_conductance(0)
+		return
+	var/divisor = loc_temp < body ? BODYTEMP_COLD_DIVISOR : BODYTEMP_HEAT_DIVISOR
+	var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD
+	self.set_environment_conductance(self.body_heat_capacity() * (1 - thermal_protection) * relative_density / (divisor * LIFE_ENVIRONMENT_SECONDS))
 
 /// Temperature play in a belly (the prey opted in): the belly's temperature against the species' levels.
 /datum/om/stage/life/environment/carbon/human/proc/belly_temperature_harm(mob/living/carbon/human/self)
@@ -1034,7 +1034,7 @@
 /// 310.15K is the 'safe' zone, where no damage is dealt.
 /datum/om/stage/life/environment/carbon/human/proc/body_temperature_harm(mob/living/carbon/human/self)
 	var/datum/species/S = self.species
-	var/body_temp = self.bodytemperature
+	var/body_temp = self.body_temperature()
 	if(body_temp >= S.heat_discomfort_level)
 		var/heat_dam = 0
 		if(body_temp >= S.heat_level_3)
@@ -1112,13 +1112,15 @@
 
 /// MED-6: at its set point, with no heat source of its own, the body has nothing to regulate.
 /datum/om/stage/life/thermoregulation/idle(mob/living/carbon/human/self)
+	if(self.body?.metabolic_power)
+		return FALSE // it runs once more to stop its own power
 	if(self.species.passive_temp_gain)
 		return FALSE
 	if(isnull(self.species.body_temperature))
 		return TRUE
 	if(self.stat != DEAD && self.robobody_count)
 		return FALSE
-	return self.on_fire || abs(self.thermal_setpoint() - self.bodytemperature) < 0.5
+	return self.on_fire || abs(self.thermal_setpoint() - self.body_temperature()) < 0.5
 
 /// C16 / P2-S10: the temperature this body regulates toward — the species norm
 /// plus BF_TEMPERATURE (fevers and chills are factors on afflictions, not
@@ -1130,52 +1132,59 @@
 /datum/om/stage/life/thermoregulation/rewake_delay(mob/living/carbon/human/self)
 	return 4 SECONDS
 
-/// Body temperature adjusts itself (self-regulation).
+/// Body temperature adjusts itself (self-regulation): metabolism is the body's own power, W, held until the next run (the old per-run
+/// temperature steps, as the power that makes them over LIFE_ENVIRONMENT_SECONDS).
 /datum/om/stage/life/thermoregulation/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
+	var/per_kelvin = self.body_heat_capacity() / LIFE_ENVIRONMENT_SECONDS // W that make one kelvin per run
+	var/watts = 0
 	// We produce heat naturally.
 	if (self.species.passive_temp_gain)
-		self.adjust_bodytemperature(self.species.passive_temp_gain)
+		watts += self.species.passive_temp_gain * per_kelvin
 	if (self.species.body_temperature == null)
+		self.set_metabolic_power(watts)
 		return //this species doesn't have metabolic thermoregulation
 
 	// FBPs will overheat when alive, prosthetic limbs are fine.
 	if(self.stat != DEAD && self.robobody_count)
 		if(!self.nif || !self.nif.flag_check(NIF_O_HEATSINKS,NIF_FLAGS_OTHER))
-			self.adjust_bodytemperature(round(self.robobody_count*1.15))
+			watts += round(self.robobody_count*1.15) * per_kelvin
 		var/obj/item/organ/internal/robotic/heatsink/HS = self.organ_in(O_HEATSINK)
 		if(!HS || HS.is_broken()) // However, NIF Heatsinks will not compensate for a core FBP component (your heatsink) being lost.
-			self.adjust_bodytemperature(round(self.robobody_count*0.5))
+			watts += round(self.robobody_count*0.5) * per_kelvin
 
+	var/body = self.body_temperature()
 	var/setpoint = self.thermal_setpoint()
-	var/body_temperature_difference = setpoint - self.bodytemperature
+	var/body_temperature_difference = setpoint - body
 
 	if (abs(body_temperature_difference) < 0.5)
+		self.set_metabolic_power(watts)
 		return //fuck this precision
 
 	// B15: thermoregulating drugs (leporazine) act through their tag, here.
 	var/thermo = self.body?.treatment_levels()?[TREAT_THERMOREGULATION]
 	if(thermo)
 		var/step = min(abs(body_temperature_difference), thermo * DQ_THERMOREG_K_PER_LEVEL)
-		self.adjust_bodytemperature(body_temperature_difference > 0 ? step : -step)
-		body_temperature_difference = setpoint - self.bodytemperature
+		watts += (body_temperature_difference > 0 ? step : -step) * per_kelvin
+		body_temperature_difference -= body_temperature_difference > 0 ? step : -step
 		if (abs(body_temperature_difference) < 0.5)
+			self.set_metabolic_power(watts)
 			return
 
 	if (self.on_fire)
+		self.set_metabolic_power(watts)
 		return //too busy for pesky metabolic regulation
 
-	if(self.bodytemperature < self.species.cold_level_1) //260.15 is 310.15 - 50, the temperature where you start to feel effects.
+	var/recovery_amt = 0
+	if(body < self.species.cold_level_1) //260.15 is 310.15 - 50, the temperature where you start to feel effects.
 		if(self.nutrition >= 2) //If we are very, very cold we'll use up quite a bit of nutriment to heat us up.
 			self.adjust_nutrition(-2)
-		var/recovery_amt = max((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), BODYTEMP_AUTORECOVERY_MINIMUM)
-		self.adjust_bodytemperature(recovery_amt)
-	else if(self.species.cold_level_1 <= self.bodytemperature && self.bodytemperature <= self.species.heat_level_1)
-		var/recovery_amt = body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR
-		self.adjust_bodytemperature(recovery_amt)
-	else if(self.bodytemperature > self.species.heat_level_1) //360.15 is 310.15 + 50, the temperature where you start to feel effects.
+		recovery_amt = max((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), BODYTEMP_AUTORECOVERY_MINIMUM)
+	else if(self.species.cold_level_1 <= body && body <= self.species.heat_level_1)
+		recovery_amt = body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR
+	else if(body > self.species.heat_level_1) //360.15 is 310.15 + 50, the temperature where you start to feel effects.
 		//We totally need a sweat system cause it totally makes sense...~
-		var/recovery_amt = min((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), -BODYTEMP_AUTORECOVERY_MINIMUM)	//We're dealing with negative numbers
-		self.adjust_bodytemperature(recovery_amt)
+		recovery_amt = min((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), -BODYTEMP_AUTORECOVERY_MINIMUM)	//We're dealing with negative numbers
+	self.set_metabolic_power(watts + recovery_amt * per_kelvin)
 
 /// Body part flags protected from heat at `temperature` (worn protection cache).
 /mob/living/carbon/human/proc/get_heat_protection_flags(temperature)

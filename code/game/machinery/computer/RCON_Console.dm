@@ -30,9 +30,6 @@ CAPABILITIES(/obj/machinery/computer/rcon)
 /obj/machinery/computer/rcon/ui_redirect(mob/user)
 	return rcon
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/rcon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/rcon/appearance_overlays()
-	. = list()
-	. += ..()
-	if(operable())
-		. += "ai-fixer-empty"
+/obj/machinery/computer/rcon/draw(datum/look/look)
+	..()
+	look.overlay("ai-fixer-empty", when = operable())

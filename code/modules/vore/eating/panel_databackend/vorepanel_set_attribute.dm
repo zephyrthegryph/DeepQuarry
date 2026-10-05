@@ -1,3 +1,7 @@
+#define VORE_SIZE_MULT_MOB "mob"
+#define VORE_SIZE_MULT_ITEM "item"
+#define VORE_SIZE_MULT_OVERALL "overall"
+
 UI_SUBACT(/datum/vore_look, "attr", "b_name", attr_b_name, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_name)
 	var/new_name = html_encode(params["val"])
@@ -389,60 +393,8 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_msgs)
 			host().vore_selected.set_messages(params["val"], BELLY_LIQUID_MESSAGE5, limit = BELLIES_MESSAGE_MAX)
 
 		if("reset")
-			var/confirm = rerun_ask(user, "a1", PROC_REF(attr_b_msgs), args, /datum/om/prompt/choice/alert, message = "This will delete any custom messages. Are you sure?", title = "Confirmation", choices = list("Cancel","DELETE"))
-			if(isnull(confirm))
-				return
-			if(confirm != "DELETE")
-				return FALSE
-			host().vore_selected.digest_messages_prey = host().vore_selected.belly_shared_list("digest_messages_prey")
-			host().vore_selected.digest_messages_owner = host().vore_selected.belly_shared_list("digest_messages_owner")
-			host().vore_selected.absorb_messages_prey = host().vore_selected.belly_shared_list("absorb_messages_prey")
-			host().vore_selected.absorb_messages_owner = host().vore_selected.belly_shared_list("absorb_messages_owner")
-			host().vore_selected.unabsorb_messages_prey = host().vore_selected.belly_shared_list("unabsorb_messages_prey")
-			host().vore_selected.unabsorb_messages_owner = host().vore_selected.belly_shared_list("unabsorb_messages_owner")
-			host().vore_selected.struggle_messages_outside = host().vore_selected.belly_shared_list("struggle_messages_outside")
-			host().vore_selected.struggle_messages_inside = host().vore_selected.belly_shared_list("struggle_messages_inside")
-			host().vore_selected.absorbed_struggle_messages_outside = host().vore_selected.belly_shared_list("absorbed_struggle_messages_outside")
-			host().vore_selected.absorbed_struggle_messages_inside = host().vore_selected.belly_shared_list("absorbed_struggle_messages_inside")
-			host().vore_selected.escape_attempt_messages_owner = host().vore_selected.belly_shared_list("escape_attempt_messages_owner")
-			host().vore_selected.escape_attempt_messages_prey = host().vore_selected.belly_shared_list("escape_attempt_messages_prey")
-			host().vore_selected.escape_messages_owner = host().vore_selected.belly_shared_list("escape_messages_owner")
-			host().vore_selected.escape_messages_prey = host().vore_selected.belly_shared_list("escape_messages_prey")
-			host().vore_selected.escape_messages_outside = host().vore_selected.belly_shared_list("escape_messages_outside")
-			host().vore_selected.escape_item_messages_owner = host().vore_selected.belly_shared_list("escape_item_messages_owner")
-			host().vore_selected.escape_item_messages_prey = host().vore_selected.belly_shared_list("escape_item_messages_prey")
-			host().vore_selected.escape_item_messages_outside = host().vore_selected.belly_shared_list("escape_item_messages_outside")
-			host().vore_selected.escape_fail_messages_owner = host().vore_selected.belly_shared_list("escape_fail_messages_owner")
-			host().vore_selected.escape_fail_messages_prey = host().vore_selected.belly_shared_list("escape_fail_messages_prey")
-			host().vore_selected.escape_attempt_absorbed_messages_owner = host().vore_selected.belly_shared_list("escape_attempt_absorbed_messages_owner")
-			host().vore_selected.escape_attempt_absorbed_messages_prey = host().vore_selected.belly_shared_list("escape_attempt_absorbed_messages_prey")
-			host().vore_selected.escape_absorbed_messages_owner = host().vore_selected.belly_shared_list("escape_absorbed_messages_owner")
-			host().vore_selected.escape_absorbed_messages_prey = host().vore_selected.belly_shared_list("escape_absorbed_messages_prey")
-			host().vore_selected.escape_absorbed_messages_outside = host().vore_selected.belly_shared_list("escape_absorbed_messages_outside")
-			host().vore_selected.escape_fail_absorbed_messages_owner = host().vore_selected.belly_shared_list("escape_fail_absorbed_messages_owner")
-			host().vore_selected.escape_fail_absorbed_messages_prey = host().vore_selected.belly_shared_list("escape_fail_absorbed_messages_prey")
-			host().vore_selected.primary_transfer_messages_owner = host().vore_selected.belly_shared_list("primary_transfer_messages_owner")
-			host().vore_selected.primary_transfer_messages_prey = host().vore_selected.belly_shared_list("primary_transfer_messages_prey")
-			host().vore_selected.secondary_transfer_messages_owner = host().vore_selected.belly_shared_list("secondary_transfer_messages_owner")
-			host().vore_selected.secondary_transfer_messages_prey = host().vore_selected.belly_shared_list("secondary_transfer_messages_prey")
-			host().vore_selected.primary_autotransfer_messages_owner = host().vore_selected.belly_shared_list("primary_autotransfer_messages_owner")
-			host().vore_selected.primary_autotransfer_messages_prey = host().vore_selected.belly_shared_list("primary_autotransfer_messages_prey")
-			host().vore_selected.secondary_autotransfer_messages_owner = host().vore_selected.belly_shared_list("secondary_autotransfer_messages_owner")
-			host().vore_selected.secondary_autotransfer_messages_prey = host().vore_selected.belly_shared_list("secondary_autotransfer_messages_prey")
-			host().vore_selected.digest_chance_messages_owner = host().vore_selected.belly_shared_list("digest_chance_messages_owner")
-			host().vore_selected.digest_chance_messages_prey = host().vore_selected.belly_shared_list("digest_chance_messages_prey")
-			host().vore_selected.absorb_chance_messages_owner = host().vore_selected.belly_shared_list("absorb_chance_messages_owner")
-			host().vore_selected.absorb_chance_messages_prey = host().vore_selected.belly_shared_list("absorb_chance_messages_prey")
-			host().vore_selected.examine_messages = host().vore_selected.belly_shared_list("examine_messages")
-			host().vore_selected.examine_messages_absorbed = host().vore_selected.belly_shared_list("examine_messages_absorbed")
-			host().vore_selected.emote_lists = host().vore_selected.belly_shared_list("emote_lists")
-			host().vore_selected.trash_eater_in = host().vore_selected.belly_shared_list("trash_eater_in")
-			host().vore_selected.trash_eater_out = host().vore_selected.belly_shared_list("trash_eater_out")
-			host().vore_selected.liquid_fullness1_messages = host().vore_selected.belly_shared_list("fullness1_messages")
-			host().vore_selected.liquid_fullness2_messages = host().vore_selected.belly_shared_list("fullness2_messages")
-			host().vore_selected.liquid_fullness3_messages = host().vore_selected.belly_shared_list("fullness3_messages")
-			host().vore_selected.liquid_fullness4_messages = host().vore_selected.belly_shared_list("fullness4_messages")
-			host().vore_selected.liquid_fullness5_messages = host().vore_selected.belly_shared_list("fullness5_messages")
+			open_request(ui, /datum/prompt/choice/vore_reset_messages, TYPE_PROC_REF(/datum/tgui, vore_reset_messages_answered), answerer = user, question = "This will delete any custom messages. Are you sure?", title = "Confirmation", choices = list("Cancel", "DELETE"), buttons = TRUE)
+			return
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
@@ -497,44 +449,15 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_silicon_belly)
 
 UI_SUBACT(/datum/vore_look, "attr", "b_belly_mob_mult", attr_b_belly_mob_mult)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_mob_mult)
-	var/new_prey_mult = rerun_ask(user, "a2", PROC_REF(attr_b_belly_mob_mult), args, /datum/om/prompt/number, message = "Choose the multiplier for mobs contributing to belly size, ranging from 0 to 5. Set to 0 to disable mobs contributing to belly size", title = "Set Prey Multiplier", default = host().vore_selected.belly_mob_mult, max = 5)
-	if(isnull(new_prey_mult))
-		return
-	if(new_prey_mult == null)
-		return FALSE
-	host().vore_selected.belly_mob_mult = CLAMP(new_prey_mult, 0, 5) //Max at 5 because in no world will a borg have more than 5 bellies
-	host().update_icon()
-	. = TRUE
-	if(.)
-		unsaved_changes = TRUE
+	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_MOB, displayed_max = 5, default = host().vore_selected.belly_mob_mult, question = "Choose the multiplier for mobs contributing to belly size, ranging from 0 to 5. Set to 0 to disable mobs contributing to belly size", title = "Set Prey Multiplier")
 
 UI_SUBACT(/datum/vore_look, "attr", "b_belly_item_mult", attr_b_belly_item_mult)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_item_mult)
-	var/new_item_mult = rerun_ask(user, "a3", PROC_REF(attr_b_belly_item_mult), args, /datum/om/prompt/number, message = "Choose the multiplier for items contributing to belly size, ranging from 0 to 10. (Item size affects how much they contribute as well) Set to 0 to disable size checks", title = "Set Item Multiplier", default = host().vore_selected.belly_item_mult, max = 10)
-	if(isnull(new_item_mult))
-		return
-	if(new_item_mult == null)
-		return FALSE
-	else
-		host().vore_selected.belly_item_mult = CLAMP(new_item_mult, 0, 10) //Max at 10 because items contribute less than mobs, in general
-	host().update_icon()
-	. = TRUE
-	if(.)
-		unsaved_changes = TRUE
+	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_ITEM, displayed_max = 10, default = host().vore_selected.belly_item_mult, question = "Choose the multiplier for items contributing to belly size, ranging from 0 to 10. (Item size affects how much they contribute as well) Set to 0 to disable size checks", title = "Set Item Multiplier")
 
 UI_SUBACT(/datum/vore_look, "attr", "b_belly_overall_mult", attr_b_belly_overall_mult)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_overall_mult)
-	var/new_overall_mult = rerun_ask(user, "a4", PROC_REF(attr_b_belly_overall_mult), args, /datum/om/prompt/number, message = "Choose the overall multiplier to be applied to belly contents after specific multipliers, ranging from 0 to 5. Set to 0 to disable showing belly sprites at all.", title = "Set minimum prey amount", default = host().vore_selected.belly_overall_mult, max = 5)
-	if(isnull(new_overall_mult))
-		return
-	if(new_overall_mult == null)
-		return FALSE
-	else
-		host().vore_selected.belly_overall_mult = CLAMP(new_overall_mult, 0, 5) // Max at 5 because... no reason to go higher at that point
-	host().update_icon()
-	. = TRUE
-	if(.)
-		unsaved_changes = TRUE
+	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_OVERALL, displayed_max = 5, default = host().vore_selected.belly_overall_mult, question = "Choose the overall multiplier to be applied to belly contents after specific multipliers, ranging from 0 to 5. Set to 0 to disable showing belly sprites at all.", title = "Set minimum prey amount")
 
 UI_SUBACT(/datum/vore_look, "attr", "b_fancy_sound", attr_b_fancy_sound)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_fancy_sound)
@@ -1227,44 +1150,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_save_digest_mode)
 
 UI_SUBACT(/datum/vore_look, "attr", "b_del", attr_b_del)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_del)
-	var/alert = rerun_ask(user, "a5", PROC_REF(attr_b_del), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to delete your [lowertext(host().vore_selected.name)]?", title = "Confirmation", choices = list("Cancel","Delete"))
-	if(isnull(alert))
-		return
-	if(alert != "Delete")
-		return FALSE
-
-	var/failure_msg = ""
-
-	var/dest_for //Check to see if it's the destination of another vore organ.
-	for(var/obj/belly/B as anything in host().vore_organs)
-		if(B.transferlocation == host().vore_selected)
-			dest_for = B.name
-			failure_msg += "This is the destiantion for at least '[dest_for]' belly transfers. Remove it as the destination from any bellies before deleting it. "
-			break
-		if(B.transferlocation_secondary == host().vore_selected)
-			dest_for = B.name
-			failure_msg += "This is the destiantion for at least '[dest_for]' secondary belly transfers. Remove it as the destination from any bellies before deleting it. "
-			break
-
-	if(contents_count(host().vore_selected))
-		failure_msg += "You cannot delete bellies with contents! " //These end with spaces, to be nice looking. Make sure you do the same.
-	if(host().vore_selected.immutable)
-		failure_msg += "This belly is marked as undeletable. "
-	if(length(host().vore_organs) == 1)
-		failure_msg += "You must have at least one belly. "
-
-	if(failure_msg)
-		tgui_alert_async(user,failure_msg,"Error!")
-		return FALSE
-
-	if(host().soulgem?.linked_belly() == host().vore_selected)
-		host().soulgem.linked_belly = null
-
-	qdel(host().vore_selected)
-	host().vore_selected = host().vore_organs[1]
-	. = TRUE
-	if(.)
-		unsaved_changes = TRUE
+	open_request(ui, /datum/prompt/choice/vore_delete_belly, TYPE_PROC_REF(/datum/tgui, vore_delete_belly_answered), answerer = user, question = "Are you sure you want to delete your [lowertext(host().vore_selected.name)]?", title = "Confirmation", choices = list("Cancel", "Delete"), buttons = TRUE)
 
 UI_SUBACT(/datum/vore_look, "attr", "b_private_struggle", attr_b_private_struggle)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_private_struggle)
@@ -1551,3 +1437,178 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle5)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
+
+/// A nested attribute replay retains its original UI, but rereads the current selected belly.
+/datum/prompt/number/vore_size_multiplier
+	timeout = 0
+	recheck_on_open = TRUE
+	var/multiplier_kind
+	var/displayed_max
+
+/datum/prompt/number/vore_size_multiplier/normalize(given)
+	return given
+
+/datum/prompt/number/vore_size_multiplier/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, displayed_max, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/vore_size_multiplier/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui))
+		return "gone"
+	var/datum/vore_look/panel = original_ui.src_object()
+	if(!istype(panel) || QDELETED(panel))
+		return "gone"
+	return null
+
+/datum/tgui/proc/vore_size_multiplier_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/vore_size_multiplier/request = A.answer
+	var/datum/vore_look/panel = src_object()
+	switch(request.multiplier_kind)
+		if(VORE_SIZE_MULT_MOB)
+			panel.host().vore_selected.belly_mob_mult = CLAMP(request.answer_value, 0, 5)
+		if(VORE_SIZE_MULT_ITEM)
+			panel.host().vore_selected.belly_item_mult = CLAMP(request.answer_value, 0, 10)
+		if(VORE_SIZE_MULT_OVERALL)
+			panel.host().vore_selected.belly_overall_mult = CLAMP(request.answer_value, 0, 5)
+	panel.host().update_icon()
+	panel.unsaved_changes = TRUE
+	SStgui.update_uis(panel)
+
+#undef VORE_SIZE_MULT_MOB
+#undef VORE_SIZE_MULT_ITEM
+#undef VORE_SIZE_MULT_OVERALL
+
+
+/datum/prompt/choice/vore_reset_messages
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/vore_reset_messages/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui))
+		return "gone"
+	var/datum/vore_look/panel = original_ui.src_object()
+	if(!istype(panel) || QDELETED(panel))
+		return "gone"
+	return null
+
+/datum/tgui/proc/vore_reset_messages_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/vore_look/panel = src_object()
+	if(A.answer.answer_value == "DELETE")
+		panel.host().vore_selected.digest_messages_prey = panel.host().vore_selected.belly_shared_list("digest_messages_prey")
+		panel.host().vore_selected.digest_messages_owner = panel.host().vore_selected.belly_shared_list("digest_messages_owner")
+		panel.host().vore_selected.absorb_messages_prey = panel.host().vore_selected.belly_shared_list("absorb_messages_prey")
+		panel.host().vore_selected.absorb_messages_owner = panel.host().vore_selected.belly_shared_list("absorb_messages_owner")
+		panel.host().vore_selected.unabsorb_messages_prey = panel.host().vore_selected.belly_shared_list("unabsorb_messages_prey")
+		panel.host().vore_selected.unabsorb_messages_owner = panel.host().vore_selected.belly_shared_list("unabsorb_messages_owner")
+		panel.host().vore_selected.struggle_messages_outside = panel.host().vore_selected.belly_shared_list("struggle_messages_outside")
+		panel.host().vore_selected.struggle_messages_inside = panel.host().vore_selected.belly_shared_list("struggle_messages_inside")
+		panel.host().vore_selected.absorbed_struggle_messages_outside = panel.host().vore_selected.belly_shared_list("absorbed_struggle_messages_outside")
+		panel.host().vore_selected.absorbed_struggle_messages_inside = panel.host().vore_selected.belly_shared_list("absorbed_struggle_messages_inside")
+		panel.host().vore_selected.escape_attempt_messages_owner = panel.host().vore_selected.belly_shared_list("escape_attempt_messages_owner")
+		panel.host().vore_selected.escape_attempt_messages_prey = panel.host().vore_selected.belly_shared_list("escape_attempt_messages_prey")
+		panel.host().vore_selected.escape_messages_owner = panel.host().vore_selected.belly_shared_list("escape_messages_owner")
+		panel.host().vore_selected.escape_messages_prey = panel.host().vore_selected.belly_shared_list("escape_messages_prey")
+		panel.host().vore_selected.escape_messages_outside = panel.host().vore_selected.belly_shared_list("escape_messages_outside")
+		panel.host().vore_selected.escape_item_messages_owner = panel.host().vore_selected.belly_shared_list("escape_item_messages_owner")
+		panel.host().vore_selected.escape_item_messages_prey = panel.host().vore_selected.belly_shared_list("escape_item_messages_prey")
+		panel.host().vore_selected.escape_item_messages_outside = panel.host().vore_selected.belly_shared_list("escape_item_messages_outside")
+		panel.host().vore_selected.escape_fail_messages_owner = panel.host().vore_selected.belly_shared_list("escape_fail_messages_owner")
+		panel.host().vore_selected.escape_fail_messages_prey = panel.host().vore_selected.belly_shared_list("escape_fail_messages_prey")
+		panel.host().vore_selected.escape_attempt_absorbed_messages_owner = panel.host().vore_selected.belly_shared_list("escape_attempt_absorbed_messages_owner")
+		panel.host().vore_selected.escape_attempt_absorbed_messages_prey = panel.host().vore_selected.belly_shared_list("escape_attempt_absorbed_messages_prey")
+		panel.host().vore_selected.escape_absorbed_messages_owner = panel.host().vore_selected.belly_shared_list("escape_absorbed_messages_owner")
+		panel.host().vore_selected.escape_absorbed_messages_prey = panel.host().vore_selected.belly_shared_list("escape_absorbed_messages_prey")
+		panel.host().vore_selected.escape_absorbed_messages_outside = panel.host().vore_selected.belly_shared_list("escape_absorbed_messages_outside")
+		panel.host().vore_selected.escape_fail_absorbed_messages_owner = panel.host().vore_selected.belly_shared_list("escape_fail_absorbed_messages_owner")
+		panel.host().vore_selected.escape_fail_absorbed_messages_prey = panel.host().vore_selected.belly_shared_list("escape_fail_absorbed_messages_prey")
+		panel.host().vore_selected.primary_transfer_messages_owner = panel.host().vore_selected.belly_shared_list("primary_transfer_messages_owner")
+		panel.host().vore_selected.primary_transfer_messages_prey = panel.host().vore_selected.belly_shared_list("primary_transfer_messages_prey")
+		panel.host().vore_selected.secondary_transfer_messages_owner = panel.host().vore_selected.belly_shared_list("secondary_transfer_messages_owner")
+		panel.host().vore_selected.secondary_transfer_messages_prey = panel.host().vore_selected.belly_shared_list("secondary_transfer_messages_prey")
+		panel.host().vore_selected.primary_autotransfer_messages_owner = panel.host().vore_selected.belly_shared_list("primary_autotransfer_messages_owner")
+		panel.host().vore_selected.primary_autotransfer_messages_prey = panel.host().vore_selected.belly_shared_list("primary_autotransfer_messages_prey")
+		panel.host().vore_selected.secondary_autotransfer_messages_owner = panel.host().vore_selected.belly_shared_list("secondary_autotransfer_messages_owner")
+		panel.host().vore_selected.secondary_autotransfer_messages_prey = panel.host().vore_selected.belly_shared_list("secondary_autotransfer_messages_prey")
+		panel.host().vore_selected.digest_chance_messages_owner = panel.host().vore_selected.belly_shared_list("digest_chance_messages_owner")
+		panel.host().vore_selected.digest_chance_messages_prey = panel.host().vore_selected.belly_shared_list("digest_chance_messages_prey")
+		panel.host().vore_selected.absorb_chance_messages_owner = panel.host().vore_selected.belly_shared_list("absorb_chance_messages_owner")
+		panel.host().vore_selected.absorb_chance_messages_prey = panel.host().vore_selected.belly_shared_list("absorb_chance_messages_prey")
+		panel.host().vore_selected.examine_messages = panel.host().vore_selected.belly_shared_list("examine_messages")
+		panel.host().vore_selected.examine_messages_absorbed = panel.host().vore_selected.belly_shared_list("examine_messages_absorbed")
+		panel.host().vore_selected.emote_lists = panel.host().vore_selected.belly_shared_list("emote_lists")
+		panel.host().vore_selected.trash_eater_in = panel.host().vore_selected.belly_shared_list("trash_eater_in")
+		panel.host().vore_selected.trash_eater_out = panel.host().vore_selected.belly_shared_list("trash_eater_out")
+		panel.host().vore_selected.liquid_fullness1_messages = panel.host().vore_selected.belly_shared_list("fullness1_messages")
+		panel.host().vore_selected.liquid_fullness2_messages = panel.host().vore_selected.belly_shared_list("fullness2_messages")
+		panel.host().vore_selected.liquid_fullness3_messages = panel.host().vore_selected.belly_shared_list("fullness3_messages")
+		panel.host().vore_selected.liquid_fullness4_messages = panel.host().vore_selected.belly_shared_list("fullness4_messages")
+		panel.host().vore_selected.liquid_fullness5_messages = panel.host().vore_selected.belly_shared_list("fullness5_messages")
+		panel.unsaved_changes = TRUE
+	SStgui.update_uis(panel)
+
+/datum/prompt/choice/vore_delete_belly
+	parent_type = /datum/prompt/choice/vore_reset_messages
+
+/datum/prompt/choice/vore_delete_belly/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(answer_value != "Delete")
+		return null
+	var/datum/tgui/original_ui = owner
+	var/datum/vore_look/panel = original_ui.src_object()
+	return panel.vore_delete_belly_refusal()
+
+/datum/vore_look/proc/vore_delete_belly_refusal()
+	var/failure_msg = ""
+
+	var/dest_for //Check to see if it's the destination of another vore organ.
+	for(var/obj/belly/B as anything in host().vore_organs)
+		if(B.transferlocation == host().vore_selected)
+			dest_for = B.name
+			failure_msg += "This is the destiantion for at least '[dest_for]' belly transfers. Remove it as the destination from any bellies before deleting it. "
+			break
+		if(B.transferlocation_secondary == host().vore_selected)
+			dest_for = B.name
+			failure_msg += "This is the destiantion for at least '[dest_for]' secondary belly transfers. Remove it as the destination from any bellies before deleting it. "
+			break
+
+	if(contents_count(host().vore_selected))
+		failure_msg += "You cannot delete bellies with contents! " //These end with spaces, to be nice looking. Make sure you do the same.
+	if(host().vore_selected.immutable)
+		failure_msg += "This belly is marked as undeletable. "
+	if(length(host().vore_organs) == 1)
+		failure_msg += "You must have at least one belly. "
+
+	return length(failure_msg) ? failure_msg : null
+
+/datum/tgui/proc/vore_delete_belly_answered(datum/act/request/A)
+	var/datum/vore_look/panel = src_object()
+	if(!A.answer)
+		if(!isnull(A.request.answer_value) && A.request.last_error && A.request.last_error != "gone")
+			tgui_alert_async(A.request.answerer, A.request.last_error, "Error!")
+			SStgui.update_uis(panel)
+		return
+	if(A.answer.answer_value == "Delete")
+		panel.vore_delete_belly_apply()
+		panel.unsaved_changes = TRUE
+	SStgui.update_uis(panel)
+
+/datum/vore_look/proc/vore_delete_belly_apply()
+	if(host().soulgem?.linked_belly() == host().vore_selected)
+		host().soulgem.linked_belly = null
+
+	qdel(host().vore_selected)
+	host().vore_selected = host().vore_organs[1]

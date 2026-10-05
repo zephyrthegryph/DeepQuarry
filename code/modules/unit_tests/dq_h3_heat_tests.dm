@@ -22,7 +22,7 @@
 
 /// Puts the test floor's air back at room temperature (burning test objects heat it).
 /proc/dq_h3_cool_floor(turf/open/T)
-	T.air?.set_temperature(T20C)
+	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
 
 /// wait_for_condition() helper: TRUE once A is warmer than `start`.
 /proc/dq_h3_probe_warmer_than(atom/A, start)
@@ -64,7 +64,7 @@
 	var/datum/gas_mixture/saved = new
 	saved.copy_from(T.air)
 	var/obj/item/paper/late = allocate(/obj/item/paper, T)
-	T.air.set_temperature(ignition + 100)
+	heat_set(T.air, ignition + 100, HEAT_SOURCE_OTHER)
 	late.add_heat(1)
 	T.air.copy_from(saved)
 	TEST_ASSERT(late.resistance_flags & ON_FIRE, "a first heat body above the ignition point lights it")
@@ -213,7 +213,7 @@
 	dq_rx_flush()
 	TEST_ASSERT_EQUAL(doused.burn_ended_by, BURN_ENDED_COOLED, "it goes out when it cools, from a heat watch")
 	air.copy_from(saved)
-	air.set_temperature(T20C)
+	heat_set(air, T20C, HEAT_SOURCE_OTHER)
 
 // ---- Hotspots heat a tile's items through their heat nodes ----
 
@@ -228,7 +228,7 @@
 
 	T.air.set_moles(/datum/gas/oxygen, 300)
 	T.air.set_moles(/datum/gas/plasma, 100)
-	T.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 100)
+	heat_set(T.air, PLASMA_MINIMUM_BURN_TEMPERATURE + 100, HEAT_SOURCE_OTHER)
 	T.hotspot_expose(PLASMA_MINIMUM_BURN_TEMPERATURE + 500, CELL_VOLUME, TRUE)
 	var/obj/effect/hotspot/hotspot = T.active_hotspot
 	TEST_ASSERT(hotspot, "the tile burns")

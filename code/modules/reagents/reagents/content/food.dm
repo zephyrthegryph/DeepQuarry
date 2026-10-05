@@ -782,7 +782,7 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/frostoil/affect_blood(mob/living/carbon/M, alien, removed)
-	warm_body(M, -10 * TEMPERATURE_DAMAGE_COEFFICIENT, removed, min_temp = min(M.bodytemperature, 215))
+	warm_body(M, -10 * TEMPERATURE_DAMAGE_COEFFICIENT, removed, min_temp = min(M.body_temperature(), 215))
 	if(prob(1))
 		M.emote("shiver")
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5)

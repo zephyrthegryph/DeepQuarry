@@ -140,7 +140,7 @@ DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_PROJECTILE, PROC_REF(chamele
 
 	if(can_move)
 		can_move = 0
-		switch(user.bodytemperature)
+		switch(user.body_temperature())
 			if(300 to INFINITY)
 				after(src, 1 SECOND, PROC_REF(allow_move))
 			if(295 to 300)

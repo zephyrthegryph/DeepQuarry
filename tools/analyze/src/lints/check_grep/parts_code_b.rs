@@ -90,7 +90,7 @@ pub fn parts() -> Vec<Part> {
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/fire_act\("),
         ),
-        // Shrink-only while the heat network lands, then a hard ban (ceiling 0): DM never writes a gas's or a solid's energy.
+        // Hard ban: DM outside the gas and heat domains never writes a gas's or a solid's temperature or energy.
         Part::new(
             "heat_raw_temperature_writes",
             "heat: raw temperature and energy writes outside code/domains",
@@ -98,7 +98,8 @@ pub fn parts() -> Vec<Part> {
             Files::Code,
             line(r"\b(set_temperature|add_thermal_energy)\("),
         )
-        .flt(vec![Flt::DropPaths("heat_writes_allow"), drop(r"^[^:]+:\d+:\s*//")]),
+        .flt(vec![Flt::DropPaths("heat_writes_allow"), drop(r"^[^:]+:\d+:\s*//")])
+        .allow(Allow::Strict),
         Part::new(
             "damage_ratchet_on_non_turf_ex_act_overrides_d5",
             "damage: ratchet on non-turf ex_act() overrides (D5)",

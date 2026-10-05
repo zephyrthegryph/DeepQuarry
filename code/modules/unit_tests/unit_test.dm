@@ -222,7 +222,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			if(OT.air)
 				OT.air.copy_from(dq_unit_test_block_default_air())
 				OT.air_update_turf(TRUE, FALSE)
-			OT.set_temperature(T20C)
+			heat_set_solid(OT, T20C)
 		else if(istype(T, /turf/simulated/wall))
 			// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
 			// et al) and never got to restore them because it errored out early.
@@ -243,7 +243,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	var/static/datum/gas_mixture/default_air
 	if(!default_air)
 		default_air = new
-		default_air.set_temperature(T20C)
+		heat_set(default_air, T20C, HEAT_SOURCE_OTHER)
 		default_air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
 		default_air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	return default_air.copy()

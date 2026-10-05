@@ -12,29 +12,17 @@
 
 	var/datum/tgui_module/communications/communications
 
+MSG_DEF(communications/scrambled, "You scramble the communication routing circuits!", "")
+
+// The command console hosts the communications window (its module); an emag scrambles its routing, which opens the line to the Syndicate
+// until someone restores the backup routing from the window.
 CAPABILITIES(/obj/machinery/computer/communications)
 	owns_one(nameof(communications), /datum/tgui_module/communications, starts = /datum/tgui_module/communications)
+	emag(say = MSG(communications/scrambled))
+	op("use", hand(), remote(), then(PROC_REF(open_module_window)))
 
-DECLARE_EMAG(/obj/machinery/computer/communications, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/communications/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	set_emagged(TRUE)
-	communications.emagged = TRUE
-	to_chat(user, "You scramble the communication routing circuits!")
-	return TRUE
-
-/obj/machinery/computer/communications/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/comms_open_ui,
-	)
-	..()
-
-/// Old attack_hand: `if(..()) return; communications.tgui_interact(user)`.
-/datum/interaction/machine_hand/comms_open_ui
-	id = "comms_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/communications/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/communications/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	communications.tgui_interact(user)
-	return TRUE
+/// The hand's use, or a silicon's: the communications window opens.
+/obj/machinery/computer/communications/proc/open_module_window(datum/act/op/A)
+	communications.tgui_interact(A.actor)
+	return OP_OK
 

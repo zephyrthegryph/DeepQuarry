@@ -742,9 +742,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_o
 				to_chat(L, span_danger("The water is searing hot!"))
 				L.injure(INJURY_BURN, 5, null, src)
 		else
-			if(L.bodytemperature < 288) // 15C
+			if(L.body_temperature() < 288) // 15C
 				L.adjust_bodytemperature(10, max_temp = SHOWER_TEMP_NORMAL)
-			if(L.bodytemperature > 298) // 25C
+			if(L.body_temperature() > 298) // 25C
 				L.adjust_bodytemperature(-(10), min_temp = SHOWER_TEMP_NORMAL)
 
 /obj/effect/mist

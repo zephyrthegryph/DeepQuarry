@@ -119,7 +119,7 @@
 		return TRUE
 	if(LAZYLEN(self.body?.afflictions))
 		return FALSE
-	if(self.bodytemperature < self.minbodytemp || self.bodytemperature > self.maxbodytemp)
+	if(self.body_temperature() < self.minbodytemp || self.body_temperature() > self.maxbodytemp)
 		return FALSE
 	var/datum/gas_mixture/environment = isbelly(self.loc) ? self.loc.return_air_for_internal_lifeform(self) : self.loc.return_air()
 	return !environment || self.environment_is_safe(environment)
@@ -130,7 +130,7 @@
 /// TRUE when exchange() would change nothing: temperature within the mob's range and every
 /// gas inside its bounds. Read-only; shared by the sleep rule and the hibernation audit.
 /mob/living/simple_mob/proc/environment_is_safe(datum/gas_mixture/environment)
-	if(abs(environment.return_temperature() - bodytemperature) > temperature_range)
+	if(abs(environment.return_temperature() - body_temperature()) > temperature_range)
 		return FALSE
 	var/o2 = LINDA_GAS_AMT(environment, GAS_O2)
 	if((min_oxy && o2 < min_oxy) || (max_oxy && o2 > max_oxy))
@@ -155,8 +155,8 @@
 		return 1
 
 	var/env_temperature = environment.return_temperature()
-	if( abs(env_temperature - self.bodytemperature) > self.temperature_range )
-		self.adjust_bodytemperature(((env_temperature - self.bodytemperature) / 5))
+	if( abs(env_temperature - self.body_temperature()) > self.temperature_range )
+		self.adjust_bodytemperature(((env_temperature - self.body_temperature()) / 5))
 
 	// Accumulate (|=) failures across gas blocks so an earlier failing gas
 	// isn't masked by a later passing one.
@@ -207,10 +207,10 @@
 		self.clear_alert("methane_in_air")
 
 	//Atmos effect
-	if(self.bodytemperature < self.minbodytemp)
+	if(self.body_temperature() < self.minbodytemp)
 		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick, source = self.loc, flags = INJURE_CONTINUOUS)
 		self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
-	else if(self.bodytemperature > self.maxbodytemp)
+	else if(self.body_temperature() > self.maxbodytemp)
 		self.injure(INJURY_BURN, self.heat_damage_per_tick, source = self.loc, flags = INJURE_CONTINUOUS)
 		self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 	else

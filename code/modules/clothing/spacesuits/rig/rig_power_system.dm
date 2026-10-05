@@ -70,7 +70,7 @@
 /*
  * proc/run_cooling(mob/living/carbon/human/H)
  *
- * Performs one process tick of active cooling.  Reduces H.bodytemperature
+ * Performs one process tick of active cooling.  Reduces H.body_temperature()
  * toward thermostat and drains the cell.  Turns cooling off on cell exhaustion.
  * Called from /obj/item/rig/process().
  */
@@ -98,9 +98,9 @@
 
 	var/temp_adj
 	if(thermal_protection < 0.99)
-		temp_adj = min(H.bodytemperature - max(thermostat, env_temp), max_cooling)
+		temp_adj = min(H.body_temperature() - max(thermostat, env_temp), max_cooling)
 	else
-		temp_adj = min(H.bodytemperature - thermostat, max_cooling)
+		temp_adj = min(H.body_temperature() - thermostat, max_cooling)
 
 	if(temp_adj < 0.5)
 		return
