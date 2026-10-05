@@ -243,8 +243,10 @@
 	var/datum/material_service/source_service = material_service_of(source)
 	var/datum/material_service/service = material_service_of(src)
 	if(source_service && service)
-		service.temperature = source_service.temperature
-		service.buffer_energy = source_service.buffer_energy
+		// The rebuilt assembly carries the old one's heat: the same temperature, and the same energy when its stock is the same.
+		heat_store_set_temperature(service.heat_store, source_service.temperature(), HEAT_SOURCE_MATERIAL)
+		if(service.thermal_mass() == source_service.thermal_mass())
+			service.add_heat(heat_store_energy(source_service.heat_store) - heat_store_energy(service.heat_store), HEAT_SOURCE_MATERIAL)
 	return has_functional_construction()
 
 /obj/proc/construction_summary()

@@ -14201,13 +14201,13 @@
 	into += entry_line(80)
 	into += list(global.op("log_interaction_item", global.item(/obj/item), global.then(PROC_REF(log_interaction_item))))
 
-/// CAPABILITIES(/obj/item/stack/material/processed_alloy) at code/modules/materials/engineering/processed_material.dm:295
+/// CAPABILITIES(/obj/item/stack/material/processed_alloy) at code/modules/materials/engineering/processed_material.dm:297
 /obj/item/stack/material/processed_alloy/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/materials/engineering/processed_material.dm", 295, /obj/item/stack/material/processed_alloy)
-	into += entry_line(296)
+	into += entry_block("code/modules/materials/engineering/processed_material.dm", 297, /obj/item/stack/material/processed_alloy)
+	into += entry_line(298)
 	into += list(global.owns_one(nameof(batch_state), /datum/material_batch))
-	into += entry_line(297)
+	into += entry_line(299)
 	into += list(global.op("processed_alloy_item", global.item(/obj/item), global.then(PROC_REF(processed_alloy_item))))
 
 /// CAPABILITIES(/obj/item/stack/rods) at code/modules/materials/sheets/metals/rods.dm:41
