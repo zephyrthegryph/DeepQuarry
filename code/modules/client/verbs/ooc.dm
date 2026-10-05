@@ -69,7 +69,7 @@
 			var/display_name = src.key
 			if(holder)
 				if(holder.fakekey)
-					if(target.holder)
+					if(admin_can(target, 0))
 						display_name = "[holder.fakekey]/([src.key])"
 					else
 						display_name = holder.fakekey
