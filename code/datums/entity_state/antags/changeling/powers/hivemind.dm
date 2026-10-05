@@ -25,6 +25,9 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 	set name = "Hive Channel (10)"
 	set desc = "Allows you to channel DNA in the airwaves to allow other changelings to absorb it."
 
+	return changeling_hiveupload_review()
+
+/mob/proc/changeling_hiveupload_review(answered = FALSE, reply)
 	var/datum/changeling/changeling = changeling_power(10,1)
 	if(!changeling)
 		return
@@ -38,7 +41,10 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 		to_chat(src, span_notice("The airwaves already have all of our DNA."))
 		return
 
-	var/S = rerun_ask(src, "a1", PROC_REF(changeling_hiveupload), args, /datum/om/prompt/choice, message = "Select a DNA to channel:", title = "Channel DNA", choices = names)
+	if(!answered)
+		open_request(src, /datum/prompt/choice, PROC_REF(changeling_hiveupload_answered), answerer = src, title = "Channel DNA", question = "Select a DNA to channel:", choices = names, timeout = 0)
+		return
+	var/S = reply
 	if(isnull(S))
 		return
 	if(!S)
@@ -59,6 +65,9 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 	set name = "Hive Absorb (20)"
 	set desc = "Allows you to absorb DNA that is being channeled in the airwaves."
 
+	return changeling_hivedownload_review()
+
+/mob/proc/changeling_hivedownload_review(answered = FALSE, reply)
 	var/datum/changeling/changeling = changeling_power(20,1)
 	if(!changeling)
 		return
@@ -72,7 +81,10 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 		to_chat(src, span_notice("There's no new DNA to absorb from the air."))
 		return
 
-	var/S = rerun_ask(src, "a2", PROC_REF(changeling_hivedownload), args, /datum/om/prompt/choice, message = "Select a DNA to absorb:", title = "Absorb DNA", choices = names)
+	if(!answered)
+		open_request(src, /datum/prompt/choice, PROC_REF(changeling_hivedownload_answered), answerer = src, title = "Absorb DNA", question = "Select a DNA to absorb:", choices = names, timeout = 0)
+		return
+	var/S = reply
 	if(isnull(S))
 		return
 	if(!S)
@@ -86,3 +98,19 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 	to_chat(src, span_notice("We absorb the DNA of [S] from the air."))
 	feedback_add_details("changeling_powers","HD")
 	return TRUE
+
+/// Replay the current changeling state and choices after an accepted native answer.
+/mob/proc/changeling_hiveupload_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	changeling_hiveupload_review(TRUE, context.answer.answer_value)
+	if(!QDELETED(src))
+		SStgui.update_uis(src)
+
+/// Replay the current changeling state and choices after an accepted native answer.
+/mob/proc/changeling_hivedownload_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	changeling_hivedownload_review(TRUE, context.answer.answer_value)
+	if(!QDELETED(src))
+		SStgui.update_uis(src)

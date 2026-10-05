@@ -112,16 +112,6 @@
 	. = ..()
 	. += owns(nameof(soulgem), policy = OWN_CONTAINED)
 
-/mob/relations()
-	. = ..()
-	// A mob owns its bellies (vore_organs, deleted with it); the selected / spontaneous / previewed
-	// bellies are relation views onto bellies (previewing_belly names a predator's belly).
-	. += rel_one(nameof(vore_selected))
-	. += rel_one(nameof(spont_belly_front))
-	. += rel_one(nameof(spont_belly_rear))
-	. += rel_one(nameof(spont_belly_left))
-	. += rel_one(nameof(spont_belly_right))
-	. += rel_one(nameof(previewing_belly))
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob, absorbed)

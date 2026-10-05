@@ -218,11 +218,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_ove
 /obj/item/toy/sword/proc/ask_blade_color(datum/act/request/A)
 	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(A.request.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color/blade_recolor, PROC_REF(blade_recolored), answerer = A.request.answerer, default = lcolor, title = "Choose Energy Color")
 
-/obj/item/toy/sword/proc/blade_recolored(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		lcolor = sanitize_hexcolor(ask.picked_color)
+/obj/item/toy/sword/proc/blade_recolored(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		lcolor = sanitize_hexcolor(A.answer.answer_value)
 	update_icon()
 
 /obj/item/toy/sword/examine(mob/user)

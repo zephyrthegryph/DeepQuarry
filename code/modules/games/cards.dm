@@ -167,6 +167,9 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 /// Old Deal verb: Deal a card from a deck.
 /obj/item/deck/proc/deck_verb_deal(mob/user, obj/item/held, datum/interaction/interaction)
+	return deck_verb_deal_stage(user, held, interaction, list())
+
+/obj/item/deck/proc/deck_verb_deal_stage(mob/user, obj/item/held, datum/interaction/interaction, list/card_answers)
 	if(user.stat || !Adjacent(user)) return
 
 	if(!length(cards)) // re-checked: the requirement told them, and reruns after a prompt re-enter here
@@ -177,7 +180,10 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		if(!player.stat)
 			players += player
 
-	var/mob/living/M = rerun_ask(user, "k148", PROC_REF(deck_verb_deal), args, /datum/om/prompt/choice, message = "Who do you wish to deal a card?", title = "Deal to whom?", choices = players)
+	if(!("k148" in card_answers))
+		open_request(src, /datum/prompt/choice/card_game_review, PROC_REF(deck_verb_deal_answered), answerer = user, card_operator = user, card_input = held, card_interaction = interaction, card_answers = card_answers, card_key = "k148", question = "Who do you wish to deal a card?", title = "Deal to whom?", choices = players , buttons = FALSE)
+		return null
+	var/mob/living/M = card_answers["k148"]
 	if(isnull(M))
 		return
 	if(!user || !src || !M) return
@@ -186,6 +192,9 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 /// Old Deal Multiple Cards verb: Deal multiple cards from a deck.
 /obj/item/deck/proc/deck_verb_deal_multi(mob/user, obj/item/held, datum/interaction/interaction)
+	return deck_verb_deal_multi_stage(user, held, interaction, list())
+
+/obj/item/deck/proc/deck_verb_deal_multi_stage(mob/user, obj/item/held, datum/interaction/interaction, list/card_answers)
 	if(user.stat || !Adjacent(user)) return
 
 	if(!length(cards)) // re-checked: the requirement told them, and reruns after a prompt re-enter here
@@ -196,12 +205,18 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		if(!player.stat)
 			players += player
 	var/maxcards = max(min(length(cards),10),1)
-	var/dcard = rerun_ask(user, "k172", PROC_REF(deck_verb_deal_multi), args, /datum/om/prompt/number, message = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", max = maxcards)
+	if(!("k172" in card_answers))
+		open_request(src, /datum/prompt/number/card_game_review, PROC_REF(deck_verb_deal_multi_answered), answerer = user, card_operator = user, card_input = held, card_interaction = interaction, card_answers = card_answers, card_key = "k172", question = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", card_max = maxcards)
+		return null
+	var/dcard = card_answers["k172"]
 	if(isnull(dcard))
 		return
 	if(dcard > maxcards)
 		return
-	var/mob/living/M = rerun_ask(user, "k175", PROC_REF(deck_verb_deal_multi), args, /datum/om/prompt/choice, message = "Who do you wish to deal [dcard] card(s)?", title = "Deal to whom?", choices = players)
+	if(!("k175" in card_answers))
+		open_request(src, /datum/prompt/choice/card_game_review, PROC_REF(deck_verb_deal_multi_answered), answerer = user, card_operator = user, card_input = held, card_interaction = interaction, card_answers = card_answers, card_key = "k175", question = "Who do you wish to deal [dcard] card(s)?", title = "Deal to whom?", choices = players , buttons = FALSE)
+		return null
+	var/mob/living/M = card_answers["k175"]
 	if(isnull(M))
 		return
 	if(!user || !src || !M) return
@@ -210,6 +225,9 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 /// Old Search for Cards verb: Search for and draw a specific card (or cards) in the deck. This will be an obvious action to all observers.
 /obj/item/deck/proc/deck_verb_search(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+	return deck_verb_search_stage(user, held, interaction, list())
+
+/obj/item/deck/proc/deck_verb_search_stage(mob/living/carbon/user, obj/item/held, datum/interaction/interaction, list/card_answers)
 	if(user.stat || !Adjacent(user)) return
 
 	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion (the requirement told them)
@@ -246,7 +264,10 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		for(var/i = 0, i < length(L), i++)
 			cards_to_choose += "[key] ([i+1])"
 
-	var/list/cards_to_draw = rerun_ask(user, "k228", PROC_REF(deck_verb_search), args, /datum/om/prompt/checklist, message = "Which cards do you want to retrieve?", title = "Choose your cards", choices = cards_to_choose, min_picks = 1)
+	if(!("k228" in card_answers))
+		open_request(src, /datum/prompt/checklist/card_game_review, PROC_REF(deck_verb_search_answered), answerer = user, card_operator = user, card_input = held, card_interaction = interaction, card_answers = card_answers, card_key = "k228", question = "Which cards do you want to retrieve?", title = "Choose your cards", choices = cards_to_choose, min_picks = 1)
+		return null
+	var/list/cards_to_draw = card_answers["k228"]
 	if(isnull(cards_to_draw))
 		return
 
@@ -304,12 +325,18 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 /// Old attackby.
 /obj/item/hand/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
+	return interaction_item_stage(user, O, interaction, list())
+
+/obj/item/hand/proc/interaction_item_stage(mob/user, obj/O, datum/interaction/interaction, list/card_answers)
 	if(length(cards) == 1 && istype(O, /obj/item/pen))
 		var/datum/playingcard/P = cards[1]
 		if(P.name != "Blank Card")
 			to_chat(user,span_notice("You cannot write on that card."))
 			return INTERACTION_HANDLED_PASS
-		var/cardtext = rerun_ask(user, "k284", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What do you wish to write on the card?", title = "Card Editing", max_length = MAX_PAPER_MESSAGE_LEN)
+		if(!("k284" in card_answers))
+			open_request(src, /datum/prompt/text/card_game_review, PROC_REF(interaction_item_answered), answerer = user, card_operator = user, card_input = O, card_interaction = interaction, card_answers = card_answers, card_key = "k284", question = "What do you wish to write on the card?", title = "Card Editing", max_len = MAX_PAPER_MESSAGE_LEN)
+			return TRUE
+		var/cardtext = card_answers["k284"]
 		if(isnull(cardtext))
 			return TRUE
 		if(!cardtext)
@@ -437,9 +464,15 @@ CAPABILITIES(/obj/item/pack)
 
 /// Old Discard verb: Place (a) card(s) from your hand in front of you.
 /obj/item/hand/proc/hand_verb_discard(mob/user, obj/item/held, datum/interaction/interaction)
+	return hand_verb_discard_stage(user, held, interaction, list())
+
+/obj/item/hand/proc/hand_verb_discard_stage(mob/user, obj/item/held, datum/interaction/interaction, list/card_answers)
 	var/i
 	var/maxcards = min(length(cards),5) // Maximum of 5 cards at once
-	var/discards = rerun_ask(user, "k432", PROC_REF(hand_verb_discard), args, /datum/om/prompt/number, message = "How many cards do you want to discard? You may discard up to [maxcards] card(s)", max = maxcards)
+	if(!("k432" in card_answers))
+		open_request(src, /datum/prompt/number/card_game_review, PROC_REF(hand_verb_discard_answered), answerer = user, card_operator = user, card_input = held, card_interaction = interaction, card_answers = card_answers, card_key = "k432", question = "How many cards do you want to discard? You may discard up to [maxcards] card(s)", card_max = maxcards)
+		return null
+	var/discards = card_answers["k432"]
 	if(isnull(discards))
 		return
 	if(discards > maxcards)
@@ -451,7 +484,10 @@ CAPABILITIES(/obj/item/pack)
 		for(var/datum/playingcard/P in cards)
 			if(!(P in picked))
 				to_discard[P.name] = P
-		var/discarding = rerun_ask(user, "card[i]", PROC_REF(hand_verb_discard), args, /datum/om/prompt/choice, message = "Which card do you wish to put down?", title = "Card Selection", choices = to_discard)
+		if(!("card[i]" in card_answers))
+			open_request(src, /datum/prompt/choice/card_game_review, PROC_REF(hand_verb_discard_answered), answerer = user, card_operator = user, card_input = held, card_interaction = interaction, card_answers = card_answers, card_key = "card[i]", question = "Which card do you wish to put down?", title = "Card Selection", choices = to_discard , buttons = FALSE)
+			return null
+		var/discarding = card_answers["card[i]"]
 		if(!discarding || !to_discard[discarding] || !user || !src) return
 		picked += to_discard[discarding]
 
@@ -503,6 +539,9 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 
 /// Old Remove card verb: Remove a card from the hand.
 /obj/item/hand/proc/hand_verb_remove_card(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+	return hand_verb_remove_card_stage(user, held, interaction, list())
+
+/obj/item/hand/proc/hand_verb_remove_card_stage(mob/living/carbon/user, obj/item/held, datum/interaction/interaction, list/card_answers)
 	if(user.stat || !Adjacent(user)) return
 
 	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion (the requirement told them)
@@ -511,7 +550,10 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	var/pickablecards = list()
 	for(var/datum/playingcard/P in cards)
 		pickablecards[P.name] = P
-	var/pickedcard = rerun_ask(user, "k493", PROC_REF(hand_verb_remove_card), args, /datum/om/prompt/choice, message = "Which card do you want to remove from the hand?", title = "Card Selection", choices = pickablecards)
+	if(!("k493" in card_answers))
+		open_request(src, /datum/prompt/choice/card_game_review, PROC_REF(hand_verb_remove_card_answered), answerer = user, card_operator = user, card_input = held, card_interaction = interaction, card_answers = card_answers, card_key = "k493", question = "Which card do you want to remove from the hand?", title = "Card Selection", choices = pickablecards , buttons = FALSE)
+		return null
+	var/pickedcard = card_answers["k493"]
 	if(isnull(pickedcard))
 		return
 
@@ -615,3 +657,241 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 	return TRUE
 
 // A deck, pack or hand owns the card datums it holds.
+
+/obj/item/deck/proc/deck_verb_deal_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = deck_verb_deal_answered_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/deck/proc/deck_verb_deal_answered_apply(datum/act/request/A)
+	var/datum/prompt/choice/card_game_review/ask = A.answer
+	ask.card_answers[ask.card_key] = ask.answer_value
+	return deck_verb_deal_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
+
+/obj/item/deck/proc/deck_verb_deal_multi_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = deck_verb_deal_multi_answered_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/deck/proc/deck_verb_deal_multi_answered_apply(datum/act/request/A)
+	if(istype(A.answer, /datum/prompt/number/card_game_review))
+		var/datum/prompt/number/card_game_review/ask = A.answer
+		ask.card_answers[ask.card_key] = ask.answer_value
+		return deck_verb_deal_multi_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
+	var/datum/prompt/choice/card_game_review/ask = A.answer
+	ask.card_answers[ask.card_key] = ask.answer_value
+	return deck_verb_deal_multi_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
+
+/obj/item/deck/proc/deck_verb_search_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = deck_verb_search_answered_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/deck/proc/deck_verb_search_answered_apply(datum/act/request/A)
+	var/datum/prompt/checklist/card_game_review/ask = A.answer
+	ask.card_answers[ask.card_key] = ask.answer_value
+	return deck_verb_search_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
+
+/obj/item/hand/proc/interaction_item_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = interaction_item_answered_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/hand/proc/interaction_item_answered_apply(datum/act/request/A)
+	var/datum/prompt/text/card_game_review/ask = A.answer
+	ask.card_answers[ask.card_key] = ask.answer_value
+	return interaction_item_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
+
+/obj/item/hand/proc/hand_verb_discard_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = hand_verb_discard_answered_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/hand/proc/hand_verb_discard_answered_apply(datum/act/request/A)
+	if(istype(A.answer, /datum/prompt/number/card_game_review))
+		var/datum/prompt/number/card_game_review/ask = A.answer
+		ask.card_answers[ask.card_key] = ask.answer_value
+		return hand_verb_discard_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
+	var/datum/prompt/choice/card_game_review/ask = A.answer
+	ask.card_answers[ask.card_key] = ask.answer_value
+	return hand_verb_discard_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
+
+/obj/item/hand/proc/hand_verb_remove_card_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = hand_verb_remove_card_answered_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/hand/proc/hand_verb_remove_card_answered_apply(datum/act/request/A)
+	var/datum/prompt/choice/card_game_review/ask = A.answer
+	ask.card_answers[ask.card_key] = ask.answer_value
+	return hand_verb_remove_card_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
+
+/datum/prompt/choice/card_game_review
+	timeout = 0
+	var/mob/card_operator
+	var/obj/card_input
+	var/datum/interaction/card_interaction
+	var/card_operator_expected = FALSE
+	var/card_input_expected = FALSE
+	var/card_interaction_expected = FALSE
+	var/list/card_answers
+	var/card_key
+
+CAPABILITIES(/datum/prompt/choice/card_game_review)
+	ref_one(nameof(card_operator), /mob)
+	ref_one(nameof(card_input), /obj)
+	ref_one(nameof(card_interaction), /datum/interaction)
+
+/datum/prompt/choice/card_game_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = card_operator
+	var/obj/captured_input = card_input
+	var/datum/interaction/captured_interaction = card_interaction
+	card_operator_expected = !isnull(captured_operator)
+	card_input_expected = !isnull(captured_input)
+	card_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(card_operator))
+	rel_clear(src, nameof(card_input))
+	rel_clear(src, nameof(card_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(card_operator), captured_operator)
+	if(captured_input && !QDELETED(captured_input))
+		rel_set(src, nameof(card_input), captured_input)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(card_interaction), captured_interaction)
+
+/datum/prompt/choice/card_game_review/recheck_extra()
+	if((card_operator_expected && QDELETED(card_operator)) || (card_input_expected && QDELETED(card_input)) || (card_interaction_expected && QDELETED(card_interaction)))
+		return "gone"
+	if((card_key == "k148" || card_key == "k175") && !isnull(answer_value))
+		var/mob/living/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+
+/datum/prompt/number/card_game_review
+	timeout = 0
+	var/card_max = INFINITY
+	var/mob/card_operator
+	var/obj/card_input
+	var/datum/interaction/card_interaction
+	var/card_operator_expected = FALSE
+	var/card_input_expected = FALSE
+	var/card_interaction_expected = FALSE
+	var/list/card_answers
+	var/card_key
+
+CAPABILITIES(/datum/prompt/number/card_game_review)
+	ref_one(nameof(card_operator), /mob)
+	ref_one(nameof(card_input), /obj)
+	ref_one(nameof(card_interaction), /datum/interaction)
+
+/datum/prompt/number/card_game_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = card_operator
+	var/obj/captured_input = card_input
+	var/datum/interaction/captured_interaction = card_interaction
+	card_operator_expected = !isnull(captured_operator)
+	card_input_expected = !isnull(captured_input)
+	card_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(card_operator))
+	rel_clear(src, nameof(card_input))
+	rel_clear(src, nameof(card_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(card_operator), captured_operator)
+	if(captured_input && !QDELETED(captured_input))
+		rel_set(src, nameof(card_input), captured_input)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(card_interaction), captured_interaction)
+
+/datum/prompt/number/card_game_review/recheck_extra()
+	if((card_operator_expected && QDELETED(card_operator)) || (card_input_expected && QDELETED(card_input)) || (card_interaction_expected && QDELETED(card_interaction)))
+		return "gone"
+
+/datum/prompt/text/card_game_review
+	timeout = 0
+	var/mob/card_operator
+	var/obj/card_input
+	var/datum/interaction/card_interaction
+	var/card_operator_expected = FALSE
+	var/card_input_expected = FALSE
+	var/card_interaction_expected = FALSE
+	var/list/card_answers
+	var/card_key
+
+CAPABILITIES(/datum/prompt/text/card_game_review)
+	ref_one(nameof(card_operator), /mob)
+	ref_one(nameof(card_input), /obj)
+	ref_one(nameof(card_interaction), /datum/interaction)
+
+/datum/prompt/text/card_game_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = card_operator
+	var/obj/captured_input = card_input
+	var/datum/interaction/captured_interaction = card_interaction
+	card_operator_expected = !isnull(captured_operator)
+	card_input_expected = !isnull(captured_input)
+	card_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(card_operator))
+	rel_clear(src, nameof(card_input))
+	rel_clear(src, nameof(card_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(card_operator), captured_operator)
+	if(captured_input && !QDELETED(captured_input))
+		rel_set(src, nameof(card_input), captured_input)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(card_interaction), captured_interaction)
+
+/datum/prompt/text/card_game_review/recheck_extra()
+	if((card_operator_expected && QDELETED(card_operator)) || (card_input_expected && QDELETED(card_input)) || (card_interaction_expected && QDELETED(card_interaction)))
+		return "gone"
+
+/datum/prompt/checklist/card_game_review
+	timeout = 0
+	var/mob/card_operator
+	var/obj/card_input
+	var/datum/interaction/card_interaction
+	var/card_operator_expected = FALSE
+	var/card_input_expected = FALSE
+	var/card_interaction_expected = FALSE
+	var/list/card_answers
+	var/card_key
+
+CAPABILITIES(/datum/prompt/checklist/card_game_review)
+	ref_one(nameof(card_operator), /mob)
+	ref_one(nameof(card_input), /obj)
+	ref_one(nameof(card_interaction), /datum/interaction)
+
+/datum/prompt/checklist/card_game_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = card_operator
+	var/obj/captured_input = card_input
+	var/datum/interaction/captured_interaction = card_interaction
+	card_operator_expected = !isnull(captured_operator)
+	card_input_expected = !isnull(captured_input)
+	card_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(card_operator))
+	rel_clear(src, nameof(card_input))
+	rel_clear(src, nameof(card_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(card_operator), captured_operator)
+	if(captured_input && !QDELETED(captured_input))
+		rel_set(src, nameof(card_input), captured_input)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(card_interaction), captured_interaction)
+
+/datum/prompt/checklist/card_game_review/recheck_extra()
+	if((card_operator_expected && QDELETED(card_operator)) || (card_input_expected && QDELETED(card_input)) || (card_interaction_expected && QDELETED(card_interaction)))
+		return "gone"
+
+/// Display the original UI bound without clamping an accepted raw count before the replay's live guard.
+/datum/prompt/number/card_game_review/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, card_max, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box

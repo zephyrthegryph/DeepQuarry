@@ -101,7 +101,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/unary/cryo_cell, MACHINE_
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
-	op("cryo_cell_interaction_hand", hand(), ungated(), needs(req_panel_closed()), then(PROC_REF(cryo_cell_interaction_hand)))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	op("cryo_cell_interaction_hand", hand(), ungated(), needs(req_closed(SPACE_PANEL)), then(PROC_REF(cryo_cell_interaction_hand)))
 	op("cryo_cell_interaction_item", item(/obj/item), then(PROC_REF(cryo_cell_interaction_item)))
 	op("put_inside", item(/mob), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(cryo_cell_interaction_drag)))
 	op("eject_occupant", menu(), label("Eject occupant"), then(PROC_REF(cryo_cell_move_eject)))

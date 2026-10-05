@@ -42,7 +42,8 @@
 
 /// A player's drag (the adapter's path: ops first, then the legacy gesture entries and MouseDrop_T).
 /datum/unit_test/dq_fwg3/proc/player_drag(mob/actor, atom/dragged, atom/over)
-	actor.input_adapter().drag(actor, dragged, over, get_turf(dragged), get_turf(over), null, null, "")
+	var/datum/input_adapter/adapter = actor.input_adapter()
+	adapter.drag(actor, dragged, over, get_turf(dragged), get_turf(over), null, null, "")
 	test_time(1)
 
 /// A player's click (ClickOn: the telekinesis adapter at range, as a player's click reaches it).

@@ -71,48 +71,54 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 /obj/item/pen/crayon/afterattack(atom/target, mob/user, proximity, click_parameters)
 	if(!proximity) return
 	if(istype(target,/turf/simulated/floor))
-		om_ask(user, /datum/om/prompt/choice/crayon_kind, PROC_REF(ask_drawing), subject = target, click_parameters = click_parameters)
+		open_request(src, /datum/prompt/choice/crayon_kind, PROC_REF(ask_drawing), answerer = user, subject = target, click_parameters = click_parameters)
 	return
 
 /// What to draw, then which one. The subject is the floor: still in reach, and the drawer able.
-/datum/om/prompt/choice/crayon_kind
+/datum/prompt/choice/crayon_kind
 	title = "Crayon scribbles"
-	message = "Choose what you'd like to draw."
+	recheck_on_open = TRUE
+	question = "Choose what you'd like to draw."
 	choices = list("graffiti","rune","letter","arrow")
-	requires = list(/datum/om/check/in_range, /datum/om/check/not_incapacitated)
+	timeout = 0
 	var/click_parameters
 
-/datum/om/prompt/choice/crayon_drawing
-	title = "Crayon scribbles"
-	requires = list(/datum/om/check/in_range, /datum/om/check/not_incapacitated)
+/datum/prompt/choice/crayon_drawing
+	parent_type = /datum/prompt/choice/crayon_kind
 	var/drawing_kind
-	var/click_parameters
 
-/datum/om/prompt/choice/crayon_drawing/prepare()
+/datum/prompt/choice/crayon_drawing/prepare(datum/act/context)
+	. = ..()
 	switch(drawing_kind)
 		if("letter")
-			message = "Choose the letter."
+			question = "Choose the letter."
 			choices = list("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z")
 		if("graffiti")
-			message = "Choose the graffiti."
+			question = "Choose the graffiti."
 			choices = list("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa")
 		if("rune")
-			message = "Choose the rune."
+			question = "Choose the rune."
 			choices = list("rune1", "rune2", "rune3", "rune4", "rune5", "rune6")
 		if("arrow")
-			message = "Choose the arrow."
+			question = "Choose the arrow."
 			choices = list("left", "right", "up", "down")
 		else
 			return FALSE
 	return TRUE
 
-/obj/item/pen/crayon/proc/ask_drawing(datum/om/prompt/choice/crayon_kind/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/crayon_drawing, PROC_REF(drawing_chosen), subject = ask.subject, drawing_kind = ask.choice, click_parameters = ask.click_parameters)
+/obj/item/pen/crayon/proc/ask_drawing(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/crayon_kind/ask = context.answer
+	open_request(src, /datum/prompt/choice/crayon_drawing, PROC_REF(drawing_chosen), answerer = ask.answerer, subject = ask.subject, drawing_kind = ask.answer_value, click_parameters = ask.click_parameters)
 
-/obj/item/pen/crayon/proc/drawing_chosen(datum/om/prompt/choice/crayon_drawing/ask)
+/obj/item/pen/crayon/proc/drawing_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/crayon_drawing/ask = context.answer
 	var/mob/user = ask.answerer
 	var/atom/target = ask.subject
-	var/drawtype = ask.choice
+	var/drawtype = ask.answer_value
 	if(!drawtype)
 		return
 	switch(ask.drawing_kind)
@@ -235,3 +241,15 @@ CAPABILITIES(/obj/item/pen/crayon/marker/rainbow)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()
+
+/datum/prompt/choice/crayon_kind/recheck_extra()
+	var/mob/drawer = answerer
+	var/atom/surface = subject
+	if(!istype(drawer) || QDELETED(drawer) || !istype(surface) || QDELETED(surface))
+		return "too far away"
+	var/turf/drawer_turf = get_turf(drawer)
+	var/turf/surface_turf = get_turf(surface)
+	if(!drawer_turf || !surface_turf || drawer_turf.z != surface_turf.z || get_dist(drawer_turf, surface_turf) > 1)
+		return "too far away"
+	if(drawer.incapacitated(INCAPACITATION_DEFAULT))
+		return "not able to"

@@ -456,7 +456,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		needs(req(PROC_REF(pry_free), because = PROC_REF(pry_reason))), then(PROC_REF(pry_forced)))
 	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)), priority(above("pry")),
 		wait(4 SECONDS), then(PROC_REF(crowbar_act_tool_done)))
-	op("wires_window", hand(), when(PANEL_OPEN), priority(OP_PRIORITY_PART), wait(0),
+	op("wires_window", hand(), at(SPACE_PANEL), priority(OP_PRIORITY_PART), wait(0),
 		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
 	op("tear", hand(), label("Tear"), when(req(PROC_REF(claws_tear))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)),
 		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(tear_done)))

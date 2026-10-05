@@ -14,6 +14,9 @@
 	set desc = "Shape our vocal glands to form a voice of someone we choose. We cannot regenerate chemicals when mimicing."
 
 
+	return changeling_mimicvoice_review()
+
+/mob/proc/changeling_mimicvoice_review(answered = FALSE, reply)
 	var/datum/changeling/changeling = changeling_power()
 	if(!changeling)	return
 
@@ -22,7 +25,10 @@
 		to_chat(src, span_notice("We return our vocal glands to their original location."))
 		return
 
-	var/mimic_voice = rerun_ask(src, "a1", PROC_REF(changeling_mimicvoice), args, /datum/om/prompt/text, message = "Enter a name to mimic.", title = "Mimic Voice", max_length = MAX_NAME_LEN)
+	if(!answered)
+		open_request(src, /datum/prompt/text, PROC_REF(changeling_mimicvoice_answered), answerer = src, title = "Mimic Voice", question = "Enter a name to mimic.", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
+		return
+	var/mimic_voice = reply
 	if(isnull(mimic_voice))
 		return
 	if(!mimic_voice)
@@ -42,3 +48,11 @@ DECLARE_REPEAT(/datum/changeling, 4 SECONDS, mimic_drain, "mimicing")
 	if(!owner?.mind)
 		return REPEAT_STOP
 	chem_charges = max(chem_charges - 1, 0)
+
+/// Replay the current changeling state and choices after an accepted native answer.
+/mob/proc/changeling_mimicvoice_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	changeling_mimicvoice_review(TRUE, context.answer.answer_value)
+	if(!QDELETED(src))
+		SStgui.update_uis(src)

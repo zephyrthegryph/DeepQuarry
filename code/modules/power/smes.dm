@@ -100,22 +100,23 @@ TRACKED(/obj/machinery/power/smes, grid_check)
 
 CAPABILITIES(/obj/machinery/power/smes)
 	machine_basics(repair = NONE, powered = FALSE)
+	space(SPACE_PANEL, door = nameof(panel_open), closed = MSG(smes/hatch_shut))
 	links(/obj/machinery/power/smes::terminals, /obj/machinery/power/terminal/smes_input::unit, a_many = TRUE)
 	interface("Smes")
 	op("tryinput", ui_act("tryinput"), then(PROC_REF(ui_toggle_input)))
 	op("tryoutput", ui_act("tryoutput"), then(PROC_REF(ui_toggle_output)))
 	op("input", ui_act("input", arg("adjust"), arg("target")), then(PROC_REF(ui_set_input)))
 	op("output", ui_act("output", arg("adjust"), arg("target")), then(PROC_REF(ui_set_output)))
-	op("add_cable", stack(/obj/item/stack/cable_coil, 10), when(nameof(panel_open)),
+	op("add_cable", stack(/obj/item/stack/cable_coil, 10), at(SPACE_PANEL),
 		needs(req(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))),
 		wait(5 SECONDS), then(PROC_REF(terminal_built)), says(MSG(smes/terminal_built)))
-	op("cut_terminal", tool(TOOL_WIRECUTTER), when(nameof(panel_open)),
+	op("cut_terminal", tool(TOOL_WIRECUTTER), at(SPACE_PANEL),
 		needs(req(PROC_REF(terminal_cuttable), because = PROC_REF(terminal_cut_refusal))),
 		wait(5 SECONDS), then(PROC_REF(terminal_taken_down)), says(MSG(smes/terminal_cut)))
-	op("weld", tool(TOOL_WELDER), costs(RES_FUEL, 0),
-		needs(req_is(nameof(panel_open), TRUE, because = MSG(smes/hatch_shut)), req(PROC_REF(welder_lit), because = MSG(smes/welder_off))),
+	op("weld", tool(TOOL_WELDER), at(SPACE_PANEL), costs(RES_FUEL, 0),
+		needs(req(PROC_REF(welder_lit), because = MSG(smes/welder_off))),
 		wait(PROC_REF(repair_time)), then(PROC_REF(casing_repaired)), says(MSG(smes/repaired)))
-	op("swallow", item(/obj/item), when(nameof(panel_open)), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(swallowed)))
+	op("swallow", item(/obj/item), at(SPACE_PANEL), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(swallowed)))
 	examine_line(PROC_REF(examine_state))
 	on_change(nameof(stat), ANY, then(PROC_REF(stat_changed)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_scramble)))

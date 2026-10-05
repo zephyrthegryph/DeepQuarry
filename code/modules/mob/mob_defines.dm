@@ -290,6 +290,13 @@ CAPABILITIES(/mob)
 	owns_many(nameof(vore_organs))
 	owns_many(nameof(alerts))
 	owns_many(nameof(screens))
+	// Selected, spontaneous and previewed bellies are borrowed views, separate from owned vore_organs.
+	ref_one(nameof(vore_selected))
+	ref_one(nameof(spont_belly_front))
+	ref_one(nameof(spont_belly_rear))
+	ref_one(nameof(spont_belly_left))
+	ref_one(nameof(spont_belly_right))
+	ref_one(nameof(previewing_belly))
 
 
 /mob

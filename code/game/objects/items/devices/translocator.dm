@@ -432,24 +432,28 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele_beacon, \
 /obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
 		LAZYOR(warned_users, user.ckey)
-		om_ask(user, /datum/om/prompt/confirm/tele_beacon_warning, PROC_REF(warning_answered))
+		open_request(src, /datum/prompt/choice/tele_beacon_warning, PROC_REF(warning_answered), answerer = user)
 		return TRUE
 	return FALSE
 
 /// The OOC warning before first picking up someone else's beacon. Re-checked on the answer: still next to it.
-/datum/om/prompt/confirm/tele_beacon_warning
+/datum/prompt/choice/tele_beacon_warning
 	title = "OOC Warning"
-	message = {"
+	question = {"
 This device is a translocator beacon. Having it on your person may mean that anyone
 who teleports to this beacon gets teleported into your selected vore-belly. If you are prey-only
 or don't wish to potentially have a random person teleported into you, it's suggested that you
 not carry this around."}
-	yes_text = "Take It"
-	no_text = "Leave It"
+	choices = list("Take It", "Leave It")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/obj/item/perfect_tele_beacon/proc/warning_answered(datum/om/prompt/confirm/ask)
-	attack_hand(ask.answerer)
+/obj/item/perfect_tele_beacon/proc/warning_answered(datum/act/request/A)
+	if(A.answer?.answer_value != "Take It")
+		return
+	attack_hand(A.request.answerer)
 
 /obj/item/perfect_tele_beacon/stationary
 	name = "stationary translocator beacon"

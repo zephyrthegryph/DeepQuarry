@@ -125,9 +125,5 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /// LC-refs: the actions granted to this player on each login are theirs.
 
-/datum/persistent_client/relations()
-	. = ..()
-	. += rel_one(nameof(mob), back = nameof(/mob::persistent_client))
-/mob/relations()
-	. = ..()
-	. += rel_one(nameof(persistent_client), back = nameof(/datum/persistent_client::mob))
+CAPABILITIES(/datum/persistent_client)
+	links(/datum/persistent_client::mob, /mob::persistent_client)

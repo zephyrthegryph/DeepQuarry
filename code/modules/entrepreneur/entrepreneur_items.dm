@@ -189,7 +189,13 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_R
 
 /// Old attack_self.
 /obj/item/entrepreneur/horoscope/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/zodiac = rerun_ask(user, "k192", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Which of todays zodiacs do you want to read?", title = "Zodiac", choices = zodiacs)
+	return horoscope_stage(user, held, interaction)
+
+/obj/item/entrepreneur/horoscope/proc/horoscope_stage(mob/user, obj/item/held, datum/interaction/interaction, selected, answered = FALSE)
+	if(!answered)
+		open_request(src, /datum/prompt/choice/entrepreneur_review, PROC_REF(horoscope_answered), answerer = user, entrepreneur_operator = user, entrepreneur_held = held, entrepreneur_interaction = interaction, question = "Which of todays zodiacs do you want to read?", title = "Zodiac", choices = zodiacs)
+		return TRUE
+	var/zodiac = selected
 	if(isnull(zodiac))
 		return TRUE
 	if(zodiac)
@@ -479,9 +485,15 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 
 /// Old click_alt.
 /obj/item/entrepreneur/spirit_board/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+	return spirit_alt_stage(user, held, interaction)
+
+/obj/item/entrepreneur/spirit_board/proc/spirit_alt_stage(mob/living/carbon/user, obj/item/held, datum/interaction/interaction, selected, answered = FALSE)
 	if(!istype(user)) //admins can be cheeky
 		return TRUE
-	var/_answer_k451 = rerun_ask(user, "k451", PROC_REF(interaction_alt), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
+	if(!answered)
+		open_request(src, /datum/prompt/choice/entrepreneur_review, PROC_REF(spirit_alt_answered), answerer = user, entrepreneur_operator = user, entrepreneur_held = held, entrepreneur_interaction = interaction, question = "What should it land on next?", title = "Next result", choices = possible_results)
+		return TRUE
+	var/_answer_k451 = selected
 	if(isnull(_answer_k451))
 		return TRUE
 	next_result = _answer_k451
@@ -489,9 +501,15 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 
 /// Old attack_ghost: choose the board's next result. Never fell through to the default.
 /obj/item/entrepreneur/spirit_board/proc/spirit_board_ghost_guide(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+	return spirit_ghost_stage(user, held, interaction)
+
+/obj/item/entrepreneur/spirit_board/proc/spirit_ghost_stage(mob/observer/dead/user, obj/item/held, datum/interaction/interaction, selected, answered = FALSE)
 	if(!ghost_enabled)
 		return TRUE
-	var/_answer_k459 = rerun_ask(user, "k459", PROC_REF(spirit_board_ghost_guide), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
+	if(!answered)
+		open_request(src, /datum/prompt/choice/entrepreneur_review, PROC_REF(spirit_ghost_answered), answerer = user, entrepreneur_operator = user, entrepreneur_held = held, entrepreneur_interaction = interaction, question = "What should it land on next?", title = "Next result", choices = possible_results)
+		return TRUE
+	var/_answer_k459 = selected
 	if(isnull(_answer_k459))
 		return TRUE
 	next_result = _answer_k459
@@ -648,3 +666,63 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 /obj/item/entrepreneur/emf/equipped(mob/user, slot)
 	. = ..()
 	om_task_periodic(src, PERIODIC_SLOW)
+
+/obj/item/entrepreneur/horoscope/proc/horoscope_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
+	// Recovery: the old kept callback refreshed its UI even when replay failed.
+	. = horoscope_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.answer_value, TRUE)
+	SStgui.update_uis(src)
+
+/obj/item/entrepreneur/spirit_board/proc/spirit_alt_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
+	// Recovery: the old kept callback refreshed its UI even when replay failed.
+	. = spirit_alt_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.answer_value, TRUE)
+	SStgui.update_uis(src)
+
+/obj/item/entrepreneur/spirit_board/proc/spirit_ghost_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
+	// Recovery: the old kept callback refreshed its UI even when replay failed.
+	. = spirit_ghost_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.answer_value, TRUE)
+	SStgui.update_uis(src)
+
+/datum/prompt/choice/entrepreneur_review
+	timeout = 0
+	var/mob/entrepreneur_operator
+	var/entrepreneur_operator_expected = FALSE
+	var/obj/item/entrepreneur_held
+	var/entrepreneur_held_expected = FALSE
+	var/datum/interaction/entrepreneur_interaction
+	var/entrepreneur_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/entrepreneur_review)
+	ref_one(nameof(entrepreneur_operator), /mob)
+	ref_one(nameof(entrepreneur_held), /obj/item)
+	ref_one(nameof(entrepreneur_interaction), /datum/interaction)
+
+/datum/prompt/choice/entrepreneur_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = entrepreneur_operator
+	entrepreneur_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(entrepreneur_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(entrepreneur_operator), captured_operator)
+	var/obj/item/captured_held = entrepreneur_held
+	entrepreneur_held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(entrepreneur_held))
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(entrepreneur_held), captured_held)
+	var/datum/interaction/captured_interaction = entrepreneur_interaction
+	entrepreneur_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(entrepreneur_interaction))
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(entrepreneur_interaction), captured_interaction)
+
+/datum/prompt/choice/entrepreneur_review/recheck_extra()
+	if((entrepreneur_operator_expected && QDELETED(entrepreneur_operator)) || (entrepreneur_held_expected && QDELETED(entrepreneur_held)) || (entrepreneur_interaction_expected && QDELETED(entrepreneur_interaction)))
+		return "gone"

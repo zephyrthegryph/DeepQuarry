@@ -67,7 +67,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 /datum/game_mode/proc/topic_set(mob/user, list/args)
 	var/option = args["set"]
-	om_ask(user, /datum/om/prompt/number/game_mode_option, PROC_REF(game_mode_option_entered), message = game_mode_option_prompt(option), max = option == "shuttle_delay" ? 20 : 100, option = option)
+	open_request(src, /datum/prompt/number/game_mode_option, PROC_REF(game_mode_option_entered), answerer = user, question = game_mode_option_prompt(option), window_max = option == "shuttle_delay" ? 20 : 100, option = option)
 	refresh_game_mode_panel(user)
 
 /datum/game_mode/proc/topic_debug_antag(mob/user, list/args)
@@ -106,13 +106,19 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 			return "Enter a new moderate event time modifier."
 
 /// An admin sets a numeric game mode option (`option`).
-/datum/om/prompt/number/game_mode_option
-	requires = PROMPT_ADMIN(R_ADMIN|R_SERVER)
+/datum/prompt/number/game_mode_option
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_SERVER
 	var/option
+	var/window_max = INFINITY
 
-/datum/game_mode/proc/game_mode_option_entered(datum/om/prompt/number/game_mode_option/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.number
+/datum/game_mode/proc/game_mode_option_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/game_mode_option/ask = context.answer
+	var/mob/user = context.request.answerer
+	var/choice = ask.answer_value
 	switch(ask.option)
 		if("shuttle_delay")
 			if(!choice || choice < 1 || choice > 20)
@@ -599,3 +605,12 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	return
 
 // Antagonist definitions are round-long singletons.
+
+/datum/prompt/number/game_mode_option/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/number/game_mode_option/present(mob/user)
+	var/datum/tgui_input_number/prompt/window = new(user, question, title || "Number Input", default || 0, isnull(window_max) ? INFINITY : window_max, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(window, nameof(window.prompt), src)
+	window.tgui_interact(user)
+	return window

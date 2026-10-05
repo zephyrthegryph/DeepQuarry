@@ -174,13 +174,19 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 
 /// Old attack_ghost: a ghost may become a living plant product. Never fell through to the default.
 /obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_ghost_harvest(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+	return botany_ghost_harvest_stage(user, held, interaction)
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/botany_ghost_harvest_stage(mob/observer/dead/user, obj/item/held, datum/interaction/interaction, botany_answer, botany_answer_ready = FALSE)
 	if(!(harvest && seed && seed.has_mob_product))
 		return TRUE
 
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
 	if(!G.assess_candidate(user))
 		return TRUE
-	var/response = rerun_ask(user, "k175", PROC_REF(hydroponics_ghost_harvest), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to harvest this [seed.display_name]?", title = "Living plant request", choices = list("Yes", "No"))
+	if(!botany_answer_ready)
+		open_request(src, /datum/prompt/choice/botany_ghost_harvest, PROC_REF(botany_ghost_harvest_answered), answerer = user, botany_operator = user, botany_held = held, botany_interaction = interaction, question = "Are you sure you want to harvest this [seed.display_name]?", title = "Living plant request", choices = list("Yes", "No"), buttons = TRUE)
+		return TRUE
+	var/response = botany_answer
 	if(isnull(response))
 		return TRUE
 	if(response == "Yes")
@@ -521,8 +527,14 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(mob/user, obj/item/held, datum/interaction/interaction)
+	return botany_tray_light_stage(user, held, interaction)
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/botany_tray_light_stage(mob/user, obj/item/held, datum/interaction/interaction, botany_answer, botany_answer_ready = FALSE)
 	if(ishuman(user) || isrobot(user))
-		var/new_light = rerun_ask(user, "k502", PROC_REF(interaction_set_light), args, /datum/om/prompt/choice, message = "Specify a light level.", title = "Light Level", choices = list(0,1,2,3,4,5,6,7,8,9,10))
+		if(!botany_answer_ready)
+			open_request(src, /datum/prompt/choice/botany_tray_light, PROC_REF(botany_tray_light_answered), answerer = user, botany_operator = user, botany_held = held, botany_interaction = interaction, question = "Specify a light level.", title = "Light Level", choices = list(0,1,2,3,4,5,6,7,8,9,10), buttons = FALSE)
+			return
+		var/new_light = botany_answer
 		if(isnull(new_light))
 			return
 		if(new_light)
@@ -799,3 +811,94 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 #undef AGE_MOD_MAX
 
 /// The planted seed: a registered line, or the tray's own private (mutated / modified) copy.
+/obj/machinery/portable_atmospherics/hydroponics/proc/botany_ghost_harvest_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = botany_ghost_harvest_apply(A)
+	SStgui.update_uis(src)
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/botany_ghost_harvest_apply(datum/act/request/A)
+	var/datum/prompt/choice/botany_ghost_harvest/ask = A.answer
+	return botany_ghost_harvest_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.answer_value, TRUE)
+
+/datum/prompt/choice/botany_ghost_harvest
+	timeout = 0
+	var/mob/botany_operator
+	var/obj/item/botany_held
+	var/datum/interaction/botany_interaction
+	var/botany_operator_expected = FALSE
+	var/botany_held_expected = FALSE
+	var/botany_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/botany_ghost_harvest)
+	ref_one(nameof(botany_operator), /mob)
+	ref_one(nameof(botany_held), /obj/item)
+	ref_one(nameof(botany_interaction), /datum/interaction)
+
+/datum/prompt/choice/botany_ghost_harvest/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = botany_operator
+	var/obj/item/captured_held = botany_held
+	var/datum/interaction/captured_interaction = botany_interaction
+	botany_operator_expected = !isnull(captured_operator)
+	botany_held_expected = !isnull(captured_held)
+	botany_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(botany_operator))
+	rel_clear(src, nameof(botany_held))
+	rel_clear(src, nameof(botany_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(botany_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(botany_held), captured_held)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(botany_interaction), captured_interaction)
+
+/datum/prompt/choice/botany_ghost_harvest/recheck_extra()
+	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
+		return "gone"
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/botany_tray_light_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = botany_tray_light_apply(A)
+	SStgui.update_uis(src)
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/botany_tray_light_apply(datum/act/request/A)
+	var/datum/prompt/choice/botany_tray_light/ask = A.answer
+	return botany_tray_light_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.answer_value, TRUE)
+
+/datum/prompt/choice/botany_tray_light
+	timeout = 0
+	var/mob/botany_operator
+	var/obj/item/botany_held
+	var/datum/interaction/botany_interaction
+	var/botany_operator_expected = FALSE
+	var/botany_held_expected = FALSE
+	var/botany_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/botany_tray_light)
+	ref_one(nameof(botany_operator), /mob)
+	ref_one(nameof(botany_held), /obj/item)
+	ref_one(nameof(botany_interaction), /datum/interaction)
+
+/datum/prompt/choice/botany_tray_light/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = botany_operator
+	var/obj/item/captured_held = botany_held
+	var/datum/interaction/captured_interaction = botany_interaction
+	botany_operator_expected = !isnull(captured_operator)
+	botany_held_expected = !isnull(captured_held)
+	botany_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(botany_operator))
+	rel_clear(src, nameof(botany_held))
+	rel_clear(src, nameof(botany_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(botany_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(botany_held), captured_held)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(botany_interaction), captured_interaction)
+
+/datum/prompt/choice/botany_tray_light/recheck_extra()
+	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
+		return "gone"

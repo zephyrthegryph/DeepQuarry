@@ -601,13 +601,43 @@
 		if(op_cand_when(R, C))
 			. += C
 
-/// The winner of a click: the first survivor whose conditions hold, with the candidates after it that the passes() chain would run.
+/// The winner of a click: the first survivor whose conditions hold and whose path is open. The silent-or-refuse rule of spaces (section 8): a
+/// candidate placed at(SPACE_X) behind a closed door is set aside while another candidate answers the same input; when none does, the first
+/// one set aside wins, and Require refuses it with the blocking door's reason.
 /proc/op_resolution_winner(datum/op_resolution/R)
 	RETURN_TYPE(/datum/op_cand)
+	var/datum/op_cand/set_aside = null
 	for(var/datum/op_cand/C as anything in R.ordered)
-		if(op_cand_when(R, C))
-			return C
-	return null
+		if(!op_cand_when(R, C))
+			continue
+		if(op_cand_path_reason(R, C))
+			// A catch-all (item(/obj/item): set anything down inside, swallow anything) behind a closed door claims nothing: it is dropped as if
+			// its door were a when(), so the click goes on to what the held thing does by itself (package wrap on a shut locker).
+			if(!op_cand_catch_all(C))
+				set_aside ||= C
+			continue
+		// The held thing was meant for the space (a cell for its bay): a later candidate that ignores what is held (an empty-hand touch, the
+		// window) does not answer the same input, so the blocked one stands and Require gives the door's reason.
+		if(set_aside && R.held && op_cand_takes_held(set_aside) && !op_cand_takes_held(C))
+			return set_aside
+		return C
+	return set_aside
+
+/// Is candidate C a catch-all: its item() binding takes any item or movable?
+/proc/op_cand_catch_all(datum/op_cand/C)
+	return C.item_type == /obj/item || C.item_type == /atom/movable || C.item_type == /obj
+
+/// Does candidate C's binding take the held thing (item(), tool(), stack(), in_hand())? A hand() binding answers whatever is held.
+/proc/op_cand_takes_held(datum/op_cand/C)
+	return C.binding && (C.binding.bind_kind in list(BIND_ITEM, BIND_TOOL, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET))
+
+/// Why candidate C's path is blocked (the op is placed at a space of the target that a door on the way keeps shut), or null.
+/proc/op_cand_path_reason(datum/op_resolution/R, datum/op_cand/C)
+	var/space_id = C.oplan?.space
+	if(isnull(space_id) || R.origin == ORIGIN_SYSTEM)
+		return null
+	var/atom/T = (C.side == CAND_TARGET) ? R.target : C.holder
+	return istype(T) ? T.space_reason(space_id, R.authority, R.actor) : null
 
 /// The text label of an op: label("Text"), else its key's last segment, spaced.
 /proc/op_label(datum/op_plan/P)
@@ -683,6 +713,8 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			continue
 		if(!op_cand_when(R, C))
 			continue
+		if(op_cand_path_reason(R, C))
+			continue // behind a closed door: not a menu line, as a click sets it aside (spaces.dm)
 		seen[C.oplan.key] = TRUE
 		if(!isnull(C.oplan.cooldown_t))
 			timed = TRUE

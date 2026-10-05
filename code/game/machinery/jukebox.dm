@@ -457,8 +457,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 
 	for(var/datum/track/T in custom_tracks)
 		if(T.title == track || T.url == track)
-			own_take_member(src, nameof(custom_tracks), T)
-			qdel(T)
+			rel_remove(src, nameof(custom_tracks), T)
 			return
 
 	to_chat(C, span_warning("Couldn't find a track matching the specified parameters."))

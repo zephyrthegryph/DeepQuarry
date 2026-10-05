@@ -27,6 +27,9 @@ APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "{appearance_fill}{written_text?_writi
 
 /// Old attackby.
 /obj/item/sticky_pad/proc/interaction_item(mob/user, obj/item/thing, datum/interaction/interaction)
+	return paperwork_sticky_write_stage(user, thing, interaction)
+
+/obj/item/sticky_pad/proc/paperwork_sticky_write_stage(mob/user, obj/item/thing, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
 	if(istype(thing, /obj/item/pen))
 
 		if(jobban_isbanned(user, JOB_GRAFFITI))
@@ -37,7 +40,10 @@ APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "{appearance_fill}{written_text?_writi
 		if(writing_space <= 0)
 			to_chat(user, span_warning("There is no room left on \the [src]."))
 			return INTERACTION_HANDLED_PASS
-		var/_answer_k37 = rerun_ask(user, "k37", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to write?", max_length = writing_space, encode = FALSE)
+		if(!paperwork_answer_ready)
+			open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_sticky_write_answered), answerer = user, paperwork_operator = user, paperwork_held = thing, paperwork_interaction = interaction, question = "What would you like to write?", max_len = writing_space, encode = FALSE, name_text = (writing_space <= MAX_NAME_LEN))
+			return TRUE
+		var/_answer_k37 = paperwork_answer
 		if(isnull(_answer_k37))
 			return TRUE
 		var/text = sanitizeSafe(_answer_k37, writing_space)
@@ -174,3 +180,13 @@ EXTEND_INTERACTIONS(/obj/item/paper/sticky, INTERACT_HAND_DEFAULT("Pick up", PRO
 					pixel_y += 32
 				else if(dir_offset & SOUTH)
 					pixel_y -= 32
+
+/obj/item/sticky_pad/proc/paperwork_sticky_write_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paperwork_sticky_write_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/sticky_pad/proc/paperwork_sticky_write_apply(datum/act/request/A)
+	var/datum/prompt/text/paperwork_review/ask = A.answer
+	return paperwork_sticky_write_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)

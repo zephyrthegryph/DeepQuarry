@@ -291,6 +291,9 @@ TRACKED(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn)
 /obj/item/offhand/crushergauntlets
 	var/tmp/obj/item/kinetic_crusher/machete/gauntlets/linked
 
+CAPABILITIES(/obj/item/offhand/crushergauntlets)
+	ref_one(nameof(linked))
+
 /obj/item/offhand/crushergauntlets/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(FALSE)
 	if(linked().wielded)
@@ -299,6 +302,9 @@ TRACKED(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn)
 /obj/item/kinetic_crusher/machete/gauntlets/rig
 	name = "\improper mounted proto-kinetic gear"
 	var/tmp/obj/item/rig_module/gauntlets/storing_module
+
+CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets/rig)
+	ref_one(nameof(storing_module))
 
 /obj/item/kinetic_crusher/machete/gauntlets/rig/dropped(mob/user, equipping, slot)
 	. = ..(user)
@@ -343,6 +349,9 @@ TRACKED(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn)
 	range = 6
 	accuracy = INFINITY	// NO.
 	var/tmp/obj/item/kinetic_crusher/hammer_synced
+
+CAPABILITIES(/obj/item/projectile/destabilizer)
+	ref_one(nameof(hammer_synced))
 
 /obj/item/projectile/destabilizer/on_impact(atom/A)
 	if(ismineralturf(A))

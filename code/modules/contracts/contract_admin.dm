@@ -1,9 +1,17 @@
 ADMIN_VERB(dq_inspect_contract, R_ADMIN, "Inspect Contract", "Inspect contract state, evidence, contributions, and audit history.", ADMIN_CATEGORY_DEBUG)
+	return contract_inspect_stage(user, list())
+
+/datum/admin_verb/dq_inspect_contract/proc/contract_inspect_stage(client/user, list/inspect_answers)
 	var/list/options = list()
 	for(var/id in SScontracts.contracts_by_id)
 		var/datum/contract/contract = SScontracts.contracts_by_id[id]
 		options["[contract.id] — [contract.title] ([contract.state])"] = contract
-	var/selection = verb_ask(user.mob, "k6", args, /datum/om/prompt/choice, message = "Select a contract to inspect.", title = "Contract Inspector", choices = options)
+	if(!("k6" in inspect_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/contract_inspector_review, PROC_REF(contract_inspect_answered), answerer = user.mob, choices = options)
+		return
+	var/selection = inspect_answers["k6"]
 	if(isnull(selection))
 		return
 	var/datum/contract/contract = options[selection]
@@ -64,3 +72,35 @@ ADMIN_VERB(dq_inspect_contract_board, R_ADMIN, "Inspect Contract Board", "Inspec
 		html += "<tr><td>[worldtime2stationtime(entry.time)]</td><td>[html_encode(entry.action)]</td><td>[html_encode(entry.definition_id)] / [html_encode(entry.contract_id || "candidate")]</td><td>[html_encode(entry.board_key || "none")]</td><td>[html_encode(entry.reason || "") ]</td></tr>"
 	html += "</table>"
 	user.mob << browse(html, "window=dq_contract_board;size=900x680")
+
+/datum/prompt/choice/contract_inspector_review
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_ADMIN
+	question = "Select a contract to inspect."
+	title = "Contract Inspector"
+
+/datum/prompt/choice/contract_inspector_review/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+
+/proc/contract_inspector_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/dq_inspect_contract/proc/contract_inspect_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(contract_inspector_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	return contract_inspect_stage(user, list("k6" = context.answer.answer_value))

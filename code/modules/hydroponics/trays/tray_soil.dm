@@ -46,8 +46,14 @@
 	consume(src, user)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
+	return botany_soil_destroy_stage(user, O, interaction)
+
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/botany_soil_destroy_stage(mob/user, obj/item/O, datum/interaction/interaction, botany_answer, botany_answer_ready = FALSE)
 	if(!seed)
-		var/choice= rerun_ask(user, "k43", PROC_REF(interaction_shovel), args, /datum/om/prompt/choice/alert, message = "Do you want to destroy the growplot?", title = "Destroy growplot?", choices = list("Yes", "No"))
+		if(!botany_answer_ready)
+			open_request(src, /datum/prompt/choice/botany_soil_destroy, PROC_REF(botany_soil_destroy_answered), answerer = user, botany_operator = user, botany_held = O, botany_interaction = interaction, question = "Do you want to destroy the growplot?", title = "Destroy growplot?", choices = list("Yes", "No"), buttons = TRUE)
+			return
+		var/choice = botany_answer
 		if(isnull(choice))
 			return
 		if(!choice||choice=="No")
@@ -108,3 +114,49 @@
 		if(plant.invisibility == INVISIBILITY_MAXIMUM)
 			plant.invisibility = initial(plant.invisibility)
 	..()
+
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/botany_soil_destroy_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = botany_soil_destroy_apply(A)
+	SStgui.update_uis(src)
+
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/botany_soil_destroy_apply(datum/act/request/A)
+	var/datum/prompt/choice/botany_soil_destroy/ask = A.answer
+	return botany_soil_destroy_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.answer_value, TRUE)
+
+/datum/prompt/choice/botany_soil_destroy
+	timeout = 0
+	var/mob/botany_operator
+	var/obj/item/botany_held
+	var/datum/interaction/botany_interaction
+	var/botany_operator_expected = FALSE
+	var/botany_held_expected = FALSE
+	var/botany_interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/botany_soil_destroy)
+	ref_one(nameof(botany_operator), /mob)
+	ref_one(nameof(botany_held), /obj/item)
+	ref_one(nameof(botany_interaction), /datum/interaction)
+
+/datum/prompt/choice/botany_soil_destroy/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = botany_operator
+	var/obj/item/captured_held = botany_held
+	var/datum/interaction/captured_interaction = botany_interaction
+	botany_operator_expected = !isnull(captured_operator)
+	botany_held_expected = !isnull(captured_held)
+	botany_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(botany_operator))
+	rel_clear(src, nameof(botany_held))
+	rel_clear(src, nameof(botany_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(botany_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(botany_held), captured_held)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(botany_interaction), captured_interaction)
+
+/datum/prompt/choice/botany_soil_destroy/recheck_extra()
+	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
+		return "gone"

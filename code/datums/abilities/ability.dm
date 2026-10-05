@@ -128,7 +128,7 @@
 	return list()
 
 /**
- * Asks `actor` to pick one candidate (om_ask: nothing waits) and returns null;
+ * Asks `actor` to pick one candidate without waiting and returns null;
  * the pick runs the ability through target_picked(). Tells `actor` why if
  * there's nothing to pick. Overridable for a picker whose "no valid target"
  * case is itself an action (robot_mount's dismount) rather than a plain refusal.
@@ -138,14 +138,20 @@
 	if(!length(choices))
 		to_chat(actor, span_warning("There's nothing nearby to [lowertext(name)]."))
 		return null
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(target_picked), message = picker_prompt, title = picker_title, choices = choices, requires = list(/datum/om/check/not_incapacitated))
+	open_request(src, /datum/prompt/choice/ability_target, PROC_REF(target_picked), answerer = actor, question = picker_prompt, title = picker_title, choices = choices, ask_flags = ASK_CAPABLE)
 	return null
 
 /// pick_target()'s answer: the pick must still be a candidate (re-checked now), then the
 /// ability runs on it as the keybind would have.
-/datum/interaction/ability/picker/proc/target_picked(datum/om/prompt/choice/ask)
+/datum/interaction/ability/picker/proc/target_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = target_picked_apply(A)
+
+/datum/interaction/ability/picker/proc/target_picked_apply(datum/act/request/A)
+	var/datum/prompt/choice/ability_target/ask = A.answer
 	var/mob/living/actor = ask.answerer
-	var/atom/target = ask.choice
+	var/atom/target = ask.answer_value
 	if(!istype(actor) || !target || !(target in candidates(actor)))
 		return
 	if(!applies_to(target))
@@ -238,3 +244,13 @@ GLOBAL_LIST_INIT(ability_interaction_types, init_ability_interaction_types())
 	for(var/datum/interaction/ability/path as anything in subtypesof(/datum/interaction/ability))
 		if(initial(path.id))
 			. += path
+
+/datum/prompt/choice/ability_target
+	timeout = 0
+
+/datum/prompt/choice/ability_target/recheck_extra()
+	if(isnull(answer_value))
+		return
+	var/atom/selected = answer_value
+	if(!istype(selected) || QDELETED(selected))
+		return "gone"

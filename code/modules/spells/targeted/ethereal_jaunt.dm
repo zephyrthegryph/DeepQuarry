@@ -93,9 +93,8 @@
 	. = ..()
 	rel_set(src, nameof(last_valid_turf), get_turf(loc))
 
-/obj/effect/dummy/spell_jaunt/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+CAPABILITIES(/obj/effect/dummy/spell_jaunt)
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)
 	if (!src.canmove || reappearing) return

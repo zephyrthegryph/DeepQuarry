@@ -223,11 +223,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 /obj/item/melee/energy/proc/ask_blade_color(datum/act/request/A)
 	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(A.request.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color/blade_recolor, PROC_REF(blade_recolored), answerer = A.request.answerer, default = lcolor, title = "Choose Energy Color")
 
-/obj/item/melee/energy/proc/blade_recolored(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		lcolor = sanitize_hexcolor(ask.picked_color)
+/obj/item/melee/energy/proc/blade_recolored(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		lcolor = sanitize_hexcolor(A.answer.answer_value)
 	update_icon()
 	if(active)
 		set_light(lrange, lpower, lcolor)
@@ -602,3 +604,18 @@ DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 /// Relation view: creator (reads null once it is gone).
 /obj/item/melee/energy/blade/proc/creator() as /mob/living
 	return creator
+
+/datum/prompt/color/blade_recolor
+	timeout = 0
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	recheck_on_open = TRUE
+
+/// The original picker delivered raw text to the effect's sanitize_hexcolor call.
+/datum/prompt/color/blade_recolor/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/color/blade_recolor/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title || "Pick a color", default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker

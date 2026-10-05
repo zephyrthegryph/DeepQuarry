@@ -495,7 +495,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 			"ERIS" = image(icon = 'icons/mob/radial.dmi', icon_state = "eris")
 			)
 			// optional: a cancelled sub-pick still switches the mode, as before.
-			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_girder_chosen), choices = wall_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_girder_chosen), answerer = user, choices = wall_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional_pick = TRUE)
 			return
 		if("Airlock")
 			mode_index = rcd_mode_index(RCD_AIRLOCK)
@@ -534,7 +534,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 			"Light Switch" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightswitch"),
 			"Entertainment Monitor" = image(icon = 'icons/mob/radial.dmi', icon_state = "entertainment")
 			)
-			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_wall_frame_chosen), choices = wall_frame_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_wall_frame_chosen), answerer = user, choices = wall_frame_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional_pick = TRUE)
 			return
 		if("Change Access")
 			change_airlock_access(user)
@@ -549,7 +549,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 			"HOSTILE TO ALL" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret1"),
 			"HOSTILE TO ENEMIES" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret2")
 			)
-			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_turret_faction_chosen), choices = turret_factions, anchor = src, require_near = ranged?FALSE:TRUE, tooltips = TRUE, optional = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_turret_faction_chosen), answerer = user, choices = turret_factions, anchor = src, require_near = ranged?FALSE:TRUE, tooltips = TRUE, optional_pick = TRUE)
 			return
 		else
 			return
@@ -560,11 +560,14 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	play_sfx(src, SFX_EFFECTS_POP)
 	to_chat(user, span_notice("You change RCD's mode to '[choice]'."))
 
-/obj/item/rcd/proc/rcd_girder_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/rcd_girder_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("DEFAULT")
 			girder_type = /obj/structure/girder
 		if("BAY")
@@ -574,11 +577,14 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	mode_index = rcd_mode_index(RCD_FLOORWALL)
 	rcd_mode_changed(user, "Floors & Walls")
 
-/obj/item/rcd/proc/rcd_wall_frame_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/rcd_wall_frame_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("Air Alarm")
 			wall_frame_type = /obj/machinery/alarm
 		if("Light Bulb")
@@ -627,11 +633,14 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	mode_index = rcd_mode_index(RCD_WALLFRAME)
 	rcd_mode_changed(user, "WallFrames")
 
-/obj/item/rcd/proc/rcd_turret_faction_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/rcd_turret_faction_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("HOSTILE TO ALL")
 			turret_faction = null
 		if("HOSTILE TO ENEMIES")
@@ -658,13 +667,16 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	)
 
 	// optional: a cancelled pick falls back to the default airlock, as before.
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_category_chosen), choices = solid_or_glass_choices, anchor = src, require_near = TRUE, optional = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(airlock_category_chosen), answerer = user, choices = solid_or_glass_choices, anchor = src, require_near = TRUE, optional_pick = TRUE)
 
-/obj/item/rcd/proc/airlock_category_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/airlock_category_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("Solid")
 			if(advanced_airlock_setting == 1)
 				var/list/solid_choices = list(
@@ -683,7 +695,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 					"Airtight Hatch" = get_airlock_image(/obj/machinery/door/airlock/hatch),
 					"Maintenance Hatch" = get_airlock_image(/obj/machinery/door/airlock/maintenance_hatch)
 				)
-				om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_solid_paint_chosen), choices = solid_choices, anchor = src, radius = 42, require_near = TRUE, optional = TRUE)
+				open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(airlock_solid_paint_chosen), answerer = user, choices = solid_choices, anchor = src, radius = 42, require_near = TRUE, optional_pick = TRUE)
 			else
 				airlock_type = /obj/machinery/door/airlock
 				airlock_glass = FALSE
@@ -702,7 +714,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 					"Mining" = get_airlock_image(/obj/machinery/door/airlock/glass_mining),
 					"External" = get_airlock_image(/obj/machinery/door/airlock/glass_external),
 				)
-				om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_glass_paint_chosen), choices = glass_choices, anchor = src, radius = 42, require_near = TRUE, optional = TRUE)
+				open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(airlock_glass_paint_chosen), answerer = user, choices = glass_choices, anchor = src, radius = 42, require_near = TRUE, optional_pick = TRUE)
 			else
 				airlock_type = /obj/machinery/door/airlock/glass
 				airlock_glass = TRUE
@@ -710,11 +722,14 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 			airlock_type = /obj/machinery/door/airlock
 			airlock_glass = FALSE
 
-/obj/item/rcd/proc/airlock_solid_paint_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/airlock_solid_paint_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("Standard")
 			airlock_type = /obj/machinery/door/airlock
 		if("Engineering")
@@ -745,11 +760,14 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 			airlock_type = /obj/machinery/door/airlock/maintenance_hatch
 	airlock_glass = FALSE
 
-/obj/item/rcd/proc/airlock_glass_paint_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/airlock_glass_paint_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("Standard")
 			airlock_type = /obj/machinery/door/airlock/glass
 		if("Engineering")
@@ -939,7 +957,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			)
 			// The build waits on the picks; the matter is paid when the last one lands (finish_deferred_build).
 			the_rcd.cleanup_effect(src)
-			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_type_chosen), choices = windoor_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_windoor_type_chosen), answerer = user, choices = windoor_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			return FALSE
 		if(RCD_FIRELOCK)
 			if(locate_on(src, /obj/machinery/door/firedoor))
@@ -964,7 +982,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			"Computer" = image(icon = 'icons/mob/radial.dmi', icon_state = "computer_dir")
 			)
 			the_rcd.cleanup_effect(src)
-			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_frame_type_chosen), choices = frame_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_frame_type_chosen), answerer = user, choices = frame_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			return FALSE
 		if(RCD_CONVEYOR)
 			var/list/conveyor_dirs = list(
@@ -974,7 +992,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyorw")
 			)
 			the_rcd.cleanup_effect(src)
-			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_conveyor_dir_chosen), choices = conveyor_dirs, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_conveyor_dir_chosen), answerer = user, choices = conveyor_dirs, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			return FALSE
 		if(RCD_TURRET)
 			if(locate_on(src, /obj/machinery/porta_turret))
@@ -984,16 +1002,45 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			return TRUE
 
 /// A floor build that asks what to make after the RCD's timer: it carries the RCD and the picks so far.
-/datum/om/prompt/choice/radial/rcd_build
+/datum/prompt/choice/rcd_option_review
+	timeout = 0
+	radial = TRUE
+	autopick_single_option = TRUE
+	var/optional_pick = FALSE
+
+/// Optional RCD menus deliberately apply their existing null-choice fallback on explicit cancellation.
+/datum/prompt/choice/rcd_option_review/proc/deliver_pick()
+	var/mob/user = answerer
+	if(!istype(user) || QDELETED(user) || !length(choices))
+		return FALSE
+	return outcome == REQ_ANSWERED || (optional_pick && outcome == REQ_CANCELLED && isnull(answer_value))
+
+/datum/prompt/choice/rcd_build_review
+	parent_type = /datum/prompt/choice/rcd_option_review
 	var/obj/item/rcd/rcd
 	var/windoor_type
 	var/windoor_dir
 	var/frame_type
 
+CAPABILITIES(/datum/prompt/choice/rcd_build_review)
+	ref_one(nameof(rcd), /obj/item/rcd)
+
+/datum/prompt/choice/rcd_build_review/prepare(datum/act/A)
+	var/obj/item/rcd/captured = rcd
+	rel_clear(src, nameof(rcd))
+	if(captured)
+		rel_set(src, nameof(rcd), captured)
+	return ..()
+
+/datum/prompt/choice/rcd_build_review/recheck_extra()
+	if(!istype(rcd) || QDELETED(rcd))
+		return "gone"
+	return ..()
+
 /// The pick can still be built: the RCD is usable and can pay for `mode` here.
-/turf/simulated/floor/proc/rcd_build_pick_ok(datum/om/prompt/choice/radial/rcd_build/ask, mode)
+/turf/simulated/floor/proc/rcd_build_pick_ok(datum/prompt/choice/rcd_build_review/ask, mode)
 	var/obj/item/rcd/rcd = ask.rcd
-	if(!ask.choice || !rcd.check_menu(ask.answerer))
+	if(!ask.answer_value || !rcd.check_menu(ask.answerer))
 		return FALSE
 	var/list/results = rcd_values(ask.answerer, rcd, mode)
 	if(!islist(results))
@@ -1015,19 +1062,25 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	record_enhanced_output(cost, output_envelope)
 	play_sfx(A, SFX_ITEMS_DECONSTRUCT)
 
-/turf/simulated/floor/proc/rcd_windoor_type_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_windoor_type_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
 		return
-	var/selected_windoor_type = ask.choice
+	var/selected_windoor_type = ask.answer_value
 	var/list/windoor_dirs = list(
 	"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorn":"swindoorn")),
 	"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoore":"swindoore")),
 	"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoors":"swindoors")),
 	"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorw":"swindoorw"))
 	)
-	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_dir_chosen), choices = windoor_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, require_near = ask.require_near, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_windoor_dir_chosen), answerer = ask.answerer, choices = windoor_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, require_near = ask.require_near, tooltips = TRUE)
 
-/turf/simulated/floor/proc/rcd_windoor_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_windoor_dir_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
 		return
 	var/selected_windoor_type = ask.windoor_type
@@ -1035,15 +1088,18 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	"left" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"left":"leftsecure")),
 	"right" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"right":"rightsecure"))
 	)
-	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_open_dir_chosen), choices = windoor_open_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, windoor_dir = ask.choice, require_near = ask.require_near, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_windoor_open_dir_chosen), answerer = ask.answerer, choices = windoor_open_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, windoor_dir = ask.answer_value, require_near = ask.require_near, tooltips = TRUE)
 
-/turf/simulated/floor/proc/rcd_windoor_open_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_windoor_open_dir_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
 		return
 	var/obj/item/rcd/rcd = ask.rcd
 	var/selected_windoor_type = ask.windoor_type
 	var/selected_windoor_dir = ask.windoor_dir
-	var/selected_windoor_open_dir = ask.choice
+	var/selected_windoor_open_dir = ask.answer_value
 	var/obj/machinery/door/window/A = new(src)
 	if(selected_windoor_type == "default")
 		selected_windoor_type = ""
@@ -1076,7 +1132,10 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	A.autoclose = TRUE
 	rcd.finish_deferred_build(src, ask.answerer, RCD_WINDOOR)
 
-/turf/simulated/floor/proc/rcd_frame_type_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_frame_type_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_FRAME))
 		return
 	var/list/frame_dirs = list(
@@ -1085,14 +1144,17 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "csouth"),
 	"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "cwest")
 	)
-	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_frame_dir_chosen), choices = frame_dirs, anchor = src, rcd = ask.rcd, frame_type = ask.choice, require_near = ask.require_near, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_frame_dir_chosen), answerer = ask.answerer, choices = frame_dirs, anchor = src, rcd = ask.rcd, frame_type = ask.answer_value, require_near = ask.require_near, tooltips = TRUE)
 
-/turf/simulated/floor/proc/rcd_frame_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_frame_dir_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_FRAME))
 		return
 	var/mob/living/user = ask.answerer
 	var/selected_frame_type = ask.frame_type
-	var/selected_frame_dir = ask.choice
+	var/selected_frame_dir = ask.answer_value
 	var/obj/structure/frame
 	if(selected_frame_type == "Machine")
 		frame = new/obj/structure/frame(src)
@@ -1111,11 +1173,14 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	to_chat(user, span_notice("You build a frame"))
 	ask.rcd.finish_deferred_build(src, user, RCD_FRAME)
 
-/turf/simulated/floor/proc/rcd_conveyor_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_conveyor_dir_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_CONVEYOR))
 		return
 	var/mob/living/user = ask.answerer
-	var/selected_conveyor_dir = ask.choice
+	var/selected_conveyor_dir = ask.answer_value
 	var/obj/machinery/conveyor/C = new(src)
 	switch(selected_conveyor_dir)
 		if("NORTH")
@@ -1284,7 +1349,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 					"FULL" = image(icon = 'icons/mob/radial.dmi', icon_state = "wfull"),
 					)
 					// Pick first; the answer re-runs use_rcd() with the direction confirmed.
-					om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_window_dir_chosen), choices = window_dirs, subject = the_rcd, anchor = src, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+					open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_window_dir_chosen), answerer = user, choices = window_dirs, subject = the_rcd, anchor = src, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 					return 1
 				the_rcd.window_dir_confirmed = FALSE
 				if(the_rcd.window_dir != "FULL")
@@ -1296,12 +1361,15 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			return rcd_value_entry(RCD_DECONSTRUCT, 0.5 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 0)
 	return FALSE
 
-/obj/structure/grille/proc/rcd_window_dir_chosen(datum/om/prompt/choice/radial/ask)
+/obj/structure/grille/proc/rcd_window_dir_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	var/obj/item/rcd/the_rcd = ask.subject
-	if(!istype(the_rcd) || !ask.choice || !the_rcd.check_menu(user))
+	if(!istype(the_rcd) || !ask.answer_value || !the_rcd.check_menu(user))
 		return
-	the_rcd.window_dir = ask.choice
+	the_rcd.window_dir = ask.answer_value
 	the_rcd.window_dir_confirmed = TRUE
 	the_rcd.use_rcd(src, user)
 	the_rcd.window_dir_confirmed = FALSE

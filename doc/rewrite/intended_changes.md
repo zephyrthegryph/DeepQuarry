@@ -547,6 +547,44 @@ legacy tree first) and `code/modules/unit_tests/dq_emp_disable_behaviour.dm` (th
   the hold. A GPS and a vehicle declare `operable` beside their types.
 * **The fault lights of the APC's examine text** are an `examine_line()`, so they come after the capabilities' lines instead of before them.
 
+## Physical paths: spaces and doors (APC, airlock, lockers, vending, every hatch)
+
+Pinned by `code/modules/unit_tests/dq_paths_behaviour.dm` (16.1a cases 1 to 5, the APC hatch's reasons, the airlock's wires behind its panel, a
+locker's door; written and green on the old gates first) and the existing APC, door, closet and vending behaviour suites.
+
+* **A click behind a closed door that nothing else answers is refused with the door's reason** instead of doing nothing. The old gates were
+  `when(PANEL_OPEN)` / `when(nameof(panel_open))` / `when(nameof(opened))` (silent: the click fell through to nothing). Examples: a multitool or
+  wirecutters on an airlock or vending machine with its panel shut says "The maintenance panel is closed."; cable, wirecutters, a welder, a coil
+  or a multitool on an SMES with its access hatch shut says "You need to open the access hatch first." (its weld already said so); an empty hand on a filled
+  grave says "It is closed.". Where another op answers the click (an empty hand on a closed APC opens its window) the blocked op stays silent, as
+  before, and a catch-all behind a closed door (`item(/obj/item)`: a locker's "put down", an SMES's swallow) stays silent too, so a held thing
+  still does what it does by itself (package wrap on a shut locker). Menus leave out ops behind a closed door, as the old `when()` did.
+* **The panel latch replaces a two-way rule.** `panel_needs_cover_closed` was an `extend("panel.open", needs(cover closed))` that also kept an open
+  panel from being closed while the cover was open. As a latch it only keeps a shut panel shut; an open panel can always be closed.
+* **Generated slot refusals.** A device cell on an APC says "That is too small to fit." (was "That power cell is too small to work here."), a
+  too-large one "That is too large to fit."; a new cover on a broken APC with its cell in says "Remove the <cell name> first." (was "Remove the
+  power cell first."). What is refused, and when, is unchanged.
+* **A new APC cover on an APC that isn't broken is silent** (the replace step is offered only on a broken cover) instead of "It isn't broken.";
+  the frame in hand falls through to whatever else it means.
+* **Library defaults for locks and emags.** `lock()` now needs a working (`req_operable()`), unsubverted (`req_not_subverted()`) holder and
+  `emag()` a working one, unless configured off. New for: secure closets and lockboxes (an unsubverted check only: they have no power), and an
+  emag on an unpowered or broken machine that had no such gate (portable turrets, turret controls, jukeboxes, gear dispensers, suit cyclers,
+  cloning pods, deployable barriers, telecomms consoles, vending machines, door controls, light replacers): it is refused with "It isn't working."
+  A one-shot emag is refused on a holder subverted any other way too (an AI hack: `is_subverted()`), not only on one already emagged.
+* **Menus leave out every op behind a closed door**, as they left out the `when()`-gated ones: the APC's welder dismantle step no longer shows,
+  greyed, in the menu of a closed APC (`dx_menu_order_golden.dm` updated for that one scenario).
+
+
+## Wires: the wires library replaces /datum/wires
+
+Pinned by `code/modules/unit_tests/dq_wires_behaviour.dm` (written and green on the legacy code first; only its adapter block changed in the
+conversion), with the holder tests that already drove wires (dq_p2_apc, dq_p2_door, dq_p2_vending, dq_p2_smes, interim_*_wire_*).
+
+* **A signaler on a wire works again.** `/obj/item/assembly/signaler` read the atom's `wires` var (the holder's legacy wire datum, null on a signaler)
+  where it meant its own `wires_type` flags, so an attached signaler never pulsed its wire, and no signaler took a radio signal at all
+  (`receive_signal()` refused every one). Both read `wires_type` now. Fixed on the legacy code first, so the tests pin the working behaviour.
+
+
 ## fw-gaps3 (input kinds)
 
 * **Telekinesis is a provider, and it does any hand op in sight.** `/mob` declares `telekinetic_reach()`: `provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE)` while the mob is `tk_ready()` (a TK mutation or powered kinesis gloves,

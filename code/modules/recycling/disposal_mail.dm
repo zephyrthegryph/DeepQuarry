@@ -34,6 +34,9 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 
 /// Old attackby.
 /obj/structure/bigDelivery/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return parcel_item_stage(user, W, interaction, list())
+
+/obj/structure/bigDelivery/proc/parcel_item_stage(mob/user, obj/item/W, datum/interaction/interaction, list/parcel_answers)
 	if(istype(W, /obj/item/destTagger))
 		var/obj/item/destTagger/O = W
 		if(O.currTag)
@@ -51,12 +54,18 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 			to_chat(user, span_warning("You need to set a destination first!"))
 
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k43 = rerun_ask(user, "k43", PROC_REF(interaction_item), args, /datum/om/prompt/choice/alert, message = "What would you like to alter?", title = "Select Alteration", choices = list("Title","Description","Cancel"))
+		if(!("k43" in parcel_answers))
+			open_request(src, /datum/prompt/choice/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k43", question = "What would you like to alter?", title = "Select Alteration", choices = list("Title","Description","Cancel"), buttons = TRUE)
+			return TRUE
+		var/_answer_k43 = parcel_answers["k43"]
 		if(isnull(_answer_k43))
 			return TRUE
 		switch(_answer_k43)
 			if("Title")
-				var/_answer_k45 = rerun_ask(user, "k45", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Label text?", title = "Set label", max_length = MAX_NAME_LEN, encode = FALSE)
+				if(!("k45" in parcel_answers))
+					open_request(src, /datum/prompt/text/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k45", question = "Label text?", title = "Set label", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+					return TRUE
+				var/_answer_k45 = parcel_answers["k45"]
 				if(isnull(_answer_k45))
 					return TRUE
 				var/str = sanitizeSafe(_answer_k45, MAX_NAME_LEN)
@@ -74,7 +83,10 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				else
 					nameset = 1
 			if("Description")
-				var/str = rerun_ask(user, "k60", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Label text?", title = "Set label")
+				if(!("k60" in parcel_answers))
+					open_request(src, /datum/prompt/text/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k60", question = "Label text?", title = "Set label")
+					return TRUE
+				var/str = parcel_answers["k60"]
 				if(isnull(str))
 					return TRUE
 				if(!str || !length(str))
@@ -181,6 +193,9 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 
 /// Old attackby.
 /obj/item/smallDelivery/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return parcel_item_stage(user, W, interaction, list())
+
+/obj/item/smallDelivery/proc/parcel_item_stage(mob/user, obj/item/W, datum/interaction/interaction, list/parcel_answers)
 	if(istype(W, /obj/item/destTagger))
 		var/obj/item/destTagger/O = W
 		if(O.currTag)
@@ -198,12 +213,18 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 			to_chat(user, span_warning("You need to set a destination first!"))
 
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k174 = rerun_ask(user, "k174", PROC_REF(interaction_item), args, /datum/om/prompt/choice/alert, message = "What would you like to alter?", title = "Select Alteration", choices = list("Title","Description","Cancel"))
+		if(!("k174" in parcel_answers))
+			open_request(src, /datum/prompt/choice/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k174", question = "What would you like to alter?", title = "Select Alteration", choices = list("Title","Description","Cancel"), buttons = TRUE)
+			return TRUE
+		var/_answer_k174 = parcel_answers["k174"]
 		if(isnull(_answer_k174))
 			return TRUE
 		switch(_answer_k174)
 			if("Title")
-				var/_answer_k176 = rerun_ask(user, "k176", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Label text?", title = "Set label", max_length = MAX_NAME_LEN, encode = FALSE)
+				if(!("k176" in parcel_answers))
+					open_request(src, /datum/prompt/text/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k176", question = "Label text?", title = "Set label", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+					return TRUE
+				var/_answer_k176 = parcel_answers["k176"]
 				if(isnull(_answer_k176))
 					return TRUE
 				var/str = sanitizeSafe(_answer_k176, MAX_NAME_LEN)
@@ -222,7 +243,10 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 					nameset = 1
 
 			if("Description")
-				var/str = rerun_ask(user, "k192", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Label text?", title = "Set label")
+				if(!("k192" in parcel_answers))
+					open_request(src, /datum/prompt/text/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k192", question = "Label text?", title = "Set label")
+					return TRUE
+				var/str = parcel_answers["k192"]
 				if(isnull(str))
 					return TRUE
 				if(!str || !length(str))
@@ -287,3 +311,109 @@ DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance
 /// the wrapped this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/bigDelivery/proc/wrapped() as /obj
 	return wrapped
+
+/obj/structure/bigDelivery/proc/parcel_label_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = parcel_label_apply(A)
+	SStgui.update_uis(src)
+
+/obj/structure/bigDelivery/proc/parcel_label_apply(datum/act/request/A)
+	if(istype(A.answer, /datum/prompt/choice/parcel_label_review))
+		var/datum/prompt/choice/parcel_label_review/ask = A.answer
+		ask.parcel_answers[ask.parcel_key] = ask.answer_value
+		return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
+	var/datum/prompt/text/parcel_label_review/ask = A.answer
+	ask.parcel_answers[ask.parcel_key] = ask.answer_value
+	return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
+
+/obj/item/smallDelivery/proc/parcel_label_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = parcel_label_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/smallDelivery/proc/parcel_label_apply(datum/act/request/A)
+	if(istype(A.answer, /datum/prompt/choice/parcel_label_review))
+		var/datum/prompt/choice/parcel_label_review/ask = A.answer
+		ask.parcel_answers[ask.parcel_key] = ask.answer_value
+		return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
+	var/datum/prompt/text/parcel_label_review/ask = A.answer
+	ask.parcel_answers[ask.parcel_key] = ask.answer_value
+	return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
+
+/datum/prompt/choice/parcel_label_review
+	timeout = 0
+	var/mob/parcel_operator
+	var/obj/item/parcel_pen
+	var/datum/interaction/parcel_interaction
+	var/parcel_operator_expected = FALSE
+	var/parcel_pen_expected = FALSE
+	var/parcel_interaction_expected = FALSE
+	var/list/parcel_answers
+	var/parcel_key
+
+CAPABILITIES(/datum/prompt/choice/parcel_label_review)
+	ref_one(nameof(parcel_operator), /mob)
+	ref_one(nameof(parcel_pen), /obj/item)
+	ref_one(nameof(parcel_interaction), /datum/interaction)
+
+/datum/prompt/choice/parcel_label_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = parcel_operator
+	var/obj/item/captured_pen = parcel_pen
+	var/datum/interaction/captured_interaction = parcel_interaction
+	parcel_operator_expected = !isnull(captured_operator)
+	parcel_pen_expected = !isnull(captured_pen)
+	parcel_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(parcel_operator))
+	rel_clear(src, nameof(parcel_pen))
+	rel_clear(src, nameof(parcel_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(parcel_operator), captured_operator)
+	if(captured_pen && !QDELETED(captured_pen))
+		rel_set(src, nameof(parcel_pen), captured_pen)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(parcel_interaction), captured_interaction)
+
+/datum/prompt/choice/parcel_label_review/recheck_extra()
+	if((parcel_operator_expected && QDELETED(parcel_operator)) || (parcel_pen_expected && QDELETED(parcel_pen)) || (parcel_interaction_expected && QDELETED(parcel_interaction)))
+		return "gone"
+
+/datum/prompt/text/parcel_label_review
+	timeout = 0
+	var/mob/parcel_operator
+	var/obj/item/parcel_pen
+	var/datum/interaction/parcel_interaction
+	var/parcel_operator_expected = FALSE
+	var/parcel_pen_expected = FALSE
+	var/parcel_interaction_expected = FALSE
+	var/list/parcel_answers
+	var/parcel_key
+
+CAPABILITIES(/datum/prompt/text/parcel_label_review)
+	ref_one(nameof(parcel_operator), /mob)
+	ref_one(nameof(parcel_pen), /obj/item)
+	ref_one(nameof(parcel_interaction), /datum/interaction)
+
+/datum/prompt/text/parcel_label_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = parcel_operator
+	var/obj/item/captured_pen = parcel_pen
+	var/datum/interaction/captured_interaction = parcel_interaction
+	parcel_operator_expected = !isnull(captured_operator)
+	parcel_pen_expected = !isnull(captured_pen)
+	parcel_interaction_expected = !isnull(captured_interaction)
+	rel_clear(src, nameof(parcel_operator))
+	rel_clear(src, nameof(parcel_pen))
+	rel_clear(src, nameof(parcel_interaction))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(parcel_operator), captured_operator)
+	if(captured_pen && !QDELETED(captured_pen))
+		rel_set(src, nameof(parcel_pen), captured_pen)
+	if(captured_interaction && !QDELETED(captured_interaction))
+		rel_set(src, nameof(parcel_interaction), captured_interaction)
+
+/datum/prompt/text/parcel_label_review/recheck_extra()
+	if((parcel_operator_expected && QDELETED(parcel_operator)) || (parcel_pen_expected && QDELETED(parcel_pen)) || (parcel_interaction_expected && QDELETED(parcel_interaction)))
+		return "gone"
