@@ -134,11 +134,13 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_alert_hack_chosen), receiver = user, title = "Alert Level", message = "Select new alert level:", choices = list("green", "yellow", "violet", "orange", "blue", "red", "delta"))
+	open_request(user, /datum/prompt/choice/malf_alert_level, TYPE_PROC_REF(/mob/living/silicon/ai, malf_alert_hack_chosen), answerer = user, title = "Alert Level", question = "Select new alert level:", choices = list("green", "yellow", "violet", "orange", "blue", "red", "delta"))
 
-/mob/living/silicon/ai/proc/malf_alert_hack_chosen(datum/om/prompt/choice/malf/ask)
+/mob/living/silicon/ai/proc/malf_alert_hack_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
 	var/mob/living/silicon/ai/user = src
-	var/alert_target = ask.choice
+	var/alert_target = A.answer.answer_value
 	var/price = 200
 	if(!alert_target || !ability_prechecks(user, price) || !ability_pay(user, price))
 		to_chat(user, "Hack Aborted")
@@ -242,3 +244,8 @@
 
 /datum/prompt/text/malf_encryption_message/normalize(given)
 	return istext(given) ? given : null
+
+/datum/prompt/choice/malf_alert_level
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CONSCIOUS

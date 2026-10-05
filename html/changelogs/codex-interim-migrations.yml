@@ -6,3 +6,4 @@ changes:
   - code_imp: "Moved vote setup, respawn approvals, AI law entry, reagent selection, blade colors and voice settings to native requests."
   - code_imp: "Moved seed spawning, fake PDA identities, job slots, agent-card menus and ban edit values to native requests."
   - code_imp: "Moved custom-item selection, cryo approvals, AI message composition, mecha pressure and additional buildmode choices to native requests."
+  - code_imp: "Moved unseen-ban confirmation, talisman and tracking choices, and AI alert-level selection to native requests."
