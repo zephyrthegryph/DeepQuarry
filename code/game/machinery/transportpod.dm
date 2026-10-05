@@ -1,3 +1,8 @@
+// The ballistic transportation pod: one person climbs in, confirms, and the pod launches them to a random point of the station, blowing a hole on
+// arrival. ONE CAPABILITIES list says what it is: an occupant pod (occupant_pod(): the drag, the menu's "Move Inside" and "Eject", the occupant
+// moving out), the launch question asked of whoever gets in, and the launch itself while the occupant's answer stands. Walking into it climbs in:
+// Bumped() is the legacy collision hook, which has no declared form yet (ACTION(bump) has no emit site).
+
 /obj/machinery/transportpod
 	name = "Ballistic Transportation Pod"
 	desc = "A fast transit ballistic pod used to get from one place to the next. Batteries not included!"
@@ -8,35 +13,40 @@
 	anchored = TRUE
 	use_power = USE_POWER_OFF
 
-
 	var/xc = list(137, 209, 163, 110, 95, 60, 129, 201) // List of x values on the map to go to.
 	var/yc = list(134, 99, 169, 120, 96, 122, 189, 219) // List of y values on the map to go to.
 
 	var/limit_x = 3
 	var/limit_y = 3
+	/// TRUE from the occupant's confirmation until the pod launches.
+	var/in_transit = FALSE
 
-/// TRUE from the occupant's confirmation until the pod launches.
-OM_FIELD(/obj/machinery/transportpod, in_transit, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/transportpod, MACHINE_PIPELINE, "in_transit")
+TRACKED(/obj/machinery/transportpod, in_transit)
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/transportpod
-	holder = /obj/machinery/transportpod
-	slot_id = OCCUPANT_SLOT_TRANSPORTPOD
-	name = "transport pod"
-
-/// The occupant (cap_occupant(), library/occupant.dm): anyone gets in by walking into it (Bumped()), dragging a person
-/// onto it or the Menu's "Climb in"; "Eject" (or moving inside) lets them out. Entering asks for launch confirmation.
-/obj/machinery/transportpod/capabilities()
-	. = ..()
-	. += cap_occupant(OCCUPANT_SLOT_TRANSPORTPOD, types = /mob/living/carbon/human, on_enter = PROC_REF(occupant_entered), self_name = "Enter Pod", eject_name = "Eject Pod")
+CAPABILITIES(/obj/machinery/transportpod)
+	occupant_pod(OCCUPANT_SLOT_TRANSPORTPOD)
+	on_notice(/datum/notice/pod_entered, then(PROC_REF(ask_to_launch)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(launch)), when = nameof(in_transit))
 
 /obj/machinery/transportpod/draw(datum/look/look)
 	..()
 	look.state(occupant_of(src) ? "borg_pod_closed" : "borg_pod_opened")
 
-/// Launches once an occupant confirms (in_transit, the declaration above).
-/obj/machinery/transportpod/machine_step()
+/// Whoever got in (by any path) is asked to confirm the launch.
+/obj/machinery/transportpod/proc/ask_to_launch(datum/act/A)
+	var/datum/notice/pod_entered/N = A
+	open_request(src, /datum/prompt/yes_no, PROC_REF(launch_answered), answerer = N.occupant, title = "Transport Pod", question = "Are you sure you're ready to launch?", ask_flags = ASK_INSIDE, timeout = 0)
+
+/obj/machinery/transportpod/proc/launch_answered(datum/act/request/A)
+	if(A.answer && A.answer.answer_value)
+		set_in_transit(TRUE)
+		playsound(src, HYPERSPACE_WARMUP)
+	else
+		occupant_eject(src)
+	return 1
+
+/// The occupant confirmed: the pod picks a destination, clears its landing site and flies.
+/obj/machinery/transportpod/proc/launch(datum/act/timer/A)
 	set_in_transit(FALSE)
 	if(!occupant_of(src)) // they got out before launch
 		return
@@ -56,27 +66,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transportpod, MACHINE_PIPELINE, "in_transi
 	occupant_eject(src)
 	after(src, 0.2 SECONDS, TYPE_PROC_REF(/datum, om_qdel_self))
 
-/obj/machinery/transportpod/relaymove(mob/user as mob)
-	if(user.stat)
-		return
-	occupant_eject(src, user)
-
 /obj/machinery/transportpod/Bumped(mob/living/O)
 	if(!istype(O) || O.incapacitated()) //aint no sleepy people getting in here
 		return
 	occupant_enter(src, O, O)
-
-/// cap_occupant()'s on_enter: whoever got in (by any path) is asked to confirm the launch.
-/obj/machinery/transportpod/proc/occupant_entered(mob/living/O)
-	open_request(src, /datum/prompt/yes_no, PROC_REF(launch_answered), answerer = O, title = "Transport Pod", question = "Are you sure you're ready to launch?", ask_flags = ASK_INSIDE, timeout = 0)
-
-/obj/machinery/transportpod/proc/launch_answered(datum/act/request/A)
-	if(A.answer && A.answer.answer_value)
-		set_in_transit(TRUE)
-		playsound(src, HYPERSPACE_WARMUP)
-	else
-		occupant_eject(src)
-	return 1
 
 /obj/machinery/transportpod/proc/build()
 	for(var/x = limit_x-2, x <= limit_x, x++)

@@ -1,56 +1,58 @@
-// B2 library capabilities: cap_occupant, cap_access and the holder-interface move
-// (code/datums/capabilities/library/{parts,occupant,access}.dm).
+// B2 library capabilities: occupant_pod (code/library/containers/occupant_pod.dm), cap_access and the holder-interface move
+// (code/datums/capabilities/library/{parts,access}.dm).
 
-// ---- cap_occupant ----
+// ---- occupant_pod (code/library/containers/occupant_pod.dm) ----
 
-/// A transport pod that counts its occupant hooks instead of asking for launch.
+/// A transport pod that counts what its pod tells it instead of asking for launch.
 /obj/machinery/transportpod/dx_b2
 	var/entered = 0
 	var/exited = 0
 
-/obj/machinery/transportpod/dx_b2/capabilities()
-	. = ..()
-	. = replace(., "occupant:[OCCUPANT_SLOT_TRANSPORTPOD]", cap_occupant(OCCUPANT_SLOT_TRANSPORTPOD, types = /mob/living/carbon/human, on_enter = PROC_REF(occupant_entered), on_exit = PROC_REF(occupant_left), self_name = "Enter Pod", eject_name = "Eject Pod"))
+CAPABILITIES(/obj/machinery/transportpod/dx_b2)
+	on_notice(/datum/notice/pod_left, then(PROC_REF(count_exit)))
 
-/obj/machinery/transportpod/dx_b2/occupant_entered(mob/living/O)
+/obj/machinery/transportpod/dx_b2/ask_to_launch(datum/act/A)
 	entered++
 
-/obj/machinery/transportpod/dx_b2/proc/occupant_left(mob/living/O)
+/obj/machinery/transportpod/dx_b2/proc/count_exit(datum/act/A)
 	exited++
 
-/// Entering and leaving by every path: the reads, the hooks, the refusals, the ops and the destroy spill.
+/// Entering and leaving by every path: the reads, the notices, the refusals, the ops and the destroy spill.
 /datum/unit_test/dx_cap_occupant/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/machinery/transportpod/dx_b2/pod = allocate(/obj/machinery/transportpod/dx_b2, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT_EQUAL(length(occupants(pod)), 0, "occupants() is an empty list, never null")
 	TEST_ASSERT_NULL(occupant_of(pod), "nobody inside")
+	TEST_ASSERT(!occupant_pod_occupied(pod), "the pod's state agrees")
 	TEST_ASSERT(occupant_enter(pod, H, H), "occupant_enter() puts them in")
 	TEST_ASSERT_EQUAL(H.loc, pod, "inside the pod")
 	TEST_ASSERT_EQUAL(occupant_of(pod), H, "occupant_of() reads the ledger slot")
-	TEST_ASSERT_EQUAL(pod.entered, 1, "on_enter ran once")
+	TEST_ASSERT(occupant_pod_occupied(pod), "OCCUPANT_POD_OCCUPIED is set")
+	TEST_ASSERT_EQUAL(pod.entered, 1, "pod_entered was heard once")
 	TEST_ASSERT(!occupant_enter(pod, H2, H2), "a full pod refuses a second")
-	TEST_ASSERT_NOTNULL(test_op(H2, pod, "enter_[OCCUPANT_SLOT_TRANSPORTPOD]_self"), "and its climb-in op says why")
-	TEST_ASSERT(perform_op(H2, pod, "eject_[OCCUPANT_SLOT_TRANSPORTPOD]"), "the eject op lets them out")
-	TEST_ASSERT_EQUAL(H.loc, T, "out on the pod's turf")
-	TEST_ASSERT_EQUAL(pod.exited, 1, "on_exit ran once")
-	TEST_ASSERT(perform_op(H2, pod, "enter_[OCCUPANT_SLOT_TRANSPORTPOD]_self"), "the climb-in op")
-	TEST_ASSERT_EQUAL(occupant_of(pod), H2, "the second is inside")
-	// A raw ledger move (legacy code) still reaches the capability.
+	test_menu(H2, pod, "occupant_pod.eject")
+	test_time(1)
+	TEST_ASSERT_EQUAL(H.loc, T, "the eject op lets them out onto the pod's turf")
+	TEST_ASSERT_EQUAL(pod.exited, 1, "pod_left was heard once")
+	test_menu(H2, pod, "occupant_pod.climb_in")
+	test_time(1)
+	TEST_ASSERT_EQUAL(occupant_of(pod), H2, "Move Inside puts the actor in")
+	// A raw ledger move (legacy code) still reaches the pod.
 	pod.slot_remove(H2, T)
-	TEST_ASSERT_EQUAL(pod.exited, 2, "a raw slot_remove() runs on_exit too")
-	TEST_ASSERT_EQUAL(length(occupants(pod)), 0, "empty again")
+	TEST_ASSERT_EQUAL(pod.exited, 2, "a raw slot_remove() is heard too")
+	TEST_ASSERT(!occupant_pod_occupied(pod), "and empties the pod")
 	occupant_enter(pod, H, H)
 	qdel(pod)
 	TEST_ASSERT(!QDELETED(H), "destroying the pod keeps its occupant")
 	TEST_ASSERT_EQUAL(H.loc, T, "spilled onto the turf")
+	test_driver_end()
 
-/// The converted pod declares the capability and draws from it.
+/// The converted pod declares the capability.
 /datum/unit_test/dx_cap_occupant_transportpod/Run()
 	var/obj/machinery/transportpod/pod = allocate(/obj/machinery/transportpod, run_loc_floor_bottom_left)
-	TEST_ASSERT_NOTNULL(occupant_cap(pod, OCCUPANT_SLOT_TRANSPORTPOD), "the pod has cap_occupant()")
-	TEST_ASSERT_NOTNULL(op_entry_named(null, pod, "eject_[OCCUPANT_SLOT_TRANSPORTPOD]"), "its eject op")
+	TEST_ASSERT_NOTNULL(occupant_pod_of(pod), "the pod declares occupant_pod()")
 
 // ---- cap_access ----
 

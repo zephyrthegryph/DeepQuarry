@@ -157,6 +157,16 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 		return "\The [thing] doesn't go there."
 	return ..()
 
+/// A declared slot that is sealed (slot(..., exposure = SLOT_EXPOSURE_SEALED)): what is inside lives in the holder's shell, as a pod's patient
+/// does: no gas reaches them, no heat or blast crosses it (containment.md section 10). Spilled onto the floor when the holder is destroyed.
+/datum/om/relation/slot/declared/sealed
+	name = "sealed slot"
+	exposure = SLOT_EXPOSURE_SEALED
+	reaches_mobs = TRUE
+	heat_transmission = 0
+	radiation_transmission = 1
+	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
 /// The declared slots of `holder` that its relation decls (`defs`) do not already give, in declaration order: its slot() entries, then each
 /// graph's put_in() slots. Built once per holder type (dq_slot_defs_for() caches the list).
 /proc/declared_slot_defs(atom/holder, list/defs)
@@ -172,7 +182,7 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 			continue
 		taken[id] = TRUE
 		var/capacity = E.args["capacity"]
-		. += declared_slot_def(holder.type, id, isnum(capacity) ? capacity : 0, E.args["at"], E.args["accepts"], !length(defs) && !length(.))
+		. += declared_slot_def(holder.type, id, isnum(capacity) ? capacity : 0, E.args["at"], E.args["accepts"], !length(defs) && !length(.), E.args["exposure"])
 	for(var/cap_id in list(CAP_CONSTRUCTION, CAP_DEPLOYMENT))
 		var/datum/capability/construction/graph_def = cap_of(holder, cap_id)
 		var/datum/state_graph/G = graph_def?.graph
@@ -190,15 +200,16 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 			taken[id] = TRUE
 			. += declared_slot_def(holder.type, id, puts[id], G.space, null, !length(defs) && !length(.))
 
-/// The shared declared slot of holder type `holder_type` with id `id`: `capacity` things (0: no limit), in space `at`, of type `accepts`.
-/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default)
+/// The shared declared slot of holder type `holder_type` with id `id`: `capacity` things (0: no limit), in space `at`, of type `accepts`. An
+/// `exposure` of SLOT_EXPOSURE_SEALED makes it a sealed slot (an occupant pod's): what is inside lives in the holder's shell.
+/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default, exposure = null)
 	RETURN_TYPE(/datum/om/relation/slot/declared)
 	var/static/list/made = list()
 	var/cache_key = "[holder_type]|[id]"
 	var/datum/om/relation/slot/declared/S = made[cache_key]
 	if(S)
 		return S
-	S = new
+	S = exposure == SLOT_EXPOSURE_SEALED ? new /datum/om/relation/slot/declared/sealed : new
 	S.holder = holder_type
 	S.slot_id = id
 	S.name = "[id]"

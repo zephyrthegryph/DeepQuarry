@@ -148,6 +148,12 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 /// entries of the item's type (ON_HOLDER) are granted to the holder with the item as source, and those of the holder's type (ON_CONTENTS) to the
 /// item with the holder as source, both for exactly the item's time in the slot and bound to it. A type with no while_slotted entry costs two
 /// flag reads.
+///
+/// A while_slotted entry inside when(cond, ...) applies only while the condition holds on the side that declares it (the holder for ON_CONTENTS,
+/// the item for ON_HOLDER): a stasis bed's when(STAT_OPERABLE, while_slotted(SLOT_X, ..., on = ON_CONTENTS)) holds its occupant only while the
+/// bed works. The condition's reads, and the var a contribution inside reads (contributes(STAT_X, nameof(v)): v is a var of the declaring side),
+/// are watched by on_change hooks that table_slot_gates() adds to the declaring type, and activations_slot_regate() re-applies the scope when one
+/// changes.
 /proc/activations_slot_enter(datum/item, datum/holder, slot_id)
 	if(QDELETED(item) || QDELETED(holder))
 		return
@@ -157,16 +163,118 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 			var/datum/entry/E = C.item
 			if(E.args["on"] != ON_HOLDER || !slot_matches(E.args["slot"], slot_id, holder))
 				continue
-			for(var/datum/capability/child as anything in slot_scope_capabilities(E))
-				activation_attach(holder, child, item, null, SCOPE_SLOT, slot_id, null)
+			slot_scope_apply(holder, item, slot_id, C)
 	var/datum/type_table/holder_table = table_of(holder)
 	if(holder_table.has_slotted)
 		for(var/datum/centry/C as anything in compiled_entries(holder_table, ENTRY_WHILE_SLOTTED))
 			var/datum/entry/E = C.item
 			if(E.args["on"] != ON_CONTENTS || !slot_matches(E.args["slot"], slot_id, holder))
 				continue
-			for(var/datum/capability/child as anything in slot_scope_capabilities(E))
-				activation_attach(item, child, holder, null, SCOPE_SLOT, slot_id, null)
+			slot_scope_apply(item, holder, slot_id, C)
+
+/// Attaches what one while_slotted entry (centry C, declared by `source`'s type) gives `target`, when its when() conditions hold on `source`.
+/proc/slot_scope_apply(datum/target, datum/source, slot_id, datum/centry/C)
+	if(length(C.whens) && !op_whens_hold(source, C.whens))
+		return
+	for(var/datum/capability/child as anything in slot_scope_capabilities(C.item))
+		activation_attach(target, child, source, null, SCOPE_SLOT, slot_id, null)
+
+/// Ends what one while_slotted entry (centry C, declared by `source`'s type) gave `target` in `slot_id`.
+/proc/slot_scope_end(datum/target, datum/source, slot_id, datum/centry/C)
+	if(!target.rx?.activations)
+		return
+	var/list/defs = slot_scope_capabilities(C.item)
+	for(var/datum/activation/A as anything in target.rx.activations.Copy())
+		if(!A.dead && A.scope == SCOPE_SLOT && A.scope_data == slot_id && A.source == source && (A.def in defs))
+			activation_end(A)
+
+/// A watched input of a gated or reading while_slotted entry of `declarer`'s type changed (the on_change hooks of table_slot_gates()): each such
+/// entry's scope is re-applied to what it covers now, so the condition and the read value are the current ones. Ending and re-attaching inside
+/// one trigger leaves a stat that did not move where it was.
+/proc/activations_slot_regate(datum/declarer)
+	if(!isatom(declarer) || QDELETED(declarer))
+		return
+	var/atom/movable/side = declarer
+	var/datum/type_table/T = table_of(side)
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_WHILE_SLOTTED))
+		if(!slot_scope_watched(C))
+			continue
+		var/datum/entry/E = C.item
+		if(E.args["on"] == ON_CONTENTS)
+			var/datum/ledger/L = side.ledger
+			for(var/slot_id in L?.slots)
+				if(!slot_matches(E.args["slot"], slot_id, side))
+					continue
+				for(var/atom/movable/inside as anything in L.slots[slot_id])
+					slot_scope_end(inside, side, slot_id, C)
+					slot_scope_apply(inside, side, slot_id, C)
+			continue
+		var/atom/container = istype(side) ? side.loc : null
+		var/datum/ledger/outer = container?.ledger
+		var/list/entry = outer?.entries[side]
+		if(!entry || !slot_matches(E.args["slot"], entry[LEDGER_E_SLOT], container))
+			continue
+		slot_scope_end(container, side, entry[LEDGER_E_SLOT], C)
+		slot_scope_apply(container, side, entry[LEDGER_E_SLOT], C)
+
+/// The on_change handler table_slot_gates() gives a declaring type: A.holder's watched slot scopes are re-applied.
+/proc/activations_slot_regate_hook(datum/act/A)
+	activations_slot_regate(A.holder)
+
+/// The inputs a while_slotted entry is re-applied on: its when() conditions, and the vars of the declaring side its contributions read. Empty for
+/// an entry that never changes while the item stays (the common case).
+/proc/slot_scope_inputs(datum/centry/C, datum/type_table/T = null)
+	. = list()
+	for(var/datum/entry/W as anything in C.whens)
+		. += list(W.args["cond"])
+		if(T)
+			. |= slot_scope_stat_reads(T, W.args["cond"])
+	var/datum/entry/E = C.item
+	for(var/datum/entry/child in E.children)
+		if(child.kind == "contributes" && istext(child.args["value"]) && length(child.args["value"]))
+			. += child.args["value"]
+
+/// The vars the type's own contributions to the stats in `cond` read (contributes(..., reads = list(...)), a var value): a stat a legacy bit feeds is
+/// recomputed when it is read, not when the bit changes, so the gate also watches the bits (a machine's STAT_OPERABLE reads `stat`).
+/proc/slot_scope_stat_reads(datum/type_table/T, cond)
+	. = list()
+	if(islist(cond))
+		var/list/tree = cond
+		for(var/i in 2 to length(tree))
+			. |= slot_scope_stat_reads(T, tree[i])
+		return
+	if(!isnum(cond) || !stat_def_of(cond))
+		return
+	for(var/datum/centry/C as anything in compiled_entries(T, "contributes"))
+		var/datum/entry/E = C.item
+		if(E.args["stat"] != cond)
+			continue
+		for(var/read in E.args["reads"])
+			if(istext(read) && !findtext(read, "."))
+				. |= read
+
+/proc/slot_scope_watched(datum/centry/C)
+	return length(slot_scope_inputs(C)) > 0
+
+/// The while_slotted entries of a compiled table that are gated or read a var get one on_change hook per input on the declaring type, so a change
+/// of the condition or of the value re-applies the scope (activations_slot_regate()). Each hook is added once: a subtype's table, copied from its
+/// parent's, already carries its parent's.
+/proc/table_slot_gates(datum/type_table/T)
+	var/list/have = null
+	for(var/datum/centry/C as anything in T.items)
+		if(istext(C.eff_key) && findtext(C.eff_key, "slot_gate:") == 1)
+			LAZYSET(have, C.eff_key, TRUE)
+	for(var/datum/centry/C as anything in T.items.Copy())
+		var/datum/entry/E = C.item
+		if(!istype(E) || E.kind != ENTRY_WHILE_SLOTTED)
+			continue
+		var/list/inputs = slot_scope_inputs(C, T)
+		for(var/i in 1 to length(inputs))
+			var/gate_key = "slot_gate:[E.sig]:[i]"
+			if(LAZYACCESS(have, gate_key))
+				continue
+			LAZYSET(have, gate_key, TRUE)
+			table_add_item(T, on_change(inputs[i], ANY, then(GLOBAL_PROC_REF(activations_slot_regate_hook))), C.origin, null, null, gate_key)
 
 /// `item` left `holder`'s slot `slot_id`, however it left: everything the slot scoped goes at once.
 /proc/activations_slot_exit(datum/item, datum/holder, slot_id)
