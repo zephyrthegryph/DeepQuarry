@@ -43,8 +43,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/telecomms/traffic, "temp:text", "network
 	return data
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_clear_temp(datum/act/op/A)
-	temp = ""
-	SStgui.update_uis(src)
+	set_temp("")
 	return OP_OK
 
 UI_ACT(/obj/machinery/computer/telecomms/traffic, "set_network", ui_act_set_network)

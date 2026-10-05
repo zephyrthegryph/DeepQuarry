@@ -23,10 +23,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	produces_heat = 0
 	delay = 7
 	circuit = /obj/item/circuitboard/telecomms/broadcaster
-	//Vars only used if you're using the overmap
-	var/overmap_range = 0
-	var/overmap_range_min = 0
-	var/overmap_range_max = 5
 	// Linked bluespace radios are BS_RX_RADIOS(src) (the bluespace_rx_from relation).
 
 /obj/machinery/telecomms/broadcaster/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
@@ -129,14 +125,13 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	machinetype = 6
 	produces_heat = 0
 	var/intercept = 0 // if nonzero, broadcasts all messages to syndicate channel
-	var/overmap_range = 0
 
 	// Linked bluespace radios: BS_TX_RADIOS(src) transmit to it, BS_RX_RADIOS(src) receive from it.
 
 /obj/machinery/telecomms/allinone/receive_signal(datum/signal/signal)
 
 	// Has to be on to receive messages
-	if(!on)
+	if(!running)
 		return
 
 	// Why did you use this subtype?
@@ -206,7 +201,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	idle_power_usage = 0
 
 /obj/machinery/telecomms/allinone/antag/receive_signal(datum/signal/signal)
-	if(!on) // has to be on to receive messages
+	if(!running) // has to be on to receive messages
 		return
 
 	if(is_freq_listening(signal)) // detect subspace signals
@@ -744,7 +739,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 /obj/machinery/telecomms/allinone/link/receive_signal(datum/signal/signal)
 
 	// Has to be on to receive messages
-	if(!on)
+	if(!running)
 		return
 
 	// Why did you use this subtype?

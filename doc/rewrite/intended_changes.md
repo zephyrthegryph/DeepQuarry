@@ -1201,3 +1201,28 @@ first: no click reached the legacy `wrench_act()`).
   `emag()`; the module reads it (`routing_scrambled()`), and "Restore Backup" clears it, so the console and its window can no longer disagree.
   The shuttle-call grace periods are measured from the round's start (`ELAPSED(SSticker, round_start_time)`), not from server start, and are
   named (10 and 90 minutes; the old comment said 30).
+
+## Telecommunications (rewrite/machines-full)
+
+- **Running.** A node runs while switched on (`toggled`, tracked) and working: `STAT running` replaces the `on` var the machine step kept in
+  sync (`update_power()` and the step are gone). Running, it hums (its sound loop is a declared starting occupant), heats its room with its
+  traffic and lets its traffic decay every thermal step (`every(thermal_interval, when = STAT_RUNNING)`): a stopped node does no periodic
+  work at all, and its look (`draw()`: the `_off` state) and hum follow `on_change(STAT_RUNNING)`. Traffic decays by its net speed once per
+  step (the legacy step multiplied by the frames that had passed since the last one). A node's `STAT_OPERABLE` reads the machine's
+  condition bits like any machine's.
+- **The multitool window.** It opens with a multitool (the interface's input) and every button needs one (`req_tcomms_multitool()`; the
+  legacy window closed itself through a `tgui_status()` override but its buttons still answered). The id, network, filter and the bus's
+  frequency are `asks()` (the bus's question now defaults to its current frequency, not the network tag; 0 turns frequency changing off).
+  Linking needs a telecommunications machine in the multitool's buffer (a requirement; the legacy link took any buffered machine), and
+  unlinking a link index that is not there is refused. The relay's station lock is a requirement (it can lock only from the satellite or back
+  from the station). The receiver's and the broadcaster's range is one op on the base (`ranged`), not two copies. The status line is
+  `report()` over a tracked `temp`.
+- **Repair.** Only nanopaste repairs a node, and only a damaged one (the legacy handler answered every item, doing nothing for most).
+- **Servers.** A log entry from a signal with no speaker no longer runtimes (`M?.isMonkey()`). The log's size is its length: deleting an
+  entry from the log browser frees its place (the legacy counter was never decremented, so a server whose entries were deleted dropped the
+  wrong ones, or none, at its cap). The compiler and the server's radio are declared starting occupants.
+- **The consoles.** The network monitor and the log browser share one set of entries (`tcomms_probe_console()`): scan (refused while the
+  buffer is full), view, release, the network question, the status line, the emag (whose message lost its "You you"). The log browser's
+  delete is a requirement (its access, or emagged) instead of a check inside the effect, and an index with no entry is refused. The traffic
+  console keeps its legacy form; its network and status line now live on the console base.
+- Magic numbers are named in `code/__defines/radio.dm` (TCOMMS_*).
