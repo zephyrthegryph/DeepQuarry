@@ -172,6 +172,8 @@ struct Slot {
     /// The last step's flows, J, and the step length, s.
     last: Flow,
     last_dt: f64,
+    /// Work in less work out since DM last took it (`heat_edge_take_work`), J.
+    work_owed: f64,
 }
 
 #[derive(Default)]
@@ -381,6 +383,7 @@ pub(crate) fn step(now: f64, first_dt: f64) {
             if let Some(Some(s)) = n.slots.get_mut(i) {
                 s.last = f;
                 s.last_dt = dt;
+                s.work_owed += f.work_in - f.work_out;
             }
         }
         n.last = books;
@@ -400,7 +403,7 @@ pub(crate) fn reset() {
 
 fn insert(edge: Edge<Res>) -> f32 {
     NET.with_borrow_mut(|n| {
-        let slot = Slot { edge, last: Flow::default(), last_dt: 0.0 };
+        let slot = Slot { edge, last: Flow::default(), last_dt: 0.0, work_owed: 0.0 };
         let i = if let Some(i) = n.free.pop() {
             n.slots[i] = Some(slot);
             i
@@ -584,6 +587,20 @@ fn heat_edge_power(id: ByondValue) -> Result<ByondValue> {
     let i = slot_index(&id)?;
     let w = NET.with_borrow(|n| match n.slots.get(i) {
         Some(Some(s)) if s.last_dt > 0.0 => (s.last.work_out - s.last.work_in) / s.last_dt,
+        _ => 0.0,
+    });
+    #[allow(clippy::cast_possible_truncation)]
+    Ok((w as f32).into())
+}
+
+/// The electrical work an edge exchanged since this was last called, J
+/// (positive: a pump drew it; negative: an engine made it), and resets it:
+/// what a machine pays from its cell or grid, exactly what Rust booked.
+#[auxmacros::bind("/proc/heat_edge_take_work")]
+fn heat_edge_take_work(id: ByondValue) -> Result<ByondValue> {
+    let i = slot_index(&id)?;
+    let w = NET.with_borrow_mut(|n| match n.slots.get_mut(i) {
+        Some(Some(s)) => std::mem::take(&mut s.work_owed),
         _ => 0.0,
     });
     #[allow(clippy::cast_possible_truncation)]

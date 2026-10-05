@@ -31,7 +31,7 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/coolanttank, DAMAGE_EXPLOSION,
 	if(env)
 		var/cooling_strength = reagents.machine_cooling_power()
 		if(cooling_strength > 0)
-			env.add_thermal_energy(-(cooling_strength * COOLING_FACTOR))
+			heat_add(env, -(cooling_strength * COOLING_FACTOR), HEAT_SOURCE_DEVICE)
 
 	expire(10)
 

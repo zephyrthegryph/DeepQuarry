@@ -467,8 +467,8 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			visible_message("[src]: Releasing [round(thermal_power)] W.")
 			visible_message("[src]: Releasing additional [round((heat_capacity_new - heat_capacity)*removed.return_temperature())] W with exhaust gasses.")
 
-		removed.add_thermal_energy(thermal_power)
-		removed.set_temperature(between(0, removed.return_temperature(), 10000))
+		heat_add(removed, thermal_power, HEAT_SOURCE_REACTION)
+		heat_set(removed, between(0, removed.return_temperature(), 10000), HEAT_SOURCE_REACTION)
 
 		env.merge(removed)
 

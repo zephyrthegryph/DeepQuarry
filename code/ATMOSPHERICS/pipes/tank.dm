@@ -80,7 +80,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 /obj/machinery/atmospherics/pipe/tank/air/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
-	air_temporary.set_temperature(T20C)
+	heat_set(air_temporary, T20C)
 
 	air_temporary.adjust_multi(GAS_O2,  (start_pressure*O2STANDARD)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()), \
 								GAS_N2,(start_pressure*N2STANDARD)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
@@ -96,7 +96,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/oxygen, null, list(APPE
 /obj/machinery/atmospherics/pipe/tank/oxygen/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
-	air_temporary.set_temperature(T20C)
+	heat_set(air_temporary, T20C)
 
 	air_temporary.adjust_gas(GAS_O2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
@@ -112,7 +112,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrogen, null, list(AP
 /obj/machinery/atmospherics/pipe/tank/nitrogen/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
-	air_temporary.set_temperature(T20C)
+	heat_set(air_temporary, T20C)
 
 	air_temporary.adjust_gas(GAS_N2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
@@ -127,7 +127,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/carbon_dioxide, null, l
 /obj/machinery/atmospherics/pipe/tank/carbon_dioxide/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
-	air_temporary.set_temperature(T20C)
+	heat_set(air_temporary, T20C)
 
 	air_temporary.adjust_gas(GAS_CO2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
@@ -143,7 +143,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/phoron, null, list(APPE
 /obj/machinery/atmospherics/pipe/tank/phoron/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
-	air_temporary.set_temperature(T20C)
+	heat_set(air_temporary, T20C)
 
 	air_temporary.adjust_gas(GAS_PHORON, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
@@ -158,7 +158,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrous_oxide, null, li
 /obj/machinery/atmospherics/pipe/tank/nitrous_oxide/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
-	air_temporary.set_temperature(T0C)
+	heat_set(air_temporary, T0C)
 
 	air_temporary.adjust_gas(GAS_N2O, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
@@ -175,7 +175,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/methane, null, list(APP
 	. = ..()
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
-	air_temporary.set_temperature(T20C)
+	heat_set(air_temporary, T20C)
 
 	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 

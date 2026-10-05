@@ -139,7 +139,7 @@ CAPABILITIES(/obj/structure/closet/grave)
 	var/datum/gas_mixture/grave_breath = new()
 	var/datum/gas_mixture/above_air = return_air()
 	grave_breath.adjust_gas(gasid, BREATH_MOLES)
-	grave_breath.set_temperature((above_air.return_temperature()) - 30)	//Underground
+	heat_set(grave_breath, (above_air.return_temperature()) - 30)	//Underground
 	return grave_breath
 
 /obj/structure/closet/grave/dirthole

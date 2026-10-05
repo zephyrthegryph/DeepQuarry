@@ -559,9 +559,9 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 			if(abs(temperature - ambient.return_temperature()) >= MATERIAL_THERMAL_RESOLUTION && abs(exchange) > 0.01)
 				var/converted = convert_transferred_heat(exchange, ambient.return_temperature())
 				if(exchange > 0)
-					ambient.add_thermal_energy(-add_heat(-exchange) - converted)
+					heat_add(ambient, -add_heat(-exchange) - converted, HEAT_SOURCE_MATERIAL)
 				else
-					ambient.add_thermal_energy(-add_heat(-exchange - converted) - converted)
+					heat_add(ambient, -add_heat(-exchange - converted) - converted, HEAT_SOURCE_MATERIAL)
 				active = TRUE
 	var/datum/material/structure = owner().material_for_role(MATERIAL_ROLE_STRUCTURE) || owner().primary_construction_material()
 	last_stress = structure ? temperature / max(structure.melting_point, 1) : 0
@@ -596,7 +596,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/exchange = equilibrium * (1 - 2.718281828 ** (-conductance * elapsed * (1 / thermal_mass() + 1 / capacity)))
 	if(abs(exchange) < 0.01)
 		return FALSE
-	air.add_thermal_energy(-add_heat(exchange))
+	heat_add(air, -add_heat(exchange), HEAT_SOURCE_MATERIAL)
 	return TRUE
 
 /// A thermoelectric cell converts only a fraction of actual hot-to-cold heat

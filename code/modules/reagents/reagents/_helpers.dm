@@ -34,7 +34,7 @@
 	if(!environment || environment.return_temperature() <= WATER_BOILING_POINT)
 		return FALSE
 	var/removed_heat = between(0, volume * WATER_LATENT_HEAT, -environment.get_thermal_energy_change(WATER_BOILING_POINT))
-	environment.add_thermal_energy(-removed_heat)
+	heat_add(environment, -removed_heat, HEAT_SOURCE_REACTION)
 	return TRUE
 
 /// Liquid on a burning tile knocks the fire back: the tile's gas loses at least
@@ -45,7 +45,7 @@
 		return
 	var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air()))
 	var/lowertemp_temperature = lowertemp.return_temperature()
-	lowertemp.set_temperature(max(min(lowertemp_temperature - 2000, lowertemp_temperature / 2), 0))
+	heat_set(lowertemp, max(min(lowertemp_temperature - 2000, lowertemp_temperature / 2), 0), HEAT_SOURCE_REACTION)
 	lowertemp.react()
 	T.assume_air(lowertemp)
 	qdel(hotspot)

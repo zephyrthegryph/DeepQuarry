@@ -487,7 +487,7 @@
 			weighted_specific_heat += max(material.specific_heat, 100) * LAZYACCESS(composition, material_name) / max(amount, 1)
 	return max(1, amount * weighted_specific_heat / 160)
 
-/datum/material_batch/proc/add_thermal_energy(joules)
+/datum/material_batch/proc/add_batch_heat(joules)
 	if(!isnum(joules) || !joules)
 		return 0
 	var/old_temperature = temperature

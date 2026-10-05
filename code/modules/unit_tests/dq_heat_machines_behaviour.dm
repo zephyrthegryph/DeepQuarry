@@ -20,6 +20,12 @@
 	SSair.run_gas_frames(1)
 	return pair
 
+/// `seconds` of game time: the kernel's machines and the world's steps (the test clock does not pace the native world).
+/proc/heat_bt_run(seconds)
+	for(var/i in 1 to seconds)
+		test_time(1 SECOND)
+		vg_world_run_steps(2)
+
 /// Thermal energy of the air of some turfs, J.
 /proc/heat_bt_air_energy(list/turfs)
 	. = 0
@@ -52,7 +58,7 @@
 	MACHINE_WAKE(heater)
 	var/charge0 = heater.cell.charge
 	var/e0 = heat_bt_air_energy(room)
-	test_time(20 SECONDS)
+	heat_bt_run(20)
 	var/turf/here = room[1]
 	var/datum/gas_mixture/air = here.return_air()
 	var/gained = heat_bt_air_energy(room) - e0
@@ -60,7 +66,8 @@
 	log_test("space heater heating: [round(air.return_temperature(), 0.01)] K after 20 s from 283 K; air gained [round(gained)] J, cell gave [round(drawn)] J")
 	TEST_ASSERT(air.return_temperature() > 283.5, "the room warmed ([air.return_temperature()] K)")
 	TEST_ASSERT(drawn > 0, "the cell paid for it")
-	TEST_ASSERT(abs(gained - drawn) <= max(0.05 * drawn, 500), "resistive heating: the air gained what the cell gave ([gained] J vs [drawn] J)")
+	// Resistive: every joule of cell becomes heat; the room's walls take a share of what the air got.
+	TEST_ASSERT(gained <= drawn + 500 && gained >= 0.85 * drawn, "resistive heating: the air gained what the cell gave, less the walls' share ([gained] J vs [drawn] J)")
 
 /// A space heater cools a warm room toward its thermostat, drawing on its cell.
 /datum/unit_test/dq_heat_bt/space_heater_cools
@@ -74,7 +81,7 @@
 	MACHINE_WAKE(heater)
 	var/charge0 = heater.cell.charge
 	var/e0 = heat_bt_air_energy(room)
-	test_time(20 SECONDS)
+	heat_bt_run(20)
 	var/turf/here = room[1]
 	var/datum/gas_mixture/air = here.return_air()
 	var/lost = e0 - heat_bt_air_energy(room)
@@ -110,7 +117,7 @@
 	F.set_use_power(USE_POWER_ACTIVE)
 	MACHINE_WAKE(F)
 	var/room0 = heat_bt_air_energy(room)
-	test_time(20 SECONDS)
+	heat_bt_run(20)
 	var/loop_t = F.air_contents.return_temperature()
 	var/room_gain = heat_bt_air_energy(room) - room0
 	log_test("freezer: loop [round(loop_t, 0.01)] K after 20 s from [T20C] K toward 200 K; room gained [round(room_gain)] J")
@@ -143,7 +150,7 @@
 	H.stat_remove(NOPOWER | BROKEN)
 	H.set_use_power(USE_POWER_ACTIVE)
 	MACHINE_WAKE(H)
-	test_time(20 SECONDS)
+	heat_bt_run(20)
 	var/loop_t = H.air_contents.return_temperature()
 	log_test("heater: loop [round(loop_t, 0.01)] K after 20 s from [T20C] K toward 400 K")
 	TEST_ASSERT(loop_t > T20C + 1, "the loop warmed ([loop_t] K)")

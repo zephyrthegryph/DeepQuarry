@@ -860,7 +860,7 @@
 	if(istype(lifeform))	// If this doesn't succeed, then 'lifeform' is actually a bag or capture crystal with someone inside
 		air_type = lifeform.get_perfect_belly_air_type()		// Without any overrides/changes, its gonna be /datum/gas_mixture/belly_air
 	var/datum/gas_mixture/air = new air_type(1000)
-	air.set_temperature(get_interior_temperature())
+	heat_set(air, get_interior_temperature())
 	return air
 
 /// Breathing in a belly: a digesting belly's digest_oxy makes its air stale.
@@ -895,7 +895,7 @@
 
 /datum/gas_mixture/belly_air/New()
 	. = ..()
-	set_temperature(T20C) // arena default is TCMB; sync mirror initializer into the arena
+	heat_set(src, T20C) // arena default is TCMB; sync mirror initializer into the arena
 	adjust_gas(GAS_O2, 21)
 	adjust_gas(GAS_N2, 79)
 
@@ -904,7 +904,7 @@
 
 /datum/gas_mixture/belly_air/vox/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/zaddat
@@ -912,7 +912,7 @@
 
 /datum/gas_mixture/belly_air/zaddat/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_O2, 100)
 
 /datum/gas_mixture/belly_air/nitrogen_breather
@@ -920,7 +920,7 @@
 
 /datum/gas_mixture/belly_air/nitrogen_breather/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather
@@ -928,7 +928,7 @@
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_CO2, 100)
 
 /datum/gas_mixture/belly_air/methane_breather
@@ -936,7 +936,7 @@
 
 /datum/gas_mixture/belly_air/methane_breather/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_CH4, 100)
 
 /mob/living/proc/feed_grabbed_to_self_falling_nom(mob/living/user, mob/living/prey)

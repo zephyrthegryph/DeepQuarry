@@ -194,5 +194,5 @@ CAPABILITIES(/obj)
 		return FALSE
 	air.adjust_multiple_gases(list(GAS_O2 = -oxygen, GAS_CO2 = oxygen))
 	if(heat_to_gas)
-		air.add_thermal_energy(joules)
+		heat_add(air, joules, HEAT_SOURCE_FIRE)
 	return TRUE

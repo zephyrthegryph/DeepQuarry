@@ -230,7 +230,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	service.add_heat(-moved_heat)
 	var/turf/location = get_turf(src)
 	var/datum/gas_mixture/ambient = location?.return_air()
-	ambient?.add_thermal_energy(moved_heat + work_charge / CELLRATE)
+	heat_add(ambient, moved_heat + work_charge / CELLRATE, HEAT_SOURCE_MATERIAL)
 	service.input_joules += work_charge / CELLRATE
 	service.loss_joules += work_charge / CELLRATE
 	return moved_heat

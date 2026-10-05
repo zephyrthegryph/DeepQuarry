@@ -289,7 +289,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 					if(heat_transfer > 0)
 						heat_transfer = min(heat_transfer , heating_power)
 
-						removed.add_thermal_energy(heat_transfer)
+						heat_add(removed, heat_transfer, HEAT_SOURCE_FIRE)
 
 				for(var/mob/living/L in view(3, src))
 					L.apply_body_effect(/datum/body_effect/endothermic, 10 SECONDS, null, TRUE)
@@ -495,7 +495,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, TYPE_PROC_REF(/atom, appearanc
 					if(heat_transfer > 0)
 						heat_transfer = min(heat_transfer , heating_power)
 
-						removed.add_thermal_energy(heat_transfer)
+						heat_add(removed, heat_transfer, HEAT_SOURCE_FIRE)
 
 				env.merge(removed)
 

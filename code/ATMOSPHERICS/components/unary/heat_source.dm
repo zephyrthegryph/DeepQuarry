@@ -1,4 +1,8 @@
+TRACKED(/obj/machinery/atmospherics/unary/heater, pumping)
+
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	// A resistive heater on its pipeline's gas toward the thermostat: one joule of heat per joule drawn.
+	when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_HEAT, TRUE))
 	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
 	interface("GasTemperatureSystem")
 	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
@@ -31,6 +35,8 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 
 	var/set_temperature = T20C	//thermostat
 	var/heating = 0		//mainly for icon updates
+	/// TRUE while it heats: its heater exists exactly while this is set.
+	var/pumping = FALSE
 	var/reagent_cooling = 0
 	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
@@ -74,26 +80,23 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/heater, "appearance_heater_
 ))
 
 
+/// The heater (its CAPABILITIES entry) heats the loop in Rust; the step pays its work, uses up coolant and shows what it does.
 /obj/machinery/atmospherics/unary/heater/machine_step()
 	..()
 
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
 	if(!operable() || !use_power)
 		heating = 0
+		set_pumping(FALSE)
 		update_icon()
 		register_gas_dependencies()
 		return PROCESS_KILL
 
+	set_pumping(TRUE)
 	if(network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
-		// A resistive heater turns at most the power it draws into heat.
-		air_contents.add_thermal_energy(min(power_rating * CLAMP(reagent_cooling,REAGENT_COOLING_MINMOD,REAGENT_COOLING_MAXMOD) * HEATER_PERF_MULT * heating_efficiency, power_rating))
-		use_power(power_rating)
-
-		// Process coolant
+		use_power(-heat_entries_power(src))
 		reagents.remove_any(REAGENT_COOLING_CONSUMED)
-
 		heating = 1
-		network.mark_dirty()
 	else
 		heating = 0
 		register_gas_dependencies()
@@ -202,6 +205,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/heater, "appearance_heater_
 /obj/machinery/atmospherics/unary/heater/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
 	power_rating = max_power_rating * (power_setting/100)
+	heat_entries_refresh(src)
 
 /obj/machinery/atmospherics/unary/heater/examine(mob/user)
 	. = ..()

@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "a57dc1363c261189"
+#define VERDIGRIS_ABI "a530a8b20feb12d9"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -235,6 +235,11 @@
 /// Fire and burning.
 // verdigris/ffi/src/heat_net.rs
 #define HEAT_SOURCE_FIRE 3
+
+/// A material's own heat model (material science's DM solid state) giving
+/// heat to or taking it from a gas.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_MATERIAL 9
 
 /// Metabolism: a living body's own heat.
 // verdigris/ffi/src/heat_net.rs
@@ -1056,6 +1061,15 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_set_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(id, param, value)
+
+/// The electrical work an edge exchanged since this was last called, J
+/// (positive: a pump drew it; negative: an engine made it), and resets it:
+/// what a machine pays from its cell or grid, exactly what Rust booked.
+// /proc/heat_edge_take_work (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_take_work(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_take_work_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
 
 /// A heat engine between two reservoirs: heat flows from the hotter to the
 /// colder through `conductance` W/K and `efficiency` of it (capped at Carnot)

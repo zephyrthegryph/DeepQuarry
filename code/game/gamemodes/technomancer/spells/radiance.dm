@@ -45,8 +45,8 @@ DECLARE_PERIODIC(/obj/item/spell/radiance, PERIODIC_SLOW)
 
 		var/thermal_power = 300 * adjusted_power
 
-		removed.add_thermal_energy(thermal_power)
-		removed.set_temperature(between(0, removed.return_temperature(), 10000))
+		heat_add(removed, thermal_power, HEAT_SOURCE_SPELL)
+		heat_set(removed, between(0, removed.return_temperature(), 10000), HEAT_SOURCE_SPELL)
 
 		env.merge(removed)
 

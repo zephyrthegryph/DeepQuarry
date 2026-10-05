@@ -16206,17 +16206,19 @@
 	into += entry_line(81)
 	into += list(global.owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary/freezer) at code/ATMOSPHERICS/components/unary/cold_sink.dm:1
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/freezer) at code/ATMOSPHERICS/components/unary/cold_sink.dm:3
 /obj/machinery/atmospherics/unary/freezer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/cold_sink.dm", 1, /obj/machinery/atmospherics/unary/freezer)
-	into += entry_line(2)
+	into += entry_block("code/ATMOSPHERICS/components/unary/cold_sink.dm", 3, /obj/machinery/atmospherics/unary/freezer)
+	into += entry_line(6)
+	into += list(global.when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_COOL, FALSE, nameof(carnot_fraction), nameof(max_cop))))
+	into += entry_line(7)
 	into += list(global.op("toggleStatus", global.ui_act("toggleStatus"), global.then(PROC_REF(ui_act_togglestatus))))
-	into += entry_line(3)
+	into += entry_line(8)
 	into += list(global.interface("GasTemperatureSystem"))
-	into += entry_line(4)
+	into += entry_line(9)
 	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
-	into += entry_line(5)
+	into += entry_line(10)
 	into += list(global.op("setPower", global.ui_act("setPower", global.arg("value", global.num())), global.then(PROC_REF(ui_act_setpower))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger) at code/ATMOSPHERICS/components/unary/heat_exchanger.dm:20
@@ -16228,17 +16230,19 @@
 	into += entry_line(22)
 	into += list(global.entry_link("/obj/machinery/atmospherics/unary/heat_exchanger::partner", "/obj/machinery/atmospherics/unary/heat_exchanger::partner"))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary/heater) at code/ATMOSPHERICS/components/unary/heat_source.dm:1
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/heater) at code/ATMOSPHERICS/components/unary/heat_source.dm:3
 /obj/machinery/atmospherics/unary/heater/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/heat_source.dm", 1, /obj/machinery/atmospherics/unary/heater)
-	into += entry_line(2)
-	into += list(global.op("toggleStatus", global.ui_act("toggleStatus"), global.then(PROC_REF(ui_act_togglestatus))))
-	into += entry_line(3)
-	into += list(global.interface("GasTemperatureSystem"))
-	into += entry_line(4)
-	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
+	into += entry_block("code/ATMOSPHERICS/components/unary/heat_source.dm", 3, /obj/machinery/atmospherics/unary/heater)
 	into += entry_line(5)
+	into += list(global.when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_HEAT, TRUE)))
+	into += entry_line(6)
+	into += list(global.op("toggleStatus", global.ui_act("toggleStatus"), global.then(PROC_REF(ui_act_togglestatus))))
+	into += entry_line(7)
+	into += list(global.interface("GasTemperatureSystem"))
+	into += entry_line(8)
+	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
+	into += entry_line(9)
 	into += list(global.op("setPower", global.ui_act("setPower", global.arg("value", global.num())), global.then(PROC_REF(ui_act_setpower))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump) at code/ATMOSPHERICS/components/unary/vent_pump.dm:51
@@ -19342,13 +19346,15 @@
 	into += entry_line(54)
 	into += list(global.on_wire(WIRE_TESLACOIL_ZAP, pulse = PROC_REF(zap_wire_pulsed)))
 
-/// CAPABILITIES(/obj/machinery/power/thermoregulator) at code/game/machinery/airconditioner.dm:155
+/// CAPABILITIES(/obj/machinery/power/thermoregulator) at code/game/machinery/airconditioner.dm:112
 /obj/machinery/power/thermoregulator/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/airconditioner.dm", 155, /obj/machinery/power/thermoregulator)
-	into += entry_line(156)
+	into += entry_block("code/game/machinery/airconditioner.dm", 112, /obj/machinery/power/thermoregulator)
+	into += entry_line(113)
 	into += list(global.climb())
-	into += entry_line(157)
+	into += entry_line(116)
+	into += list(global.when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heat_pump_watts), nameof(target_temp), HEAT_PUMP_BOTH, FALSE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop))))
+	into += entry_line(117)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(thermoregulator_emp)))))
 
 /// CAPABILITIES(/obj/machinery/power/turbine) at code/modules/power/turbine.dm:321
@@ -19806,19 +19812,21 @@
 	into += entry_line(372)
 	into += list(global.extend("release", global.needs(global.req(PROC_REF(ui_gate), silent = TRUE))))
 
-/// CAPABILITIES(/obj/machinery/space_heater) at code/game/machinery/spaceheater.dm:51
+/// CAPABILITIES(/obj/machinery/space_heater) at code/game/machinery/spaceheater.dm:52
 /obj/machinery/space_heater/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/spaceheater.dm", 51, /obj/machinery/space_heater)
-	into += entry_line(52)
-	into += list(global.climb())
+	into += entry_block("code/game/machinery/spaceheater.dm", 52, /obj/machinery/space_heater)
 	into += entry_line(53)
-	into += list(global.interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state)))
-	into += entry_line(54)
-	into += list(global.op("temp", global.ui_act("temp", global.arg("newtemp", global.num())), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_temp))))
-	into += entry_line(55)
-	into += list(global.op("cellremove", global.ui_act("cellremove"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellremove))))
+	into += list(global.climb())
 	into += entry_line(56)
+	into += list(global.when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heating_power), nameof(set_temperature), HEAT_PUMP_BOTH, TRUE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop))))
+	into += entry_line(57)
+	into += list(global.interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state)))
+	into += entry_line(58)
+	into += list(global.op("temp", global.ui_act("temp", global.arg("newtemp", global.num())), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_temp))))
+	into += entry_line(59)
+	into += list(global.op("cellremove", global.ui_act("cellremove"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellremove))))
+	into += entry_line(60)
 	into += list(global.op("cellinstall", global.ui_act("cellinstall"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellinstall))))
 
 /// CAPABILITIES(/obj/machinery/sparker) at code/game/machinery/igniter.dm:113
@@ -23050,32 +23058,32 @@
 	into += entry_line(24)
 	into += list(global.configure(global.occupant_pod(OCCUPANT_SLOT_TEST_FIXTURE, exit_to = SOUTH)))
 
-/// CAPABILITIES(/obj/machinery/heat_fixture/chiller) at code/tests/domains/heat_fixtures.dm:35
+/// CAPABILITIES(/obj/machinery/heat_fixture/chiller) at code/tests/domains/heat_fixtures.dm:33
 /obj/machinery/heat_fixture/chiller/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/domains/heat_fixtures.dm", 35, /obj/machinery/heat_fixture/chiller)
-	into += entry_line(36)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 33, /obj/machinery/heat_fixture/chiller)
+	into += entry_line(34)
 	into += list(global.when(nameof(heat_on), heat_pump(nameof(cold), nameof(gas), 2000, 200, mode = HEAT_PUMP_COOL)))
 
-/// CAPABILITIES(/obj/machinery/heat_fixture/engine) at code/tests/domains/heat_fixtures.dm:41
+/// CAPABILITIES(/obj/machinery/heat_fixture/engine) at code/tests/domains/heat_fixtures.dm:39
 /obj/machinery/heat_fixture/engine/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/domains/heat_fixtures.dm", 41, /obj/machinery/heat_fixture/engine)
-	into += entry_line(42)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 39, /obj/machinery/heat_fixture/engine)
+	into += entry_line(40)
 	into += list(global.when(nameof(heat_on), heat_engine(nameof(gas), nameof(cold), 0.5, 100)))
 
-/// CAPABILITIES(/obj/machinery/heat_fixture/plate) at code/tests/domains/heat_fixtures.dm:23
+/// CAPABILITIES(/obj/machinery/heat_fixture/plate) at code/tests/domains/heat_fixtures.dm:21
 /obj/machinery/heat_fixture/plate/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/domains/heat_fixtures.dm", 23, /obj/machinery/heat_fixture/plate)
-	into += entry_line(24)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 21, /obj/machinery/heat_fixture/plate)
+	into += entry_line(22)
 	into += list(global.when(nameof(heat_on), heat_link(nameof(gas), HEAT_AIR, nameof(conductance))))
 
-/// CAPABILITIES(/obj/machinery/heat_fixture/pod) at code/tests/domains/heat_fixtures.dm:29
+/// CAPABILITIES(/obj/machinery/heat_fixture/pod) at code/tests/domains/heat_fixtures.dm:27
 /obj/machinery/heat_fixture/pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/domains/heat_fixtures.dm", 29, /obj/machinery/heat_fixture/pod)
-	into += entry_line(30)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 27, /obj/machinery/heat_fixture/pod)
+	into += entry_line(28)
 	into += list(global.when(nameof(heat_on), global.while_slotted("heat_pod", heat_link(HEAT_HOLDER, nameof(gas), nameof(conductance)), on = ON_CONTENTS)))
 
 /// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:117

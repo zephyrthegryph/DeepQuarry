@@ -337,7 +337,7 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 
 /datum/event/supply_demand/proc/choose_atmos_items(differentTypes)
 	var/datum/gas_mixture/mixture = new
-	mixture.set_temperature(T20C)
+	heat_set(mixture, T20C)
 	var/unpickedTypes = GLOB.gas_data.gases.Copy()
 	unpickedTypes -= GAS_VOLATILE_FUEL // Don't do that one
 	for(var/i in 1 to differentTypes)

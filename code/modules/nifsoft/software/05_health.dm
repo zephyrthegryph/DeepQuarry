@@ -204,7 +204,7 @@
 	if(!active) return null
 	var/datum/gas_mixture/breath = new(BREATH_VOLUME)
 	breath.adjust_gas(GAS_O2, BREATH_MOLES)
-	breath.set_temperature(T20C)
+	heat_set(breath, T20C)
 	return breath
 
 /datum/nifsoft/mindbackup

@@ -107,12 +107,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 				var/environment_temperature = env.return_temperature()
 				if(heat_transfer > 0 && environment_temperature < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
 					heat_transfer = min(heat_transfer , self.heating_power) //limit by the power rating of the heater
-					removed.add_thermal_energy(heat_transfer)
+					heat_add(removed, heat_transfer, HEAT_SOURCE_OTHER)
 
 				else if(heat_transfer > 0 && environment_temperature < self.set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
 					self.heating_power = self.original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
 					heat_transfer = min(heat_transfer , self.heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
-					removed.add_thermal_energy(heat_transfer)
+					heat_add(removed, heat_transfer, HEAT_SOURCE_OTHER)
 
 				else
 					return
@@ -165,7 +165,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		env.add_thermal_energy(chilltemp * 1000)
+		heat_add(env, chilltemp * 1000, HEAT_SOURCE_OTHER)
 
 /mob/living/simple_mob/vore/spacecritter/livingice/iceberg
 	name = "living iceberg"

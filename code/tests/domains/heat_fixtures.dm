@@ -9,13 +9,11 @@
 
 TRACKED(/obj/machinery/heat_fixture, heat_on)
 
-/obj/machinery/heat_fixture/Initialize(mapload)
-	// ALLOW(init/INSTANCE_STATE): a fixture's two scratch gases are per-instance state the heat entries name
-	gas = new(CELL_VOLUME)
-	gas.adjust_gas(GAS_N2, 100)
-	cold = new(CELL_VOLUME)
-	cold.adjust_gas(GAS_N2, 100)
-	return ..()
+/// Two cells of nitrogen it starts with (gas_store()).
+/obj/machinery/heat_fixture/capabilities()
+	. = ..()
+	. += gas_store(nameof(gas), CELL_VOLUME, T20C, list(GAS_N2 = ONE_ATMOSPHERE))
+	. += gas_store(nameof(cold), CELL_VOLUME, T20C, list(GAS_N2 = ONE_ATMOSPHERE))
 
 /// Links its gas to the room's air while on.
 /obj/machinery/heat_fixture/plate

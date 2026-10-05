@@ -66,13 +66,11 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 /// heat_entries_refresh(), which the pipe machines call when their ports bind.
 /datum/entry_engine/heat_edge/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	var/datum/heat_edge_record/R = new
-	R.activation = A
-	R.entry = E
+	R.activation = A // ALLOW(ownership): an engine record the heat entry engine owns and drops in remove()
+	R.entry = E // ALLOW(ownership): the interned entry this record was made for, a flyweight
 	heat_entry_make(R)
 	GLOB.heat_entry_edges["[A.serial]:[E.sig]"] = R
-	var/atom/declarer = heat_entry_declarer(A)
-	if(isatom(declarer))
-		LAZYADD(declarer.heat_edge_records, R)
+	heat_records_add(GLOB.heat_edge_records_of, heat_entry_declarer(A), R)
 	return TRUE
 
 /datum/entry_engine/heat_edge/remove(datum/activation/A, datum/entry/E)
@@ -81,9 +79,7 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 		return
 	GLOB.heat_entry_edges -= "[A.serial]:[E.sig]"
 	heat_entry_unmake(R)
-	var/atom/declarer = heat_entry_declarer(A)
-	if(isatom(declarer))
-		LAZYREMOVE(declarer.heat_edge_records, R)
+	heat_records_remove(GLOB.heat_edge_records_of, heat_entry_declarer(A), R)
 
 /// The side that declares an activation's entries: the container of a slotted one, else the holder.
 /proc/heat_entry_declarer(datum/activation/A)
@@ -151,9 +147,8 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 			vg_heat_body_keep(end[2], TRUE)
 	if((E.args["a"] in list(HEAT_AIR, HEAT_HULL)) || (E.args["b"] in list(HEAT_AIR, HEAT_HULL)))
 		if(ismovable(declarer))
-			R.follows = declarer
-			var/atom/movable/M = declarer
-			LAZYOR(M.heat_followers, R)
+			R.follows = declarer // ALLOW(ownership): a weak back-reference the record clears in heat_entry_unmake()
+			heat_records_add(GLOB.heat_followers_of, declarer, R)
 	return TRUE
 
 /// Removes the Rust edge of a record.
@@ -162,51 +157,64 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 		vg_heat_edge_remove(R.id)
 		R.id = null
 	if(R.follows)
-		LAZYREMOVE(R.follows.heat_followers, R)
-		R.follows = null
+		heat_records_remove(GLOB.heat_followers_of, R.follows, R)
+		R.follows = null // ALLOW(ownership): clearing the record's weak back-reference
 
-/// The edges whose endpoint follows this movable (HEAT_AIR, HEAT_HULL of a machine that can be moved).
-/atom/movable/var/list/heat_followers
+/// Declarer -> the records of the edges whose endpoint follows where it is (HEAT_AIR, HEAT_HULL of a machine that can be moved).
+GLOBAL_LIST_EMPTY(heat_followers_of)
+/// Declarer -> the records of the heat edges it declares (heat_entries_refresh(), heat_entries_bill()).
+GLOBAL_LIST_EMPTY(heat_edge_records_of)
 
-/// This movable moved: the edges that name its air or its hull are re-made on the new turf.
-/atom/movable/proc/heat_followers_moved()
-	for(var/datum/heat_edge_record/R as anything in heat_followers?.Copy())
+/proc/heat_records_add(list/index, datum/key, datum/heat_edge_record/R)
+	if(!key)
+		return
+	var/list/records = index[key]
+	if(!records)
+		records = list()
+		index[key] = records
+	records += R
+
+/proc/heat_records_remove(list/index, datum/key, datum/heat_edge_record/R)
+	var/list/records = key ? index[key] : null
+	if(!records)
+		return
+	records -= R
+	if(!length(records))
+		index -= key
+
+/// A movable moved: the edges that name its air or its hull are re-made on the new turf.
+/proc/heat_followers_moved(atom/movable/M)
+	for(var/datum/heat_edge_record/R as anything in GLOB.heat_followers_of[M]?.Copy())
 		heat_entry_unmake(R)
 		heat_entry_make(R)
-
-/// The heat edge records this atom declares (heat_entries_refresh(), heat_entries_power()).
-/atom/var/list/heat_edge_records
 
 /// Re-makes the holder's heat edges with the current values of what they read: after a var a heat entry reads changed without a
 /// tracked setter, or once an endpoint exists (a pipe machine's ports bound).
 /proc/heat_entries_refresh(atom/holder)
-	for(var/datum/heat_edge_record/R as anything in holder?.heat_edge_records)
+	for(var/datum/heat_edge_record/R as anything in GLOB.heat_edge_records_of[holder])
 		heat_entry_unmake(R)
 		heat_entry_make(R)
 
 /// Makes the holder's heat edges that could not be made yet (an endpoint did not exist).
 /proc/heat_entries_complete(atom/holder)
-	for(var/datum/heat_edge_record/R as anything in holder?.heat_edge_records)
+	for(var/datum/heat_edge_record/R as anything in GLOB.heat_edge_records_of[holder])
 		if(!R.id)
 			heat_entry_make(R)
 
 /// The electrical power of the holder's live heat edges last step, W: positive for engines' output, negative for pumps' draw.
 /proc/heat_entries_power(atom/holder)
 	. = 0
-	for(var/datum/heat_edge_record/R as anything in holder?.heat_edge_records)
+	for(var/datum/heat_edge_record/R as anything in GLOB.heat_edge_records_of[holder])
 		if(R.id)
 			. += heat_edge_power(R.id)
 
-/// When heat_entries_bill() last billed this atom's heat edges (world.time).
-/atom/var/heat_billed_at
-
 /// The electrical energy the holder's heat edges exchanged since it last asked, J: what its pumps drew (positive) less what its
-/// engines made. A machine pays it from its cell or its grid with this, so the power it pays and the heat it moves agree.
+/// engines made, exactly as Rust booked it. A machine pays it from its cell or its grid, so the power it pays and the heat it moves agree.
 /proc/heat_entries_bill(atom/holder)
-	var/now = world.time
-	var/since = isnull(holder.heat_billed_at) ? 0 : max(0, now - holder.heat_billed_at) / (1 SECONDS)
-	holder.heat_billed_at = now
-	return -heat_entries_power(holder) * since
+	. = 0
+	for(var/datum/heat_edge_record/R as anything in GLOB.heat_edge_records_of[holder])
+		if(R.id)
+			. += vg_heat_edge_take_work(R.id) || 0
 
 /// The live heat edge ids the holder declares, or is the holder of (a slotted occupant) (tests, tooling).
 /proc/heat_entries_of(datum/holder)

@@ -137,7 +137,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	rust_allocate_pipe_ports()
 	rust_register_pipe_port_data()
 	rust_register_pipe_edges()
-	if(heat_edge_records)
+	if(GLOB.heat_edge_records_of[src])
 		heat_entries_complete(src) // its heat entries that name a port (HEAT_PORT(i)) can be made now
 	if(commit && !SSexplosions.is_bulk_resolving())
 		SSair.rust_commit_pending_pipenets()
