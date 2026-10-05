@@ -158,3 +158,11 @@
 	TEST_ASSERT(p2_smes_safeties(S), "a second after the first pulse it is back on")
 	test_time(2 SECONDS)
 	TEST_ASSERT(p2_smes_safeties(S), "a second later it is back on")
+
+/// A grid checker's failure tells the units upstream to suspend (do_grid_check()).
+/datum/unit_test/dq_p2_smes/mf_grid_checker_reaches_the_unit
+
+/datum/unit_test/dq_p2_smes/mf_grid_checker_reaches_the_unit/run_gate()
+	var/obj/machinery/power/smes/S = p2_smes()
+	S.do_grid_check()
+	TEST_ASSERT(!S.grid_check, "legacy: the SMES has no do_grid_check() of its own, so a grid check never suspends it")
