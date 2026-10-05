@@ -15,7 +15,7 @@
 	TEST_ASSERT_EQUAL(computer.buffer_mob, "Unit recipient", "accepted recipient updates the actual checkout buffer")
 	computer.apply_catalogue_answer("editbook", "")
 	computer.apply_catalogue_answer("editmob", "")
-	TEST_ASSERT_EQUAL(computer.buffer_book, "", "accepted blank overwrites the book buffer")
+	TEST_ASSERT(isnull(computer.buffer_book), "accepted blank clears the book buffer through the original sanitizer")
 	TEST_ASSERT_EQUAL(computer.buffer_mob, "", "accepted blank overwrites the recipient buffer")
 	computer.apply_catalogue_answer("setauthor", "First author")
 	TEST_ASSERT_EQUAL(first.author, "First author", "author edit uses the actual current scanned book")
