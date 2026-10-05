@@ -12,7 +12,13 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/bump_teleporter, REGISTRY_BUMP_TELEPORTERS)
 
-/obj/effect/bump_teleporter/Bumped(atom/user)
+CAPABILITIES(/obj/effect/bump_teleporter)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/bump_teleporter/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/user = N.bumper
 	if(!ismob(user))
 		//user.loc = src.loc	//Stop at teleporter location
 		return
@@ -25,3 +31,4 @@ REGISTRY_MEMBERSHIP(/obj/effect/bump_teleporter, REGISTRY_BUMP_TELEPORTERS)
 		if(BT.id == src.id_target)
 			M.forceMove(BT.loc) // Teleport to location with correct id. //
 			return
+

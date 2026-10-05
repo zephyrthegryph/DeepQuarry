@@ -53,6 +53,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	register_dangerous_to_step()
 
 CAPABILITIES(/obj/structure/cliff)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	climb(delay = CLIFF_CLIMB_TIME, delay_by = PROC_REF(climb_delay), gate = PROC_REF(climbing_gear_needed))
 
 /// North facing cliffs are two tiles high and take half the time.
@@ -171,13 +172,15 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 				return FALSE
 		return TRUE
 
-/obj/structure/cliff/Bumped(atom/A)
+/// Something walked into it (the bump action's notice).
+/obj/structure/cliff/proc/bumped_into(datum/act/act)
+	var/datum/notice/bumped/N = act
+	var/atom/A = N.bumper
 	if(isliving(A))
 		var/mob/living/L = A
 		if(should_fall(L))
 			fall_off_cliff(L)
 			return
-	..()
 
 /obj/structure/cliff/proc/should_fall(mob/living/L)
 	if(dq_get_hovering(L) || L.flying)

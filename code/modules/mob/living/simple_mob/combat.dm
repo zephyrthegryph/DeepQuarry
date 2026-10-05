@@ -77,7 +77,7 @@
 // Generally used to do the regular attack.
 // Override for doing special stuff with the direct result of the attack.
 /mob/living/simple_mob/proc/apply_attack(atom/A, damage_to_do, stance = I_HURT)
-	return A.attack_generic(src, damage_to_do, pick(attacktext))
+	return generic_hit(A, src, damage_to_do, pick(attacktext))
 
 // Override for special effects after a successful attack, like injecting poison or stunning the target.
 /mob/living/simple_mob/proc/apply_melee_effects(atom/A, stance = I_HURT)

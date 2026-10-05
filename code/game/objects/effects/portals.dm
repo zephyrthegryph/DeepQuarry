@@ -13,7 +13,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	anchored = TRUE
 	var/event = FALSE
 
-/obj/effect/portal/Bumped(mob/M as mob|obj)
+CAPABILITIES(/obj/effect/portal)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/portal/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/M = N.bumper
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(M)

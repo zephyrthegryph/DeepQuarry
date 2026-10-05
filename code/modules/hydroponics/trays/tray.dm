@@ -698,6 +698,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	take_plant_sample(user)
 	return ITEM_INTERACT_SUCCESS
 
+/// A mechanical tray with no port under it is bolted down by its own wrench, not connected.
+/obj/machinery/portable_atmospherics/hydroponics/port_wrench_offered(datum/act/op/A)
+	return !mechanical || locate_within(loc, /obj/machinery/atmospherics/portables_connector)
+
 /obj/machinery/portable_atmospherics/hydroponics/wrench_act(mob/user, obj/item/tool)
 	if(!mechanical)
 		return ..()

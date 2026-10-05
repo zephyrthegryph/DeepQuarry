@@ -1263,6 +1263,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!istype(where))
 		return OP_FAILED
 	var/spawn_path = src.args["type"]
+	if(ispath(spawn_path, /obj/item/stack)) // a stack spawns as one pile of n
+		new spawn_path(get_turf(where), src.args["n"])
+		return OP_OK
 	for(var/i in 1 to src.args["n"])
 		new spawn_path(get_turf(where))
 	return OP_OK

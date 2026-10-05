@@ -993,6 +993,98 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
   takes the emag through the emag library.
 * **Map edits**: the alarms a map left unlocked (`locked = 0`) say `lock_at_start = 0`.
 
+## Portable turrets, the turret control panel and the turret frame (rewrite/machines-full)
+
+- **Lock and window.** The turret and the panel use the library `lock()`; their window buttons need `req_window_usable()` with the firewall
+  (`ailock`) as the remote condition, so a silicon over its link is kept out by the firewall and an admin ghost works a locked machine.
+- **Pulses.** `emp_disable()` replaces the hand-written switch-off and re-enable: a pulse holds STAT_OPERABLE down (6-60 s over severity) and
+  the turret's / panel's on switch is left as it was (before, the pulse flipped `enabled` off and a timer flipped it back on). A knocked-out
+  or unpowered panel tells its turrets to stand down and they follow it again when it comes back.
+- **Armed.** `STAT armed` = switched on and operable; the target scan is `every(..., when = STAT_ARMED)`, so an idle or unpowered turret
+  does no periodic work (the old mob-chunk sleep tokens and its test are gone). Power that comes back before the turret "noticed" leaves it
+  powered (the old delayed power-off landed after power returned).
+- **Emag.** `emag(disables_for = 6 SECONDS)`: the turret is subverted, locked away from its panels and switched on, held inoperable for the
+  six-second grace.
+- **Panel settings.** The panel hands its turrets every setting it shows, `check_down` included (before, the down setting never reached them),
+  and no longer overwrites a turret's own firewall. The panel's area is a link (`/area::turret_controls`); mappers name it with
+  `control_area_name` (the four map edits were rewritten).
+- **The pop-up cover** is the library `popup_cover()`.
+- **The frame** is a `construction()` graph: the proximity sensor goes in with a click (before, no click reached it) and stays in the frame's
+  construction slot; each step undoes by its tool; a loose frame pries apart into one stack of five sheets (`spawns()` of a stack now makes
+  one pile of n). Renaming is `asks()` a text prompt.
+## Atmospherics machines: the canister and the portable machines
+
+Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first) and the canister tests of `dq_atmos_tests.dm`.
+
+* **The chilled oxygen canister holds one load of oxygen**, chilled to 80 K: it was filled twice (its own fill on top of the oxygen canister's).
+* **The presets are a `starts_with` table** (gas -> share of a 45-atmosphere load; the engine set-up canisters' share is 2). The room filler is a
+  preset that empties itself into its room.
+* **A ruptured canister's gas goes into the room** (`gas_dump()`): it went nowhere (the machine's own destruction let go of the mixture first).
+* **The valve's release is `gas_release()`** (the same exact solve and the same release-flow cap per service interval; the turf is woken by the API),
+  and a cyborg's jetpack refill too (an exact solve at the mixing temperature, where it used the canister's temperature).
+* **A canister can be relabelled while it is empty**, read when asked (it was a stored flag the machine pipeline overwrote each frame, so the type's
+  `can_label` never held past the first frame anyway).
+* **The release log keeps its newest 50 lines** as a list (it was an unbounded HTML string).
+* **The canister's work is an `every()` gated by `working`**, woken by its own gas watch; a closed connected canister's gas change moves only its
+  gauge. The machine pipeline stage, its OM value watch, `MACHINE_WAKE` and `om_settled` are gone.
+* **The tank bay, the port wrench, the liner, the welder, the strike and the cell slot of the powered ones are ops** (`tank_bay()` beside
+  `cell_bay()`); refusals say why ("It is wrecked.", "Nothing happens.", the drain and liner reasons). A liner takes its two sheets as the op's cost.
+* **The canister's eject drops the tank on the floor and closes an open valve, as before; the label's colour is a tracked var drawn by `draw()`.**
+## Missing forms: the bump action
+
+Pinned by `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on the legacy `Bumped()` first) and the bump tests of `dq_p2_door_behaviour.dm`.
+
+* **Walking into something is the bump action**: `/atom/movable/proc/bump_into()` is its one emitter (the movement path's `Bump()` and a mech's push
+  call it), published on the bumped atom with `bumper`, `bumped` and `direction`. A type answers with `on_notice(/datum/notice/bumped, ...)` or takes it
+  over with `extend(/datum/act/bump, instead(...))`; an unconverted `Bumped()` still runs after the notice. A refused or taken-over bump skips it.
+* **The airlock's bump shock is a takeover**: a live door's shock (or a hallucinating mob's phantom one) replaces the bump; a shock that finds no power
+  lets the bump go on to the door as before. A mob shocked this way is stamped for the once-a-second bump limit (it was stamped before the shock).
+* **A mech's bump reaches doors through the same emitter**: a mech pushing an anchored object used to call its `Bumped()` directly.
+* Converted: the door base, airlock, blast door, firedoor, windoor, unpowered door, transport pod, and the bump answers of the shadekin portals,
+  recharge station, teleporter hub, bluespace/flux/gravity anomalies, bump teleporter, grille, cliff, fence, medical holosign, simple door, portals,
+  transit tubes, telecube, redgate, autogibber, station map and infrared beam. The rest are held by the `bump_ratchet_on_bumped_overrides` ceiling.
+
+## Missing forms: the generic hit
+
+Pinned by the smash tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on `attack_generic()` first) and the animal tests of
+`dq_p2_door_behaviour.dm`, `dq_p2_closet_behaviour.dm`, `dq_p2_lights_behaviour.dm` and the other callers' tests (now driven through `generic_hit()`).
+
+* **A generic attack is the hit/generic action**: `generic_hit(target, user, damage, attack_verb)` is its one emitter (simple mobs' attacks, xeno
+  bites, bots, a hulk's or a shredder's smash). A target takes it over with `extend(/datum/act/hit/generic, instead(...))`; otherwise the default
+  `attack_generic()` lands with the act's final damage.
+* **A taken-over hit is not a landed one for the attacker**: `apply_attack()` returns FALSE for it, so a simple mob's melee effects (poison and the
+  like) do not follow a hit a door or a fixture answered itself. A camera's smash used to return TRUE here.
+* Converted: the door base, airlock, blast door, firedoor, puzzle door, lift panel, drop pod door, cult pylon, light fixture, camera, expedition demo
+  target, ladder and trash pile. The rest are held by the `generic_hit_ratchet_on_attack_generic_overrides` ceiling.
+## Electrification as timed holds (vending, smartfridge, seed storage, suit cycler; rewrite/machines-full)
+
+- `shock_wire()` has no counter mode any more. Every user declares `STAT(T, electrified, TOP, base = 0)` (as the airlock does) and
+  `shock_wire(stat = STAT_ELECTRIFIED)`: a pulse is a timed hold of exactly 30 seconds (before: 30 "frames" of a per-tick countdown, whose
+  real length followed the machine's step rate), a cut wire an untimed hold until mended, and mending releases both.
+- Sources do not overwrite each other: an event's or an admin's hold sits beside the wire's, and the strongest (TOP) wins; mending the wire
+  leaves another source's hold in place (before, any writer set the one counter).
+- The shock counts only while the machine is operable (`shock_live()`): an unpowered or broken machine shocks nobody, and is live again when
+  it comes back. A timed hold's clock keeps running while the machine is down, so a pulse can run out during an outage (before, the countdown
+  paused). The suit cycler no longer clears its shock when it loses power.
+- The `seconds_electrified` counter, its -1 sentinel and the countdown in the machines' periodic work are gone: an idle electrified vendor,
+  fridge or seed storage does no periodic work for its shock.
+
+## Atmospherics: the cryo cell's pipe and on-state
+
+* The cryo cell's on-state is its own tracked `cooling` (`set_cooling()`), not the machine core's `on`; its pipe check is the unary device's
+  `piped()` (shared with every unary device), not a read of `node` of its own.
+* `gas_body_heat_exchange()` wakes the pipe network that owns the gas (`gas_touched(air)`) whenever the gas's temperature moves; the cell no
+  longer marks the network by hand. Before, it marked it only when the gas moved by more than 1 K in a tick, so a slow exchange now records
+  every change (a revision bump, no extra pipenet pass). A body already at the gas's temperature changes nothing (no rounding drift).
+
+## Missing forms: an explosion's contents
+
+Pinned by `code/modules/unit_tests/dq_mfo_blast_contents.dm` (green on the overrides first), `dq_explosion_batch_tests.dm` and `dq_c8a_occupant_slot_tests.dm`.
+
+* **How hard a blast reaches a holder's contents is declared**: `blast_contents()` or `blast_contents(shield = 1)` in the holder's CAPABILITIES; the
+  explosion service reads it (`explosion_contents_severity_of()`). Every `explosion_contents_severity()` override is gone (body scanner, clone pod,
+  DNA scanner, pAI card, closet, statue, morgue, transit tube pod, bookcase, APC, atmospherics machinery) and the name is a hard ban.
+* No change in numbers: the DNA scanner declared two overrides, and the later one (the full blast) is what ran.
 ## Heat network (rewrite/thermal-domain)
 
 Heat moves only through Rust's conserved transfer primitive and declared edges (`heat_link()`, `heat_pump()`, `heat_engine()`; `heat_move()` and its

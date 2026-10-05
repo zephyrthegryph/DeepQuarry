@@ -32,14 +32,17 @@
 	update_icon()
 
 CAPABILITIES(/obj/structure/ladder)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
 
-/obj/structure/ladder/attack_generic(mob/user)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/ladder/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	//Simple Animal
 	if(isanimal(user))
 		attack_hand(user)
 	else
-		return ..()
+		return HOOK_DECLINE
 
 /obj/structure/ladder/welder_act(mob/user, obj/item/C)
 	var/obj/item/weldingtool/WT = C.get_welder()

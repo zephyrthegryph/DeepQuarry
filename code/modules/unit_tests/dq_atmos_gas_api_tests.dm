@@ -92,6 +92,19 @@
 	TEST_ASSERT(half > body && half < BODYTEMP_NORMAL, "a half share goes half way: [half]")
 	qdel(M)
 
+/// The pipe network that owns the gas re-settles on its own: the caller (a cryo cell) never marks it.
+/datum/unit_test/dq_gas_api/body_heat_exchange_wakes_network
+/datum/unit_test/dq_gas_api/body_heat_exchange_wakes_network/Run()
+	var/datum/pipe_network/N = new
+	rel_set(N, nameof(N.air), gas_api_test_mix(200, 50, 80))
+	var/before = N.revision
+	gas_body_heat_exchange(N.air, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY)
+	TEST_ASSERT(N.revision > before, "the owning network's revision moves")
+	before = N.revision
+	gas_body_heat_exchange(N.air, gas_sample(N.air).temperature, HUMAN_HEAT_CAPACITY)
+	TEST_ASSERT_EQUAL(N.revision, before, "a body already at the gas temperature changes nothing")
+	qdel(N)
+
 /datum/unit_test/dq_gas_api/observation_fields
 /datum/unit_test/dq_gas_api/observation_fields/Run()
 	var/list/record = list(7, 42, 3, 9, 101.3, 293.15, 2500, 21, 0.5, 0, 0, 0, 0, 0, 0, 103)

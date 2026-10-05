@@ -194,7 +194,7 @@
 
 /obj/machinery/atmospherics/unary/cryo_cell/generated_reads()
 	. = ..()
-	. += drawn_from(nameof(beaker))
+	. += drawn_from(nameof(beaker), nameof(cooling))
 
 /obj/machinery/atmospherics/unary/vent_pump/generated_reads()
 	. = ..()
@@ -237,6 +237,14 @@
 	. = ..()
 	. += drawn_from(nameof(lamp_shade), nameof(status))
 
+/obj/machinery/porta_turret/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(turret_type))
+
+/obj/machinery/portable_atmospherics/canister/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(canister_color), nameof(destroyed), nameof(gauge_band), nameof(holding))
+
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(cell), nameof(charging), nameof(operating))
@@ -249,6 +257,10 @@
 /obj/machinery/recharger/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(charge_phase), nameof(icon_state_charged), nameof(icon_state_charging), nameof(icon_state_idle))
+
+/obj/machinery/turretid/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(enabled), nameof(lethal))
 
 /obj/structure/event_collector/nukies/generated_reads()
 	. = ..()

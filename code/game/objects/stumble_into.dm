@@ -87,7 +87,8 @@
 
 /obj/machinery/door/airlock/stumble_into(mob/living/M)
 	..()
-	bumpopen(M)
+	if(!shocks_bumper(M))
+		bumpopen(M)
 
 /obj/machinery/appliance/cooker/fryer/stumble_into(mob/living/M)
 	visible_message(span_warning("[M] [pick("ran", "slammed")] into \the [src]!"))
@@ -100,9 +101,9 @@
 
 /obj/machinery/porta_turret/stumble_into(mob/living/M)
 	..()
-	if(!attacked && !emagged)
-		attacked = TRUE
-		after(src, 6 SECONDS, PROC_REF(calm_down))
+	if(!attacked && !emag_emagged(src))
+		set_attacked(TRUE)
+		after(src, 6 SECONDS, PROC_REF(calm_down), key = "grudge")
 
 // space_heater (spaceheater.dm) deleted with ZAS atmos machinery;
 // stumble override removed.

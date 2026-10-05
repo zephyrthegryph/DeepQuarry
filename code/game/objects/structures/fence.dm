@@ -28,6 +28,7 @@
 	return ..()
 
 CAPABILITIES(/obj/structure/fence)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	climb(gate = PROC_REF(needs_a_climbable_hole))
 
 /// A fence is climbed through a medium hole: an intact one is too tight to, and a large one is walked through.
@@ -142,8 +143,10 @@ CAPABILITIES(/obj/structure/fence)
 			to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
 	update_cut_status()
 
-/obj/structure/fence/Bumped(AM)
-	. = ..()
+/// Something walked into it (the bump action's notice).
+/obj/structure/fence/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(electric && isliving(AM))
 		var/mob/living/L = AM
 		if(!L.is_incorporeal())

@@ -114,6 +114,20 @@ pub fn parts() -> Vec<Part> {
             line(r"^/[A-Za-z0-9_/]*/(atom_break|set_broken)\("),
         ),
         Part::new(
+            "generic_hit_ratchet_on_attack_generic_overrides",
+            "generic hit: ratchet on attack_generic() overrides",
+            "attack_generic() overrides over the ratchet. Take the generic hit over: extend(/datum/act/hit/generic, instead(then(PROC_REF(x)))) in the type's CAPABILITIES; HOOK_DECLINE lets the default attack land.",
+            Files::Code,
+            line(r"^/[A-Za-z0-9_/]*/attack_generic\("),
+        ),
+        Part::new(
+            "bump_ratchet_on_bumped_overrides",
+            "bump: ratchet on Bumped() overrides",
+            "Bumped() overrides over the ratchet. Answer the bump action: on_notice(/datum/notice/bumped, then(PROC_REF(x))) or extend(/datum/act/bump, ...) in the type's CAPABILITIES.",
+            Files::Code,
+            line(r"^/[A-Za-z0-9_/]*/Bumped\("),
+        ),
+        Part::new(
             "weapon_vocabulary_injury_kinds_not_damage_types",
             "weapon vocabulary: injury kinds, not damage types",
             "a legacy damage type (damtype / injury_kind_for / check_armour / attack_sharp...) detected. Declare injury_kind = INJURY_X (or injury_kinds) and derive object damage with injury_kind_obj_damage_type().",

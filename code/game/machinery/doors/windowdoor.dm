@@ -50,7 +50,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 		visible_message("[src] shatters!")
 	qdel(src)
 
-/obj/machinery/door/window/Bumped(atom/movable/AM as mob|obj)
+/// Something walked into the windoor: a bot with its card or a mech with its pilot's access opens it for five seconds, a mob with access for two
+/// (five for a public one). Replaces the door's answer.
+/obj/machinery/door/window/door_bumped(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
+	if(!AM)
+		return
 	if (!( ismob(AM) ))
 		var/mob/living/bot/bot = AM
 		if(istype(bot))

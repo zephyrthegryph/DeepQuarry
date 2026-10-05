@@ -245,10 +245,15 @@ DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction
 		cooldown(mate_too = FALSE)
 	. = ..()
 
-/obj/item/telecube/Bumped(atom/movable/M)
+CAPABILITIES(/obj/item/telecube)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/item/telecube/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/M = N.bumper
 	if(teleport_to_mate(M))
 		cooldown(mate_too = FALSE)
-	. = ..()
 
 // Subtypes
 

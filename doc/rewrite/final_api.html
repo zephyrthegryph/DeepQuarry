@@ -1463,10 +1463,11 @@ ACTION(op, datum/op_def/op, provider, notice = /datum/notice/op_done)   <span cl
     <tbody>
       <tr><td><code>move</code>, <code>z_change</code></td><td><code>turf/origin</code>, <code>turf/destination</code> (and <code>direction</code> for a move)</td><td><code>moved</code>, <code>z_changed</code></td></tr>
       <tr><td><code>cross</code>, <code>uncross</code></td><td><code>atom/movable/crosser</code></td><td><code>crossed</code>, <code>uncrossed</code></td></tr>
-      <tr><td><code>bump</code>, <code>stumbled_into</code></td><td><code>atom/bumped</code>; <code>atom/movable/stumbled</code></td><td><code>bumped</code>, <code>stumbled_into</code></td></tr>
+      <tr><td><code>bump</code>, <code>stumbled_into</code></td><td><code>atom/movable/bumper, atom/bumped, direction</code> (published on the bumped atom, from the one emitter <code>bump_into()</code>); <code>atom/movable/stumbled</code></td><td><code>bumped</code>, <code>stumbled_into</code></td></tr>
       <tr><td><code>fall</code></td><td><code>turf/landing</code>, <code>mob/living/landed_on</code></td><td><code>fell</code></td></tr>
       <tr><td><code>thrown_hit</code></td><td><code>atom/movable/thrown</code></td><td><code>thrown_hit</code></td></tr>
       <tr><td><code>hit/&lt;entry&gt;</code>: projectile, melee, explosion, emp, blob, fire, shock, ...</td><td><code>datum/damage_packet/packet</code></td><td><code>hit/&lt;entry&gt;</code></td></tr>
+      <tr><td><code>hit/generic</code>: a simple mob's, a xeno's or a bot's generic attack, from its one emitter <code>generic_hit(target, user, damage, attack_verb)</code></td><td><code>packet</code> (the attacker and <code>DAMAGE_ENTRY_GENERIC</code>, no amounts), <code>mob/attacker, damage, attack_verb</code></td><td><code>hit/generic</code>. A target answers it with <code>extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))</code>; a handler that returns <code>HOOK_DECLINE</code> lets the default generic attack land with the act's final <code>damage</code>. Replaces <code>attack_generic()</code> overrides</td></tr>
       <tr><td><code>irradiate</code>, <code>injure</code>, <code>body_status</code></td><td>the body domain's fields (<a href="#domains">section 14</a>)</td><td><code>irradiated</code>, <code>injured</code>, <code>body_status_changed</code> (declared with <code>notice =</code>)</td></tr>
       <tr><td><code>insert</code>, <code>remove</code></td><td><code>atom/movable/item</code> (a slot holds mobs too), <code>slot_id</code></td><td><code>inserted</code>, <code>removed</code></td></tr>
       <tr><td><code>equip</code>, <code>unequip</code></td><td><code>obj/item/item</code>, <code>slot_id</code></td><td><code>equipped</code>, <code>unequipped</code></td></tr>
@@ -2639,6 +2640,7 @@ request(src, /datum/prompt/yes_no/ghost_role, then(PROC_REF(role_answered)), val
       <li><strong>Mitigation:</strong> armour stats, materials, resistances.</li>
       <li><strong>The sink:</strong> <code>damage_sink()</code>, which is integrity for objects and <code>injure()</code> for mobs.</li>
       <li><strong>The notice:</strong> <code>/datum/notice/hit/&lt;entry&gt;</code>.</li>
+          <li><strong>An explosion's contents:</strong> a holder declares how hard a blast on it reaches what it carries, <code>blast_contents()</code> (the full blast) or <code>blast_contents(shield = 1)</code> (one severity step lighter; past light it reaches nothing); the explosion service reads it with <code>explosion_contents_severity_of(holder, severity)</code> and queues the contents in the same batch. A holder that declares nothing shields them. Replaces <code>explosion_contents_severity()</code> overrides.</li>
     </ol>
     <p>Integrity's broken state is tracked; <code>atom_break()</code> and <code>atom_fix()</code> publish it. Library pieces: <code>emp_disable()</code>, <code>reflects()</code>, <code>blocks()</code>. Repair is a <code>fixes()</code> part, or <code>repair_damage()</code>. A worn piece of kit reaches the wearer through <code>while_slotted</code>, not through a hand-written hook on the mob:</p>
   </div>

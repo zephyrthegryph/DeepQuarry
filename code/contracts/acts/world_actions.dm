@@ -12,7 +12,9 @@ ACTION(move, turf/origin, turf/destination, direction)
 ACTION(z_change, turf/origin, turf/destination)
 ACTION(cross, atom/movable/crosser)
 ACTION(uncross, atom/movable/crosser)
-ACTION(bump, atom/bumped)
+// bump is published on the BUMPED atom (the door, the pod, the wall): `bumper` walked into it heading `direction`. One emitter,
+// /atom/movable/proc/bump_into() (atoms_movable.dm), which the movement path's Bump() and a mech's push both call.
+ACTION(bump, atom/movable/bumper, atom/bumped, direction)
 ACTION(stumbled_into, atom/movable/stumbled)
 ACTION(fall, turf/landing, mob/living/landed_on)
 ACTION(thrown_hit, atom/movable/thrown)
@@ -24,6 +26,10 @@ ACTION(hit/emp)
 ACTION(hit/blob)
 ACTION(hit/fire)
 ACTION(hit/shock)
+// A simple mob's, a xeno's or a bot's generic attack (the old attack_generic()), started by generic_hit() before anything lands: `packet` names the
+// attacker and DAMAGE_ENTRY_GENERIC and carries no amounts; `damage` is what the default attack would deal. A takeover (instead) is the target's
+// own answer; otherwise the default attack lands.
+ACTION(hit/generic, mob/attacker, damage, attack_verb)
 ACTION(irradiate, effect, blocked, check_protection, rad_protection)
 ACTION(injure, kind, amount, zone, atom/cause, flags)
 ACTION(body_status, notice = /datum/notice/body_status_changed)

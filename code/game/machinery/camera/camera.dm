@@ -43,6 +43,7 @@
 	var/client_huds = null
 
 CAPABILITIES(/obj/machinery/camera)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	owns_one(nameof(assembly), /obj/item/camera_assembly)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(camera_emp))))
 	space(SPACE_PANEL, door = nameof(panel_open))
@@ -271,7 +272,9 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 	return TRUE
 
-/obj/machinery/camera/attack_generic(mob/user as mob)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/machinery/camera/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	if(isanimal(user))
 		var/mob/living/simple_mob/S = user
 		set_status(0)
@@ -281,8 +284,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		playsound(src, S.attack_sound, 100, 1)
 		add_hiddenprint(user)
 		deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
-		return 1
-	return 0
+		return OP_OK
+	return OP_OK
 
 /obj/machinery/camera/screwdriver_act(mob/user, obj/item/tool)
 	update_coverage()

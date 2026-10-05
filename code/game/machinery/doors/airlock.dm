@@ -193,6 +193,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	extend("doors.close", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	// Touching a live door shocks you instead of doing what you meant. Window buttons and a silicon's link are not touches.
 	extend(/datum/act/op, instead(when(STAT_ELECTRIFIED, req_on_origin(ORIGIN_CLICK)), then(PROC_REF(shock_toucher)), order = ORDER_EARLY))
+	// Walking into a live door shocks you instead of opening it; a mech reports to the cycling controller.
+	extend(/datum/act/bump, instead(then(PROC_REF(bump_shocks)), order = ORDER_EARLY))
+	on_notice(/datum/notice/bumped, then(PROC_REF(mech_bumped_status)))
 
 	section(ctrl_click, "The ctrl-click on the door: hammer on it (combat), hold it open (grab), ring the bell (anything else)")
 	// A silicon's ctrl-click is its bolt button over the link (below), never a hand on the door.
@@ -843,32 +846,53 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/requiresID()
 	return !(wire_is_cut(src, WIRE_IDSCAN) || aiDisabledIdScanner)
 
-/// A mob walked into the door: a live door shocks a non-silicon (once a second), a hallucinating one may feel a phantom shock; then the base bump.
-/obj/machinery/door/airlock/bumpopen(mob/living/user) //Airlocks now zap you when you 'bump' them open when they're electrified. --NeoFite
-	if(!issilicon(user))
-		if(electrified)
-			if(!COOLDOWN_FINISHED(src, bump_zap_cooldown))
-				return
-			if(shock(user, 100))
-				COOLDOWN_START(src, bump_zap_cooldown, 1 SECOND)
-				return
-		else if(user.status_units(EFFECT_HALLUCINATING) > 50 && prob(10) && operating == 0)
-			to_chat(user, span_danger("You feel a powerful shock course through your body!"))
-			user.playsound_local(get_turf(user), get_sfx(SFX_SPARKS), vol = 75)
-			user.injure(INJURY_PAIN, 10, null, src)
-			user.status_adjust(EFFECT_STUNNED, 10)
-			return
-	..(user)
+/// A mob walked into the door (the bump action, taken over before the door's own answer): a live door shocks a non-silicon (once a second), and
+/// a hallucinating one may feel a phantom shock instead of the door opening. A bump that does neither goes on to the door's answer (door_bumped()).
+/obj/machinery/door/airlock/proc/bump_shocks(datum/act/bump/A)
+	var/mob/living/user = A.bumper
+	if(!istype(user) || !bump_reaches_without_stamp(user))
+		return HOOK_DECLINE
+	return shocks_bumper(user) ? OP_OK : HOOK_DECLINE
+
+/// The shock a mob walking or stumbling into the door takes: TRUE when it took one (or a phantom one), and the door does not open for it.
+/obj/machinery/door/airlock/proc/shocks_bumper(mob/living/user)
+	if(issilicon(user)) // a cyborg's chassis is insulated from the door
+		return FALSE
+	if(electrified)
+		if(!COOLDOWN_FINISHED(src, bump_zap_cooldown))
+			EXPIRY_STAMP(user, last_bumped, CLOCK_WORLD)
+			return TRUE // the shock just fired: the bump does nothing
+		if(shock(user, 100))
+			EXPIRY_STAMP(user, last_bumped, CLOCK_WORLD)
+			COOLDOWN_START(src, bump_zap_cooldown, 1 SECOND)
+			return TRUE
+		return FALSE
+	if(user.status_units(EFFECT_HALLUCINATING) > 50 && prob(10) && operating == 0)
+		EXPIRY_STAMP(user, last_bumped, CLOCK_WORLD)
+		to_chat(user, span_danger("You feel a powerful shock course through your body!"))
+		user.playsound_local(get_turf(user), get_sfx(SFX_SPARKS), vol = 75)
+		user.injure(INJURY_PAIN, 10, null, src)
+		user.status_adjust(EFFECT_STUNNED, 10)
+		return TRUE
+	return FALSE
+
+/// A mech whose pilot may use the door asks its controller to report the door's state (a cycling airlock's sensors).
+/obj/machinery/door/airlock/proc/mech_bumped_status(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/obj/mecha/mecha = N.bumper
+	if(istype(mecha) && density && radio_connection() && mecha.slot_item(MECHA_SLOT_PILOT) && (allowed(mecha.slot_item(MECHA_SLOT_PILOT)) || check_access_list(mecha.operation_req_access)))
+		send_status(1)
 
 /// A simple mob that smashes an airlock which has lost its power: through bolts or a weld it breaks into the internals (an op, so it takes its time),
 /// otherwise it forces the door open or shut at once. A door that works takes the smash as damage.
-// Kept: a simple mob's smash reaches an atom only through attack_generic until the generic attack is a hit action
-/obj/machinery/door/airlock/attack_generic(mob/living/user, damage)
+/obj/machinery/door/airlock/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/user = A.attacker
+	var/damage = A.damage
 	if(operable())
 		return ..()
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
-		return
+		return OP_OK
 	if(bolted || weld_shut_welded(src))
 		act_message(user, src, others = span_danger("%U% begins breaking into %T% internals!"))
 		perform_op(user, src, "break_in", origin = ORIGIN_SYSTEM)
@@ -878,6 +902,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	else
 		act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 		close(TRUE)
+	return OP_OK
 
 /// A thrown metal thing striking a live door sparks.
 /obj/machinery/door/airlock/door_thrown_at(datum/act/A)

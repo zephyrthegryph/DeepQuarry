@@ -20,8 +20,13 @@ CAPABILITIES(/obj/effect/simple_portal/linked)
 	if(portal_id)
 		link_portal()
 
-/obj/effect/simple_portal/Bumped(atom/movable/AM)
-	. = ..()
+CAPABILITIES(/obj/effect/simple_portal)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/simple_portal/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	handle_teleport(AM)
 
 /obj/effect/simple_portal/Crossed(atom/movable/AM)

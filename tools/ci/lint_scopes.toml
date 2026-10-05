@@ -308,6 +308,8 @@ damage_ratchet_on_non_turf_ex_act_overrides_d5 = 10
 damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 2
+bump_ratchet_on_bumped_overrides = 22
+generic_hit_ratchet_on_attack_generic_overrides = 38
 
 [lint.op_order]
 # fixtures and tests pin the relative-priority mechanism itself
@@ -336,4 +338,5 @@ banned = [
   "_own_add = rel_add(holder, nameof(v), value): the accessor is private to code/engine and code/datums/ownership",
   "_own_put = rel_add(holder, nameof(v), value, key): the accessor is private to code/engine and code/datums/ownership",
   "own_put = rel_add(holder, nameof(v), value, key): the engine's accessor is _own_put, never called from content",
+  "explosion_contents_severity = declare blast_contents() (code/library/structures/blast_contents.dm); the explosion service reads explosion_contents_severity_of()",
 ]

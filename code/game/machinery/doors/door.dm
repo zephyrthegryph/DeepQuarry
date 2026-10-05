@@ -68,6 +68,7 @@ MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
 CAPABILITIES(/obj/machinery/door)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	machine_basics(null, repair = NONE, frame = NONE)
 	doors()
 	emag(list(needs(req_is(nameof(density), because = MSG(door/close_first))), then(PROC_REF(door_emag))), repeatable = TRUE)
@@ -81,10 +82,13 @@ CAPABILITIES(/obj/machinery/door)
 	op("repair", tool(TOOL_WELDER), when(PROC_REF(repairable)), priority(OP_PRIORITY_PART), wait(PROC_REF(repair_time)),
 		needs(req_is(nameof(density), because = MSG(door/close_first))), fixes(), says(MSG(door/repaired)))
 	on_notice(/datum/notice/hit, then(PROC_REF(door_thrown_at)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(door_bumped)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(door_blobbed))))
 
-// A simple mob's smash reaches an atom only through attack_generic() until the generic attack is a hit action (section 14): kept.
-/obj/machinery/door/attack_generic(mob/user, damage)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/machinery/door/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	if(isanimal(user))
 		var/mob/living/simple_mob/S = user
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
@@ -94,6 +98,7 @@ CAPABILITIES(/obj/machinery/door)
 		else
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
+	return OP_OK
 
 // ALLOW(init/INSTANCE_STATE): a door's layer, blast resistance and bounds follow whether the map placed it shut or open and how wide it is
 /obj/machinery/door/Initialize(mapload)
@@ -178,22 +183,46 @@ CAPABILITIES(/obj/machinery/door)
 		return FALSE
 	return TRUE
 
-// The bump is movement, not an op (doors(), library/machine/doors.dm): the bump action has no emitter on the bumped atom yet, so this stays.
-/obj/machinery/door/Bumped(atom/AM)
-	. = ..()
+// ---- the bump: something walked into the door (the bump action, on_notice(/datum/notice/bumped)) ----
+
+/// Whether a bump by mob `M` reaches the door's own answer (bumpopen()): the panel is shut, the door is still, `M` has not bumped a door in the last
+/// second (a bump counts once a second: shock spam), a restrained mob may not unless the door is public, and a pest nobody plays never does.
+/// Stamps the second when it gets past the cooldown, as the old Bumped() did.
+/obj/machinery/door/proc/bump_reaches(mob/M)
 	if(panel_is_open(src) || operating)
+		return FALSE
+	if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
+		return FALSE //Can bump-open one airlock per second. This is to prevent shock spam.
+	EXPIRY_STAMP(M, last_bumped, CLOCK_WORLD)
+	return bump_allowed(M)
+
+/// bump_reaches() without the stamp: what a takeover asks before it answers the bump itself (the airlock's shock).
+/obj/machinery/door/proc/bump_reaches_without_stamp(mob/M)
+	if(panel_is_open(src) || operating)
+		return FALSE
+	if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
+		return FALSE
+	return bump_allowed(M)
+
+/// A restrained mob bumps open only a public door; a pest nobody plays bumps nothing open.
+/obj/machinery/door/proc/bump_allowed(mob/M)
+	if(M.restrained() && !check_access(null))
+		return FALSE
+	if(has_trait(M, TRAIT_AMBIENT_PEST_MOB) && !(M.ckey))
+		return FALSE
+	return TRUE
+
+/// Something walked into the door: a mob opens it with its access (bumpopen()), a drone or a bot with its card, a mech with its pilot's access, a
+/// wheelchair with whoever pushes it. Subtypes narrow it (a blast door ignores bumps while shut).
+/obj/machinery/door/proc/door_bumped(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
+	if(!AM || panel_is_open(src) || operating)
 		return
 
 	if(ismob(AM))
 		var/mob/M = AM
-		if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
-			return	//Can bump-open one airlock per second. This is to prevent shock spam.
-		EXPIRY_STAMP(M, last_bumped, CLOCK_WORLD)
-		if(M.restrained() && !check_access(null))
-			return
-		else if(has_trait(M, TRAIT_AMBIENT_PEST_MOB) && !(M.ckey))
-			return
-		else
+		if(bump_reaches(M))
 			bumpopen(M)
 		return
 

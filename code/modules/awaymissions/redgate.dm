@@ -97,7 +97,10 @@
 		plane = OBJ_PLANE
 		set_light(0)
 
-/obj/structure/redgate/Bumped(mob/M as mob)
+/// Something walked into it (the bump action's notice).
+/obj/structure/redgate/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/M = N.bumper
 	src.teleport(M)
 	return
 
@@ -561,4 +564,5 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 	return target
 
 CAPABILITIES(/obj/structure/redgate)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	links(/obj/structure/redgate::target, /obj/structure/redgate::target)

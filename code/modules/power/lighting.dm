@@ -104,6 +104,7 @@ TRACKED(/obj/machinery/light, flickering)
 TRACKED(/obj/machinery/light, auto_flicker)
 
 CAPABILITIES(/obj/machinery/light)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)
 	links(/obj/machinery/light::power_area, /area::lights, b_many = TRUE)
 	owns_one(nameof(installed_light), /obj/item/light)
@@ -378,18 +379,21 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	update_light()
 	update_active_power_usage((light_range * light_power) * LIGHTING_POWER_FACTOR)
 
-/obj/machinery/light/attack_generic(mob/user, damage)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/machinery/light/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	if(!damage)
-		return
+		return OP_OK
 	if(status == LIGHT_EMPTY||status == LIGHT_BROKEN)
 		to_chat(user, "That object is useless to you.")
-		return
+		return OP_OK
 	if(!(status == LIGHT_OK||status == LIGHT_BURNED))
-		return
+		return OP_OK
 	act_message(user, null, others = span_danger("%U% smashes the light!"))
 	user.do_attack_animation(src)
 	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
-	return 1
+	return OP_OK
 
 // attempt to set the light's on/off status
 // will not switch on if broken/burned/empty

@@ -231,7 +231,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 					act_message(src, A, others = span_danger("%U% swings wildly at %T% with a minihoe, missing completely!"))
 					return
 				var/t = pick("slashed", "sliced", "cut", "clawed")
-				A.attack_generic(src, 5, t)
+				generic_hit(A, src, 5, t)
 			if("water")
 				flick("farmbot_water", src)
 

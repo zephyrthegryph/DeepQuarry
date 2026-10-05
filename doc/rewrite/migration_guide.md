@@ -761,7 +761,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 		icon_state = "[canister_color]-1"
 		return .
 	icon_state = "[canister_color]"
-	var/flag = desired_update_flag()
+	var/flag = (holding ? 1 : 0) | (connected_port() ? 2 : 0) | (4 << (gauge_band - 1)) // the old desired_update_flag()
 	if(flag & 1)
 		. += "can-open"
 	if(flag & 2)

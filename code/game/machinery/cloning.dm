@@ -121,6 +121,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occu
 	return occupant_mob
 
 CAPABILITIES(/obj/machinery/clonepod)
+	blast_contents()
 	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(growing_record), /datum/transhuman/body_record)
 	op("clonepod_interaction_hand", hand(), then(PROC_REF(clonepod_interaction_hand)))
@@ -504,9 +505,6 @@ CAPABILITIES(/obj/machinery/clonepod)
 		return HOOK_DECLINE
 	malfunction()
 	return HOOK_DECLINE
-
-/obj/machinery/clonepod/explosion_contents_severity(severity)
-	return severity
 
 /obj/machinery/clonepod/proc/appearance_state()
 	if(get_occupant() && !has_stat(NOPOWER))

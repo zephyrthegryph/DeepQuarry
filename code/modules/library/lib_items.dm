@@ -21,6 +21,7 @@
 	opacity = 1
 
 CAPABILITIES(/obj/structure/bookcase)
+	blast_contents()
 	climb()
 	op("take_book", hand(), ungated(),
 		asks(/datum/prompt/choice, fields = list("question" = "Which book would you like to remove from the shelf?", "title" = "Book Selection", "choices" = computed(PROC_REF(shelved_books)), "timeout" = 0), step = "k65", when = PROC_REF(has_books)),
@@ -92,9 +93,6 @@ CAPABILITIES(/obj/structure/bookcase)
 				choice.forceMove(get_turf(src))
 			update_icon()
 	return TRUE
-
-/obj/structure/bookcase/explosion_contents_severity(severity)
-	return severity
 
 /obj/structure/bookcase/atom_destruction(damage_flag)
 	for(var/obj/item/book/b in contents)

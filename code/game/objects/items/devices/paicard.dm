@@ -43,6 +43,7 @@
 	var/selected_system = "pAI"
 
 CAPABILITIES(/obj/item/paicard)
+	blast_contents()
 	owns_one(nameof(multitool), /obj/item/multitool)
 	owns_one(nameof(radio), /obj/item/radio/borg/pai)
 	owns_one(nameof(signaler), /obj/item/assembly/signaler)
@@ -387,9 +388,6 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 		COOLDOWN_START(src, notify_cooldown, 5 MINUTES)
 /*
 */
-/obj/item/paicard/explosion_contents_severity(severity)
-	return severity
-
 /obj/item/paicard/see_emote(mob/living/M, text)
 	if(pai && pai.client && !pai.canmove)
 		var/rendered = span_message("[text]")

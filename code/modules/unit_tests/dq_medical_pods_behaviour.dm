@@ -449,7 +449,7 @@
 	P.set_bodytemperature(T20C)
 	medpod_ui(H, cell, "switchOn")
 	test_time(1)
-	TEST_ASSERT(cell.on, "setup: the cell is on")
+	TEST_ASSERT(cell.cooling, "setup: the cell is on")
 	test_time(10 SECONDS)
 	TEST_ASSERT(P.bodytemperature < T20C, "the occupant is cooled")
 	TEST_ASSERT_EQUAL(P.stat, UNCONSCIOUS, "and kept asleep")

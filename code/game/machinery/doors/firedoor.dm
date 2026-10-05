@@ -234,7 +234,9 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	return TRUE
 
 /// A pilot's mecha bumping a shut one asks the pilot.
-/obj/machinery/door/firedoor/Bumped(atom/AM)
+/obj/machinery/door/firedoor/door_bumped(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(panel_is_open(src) || operating)
 		return
 	if(!density)
@@ -282,15 +284,17 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 
 /// A simple mob smashing at one that has lost its power: a strong one forces it (a second, two when welded; half that to shut), a weak one strains for nothing.
 /// A door that works takes the smash as damage.
-/obj/machinery/door/firedoor/attack_generic(mob/living/user, damage)
+/obj/machinery/door/firedoor/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/user = A.attacker
+	var/damage = A.damage
 	if(!operable())
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			act_message(user, src, others = span_danger("%U% starts forcing %T% [density ? "open" : "closed"]!"))
 			perform_op(user, src, "force_generic", origin = ORIGIN_SYSTEM)
 		else
 			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
-		return
-	..()
+		return OP_OK
+	return ..()
 
 /obj/machinery/door/firedoor/proc/generic_wait(datum/act/A)
 	var/time_to_force = (2 + (2 * blocked)) * 5

@@ -1069,7 +1069,7 @@
 /datum/unit_test/dq_p2_lights/creature_smashes_a_fixture/run_gate()
 	var/obj/machinery/light/L = light()
 	var/mob/living/carbon/human/H = person()
-	L.attack_generic(H, 15)
+	generic_hit(L, H, 15)
 	settle()
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_BROKEN, "smashed")
 

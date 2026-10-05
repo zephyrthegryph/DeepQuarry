@@ -48,14 +48,10 @@
 /obj/machinery/door/blast/get_material()
 	return implicit_material
 
-// Proc: Bumped()
-// Parameters: 1 (AM - Atom that tried to walk through this object)
-// Description: If we are open returns zero, otherwise returns result of parent function.
-/obj/machinery/door/blast/Bumped(atom/AM)
+/// A shut blast door ignores whatever walks into it; an open one answers as any door.
+/obj/machinery/door/blast/door_bumped(datum/act/A)
 	if(!density)
 		return ..()
-	else
-		return 0
 
 // Proc: update_icon()
 // Parameters: None
@@ -130,15 +126,17 @@ CAPABILITIES(/obj/machinery/door/blast)
 
 /// A simple mob smashing at a blast door that has lost its power: a strong one forces it (5 seconds open, 2 shut), a weak one strains for nothing.
 /// A door that works takes the smash as damage.
-/obj/machinery/door/blast/attack_generic(mob/living/user, damage)
+/obj/machinery/door/blast/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/user = A.attacker
+	var/damage = A.damage
 	if(!operable())
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			act_message(user, src, others = span_danger("%U% starts forcing %T% [density ? "open" : "closed"]!"))
 			perform_op(user, src, "force_generic", origin = ORIGIN_SYSTEM)
 		else
 			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
-		return
-	..()
+		return OP_OK
+	return ..()
 
 /obj/machinery/door/blast/proc/generic_wait(datum/act/A)
 	return density ? 5 SECONDS : 2 SECONDS

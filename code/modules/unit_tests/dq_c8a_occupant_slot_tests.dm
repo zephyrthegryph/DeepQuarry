@@ -90,7 +90,7 @@
 	c8a_check_occupant_slot(scanner, H, OCCUPANT_SLOT_DNA_SCANNER)
 
 /// The DNA scanner used to pass an explosion's severity into its contents
-/// unconditionally (explosion_contents_severity() returning severity as-is).
+/// unconditionally (its old override returned severity as-is; now blast_contents()).
 /// That's now its slot's DAMAGE_BLAST share; an unarmoured scanner still
 /// passes the whole severity through.
 /datum/unit_test/dq_c8a_dna_scanner_blast_share
@@ -98,8 +98,8 @@
 /datum/unit_test/dq_c8a_dna_scanner_blast_share/Run()
 	var/turf/T = test_floor()
 	var/obj/machinery/dna_scannernew/scanner = allocate(/obj/machinery/dna_scannernew, T)
-	TEST_ASSERT_EQUAL(scanner.explosion_contents_severity(3), 3, "an unarmoured DNA scanner should pass an explosion's severity through to its occupant")
-	TEST_ASSERT_EQUAL(scanner.explosion_contents_severity(0), 0, "no explosion means no share")
+	TEST_ASSERT_EQUAL(explosion_contents_severity_of(scanner, 3), 3, "an unarmoured DNA scanner should pass an explosion's severity through to its occupant")
+	TEST_ASSERT_EQUAL(explosion_contents_severity_of(scanner, 0), 0, "no explosion means no share")
 
 /// A holder with no declared blast share (the default) shields its occupant.
 /datum/unit_test/dq_c8a_cryopod_blast_share

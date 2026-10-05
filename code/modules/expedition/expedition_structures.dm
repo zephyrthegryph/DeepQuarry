@@ -114,13 +114,19 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_demo_target, INTERACT_ITEM(null, 
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-/obj/structure/expedition_demo_target/attack_generic(mob/user, damage)
+CAPABILITIES(/obj/structure/expedition_demo_target)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/expedition_demo_target/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	user.setClickCooldown(user.get_attack_speed())
 	if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		act_message(user, src, others = span_danger("%U% smashes into %T%!"))
 		receive_generic_attack(user, damage)
 	user.do_attack_animation(src)
-	return 1
+	return OP_OK
 
 // ---------------------------------------------------------------------------
 // Objective marker: a beacon dropped at a far corner of the site. The "reach"

@@ -1,4 +1,20 @@
-// Generic damage proc (slimes and monkeys).
+/// A generic attack (a simple mob's, a xeno's, a bot's, a hulk's smash) on `target`: the hit/generic action (doc/rewrite/final_api.html, section 8).
+/// The one emitter: a type answers it with extend(/datum/act/hit/generic, instead(...)); when nothing takes it over the default generic attack
+/// (attack_generic()) lands with the act's final damage. Returns what the default attack returned, or FALSE when the target took it over.
+/proc/generic_hit(atom/target, mob/user, damage, attack_verb)
+	if(!target || QDELETED(target))
+		return FALSE
+	var/datum/damage_packet/packet = damage_packet(user, user, null, null, DAMAGE_PACKET_SILENT, 0, user ? get_dir(user, target) : 0, null, DAMAGE_ENTRY_GENERIC)
+	var/datum/act/hit/generic/G = ACT_TRY(target, hit_generic, packet, user, damage, attack_verb)
+	if(!G)
+		packet.release()
+		return FALSE
+	damage = ACT_FINAL(G, damage, damage)
+	. = target.attack_generic(user, damage, attack_verb)
+	act_done(G)
+	packet.release()
+
+// Generic damage proc (slimes and monkeys): the default a generic hit lands when no hook takes it over. Reached only through generic_hit().
 /atom/proc/attack_generic(mob/user, damage, attack_verb)
 	if(!damage || !uses_integrity)
 		react_to_entry(DAMAGE_ENTRY_GENERIC, 0, user, user)
@@ -105,7 +121,7 @@
 		return 0
 
 	setClickCooldown(get_attack_speed())
-	A.attack_generic(src,rand(5,6),"bitten")
+	generic_hit(A, src, rand(5,6), "bitten")
 
 /*
 	New Players:

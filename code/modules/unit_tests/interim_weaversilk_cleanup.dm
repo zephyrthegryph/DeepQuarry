@@ -26,9 +26,9 @@
 /datum/unit_test/interim_weaversilk_generic_hit/Run()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
 	var/obj/effect/weaversilk/web = allocate(/obj/effect/weaversilk)
-	web.attack_generic(user, 0)
+	generic_hit(web, user, 0)
 	TEST_ASSERT(!QDELETED(web), "actual zero-damage generic hit preserves the web")
-	web.attack_generic(user, 1)
+	generic_hit(web, user, 1)
 	TEST_ASSERT(QDELETED(web), "actual nonzero generic hit consumes the web")
 	TEST_ASSERT(!QDELETED(user), "actual generic cleanup preserves its actor")
 

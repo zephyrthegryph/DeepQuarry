@@ -34,6 +34,7 @@
 	var/datum/station_holomap/holomap_datum
 
 CAPABILITIES(/obj/machinery/station_map)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	owns_one(nameof(holomap_datum), starts = /datum/station_holomap)
 
 /// The mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
@@ -101,7 +102,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 	return TRUE
 
 // Let people bump up against it to watch
-/obj/machinery/station_map/Bumped(atom/movable/AM)
+/// Something walked into it (the bump action's notice).
+/obj/machinery/station_map/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(!watching_mob() && isliving(AM) && AM.loc == loc)
 		startWatching(AM)
 

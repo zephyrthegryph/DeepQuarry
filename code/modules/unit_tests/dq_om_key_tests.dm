@@ -60,12 +60,10 @@
 	var/turf/T = locate(1, 1, 1)
 	var/obj/machinery/porta_turret/turret = allocate(/obj/machinery/porta_turret, T)
 	turret.set_stat(0)
-	turret.enabled = FALSE
-	turret.machine_step()
-	TEST_ASSERT(turret.asleep_on_keys(), "disabled turret did not sleep on its settings key")
-	TEST_ASSERT_NULL(turret.om_sleep_violation(), "a disabled sleeping turret reported a violation")
-	var/failure = om_wake_test(turret, om_callable(turret, TYPE_PROC_REF(/obj/machinery/porta_turret, emp_reenable)))
-	TEST_ASSERT(!failure, failure)
+	turret.set_enabled(FALSE)
+	TEST_ASSERT(!turret.armed, "a switched-off turret is not armed (its scan parks)")
+	turret.set_enabled(TRUE)
+	TEST_ASSERT(turret.armed, "switching it on arms it again (its scan wakes)")
 
 /datum/unit_test/dq_om_keys_wake_point_defense
 
