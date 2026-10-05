@@ -68,6 +68,7 @@ MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
 CAPABILITIES(/obj/machinery/door)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	machine_basics(null, repair = NONE, frame = NONE)
 	doors()
 	emag(list(needs(req_is(nameof(density), because = MSG(door/close_first))), then(PROC_REF(door_emag))), repeatable = TRUE)
@@ -84,8 +85,10 @@ CAPABILITIES(/obj/machinery/door)
 	on_notice(/datum/notice/bumped, then(PROC_REF(door_bumped)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(door_blobbed))))
 
-// A simple mob's smash reaches an atom only through attack_generic() until the generic attack is a hit action (section 14): kept.
-/obj/machinery/door/attack_generic(mob/user, damage)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/machinery/door/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	if(isanimal(user))
 		var/mob/living/simple_mob/S = user
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
@@ -95,6 +98,7 @@ CAPABILITIES(/obj/machinery/door)
 		else
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
+	return OP_OK
 
 // ALLOW(init/INSTANCE_STATE): a door's layer, blast resistance and bounds follow whether the map placed it shut or open and how wide it is
 /obj/machinery/door/Initialize(mapload)

@@ -1204,7 +1204,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			H.do_attack_animation(src)
 			var/shreddamage = H.species.can_shred(H, FALSE, 15)
 			if(shreddamage)
-				attack_generic(H, shreddamage, "attacked")
+				generic_hit(src, H, shreddamage, "attacked")
 			else
 				play_sfx(src.loc, SFX_EFFECTS_BANG, 0.2)
 				act_message(H, src, others = span_warning("%U% punches %T%, but doesn't leave a dent."))

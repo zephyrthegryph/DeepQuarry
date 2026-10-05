@@ -205,7 +205,7 @@
 /datum/unit_test/dq_p2_reagents/animal_nibbles_a_snack/run_gate()
 	var/mob/living/simple_mob/combat_ai_test_subject/mob = allocate(/mob/living/simple_mob/combat_ai_test_subject, run_loc_floor_bottom_left)
 	var/obj/item/reagent_containers/food/snacks/aesirsalad/S = sn_snack()
-	S.attack_generic(mob)
+	generic_hit(S, mob)
 	TEST_ASSERT_EQUAL(rc_units(S), 29, "a bite was taken")
 	TEST_ASSERT_EQUAL(sn_bites(S), 1, "and counted")
 

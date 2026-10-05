@@ -313,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 		adjust_integrity(-real_damage)
 
 	else
-		attack_generic(M, rand(1,10), "bashed")
+		generic_hit(src, M, rand(1,10), "bashed")
 	return TRUE
 
 /// Old attackby.

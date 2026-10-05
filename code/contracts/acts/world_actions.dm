@@ -26,6 +26,10 @@ ACTION(hit/emp)
 ACTION(hit/blob)
 ACTION(hit/fire)
 ACTION(hit/shock)
+// A simple mob's, a xeno's or a bot's generic attack (the old attack_generic()), started by generic_hit() before anything lands: `packet` names the
+// attacker and DAMAGE_ENTRY_GENERIC and carries no amounts; `damage` is what the default attack would deal. A takeover (instead) is the target's
+// own answer; otherwise the default attack lands.
+ACTION(hit/generic, mob/attacker, damage, attack_verb)
 ACTION(irradiate, effect, blocked, check_protection, rad_protection)
 ACTION(injure, kind, amount, zone, atom/cause, flags)
 ACTION(body_status, notice = /datum/notice/body_status_changed)

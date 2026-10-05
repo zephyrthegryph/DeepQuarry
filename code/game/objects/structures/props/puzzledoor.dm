@@ -129,9 +129,11 @@
 		return TRUE
 	return TRUE
 
-/obj/machinery/door/blast/puzzle/attack_generic(mob/user, damage)
+/obj/machinery/door/blast/puzzle/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	if(check_locks())
 		force_toggle(1, user)
+	return OP_OK
 
 /obj/machinery/door/blast/puzzle/attack_alien(mob/user)
 	if(check_locks())

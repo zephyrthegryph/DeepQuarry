@@ -1043,3 +1043,16 @@ Pinned by `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on the lega
 * Converted: the door base, airlock, blast door, firedoor, windoor, unpowered door, transport pod, and the bump answers of the shadekin portals,
   recharge station, teleporter hub, bluespace/flux/gravity anomalies, bump teleporter, grille, cliff, fence, medical holosign, simple door, portals,
   transit tubes, telecube, redgate, autogibber, station map and infrared beam. The rest are held by the `bump_ratchet_on_bumped_overrides` ceiling.
+
+## Missing forms: the generic hit
+
+Pinned by the smash tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on `attack_generic()` first) and the animal tests of
+`dq_p2_door_behaviour.dm`, `dq_p2_closet_behaviour.dm`, `dq_p2_lights_behaviour.dm` and the other callers' tests (now driven through `generic_hit()`).
+
+* **A generic attack is the hit/generic action**: `generic_hit(target, user, damage, attack_verb)` is its one emitter (simple mobs' attacks, xeno
+  bites, bots, a hulk's or a shredder's smash). A target takes it over with `extend(/datum/act/hit/generic, instead(...))`; otherwise the default
+  `attack_generic()` lands with the act's final damage.
+* **A taken-over hit is not a landed one for the attacker**: `apply_attack()` returns FALSE for it, so a simple mob's melee effects (poison and the
+  like) do not follow a hit a door or a fixture answered itself. A camera's smash used to return TRUE here.
+* Converted: the door base, airlock, blast door, firedoor, puzzle door, lift panel, drop pod door, cult pylon, light fixture, camera, expedition demo
+  target, ladder and trash pile. The rest are held by the `generic_hit_ratchet_on_attack_generic_overrides` ceiling.

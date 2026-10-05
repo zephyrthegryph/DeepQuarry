@@ -101,7 +101,7 @@
 
 /// A mob wearing down a table the way a claw or a bite does: `damage` of generic attack.
 /proc/p2_table_mob_attack(mob/living/attacker, obj/structure/table/T, damage)
-	return T.attack_generic(attacker, damage)
+	return generic_hit(T, attacker, damage)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The base
