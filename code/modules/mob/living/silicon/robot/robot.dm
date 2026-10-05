@@ -1166,7 +1166,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 /// The take_power_part op's condition: the chassis is open, its wiring tucked away, and there is a cell or the fried remains of its mount to take.
 /mob/living/silicon/robot/proc/power_part_exposed(datum/act/A)
-	if(!opened || wiresexposed)
+	if(!opened || wiresexposed) // ALLOW(reads): the chassis cover and wiring are legacy robot state, tracked in the mob conversion; read when a click resolves
 		return FALSE
 	if(cell)
 		return TRUE
