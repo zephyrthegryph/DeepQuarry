@@ -39,15 +39,21 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_cut(mob/user, list/args)
 	if(cable && cable.get_amount())
-		om_ask(chassis?.slot_item(MECHA_SLOT_PILOT), /datum/om/prompt/number, PROC_REF(cable_length_entered), default = min(cable.get_amount(), 30), subject = chassis, title = "Cut cable", message = "Please specify the length of cable to cut", requires = list(/datum/om/check/inside_target))
+		var/mob/pilot = chassis?.slot_item(MECHA_SLOT_PILOT)
+		if(!istype(pilot) || QDELETED(pilot))
+			return
+		open_request(src, /datum/prompt/number/mecha_cable_cut, PROC_REF(cable_length_entered), answerer = pilot, default = min(cable.get_amount(), 30), subject = chassis)
 	else
 		occupant_message("There's no more cable on the reel.")
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_length_entered(datum/om/prompt/number/ask)
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_length_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/mecha_cable_cut/ask = context.answer
 	if(!cable)
 		return
-	var/m = min(ask.number, cable.get_amount())
+	var/m = min(ask.answer_value, cable.get_amount())
 	if(m)
 		use_cable(m)
 		new /obj/item/stack/cable_coil(get_turf(chassis), m)
@@ -134,3 +140,24 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 /// last piece
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/last_piece() as /obj/structure/cable
 	return last_piece
+
+/datum/prompt/number/mecha_cable_cut
+	title = "Cut cable"
+	question = "Please specify the length of cable to cut"
+	ask_flags = ASK_INSIDE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/mecha_cable_cut/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, INFINITY, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/mecha_cable_cut/recheck_extra()
+	var/mob/pilot = answerer
+	if(!istype(pilot) || QDELETED(pilot))
+		return "gone"
+	if(subject && QDELETED(subject))
+		return "gone"
+	return null

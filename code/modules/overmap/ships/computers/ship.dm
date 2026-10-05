@@ -40,12 +40,19 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	if(viewing_overmap(user))
 		user.reset_perspective()
 	// was an admin_log_show error popup; now a tgui_alert with a single Reconnect choice.
-	var/_answer_k47 = rerun_ask(user, "k47", PROC_REF(display_reconnect_dialog), args, /datum/om/prompt/choice/alert, message = "Unable to connect to [flavor].", title = "[src]", choices = list("Reconnect", "Close"))
-	if(isnull(_answer_k47))
+	open_request(src, /datum/prompt/choice/ship_reconnect, PROC_REF(reconnect_answered), answerer = user, question = "Unable to connect to [flavor].", title = "[src]")
+
+/obj/machinery/computer/ship/proc/reconnect_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	if(_answer_k47 == "Reconnect")
+	var/mob/user = context.answer.answerer
+	if(viewing_overmap(user))
+		user.reset_perspective()
+	if(context.answer.answer_value == "Reconnect")
 		if(sync_linked(user))
 			interface_interact(user)
+	if(!QDELETED(src))
+		SStgui.update_uis(src)
 
 TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 
@@ -153,3 +160,13 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/ship, PROC_REF(on_emag), null)
 /// Accessor for the linked var.
 /obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship
 	return linked
+
+/datum/prompt/choice/ship_reconnect
+	choices = list("Reconnect", "Close")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/ship_reconnect/recheck_extra()
+	var/mob/user = answerer
+	return !istype(user) || QDELETED(user) ? "gone" : null

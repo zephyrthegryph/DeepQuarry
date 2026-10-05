@@ -135,9 +135,11 @@ UI_ACT(/obj/machinery/computer/ship/sensors, "range", ui_act_range)
 UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_range)
 	if(!(sensors()))
 		return FALSE
-	var/nrange = act_ask(ui.user, action, params, ui, "k125", /datum/om/prompt/number, message = "Set new sensors range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
-	if(isnull(nrange))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
+	open_request(ui, /datum/prompt/number/ship_sensor_range, TYPE_PROC_REF(/datum/tgui, ship_sensor_range_answered), answerer = ui.user, default = sensors().range, displayed_max = world.view)
+
+/obj/machinery/computer/ship/sensors/proc/apply_sensor_range_answer(datum/tgui/ui, datum/tgui_state/state, nrange)
 	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 		return FALSE
 	if(nrange)
@@ -295,3 +297,39 @@ DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shu
 /// Accessor for the sensors var.
 /obj/machinery/computer/ship/sensors/proc/sensors() as /obj/machinery/shipsensors
 	return sensors
+
+/datum/tgui/proc/ship_sensor_range_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/computer/ship/sensors/computer = src_object()
+	if(computer.apply_sensor_range_answer(src, state(), context.answer.answer_value))
+		SStgui.update_uis(computer)
+
+/datum/prompt/number/ship_sensor_range
+	question = "Set new sensors range"
+	title = "Sensor range"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/displayed_max
+
+/datum/prompt/number/ship_sensor_range/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, displayed_max, 0, timeout, FALSE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/ship_sensor_range/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	var/mob/user = answerer
+	if(!istype(original_ui) || QDELETED(original_ui) || !istype(user) || QDELETED(user))
+		return "gone"
+	var/obj/machinery/computer/ship/sensors/computer = original_ui.src_object()
+	if(!istype(computer) || QDELETED(computer))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!computer.ui_act_allowed(original_ui.user, "range", original_ui, original_ui.state()))
+		return "the sensors console action is unavailable"
+	if(!isnull(answer_value) && !computer.sensors())
+		return "the sensor is missing"
+	return null

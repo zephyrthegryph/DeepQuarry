@@ -5252,13 +5252,13 @@
 	into += entry_line(23)
 	into += list(global.owns_one(nameof(range_connector), /datum/connect_range))
 
-/// CAPABILITIES(/datum/radial_menu) at code/_onclick/hud/radial.dm:113
+/// CAPABILITIES(/datum/radial_menu) at code/_onclick/hud/radial.dm:114
 /datum/radial_menu/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/_onclick/hud/radial.dm", 113, /datum/radial_menu)
-	into += entry_line(114)
-	into += list(global.owns_one(nameof(close_button), /atom/movable/screen/radial/center))
+	into += entry_block("code/_onclick/hud/radial.dm", 114, /datum/radial_menu)
 	into += entry_line(115)
+	into += list(global.owns_one(nameof(close_button), /atom/movable/screen/radial/center))
+	into += entry_line(116)
 	into += list(global.owns_many(nameof(elements), /atom/movable/screen))
 
 /// CAPABILITIES(/datum/radial_menu/prompt) at code/engine/present/prompt_windows.dm:186
@@ -12769,11 +12769,11 @@
 	into += entry_line(24)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(pinpointer_step)), when = nameof(active)))
 
-/// CAPABILITIES(/obj/item/pinpointer/advpinpointer) at code/game/gamemodes/nuclear/pinpointer.dm:356
+/// CAPABILITIES(/obj/item/pinpointer/advpinpointer) at code/game/gamemodes/nuclear/pinpointer.dm:366
 /obj/item/pinpointer/advpinpointer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/gamemodes/nuclear/pinpointer.dm", 356, /obj/item/pinpointer/advpinpointer)
-	into += entry_line(357)
+	into += entry_block("code/game/gamemodes/nuclear/pinpointer.dm", 366, /obj/item/pinpointer/advpinpointer)
+	into += entry_line(367)
 	into += list(global.op("advpinpointer_toggle_mode_effect", global.menu(), global.label("Toggle Pinpointer Mode"), global.then(PROC_REF(advpinpointer_toggle_mode_effect))))
 
 /// CAPABILITIES(/obj/item/pipe_dispenser) at code/game/objects/items/weapons/RPD.dm:54

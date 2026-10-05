@@ -172,21 +172,66 @@
 	if(!length(detachable_limbs))
 		to_chat(src, span_warning("You have no detachable limbs."))
 		return FALSE
-	om_ask(src, /datum/om/prompt/choice/detach_limb, PROC_REF(detach_limb_chosen), choices = detachable_limbs)
+	open_request(src, /datum/prompt/choice/detach_limb, PROC_REF(detach_limb_chosen), answerer = src, choices = detachable_limbs)
 	return TRUE
 
+#define DETACH_LIMB_STATE "detach_limb_state"
+#define DETACH_LIMB_DAMAGE "detach_limb_damage"
+#define DETACH_LIMB_PARENT_DAMAGE "detach_limb_parent_damage"
+
 /// Re-checked on the answer: the limb can still be detached.
-/datum/om/prompt/choice/detach_limb
+/datum/prompt/choice/detach_limb
 	title = "Limb Removal"
-	message = "Which limb do you wish to detach?"
+	question = "Which limb do you wish to detach?"
+	timeout = 0
+	recheck_on_open = TRUE
 
-/datum/om/prompt/choice/detach_limb/valid()
+/datum/prompt/choice/detach_limb/recheck_extra()
 	var/mob/living/carbon/human/H = answerer
-	return H.check_can_detach_modular_limb(choice) ? null : "can't detach"
+	if(!istype(H) || QDELETED(H))
+		return "gone"
+	if(isnull(answer_value))
+		return null
+	var/obj/item/organ/external/E = answer_value
+	if(!istype(E) || QDELETED(E))
+		return "gone"
+	if(!COOLDOWN_FINISHED(H, last_special))
+		return "can't detach"
+	if(H.incapacitated() || H.restrained())
+		return DETACH_LIMB_STATE
+	if(E.owner != H || E.loc != H)
+		return "can't detach"
+	if(E.check_modular_limb_damage(H))
+		return DETACH_LIMB_DAMAGE
+	var/obj/item/organ/external/parent = E.parent_organ && H.get_organ(E.parent_organ)
+	if(!parent)
+		return "can't detach"
+	if(parent.check_modular_limb_damage(H))
+		return DETACH_LIMB_PARENT_DAMAGE
+	if(!(E in H.get_modular_limbs(return_first_found = FALSE, validate_proc = TYPE_PROC_REF(/obj/item/organ/external, can_remove_modular_limb))))
+		return "can't detach"
+	return null
 
-/mob/living/carbon/human/proc/detach_limb_chosen(datum/om/prompt/choice/detach_limb/ask)
-	var/obj/item/organ/external/E = ask.choice
+/mob/living/carbon/human/proc/detach_limb_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(isnull(A.request.answer_value))
+			return
+		switch(A.request.last_error)
+			if(DETACH_LIMB_STATE)
+				to_chat(src, span_warning("You can't do that in your current state!"))
+			if(DETACH_LIMB_DAMAGE)
+				to_chat(src, span_warning("That limb is too damaged to be removed!"))
+			if(DETACH_LIMB_PARENT_DAMAGE)
+				var/obj/item/organ/external/rejected_limb = A.request.answer_value
+				var/obj/item/organ/external/parent = rejected_limb.parent_organ && get_organ(rejected_limb.parent_organ)
+				to_chat(src, span_warning("Your [parent.name] is too damaged to detach anything from it."))
+		return
+	var/obj/item/organ/external/E = A.answer.answer_value
 	om_task_timed(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(detach_limb_verb_human_done), done_args = list(E))
+
+#undef DETACH_LIMB_STATE
+#undef DETACH_LIMB_DAMAGE
+#undef DETACH_LIMB_PARENT_DAMAGE
 
 /mob/living/carbon/human/proc/detach_limb_verb_human_done(obj/item/organ/external/E)
 	if(!check_can_detach_modular_limb(E))

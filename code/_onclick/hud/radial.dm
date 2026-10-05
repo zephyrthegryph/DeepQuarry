@@ -33,9 +33,10 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		icon_state = "radial_slice_focus"
 	else
 		icon_state = "[parent().radial_slice_icon]_focus"
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native radial hover supplies one initiating mob for tooltip delivery and the existing hover-click gate.
 	if(tooltips)
-		openToolTip(usr, src, params, title = name)
-	if (click_on_hover && !isnull(usr) && !isnull(parent()))
+		openToolTip(user, src, params, title = name)
+	if (click_on_hover && !isnull(user) && !isnull(parent()))
 		Click(location, control, params)
 
 /atom/movable/screen/radial/slice/MouseExited(location, control, params)
