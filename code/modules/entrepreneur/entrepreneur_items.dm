@@ -672,7 +672,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 		return
 	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
 	// Recovery: the old kept callback refreshed its UI even when replay failed.
-	. = horoscope_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.answer_value, TRUE)
+	. = horoscope_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.value, TRUE)
 	SStgui.update_uis(src)
 
 /obj/item/entrepreneur/spirit_board/proc/spirit_alt_answered(datum/act/request/context)
@@ -680,7 +680,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 		return
 	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
 	// Recovery: the old kept callback refreshed its UI even when replay failed.
-	. = spirit_alt_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.answer_value, TRUE)
+	. = spirit_alt_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.value, TRUE)
 	SStgui.update_uis(src)
 
 /obj/item/entrepreneur/spirit_board/proc/spirit_ghost_answered(datum/act/request/context)
@@ -688,7 +688,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 		return
 	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
 	// Recovery: the old kept callback refreshed its UI even when replay failed.
-	. = spirit_ghost_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.answer_value, TRUE)
+	. = spirit_ghost_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.value, TRUE)
 	SStgui.update_uis(src)
 
 /datum/prompt/choice/entrepreneur_review

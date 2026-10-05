@@ -30,7 +30,7 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 /datum/tgui_module/rustcore_monitor/proc/tag_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_ident = sanitize_text(A.answer.answer_value)
+	var/new_ident = sanitize_text(A.answer.value)
 	if(new_ident)
 		core_tag = new_ident
 	SStgui.update_uis(src)

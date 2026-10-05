@@ -206,7 +206,7 @@ ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map
 		return
 	var/datum/prompt/text/environment_message_review/ask = context.answer
 	var/list/environment_answers = ask.environment_answers.Copy()
-	environment_answers[ask.environment_key] = ask.answer_value
+	environment_answers[ask.environment_key] = ask.value
 	environment_create_stage(environment_answers)
 	SStgui.update_uis(src)
 
@@ -215,7 +215,7 @@ ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map
 		return
 	var/datum/prompt/choice/environment_message_review/ask = context.answer
 	var/list/environment_answers = ask.environment_answers.Copy()
-	environment_answers[ask.environment_key] = ask.answer_value
+	environment_answers[ask.environment_key] = ask.value
 	environment_remove_stage(environment_answers)
 	SStgui.update_uis(src)
 
@@ -224,7 +224,7 @@ ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map
 		return
 	var/datum/prompt/text/environment_message_review/ask = context.answer
 	var/list/environment_answers = ask.environment_answers.Copy()
-	environment_answers[ask.environment_key] = ask.answer_value
+	environment_answers[ask.environment_key] = ask.value
 	var/client/user = context.request.answerer?.client
 	if(!user)
 		return
@@ -241,7 +241,7 @@ ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map
 		return
 	var/datum/prompt/choice/environment_message_review/ask = context.answer
 	var/list/environment_answers = ask.environment_answers.Copy()
-	environment_answers[ask.environment_key] = ask.answer_value
+	environment_answers[ask.environment_key] = ask.value
 	var/client/user = context.request.answerer?.client
 	if(!user)
 		return

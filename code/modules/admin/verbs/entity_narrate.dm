@@ -72,11 +72,11 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 		if(L.client)
 			return "player"
 	var/datum/entity_narrate/holder = user.entity_narrate_holder
-	if(!isnull(answer_value) && holder && (answer_value in holder.entity_names))
+	if(!isnull(value) && holder && (value in holder.entity_names))
 		return "duplicate"
 
 /datum/admin_verb/add_mob_for_narration/proc/entity_name_answered(datum/act/request/context)
-	if(isnull(context.request.answer_value) || QDELETED(context.request.answerer) || !context.request.answerer.client || QDELETED(context.request.subject))
+	if(isnull(context.request.value) || QDELETED(context.request.answerer) || !context.request.answerer.client || QDELETED(context.request.subject))
 		return
 	if(!context.answer && !(context.request.last_error in list("holder", "ghost", "player", "duplicate")))
 		return
@@ -89,7 +89,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 		user.entity_narrate_holder = new /datum/entity_narrate()
 	var/datum/entity_narrate/holder = user.entity_narrate_holder
 	var/atom/target = context.request.subject
-	var/unique_name = context.request.answer_value
+	var/unique_name = context.request.value
 	if(!context.answer)
 		switch(context.request.last_error)
 			if("ghost")
@@ -136,7 +136,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 	var/datum/entity_narrate/holder = current_holder(user)
 	if(!holder)
 		return
-	var/removekey = context.request.answer_value
+	var/removekey = context.request.value
 	if(removekey == "Clear All")
 		open_request(src, /datum/prompt/choice/admin_narrate_clear, PROC_REF(clear_selected), answerer = user.mob)
 	else if(removekey)
@@ -150,7 +150,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 
 /datum/admin_verb/remove_mob_for_narration/proc/apply_clear(datum/act/request/context)
 	var/datum/entity_narrate/holder = current_holder(context.request.answerer.client)
-	if(!holder || context.request.answer_value != "Yes")
+	if(!holder || context.request.value != "Yes")
 		return
 	holder.entity_names = list()
 	own_clear(holder, nameof(/datum/entity_narrate::entity_refs), OWN_DELETE)

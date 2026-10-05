@@ -55,7 +55,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 	return isobserver(R.answerer) && !client && !key && stat != DEAD && SSticker && SSticker.mode
 
 /mob/living/silicon/robot/platform/proc/ghost_control_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/observer/dead/user = A.request.answerer
 

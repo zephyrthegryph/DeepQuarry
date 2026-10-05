@@ -32,7 +32,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	return locate_on(owner, /obj) ? "not clear" : null
 
 /turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/user = A.request.answerer
 	act_message(user, src, MSG_SELF("You start piling up %T%..."), MSG_OTHERS("%U% starts piling up %T%..."))

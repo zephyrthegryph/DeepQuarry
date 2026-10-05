@@ -47,13 +47,13 @@
 
 /mob/living/proc/vertical_nom_answered(datum/act/request/context)
 	if(!context.answer)
-		if(!isnull(context.request.answer_value))
+		if(!isnull(context.request.value))
 			switch(context.request.last_error)
 				if(VERTICAL_NOM_STATE, VERTICAL_NOM_BELLY, VERTICAL_NOM_TARGETS)
 					to_chat(src, span_notice(context.request.last_error))
 					SStgui.update_uis(src)
 		return
-	var/mob/living/target = context.answer.answer_value
+	var/mob/living/target = context.answer.value
 	to_chat(target, span_vwarning("You feel yourself being pulled up by something... Or someone?!"))
 	var/starting_loc = target.loc
 
@@ -70,8 +70,8 @@
 	var/mob/living/user = answerer
 	if(!istype(user) || QDELETED(user))
 		return "gone"
-	if(!isnull(answer_value))
-		var/mob/living/target = answer_value
+	if(!isnull(value))
+		var/mob/living/target = value
 		if(!istype(target) || QDELETED(target))
 			return "gone"
 	if(user.stat == DEAD || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_STUNNED) || user.is_incorporeal())

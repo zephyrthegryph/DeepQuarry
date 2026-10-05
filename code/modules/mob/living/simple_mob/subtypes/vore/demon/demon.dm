@@ -181,7 +181,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
 /mob/living/simple_mob/vore/demon/proc/alt_appearance_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/alternate_selection = A.answer.answer_value
+	var/alternate_selection = A.answer.value
 	alternate_selection = lowertext(alternate_selection)
 
 	//Change the all the icon info.

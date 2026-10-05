@@ -310,9 +310,9 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 /obj/item/aiModule/freeform/proc/law_position_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value < MIN_SUPPLIED_LAW_NUMBER)
+	if(A.answer.value < MIN_SUPPLIED_LAW_NUMBER)
 		return
-	lawpos = min(A.answer.answer_value, MAX_SUPPLIED_LAW_NUMBER)
+	lawpos = min(A.answer.value, MAX_SUPPLIED_LAW_NUMBER)
 	open_request(src, /datum/prompt/text/ai_law_freeform, PROC_REF(law_entered), answerer = A.request.answerer, question = "Please enter a new law for the AI.")
 
 /// Freeform law text: the existing numeric stage and this stage use the same carried/capable rechecks.
@@ -325,7 +325,7 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 /obj/item/aiModule/freeform/proc/law_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	newFreeFormLaw = A.answer.answer_value
+	newFreeFormLaw = A.answer.value
 	desc = "A 'freeform' AI module: ([lawpos]) '[newFreeFormLaw]'"
 
 /obj/item/aiModule/freeform/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)

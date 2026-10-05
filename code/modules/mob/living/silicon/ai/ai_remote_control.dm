@@ -74,7 +74,7 @@
 	if(!A.answer)
 		to_chat(src, span_notice("Deployment aborted."))
 		return
-	deploy_to_shell(A.answer.answer_value, TRUE)
+	deploy_to_shell(A.answer.value, TRUE)
 
 /mob/living/silicon/ai/proc/deploy_to_shell_act()
 	set category = VERB_CAT_AI_COMMANDS

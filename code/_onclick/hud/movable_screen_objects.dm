@@ -124,7 +124,7 @@
 /client/proc/movable_ui_position_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/screen_l = A.answer.answer_value
+	var/screen_l = A.answer.value
 	if(!screen_l)
 		return
 
@@ -148,7 +148,7 @@
 /client/proc/snap_ui_position_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/screen_l = A.answer.answer_value
+	var/screen_l = A.answer.value
 	if(!screen_l)
 		return
 

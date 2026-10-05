@@ -64,7 +64,7 @@
 	user.swallow_trash(src)
 
 /obj/item/pda/proc/eat_risk_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/user = A.request.answerer
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))

@@ -312,7 +312,7 @@
 	var/prefs_name
 
 /mob/observer/dead/proc/join_as_voice_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	return join_as_voice_apply(A)
 
@@ -350,7 +350,7 @@
 /mob/observer/dead/proc/voice_request_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/obj/item/communicator/chosen_communicator = A.answer.answer_value
+	var/obj/item/communicator/chosen_communicator = A.answer.value
 	var/mob/observer/dead/O = src
 	if(O.exonet && chosen_communicator.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "voice")

@@ -165,7 +165,7 @@ CAPABILITIES(/obj/item/clothing/head/pilot)
 		return
 	for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
 		var/image/I = images[img]
-		I.color = A.answer.answer_value
+		I.color = A.answer.value
 
 
 // its HUD images are detached.

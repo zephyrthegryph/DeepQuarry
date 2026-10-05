@@ -18,7 +18,7 @@ ADMIN_VERB(atmosscan, R_DEBUG, "Check Piping", "Check all pipes in game (Only us
 	set background = 1
 	var/client/user = context.request.answerer.client
 	feedback_add_details("admin_verb","CP")
-	if(context.request.answer_value != "Yes")
+	if(context.request.value != "Yes")
 		return
 
 	to_chat(user, span_debug_info("Checking for disconnected pipes..."))

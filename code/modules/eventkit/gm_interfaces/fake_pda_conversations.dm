@@ -140,9 +140,9 @@ Invoked by vv topic "fakepdapropconvo" in code\modules\admin\view_variables\topi
 	var/datum/eventkit/fake_pdaconvos/FPC = user.client?.fakeConversations
 	if(!FPC)
 		return
-	if(A.request.answer_value == "Dialogue")
+	if(A.request.value == "Dialogue")
 		open_request(src, /datum/prompt/choice/prop_pda_conversation, PROC_REF(prop_conversation_identity_chosen), answerer = user, title = "identities", question = "Pick which identity to use(details are printed to chat)", choices = FPC.fakeRefs)
-	if(A.request.answer_value == "TGUI")
+	if(A.request.value == "TGUI")
 		to_chat(user, span_notice("Sorry, the TGUI functionality is not yet implemented - use Dialogue mode!"))
 
 /obj/item/pda/proc/prop_conversation_identity_chosen(datum/act/request/A)
@@ -152,7 +152,7 @@ Invoked by vv topic "fakepdapropconvo" in code\modules\admin\view_variables\topi
 	var/datum/eventkit/fake_pdaconvos/FPC = user.client?.fakeConversations
 	if(!FPC)
 		return
-	var/identity = A.request.answer_value
+	var/identity = A.request.value
 	to_chat(user, span_notice("You are using [identity]. Current name: [FPC.names[identity]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, identity)]"))
 	prop_conversation_ask_message(user, identity, 30)
 
@@ -165,7 +165,7 @@ Invoked by vv topic "fakepdapropconvo" in code\modules\admin\view_variables\topi
 	if(!A.answer)
 		return
 	var/datum/prompt/text/prop_pda_conversation/ask = A.request
-	var/conversation_message = ask.answer_value
+	var/conversation_message = ask.value
 	if(!conversation_message)
 		return
 	open_request(src, /datum/prompt/choice/prop_pda_conversation, PROC_REF(prop_conversation_direction_chosen), answerer = ask.answerer, buttons = TRUE, title = "Direction", question = "Received or Sent?", choices = list("Received", "Sent"), identity = ask.identity, messages_left = ask.messages_left, conversation_message = conversation_message)
@@ -179,7 +179,7 @@ Invoked by vv topic "fakepdapropconvo" in code\modules\admin\view_variables\topi
 	var/datum/data/pda/app/messenger/ourPDA = find_program(/datum/data/pda/app/messenger)
 	if(!FPC || !ourPDA)
 		return
-	ourPDA.createFakeMessage(FPC.names[ask.identity], ask.identity, LAZYACCESS(FPC.fakeJobs, ask.identity), ask.answer_value == "Sent" ? 1 : 0, ask.conversation_message)
+	ourPDA.createFakeMessage(FPC.names[ask.identity], ask.identity, LAZYACCESS(FPC.fakeJobs, ask.identity), ask.value == "Sent" ? 1 : 0, ask.conversation_message)
 	prop_conversation_ask_message(user, ask.identity, ask.messages_left - 1)
 
 /obj/item/pda/proc/createPropFakeConversation_admin(mob/M)
@@ -250,5 +250,5 @@ Invoked by vv topic "fakepdapropconvo" in code\modules\admin\view_variables\topi
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	pda_answers[pda_key] = A.answer.answer_value
+	pda_answers[pda_key] = A.answer.value
 	return fake_pdaconvos_stage(user, pda_answers)

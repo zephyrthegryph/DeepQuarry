@@ -105,9 +105,9 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 	return OP_OK
 
 /obj/item/stack/marker_beacon/proc/color_chosen(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
-	set_picked_color(A.answer.answer_value)
+	set_picked_color(A.answer.value)
 
 /obj/structure/marker_beacon
 	name = "marker beacon"
@@ -202,9 +202,9 @@ CAPABILITIES(/obj/structure/marker_beacon)
 	return OP_OK
 
 /obj/structure/marker_beacon/proc/color_chosen(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
-	var/chosen = A.answer.answer_value
+	var/chosen = A.answer.value
 	if(!GLOB.marker_beacon_colors[chosen]) // "Random" is not a true colour: it picks one
 		chosen = pick(GLOB.marker_beacon_colors)
 	set_picked_color(chosen)

@@ -155,11 +155,11 @@
 
 /obj/item/capture_crystal/proc/command_entered(datum/act/request/A)
 	if(!A.answer)
-		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
 			to_chat(A.request.answerer, span_notice("You decided against it."))
 		return
 	var/mob/living/M = A.request.answerer
-	var/transmit_msg = A.answer.answer_value
+	var/transmit_msg = A.answer.value
 	if(length(transmit_msg) >= MAX_MESSAGE_LEN)
 		to_chat(M, span_danger("Your message was TOO LONG!:[transmit_msg]"))
 		return
@@ -223,12 +223,12 @@ CAPABILITIES(/datum/prompt/choice/crystal_ghost_invite)
 /obj/item/capture_crystal/proc/ghost_invite_answered(datum/act/request/A)
 	var/datum/prompt/choice/crystal_ghost_invite/ask = A.request
 	if(!A.answer)
-		if(ask.outcome == REQ_CANCELLED && (!isnull(ask.answer_value) || QDELETED(ask.bound)) && !QDELETED(ask.answerer))
+		if(ask.outcome == REQ_CANCELLED && (!isnull(ask.value) || QDELETED(ask.bound)) && !QDELETED(ask.answerer))
 			to_chat(ask.answerer, span_notice("You decided against it."))
 		return
 	var/mob/living/U = ask.answerer
 	var/mob/living/simple_mob/M = ask.bound
-	if(ask.answer_value == "No")
+	if(ask.value == "No")
 		to_chat(U, span_notice("You decided against it."))
 		return
 	M.ghostjoin = TRUE
@@ -303,7 +303,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	if(A.answer.answer_value == "Yes" && !owner && bound_mob && bound_mob != user)
+	if(A.answer.value == "Yes" && !owner && bound_mob && bound_mob != user)
 		rel_set(src, nameof(owner), user)
 	use_crystal(user)
 
@@ -442,7 +442,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	var/datum/prompt/choice/crystal_capture/ask = A.request
 	if(QDELETED(ask.answerer))
 		return
-	if(!A.answer || ask.answer_value != "Yes")
+	if(!A.answer || ask.value != "Yes")
 		if(ask.outcome == REQ_CANCELLED || A.answer)
 			capture_refused(ask.capturer)
 		return
@@ -457,7 +457,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	var/datum/prompt/choice/crystal_capture/ask = A.request
 	if(QDELETED(ask.answerer))
 		return
-	if(!A.answer || ask.answer_value != "Yes")
+	if(!A.answer || ask.value != "Yes")
 		if(ask.outcome == REQ_CANCELLED || A.answer)
 			capture_refused(ask.capturer)
 		return

@@ -119,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		return
 	if(!A.answer && A.request.last_error)
 		return
-	var/choice = A.answer ? A.answer.answer_value : null
+	var/choice = A.answer ? A.answer.value : null
 	var/obj/item/wrapped = get_wrapped_item()
 	if(choice)
 		var/obj/item/storage/internal/gripper/selected_pocket = pocket_choice_target(choice)

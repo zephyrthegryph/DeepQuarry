@@ -31,9 +31,9 @@
 /mob/living/proc/autowhisper_mode_chosen(datum/act/request/A)
 	var/choice
 	if(A.answer)
-		choice = A.answer.answer_value
+		choice = A.answer.value
 	else
-		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value) || QDELETED(A.request.answerer))
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.value) || QDELETED(A.request.answerer))
 			return
 		choice = "Adjacent Turfs (Default)"
 	if(!choice || choice == "Adjacent Turfs (Default)")

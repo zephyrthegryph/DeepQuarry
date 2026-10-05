@@ -779,7 +779,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 /obj/machinery/proc/frequency_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_frequency = A.answer.answer_value
+	var/new_frequency = A.answer.value
 	if(!new_frequency || !hascall(src, "set_frequency"))
 		return
 	call(src, "set_frequency")(sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
@@ -794,10 +794,10 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	var/var_name
 
 /obj/machinery/proc/text_var_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/text/machine_var/R = A.request
-	vars[R.var_name] = A.answer.answer_value // ALLOW(api): the asked var is named by the question, so the write is by name; ask_text_var() callers pass their own var
+	vars[R.var_name] = A.answer.value // ALLOW(api): the asked var is named by the question, so the write is by name; ask_text_var() callers pass their own var
 
 
 /// The maintenance panel is open.

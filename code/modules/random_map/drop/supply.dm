@@ -90,7 +90,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 
@@ -108,7 +108,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 		if(!result.ok)
 			stack_trace("supply drop answer [answer.answer_callback]: [result.error]")
 		return result.value
-	if(answer.outcome == REQ_CANCELLED && isnull(answer.answer_value))
+	if(answer.outcome == REQ_CANCELLED && isnull(answer.value))
 		if(answer.cancel_callback)
 			var/datum/result/result = safe_call(answer.cancel_callback)
 			if(!result.ok)
@@ -124,20 +124,20 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	qdel(src)
 
 /datum/supply_drop_order/proc/custom_answered(datum/act/request/A)
-	if((A.answer.answer_value == "Yes"))
+	if((A.answer.value == "Yes"))
 		chosen_loot_types = list()
 		next_category()
 		return
 	ask(/datum/prompt/choice/supply_drop/confirm, "Do you wish to specify a loot type?", PROC_REF(specify_answered), PROC_REF(abandon))
 
 /datum/supply_drop_order/proc/specify_answered(datum/act/request/A)
-	if(!(A.answer.answer_value == "Yes"))
+	if(!(A.answer.value == "Yes"))
 		confirm()
 		return
 	ask(/datum/prompt/choice/supply_drop, "Select a loot type.", PROC_REF(loot_type_answered), PROC_REF(confirm), GLOB.supply_drop)
 
 /datum/supply_drop_order/proc/loot_type_answered(datum/act/request/A)
-	chosen_loot_type = A.answer.answer_value
+	chosen_loot_type = A.answer.value
 	confirm()
 
 /datum/supply_drop_order/proc/next_category()
@@ -150,7 +150,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	ask(/datum/prompt/choice/supply_drop/confirm, question, PROC_REF(category_answered), PROC_REF(next_category))
 
 /datum/supply_drop_order/proc/category_answered(datum/act/request/A)
-	if((A.answer.answer_value == "Yes"))
+	if((A.answer.value == "Yes"))
 		pick_loot()
 	else
 		next_category()
@@ -160,7 +160,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	ask(/datum/prompt/choice/supply_drop, "Select a new loot path. Cancel to finish.", PROC_REF(loot_picked), PROC_REF(next_category), choices)
 
 /datum/supply_drop_order/proc/loot_picked(datum/act/request/A)
-	var/loot_path = A.answer.answer_value
+	var/loot_path = A.answer.value
 	if(!ispath(loot_path))
 		next_category()
 		return
@@ -172,7 +172,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 
 /datum/supply_drop_order/proc/confirmed(datum/act/request/A)
 	var/mob/user = A.request.answerer
-	if((A.answer.answer_value == "Yes") && isturf(user.loc))
+	if((A.answer.value == "Yes") && isturf(user.loc))
 		log_admin("[key_name(user)] dropped supplies at ([user.x],[user.y],[user.z])")
 		new /datum/random_map/droppod/supply(null, user.x-2, user.y-2, user.z, supplied_drops = chosen_loot_types, supplied_drop = chosen_loot_type)
 	qdel(src)

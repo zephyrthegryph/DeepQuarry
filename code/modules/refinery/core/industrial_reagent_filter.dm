@@ -129,11 +129,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/a
 		return "cannot use"
 
 /obj/machinery/reagent_refinery/filter/proc/filter_selected(datum/act/request/context)
-	if(isnull(context.request.answer_value) || context.request.last_error == "gone")
+	if(isnull(context.request.value) || context.request.last_error == "gone")
 		return
 	SStgui.update_uis(src)
 	if(context.answer)
-		apply_filter_selection(context.answer.answer_value)
+		apply_filter_selection(context.answer.value)
 
 /obj/machinery/reagent_refinery/filter/proc/apply_filter_selection(select)
 	var/list/selection_data = filter_selection_data()

@@ -89,7 +89,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(printing || (!operable()))
 		return
 

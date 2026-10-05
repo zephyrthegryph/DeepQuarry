@@ -86,7 +86,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	return TRUE
 
 /obj/machinery/pipelayer/proc/eject_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/user = A.request.answerer
 	if(panel_open)
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	P_type_t = choice
 	P_type = Pipes[P_type_t]
 	act_message(user, src, MSG_SELF(span_notice("You set %T% to manufacture [P_type_t].")), \

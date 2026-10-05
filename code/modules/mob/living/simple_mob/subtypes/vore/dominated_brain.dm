@@ -91,7 +91,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 		..()
 
 /mob/living/dominated_brain/proc/resist_domination_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	if(mind != pred_mind || !pred_body?.prey_controlled)
 		return
@@ -114,7 +114,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 	restore_control_now()
 
 /mob/living/dominated_brain/proc/restore_control_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	restore_control_now()
 
@@ -259,7 +259,7 @@ CAPABILITIES(/datum/control_transfer_review)
 		return
 	var/datum/control_transfer_review/review = owner
 	// A No ended the old prompt before the flow unparked its other captured participants.
-	return answer_value == "No" ? null : review.why_not()
+	return value == "No" ? null : review.why_not()
 
 /datum/control_transfer_review/proc/why_not()
 	return QDELETED(actor) ? "gone" : null
@@ -289,7 +289,7 @@ CAPABILITIES(/datum/control_transfer_review)
 	if(!A.answer || QDELETED(actor))
 		retire()
 		return
-	if(A.answer.answer_value == "No")
+	if(A.answer.value == "No")
 		var/datum/prompt/choice/control_transfer_review/question = A.request
 		if(question.decline_text)
 			to_chat(actor, span_warning("\The [question.answerer] [question.decline_text]"))
@@ -465,7 +465,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/datum/control_transfer_review/review = owner
@@ -488,7 +488,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	run_step(PROC_REF(target_step), A)
 
 /datum/control_transfer_review/dominate_prey/proc/target_step(datum/act/request/A)
-	var/mob/living/selected = A.answer.answer_value
+	var/mob/living/selected = A.answer.value
 	if(!istype(selected))
 		to_chat(actor, span_warning("You must have a tighter grip to dominate this creature."))
 		retire()
@@ -630,7 +630,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 /mob/living/proc/lend_prey_control_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/prey = A.answer.answer_value
+	var/mob/living/prey = A.answer.value
 	if(!can_lend_prey_control(prey))
 		return
 	var/datum/control_transfer_review/lend_prey_control/review = new

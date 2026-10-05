@@ -17,7 +17,7 @@
 /mob/living/carbon/alien/larva/proc/caste_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	evolve_into("Genaprawn [A.answer.answer_value]")
+	evolve_into("Genaprawn [A.answer.value]")
 
 /mob/living/carbon/alien/larva/show_evolution_blurb()
 	return

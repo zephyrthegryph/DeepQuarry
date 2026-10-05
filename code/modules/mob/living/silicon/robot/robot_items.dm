@@ -148,7 +148,7 @@ CAPABILITIES(/obj/item/pen/robopen)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(choice == "Cancel")
 		return
 
@@ -168,7 +168,7 @@ CAPABILITIES(/obj/item/pen/robopen)
 /obj/item/pen/robopen/proc/robopen_colour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	colour = A.answer.answer_value
+	colour = A.answer.value
 
 // Copied over from paper's rename verb
 // see code\modules\paperwork\paper.dm line 62
@@ -185,7 +185,7 @@ CAPABILITIES(/obj/item/pen/robopen)
 	var/obj/item/paper/paper = A.request.subject
 	if(QDELETED(paper))
 		return
-	var/n_name = sanitizeSafe(A.answer.answer_value, 32)
+	var/n_name = sanitizeSafe(A.answer.value, 32)
 	paper.name = "paper[(n_name ? text("- '[n_name]'") : null)]"
 	paper.last_modified_ckey = user.ckey
 	add_fingerprint(user)
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/form_printer)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Paper")
 			flick("doc_printer_mod_ejecting", src)
 			after(src, 2.2 SECONDS, PROC_REF(dispense_paper))
@@ -240,7 +240,7 @@ CAPABILITIES(/obj/item/form_printer)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/department = A.answer.answer_value
+	var/department = A.answer.value
 	if(department == "Empty")
 		print_form(list("", "Empty form"))
 		return
@@ -253,7 +253,7 @@ CAPABILITIES(/obj/item/form_printer)
 /obj/item/form_printer/proc/form_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	print_form(splittext(A.answer.answer_value, ": "))
+	print_form(splittext(A.answer.value, ": "))
 
 /// Prints list(form code, form name).
 /obj/item/form_printer/proc/print_form(list/split)
@@ -517,7 +517,7 @@ CAPABILITIES(/obj/item/borg/combat/shield)
 /obj/item/borg/combat/shield/proc/shield_level_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	shield_level = text2num(A.answer.answer_value)/100
+	shield_level = text2num(A.answer.value)/100
 
 /obj/item/borg/combat/mobility
 	name = "mobility module"
@@ -663,7 +663,7 @@ CAPABILITIES(/obj/item/robo_dice)
 		return
 	var/mob/user = A.request.answerer
 	var/sides = 0
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("roll d4")
 			sides = 4
 		if("roll d6")
@@ -687,7 +687,7 @@ CAPABILITIES(/obj/item/robo_dice)
 /obj/item/robo_dice/proc/custom_die_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	roll_die(A.request.answerer, A.answer.answer_value)
+	roll_die(A.request.answerer, A.answer.value)
 
 /obj/item/robo_dice/proc/roll_die(mob/user, sides)
 	if(sides <= 0)

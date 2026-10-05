@@ -65,7 +65,7 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 	var/mob/living/user = A.request.answerer
 	var/max_health = 10
 	var/min_health = 1
-	var/_answer_a1 = A.answer.answer_value
+	var/_answer_a1 = A.answer.value
 	var/new_health = _answer_a1 //If you need to go above 10, ask admins.
 	if(isnull(new_health))
 		return null
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 	var/mob/living/user = A.request.answerer
 	var/max_heal_time = 60
 	var/min_heal_time = 0
-	var/_answer_a2 = A.answer.answer_value
+	var/_answer_a2 = A.answer.value
 	var/new_heal_timer = _answer_a2 //If you need to go above 10, ask admins.
 	if(isnull(new_heal_timer))
 		return null
@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 	if(QDELETED(request.answerer))
 		return
 	if(!A.answer)
-		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
 			if(!Adjacent(request.answerer))
 				to_chat(request.answerer, span_danger("You must be adjacent to the suit to adjust its healing timer!"))
 			SStgui.update_uis(src)

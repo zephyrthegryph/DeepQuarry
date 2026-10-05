@@ -35,7 +35,7 @@ CAPABILITIES(/datum/admin_set_ckey_review)
 
 /datum/admin_set_ckey_review/proc/answered(datum/act/request/context)
 	if(context.answer)
-		var/client/picked = context.request.answer_value
+		var/client/picked = context.request.value
 		var/picked_ckey = picked.ckey
 		apply_choice(picked_ckey)
 	retire()
@@ -72,10 +72,10 @@ CAPABILITIES(/datum/admin_set_ckey_review)
 	. = review.refusal()
 	if(.)
 		return
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	if(!istype(answer_value, /client))
+	if(!istype(value, /client))
 		return "The selected player is no longer available."
-	var/client/picked = answer_value
+	var/client/picked = value
 	if(!GLOB.directory[picked.ckey])
 		return "The selected player is no longer available."

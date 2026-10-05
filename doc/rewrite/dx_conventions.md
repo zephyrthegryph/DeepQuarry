@@ -269,6 +269,12 @@ shrink-only; new code is held to 0. `// ALLOW(<lint>): <reason>` keeps a justifi
   - `dx_manual_fingerprint_log`: fingerprints or logs in an `act_` proc or a capability entry handler.
   - `dx_constructor_shadow` (H7): a type proc named like a global `cap_*` constructor or bundle.
   - `dx_manual_transfer`: a hand-rolled take-out or move next to `own_set` / `own_add` / `own_put`.
+  - `dx_review` (the machine review, `tools/analyze/src/lints/sys_dx_review.rs`, shrink-only): `effect_refusal` (an op effect that tells
+    the actor why and returns `OP_REFUSED`: make it a requirement), `request_in_effect` (`open_request()` in an op effect: `asks()`),
+    `nameof_unrelated` (`own_*`/`rel_*` on `src` with another type's var, or such a `nameof` in a type's own block), `unkeyed_wire_after`
+    (an `after()` without `key =` in a wire or pulse handler), `manual_push` (a hand `push_to_rust()` or `changed(E, CHANGE_*)`),
+    `output_side_effect` (`ui_data`/`draw`/appearance procs that speak or play sounds) and `undef_then_used` (a define used after its
+    `#undef`). An `ALLOW(x)` naming no lint is already the `allow_annotations` lint's.
   - `dx_old_forms` (removed): it banned forms whose replacements are themselves replaced by the final design. A legacy form is banned only by the commit that lands its replacement (AGENTS.md section 3).
 - **Foundation lints [in progress]:** take/release pairing for pooled datums; the
   `turf.temperature` mirror lint; `look_lacks()` missing-part test; round-trip conservation test for

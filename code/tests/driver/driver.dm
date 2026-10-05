@@ -261,7 +261,7 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 /proc/test_request_handler(datum/holder, proc_name, mob/answerer, value, kind = /datum/prompt/choice)
 	var/datum/request/R = new kind
 	R.answerer = answerer // ALLOW(ownership): a throwaway request record for one direct handler call, discarded at the end of the proc
-	R.answer_value = value
+	R.value = value
 	var/datum/act/request/A = take(/datum/act/request)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.request = R // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release

@@ -207,7 +207,7 @@ ADMIN_VERB(overlay_random_map, R_DEBUG, "Overlay Random Map", "Apply a map to an
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.answer_value
+	map_answers[map_key] = context.answer.value
 	return random_map_stage(user, map_answers)
 
 /datum/admin_verb/delete_random_map/proc/random_map_answered(datum/act/request/context)
@@ -238,7 +238,7 @@ ADMIN_VERB(overlay_random_map, R_DEBUG, "Overlay Random Map", "Apply a map to an
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.answer_value
+	map_answers[map_key] = context.answer.value
 	return random_map_stage(user, map_answers)
 
 /datum/admin_verb/create_random_map/proc/random_map_answered(datum/act/request/context)
@@ -269,7 +269,7 @@ ADMIN_VERB(overlay_random_map, R_DEBUG, "Overlay Random Map", "Apply a map to an
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.answer_value
+	map_answers[map_key] = context.answer.value
 	return random_map_stage(user, map_answers)
 
 /datum/admin_verb/apply_random_map/proc/random_map_answered(datum/act/request/context)
@@ -300,7 +300,7 @@ ADMIN_VERB(overlay_random_map, R_DEBUG, "Overlay Random Map", "Apply a map to an
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.answer_value
+	map_answers[map_key] = context.answer.value
 	return random_map_stage(user, map_answers)
 
 /datum/admin_verb/overlay_random_map/proc/random_map_answered(datum/act/request/context)
@@ -331,7 +331,7 @@ ADMIN_VERB(overlay_random_map, R_DEBUG, "Overlay Random Map", "Apply a map to an
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	map_answers[map_key] = context.answer.answer_value
+	map_answers[map_key] = context.answer.value
 	return random_map_stage(user, map_answers)
 
 /proc/random_map_advanced_call(mob/actor)

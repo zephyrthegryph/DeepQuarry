@@ -302,7 +302,7 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
 	if(request.captures_gone())
 		return
 	if(!A.answer)
-		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
 			SStgui.update_uis(src)
 		return
 	apply_rename(A)
@@ -312,7 +312,7 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
 	var/mob/M = A.request.answerer
 	if(!check_interactivity(M))
 		return
-	var/_answer_k272 = A.answer.answer_value
+	var/_answer_k272 = A.answer.value
 	var/input = sanitizeSafe(_answer_k272, MAX_NAME_LEN)
 	if(src && input)
 		to_chat(M, span_notice("The machine now has a label reading '[input]'."))
@@ -561,7 +561,7 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 	var/list/options = input_prompt_options()
 	var/list/input_selection = options[1]
 	var/list/available_inputs = options[2]
-	var/selection = A.answer.answer_value
+	var/selection = A.answer.value
 	var/obj/item/integrated_circuit/input/choice
 	if(selection)
 		var/index = input_selection.Find(selection)

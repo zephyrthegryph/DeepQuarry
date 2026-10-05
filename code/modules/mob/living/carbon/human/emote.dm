@@ -392,10 +392,10 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 /mob/living/carbon/human/proc/pose_entered(datum/act/request/A)
 	if(!A.answer)
-		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
 			pose_cleared()
 		return
-	var/new_pose = strip_html_simple(A.answer.answer_value)
+	var/new_pose = strip_html_simple(A.answer.value)
 	if(!new_pose)
 		pose_cleared()
 		return
@@ -409,7 +409,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	var/quiet_pose = FALSE
 	var/include_icon = TRUE
 	pose_move = FALSE
-	for(var/o in A.answer.answer_value)
+	for(var/o in A.answer.value)
 		if(o == "Cancel Pose on Movement")
 			pose_move = TRUE
 		if(o == "Disable Pose Icon")
@@ -554,7 +554,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 /mob/living/carbon/human/proc/gender_identity_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	change_gender_identity(A.answer.answer_value)
+	change_gender_identity(A.answer.value)
 
 /mob/living/carbon/human/verb/hide_wings_vr()
 	set name = "Show/Hide wings"

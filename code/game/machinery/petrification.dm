@@ -192,8 +192,8 @@ CAPABILITIES(/obj/machinery/petrification)
 			open_request(src, /datum/prompt/choice/statue_target, PROC_REF(petrify_target_chosen), answerer = user, title = "Petrification Target", question = "Choose the target.", choices = targets)
 
 /obj/machinery/petrification/proc/tint_chosen(datum/act/request/A)
-	if(A.answer?.answer_value)
-		tint = A.answer.answer_value
+	if(A.answer?.value)
+		tint = A.answer.value
 
 /datum/prompt/text/statue_option
 	max_len = MAX_NAME_LEN
@@ -208,7 +208,7 @@ CAPABILITIES(/obj/machinery/petrification)
 		return
 	var/datum/prompt/text/statue_option/ask = A.answer
 	var/option = ask.option
-	var/input = sanitizeSafe(ask.answer_value, 25)
+	var/input = sanitizeSafe(ask.value, 25)
 	if (length(input) <= 0)
 		return
 	if (option == "adjective")
@@ -232,7 +232,7 @@ CAPABILITIES(/obj/machinery/petrification)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/ask = A.answer
-	var/mob/living/carbon/human/H = ask.choices[ask.answer_value]
+	var/mob/living/carbon/human/H = ask.choices[ask.value]
 	if(!ishuman(H) || !is_valid_target(H))
 		return
 	open_request(src, /datum/prompt/choice/petrify_consent, PROC_REF(first_confirmed), answerer = H, operator = A.request.answerer, question = "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.")
@@ -262,7 +262,7 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 	var/mob/living/carbon/human/H = ask.answerer
 	if(QDELETED(ask.operator) || !istype(H) || QDELETED(H))
 		return
-	if(!A.answer || ask.answer_value != "Confirm")
+	if(!A.answer || ask.value != "Confirm")
 		popup_msg(ask.operator, "They declined the request.", FALSE)
 		return
 	open_request(src, /datum/prompt/choice/petrify_consent, PROC_REF(second_confirmed), answerer = H, operator = ask.operator, question = "This is your last warning, are you -certain-?")
@@ -272,7 +272,7 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 	var/mob/living/carbon/human/H = ask.answerer
 	if(QDELETED(ask.operator) || !istype(H) || QDELETED(H))
 		return
-	if(!A.answer || ask.answer_value != "Confirm")
+	if(!A.answer || ask.value != "Confirm")
 		popup_msg(ask.operator, "They declined the request.", FALSE)
 		return
 	if(!is_valid_target(H))

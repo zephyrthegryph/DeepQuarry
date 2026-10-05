@@ -187,7 +187,7 @@ UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_val)
 /datum/tgui_input_colormatrix/proc/color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	activecolor = A.answer.answer_value
+	activecolor = A.answer.value
 	SStgui.update_uis(src)
 
 /datum/prompt/color/matrix_active_colour

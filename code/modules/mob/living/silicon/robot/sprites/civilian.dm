@@ -240,7 +240,7 @@
 	if(!A.answer)
 		return
 	var/mob/living/silicon/robot/ourborg = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(ourborg.sprite_datum == src)
 		LAZYSET(ourborg.sprite_extra_customization, "boozehound", choice)
 		play_sfx(ourborg.loc, SFX_EFFECTS_BUBBLES, 2, vary = FALSE, extrarange = 4)

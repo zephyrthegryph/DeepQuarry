@@ -785,7 +785,7 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 /mob/proc/stomach_vision_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
+	if(A.answer.value)
 		client?.prefs.write_preference_by_type(/datum/preference/toggle/tummy_sprites,TRUE) //Simple! Easy!
 		to_chat(src, "You can now see stomachs!")
 	else

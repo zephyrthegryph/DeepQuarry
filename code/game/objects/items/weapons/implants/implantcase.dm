@@ -26,7 +26,7 @@
 /obj/item/implantcase/proc/label_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/t = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	var/t = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(t)
 		name = text("Glass Case - '[]'", t)
 	else

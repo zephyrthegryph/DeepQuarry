@@ -229,8 +229,8 @@ DECLARE_EMAG_REPEATABLE(/obj/item/rig, PROC_REF(on_emag), null)
 		return
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(isnull(request.mount_choice))
-		return screwdriver_act(user, request.captured_tool, A.answer.answer_value)
-	return screwdriver_act(user, request.captured_tool, request.mount_choice, A.answer.answer_value)
+		return screwdriver_act(user, request.captured_tool, A.answer.value)
+	return screwdriver_act(user, request.captured_tool, request.mount_choice, A.answer.value)
 
 /datum/prompt/choice/rig_maintenance
 	title = "Removal Choice"

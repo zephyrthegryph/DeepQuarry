@@ -184,7 +184,7 @@ DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interactio
 	var/mob/user = A.request.answerer
 	var/datum/prompt/choice/prompt = A.answer
 	var/list/L = prompt.choices
-	var/t1 = A.answer.answer_value
+	var/t1 = A.answer.value
 	var/count = 0	//num of portals from this teleport in world
 	for(var/obj/effect/portal/PO in REGISTRY_MEMBERS(REGISTRY_PORTALS))
 		if(PO.creator == src)	count++

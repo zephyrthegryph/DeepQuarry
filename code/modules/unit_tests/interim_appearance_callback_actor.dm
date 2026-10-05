@@ -20,7 +20,7 @@
 	var/datum/prompt/color/appearance/ask = allocate(/datum/prompt/color/appearance)
 	ask.answerer = operator
 	ask.field = "hair_color"
-	ask.answer_value = "#040506"
+	ask.value = "#040506"
 	target.change_hair_color(1, 2, 3)
 	TEST_ASSERT(changer.apply_color(ask), "the actual callback changes the target's hair")
 	TEST_ASSERT_EQUAL(target.r_hair, 4, "the callback writes the actual red channel")

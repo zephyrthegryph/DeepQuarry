@@ -101,7 +101,7 @@ CAPABILITIES(/datum/prompt/choice/platform_paint)
 	if(!paint_still_valid(A))
 		return
 	var/datum/prompt/choice/platform_paint/paint_question = A.request
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(choice == "Decal")
 		var/obj/item/robot_module/robot/platform/tank_module = module
 		var/list/available = tank_module.available_decals
@@ -119,7 +119,7 @@ CAPABILITIES(/datum/prompt/choice/platform_paint)
 	if(!paint_still_valid(A))
 		return
 	var/datum/prompt/choice/platform_paint/paint_question = A.request
-	apply_paint(A.answer.answer_value, paint_question.painting)
+	apply_paint(A.answer.value, paint_question.painting)
 
 /// Applies a paint choice. Returns TRUE if anything changed.
 /mob/living/silicon/robot/platform/proc/apply_paint(choice, obj/item/floor_painter/painting)

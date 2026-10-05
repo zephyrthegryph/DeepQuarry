@@ -66,7 +66,7 @@ DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, \
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/mob/living/T = A.answer.answer_value
+	var/mob/living/T = A.answer.value
 	if(!T.ckey)
 		return
 

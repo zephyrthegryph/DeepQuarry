@@ -94,7 +94,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_set_blood_color)
 	if(!A.answer)
 		return
 	var/datum/prompt/color/prefs/ask = A.answer
-	ask.preferences.update_preference_by_type(/datum/preference/color/human/blood_color, sanitize_hexcolor(ask.answer_value, default="#A10808"))
+	ask.preferences.update_preference_by_type(/datum/preference/color/human/blood_color, sanitize_hexcolor(ask.value, default="#A10808"))
 	SStgui.update_uis(ask.preferences)
 
 /datum/preference_editor/trait_picker/proc/add_trait_atomic(datum/preferences/preferences, list_type, trait_path)

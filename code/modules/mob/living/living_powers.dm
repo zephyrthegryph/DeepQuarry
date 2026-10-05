@@ -140,9 +140,9 @@
 	. = ..()
 	if(.)
 		return
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
-	var/mob/living/carbon/human/selected = answer_value
+	var/mob/living/carbon/human/selected = value
 	if(!istype(selected) || QDELETED(selected) || QDELETED(answerer))
 		return "gone"
 	return answerer.Adjacent(selected) ? null : "too far away"
@@ -153,7 +153,7 @@
 	return apply_rainbow_target_chosen(A)
 
 /mob/living/proc/apply_rainbow_target_chosen(datum/act/request/A)
-	var/mob/living/carbon/human/chosen_target = A.answer.answer_value
+	var/mob/living/carbon/human/chosen_target = A.answer.value
 
 	act_message(src, null, others = span_warning("%U% begins chargin' their lazor!"))
 	om_task_timed(src, 5 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(healing_rainbows_living_done), done_args = list(chosen_target))

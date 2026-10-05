@@ -88,7 +88,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	if(!A.answer)
 		return
 	var/datum/prompt/text/admin_pm_popup/ask = A.answer
-	var/reply = ask.answer_value
+	var/reply = ask.value
 	if(!reply)
 		return
 	var/client/sender = GLOB.directory[ask.sender_ckey]

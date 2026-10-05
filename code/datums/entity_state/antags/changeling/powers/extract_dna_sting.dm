@@ -44,4 +44,4 @@
 /mob/proc/changeling_extract_dna_sting_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_extract_dna_sting_stage(A.answer.answer_value)
+	changeling_extract_dna_sting_stage(A.answer.value)

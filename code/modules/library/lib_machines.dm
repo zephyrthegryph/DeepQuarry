@@ -732,7 +732,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	else
 		var/datum/prompt/choice/library_catalogue_category/ask = context.answer
 		selected_action = ask.catalogue_action
-	computer.apply_catalogue_answer(selected_action, context.answer.answer_value)
+	computer.apply_catalogue_answer(selected_action, context.answer.value)
 	SStgui.update_uis(computer)
 
 /obj/machinery/librarycomp/proc/apply_catalogue_answer(selected_action, value)
@@ -803,7 +803,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	else
 		var/datum/prompt/choice/library_search_category/ask = context.answer
 		selected_action = ask.library_action
-	computer.apply_search_answer(selected_action, context.answer.answer_value)
+	computer.apply_search_answer(selected_action, context.answer.value)
 	SStgui.update_uis(computer)
 
 /obj/machinery/librarypubliccomp/proc/apply_search_answer(selected_action, value)
@@ -853,7 +853,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	if(!context.answer)
 		return
 	var/obj/machinery/librarycomp/computer = src_object()
-	if(computer.library_upload_stage(src, context.answer.answer_value, TRUE))
+	if(computer.library_upload_stage(src, context.answer.value, TRUE))
 		SStgui.update_uis(computer)
 
 /datum/prompt/choice/library_upload
@@ -881,7 +881,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	if(!context.answer)
 		return
 	var/obj/machinery/librarycomp/computer = src_object()
-	var/orderid = context.answer.answer_value
+	var/orderid = context.answer.value
 	if(orderid && isnum(orderid))
 		var/datum/notice/ui_act/notice = notice_take(/datum/notice/ui_act)
 		notice.usr_ = user

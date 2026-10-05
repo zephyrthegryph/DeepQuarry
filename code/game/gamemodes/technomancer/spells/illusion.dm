@@ -50,7 +50,7 @@ CAPABILITIES(/obj/item/spell/illusion)
 /obj/item/spell/illusion/proc/illusion_action_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Speak")
 			open_request(src, /datum/prompt/text, PROC_REF(illusion_speak), answerer = A.request.answerer, title = "Illusion Speak", question = "What do you want \the [illusion] to say?", encode = FALSE, timeout = 0)
 		if("Emote")
@@ -60,14 +60,14 @@ CAPABILITIES(/obj/item/spell/illusion)
 	if(!A.answer)
 		return
 	//Sanitize occurs inside say() already.
-	if(A.answer.answer_value && illusion)
-		illusion.say(A.answer.answer_value)
+	if(A.answer.value && illusion)
+		illusion.say(A.answer.value)
 
 /obj/item/spell/illusion/proc/illusion_emote(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value && illusion)
-		illusion.emote(A.answer.answer_value)
+	if(A.answer.value && illusion)
+		illusion.emote(A.answer.value)
 
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.

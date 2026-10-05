@@ -369,7 +369,7 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	var/static/list/options = list("Blank" = "papermask", "Neutral" = "neutralmask", "Eyes" = "eyemask",
 							"Sleeping" ="sleepingmask", "Heart" = "heartmask", "Core" = "coremask",
 							"Plus" = "plusmask", "Square" ="squaremask", "Bullseye" = "bullseyemask",
@@ -421,7 +421,7 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	var/static/list/options = list("Joy" = "joy", "Flushed" = "flushed", "Pensive" = "pensive","Angry" ="angry")
 	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]

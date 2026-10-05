@@ -111,7 +111,7 @@ CAPABILITIES(/obj/item/paicard)
 	return card.pai ? "already inhabited" : null
 
 /obj/item/paicard/proc/inhabit_confirmed(datum/act/request/A)
-	if(A.answer?.answer_value == "Load pAI Data")
+	if(A.answer?.value == "Load pAI Data")
 		ghost_inhabit(A.request.answerer)
 
 /obj/item/paicard/proc/ghost_inhabit(mob/user)
@@ -539,7 +539,7 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	switch(choice)
 		if("cell")
 			if(cell == PP_FUNCTIONAL)
@@ -685,7 +685,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 		return
 	var/mob/user = A.request.answerer
 	play_sfx(src, SFX_ITEMS_PICKUP_COMPONENT, volume = 0)
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, A.answer.answer_value))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, A.answer.value))
 
 /// Adding or removing an ID's access. Re-checked on the answer: the ID is still in hand, the pAI still accepts it.
 /datum/prompt/choice/pai_id_access
@@ -707,7 +707,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	var/mob/user = A.request.answerer
 	var/obj/item/I = A.request.subject
 	var/obj/item/card/id/ID = I.GetID()
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Add Access")
 			pai.idcard.access |= ID.access
 			to_chat(user, span_notice("You add the access from the [I] to [src]."))

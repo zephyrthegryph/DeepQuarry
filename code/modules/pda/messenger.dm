@@ -164,9 +164,9 @@ TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_mes
 	if(target_expected && (!subject || QDELETED(subject)))
 		return "gone"
 	// These are answer-time guards: the old entry opened before checking them.
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	if(!answer_value || !readd_quotes(answer_value) || !istype(subject, /obj/item/pda))
+	if(!value || !readd_quotes(value) || !istype(subject, /obj/item/pda))
 		return "not sent"
 	var/obj/item/pda/sender = program.pda()
 	if(!sender || QDELETED(sender))
@@ -183,13 +183,13 @@ TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_mes
 		return "not sent"
 
 /datum/data/pda/app/messenger/proc/message_entered(datum/act/request/A)
-	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+	if(isnull(A.request.value) || A.request.last_error == "gone")
 		return
 	SStgui.update_uis(src)
 	if(A.answer)
 		var/obj/item/pda/P = A.request.subject
 		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
-		send_message_answered(A.request.answerer, P, PM, readd_quotes(A.answer.answer_value))
+		send_message_answered(A.request.answerer, P, PM, readd_quotes(A.answer.value))
 
 /datum/data/pda/app/messenger/proc/send_message_answered(mob/living/U, obj/item/pda/P, datum/data/pda/app/messenger/PM, t)
 	COOLDOWN_START(src, text_cooldown, 0.5 SECONDS)

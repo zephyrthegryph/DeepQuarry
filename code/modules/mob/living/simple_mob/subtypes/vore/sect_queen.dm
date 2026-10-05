@@ -98,8 +98,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
 /mob/living/simple_mob/vore/sect_queen/proc/abdomen_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		custom_eye_color = A.answer.answer_value
+	if(A.answer.value)
+		custom_eye_color = A.answer.value
 		remove_eyes()
 		add_eyes()
 

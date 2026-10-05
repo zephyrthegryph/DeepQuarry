@@ -159,7 +159,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	return TRUE
 
 /obj/machinery/organ_printer/proc/bioprinter_menu_answered(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Print Limbs")
+	if(!A.answer || A.answer.value != "Print Limbs")
 		return
 	printing_menu(A.request.answerer)
 
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 		return
 	var/datum/prompt/choice/R = A.request
 	var/list/possible_list = R.choices
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 
 	if(!can_print(choice, possible_list[choice][2]))
 		return

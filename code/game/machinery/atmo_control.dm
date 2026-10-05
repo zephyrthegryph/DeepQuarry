@@ -179,7 +179,7 @@ CAPABILITIES(/datum/prompt/text/air_sensor_tag)
 	var/datum/prompt/choice/air_sensor_options/R = A.request
 	var/mob/user = R.answerer
 	invalidate_gas_dependencies()
-	switch(R.choices[A.answer.answer_value])
+	switch(R.choices[A.answer.value])
 		if(SENSOR_PRESSURE)
 			output ^= SENSOR_PRESSURE
 		if(SENSOR_TEMPERATURE)
@@ -202,11 +202,11 @@ CAPABILITIES(/datum/prompt/text/air_sensor_tag)
 			open_request(src, /datum/prompt/text/air_sensor_tag, PROC_REF(sensor_tag_entered), answerer = user, title = "Set ID Tag", question = "Please insert an ID tag for [src], example 'burn_chamber'.", default = id_tag, max_len = MAX_NAME_LEN, tool = R.tool, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
 /obj/machinery/air_sensor/proc/sensor_tag_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/text/air_sensor_tag/R = A.request
 	var/mob/user = R.answerer
-	id_tag = A.answer.answer_value
+	id_tag = A.answer.value
 	var/obj/item/multitool/M = R.tool
 	if(istype(M) && M.loc == user)
 		rel_set(M, nameof(M.connectable), src)
@@ -320,7 +320,7 @@ CAPABILITIES(/datum/prompt/text/air_control_sensor_name)
 	var/datum/prompt/choice/air_control_menu/R = A.request
 	var/mob/user = R.answerer
 	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Inlet")
 			configure_inlet(user, tool)
 		if("Outlet")
@@ -346,7 +346,7 @@ CAPABILITIES(/datum/prompt/text/air_control_sensor_name)
 	var/datum/prompt/choice/air_control_sensors/R = A.request
 	var/mob/living/user = R.answerer
 	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Add")
 			// Device must be a meter or gas sensor.
 			var/obj/machinery/device = tool.connectable()
@@ -367,7 +367,7 @@ CAPABILITIES(/datum/prompt/text/air_control_sensor_name)
 	var/datum/prompt/text/air_control_sensor_name/R = A.request
 	var/mob/living/user = R.answerer
 	var/obj/machinery/device = R.device
-	var/device_name = A.answer.answer_value
+	var/device_name = A.answer.value
 	if(!device_name)
 		to_chat(user, span_warning("Error: No name was given for [device]."))
 		return
@@ -383,10 +383,10 @@ CAPABILITIES(/datum/prompt/text/air_control_sensor_name)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/R = A.request
-	open_request(src, /datum/prompt/yes_no/air_control_sensor_remove, PROC_REF(sensor_removal_confirmed), answerer = R.answerer, title = "Warning", question = "Are you sure you want to remove the sensor/meter '[A.answer.answer_value]'?", sensor_names = R.choices, to_remove = A.answer.answer_value, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+	open_request(src, /datum/prompt/yes_no/air_control_sensor_remove, PROC_REF(sensor_removal_confirmed), answerer = R.answerer, title = "Warning", question = "Are you sure you want to remove the sensor/meter '[A.answer.value]'?", sensor_names = R.choices, to_remove = A.answer.value, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
 /obj/machinery/computer/general_air_control/proc/sensor_removal_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/air_control_sensor_remove/R = A.request
 	var/mob/living/user = R.answerer
@@ -512,7 +512,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 	var/datum/prompt/choice/air_control_port/R = A.request
 	var/mob/living/user = R.answerer
 	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if ("Set")
 			to_chat(user, span_notice("The buffer is [tool.connectable()]"))
 			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/vent_pump))
@@ -540,7 +540,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 	var/datum/prompt/choice/air_control_port/R = A.request
 	var/mob/living/user = R.answerer
 	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if ("Set")
 			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/outlet_injector))
 				to_chat(user, span_notice("Error: Buffer is either empty, or object in buffer is invalid. Device should be Injector"))
@@ -670,7 +670,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 	var/datum/prompt/choice/air_control_port/R = A.request
 	var/mob/living/user = R.answerer
 	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if ("Set")
 			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/vent_pump))
 				to_chat(user, span_warning("Error: Buffer is either empty, or object in buffer is invalid. Device should be Air Vent"))
@@ -697,7 +697,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 	var/datum/prompt/choice/air_control_port/R = A.request
 	var/mob/living/user = R.answerer
 	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if ("Set")
 			to_chat(user, span_notice("The buffer is [tool.connectable()]"))
 			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/outlet_injector))

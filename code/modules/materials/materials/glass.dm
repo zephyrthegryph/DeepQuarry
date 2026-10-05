@@ -102,7 +102,7 @@
 	if(!A.answer)
 		return
 	SStgui.update_uis(src)
-	window_build_stage(A.request.answerer, A.request.subject, TRUE, A.answer.answer_value)
+	window_build_stage(A.request.answerer, A.request.subject, TRUE, A.answer.value)
 
 /datum/prompt/choice/glass_window_build
 	title = "Window Construction"

@@ -90,7 +90,7 @@ CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample)
 	var/mob/living/silicon/pai/P = sample.pai
 	if(!P || !M)
 		return
-	if(A.answer.answer_value)
+	if(A.answer.value)
 		var/turf/T = get_turf(P.loc)
 		for (var/mob/v in viewers(T))
 			v.show_message(span_notice("[M] presses [M.p_their()] thumb against [P]."), 3, span_notice("[P] makes a sharp clicking sound as it extracts DNA material from [M]."), 2)

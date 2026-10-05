@@ -354,7 +354,7 @@
 	if(reason)
 		return reason
 	var/mob/living/simple_mob/animal/borer/B = answerer
-	var/mob/living/speaker = answer_value
+	var/mob/living/speaker = value
 	if(QDELETED(speaker))
 		return "gone"
 	if(B.borer_host() || speaker.stat || get_dist(B, speaker) > 7)
@@ -364,7 +364,7 @@
 /mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(datum/act/request/A)
 	if(!A.answer)
 		var/datum/request/R = A.request
-		if(R.outcome == REQ_CANCELLED && isnull(R.answer_value))
+		if(R.outcome == REQ_CANCELLED && isnull(R.value))
 			to_chat(src, span_alien("..But nothing heard it.."))
 		return
 	var/datum/prompt/choice/borer_psychic_speaker/ask = A.answer

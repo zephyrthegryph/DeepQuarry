@@ -41,7 +41,7 @@ ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs
 	var/client/user = A.request.answerer?.client
 	if(!user)
 		return
-	var/subject = A.request.answer_value
+	var/subject = A.request.value
 	if(!subject)
 		return
 

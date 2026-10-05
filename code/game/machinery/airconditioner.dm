@@ -153,7 +153,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 /obj/machinery/power/thermoregulator/proc/target_temperature_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_temp = convert_c2k(A.answer.answer_value)
+	var/new_temp = convert_c2k(A.answer.value)
 	target_temp = max(new_temp, TCMB)
 	heat_entries_refresh(src)
 	wake_for_state_change()

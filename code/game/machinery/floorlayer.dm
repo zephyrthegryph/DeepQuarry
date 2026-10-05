@@ -66,7 +66,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/selected_mode = A.answer.answer_value
+	var/selected_mode = A.answer.value
 	work_modes[selected_mode] = !work_modes[selected_mode]
 	act_message(user, src, MSG_SELF(span_notice("You set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")), \
 		MSG_OTHERS(span_notice("%U% has set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")))
@@ -83,7 +83,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/obj/item/stack/tile/selected = A.answer.answer_value
+	var/obj/item/stack/tile/selected = A.answer.value
 	if(selected.loc != src)
 		return
 	if(selected)
@@ -99,7 +99,7 @@
 /obj/machinery/floorlayer/proc/tile_type_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/obj/item/stack/tile/selected = A.answer.answer_value
+	var/obj/item/stack/tile/selected = A.answer.value
 	if(selected.loc == src)
 		rel_set(src, nameof(T), selected)
 

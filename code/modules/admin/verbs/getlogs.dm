@@ -33,7 +33,7 @@ ADMIN_VERB(get_current_logs, (R_ADMIN | R_SERVER), "Get Current Logs", "View or 
 		return
 	var/datum/prompt/choice/serverlog_action/ask = A.answer
 	var/path = ask.path
-	switch(ask.answer_value)
+	switch(ask.value)
 		if ("View")
 			// structured TGUI AdminReport.
 			dq_admin_report_html(src.mob, path, "<pre style='word-wrap: break-word; white-space: pre-wrap;'>[html_encode(file2text(file(path)))]</pre>")

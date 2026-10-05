@@ -229,7 +229,7 @@ ADMIN_VERB(ReleaseVirus, R_SPAWN|R_EVENT, "Release Virus", "Release a pre-set vi
 	var/mob/answerer = user.mob
 	if(QDELETED(answerer))
 		return
-	open_request(src, /datum/prompt/choice/admin_release_virus, PROC_REF(infectee_chosen), answerer = answerer, question = "Choose infectee", title = "Characters", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS), disease_type = A.request.answer_value)
+	open_request(src, /datum/prompt/choice/admin_release_virus, PROC_REF(infectee_chosen), answerer = answerer, question = "Choose infectee", title = "Characters", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS), disease_type = A.request.value)
 
 /datum/admin_verb/ReleaseVirus/proc/infectee_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -238,7 +238,7 @@ ADMIN_VERB(ReleaseVirus, R_SPAWN|R_EVENT, "Release Virus", "Release a pre-set vi
 	var/client/user = ask.answerer?.client
 	if(!user)
 		return
-	var/mob/living/carbon/human/H = ask.answer_value
+	var/mob/living/carbon/human/H = ask.value
 	if(!istype(H) || QDELETED(H))
 		return FALSE
 	var/disease = ask.disease_type

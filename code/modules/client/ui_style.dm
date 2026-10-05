@@ -23,7 +23,7 @@
 	if(!ishuman(user) && !isrobot(user))
 		to_chat(src, span_warning("You must be a human or a robot to use this verb."))
 		return
-	var/style = A.request.answer_value
+	var/style = A.request.value
 	if(!style)
 		return
 	open_request(src, /datum/prompt/number/ui_style_alpha, PROC_REF(ui_alpha_picked), answerer = mob, default = prefs.read_preference(/datum/preference/numeric/ui_style_alpha), style = style)
@@ -44,7 +44,7 @@
 		to_chat(src, span_warning("You must be a human or a robot to use this verb."))
 		return
 	var/datum/prompt/number/ui_style_alpha/ask = A.request
-	var/alpha = ask.answer_value
+	var/alpha = ask.value
 	if(!alpha || !(alpha <= 255 && alpha >= 50))
 		return
 	open_request(src, /datum/prompt/color/ui_style, PROC_REF(ui_color_picked), answerer = mob, default = prefs.read_preference(/datum/preference/color/ui_style_color), style = ask.style, alpha = alpha, old_style = prefs.read_preference(/datum/preference/choiced/ui_style), old_alpha = prefs.read_preference(/datum/preference/numeric/ui_style_alpha), old_color = prefs.read_preference(/datum/preference/color/ui_style_color))
@@ -66,8 +66,8 @@
 	var/datum/prompt/color/ui_style/ask = A.request
 	var/mob/user = ask.answerer
 	//update UI
-	user.update_ui_style(ask.style, ask.alpha, ask.answer_value)
-	open_request(src, /datum/prompt/yes_no/ui_style_save, PROC_REF(ui_style_saved), answerer = user, style = ask.style, alpha = ask.alpha, color = ask.answer_value, old_style = ask.old_style, old_alpha = ask.old_alpha, old_color = ask.old_color)
+	user.update_ui_style(ask.style, ask.alpha, ask.value)
+	open_request(src, /datum/prompt/yes_no/ui_style_save, PROC_REF(ui_style_saved), answerer = user, style = ask.style, alpha = ask.alpha, color = ask.value, old_style = ask.old_style, old_alpha = ask.old_alpha, old_color = ask.old_color)
 
 /// Keep the new UI look? No (or a closed window) puts the old one back.
 /datum/prompt/yes_no/ui_style_save
@@ -83,12 +83,12 @@
 
 /client/proc/ui_style_saved(datum/act/request/A)
 	var/datum/prompt/yes_no/ui_style_save/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 		return
 	var/mob/user = ask.answerer
 	if(QDELETED(user))
 		return
-	if(A.answer && ask.answer_value)
+	if(A.answer && ask.value)
 		user.write_preference_directly(/datum/preference/choiced/ui_style, ask.style, WRITE_PREF_MANUAL)
 		user.write_preference_directly(/datum/preference/numeric/ui_style_alpha, ask.alpha, WRITE_PREF_MANUAL)
 		user.write_preference_directly(/datum/preference/color/ui_style_color, ask.color, WRITE_PREF_MANUAL)

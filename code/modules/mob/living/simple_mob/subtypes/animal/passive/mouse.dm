@@ -218,7 +218,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese, p
 /mob/living/simple_mob/animal/passive/mouse/proc/mouse_colour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_mouse_colour = A.answer.answer_value
+	var/new_mouse_colour = A.answer.value
 	icon_state = resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]"
 	item_state = "mouse_[new_mouse_colour]"
 	icon_living = "mouse_[new_mouse_colour]"

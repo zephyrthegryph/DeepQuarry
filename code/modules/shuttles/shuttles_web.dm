@@ -529,4 +529,4 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/web)
 	SStgui.update_uis(src)
 
 /datum/shuttle/autodock/web_shuttle/proc/rename_shuttle_apply(datum/act/request/A)
-	return rename_shuttle_stage(A.request.answerer, A.request.answer_value, TRUE)
+	return rename_shuttle_stage(A.request.answerer, A.request.value, TRUE)

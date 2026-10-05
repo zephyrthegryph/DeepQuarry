@@ -84,7 +84,7 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_target)
 /obj/item/sleevemate/proc/scan_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	scan_target(A.request.answerer, A.answer.answer_value)
+	scan_target(A.request.answerer, A.answer.value)
 
 /obj/item/sleevemate/proc/scan_target(mob/living/user, mob/living/M)
 	if(isrobot(M))
@@ -118,7 +118,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 	if(!stored_mind())
 		return
 	var/mob/living/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Delete")
 			to_chat(user,span_notice("Internal copy of [stored_mind().name] deleted."))
 			clear_mind()
@@ -432,7 +432,7 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal)
 	return null
 
 /obj/item/sleevemate/proc/mindsteal_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Continue")
+	if(!A.answer || A.answer.value != "Continue")
 		return
 	var/datum/prompt/choice/sleevemate_mindsteal/ask = A.answer
 	var/mob/living/user = ask.answerer
@@ -450,7 +450,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(!(choice in list("Body Snatcher","Mind Binder")))
 		return
 	to_chat(user,span_danger("You hack [src]!"))

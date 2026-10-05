@@ -568,7 +568,7 @@ CAPABILITIES(/datum/preferences)
 		selecting_slots = FALSE
 		return
 	var/datum/prompt/choice/preferences_slot_dialog/ask = context.answer
-	slot_dialog_stage(ask.answerer, ask.copying, ask.answer_value, continuing = TRUE)
+	slot_dialog_stage(ask.answerer, ask.copying, ask.value, continuing = TRUE)
 	SStgui.update_uis(src)
 
 /datum/preferences/proc/slot_confirmation_answered(datum/act/request/context)
@@ -576,5 +576,5 @@ CAPABILITIES(/datum/preferences)
 		selecting_slots = FALSE
 		return
 	var/datum/prompt/choice/preferences_slot_confirmation/ask = context.answer
-	slot_dialog_stage(ask.answerer, TRUE, ask.selected_label, ask.answer_value, TRUE)
+	slot_dialog_stage(ask.answerer, TRUE, ask.selected_label, ask.value, TRUE)
 	SStgui.update_uis(src)

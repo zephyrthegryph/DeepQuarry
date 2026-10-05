@@ -51,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))
 			rel_clear(src, nameof(buffer))

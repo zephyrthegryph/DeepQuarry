@@ -247,7 +247,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	return null
 
 /obj/effect/bmode/buildholder/proc/base_turf_acknowledged(datum/act/request/context)
-	if(!context.answer || context.answer.answer_value != "Yes")
+	if(!context.answer || context.answer.value != "Yes")
 		return
 	var/mob/user = context.answer.answerer
 	var/turf/T = context.answer.subject
@@ -755,14 +755,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /obj/effect/bmode/buildmode/proc/ask_edit_type(datum/act/request/context)
 	if(!context.answer)
 		return
-	open_request(src, /datum/prompt/choice/buildmode_edit, PROC_REF(ask_edit_value), answerer = context.answer.answerer, title = "Type", question = "Select variable type:", choices = list("text","number","mob-reference","obj-reference","turf-reference"), step = context.answer.answer_value)
+	open_request(src, /datum/prompt/choice/buildmode_edit, PROC_REF(ask_edit_value), answerer = context.answer.answerer, title = "Type", question = "Select variable type:", choices = list("text","number","mob-reference","obj-reference","turf-reference"), step = context.answer.value)
 
 /obj/effect/bmode/buildmode/proc/ask_edit_value(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/buildmode_edit/ask = context.answer
 	var/mob/user = ask.answerer
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("text")
 			open_request(src, /datum/prompt/text/buildmode_edit, PROC_REF(edit_text_entered), answerer = user, title = "Value", question = "Enter variable value:", default = "value", step = ask.step)
 		if("number")
@@ -777,19 +777,19 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	if(!context.answer)
 		return
 	var/datum/prompt/text/buildmode_edit/ask = context.answer
-	edit_answered(ask.answerer, ask.step, ask.answer_value)
+	edit_answered(ask.answerer, ask.step, ask.value)
 
 /obj/effect/bmode/buildmode/proc/edit_number_entered(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/prompt/number/buildmode_edit/ask = context.answer
-	edit_answered(ask.answerer, ask.edit_var, ask.answer_value)
+	edit_answered(ask.answerer, ask.edit_var, ask.value)
 
 /obj/effect/bmode/buildmode/proc/edit_mob_ref_picked(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/buildmode_mob_reference/ask = context.answer
-	edit_answered(ask.answerer, ask.step, ask.answer_value)
+	edit_answered(ask.answerer, ask.step, ask.value)
 
 /obj/effect/bmode/buildmode/proc/edit_ref_picked(datum/om/prompt/choice/buildmode/ask)
 	edit_answered(ask.answerer, ask.step, ask.choice)
@@ -803,7 +803,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/buildmode_room_setting/ask = context.answer
-	if(ask.answer_value == "Yes")
+	if(ask.value == "Yes")
 		open_request(src, /datum/prompt/text/buildmode_room_name, PROC_REF(area_name_entered), answerer = ask.answerer, title = "Room Buildmode", question = "New area name")
 		return
 	area_enabled = 0
@@ -814,7 +814,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 		return
 	var/datum/prompt/text/buildmode_room_name/ask = context.answer
 	area_enabled = 1
-	area_name = sanitize(ask.answer_value, MAX_NAME_LEN)
+	area_name = sanitize(ask.value, MAX_NAME_LEN)
 	log_admin("BUILDMODE ROOM: [key_name(ask.answerer)] area: [area_name].")
 	ask_room_holder(ask.answerer)
 
@@ -826,7 +826,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/buildmode_room_setting/ask = context.answer
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Floor")
 			ask_path(ask.answerer, "floor_holder", /turf/simulated/floor/plating)
 		if("Wall")
@@ -836,25 +836,25 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/buildmode_light/ask = context.answer
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Range")
-			open_request(src, /datum/prompt/number/buildmode_light, PROC_REF(light_number_entered), answerer = ask.answerer, title = "Light Maker", question = "New light range.", default = 3, light_setting = ask.answer_value)
+			open_request(src, /datum/prompt/number/buildmode_light, PROC_REF(light_number_entered), answerer = ask.answerer, title = "Light Maker", question = "New light range.", default = 3, light_setting = ask.value)
 		if("Power")
-			open_request(src, /datum/prompt/number/buildmode_light, PROC_REF(light_number_entered), answerer = ask.answerer, title = "Light Maker", question = "New light power.", default = 3, light_setting = ask.answer_value)
+			open_request(src, /datum/prompt/number/buildmode_light, PROC_REF(light_number_entered), answerer = ask.answerer, title = "Light Maker", question = "New light power.", default = 3, light_setting = ask.value)
 		if("Color")
-			open_request(src, /datum/prompt/color/buildmode_light, PROC_REF(light_color_picked), answerer = ask.answerer, title = "Light Maker", question = "New light color.", default = new_light_color, light_setting = ask.answer_value)
+			open_request(src, /datum/prompt/color/buildmode_light, PROC_REF(light_color_picked), answerer = ask.answerer, title = "Light Maker", question = "New light color.", default = new_light_color, light_setting = ask.value)
 
 /obj/effect/bmode/buildmode/proc/light_number_entered(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/prompt/number/buildmode_light/ask = context.answer
-	lights_answered(ask.answerer, ask.light_setting, ask.answer_value)
+	lights_answered(ask.answerer, ask.light_setting, ask.value)
 
 /obj/effect/bmode/buildmode/proc/light_color_picked(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/prompt/color/buildmode_light/ask = context.answer
-	lights_answered(ask.answerer, ask.light_setting, ask.answer_value)
+	lights_answered(ask.answerer, ask.light_setting, ask.value)
 
 /obj/effect/bmode/buildmode/proc/lights_answered(mob/user, what, input)
 	if(!input)
@@ -887,7 +887,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 		return
 	var/datum/prompt/text/buildmode_path/ask = context.answer
 	var/mob/user = ask.answerer
-	var/list/matches = paths_matching(ask.answer_value)
+	var/list/matches = paths_matching(ask.value)
 	if(!matches.len)
 		tgui_alert_async(user, "No results found.  Sorry.")
 		return
@@ -900,7 +900,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/buildmode_path/ask = context.answer
-	path_answered(ask.answerer, ask.path_var, ask.answer_value)
+	path_answered(ask.answerer, ask.path_var, ask.value)
 
 /obj/effect/bmode/buildmode/proc/path_answered(mob/user, var_name, result)
 	log_admin("BUILDMODE/ITEM GENERATION: [key_name(user)] selected [result] to be spawned.")
@@ -1147,7 +1147,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
 		return "gone"
 	var/static/list/locked = list("vars", "key", "ckey", "client", "firemut", "ishulk", "telekinesis", "xray", "virus", "viruses", "cuffed", "ka", "last_eaten", "urine")
-	if(!isnull(answer_value) && (step in locked) && !check_rights_for(user.client, R_DEBUG))
+	if(!isnull(value) && (step in locked) && !check_rights_for(user.client, R_DEBUG))
 		return "locked variable"
 	return null
 
@@ -1184,8 +1184,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	var/mob/user = answerer
 	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
 		return "gone"
-	if(!isnull(answer_value))
-		var/mob/picked = answer_value
+	if(!isnull(value))
+		var/mob/picked = value
 		if(!istype(picked) || QDELETED(picked))
 			return "gone"
 	return null

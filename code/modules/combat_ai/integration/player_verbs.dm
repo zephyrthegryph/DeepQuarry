@@ -214,7 +214,7 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 	var/mob/living/user = owner
 	if(!istype(user) || QDELETED(user) || QDELETED(answerer))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
 	var/reason = dq_combat_actor_refusal(user)
 	if(reason)
@@ -230,14 +230,14 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 	open_request(user, /datum/prompt/choice/player_combat_move, TYPE_PROC_REF(/mob/living, dq_combat_move_answered), answerer = user, captured = answers, step_name = step, question = question, title = title, choices = labels)
 
 /mob/living/proc/dq_combat_move_answered(datum/act/request/A)
-	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+	if(isnull(A.request.value) || A.request.last_error == "gone")
 		return
 	SStgui.update_uis(src)
 	if(!A.answer)
 		dq_combat_refusal_notice(src, A.request.last_error)
 		return
 	var/list/state = A.request.captured.Copy()
-	state[A.request.step_name] = A.answer.answer_value
+	state[A.request.step_name] = A.answer.value
 	dq_combat_move_stage(state, A.request)
 
 /// Effect routing: records only the scalar result of a pure synchronous requirement.

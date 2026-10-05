@@ -146,7 +146,7 @@
 
 /obj/mecha/proc/component_pry_apply(datum/act/request/A)
 	var/datum/prompt/choice/mecha_pry_component/ask = A.answer
-	var/obj/item/mecha_parts/component/RmC = ask.choices[ask.answer_value]
+	var/obj/item/mecha_parts/component/RmC = ask.choices[ask.value]
 	RmC.detach()
 	return TRUE
 

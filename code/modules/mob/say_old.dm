@@ -16,13 +16,13 @@
 
 /mob/proc/chat_line_entered(datum/act/request/A)
 	if(!A.answer)
-		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
 			client?.stop_thinking()
 		return
 	var/datum/prompt/text/chat_line/prompt = A.answer
 	client?.stop_thinking()
-	if(A.answer.answer_value)
-		call(src, prompt.action)(A.answer.answer_value)
+	if(A.answer.value)
+		call(src, prompt.action)(A.answer.value)
 
 /mob/verb/say_verb_old()
 	set name = "Say Old"

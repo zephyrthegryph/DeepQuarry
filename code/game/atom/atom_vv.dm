@@ -92,7 +92,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 /mob/proc/vv_transform_kind_chosen(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/transform_kind = context.answer.answer_value
+	var/transform_kind = context.answer.value
 	var/question
 	switch(transform_kind)
 		if("Scale", "Shear")
@@ -109,7 +109,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	if(!context.answer)
 		return
 	var/datum/prompt/number/vv_edit/ask = context.answer
-	var/x_mod = ask.answer_value
+	var/x_mod = ask.value
 	var/question
 	switch(ask.transform_kind)
 		if("Scale", "Shear")
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	if(!context.answer)
 		return
 	var/datum/prompt/number/vv_edit/ask = context.answer
-	vv_transform_apply(ask.subject, ask.transform_kind, ask.x_mod, ask.answer_value)
+	vv_transform_apply(ask.subject, ask.transform_kind, ask.x_mod, ask.value)
 
 /mob/proc/vv_transform_apply(atom/A, transform_kind, x_mod, y_mod)
 	var/matrix/M = A.transform
@@ -145,7 +145,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 /mob/proc/vv_spin_infinite_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	if(context.answer.answer_value)
+	if(context.answer.value)
 		vv_spin_ask_rate(context.request.subject)
 		return
 	open_request(src, /datum/prompt/number/vv_edit, PROC_REF(vv_spin_count_entered), answerer = src, subject = context.request.subject, title = "Spin Animation", question = "How many spins?", min_value = 0)
@@ -153,7 +153,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 /mob/proc/vv_spin_count_entered(datum/act/request/context)
 	if(!context.answer)
 		return
-	vv_spin_ask_rate(context.request.subject, context.answer.answer_value)
+	vv_spin_ask_rate(context.request.subject, context.answer.value)
 
 /mob/proc/vv_spin_ask_rate(atom/target, num_spins = -1)
 	open_request(src, /datum/prompt/number/vv_edit, PROC_REF(vv_spin_rate_entered), answerer = src, subject = target, title = "Spin Animation", question = "How many spins per second?", min_value = 0, num_spins = num_spins)
@@ -162,7 +162,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	if(!context.answer)
 		return
 	var/datum/prompt/number/vv_edit/ask = context.answer
-	open_request(src, /datum/prompt/choice/vv_edit, PROC_REF(vv_spin_direction_chosen), answerer = src, subject = ask.subject, title = "Spin Animation", question = "Which direction?", choices = list("Clockwise", "Counter-clockwise"), buttons = TRUE, num_spins = ask.num_spins, spins_per_sec = ask.answer_value)
+	open_request(src, /datum/prompt/choice/vv_edit, PROC_REF(vv_spin_direction_chosen), answerer = src, subject = ask.subject, title = "Spin Animation", question = "Which direction?", choices = list("Clockwise", "Counter-clockwise"), buttons = TRUE, num_spins = ask.num_spins, spins_per_sec = ask.value)
 
 /mob/proc/vv_spin_direction_chosen(datum/act/request/context)
 	if(!context.answer)
@@ -171,18 +171,18 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	if(!ask.num_spins || !ask.spins_per_sec)
 		return
 	var/atom/A = ask.subject
-	A.SpinAnimation(1 SECONDS / ask.spins_per_sec, ask.num_spins, ask.answer_value == "Clockwise" ? 1 : 0)
+	A.SpinAnimation(1 SECONDS / ask.spins_per_sec, ask.num_spins, ask.value == "Clockwise" ? 1 : 0)
 
 /atom/proc/vv_stop_animations_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	animate(src, transform = null, flags = ANIMATION_END_NOW) // Literally just fucking stop animating entirely because admin said so
 
 /atom/proc/vv_auto_rename_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		vv_auto_rename(src, A.answer.answer_value)
+	if(A.answer.value)
+		vv_auto_rename(src, A.answer.value)
 
 VV_TOPIC_ACTION(/atom, VV_HK_TRIGGER_EXPLOSION, PROC_REF(vv_topic_explosion))
 VV_TOPIC_ACTION(/atom, VV_HK_TRIGGER_EMP, PROC_REF(vv_topic_emp))

@@ -143,14 +143,14 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 	if(!context.answer)
 		return
 	var/datum/managed_browser/feedback_form/form = src_object()
-	form.apply_feedback_body(context.answer.answer_value)
+	form.apply_feedback_body(context.answer.value)
 	SStgui.update_uis(form)
 
 /datum/tgui/proc/feedback_topic_answered(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/managed_browser/feedback_form/form = src_object()
-	form.apply_feedback_topic(context.answer.answer_value)
+	form.apply_feedback_topic(context.answer.value)
 	SStgui.update_uis(form)
 
 /datum/prompt/text/feedback_body
@@ -214,7 +214,7 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 		return
 	var/datum/request/request = context.request
 	if(!context.answer)
-		if(request.outcome != REQ_CANCELLED || isnull(request.answer_value))
+		if(request.outcome != REQ_CANCELLED || isnull(request.value))
 			return
 		switch(request.last_error)
 			if("feedback is too long")
@@ -226,5 +226,5 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 				return
 		SStgui.update_uis(form)
 		return
-	if(form.apply_feedback_submission(context.answer.answer_value) && !QDELETED(form))
+	if(form.apply_feedback_submission(context.answer.value) && !QDELETED(form))
 		SStgui.update_uis(form)

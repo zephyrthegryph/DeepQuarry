@@ -167,7 +167,7 @@ CAPABILITIES(/datum/record_update_review)
 	if(ask.initial_refusal)
 		retire()
 		return
-	if(!A.answer || A.request.answer_value != "Review Changes")
+	if(!A.answer || A.request.value != "Review Changes")
 		refused()
 		retire()
 		return
@@ -200,7 +200,7 @@ CAPABILITIES(/datum/record_update_review)
 		retire()
 		return
 	var/mob/M = actor
-	var/new_data = strip_html_simple(A.request.answer_value, MAX_RECORD_LENGTH)
+	var/new_data = strip_html_simple(A.request.value, MAX_RECORD_LENGTH)
 	if(!new_data)
 		refused()
 		retire()

@@ -248,7 +248,7 @@
 /mob/proc/mob_examine_selected(datum/act/request/A)
 	if(!A.answer)
 		return
-	mob_examine_stage(TRUE, A.answer.answer_value)
+	mob_examine_stage(TRUE, A.answer.value)
 
 /datum/prompt/choice/mob_examine_selection
 	question = "What would you like to examine?"
@@ -259,7 +259,7 @@
 /datum/prompt/choice/mob_examine_selection/recheck_extra()
 	if(QDELETED(owner) || QDELETED(answerer))
 		return "gone"
-	var/atom/selected = answer_value
+	var/atom/selected = value
 	if(!isnull(selected) && QDELETED(selected))
 		return "gone"
 	return null

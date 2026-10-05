@@ -430,7 +430,7 @@ UI_ACT_PROC(/datum/character_directory, ui_act_directory_setting)
 	finish_directory_answer(A, request.directory_action, request.overwrite_prefs)
 
 /datum/character_directory/proc/finish_directory_answer(datum/act/request/A, action, overwrite_prefs)
-	apply_directory_answer(A.request.answerer, action, overwrite_prefs, A.answer.answer_value)
+	apply_directory_answer(A.request.answerer, action, overwrite_prefs, A.answer.value)
 	SStgui.update_uis(src)
 
 /datum/character_directory/proc/apply_directory_answer(mob/user, action, overwrite_prefs, selected_value)

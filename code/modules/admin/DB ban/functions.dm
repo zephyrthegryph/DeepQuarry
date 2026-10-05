@@ -182,7 +182,7 @@
 	return admin_can(answerer?.client, 0) ? null : "no admin rights"
 
 /datum/admins/proc/unseen_ban_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	var/mob/admin = A.request.answerer
 	var/datum/prompt/choice/unseen_ban/ask = A.request
@@ -301,17 +301,17 @@
 	var/param
 	if(istype(ask, /datum/prompt/text/ban_edit_reason))
 		var/datum/prompt/text/ban_edit_reason/reason_ask = ask
-		value = reason_ask.answer_value
+		value = reason_ask.value
 		banid = reason_ask.banid
 		param = reason_ask.param
 	else if(istype(ask, /datum/prompt/number/ban_edit_duration))
 		var/datum/prompt/number/ban_edit_duration/duration_ask = ask
-		value = duration_ask.answer_value
+		value = duration_ask.value
 		banid = duration_ask.banid
 		param = duration_ask.param
 	else
 		var/datum/prompt/choice/ban_edit_unban/unban_ask = ask
-		value = unban_ask.answer_value
+		value = unban_ask.value
 		banid = unban_ask.banid
 		param = unban_ask.param
 	usr = admin // ALLOW(sys_usr_outside_verb): legacy prompt-flow I/O captures this initiating admin for login and cancellation checks

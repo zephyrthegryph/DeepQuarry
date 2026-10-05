@@ -101,7 +101,7 @@ CAPABILITIES(/datum/prompt/choice/pai_invite)
 	var/mob/observer/ghost = A.request.answerer
 	if(!invite.card || !invite.inquirer)
 		return
-	pai_invite_answer(invite.inquirer, ghost, invite.card, A.answer.answer_value, ghost.client)
+	pai_invite_answer(invite.inquirer, ghost, invite.card, A.answer.value, ghost.client)
 
 /datum/system/pai/proc/pai_invite_answer(mob/inquirer, mob/observer/ghost, obj/item/paicard/card, response, client/target)
 	if(check_is_already_pai(target.ckey))

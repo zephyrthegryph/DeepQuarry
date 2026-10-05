@@ -951,7 +951,7 @@ APPEARANCE_NONE(/obj/item/paper/crumpled)
 
 /obj/item/paper/proc/paper_write_apply(datum/act/request/A)
 	var/datum/prompt/text/paper_write_review/ask = A.answer
-	return paper_write_stage(ask.paper_field_id, ask.paper_operator, ask.answer_value, TRUE)
+	return paper_write_stage(ask.paper_field_id, ask.paper_operator, ask.value, TRUE)
 
 /datum/prompt/text/paper_write_review
 	timeout = 0
@@ -982,7 +982,7 @@ CAPABILITIES(/datum/prompt/text/paper_write_review)
 
 /obj/item/paper/proc/paper_rename_apply(datum/act/request/A)
 	var/datum/prompt/text/paper_rename_review/ask = A.answer
-	return paper_rename_stage(ask.paper_operator, ask.paper_held, ask.paper_interaction, ask.answer_value, TRUE)
+	return paper_rename_stage(ask.paper_operator, ask.paper_held, ask.paper_interaction, ask.value, TRUE)
 
 /datum/prompt/text/paper_rename_review
 	timeout = 0

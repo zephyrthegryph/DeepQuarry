@@ -86,9 +86,9 @@
 	var/datum/request/ask = A.request
 	if(QDELETED(ask.answerer))
 		return
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 		return
-	generateHeader(A.answer ? ask.answer_value : "")
+	generateHeader(A.answer ? ask.value : "")
 	tgui_interact(ask.answerer)
 
 CAPABILITIES(/obj/item/paper/admin)
@@ -228,7 +228,7 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_cancel)
 
 /obj/item/paper/admin/proc/admin_write_apply(datum/act/request/A)
 	var/datum/prompt/text/admin_paper_write_review/ask = A.answer
-	ask.write_answers[ask.write_key] = ask.answer_value
+	ask.write_answers[ask.write_key] = ask.value
 	return admin_write_stage(ask.write_id, ask.write_operator, ask.write_answers)
 
 /datum/prompt/text/admin_paper_write_review
@@ -258,7 +258,7 @@ CAPABILITIES(/datum/prompt/text/admin_paper_write_review)
 	if(!context.answer)
 		return
 	var/obj/item/paper/admin/paper = src_object()
-	if(paper.apply_send_confirmation(context.answer.answer_value))
+	if(paper.apply_send_confirmation(context.answer.value))
 		SStgui.update_uis(paper)
 
 /datum/prompt/choice/admin_paper_send

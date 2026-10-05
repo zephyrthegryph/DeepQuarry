@@ -228,14 +228,14 @@
 		return "gone"
 	if(!user.Adjacent(eater))
 		return "too far away"
-	if(!isnull(answer_value))
-		var/obj/belly/B = answer_value
+	if(!isnull(value))
+		var/obj/belly/B = value
 		if(!istype(B) || QDELETED(B) || B.owner != eater)
 			return "no belly"
 	return user.get_active_hand() == beacon ? null : "not holding it"
 
 /mob/living/proc/beacon_feed_confirmed(datum/act/request/A)
-	if(!A.answer || A.request.answer_value != "Yes!")
+	if(!A.answer || A.request.value != "Yes!")
 		return
 	open_request(src, /datum/prompt/choice/beacon_belly, PROC_REF(beacon_feed_answered), answerer = A.request.answerer, choices = vore_organs?.Copy(), subject = A.request.subject)
 
@@ -244,7 +244,7 @@
 		return
 	var/mob/user = A.request.answerer
 	var/obj/item/I = A.request.subject
-	var/obj/belly/B = A.request.answer_value
+	var/obj/belly/B = A.request.value
 	act_message(src, user, MSG_SELF(span_warning("%T% is trying to stuff a beacon into you!")), \
 		MSG_OTHERS(span_warning("%T% is trying to stuff a beacon into %U%'s [B.get_belly_name()]!")))
 	om_task_start(/datum/om/task/timed/living_beacon_insert, user, src, receiver = src, I = I, B = B)
@@ -269,7 +269,7 @@
 		return "gone"
 	if(!user.Adjacent(canvas))
 		return "too far away"
-	if(!isnull(answer_value) && (!answer_value || limb.owner != canvas))
+	if(!isnull(value) && (!value || limb.owner != canvas))
 		return "no writing"
 	return null
 
@@ -278,7 +278,7 @@
 		return
 	var/mob/living/attacker = A.request.answerer
 	var/obj/item/organ/external/affecting = A.request.subject
-	var/message = A.request.answer_value
+	var/message = A.request.value
 	var/mob/living/carbon/human/canvas_user = src
 	to_chat(canvas_user, span_notice("[attacker] is attempting to write on your [affecting.name]!"))
 	act_message(attacker, canvas_user, MSG_SELF(span_notice("You start writing on %T%'s [affecting.name]...")), \
@@ -464,7 +464,7 @@
 	var/datum/prompt/choice/vore_slot_review/ask = A.answer
 	selecting_slots = FALSE
 	var/mob/user = ask.answerer
-	var/choice = ask.answer_value
+	var/choice = ask.value
 	var/list/charlist = ask.choices
 	var/remember_default = default_slot
 	var/slotnum = charlist[choice]
@@ -993,8 +993,8 @@
 /mob/living/proc/glow_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		set_glow_color(A.answer.answer_value)
+	if(A.answer.value)
+		set_glow_color(A.answer.value)
 
 /mob/living/proc/get_digestion_nutrition_modifier()
 	return 1
@@ -1930,7 +1930,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/proc/vore_escape_apply(datum/act/request/A)
 	var/datum/prompt/choice/vore_escape_review/ask = A.answer
-	ask.escape_answers[ask.escape_key] = ask.answer_value
+	ask.escape_answers[ask.escape_key] = ask.value
 	return vore_escape_stage(ask.escape_answers)
 
 /datum/prompt/choice/vore_escape_review
@@ -1946,7 +1946,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/proc/vore_liquid_report_apply(datum/act/request/A)
 	var/datum/prompt/choice/vore_utility_review/ask = A.answer
-	return vore_liquid_report_stage(ask.answer_value, TRUE)
+	return vore_liquid_report_stage(ask.value, TRUE)
 
 /mob/living/proc/vore_export_answered(datum/act/request/A)
 	if(!A.answer)
@@ -1956,7 +1956,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/proc/vore_export_apply(datum/act/request/A)
 	var/datum/prompt/choice/vore_utility_review/ask = A.answer
-	return vore_export_stage(ask.answer_value, A.request.answerer, TRUE)
+	return vore_export_stage(ask.value, A.request.answerer, TRUE)
 
 /mob/living/proc/vore_effect_cleanup_answered(datum/act/request/A)
 	if(!A.answer)
@@ -1966,14 +1966,14 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/proc/vore_effect_cleanup_apply(datum/act/request/A)
 	var/datum/prompt/choice/vore_utility_review/ask = A.answer
-	return vore_effect_cleanup_stage(ask.answer_value, TRUE)
+	return vore_effect_cleanup_stage(ask.value, TRUE)
 
 /datum/prompt/choice/vore_utility_review
 	timeout = 0
 
 /datum/prompt/choice/vore_utility_review/recheck_extra()
-	if(!isnull(answer_value) && istype(answer_value, /datum))
-		var/datum/selected = answer_value
+	if(!isnull(value) && istype(value, /datum))
+		var/datum/selected = value
 		if(QDELETED(selected))
 			return "gone"
 
@@ -1987,35 +1987,35 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	var/datum/prompt/choice/vore_liquid_transfer/ask = A.answer
 	switch(ask.liquid_key)
 		if("a1")
-			var/mob/chosen = ask.answer_value
+			var/mob/chosen = ask.value
 			rel_set(ask, nameof(ask.liquid_source_mob), chosen)
 			ask.liquid_answers[ask.liquid_key] = TRUE
 		if("a2")
-			var/obj/belly/chosen = ask.answer_value
+			var/obj/belly/chosen = ask.value
 			rel_set(ask, nameof(ask.liquid_source_belly), chosen)
 			ask.liquid_answers[ask.liquid_key] = TRUE
 		if("a5")
-			var/mob/chosen = ask.answer_value
+			var/mob/chosen = ask.value
 			rel_set(ask, nameof(ask.liquid_target_mob), chosen)
 			ask.liquid_answers[ask.liquid_key] = TRUE
 		if("a6")
-			var/obj/belly/chosen = ask.answer_value
+			var/obj/belly/chosen = ask.value
 			rel_set(ask, nameof(ask.liquid_own_belly), chosen)
 			ask.liquid_answers[ask.liquid_key] = TRUE
 		if("a7")
-			var/obj/belly/chosen = ask.answer_value
+			var/obj/belly/chosen = ask.value
 			rel_set(ask, nameof(ask.liquid_other_belly), chosen)
 			ask.liquid_answers[ask.liquid_key] = TRUE
 		if("a8")
-			var/mob/chosen = ask.answer_value
+			var/mob/chosen = ask.value
 			rel_set(ask, nameof(ask.liquid_stomach_mob), chosen)
 			ask.liquid_answers[ask.liquid_key] = TRUE
 		if("a9")
-			var/obj/item/reagent_containers/chosen = ask.answer_value
+			var/obj/item/reagent_containers/chosen = ask.value
 			rel_set(ask, nameof(ask.liquid_container), chosen)
 			ask.liquid_answers[ask.liquid_key] = TRUE
 		else
-			ask.liquid_answers[ask.liquid_key] = ask.answer_value
+			ask.liquid_answers[ask.liquid_key] = ask.value
 	return vore_liquid_stage(ask.liquid_answers, ask)
 
 /datum/prompt/choice/vore_liquid_transfer
@@ -2071,8 +2071,8 @@ CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer)
 		rel_set(src, nameof(liquid_container), captured_liquid_container)
 
 /datum/prompt/choice/vore_liquid_transfer/recheck_extra()
-	if(!isnull(answer_value) && istype(answer_value, /datum))
-		var/datum/selected = answer_value
+	if(!isnull(value) && istype(value, /datum))
+		var/datum/selected = value
 		if(QDELETED(selected))
 			return "gone"
 
@@ -2084,7 +2084,7 @@ CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer)
 
 /mob/living/proc/vore_held_feed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vore_feed_review/ask = A.answer
-	return vore_held_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.answer_value, TRUE)
+	return vore_held_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.value, TRUE)
 
 /mob/living/proc/vore_self_feed_answered(datum/act/request/A)
 	if(!A.answer)
@@ -2094,7 +2094,7 @@ CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer)
 
 /mob/living/proc/vore_self_feed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vore_feed_review/ask = A.answer
-	return vore_self_feed_stage(ask.feed_operator, ask.feed_predator, ask.answer_value, TRUE)
+	return vore_self_feed_stage(ask.feed_operator, ask.feed_predator, ask.value, TRUE)
 
 /mob/living/proc/vore_other_feed_answered(datum/act/request/A)
 	if(!A.answer)
@@ -2104,7 +2104,7 @@ CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer)
 
 /mob/living/proc/vore_other_feed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vore_feed_review/ask = A.answer
-	return vore_other_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.answer_value, TRUE)
+	return vore_other_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.value, TRUE)
 
 /datum/prompt/choice/vore_feed_review
 	timeout = 0
@@ -2141,7 +2141,7 @@ CAPABILITIES(/datum/prompt/choice/vore_feed_review)
 /datum/prompt/choice/vore_feed_review/recheck_extra()
 	if((feed_operator_expected && QDELETED(feed_operator)) || (feed_prey_expected && QDELETED(feed_prey)) || (feed_predator_expected && QDELETED(feed_predator)))
 		return "gone"
-	if(!isnull(answer_value))
-		var/obj/belly/selected = answer_value
+	if(!isnull(value))
+		var/obj/belly/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"

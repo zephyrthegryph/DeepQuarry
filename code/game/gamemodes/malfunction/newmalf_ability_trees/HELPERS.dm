@@ -81,7 +81,7 @@ MSG_DEF_SELF(malf/cpu_storage, "Your CPU storage is not large enough to use this
 	var/datum/malf_hardware/C
 	for(var/H in typesof(/datum/malf_hardware))
 		var/datum/malf_hardware/HW = new H
-		if(HW.name == A.answer.answer_value)
+		if(HW.name == A.answer.value)
 			C = HW
 			break
 	if(!C)
@@ -95,7 +95,7 @@ MSG_DEF_SELF(malf/cpu_storage, "Your CPU storage is not large enough to use this
 /mob/living/silicon/ai/proc/malf_hardware_confirmed(datum/act/request/A)
 	var/mob/living/silicon/ai/user = src
 	var/datum/prompt/yes_no/malf_hardware/ask = A.answer
-	if(!ask || !ask.answer_value)
+	if(!ask || !ask.value)
 		to_chat(user, "Selection cancelled. Use command again to select")
 		return
 	if(user.hardware)
@@ -141,7 +141,7 @@ MSG_DEF_SELF(malf/cpu_storage, "Your CPU storage is not large enough to use this
 	if(!context.answer)
 		return
 	var/mob/living/silicon/ai/user = src
-	var/datum/malf_research_ability/tar = context.answer.answer_value
+	var/datum/malf_research_ability/tar = context.answer.value
 	var/datum/malf_research/res = user.research
 	rel_set(res, nameof(res.focus_static), tar)
 	to_chat(user, "Research set: [tar.name]")
@@ -251,8 +251,8 @@ MSG_DEF_SELF(malf/cpu_storage, "Your CPU storage is not large enough to use this
 	var/mob/living/silicon/ai/user = answerer
 	if(!istype(user) || QDELETED(user))
 		return "gone"
-	if(!isnull(answer_value))
-		var/datum/malf_research_ability/picked = answer_value
+	if(!isnull(value))
+		var/datum/malf_research_ability/picked = value
 		if(!istype(picked) || QDELETED(picked))
 			return "gone"
 	return null

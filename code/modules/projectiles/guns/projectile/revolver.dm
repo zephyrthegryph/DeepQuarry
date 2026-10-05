@@ -429,7 +429,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, TYPE_PROC_REF(
 
 /obj/item/gun/projectile/revolver/detective/proc/weapon_label_detective_name_apply(datum/act/request/A)
 	var/datum/prompt/text/weapon_label_review/ask = A.answer
-	return weapon_label_detective_name_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.answer_value, TRUE)
+	return weapon_label_detective_name_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.value, TRUE)
 
 /obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_name_answered(datum/act/request/A)
 	if(!A.answer)
@@ -439,7 +439,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, TYPE_PROC_REF(
 
 /obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_name_apply(datum/act/request/A)
 	var/datum/prompt/text/weapon_label_review/ask = A.answer
-	return weapon_label_detective45_name_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.answer_value, TRUE)
+	return weapon_label_detective45_name_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.value, TRUE)
 
 /obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_style_answered(datum/act/request/A)
 	if(!A.answer)
@@ -449,4 +449,4 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, TYPE_PROC_REF(
 
 /obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_style_apply(datum/act/request/A)
 	var/datum/prompt/choice/weapon_label_review/ask = A.answer
-	return weapon_label_detective45_style_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.answer_value, TRUE)
+	return weapon_label_detective45_style_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.value, TRUE)

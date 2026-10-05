@@ -68,7 +68,7 @@
 	open_request(src, /datum/prompt/yes_no, PROC_REF(wipe_software_confirmed), answerer = src, title = "Wipe Software", question = "WARNING: This will immediately wipe your software and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", timeout = 0)
 
 /mob/living/silicon/pai/proc/wipe_software_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	close_up()
 	act_message(src, null, others = span_filter_notice(span_bold("%U%") + " fades away from the screen, the pAI device goes silent."))
@@ -111,7 +111,7 @@
 	return our_soft && ram >= our_soft.ram_cost && !software[our_soft.id]
 
 /mob/living/silicon/pai/proc/download_software_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/pai_download/download = A.request
 	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[download.software_key]

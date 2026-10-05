@@ -75,7 +75,7 @@ CAPABILITIES(/datum/prompt/text/grave_carving)
 	if(!A.answer)
 		return
 	var/datum/prompt/text/grave_carving/C = A.request
-	open_request(src, /datum/prompt/text/grave_carving, PROC_REF(carvings_chosen), valid = PROC_REF(carving_valid), answerer = C.answerer, tool = C.tool, carved_name = A.answer.answer_value, title = "Epitaph Carving", question = "What message should \the [src] have?", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
+	open_request(src, /datum/prompt/text/grave_carving, PROC_REF(carvings_chosen), valid = PROC_REF(carving_valid), answerer = C.answerer, tool = C.tool, carved_name = A.answer.value, title = "Epitaph Carving", question = "What message should \the [src] have?", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 
 /obj/structure/gravemarker/proc/carvings_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -84,7 +84,7 @@ CAPABILITIES(/datum/prompt/text/grave_carving)
 	var/mob/user = C.answerer
 	var/obj/item/W = C.tool
 	var/carving_1 = sanitizeSafe(C.carved_name, MAX_NAME_LEN)
-	var/carving_2 = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	var/carving_2 = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(carving_1)
 		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
 	if(carving_2)

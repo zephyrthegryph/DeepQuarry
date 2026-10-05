@@ -99,7 +99,7 @@ TOPIC_ACTION(/datum/ghosttrap, "candidate", PROC_REF(topic_candidate), TOPIC_REF
 	if(!context.answer)
 		return
 	var/mob/target = context.answer.answerer
-	var/newname = sanitizeSafe(context.answer.answer_value, MAX_NAME_LEN)
+	var/newname = sanitizeSafe(context.answer.value, MAX_NAME_LEN)
 	if (newname != "")
 		target.real_name = newname
 		target.name = target.real_name
