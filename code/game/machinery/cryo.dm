@@ -9,7 +9,7 @@
 // bay (beaker_bay()), its eject button leaving it where the occupant leaves.
 //
 // Its on-state is its own tracked `cooling` (set_cooling()), and its pipe is the unary device's (piped(), as a vent's or a scrubber's). The gas
-// domain wakes the pipe network when the occupant's heat moves the cell's gas (gas_body_heat_exchange()); nothing here marks it by hand.
+// domain wakes the pipe network when the occupant's heat moves the cell's gas (its heat_link() entry); nothing here marks it by hand.
 // What the machine core still keeps until the machine track (phase 4): the stat bits read through machine_basics()'s bridge, set_use_power(), and
 // maintenance_flags (the panel and the crowbar).
 
@@ -63,11 +63,21 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 
 TRACKED(/obj/machinery/atmospherics/unary/cryo_cell, cooling)
 
+/// The occupant's body against the cell's gas, W/K: the old full settle per service interval, as a conductance (the body's capacity over two
+/// seconds), so the pair meets within an interval whatever the step length.
+#define CRYO_OCCUPANT_CONDUCTANCE (HUMAN_HEAT_CAPACITY / 2)
+
+/// The occupant is linked to the cell's gas by its heat entry, not coupled to the room.
+/obj/machinery/atmospherics/unary/cryo_cell/interior_heat_reservoir()
+	return HEAT_TARGET_NONE
+
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE)
 	extend(TAG_POD_ENTER, needs(req_operable(), req(PROC_REF(piped), because = MSG(cryo_cell/not_connected))))
 	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(EFFECT_SLEEPING), on = ON_CONTENTS))
+	// While it works, the occupant's body and the cell's gas trade heat through one link (the heat domain conserves it and wakes the pipe network).
+	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, heat_link(HEAT_HOLDER, HEAT_PORT(1), CRYO_OCCUPANT_CONDUCTANCE), on = ON_CONTENTS))
 	owns_one(nameof(beaker), /obj/item/reagent_containers/glass, on_destroy = ON_DESTROY_SPILL)
 	beaker_bay(nameof(beaker), eject_button = "ejectBeaker", exit_to = SOUTH)
 	space(SPACE_PANEL, door = nameof(panel_open))
@@ -133,7 +143,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	if(istype(M))
 		if(M.buckled_to() == src)
 			unbuckle_mob(M, force = TRUE)
-		if(M.bodytemperature < CRYO_THAW_TEMPERATURE && M.bodytemperature >= CRYO_THAW_FLOOR) //Patch by Aranclanos to stop people from taking burn damage after being ejected
+		if(M.body_temperature() < CRYO_THAW_TEMPERATURE && M.body_temperature() >= CRYO_THAW_FLOOR) //Patch by Aranclanos to stop people from taking burn damage after being ejected
 			M.set_bodytemperature(CRYO_THAW_TEMPERATURE)
 		M.cozyloop?.stop() // Cozy Music
 	set_use_power(USE_POWER_IDLE)
@@ -144,11 +154,9 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	var/mob/living/carbon/occupant = occupant_of(src)
 	if(!occupant || occupant.stat == DEAD || !piped() || !air_contents || air_contents.total_moles() < CRYO_MIN_MOLES)
 		return
-	// The occupant and the cell's gas settle to a shared temperature; the heat the body loses is what the gas gains.
-	occupant.set_bodytemperature(gas_body_heat_exchange(air_contents, occupant.bodytemperature, HUMAN_HEAT_CAPACITY))
-	if(occupant.bodytemperature < T0C)
-		occupant.status_at_least(EFFECT_SLEEPING, max(CRYO_MIN_STATUS, CRYO_SLEEP_SCALE / occupant.bodytemperature))
-		occupant.status_at_least(EFFECT_PARALYZED, max(CRYO_MIN_STATUS, CRYO_PARALYSIS_SCALE / occupant.bodytemperature))
+	if(occupant.body_temperature() < T0C)
+		occupant.status_at_least(EFFECT_SLEEPING, max(CRYO_MIN_STATUS, CRYO_SLEEP_SCALE / occupant.body_temperature()))
+		occupant.status_at_least(EFFECT_PARALYZED, max(CRYO_MIN_STATUS, CRYO_PARALYSIS_SCALE / occupant.body_temperature()))
 		if(!treat_occupant())
 			return
 	var/has_cryo_medicine = occupant.reagents.get_reagent_amount(REAGENT_ID_CRYOXADONE) >= 1 || occupant.reagents.get_reagent_amount(REAGENT_ID_CLONEXADONE) >= 1
@@ -163,7 +171,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 		return FALSE
 	var/list/demand = occupant.treatment_demand(/datum/diagnostic_profile/automation)
 	if(demand)
-		var/list/rates = cryo_treatment_rates(occupant.bodytemperature)
+		var/list/rates = cryo_treatment_rates(occupant.body_temperature())
 		for(var/tag in rates)
 			if(demand[tag])
 				occupant.mend(tag, rates[tag])
@@ -174,7 +182,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 		if(healthy)
 			release_treated_occupant(occupant)
 			return FALSE
-	if(occupant.bodytemperature < CRYO_DEEP_COLD && (occupant.radiation || occupant.accumulated_rads))
+	if(occupant.body_temperature() < CRYO_DEEP_COLD && (occupant.radiation || occupant.accumulated_rads))
 		occupant.purge_radiation(25)
 	return TRUE
 
@@ -227,7 +235,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
 		qdel(D)
-		occupantData["bodyTemperature"] = occupant.bodytemperature
+		occupantData["bodyTemperature"] = occupant.body_temperature()
 	data["occupant"] = occupantData
 
 	var/air_temperature = air_contents.return_temperature()

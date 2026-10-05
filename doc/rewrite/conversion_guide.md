@@ -278,3 +278,22 @@ error. Differences from the old marker list: `link(A::a, B::b)` is `links(A::a, 
 `configure(constructor(param = v))`; `adjusts(packet.amount, ...)` names the path as text, `adjusts("packet.amount", ...)`; and an `ALLOW(...)`
 annotation sits on the line above the entry it covers, not above the header. `python tools/dx/codemods/capabilities_block.py` converts a tree still
 written as backslash lists.
+
+## 10. Heat: converting a machine that moves heat
+
+DM never computes a heat transfer and never writes a temperature or an energy outside `code/domains/` (the `heat_raw_temperature_writes`
+lint is a hard ban). Converting a machine:
+
+1. **Pin it on the old code first** (`dq_heat_machines_behaviour.dm` shows the shape): the temperatures after N seconds of `test_time()`
+   and what was paid for them. The test clock advances the heat network with it (`vg_heat_net_advance`), so `test_time()` is enough.
+2. **Name the flow, not the arithmetic.** A heat exchange between two things is `heat_link(a, b, conductance)`; a heater or cooler is
+   `heat_pump(controlled, other, watts, target, mode, resistive)`; a generator is `heat_engine(...)` or, on per-step gas, `heat_engine_once()`.
+   Gate it with the condition under which it exists (`when(nameof(pumping), ...)` with a `TRACKED` var, `when(STAT_OPERABLE, ...)`,
+   `while_slotted(..., on = ON_CONTENTS)` for an occupant). Endpoints are `HEAT_PORT(i)` for a pipe machine's gas (never its `air_contents`
+   handle, which a network rebuild replaces), `HEAT_AIR`, `HEAT_HOLDER`, `nameof(v)`, `HEAT_AMBIENT` for a hull with nowhere better to go.
+3. **Pay with what Rust booked.** `heat_entries_bill(src)` is the electrical energy since the last bill: `cell.use(J * CELLRATE)`, or
+   `use_power(-heat_entries_power(src))` for a grid machine. Changing a parameter the entry reads (a thermostat) is a tracked var named in
+   `reads =`, or `heat_entries_refresh(src)` after writing it.
+4. **One-off events** are `heat_add(thing, joules, HEAT_SOURCE_*)`, `heat_set(thing, kelvin)` (an authority write), `heat_move()` between two
+   reservoirs, `heat_equalize()` for "both end at the mixed temperature". Never `mark_dirty()` after heat: Rust wakes what it changed.
+5. **Record** every number that moved in `intended_changes.md` ("Heat network"), with before and after.

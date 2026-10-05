@@ -30,7 +30,7 @@
 				adjust_fire_stacks(2)
 			ignite_mob()
 	if(fire_heats_body && exposed_temperature)
-		adjust_bodytemperature(max(min(BODYTEMP_HEATING_MAX * (1 - get_heat_protection()), exposed_temperature - bodytemperature), 0))
+		adjust_bodytemperature(max(min(BODYTEMP_HEATING_MAX * (1 - get_heat_protection()), exposed_temperature - body_temperature()), 0))
 
 
 /// Global list that containes cached fire overlays for mobs

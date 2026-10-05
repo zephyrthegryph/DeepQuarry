@@ -4,10 +4,10 @@
 /proc/gas_api_test_mix(volume, o2_moles, temperature = T20C)
 	var/datum/gas_mixture/M = new
 	M.set_volume(volume)
-	M.set_temperature(temperature)
+	heat_set(M, temperature, HEAT_SOURCE_OTHER)
 	if(o2_moles)
 		M.adjust_gas(/datum/gas/oxygen, o2_moles)
-	M.set_temperature(temperature)
+	heat_set(M, temperature, HEAT_SOURCE_OTHER)
 	return M
 
 /datum/unit_test/dq_gas_api/release_to_pressure_and_rate
@@ -43,66 +43,24 @@
 	TEST_ASSERT_EQUAL(gas_sample(null).pressure, 0, "no mixture reads empty")
 	qdel(M)
 
-/datum/unit_test/dq_gas_api/heater
-/datum/unit_test/dq_gas_api/heater/Run()
-	var/datum/gas_mixture/M = gas_api_test_mix(2500, 100, T20C - 10)
-	var/datum/gas_heater/H = new
-	var/before = M.heat_capacity() * M.return_temperature()
-	TEST_ASSERT_EQUAL(H.regulate(M, T20C), GAS_HEATER_HEATING, "a cold room starts heating")
-	TEST_ASSERT(abs(M.heat_capacity() * M.return_temperature() - before - 1000) < 1, "by its rated 1000 J")
-	M.set_temperature(T20C + 0.4)
-	TEST_ASSERT_EQUAL(H.regulate(M, T20C), GAS_HEATER_IDLE, "within half a degree it stops")
-	M.set_temperature(T20C + 1.5)
-	TEST_ASSERT_EQUAL(H.regulate(M, T20C), GAS_HEATER_IDLE, "and does not start inside its start gap")
-	var/datum/gas_mixture/small = gas_api_test_mix(100, 2, T20C - 3)
-	var/datum/gas_heater/S = new
-	var/wanted = 0.25 * small.heat_capacity() * 3
-	S.regulate(small, T20C)
-	TEST_ASSERT(wanted < 1000 && abs(S.last_joules - wanted) < 0.5, "a small room closes a quarter of the gap: [S.last_joules] vs [wanted]")
-	qdel(S)
-	qdel(small)
-	M.set_temperature(T20C - 100)
-	H.state = GAS_HEATER_IDLE
-	TEST_ASSERT_EQUAL(H.regulate(M, T20C, FALSE), GAS_HEATER_IDLE, "not allowed: it does nothing")
-	M.set_temperature(T20C + 20)
-	H.regulate(M, T20C)
-	TEST_ASSERT_EQUAL(H.state, GAS_HEATER_COOLING, "a hot room starts cooling")
-	TEST_ASSERT(abs(H.last_joules + 1000) < 1, "by its rated 1000 J")
-	M.set_temperature(250)
-	H.regulate(M, 200)
-	TEST_ASSERT(abs(H.last_joules + 1000 * 250 / T20C) < 1, "cooling cold air pumps less into the hull: [H.last_joules]")
-	var/datum/gas_mixture/vacuum = gas_api_test_mix(2500, 0.01, T20C - 30)
-	var/datum/gas_heater/V = new
-	TEST_ASSERT_EQUAL(V.regulate(vacuum, T20C), GAS_HEATER_IDLE, "a near vacuum is left alone")
-	qdel(H)
-	qdel(V)
-	qdel(M)
-	qdel(vacuum)
-
+/// A body and a gas meet in one conserved operation (heat_equalize(), the heat domain), and the pipe network that owns the gas hears it with no
+/// mark from the caller.
 /datum/unit_test/dq_gas_api/body_heat_exchange
 /datum/unit_test/dq_gas_api/body_heat_exchange/Run()
-	var/datum/gas_mixture/M = gas_api_test_mix(200, 50, 80)
-	var/gas_capacity = M.heat_capacity()
-	var/energy = gas_capacity * 80 + HUMAN_HEAT_CAPACITY * BODYTEMP_NORMAL
-	var/body = gas_body_heat_exchange(M, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY)
-	TEST_ASSERT(abs(body - M.return_temperature()) < 0.01, "share 1 settles both at one temperature")
-	TEST_ASSERT(abs(gas_capacity * M.return_temperature() + HUMAN_HEAT_CAPACITY * body - energy) < 1, "energy is conserved")
-	M.set_temperature(80)
-	var/half = gas_body_heat_exchange(M, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY, 0.5)
-	TEST_ASSERT(half > body && half < BODYTEMP_NORMAL, "a half share goes half way: [half]")
-	qdel(M)
-
-/// The pipe network that owns the gas re-settles on its own: the caller (a cryo cell) never marks it.
-/datum/unit_test/dq_gas_api/body_heat_exchange_wakes_network
-/datum/unit_test/dq_gas_api/body_heat_exchange_wakes_network/Run()
 	var/datum/pipe_network/N = new
 	rel_set(N, nameof(N.air), gas_api_test_mix(200, 50, 80))
+	var/obj/item/body = new /obj/item(null)
+	heat_set(body, BODYTEMP_NORMAL)
+	var/list/r = heat_reservoir_of(body)
+	var/body_capacity = vg_heat_reservoir_state(r[1], r[2])[2]
+	var/gas_capacity = N.air.heat_capacity()
+	var/energy = gas_capacity * 80 + body_capacity * BODYTEMP_NORMAL
 	var/before = N.revision
-	gas_body_heat_exchange(N.air, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY)
+	heat_equalize(N.air, body)
+	TEST_ASSERT(abs(body.get_temperature() - N.air.return_temperature()) < 0.01, "both end at one temperature")
+	TEST_ASSERT(abs(gas_capacity * N.air.return_temperature() + body_capacity * body.get_temperature() - energy) < max(1, energy * 1e-5), "energy is conserved")
 	TEST_ASSERT(N.revision > before, "the owning network's revision moves")
-	before = N.revision
-	gas_body_heat_exchange(N.air, gas_sample(N.air).temperature, HUMAN_HEAT_CAPACITY)
-	TEST_ASSERT_EQUAL(N.revision, before, "a body already at the gas temperature changes nothing")
+	qdel(body)
 	qdel(N)
 
 /datum/unit_test/dq_gas_api/observation_fields

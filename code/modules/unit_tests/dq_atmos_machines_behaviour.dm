@@ -46,6 +46,8 @@
 /// working main alarm scans.
 /proc/am_alarm_tick(obj/machinery/alarm/A)
 	A.scan_room(null)
+	test_drain()
+	vg_heat_net_advance(MACHINE_SERVICE_INTERVAL / (1 SECONDS)) // its heat pump works over the interval
 
 /// The area elects `A` its main alarm (the one that scans and drives the room's devices).
 /proc/am_alarm_make_main(obj/machinery/alarm/A)
@@ -174,7 +176,7 @@
 /proc/am_set_air(turf/T, o2_kpa = 21.28, n2_kpa = 80.04, temperature = T20C, list/extra)
 	var/datum/gas_mixture/air = T.return_air()
 	air.clear()
-	air.set_temperature(temperature)
+	heat_set(air, temperature, HEAT_SOURCE_OTHER)
 	var/per_kpa = air.return_volume() / (R_IDEAL_GAS_EQUATION * temperature)
 	if(o2_kpa)
 		air.set_moles(/datum/gas/oxygen, o2_kpa * per_kpa)
@@ -182,7 +184,7 @@
 		air.set_moles(/datum/gas/nitrogen, n2_kpa * per_kpa)
 	for(var/gas in extra)
 		air.set_moles(gas, extra[gas])
-	air.set_temperature(temperature)
+	heat_set(air, temperature, HEAT_SOURCE_OTHER)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Base: the kernel on its injected clock around the test, the room's air and the area's device lists put back after.
@@ -1118,7 +1120,7 @@
 	dq_atmos_test_publish_rust_pipenets(list(V, P))
 	V.stat_remove(NOPOWER | BROKEN)
 	V.air_contents.adjust_gas(/datum/gas/nitrogen, 3000 * V.air_contents.return_volume() / (R_IDEAL_GAS_EQUATION * T20C))
-	V.air_contents.set_temperature(T20C)
+	heat_set(V.air_contents, T20C, HEAT_SOURCE_OTHER)
 	V.push_to_rust()
 	var/before = T.return_air().total_moles()
 	for(var/i in 1 to 5)
@@ -1127,7 +1129,7 @@
 	TEST_ASSERT(abs(T.return_air().total_moles() - before) < 1, "the siphon leaves the room alone: [before] -> [T.return_air().total_moles()]")
 	V.air_contents.clear()
 	V.air_contents.adjust_gas(/datum/gas/nitrogen, 1000 * V.air_contents.return_volume() / (R_IDEAL_GAS_EQUATION * T20C))
-	V.air_contents.set_temperature(T20C)
+	heat_set(V.air_contents, T20C, HEAT_SOURCE_OTHER)
 	am_set_air(T)
 	before = T.return_air().total_moles()
 	for(var/i in 1 to 5)

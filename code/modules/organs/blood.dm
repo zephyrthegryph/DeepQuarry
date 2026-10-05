@@ -79,7 +79,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(!self.should_have_organ(O_HEART))
 		return
 
-	if(self.is_alive() && self.bodytemperature >= 170)	//Dead or cryosleep people do not pump the blood.
+	if(self.is_alive() && self.body_temperature() >= 170)	//Dead or cryosleep people do not pump the blood.
 
 		var/blood_volume_raw = self.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
 		// Perfusion is the physiology's: it reads the volume (and the heart's

@@ -93,9 +93,9 @@
 	var/obj/item/organ/internal/stomach/machine/S = allocate(/obj/item/organ/internal/stomach/machine)
 	rel_set(S, nameof(S.owner), H)
 	H.robobody_count = 3
-	var/before = H.bodytemperature
+	var/before = H.body_temperature()
 	S.handle_organ_proc_special()
-	TEST_ASSERT_EQUAL(H.bodytemperature, before, "the machine stomach writes no chassis heat")
+	TEST_ASSERT_EQUAL(H.body_temperature(), before, "the machine stomach writes no chassis heat")
 	rel_clear(S, nameof(S.owner))
 
 /// P2-S11: nutrition writers clamp.

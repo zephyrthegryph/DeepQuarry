@@ -46,7 +46,7 @@
 	var/litres = istext(volume) ? holder.vars[volume] : volume
 	var/kelvin = (istext(temp) ? holder.vars[temp] : temp) || T20C
 	var/datum/gas_mixture/mix = new /datum/gas_mixture(litres)
-	mix.set_temperature(kelvin)
+	heat_set(mix, kelvin)
 	for(var/gas_id in gases)
 		mix.adjust_gas(gas_id, gases[gas_id] * litres / (R_IDEAL_GAS_EQUATION * kelvin))
 	rel_set(holder, var_name, mix)

@@ -3,6 +3,9 @@
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
 
+/// Fast enough that two loops of station gas meet within a step or two, as the old full mix per air tick did.
+#define HEAT_EXCHANGER_CONDUCTANCE 5000
+
 /obj/machinery/atmospherics/unary/heat_exchanger
 
 	icon = 'icons/obj/atmospherics/heat_exchanger.dmi'
@@ -14,11 +17,17 @@
 	desc = "Exchanges heat between two input gases. Setup for fast heat transfer"
 
 	var/obj/machinery/atmospherics/unary/heat_exchanger/partner = null
-	var/update_cycle
-	gas_dependency_mask = GAS_DEPENDENCY_ALL
+	/// W/K between the two loops' gas (an engineered material's conductance lowers it).
+	var/exchange_conductance = HEAT_EXCHANGER_CONDUCTANCE
+	/// The first of the pair (by map position): it declares the pair's heat link.
+	var/leads_pair = FALSE
+
+TRACKED(/obj/machinery/atmospherics/unary/heat_exchanger, leads_pair)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 	climb()
+	// The pair's loops exchange heat through one link, declared by the first of the two (heat_exchanger_leads()).
+	when(nameof(leads_pair), heat_link(HEAT_PORT(1), nameof(partner), nameof(exchange_conductance)))
 	links(/obj/machinery/atmospherics/unary/heat_exchanger::partner, /obj/machinery/atmospherics/unary/heat_exchanger::partner)
 
 APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?intact:exposed}")
@@ -31,68 +40,28 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 			if(target.dir & get_dir(src,target))
 				rel_set(src, nameof(partner), target)
 				break
+	update_exchange_conductance()
+	set_leads_pair(heat_exchanger_leads())
+	partner?.set_leads_pair(partner.heat_exchanger_leads())
 
 	..()
 
-/obj/machinery/atmospherics/unary/heat_exchanger/machine_step()
-	..()
+/// Whether this one is the first of its pair (by map position), which declares the pair's heat link.
+/obj/machinery/atmospherics/unary/heat_exchanger/proc/heat_exchanger_leads()
 	if(!partner)
-		return 0
-
-	if(!SSair || SSair.times_fired <= update_cycle)
-		return 0
-
-	update_cycle = SSair.times_fired
-	partner.update_cycle = SSair.times_fired
-
-	var/air_heat_capacity = air_contents.heat_capacity()
-	var/other_air_heat_capacity = partner.air_contents.heat_capacity()
-	var/combined_heat_capacity = other_air_heat_capacity + air_heat_capacity
-
-	var/old_temperature = air_contents.return_temperature()
-	var/other_old_temperature = partner.air_contents.return_temperature()
-	if(combined_heat_capacity <= 0 || abs(old_temperature - other_old_temperature) <= 0.1)
-		register_gas_dependencies()
-		return PROCESS_KILL
-
-	if(combined_heat_capacity > 0)
-		var/combined_energy = other_old_temperature*other_air_heat_capacity + air_heat_capacity*old_temperature
-
-		var/new_temperature = combined_energy/combined_heat_capacity
-		var/datum/material/our_material = engineered_material()
-		var/datum/material/their_material = partner.engineered_material()
-		var/transfer_fraction = 1
-		if(our_material || their_material)
-			var/our_conductance = our_material ? our_material.thermal_conductance(1, 0.005, old_temperature) / 1000 : 50
-			var/their_conductance = their_material ? their_material.thermal_conductance(1, 0.005, other_old_temperature) / 1000 : 50
-			transfer_fraction = clamp(min(our_conductance, their_conductance) / 50, 0.02, 1)
-		air_contents.set_temperature(old_temperature + (new_temperature - old_temperature) * transfer_fraction)
-		partner.air_contents.set_temperature(other_old_temperature + (new_temperature - other_old_temperature) * transfer_fraction)
-
-	if(network)
-		if(abs(old_temperature-air_contents.return_temperature()) > 1)
-			network.mark_dirty()
-
-	if(partner.network)
-		if(abs(other_old_temperature-partner.air_contents.return_temperature()) > 1)
-			partner.network.mark_dirty()
-
-	if(abs(air_contents.return_temperature() - partner.air_contents.return_temperature()) <= 0.1)
-		register_gas_dependencies()
-		return PROCESS_KILL
-
-	return 1
-
-/// Wakes on either side of the exchange: its own contents or its partner's.
-/obj/machinery/atmospherics/unary/heat_exchanger/gas_wake_mixtures()
-	return partner ? list(air_contents, partner.air_contents) : list(air_contents)
-
-/// The same test process() makes before it exchanges heat: both sides can hold heat and differ
-/// by more than the settle margin it hibernates under.
-/obj/machinery/atmospherics/unary/heat_exchanger/gas_wake_condition()
-	if(!partner || air_contents.heat_capacity() <= 0 || partner.air_contents.heat_capacity() <= 0)
 		return FALSE
-	return abs(air_contents.return_temperature() - partner.air_contents.return_temperature()) > 0.1
+	return x + y * world.maxx + z * world.maxx * world.maxy < partner.x + partner.y * world.maxx + partner.z * world.maxx * world.maxy
+
+/// The link's conductance follows an engineered material's: the weaker side's conductance against stock.
+/obj/machinery/atmospherics/unary/heat_exchanger/proc/update_exchange_conductance()
+	var/datum/material/our_material = engineered_material()
+	var/datum/material/their_material = partner?.engineered_material()
+	var/fraction = 1
+	if(our_material || their_material)
+		var/our_conductance = our_material ? our_material.thermal_conductance(1, 0.005, T20C) / 1000 : 50
+		var/their_conductance = their_material ? their_material.thermal_conductance(1, 0.005, T20C) / 1000 : 50
+		fraction = clamp(min(our_conductance, their_conductance) / 50, 0.02, 1)
+	exchange_conductance = HEAT_EXCHANGER_CONDUCTANCE * fraction
 
 /obj/machinery/atmospherics/unary/heat_exchanger/wrench_act(mob/user, obj/item/W)
 	var/turf/T = src.loc

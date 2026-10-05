@@ -12,7 +12,7 @@
 	for(var/turf/open/floor in list(T, control_turf))
 		floor.air.adjust_gas(/datum/gas/plasma, 20)
 		floor.air.adjust_gas(/datum/gas/oxygen, 50)
-		floor.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
+		heat_set(floor.air, PLASMA_MINIMUM_BURN_TEMPERATURE + 300, HEAT_SOURCE_OTHER)
 	var/obj/effect/hotspot/original = allocate(/obj/effect/hotspot, T, CELL_VOLUME, PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
 	var/obj/effect/hotspot/control = allocate(/obj/effect/hotspot, control_turf, CELL_VOLUME, PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
 	TEST_ASSERT(!QDELETED(original) && !QDELETED(control), "actual constructors create two live original fires")

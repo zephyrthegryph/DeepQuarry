@@ -132,7 +132,7 @@ CAPABILITIES(/turf/open)
 	//acounts for changes in temperature: the seed, once
 	var/turf/parent = parent_type
 	if(initial_temperature != initial(initial_temperature) || initial_temperature != initial(parent.initial_temperature))
-		mix.set_temperature(initial_temperature) // arena-backed write (no DM mirror under the opaque-handle model)
+		heat_set(mix, initial_temperature) // arena-backed write (no DM mirror under the opaque-handle model)
 
 	return mix
 

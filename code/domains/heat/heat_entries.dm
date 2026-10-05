@@ -32,10 +32,10 @@
 /proc/heat_link(a, b, conductance, emissivity = 0, area = 0, list/reads = null, key = null)
 	return entry_make("heat_edge", key, list("edge" = HEAT_EDGE_LINK, "a" = a, "b" = b, "p1" = conductance, "p2" = emissivity, "p3" = area, "reads" = reads))
 
-/proc/heat_pump(controlled, other, watts, target, mode = HEAT_PUMP_BOTH, resistive = FALSE, carnot_fraction = 0.5, max_cop = 10, list/reads = null, key = null)
-	return list(
-		entry_make("heat_edge", key, list("edge" = HEAT_EDGE_PUMP, "a" = controlled, "b" = other, "p1" = watts, "p2" = target, "p3" = mode, "p4" = resistive, "p5" = carnot_fraction, "p6" = max_cop, "reads" = reads)),
-		contributes(STAT_POWER_DRAW, watts))
+/proc/heat_pump(controlled, other, watts, target, mode = HEAT_PUMP_BOTH, resistive = FALSE, carnot_fraction = 0.5, max_cop = 10, list/reads = null, key = null, power_draw = TRUE)
+	var/datum/entry/pump = entry_make("heat_edge", key, list("edge" = HEAT_EDGE_PUMP, "a" = controlled, "b" = other, "p1" = watts, "p2" = target, "p3" = mode, "p4" = resistive, "p5" = carnot_fraction, "p6" = max_cop, "reads" = reads))
+	// A machine's pump is part of its power draw; something that is not a machine (an exosuit) pays from its own cell and says power_draw = FALSE.
+	return power_draw ? list(pump, contributes(STAT_POWER_DRAW, watts)) : pump
 
 /proc/heat_engine(hot, cold, efficiency, conductance, list/reads = null, key = null)
 	return entry_make("heat_edge", key, list("edge" = HEAT_EDGE_ENGINE, "a" = hot, "b" = cold, "p1" = efficiency, "p2" = conductance, "reads" = reads))

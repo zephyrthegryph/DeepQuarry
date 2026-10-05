@@ -2,8 +2,8 @@
 //
 // What it is, in its CAPABILITIES block: its maintenance panel and the five wires behind it, its ID lock, its window and the buttons in it, its
 // room scan (an every() that runs only while the alarm is the area's working main alarm and has something to do: the room's air changed across one
-// of its bands, or its thermostat is working) and the gas watch that wakes it. Its own code is the scan, the thermostat (a gas-domain heater,
-// /datum/gas_heater), the radio to the devices, the area's alarm and the look.
+// of its bands, or its thermostat is working) and the gas watch that wakes it. Its own code is the scan, the thermostat (a declared heat
+// pump), the radio to the devices, the area's alarm and the look.
 //
 // The area keeps its alarms (a link: alarm_area <-> /area::air_alarms) and elects one main alarm; the devices it drives are area air devices
 // (code/domains/atmos/area_air_device.dm). The remote atmospherics console works an alarm through its own panel (/datum/air_alarm_remote), whose
@@ -98,8 +98,10 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 
 	var/datum/looping_sound/alarm/decompression_alarm/soundloop // Looping Alarms
 	var/atmoswarn = FALSE // Looping Alarms
-	/// The thermostat: a heater/cooler on the room's air.
-	var/datum/gas_heater/thermostat
+	/// The thermostat's direction while it works (HEAT_PUMP_HEAT or HEAT_PUMP_COOL): its heat pump's mode.
+	var/thermostat_mode = HEAT_PUMP_HEAT
+	/// The thermostat pump's electrical rating, W (its old 1000 J per service interval).
+	var/thermostat_watts = 500
 	/// What the thermostat is doing: GAS_HEATER_IDLE, _COOLING or _HEATING.
 	var/regulating_temperature = GAS_HEATER_IDLE
 	/// What the alarm last announced of it (the click when it starts or stops).
@@ -132,11 +134,14 @@ TRACKED(/obj/machinery/alarm, area_alert)
 TRACKED(/obj/machinery/alarm, scanning)
 TRACKED(/obj/machinery/alarm, target_temperature)
 TRACKED(/obj/machinery/alarm, rcon_setting)
+TRACKED(/obj/machinery/alarm, thermostat_mode)
 
 CAPABILITIES(/obj/machinery/alarm)
 	links(/area::air_alarms, /obj/machinery/alarm::alarm_area, a_many = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm)
-	owns_one(nameof(thermostat), /datum/gas_heater, starts = /datum/gas_heater)
+	// The thermostat: a heat pump on the room's air toward the target while it works, heating resistively and cooling into the station's
+	// heat-rejection loop at no better than one joule per joule (the old rate both ways).
+	when(nameof(regulating_temperature), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(thermostat_watts), nameof(target_temperature), nameof(thermostat_mode), TRUE, 0.5, 1, reads = list("target_temperature", "thermostat_mode")))
 	panel()
 	wires(name = "Air alarm", count = 5, tools = FALSE, by_hand = TRUE, status_lines = PROC_REF(wire_lights))
 	power_wires(stat = STAT_SHORTED, pulse_lasts = 20 MINUTES, shock = 50)
@@ -380,12 +385,10 @@ CAPABILITIES(/obj/machinery/alarm)
 		set_target_temperature(T0C + MAX_TEMPERATURE)
 	if(target_temperature < T0C + MIN_TEMPERATURE)
 		set_target_temperature(T0C + MIN_TEMPERATURE)
-	thermostat.rated_joules = active_power_usage
-	var/state = thermostat.regulate(environment, target_temperature, !tlv_level("temperature", target_temperature))
-	set_regulating_temperature(state)
+	var/state = thermostat_state(S, !tlv_level("temperature", target_temperature))
 	if(state != GAS_HEATER_IDLE)
-		S = gas_sample(environment) // the thermostat worked the air
-		partials = sample_partials(S)
+		set_thermostat_mode(state == GAS_HEATER_COOLING ? HEAT_PUMP_COOL : HEAT_PUMP_HEAT)
+	set_regulating_temperature(state)
 
 	var/old_level = danger_level
 	var/old_pressurelevel = pressure_dangerlevel
@@ -416,6 +419,18 @@ CAPABILITIES(/obj/machinery/alarm)
 	update_soundloop()
 	last_signature = room_signature(S.pressure, S.temperature, partials)
 	set_scanning(state != GAS_HEATER_IDLE)
+
+/// What the thermostat does now: it starts once the air is 2 K off the target, stops within half a kelvin of it, and never works a near vacuum
+/// or an unsafe target (`allowed`). Its heat pump (CAPABILITIES) moves the heat.
+/obj/machinery/alarm/proc/thermostat_state(datum/gas_sample/S, allowed)
+	var/gap = target_temperature - S.temperature
+	if(regulating_temperature == GAS_HEATER_IDLE)
+		if(allowed && abs(gap) > 2 && S.pressure >= 1)
+			return gap < 0 ? GAS_HEATER_COOLING : GAS_HEATER_HEATING
+		return GAS_HEATER_IDLE
+	if(!allowed || abs(gap) <= 0.5 || S.pressure < 1)
+		return GAS_HEATER_IDLE
+	return gap < 0 ? GAS_HEATER_COOLING : GAS_HEATER_HEATING
 
 /// The looping alarm sounds while the room or the area is in danger and the alarm works.
 /obj/machinery/alarm/proc/update_soundloop()

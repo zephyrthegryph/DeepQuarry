@@ -63,7 +63,7 @@
 		if(src.m_intent == I_RUN)
 			adjust_nutrition(-DEFAULT_HUNGER_FACTOR / 10)
 
-	if((src.has_mutation(FAT)) && src.m_intent == I_RUN && src.bodytemperature <= 360)
+	if((src.has_mutation(FAT)) && src.m_intent == I_RUN && src.body_temperature() <= 360)
 		src.adjust_bodytemperature(2)
 
 	// Moving around increases germ_level faster

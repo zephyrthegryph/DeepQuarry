@@ -35,7 +35,7 @@
 /datum/unit_test/interim_n2o_mine_cleanup/proc/restore_floor_atmosphere(turf/simulated/floor/floor, original_n2o, original_temperature)
 	var/datum/gas_mixture/air = floor.return_air()
 	air.set_moles(GAS_N2O, original_n2o)
-	air.set_temperature(original_temperature)
+	heat_set(air, original_temperature, HEAT_SOURCE_OTHER)
 
 /// Actual incendiary crossings preserve tiny victims but ignite a full-size human before cleanup.
 /datum/unit_test/interim_incendiary_mine_cleanup/Run()

@@ -365,7 +365,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 			if(protection < 1)
 				var/cold_factor = abs(protection - 1)
-				H.set_bodytemperature(between(50, (H.bodytemperature - ((H.bodytemperature + 50) * cold_factor) ), H.bodytemperature))
+				H.set_bodytemperature(between(50, (H.body_temperature() - ((H.body_temperature() + 50) * cold_factor) ), H.body_temperature()))
 
 			if(protection < 0.7)
 				to_chat(L, span_danger("A scalding wave of heat overwhelms you!"))
@@ -710,7 +710,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 			if(protection < 1)
 				var/cold_factor = abs(protection - 1)
-				H.set_bodytemperature(between(50, (H.bodytemperature - ((H.bodytemperature - 50) * cold_factor) ), H.bodytemperature))
+				H.set_bodytemperature(between(50, (H.body_temperature() - ((H.body_temperature() - 50) * cold_factor) ), H.body_temperature()))
 
 			if(protection < 0.7)
 				to_chat(L, span_danger("A chilling wave of cold overwhelms you!"))

@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 	dP = max(air_in.return_pressure() - air_out.return_pressure(), 0)
 	if(dP > 10)
 		kin_energy += 1/ADIABATIC_EXPONENT * dP * air_in.return_volume() * (1 - volume_ratio**ADIABATIC_EXPONENT) * efficiency
-		air_in.set_temperature(air_in.return_temperature() * volume_ratio**ADIABATIC_EXPONENT)
+		heat_set(air_in, air_in.return_temperature() * volume_ratio**ADIABATIC_EXPONENT, HEAT_SOURCE_DEVICE) // adiabatic expansion: the drop is the work the rotor takes
 
 		var/datum/gas_mixture/air_all = new
 		air_all.set_volume(air_in.return_volume() + air_out.return_volume())
@@ -76,10 +76,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 
 	update_icon()
 
-	if (network1)
-		network1.mark_dirty()
-	if (network2)
-		network2.mark_dirty()
+	gas_touched(air_in)
+	gas_touched(air_out)
 
 	// Its motor draws the spin down; wake it while there is spin to draw.
 	if(kin_energy >= TURBINE_MIN_KIN_ENERGY)

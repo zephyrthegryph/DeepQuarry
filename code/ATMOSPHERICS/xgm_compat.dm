@@ -64,16 +64,9 @@
 	var/old_total = total_moles()
 	adjust_moles(gas_type, moles)
 	if (old_total > 0)
-		set_temperature((return_temperature() * old_total + temp * moles) / (old_total + moles))
+		heat_set(src, (return_temperature() * old_total + temp * moles) / (old_total + moles))
 	else
-		set_temperature(temp)
-
-// XGM: add_thermal_energy(joules) — add heat at current heat_capacity.
-/datum/gas_mixture/proc/add_thermal_energy(joules)
-	var/cap = heat_capacity()
-	if (cap <= 0)
-		return
-	set_temperature((return_temperature() * cap + joules) / cap)
+		heat_set(src, temp)
 
 // XGM: adjust_multi(g1, n1, g2, n2, ...) — variadic adjustment helper.
 /datum/gas_mixture/proc/adjust_multi(...)
@@ -118,7 +111,7 @@
 		adjust_moles(g, giver_gases[g] * ratio)
 	var/combined_heat = our_heat + their_heat
 	if(combined_heat > MINIMUM_HEAT_CAPACITY)
-		set_temperature((our_heat * return_temperature() + their_heat * giver.return_temperature()) / combined_heat)
+		heat_set(src, (our_heat * return_temperature() + their_heat * giver.return_temperature()) / combined_heat)
 
 
 // =====================================================================
@@ -150,7 +143,7 @@
 		return null
 	var/to_remove = min(amount, total_matching)
 	var/datum/gas_mixture/removed = new
-	removed.set_temperature(return_temperature())
+	heat_set(removed, return_temperature())
 	removed.set_volume(return_volume())
 	var/share_fraction = to_remove / total_matching
 	var/list/cached = get_gases()
@@ -207,9 +200,9 @@
 	if(!isnull(temp) && temp > 0)
 		var/old_total = max(air.total_moles() - amount, 0)
 		if(old_total > 0)
-			air.set_temperature((air.return_temperature() * old_total + temp * amount) / (old_total + amount))
+			heat_set(air, (air.return_temperature() * old_total + temp * amount) / (old_total + amount))
 		else
-			air.set_temperature(temp)
+			heat_set(air, temp)
 	if(SSair)
 		SSair.add_to_active(src)
 	return TRUE

@@ -1531,15 +1531,15 @@
 	if(H.stat == DEAD) // If they're dead they won't need anything.
 		return
 
-	if(H.bodytemperature <= 260) //If they're really cold, they go into stasis.
+	if(H.body_temperature() <= 260) //If they're really cold, they go into stasis.
 		var/coldshock = 0
-		if(H.bodytemperature <= 260 && H.bodytemperature >= 200) //Chilly.
+		if(H.body_temperature() <= 260 && H.body_temperature() >= 200) //Chilly.
 			coldshock = 4 //This will begin to knock them out until they run out of oxygen and suffocate or until someone finds them.
 			H.status_set(EFFECT_BLURRY, 5) //Blurry vision in the cold.
-		if(H.bodytemperature <= 199 && H.bodytemperature >= 100) //Extremely cold. Even in somewhere like the server room it takes a while for bodytemp to drop this low.
+		if(H.body_temperature() <= 199 && H.body_temperature() >= 100) //Extremely cold. Even in somewhere like the server room it takes a while for bodytemp to drop this low.
 			coldshock = 8
 			H.status_set(EFFECT_BLURRY, 5)
-		if(H.bodytemperature <= 99) //Insanely cold.
+		if(H.body_temperature() <= 99) //Insanely cold.
 			coldshock = 16
 			H.status_set(EFFECT_BLURRY, 5)
 		H.adjust_shock(coldshock, "spider cold") //cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage.
@@ -1701,7 +1701,7 @@
 
 	//Cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage or trigger feral.
 	//NB: 'body_temperature' used here is the 'setpoint' species var
-	var/temp_diff = body_temperature - H.bodytemperature
+	var/temp_diff = body_temperature - H.body_temperature()
 	if(temp_diff >= 50)
 		H.adjust_shock(temp_diff/20, "xenochimera cold") // Divided by 20 is the same as previous numbers, but a full scale
 		H.status_at_least(EFFECT_BLURRY, 5)

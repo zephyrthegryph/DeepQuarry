@@ -332,7 +332,7 @@
 	var/datum/species/shapeshifter/promethean/S = H.species
 	if(!istype(S))
 		return
-	if(H.bodytemperature > S.heat_level_1 || H.bodytemperature < S.cold_level_1)
+	if(H.body_temperature() > S.heat_level_1 || H.body_temperature() < S.cold_level_1)
 		return
 	if(!H.is_injured())
 		return

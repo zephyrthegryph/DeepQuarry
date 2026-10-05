@@ -201,7 +201,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 		if(germ_level >= INFECTION_LEVEL_THREE)
 			die()
 
-	else if(owner && owner?.bodytemperature >= 170)	//cryo stops germs from moving and doing their bad stuffs
+	else if(owner && owner?.body_temperature() >= 170)	//cryo stops germs from moving and doing their bad stuffs
 		//** Handle antibiotics and curing infections
 		handle_antibiotics()
 		handle_rejection()
@@ -288,8 +288,8 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	if(germ_level >= INFECTION_LEVEL_ONE)
 		. = 1 //Organ qualifies for effect-specific processing
 		var/fever_temperature = owner?.species.heat_discomfort_level * 1.10 //Heat discomfort level plus 10%
-		if(owner?.bodytemperature < fever_temperature)
-			owner?.adjust_bodytemperature(min(0.2,(fever_temperature - owner?.bodytemperature) / 10)) //Will usually climb by 0.2, else 10% of the difference if less
+		if(owner?.body_temperature() < fever_temperature)
+			owner?.adjust_bodytemperature(min(0.2,(fever_temperature - owner?.body_temperature()) / 10)) //Will usually climb by 0.2, else 10% of the difference if less
 
 	//Level two qualifies for further processing effects
 	if (germ_level >= INFECTION_LEVEL_TWO)

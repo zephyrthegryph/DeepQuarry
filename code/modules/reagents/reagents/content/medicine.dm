@@ -402,7 +402,7 @@
 	species_strength = alist(IS_SLIME = 0.25)
 
 /datum/reagent/cryoxadone/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.bodytemperature < 170)
+	if(M.body_temperature() < 170)
 		var/chem_effective = M.species.chem_strength_heal * species_mult(M)
 		// Kept: temperature-gated status side effects.
 		if(alien == IS_SLIME)
@@ -430,7 +430,7 @@
 	species_strength = alist(IS_SLIME = 0.5)
 
 /datum/reagent/clonexadone/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.bodytemperature < 170)
+	if(M.body_temperature() < 170)
 		var/chem_effective = M.species.chem_strength_heal * species_mult(M)
 		// Kept: temperature-gated status side effects.
 		if(alien == IS_SLIME)
@@ -471,7 +471,7 @@
 	. = ..(M, alien, location)
 
 /datum/reagent/mortiferin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.bodytemperature < (T0C - 10) || (M.stat == DEAD))
+	if(M.body_temperature() < (T0C - 10) || (M.stat == DEAD))
 		var/chem_effective = M.species.chem_strength_heal * species_mult(M)
 		// Kept: cold-gated status side effects.
 		if(alien == IS_SLIME)
@@ -515,7 +515,7 @@
 
 /datum/reagent/necroxadone/affect_blood(mob/living/carbon/M, alien, removed)
 	var/chem_effective = M.species.chem_strength_heal * species_mult(M)
-	if(M.bodytemperature < 170 || (M.stat == DEAD && M.has_body_effect(/datum/body_effect/bloodpump_corpse)))
+	if(M.body_temperature() < 170 || (M.stat == DEAD && M.has_body_effect(/datum/body_effect/bloodpump_corpse)))
 		// Kept: cold-gated status side effects.
 		if(alien == IS_SLIME)
 			if(prob(10))

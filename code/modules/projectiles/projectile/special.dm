@@ -74,7 +74,7 @@
 
 		var/protection = null
 		var/potential_temperature_delta = null
-		var/new_temperature = L.bodytemperature
+		var/new_temperature = L.body_temperature()
 
 		if(target_temperature >= T20C) // Make it cold.
 			protection = L.get_cold_protection(target_temperature)
