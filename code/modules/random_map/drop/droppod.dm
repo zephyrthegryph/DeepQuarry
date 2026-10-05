@@ -152,50 +152,143 @@
 				_tmp_buck_38.unbuckle_mob(drop, TRUE)
 			drop.forceMove(T)
 
+#define DROP_POD_PATH "path"
+#define DROP_POD_PLAYER "player"
+#define DROP_POD_COUNT "count"
+#define DROP_POD_CKEY "ckey"
+#define DROP_POD_ANTAG "antag"
+#define DROP_POD_SURE "sure"
+#define DROP_POD_OFFER_REFUSAL "offer_refusal"
+
 ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on your location.", ADMIN_CATEGORY_FUN_DROP_POD)
-	// Everything is asked before anything is made: each answer re-runs this verb.
-	var/spawn_path = verb_ask(user, "path", args, /datum/om/prompt/choice, message = "Select a mob type.", title = "Drop Pod Selection", choices = subtypesof(/mob/living))
-	if(!ispath(spawn_path, /mob/living))
+	ask_drop_pod_step(user.mob, list(), DROP_POD_PATH)
+
+/datum/admin_verb/call_drop_pod/proc/drop_pod_candidates()
+	var/list/candidates = list()
+	for(var/client/player in GLOB.clients)
+		if(player.mob && isobserver(player.mob))
+			candidates[player.ckey] = player
+	return candidates
+
+/datum/admin_verb/call_drop_pod/proc/drop_pod_state_refusal(datum/request/R)
+	if(QDELETED(R.answerer) || !R.answerer.client)
+		return "gone"
+	var/list/state = R.captured
+	if(R.step_name != DROP_POD_PATH && !ispath(state[DROP_POD_PATH], /mob/living))
+		return "invalid path"
+	if(R.step_name == DROP_POD_COUNT && !isnull(R.answer_value) && R.answer_value <= 0)
+		return "invalid count"
+	if(state[DROP_POD_PLAYER] == "Yes")
+		var/list/candidates = drop_pod_candidates()
+		if(!length(candidates))
+			return "no candidates"
+		if(R.step_name == DROP_POD_CKEY && !isnull(R.answer_value) && !candidates[R.answer_value])
+			return "candidate left"
+		if(R.step_name != DROP_POD_CKEY && !candidates[state[DROP_POD_CKEY]])
+			return "candidate left"
+	return null
+
+/datum/admin_verb/call_drop_pod/proc/drop_pod_refusal_notice(mob/user, reason)
+	if(reason == "no candidates")
+		to_chat(user, "There are no candidates for a drop pod launch.")
+	else if(reason == "candidate left")
+		to_chat(user, "That player is no longer a candidate.")
+
+/datum/prompt/choice/admin_drop_pod
+	rights = R_FUN
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_drop_pod/prepare(datum/act/A)
+	. = ..()
+	captured[DROP_POD_OFFER_REFUSAL] = request_recheck(src)
+
+/datum/prompt/choice/admin_drop_pod/recheck_extra()
+	. = ..()
+	if(.)
 		return
+	var/datum/admin_verb/call_drop_pod/verb = owner
+	return verb.drop_pod_state_refusal(src)
 
-	var/input = verb_ask(user, "player", args, /datum/om/prompt/choice/alert, message = "Do you wish the mob to have a player?", title = "Assign Player?", choices = list("No","Yes"))
-	if(!input)
+/datum/prompt/number/admin_drop_pod
+	rights = R_FUN
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/admin_drop_pod/prepare(datum/act/A)
+	. = ..()
+	captured[DROP_POD_OFFER_REFUSAL] = request_recheck(src)
+
+/datum/prompt/number/admin_drop_pod/recheck_extra()
+	. = ..()
+	if(.)
 		return
-	var/spawn_count = 0
-	var/client/selected_player
-	var/antag_type
-	if(input == "No")
-		spawn_count = verb_ask(user, "count", args, /datum/om/prompt/number, message = "How many mobs do you wish the pod to contain?", title = "Drop Pod Selection", min = 1)
-		if(isnull(spawn_count) || spawn_count <= 0)
-			return
-	else
-		var/list/candidates = list()
-		for(var/client/player in GLOB.clients)
-			if(player.mob && isobserver(player.mob))
-				candidates[player.ckey] = player
+	var/datum/admin_verb/call_drop_pod/verb = owner
+	return verb.drop_pod_state_refusal(src)
 
-		if(!candidates.len)
-			to_chat(user, "There are no candidates for a drop pod launch.")
-			return
+/datum/prompt/number/admin_drop_pod/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default, INFINITY, 1, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
 
-		// Get a player and a mob type.
-		var/player_ckey = verb_ask(user, "ckey", args, /datum/om/prompt/choice, message = "Select a player.", title = "Drop Pod Selection", choices = candidates)
-		if(!player_ckey)
-			return
-		selected_player = candidates[player_ckey]
-		if(!selected_player)
-			to_chat(user, "That player is no longer a candidate.")
-			return
+/datum/admin_verb/call_drop_pod/proc/ask_drop_pod_step(mob/user, list/state, step)
+	switch(step)
+		if(DROP_POD_PATH)
+			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Select a mob type.", title = "Drop Pod Selection", choices = subtypesof(/mob/living))
+		if(DROP_POD_PLAYER)
+			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Do you wish the mob to have a player?", title = "Assign Player?", choices = list("No","Yes"), buttons = TRUE)
+		if(DROP_POD_COUNT)
+			open_request(src, /datum/prompt/number/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "How many mobs do you wish the pod to contain?", title = "Drop Pod Selection")
+		if(DROP_POD_CKEY)
+			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Select a player.", title = "Drop Pod Selection", choices = drop_pod_candidates())
+		if(DROP_POD_ANTAG)
+			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Select an equipment template to use or cancel for nude.", title = "Drop Pod Selection", choices = SSantag.all_antag_types)
+		if(DROP_POD_SURE)
+			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Are you SURE you wish to deploy this drop pod? It will cause a sizable explosion and gib anyone underneath it.", title = "Danger!", choices = list("No","Yes"), buttons = TRUE)
 
-		// Equip them, if they are human and it is desirable.
-		if(ispath(spawn_path, /mob/living/carbon/human))
-			antag_type = verb_ask(user, "antag", args, /datum/om/prompt/choice, message = "Select an equipment template to use or cancel for nude.", title = "Drop Pod Selection", choices = SSantag.all_antag_types, cancel_answer = "")
-			if(isnull(antag_type))
-				return
-
-	if(verb_ask(user, "sure", args, /datum/om/prompt/choice/alert, message = "Are you SURE you wish to deploy this drop pod? It will cause a sizable explosion and gib anyone underneath it.", title = "Danger!", choices = list("No","Yes")) != "Yes")
+/datum/admin_verb/call_drop_pod/proc/drop_pod_answered(datum/act/request/A)
+	var/mob/actor = A.request.answerer
+	var/list/state = A.request.captured.Copy()
+	var/step = A.request.step_name
+	if(!A.answer)
+		if(state[DROP_POD_OFFER_REFUSAL])
+			drop_pod_refusal_notice(actor, state[DROP_POD_OFFER_REFUSAL])
+			return
+		if(!isnull(A.request.answer_value))
+			drop_pod_refusal_notice(actor, A.request.last_error)
+			return
+		if(step != DROP_POD_ANTAG || A.request.outcome != REQ_CANCELLED)
+			return
+		var/reason = request_recheck(A.request)
+		if(reason)
+			drop_pod_refusal_notice(actor, reason)
+			return
+		state[DROP_POD_ANTAG] = ""
+		ask_drop_pod_step(actor, state, DROP_POD_SURE)
 		return
+	state[step] = A.answer.answer_value
+	switch(step)
+		if(DROP_POD_PATH)
+			ask_drop_pod_step(actor, state, DROP_POD_PLAYER)
+		if(DROP_POD_PLAYER)
+			ask_drop_pod_step(actor, state, state[DROP_POD_PLAYER] == "No" ? DROP_POD_COUNT : DROP_POD_CKEY)
+		if(DROP_POD_COUNT)
+			ask_drop_pod_step(actor, state, DROP_POD_SURE)
+		if(DROP_POD_CKEY)
+			ask_drop_pod_step(actor, state, ispath(state[DROP_POD_PATH], /mob/living/carbon/human) ? DROP_POD_ANTAG : DROP_POD_SURE)
+		if(DROP_POD_ANTAG)
+			ask_drop_pod_step(actor, state, DROP_POD_SURE)
+		if(DROP_POD_SURE)
+			if(state[DROP_POD_SURE] == "Yes")
+				launch_drop_pod(actor.client, state)
 
+/datum/admin_verb/call_drop_pod/proc/launch_drop_pod(client/user, list/state)
+	var/spawn_path = state[DROP_POD_PATH]
+	var/spawn_count = state[DROP_POD_COUNT] || 0
+	var/list/candidates = drop_pod_candidates()
+	var/client/selected_player = candidates[state[DROP_POD_CKEY]]
+	var/antag_type = state[DROP_POD_ANTAG]
 	var/mob/living/spawned_mob
 	var/list/spawned_mobs = list()
 	if(selected_player)
@@ -232,6 +325,14 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 		return
 
 	new /datum/random_map/droppod(null, user_mob.x-1, user_mob.y-1, user_mob.z, supplied_drops = spawned_mobs, automated = automatic_pod)
+
+#undef DROP_POD_PATH
+#undef DROP_POD_PLAYER
+#undef DROP_POD_COUNT
+#undef DROP_POD_CKEY
+#undef DROP_POD_ANTAG
+#undef DROP_POD_SURE
+#undef DROP_POD_OFFER_REFUSAL
 
 #undef SD_FLOOR_TILE
 #undef SD_WALL_TILE
