@@ -51,3 +51,4 @@ changes:
   - code_imp: "Migrated the casino prize-price prompt to a native request."
   - code_imp: "Migrated the admin server-sound picker to a native request."
   - code_imp: "Migrated the three belly-size multiplier prompts to native requests."
+  - code_imp: "Migrated the complete admin drop-pod prompt chain and noticeboard-offset prompt to native requests."
