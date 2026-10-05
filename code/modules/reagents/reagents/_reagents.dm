@@ -349,7 +349,7 @@
 	if(!M || kelvin_at_rem <= 0 || removed <= 0)
 		return 0
 	var/step = kelvin_at_rem * removed / REM
-	var/current = M.bodytemperature
+	var/current = M.body_temperature()
 	if(cool && current > target)
 		return M.adjust_bodytemperature(-min(step, current - target))
 	if(warm && current < target)

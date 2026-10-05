@@ -68,7 +68,7 @@
 /// The named field `field` (GAS_OBS_*) of the observation record at `index` of `observation`.
 #define GAS_OBSERVED(observation, index, field) ((observation)[(index) + (field)])
 
-// The state of a /datum/gas_heater (code/domains/atmos/gas.dm): what it is doing to the room's air.
+// The state of an air alarm thermostat (code/game/machinery/air_alarm.dm): what it is doing to the room's air.
 #define GAS_HEATER_IDLE 0
 #define GAS_HEATER_COOLING 1
 #define GAS_HEATER_HEATING 2

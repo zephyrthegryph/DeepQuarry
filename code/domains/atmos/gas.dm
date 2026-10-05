@@ -6,14 +6,9 @@
 //                                                  the moles moved. A canister's valve, a jetpack's refill.
 //   gas_sample(air)                                one read of everything a gauge shows (pressure, temperature, volume, heat capacity, each gas):
 //                                                  S.pressure, S.temperature, S.partial_pressure(GAS_O2), S.share(GAS_O2).
-//   /datum/gas_heater                              a heater/cooler on a room's air (the air alarm's thermostat): regulate(air, target) works the
-//                                                  air toward the target at its rated energy per call, starting and stopping with its hysteresis.
 //   gas_dump(source, into)                         empties a vessel into a room or another mixture.
 //   gas_fill(air, fractions, kpa, temperature)     a vessel filled to a pressure with a mix (a canister preset).
-//   gas_body_heat_exchange(air, body_k, body_j_per_k, share)
-//                                                  a body (a cryo cell's occupant) and a gas exchange heat: share 1 settles both at the mixed
-//                                                  temperature. The gas takes what the body gives, and a pipe network that owns the gas is
-//                                                  woken (gas_touched()); the caller never marks it. Returns the body's new temperature.
+//   heat                                           flows belong to the heat domain (code/domains/heat/): heat_link()/heat_pump() entries, heat_move().
 //   gas_touched(air)                               a mixture changed in place: the pipe network that owns it (if any) re-settles.
 //   GAS_OBSERVED(observation, index, GAS_OBS_x)    a named field of a dirty-gas observation record (code/__defines/atmospherics_linda/atmos_gasses.dm).
 //
@@ -106,72 +101,6 @@
 		if(path && row[GAS_READ_MOLES(i - 1)] > 0)
 			. += initial(path.id)
 
-// ---- a heater/cooler on a room's air ----
-
-/**
- * A heater/cooler working a room's air toward a target temperature: the air alarm's thermostat. Each regulate() call is one interval of its work:
- * it moves at most `rated_joules` (heating) and closes at most `share` of the gap to the target, so a small room is never overshot. Cooling pumps
- * the heat out into the hull at a coefficient of performance of the air's temperature over `hull_temperature`, so a cold room is cooled more
- * slowly. It starts once the air is `start_gap` off the target and stops within `stop_gap` of it, and never works a near vacuum.
- */
-/datum/gas_heater
-	var/rated_joules = 1000
-	var/share = 0.25
-	var/hull_temperature = T20C
-	var/start_gap = 2
-	var/stop_gap = 0.5
-	/// The air must hold this much pressure (kPa) to be worked.
-	var/min_pressure = 1
-	/// GAS_HEATER_IDLE, GAS_HEATER_COOLING or GAS_HEATER_HEATING.
-	var/state = GAS_HEATER_IDLE
-	/// What the last regulate() moved into the air, J (negative: out of it).
-	var/last_joules = 0
-
-/// One interval of work on `air` toward `target` (K). `allowed` FALSE stops it (its owner's own rule: the alarm will not hold an unsafe target).
-/// Returns the state after the call (GAS_HEATER_*).
-/datum/gas_heater/proc/regulate(datum/gas_mixture/air, target, allowed = TRUE)
-	last_joules = 0
-	if(!air)
-		state = GAS_HEATER_IDLE
-		return state
-	var/datum/gas_sample/S = gas_sample(air)
-	var/gap = target - S.temperature
-	if(state == GAS_HEATER_IDLE)
-		if(allowed && abs(gap) > start_gap && S.pressure >= min_pressure)
-			state = gap < 0 ? GAS_HEATER_COOLING : GAS_HEATER_HEATING
-	else if(!allowed || abs(gap) <= stop_gap || S.pressure < min_pressure)
-		state = GAS_HEATER_IDLE
-	if(state == GAS_HEATER_IDLE || S.heat_capacity <= 0)
-		return state
-	var/wanted = share * S.heat_capacity * gap // what closing this interval's share of the gap takes
-	if(gap >= 0)
-		last_joules = min(wanted, rated_joules)
-	else
-		var/cop = S.temperature / hull_temperature
-		last_joules = -min(-wanted, rated_joules, cop * rated_joules)
-	air.set_temperature(S.temperature + last_joules / S.heat_capacity)
-	return state
-
-// ---- a body and a gas ----
-
-/// A body of `body_temperature` (K) and `body_capacity` (J/K) exchanges heat with `air`: `share` (0..1) of the way to the temperature both would
-/// settle at. The gas takes exactly what the body gives up. Returns the body's new temperature (the caller sets it); `air` is changed in place.
-/proc/gas_body_heat_exchange(datum/gas_mixture/air, body_temperature, body_capacity, share = 1)
-	if(!air || body_capacity <= 0 || share <= 0)
-		return body_temperature
-	var/datum/gas_sample/S = gas_sample(air)
-	if(S.heat_capacity <= 0)
-		return body_temperature
-	var/settled = (body_capacity * body_temperature + S.heat_capacity * S.temperature) / (body_capacity + S.heat_capacity)
-	if(abs(settled - body_temperature) < 0.001) // already settled: the body's capacity would magnify rounding into a phantom change of the gas
-		return body_temperature
-	var/body_after = body_temperature + min(share, 1) * (settled - body_temperature)
-	var/gas_after = S.temperature + body_capacity * (body_temperature - body_after) / S.heat_capacity
-	air.set_temperature(gas_after)
-	if(gas_after != S.temperature)
-		gas_touched(air)
-	return body_after
-
 /// `air` was changed in place: the pipe network that owns it (a device's port naming the network's mixture) records the change, so its
 /// subscribers see it. A mixture no network owns (a room's, a private vessel's) needs nothing.
 /proc/gas_touched(datum/gas_mixture/air)
@@ -187,11 +116,11 @@
 	if(!air || !length(fractions))
 		return
 	air.clear()
-	air.set_temperature(temperature)
+	heat_set(air, temperature)
 	var/moles = kpa * air.return_volume() / (R_IDEAL_GAS_EQUATION * temperature)
 	for(var/gas in fractions)
 		air.adjust_gas(gas, moles * fractions[gas])
-	air.set_temperature(temperature)
+	heat_set(air, temperature)
 
 /// The pressure of `air`, kPa (0 for none): a read of Rust-owned gas, never cached by a condition that asks it (READS_FROM: nothing to publish).
 /proc/gas_pressure_of(datum/gas_mixture/air)

@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "a530a8b20feb12d9"
+#define VERDIGRIS_ABI "a1e9a2c964bbeee1"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1081,6 +1081,17 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(hot_kind, hot_ref, cold_kind, cold_ref, efficiency, conductance)
 
+/// One heat-engine pass between two reservoirs (a thermoelectric generator
+/// on the gas its circulators moved this step): the energy that would bring
+/// them to a common temperature flows from the hotter to the colder, and
+/// `efficiency` of it (capped at Carnot, `1 - T_cold/T_hot`) leaves as
+/// electrical work, booked out. Returns the work, J.
+// /proc/heat_engine_once (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_engine_once(a_kind, a_ref, b_kind, b_ref, efficiency)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_engine_once_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, efficiency)
+
 /// Moves `fraction` (0..1) of the way to the common temperature of two
 /// reservoirs in one conserved operation (1: both end at the mixed
 /// temperature, as if they were one body). Returns the joules moved from
@@ -1120,6 +1131,13 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_move_to_temperature_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(kind, r, temperature, source)
+
+/// Advances the heat network alone by `seconds` (the unit-test kernel clock, which does not pace the native world). Returns nothing.
+// /proc/heat_net_advance (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_net_advance(seconds)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_net_advance_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(seconds)
 
 /// A heat pump driving `controlled` toward `target` K with at most `watts`
 /// of electrical work, rejecting heat to (or drawing it from) `other`

@@ -79,12 +79,12 @@
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
 	var/obj/belly/B = vore_rate_belly(pair, DM_HOLD)
-	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.bodytemperature, "a belly's interior is the predator's body temperature")
-	TEST_ASSERT_EQUAL(prey.get_ambient_temperature(), pred.bodytemperature, "the prey's surroundings are the predator's body")
+	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.body_temperature(), "a belly's interior is the predator's body temperature")
+	TEST_ASSERT_EQUAL(prey.get_ambient_temperature(), pred.body_temperature(), "the prey's surroundings are the predator's body")
 	pred.set_bodytemperature(pred.species.heat_level_1 + 5)
-	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.bodytemperature, "the belly follows a feverish predator")
+	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.body_temperature(), "the belly follows a feverish predator")
 	var/datum/gas_mixture/air = B.return_air_for_internal_lifeform(prey)
-	TEST_ASSERT(abs(air.return_temperature() - pred.bodytemperature) < 0.01, "belly air should be at the predator's temperature, is [air.return_temperature()]")
+	TEST_ASSERT(abs(air.return_temperature() - pred.body_temperature()) < 0.01, "belly air should be at the predator's temperature, is [air.return_temperature()]")
 	B.release_all_contents(TRUE, TRUE)
 
 /// The emergent thermal metric uses the species' body temperature.

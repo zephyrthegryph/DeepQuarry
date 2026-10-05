@@ -5452,10 +5452,10 @@
 #include "code\modules\medical\symptoms\library\tick_effects.dm"
 #include "code\_helpers\soft_assert.dm"
 #include "code\ATMOSPHERICS\gasmixtures\gas_types.dm"
-#include "code\domains\atmos\gasmixtures\gas_mixture.dm"
-#include "code\domains\atmos\gasmixtures\immutable_mixtures.dm"
+#include "code\ATMOSPHERICS\gasmixtures\gas_mixture.dm"
+#include "code\ATMOSPHERICS\gasmixtures\immutable_mixtures.dm"
 #include "code\ATMOSPHERICS\gasmixtures\reaction_factors.dm"
-#include "code\domains\atmos\gasmixtures\reactions.dm"
+#include "code\ATMOSPHERICS\gasmixtures\reactions.dm"
 // atom_flags_1 declares /atom/flags_1 so /atom/Initialize can set INITIALIZED_1
 // for SSair.add_to_active routing.
 #include "code\ATMOSPHERICS\atom_flags_1.dm"
@@ -5472,7 +5472,7 @@
 // vendored machinery was deleted from code/atmospherics/machinery/
 // on 2026-05-24 — it depended on /tg/'s framework (signals, components, GAGS,
 // spatial grid, integrated circuits) that CHOMP doesn't have.
-#include "code\domains\atmos\gasmixtures\xgm_compat.dm"
+#include "code\ATMOSPHERICS\xgm_compat.dm"
 // Slim init/lifecycle FFI bridge — calls into verdigris.dll to register gas
 // singletons + reaction tables with Rust at SSair init time.
 #include "code\ATMOSPHERICS\auxmos_init_bridge.dm"

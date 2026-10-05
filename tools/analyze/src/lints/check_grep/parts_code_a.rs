@@ -142,7 +142,7 @@ pub fn parts() -> Vec<Part> {
             line(r"^/[A-Za-z0-9_/]*/return_temperature\("),
         )
         .allow(Allow::Strict)
-        .flt(vec![drop(r"^code/domains/atmos/gasmixtures/gas_mixture\.dm:[0-9]*:/datum/gas_mixture/proc/return_temperature\(")]),
+        .flt(vec![drop(r"^code/ATMOSPHERICS/gasmixtures/gas_mixture\.dm:[0-9]*:/datum/gas_mixture/proc/return_temperature\(")]),
         Part::new(
             "one_temperature_api_a_turf_keeps_no_live_temperature_of_its_own",
             "one temperature API: a turf keeps no live temperature of its own",

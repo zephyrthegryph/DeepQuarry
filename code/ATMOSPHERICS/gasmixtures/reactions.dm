@@ -202,7 +202,7 @@
 	air.adjust_moles(/datum/gas/oxygen, cleaned_air)
 
 	//Possibly burning a bit of organic matter through maillard reaction, so a *tiny* bit more heat would be understandable
-	air.set_temperature(air.return_temperature() + cleaned_air * MIASTER_STERILIZATION_ENERGY)
+	heat_set(air, air.return_temperature() + cleaned_air * MIASTER_STERILIZATION_ENERGY, HEAT_SOURCE_REACTION)
 	SET_REACTION_RESULTS(cleaned_air)
 
 	return REACTING
@@ -275,7 +275,7 @@
 	var/energy_released = FIRE_PLASMA_ENERGY_RELEASED * plasma_burn_rate
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature((temperature * old_heat_capacity + energy_released) / new_heat_capacity)
+		heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 
 	// Let the floor know a fire is happening
 	var/turf/open/location = holder
@@ -329,7 +329,7 @@
 	if(energy_released > 0)
 		var/new_heat_capacity = air.heat_capacity()
 		if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-			air.set_temperature((temperature * old_heat_capacity + energy_released) / new_heat_capacity)
+			heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 
 	//let the floor know a fire is happening
 	var/turf/open/location = holder
@@ -394,7 +394,7 @@
 	if(energy_released > 0)
 		var/new_heat_capacity = air.heat_capacity()
 		if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-			air.set_temperature((temperature * old_heat_capacity + energy_released) / new_heat_capacity)
+			heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 
 	//let the floor know a fire is happening
 	if(istype(location))
@@ -465,7 +465,7 @@
 	var/energy_consumed = FIRE_FREON_ENERGY_CONSUMED * freon_burn_rate
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max((temperature * old_heat_capacity - energy_consumed) / new_heat_capacity, TCMB))
+		heat_set_energy(air, temperature * old_heat_capacity - energy_consumed, HEAT_SOURCE_REACTION)
 
 	var/turf/open/location = holder
 	if(istype(location))
@@ -516,7 +516,7 @@
 	var/energy_released = heat_efficiency * N2O_FORMATION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((air.return_temperature() * old_heat_capacity + energy_released) / new_heat_capacity), TCMB)) // The air cools down when reacting.
+		heat_set_energy(air, air.return_temperature() * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION) // The air cools down when reacting.
 	return REACTING
 
 
@@ -555,7 +555,7 @@
 	var/energy_released = N2O_DECOMPOSITION_ENERGY * burned_fuel
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature((temperature * old_heat_capacity + energy_released) / new_heat_capacity)
+		heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 	. |= REACTING
 
 
@@ -616,7 +616,7 @@
 	var/energy_released = bz_formed * (BZ_FORMATION_ENERGY + nitrous_oxide_decomposed_factor * (N2O_DECOMPOSITION_ENERGY - BZ_FORMATION_ENERGY))
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((air.return_temperature() * old_heat_capacity + energy_released) / new_heat_capacity), TCMB))
+		heat_set_energy(air, air.return_temperature() * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 	return REACTING
 
 
@@ -662,7 +662,7 @@
 	var/energy_released = produced_amount * PLUOXIUM_FORMATION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max((air.return_temperature() * old_heat_capacity + energy_released) / new_heat_capacity, TCMB))
+		heat_set_energy(air, air.return_temperature() * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 	return REACTING
 
 
@@ -710,7 +710,7 @@
 	var/energy_used = heat_efficiency * NITRIUM_FORMATION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((temperature * old_heat_capacity - energy_used) / new_heat_capacity), TCMB)) //the air cools down when reacting
+		heat_set_energy(air, temperature * old_heat_capacity - energy_used, HEAT_SOURCE_REACTION) //the air cools down when reacting
 	return REACTING
 
 
@@ -753,7 +753,7 @@
 	var/energy_released = heat_efficiency * NITRIUM_DECOMPOSITION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((temperature * old_heat_capacity + energy_released) / new_heat_capacity), TCMB)) //the air heats up when reacting
+		heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION) //the air heats up when reacting
 	return REACTING
 
 
@@ -803,7 +803,7 @@
 	var/energy_consumed = (7000 / (1 + NUM_E ** (-0.0015 * (temperature - 6000))) + 1000) * freon_formed * 0.1
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((temperature * old_heat_capacity - energy_consumed)/new_heat_capacity), TCMB))
+		heat_set_energy(air, temperature * old_heat_capacity - energy_consumed, HEAT_SOURCE_REACTION)
 	return REACTING
 
 
@@ -850,7 +850,7 @@
 	var/energy_released = nob_formed * NOBLIUM_FORMATION_ENERGY / max(bz, 1)
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((air.return_temperature() * old_heat_capacity + energy_released) / new_heat_capacity), TCMB))
+		heat_set_energy(air, air.return_temperature() * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 	. |= REACTING | VOLATILE_REACTION
 
 
@@ -895,7 +895,7 @@
 	var/energy_used = heat_efficiency * HALON_COMBUSTION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((temperature * old_heat_capacity - energy_used) / new_heat_capacity), TCMB))
+		heat_set_energy(air, temperature * old_heat_capacity - energy_used, HEAT_SOURCE_REACTION)
 
 	// Resin foam effects.
 	var/turf/open/location = holder
@@ -948,7 +948,7 @@
 	var/energy_released = heat_efficiency * HEALIUM_FORMATION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((temperature * old_heat_capacity + energy_released) / new_heat_capacity), TCMB))
+		heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 	return REACTING
 
 /**
@@ -989,7 +989,7 @@
 	var/energy_used = heat_efficiency * ZAUKER_FORMATION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((temperature * old_heat_capacity - energy_used) / new_heat_capacity), TCMB))
+		heat_set_energy(air, temperature * old_heat_capacity - energy_used, HEAT_SOURCE_REACTION)
 	return REACTING
 
 
@@ -1027,7 +1027,7 @@
 	var/energy_released = ZAUKER_DECOMPOSITION_ENERGY * burned_fuel
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max((air.return_temperature() * old_heat_capacity + energy_released) / new_heat_capacity, TCMB))
+		heat_set_energy(air, air.return_temperature() * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 	return REACTING
 
 
@@ -1070,7 +1070,7 @@
 	var/energy_released = heat_efficiency * PN_FORMATION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(((temperature * old_heat_capacity + energy_released) / new_heat_capacity), TCMB))
+		heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 	return REACTING
 
 /**
@@ -1106,7 +1106,7 @@
 	var/energy_used = produced_amount * PN_HYDROGEN_CONVERSION_ENERGY
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max((air.return_temperature() * old_heat_capacity - energy_used) / new_heat_capacity, TCMB))
+		heat_set_energy(air, air.return_temperature() * old_heat_capacity - energy_used, HEAT_SOURCE_REACTION)
 	return REACTING
 
 /**
@@ -1159,7 +1159,7 @@
 	if(energy_released)
 		var/new_heat_capacity = air.heat_capacity()
 		if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-			air.set_temperature(max((temperature * old_heat_capacity + energy_released) / new_heat_capacity, TCMB))
+			heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 
 		. |= REACTING
 
@@ -1216,7 +1216,7 @@
 
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max((temperature * old_heat_capacity + energy_released) / new_heat_capacity, TCMB))
+		heat_set_energy(air, temperature * old_heat_capacity + energy_released, HEAT_SOURCE_REACTION)
 	. |= REACTING
 
 /datum/gas_reaction/antinoblium_replication
@@ -1263,7 +1263,7 @@
 	SET_REACTION_RESULTS(reaction_rate)
 	var/new_heat_capacity = air.heat_capacity()
 	if(new_heat_capacity > MINIMUM_HEAT_CAPACITY)
-		air.set_temperature(max(air.return_temperature() * heat_capacity / new_heat_capacity, TCMB))
+		heat_set_energy(air, air.return_temperature() * heat_capacity, HEAT_SOURCE_REACTION)
 
 
 #undef SET_REACTION_RESULTS

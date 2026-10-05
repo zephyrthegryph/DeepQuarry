@@ -20,11 +20,10 @@
 	SSair.run_gas_frames(1)
 	return pair
 
-/// `seconds` of game time: the kernel's machines and the world's steps (the test clock does not pace the native world).
+/// `seconds` of game time: the kernel's machines and the heat network's edges (the test clock advances both).
 /proc/heat_bt_run(seconds)
 	for(var/i in 1 to seconds)
 		test_time(1 SECOND)
-		vg_world_run_steps(2)
 
 /// Thermal energy of the air of some turfs, J.
 /proc/heat_bt_air_energy(list/turfs)
@@ -166,7 +165,7 @@
 	heat_set(M.cabin_air, T20C + 40)
 	for(var/i in 1 to 4)
 		M.process_preserve_temp()
-		test_time(2 SECONDS)
+		heat_bt_run(2)
 	var/cabin_t = M.cabin_air.return_temperature()
 	log_test("exosuit cabin: [round(cabin_t, 0.01)] K after four regulations from [T20C + 40] K")
 	TEST_ASSERT(cabin_t < T20C + 39, "the cabin cooled toward 20 C ([cabin_t] K)")

@@ -1120,4 +1120,28 @@ wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_be
 * **One-off writes are booked.** Every gas temperature or energy write outside the gas and heat domains became `heat_set()` (an authority write:
   spawn temperatures, admin, events, tests) or `heat_add()` with a `HEAT_SOURCE_*` (fire, reactions, spells, devices, materials). Values are
   unchanged; `heat_books()` now accounts for them. The radiance spell and the supermatter keep their 10 000 K clamp as an authority write.
+* **Cryo cell.** The occupant and the cell's gas share one declared `heat_link` (`HUMAN_HEAT_CAPACITY / 2` W/K, about a full settle per
+  service interval) while the cell is on, works and holds them; the old explicit settle per interval (`gas_body_heat_exchange`) is gone.
+  Pins unchanged (`dq_medpod/cryo_*`, `dq_cryo_cell_cools_mob`).
+* **Air alarm thermostat.** `/datum/gas_heater` is deleted; the thermostat is a `heat_pump` on the room's air (500 W, i.e. its old 1000 J per
+  service interval, resistive heating and cooling at no better than 1:1) while `regulating_temperature` says it works. Its start/stop
+  hysteresis (2 K / 0.5 K, no work below 1 kPa or on an unsafe target) is unchanged. It now works continuously between scans instead of in
+  one 1000 J lump per scan; `alarm_thermostat_heats_and_cools` still reads 3000 J over three intervals.
+* **Heat exchangers** are one `heat_link` (5000 W/K, scaled by an engineered material's conductance as before) between the pair's pipelines,
+  declared by the first of the pair; they no longer step in DM. Before: full mix per SSair tick; after: the loops meet within about a second.
+* **HE pipes in space** radiate through a `heat_link` to a 130 K sky (the temperature at which the old solar gain balanced the radiation),
+  emissivity 1 over their surface; the old scaling of radiation by the gas's density is dropped (radiation leaves the shell, not the gas).
+  A body buckled to one meets the pipe's gas through `heat_equalize` (it was a DM average with a fixed body capacity).
+* **Thermoelectric generator.** `heat_engine_once()` per step: the same equalizing transfer, with `thermal_efficiency` now capped at Carnot
+  (`1 − T_cold/T_hot`); with stock efficiency 0.65 the cap matters only for loops within a factor of ~2.9 of each other.
+* **Gas turbine.** Its adiabatic temperature drop is a booked device write (`heat_set`), unchanged in value.
+* **Exosuit cabin.** A 1000 W resistive `heat_pump` toward 20 °C against the outside air, paid from the cell, while temperature control runs
+  (was 25 % of the gap, capped at 10 K, per 2 s with no energy). Before: 305.85 K after four regulations from 333.15 K.
+* **Mob bodies.** `bodytemperature` is only the starting value; `body_temperature()` reads the mob's Rust heat body (`HUMAN_HEAT_CAPACITY`).
+  Convection is the conductance of the body's coupling to its surroundings (`C·(1−protection)·density / (divisor · 2 s)`, the old per-run rate),
+  zero inside the comfort range; radiation in space is a link to space over `HUMAN_EXPOSED_SURFACE_AREA`; thermoregulation, passive heat and
+  prosthetic heating are the body's metabolic power (the old per-run kelvin steps as watts over 2 s). Heat is conserved, so cold air chills a
+  body only as fast as the air (and what it touches) can take its heat: a human in a single cell of 50 K nitrogen warms the cell instead of
+  freezing. `dq_extreme_cold_damages_human` now chills the body against a thousand cells of 50 K gas before checking frostbite.
+* **Test clock.** `test_time()` advances the heat network's edges with it (`vg_heat_net_advance`), so heat-flow pins use the kernel clock.
 * **Material batches** keep their own DM heat model; the proc is renamed `add_batch_heat()` so it is not mistaken for a gas write.

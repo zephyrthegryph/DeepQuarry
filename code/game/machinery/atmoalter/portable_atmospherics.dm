@@ -41,7 +41,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	. = ..()
 	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
 	air_contents.set_volume(volume)
-	air_contents.set_temperature(T20C)
+	heat_set(air_contents, T20C)
 
 /// Connects to a port on its turf, once the pipes exist.
 /obj/machinery/portable_atmospherics/proc/port_after_init(datum/act/timer/A)

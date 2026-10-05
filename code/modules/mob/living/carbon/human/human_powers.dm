@@ -234,7 +234,7 @@
 /mob/living/carbon/human/proc/self_diagnostic_report()
 	var/output = span_filter_notice("Self-Diagnostic Results:\n")
 
-	output += "Internal Temperature: [convert_k2c(bodytemperature)] Degrees Celsius\n"
+	output += "Internal Temperature: [convert_k2c(body_temperature())] Degrees Celsius\n"
 
 	if(HAS_SYNTHETIC_BIOLOGY(src))
 		output += "Current Battery Charge: [nutrition]\n"

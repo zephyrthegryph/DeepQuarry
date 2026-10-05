@@ -167,12 +167,21 @@
 	var/weapons_only_cycle = FALSE	//So combat mechs don't switch to their equipment at times.
 
 	//Micro Mech Code
+	/// TRUE while temperature control runs: the cabin's heat pump exists exactly while this is set.
+	var/cabin_regulating = FALSE
 	var/max_micro_utility_equip = 0
 	var/max_micro_weapon_equip = 0
 	var/list/micro_utility_equipment
 	var/list/micro_weapon_equipment
 
+/// Electrical rating of the cabin's temperature control, W: about 10 K per 2 s on a 200 L cabin, as the old normaliser.
+#define MECHA_CABIN_REGULATOR_WATTS 1000
+
+TRACKED(/obj/mecha, cabin_regulating)
+
 CAPABILITIES(/obj/mecha)
+	// Temperature control: a heat pump between the cabin air and the air outside, toward 20 C, paid from the cell (process_preserve_temp()).
+	when(nameof(cabin_regulating), heat_pump(nameof(cabin_air), HEAT_AIR, MECHA_CABIN_REGULATOR_WATTS, T20C, HEAT_PUMP_BOTH, TRUE, power_draw = FALSE))
 	owns_one(nameof(cabin_air), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(internal_tank), /obj/item/tank)
@@ -426,13 +435,13 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 	// Max value is 16. So we let it run between [0, 16] with this.
 	process_ticks = (process_ticks + 1) % 17
 
-// Normalizing cabin air temperature to 20 degrees celsius.
+// Cabin temperature control: its heat pump (CAPABILITIES) works in Rust while it runs; this pays its work from the cell.
 // Called every fourth process() tick (20 deciseconds).
 /obj/mecha/proc/process_preserve_temp()
-	if (cabin_air && cabin_air.return_volume() > 0)
-		var/cur = cabin_air.return_temperature()  // arena-authoritative; the DM mirror can lag
-		var/delta = cur - T20C
-		cabin_air.set_temperature(cur - max(-10, min(10, round(delta/4,0.1))))
+	set_cabin_regulating(TRUE)
+	var/drawn = heat_entries_bill(src)
+	if(drawn > 0)
+		cell?.use(drawn * CELLRATE)
 
 // Handles internal air tank action.
 // Called every third process() tick (15 deciseconds).
@@ -503,7 +512,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 
 /obj/mecha/proc/add_cabin()
 	proto_set(src, nameof(cabin_air), new /datum/gas_mixture) // a private mixture the mech owns
-	cabin_air.set_temperature(T20C)
+	heat_set(cabin_air, T20C)
 	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
 	var/cabin_volume = cabin_air.return_volume()
@@ -2630,6 +2639,8 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 /////////////////////////////////////////
 /obj/mecha/proc/stop_process(process)
 	current_processes_remove(process)
+	if(process == MECHA_PROC_INT_TEMP)
+		set_cabin_regulating(FALSE)
 
 /obj/mecha/proc/start_process(process)
 	current_processes_add(process)

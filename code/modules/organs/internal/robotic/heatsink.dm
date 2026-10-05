@@ -20,19 +20,19 @@
 			owner.adjust_bodytemperature(-(round(owner.robobody_count * (1 - damage / max_damage), 0.1))) // We are dissipating added heat under normal conditions and without damage
 
 		if(thermal_protection < 0.99)
-			temp_adj = min(owner.bodytemperature - max(thermostat, env_temp), owner.robobody_count * 2)
+			temp_adj = min(owner.body_temperature() - max(thermostat, env_temp), owner.robobody_count * 2)
 		else
-			temp_adj = min(owner.bodytemperature - thermostat, owner.robobody_count * 2)
+			temp_adj = min(owner.body_temperature() - thermostat, owner.robobody_count * 2)
 
 		if(temp_adj < 0)
 			return
 
 		owner.adjust_bodytemperature(-(temp_adj*efficiency))
 
-		if(owner.bodytemperature > owner.species.heat_level_3)    // If you're already overheating to the point of melting, the heatsink starts causing problems.
+		if(owner.body_temperature() > owner.species.heat_level_3)    // If you're already overheating to the point of melting, the heatsink starts causing problems.
 			owner.injure(INJURY_TOXIN, 2 * damage / max_damage, flags = INJURE_SILENT)
 			apply_lesion_damage(max(0.5,round(damage / max_damage, 0.1)))
-		else if (owner.bodytemperature > owner.species.heat_level_2)
+		else if (owner.body_temperature() > owner.species.heat_level_2)
 			owner.injure(INJURY_TOXIN, damage / max_damage, flags = INJURE_SILENT)
 			apply_lesion_damage(max(0.25,round(damage / max_damage, 0.1)))
 

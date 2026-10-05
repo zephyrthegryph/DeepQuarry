@@ -49,6 +49,12 @@
 	HEAT_BODY_RESOLVE(src)
 	return list(HEAT_TARGET_BODY, heat_body)
 
+/// A pipe machine as a reservoir is the gas of the pipeline its first port is in (followed through merges and splits).
+/obj/machinery/atmospherics/heat_reservoir()
+	if(length(rust_pipe_port_ids) && rust_pipe_port_ids[1])
+		return list(HEAT_TARGET_PIPE_PORT, rust_pipe_port_ids[1])
+	return null
+
 /// Moves `joules` from `source_thing` into `into` (see the header). Returns the joules moved.
 /proc/heat_move(source_thing, into, joules, source = HEAT_SOURCE_NONE)
 	if(!isnum(joules) || !joules)
@@ -57,7 +63,8 @@
 	var/list/b = heat_reservoir_of(into)
 	if(!isnull(source_thing) && !a || !isnull(into) && !b)
 		return 0
-	return vg_heat_move(a ? a[1] : HEAT_TARGET_NONE, a ? a[2] : null, b ? b[1] : HEAT_TARGET_NONE, b ? b[2] : null, joules, source) || 0
+	. = vg_heat_move(a ? a[1] : HEAT_TARGET_NONE, a ? a[2] : null, b ? b[1] : HEAT_TARGET_NONE, b ? b[2] : null, joules, source) || 0
+	heat_gas_touched(source_thing, into)
 
 /// Adds `joules` (negative removes) to a reservoir from outside the simulation, booked under `source`.
 /proc/heat_add(thing, joules, source = HEAT_SOURCE_OTHER)
@@ -70,7 +77,18 @@
 	var/list/rb = heat_reservoir_of(b)
 	if(!ra || !rb)
 		return 0
-	return vg_heat_equalize(ra[1], ra[2], rb[1], rb[2], fraction) || 0
+	. = vg_heat_equalize(ra[1], ra[2], rb[1], rb[2], fraction) || 0
+	heat_gas_touched(a, b)
+
+/// One heat-engine pass between two reservoirs: the equalizing heat flows hot to cold and `efficiency` of it (capped at Carnot) leaves as
+/// electricity. Returns the electrical work, J.
+/proc/heat_engine_once(a, b, efficiency)
+	var/list/ra = heat_reservoir_of(a)
+	var/list/rb = heat_reservoir_of(b)
+	if(!ra || !rb)
+		return 0
+	. = vg_heat_engine_once(ra[1], ra[2], rb[1], rb[2], efficiency) || 0
+	heat_gas_touched(a, b)
 
 /// Brings a reservoir to `kelvin` by a booked external source (an authority write). Returns the joules it took.
 /proc/heat_set(thing, kelvin, source = HEAT_SOURCE_AUTHORITY)
@@ -79,7 +97,8 @@
 	var/list/r = heat_reservoir_of(thing)
 	if(!r)
 		return 0
-	return vg_heat_move_to_temperature(r[1], r[2], kelvin, source) || 0
+	. = vg_heat_move_to_temperature(r[1], r[2], kelvin, source) || 0
+	heat_gas_touched(thing)
 
 /// Sets a reservoir's thermal energy to `joules` (never below its floor) by a booked external source: a gas reaction that changed
 /// the mixture's composition reports the energy it ends with, `temperature * old_heat_capacity + released`. Returns the joules added.
@@ -89,7 +108,16 @@
 	var/list/r = heat_reservoir_of(thing)
 	if(!r)
 		return 0
-	return vg_heat_set_energy(r[1], r[2], joules, source) || 0
+	. = vg_heat_set_energy(r[1], r[2], joules, source) || 0
+	heat_gas_touched(thing)
+
+/// A one-off heat write changed these gases: the pipe network that owns one (a device's port naming the network's mixture) hears it, as it
+/// hears a step's flows from Rust. The caller never marks anything.
+/proc/heat_gas_touched(a, b)
+	if(istype(a, /datum/gas_mixture))
+		gas_touched(a)
+	if(istype(b, /datum/gas_mixture))
+		gas_touched(b)
 
 /// Sets a turf's solid temperature (DM authority: map load, holodeck programs, admin). The seed follows, so a turf registered after this starts
 /// there.

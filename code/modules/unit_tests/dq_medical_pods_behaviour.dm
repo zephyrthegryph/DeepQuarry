@@ -101,8 +101,9 @@
 	var/obj/machinery/atmospherics/unary/cryo_cell/cell = allocate(/obj/machinery/atmospherics/unary/cryo_cell, T)
 	var/obj/machinery/atmospherics/pipe/simple/pipe = allocate(/obj/machinery/atmospherics/pipe/simple, T)
 	rel_set(cell, nameof(cell.node), pipe)
-	heat_set(cell.air_contents, 80, HEAT_SOURCE_OTHER)
+	dq_atmos_test_publish_rust_pipenets(list(cell)) // its port: the occupant's heat link names the pipeline it is in
 	cell.air_contents.adjust_gas(/datum/gas/oxygen, 50)
+	heat_set(cell.air_contents, 80)
 	return cell
 
 /// Makes the tile south of `T` a wall for the test (the block's edge usually is one). Returns the turf to restore, or null.
@@ -451,7 +452,7 @@
 	test_time(1)
 	TEST_ASSERT(cell.cooling, "setup: the cell is on")
 	test_time(10 SECONDS)
-	TEST_ASSERT(P.bodytemperature < T20C, "the occupant is cooled")
+	TEST_ASSERT(P.body_temperature() < T20C, "the occupant is cooled")
 	TEST_ASSERT_EQUAL(P.stat, UNCONSCIOUS, "and kept asleep")
 	var/load = P.injury_load(INJURY_CATEGORY_PHYSICAL)
 	cell.stat_add(NOPOWER)
@@ -471,7 +472,7 @@
 	TEST_ASSERT(medpod_menu(H, cell, "Eject"), "the menu offers the eject")
 	test_time(1 SECOND)
 	TEST_ASSERT_NULL(medpod_occupant(cell), "the occupant is out")
-	TEST_ASSERT_EQUAL(P.bodytemperature, 261, "warmed to 261 K")
+	TEST_ASSERT_EQUAL(P.body_temperature(), 261, "warmed to 261 K")
 	TEST_ASSERT(!(P in cell.vis_contents), "no longer shown in the tube")
 	TEST_ASSERT_EQUAL(P.pixel_y, P.default_pixel_y, "at their own height")
 	TEST_ASSERT_NULL(P.buckled_to(), "and free")

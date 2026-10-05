@@ -44,7 +44,7 @@
 	if(QDELETED(src) || !owner)
 		return
 	// C16: capped — past DQ_COOLANT_LEAK_MAX_TEMP the heat is thermal runaway's job.
-	owner.adjust_bodytemperature(1.5 * severity / AFFLICTION_SEVERITY_TERMINAL, max_temp = max(owner.bodytemperature, DQ_COOLANT_LEAK_MAX_TEMP))
+	owner.adjust_bodytemperature(1.5 * severity / AFFLICTION_SEVERITY_TERMINAL, max_temp = max(owner.body_temperature(), DQ_COOLANT_LEAK_MAX_TEMP))
 
 // --- Thermal runaway ------------------------------------------------------------
 /datum/affliction/synthetic/thermal_runaway

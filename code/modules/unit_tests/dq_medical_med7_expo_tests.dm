@@ -91,11 +91,11 @@
 	TEST_ASSERT(abs(R.warm_body(H, 10, REM / 2) - 5) < 0.01, "half the metabolism gives half the shift")
 	H.set_bodytemperature(BODYTEMP_NORMAL + 3)
 	R.drive_body_temperature(H, BODYTEMP_NORMAL, 10, REM)
-	TEST_ASSERT(abs(H.bodytemperature - BODYTEMP_NORMAL) < 0.01, "a drive stops at its target")
+	TEST_ASSERT(abs(H.body_temperature() - BODYTEMP_NORMAL) < 0.01, "a drive stops at its target")
 	var/datum/reagent/lepo = SSchemistry.ready().chemical_reagents[REAGENT_ID_LEPORAZINE]
 	H.set_bodytemperature(BODYTEMP_NORMAL - 20)
 	lepo.affect_blood(H, null, REM)
-	TEST_ASSERT_EQUAL(H.bodytemperature, BODYTEMP_NORMAL - 20, "leporazine has no direct write on top of its tag")
+	TEST_ASSERT_EQUAL(H.body_temperature(), BODYTEMP_NORMAL - 20, "leporazine has no direct write on top of its tag")
 
 /// C16: a fever is a raised set point (BF_TEMPERATURE), not a per-tick temperature write.
 /datum/unit_test/dq_med7_c16_fever_is_setpoint
@@ -107,9 +107,9 @@
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/sepsis, null, 100)
 	TEST_ASSERT_NOTNULL(A, "setup: sepsis placed")
 	H.set_bodytemperature(BODYTEMP_NORMAL)
-	var/temp_before = H.bodytemperature
+	var/temp_before = H.body_temperature()
 	A.tick()
-	TEST_ASSERT_EQUAL(H.bodytemperature, temp_before, "the affliction's tick does not write body temperature")
+	TEST_ASSERT_EQUAL(H.body_temperature(), temp_before, "the affliction's tick does not write body temperature")
 	H.body.invalidate(BODY_DIRTY_FACTORS)
 	TEST_ASSERT(H.thermal_setpoint() > base + 1, "sepsis raises the thermoregulation set point")
 

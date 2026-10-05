@@ -149,7 +149,7 @@
 		M.status_adjust(EFFECT_DIZZY, -5)
 		M.status_adjust(EFFECT_DROWSY, -3)
 		M.status_adjust(EFFECT_SLEEPING, -2)
-		if(M.bodytemperature > BODYTEMP_NORMAL)
+		if(M.body_temperature() > BODYTEMP_NORMAL)
 			drive_body_temperature(M, BODYTEMP_NORMAL, 5 * TEMPERATURE_DAMAGE_COEFFICIENT, removed)
 
 
@@ -268,7 +268,7 @@
 		if(inert_for(M))
 			return
 		M.status_adjust(EFFECT_DROWSY, -7)
-		if(M.bodytemperature > BODYTEMP_NORMAL)
+		if(M.body_temperature() > BODYTEMP_NORMAL)
 			drive_body_temperature(M, BODYTEMP_NORMAL, 5 * TEMPERATURE_DAMAGE_COEFFICIENT, removed)
 		M.status_adjust(EFFECT_JITTERY, 5)
 

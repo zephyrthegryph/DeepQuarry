@@ -2891,7 +2891,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Prior atmos tests deliberately evacuate map turfs. Supply a controlled
 	// actionable atmosphere so this test measures retry scheduling, not suite order.
 	T.return_air().clear()
-	T.return_air().heat_set(src, T20C, HEAT_SOURCE_OTHER)
+	heat_set(T.return_air(), T20C)
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	TEST_ASSERT(D.can_pressurize_from(T.return_air()), "test floor has no pumpable atmosphere")
 	MACHINE_SLEEP(D)
@@ -3854,7 +3854,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	heat_set(turf_air, 50, HEAT_SOURCE_OTHER) // 50 K, ~-223°C
 
-	// Cold exposure → frostbite (thermal injury).
+	// Cold exposure → frostbite (thermal injury). Heat is conserved, so a body is chilled only by a cold mass large enough to take its heat
+	// (doc/rewrite/intended_changes.md, "Heat network"): a thousand cells of 50 K nitrogen, linked to the body, stand in for a frozen room.
+	var/datum/gas_mixture/cold_mass = new(CELL_VOLUME * 1000)
+	cold_mass.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD * 1000)
+	heat_set(cold_mass, 50)
+	var/edge = vg_heat_link_create(HEAT_TARGET_BODY, H.mob_heat_body(), HEAT_TARGET_MIXTURE, cold_mass, 1e5, 0, 0)
+	vg_heat_net_advance(60)
+	vg_heat_edge_remove(edge)
 	var/initial_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	for(var/i in 1 to 10)
 		life_test_environment(H, turf_air)
@@ -4170,6 +4177,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(C.recent_moles_transferred, 0, "settled circulator retained stale transfer state")
 	qdel(C)
 
+/// A heat exchanger pair is one declared heat link between its loops: no DM step, and the loops meet in Rust.
 /datum/unit_test/dq_stable_heat_exchanger_hibernates
 
 /datum/unit_test/dq_stable_heat_exchanger_hibernates/Run()
@@ -4178,20 +4186,20 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/unary/heat_exchanger/first = new(pair[1])
 	var/obj/machinery/atmospherics/unary/heat_exchanger/second = new(pair[2])
 	rel_set(first, nameof(first.partner), second)
-	heat_set(first.air_contents, T20C, HEAT_SOURCE_OTHER)
-	heat_set(second.air_contents, T20C, HEAT_SOURCE_OTHER)
+	rel_set(second, nameof(second.partner), first)
+	dq_atmos_test_publish_rust_pipenets(list(first, second))
+	first.set_leads_pair(first.heat_exchanger_leads())
+	second.set_leads_pair(second.heat_exchanger_leads())
+	kernel_drain_now()
 	first.air_contents.set_moles(/datum/gas/oxygen, 10)
 	second.air_contents.set_moles(/datum/gas/oxygen, 10)
-	TEST_ASSERT(test_machine_idle(first), "equilibrated heat exchanger retained timed polling")
-	// first watches its own contents and its partner's (heat_exchanger gas_wake_mixtures()):
-	// warming the partner's side is a divergence it can act on.
-	var/exchanger_wakes = first.machine_wake_count
-	heat_set(second.air_contents, T20C + 10, HEAT_SOURCE_OTHER)
-	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(first.machine_wake_count > exchanger_wakes)
-			break
-	TEST_ASSERT(first.machine_wake_count > exchanger_wakes, "temperature divergence did not wake a heat exchanger")
+	heat_set(first.air_contents, T20C)
+	heat_set(second.air_contents, T20C + 100)
+	TEST_ASSERT(test_machine_idle(first), "a heat exchanger has no DM step")
+	TEST_ASSERT_EQUAL(length(heat_entries_of(first)) + length(heat_entries_of(second)), 1, "the pair is one heat link")
+	vg_world_run_steps(10)
+	var/gap = abs(first.air_contents.return_temperature() - second.air_contents.return_temperature())
+	TEST_ASSERT(gap < 5, "the loops met ([gap] K apart)")
 	qdel(first)
 	qdel(second)
 
@@ -4369,10 +4377,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Its temperature is its heat body's (H3): hold it at the target, isolated from the room.
 	O.create_heat_body(TRUE)
 	vg_heat_body_couple(O.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
-	vg_heat_body_heat_set(src, O.heat_body, O.optimal_temp, HEAT_SOURCE_OTHER)
+	vg_heat_body_set_temperature(O.heat_body, O.optimal_temp)
 	TEST_ASSERT(test_machine_idle(O), "stable empty cooker retained timed polling")
 	TEST_ASSERT_NOTNULL(O.thermostat_watch, "a hibernating cooker waits on a heat watch")
-	vg_heat_body_heat_set(src, O.heat_body, O.optimal_temp - 20, HEAT_SOURCE_OTHER)
+	vg_heat_body_set_temperature(O.heat_body, O.optimal_temp - 20)
 	TEST_ASSERT_NOTEQUAL(O.machine_step(), PROCESS_KILL, "heating cooker hibernated below its target temperature")
 	qdel(O)
 
@@ -5587,9 +5595,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.stat_remove(NOPOWER | BROKEN)
 	// node ref so process() doesn't early-return; self-ref is enough.
 	rel_set(C, nameof(C.node), C)
+	dq_atmos_test_publish_rust_pipenets(list(C)) // its port: the occupant's heat link names the pipeline it is in
 	// Cold supply — needs ≥10 moles or process_occupant short-circuits.
-	heat_set(C.air_contents, 80, HEAT_SOURCE_OTHER) // 80 K
 	C.air_contents.adjust_gas(/datum/gas/oxygen, 50)
+	heat_set(C.air_contents, 80) // 80 K
 
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	TEST_ASSERT_NOTNULL(H, "human alloc failed")
@@ -5597,14 +5606,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Force the mob into the cryo cell's occupant slot.
 	move_into(C, OCCUPANT_SLOT_CRYO, H)
 	H.set_bodytemperature(T20C) // warm starting body temp
-	var/initial_bodytemp = H.bodytemperature
-	C.set_on(TRUE)
+	var/initial_bodytemp = H.body_temperature()
+	C.set_cooling(TRUE)
+	kernel_drain_now()
+	vg_heat_net_advance(10) // the link between the occupant and the cell's gas works over ten seconds
 
-	for(var/i in 1 to 5)
-		C.cooling_frame()
-
-	TEST_ASSERT(H.bodytemperature < initial_bodytemp, \
-		"cryo didn't cool mob: bodytemp [initial_bodytemp] → [H.bodytemperature]")
+	TEST_ASSERT(H.body_temperature() < initial_bodytemp, \
+		"cryo didn't cool mob: bodytemp [initial_bodytemp] → [H.body_temperature()]")
 
 	C.slot_remove(H, T)
 	qdel(C)

@@ -44,6 +44,19 @@ Energy is conserved everywhere, in SI units.
 - **Replaces** the ad-hoc `return_temperature()` procs on `/turf` (which returns the solid's temperature), gas mixtures, tanks, canisters and mecha. There is one meaning everywhere.
 - **Generated constants.** Units, thresholds and material defaults come from Rust. There are no hardcoded body temperatures and no duplicate ignition points.
 
+### 2.1a The heat network (landed)
+
+Every heat flow goes through one Rust primitive (`vg_core::thermo::transfer`): `q` moves between two reservoirs as `+q`/`−q` in one operation,
+capped so neither passes its floor, and is booked. Persistent edges (`heat_link`, `heat_pump`, `heat_engine`; `verdigris/ffi/src/heat_net.rs`)
+are integrated each world step with the exact pair solution (radiation linearised at the pair's temperatures), any step length; pumps use the
+Carnot-bounded regulator and book their work in, engines book theirs out. Each step's books (`vg_heat_books()`: transferred, work in/out,
+external in/out, per `HEAT_SOURCE_*`) must explain the change in the finite reservoirs' energy; debug builds assert it, release builds count
+unbalanced steps. Property tests run random networks of reservoirs and edges for 1000 frames.
+
+DM declares edges as scoped entries (`code/domains/heat/heat_entries.dm`) and one-off moves with `heat_move()`/`heat_add()`/`heat_set()`
+(`heat_net.dm`). Mob body temperature is the mob's heat body (`body_temperature()`); Life drives its environment conductance and metabolic
+power. Tooling: the *Show Heat Links* admin verb. Decisions and numbers: `intended_changes.md`, "Heat network".
+
 ### 2.2 Heat nodes are created on demand
 
 - An item, machine or container follows the temperature of its surroundings until something heats or cools it directly. Only then does it get a heat node, which it keeps until it returns to equilibrium.

@@ -56,6 +56,8 @@
 	for(var/datum/entry/W as anything in C.whens)
 		. |= list(W.args["cond"])
 		. |= slot_scope_stat_reads(T, W.args["cond"])
+		for(var/read in W.args["reads"])
+			. |= read
 	var/datum/entry/E = C.item
 	for(var/read in E.args?["reads"])
 		. |= read

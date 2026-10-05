@@ -194,7 +194,7 @@
 
 	var/used = inhaling / 6
 	breath.adjust_gas(intake_gas, -used, update = 0) //update afterwards
-	breath.adjust_gas_temp(S.exhale_type, used, H.bodytemperature, update = 0) //update afterwards
+	breath.adjust_gas_temp(S.exhale_type, used, H.body_temperature(), update = 0) //update afterwards
 
 	// Plenty of CO2 would be too much exhaled gas for a human; plants like it, and the alert tells them it's there.
 	if(inhale_pp > safe_exhaled_max * 0.7)
@@ -237,7 +237,7 @@
 				H.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_3, bodypart)
 
 		// Air on the skin also heats or cools the body a bit.
-		var/temp_adj = breath_temperature - H.bodytemperature
+		var/temp_adj = breath_temperature - H.body_temperature()
 		if(temp_adj < 0)
 			temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 		else

@@ -19,7 +19,7 @@
 
 /datum/gas_mixture/immutable/New()
 	..() // register the mixture in the arena first
-	set_temperature(initial_temperature)
+	heat_set(src, initial_temperature)
 
 //used by space tiles — empty and fixed at construction, so mark immutable now.
 /datum/gas_mixture/immutable/space
@@ -49,7 +49,7 @@
 	if(gas["TEMP"])
 		initial_temperature = text2num(gas["TEMP"])
 		gas -= "TEMP"
-	set_temperature(initial_temperature)
+	heat_set(src, initial_temperature)
 
 	for(var/id in gas)
 		var/path = id

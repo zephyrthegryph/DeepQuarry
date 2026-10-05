@@ -272,7 +272,7 @@ the artifact triggers the rage.
 
 /datum/body_effect/homeothermic/on_tick(mob/living/L)
 	..()
-	L.set_bodytemperature(round((L.bodytemperature + T20C) / 2))
+	L.set_bodytemperature(round((L.body_temperature() + T20C) / 2))
 
 /datum/body_effect/exothermic
 	tick_interval = 2 SECONDS
@@ -285,8 +285,8 @@ the artifact triggers the rage.
 
 /datum/body_effect/exothermic/on_tick(mob/living/L)
 	..()
-	if(L.bodytemperature > T20C)
-		L.set_bodytemperature(round((L.bodytemperature + T20C) / 2))
+	if(L.body_temperature() > T20C)
+		L.set_bodytemperature(round((L.body_temperature() + T20C) / 2))
 
 /datum/body_effect/endothermic
 	tick_interval = 2 SECONDS
@@ -299,8 +299,8 @@ the artifact triggers the rage.
 
 /datum/body_effect/endothermic/on_tick(mob/living/L)
 	..()
-	if(L.bodytemperature < T20C)
-		L.set_bodytemperature(round((L.bodytemperature + T20C) / 2))
+	if(L.body_temperature() < T20C)
+		L.set_bodytemperature(round((L.body_temperature() + T20C) / 2))
 
 // Nullifies EMP.
 /datum/body_effect/faraday

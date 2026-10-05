@@ -46,6 +46,8 @@
 /// working main alarm scans.
 /proc/am_alarm_tick(obj/machinery/alarm/A)
 	A.scan_room(null)
+	test_drain()
+	vg_heat_net_advance(MACHINE_SERVICE_INTERVAL / (1 SECONDS)) // its heat pump works over the interval
 
 /// The area elects `A` its main alarm (the one that scans and drives the room's devices).
 /proc/am_alarm_make_main(obj/machinery/alarm/A)
