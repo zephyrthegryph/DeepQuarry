@@ -363,29 +363,11 @@ UI_ACT_PROC(/datum/vore_look, ui_act_saveprefs)
 
 UI_ACT(/datum/vore_look, "reloadprefs", ui_act_reloadprefs)
 UI_ACT_PROC(/datum/vore_look, ui_act_reloadprefs)
-	var/alert = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you want to reload character slot preferences? This will remove your current vore organs and eject their contents.", title = "Confirmation", choices = list("Reload","Cancel"))
-	if(isnull(alert))
-		return
-	if(alert != "Reload")
-		return FALSE
-	if(!host().apply_vore_prefs())
-		tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to apply!","Error")
-	else
-		to_chat(ui.user,span_notice(STATION_PREF_NAME + "-specific preferences applied from active slot!"))
-		unsaved_changes = FALSE
-	return TRUE
+	open_request(ui, /datum/prompt/choice/vore_reload_preferences, TYPE_PROC_REF(/datum/tgui, vore_reload_preferences_answered), answerer = ui.user, step_name = action, question = "Are you sure you want to reload character slot preferences? This will remove your current vore organs and eject their contents.", title = "Confirmation", choices = list("Reload","Cancel"), buttons = TRUE)
 
 UI_ACT(/datum/vore_look, "loadprefsfromslot", ui_act_loadprefsfromslot)
 UI_ACT_PROC(/datum/vore_look, ui_act_loadprefsfromslot)
-	var/alert = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/choice/alert, message = "Are you sure you want to load another character slot's preferences? This will remove your current vore organs and eject their contents. This will not be immediately saved to your character slot, and you will need to save manually to overwrite your current bellies and preferences.", title = "Confirmation", choices = list("Load","Cancel"))
-	if(isnull(alert))
-		return
-	if(alert != "Load")
-		return FALSE
-	// The slot is picked next; picking it applies the preferences.
-	host().load_vore_prefs_from_slot()
-	unsaved_changes = TRUE
-	return TRUE
+	open_request(ui, /datum/prompt/choice/vore_load_preferences, TYPE_PROC_REF(/datum/tgui, vore_load_preferences_answered), answerer = ui.user, step_name = action, question = "Are you sure you want to load another character slot's preferences? This will remove your current vore organs and eject their contents. This will not be immediately saved to your character slot, and you will need to save manually to overwrite your current bellies and preferences.", title = "Confirmation", choices = list("Load","Cancel"), buttons = TRUE)
 //"Belly HTML Export Earlyport"
 
 UI_ACT(/datum/vore_look, "exportpanel", ui_act_exportpanel)
@@ -1670,6 +1652,57 @@ UI_ACT_PROC(/datum/vore_look, set_spont_belly)
 			host().nutrition_messages = messages
 		if(GENERAL_EXAMINE_WEIGHT)
 			host().weight_messages = messages
+
+/// The original act_ask answer re-enters the current interactive UI's typed row.
+/datum/prompt/choice/vore_reload_preferences
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/vore_reload_preferences/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui))
+		return "gone"
+	var/datum/vore_look/panel = original_ui.src_object()
+	if(!istype(panel) || QDELETED(panel))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "not interactive"
+	if(!panel.ui_act_allowed(original_ui.user, step_name, original_ui, original_ui.state()))
+		return "not allowed"
+	return null
+
+/datum/prompt/choice/vore_load_preferences
+	parent_type = /datum/prompt/choice/vore_reload_preferences
+
+/datum/tgui/proc/vore_reload_preferences_answered(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Reload")
+		return
+	var/datum/vore_look/panel = src_object()
+	if(panel.vore_reload_preferences_apply(src))
+		SStgui.update_uis(panel)
+
+/datum/vore_look/proc/vore_reload_preferences_apply(datum/tgui/ui)
+	if(!host().apply_vore_prefs())
+		tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to apply!","Error")
+	else
+		to_chat(ui.user,span_notice(STATION_PREF_NAME + "-specific preferences applied from active slot!"))
+		unsaved_changes = FALSE
+	return TRUE
+
+/datum/tgui/proc/vore_load_preferences_answered(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Load")
+		return
+	var/datum/vore_look/panel = src_object()
+	if(panel.vore_load_preferences_apply(src))
+		SStgui.update_uis(panel)
+
+/datum/vore_look/proc/vore_load_preferences_apply(datum/tgui/ui)
+	// The slot is picked next; picking it applies the preferences.
+	host().load_vore_prefs_from_slot()
+	unsaved_changes = TRUE
+	return TRUE
 
 #undef STATION_PREF_NAME
 #undef VORE_BELLY_TAB
