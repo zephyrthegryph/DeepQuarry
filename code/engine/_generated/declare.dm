@@ -4032,11 +4032,11 @@
 	into += entry_line(140)
 	into += list(global.ref_one(nameof(target), /atom))
 
-/// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:46
+/// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:56
 /datum/prompt/choice/frame_type_wall/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/wall_frames.dm", 46, /datum/prompt/choice/frame_type_wall)
-	into += entry_line(47)
+	into += entry_block("code/game/machinery/wall_frames.dm", 56, /datum/prompt/choice/frame_type_wall)
+	into += entry_line(57)
 	into += list(global.ref_one(nameof(wall_turf), /turf))
 
 /// CAPABILITIES(/datum/prompt/choice/freight_certification) at code/modules/economy/sales_lots.dm:457
@@ -5037,11 +5037,11 @@
 	into += entry_line(296)
 	into += list(global.ref_one(nameof(form), /datum/forms/protean))
 
-/// CAPABILITIES(/datum/prompt/yes_no/record_notes_delete) at code/game/machinery/computer/medical.dm:431
+/// CAPABILITIES(/datum/prompt/yes_no/record_notes_delete) at code/game/machinery/computer/medical.dm:437
 /datum/prompt/yes_no/record_notes_delete/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/computer/medical.dm", 431, /datum/prompt/yes_no/record_notes_delete)
-	into += entry_line(432)
+	into += entry_block("code/game/machinery/computer/medical.dm", 437, /datum/prompt/yes_no/record_notes_delete)
+	into += entry_line(438)
 	into += list(global.ref_one(nameof(record), /datum/data/record))
 
 /// CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch) at code/game/machinery/computer/shuttle.dm:106
@@ -11011,12 +11011,14 @@
 	into += entry_line(217)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/frame) at code/game/machinery/wall_frames.dm:24
+/// CAPABILITIES(/obj/item/frame) at code/game/machinery/wall_frames.dm:30
 /obj/item/frame/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/wall_frames.dm", 24, /obj/item/frame)
-	into += entry_line(25)
+	into += entry_block("code/game/machinery/wall_frames.dm", 30, /obj/item/frame)
+	into += entry_line(31)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
+	into += entry_line(32)
+	into += list(global.op("mount", global.at_target(/turf/simulated/wall), global.at_target(/obj/structure/window), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Mount on the wall"), global.wait(0), global.needs(global.req(PROC_REF(mount_facing), silent = TRUE), req_frame_mount()), global.then(PROC_REF(mount_on))))
 
 /// CAPABILITIES(/obj/item/fuel_assembly) at code/modules/power/fusion/fuel_assembly/fuel_assembly.dm:20
 /obj/item/fuel_assembly/declared_entries(list/into)
@@ -16522,27 +16524,27 @@
 	into += list(global.op("lock", global.ui_act("lock"), global.then(PROC_REF(ui_act_lock))))
 	into += entry_line(36)
 	into += list(global.op("view_rec", global.ui_act("view_rec", global.arg("ref")), global.then(PROC_REF(ui_act_view_rec))))
-	into += entry_line(37)
-	into += list(global.op("del_rec", global.ui_act("del_rec"), global.then(PROC_REF(ui_act_del_rec))))
 	into += entry_line(38)
-	into += list(global.op("disk", global.ui_act("disk", global.arg("option", global.schema_text(4096))), global.then(PROC_REF(ui_act_disk))))
-	into += entry_line(39)
-	into += list(global.op("refresh", global.ui_act("refresh"), global.then(PROC_REF(ui_act_refresh))))
-	into += entry_line(40)
-	into += list(global.op("selectpod", global.ui_act("selectpod", global.arg("ref")), global.then(PROC_REF(ui_act_selectpod))))
+	into += list(global.op("del_rec", global.ui_act("del_rec"), global.needs(global.req(PROC_REF(has_active_record), silent = TRUE)), global.asks(/datum/prompt/yes_no, fields = list("question" = "Please confirm that you want to delete the record by holding your ID and pressing Delete:", "yes_text" = "Delete", "no_text" = "Cancel", "inline" = TRUE, "timeout" = 0), step = "confirm"), global.then(PROC_REF(ui_act_del_rec))))
 	into += entry_line(41)
-	into += list(global.op("clone", global.ui_act("clone", global.arg("ref")), global.then(PROC_REF(ui_act_clone))))
+	into += list(global.op("disk", global.ui_act("disk", global.arg("option", global.schema_text(4096))), global.then(PROC_REF(ui_act_disk))))
 	into += entry_line(42)
-	into += list(global.op("menu", global.ui_act("menu", global.arg("num", global.num(1, 2))), global.then(PROC_REF(ui_act_menu))))
+	into += list(global.op("refresh", global.ui_act("refresh"), global.then(PROC_REF(ui_act_refresh))))
 	into += entry_line(43)
-	into += list(global.op("toggle_mode", global.ui_act("toggle_mode"), global.then(PROC_REF(ui_act_toggle_mode))))
+	into += list(global.op("selectpod", global.ui_act("selectpod", global.arg("ref")), global.then(PROC_REF(ui_act_selectpod))))
 	into += entry_line(44)
-	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
+	into += list(global.op("clone", global.ui_act("clone", global.arg("ref")), global.then(PROC_REF(ui_act_clone))))
 	into += entry_line(45)
-	into += list(global.op("cleartemp", global.ui_act("cleartemp"), global.then(PROC_REF(ui_act_cleartemp))))
+	into += list(global.op("menu", global.ui_act("menu", global.arg("num", global.num(1, 2))), global.then(PROC_REF(ui_act_menu))))
 	into += entry_line(46)
-	into += list(global.op("cloning_console_interaction_item", global.item(/obj/item), global.then(PROC_REF(cloning_console_interaction_item))))
+	into += list(global.op("toggle_mode", global.ui_act("toggle_mode"), global.then(PROC_REF(ui_act_toggle_mode))))
 	into += entry_line(47)
+	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
+	into += entry_line(48)
+	into += list(global.op("cleartemp", global.ui_act("cleartemp"), global.then(PROC_REF(ui_act_cleartemp))))
+	into += entry_line(49)
+	into += list(global.op("cloning_console_interaction_item", global.item(/obj/item), global.then(PROC_REF(cloning_console_interaction_item))))
+	into += entry_line(50)
 	into += list(global.op("cloning_console_interaction_hand", global.hand(), global.then(PROC_REF(cloning_console_interaction_hand))))
 
 /// CAPABILITIES(/obj/machinery/computer/communications) at code/game/machinery/computer/communications.dm:15
@@ -16736,6 +16738,10 @@
 	into += list(global.op("print_p", global.ui_act("print_p"), global.then(PROC_REF(ui_act_print_p))))
 	into += entry_line(48)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_records_fresh), early = TRUE)))
+	into += entry_line(50)
+	into += list(global.op("edit", global.ui_act("modal:edit", global.arg("arguments")), global.needs(global.req(PROC_REF(edit_field_known), silent = TRUE)), global.asks(/datum/prompt/choice, fields = list("question" = global.computed(PROC_REF(edit_question)), "choices" = global.computed(PROC_REF(edit_choices)), "default" = global.computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(edit_question)), "default" = global.computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)), global.then(PROC_REF(modal_edit))))
+	into += entry_line(54)
+	into += list(global.op("add_c", global.ui_act("modal:add_c", global.arg("arguments")), global.asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), global.then(PROC_REF(modal_add_comment))))
 
 /// CAPABILITIES(/obj/machinery/computer/message_monitor) at code/game/machinery/computer/message.dm:75
 /obj/machinery/computer/message_monitor/declared_entries(list/into)
@@ -16989,6 +16995,10 @@
 	into += list(global.op("photo_side", global.ui_act("photo_side"), global.then(PROC_REF(ui_act_photo_side))))
 	into += entry_line(123)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_records_fresh), early = TRUE)))
+	into += entry_line(125)
+	into += list(global.op("edit", global.ui_act("modal:edit", global.arg("arguments")), global.needs(global.req(PROC_REF(edit_field_known), silent = TRUE)), global.asks(/datum/prompt/choice, fields = list("question" = global.computed(PROC_REF(edit_question)), "choices" = global.computed(PROC_REF(edit_choices)), "default" = global.computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(edit_question)), "default" = global.computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)), global.then(PROC_REF(modal_edit))))
+	into += entry_line(129)
+	into += list(global.op("add_c", global.ui_act("modal:add_c", global.arg("arguments")), global.asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), global.then(PROC_REF(modal_add_comment))))
 
 /// CAPABILITIES(/obj/machinery/computer/security) at code/game/machinery/computer/camera.dm:18
 /obj/machinery/computer/security/declared_entries(list/into)
@@ -17125,6 +17135,10 @@
 	into += list(global.op("print_p", global.ui_act("print_p"), global.then(PROC_REF(ui_act_print_p))))
 	into += entry_line(282)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_records_fresh), early = TRUE)))
+	into += entry_line(284)
+	into += list(global.op("edit", global.ui_act("modal:edit", global.arg("arguments")), global.needs(global.req(PROC_REF(edit_field_known), silent = TRUE)), global.asks(/datum/prompt/choice, fields = list("question" = global.computed(PROC_REF(edit_question)), "choices" = global.computed(PROC_REF(edit_choices)), "default" = global.computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(edit_question)), "default" = global.computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)), global.then(PROC_REF(modal_edit))))
+	into += entry_line(288)
+	into += list(global.op("add_c", global.ui_act("modal:add_c", global.arg("arguments")), global.asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), global.then(PROC_REF(modal_add_comment))))
 
 /// CAPABILITIES(/obj/machinery/computer/station_alert) at code/game/machinery/computer/station_alert.dm:12
 /obj/machinery/computer/station_alert/declared_entries(list/into)

@@ -23,16 +23,22 @@
 	return H
 
 /// Opens modal `id` of `host`'s window as the client's modal_open does.
-/datum/unit_test/dq_fwg3_modal/proc/modal_open(mob/user, datum/host, id, list/arguments)
+/proc/fwg3_modal_open(mob/user, datum/host, id, list/arguments)
 	var/datum/op_result/R = test_ui(user, host, OP_UI_MODAL_OPEN, list("id" = id, "arguments" = arguments || list()))
 	if(!R)
 		host.act_modal_open(user, id, arguments || list())
 	return tgui_modal_data(host)
 
 /// Answers the window's modal `id` as the client's modal_answer does.
-/datum/unit_test/dq_fwg3_modal/proc/modal_answer(mob/user, datum/host, id, answer, list/arguments)
+/proc/fwg3_modal_answer(mob/user, datum/host, id, answer, list/arguments)
 	host.act_modal_answer(user, id, answer, arguments || list())
 	test_time(1)
+
+/datum/unit_test/dq_fwg3_modal/proc/modal_open(mob/user, datum/host, id, list/arguments)
+	return fwg3_modal_open(user, host, id, arguments)
+
+/datum/unit_test/dq_fwg3_modal/proc/modal_answer(mob/user, datum/host, id, answer, list/arguments)
+	fwg3_modal_answer(user, host, id, answer, arguments)
 
 /datum/unit_test/dq_fwg3_modal/proc/count_of(turf/T, path)
 	. = 0
@@ -145,3 +151,32 @@
 	D.atom_break()
 	hc_ui(H, D, "amount", list("amount" = 30))
 	TEST_ASSERT_EQUAL(D.amount, 15, "a broken dispenser ignores its buttons")
+
+/// Medical records: the edit modal asks a pick for a field with choices and a text for the rest (the field's kind decides), and the answer is the
+/// field's new value; the comment modal adds a log entry. (Pinned on the converted form: the records consoles were converted in this change.)
+/datum/unit_test/dq_hc_computers/fwg3_record_modals
+/datum/unit_test/dq_hc_computers/fwg3_record_modals/run_gate()
+	var/obj/machinery/computer/med_data/C = hc_console(/obj/machinery/computer/med_data)
+	var/mob/living/carbon/human/doctor = hc_records_user(list(ACCESS_MEDICAL))
+	var/datum/data/record/G = hc_general_record("Patient Zed", "0ZED")
+	hc_records_login(doctor, C)
+	press(doctor, C, "d_rec", list("d_rec" = "[REF(G)]"))
+	press(doctor, C, "new")
+	var/datum/data/record/M = C.active2()
+	LAZYADD(hc_records, M)
+	var/list/modal = fwg3_modal_open(doctor, C, "edit", list("field" = "b_dna", "value" = "old"))
+	TEST_ASSERT_EQUAL(modal?["type"], "input", "a text field is asked with an input modal")
+	TEST_ASSERT_EQUAL(modal?["value"], "old", "showing the value the window passed")
+	fwg3_modal_answer(doctor, C, "edit", "ABC123", list("field" = "b_dna"))
+	TEST_ASSERT_EQUAL(M.fields["b_dna"], "ABC123", "the answer is the field's value")
+	modal = fwg3_modal_open(doctor, C, "edit", list("field" = "p_stat"))
+	TEST_ASSERT_EQUAL(modal?["type"], "choice", "a field with choices is asked with a pick")
+	var/list/choices = modal?["choices"]
+	TEST_ASSERT(length(choices), "listing them")
+	fwg3_modal_answer(doctor, C, "edit", choices[3], list("field" = "p_stat"))
+	TEST_ASSERT_EQUAL(G.fields["p_stat"], choices[3], "the picked choice is the general record's field")
+	TEST_ASSERT_NULL(fwg3_modal_open(doctor, C, "edit", list("field" = "no_such_field")), "an unknown field opens nothing")
+	var/before = length(M.fields["comments"])
+	fwg3_modal_open(doctor, C, "add_c")
+	fwg3_modal_answer(doctor, C, "add_c", "Seen today.")
+	TEST_ASSERT_EQUAL(length(M.fields["comments"]), before + 1, "the comment is logged")

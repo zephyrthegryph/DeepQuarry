@@ -36,4 +36,10 @@ export type MedicalRecordsActions = {
     t1: string;
   };
   print_p: Record<string, never>;
+  'modal:edit': {
+    arguments: unknown;
+  };
+  'modal:add_c': {
+    arguments: unknown;
+  };
 };

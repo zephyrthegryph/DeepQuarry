@@ -638,6 +638,12 @@ Pinned by `code/modules/unit_tests/dq_fwg3_modals.dm` (modals opened and answere
   asks only while running, remove only while idle).
 * **Chemical dispenser.** Its buttons are ops behind a silent "not broken" requirement; clearing the recipes asks first, and saving a recording asks
   for its name and then, only when that name is taken, whether to overwrite (the old window-interactive check between the two is the op's recheck).
+* **Medical, security and employment records consoles.** The field edit modal is one op with two `asks()` steps, a pick when the field has choices and
+  a text otherwise (`when =` the field's kind); a field the console does not edit opens nothing. The comment modal is a text step. Pinned on the converted
+  form (`dq_hc_computers/fwg3_record_modals`).
+* **Cloning console.** Deleting a record asks in the window ("Delete" / "Cancel"); only "Delete" deletes (the old boolean modal reached the delete
+  handler on either answer, which then needed the ID in hand). The ID check is unchanged.
+* **Yes/no labels.** The trash-eating PDA confirmation ("Definitely" / "Cancel") is an `open_request()` of `/datum/prompt/yes_no` with its labels.
 
 ## Silicon entry points (phase A): remote() ops, the interface provider, the gripper as a provider
 
@@ -682,3 +688,7 @@ Pinned by `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (green on the leg
 * **The APC's board goes into the build graph's own slot.** The `apc_construction` slot relation is gone: the ledger makes a slot from the
   graph's `put_in(SLOT_CONSTRUCTION)` (one board, in the graph's space SPACE_HATCH, so the board sits behind the cover like the rest of the
   ladder). A `slot(SLOT_X, capacity =, at =, accepts =)` entry declares any other such slot (the e0 door assembly's).
+* **Mounting a frame is the frame's op, `frame.mount`** (`at_target()` a wall or an anchored window): the wall's and the window's item use no
+  longer call the frame. Its refusals are requirements with the old texts (the generic frame says "It cannot be placed on this spot." /
+  "...in this area." where it named itself), a diagonal or distant builder is refused silently as before, and an APC frame cuts a loose
+  terminal under it as part of the mount. `try_build()` is gone.

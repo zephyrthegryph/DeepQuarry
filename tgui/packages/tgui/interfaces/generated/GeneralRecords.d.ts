@@ -114,4 +114,10 @@ export type GeneralRecordsActions = {
     del_c: number;
   };
   print_p: Record<string, never>;
+  'modal:edit': {
+    arguments: unknown;
+  };
+  'modal:add_c': {
+    arguments: unknown;
+  };
 };
