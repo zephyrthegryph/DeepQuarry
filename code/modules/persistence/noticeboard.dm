@@ -81,11 +81,37 @@ APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_co
 	return FALSE
 
 /obj/structure/noticeboard/screwdriver_act(mob/user, obj/item/tool)
-	var/choice = rerun_ask(user, "k79", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which direction do you wish to place the noticeboard?", title = "Noticeboard Offset", choices = list("North", "South", "East", "West", "No Offset"))
-	if(isnull(choice))
-		return ITEM_INTERACT_BLOCKING
-	if(!choice || !Adjacent(user) || tool.loc != user || user.incapacitated())
-		return ITEM_INTERACT_BLOCKING
+	open_request(src, /datum/prompt/choice/noticeboard_offset, PROC_REF(noticeboard_offset_chosen), answerer = user, subject = tool)
+	return ITEM_INTERACT_BLOCKING
+
+/datum/prompt/choice/noticeboard_offset
+	title = "Noticeboard Offset"
+	question = "Which direction do you wish to place the noticeboard?"
+	choices = list("North", "South", "East", "West", "No Offset")
+	timeout = 0
+
+/datum/prompt/choice/noticeboard_offset/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/obj/structure/noticeboard/board = owner
+	var/obj/item/tool = subject
+	if(!istype(board) || QDELETED(board) || QDELETED(answerer) || !istype(tool) || QDELETED(tool))
+		return "The board, user or tool is no longer available."
+	if(!isnull(answer_value) && (!answer_value || !board.Adjacent(answerer) || tool.loc != answerer || answerer.incapacitated()))
+		return "The noticeboard cannot be adjusted now."
+
+/obj/structure/noticeboard/proc/noticeboard_offset_chosen(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	var/obj/item/tool = A.request.subject
+	if(!A.answer)
+		if(!QDELETED(user) && !QDELETED(tool) && !isnull(A.request.answer_value))
+			SStgui.update_uis(src)
+		return
+	apply_noticeboard_offset(A.answer.answer_value, tool)
+	SStgui.update_uis(src)
+
+/obj/structure/noticeboard/proc/apply_noticeboard_offset(choice, obj/item/tool)
 	playsound(loc, tool.usesound, 50, TRUE)
 	switch(choice)
 		if("North")
