@@ -19,7 +19,7 @@
 	var/datum/gas_mixture/air = T.return_air()
 	air.adjust_gas(/datum/gas/plasma, 20)
 	air.adjust_gas(/datum/gas/oxygen, 50)
-	air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
+	heat_set(air, PLASMA_MINIMUM_BURN_TEMPERATURE + 300, HEAT_SOURCE_OTHER)
 	T.hotspot_expose(PLASMA_MINIMUM_BURN_TEMPERATURE + 300, CELL_VOLUME, soh = TRUE)
 	var/obj/effect/hotspot/H = T.active_hotspot
 	TEST_ASSERT_NOTNULL(H, "no hotspot to burn")

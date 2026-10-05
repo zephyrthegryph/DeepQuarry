@@ -96,8 +96,15 @@
 /proc/heat_set_solid(turf/T, kelvin)
 	if(!T || !isnum(kelvin))
 		return FALSE
+	if(kelvin == T.get_temperature())
+		return FALSE
 	T.initial_temperature = kelvin
-	return vg_heat_set_turf_temperature(T, kelvin)
+	. = vg_heat_set_turf_temperature(T, kelvin)
+	T.solid_temperature_set()
+
+/// A turf's solid temperature was set by heat_set_solid() (a planet wall re-evaluates its neighbours).
+/turf/proc/solid_temperature_set()
+	return
 
 /// The electrical power of an edge's last step, W: positive for an engine's output, negative for a pump's draw.
 /proc/heat_edge_power(edge)

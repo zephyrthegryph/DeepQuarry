@@ -156,6 +156,6 @@ CAPABILITIES(/obj/structure/drop_pod)
 
 /datum/gas_mixture/pod_air/New()
 	. = ..()
-	set_temperature(T20C) // arena default is TCMB; set the intended initial temperature
+	heat_set(src, T20C) // arena default is TCMB; set the intended initial temperature
 	adjust_gas(GAS_O2, 21) // literal "oxygen" doesn't match LINDA gas IDs; GAS_O2 is "o2"
 	adjust_gas(GAS_N2, 79)

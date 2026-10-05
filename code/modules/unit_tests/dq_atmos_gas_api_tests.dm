@@ -4,10 +4,10 @@
 /proc/gas_api_test_mix(volume, o2_moles, temperature = T20C)
 	var/datum/gas_mixture/M = new
 	M.set_volume(volume)
-	M.set_temperature(temperature)
+	heat_set(M, temperature, HEAT_SOURCE_OTHER)
 	if(o2_moles)
 		M.adjust_gas(/datum/gas/oxygen, o2_moles)
-	M.set_temperature(temperature)
+	heat_set(M, temperature, HEAT_SOURCE_OTHER)
 	return M
 
 /datum/unit_test/dq_gas_api/release_to_pressure_and_rate
@@ -50,9 +50,9 @@
 	var/before = M.heat_capacity() * M.return_temperature()
 	TEST_ASSERT_EQUAL(H.regulate(M, T20C), GAS_HEATER_HEATING, "a cold room starts heating")
 	TEST_ASSERT(abs(M.heat_capacity() * M.return_temperature() - before - 1000) < 1, "by its rated 1000 J")
-	M.set_temperature(T20C + 0.4)
+	heat_set(M, T20C + 0.4, HEAT_SOURCE_OTHER)
 	TEST_ASSERT_EQUAL(H.regulate(M, T20C), GAS_HEATER_IDLE, "within half a degree it stops")
-	M.set_temperature(T20C + 1.5)
+	heat_set(M, T20C + 1.5, HEAT_SOURCE_OTHER)
 	TEST_ASSERT_EQUAL(H.regulate(M, T20C), GAS_HEATER_IDLE, "and does not start inside its start gap")
 	var/datum/gas_mixture/small = gas_api_test_mix(100, 2, T20C - 3)
 	var/datum/gas_heater/S = new
@@ -61,14 +61,14 @@
 	TEST_ASSERT(wanted < 1000 && abs(S.last_joules - wanted) < 0.5, "a small room closes a quarter of the gap: [S.last_joules] vs [wanted]")
 	qdel(S)
 	qdel(small)
-	M.set_temperature(T20C - 100)
+	heat_set(M, T20C - 100, HEAT_SOURCE_OTHER)
 	H.state = GAS_HEATER_IDLE
 	TEST_ASSERT_EQUAL(H.regulate(M, T20C, FALSE), GAS_HEATER_IDLE, "not allowed: it does nothing")
-	M.set_temperature(T20C + 20)
+	heat_set(M, T20C + 20, HEAT_SOURCE_OTHER)
 	H.regulate(M, T20C)
 	TEST_ASSERT_EQUAL(H.state, GAS_HEATER_COOLING, "a hot room starts cooling")
 	TEST_ASSERT(abs(H.last_joules + 1000) < 1, "by its rated 1000 J")
-	M.set_temperature(250)
+	heat_set(M, 250, HEAT_SOURCE_OTHER)
 	H.regulate(M, 200)
 	TEST_ASSERT(abs(H.last_joules + 1000 * 250 / T20C) < 1, "cooling cold air pumps less into the hull: [H.last_joules]")
 	var/datum/gas_mixture/vacuum = gas_api_test_mix(2500, 0.01, T20C - 30)
@@ -87,7 +87,7 @@
 	var/body = gas_body_heat_exchange(M, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY)
 	TEST_ASSERT(abs(body - M.return_temperature()) < 0.01, "share 1 settles both at one temperature")
 	TEST_ASSERT(abs(gas_capacity * M.return_temperature() + HUMAN_HEAT_CAPACITY * body - energy) < 1, "energy is conserved")
-	M.set_temperature(80)
+	heat_set(M, 80, HEAT_SOURCE_OTHER)
 	var/half = gas_body_heat_exchange(M, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY, 0.5)
 	TEST_ASSERT(half > body && half < BODYTEMP_NORMAL, "a half share goes half way: [half]")
 	qdel(M)

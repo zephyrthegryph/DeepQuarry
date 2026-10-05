@@ -133,6 +133,6 @@ CAPABILITIES(/datum/pipeline)
 	// It currently should stabilise at 129.6K or -143.6C
 	heat_gain -= surface * STEFAN_BOLTZMANN_CONSTANT * thermal_conductivity * (air.return_temperature() - TCMB) ** 4
 
-	air.add_thermal_energy(heat_gain)
+	heat_add(air, heat_gain, HEAT_SOURCE_OTHER)
 	if(network)
 		network.mark_dirty()

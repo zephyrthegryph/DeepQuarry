@@ -101,7 +101,7 @@
 	var/obj/machinery/atmospherics/unary/cryo_cell/cell = allocate(/obj/machinery/atmospherics/unary/cryo_cell, T)
 	var/obj/machinery/atmospherics/pipe/simple/pipe = allocate(/obj/machinery/atmospherics/pipe/simple, T)
 	rel_set(cell, nameof(cell.node), pipe)
-	cell.air_contents.set_temperature(80)
+	heat_set(cell.air_contents, 80, HEAT_SOURCE_OTHER)
 	cell.air_contents.adjust_gas(/datum/gas/oxygen, 50)
 	return cell
 

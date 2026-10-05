@@ -555,10 +555,10 @@ GLOBAL_LIST_EMPTY(colored_images)
 	// through their own parse_string_immutable path instead.
 	var/list/gas = gas_string_to_list(gas_string)
 	if(gas["TEMP"])
-		canonical_mix.set_temperature(text2num(gas["TEMP"]))
+		heat_set(canonical_mix, text2num(gas["TEMP"]))
 		gas -= "TEMP"
 	else // if we do not have a temp in the new gas mix lets assume room temp.
-		canonical_mix.set_temperature(T20C)
+		heat_set(canonical_mix, T20C)
 	for(var/id in gas)
 		var/path = id
 		if(!ispath(path))

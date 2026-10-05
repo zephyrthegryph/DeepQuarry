@@ -180,12 +180,6 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 		return 0
 	return vg_heat_add_turf(src, joules) ? joules : 0
 
-/// Sets the solid temperature (DM authority: map load, holodeck programs, admin). The seed follows, so a turf
-/// registered after this starts there.
-/turf/proc/set_temperature(new_temperature)
-	initial_temperature = new_temperature
-	return vg_heat_set_turf_temperature(src, new_temperature)
-
 /turf/thermal_properties()
 	return list(heat_capacity, thermal_conductivity, THERMAL_EMISSIVITY_DEFAULT)
 

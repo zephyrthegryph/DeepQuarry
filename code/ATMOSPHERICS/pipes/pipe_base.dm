@@ -224,7 +224,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	released.adjust_moles(/datum/gas/plasma, material_sorbed_moles)
 	var/released_capacity = released.heat_capacity()
 	if(released_capacity > 0 && material_sorbed_thermal_energy > 0)
-		released.set_temperature(material_sorbed_thermal_energy / released_capacity)
+		heat_set(released, material_sorbed_thermal_energy / released_capacity)
 	environment.merge(released)
 	qdel(released)
 	material_sorbed_moles = 0

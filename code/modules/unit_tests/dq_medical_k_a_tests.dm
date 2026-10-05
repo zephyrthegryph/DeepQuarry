@@ -62,7 +62,7 @@
 	var/datum/gas_mixture/breath = new(BREATH_VOLUME)
 	breath.adjust_gas(/datum/gas/carbon_dioxide, MOLES_O2STANDARD)
 	breath.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	breath.set_temperature(T20C)
+	heat_set(breath, T20C, HEAT_SOURCE_OTHER)
 	var/co2_before = breath.get_moles(/datum/gas/carbon_dioxide)
 	H.photosynthesis_boost = 0
 	P.skin_exchange(H, breath)

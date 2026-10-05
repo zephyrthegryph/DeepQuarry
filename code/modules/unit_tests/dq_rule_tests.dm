@@ -184,7 +184,7 @@
 		floor.extinguish()
 		if(floor.active_hotspot)
 			qdel(floor.active_hotspot)
-		floor.air?.set_temperature(T20C)
+		heat_set(floor.air, T20C, HEAT_SOURCE_OTHER)
 		thing = allocate(root, floor)
 	else
 		thing = allocate(root)
@@ -391,7 +391,7 @@
 	var/datum/gas_mixture/saved = new
 	saved.copy_from(T.air)
 	T.air.set_moles(GAS_O2, 20)
-	T.air.set_temperature(T20C)
+	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
 	var/obj/item/paper/hot = allocate(/obj/item/paper, T)
 	var/ignition = PROPERTY(hot, PROP_IGNITION_POINT)
 	TEST_ASSERT(ignition > T20C, "paper has an ignition point")
