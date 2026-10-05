@@ -307,9 +307,9 @@ APPEARANCE_TEMPLATE(/obj/structure/closet/crate/secure, "closed_{appearance_lock
 	if(newgas_temperature <= target_temp)	return
 
 	if((newgas_temperature - cooling_power) > target_temp)
-		newgas.set_temperature(newgas_temperature - cooling_power)
+		heat_set(newgas, newgas_temperature - cooling_power, HEAT_SOURCE_DEVICE)
 	else
-		newgas.set_temperature(target_temp)
+		heat_set(newgas, target_temp, HEAT_SOURCE_DEVICE)
 	return newgas
 
 /obj/structure/closet/crate/freezer/Entered(atom/movable/AM)

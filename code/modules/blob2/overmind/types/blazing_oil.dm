@@ -29,7 +29,7 @@
 		return
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		env.add_thermal_energy(10 * 1000)
+		heat_add(env, 10 * 1000, HEAT_SOURCE_OTHER)
 
 /datum/blob_type/blazing_oil/on_chunk_tick(obj/item/blobcore_chunk/B)
 	B.reagents.add_reagent(REAGENT_ID_THERMITEV, 0.5)
@@ -39,7 +39,7 @@
 		return
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		env.add_thermal_energy(10 * 1000)
+		heat_add(env, 10 * 1000, HEAT_SOURCE_OTHER)
 
 /datum/blob_type/blazing_oil/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
 	user.apply_body_effect(/datum/body_effect/exothermic, 5 MINUTES)

@@ -30,7 +30,6 @@
 	set_bolted(chosen_door(), TRUE)
 	chosen_door().take_damage(chosen_door().max_integrity * 5/6, BRUTE)
 	hold(chosen_door(), STAT_AICONTROLDISABLED, null, SRC_ROUND_EVENT)
-	chosen_door().update_icon()
 
 /// Accessor for the chosen_door var.
 /datum/event/electrified_door/proc/chosen_door() as /obj/machinery/door/airlock

@@ -101,6 +101,9 @@
 #define ENGINE_HOOK_AFTER_INIT (1<<4)
 /// A slot() entry of the type has starts =: its contents are made in the engine init (slot_starts_init()).
 #define ENGINE_HOOK_SLOT_STARTS (1<<5)
+/// The type declares entries of a condition-scoped kind (an entry engine with cond_scoped = TRUE, such as heat_link()): each is an activation
+/// of the holder that lives while its when() conditions hold (cond_scope.dm).
+#define ENGINE_HOOK_COND_SCOPED (1<<6)
 
 
 #define ALLOC_LAZY 1

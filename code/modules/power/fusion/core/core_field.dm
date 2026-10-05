@@ -296,7 +296,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		var/datum/gas_mixture/plasma = new
 		plasma.adjust_gas(GAS_O2, (size*100), 0)
 		plasma.adjust_gas(GAS_PHORON, (size*100), 0)
-		plasma.set_temperature(plasma_temperature/2)
+		heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 		// plasma.update_values() removed; no-op under LINDA.
 		T.assume_air(plasma)
 		// A field that never heated (plasma_temperature 0) ignites nothing; hotspot_expose() refuses
@@ -551,7 +551,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 	if(owned_core && owned_core.loc)
 		var/datum/gas_mixture/environment = owned_core.loc.return_air()
 		if(environment && environment.return_temperature() < (T0C+FUSION_MAX_ENVIRO_HEAT))
-			environment.add_thermal_energy(plasma_temperature*5000)
+			heat_add(environment, plasma_temperature*5000, HEAT_SOURCE_DEVICE)
 			check_instability()
 
 //Temperature changes depending on color.
@@ -633,7 +633,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 			var/datum/gas_mixture/plasma = new
 			plasma.adjust_gas(GAS_O2, (size*100), 0)
 			plasma.adjust_gas(GAS_PHORON, (size*100), 0)
-			plasma.set_temperature(plasma_temperature/2)
+			heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 			// plasma.update_values() removed; no-op under LINDA.
 			TT.assume_air(plasma)
 			TT.hotspot_expose(plasma_temperature)
@@ -649,7 +649,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		var/datum/gas_mixture/plasma = new
 		plasma.adjust_gas(GAS_O2, (size*100), 0)
 		plasma.adjust_gas(GAS_PHORON, (size*100), 0)
-		plasma.set_temperature(plasma_temperature/2)
+		heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 		// plasma.update_values() removed; no-op under LINDA.
 		TT.assume_air(plasma)
 		TT.hotspot_expose(plasma_temperature)

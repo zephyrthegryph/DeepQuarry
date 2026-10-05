@@ -161,7 +161,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(remaining > 0 && air.return_temperature() > material.phase_change_temperature)
 		var/available = max(0, -air.get_thermal_energy_change(material.phase_change_temperature))
 		var/absorbed = min(remaining, available)
-		air.add_thermal_energy(-absorbed)
+		heat_add(air, -absorbed, HEAT_SOURCE_MATERIAL)
 		stored_phase_energy += absorbed
 
 /datum/material_response/proc/on_propagated_radiation(datum/act/notice/A)

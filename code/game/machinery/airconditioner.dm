@@ -49,31 +49,20 @@
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
 
+/// Powered straight from its cables with no metering: the pump works while it is on a network.
 /obj/machinery/power/thermoregulator/southerncross/machine_step()
 	if(!power_region)
 		turn_off()
 		return PROCESS_KILL
-
-	var/datum/gas_mixture/env = loc.return_air()
-	if(!env || abs(env.return_temperature() - target_temp) < 1)
-		change_mode(MODE_IDLE)
-		hibernate_until_temperature_changes()
-		return PROCESS_KILL
-
-	var/datum/gas_mixture/removed = env.remove_ratio(0.99)
-	if(!removed)
-		change_mode(MODE_IDLE)
-		hibernate_until_temperature_changes()
-		return PROCESS_KILL
-
-	apply_regulator_step(removed, active_power_usage*1000)
-	env.merge(removed)
+	set_pumping(TRUE)
+	update_pump_mode()
 
 // Given the power behind this thermodynamics defying machine, nerfing EMP effectiveness.
 /obj/machinery/power/thermoregulator/southerncross/thermoregulator_emp(datum/act/hit/emp/A)
 	if(!on)
 		set_on(1)
 	target_temp += rand(0, 20)
+	heat_entries_refresh(src)
 	wake_for_state_change()
 	update_icon()
 	return ..()
@@ -112,48 +101,19 @@
 	var/regulator_carnot_fraction = 0.4
 	/// Upper bound on the pump's COP (a pump across a tiny gap is not free).
 	var/regulator_max_cop = 25
+	/// The heat pump's electrical rating, W.
+	var/heat_pump_watts = 150 KILOWATTS
+	/// TRUE while it works the room's air: its heat pump exists exactly while this is set.
+	var/pumping = FALSE
 
 DECLARE_PERIODIC_WHILE(/obj/machinery/power/thermoregulator, MACHINE_PIPELINE, "on")
-
-/// One vg_heat_regulator_step() call against `removed`'s current heat
-/// capacity/temperature, applied with add_thermal_energy(). `watts` is the
-/// electrical work budget for this call (one process() tick is treated as
-/// one second, matching every caller's existing per-tick power constants);
-/// heating is resistive (1:1, matching every caller's old heating branch
-/// exactly); cooling rejects to an infinite reservoir (the old code never
-/// applied the rejected/absorbed heat to any other side either -- see H4's
-/// note in temperature.md). Sets `mode` and returns it.
-/obj/machinery/power/thermoregulator/proc/apply_regulator_step(datum/gas_mixture/removed, watts)
-	var/capacity = removed.heat_capacity()
-	if(!removed || capacity <= 0)
-		change_mode(MODE_IDLE)
-		return mode
-	// The "other" side is an infinite reservoir at station-ambient
-	// temperature (there is no specific hull/space hookup here -- the old
-	// code never applied the rejected/absorbed heat to any other side
-	// either). Only cooling's Carnot lift (Th - Tc) reads this; T20C keeps
-	// that lift physically sane instead of the wildly-wrong TCMB a
-	// space-side default would give.
-	var/list/step = vg_heat_regulator_step(
-		target_temp, watts, REGULATOR_MODE_BOTH,
-		regulator_carnot_fraction, regulator_max_cop, TRUE, 1,
-		capacity, removed.return_temperature(),
-		-1, T20C,
-		1,
-	)
-	var/moved = step[2]
-	if(moved > 0)
-		change_mode(MODE_HEATING)
-	else if(moved < 0)
-		change_mode(MODE_COOLING)
-	else
-		change_mode(MODE_IDLE)
-		return mode
-	removed.add_thermal_energy(moved)
-	return mode
+TRACKED(/obj/machinery/power/thermoregulator, pumping)
 
 CAPABILITIES(/obj/machinery/power/thermoregulator)
 	climb()
+	// A heat pump on the room's air toward the target, against the station's heat-rejection loop at 20 C: a Carnot-bounded COP both
+	// ways (heating draws on the loop, cooling rejects into it). Its work is paid from the grid (machine_step()).
+	when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heat_pump_watts), nameof(target_temp), HEAT_PUMP_BOTH, FALSE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop)))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(thermoregulator_emp))))
 
 /obj/machinery/power/thermoregulator/Initialize(mapload)
@@ -195,6 +155,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 		return
 	var/new_temp = convert_c2k(A.answer.answer_value)
 	target_temp = max(new_temp, TCMB)
+	heat_entries_refresh(src)
 	wake_for_state_change()
 	return ITEM_INTERACT_SUCCESS
 
@@ -223,9 +184,12 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 		MSG_OTHERS(span_notice("%U% [on ? "activates" : "deactivates"] %T%.")))
 	if(!on)
 		change_mode(MODE_IDLE)
+		set_pumping(FALSE)
 	wake_for_state_change()
 	update_icon()
 
+/// The heat pump (its CAPABILITIES entry) works the air in Rust; the step pays its work from the grid and shows what it does. It
+/// sleeps within a degree of its target, where the pump has nothing to move.
 /obj/machinery/power/thermoregulator/machine_step()
 	if(!power_region)
 		turn_off()
@@ -236,40 +200,25 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 		turn_off()
 		return PROCESS_KILL
 
-	var/datum/gas_mixture/env = loc.return_air()
-	if(!env || abs(env.return_temperature() - target_temp) < 1)
-		change_mode(MODE_IDLE)
+	var/work = -heat_entries_power(src)
+	if(work > 0 && draw_power(work) < work * 0.99)
+		visible_message(span_infoplain(span_bold("\The [src]") + " shuts down."))
+		turn_off()
+		return PROCESS_KILL
+	set_pumping(TRUE)
+	if(update_pump_mode() == MODE_IDLE)
 		hibernate_until_temperature_changes()
 		return PROCESS_KILL
 
-	var/datum/gas_mixture/removed = env.remove_ratio(0.99)
-	if(!removed)
+/// Shows whether the room is being heated or cooled. Returns the mode.
+/obj/machinery/power/thermoregulator/proc/update_pump_mode()
+	var/datum/gas_mixture/env = loc?.return_air()
+	var/gap = env ? target_temp - env.return_temperature() : 0
+	if(abs(gap) < 1)
 		change_mode(MODE_IDLE)
-		hibernate_until_temperature_changes()
-		return PROCESS_KILL
-
-	var/heat_transfer = removed.get_thermal_energy_change(target_temp)
-	var/power_avail
-	if(heat_transfer == 0) //just in case
-		change_mode(MODE_IDLE)
-	else if(heat_transfer > 0)
-		change_mode(MODE_HEATING)
-		power_avail = draw_power(min(heat_transfer, active_power_usage))
-		removed.add_thermal_energy(min(power_avail*5,heat_transfer))
 	else
-		change_mode(MODE_COOLING)
-		heat_transfer = abs(heat_transfer)
-		// H4: the Carnot-bounded COP formula lives once in Rust now
-		// (rust_core.md §15's "the heat regulator" row) instead of this
-		// unit's own `removed.return_temperature()/TN60C` approximation;
-		// "other" (the hot side rejected heat goes to) is treated as
-		// station-ambient, same reasoning as apply_regulator_step's.
-		var/cop = vg_heat_regulator_cooling_cop(removed.return_temperature(), T20C, regulator_carnot_fraction, regulator_max_cop)
-		var/actual_heat_transfer = heat_transfer
-		heat_transfer = min(heat_transfer, active_power_usage*cop)
-		power_avail = draw_power(heat_transfer/cop)
-		removed.add_thermal_energy(-min(power_avail*5*cop,actual_heat_transfer))
-	env.merge(removed)
+		change_mode(gap > 0 ? MODE_HEATING : MODE_COOLING)
+	return mode
 
 /obj/machinery/power/thermoregulator/proc/appearance_mode()
 	if(!on)
@@ -289,6 +238,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/thermoregulator, "appearance_mode", list
 
 /obj/machinery/power/thermoregulator/proc/turn_off()
 	set_on(FALSE)
+	set_pumping(FALSE)
 	change_mode(MODE_IDLE)
 	update_icon()
 
@@ -320,6 +270,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/thermoregulator, "appearance_mode", list
 	if(!on)
 		set_on(TRUE)
 	target_temp += rand(0, 1000)
+	heat_entries_refresh(src)
 	wake_for_state_change()
 	update_icon()
 	return HOOK_DECLINE
@@ -328,12 +279,8 @@ DECLARE_APPEARANCE(/obj/machinery/power/thermoregulator, "appearance_mode", list
 	if(!anchored || !power_region)
 		return
 	var/power_avail = draw_power(active_power_usage*10)
-	var/datum/gas_mixture/env = loc.return_air()
-	if(env)
-		var/datum/gas_mixture/removed = env.remove_ratio(0.99)
-		if(removed)
-			removed.add_thermal_energy(power_avail*5)
-			env.merge(removed)
+	// The surge burns through its coils: what it drew becomes heat in the room, one for one.
+	heat_add(loc.return_air(), power_avail, HEAT_SOURCE_DEVICE)
 	var/turf/T = get_turf(src)
 	new /obj/effect/decal/cleanable/liquid_fuel(T, 5)
 	T.assume_gas(GAS_VOLATILE_FUEL, 5, T20C)

@@ -20,7 +20,7 @@
 	icon_state = null
 	min_force = 20 //minimum amount of force needed to damage the door with a melee weapon
 	var/datum/material/implicit_material
-	// Icon states for different shutter types. Simply change this instead of rewriting the update_icon proc.
+	// Icon states for different shutter types: draw() shows the open or closed one.
 	var/icon_state_open = null
 	var/icon_state_opening = null
 	var/icon_state_closed = null
@@ -53,10 +53,10 @@
 	if(!density)
 		return ..()
 
-// Proc: update_icon()
-// Parameters: None
-// Description: Updates icon of this object. Uses icon state variables.
-APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@icon_state_open}")
+/// The look: the shut or open state its type names (icon_state_closed / icon_state_open).
+/obj/machinery/door/blast/draw(datum/look/look)
+	..()
+	look.state(density ? icon_state_closed : icon_state_open)
 
 // Blast doors are triggered remotely, so nobody is allowed to physically influence it.
 /obj/machinery/door/blast/allowed(mob/M)
@@ -215,7 +215,6 @@ CAPABILITIES(/obj/machinery/door/blast)
 	flick(icon_state_opening, src)
 	set_density(FALSE)
 	update_nearby_tiles()
-	update_icon()
 	set_opacity(0)
 	set_rad_insulation(RAD_NO_INSULATION)
 	after(src, 1.5 SECONDS, PROC_REF(complete_force_open), key = "swing_open", clock = CLOCK_WORLD)
@@ -239,7 +238,6 @@ CAPABILITIES(/obj/machinery/door/blast)
 	flick(icon_state_closing, src)
 	set_density(TRUE)
 	update_nearby_tiles()
-	update_icon()
 	set_rad_insulation(closed_rad_insulation())
 	if(istransparent)
 		set_opacity(0)

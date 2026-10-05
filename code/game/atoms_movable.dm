@@ -339,6 +339,8 @@
 		light.source_atom.update_light()
 	if(!isnull(heat_body))
 		heat_recouple()
+	if(GLOB.heat_followers_of[src])
+		heat_followers_moved(src)
 	return TRUE
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)

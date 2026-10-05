@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "d5187c0b1ec555c5"
+#define VERDIGRIS_ABI "a530a8b20feb12d9"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -235,6 +235,11 @@
 /// Fire and burning.
 // verdigris/ffi/src/heat_net.rs
 #define HEAT_SOURCE_FIRE 3
+
+/// A material's own heat model (material science's DM solid state) giving
+/// heat to or taking it from a gas.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_MATERIAL 9
 
 /// Metabolism: a living body's own heat.
 // verdigris/ffi/src/heat_net.rs
@@ -1057,6 +1062,15 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(id, param, value)
 
+/// The electrical work an edge exchanged since this was last called, J
+/// (positive: a pump drew it; negative: an engine made it), and resets it:
+/// what a machine pays from its cell or grid, exactly what Rust booked.
+// /proc/heat_edge_take_work (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_take_work(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_take_work_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
 /// A heat engine between two reservoirs: heat flows from the hotter to the
 /// colder through `conductance` W/K and `efficiency` of it (capped at Carnot)
 /// leaves as electrical work, read back with `heat_edge_power`. Returns the
@@ -1066,6 +1080,16 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_engine_create_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(hot_kind, hot_ref, cold_kind, cold_ref, efficiency, conductance)
+
+/// Moves `fraction` (0..1) of the way to the common temperature of two
+/// reservoirs in one conserved operation (1: both end at the mixed
+/// temperature, as if they were one body). Returns the joules moved from
+/// the first to the second.
+// /proc/heat_equalize (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_equalize(a_kind, a_ref, b_kind, b_ref, fraction)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_equalize_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, fraction)
 
 /// A conduction (and radiation) link between two reservoirs: `conductance`
 /// W/K, plus `εσA(T_a⁴ − T_b⁴)` when `emissivity` and `area` (m²) are
@@ -1157,6 +1181,16 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_reset_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
+
+/// Sets a reservoir's thermal energy to `joules` (its floor at least) by an
+/// external, booked source: a reaction that changed a gas's composition and
+/// released or consumed `joules - before` (`HEAT_SOURCE_REACTION`). Returns
+/// the joules added.
+// /proc/heat_set_energy (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_set_energy(kind, r, joules, source)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_set_energy_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind, r, joules, source)
 
 // /turf/proc/heat_set_turf (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_set_turf(turf, kind, capacity, conductivity, emissivity, temperature, air)

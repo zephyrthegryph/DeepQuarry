@@ -74,7 +74,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 			var/datum/gas_mixture/above_air = return_air()
 			var/amount = 300
 			water_breath.adjust_gas(GAS_O2, amount) // Assuming water breathes just extract the oxygen directly from the water.
-			water_breath.set_temperature(above_air.return_temperature())
+			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
 		else
 			var/gasid = GAS_CO2
@@ -85,7 +85,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 			var/datum/gas_mixture/water_breath = new()
 			var/datum/gas_mixture/above_air = return_air()
 			water_breath.adjust_gas(gasid, BREATH_MOLES) // They have no oxygen, but non-zero moles and temp
-			water_breath.set_temperature(above_air.return_temperature())
+			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
 	if(L && L.is_bad_swimmer() && depth >= 2 && !L.buckled() && !L.flying)
 		if(prob(10))
@@ -95,7 +95,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 			var/datum/gas_mixture/above_air = return_air()
 			var/amount = 300
 			water_breath.adjust_gas(GAS_O2, amount) // Assuming water breathes just extract the oxygen directly from the water.
-			water_breath.set_temperature(above_air.return_temperature())
+			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
 		else
 			var/gasid = GAS_CO2
@@ -106,7 +106,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 			var/datum/gas_mixture/water_breath = new()
 			var/datum/gas_mixture/above_air = return_air()
 			water_breath.adjust_gas(gasid, BREATH_MOLES) // They have no oxygen, but non-zero moles and temp
-			water_breath.set_temperature(above_air.return_temperature())
+			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
 	return return_air() // Otherwise their head is above the water, so get the air from the atmosphere instead.
 

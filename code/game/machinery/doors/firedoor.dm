@@ -271,7 +271,6 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 		act_message(user, src, others = span_alium("%U% digs into %T% internals!"))
 		play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 		set_blocked(0)
-		update_icon()
 		force_open_by(user)
 	else if(density)
 		play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
@@ -364,7 +363,6 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 		MSG_BLIND("You hear something being welded."), \
 		item = welder)
 	playsound(src, welder.usesound, 100, TRUE)
-	update_icon()
 	return OP_OK
 
 /// A screwdriver opens or closes the maintenance hatch of a shut door.
@@ -374,7 +372,6 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	playsound(src, A.held.usesound, 50, TRUE)
 	act_message(user, src, MSG_SELF("You have [hatch_open ? "opened" : "closed"] %T% maintenance hatch."), \
 		MSG_OTHERS(span_danger("%U% has [hatch_open ? "opened" : "closed"] %T% maintenance hatch.")))
-	update_icon()
 	return OP_OK
 
 /// The hatch is open on a shut door (the electronics can be reached).
@@ -494,7 +491,7 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	if(!any_alerts)
 		dir_alerts = null
 	if(redraw)
-		update_icon()
+		changed(src) // the alert lights are no tracked var: the look is redrawn by hand
 
 /obj/machinery/door/firedoor/proc/firedoor_temperature_band(temperature)
 	// Auxmos publishes temperatures as 32-bit floats. Allow a tiny boundary
@@ -534,7 +531,6 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	if(hatch_open)
 		set_hatch_open(0)
 		visible_message("The maintenance hatch of \the [src] closes.")
-		update_icon()
 
 	if(!forced)
 		if(!operable())
@@ -553,15 +549,6 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 			playsound(src, close_sound, 37, 1) // var
 			flick("door_closing", src)
 	return
-
-// The door template the base door declares (door.dm) doesn't apply: draw() below is the look.
-APPEARANCE_NONE(/obj/machinery/door/firedoor)
-
-/// Bridge while door.dm's other doors still draw through update_icon(): its shared procs call update_icon(), which marks the firedoor changed so
-/// draw() runs.
-// ALLOW(sys_update_icon): bridge only; it draws nothing, it marks the firedoor so draw() runs
-/obj/machinery/door/firedoor/update_icon()
-	changed(src)
 
 /obj/machinery/door/firedoor/draw(datum/look/look)
 	..()

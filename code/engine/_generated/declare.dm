@@ -1408,15 +1408,15 @@
 	into += entry_line(441)
 	into += list(global.op("attach", global.ui_act(global.arg("wire", global.schema_text(32))), global.needs(req_wires_in_reach(), global.req(PROC_REF(can_attach), because = MSG(wires/need_signaler))), global.then(PROC_REF(attach_pressed))))
 
-/// CAPABILITIES(/datum/cap_data/wires/airlock) at code/game/machinery/doors/airlock.dm:1254
+/// CAPABILITIES(/datum/cap_data/wires/airlock) at code/game/machinery/doors/airlock.dm:1245
 /datum/cap_data/wires/airlock/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/airlock.dm", 1254, /datum/cap_data/wires/airlock)
-	into += entry_line(1255)
+	into += entry_block("code/game/machinery/doors/airlock.dm", 1245, /datum/cap_data/wires/airlock)
+	into += entry_line(1246)
 	into += list(global.op("set_id_tag", global.ui_act(), global.needs(req_wires_in_reach()), global.asks(/datum/prompt/text, fields = list("title" = "ID Tag", "question" = "Enter a new ID tag", "default" = global.computed(PROC_REF(id_tag_now)), "max_len" = 60)), global.then(PROC_REF(id_tag_answered))))
-	into += entry_line(1258)
+	into += entry_line(1249)
 	into += list(global.op("set_frequency", global.ui_act(global.arg("freq", global.num())), global.needs(req_wires_in_reach()), global.then(PROC_REF(frequency_set))))
-	into += entry_line(1259)
+	into += entry_line(1250)
 	into += list(global.op("clear_frequency", global.ui_act(), global.needs(req_wires_in_reach()), global.then(PROC_REF(frequency_cleared))))
 
 /// CAPABILITIES(/datum/capability/construction) at code/datums/capabilities/construction.dm:55
@@ -16323,17 +16323,19 @@
 	into += entry_line(81)
 	into += list(global.owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary/freezer) at code/ATMOSPHERICS/components/unary/cold_sink.dm:1
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/freezer) at code/ATMOSPHERICS/components/unary/cold_sink.dm:3
 /obj/machinery/atmospherics/unary/freezer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/cold_sink.dm", 1, /obj/machinery/atmospherics/unary/freezer)
-	into += entry_line(2)
+	into += entry_block("code/ATMOSPHERICS/components/unary/cold_sink.dm", 3, /obj/machinery/atmospherics/unary/freezer)
+	into += entry_line(6)
+	into += list(global.when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_COOL, FALSE, nameof(carnot_fraction), nameof(max_cop))))
+	into += entry_line(7)
 	into += list(global.op("toggleStatus", global.ui_act("toggleStatus"), global.then(PROC_REF(ui_act_togglestatus))))
-	into += entry_line(3)
+	into += entry_line(8)
 	into += list(global.interface("GasTemperatureSystem"))
-	into += entry_line(4)
+	into += entry_line(9)
 	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
-	into += entry_line(5)
+	into += entry_line(10)
 	into += list(global.op("setPower", global.ui_act("setPower", global.arg("value", global.num())), global.then(PROC_REF(ui_act_setpower))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger) at code/ATMOSPHERICS/components/unary/heat_exchanger.dm:20
@@ -16345,17 +16347,19 @@
 	into += entry_line(22)
 	into += list(global.entry_link("/obj/machinery/atmospherics/unary/heat_exchanger::partner", "/obj/machinery/atmospherics/unary/heat_exchanger::partner"))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary/heater) at code/ATMOSPHERICS/components/unary/heat_source.dm:1
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/heater) at code/ATMOSPHERICS/components/unary/heat_source.dm:3
 /obj/machinery/atmospherics/unary/heater/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/heat_source.dm", 1, /obj/machinery/atmospherics/unary/heater)
-	into += entry_line(2)
-	into += list(global.op("toggleStatus", global.ui_act("toggleStatus"), global.then(PROC_REF(ui_act_togglestatus))))
-	into += entry_line(3)
-	into += list(global.interface("GasTemperatureSystem"))
-	into += entry_line(4)
-	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
+	into += entry_block("code/ATMOSPHERICS/components/unary/heat_source.dm", 3, /obj/machinery/atmospherics/unary/heater)
 	into += entry_line(5)
+	into += list(global.when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_HEAT, TRUE)))
+	into += entry_line(6)
+	into += list(global.op("toggleStatus", global.ui_act("toggleStatus"), global.then(PROC_REF(ui_act_togglestatus))))
+	into += entry_line(7)
+	into += list(global.interface("GasTemperatureSystem"))
+	into += entry_line(8)
+	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
+	into += entry_line(9)
 	into += list(global.op("setPower", global.ui_act("setPower", global.arg("value", global.num())), global.then(PROC_REF(ui_act_setpower))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump) at code/ATMOSPHERICS/components/unary/vent_pump.dm:51
@@ -18061,31 +18065,31 @@
 	into += entry_line(14)
 	into += list(global.op("block", global.item(/obj/item), global.when(global.req(PROC_REF(item_blocked))), global.priority(OP_PRIORITY_SUBVERT), global.then(PROC_REF(item_swallowed))))
 
-/// CAPABILITIES(/obj/machinery/door/window) at code/game/machinery/doors/windowdoor.dm:164
+/// CAPABILITIES(/obj/machinery/door/window) at code/game/machinery/doors/windowdoor.dm:167
 /obj/machinery/door/window/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/windowdoor.dm", 164, /obj/machinery/door/window)
-	into += entry_line(165)
-	into += list(global.without("reinforce"))
-	into += entry_line(166)
-	into += list(global.without("weld_plasteel"))
-	into += entry_line(167)
-	into += list(global.without("unreinforce"))
+	into += entry_block("code/game/machinery/doors/windowdoor.dm", 167, /obj/machinery/door/window)
 	into += entry_line(168)
-	into += list(global.without("repair"))
+	into += list(global.without("reinforce"))
 	into += entry_line(169)
-	into += list(global.owns_one(nameof(electronics), /obj/item/airlock_electronics))
+	into += list(global.without("weld_plasteel"))
 	into += entry_line(170)
-	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(door_emp))))
+	into += list(global.without("unreinforce"))
 	into += entry_line(171)
-	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.label("Slice open"), global.when(PROC_REF(not_swinging)), global.priority(OP_PRIORITY_TAKE_OUT), global.wait(0), global.then(PROC_REF(sliced_open))))
+	into += list(global.without("repair"))
 	into += entry_line(172)
-	into += list(global.op("shred", global.hand(), global.hostile(), global.label("Smash"), global.when(global.req(PROC_REF(claws_shred))), global.wait(0), global.then(PROC_REF(shredded))))
+	into += list(global.owns_one(nameof(electronics), /obj/item/airlock_electronics))
 	into += entry_line(173)
-	into += list(global.op("weld_repair", global.tool(TOOL_WELDER), global.stance(I_HELP), global.label("Repair"), global.when(PROC_REF(not_swinging)), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.costs(RES_FUEL, 1), global.needs(global.req(PROC_REF(damaged_now), because = MSG(windoor/good_condition))), global.then(PROC_REF(repaired)), global.says(MSG(windoor/repaired))))
+	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(door_emp))))
+	into += entry_line(174)
+	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.label("Slice open"), global.when(PROC_REF(not_swinging)), global.priority(OP_PRIORITY_TAKE_OUT), global.wait(0), global.then(PROC_REF(sliced_open))))
 	into += entry_line(175)
-	into += list(global.op("crowbar_shut", global.tool(TOOL_CROWBAR), global.when(nameof(density)), global.priority(OP_PRIORITY_PART), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += list(global.op("shred", global.hand(), global.hostile(), global.label("Smash"), global.when(global.req(PROC_REF(claws_shred))), global.wait(0), global.then(PROC_REF(shredded))))
 	into += entry_line(176)
+	into += list(global.op("weld_repair", global.tool(TOOL_WELDER), global.stance(I_HELP), global.label("Repair"), global.when(PROC_REF(not_swinging)), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.costs(RES_FUEL, 1), global.needs(global.req(PROC_REF(damaged_now), because = MSG(windoor/good_condition))), global.then(PROC_REF(repaired)), global.says(MSG(windoor/repaired))))
+	into += entry_line(178)
+	into += list(global.op("crowbar_shut", global.tool(TOOL_CROWBAR), global.when(nameof(density)), global.priority(OP_PRIORITY_PART), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += entry_line(179)
 	into += list(global.op("pry_out", global.tool(TOOL_CROWBAR), global.label("Pry out of the frame"), global.when(global.cond_not(nameof(density))), global.when(PROC_REF(not_swinging)), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.then(PROC_REF(pried_out))))
 
 /// CAPABILITIES(/obj/machinery/door_timer) at code/game/machinery/doors/brigdoors.dm:51
@@ -19577,13 +19581,15 @@
 	into += entry_line(54)
 	into += list(global.on_wire(WIRE_TESLACOIL_ZAP, pulse = PROC_REF(zap_wire_pulsed)))
 
-/// CAPABILITIES(/obj/machinery/power/thermoregulator) at code/game/machinery/airconditioner.dm:155
+/// CAPABILITIES(/obj/machinery/power/thermoregulator) at code/game/machinery/airconditioner.dm:112
 /obj/machinery/power/thermoregulator/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/airconditioner.dm", 155, /obj/machinery/power/thermoregulator)
-	into += entry_line(156)
+	into += entry_block("code/game/machinery/airconditioner.dm", 112, /obj/machinery/power/thermoregulator)
+	into += entry_line(113)
 	into += list(global.climb())
-	into += entry_line(157)
+	into += entry_line(116)
+	into += list(global.when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heat_pump_watts), nameof(target_temp), HEAT_PUMP_BOTH, FALSE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop))))
+	into += entry_line(117)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(thermoregulator_emp)))))
 
 /// CAPABILITIES(/obj/machinery/power/turbine) at code/modules/power/turbine.dm:321
@@ -20044,19 +20050,21 @@
 	into += entry_line(364)
 	into += list(global.extend("release", global.needs(global.req(PROC_REF(ui_gate), silent = TRUE))))
 
-/// CAPABILITIES(/obj/machinery/space_heater) at code/game/machinery/spaceheater.dm:51
+/// CAPABILITIES(/obj/machinery/space_heater) at code/game/machinery/spaceheater.dm:52
 /obj/machinery/space_heater/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/spaceheater.dm", 51, /obj/machinery/space_heater)
-	into += entry_line(52)
-	into += list(global.climb())
+	into += entry_block("code/game/machinery/spaceheater.dm", 52, /obj/machinery/space_heater)
 	into += entry_line(53)
-	into += list(global.interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state)))
-	into += entry_line(54)
-	into += list(global.op("temp", global.ui_act("temp", global.arg("newtemp", global.num())), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_temp))))
-	into += entry_line(55)
-	into += list(global.op("cellremove", global.ui_act("cellremove"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellremove))))
+	into += list(global.climb())
 	into += entry_line(56)
+	into += list(global.when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heating_power), nameof(set_temperature), HEAT_PUMP_BOTH, TRUE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop))))
+	into += entry_line(57)
+	into += list(global.interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state)))
+	into += entry_line(58)
+	into += list(global.op("temp", global.ui_act("temp", global.arg("newtemp", global.num())), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_temp))))
+	into += entry_line(59)
+	into += list(global.op("cellremove", global.ui_act("cellremove"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellremove))))
+	into += entry_line(60)
 	into += list(global.op("cellinstall", global.ui_act("cellinstall"), global.needs(global.req(PROC_REF(ui_gate), silent = TRUE)), global.then(PROC_REF(ui_act_cellinstall))))
 
 /// CAPABILITIES(/obj/machinery/sparker) at code/game/machinery/igniter.dm:113
@@ -23405,6 +23413,34 @@
 	into += entry_block("code/modules/unit_tests/dq_medpod_library_tests.dm", 23, /obj/machinery/dq_pod_fixture/south_exit)
 	into += entry_line(24)
 	into += list(global.configure(global.occupant_pod(OCCUPANT_SLOT_TEST_FIXTURE, exit_to = SOUTH)))
+
+/// CAPABILITIES(/obj/machinery/heat_fixture/chiller) at code/tests/domains/heat_fixtures.dm:33
+/obj/machinery/heat_fixture/chiller/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 33, /obj/machinery/heat_fixture/chiller)
+	into += entry_line(34)
+	into += list(global.when(nameof(heat_on), heat_pump(nameof(cold), nameof(gas), 2000, 200, mode = HEAT_PUMP_COOL)))
+
+/// CAPABILITIES(/obj/machinery/heat_fixture/engine) at code/tests/domains/heat_fixtures.dm:39
+/obj/machinery/heat_fixture/engine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 39, /obj/machinery/heat_fixture/engine)
+	into += entry_line(40)
+	into += list(global.when(nameof(heat_on), heat_engine(nameof(gas), nameof(cold), 0.5, 100)))
+
+/// CAPABILITIES(/obj/machinery/heat_fixture/plate) at code/tests/domains/heat_fixtures.dm:21
+/obj/machinery/heat_fixture/plate/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 21, /obj/machinery/heat_fixture/plate)
+	into += entry_line(22)
+	into += list(global.when(nameof(heat_on), heat_link(nameof(gas), HEAT_AIR, nameof(conductance))))
+
+/// CAPABILITIES(/obj/machinery/heat_fixture/pod) at code/tests/domains/heat_fixtures.dm:27
+/obj/machinery/heat_fixture/pod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 27, /obj/machinery/heat_fixture/pod)
+	into += entry_line(28)
+	into += list(global.when(nameof(heat_on), global.while_slotted("heat_pod", heat_link(HEAT_HOLDER, nameof(gas), nameof(conductance)), on = ON_CONTENTS)))
 
 /// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:117
 /obj/machinery/p2_box/declared_entries(list/into)

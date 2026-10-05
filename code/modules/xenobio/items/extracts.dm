@@ -377,7 +377,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
 		// This is most likely physically impossible but when has that stopped slimes before?
-		env.add_thermal_energy(15 * 1000 * 1000)
+		heat_add(env, 15 * 1000 * 1000, HEAT_SOURCE_REACTION)
 
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
 	..()
@@ -722,7 +722,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
 		// This is most likely physically impossible but when has that stopped slimes before?
-		env.add_thermal_energy(-10 * 1000 * 1000) // For a moderately sized room this doesn't actually lower it that much.
+		heat_add(env, -10 * 1000 * 1000, HEAT_SOURCE_REACTION) // For a moderately sized room this doesn't actually lower it that much.
 
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
 

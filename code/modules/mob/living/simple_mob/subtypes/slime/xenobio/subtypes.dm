@@ -259,7 +259,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		env.add_thermal_energy(-10 * 1000)
+		heat_add(env, -10 * 1000, HEAT_SOURCE_OTHER)
 
 /mob/living/simple_mob/slime/xenobio/dark_blue/apply_melee_effects(atom/A)
 	..()

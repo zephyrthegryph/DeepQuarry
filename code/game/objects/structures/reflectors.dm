@@ -354,5 +354,5 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 
 /obj/machinery/portable_atmospherics/canister/phoron/cold/Initialize(mapload)
 	. = ..()
-	src.air_contents.set_temperature(2.72)
+	heat_set(src.air_contents, 2.72)
 

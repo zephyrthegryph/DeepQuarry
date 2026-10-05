@@ -584,7 +584,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 		var/datum/gas_mixture/_air = T.return_air()
 		if(_air)
 			LINDA_GAS_ADJUST(_air, GAS_N2, 450)
-			_air.set_temperature(50)
+			heat_set(_air, 50)
 
 
 	log_admin("[key_name(user)] setup the supermatter engine [response == "Setup except coolant" ? "without coolant" : ""]")

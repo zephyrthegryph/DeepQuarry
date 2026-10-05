@@ -23,7 +23,7 @@
 			fixture_turf.air.set_moles(gas, 0)
 		fixture_turf.air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
 		fixture_turf.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
-		fixture_turf.air.set_temperature(T20C)
+		heat_set(fixture_turf.air, T20C)
 		fixture_turf.air_update_turf(FALSE, FALSE)
 	var/seconds = param("seconds", 40)
 	detail("life_sweep_scheduler", life_bench_scheduler())

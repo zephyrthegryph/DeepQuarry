@@ -128,11 +128,11 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	// auxmos archiving.
 	PT.air_contents.adjust_gas(GAS_PHORON, (phoron) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
 	PT.air_contents.adjust_gas(GAS_CO2, (carbon) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
-	PT.air_contents.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE+1)
+	heat_set(PT.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
 	OT.valve_welded = 1
 	OT.air_contents.adjust_gas(GAS_O2, (oxygen) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
-	OT.air_contents.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE+1)
+	heat_set(OT.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
 	var/obj/item/assembly/S = new assembly_type(V)
 	rel_set(V, nameof(V.attached_device), S)

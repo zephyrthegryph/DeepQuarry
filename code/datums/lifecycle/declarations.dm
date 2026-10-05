@@ -375,7 +375,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/volume = lifecycle_decl_value(D, gas[2])
 	var/temperature = lifecycle_decl_value(D, gas[3]) || T20C
 	var/datum/gas_mixture/mix = new /datum/gas_mixture(volume)
-	mix.set_temperature(temperature)
+	heat_set(mix, temperature)
 	var/list/gases = gas[4]
 	for(var/gas_id in gases)
 		mix.adjust_gas(gas_id, gases[gas_id] * volume / (R_IDEAL_GAS_EQUATION * temperature))

@@ -120,7 +120,6 @@ CAPABILITIES(/obj/machinery/door)
 			bound_width = world.icon_size
 			bound_height = width * world.icon_size
 
-	update_icon()
 
 	update_nearby_tiles(need_rebuild=1)
 
@@ -361,7 +360,6 @@ CAPABILITIES(/obj/machinery/door)
 /// The welder finished: the door is heat proof and the sheets are spent.
 /obj/machinery/door/proc/plasteel_welded(datum/act/op/A)
 	heat_proof = TRUE
-	update_icon()
 	set_reinforcing(0)
 	return OP_OK
 
@@ -400,7 +398,6 @@ CAPABILITIES(/obj/machinery/door)
 
 /obj/machinery/door/on_update_integrity(old_value, new_value)
 	. = ..()
-	update_icon()
 
 /obj/machinery/door/atom_break(damage_flag)
 	. = ..()
@@ -411,7 +408,10 @@ CAPABILITIES(/obj/machinery/door)
 /obj/machinery/door/proc/on_broken()
 	visible_message("[name] breaks!")
 
-APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
+/// The look: a shut door shows "door1", an open one "door0" (density is tracked, so a swing redraws it). Subtypes draw their own.
+/obj/machinery/door/draw(datum/look/look)
+	..()
+	look.state("door[density]")
 
 /obj/machinery/door/proc/do_animate(animation)
 	switch(animation)
@@ -458,7 +458,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 	SHOULD_NOT_OVERRIDE(TRUE)
 	layer = open_layer
 	explosion_resistance = 0
-	update_icon()
 	set_opacity(0)
 	set_operating(0)
 
@@ -508,7 +507,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 
 /obj/machinery/door/proc/close_internalfinish(forced = 0)
 	PROTECTED_PROC(TRUE) //do not touch this or BYOND will devour you
-	update_icon()
 	if(visible && !glass)
 		set_opacity(1)	//caaaaarn!
 	set_operating(0)

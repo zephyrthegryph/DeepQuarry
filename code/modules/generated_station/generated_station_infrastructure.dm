@@ -10,7 +10,7 @@
 		return FALSE
 	for(var/gas_type in GLOB.meta_gas_info)
 		air.set_moles(gas_type, 0)
-	air.set_temperature(T20C)
+	heat_set(air, T20C)
 	air.set_volume(CELL_VOLUME)
 	var/standard_moles = ONE_ATMOSPHERE * air.return_volume() / (R_IDEAL_GAS_EQUATION * T20C)
 	air.set_moles(/datum/gas/oxygen, standard_moles * O2STANDARD)

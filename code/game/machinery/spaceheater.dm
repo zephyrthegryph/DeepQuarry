@@ -28,13 +28,12 @@
 	var/max_temperature = DEFAULT_MAX_TEMP
 	var/heating_power = 40000
 	var/power_efficiency = 1 //Inverse. The lower, the more power efficient we are.
-	/// Fraction of the Carnot COP this heater's cooling side achieves (H4:
-	/// the real Carnot-bounded COP formula lives once in Rust now,
-	/// rust_core.md §15, replacing the old `removed.return_temperature() /
-	/// T20C` approximation below).
+	/// Fraction of the Carnot COP its cooling side achieves (the heat pump's COP is Rust's, Carnot-bounded).
 	var/regulator_carnot_fraction = 0.4
 	/// Upper bound on the pump's COP.
 	var/regulator_max_cop = 25
+	/// TRUE while it works the room's air: its heat pump exists exactly while this is set.
+	var/pumping = FALSE
 	clicksound = SFX_SWITCH
 	interact_offline = TRUE
 	bubble_icon = "engineering"
@@ -48,8 +47,13 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 // Regulates the air while switched on (any state but SHEATER_OFF).
 DECLARE_PERIODIC_WHILE(/obj/machinery/space_heater, MACHINE_PIPELINE, "state")
 
+TRACKED(/obj/machinery/space_heater, pumping)
+
 CAPABILITIES(/obj/machinery/space_heater)
 	climb()
+	// A heat pump on the room's air toward the thermostat: it heats resistively, one joule of heat per joule drawn, and cools by
+	// pumping into the station's heat-rejection loop at a Carnot-bounded COP. Its work is paid from the cell (machine_step()).
+	when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heating_power), nameof(set_temperature), HEAT_PUMP_BOTH, TRUE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop)))
 	interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state))
 	op("temp", ui_act("temp", arg("newtemp", num())), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_temp)))
 	op("cellremove", ui_act("cellremove"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellremove)))
@@ -171,6 +175,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		tgui_interact(user)
 	else
 		set_state(state ? SHEATER_OFF : SHEATER_STANDBY)
+		if(state == SHEATER_OFF)
+			set_pumping(FALSE)
 		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")),
 			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
 	return
@@ -208,6 +214,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 /obj/machinery/space_heater/proc/ui_act_temp(datum/act/op/A, newtemp)
 	// limit to 0-90 degC
 	set_temperature = clamp(newtemp, min_temperature, max_temperature)
+	heat_entries_refresh(src)
 	. = TRUE
 
 /obj/machinery/space_heater/proc/ui_act_cellremove(datum/act/op/A)
@@ -235,40 +242,25 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 				item = C)
 		. = TRUE
 
+/// The heat pump (its CAPABILITIES entry) works the air in Rust; the step pays its work from the cell and shows what it does.
 /obj/machinery/space_heater/machine_step()
-	if(cell && cell.charge)
-		var/datum/gas_mixture/env = loc.return_air()
-		if(env && abs(env.return_temperature() - set_temperature) > 0.1)
-			var/transfer_moles = 0.25 * env.total_moles()
-			var/datum/gas_mixture/removed = env.remove(transfer_moles)
-			if(removed)
-				var/heat_transfer = removed.get_thermal_energy_change(set_temperature)
-				if(heat_transfer > 0)	//heating air
-					if(state == SHEATER_STANDBY)
-						set_state(SHEATER_HEAT)
-					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater
-
-					removed.add_thermal_energy(heat_transfer)
-					cell.use(heat_transfer*CELLRATE*power_efficiency)
-				else	//cooling air
-					if(state == SHEATER_STANDBY)
-						set_state(SHEATER_COOL)
-					heat_transfer = abs(heat_transfer)
-
-					//Assume the heat is being pumped into the hull which is fixed at 20 C
-					var/cop = vg_heat_regulator_cooling_cop(removed.return_temperature(), T20C, regulator_carnot_fraction, regulator_max_cop) //power used = heat_transfer/cop
-					heat_transfer = min(heat_transfer, cop * heating_power)	//limit heat transfer by available power
-					heat_transfer = removed.add_thermal_energy(-heat_transfer)	//get the actual heat transfer
-
-					var/power_used = abs(heat_transfer)/cop
-					cell.use(power_used*CELLRATE*power_efficiency)
-
-			env.merge(removed)
-	else
+	if(!cell || !cell.charge)
+		set_pumping(FALSE)
 		set_state(SHEATER_OFF)
 		power_change()
 		update_icon()
 		return PROCESS_KILL
+	var/drawn = heat_entries_bill(src)
+	if(drawn > 0)
+		cell.use(drawn * CELLRATE * power_efficiency)
+	if(!pumping)
+		set_pumping(TRUE)
+	var/datum/gas_mixture/env = loc.return_air()
+	var/gap = env ? set_temperature - env.return_temperature() : 0
+	if(abs(gap) <= 0.1)
+		set_state(SHEATER_STANDBY)
+	else
+		set_state(gap > 0 ? SHEATER_HEAT : SHEATER_COOL)
 
 /obj/machinery/space_heater/power_change()
 	. = ..()

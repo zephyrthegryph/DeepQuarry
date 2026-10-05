@@ -267,7 +267,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 		max_integrity -= rand(20,60)
 		if(get_integrity() > max_integrity)
 			update_integrity(max_integrity)
-		src.air_contents.add_thermal_energy(rand(2000,50000))
+		heat_add(src.air_contents, rand(2000,50000), HEAT_SOURCE_OTHER)
 
 DECLARE_INTERACTIONS(/obj/item/tank, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -611,7 +611,7 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(src.air_contents, GAS_O2))
 	// update_values() removed; no-op under LINDA.
 	src.valve_welded = 1
-	src.air_contents.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE-1)
+	heat_set(src.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE-1, HEAT_SOURCE_OTHER)
 
 	src.wired = 1
 
@@ -707,7 +707,7 @@ TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/small, oxygen_bomb_forced_fill, 0)
 	src.update_icon()
 	src.update_gauge()
 
-	air_contents.add_thermal_energy(15000)
+	heat_add(air_contents, 15000, HEAT_SOURCE_OTHER)
 
 DECLARE_APPEARANCE_PROC(/obj/item/tankassemblyproxy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/tankassemblyproxy/appearance_overlays()

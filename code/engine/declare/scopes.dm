@@ -19,6 +19,8 @@
 	if(T.hook_flags & ENGINE_HOOK_STATS)
 		stat_holder_init(holder, mapload)
 	hooks_change_baseline(holder)
+	if(T.hook_flags & ENGINE_HOOK_COND_SCOPED)
+		activations_cond_init(holder, T)
 	type_every_arm(holder, T)
 	if(T.hook_flags & ENGINE_HOOK_AFTER_INIT)
 		after_init_note(holder, mapload)

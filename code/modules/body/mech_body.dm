@@ -360,10 +360,10 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 		if(int_tank_air && int_tank_air.return_pressure() > TANK_LEAK_PRESSURE)
 			plan.afflict(host, MECHA_INT_TANK_BREACH)
 		if(int_tank_air && int_tank_air.return_volume() > 0)
-			int_tank_air.set_temperature(min(6000 + T0C, int_tank_air.return_temperature() + rand(10, 15)))
+			heat_set(int_tank_air, min(6000 + T0C, int_tank_air.return_temperature() + rand(10, 15)), HEAT_SOURCE_FIRE)
 	var/datum/gas_mixture/cabin = host.cabin_air
 	if(cabin && cabin.return_volume() > 0)
-		cabin.set_temperature(min(6000 + T0C, cabin.return_temperature() + rand(10, 15)))
+		heat_set(cabin, min(6000 + T0C, cabin.return_temperature() + rand(10, 15)), HEAT_SOURCE_FIRE)
 		var/cabin_temp = cabin.return_temperature()
 		if(cabin_temp > host.max_temperature / 2)
 			plan.injure(host, 4 / round(host.max_temperature / cabin_temp, 0.1), FIRE)

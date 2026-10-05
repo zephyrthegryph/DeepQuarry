@@ -655,8 +655,8 @@ pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
     .inspect(|_| {
         if due {
             // The heat network's edges, over the world time since their last step (exact for any interval).
-            if let Ok(now) = with_world(|w| Ok(w.now())) {
-                crate::heat_net::step(now);
+            if let Ok((now, dt)) = with_world(|w| Ok((w.now(), w.dt().0))) {
+                crate::heat_net::step(now, dt);
             }
         }
     })
@@ -762,6 +762,8 @@ fn world_run_steps(steps: ByondValue) -> Result<ByondValue> {
             w.step_blocking();
             Ok(())
         })?;
+        let (now, dt) = with_world(|w| Ok((w.now(), w.dt().0)))?;
+        crate::heat_net::step(now, dt);
     }
     Ok(ByondValue::null())
 }

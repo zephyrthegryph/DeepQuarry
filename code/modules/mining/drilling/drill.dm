@@ -168,7 +168,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 			var/datum/gas_mixture/GM = new
 			for(var/gas in gas_field)
 				GM.adjust_multi(gas, drill_moles_per_tick)
-			GM.set_temperature(423)  // ~150C; must go through the arena, not the DM mirror
+			heat_set(GM, 423)  // ~150C; must go through the arena, not the DM mirror
 			var/atom/location = src.loc
 			location.assume_air(GM)
 	else if(istype(get_turf(src), /turf/simulated))

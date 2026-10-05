@@ -86,3 +86,23 @@
 #define FIRE_REACTION_IGNITE 2
 /// Runs fire_trigger_proc instead of burning (volatile slimes).
 #define FIRE_REACTION_TRIGGER 3
+
+// ---- The heat network (code/domains/heat/) ----
+/// Outer space as a heat reservoir (heat_move(), the heat entries): infinite, at TCMB.
+#define HEAT_SPACE "heat:space"
+// Endpoints of a heat entry, besides a var name of the declaring side (nameof(v): a gas mixture or an atom):
+/// The activation's holder: the occupant of a while_slotted(..., on = ON_CONTENTS) entry, the machine itself at type level.
+#define HEAT_HOLDER "heat:holder"
+/// The side that declares the entry: the container of a while_slotted(..., on = ON_CONTENTS) entry, the machine itself at type level.
+#define HEAT_DECLARER "heat:declarer"
+/// The air around the declaring side (its turf's).
+#define HEAT_AIR "heat:air"
+/// The solid of the declaring side's turf (the hull a machine rejects heat into).
+#define HEAT_HULL "heat:hull"
+/// The station's heat-rejection loop as a reservoir: infinite, at 20 °C. What a heat pump with nothing better to reject into (a space
+/// heater, a thermoregulator) pumps against, booked in the heat ledger as leaving the simulation.
+#define HEAT_AMBIENT "heat:ambient"
+/// Port `i` of the declaring pipe machine: the gas of the pipeline the port is in, followed through merges and splits.
+#define HEAT_PORT(i) "heat:port:[i]"
+/// An infinite reservoir at `kelvin` (the sky a radiator sees).
+#define HEAT_SKY(kelvin) "heat:sky:[kelvin]"

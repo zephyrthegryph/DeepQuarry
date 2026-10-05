@@ -70,7 +70,7 @@
 	// work is new energy supplied by the motor. Deposit useful shaft work into
 	// the destination gas and motor losses into the shell so the complete
 	// machine + gas ledger conserves exactly the power paid by the pump.
-	destination.add_thermal_energy(useful)
+	heat_add(destination, useful, HEAT_SOURCE_DEVICE)
 	service.record_work(input_energy, useful)
 	service.delivered_moles += actual_moles
 	service.last_delivery_pressure = destination.return_pressure()

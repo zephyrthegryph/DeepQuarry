@@ -15,6 +15,9 @@
 /datum/entry_engine
 	/// The entry kind this engine applies (ENTRY_* or another engine's kind).
 	var/kind
+	/// TRUE: a type-level entry of this kind is applied as an activation of the holder that lives while its enclosing when() conditions hold
+	/// (cond_scope.dm), so the engine sees a type-level entry the way it sees a granted or slotted one, and its remove() runs when the scope ends.
+	var/cond_scoped = FALSE
 
 /// Checks an entry before anything is applied: null when it can apply, else the reason it cannot. Pure.
 /datum/entry_engine/proc/validate(datum/activation/A, datum/entry/E)

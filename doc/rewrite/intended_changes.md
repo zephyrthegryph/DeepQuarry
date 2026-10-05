@@ -1085,3 +1085,39 @@ Pinned by `code/modules/unit_tests/dq_mfo_blast_contents.dm` (green on the overr
   explosion service reads it (`explosion_contents_severity_of()`). Every `explosion_contents_severity()` override is gone (body scanner, clone pod,
   DNA scanner, pAI card, closet, statue, morgue, transit tube pod, bookcase, APC, atmospherics machinery) and the name is a hard ban.
 * No change in numbers: the DNA scanner declared two overrides, and the later one (the full blast) is what ran.
+
+## Missing forms: door looks
+
+Pinned by the look tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on the templates first).
+
+* **Every door draws through draw(look)**: the base door (`door1`/`door0`), the blast door (its type's open and closed states) and the windoor (its base
+  state, `open` after it) replace their `APPEARANCE_TEMPLATE`s; the airlock's and firedoor's `update_icon()` -> `changed()` bridges and their
+  `APPEARANCE_NONE` lines are gone. A swing, a weld, a hatch and damage redraw through their tracked vars; the firedoor's alert lights and the angled
+  bay airlock's built icon (no tracked vars) mark the door changed by hand. No look changes.
+## Heat network (rewrite/thermal-domain)
+
+Heat moves only through Rust's conserved transfer primitive and declared edges (`heat_link()`, `heat_pump()`, `heat_engine()`; `heat_move()` and its
+wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_behaviour.dm` (before/after values logged by each test).
+
+* **Machine heat goes to a booked 20 °C reservoir (approved).** A heat pump with nothing physical to reject into (space heater, thermoregulator)
+  pumps against `HEAT_AMBIENT`, an infinite 20 °C reservoir whose flows are booked in the heat ledger as leaving or entering the station. The old
+  code deleted or created that heat with no record. The floor tile was rejected as the sink: 150 kW into a solid cell heats it thousands of kelvin.
+* **Space heater.** Heating is resistive, one joule of air heat per joule of cell (before: 301.87 K after 20 s from 283 K, air +39 251 J for 39 256 J
+  of cell; unchanged in kind). After: 303 K (it reaches its thermostat; it runs on the world step), air +82 615 J for 90 383 J of cell, the
+  rest in the room's walls through the solid–air coupling. Cooling now pays for its work: before, the cell gave **0 J** while the air lost 39 251 J (a bug: cooling was free and
+  the heat vanished); now the cell pays `Q / COP` with a Carnot-bounded COP and the heat goes to the ambient reservoir (after: 293.05 K from 313 K in 20 s, air
+  −82 189 J, cell 3 227 J).
+* **Thermoregulator.** Heating gave 5× the drawn power as heat (B10); it is now a heat pump against the 20 °C reservoir at a Carnot-bounded COP, and
+  the grid is billed the pump's measured work. Its overload surge heats the room 1:1 with the energy drawn (was 5×).
+* **Gas cooling and heating systems.** The freezer is a Carnot-bounded pump from its pipe port into the room (was `2.5·T/T_heatsink`, with coolant
+  multiplying the heat moved for free); parts and coolant now raise its Carnot fraction (capped at 1). The heater is resistive at its power rating.
+  Both run in Rust on the world step, so they no longer depend on how often the machine steps. Before: freezer loop 243.15 K after 20 s from
+  293.15 K toward 200 K, room +20 000 J; heater loop 313.15 K after 20 s toward 400 K. After: freezer loop reaches 200 K, room +79 423 J;
+  heater loop reaches 400 K (the 50-mol test loop is small: the old per-step caps made it slower than its rating).
+* **Bodies exchange heat with their surroundings only outside their comfort range (approved).** With energy conserved, a 280 kJ/K body against a
+  ~2 kJ/K tile of air would heat every occupied room, so the body↔environment link carries the old convection rate only while the old Life code
+  would have run convection (body outside its comfort band or air more than 20 K away); inside it the link conducts nothing.
+* **One-off writes are booked.** Every gas temperature or energy write outside the gas and heat domains became `heat_set()` (an authority write:
+  spawn temperatures, admin, events, tests) or `heat_add()` with a `HEAT_SOURCE_*` (fire, reactions, spells, devices, materials). Values are
+  unchanged; `heat_books()` now accounts for them. The radiance spell and the supermatter keep their 10 000 K clamp as an authority write.
+* **Material batches** keep their own DM heat model; the proc is renamed `add_batch_heat()` so it is not mistaken for a gas write.

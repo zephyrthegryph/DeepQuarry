@@ -132,8 +132,7 @@
 			if(internal_capacity > 0 && external_capacity > 0)
 				var/equilibrium_energy = (internal_temperature - external_temperature) / (1 / internal_capacity + 1 / external_capacity)
 				var/heat = equilibrium_energy * (1 - 2.718281828 ** (-conductance * elapsed_seconds * (1 / internal_capacity + 1 / external_capacity)))
-				internal.add_thermal_energy(-heat)
-				external.add_thermal_energy(heat)
+				heat_move(internal, external, heat)
 				active = abs(heat) > 0.01 || active
 
 	if(!service_owns_heat && structure && max(internal_temperature, external_temperature) >= structure.melting_point)

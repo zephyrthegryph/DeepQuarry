@@ -1,11 +1,17 @@
+TRACKED(/obj/machinery/atmospherics/unary/freezer, pumping)
+
 CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	// A heat pump from its pipeline's gas into the room around it, toward the thermostat: the room takes the heat plus the work, at a
+	// Carnot-bounded COP that better parts and coolant raise.
+	when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_COOL, FALSE, nameof(carnot_fraction), nameof(max_cop)))
 	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
 	interface("GasTemperatureSystem")
 	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
 	op("setPower", ui_act("setPower", arg("value", num())), then(PROC_REF(ui_act_setpower)))
 
 //TODO: Put this under a common parent type with heaters to cut down on the copypasta
-#define FREEZER_PERF_MULT 2.5
+/// The share of the Carnot COP stock parts achieve; each part tier above the first adds to it (RefreshParts()).
+#define FREEZER_CARNOT_FRACTION 0.4
 #define REAGENT_COOLING_CONSUMED 0.1
 #define REAGENT_COOLING_MINMOD 0.15
 #define REAGENT_COOLING_MAXMOD 5
@@ -22,7 +28,12 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	idle_power_usage = 5			// 5 Watts for thermostat related circuitry
 	circuit = /obj/item/circuitboard/unary_atmos/cooler
 
-	var/heatsink_temperature = T20C	// The constant temperature reservoir into which the freezer pumps heat. Probably the hull of the station or something.
+	/// The share of the Carnot COP its pump achieves (parts and coolant raise it).
+	var/carnot_fraction = FREEZER_CARNOT_FRACTION
+	/// Upper bound on its COP.
+	var/max_cop = 10
+	/// TRUE while it pumps: its heat pump exists exactly while this is set.
+	var/pumping = FALSE
 	var/internal_volume = 600		// L
 
 	var/max_power_rating = 20000	// Power rating when the usage is turned up to 100
@@ -128,6 +139,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freeze
 		set_temperature = min(amount, 1000)
 	else
 		set_temperature = max(amount, 0)
+	heat_entries_refresh(src)
 	add_fingerprint(user)
 	if(.)
 		invalidate_gas_dependencies()
@@ -141,42 +153,27 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freeze
 	if(.)
 		invalidate_gas_dependencies()
 
+/// The heat pump (its CAPABILITIES entry) cools the loop in Rust; the step pays its work, uses up coolant and shows what it does.
 /obj/machinery/atmospherics/unary/freezer/machine_step()
 	..()
 
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
 	if(!operable() || !use_power)
 		cooling = 0
+		set_pumping(FALSE)
 		update_icon()
 		register_gas_dependencies()
 		return PROCESS_KILL
 
-	var/air_temperature = air_contents.return_temperature()
-	if(network && air_contents.total_moles() && air_temperature > set_temperature)
+	var/coolant_fraction = clamp(FREEZER_CARNOT_FRACTION * get_part_bonus() * CLAMP(reagent_cooling, REAGENT_COOLING_MINMOD, REAGENT_COOLING_MAXMOD), 0.05, 1)
+	if(abs(coolant_fraction - carnot_fraction) > 0.01)
+		carnot_fraction = coolant_fraction
+		heat_entries_refresh(src)
+	set_pumping(TRUE)
+	if(network && air_contents.total_moles() && air_contents.return_temperature() > set_temperature)
 		cooling = 1
-
-		var/heat_transfer = max( -air_contents.get_thermal_energy_change(set_temperature - 5), 0 )
-
-		//Assume the heat is being pumped into the hull which is fixed at heatsink_temperature
-		//not /really/ proper thermodynamics but whatever
-		var/cop = FREEZER_PERF_MULT * air_temperature/heatsink_temperature	//heatpump coefficient of performance from thermodynamics -> power used = heat_transfer/cop
-		heat_transfer = min(heat_transfer, cop * power_rating)	//limit heat transfer by available power
-
-		// Process coolant
-		heat_transfer *= CLAMP(reagent_cooling,REAGENT_COOLING_MINMOD,REAGENT_COOLING_MAXMOD)
+		use_power(-heat_entries_power(src))
 		reagents.remove_any(REAGENT_COOLING_CONSUMED)
-
-		var/removed = -air_contents.add_thermal_energy(-heat_transfer)		//remove the heat
-		if(debug)
-			visible_message("[src]: Removing [removed] W.")
-
-		use_power(power_rating)
-		// Heat pump: the room around the machine is the hot side. It receives
-		// the heat taken from the loop plus the electrical work.
-		var/datum/gas_mixture/environment = loc?.return_air()
-		environment?.add_thermal_energy(removed + power_rating)
-
-		network.mark_dirty()
 	else
 		cooling = 0
 		register_gas_dependencies()
@@ -185,6 +182,10 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freeze
 
 	update_icon()
 	return 1
+
+/// How much better than stock its parts make the pump (1: stock).
+/obj/machinery/atmospherics/unary/freezer/proc/get_part_bonus()
+	return max(1, (get_part_rating(/obj/item/stock_parts/manipulator) + get_part_rating(/obj/item/stock_parts/matter_bin)) / 2)
 
 /// Eligibility rule for waking from gas (unary_base.dm register_gas_dependencies()): the same
 /// test process() makes before it cools anything.
@@ -207,13 +208,14 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freeze
 	manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 
 	max_power_rating = initial(max_power_rating) * cap_rating / 2			//more powerful
-	heatsink_temperature = initial(heatsink_temperature) / ((manip_rating + bin_rating) / 2)	//more efficient
+	carnot_fraction = clamp(FREEZER_CARNOT_FRACTION * max(1, (manip_rating + bin_rating) / 2), 0.05, 1)	//more efficient
 	air_contents.set_volume(max(initial(internal_volume) - 200, 0) + 200 * bin_rating)
 	set_power_level(power_setting)
 
 /obj/machinery/atmospherics/unary/freezer/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
 	power_rating = max_power_rating * (power_setting/100)
+	heat_entries_refresh(src)
 
 /obj/machinery/atmospherics/unary/freezer/examine(mob/user)
 	. = ..()
@@ -223,4 +225,4 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freeze
 #undef REAGENT_COOLING_MINMOD
 #undef REAGENT_COOLING_MAXMOD
 #undef REAGENT_COOLING_CONSUMED
-#undef FREEZER_PERF_MULT
+#undef FREEZER_CARNOT_FRACTION
