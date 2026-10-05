@@ -1092,6 +1092,12 @@
 
 #include "round2_grenade_timer_configuration.dm"
 
+#include "round2_glass_window_choice.dm"
+
+#include "round2_helm_navigation_entry.dm"
+
+#include "round2_matrix_active_colour.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
