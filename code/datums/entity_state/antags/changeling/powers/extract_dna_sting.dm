@@ -12,8 +12,11 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Extract DNA Sting (40)"
 	set desc="Stealthily sting a target to extract their DNA."
+	return changeling_extract_dna_sting_stage()
 
-	var/mob/living/carbon/human/T = changeling_sting(40, /mob/proc/changeling_extract_dna_sting)
+/mob/proc/changeling_extract_dna_sting_stage(mob/living/carbon/selected_target)
+
+	var/mob/living/carbon/human/T = changeling_sting(40, PROC_REF(changeling_extract_dna_sting_target_answered), selected_target)
 	if(!T)
 		return
 
@@ -37,3 +40,8 @@
 
 	feedback_add_details("changeling_powers","ED")
 	return TRUE
+
+/mob/proc/changeling_extract_dna_sting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_extract_dna_sting_stage(A.answer.answer_value)

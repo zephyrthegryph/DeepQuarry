@@ -12,8 +12,11 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Blind sting (20)"
 	set desc="Sting target"
+	return changeling_blind_sting_stage()
+
+/mob/proc/changeling_blind_sting_stage(mob/living/carbon/selected_target)
 	var/datum/changeling/comp = is_changeling(src)
-	var/mob/living/carbon/T = changeling_sting(20,/mob/proc/changeling_blind_sting)
+	var/mob/living/carbon/T = changeling_sting(20, PROC_REF(changeling_blind_sting_target_answered), selected_target)
 	if(!T)
 		return FALSE
 	add_attack_logs(src,T,"Blind sting (changeling)")
@@ -28,3 +31,8 @@
 	feedback_add_details("changeling_powers","BS")
 	return TRUE
 
+
+/mob/proc/changeling_blind_sting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_blind_sting_stage(A.answer.answer_value)

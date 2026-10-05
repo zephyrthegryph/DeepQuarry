@@ -9,8 +9,11 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Unfat sting (5)"
 	set desc = "Sting target"
+	return changeling_unfat_sting_stage()
 
-	var/mob/living/carbon/T = changeling_sting(5,/mob/proc/changeling_unfat_sting)
+/mob/proc/changeling_unfat_sting_stage(mob/living/carbon/selected_target)
+
+	var/mob/living/carbon/T = changeling_sting(5, PROC_REF(changeling_unfat_sting_target_answered), selected_target)
 	if(!T)
 		return FALSE
 	add_attack_logs(src,T,"Unfat sting (changeling)")
@@ -18,3 +21,8 @@
 	T.adjust_nutrition(-max(100, T.nutrition/1.15)) //Decrease their nutrition by 100 or 85%, whatever is higher. Ex: 1000 nutrition becomes ~130. 6000 nutrition becomes 800.
 	feedback_add_details("changeling_powers","US")
 	return TRUE
+
+/mob/proc/changeling_unfat_sting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_unfat_sting_stage(A.answer.answer_value)

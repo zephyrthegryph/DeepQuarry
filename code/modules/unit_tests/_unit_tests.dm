@@ -1079,6 +1079,16 @@
 #include "round2_helm_limit_requests.dm"
 #include "round2_helm_coordinates_clientless.dm"
 
+#include "round2_spellbook_immediate_speed_upgrade.dm"
+#include "round2_mob_examine_selection.dm"
+#include "round2_zorgoia_overlay_cache.dm"
+
+#include "round2_changeling_sting_continuation.dm"
+
+#include "round2_lion_cached_mane_parity.dm"
+
+#include "round2_silicon_album_delete.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

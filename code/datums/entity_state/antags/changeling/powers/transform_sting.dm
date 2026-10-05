@@ -11,6 +11,9 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Transformation sting (40)"
 	set desc="Sting target"
+	return changeling_transformation_sting_stage()
+
+/mob/proc/changeling_transformation_sting_stage(dna_answer, mob/living/carbon/selected_target)
 
 	var/datum/changeling/changeling = changeling_power(40, 1, 100, CONSCIOUS)
 	if(!changeling)
@@ -24,10 +27,10 @@
 		return FALSE
 	var/S
 	if(LAZYLEN(names) > 1)
-		var/_answer_a1 = rerun_ask(src, "a1", PROC_REF(changeling_transformation_sting), args, /datum/om/prompt/choice, message = "Select the target DNA:", title = "Target DNA", choices = names)
-		if(isnull(_answer_a1))
+		if(isnull(dna_answer))
+			open_request(src, /datum/prompt/choice/changeling_sting_dna, PROC_REF(changeling_transformation_dna_answered), answerer = src, choices = names)
 			return
-		S = _answer_a1
+		S = dna_answer
 	else
 		S = names[1]
 
@@ -35,7 +38,7 @@
 	if(!chosen_dna)
 		return
 
-	var/mob/living/carbon/T = changeling_sting(40,/mob/proc/changeling_transformation_sting)
+	var/mob/living/carbon/T = changeling_sting(40, PROC_REF(changeling_transformation_sting_target_answered), selected_target, list("dna_label" = S))
 	if(!T)
 		return FALSE
 	if((T.has_mutation(HUSK)) || (!ishuman(T) && !issmall(T)))
@@ -49,3 +52,13 @@
 	domutcheck(T, null)
 	feedback_add_details("changeling_powers","TS")
 	return TRUE
+
+/mob/proc/changeling_transformation_sting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_transformation_sting_stage(A.request.captured["dna_label"], A.answer.answer_value)
+
+/mob/proc/changeling_transformation_dna_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_transformation_sting_stage(A.answer.answer_value)
