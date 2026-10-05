@@ -131,16 +131,46 @@
 
 	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	AI.remove_target() // So hostile things stop attacking people even if not hostile anymore.
-	var/_answer_k126 = rerun_ask(user, "k126", PROC_REF(attack), args, /datum/om/prompt/text, message = "Would you like to give \the [M] a name?", title = "Name your new pet", default = M.name, max_length = MAX_NAME_LEN)
-	if(isnull(_answer_k126))
-		return TRUE
-	var/newname = copytext(_answer_k126,1,MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text/slime_docility_name, PROC_REF(docility_name_entered), answerer = user, subject = M, default = M.name, question = "Would you like to give \the [M] a name?")
+	return TRUE
 
+/obj/item/slimepotion/docility/proc/docility_name_entered(datum/act/request/A)
+	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+		return
+	SStgui.update_uis(src)
+	var/mob/living/M = A.request.subject
+	var/mob/living/user = A.request.answerer
+	if(!A.answer)
+		if(A.request.last_error == "dead")
+			to_chat(user, span_warning("\The [M] is dead!"))
+		else if(A.request.last_error == "no brain")
+			to_chat(user, span_warning("\The [M] is too strongly willed for this to affect them."))
+		return
+	var/newname = copytext(A.answer.answer_value,1,MAX_NAME_LEN)
 	if(newname && !QDELETED(M))
 		M.name = newname
 		M.real_name = newname
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
+
+/datum/prompt/text/slime_docility_name
+	title = "Name your new pet"
+	max_len = MAX_NAME_LEN
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/slime_docility_name/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/slime_docility_name/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer) || QDELETED(subject))
+		return "gone"
+	if(!isnull(answer_value))
+		var/mob/living/M = subject
+		if(M.stat == DEAD)
+			return "dead"
+		if(!M.ai_brain)
+			return "no brain"
+	return null
 
 
 // Makes slimes make more extracts.

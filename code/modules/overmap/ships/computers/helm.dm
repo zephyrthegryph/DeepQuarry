@@ -217,27 +217,74 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_remove)
 
 UI_ACT(/obj/machinery/computer/ship/helm, "setcoord", ui_act_setcoord, UI_ARG_BOOL("setx"), UI_ARG_BOOL("sety"))
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_setcoord)
-	if(params["setx"])
-		var/newx = act_ask(ui.user, action, params, ui, "k214", /datum/om/prompt/number, message = "Input new destiniation x coordinate", title = "Coordinate input", default = dx, max = world.maxx, min = 1)
-		if(isnull(newx))
+	return helm_coordinate_stage(ui, list("setx" = params["setx"], "sety" = params["sety"]))
+
+/obj/machinery/computer/ship/helm/proc/helm_coordinate_stage(datum/tgui/ui, list/answers, datum/request/request)
+	if(answers["setx"])
+		if(!("x" in answers))
+			open_request(ui, /datum/prompt/number/helm_coordinates, TYPE_PROC_REF(/datum/tgui, helm_coordinates_entered), answerer = ui.user, captured = answers.Copy(), step_name = "x", question = "Input new destiniation x coordinate", default = dx, max_value = world.maxx)
 			return
-		if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+		var/newx = answers["x"]
+		if(helm_coordinate_recheck(ui, request))
 			return
 		if(newx)
 			dx = CLAMP(newx, 1, world.maxx)
-
-	if(params["sety"])
-		var/newy = act_ask(ui.user, action, params, ui, "k221", /datum/om/prompt/number, message = "Input new destiniation y coordinate", title = "Coordinate input", default = dy, max = world.maxy, min = 1)
-		if(isnull(newy))
+	if(answers["sety"])
+		if(!("y" in answers))
+			open_request(ui, /datum/prompt/number/helm_coordinates, TYPE_PROC_REF(/datum/tgui, helm_coordinates_entered), answerer = ui.user, captured = answers.Copy(), step_name = "y", question = "Input new destiniation y coordinate", default = dy, max_value = world.maxy)
 			return
-		if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+		var/newy = answers["y"]
+		if(helm_coordinate_recheck(ui, request))
 			return
 		if(newy)
 			dy = CLAMP(newy, 1, world.maxy)
-	. = TRUE
-	add_fingerprint(ui.user)
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	helm_terminal_feedback(ui.user)
+	return TRUE
+
+/datum/tgui/proc/helm_coordinates_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/machinery/computer/ship/helm/helm = src_object()
+	var/list/answers = A.request.captured.Copy()
+	answers[A.request.step_name] = A.answer.answer_value
+	if(helm.helm_coordinate_stage(src, answers, A.request))
+		SStgui.update_uis(helm)
+
+/// Prepare the original virtual status query, then route only a pure scalar refusal.
+/obj/machinery/computer/ship/helm/proc/helm_coordinate_recheck(datum/tgui/ui, datum/request/request)
+	var/current_status = tgui_status(ui.user, ui.state())
+	var/reason = helm_coordinate_status_refusal(current_status)
+	if(!request)
+		return reason
+	request.captured["late_refusal"] = reason
+	return request_recheck(request)
+
+/proc/helm_coordinate_status_refusal(current_status)
+	if(current_status != STATUS_INTERACTIVE)
+		return "the helm window is not interactive"
+	return null
+
+/datum/prompt/number/helm_coordinates
+	title = "Coordinate input"
+	min_value = 1
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/helm_coordinates/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/helm_coordinates/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/ship/helm/helm = original_ui.src_object()
+	if(!istype(helm) || QDELETED(helm))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!helm.ui_act_allowed(original_ui.user, "setcoord", original_ui, original_ui.state()))
+		return "the helm action is unavailable"
+	return captured?["late_refusal"]
 
 UI_ACT(/obj/machinery/computer/ship/helm, "setds", ui_act_setds, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_setds)
@@ -259,27 +306,67 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_reset)
 
 UI_ACT(/obj/machinery/computer/ship/helm, "speedlimit", ui_act_speedlimit)
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_speedlimit)
-	var/newlimit = act_ask(ui.user, action, params, ui, "k239", /datum/om/prompt/number, message = "Input new speed limit for autopilot (0 to brake)", title = "Autopilot speed limit", default = speedlimit*1000, max = 100000, round_entry = FALSE)
-	if(isnull(newlimit))
-		return
-	if(newlimit)
-		speedlimit = CLAMP(newlimit/1000, 0, 100)
-	. = TRUE
-	add_fingerprint(ui.user)
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	open_request(ui, /datum/prompt/number/helm_limit/speed, TYPE_PROC_REF(/datum/tgui, helm_limit_entered), answerer = ui.user, default = speedlimit*1000)
 
 UI_ACT(/obj/machinery/computer/ship/helm, "accellimit", ui_act_accellimit)
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_accellimit)
-	var/newlimit = act_ask(ui.user, action, params, ui, "k245", /datum/om/prompt/number, message = "Input new acceleration limit", title = "Acceleration limit", default = accellimit*1000, round_entry = FALSE)
-	if(isnull(newlimit))
+	open_request(ui, /datum/prompt/number/helm_limit/acceleration, TYPE_PROC_REF(/datum/tgui, helm_limit_entered), answerer = ui.user, default = accellimit*1000)
+
+/datum/tgui/proc/helm_limit_entered(datum/act/request/A)
+	var/datum/tgui/ui = src
+	if(!A.answer)
 		return
+	var/obj/machinery/computer/ship/helm/helm = src_object()
+	var/datum/prompt/number/helm_limit/ask = A.answer
+	var/newlimit = ask.answer_value
 	if(newlimit)
-		accellimit = max(newlimit/1000, 0)
-	. = TRUE
-	add_fingerprint(ui.user)
-	if(. && !issilicon(ui.user))
+		if(ask.limit_action == "speedlimit")
+			helm.speedlimit = CLAMP(newlimit/1000, 0, 100)
+		else
+			helm.accellimit = max(newlimit/1000, 0)
+	helm.helm_terminal_feedback(ui.user)
+	SStgui.update_uis(helm)
+
+/// Apply the helm's fingerprint and actor-specific keyboard presentation together.
+/obj/machinery/computer/ship/helm/proc/helm_terminal_feedback(mob/user)
+	add_fingerprint(user)
+	if(!issilicon(user))
 		play_sfx(src, SFX_TERMINAL_TYPE)
+
+/datum/prompt/number/helm_limit
+	min_value = 0
+	step = FALSE
+	timeout = 0
+	recheck_on_open = TRUE
+	var/limit_action
+
+/datum/prompt/number/helm_limit/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/helm_limit/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/ship/helm/helm = original_ui.src_object()
+	if(!istype(helm) || QDELETED(helm))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!helm.ui_act_allowed(original_ui.user, limit_action, original_ui, original_ui.state()))
+		return "the helm action is unavailable"
+	return null
+
+/datum/prompt/number/helm_limit/speed
+	question = "Input new speed limit for autopilot (0 to brake)"
+	title = "Autopilot speed limit"
+	max_value = 100000
+	limit_action = "speedlimit"
+
+/datum/prompt/number/helm_limit/acceleration
+	question = "Input new acceleration limit"
+	title = "Acceleration limit"
+	max_value = INFINITY
+	limit_action = "accellimit"
 
 UI_ACT(/obj/machinery/computer/ship/helm, "move", ui_act_move, UI_ARG_NUM("dir"))
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_move)

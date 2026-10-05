@@ -17697,11 +17697,11 @@
 	into += entry_line(29)
 	into += list(global.owns_many(nameof(known_sectors)))
 
-/// CAPABILITIES(/obj/machinery/computer/ship/navigation) at code/modules/overmap/ships/computers/helm.dm:341
+/// CAPABILITIES(/obj/machinery/computer/ship/navigation) at code/modules/overmap/ships/computers/helm.dm:428
 /obj/machinery/computer/ship/navigation/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/overmap/ships/computers/helm.dm", 341, /obj/machinery/computer/ship/navigation)
-	into += entry_line(342)
+	into += entry_block("code/modules/overmap/ships/computers/helm.dm", 428, /obj/machinery/computer/ship/navigation)
+	into += entry_line(429)
 	into += list(global.owns_one(nameof(nav_tgui), starts = /datum/tgui_module/ship/nav))
 
 /// CAPABILITIES(/obj/machinery/computer/shutoff_monitor) at code/game/machinery/computer/shutoff_monitor.dm:10
