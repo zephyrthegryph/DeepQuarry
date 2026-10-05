@@ -163,7 +163,8 @@
 					return TRUE
 			return FALSE
 		if(BIND_ITEM, BIND_STACK)
-			return side == CAND_TARGET && !isnull(held) && istype(held, B.args["type"])
+			// an item used on itself is its in_hand() use, never an item() of its own (the old attackby never ran on itself)
+			return side == CAND_TARGET && !isnull(held) && held != target && istype(held, B.args["type"])
 		if(BIND_IN_HAND)
 			return !isnull(held) && held == holder && target == held
 		if(BIND_AT_TARGET)

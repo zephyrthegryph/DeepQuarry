@@ -11,7 +11,7 @@
 	for(var/obj/item/inflatable/I in contents_of(T))
 		initial_refunds++
 	TEST_ASSERT_EQUAL(initial_refunds, 0, "the actual fixture begins without a folded-wall refund")
-	wall.hand_deflate_effect(user, null, null)
+	wall.deflate_by(user)
 	TEST_ASSERT(wall.deflating, "the real public deflate interaction enters the deflating state")
 	scheduler_advance((2 SECONDS) / (1 SECOND))
 	TEST_ASSERT(!QDELETED(wall), "the actual wall remains before its five-second deflation completes")
@@ -21,7 +21,7 @@
 		own(I)
 		early_refunds++
 	TEST_ASSERT_EQUAL(early_refunds, 0, "the actual pending deflation emits no early folded-wall refund")
-	wall.hand_deflate_effect(user, null, null)
+	wall.deflate_by(user)
 	scheduler_advance((4 SECONDS) / (1 SECOND))
 	var/list/refunds = list()
 	for(var/obj/item/inflatable/I in contents_of(T))

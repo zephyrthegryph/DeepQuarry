@@ -395,7 +395,7 @@
 	TEST_ASSERT_NOTNULL(P, "the question is open")
 	TEST_ASSERT_EQUAL(P.question, "Name?", "a literal field")
 	TEST_ASSERT_EQUAL(P.default, "Bae", "a var of the holder")
-	TEST_ASSERT_EQUAL(P.title, "Name gap asker", "a computed field")
+	TEST_ASSERT_EQUAL(P.title, "Name [asker]", "a computed field")
 	TEST_ASSERT(P.name_text, "name_text as declared")
 	test_answer(H, "Rex")
 	TEST_ASSERT_EQUAL(asker.log_text(), "named:Rex", "the answer reaches the effect")

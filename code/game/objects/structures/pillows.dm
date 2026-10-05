@@ -8,7 +8,6 @@
 	slot_flags = 0
 	var/pile_type = "/obj/structure/bed/pillowpile"
 	throw_range = 7
-	special_handling = TRUE
 
 /// Old attack_self: set the pillow down.
 /obj/item/bedsheet/pillow/proc/pillow_self(datum/act/op/A)
@@ -23,8 +22,9 @@
 	icon_state = initial(icon_state)
 
 CAPABILITIES(/obj/item/bedsheet/pillow)
-	op("pillow_self", in_hand(), label("Place"), then(PROC_REF(pillow_self)))
-	op("pillow_interaction_item", item(/obj/item), then(PROC_REF(pillow_interaction_item)))
+	// the pillow's own uses replace the sheet's (lay_out, use_item)
+	op("lay_out", in_hand(), label("Place"), then(PROC_REF(pillow_self)))
+	op("use_item", item(/obj/item), then(PROC_REF(pillow_interaction_item)))
 
 /// Old attackby.
 /obj/item/bedsheet/pillow/proc/pillow_interaction_item(datum/act/op/A)

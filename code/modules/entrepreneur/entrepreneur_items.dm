@@ -286,7 +286,12 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_R
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "exercise_mat"
 
-EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/obj/item/bedsheet/pillow/exercise)
+	op("use_item", item(/obj/item), passes(), then(PROC_REF(exercise_item_passes)))
+
+/// An item used on an exercise mat does nothing to it: the click goes on (the old interaction_pass).
+/obj/item/bedsheet/pillow/exercise/proc/exercise_item_passes(datum/act/op/A)
+	return OP_PASS
 
 /obj/item/entrepreneur/dumbbell
 	name = "dumbbell"

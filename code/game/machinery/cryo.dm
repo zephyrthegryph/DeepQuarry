@@ -90,24 +90,22 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/unary/cryo_cell, MACHINE_
 	if(occupant == user && !user.stat)
 		go_out()
 
-EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(cryo_cell_interaction_hand), REQ_BECAUSE(REQ_PANEL(FALSE), "close the maintenance panel first")), \
-	INTERACT_ITEM(null, PROC_REF(cryo_cell_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(cryo_cell_interaction_drag)), \
-	INTERACT_VERB("Eject occupant", PROC_REF(cryo_cell_move_eject)), \
-	INTERACT_VERB("Move Inside", PROC_REF(cryo_cell_move_inside)), \
-)
-
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
 	if(user == occupant)
-		return TRUE
+		return OP_OK
 
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
+	op("cryo_cell_interaction_hand", hand(), ungated(), needs(req_panel_closed()), then(PROC_REF(cryo_cell_interaction_hand)))
+	op("cryo_cell_interaction_item", item(/obj/item), then(PROC_REF(cryo_cell_interaction_item)))
+	op("put_inside", item(/mob), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(cryo_cell_interaction_drag)))
+	op("eject_occupant", menu(), label("Eject occupant"), then(PROC_REF(cryo_cell_move_eject)))
+	op("move_inside", menu(), label("Move Inside"), then(PROC_REF(cryo_cell_move_inside)))
 	interface("Cryo", title = "Cryo Cell")
 	op("switchOn", ui_act("switchOn"), then(PROC_REF(ui_act_switchon)))
 	op("switchOff", ui_act("switchOff"), then(PROC_REF(ui_act_switchoff)))
@@ -191,7 +189,9 @@ MSG_DEF_SELF(cryo_cell/occupant_locked_out, "You can't reach the controls from i
 	add_fingerprint(user)
 
 /// Old attackby. It never called ..(), so every item stops here.
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_item(mob/user, obj/item/G, datum/interaction/interaction)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/G = A.held
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
 	if(istype(G, /obj/item/reagent_containers/glass))
 		if(beaker)
@@ -219,11 +219,13 @@ MSG_DEF_SELF(cryo_cell/occupant_locked_out, "You can't reach the controls from i
 	return TRUE
 
 /// Old MouseDrop_T: allows borgs to put people into cryo without external assistance.
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_drag(mob/user, mob/target, datum/interaction/interaction)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/target = A.held
 	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target))
-		return FALSE
+		return OP_DECLINE
 	put_mob(target, user)
-	return TRUE
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/unary/cryo_cell/appearance_overlays()
@@ -377,7 +379,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 	go_out()//and release him from the eternal prison.
 
 /// Old verb "Eject occupant".
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
 	if(user == occupant)//If the user is inside the tube...
 		if(user.stat == 2)//and he's not dead....
@@ -392,7 +395,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 	return
 
 /// Old verb "Move Inside".
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_inside(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		var/mob/living/L = user
 		if(L.has_buckled_mobs())

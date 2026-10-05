@@ -8463,14 +8463,30 @@
 	into += entry_line(63)
 	into += list(global.op("deploy", global.in_hand(), global.label("Deploy trap"), global.then(PROC_REF(deploy_trap_input))))
 
-/// CAPABILITIES(/obj/item/bedsheet/pillow) at code/game/objects/structures/pillows.dm:25
+/// CAPABILITIES(/obj/item/bedsheet) at code/game/objects/structures/bedsheet_bin.dm:41
+/obj/item/bedsheet/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/bedsheet_bin.dm", 41, /obj/item/bedsheet)
+	into += entry_line(42)
+	into += list(global.op("use_item", global.item(/obj/item), global.then(PROC_REF(interaction_item))))
+	into += entry_line(43)
+	into += list(global.op("lay_out", global.in_hand(), global.label("Lay out"), global.then(PROC_REF(bedsheet_self))))
+
+/// CAPABILITIES(/obj/item/bedsheet/pillow) at code/game/objects/structures/pillows.dm:24
 /obj/item/bedsheet/pillow/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/pillows.dm", 25, /obj/item/bedsheet/pillow)
+	into += entry_block("code/game/objects/structures/pillows.dm", 24, /obj/item/bedsheet/pillow)
 	into += entry_line(26)
-	into += list(global.op("pillow_self", global.in_hand(), global.label("Place"), global.then(PROC_REF(pillow_self))))
+	into += list(global.op("lay_out", global.in_hand(), global.label("Place"), global.then(PROC_REF(pillow_self))))
 	into += entry_line(27)
-	into += list(global.op("pillow_interaction_item", global.item(/obj/item), global.then(PROC_REF(pillow_interaction_item))))
+	into += list(global.op("use_item", global.item(/obj/item), global.then(PROC_REF(pillow_interaction_item))))
+
+/// CAPABILITIES(/obj/item/bedsheet/pillow/exercise) at code/modules/entrepreneur/entrepreneur_items.dm:289
+/obj/item/bedsheet/pillow/exercise/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/entrepreneur/entrepreneur_items.dm", 289, /obj/item/bedsheet/pillow/exercise)
+	into += entry_line(290)
+	into += list(global.op("use_item", global.item(/obj/item), global.passes(), global.then(PROC_REF(exercise_item_passes))))
 
 /// CAPABILITIES(/obj/item/beehive_assembly) at code/modules/hydroponics/beekeeping/beehive.dm:370
 /obj/item/beehive_assembly/declared_entries(list/into)
@@ -9913,11 +9929,11 @@
 	into += entry_line(118)
 	into += list(global.owns_one(nameof(ent_debug), /datum/entopic))
 
-/// CAPABILITIES(/obj/item/entrepreneur/emf) at code/modules/entrepreneur/entrepreneur_items.dm:358
+/// CAPABILITIES(/obj/item/entrepreneur/emf) at code/modules/entrepreneur/entrepreneur_items.dm:363
 /obj/item/entrepreneur/emf/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/entrepreneur/entrepreneur_items.dm", 358, /obj/item/entrepreneur/emf)
-	into += entry_line(359)
+	into += entry_block("code/modules/entrepreneur/entrepreneur_items.dm", 363, /obj/item/entrepreneur/emf)
+	into += entry_line(364)
 	into += list(global.op("scan", global.in_hand(), global.label("Read EMF scanner"), global.then(PROC_REF(emf_scan_requested))))
 
 /// CAPABILITIES(/obj/item/evidencebag) at code/modules/detectivework/tools/evidencebag.dm:80
@@ -10631,19 +10647,26 @@
 	into += entry_line(28)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(user_conscious), because = MSG(implantpad/unconscious)))))
 
-/// CAPABILITIES(/obj/item/inflatable/door/torn) at code/game/objects/structures/inflatable.dm:281
+/// CAPABILITIES(/obj/item/inflatable) at code/game/objects/structures/inflatable.dm:10
+/obj/item/inflatable/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/inflatable.dm", 10, /obj/item/inflatable)
+	into += entry_line(11)
+	into += list(global.op("inflate", global.in_hand(), global.label("Inflate"), global.then(PROC_REF(inflatable_self))))
+
+/// CAPABILITIES(/obj/item/inflatable/door/torn) at code/game/objects/structures/inflatable.dm:264
 /obj/item/inflatable/door/torn/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/inflatable.dm", 281, /obj/item/inflatable/door/torn)
-	into += entry_line(282)
-	into += list(global.op("torn_door_inflate", global.in_hand(), global.label("Inflate"), global.then(PROC_REF(torn_door_inflatable_self))))
+	into += entry_block("code/game/objects/structures/inflatable.dm", 264, /obj/item/inflatable/door/torn)
+	into += entry_line(265)
+	into += list(global.op("inflate", global.in_hand(), global.label("Inflate"), global.then(PROC_REF(torn_door_inflatable_self))))
 
-/// CAPABILITIES(/obj/item/inflatable/torn) at code/game/objects/structures/inflatable.dm:264
+/// CAPABILITIES(/obj/item/inflatable/torn) at code/game/objects/structures/inflatable.dm:248
 /obj/item/inflatable/torn/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/inflatable.dm", 264, /obj/item/inflatable/torn)
-	into += entry_line(265)
-	into += list(global.op("torn_inflate", global.in_hand(), global.label("Inflate"), global.then(PROC_REF(torn_inflatable_self))))
+	into += entry_block("code/game/objects/structures/inflatable.dm", 248, /obj/item/inflatable/torn)
+	into += entry_line(249)
+	into += list(global.op("inflate", global.in_hand(), global.label("Inflate"), global.then(PROC_REF(torn_inflatable_self))))
 
 /// CAPABILITIES(/obj/item/inflatable_dispenser) at code/modules/mob/living/silicon/robot/robot_items.dm:553
 /obj/item/inflatable_dispenser/declared_entries(list/into)
@@ -13474,11 +13497,11 @@
 	into += entry_line(29)
 	into += list(global.configure(global.storage(max_size = ITEMSIZE_SMALL)))
 
-/// CAPABILITIES(/obj/item/storage/briefcase/inflatable) at code/game/objects/structures/inflatable.dm:300
+/// CAPABILITIES(/obj/item/storage/briefcase/inflatable) at code/game/objects/structures/inflatable.dm:283
 /obj/item/storage/briefcase/inflatable/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/inflatable.dm", 300, /obj/item/storage/briefcase/inflatable)
-	into += entry_line(301)
+	into += entry_block("code/game/objects/structures/inflatable.dm", 283, /obj/item/storage/briefcase/inflatable)
+	into += entry_line(284)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/inflatable))))
 
 /// CAPABILITIES(/obj/item/storage/dicecup) at code/modules/games/dice.dm:219
@@ -14645,21 +14668,31 @@
 	into += entry_line(173)
 	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell) at code/game/machinery/cryo.dm:110
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell) at code/game/machinery/cryo.dm:103
 /obj/machinery/atmospherics/unary/cryo_cell/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/cryo.dm", 110, /obj/machinery/atmospherics/unary/cryo_cell)
-	into += entry_line(111)
+	into += entry_block("code/game/machinery/cryo.dm", 103, /obj/machinery/atmospherics/unary/cryo_cell)
+	into += entry_line(104)
+	into += list(global.op("cryo_cell_interaction_hand", global.hand(), global.ungated(), global.needs(req_panel_closed()), global.then(PROC_REF(cryo_cell_interaction_hand))))
+	into += entry_line(105)
+	into += list(global.op("cryo_cell_interaction_item", global.item(/obj/item), global.then(PROC_REF(cryo_cell_interaction_item))))
+	into += entry_line(106)
+	into += list(global.op("put_inside", global.item(/mob), global.gesture(GESTURE_DRAG), global.label("Put inside"), global.then(PROC_REF(cryo_cell_interaction_drag))))
+	into += entry_line(107)
+	into += list(global.op("eject_occupant", global.menu(), global.label("Eject occupant"), global.then(PROC_REF(cryo_cell_move_eject))))
+	into += entry_line(108)
+	into += list(global.op("move_inside", global.menu(), global.label("Move Inside"), global.then(PROC_REF(cryo_cell_move_inside))))
+	into += entry_line(109)
 	into += list(global.interface("Cryo", title = "Cryo Cell"))
-	into += entry_line(112)
+	into += entry_line(110)
 	into += list(global.op("switchOn", global.ui_act("switchOn"), global.then(PROC_REF(ui_act_switchon))))
-	into += entry_line(113)
+	into += entry_line(111)
 	into += list(global.op("switchOff", global.ui_act("switchOff"), global.then(PROC_REF(ui_act_switchoff))))
-	into += entry_line(114)
+	into += entry_line(112)
 	into += list(global.op("ejectBeaker", global.ui_act("ejectBeaker"), global.then(PROC_REF(ui_act_ejectbeaker))))
-	into += entry_line(115)
+	into += entry_line(113)
 	into += list(global.op("ejectOccupant", global.ui_act("ejectOccupant"), global.then(PROC_REF(ui_act_ejectoccupant))))
-	into += entry_line(116)
+	into += entry_line(114)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(actor_not_inside), because = MSG(cryo_cell/occupant_locked_out)))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/engine) at code/modules/overmap/ships/engines/gas_thruster.dm:80
@@ -14770,6 +14803,12 @@
 	into += list(global.op("ejectify", global.ui_act("ejectify"), global.then(PROC_REF(ui_act_ejectify))))
 	into += entry_line(35)
 	into += list(global.op("print_p", global.ui_act("print_p"), global.then(PROC_REF(ui_act_print_p))))
+	into += entry_line(36)
+	into += list(global.op("put_grabbed_inside", global.item(/obj/item/grab), global.label("Put inside"), global.needs(global.req(PROC_REF(insert_allowed), because = PROC_REF(insert_refusal))), global.then(PROC_REF(bodyscanner_interaction_item))))
+	into += entry_line(37)
+	into += list(global.op("put_inside", global.item(/mob/living/carbon/human), global.gesture(GESTURE_DRAG), global.label("Put inside"), global.needs(global.req(PROC_REF(drag_allowed), because = PROC_REF(drag_refusal))), global.then(PROC_REF(bodyscanner_interaction_drag))))
+	into += entry_line(38)
+	into += list(global.op("eject", global.menu(), global.label("Eject Body Scanner"), global.then(PROC_REF(bodyscanner_eject))))
 
 /// CAPABILITIES(/obj/machinery/bomb_tester) at code/game/machinery/bomb_tester.dm:33
 /obj/machinery/bomb_tester/declared_entries(list/into)
@@ -14944,25 +14983,25 @@
 	into += entry_line(86)
 	into += list(global.owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge))
 
-/// CAPABILITIES(/obj/machinery/clonepod) at code/game/machinery/cloning.dm:121
+/// CAPABILITIES(/obj/machinery/clonepod) at code/game/machinery/cloning.dm:123
 /obj/machinery/clonepod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/cloning.dm", 121, /obj/machinery/clonepod)
-	into += entry_line(122)
-	into += list(global.owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(123)
-	into += list(global.owns_one(nameof(growing_record), /datum/transhuman/body_record))
+	into += entry_block("code/game/machinery/cloning.dm", 123, /obj/machinery/clonepod)
 	into += entry_line(124)
-	into += list(global.op("clonepod_interaction_hand", global.hand(), global.then(PROC_REF(clonepod_interaction_hand))))
+	into += list(global.owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL))
 	into += entry_line(125)
-	into += list(global.op("clonepod_interaction_item", global.item(/obj/item), global.then(PROC_REF(clonepod_interaction_item))))
+	into += list(global.owns_one(nameof(growing_record), /datum/transhuman/body_record))
 	into += entry_line(126)
-	into += list(global.op("clonepod_eject", global.menu(), global.label("Eject Cloner"), global.then(PROC_REF(clonepod_eject))))
+	into += list(global.op("clonepod_interaction_hand", global.hand(), global.then(PROC_REF(clonepod_interaction_hand))))
 	into += entry_line(127)
-	into += list(global.op("clonepod_empty_beakers", global.menu(), global.label("Eject Beakers"), global.then(PROC_REF(clonepod_empty_beakers))))
+	into += list(global.op("clonepod_interaction_item", global.item(/obj/item), global.then(PROC_REF(clonepod_interaction_item))))
 	into += entry_line(128)
-	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
+	into += list(global.op("clonepod_eject", global.menu(), global.label("Eject Cloner"), global.then(PROC_REF(clonepod_eject))))
 	into += entry_line(129)
+	into += list(global.op("clonepod_empty_beakers", global.menu(), global.label("Eject Beakers"), global.then(PROC_REF(clonepod_empty_beakers))))
+	into += entry_line(130)
+	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
+	into += entry_line(131)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(clonepod_emp)))))
 
 /// CAPABILITIES(/obj/machinery/compressor) at code/modules/power/turbine.dm:45
@@ -18228,6 +18267,17 @@
 	into += entry_line(251)
 	into += list(global.op("collapse", global.item(/obj/item/roller_holder), global.label("Collapse"), global.then(PROC_REF(collapse_with_rack))))
 
+/// CAPABILITIES(/obj/structure/bedsheetbin) at code/game/objects/structures/bedsheet_bin.dm:256
+/obj/structure/bedsheetbin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/bedsheet_bin.dm", 256, /obj/structure/bedsheetbin)
+	into += entry_line(257)
+	into += list(global.op("bedsheetbin_item", global.item(/obj/item), global.then(PROC_REF(interaction_item))))
+	into += entry_line(258)
+	into += list(global.op("bedsheetbin_hand", global.hand(), global.then(PROC_REF(interaction_hand))))
+	into += entry_line(259)
+	into += list(global.op("take_sheet", global.tk(), global.label("Take sheet"), global.then(PROC_REF(interaction_tk))))
+
 /// CAPABILITIES(/obj/structure/biowaste_tank) at code/game/objects/structures/watercloset.dm:1377
 /obj/structure/biowaste_tank/declared_entries(list/into)
 	..(into)
@@ -18862,12 +18912,27 @@
 	into += entry_line(124)
 	into += list(global.owns_one(nameof(source_hook), /obj/effect/hoist_hook))
 
-/// CAPABILITIES(/obj/structure/inflatable) at code/game/objects/structures/inflatable.dm:50
+/// CAPABILITIES(/obj/structure/inflatable) at code/game/objects/structures/inflatable.dm:48
 /obj/structure/inflatable/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/inflatable.dm", 50, /obj/structure/inflatable)
-	into += entry_line(51)
+	into += entry_block("code/game/objects/structures/inflatable.dm", 48, /obj/structure/inflatable)
+	into += entry_line(49)
 	into += list(global.extend(/datum/act/hit/blob, global.instead(global.then(PROC_REF(inflatable_blob)))))
+	into += entry_line(50)
+	into += list(global.op("use_hand", global.hand(), global.then(PROC_REF(interaction_hand))))
+	into += entry_line(51)
+	into += list(global.op("use_item", global.item(/obj/item), global.then(PROC_REF(interaction_item))))
+	into += entry_line(52)
+	into += list(global.op("deflate", global.menu(), global.label("Deflate"), global.then(PROC_REF(hand_deflate_effect))))
+
+/// CAPABILITIES(/obj/structure/inflatable/door) at code/game/objects/structures/inflatable.dm:160
+/obj/structure/inflatable/door/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/inflatable.dm", 160, /obj/structure/inflatable/door)
+	into += entry_line(161)
+	into += list(global.op("use_hand", global.hand(), global.then(PROC_REF(interaction_door_hand))))
+	into += entry_line(162)
+	into += list(global.without("use_item"))
 
 /// CAPABILITIES(/obj/structure/janitorialcart) at code/game/objects/structures/janicart.dm:25
 /obj/structure/janitorialcart/declared_entries(list/into)
@@ -19086,77 +19151,87 @@
 	into += entry_line(39)
 	into += list(global.climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over)))
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:65
+/// CAPABILITIES(/obj/structure/reagent_dispensers) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:60
 /obj/structure/reagent_dispensers/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 65, /obj/structure/reagent_dispensers)
-	into += entry_line(66)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 60, /obj/structure/reagent_dispensers)
+	into += entry_line(61)
+	into += list(global.op("interaction_item", global.item(/obj/item), global.priority(OP_PRIORITY_DEFAULT), global.then(PROC_REF(interaction_item))))
+	into += entry_line(62)
+	into += list(global.op("interaction_alt", global.hand(), global.ungated(), global.gesture(GESTURE_ALT), global.then(PROC_REF(interaction_alt))))
+	into += entry_line(63)
+	into += list(global.op("reagent_dispenser_set_aptft", global.menu(), global.label("Set transfer amount"), global.when(PROC_REF(has_transfer_amounts)), global.asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = global.computed(PROC_REF(reagent_dispenser_set_aptft_a1_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "a1"), global.then(PROC_REF(reagent_dispenser_set_aptft))))
+	into += entry_line(64)
 	into += list(global.extend(/datum/act/hit/blob, global.instead(global.then(PROC_REF(dispenser_blob_burst)))))
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:522
+/// CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:521
 /obj/structure/reagent_dispensers/beerkeg/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 522, /obj/structure/reagent_dispensers/beerkeg)
-	into += entry_line(523)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 521, /obj/structure/reagent_dispensers/beerkeg)
+	into += entry_line(522)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:582
+/// CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:581
 /obj/structure/reagent_dispensers/bloodbarrel/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 582, /obj/structure/reagent_dispensers/bloodbarrel)
-	into += entry_line(583)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 581, /obj/structure/reagent_dispensers/bloodbarrel)
+	into += entry_line(582)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:557
+/// CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:556
 /obj/structure/reagent_dispensers/cookingoil/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 557, /obj/structure/reagent_dispensers/cookingoil)
-	into += entry_line(558)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 556, /obj/structure/reagent_dispensers/cookingoil)
+	into += entry_line(557)
 	into += list(global.climb())
-	into += entry_line(559)
+	into += entry_line(558)
 	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(tank_blast_explode)))))
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/foam) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:160
+/// CAPABILITIES(/obj/structure/reagent_dispensers/foam) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:159
 /obj/structure/reagent_dispensers/foam/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 160, /obj/structure/reagent_dispensers/foam)
-	into += entry_line(161)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 159, /obj/structure/reagent_dispensers/foam)
+	into += entry_line(160)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/fueltank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:134
+/// CAPABILITIES(/obj/structure/reagent_dispensers/fueltank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:133
 /obj/structure/reagent_dispensers/fueltank/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 134, /obj/structure/reagent_dispensers/fueltank)
-	into += entry_line(135)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 133, /obj/structure/reagent_dispensers/fueltank)
+	into += entry_line(134)
 	into += list(global.climb())
-	into += entry_line(136)
+	into += entry_line(135)
 	into += list(global.extend(/datum/act/hit/explosion, global.instead(global.then(PROC_REF(tank_blast_explode)))))
-	into += entry_line(137)
+	into += entry_line(136)
 	into += list(global.op("hand", global.hand(), global.ungated(), global.then(PROC_REF(interaction_hand))))
-	into += entry_line(138)
+	into += entry_line(137)
 	into += list(global.op("fueltank_interaction_item", global.item(/obj/item), global.then(PROC_REF(fueltank_interaction_item))))
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/he3) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:174
+/// CAPABILITIES(/obj/structure/reagent_dispensers/he3) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:173
 /obj/structure/reagent_dispensers/he3/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 174, /obj/structure/reagent_dispensers/he3)
-	into += entry_line(175)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 173, /obj/structure/reagent_dispensers/he3)
+	into += entry_line(174)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:379
+/// CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:378
 /obj/structure/reagent_dispensers/water_cooler/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 379, /obj/structure/reagent_dispensers/water_cooler)
-	into += entry_line(380)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 378, /obj/structure/reagent_dispensers/water_cooler)
+	into += entry_line(379)
 	into += list(global.climb())
+	into += entry_line(380)
+	into += list(global.op("interaction_hand", global.hand(), global.ungated(), global.then(PROC_REF(interaction_hand))))
+	into += entry_line(382)
+	into += list(global.op("interaction_item", global.item(/obj/item), global.then(PROC_REF(water_cooler_interaction_item))))
 
-/// CAPABILITIES(/obj/structure/reagent_dispensers/watertank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:103
+/// CAPABILITIES(/obj/structure/reagent_dispensers/watertank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:102
 /obj/structure/reagent_dispensers/watertank/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 103, /obj/structure/reagent_dispensers/watertank)
-	into += entry_line(104)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 102, /obj/structure/reagent_dispensers/watertank)
+	into += entry_line(103)
 	into += list(global.climb())
-	into += entry_line(105)
+	into += entry_line(104)
 	into += list(global.op("watertank_interaction_item", global.item(/obj/item), global.then(PROC_REF(watertank_interaction_item))))
 
 /// CAPABILITIES(/obj/structure/redgate) at code/modules/awaymissions/redgate.dm:563

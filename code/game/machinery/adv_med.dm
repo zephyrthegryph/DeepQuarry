@@ -33,6 +33,9 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	interface("BodyScanner", title = "Body Scanner")
 	op("ejectify", ui_act("ejectify"), then(PROC_REF(ui_act_ejectify)))
 	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
+	op("put_grabbed_inside", item(/obj/item/grab), label("Put inside"), needs(req(PROC_REF(insert_allowed), because = PROC_REF(insert_refusal))), then(PROC_REF(bodyscanner_interaction_item)))
+	op("put_inside", item(/mob/living/carbon/human), gesture(GESTURE_DRAG), label("Put inside"), needs(req(PROC_REF(drag_allowed), because = PROC_REF(drag_refusal))), then(PROC_REF(bodyscanner_interaction_drag)))
+	op("eject", menu(), label("Eject Body Scanner"), then(PROC_REF(bodyscanner_eject)))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/body_scanner
@@ -51,11 +54,21 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	else
 		set_light(0)
 
-EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
-	INTERACT_INSERT(/obj/item/grab, PROC_REF(bodyscanner_interaction_item), "Put inside", REQ_TARGET_STATE(/obj/machinery/bodyscanner/proc/can_insert_grabbed)), \
-	INTERACT_DRAG("Put inside", PROC_REF(bodyscanner_interaction_drag), REQ_TARGET_STATE(/obj/machinery/bodyscanner/proc/can_drag_inside)), \
-	INTERACT_VERB("Eject Body Scanner", PROC_REF(bodyscanner_eject)), \
-)
+/// The refusal of putting the grabbed mob in (can_insert_grabbed()'s reason as a sentence), or null.
+/obj/machinery/bodyscanner/proc/insert_refusal(datum/act/op/A)
+	var/why = can_insert_grabbed(A.actor, src, A.held)
+	return why == TRUE ? null : "[capitalize(why)]."
+
+/obj/machinery/bodyscanner/proc/insert_allowed(datum/act/op/A)
+	return can_insert_grabbed(A.actor, src, A.held) == TRUE
+
+/// The refusal of dragging a body in (can_drag_inside()'s reason as a sentence), or null.
+/obj/machinery/bodyscanner/proc/drag_refusal(datum/act/op/A)
+	var/why = can_drag_inside(A.actor, src, A.held)
+	return why == TRUE ? null : "[capitalize(why)]."
+
+/obj/machinery/bodyscanner/proc/drag_allowed(datum/act/op/A)
+	return can_drag_inside(A.actor, src, A.held) == TRUE
 
 /// Requirement for putting a grabbed mob in: TRUE, or why not.
 /obj/machinery/bodyscanner/proc/can_insert_grabbed(mob/user, atom/target, obj/item/grab/G)
@@ -68,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return TRUE // the effect declines silently
 	if(!ishuman(M))
 		return "it's not designed for that organism"
-	if(slot_item(OCCUPANT_SLOT_BODY_SCANNER))
+	if(occupant_in(OCCUPANT_SLOT_BODY_SCANNER))
 		return "it's already occupied"
 	if(M.has_buckled_mobs())
 		return "[M] has other entities attached to it, remove them first"
@@ -84,7 +97,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return TRUE
 	if(panel_open)
 		return "close the maintenance panel first"
-	if(slot_item(OCCUPANT_SLOT_BODY_SCANNER))
+	if(occupant_in(OCCUPANT_SLOT_BODY_SCANNER))
 		return "it's already occupied"
 	if(O.buckled_to())
 		return TRUE
@@ -95,13 +108,15 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	return TRUE
 
 /// Old attackby.
-/obj/machinery/bodyscanner/proc/bodyscanner_interaction_item(mob/user, obj/item/G, datum/interaction/interaction)
+/obj/machinery/bodyscanner/proc/bodyscanner_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/G = A.held
 	if(!istype(G, /obj/item/grab))
-		return FALSE
+		return OP_DECLINE
 	var/obj/item/grab/H = G
 	var/mob/M = H?.grab_target()
 	if(!ismob(M))
-		return FALSE
+		return OP_DECLINE
 	if(!move_into(src, OCCUPANT_SLOT_BODY_SCANNER, M))
 		return TRUE
 	update_icon()
@@ -120,22 +135,24 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /// Old MouseDrop_T.
-/obj/machinery/bodyscanner/proc/bodyscanner_interaction_drag(mob/user, mob/living/carbon/human/O, datum/interaction/interaction)
+/obj/machinery/bodyscanner/proc/bodyscanner_interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/carbon/human/O = A.held
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if(!istype(O))
-		return FALSE //not a mob
+		return OP_DECLINE //not a mob
 	if(user.incapacitated())
-		return FALSE //user shouldn't be doing things
+		return OP_DECLINE //user shouldn't be doing things
 	if(O.anchored)
-		return FALSE //mob is anchored???
+		return OP_DECLINE //mob is anchored???
 	if(get_dist(user, src) > 1 || get_dist(user, O) > 1)
-		return FALSE //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
+		return OP_DECLINE //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
 	if(!ishuman(user) && !isrobot(user))
-		return FALSE //not a borg or human
+		return OP_DECLINE //not a borg or human
 	if(occupant)
-		return FALSE //occupied (can_drag_inside refuses this)
+		return OP_DECLINE //occupied (can_drag_inside refuses this)
 	if(O?.buckled_to())
-		return FALSE
+		return OP_DECLINE
 
 	if(O == user)
 		act_message(user, src, others = "%U% climbs into %T%.")
@@ -156,7 +173,8 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	go_out()
 
 /// Old verb "Eject Body Scanner".
-/obj/machinery/bodyscanner/proc/bodyscanner_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bodyscanner/proc/bodyscanner_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.incapacitated())
 		return
 	go_out()

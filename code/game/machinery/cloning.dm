@@ -91,9 +91,11 @@
 	name = "cloning pod"
 
 /datum/om/relation/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+	..()
 	target.set_occupant(source)
 
 /datum/om/relation/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+	..()
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
 

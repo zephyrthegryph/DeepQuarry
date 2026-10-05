@@ -41,6 +41,8 @@
 #define OCCUPANT_SLOT_SLEEPER "sleeper_occupant"
 /// The sealed occupant slot of a cryo tube.
 #define OCCUPANT_SLOT_CRYO "cryo_occupant"
+/// The change key an occupant slot publishes on its holder when someone gets in or out (read through occupant_in()).
+#define OCCUPANT_KEY "occupant"
 /// The sealed occupant slot of an advanced medical body scanner.
 #define OCCUPANT_SLOT_BODY_SCANNER "body_scanner_occupant"
 /// The sealed occupant slot of a cloning pod.

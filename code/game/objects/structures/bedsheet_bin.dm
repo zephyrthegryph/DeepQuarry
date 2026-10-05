@@ -18,8 +18,6 @@ LINEN BINS
 	w_class = ITEMSIZE_SMALL
 	drop_sound = SFX_ITEMS_DROP_CLOTHING
 	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
-	///var used for attack_self chain
-	var/special_handling = FALSE
 	resistance_flags = FLAMMABLE
 
 /// Custom nouns to act as the subject of dreams.
@@ -29,31 +27,31 @@ TYPE_TABLE_DECLARE(/obj/item/bedsheet, bedsheet_dream_messages, list("white"))
 	. = ..()
 	make_rotatable(only_flip = TRUE)
 
-/// Old attack_self: lay the sheet out or pick its layer back up. Subtypes with special_handling fall through.
-/obj/item/bedsheet/proc/bedsheet_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+/// Old attack_self: lay the sheet out or pick its layer back up. A kind with its own use (a pillow) re-declares the op.
+/obj/item/bedsheet/proc/bedsheet_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.drop_item()
 	if(layer == initial(layer))
 		layer = ABOVE_MOB_LAYER
 	else
 		reset_plane_and_layer()
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/bedsheet, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SELF("Lay out", PROC_REF(bedsheet_self)), \
-)
+CAPABILITIES(/obj/item/bedsheet)
+	op("use_item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("lay_out", in_hand(), label("Lay out"), then(PROC_REF(bedsheet_self)))
 
 /// Old attackby.
-/obj/item/bedsheet/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/bedsheet/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(is_sharp(I))
 		act_message(user, src, MSG_SELF(span_notice("You begin cutting up %T% with [I].")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins cutting up %T% with [I].")))
 		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/bedsheet/proc/attackby_timed_done(mob/user)
 	var/turf/T = drop_location()
@@ -255,21 +253,15 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 
 
-/obj/structure/bedsheetbin/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/bedsheetbin_item,
-		/datum/interaction/entry_hand/bedsheetbin_hand,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_TK("Take sheet", PROC_REF(interaction_tk)))
-	..()
+CAPABILITIES(/obj/structure/bedsheetbin)
+	op("bedsheetbin_item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("bedsheetbin_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("take_sheet", tk(), label("Take sheet"), then(PROC_REF(interaction_tk)))
 
 /// Old attackby: put a bedsheet in, or hide a small item among the sheets.
-/datum/interaction/entry_item/bedsheetbin_item
-	id = "bedsheetbin_item"
-	name = "Use"
-	effect = /obj/structure/bedsheetbin/proc/interaction_item
-
-/obj/structure/bedsheetbin/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/bedsheetbin/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/bedsheet))
 		if(!own_bring_in(src, nameof(sheets), I, null, user, TRUE, null, FALSE))
 			return TRUE
@@ -284,12 +276,8 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 	return TRUE
 
 /// Old attack_hand: take a bedsheet out (and anything hidden among them).
-/datum/interaction/entry_hand/bedsheetbin_hand
-	id = "bedsheetbin_hand"
-	name = "Use"
-	effect = /obj/structure/bedsheetbin/proc/interaction_hand
-
-/obj/structure/bedsheetbin/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bedsheetbin/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(amount >= 1)
 		amount--
 
@@ -315,7 +303,8 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 	return TRUE
 
 /// Old attack_tk: pull a sheet (and anything hidden among them) out at range.
-/obj/structure/bedsheetbin/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bedsheetbin/proc/interaction_tk(datum/act/op/A)
+	var/mob/user = A.actor
 	if(amount >= 1)
 		amount--
 
