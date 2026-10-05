@@ -85,6 +85,7 @@
 //returns a direction flag based on the string passed to it
 // case insensitive
 /proc/dir_flag(dir)
+	READS_FROM()
 	dir = lowertext(dir)
 	switch(dir)
 		if("north")

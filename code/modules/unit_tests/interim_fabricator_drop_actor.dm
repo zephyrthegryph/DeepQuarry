@@ -1,10 +1,3 @@
-/obj/interim_fabricator_drop_actor_click
-	var/obj/machinery/machine
-	var/turf/landing
-
-/obj/interim_fabricator_drop_actor_click/Click(location, control, params)
-	machine.MouseDrop(null, get_turf(machine), landing)
-
 /datum/unit_test/interim_fabricator_drop_actor
 	abstract_type = /datum/unit_test/interim_fabricator_drop_actor
 	var/machine_type
@@ -15,7 +8,10 @@
 /datum/unit_test/interim_fabricator_drop_actor/mech
 	machine_type = /obj/machinery/mecha_part_fabricator_tg
 
+/// The drop direction follows a drag of the machine (the fabricator capability's drop_here op): only by someone standing next to it, never a ghost,
+/// and never toward the machine's own tile; it never starts printing.
 /datum/unit_test/interim_fabricator_drop_actor/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/east = get_step(T, EAST)
 	var/turf/north = get_step(T, NORTH)
@@ -26,39 +22,17 @@
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
 	ghost.forceMove(T)
 	var/obj/machinery/machine = allocate(machine_type, T)
-	if(istype(machine, /obj/machinery/rnd/production))
-		var/obj/machinery/rnd/production/production = machine
-		TEST_ASSERT(!production.busy, "the real production machine is not printing")
-	else
-		var/obj/machinery/mecha_part_fabricator_tg/mech = machine
-		TEST_ASSERT_NULL(mech.being_built(), "the actual mech fabricator has no active design")
-	var/obj/interim_fabricator_drop_actor_click/probe = allocate(/obj/interim_fabricator_drop_actor_click, T)
-	rel_set(probe, nameof(probe.machine), machine)
-	rel_set(probe, nameof(probe.landing), east)
-	km_synthetic_click(actor, probe)
-	TEST_ASSERT_EQUAL(actual_direction(machine), EAST, "the actual native drag selects the real east output direction")
-	TEST_ASSERT(!machine.Adjacent(bystander) && machine.Adjacent(ghost), "distant human and nearby actual observer satisfy their distinct refusal preconditions")
-	rel_set(probe, nameof(probe.landing), north)
-	km_synthetic_click(bystander, probe)
-	TEST_ASSERT_EQUAL(actual_direction(machine), EAST, "a distant native actor cannot reorient the actual machine")
-	km_synthetic_click(ghost, probe)
-	TEST_ASSERT_EQUAL(actual_direction(machine), EAST, "a nearby actual observer cannot reorient the actual machine")
-	rel_set(probe, nameof(probe.landing), T)
-	km_synthetic_click(actor, probe)
-	TEST_ASSERT_EQUAL(actual_direction(machine), EAST, "an actual zero-vector drop leaves its previous output orientation unchanged")
-	rel_set(probe, nameof(probe.landing), north)
-	km_synthetic_click(actor, probe)
-	TEST_ASSERT_EQUAL(actual_direction(machine), NORTH, "the same supported native actor can choose another real output floor")
-	if(istype(machine, /obj/machinery/rnd/production))
-		var/obj/machinery/rnd/production/production = machine
-		TEST_ASSERT(!production.busy, "orientation never starts production printing")
-	else
-		var/obj/machinery/mecha_part_fabricator_tg/mech = machine
-		TEST_ASSERT_NULL(mech.being_built(), "orientation never starts a mech design")
-
-/datum/unit_test/interim_fabricator_drop_actor/proc/actual_direction(obj/machinery/machine)
-	if(istype(machine, /obj/machinery/rnd/production))
-		var/obj/machinery/rnd/production/production = machine
-		return production.drop_direction
-	var/obj/machinery/mecha_part_fabricator_tg/mech = machine
-	return mech.drop_direction
+	TEST_ASSERT(!fabricator_printing(machine), "the machine is not printing")
+	test_drag(actor, machine, east)
+	TEST_ASSERT_EQUAL(machine.vars["drop_direction"], EAST, "a drag selects the east output direction")
+	TEST_ASSERT(!machine.Adjacent(bystander) && machine.Adjacent(ghost), "distant human and nearby observer satisfy their distinct refusal preconditions")
+	test_drag(bystander, machine, north)
+	TEST_ASSERT_EQUAL(machine.vars["drop_direction"], EAST, "a distant actor cannot reorient the machine")
+	test_drag(ghost, machine, north)
+	TEST_ASSERT_EQUAL(machine.vars["drop_direction"], EAST, "a nearby observer cannot reorient the machine")
+	test_drag(actor, machine, T)
+	TEST_ASSERT_EQUAL(machine.vars["drop_direction"], EAST, "a zero-vector drop leaves its previous output orientation unchanged")
+	test_drag(actor, machine, north)
+	TEST_ASSERT_EQUAL(machine.vars["drop_direction"], NORTH, "the same actor can choose another output floor")
+	TEST_ASSERT(!fabricator_printing(machine), "orientation never starts printing")
+	test_driver_end()

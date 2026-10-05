@@ -118,28 +118,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_P
 	if(index == 3)
 		rust_device_dirty()
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/atmos_filter, set_flow_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, set_flow_rate)
+TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type)
 
 /// The Rust group is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/trinary/atmos_filter/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate), nameof(filter_type))
-
-/obj/machinery/atmospherics/trinary/atmos_filter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/atmos_filter_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/atmos_filter_use
-	id = "atmos_filter_use"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/trinary/atmos_filter/proc/lets_in, "access denied"))
-	effect = /atom/proc/interaction_open_ui
-
-/obj/machinery/atmospherics/trinary/atmos_filter/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
 
 /// The window's data.
 /obj/machinery/atmospherics/trinary/atmos_filter/ui_data(datum/act/eval/A)
@@ -169,14 +154,14 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type, C
 	return data
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
-	interface("AtmosFilter")
+	pipe_device_window("AtmosFilter")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("rate", ui_act("rate", arg("rate")), then(PROC_REF(ui_act_rate)))
 	op("filter", ui_act("filter", arg("filterset", num())), then(PROC_REF(ui_act_filter)))
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_power(datum/act/op/A)
-	set_use_power(!use_power)
-	add_fingerprint(A.actor)
+	toggle_power()
+	return OP_OK
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_rate(datum/act/op/A, rate)
 	if(rate == "max")
@@ -186,13 +171,11 @@ CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
 		. = TRUE
 	if(.)
 		set_set_flow_rate(clamp(rate, 0, air1.return_volume()))
-	add_fingerprint(A.actor)
 	update_icon()
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_filter(datum/act/op/A, filterset)
 	. = TRUE
 	set_filter_type(filterset)
-	add_fingerprint(A.actor)
 	update_icon()
 
 //

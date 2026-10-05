@@ -1108,7 +1108,12 @@
 	var/turf/simulated/floor/pipe_turf = run[2]
 	var/direction = get_dir(T, pipe_turf)
 	dq_atmos_test_isolate_pair(T, pipe_turf)
+	// The two tiles share their air: both start with the same, or the room's moles drift by mixing with whatever an earlier test left on the
+	// pipe's tile (the run is found anywhere on the map, outside the room the base snapshots).
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_snapshot_air(pipe_turf)
 	am_set_air(T)
+	am_set_air(pipe_turf)
 	var/obj/machinery/atmospherics/unary/vent_pump/siphon/on/atmos/V = allocate(/obj/machinery/atmospherics/unary/vent_pump/siphon/on/atmos, T)
 	V.dir = direction
 	V.initialize_directions = direction

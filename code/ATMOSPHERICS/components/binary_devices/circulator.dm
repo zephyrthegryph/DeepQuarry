@@ -55,7 +55,7 @@
 				last_temperature = removed.return_temperature()
 
 				//Update the gas networks.
-				network1.mark_dirty()
+				gas_touched(air1)
 
 				EXPIRY_STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
 				// The "running" overlay times out 5 s after the last transfer: one timer,

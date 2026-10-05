@@ -25,8 +25,11 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Enfeebling Sting (30)"
 	set desc = "Reduces the maximum health of a victim for a few minutes.."
+	return changeling_enfeebling_string_stage()
 
-	var/mob/living/carbon/T = changeling_sting(30,/mob/proc/changeling_enfeebling_string)
+/mob/proc/changeling_enfeebling_string_stage(mob/living/carbon/selected_target)
+
+	var/mob/living/carbon/T = changeling_sting(30, PROC_REF(changeling_enfeebling_string_target_answered), selected_target)
 	var/datum/changeling/comp = is_changeling(src)
 	if(!T)
 		return 0
@@ -42,3 +45,8 @@
 		H.apply_body_effect(type_to_give, 2 MINUTES)
 	feedback_add_details("changeling_powers","ES")
 	return 1
+
+/mob/proc/changeling_enfeebling_string_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_enfeebling_string_stage(A.answer.answer_value)

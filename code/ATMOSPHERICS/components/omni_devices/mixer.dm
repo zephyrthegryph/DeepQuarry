@@ -122,112 +122,121 @@
 		use_power(power_w)
 	last_flow_rate = moles
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/omni/mixer, set_flow_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/omni/mixer, set_flow_rate)
 
 /// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or share changes.
 /obj/machinery/atmospherics/omni/mixer/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate))
 
-DECLARE_UI(/obj/machinery/atmospherics/omni/mixer, "OmniMixer")
+CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
+	ref_one(nameof(output))
+	ref_many(nameof(inputs))
+	pipe_device_window("OmniMixer")
+	op("power", ui_act("power"), then(PROC_REF(ui_power_switched)))
+	op("configure", ui_act("configure"), then(PROC_REF(ui_configure)))
+	op("set_flow_rate", ui_act("set_flow_rate"), needs(req(PROC_REF(configurable), silent = TRUE)),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_flow_rate_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = nameof(max_flow_rate), "timeout" = 0), step = "rate"),
+		then(PROC_REF(ui_set_flow_rate)))
+	op("switch_mode", ui_act("switch_mode", arg("dir"), arg("mode", schema_text(16))), needs(req(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_switch_mode)))
+	op("switch_con", ui_act("switch_con", arg("dir")), needs(req(PROC_REF(configurable), silent = TRUE), req(PROC_REF(share_free), silent = TRUE)),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(share_question)), "title" = "Concentration control", "default" = computed(PROC_REF(share_default)), "max_value" = computed(PROC_REF(share_most)), "timeout" = 0), step = "share"),
+		then(PROC_REF(ui_switch_con)))
+	op("switch_conlock", ui_act("switch_conlock", arg("dir")), needs(req(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_switch_conlock)))
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/omni/mixer, "power=use_power", "config=configuring:num", "merge:ui_data_obj_machinery_atmospherics_omni_mixer{ports:list,set_flow_rate:num,last_flow_rate:num}")
-
-/// The computed part of /obj/machinery/atmospherics/omni/mixer's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/omni/mixer/proc/ui_data_obj_machinery_atmospherics_omni_mixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
-
+/// The window's data.
+/obj/machinery/atmospherics/omni/mixer/ui_data(datum/act/eval/A)
+	var/list/data = list("power" = use_power, "config" = configuring)
 	var/list/portData = list()
 	for(var/datum/omni_port/P in ports)
 		if(!configuring && P.mode == 0)
 			continue
-
-		var/input = 0
-		var/output = 0
-		switch(P.mode)
-			if(ATM_INPUT)
-				input = 1
-			if(ATM_OUTPUT)
-				output = 1
-
-		portData[++portData.len] = list("dir" = dir_name(P.dir, capitalize = 1), \
-										"concentration" = P.concentration, \
-										"input" = input, \
-										"output" = output, \
-										"con_lock" = P.con_lock)
-
+		portData[++portData.len] = list("dir" = dir_name(P.dir, capitalize = 1), "concentration" = P.concentration, "input" = P.mode == ATM_INPUT, "output" = P.mode == ATM_OUTPUT, "con_lock" = P.con_lock)
 	if(portData.len)
 		data["ports"] = portData
 	if(output)
 		data["set_flow_rate"] = round(set_flow_rate)
 		data["last_flow_rate"] = round(last_flow_rate)
-
 	return data
 
-/obj/machinery/atmospherics/omni/mixer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	wake_for_state_change()
-	return TRUE
+/// The ports, the rate and the shares are changed only while configuring with the mixer off (silent, as the old early returns were).
+/obj/machinery/atmospherics/omni/mixer/proc/configurable(datum/act/op/A)
+	return configuring && !use_power
 
-UI_ACT(/obj/machinery/atmospherics/omni/mixer, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_power)
-	. = TRUE
+/obj/machinery/atmospherics/omni/mixer/proc/ui_power_switched(datum/act/op/A)
 	if(!configuring)
 		set_use_power(!use_power)
 	else
 		set_use_power(USE_POWER_OFF)
 	wake_for_state_change()
 	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/omni/mixer, "configure", ui_act_configure)
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_configure)
-	. = TRUE
+/obj/machinery/atmospherics/omni/mixer/proc/ui_configure(datum/act/op/A)
 	set_configuring(!configuring)
 	if(configuring)
 		set_use_power(USE_POWER_OFF)
 	wake_for_state_change()
 	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/omni/mixer, "set_flow_rate", ui_act_set_flow_rate)
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_set_flow_rate)
-	. = TRUE
-	if(!configuring || use_power)
-		return
-	var/new_flow_rate = act_ask(ui.user, action, params, ui, "k237", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
-	if(isnull(new_flow_rate))
-		return
-	set_set_flow_rate(between(0, new_flow_rate, max_flow_rate))
+/obj/machinery/atmospherics/omni/mixer/proc/set_flow_rate_question(datum/act/op/A)
+	return "Enter new flow rate limit (0-[max_flow_rate]L/s)"
+
+/obj/machinery/atmospherics/omni/mixer/proc/ui_set_flow_rate(datum/act/op/A)
+	set_set_flow_rate(between(0, A.step_value("rate"), max_flow_rate))
 	wake_for_state_change()
 	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/omni/mixer, "switch_mode", ui_act_switch_mode, UI_ARG_VALUE("dir"), UI_ARG_TEXT("mode"))
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_mode)
-	. = TRUE
-	if(!configuring || use_power)
-		return
-	switch_mode(dir_flag(params["dir"]), params["mode"])
+/obj/machinery/atmospherics/omni/mixer/proc/ui_switch_mode(datum/act/op/A, dir, mode)
+	switch_mode(dir_flag(dir), mode)
 	wake_for_state_change()
 	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/omni/mixer, "switch_con", ui_act_switch_con, UI_ARG_VALUE("dir"))
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_con)
-	. = TRUE
-	if(!configuring || use_power)
-		return
-	change_concentration(dir_flag(params["dir"]), ui.user)
+/obj/machinery/atmospherics/omni/mixer/proc/ui_switch_conlock(datum/act/op/A, dir)
+	con_lock(dir_flag(dir))
 	wake_for_state_change()
 	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/omni/mixer, "switch_conlock", ui_act_switch_conlock, UI_ARG_VALUE("dir"))
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
-	. = TRUE
-	if(!configuring || use_power)
-		return
-	con_lock(dir_flag(params["dir"]))
+// ---- an input's share ----
+
+/// The share the locked inputs leave (the asked port itself is never counted).
+/obj/machinery/atmospherics/omni/mixer/proc/share_left(port)
+	. = 1
+	for(var/datum/omni_port/P in inputs)
+		if(P.dir != port && P.con_lock)
+			. -= P.concentration
+
+/// Another input is free to take up the rest.
+/obj/machinery/atmospherics/omni/mixer/proc/share_free(datum/act/op/A)
+	var/port = dir_flag(A.args["dir"])
+	for(var/datum/omni_port/P in inputs)
+		if(P.dir != port && !P.con_lock) // ALLOW(reads): the ports are asked when the button is pressed, never from a cached menu or look
+			return TRUE
+	return FALSE
+
+/obj/machinery/atmospherics/omni/mixer/proc/share_most(datum/act/op/A)
+	return round(share_left(dir_flag(A.args["dir"])) * 100, 0.5)
+
+/obj/machinery/atmospherics/omni/mixer/proc/share_question(datum/act/op/A)
+	return "Enter a new concentration (0-[share_most(A)])%"
+
+/obj/machinery/atmospherics/omni/mixer/proc/share_default(datum/act/op/A)
+	var/port = dir_flag(A.args["dir"])
+	for(var/datum/omni_port/P in inputs)
+		if(P.dir == port)
+			return min(share_left(port), P.concentration) * 100
+	return 0
+
+/// The asked share goes to its port; the rest is spread evenly over the inputs that are not locked.
+/obj/machinery/atmospherics/omni/mixer/proc/ui_switch_con(datum/act/op/A, dir)
+	set_share(dir_flag(dir), A.step_value("share") / 100)
 	wake_for_state_change()
 	update_icon()
+	return OP_OK
 
 /obj/machinery/atmospherics/omni/mixer/proc/switch_mode(port = NORTH, mode = ATM_NONE)
 	wake_for_state_change()
@@ -269,71 +278,28 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
 
 	update_ports()
 
-/obj/machinery/atmospherics/omni/mixer/proc/change_concentration(port = NORTH, mob/user)
-	return mixer_concentration_stage(port, user, list())
-
-/obj/machinery/atmospherics/omni/mixer/proc/mixer_concentration_stage(port, mob/user, list/config_answers)
+/// Sets the share of `port` (clamped to what the locked inputs leave) and spreads the rest over the unlocked inputs.
+/obj/machinery/atmospherics/omni/mixer/proc/set_share(port, new_con)
 	tag_north_con = null
 	tag_south_con = null
 	tag_east_con = null
 	tag_west_con = null
-
-	var/old_con = 0
+	var/remain_con = share_left(port)
 	var/non_locked = 0
-	var/remain_con = 1
-
 	for(var/datum/omni_port/P in inputs)
-		if(P.dir == port)
-			old_con = P.concentration
-		else if(!P.con_lock)
+		if(P.dir != port && !P.con_lock)
 			non_locked++
-		else
-			remain_con -= P.concentration
-
 	if(non_locked < 1)
 		return
-
-	if(!("k321" in config_answers))
-		open_request(src, /datum/prompt/number/atmos_config_review, PROC_REF(mixer_concentration_answered), answerer = user, config_operator = user, config_port = port, config_answers = config_answers, config_key = "k321", question = "Enter a new concentration (0-[round(remain_con * 100, 0.5)])%", title = "Concentration control", default = min(remain_con, old_con)*100, config_max = round(remain_con * 100, 0.5))
-		return
-	var/_answer_k321 = config_answers["k321"]
-	if(isnull(_answer_k321))
-		return
-	var/new_con = (_answer_k321) / 100
-
-	//cap it between 0 and the max remaining concentration
 	new_con = between(0, new_con, remain_con)
-
-	//new_con = min(remain_con, new_con)
-
-	//clamp remaining concentration so we don't go into negatives
-	remain_con = max(0, remain_con - new_con)
-
-	//distribute remaining concentration between unlocked ports evenly
-	remain_con /= max(1, non_locked)
-
+	remain_con = max(0, remain_con - new_con) / max(1, non_locked)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
 			P.concentration = new_con
 		else if(!P.con_lock)
 			P.concentration = remain_con
 
-
 /obj/machinery/atmospherics/omni/mixer/proc/con_lock(port = NORTH)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
-
-CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
-	ref_one(nameof(output))
-	ref_many(nameof(inputs))
-
-/obj/machinery/atmospherics/omni/mixer/proc/mixer_concentration_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/number/atmos_config_review/ask = context.answer
-	var/list/config_answers = ask.config_answers.Copy()
-	config_answers[ask.config_key] = ask.answer_value
-	// Recovery: old kept.finished refreshed the target even if replay failed.
-	. = mixer_concentration_stage(ask.config_port, ask.config_operator, config_answers)
-	SStgui.update_uis(src)

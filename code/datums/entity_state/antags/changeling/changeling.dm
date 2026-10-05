@@ -275,7 +275,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 	return 1
 
 //Handles the general sting code to reduce on copypasta (seeming as somebody decided to make SO MANY dumb abilities)
-/mob/proc/changeling_sting(required_chems=0, verb_path)
+/mob/proc/changeling_sting(required_chems=0, then_proc, mob/living/carbon/selected_target, list/captured)
 	var/datum/changeling/comp = changeling_power(required_chems)
 	if(!comp)
 		return
@@ -284,11 +284,12 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 		return
 
 	var/list/victims = list()
-	for(var/mob/living/carbon/C in oview(comp.sting_range))
+	for(var/mob/living/carbon/C in oview(comp.sting_range, src))
 		victims += C
-	var/mob/living/carbon/T = rerun_ask(src, "a1", PROC_REF(changeling_sting), args, /datum/om/prompt/choice, message = "Who will we sting?", title = "Sting!", choices = victims)
-	if(isnull(T))
+	if(isnull(selected_target))
+		open_request(src, /datum/prompt/choice/changeling_sting_target, then_proc, answerer = src, choices = victims, captured = captured)
 		return
+	var/mob/living/carbon/T = selected_target
 
 	if(!T)
 		to_chat(src, span_warning("We have no targets in range to sting!"))
@@ -299,7 +300,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 	if(HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
-	if(!(T in view(comp.sting_range))) return
+	if(!(T in view(comp.sting_range, src))) return
 	if(!sting_can_reach(T, comp.sting_range)) return
 	if(!changeling_power(required_chems)) return
 
@@ -498,3 +499,26 @@ CAPABILITIES(/datum/changeling_panel)
 
 
 
+
+/datum/prompt/choice/changeling_sting_target
+	question = "Who will we sting?"
+	title = "Sting!"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/changeling_sting_target/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	var/mob/living/carbon/selected = answer_value
+	if(!isnull(selected) && QDELETED(selected))
+		return "gone"
+	return null
+
+/datum/prompt/choice/changeling_sting_dna
+	question = "Select the target DNA:"
+	title = "Target DNA"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/changeling_sting_dna/recheck_extra()
+	return QDELETED(owner) || QDELETED(answerer) ? "gone" : null

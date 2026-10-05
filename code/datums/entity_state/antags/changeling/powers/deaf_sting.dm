@@ -12,8 +12,11 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Deaf sting (5)"
 	set desc="Sting target:"
+	return changeling_deaf_sting_stage()
 
-	var/mob/living/carbon/T = changeling_sting(5,/mob/proc/changeling_deaf_sting)
+/mob/proc/changeling_deaf_sting_stage(mob/living/carbon/selected_target)
+
+	var/mob/living/carbon/T = changeling_sting(5, PROC_REF(changeling_deaf_sting_target_answered), selected_target)
 	var/datum/changeling/comp = is_changeling(src)
 	if(!T)	return 0
 	add_attack_logs(src,T,"Deaf sting (changeling)")
@@ -25,3 +28,8 @@
 	T.status_at_least(EFFECT_DEAFENED, CEILING(duration / LIFE_CYCLE, 1))
 	feedback_add_details("changeling_powers","DS")
 	return 1
+
+/mob/proc/changeling_deaf_sting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_deaf_sting_stage(A.answer.answer_value)

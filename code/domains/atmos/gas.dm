@@ -106,7 +106,7 @@
 /proc/gas_touched(datum/gas_mixture/air)
 	var/datum/pipe_network/network = owner_of(air)
 	if(istype(network))
-		network.mark_dirty()
+		network.revision++
 
 // ---- filling a vessel ----
 

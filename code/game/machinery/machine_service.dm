@@ -213,9 +213,7 @@ SYSTEM_DEF(machines)
 			var/turf/open/T = M.loc
 			if(istype(T))
 				touched_turfs[T] = TRUE
-		if(istype(M, /obj/machinery/atmospherics/unary))
-			var/obj/machinery/atmospherics/unary/U = M
-			U.network?.mark_dirty()
+		gas_touched(destination)
 	// Publication is atomic, so visuals and turf dependencies should observe it
 	// atomically too. Multiple devices on one turf now cause one semantic update.
 	for(var/turf/open/T as anything in touched_turfs)

@@ -275,6 +275,23 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	goia_overlays["zorgoia_belly"] = bodycolor
 	update_icon()
 
+/// Immutable visual snapshots, bounded so arbitrary player colours cannot grow a world-long cache.
+DECLARE_SHARED_CACHE_EX(zorgoia_overlay, GLOBAL_PROC_REF(build_zorgoia_overlay), SC_NEVER, 1024, 0)
+
+/proc/cached_zorgoia_overlay(state, tint, overlay_plane, overlay_layer)
+	var/key = json_encode(list(state, tint, overlay_plane, overlay_layer))
+	return CACHED_KEY(zorgoia_overlay, key, state, tint, overlay_plane, overlay_layer)
+
+/proc/build_zorgoia_overlay(state, tint, overlay_plane, overlay_layer)
+	// Like iconstate2appearance(), retain one private scratch image and cache only its immutable snapshot.
+	var/static/image/scratch = image('icons/mob/zorgoia64x32.dmi', pixel_x = -16)
+	scratch.icon_state = state
+	scratch.color = tint
+	scratch.appearance_flags = RESET_COLOR|PIXEL_SCALE
+	scratch.plane = overlay_plane
+	scratch.layer = overlay_layer
+	return scratch.appearance
+
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/zorgoia, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/zorgoia/appearance_overlays()
 	. = list()
@@ -288,85 +305,26 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/zorgoia, TYPE_PROC_REF(/atom
 	vore_capacity = 3
 	//Heads up, the order of these overlays stacking on top of each other is different from the array order. So goia_overlay[1] is the belly, but rendering on top of everything at the end instead
 
-	var/image/I = image(icon, "[goia_overlays["main"]][resting? "-rest" : null]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_main"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["main"]][resting? "-rest" : null]", goia_overlays["zorgoia_main"], MOB_PLANE, MOB_LAYER)
 
-	I = image(icon, "[goia_overlays["ears"]][resting? "-rest" : null]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_ears"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["ears"]][resting? "-rest" : null]", goia_overlays["zorgoia_ears"], MOB_PLANE, MOB_LAYER)
 
-	I = image(icon, "[goia_overlays["spots"]][resting? "-rest" : null]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_spots"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["spots"]][resting? "-rest" : null]", goia_overlays["zorgoia_spots"], MOB_PLANE, MOB_LAYER)
 
-	I = image(icon, "[goia_overlays["claws"]][resting? "-rest" : null]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_claws"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["claws"]][resting? "-rest" : null]", goia_overlays["zorgoia_claws"], MOB_PLANE, MOB_LAYER)
 
-	I = image(icon, "[goia_overlays["spines"]][resting? "-rest" : null]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_spines"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["spines"]][resting? "-rest" : null]", goia_overlays["zorgoia_spines"], MOB_PLANE, MOB_LAYER)
 
 
-	I = image(icon, "[goia_overlays["fluff"]][resting? "-rest" : null]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_fluff"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["fluff"]][resting? "-rest" : null]", goia_overlays["zorgoia_fluff"], MOB_PLANE, MOB_LAYER)
 
-	I = image(icon, "[goia_overlays["eyes"]][resting? "-rest" : null]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_eyes"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = PLANE_LIGHTING_ABOVE
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["eyes"]][resting? "-rest" : null]", goia_overlays["zorgoia_eyes"], PLANE_LIGHTING_ABOVE, FLOAT_LAYER)
 
-	I = image(icon, "[goia_overlays["spike"]][resting? "-rest" : null]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_spike"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["spike"]][resting? "-rest" : null]", goia_overlays["zorgoia_spike"], MOB_PLANE, MOB_LAYER)
 
-	I = image(icon, "[goia_overlays["belly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_belly"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["belly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", goia_overlays["zorgoia_belly"], MOB_PLANE, MOB_LAYER)
 
-	I = image(icon, "[goia_overlays["underbelly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", pixel_x = -16)
-	I.color = goia_overlays["zorgoia_underbelly"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	. += I
-	qdel(I)
+	. += cached_zorgoia_overlay("[goia_overlays["underbelly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", goia_overlays["zorgoia_underbelly"], MOB_PLANE, MOB_LAYER)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(zorgoia_interaction_hand)), \

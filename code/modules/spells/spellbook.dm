@@ -16,7 +16,7 @@
 
 // attack_self moved to code/modules/spells/spellbook_panel.dm so it opens via structured TGUI.
 
-/// The panel's "choose" action: learns, upgrades or buys `spell_choice` (params/ui carry the upgrade prompt's re-run).
+/// The panel's "choose" action: learns, upgrades or buys `spell_choice`.
 /obj/item/spellbook/proc/choose_spell(mob/user, spell_choice, list/params, datum/tgui/ui)
 	if(!ishuman(user) || !istext(spell_choice))
 		return
@@ -58,23 +58,8 @@
 							uses++
 							break
 						else
-							if(aspell.can_improve("speed") && aspell.can_improve("power"))
-								var/upgrade = act_ask(H, "choose", params, ui, "upgrade", /datum/om/prompt/choice/alert, message = "Do you want to upgrade this spell's speed or power?", title = "Select Upgrade", choices = list("Speed", "Power", "Cancel"))
-								if(isnull(upgrade)) // the answer re-runs this link
-									uses++
-									return
-								switch(upgrade)
-									if("Speed")
-										temp = aspell.quicken_spell()
-									if("Power")
-										temp = aspell.empower_spell()
-									else
-										uses++
-										break
-							else if (aspell.can_improve("speed"))
+							if(aspell.can_improve("speed"))
 								temp = aspell.quicken_spell()
-							else if (aspell.can_improve("power"))
-								temp = aspell.empower_spell()
 			/*
 			*/
 				if(!already_knows)

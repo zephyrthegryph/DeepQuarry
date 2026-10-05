@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prints the path of the `analyze` lint engine binary (tools/analyze), building it first when stale
-# (cargo's own up-to-date check: a no-op, about a second, when nothing changed).
+# (the shared binary cache, else cargo's own up-to-date check: a no-op, about a second, when nothing changed).
 #
 #   bin=$(bash tools/ci/analyze.sh) && "$bin" check --ci
 #
@@ -19,6 +19,19 @@ bin="$target_dir/$profile/$exe"
 if [ -n "${DQ_ANALYZE_NO_BUILD:-}" ] && [ -x "$bin" ]; then
 	echo "$bin"
 	exit 0
+fi
+# The release binary goes through the build tool's analyze-build target: it restores the binary from the
+# shared content-addressed cache (DQ_ANALYZE_CACHE, E:/dq-cache/analyze-bin) when another worktree already
+# built these sources, and builds and stores it otherwise. A fresh worktree then needs no cargo build.
+if [ "$profile" = "release" ] && [ -z "${DQ_ANALYZE_DIRECT_CARGO:-}" ]; then
+	"$root/tools/build/build.sh" analyze-build >&2 || {
+		echo "analyze: tools/build/build.sh analyze-build failed" >&2
+		exit 1
+	}
+	if [ -x "$bin" ]; then
+		echo "$bin"
+		exit 0
+	fi
 fi
 if ! command -v cargo >/dev/null 2>&1; then
 	if [ -x "$bin" ]; then

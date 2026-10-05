@@ -7,6 +7,8 @@ Destructive Analyzer
 It is used to destroy hand-held objects and advance technological research. Used to perform /datum/experiment/physical/destructive_analysis experiments.
 */
 
+MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
+
 /obj/machinery/rnd/destructive_analyzer
 	name = "destructive analyzer"
 	icon_state = "d_analyzer"
@@ -18,9 +20,17 @@ It is used to destroy hand-held objects and advance technological research. Used
 	var/rped_recycler_ready = TRUE
 	var/datum/remote_materials/rmat
 
+/// Busy analysing an item (or recycling parts).
+OM_FIELD(/obj/machinery/rnd/destructive_analyzer, busy, FALSE, CHANGE_MACHINE_SETTINGS)
+
+///Reset the state of this machine
+/obj/machinery/rnd/destructive_analyzer/proc/reset_busy()
+	set_busy(FALSE)
+
 CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	owns_one(nameof(rmat), /datum/remote_materials)
 	interface("DestructiveAnalyzer")
+	extend("part_replacement.replace", needs(req(PROC_REF(idle), because = MSG(analyzer/busy))))
 	op("eject_item", ui_act("eject_item"), then(PROC_REF(ui_act_eject_item)))
 	op("deconstruct", ui_act("deconstruct", arg("deconstruct_id", schema_text(4096))), then(PROC_REF(ui_act_deconstruct)))
 
@@ -51,36 +61,30 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	T *= 0.1
 	decon_mod = clamp(T, 0, 1)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/rnd/destructive_analyzer/appearance_overlays()
-	. = list()
-	var/current_item = loaded_item
-	if(panel_open)
-		icon_state = "d_analyzer_t"
-	else if(current_item)
-		icon_state = "d_analyzer_l"
+/// Its open panel and the item it holds have their own states.
+/obj/machinery/rnd/destructive_analyzer/draw(datum/look/look)
+	..()
+	look.hide(LOOK_PANEL_OPEN)
+	if(panel_open(src))
+		look.state("d_analyzer_t")
+	else if(loaded_item)
+		look.state("d_analyzer_l")
 	else
-		icon_state = "d_analyzer"
+		look.state("d_analyzer")
 
 /obj/machinery/rnd/destructive_analyzer/declare_interactions(list/into)
 	into += list(
-		/datum/interaction/machine_item/destructive_analyzer_part_replace,
 		/datum/interaction/machine_item/destructive_analyzer_load,
 		/datum/interaction/machine_drag/destructive_analyzer_recycle,
-		/datum/interaction/machine_hand/ungated/open_ui,
 	)
 	..()
 
 /obj/machinery/rnd/destructive_analyzer/proc/not_busy(mob/actor, atom/target, obj/item/held)
 	return !busy
 
-/datum/interaction/machine_item/destructive_analyzer_part_replace
-	id = "destructive_analyzer_part_replace"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/not_busy, "it's busy right now"))
-	effect = /obj/machinery/proc/interaction_part_replacement
+/// Not busy analysing (a requirement of the part replacer).
+/obj/machinery/rnd/destructive_analyzer/proc/idle(datum/act/A)
+	return !busy
 
 /datum/interaction/machine_item/destructive_analyzer_load
 	id = "destructive_analyzer_load"
@@ -91,7 +95,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/
 	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_load
 
 /obj/machinery/rnd/destructive_analyzer/proc/panel_closed(mob/actor, atom/target, obj/item/held)
-	return !panel_open
+	return !panel_open(src)
 
 /obj/machinery/rnd/destructive_analyzer/proc/interaction_load(mob/user, obj/item/O, datum/interaction/interaction)
 	var/current_item = loaded_item
