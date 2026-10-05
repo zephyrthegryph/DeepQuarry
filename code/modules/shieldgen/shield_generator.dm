@@ -425,8 +425,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		if(running == SHIELD_IDLE)
 			return
 		running = SHIELD_IDLE
-		for(var/obj/effect/shield/S in field_segments)
-			qdel(S)
+		own_clear(src, nameof(field_segments), OWN_DELETE)
 	else
 		if(running != SHIELD_IDLE)
 			return
