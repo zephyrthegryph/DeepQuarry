@@ -347,18 +347,10 @@ GLOBAL_VAR_INIT(e0_chain_handled, 0)
 /obj/e0_fixture/door_assembly
 	name = "e0 door assembly"
 
+/// The boarded stage puts the board in the assembly's construction slot, declared as an entry (four things at most).
 CAPABILITIES(/obj/e0_fixture/door_assembly)
 	construction(GRAPH_DOOR_ASSEMBLY)
-
-/// The slot the boarded stage puts the board in (SLOT_CONSTRUCTION).
-/datum/om/relation/slot/e0_construction
-	holder = /obj/e0_fixture/door_assembly
-	slot_id = SLOT_CONSTRUCTION
-	name = "construction"
-	is_default = TRUE
-	capacity_model = SLOT_CAPACITY_COUNT
-	capacity = 4
-	drop_policy = SLOT_DROP_SPILL
+	slot(SLOT_CONSTRUCTION, capacity = 4)
 
 /// A subtype placed finished. Two paths lead from the frame to finished, so the type names which one the history is seeded along.
 /obj/e0_fixture/door_assembly/finished

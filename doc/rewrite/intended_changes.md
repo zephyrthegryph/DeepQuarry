@@ -622,6 +622,23 @@ Pinned by `code/modules/unit_tests/dq_fwg3_windows.dm` (buttons through `hc_ui()
 * **Atmospherics filters.** The omni filter's flow-rate and filter questions are `asks()` steps behind a silent requirement (configuring, with the filter off); `configuring` is tracked. The trinary filter's three buttons are ops.
 * **Rubber duckies.** Each duck's squeeze re-declares the horn's `honk` op (the two in-hand ops clashed at boot since the horn was converted).
 
+### fw-gaps3 content: modals as in-window questions (chem master, chemical synthesizer, chemical dispenser)
+
+Pinned by `code/modules/unit_tests/dq_fwg3_modals.dm` (modals opened and answered as the client does, run on the legacy `ui_modal_opened()` /
+`ui_modal_answered()` first; the two flows whose legacy answer re-ran `tgui_act()` through an open window, the buffer's custom amounts and the chained
+"make several" modals, could not be driven there and are pinned on the converted form).
+
+* **Chem master.** Every modal is an op bound to `"modal:<id>"` whose question is asked inline; the guards that kept a modal from opening (no beaker, an
+  empty buffer, a condiment master asked for pills) are silent requirements. "Make several" (pills, patches, bottles) is one op with two steps, the
+  count then the name (shown under the single-item modal's id); a count below one asks again instead of closing (it was dropped silently). The style
+  modals answer the picked sprite, whose index is the style. The custom buffer amounts reach the add and remove buttons' own handlers directly (they
+  re-entered `tgui_act()`, which needs the open window). A cyborg standing next to it now gets an ejected beaker or pill bottle put in its gripper,
+  if it can hold it (`!issilicon()` became "not through a remote link"); the AI never does.
+* **Chemical synthesizer.** The three style modals are inline steps; the clear-queue, stall and remove-recipe confirmations are `asks()` steps (stall
+  asks only while running, remove only while idle).
+* **Chemical dispenser.** Its buttons are ops behind a silent "not broken" requirement; clearing the recipes asks first, and saving a recording asks
+  for its name and then, only when that name is taken, whether to overwrite (the old window-interactive check between the two is the op's recheck).
+
 ## Silicon entry points (phase A): remote() ops, the interface provider, the gripper as a provider
 
 Pinned by `code/modules/unit_tests/dq_silicon_entry_tests.dm` (16 tests, green on the legacy hooks first; the converted code passes the same tests, one
@@ -662,3 +679,6 @@ Pinned by `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (green on the leg
 * **An APC frame held to a wall builds the APC on the wall.** `try_build()` called `replace_with()` on the frame while it was still in the
   builder's hand, and `replace_with()` hands the successor the original's slot: the new APC frame went into the builder's hand. The frame is
   dropped first now (fixed on the legacy code with the tests).
+* **The APC's board goes into the build graph's own slot.** The `apc_construction` slot relation is gone: the ledger makes a slot from the
+  graph's `put_in(SLOT_CONSTRUCTION)` (one board, in the graph's space SPACE_HATCH, so the board sits behind the cover like the rest of the
+  ladder). A `slot(SLOT_X, capacity =, at =, accepts =)` entry declares any other such slot (the e0 door assembly's).

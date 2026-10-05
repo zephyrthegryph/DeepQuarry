@@ -129,12 +129,86 @@
 
 DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEVER)
 
-/// Builder for dq_slot_defs_for(): `holder` is any instance answering `key`.
+/// Builder for dq_slot_defs_for(): `holder` is any instance answering `key`. The registry's relation decls first, then the slots the holder's
+/// CAPABILITIES declare (slot() entries, and the slot each construction or deployment graph puts its parts in).
 /proc/build_slot_defs_for(atom/holder, key)
 	var/list/defs = holder.slot_relation_overrides()
 	if(isnull(defs))
 		defs = om_registry().slot_group_for(key)
+	var/list/declared = declared_slot_defs(holder, defs)
+	if(length(declared))
+		defs = (defs || list()) + declared
 	return length(defs) ? defs : FALSE
+
+// ---- slots declared as entries ----
+
+/// A ledger slot made from a declaration, not a relation type of its own: a slot(SLOT_X, ...) entry of the holder's CAPABILITIES, or the slot a
+/// state graph's put_in(SLOT_X) puts its parts in (the APC's board in SLOT_CONSTRUCTION). One shared instance per holder type and slot id
+/// (declared_slot_def()); the ledger moves link things under this one registered relation type.
+/datum/om/relation/slot/declared
+	name = "declared slot"
+	capacity_model = SLOT_CAPACITY_COUNT
+	drop_policy = SLOT_DROP_SPILL
+	/// A slot() entry's accepts: the type a thing must be.
+	var/accepts_type
+
+/datum/om/relation/slot/declared/refusal(atom/holder, atom/movable/thing, mob/actor)
+	if(accepts_type && !istype(thing, accepts_type))
+		return "\The [thing] doesn't go there."
+	return ..()
+
+/// The declared slots of `holder` that its relation decls (`defs`) do not already give, in declaration order: its slot() entries, then each
+/// graph's put_in() slots. Built once per holder type (dq_slot_defs_for() caches the list).
+/proc/declared_slot_defs(atom/holder, list/defs)
+	. = list()
+	var/list/taken = list()
+	for(var/datum/om/relation/slot/S as anything in defs)
+		taken[S.slot_id] = TRUE
+	var/datum/type_table/T = table_of(holder)
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_SLOT))
+		var/datum/entry/E = C.item
+		var/id = E.args["id"]
+		if(isnull(id) || taken[id] || (istext(id) && (id in holder.vars)))
+			continue
+		taken[id] = TRUE
+		var/capacity = E.args["capacity"]
+		. += declared_slot_def(holder.type, id, isnum(capacity) ? capacity : 0, E.args["at"], E.args["accepts"], !length(defs) && !length(.))
+	for(var/cap_id in list(CAP_CONSTRUCTION, CAP_DEPLOYMENT))
+		var/datum/capability/construction/graph_def = cap_of(holder, cap_id)
+		var/datum/state_graph/G = graph_def?.graph
+		if(!G)
+			continue
+		var/list/puts = list()
+		for(var/datum/graph_edge/edge as anything in G.edges)
+			for(var/datum/entry/part/effect/put_in/P in edge.parts)
+				var/id = P.args["slot"]
+				if(!isnull(id) && !(istext(id) && (id in holder.vars)))
+					puts[id] = (puts[id] || 0) + 1
+		for(var/id in puts)
+			if(taken[id])
+				continue
+			taken[id] = TRUE
+			. += declared_slot_def(holder.type, id, puts[id], G.space, null, !length(defs) && !length(.))
+
+/// The shared declared slot of holder type `holder_type` with id `id`: `capacity` things (0: no limit), in space `at`, of type `accepts`.
+/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default)
+	RETURN_TYPE(/datum/om/relation/slot/declared)
+	var/static/list/made = list()
+	var/cache_key = "[holder_type]|[id]"
+	var/datum/om/relation/slot/declared/S = made[cache_key]
+	if(S)
+		return S
+	S = new
+	S.holder = holder_type
+	S.slot_id = id
+	S.name = "[id]"
+	S.capacity_model = capacity ? SLOT_CAPACITY_COUNT : SLOT_CAPACITY_NONE
+	S.capacity = capacity
+	S.at = at
+	S.accepts_type = accepts
+	S.is_default = is_default
+	made[cache_key] = S
+	return S
 
 /// What a holder's slot set is cached by. A holder whose slots depend on more
 /// than its own type (a mob's body plan) overrides this to return that type
