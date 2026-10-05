@@ -94,16 +94,21 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/text/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_encryption_hack_titled), receiver = user, message = "Select message title: ")
+	open_request(user, /datum/prompt/text/malf_encryption_message, TYPE_PROC_REF(/mob/living/silicon/ai, malf_encryption_hack_titled), answerer = user, question = "Select message title: ")
 
-/mob/living/silicon/ai/proc/malf_encryption_hack_titled(datum/om/prompt/text/malf/ask)
-	om_ask(src, /datum/om/prompt/text/malf, PROC_REF(malf_encryption_hack_written), message = "Select message text: ", message_title = ask.text)
+/mob/living/silicon/ai/proc/malf_encryption_hack_titled(datum/act/request/context)
+	if(!context.answer)
+		return
+	open_request(src, /datum/prompt/text/malf_encryption_message, PROC_REF(malf_encryption_hack_written), answerer = src, question = "Select message text: ", message_title = context.answer.answer_value)
 
-/mob/living/silicon/ai/proc/malf_encryption_hack_written(datum/om/prompt/text/malf/ask)
+/mob/living/silicon/ai/proc/malf_encryption_hack_written(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/malf_encryption_message/ask = context.answer
 	var/mob/living/silicon/ai/user = src
 	var/price = 75
 	var/title = ask.message_title
-	var/text = ask.text
+	var/text = ask.answer_value
 	if(!title || !text || !ability_prechecks(user, price) || !ability_pay(user, price))
 		to_chat(user, "Hack Aborted")
 		return
@@ -228,3 +233,12 @@
 		"This is highly abnormal and somewhat concerning. The intruder is too fast, he is evading our traces. No man could be this fast...",
 		"We have traced the intrude#, it seem& t( e yo3r AI s7stem, it &# *#ck@ng th$ sel$ destru$t mechani&m, stop i# bef*@!)$#&&@@  <CONNECTION LOST>")
 	GLOB.command_announcement.Announce(messages[stage], "Network Monitoring")
+
+/datum/prompt/text/malf_encryption_message
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CONSCIOUS
+	var/message_title
+
+/datum/prompt/text/malf_encryption_message/normalize(given)
+	return istext(given) ? given : null
