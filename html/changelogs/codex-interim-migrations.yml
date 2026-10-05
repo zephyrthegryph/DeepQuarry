@@ -59,3 +59,4 @@ changes:
   - code_imp: "Migrated stock-share buy and sell prompts to native requests."
   - code_imp: "Migrated narration entity-name prompts to native requests."
   - code_imp: "Migrated the ore-processing setting prompt to a native request."
+  - code_imp: "Migrated the admin material-treatment prompt chain to native requests."
