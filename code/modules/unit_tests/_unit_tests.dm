@@ -1017,6 +1017,8 @@
 
 #include "round2_shield_idle_disposal.dm"
 
+#include "round2_viral_trait_generation.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

@@ -147,7 +147,7 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 
 	var/list/possible_symptoms = list()
 	for(var/symp in GLOB.viral_trait_types)
-		var/datum/viral_trait/S = new symp
+		var/datum/viral_trait/S = dq_proto(symp)
 		if(S.threat >= sev_min && S.threat <= sev_max)
 			if(!HasSymptom(S))
 				possible_symptoms += S
@@ -156,7 +156,11 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 		return generated
 
 	for(var/i = 1 to amount)
-		generated += pick_n_take(possible_symptoms)
+		var/datum/viral_trait/selected = pick_n_take(possible_symptoms)
+		var/datum/viral_trait/fresh = null
+		if(selected)
+			fresh = new selected.type
+		generated += fresh
 
 	return generated
 
@@ -167,7 +171,7 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 	// Generate symptoms. By default, we only choose non-deadly symptoms.
 	var/list/possible_symptoms = list()
 	for(var/symp in GLOB.viral_trait_types)
-		var/datum/viral_trait/S = new symp
+		var/datum/viral_trait/S = dq_proto(symp)
 		if(S.level >= level_min && S.level <= level_max)
 			if(!HasSymptom(S))
 				possible_symptoms += S
@@ -183,7 +187,11 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 			number_of += 1
 
 	for(var/i = 1; number_of >= i && length(possible_symptoms); i++)
-		generated += pick_n_take(possible_symptoms)
+		var/datum/viral_trait/selected = pick_n_take(possible_symptoms)
+		var/datum/viral_trait/fresh = null
+		if(selected)
+			fresh = new selected.type
+		generated += fresh
 
 	return generated
 
