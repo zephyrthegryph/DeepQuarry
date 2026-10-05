@@ -1,7 +1,7 @@
 // Behaviour-preservation tests for the wall frame items (/obj/item/frame and its subtypes): a frame held to a wall becomes the thing it frames,
 // fixed to that wall, where the builder stands. Written against the legacy try_build() path and kept passing now that the build is the frame
 // item's own op (frame.mount). Input is the player's click (test_click()), never a proc of the frame.
-// (A wrench on a loose frame is the frame's own legacy wrench_act(); a click with a wrench does not reach it today, so it is not pinned here.)
+// A wrench on a loose frame takes it apart into its materials (the frame's op frame.refund).
 
 /// A wall beside the run block's corner (made one for the test if the map has none there), and the turf it was.
 /datum/unit_test/dq_p2_apc/frame
@@ -100,3 +100,38 @@
 	restore_wall()
 	TEST_ASSERT_NULL(L, "an area that needs no power takes no fixture")
 	TEST_ASSERT(!QDELETED(frame), "and the frame is not used")
+
+/// A wrench on a loose frame takes it apart: the frame is gone and its five sheets of steel lie where it was.
+/datum/unit_test/dq_p2_apc/frame/wrench_refunds_a_loose_frame
+
+/datum/unit_test/dq_p2_apc/frame/wrench_refunds_a_loose_frame/run_gate()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = p2_actor(T)
+	var/obj/item/frame/frame = allocate(/obj/item/frame, T)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
+	W.toolspeed = 0
+	touch(H, frame, W)
+	TEST_ASSERT(QDELETED(frame), "the frame is taken apart")
+	var/sheets = 0
+	for(var/obj/item/stack/material/steel/S in T)
+		sheets += S.get_amount()
+	TEST_ASSERT_EQUAL(sheets, 5, "into five sheets of steel")
+	for(var/obj/item/stack/material/steel/S in T)
+		qdel(S)
+
+/// A frame held in the other hand is taken apart all the same.
+/datum/unit_test/dq_p2_apc/frame/wrench_refunds_a_held_frame
+
+/datum/unit_test/dq_p2_apc/frame/wrench_refunds_a_held_frame/run_gate()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = p2_actor(T)
+	var/obj/item/frame/frame = allocate(/obj/item/frame, T)
+	H.put_in_inactive_hand(frame)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
+	W.toolspeed = 0
+	H.put_in_active_hand(W)
+	test_click(H, frame, W)
+	p2_settle()
+	TEST_ASSERT(QDELETED(frame), "the held frame is taken apart")
+	for(var/obj/item/stack/material/steel/S in range(1, T))
+		qdel(S)

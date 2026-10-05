@@ -1146,3 +1146,11 @@ Pinned by `code/modules/unit_tests/dq_mfo_malf_costs.dm` (green on the custom ma
 * **Unlocking a cyborg is checked against its 125 CPU when asked** (the old confirmation carried no price and only failed at payment).
 * **A camera hack that changes nothing costs nothing** (as before); the AI's hardware pick, the core and station self-destructs and the hack
   confirmations of cyborgs and AIs are plain requests.
+
+## Missing forms: the frame's wrench refund
+
+Pinned by `wrench_refunds_a_loose_frame` and `wrench_refunds_a_held_frame` in `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (no behaviour to pin
+first: no click reached the legacy `wrench_act()`).
+
+* **A wrench takes a loose wall or machine frame apart again** (op `frame.refund`, a `tool(TOOL_WRENCH)` op on the frame item): the frame becomes its
+  `refund_amt` of `refund_type` (five sheets of steel by default). It was broken in play.

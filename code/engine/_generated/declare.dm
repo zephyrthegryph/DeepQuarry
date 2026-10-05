@@ -4286,11 +4286,11 @@
 	into += entry_line(140)
 	into += list(global.ref_one(nameof(target), /atom))
 
-/// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:56
+/// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:59
 /datum/prompt/choice/frame_type_wall/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/wall_frames.dm", 56, /datum/prompt/choice/frame_type_wall)
-	into += entry_line(57)
+	into += entry_block("code/game/machinery/wall_frames.dm", 59, /datum/prompt/choice/frame_type_wall)
+	into += entry_line(60)
 	into += list(global.ref_one(nameof(wall_turf), /turf))
 
 /// CAPABILITIES(/datum/prompt/choice/freight_certification) at code/modules/economy/sales_lots.dm:457
@@ -11318,13 +11318,15 @@
 	into += entry_line(217)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/frame) at code/game/machinery/wall_frames.dm:30
+/// CAPABILITIES(/obj/item/frame) at code/game/machinery/wall_frames.dm:32
 /obj/item/frame/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/wall_frames.dm", 30, /obj/item/frame)
-	into += entry_line(31)
+	into += entry_block("code/game/machinery/wall_frames.dm", 32, /obj/item/frame)
+	into += entry_line(33)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
-	into += entry_line(32)
+	into += entry_line(34)
+	into += list(global.op("refund", global.tool(TOOL_WRENCH), global.label("Take apart"), global.then(PROC_REF(refund_materials))))
+	into += entry_line(35)
 	into += list(global.op("mount", global.at_target(/turf/simulated/wall), global.at_target(/obj/structure/window), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Mount on the wall"), global.wait(0), global.needs(global.req(PROC_REF(mount_facing), silent = TRUE), req_frame_mount()), global.then(PROC_REF(mount_on))))
 
 /// CAPABILITIES(/obj/item/fuel_assembly) at code/modules/power/fusion/fuel_assembly/fuel_assembly.dm:20

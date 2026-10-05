@@ -17,9 +17,11 @@
 	if(!frame_types_wall)
 		frame_types_wall = GLOB.construction_frame_wall
 
-/obj/item/frame/wrench_act(mob/user, obj/item/tool)
+/// A wrench takes the loose frame apart: it becomes the materials it was made of (refund_amt of refund_type).
+/obj/item/frame/proc/refund_materials(datum/act/op/A)
+	add_fingerprint(A.actor)
 	replace_with(src, refund_type, refund_amt)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 MSG_DEF_SELF(frame/bad_spot, "It cannot be placed on this spot.")
 MSG_DEF_SELF(frame/bad_area, "It cannot be placed in this area.")
@@ -29,6 +31,7 @@ MSG_DEF_SELF(frame/wall_taken, "There's already an item on this wall!")
 /// decides what that is (mount_on()): a fixture or cabinet, or a machine at the first stage of its build graph (the APC frame).
 CAPABILITIES(/obj/item/frame)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("refund", tool(TOOL_WRENCH), label("Take apart"), then(PROC_REF(refund_materials)))
 	op("mount", at_target(/turf/simulated/wall), at_target(/obj/structure/window), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK),
 		label("Mount on the wall"), wait(0),
 		needs(req(PROC_REF(mount_facing), silent = TRUE), req_frame_mount()),
