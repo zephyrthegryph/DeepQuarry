@@ -14,7 +14,7 @@
 
 /// The consoles an APC's overload of `A` reaches.
 /proc/mfc_area_consoles(area/A)
-	return area_members(A, POWER_ROLE_COMPUTER)
+	return area_consoles(A)
 
 /datum/unit_test/dq_hc_computers/mfc
 	abstract_type = /datum/unit_test/dq_hc_computers/mfc
@@ -125,3 +125,55 @@
 	TEST_ASSERT(C in mfc_area_consoles(get_area(C)), "the console's area lists it")
 	qdel(C)
 	TEST_ASSERT(!(C in mfc_area_consoles(get_area(hc_spot()))), "a deleted console leaves the list")
+
+// ---- the ID card modification console ----
+
+/// The "Eject ID Card" choice: the operator's card first, then the subject's.
+/proc/mfc_card_eject(mob/user, obj/machinery/computer/card/C)
+	C.interaction_eject_id(user, null, null)
+
+/// An ID card used on the console goes in: one with the change-IDs access is scanned as the operator's, any other is loaded to be modified.
+/datum/unit_test/dq_hc_computers/mfc/card_goes_in_by_hand
+/datum/unit_test/dq_hc_computers/mfc/card_goes_in_by_hand/run_gate()
+	var/obj/machinery/computer/card/C = hc_console(/obj/machinery/computer/card)
+	var/mob/living/carbon/human/H = hc_actor()
+	var/obj/item/card/id/op = hc_operator_card()
+	var/obj/item/card/id/subject = hc_subject_card()
+	hc_hold(H, op)
+	hci_click(H, C, op)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(C.scan, op, "the operator's card is scanned")
+	hc_hold(H, subject)
+	hci_click(H, C, subject)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(C.modify, subject, "the other card is loaded to be modified")
+
+/// Ejecting gives back the operator's card first, then the subject's, then there is nothing to give.
+/datum/unit_test/dq_hc_computers/mfc/card_eject_order
+/datum/unit_test/dq_hc_computers/mfc/card_eject_order/run_gate()
+	var/list/R = hc_card_ready()
+	var/obj/machinery/computer/card/C = R[1]
+	var/mob/living/carbon/human/H = R[2]
+	hc_hold(H, null)
+	mfc_card_eject(H, C)
+	test_time(1 SECOND)
+	TEST_ASSERT(isnull(C.scan) && C.modify == R[4], "the operator's card comes out first")
+	var/obj/item/card/id/op = R[3]
+	TEST_ASSERT(op.loc != C, "and is out of the console")
+	hc_hold(H, null)
+	mfc_card_eject(H, C)
+	test_time(1 SECOND)
+	TEST_ASSERT(isnull(C.modify), "then the subject's")
+	mfc_card_eject(H, C)
+	test_time(1 SECOND)
+	TEST_ASSERT(isnull(C.scan) && isnull(C.modify), "and then nothing")
+
+/// A change to the card renames it after its owner and assignment.
+/datum/unit_test/dq_hc_computers/mfc/card_name_follows_the_changes
+/datum/unit_test/dq_hc_computers/mfc/card_name_follows_the_changes/run_gate()
+	var/list/R = hc_card_ready()
+	var/obj/machinery/computer/card/C = R[1]
+	var/mob/living/carbon/human/H = R[2]
+	var/obj/item/card/id/subject = R[4]
+	press(H, C, "terminate")
+	TEST_ASSERT_EQUAL(subject.name, "Test Subject's ID Card (Dismissed)", "the name follows the dismissal")

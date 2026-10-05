@@ -6,9 +6,9 @@
 	icon_screen = "alert:0"
 	light_color = "#e6ffff"
 
-/obj/machinery/computer/atmos_alert/Initialize(mapload)
-	. = ..()
-	GLOB.atmosphere_alarm.register_alarm(src, /atom/proc/update_icon)
+/// The console listens to the station's atmosphere alarms once it is placed.
+/obj/machinery/computer/atmos_alert/proc/listen_alarms(datum/act/timer/A)
+	GLOB.atmosphere_alarm.register_alarm(src, TYPE_PROC_REF(/obj/machinery/computer/atmos_alert, alarms_changed))
 
 /// Phase 2: leaves the atmosphere alarm's listeners.
 /obj/machinery/computer/atmos_alert/lifecycle_dematerialize()
@@ -25,6 +25,7 @@
 	return proximity_flag
 
 CAPABILITIES(/obj/machinery/computer/atmos_alert)
+	after_init(0, then(PROC_REF(listen_alarms)))
 	interface("AtmosAlertConsole")
 	op("clear", ui_act("clear", arg("ref")), then(PROC_REF(ui_act_clear)))
 
@@ -44,25 +45,22 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 
 	return data
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/atmos_alert, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/atmos_alert/appearance_overlays()
-	. = list()
-	if(operable())
-		var/list/alarms = GLOB.atmosphere_alarm.major_alarms()
-		if(alarms.len)
-			icon_screen = "alert:2"
-			play_sfx(src, SFX_EFFECTS_COMP_ALERT_MAJOR) // Alarm notifications
-			after(src, 10 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/comp_alert_major.ogg', 70, 1)) // Wait 10 seconds, then play it again
+/// The station's atmosphere alarms changed: the screen shows the worst level, and the console sounds it (again ten seconds later for an alarm).
+/obj/machinery/computer/atmos_alert/proc/alarms_changed()
+	if(!operable())
+		return
+	var/level = length(GLOB.atmosphere_alarm.major_alarms()) ? 2 : (length(GLOB.atmosphere_alarm.minor_alarms()) ? 1 : 0)
+	icon_screen = level ? "alert:[level]" : initial(icon_screen)
+	switch(level)
+		if(2)
+			play_sfx(src, SFX_EFFECTS_COMP_ALERT_MAJOR)
+			after(src, 10 SECONDS, TYPE_PROC_REF(/atom, om_playsound), key = "alert_repeat", with = list('sound/effects/comp_alert_major.ogg', 70, 1))
+		if(1)
+			play_sfx(src, SFX_EFFECTS_COMP_ALERT_MINOR)
+			after(src, 10 SECONDS, TYPE_PROC_REF(/atom, om_playsound), key = "alert_repeat", with = list('sound/effects/comp_alert_minor.ogg', 50, 1))
 		else
-			alarms = GLOB.atmosphere_alarm.minor_alarms()
-			if(alarms.len)
-				icon_screen = "alert:1"
-				play_sfx(src, SFX_EFFECTS_COMP_ALERT_MINOR) // Alarm notifications
-				after(src, 10 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/comp_alert_minor.ogg', 50, 1)) // Wait 10 seconds, then play it again
-			else
-				icon_screen = initial(icon_screen)
-				play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR) // Alarm notifications
-	. += ..()
+			play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR)
+	update_icon()
 
 /obj/machinery/computer/atmos_alert/proc/ui_act_clear(datum/act/op/A, ref)
 	var/datum/alarm/alarm = ui_ref(ref, GLOB.atmosphere_alarm.alarms, /datum/alarm)
