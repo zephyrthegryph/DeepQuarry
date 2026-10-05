@@ -16069,11 +16069,11 @@
 	into += entry_line(42)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(not_simulating), because = MSG(bomb_tester/simulating)))))
 
-/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:681
+/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:661
 /obj/machinery/bookbinder/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 681, /obj/machinery/bookbinder)
-	into += entry_line(682)
+	into += entry_block("code/modules/library/lib_machines.dm", 661, /obj/machinery/bookbinder)
+	into += entry_line(662)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/botany) at code/modules/hydroponics/seed_machines.dm:78
@@ -17848,21 +17848,21 @@
 	into += entry_line(32)
 	into += list(global.owns_one(nameof(fabricated_tablet), /obj/item/modular_computer/tablet))
 
-/// CAPABILITIES(/obj/machinery/librarycomp) at code/modules/library/lib_machines.dm:182
+/// CAPABILITIES(/obj/machinery/librarycomp) at code/modules/library/lib_machines.dm:172
 /obj/machinery/librarycomp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 182, /obj/machinery/librarycomp)
-	into += entry_line(183)
+	into += entry_block("code/modules/library/lib_machines.dm", 172, /obj/machinery/librarycomp)
+	into += entry_line(173)
 	into += list(global.owns_many(nameof(checkouts)))
-	into += entry_line(184)
+	into += entry_line(174)
 	into += list(global.op("print_bible", global.ui_act(), global.then(PROC_REF(ui_act_print_bible))))
-	into += entry_line(185)
+	into += entry_line(175)
 	into += list(global.op("arccheckout", global.ui_act(), global.then(PROC_REF(ui_act_arccheckout))))
-	into += entry_line(186)
+	into += entry_line(176)
 	into += list(global.op("increasetime", global.ui_act(), global.then(PROC_REF(ui_act_increasetime))))
-	into += entry_line(187)
+	into += entry_line(177)
 	into += list(global.op("decreasetime", global.ui_act(), global.then(PROC_REF(ui_act_decreasetime))))
-	into += entry_line(188)
+	into += entry_line(178)
 	into += list(global.op("checkout", global.ui_act(), global.then(PROC_REF(ui_act_checkout))))
 
 /// CAPABILITIES(/obj/machinery/librarypubliccomp) at code/modules/library/lib_machines.dm:23
@@ -17874,17 +17874,17 @@
 	into += entry_line(25)
 	into += list(global.op("back", global.ui_act(), global.then(PROC_REF(ui_act_back))))
 
-/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:632
+/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:612
 /obj/machinery/libraryscanner/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 632, /obj/machinery/libraryscanner)
-	into += entry_line(633)
+	into += entry_block("code/modules/library/lib_machines.dm", 612, /obj/machinery/libraryscanner)
+	into += entry_line(613)
 	into += list(global.interface("LibraryScanner", title = "Scanner"))
-	into += entry_line(634)
+	into += entry_line(614)
 	into += list(global.op("scan", global.ui_act("scan"), global.then(PROC_REF(ui_act_scan))))
-	into += entry_line(635)
+	into += entry_line(615)
 	into += list(global.op("clear", global.ui_act("clear"), global.then(PROC_REF(ui_act_clear))))
-	into += entry_line(636)
+	into += entry_line(616)
 	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
 
 /// CAPABILITIES(/obj/machinery/light) at code/modules/power/lighting.dm:106

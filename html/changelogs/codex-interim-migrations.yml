@@ -13,3 +13,5 @@ changes:
   - bugfix: "Constructs no longer retain newly created spell items when both manipulators are occupied."
   - code_imp: "Retired robot source replacements through declared ownership and moved shock collar tag prompts to native requests."
   - code_imp: "Moved ticket list choices to native requests while preserving their window and staff permission checks."
+  - code_imp: "Moved library search, catalogue editing and account fund adjustment prompts to native requests."
+  - bugfix: "Laser-tag guns no longer retain unused projectiles after refusing a suicide attempt."
