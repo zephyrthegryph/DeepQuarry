@@ -169,6 +169,9 @@
 	set category = VERB_CAT_IC_GAME
 	set popup_menu = FALSE
 
+	return mob_examine_stage(FALSE)
+
+/mob/proc/mob_examine_stage(answered, atom/selected)
 	if((is_blind(src) || src.stat) && !isobserver(src))
 		to_chat(src, span_notice("Something is there but you can't see it."))
 		return 1
@@ -226,10 +229,11 @@
 	if(E.len == 1)
 		B = pick(E)
 	else
-		var/_answer_k218 = rerun_ask(src, "k218", VERB_REF(mob_examine), args, /datum/om/prompt/choice, message = "What would you like to examine?", title = "Examine", choices = E)
-		if(isnull(_answer_k218))
+		if(!answered)
+			open_request(src, /datum/prompt/choice/mob_examine_selection, PROC_REF(mob_examine_selected), answerer = src, choices = E)
 			return
-		B = _answer_k218
+		B = selected
+
 	if(!B)
 		return
 	if(!isbelly(loc) && !istype(loc, /obj/item/holder) && !isAI(src))
@@ -240,3 +244,22 @@
 		results = list("You were unable to examine that. Tell a developer!")
 	to_chat(src, jointext(results, "<br>"))
 	update_examine_panel(B)
+
+/mob/proc/mob_examine_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	mob_examine_stage(TRUE, A.answer.answer_value)
+
+/datum/prompt/choice/mob_examine_selection
+	question = "What would you like to examine?"
+	title = "Examine"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/mob_examine_selection/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	var/atom/selected = answer_value
+	if(!isnull(selected) && QDELETED(selected))
+		return "gone"
+	return null
