@@ -2915,6 +2915,9 @@ CAPABILITIES(/obj/machinery/power/apc)
 	ui_shape(operating, chargemode, coverlocked,                     <span class="c">// vars named here take their schemas</span>
 		channels = list_of(row(name = text(24), mode = enum(POWERCHAN_MODES))))
 	op("breaker", ui_act(), toggles(nameof(operating)))   <span class="c">// no lock clause: lock() gates every TAG_UI op</span>
+	extend("breaker", binds(remote()), gesture(GESTURE_CTRL))   <span class="c">// a silicon's ctrl-click throws the same breaker</span>
+	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_allowed), remote_because = MSG(apc/ai_disabled))))   <span class="c">// window access: the library's (section 11)</span>
+	on_change(nameof(operating), ANY, then(PROC_REF(supply_changed)))   <span class="c">// the area follows the breaker, whoever throws it</span>
 	op("chargemode", ui_act(), toggles(nameof(chargemode)))
 	op("coverlock", ui_act(), toggles(nameof(coverlocked)))
 	op("set_channel", ui_act(arg("channel", enum(APC_CHANNELS)), arg("mode", enum(POWERCHAN_MODES))),
@@ -2969,7 +2972,10 @@ CAPABILITIES(/obj/machinery/power/apc)
 
 /obj/machinery/power/apc/push_to_rust()                      <span class="c">// an output: runs in phase S, before the native step, after a value it reads changed</span>
 	native_write(src, NATIVE_APC_OPERATING, operating &amp;&amp; operable)
-	native_write(src, NATIVE_APC_CHARGEMODE, chargemode)</code></pre>
+	native_write(src, NATIVE_APC_CHARGEMODE, chargemode)
+	native_write(src, NATIVE_APC_CHANNELS, equipment, POWER_CHANNEL_EQUIPMENT)   <span class="c">// the one path for the channel modes</span>
+	native_write(src, NATIVE_APC_CHANNELS, lighting, POWER_CHANNEL_LIGHTING)
+	native_write(src, NATIVE_APC_CHANNELS, environ, POWER_CHANNEL_ENVIRON)</code></pre>
   <div class="prose">
     <p><strong>What this shows.</strong> One list declares everything. The hatch takes the wire set and the emag effect as params, so the APC never declares <code>wires</code> or <code>emag</code> a second time. Every key is a declared identifier: <code>STAGE_APC_*</code>, <code>COVER_OPEN</code>, <code>LOCK_LOCKED</code>, and op keys namespaced by their capability, with the cell bay's selector (<code>cell_bay.cell.take</code>) and the window's (<code>interface.APC.open</code>). The lock gates the four UI ops without a clause on any of them. A blob hit is a takeover, not a damage row. The outputs need no <code>..()</code>, and <code>push_to_rust()</code> runs in phase S, so a switch flipped in this tick's input is in the native step of the same frame. The three channel settings share one schema, so a bad UI value never reaches <code>set_channel_mode</code>.</p>
     <p><strong>What it replaces:</strong></p>
@@ -2981,6 +2987,8 @@ CAPABILITIES(/obj/machinery/power/apc)
       <li>The starting-cell <code>Initialize</code>, and <code>configure(cell_bay(starts =))</code> on subtypes beside the var.</li>
       <li><code>set_nightshift()</code>, called by the night-shift service on every APC (16.11).</li>
       <li>The three damage rows and <code>emag_act()</code>.</li>
+      <li>A second breaker op for the silicon's ctrl-click, <code>set_breaker()</code> and <code>toggle_breaker()</code>, and the channel modes written to Rust by hand.</li>
+      <li>The APC's own window-access, lock-exemption and admin-ghost procs: <code>req_window_usable()</code> and <code>req_silicon_or_admin()</code> (code/library/access/window_access.dm) say them for every window.</li>
       <li>Every hand-written hatch rule: <code>when(COVER_OPEN)</code> on the cell take, <code>req_built()</code> and a size proc on the cell insert, a cover-hold proc for the lock and the loose board, the replace conditions, and the lock and emag guards. The path (section 8, spaces and doors) says them: a staged <code>SPACE_CELL</code>, <code>fits = size_is(...)</code>, a latch, a protruding stage, the cover's repair step and the library's lock and emag defaults.</li>
     </ul>
   </div>
@@ -3036,64 +3044,66 @@ CAPABILITIES(/obj/machinery/power/apc)
   <div class="prose"><p>Every row names the entry that put the candidate there, with its file and line, because the table builder records them. The same trace prints from <code>perform_op(actor, apc, "cell_bay.cell.take", null, trace = TRUE)</code>, and a test pins the behaviour with <code>assert_resolves(actor, apc, null, GESTURE_CLICK, "interface.APC.open")</code>.</p></div>
 
   <h3 id="ex-airlock">16.2 Airlock: bolts, electrification, AI control, wires, access, emag</h3>
-  <pre><code>TRACKED(/obj/machinery/door/airlock, welded, schema = bool, default = FALSE)
-STAT(/obj/machinery/door/airlock, bolted, ANY)          <span class="c">// the AI, a cut wire, a lockdown and an admin can each hold it</span>
-STAT(/obj/machinery/door/airlock, electrified, ANY)     <span class="c">// timed holds for "30 seconds", untimed for "until released"</span>
-SOURCE_DEF(lockdown)                                     <span class="c">// a security lockdown: hold(door, STAT_BOLTED, source = SRC_LOCKDOWN)</span>
+  <pre><code>STAT(/obj/machinery/door, bolted, ANY)                   <span class="c">// the bolts library's stat (door_parts.dm): the motor, each AI, an admin hold it</span>
+SOURCE_DEF(door_bolts)                                   <span class="c">// the door's own motor: a wire, a button, a radio command, a map start</span>
+STAT(/obj/machinery/door/airlock, electrified, TOP, base = 0)   <span class="c">// timed holds for "30 seconds", untimed for "until released" (the suit cycler's rule)</span>
+STAT(/obj/machinery/door/airlock, main_power_out, ANY)  <span class="c">// a cut cable (SRC_POWER_WIRE), a tripped breaker for a minute (SRC_BREAKER)</span>
+STAT(/obj/machinery/door/airlock, backup_power_out, ANY) <span class="c">// the same, and the ten seconds of switchover (SRC_BACKUP_SWITCHOVER)</span>
+STAT(/obj/machinery/door/airlock, aiControlDisabled, ANY)   <span class="c">// ai_control(): the AI wire cut, or pulsed for a second; a round event</span>
+SOURCE_DEF(lockdown)                                     <span class="c">// a button, an event or a script electrifying the door</span>
 
-CAPABILITIES(/obj/machinery/door/airlock)
-	doors(open = PROC_REF(do_open), close = PROC_REF(do_close), autoclose = 15 SECONDS)   <span class="c">// "doors.open", "doors.close", DOOR_OPEN</span>
-	powered(POWER_CHANNEL_ENVIRON)
-	access()
-	maintenance_hatch(
-		cover = cover(open = tool(TOOL_SCREWDRIVER)),
-		wires = wires(name = "Airlock", count = PROC_REF(wire_count), randomize = PROC_REF(wires_randomized)),
-		emag = list(then(PROC_REF(emag_open))),
-		lock = FALSE)   <span class="c">// the door's ID check is access(), not a hatch lock</span>
-	bolts(wire = WIRE_DOOR_BOLTS)                            <span class="c">// the bolt wire: a cut drops the bolts</span>
-	shock_wire(stat = STAT_ELECTRIFIED)                      <span class="c">// the shock wire: held while cut, 30 seconds a pulse</span>
-	ai_control(stat = STAT_AICONTROLDISABLED)                <span class="c">// the AI control wire</span>
-	extend("doors.open", needs(
-		req_is(STAT_BOLTED, FALSE, because = MSG(door/bolted)),
-		req_is(nameof(welded), FALSE, because = MSG(door/welded))))
-	extend("doors.close", needs(
-		req_is(STAT_BOLTED, FALSE, because = MSG(door/bolted)),
-		req_is(nameof(welded), FALSE, because = MSG(door/welded))))
-	extend("pry", needs(
-		req_is(STAT_BOLTED, FALSE, because = MSG(door/bolted)),
-		req_is(nameof(welded), FALSE, because = MSG(door/welded))))
-	extend("doors.open", needs(req_is(STAT_OPERABLE, because = MSG(door/unpowered))))
-	extend("doors.close", needs(req_is(STAT_OPERABLE, because = MSG(door/unpowered))))
+CAPABILITIES(/obj/machinery/door/airlock)                <span class="c">// the base door brings machine_basics, doors(), the emag, the plasteel and repair ops</span>
+	panel()
+	wires(name = "Airlock", count = PROC_REF(wire_count), randomize = PROC_REF(wires_randomized), status_lines = PROC_REF(wire_lights))
+	ai_control(stat = STAT_AICONTROLDISABLED, pulse_lasts = 1 SECOND)   <span class="c">// each brings its wire: cut holds, a pulse holds a while</span>
+	shock_wire(stat = STAT_ELECTRIFIED)
+	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))   <span class="c">// the airlock's own</span>
+	bolts(drop = "drop_bolts", raise = "raise_bolts", starts = nameof(bolted_at_start), wire = WIRE_DOOR_BOLTS)
+	weld_shut(offered = PROC_REF(weld_offered), starts = nameof(welded_at_start))
+	door_emergency()
+	ref_many(nameof(close_others), /obj/machinery/door/airlock, by = nameof(closeOtherId))   <span class="c">// paired doors, both ways</span>
+	on_change(nameof(main_power_out), ANY, then(PROC_REF(main_power_changed)))   <span class="c">// the backup's switchover</span>
 
-	<span class="c">// Silicon control, in the door's own window. Each AI's holds have that AI as their source.</span>
-	interface("AiAirlock", title = "Airlock Control")
-	extend("interface.AiAirlock.open", inputs(remote()))   <span class="c">// silicons only: remote() replaces the hand binding</span>
-	ui_shape(bolted = bool, electrified = bool)
-	op("bolts", ui_act(), toggles_hold(STAT_BOLTED, source = ON_ACTOR))
-	op("shock_off", ui_act(), releases(STAT_ELECTRIFIED, source = ON_ACTOR))
-	op("shock_30s", ui_act(), holds(STAT_ELECTRIFIED, lasts = 30 SECONDS, source = ON_ACTOR))
-	op("shock_on", ui_act(), holds(STAT_ELECTRIFIED, source = ON_ACTOR))
-	extend(TAG_UI, needs(req_wire(WIRE_AI_CONTROL)))
-	extend("shock_30s", needs(req_wire(WIRE_ELECTRIFY)))
-	extend("shock_on", needs(req_wire(WIRE_ELECTRIFY)))
-
-	op("pry", label("Pry open"), force_pry(), wait(5 SECONDS), when(not(DOOR_OPEN)),
-		needs(req_is(STAT_OPERABLE, FALSE, because = MSG(door/powered_shut))),
-		then(PROC_REF(do_open)))
-	op("weld", tool(TOOL_WELDER), when(not(DOOR_OPEN)), toggles(nameof(welded)))
-
-	<span class="c">// Touching a live door shocks you instead of doing what you meant. Remote and UI ops are not touches.</span>
+	<span class="c">// Touching a live door shocks you instead of doing what you meant. Window buttons and a silicon's link are not touches.</span>
 	extend(/datum/act/op, instead(when(STAT_ELECTRIFIED, req_on_origin(ORIGIN_CLICK)),
 		then(PROC_REF(shock_toucher)), order = ORDER_EARLY))
 
-/obj/machinery/door/airlock/proc/shock_toucher(datum/act/A)
-	shock(A.actor, 100)
+	section(ctrl_click, "hammer on it (combat), hold it open (grab), ring the bell")
+	op("hold_open", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), stance(I_GRAB), priority(above("hammer")),
+		when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), then(PROC_REF(hold_door_open)))
 
-/obj/machinery/door/airlock/ui_data(datum/act/A)
-	return list("bolted" = bolted, "electrified" = electrified)</code></pre>
+	section(controls, "the remote control window and a silicon's gestures over its link")
+	interface("AiAirlock")
+	extend("ui_open", inputs(remote()))                   <span class="c">// silicons only: remote() replaces the hand binding</span>
+	extend(TAG_UI, needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)),
+		req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))   <span class="c">// the library's window access (section 11)</span>
+	op("bolt_toggle", ui_act("bolt-toggle"), needs(req_wire(WIRE_DOOR_BOLTS, because = MSG(airlock/bolt_wire_cut)),
+		req(PROC_REF(actor_may_move_bolts), because = MSG(airlock/no_power_to_raise))),
+		toggles_hold(STAT_BOLTED, source = ON_ACTOR), says(PROC_REF(bolts_message)), logs(LOG_GAME))
+	op("shock_restore", ui_act("shock-restore"), releases(STAT_ELECTRIFIED, source = ON_ACTOR))
+	op("shock_temp", ui_act("shock-temp"), needs(req(PROC_REF(power_systems_on), because = MSG(airlock/unpowered))),
+		holds(STAT_ELECTRIFIED, lasts = 30 SECONDS, source = ON_ACTOR), then(PROC_REF(electrified_by)), logs(LOG_GAME))
+	op("shock_perm", ui_act("shock-perm"), needs(req(PROC_REF(power_systems_on), because = MSG(airlock/unpowered))),
+		holds(STAT_ELECTRIFIED, source = ON_ACTOR), then(PROC_REF(electrified_by)), logs(LOG_GAME))
+	op("disrupt_main", ui_act("disrupt-main"), needs(req_is(STAT_MAIN_POWER_OUT, FALSE, because = MSG(airlock/main_offline))),
+		then(PROC_REF(lose_main_power)))
+	op("speed_toggle", ui_act("speed-toggle"), needs(req_wire(WIRE_SPEED, because = MSG(airlock/timing_wire_cut))), toggles(nameof(normalspeed)))
+	extend("bolt_toggle", binds(remote()), gesture(GESTURE_CTRL))   <span class="c">// a silicon's ctrl-click is the same button</span>
+	extend("open_close", binds(remote()), gesture(GESTURE_SHIFT))
+
+/obj/machinery/door/airlock/proc/power_systems_on(datum/act/A)
+	return operable() &amp;&amp; (!main_power_out || !backup_power_out)
+
+/obj/machinery/door/airlock/proc/ai_control_allowed(datum/act/op/A)   <span class="c">// req_window_usable()'s remote rule: a condition</span>
+	return !aiControlDisabled &amp;&amp; !all_power_lost()
+
+/obj/machinery/door/airlock/proc/shock_toucher(datum/act/op/A)   <span class="c">// a shock that does not land lets the touch go on</span>
+	if((A.authority &amp; AUTH_REMOTE_ACCESS) || !shock(A.actor, A.held ? 75 : 100))
+		return HOOK_DECLINE
+	return OP_OK</code></pre>
   <div class="prose">
-    <p><strong>What this shows.</strong> Two AIs bolt the door, and each one's hold has that AI as its source (<code>source = ON_ACTOR</code>), so one AI's "unbolt" releases only its own hold, and a deleted AI's bolts drop by themselves. An AI's "shock off" leaves a wire pulse (the shock wire's own pulse source) running its 30 seconds. The wires come from the capabilities: <code>bolts(wire =)</code>, <code>shock_wire()</code> and <code>ai_control()</code> each bring theirs, so the door lists no wires. <code>toggles_hold</code> does the toggle that used to need a <code>held_by()</code> read. The door declares <code>bolted</code> and <code>electrified</code> itself, since <code>doors()</code> leaves bolts to the door type. The window buttons are <code>ui_act()</code> ops with no target binding, so <code>A.target</code> is the door and their holds land on it. One <code>extend(TAG_UI, ...)</code> puts the AI-control wire in front of every window button. The shock is a takeover of click ops only.</p>
-    <p><strong>What it replaces:</strong> string sources (<code>"ai"</code>, <code>"wire"</code>) and the one var that served every bolter; the <code>ai_toggle_bolts</code> and <code>ai_shock</code> handlers with their <code>A.args["mode"]</code> switch; separate <code>wires()</code> and <code>emag()</code> lines beside the hatch; <code>intercept()</code>; <code>req_stat</code>.</p>
+    <p><strong>What this shows.</strong> Every switch of the door is a stat composed from sourced holds, so a timer is a hold that runs out and two hands never fight over one var. Two AIs bolt the door, and each one's hold has that AI as its source (<code>source = ON_ACTOR</code>), so one AI's "unbolt" releases only its own hold, and a deleted AI's bolts drop by themselves; the door's own motor (<code>SRC_DOOR_BOLTS</code>: a wire, a button) still lifts every hold when it raises them. An AI's "restore" leaves a wire pulse (the shock wire's own source) running its 30 seconds; the wires come with the capabilities that own their state (<code>ai_control()</code>, <code>shock_wire()</code>, <code>bolts(wire =)</code>), so the door lists only the wires that are its own. A pulsed and then cut AI wire are two holds, so the pulse running out cannot hand control back over the cut. <code>toggles_hold</code> does the toggle that used to need a <code>held_by()</code> read. The window buttons refuse through <code>needs()</code>, never with a message in the effect, and the library's window access (<code>req_window_usable()</code>, the APC's too) asks the door only for its remote rule. A silicon's gestures are the window's own ops with one more binding (<code>binds(remote())</code>), so there is no second op to keep in step. The shock is one takeover of every click op.</p>
+    <p><strong>What it replaces:</strong> the 0/1/-1 ints <code>electrified_until</code>, <code>main_power_lost_until</code>, <code>backup_power_lost_until</code> and <code>aiControlDisabled</code> with their hand-keyed timers and the thirty-line <code>electrify()</code>; the shock written as an early effect on seventeen named ops; the window buttons' <code>to_chat</code> refusals; the <code>click_ctrl()</code> override looping over op keys; <code>lock()</code>/<code>unlock()</code> beside the bolts library; the init-time scan of every machine for <code>closeOtherId</code>; string sources (<code>"ai"</code>, <code>"wire"</code>); <code>intercept()</code>; <code>req_stat</code>.</p>
   </div>
 
   <h3 id="ex-turret">16.3 Portable turret: setting vs effective, EMP and emag, subtype params</h3>

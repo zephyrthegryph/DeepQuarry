@@ -673,10 +673,10 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 	pod_glass()
 	if(linked_door())
 		if(is_bolted(linked_door()))
-			linked_door().unlock()
+			set_bolted(linked_door(), FALSE)
 			linked_door().stop_blocking_light()
 		else
-			linked_door().lock()
+			set_bolted(linked_door(), TRUE)
 			// Block light when bolted, since the door is effectively functioning like polarized glass
 			linked_door().start_blocking_light()
 	return OP_OK

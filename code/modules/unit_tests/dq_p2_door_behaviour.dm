@@ -33,7 +33,7 @@
 
 /// Whether touching the door would shock now.
 /proc/p2_door_electrified(obj/machinery/door/airlock/D)
-	return D.isElectrified()
+	return D.electrified
 
 /// Whether the maintenance panel is open.
 /proc/p2_door_panel_open(obj/machinery/door/D)
@@ -53,7 +53,7 @@
 
 /// Whether the door has power it can move on (main or backup).
 /proc/p2_door_powered(obj/machinery/door/airlock/D)
-	return D.arePowerSystemsOn()
+	return D.power_systems_on()
 
 /// Whether the door's safeties stop it closing on someone.
 /proc/p2_door_safeties(obj/machinery/door/D)
@@ -62,7 +62,7 @@
 
 /// Sets whether the door closes itself after a wait (the timing wire's switch).
 /proc/p2_door_set_autoclose(obj/machinery/door/D, on)
-	D.autoclose = on
+	D.set_autoclose(on)
 
 /// Whether the firedoor is welded shut.
 /proc/p2_firedoor_welded(obj/machinery/door/firedoor/D)

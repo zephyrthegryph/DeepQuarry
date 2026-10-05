@@ -94,6 +94,8 @@
 	var/datum/target
 	/// ACT_*: the outcome the notice carries.
 	var/outcome
+	/// The refusal reason (a /datum/msg type) of what ended refused: an op's (op_done for on_op(..., outcome = ACT_REFUSED)).
+	var/refusal
 
 /// after(), delayed(), every(), after_init() and sequence work. Fields set: holder, dt, args (after_init(): mapload); for a system's per-member work target is
 /// the member; for a delayed() part, holder and the three snapshot names and nothing else.

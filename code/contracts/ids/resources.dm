@@ -11,6 +11,7 @@ RESOURCE_DEF(RES_BLOOD, adapter = /datum/resource/blood)
 RESOURCE_DEF(RES_DARK_ENERGY, adapter = /datum/resource/dark_energy)
 RESOURCE_DEF(RES_REAGENTS, adapter = /datum/resource/reagents)
 RESOURCE_DEF(RES_SLOT_CAPACITY, adapter = /datum/resource/slot_capacity)
+RESOURCE_DEF(RES_CREDITS, adapter = /datum/resource/credits)
 
 #define RES_FUEL 1
 #define RES_USES 2
@@ -22,3 +23,4 @@ RESOURCE_DEF(RES_SLOT_CAPACITY, adapter = /datum/resource/slot_capacity)
 #define RES_DARK_ENERGY 8
 #define RES_REAGENTS 9
 #define RES_SLOT_CAPACITY 10
+#define RES_CREDITS 11

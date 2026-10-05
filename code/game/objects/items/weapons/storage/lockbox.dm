@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/storage/lockbox)
 			audible_feedback = span_warning("You hear a faint electrical spark.")
 
 		set_broken(1)
-		cap_key_set(src, LOCK_LOCKED, FALSE, null)
+		key_set(src, LOCK_LOCKED, FALSE)
 		desc = "It appears to be broken."
 		visible_message(visual_feedback, audible_feedback)
 		return 1

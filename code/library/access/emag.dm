@@ -38,7 +38,7 @@ cap_keys(CAP_EMAG, EMAGGED = MSG(emag/already))
 
 /// The part of an emag every holder shares, after the type's parts went through: subverted, told, the card paid.
 /datum/capability/lib/emag/proc/finish(datum/act/op/A)
-	cap_key_set(A.holder, EMAG_EMAGGED, TRUE, null)
+	key_set(A.holder, EMAG_EMAGGED, TRUE)
 	if(disables_for)
 		hold(A.holder, STAT_OPERABLE, FALSE, A.holder, disables_for)
 	var/datum/msg/spoken = say || /datum/msg/emag/done

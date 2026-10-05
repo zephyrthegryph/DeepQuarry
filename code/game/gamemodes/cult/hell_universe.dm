@@ -73,4 +73,4 @@ In short:
 /datum/universal_state/hell/proc/APCSet()
 	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if (!APC.has_stat(BROKEN) && !APC.is_critical)
-			cap_key_set(APC, EMAG_EMAGGED, TRUE, null)
+			key_set(APC, EMAG_EMAGGED, TRUE)

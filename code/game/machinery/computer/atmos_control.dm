@@ -51,3 +51,13 @@ DECLARE_EMAG(/obj/machinery/computer/atmoscontrol, PROC_REF(on_emag), null, null
 		rel_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control(src, req_access, req_one_access, monitored_alarm_ids))
 	return atmos_control
 
+
+// A cyborg with access interfaces remotely as the AI does (FALSE: the robot adapter's default); without it, only by hand from next to it.
+EXTEND_INTERACTIONS(/obj/machinery/computer/atmoscontrol, INTERACT_ROBOT("Use", PROC_REF(atmoscontrol_robot_use)))
+
+/obj/machinery/computer/atmoscontrol/proc/atmoscontrol_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(allowed(user))
+		return FALSE
+	if(Adjacent(user))
+		attack_hand(user)
+	return TRUE

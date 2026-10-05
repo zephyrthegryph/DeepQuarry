@@ -130,21 +130,49 @@
 /datum/stat_decl/obj/machinery/autolathe/__shocked/spec()
 	return list(/obj/machinery/autolathe, /obj/machinery/autolathe/proc/__stat_shocked)
 
-/// STAT(/obj/machinery/door/airlock, aiControlDisabled, ANY) at code/game/machinery/doors/airlock.dm:430
+/// STAT(/obj/machinery/door, bolted, ANY) at code/library/machine/door_parts.dm:27
+/obj/machinery/door/var/bolted = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/door/proc/__stat_bolted()
+	return list("bolted", "ANY", list(id = STAT_BOLTED))
+/datum/stat_decl/obj/machinery/door/__bolted/spec()
+	return list(/obj/machinery/door, /obj/machinery/door/proc/__stat_bolted)
+
+/// STAT(/obj/machinery/door/airlock, aiControlDisabled, ANY) at code/game/machinery/doors/airlock.dm:90
 /obj/machinery/door/airlock/var/aiControlDisabled = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/door/airlock/proc/__stat_aiControlDisabled()
 	return list("aiControlDisabled", "ANY", list(id = STAT_AICONTROLDISABLED))
 /datum/stat_decl/obj/machinery/door/airlock/__aiControlDisabled/spec()
 	return list(/obj/machinery/door/airlock, /obj/machinery/door/airlock/proc/__stat_aiControlDisabled)
 
-/// STAT(/obj/machinery/door/airlock, aiDisabledIdScanner, ANY) at code/game/machinery/doors/airlock.dm:432
+/// STAT(/obj/machinery/door/airlock, aiDisabledIdScanner, ANY) at code/game/machinery/doors/airlock.dm:92
 /obj/machinery/door/airlock/var/aiDisabledIdScanner = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/door/airlock/proc/__stat_aiDisabledIdScanner()
 	return list("aiDisabledIdScanner", "ANY", list(id = STAT_AIDISABLEDIDSCANNER))
 /datum/stat_decl/obj/machinery/door/airlock/__aiDisabledIdScanner/spec()
 	return list(/obj/machinery/door/airlock, /obj/machinery/door/airlock/proc/__stat_aiDisabledIdScanner)
 
-/// STAT(/obj/machinery/door/airlock, safe, ALL) at code/game/machinery/doors/airlock.dm:434
+/// STAT(/obj/machinery/door/airlock, backup_power_out, ANY) at code/game/machinery/doors/airlock.dm:98
+/obj/machinery/door/airlock/var/backup_power_out = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/door/airlock/proc/__stat_backup_power_out()
+	return list("backup_power_out", "ANY", list(id = STAT_BACKUP_POWER_OUT))
+/datum/stat_decl/obj/machinery/door/airlock/__backup_power_out/spec()
+	return list(/obj/machinery/door/airlock, /obj/machinery/door/airlock/proc/__stat_backup_power_out)
+
+/// STAT(/obj/machinery/door/airlock, electrified, TOP) at code/game/machinery/doors/airlock.dm:88
+/obj/machinery/door/airlock/var/electrified = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/door/airlock/proc/__stat_electrified()
+	return list("electrified", "TOP", list(id = STAT_ELECTRIFIED, base = 0))
+/datum/stat_decl/obj/machinery/door/airlock/__electrified/spec()
+	return list(/obj/machinery/door/airlock, /obj/machinery/door/airlock/proc/__stat_electrified)
+
+/// STAT(/obj/machinery/door/airlock, main_power_out, ANY) at code/game/machinery/doors/airlock.dm:96
+/obj/machinery/door/airlock/var/main_power_out = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/door/airlock/proc/__stat_main_power_out()
+	return list("main_power_out", "ANY", list(id = STAT_MAIN_POWER_OUT))
+/datum/stat_decl/obj/machinery/door/airlock/__main_power_out/spec()
+	return list(/obj/machinery/door/airlock, /obj/machinery/door/airlock/proc/__stat_main_power_out)
+
+/// STAT(/obj/machinery/door/airlock, safe, ALL) at code/game/machinery/doors/airlock.dm:94
 /obj/machinery/door/airlock/var/safe = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/door/airlock/proc/__stat_safe()
 	return list("safe", "ALL", list(id = STAT_SAFE))
@@ -165,21 +193,21 @@
 /datum/stat_decl/obj/machinery/light/__nightshift_enabled/spec()
 	return list(/obj/machinery/light, /obj/machinery/light/proc/__stat_nightshift_enabled)
 
-/// STAT(/obj/machinery/power/apc, aidisabled, ANY) at code/modules/power/apc.dm:135
+/// STAT(/obj/machinery/power/apc, aidisabled, ANY) at code/modules/power/apc.dm:132
 /obj/machinery/power/apc/var/aidisabled = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/power/apc/proc/__stat_aidisabled()
 	return list("aidisabled", "ANY", list(id = STAT_AIDISABLED))
 /datum/stat_decl/obj/machinery/power/apc/__aidisabled/spec()
 	return list(/obj/machinery/power/apc, /obj/machinery/power/apc/proc/__stat_aidisabled)
 
-/// STAT(/obj/machinery/power/apc, shorted, ANY) at code/modules/power/apc.dm:133
+/// STAT(/obj/machinery/power/apc, shorted, ANY) at code/modules/power/apc.dm:130
 /obj/machinery/power/apc/var/shorted = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/power/apc/proc/__stat_shorted()
 	return list("shorted", "ANY", list(id = STAT_SHORTED))
 /datum/stat_decl/obj/machinery/power/apc/__shorted/spec()
 	return list(/obj/machinery/power/apc, /obj/machinery/power/apc/proc/__stat_shorted)
 
-/// STAT(/obj/machinery/power/apc, supplying, ALL) at code/modules/power/apc.dm:131
+/// STAT(/obj/machinery/power/apc, supplying, ALL) at code/modules/power/apc.dm:128
 /obj/machinery/power/apc/var/supplying = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/power/apc/proc/__stat_supplying()
 	return list("supplying", "ALL", list(id = STAT_SUPPLYING))
@@ -242,14 +270,14 @@
 /datum/stat_decl/obj/machinery/suit_cycler/__safeties/spec()
 	return list(/obj/machinery/suit_cycler, /obj/machinery/suit_cycler/proc/__stat_safeties)
 
-/// STAT(/obj/machinery/vending, scan_id, TOP) at code/modules/economy/vending.dm:114
+/// STAT(/obj/machinery/vending, scan_id, TOP) at code/modules/economy/vending.dm:120
 /obj/machinery/vending/var/scan_id = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/vending/proc/__stat_scan_id()
 	return list("scan_id", "TOP", list(id = STAT_SCAN_ID, base = TRUE))
 /datum/stat_decl/obj/machinery/vending/__scan_id/spec()
 	return list(/obj/machinery/vending, /obj/machinery/vending/proc/__stat_scan_id)
 
-/// STAT(/obj/machinery/vending, shoot_inventory, ANY) at code/modules/economy/vending.dm:116
+/// STAT(/obj/machinery/vending, shoot_inventory, ANY) at code/modules/economy/vending.dm:122
 /obj/machinery/vending/var/shoot_inventory = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/vending/proc/__stat_shoot_inventory()
 	return list("shoot_inventory", "ANY", list(id = STAT_SHOOT_INVENTORY))

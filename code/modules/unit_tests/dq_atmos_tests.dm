@@ -4620,11 +4620,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/T = get_turf(A)
 	A.set_density(FALSE)
 	A.operating = FALSE
-	cap_key_set(A, BOLTS_BOLTED, FALSE, null)
+	set_bolted(A, FALSE, TRUE)
 	A.frozen = FALSE
 	A.autoclose_cancel()
 	A.safe = TRUE
-	A.autoclose = TRUE
+	A.set_autoclose(TRUE)
 	var/obj/blocker = new(T)
 	blocker.set_density(TRUE)
 	A.close()
@@ -4644,10 +4644,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/door/airlock/external/A = allocate(/obj/machinery/door/airlock/external, run_loc_floor_bottom_left)
 	A.set_density(TRUE)
 	A.operating = FALSE
-	cap_key_set(A, BOLTS_BOLTED, FALSE, null)
+	set_bolted(A, FALSE, TRUE)
 	A.frozen = FALSE
 	A.id_tag = "dq_secure_open_test"
-	TEST_ASSERT(A.arePowerSystemsOn(), "the test airlock has no power")
+	TEST_ASSERT(A.power_systems_on(), "the test airlock has no power")
 	var/datum/signal/S = new
 	S.data["tag"] = A.id_tag
 	S.data["command"] = "secure_open"
@@ -4660,7 +4660,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(is_bolted(A), "secure_open left the door unbolted (it would autoclose and retry forever)")
 	TEST_ASSERT_NULL(A.cur_command, "secure_open never completed")
 	// Already open and unbolted (bolts raised by hand): the command only bolts it.
-	cap_key_set(A, BOLTS_BOLTED, FALSE, null)
+	set_bolted(A, FALSE, TRUE)
 	A.receive_signal(S)
 	waited = 0
 	while((A.cur_command || A.operating) && waited < 5 SECONDS)
@@ -4675,7 +4675,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
 	A.set_density(TRUE)
 	A.operating = FALSE
-	A.autoclose = TRUE
+	A.set_autoclose(TRUE)
 	A.autoclose_in(1)
 	for(var/i in 1 to 200)
 		if(!A.autoclose_pending())
@@ -4684,14 +4684,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!A.autoclose_pending(), "closed airlock kept its stale autoclose deadline")
 	A.set_density(FALSE)
 	A.operating = FALSE
-	cap_key_set(A, BOLTS_BOLTED, TRUE, null)
+	set_bolted(A, TRUE, TRUE)
 	A.autoclose_in(1)
 	for(var/i in 1 to 200)
 		if(!A.autoclose_pending())
 			break
 		om_test_ticks(1)
 	TEST_ASSERT(!A.autoclose_pending(), "locked open airlock kept its impossible autoclose deadline")
-	A.unlock(TRUE)
+	set_bolted(A, FALSE, TRUE)
 	TEST_ASSERT(A.autoclose_pending(), "unlocking an open airlock did not restore autoclose scheduling")
 
 /// An idle recharger draws only its idle power: an empty one, and one holding a full cell.

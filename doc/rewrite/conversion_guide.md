@@ -120,11 +120,16 @@ the capability reads (`starts_locked = nameof(lock_at_start)`) and `lock_at_star
 **Window and buttons.** Before: `tgui_id`, a `tgui_data()` override, `act_*` procs and a `ui_allowed()` guard. After: `interface("APC")`, a
 `ui_data(datum/act/eval/A)` that returns the data (`A.actor` is the viewer), and one op per button with a `ui_act()` binding; the old action
 name stays (`ui_act("charge")`), so the TSX does not change except where the data shape moved (the APC's `caps.power` object became top-level keys).
+Who may work the window is the library's (`code/library/access/window_access.dm`): `req_window_usable(remote = PROC_REF(x))` (an admin ghost
+always; anyone else awake, free and standing, beside the machine or over a silicon's link, where the machine's own `x(A)` says null or a reason)
+and `req_silicon_or_admin()` (the buttons only a silicon has). Write no `can_use()`/`ui_usable()` of your own. A silicon's gesture that does what a
+button does is that button with one more binding, `extend("breaker", binds(remote()), gesture(GESTURE_CTRL))`, never a second op.
 
 ```dm
 op("set_channel", ui_act("channel", arg("channel", int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), arg("mode", int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))), then(PROC_REF(ui_set_channel))),
 op("breaker", ui_act(), toggles(nameof(operating)), then(PROC_REF(settings_applied)), logs(LOG_GAME)),
-extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))),   // the old can_use(), as a pure requirement
+extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_allowed), remote_because = MSG(apc/ai_disabled)))),   // the old can_use(): the library's window access
+extend("breaker", binds(remote()), gesture(GESTURE_CTRL)),   // a silicon's ctrl-click throws the same breaker
 extend("nightshift", drop = "lock"),   // this one button works whatever the lock says: relax the lock's requirement by its id
 ```
 
@@ -235,6 +240,15 @@ door's own ops (strike, reinforce, repair). A kind of door `without()`s what it 
   `qdel(src)` in the stage's `then()`; `graph_advance` now skips a holder that is already gone. `replace_with()` deletes what the old holder owned.
 * *Emags*: a door that takes none is `without(CAP_EMAG)` plus a refusing op; `emag_target()` (events, a changeling's pick) reaches a capability's emag through
   the cardless `emag.subvert` op.
+* *State several hands change* (bolts, current, power, AI control): a `STAT(T, x, ANY)` composed from sourced holds, not a 0/1/-1 int with keyed
+  timers. A timer is `hold(E, STAT_X, TRUE, SRC_Y, lasts)`, "until fixed" an untimed hold released by the fix, and a button's own hold has the
+  actor as its source (`toggles_hold(STAT_X, source = ON_ACTOR)`), so two hands never undo each other and a pulse running out cannot undo a cut.
+  React with `on_change(nameof(x), ...)`. The airlock (16.2) is the reference: `STAT_ELECTRIFIED`, `STAT_MAIN_POWER_OUT`, `STAT_BACKUP_POWER_OUT`,
+  `STAT_AI_LOCKED_OUT` and the bolts library's `STAT_BOLTED`.
+* *A touch the holder answers with something else* (a live door's shock): one takeover of its click ops,
+  `extend(/datum/act/op, instead(when(STAT_X, req_on_origin(ORIGIN_CLICK)), then(PROC_REF(y))))`, run at the start of Do; `y` returns `HOOK_DECLINE` to
+  let the op go on. Not an early `then()` on a hand-kept list of op keys.
+* *A window button that refuses* says so with `needs(req_wire(...), req_is(...), because = MSG(x))`, never `to_chat()` and `OP_REFUSED` in the effect.
 * *Keyed relations*: `ref_many(nameof(v), /type, by = nameof(id))` on the holder; the target needs nothing (the generator lists every keyed target
   so a table built first knows its key). It cannot name two different vars (a button's `id`, an airlock's `id_tag`): that bridge stays `rel_key()`.
 

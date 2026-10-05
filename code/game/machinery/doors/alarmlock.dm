@@ -28,10 +28,10 @@
 	if(alarm_area == our_area.name)
 		switch(alert)
 			if("severe")
-				autoclose = 1
+				set_autoclose(1)
 				close()
 			if("minor", "clear")
-				autoclose = 0
+				set_autoclose(0)
 				open()
 
 /// air connection (a relation view: it reads null once the target is deleted).

@@ -90,7 +90,7 @@
 
 	// Relatively small chance to emag the apc as apc_damage event does.
 	if(prob(5))
-		cap_key_set(A, EMAG_EMAGGED, TRUE, null)
+		key_set(A, EMAG_EMAGGED, TRUE)
 		play_sfx(A, SFX_MACHINES_CHIME)
 		apcs_emagged++
 

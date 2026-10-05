@@ -12,11 +12,11 @@
 TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/door/airlock/proc/command_step(datum/act/A)
-	if (arePowerSystemsOn())
+	if (power_systems_on())
 		execute_current_command()
 
 /obj/machinery/door/airlock/receive_signal(datum/signal/signal)
-	if (!arePowerSystemsOn()) return //no power
+	if (!power_systems_on()) return //no power
 
 	if(!signal || signal.encryption) return
 
@@ -44,7 +44,7 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 	// may run in either order), so the bolts drop even mid-swing: refused for `operating`, the command stayed
 	// pending, the door autoclosed and the command reopened it, forever.
 	if(do_lock)
-		lock(forced = TRUE)
+		set_bolted(src, TRUE, TRUE)
 	if(delayed_status)
 		// ALLOW(sys_om_after_rearm): one retry that waits for the delayed status to land, not a loop over state
 		after(src, 0.2 SECONDS, PROC_REF(check_completion))
@@ -65,19 +65,19 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 			after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
 
 		if("unlock")
-			unlock()
+			set_bolted(src, FALSE)
 			check_completion()
 
 		if("lock")
 			check_completion(TRUE)
 
 		if("secure_open")
-			unlock()
+			set_bolted(src, FALSE)
 
 			after(src, 0.2 SECONDS, PROC_REF(do_secure_open))
 
 		if("secure_close")
-			unlock()
+			set_bolted(src, FALSE)
 			close()
 			after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), with = list(TRUE, 0.2 SECONDS))
 

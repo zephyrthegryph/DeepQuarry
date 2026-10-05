@@ -7,12 +7,12 @@
 	var/mob/living/carbon/human/user = make_person(null, tile(3, 2))
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
-	door.autoclose = FALSE
+	door.set_autoclose(FALSE)
 	door.req_access = list(ACCESS_SECURITY)
 	var/list/access_before = door.req_access
 	card.uses = 3
 	TEST_ASSERT(user.put_in_active_hand(card), "the actual airlock actor holds the real charged emag")
-	TEST_ASSERT(!door.wire_cut(WIRE_OPEN_DOOR) && !door.wire_cut(WIRE_IDSCAN), "the actual airlock starts with control and ID wires intact")
+	TEST_ASSERT(!wire_is_cut(door, WIRE_OPEN_DOOR) && !wire_is_cut(door, WIRE_IDSCAN), "the actual airlock starts with control and ID wires intact")
 	p2_door_set_power(door, FALSE)
 	var/timers_before = om_timer_count(door)
 	p2_door_click(user, door, card)
@@ -21,7 +21,7 @@
 	TEST_ASSERT_EQUAL(om_timer_count(door), timers_before, "actual unpowered refusal schedules no reaction")
 	TEST_ASSERT(door.density && !door.operating, "actual unpowered refusal leaves the closed airlock idle")
 	p2_door_set_power(door, TRUE)
-	TEST_ASSERT(door.arePowerSystemsOn(), "the actual powered fixture has an available power system")
+	TEST_ASSERT(door.power_systems_on(), "the actual powered fixture has an available power system")
 	p2_door_click(user, door, card)
 	TEST_ASSERT_EQUAL(card.uses, 2, "the actual successful capability spends exactly one card use")
 	TEST_ASSERT(is_emagged(door), "the actual successful capability records its emag state")
@@ -32,7 +32,7 @@
 	TEST_ASSERT(!door.operating, "the actual opening animation finishes idle")
 	TEST_ASSERT_EQUAL(door.req_access, access_before, "actual airlock emag preserves the exact configured access list")
 	TEST_ASSERT(ACCESS_SECURITY in door.req_access, "actual airlock emag retains the security-access requirement")
-	TEST_ASSERT(!door.wire_cut(WIRE_OPEN_DOOR) && !door.wire_cut(WIRE_IDSCAN), "actual airlock emag does not cut control or ID wires")
+	TEST_ASSERT(!wire_is_cut(door, WIRE_OPEN_DOOR) && !wire_is_cut(door, WIRE_IDSCAN), "actual airlock emag does not cut control or ID wires")
 	var/open_timers = om_timer_count(door)
 	p2_door_click(user, door, card)
 	TEST_ASSERT_EQUAL(card.uses, 2, "the actual already-open mechanism refusal spends no additional card use")

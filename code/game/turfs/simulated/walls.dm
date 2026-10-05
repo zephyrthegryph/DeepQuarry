@@ -948,7 +948,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 				else
 					A.electronics.conf_access = the_rcd.conf_access.Copy()
 					A.req_access = the_rcd.conf_access.Copy()
-			A.autoclose = TRUE
+			A.set_autoclose(TRUE)
 			return TRUE
 		if(RCD_WINDOOR)
 			var/list/windoor_types = list(
@@ -1129,7 +1129,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 		else
 			A.electronics.conf_access = rcd.conf_access.Copy()
 			A.req_access = rcd.conf_access.Copy()
-	A.autoclose = TRUE
+	A.set_autoclose(TRUE)
 	rcd.finish_deferred_build(src, ask.answerer, RCD_WINDOOR)
 
 /turf/simulated/floor/proc/rcd_frame_type_chosen(datum/act/request/context)

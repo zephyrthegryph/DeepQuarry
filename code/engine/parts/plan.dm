@@ -505,6 +505,10 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 /datum/entry/part/effect/toggles/compile(datum/op_plan/P, level)
 	..()
 	P.toggles = TRUE
+	// toggles(KEY, when = cond): the switch exists only while cond holds (a setting the type locks: a lasertag turret's targets), so the op is not a
+	// candidate otherwise, the button does nothing and says nothing, and no handler repeats the check.
+	if(!isnull(src.args["when"]))
+		LAZYADD(P.conds, list(src.args["when"]))
 
 /datum/entry/part/passes/compile(datum/op_plan/P, level)
 	P.passes = TRUE

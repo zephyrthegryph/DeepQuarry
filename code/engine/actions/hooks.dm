@@ -427,6 +427,11 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 			if(ENTRY_WHEN)
 				if(!hook_gate(H, A, part.args["cond"]))
 					return FALSE
+				// when(cond, req_x(...)): requirements written beside the condition gate the hook too, asked in the action's context (an op's
+				// origin, its actor): extend(/datum/act/op, instead(when(STAT_X, req_on_origin(ORIGIN_CLICK)), ...)).
+				for(var/datum/entry/part/req/R in part.children)
+					if(!istype(A, /datum/act/op) || !op_req_holds(A, R))
+						return FALSE
 			if(ENTRY_CHANCE)
 				if(!TEST_ROLL(part.args["percent"]))
 					return FALSE

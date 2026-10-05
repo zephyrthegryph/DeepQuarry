@@ -161,6 +161,7 @@ CAPABILITIES(/obj/machinery/door/window)
 	without("unreinforce")
 	without("repair")
 	owns_one(nameof(electronics), /obj/item/airlock_electronics)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))
 	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_TAKE_OUT), wait(0), then(PROC_REF(sliced_open)))
 	op("shred", hand(), hostile(), label("Smash"), when(req(PROC_REF(claws_shred))), wait(0), then(PROC_REF(shredded)))
 	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS), costs(RES_FUEL, 1),

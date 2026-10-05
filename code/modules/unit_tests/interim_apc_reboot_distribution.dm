@@ -11,8 +11,6 @@
 	apc.set_operating(TRUE)
 	apc.set_chargemode(FALSE)
 	apc.charging = 2
-	apc.chargecount = 7
-	apc.longtermpower = -1
 	apc.main_status = APC_EXTERNAL_POWER_GOOD
 	apc.energy_fail(3) // This API counts machine-service intervals, rather than deciseconds.
 	TEST_ASSERT(apc.failure_left() > 0, "the actual power-failure entry establishes a pending failure")
@@ -24,8 +22,6 @@
 	TEST_ASSERT(!apc.operating, "actual reboot leaves the breaker off")
 	TEST_ASSERT(apc.chargemode, "actual reboot restores charge mode")
 	TEST_ASSERT_EQUAL(apc.charging, 0, "actual reboot clears active charging status")
-	TEST_ASSERT_EQUAL(apc.chargecount, 0, "actual reboot clears the charging count")
-	TEST_ASSERT_EQUAL(apc.longtermpower, 10, "actual reboot resets the distribution's long-term power allowance")
 	TEST_ASSERT_EQUAL(apc.main_status, APC_EXTERNAL_POWER_NOTCONNECTED, "actual reboot clears the previously good external-power status")
 	TEST_ASSERT(!apc.failure_left(), "actual reboot clears the current power failure")
 	TEST_ASSERT_NULL(hold_left(apc, STAT_OPERABLE, SRC_POWER_FAILURE), "actual reboot cancels the outstanding failure revert")

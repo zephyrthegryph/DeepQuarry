@@ -52,8 +52,8 @@
 
 /// The APC's interface is subverted, as an emag leaves it: subverted and unlocked.
 /proc/p2_apc_subvert(obj/machinery/power/apc/A)
-	cap_key_set(A, EMAG_EMAGGED, TRUE, null)
-	cap_key_set(A, LOCK_LOCKED, FALSE, null)
+	key_set(A, EMAG_EMAGGED, TRUE)
+	key_set(A, LOCK_LOCKED, FALSE)
 
 /// Somebody opens the APC's window (the touch of a hand or a silicon).
 /proc/p2_apc_open_interface(obj/machinery/power/apc/A, mob/user)
@@ -94,7 +94,7 @@
 
 /// The area takes `watts` more static load on the equipment channel (negative: gives it back).
 /proc/p2_apc_load(obj/machinery/power/apc/A, watts)
-	A.area().use_power_static(watts, EQUIP)
+	A.area.use_power_static(watts, EQUIP)
 
 /// One power step as the game runs it.
 /proc/p2_apc_power_step()
@@ -103,7 +103,7 @@
 
 /// The channel `index` of the area is powered (0 equipment, 1 lighting, 2 environment).
 /proc/p2_apc_area_powered(obj/machinery/power/apc/A, index)
-	return !!(index == 0 ? A.area().power_equip : (index == 1 ? A.area().power_light : A.area().power_environ))
+	return !!(index == 0 ? A.area.power_equip : (index == 1 ? A.area.power_light : A.area.power_environ))
 
 /// The APC's output is down for a while (an EMP, an overload event, a supermatter shutdown): its power failure is on.
 /proc/p2_apc_failed(obj/machinery/power/apc/A)
@@ -303,8 +303,8 @@
 
 /datum/unit_test/dq_p2_apc/area_membership_and_lights/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
-	TEST_ASSERT_EQUAL(A.area(), get_area(A), "the APC serves the area it stands in")
-	TEST_ASSERT_EQUAL(A.area().apc, A, "and the area names it")
+	TEST_ASSERT_EQUAL(A.area, get_area(A), "the APC serves the area it stands in")
+	TEST_ASSERT_EQUAL(A.area.apc, A, "and the area names it")
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, run_loc_floor_bottom_left)
 	TEST_ASSERT(L in p2_apc_area_lights(A), "a light of the area is one of its lights")
 	qdel(L)
@@ -1497,22 +1497,22 @@
 		using_map.station_levels += A.z
 	p2_apc_station_night(FALSE)
 	p2_settle()
-	TEST_ASSERT(!A.area().lights_nightshift, "by day the area is bright")
+	TEST_ASSERT(!A.area.lights_nightshift, "by day the area is bright")
 	p2_apc_station_night(TRUE)
 	p2_settle()
-	TEST_ASSERT(A.area().lights_nightshift, "at night an automatic APC dims its area")
+	TEST_ASSERT(A.area.lights_nightshift, "at night an automatic APC dims its area")
 	A.set_nightshift_setting(NIGHTSHIFT_NEVER)
 	p2_settle()
-	TEST_ASSERT(!A.area().lights_nightshift, "an APC set to never keeps it bright at night")
+	TEST_ASSERT(!A.area.lights_nightshift, "an APC set to never keeps it bright at night")
 	A.set_nightshift_setting(NIGHTSHIFT_AUTO)
 	p2_settle()
-	TEST_ASSERT(A.area().lights_nightshift, "back on automatic it dims again")
+	TEST_ASSERT(A.area.lights_nightshift, "back on automatic it dims again")
 	p2_apc_station_night(FALSE)
 	p2_settle()
-	TEST_ASSERT(!A.area().lights_nightshift, "the morning brightens it")
+	TEST_ASSERT(!A.area.lights_nightshift, "the morning brightens it")
 	A.set_nightshift_setting(NIGHTSHIFT_ALWAYS)
 	p2_settle()
-	TEST_ASSERT(A.area().lights_nightshift, "an APC set to always dims it by day")
+	TEST_ASSERT(A.area.lights_nightshift, "an APC set to always dims it by day")
 	A.set_nightshift_setting(NIGHTSHIFT_AUTO)
 	using_map.station_levels = levels
 	p2_apc_station_night(was_night)

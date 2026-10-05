@@ -520,7 +520,6 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	icon = 'icons/obj/doors/Dooralien.dmi'
 	explosion_resistance = 20
 	secured_wires = TRUE
-	hackProof = TRUE
 	assembly_type = /obj/structure/door_assembly/door_assembly_alien
 	req_one_access = list(ACCESS_ALIEN)
 	security_level = 100
@@ -532,7 +531,6 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 /obj/machinery/door/airlock/alien/public // Entry to UFO.
 	req_one_access = list()
 	normalspeed = FALSE // So it closes faster and hopefully keeps the warm air inside.
-	hackProof = TRUE //No borgs
 
 
 /obj/machinery/door/airlock/glass_external/public
@@ -545,7 +543,6 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 	icon = 'icons/obj/doors/Dooralien_blue.dmi'
 	explosion_resistance = 20
 	secured_wires = TRUE
-	hackProof = TRUE
 	assembly_type = /obj/structure/door_assembly/door_assembly_alien
 	req_one_access = list()
 
@@ -556,7 +553,6 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 /obj/machinery/door/airlock/alien/blue/public // Entry to UFO.
 	req_one_access = list()
 	normalspeed = FALSE // So it closes faster and hopefully keeps the warm air inside.
-	hackProof = TRUE // No borgos
 
 /obj/machinery/door/airlock/glass_security/polarized
 	name = "Electrochromic Security Airlock"
@@ -569,3 +565,9 @@ CAPABILITIES(/obj/machinery/door/airlock/glass_external)
 /obj/machinery/door/airlock/glass_command/polarized
 	name = "Electrochormic Command Airlock"
 	icon_tinted = 'icons/obj/doors/Doorcomtinted_vr.dmi'
+
+/obj/machinery/door/airlock/scp
+	name = "SCP Access"
+	icon = 'icons/obj/doors/SCPdoor.dmi'
+	open_sound_powered = 'sound/machines/scp1o.ogg'
+	close_sound_powered = 'sound/machines/scp1c.ogg'

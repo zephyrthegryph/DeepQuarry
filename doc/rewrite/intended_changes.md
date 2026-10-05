@@ -888,3 +888,78 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
   with the library's question text.
 * **The vent's flow stays volume-limited** (its pipe volume times fifty litres a second, as since the flow law moved to Rust): `power_rating` is what
   it draws, not its limit. A power-limited flow would change every station's ventilation rate; this is recorded rather than changed.
+## Vending machines (rewrite/machines-full)
+
+- **One vend op.** Buying is `op("vend")` with its refusals as requirements (stock, power, the product's access, a NIF's readiness for the
+  NIFSoft shop), the PIN as `asks()` and the price as `costs(RES_CREDITS, vend_price)`: the credits are reserved after the last answer and
+  taken after the effects, so a vend refused or cancelled half way never charges. A refused vend says why (the notice's `refusal`).
+- **Coins.** The coin button is `req_on_authority(AUTH_PHYSICAL)`: anyone standing at the vendor, a cyborg included, takes the coin out;
+  a silicon over its link does not (before, a cyborg at the vendor was refused).
+- **Logs** need the logs to exist and the log access (`check_logs` is gated, no longer a no-op button).
+- **Rotation** is the library `rotatable()` capability (`rotatable.clockwise` / `rotatable.counterclockwise`), replacing the vendor's own verbs.
+- **Slogans and timed work** run on `every(..., when = STAT_OPERABLE + wanted)`: an unpowered or broken vendor no longer polls; slogans start
+  after init and the slogan delay is a time define (10 minutes, unchanged).
+- The cigarette machine's Mauser lives in its product table instead of an `Initialize()` override.
+- Library: `credits_resource.dm` (the RES_CREDITS adapter: the payer is the actor's credits source), `rotatable()`, `toggles(key, when =)`.
+## Airlock and APC, full conversion (rewrite/doors-full)
+
+Pinned by `code/modules/unit_tests/dq_doors_full_behaviour.dm` (written and green on the code before it, commit "Pin airlock and APC behaviour before
+the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Each row below edited the assertion that pinned the old behaviour.
+
+### APC
+
+* **A reboot forgets the power alarm it raised.** `reboot()` cleared the alarm on the alarm handler but left `power_alarm_raised` set, so the next poll
+  "cleared" it a second time and counted a power event. (bug; `reboot_clears_the_power_alarm`)
+* **The channel modes reach the power domain through `push_to_rust()` only.** `set_channel_mode()` and `reboot()` wrote `NATIVE_APC_CHANNELS` by hand;
+  the push now carries the three channels with the rest of the settings, once per frame after any of them changed. Same values, one path.
+* **One breaker path.** The window's `breaker` op also answers a silicon's ctrl-click (`extend("breaker", binds(remote()), gesture(GESTURE_CTRL))`);
+  `remote_breaker`, `set_breaker()` and `toggle_breaker()` are gone, and the area follows the breaker through `on_change(nameof(operating))` whoever
+  writes it (the AI restoring its own power, a break). The ctrl-click is under the window's rules: a cyborg without access works an *unlocked* APC's
+  breaker by ctrl-click as it already could through the window (it used to also need `remote_link_allowed()` for the ctrl-click alone).
+* **Window access is the library's** (`req_window_usable()`, `req_silicon_or_admin()`, `code/library/access/window_access.dm`): the refusal texts are
+  the library's ("You can't use that right now.", "Only a silicon can do that."), the rules are unchanged; the APC keeps only its own remote rule
+  (`remote_control_allowed()`: the AI-control wire, the hacker and its cyborgs).
+* The window data loses `normallyLocked` (always equal to `locked`) and `totalCharging` (always 0); the TSX shows the total load alone.
+* Dead state is gone: `debug`, `chargecount`, `longtermpower` (Rust keeps its own), `report()`, the `area()` accessor (the `area` var is read directly).
+
+### Airlock
+
+* **The AI-control wire pulsed and then cut keeps silicons out.** The pulse's one-second timer was unkeyed and set the control back on whatever
+  the wire said, so a pulse followed by a cut gave the AI its control back, and pulses stacked timers. Now the cut and the pulse are separate holds on
+  `STAT_AI_LOCKED_OUT` (`SRC_AI_WIRE`, `SRC_AI_WIRE_PULSE` for a second). (bug 1; `ai_wire_pulse_then_cut_keeps_the_ai_out`)
+* **An emagged door shows its 'AI control allowed' light off, and its open-door wire does nothing.** Both checks read an `emagged` var the door's emag
+  never set; they read `emag_emagged()`. (bug 2; `emagged_door_shows_ai_control_off`, `emagged_door_ignores_the_open_wire`)
+* **The speed and the autoclose are tracked** (`TRACKED(/obj/machinery/door, normalspeed)`, `autoclose`): the window's speed and the timing wire's
+  writes reach whatever reads them. (bug 3; `speed_toggle_is_tracked_and_refused_with_the_wire_cut`)
+* **Paired airlocks close each other both ways.** The pairing was a scan of every machine at init that linked only the airlock placed second to the
+  first; it is a keyed relation (`ref_many(nameof(close_others), /obj/machinery/door/airlock, by = nameof(closeOtherId))`). (bug 4;
+  `paired_airlocks_close_each_other`)
+* **The prison break leaves the cell door bolted open.** `prison_open()` dropped the bolts while the door swung, which the bolts refuse, so the door
+  stayed unbolted; it drops them forced. (bug found by the pinning test `prison_open_opens_and_rebolts`)
+* **Bolts and current are sourced holds** (`STAT_BOLTED` on every door, `STAT_ELECTRIFIED` on the airlock; final_api 16.2). An AI's bolt button and its
+  shock buttons hold with the AI as the source, so one AI's unbolt or "restore" releases only its own hold: a second AI's bolts, a wire's pulse, a
+  button's lockdown run on. A deleted AI's holds go with it. The door's own motor (a wire, a button, a radio command, a map start) is `SRC_DOOR_BOLTS`,
+  and its mechanical raise (`set_bolted(door, FALSE)`, the bolt wire's pulse) still lifts every hold. (`second_ai_and_the_bolts`,
+  `ai_restore_after_a_wire_pulse`)
+* **Mending the electrify wire releases only the wire's current** (it used to end every electrification).
+* **Main and backup power are stats** (`STAT_MAIN_POWER_OUT`, `STAT_BACKUP_POWER_OUT`): a cut cable holds until mended, a tripped breaker for a minute,
+  the backup's switchover for ten seconds. The window shows the same numbers. The disrupt buttons, and every other window button, refuse through
+  `needs()` with the old text instead of a message in the effect.
+* **Touching a live door is one takeover of every click op** (`extend(/datum/act/op, instead(when(STAT_ELECTRIFIED, req_on_origin(ORIGIN_CLICK)), ...))`)
+  instead of an early effect on seventeen named ops. Ops that were not on the list now shock too (clearing ice, the ctrl-click's hammer and bell);
+  window buttons and a silicon's link never did and still do not. A shocked touch ends `ACT_REPLACED` (it ended refused, so a shut door's denial
+  flash no longer follows the shock).
+* **The ctrl-click is three ops** (`hammer`, `hold_open`, `doorbell`, all `gesture(GESTURE_CTRL)` and not for silicons); a silicon's ctrl-click is the
+  bolt button over its link (`extend("bolt_toggle", binds(remote()), gesture(GESTURE_CTRL))`), and its shift-click the open button. No `click_ctrl()`
+  override loops over op keys any more.
+* **A thrown metal thing striking a live door sparks** (the sparks were a side effect of `CanPass()`, for any metal item that tried to pass a shut live door).
+* **The swing's sound reaches the clients that hear the door** (`hearers()`, `play_motion_sound()`), not every player's mob within twice the view; an AI
+  listening through its hologram no longer hears it.
+* **An EMP pops open the doors that declare it** (the airlock and the windoor hook `door_emp()`); the base door no longer asks `istype()` of its subtypes.
+* **A blob reaching a door** is a takeover of the blob hit (`extend(/datum/act/hit/blob, ...)`): an open door is untouched, a broken shut one opens, a
+  sound shut one takes the hit as before.
+* Gone as dead: `aiControlDisabled` (its bypass states 2 and -1 had no writer), `hackProof`, `aiHacking`, `canAIHack()`, `lockdownbyai`,
+  `next_weather_check`, the `wire_cut()` wrapper, the three hand-keyed power and shock timers and `electrify()`'s thirty-line state machine
+  (`electrify(duration, source, user)` is now a hold), `lock()`/`unlock()` (the bolts library's `drop_bolts`/`raise_bolts`, through `set_bolted()`).
+* Moved, behaviour intact: the SCP door to `airlock_subtypes.dm`, the cyborg's water reserve and refill verb to `robot.dm`, the cyborg-use rows to
+  `atmos_control.dm`, `computer/robot.dm`, `turret_control.dm` and `portable_turret.dm` (its cyborg `isLocked()` branch folded into the turret's own).

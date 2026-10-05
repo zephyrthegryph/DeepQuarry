@@ -433,6 +433,26 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 // This operates on a nifsoft *path*, not an instantiation.
 // It tells the nifsoft shop if it's installation will succeed, to prevent it
 // from charging the user for incompatible software.
+MSG_DEF_SELF(nif/tempfail, "Your NIF is not working.")
+MSG_DEF_SELF(nif/already_installed, "That software is already installed in your NIF.")
+MSG_DEF_SELF(nif/not_for_chassis, "That software is not supported on your chassis type.")
+MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic life.")
+
+/// Why the NIF cannot take the software (a /datum/msg type), or null. Reads only: a shop asks it before it sells.
+/obj/item/nif/proc/install_refusal(datum/nifsoft/path)
+	if(stat == NIF_TEMPFAIL) // ALLOW(reads): a NIF's state and software are asked when the software is chosen, never cached
+		return /datum/msg/nif/tempfail
+	if(nifsofts[initial(path.list_pos)])
+		return /datum/msg/nif/already_installed
+	if(human)
+		var/applies_to = initial(path.applies_to)
+		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
+		if(synth && !(applies_to & NIF_SYNTHETIC))
+			return /datum/msg/nif/not_for_chassis
+		if(!synth && !(applies_to & NIF_ORGANIC))
+			return /datum/msg/nif/not_for_organics
+	return null
+
 /obj/item/nif/proc/can_install(datum/nifsoft/path)
 	if(stat == NIF_TEMPFAIL)
 		return FALSE

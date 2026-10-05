@@ -413,10 +413,12 @@
 					/obj/item/reagent_containers/ecig_cartridge/lemonlime = 5,
 					/obj/item/reagent_containers/ecig_cartridge/coffee = 5,
 					/obj/item/reagent_containers/ecig_cartridge/blanknico = 2,
-					/obj/item/storage/box/fancy/chewables/tobacco/nico = 5)
+					/obj/item/storage/box/fancy/chewables/tobacco/nico = 5,
+					/obj/item/storage/fancy/cigarettes/yw/mauser = 5)
 	contraband = list(/obj/item/flame/lighter/zippo = 4)
 	premium = list(/obj/item/storage/fancy/cigar = 5)
 	prices = list(/obj/item/storage/fancy/cigarettes = 12,
+					/obj/item/storage/fancy/cigarettes/yw/mauser = 18,
 					/obj/item/storage/fancy/cigarettes/dromedaryco = 20,
 					/obj/item/storage/fancy/cigarettes/killthroat = 14,
 					/obj/item/storage/fancy/cigarettes/luckystars = 17,

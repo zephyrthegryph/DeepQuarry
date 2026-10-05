@@ -54,7 +54,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 
 /// Locks or unlocks it outright (an EMP, a code, a break-out): the lock's key is the one state there is.
 /obj/structure/closet/proc/force_lock(on)
-	return cap_key_set(src, LOCK_LOCKED, !!on, null)
+	return key_set(src, LOCK_LOCKED, !!on)
 
 /// An EMP may toggle the lock, pop the closet or scramble its access.
 /obj/structure/closet/secure_closet/proc/secure_closet_emp(datum/act/A)

@@ -133,11 +133,11 @@
 	actor.name = actor.real_name
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
 	door.set_stat(0)
-	TEST_ASSERT(door.arePowerSystemsOn(), "Fixture must have working airlock power")
+	TEST_ASSERT(door.power_systems_on(), "Fixture must have working airlock power")
 	var/datum/wires_test_adapter/wires = wires_test(door)
 	TEST_ASSERT_NOTNULL(wires, "Airlock did not provide wires")
 	wires.pulse(WIRE_ELECTRIFY, actor)
-	TEST_ASSERT(door.isElectrified(), "Pulsing the electrify wire must electrify the door")
+	TEST_ASSERT(door.electrified, "Pulsing the electrify wire must electrify the door")
 	var/attributed = FALSE
 	for(var/entry in door.shockedby)
 		if(findtext(entry, actor.name))
@@ -145,10 +145,10 @@
 	TEST_ASSERT(attributed, "Electrification history must credit the explicit wire operator")
 	wires.cut(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(wires.is_cut(WIRE_ELECTRIFY), "Cutting must sever the electrify wire")
-	TEST_ASSERT_EQUAL(door.electrified_until, -1, "Cut wire must leave permanent electrification")
+	TEST_ASSERT(door.electrified && wire_is_cut(door, WIRE_ELECTRIFY), "Cut wire must leave the door electrified")
 	wires.cut(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(!wires.is_cut(WIRE_ELECTRIFY), "Second cut action must mend the wire")
-	TEST_ASSERT(!door.isElectrified(), "Mending the electrify wire must remove electrification")
+	TEST_ASSERT(!door.electrified, "Mending the electrify wire must remove electrification")
 
 /// Exercise declared requirements as well as completion: wrong boards and short cable stacks refuse.
 /datum/unit_test/interim_machine_frame_requirements/Run()
@@ -223,7 +223,7 @@
 /datum/unit_test/interim_door_emag_reaction/proc/emag_reaction()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/machinery/door/door = allocate(/obj/machinery/door, locate(T.x + 2, T.y + 2, T.z))
-	door.autoclose = FALSE
+	door.set_autoclose(FALSE)
 	door.set_stat(0)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, locate(T.x + 3, T.y + 2, T.z))
 	var/obj/item/card/emag/emag = allocate(/obj/item/card/emag, actor.loc)
@@ -243,7 +243,7 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(emag.uses, uses - 1, "An already open door must consume no emag uses")
 	var/obj/machinery/door/unpowered = allocate(/obj/machinery/door, locate(T.x + 2, T.y + 3, T.z))
-	unpowered.autoclose = FALSE
+	unpowered.set_autoclose(FALSE)
 	unpowered.set_stat(NOPOWER)
 	actor.forceMove(locate(T.x + 3, T.y + 3, T.z))
 	actor.next_click = 0
