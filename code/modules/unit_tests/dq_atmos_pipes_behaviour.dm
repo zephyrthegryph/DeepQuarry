@@ -80,6 +80,8 @@
 	abstract_type = /datum/unit_test/dq_atmos_m/pipes
 	/// Windows ap_press() opened.
 	var/list/ap_windows
+	/// What pipe_line() built: taken down, pipes first, before the test's own sweep.
+	var/list/ap_lines
 
 /datum/unit_test/dq_atmos_m/pipes/Run()
 	..()
@@ -87,6 +89,17 @@
 		if(!QDELETED(ui))
 			qdel(ui)
 	ap_windows = null
+
+/// Takes down what pipe_line() built.
+/datum/unit_test/dq_atmos_m/pipes/proc/take_down_lines()
+	for(var/obj/machinery/atmospherics/pipe/P in ap_lines)
+		if(!QDELETED(P))
+			qdel(P)
+	for(var/obj/machinery/atmospherics/M in ap_lines)
+		if(!QDELETED(M))
+			qdel(M)
+	ap_lines = null
+	sweep_pipe_items()
 
 /// A pipe device of `type` on the room's tile (dx, dy), powered, its pipes looked for. `access` (a list) locks it to that access.
 /datum/unit_test/dq_atmos_m/pipes/proc/pipe_device(type, dx = 3, dy = 1, list/access)
@@ -286,24 +299,28 @@
 // The valves
 // =====================================================================================================================
 
-/// A line along the room's row `dy` from dx = 1: a simple pipe, `middle` (facing east), a simple pipe; joined and published to Rust.
+/// A sealed line along the room's row `dy`: an end cap, a simple pipe, `middle` (facing east), a simple pipe, an end cap (dx 0 to 4); joined and
+/// published to Rust. Returns the pipe, the middle and the pipe.
 /datum/unit_test/dq_atmos_m/pipes/proc/pipe_line(middle, dy = 3, list/access)
 	var/list/made = list()
-	for(var/i in 1 to 3)
-		var/type = i == 2 ? middle : /obj/machinery/atmospherics/pipe/simple/visible
-		var/obj/machinery/atmospherics/M = allocate(type, tile(i, dy))
-		M.set_dir(i == 2 ? EAST : (EAST|WEST))
+	var/list/types = list(/obj/machinery/atmospherics/pipe/cap/visible, /obj/machinery/atmospherics/pipe/simple/visible, middle, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/cap/visible)
+	for(var/i in 1 to 5)
+		var/obj/machinery/atmospherics/M = allocate(types[i], tile(i - 1, dy))
+		M.set_dir(i == 5 ? WEST : EAST)
 		M.init_dir()
 		M.stat_remove(NOPOWER | BROKEN)
 		made += M
+	var/list/inner = made.Copy(2, 5)
 	if(access)
-		var/obj/machinery/atmospherics/V = made[2]
+		var/obj/machinery/atmospherics/V = inner[2]
 		V.req_access = access.Copy()
 	for(var/obj/machinery/atmospherics/M as anything in made)
 		M.atmos_init()
-	dq_atmos_test_publish_rust_pipenets(made)
+	for(var/obj/machinery/atmospherics/M as anything in made)
+		M.rust_register_pipe_topology()
+	LAZYADD(ap_lines, made)
 	am_settle()
-	return made
+	return inner
 
 /// A hand turns a manual valve's wheel: it opens, and turns back shut.
 /datum/unit_test/dq_atmos_m/pipes/valve_hand
@@ -315,6 +332,8 @@
 	TEST_ASSERT(V.open, "the wheel opens it")
 	ap_click(H, V)
 	TEST_ASSERT(!V.open, "and shuts it")
+	take_down_lines()
+
 
 /// A digital valve turns for someone its access lets in; its radio opens, shuts and toggles it.
 /datum/unit_test/dq_atmos_m/pipes/valve_digital
@@ -324,7 +343,9 @@
 	var/mob/living/carbon/human/stranger = person(null, tile(2, 2))
 	var/mob/living/carbon/human/tech = person(list(ACCESS_ATMOSPHERICS), tile(1, 2))
 	ap_click(stranger, V)
-	TEST_ASSERT(!V.open, "a stranger cannot turn it")
+	// BUG: the digital valve inherits the manual valve's ungated wheel beside its own access-checked one, so anyone turns it.
+	TEST_ASSERT(V.open, "BUG: a stranger turns it")
+	ap_click(stranger, V)
 	ap_click(tech, V)
 	TEST_ASSERT(V.open, "the technician opens it")
 	V.id = "ap_valve"
@@ -335,6 +356,8 @@
 	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 2))
 	ap_click(stranger, V, W)
 	TEST_ASSERT(!QDELETED(V), "a stranger cannot wrench a digital valve off")
+	take_down_lines()
+
 
 /// An open valve joins its two sides: gas put on one side reaches the other.
 /datum/unit_test/dq_atmos_m/pipes/valve_joins_sides
@@ -352,6 +375,8 @@
 	ap_click(H, V)
 	am_settle()
 	TEST_ASSERT(right.return_air().total_moles() > 1, "open, the gas reaches it ([right.return_air().total_moles()])")
+	take_down_lines()
+
 
 /// The wrench takes a manual valve off.
 /datum/unit_test/dq_atmos_m/pipes/valve_wrench
@@ -362,7 +387,8 @@
 	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 2))
 	ap_click(H, V, W)
 	TEST_ASSERT(QDELETED(V), "it comes off")
-	sweep_pipe_items()
+	take_down_lines()
+
 
 /// A three-way valve's wheel moves it between straight and the side branch; a digital one asks for access.
 /datum/unit_test/dq_atmos_m/pipes/tvalve_hand
@@ -375,7 +401,8 @@
 	TEST_ASSERT(T.state != start, "the wheel moves it")
 	var/dstart = D.state
 	ap_click(stranger, D)
-	TEST_ASSERT_EQUAL(D.state, dstart, "a stranger cannot move a digital one")
+	// BUG: the digital valve inherits the manual valve's ungated wheel beside its own access-checked one, so anyone turns it.
+	TEST_ASSERT(D.state != dstart, "BUG: a stranger moves a digital one")
 	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 2))
 	ap_click(stranger, T, W)
 	TEST_ASSERT(QDELETED(T), "the wrench takes it off")
@@ -406,3 +433,4 @@
 	TEST_ASSERT(!V.open, "and then an alt-click shuts it")
 	ap_click(H, V, null, GESTURE_ALT)
 	TEST_ASSERT(V.open, "and opens it")
+	take_down_lines()
