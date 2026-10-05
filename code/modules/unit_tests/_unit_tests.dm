@@ -484,6 +484,7 @@
 #include "dq_mf_vending_behaviour.dm"
 #include "dq_mf_turret_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
+#include "dq_doors_full_behaviour.dm"
 #include "dq_paths_behaviour.dm"
 #include "dq_p2_door_base_tests.dm"
 #include "dq_p2_table_behaviour.dm"
