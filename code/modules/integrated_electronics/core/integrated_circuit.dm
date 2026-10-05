@@ -71,7 +71,7 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 	if(request.captures_gone())
 		return
 	if(!A.answer)
-		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
 			SStgui.update_uis(src)
 		return
 	apply_rename(A)
@@ -81,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 	var/mob/M = A.request.answerer
 	if(!check_interactivity(M))
 		return
-	var/_answer_k80 = A.answer.answer_value
+	var/_answer_k80 = A.answer.value
 	var/input = sanitizeSafe(_answer_k80, MAX_NAME_LEN)
 	if(src && input && assembly().check_interactivity(M))
 		to_chat(M, span_notice("The circuit '[src.name]' is now labeled '[input]'."))

@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	if(!A.answer)
 		return
 	var/mob/living/silicon/robot/R = A.request.answerer
-	var/N = A.answer.answer_value
+	var/N = A.answer.value
 	if(!isnull(N) && N >= 0 && N <= 100)
 		set_cloak_strength(N/100)
 		to_chat(R, span_warning("You will now be [N]% obscured when the cloak is active."))

@@ -153,7 +153,7 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 /obj/mecha/combat/phazon/janus/proc/janus_damtype_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_damtype = A.answer.answer_value
+	var/new_damtype = A.answer.value
 	switch(new_damtype)
 		if("Force")
 			melee_injury_kind = INJURY_BLUNT

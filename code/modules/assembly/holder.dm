@@ -223,32 +223,58 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	set category = VERB_CAT_OBJECT
 	set src in usr
 
-	if ( !(usr.stat || usr.restrained()) )
-		var/obj/item/assembly_holder/holder
-		if(istype(src,/obj/item/grenade/chem_grenade))
-			var/obj/item/grenade/chem_grenade/gren = src
-			holder=gren.detonator
-		var/obj/item/assembly/timer/tmr = holder.a_left
-		if(!istype(tmr,/obj/item/assembly/timer))
-			tmr = holder.a_right
-		if(!istype(tmr,/obj/item/assembly/timer))
-			to_chat(usr, span_notice("This detonator has no timer."))
-			return
+	if(!istype(src, /obj/item/grenade/chem_grenade))
+		to_chat(usr, span_notice("This detonator has no timer."))
+		return
+	var/obj/item/grenade/chem_grenade/grenade = src
+	grenade.configure_detonator_timer(usr)
 
+/// The granted verb runs on the grenade; resolve its current detonator again on an answer.
+/obj/item/grenade/chem_grenade/proc/configure_detonator_timer(mob/user, timer_answer, answer_ready = FALSE)
+	if(!(user.stat || user.restrained()))
+		var/obj/item/assembly_holder/holder = detonator
+		if(!holder)
+			to_chat(user, span_notice("This detonator has no timer."))
+			return
+		var/obj/item/assembly/timer/tmr = holder.a_left
+		if(!istype(tmr, /obj/item/assembly/timer))
+			tmr = holder.a_right
+		if(!istype(tmr, /obj/item/assembly/timer))
+			to_chat(user, span_notice("This detonator has no timer."))
+			return
 		if(tmr.timing)
-			to_chat(usr, span_notice("Clock is ticking already."))
+			to_chat(user, span_notice("Clock is ticking already."))
+		else if(!answer_ready)
+			open_request(src, /datum/prompt/number/grenade_timer_configuration, PROC_REF(detonator_timer_entered), answerer = user)
+		else if(timer_answer > 0 && timer_answer < 1000)
+			tmr.time = timer_answer
+			name = initial(name) + "([tmr.time] secs)"
+			to_chat(user, span_notice("Timer set to [tmr.time] seconds."))
 		else
-			var/ntime = rerun_ask(usr, "k231", VERB_REF(configure), args, /datum/om/prompt/number, message = "Enter desired time in seconds", title = "Time", default = 5, max = 1000)
-			if(isnull(ntime))
-				return
-			if (ntime > 0 && ntime < 1000)
-				tmr.time = ntime
-				name = initial(name) + "([tmr.time] secs)"
-				to_chat(usr, span_notice("Timer set to [tmr.time] seconds."))
-			else
-				to_chat(usr, span_notice("Timer can't be [ntime <= 0 ? "negative" : "more than 1000 seconds"]."))
+			to_chat(user, span_notice("Timer can't be [timer_answer <= 0 ? "negative" : "more than 1000 seconds"]."))
 	else
-		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
+		to_chat(user, span_notice("You cannot do this while [user.stat ? "unconscious/dead" : "restrained"]."))
+
+/obj/item/grenade/chem_grenade/proc/detonator_timer_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	configure_detonator_timer(A.request.answerer, A.answer.value, TRUE)
+
+/datum/prompt/number/grenade_timer_configuration
+	question = "Enter desired time in seconds"
+	title = "Time"
+	default = 5
+	min_value = 0
+	max_value = 1000
+	timeout = 0
+	recheck_on_open = TRUE
+
+/// Keep the legacy server answer raw; the real numeric window still rounds and bounds entries.
+/datum/prompt/number/grenade_timer_configuration/recheck_extra()
+	return QDELETED(owner) || QDELETED(answerer) ? "gone" : null
+
+/datum/prompt/number/grenade_timer_configuration/normalize(given)
+	return isnum(given) ? given : null
 
 /obj/item/assembly_holder/ownership()
 	. = ..()

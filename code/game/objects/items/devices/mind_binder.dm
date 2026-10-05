@@ -103,7 +103,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	return null
 
 /obj/item/mindbinder/proc/self_bind_mob_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Continue")
+	if(!A.answer || A.answer.value != "Continue")
 		return
 	var/datum/prompt/choice/mindbinder/self_bind/mob/ask = A.answer
 	var/mob/user = ask.answerer
@@ -113,7 +113,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
 
 /obj/item/mindbinder/proc/self_bind_item_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Continue")
+	if(!A.answer || A.answer.value != "Continue")
 		return
 	var/datum/prompt/choice/mindbinder/self_bind/item/ask = A.answer
 	var/mob/user = ask.answerer
@@ -123,7 +123,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	om_task_timed(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
 
 /obj/item/mindbinder/proc/store_mob_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Continue")
+	if(!A.answer || A.answer.value != "Continue")
 		return
 	var/datum/prompt/choice/mindbinder/store_mob/ask = A.answer
 	var/mob/user = ask.answerer

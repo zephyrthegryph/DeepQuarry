@@ -54,7 +54,7 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/N = A.answer.answer_value
+	var/N = A.answer.value
 	if(isnull(N))
 		return
 	if (N)

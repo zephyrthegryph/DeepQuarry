@@ -16,7 +16,7 @@
 
 /datum/e6_probe_owner/proc/done(datum/act/request/A)
 	outcomes += A.request.outcome
-	answers += A.request.answer_value
+	answers += A.request.value
 	if(A.answer)
 		answers += "answer:[A.answer.type]"
 	return
@@ -60,7 +60,7 @@
 	test_answer(actor, 42)
 	TEST_ASSERT(!R.is_open(), "an answer closes it")
 	TEST_ASSERT_EQUAL(R.outcome, REQ_ANSWERED, "as answered")
-	TEST_ASSERT_EQUAL(R.answer_value, 42, "carrying the answer")
+	TEST_ASSERT_EQUAL(R.value, 42, "carrying the answer")
 	TEST_ASSERT_EQUAL(length(owner.outcomes), 1, "the handler ran once")
 	TEST_ASSERT_EQUAL(owner.outcomes[1], REQ_ANSWERED, "and saw the outcome")
 	TEST_ASSERT_EQUAL(owner.answers[1], 42, "and the answer")

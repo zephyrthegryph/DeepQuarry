@@ -13,7 +13,7 @@ ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any liv
 	open_target_resize(A)
 
 /datum/admin_verb/mob_resize/proc/open_target_resize(datum/act/request/A)
-	var/mob/target_mob = A.request.answer_value
+	var/mob/target_mob = A.request.value
 	var/client/user = A.request.answerer.client
 	user.do_resize(target_mob)
 
@@ -59,8 +59,8 @@ ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any liv
 	. = ..()
 	if(.)
 		return
-	if(!isnull(answer_value))
-		var/mob/picked = answer_value
+	if(!isnull(value))
+		var/mob/picked = value
 		return QDELETED(picked) ? "target is gone" : null
 
 /datum/admin_resize_review
@@ -89,7 +89,7 @@ CAPABILITIES(/datum/admin_resize_review)
 	if(!A.answer)
 		return
 	var/client/user = GLOB.directory[client_ckey]
-	user.do_resize(target, A.request.answer_value, TRUE)
+	user.do_resize(target, A.request.value, TRUE)
 
 /datum/prompt/number/admin_resize_amount
 	rights = R_ADMIN|R_FUN|R_VAREDIT

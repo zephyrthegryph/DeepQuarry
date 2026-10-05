@@ -383,7 +383,7 @@ GLOBAL_PROTECT(protected_ranks)
 		return
 	var/datum/request/admin_reload/request = A.request
 	var/mob/user = request.initiator()
-	load_admins(request.no_update, FALSE, request.answer_value, user)
+	load_admins(request.no_update, FALSE, request.value, user)
 
 /// Writes the protected ranks to the database on the I/O lane (om_io); returns at once.
 /proc/sync_ranks_with_db(mob/user)

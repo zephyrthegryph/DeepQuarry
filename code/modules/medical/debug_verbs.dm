@@ -93,11 +93,11 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 		return
 	switch(ask.stage)
 		if(0)
-			advance_condition(user, 1, ask.answer_value)
+			advance_condition(user, 1, ask.value)
 		if(1)
-			advance_condition(user, 2, ask.target_key, ask.answer_value)
+			advance_condition(user, 2, ask.target_key, ask.value)
 		if(2)
-			advance_condition(user, 3, ask.target_key, ask.condition_key, ask.answer_value)
+			advance_condition(user, 3, ask.target_key, ask.condition_key, ask.value)
 
 
 
@@ -150,7 +150,7 @@ ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print 
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = A.request.answer_value
+	var/picked_target_key = A.request.value
 	if(!picked_target_key)
 		return
 	var/mob/living/carbon/human/target = candidates[picked_target_key]
@@ -170,7 +170,7 @@ ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print 
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = A.request.answer_value
+	var/picked_target_key = A.request.value
 	if(!picked_target_key)
 		to_chat(user, span_warning("DQ Inspect: cancelled (no target picked)."))
 		return

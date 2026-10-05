@@ -411,7 +411,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 /mob/living/simple_mob/vore/bigdragon/proc/style_part_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/part = A.answer.answer_value
+	var/part = A.answer.value
 	if(!part || QDELETED(src) || src.incapacitated())
 		return
 	var/list/options
@@ -937,7 +937,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 /mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/input_style = A.answer.answer_value
+	var/input_style = A.answer.value
 	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")

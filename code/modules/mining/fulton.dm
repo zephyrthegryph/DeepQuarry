@@ -54,7 +54,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	if(!possible_beacons.len)
 		to_chat(user, "There are no extraction beacons in existence!")
 		return TRUE
-	var/obj/structure/extraction_point/selected = A.answer.answer_value
+	var/obj/structure/extraction_point/selected = A.answer.value
 	if(!istype(selected) || QDELETED(selected))
 		return TRUE
 	rel_set(src, nameof(beacon), selected)
@@ -93,8 +93,8 @@ CAPABILITIES(/datum/prompt/choice/extraction_beacon)
 		return
 	if(captures_gone())
 		return "gone"
-	if(!isnull(answer_value))
-		var/obj/structure/extraction_point/selected = answer_value
+	if(!isnull(value))
+		var/obj/structure/extraction_point/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "the extraction beacon is gone"
 	return null

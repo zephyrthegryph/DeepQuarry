@@ -30,7 +30,7 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 	return TRUE
 
 /obj/item/teleportation_scroll/proc/scroll_answered(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Teleport")
+	if(!A.answer || A.answer.value != "Teleport")
 		return
 	var/mob/living/carbon/human/user = A.request.answerer
 	if(ishuman(user) && !user.restrained() && uses >= 1)
@@ -44,7 +44,7 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/area/thearea = GLOB.teleportlocs[A.answer.answer_value]
+	var/area/thearea = GLOB.teleportlocs[A.answer.value]
 	if(!thearea || uses < 1)
 		return
 

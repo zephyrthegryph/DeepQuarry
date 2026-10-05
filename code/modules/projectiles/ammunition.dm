@@ -408,7 +408,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 
 /obj/item/ammo_casing/proc/weapon_label_inscription_apply(datum/act/request/A)
 	var/datum/prompt/text/weapon_label_review/ask = A.answer
-	return weapon_label_inscription_stage(ask.weapon_operator, ask.weapon_held, ask.answer_value, TRUE)
+	return weapon_label_inscription_stage(ask.weapon_operator, ask.weapon_held, ask.value, TRUE)
 
 /datum/prompt/text/weapon_label_review
 	timeout = 0

@@ -91,7 +91,7 @@
 		open_request(src, /datum/prompt/choice/technomancer_carried, PROC_REF(release_control_answered), answerer = user, subject = src, title = "Release Control?", question = "Would you like to release control of the entities you are controlling? They won't be friendly to you anymore if you do this, so be careful.", choices = list("No", "Yes"), buttons = TRUE)
 
 /obj/item/spell/control/proc/release_control_answered(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	return release_control_answered_apply(A)
 

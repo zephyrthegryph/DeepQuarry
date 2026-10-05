@@ -52,7 +52,7 @@
 /mob/living/carbon/human/proc/lleill_shape_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	lleill_change_shape(A.answer.answer_value)
+	lleill_change_shape(A.answer.value)
 
 /mob/living/carbon/human/proc/lleill_change_shape(new_species = null)
 	if(!new_species)
@@ -80,7 +80,7 @@
 /mob/living/carbon/human/proc/lleill_colour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	lleill_set_colour(A.answer.answer_value)
+	lleill_set_colour(A.answer.value)
 
 /mob/living/carbon/human/proc/lleill_set_colour(new_skin)
 
@@ -191,7 +191,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 /mob/living/carbon/human/proc/lleill_transmute_chosen(datum/act/request/A)
 	var/datum/prompt/choice/lleill_transmute/ask = A.request
 	if(!A.answer)
-		if(!isnull(ask.answer_value))
+		if(!isnull(ask.value))
 			if(ask.last_error == "not in hand")
 				to_chat(src, span_warning("The item is no longer in your hands."))
 			else if(ask.last_error == "no energy")
@@ -199,7 +199,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 		return
 	var/obj/item/I = ask.item
 	var/energy_cost = ask.energy_cost
-	var/obj/item/transmute_product = ask.choices[A.answer.answer_value]
+	var/obj/item/transmute_product = ask.choices[A.answer.value]
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
 	om_task_start(/datum/om/task/timed/human_lleill_transmute_human, src, I, energy_cost = energy_cost, transmute_product = transmute_product)
 
@@ -288,11 +288,11 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	if(.)
 		return
 	var/mob/living/carbon/human/H = answerer
-	if(!isnull(answer_value))
-		var/obj/structure/glamour_ring/R = answer_value
+	if(!isnull(value))
+		var/obj/structure/glamour_ring/R = value
 		if(!istype(R) || QDELETED(R))
 			return "gone"
-		if(!(answer_value in H.teleporters))
+		if(!(value in H.teleporters))
 			return "ring gone"
 	return H.species.lleill_energy < energy_cost ? "no energy" : null
 
@@ -300,7 +300,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/lleill_ring_action/ask = A.request
-	var/r_action = ask.answer_value
+	var/r_action = ask.value
 	var/energy_cost_spawn = ask.energy_cost_spawn
 	var/energy_cost_tele = ask.energy_cost_tele
 	if(r_action == "Cancel")
@@ -323,10 +323,10 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 /mob/living/carbon/human/proc/lleill_ring_teleport_chosen(datum/act/request/A)
 	var/datum/prompt/choice/lleill_ring_teleport/ask = A.request
 	if(!A.answer)
-		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.value) && ask.last_error == "no energy")
 			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 		return
-	var/obj/structure/glamour_ring/R = ask.answer_value
+	var/obj/structure/glamour_ring/R = ask.value
 	var/energy_cost_tele = ask.energy_cost
 	var/T = get_turf(src)
 	play_sfx(T, SFX_SPARKS)
@@ -420,7 +420,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/datum/lleill_contact_review/contact = owner
@@ -447,7 +447,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	if(QDELETED(contact.actor) || QDELETED(contact.chosen_target))
 		return "gone"
 	// Refusing the invitation used to stop the flow before its consciousness check.
-	return answer_value == FALSE ? null : contact.why_not()
+	return value == FALSE ? null : contact.why_not()
 
 /datum/lleill_contact_review/proc/why_not()
 	return QDELETED(actor) ? "gone" : actor.stat != CONSCIOUS ? "not conscious" : null
@@ -482,7 +482,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	if(!A.answer)
 		stopped()
 		return
-	rel_set(src, nameof(chosen_target), A.request.answer_value)
+	rel_set(src, nameof(chosen_target), A.request.value)
 	if(QDELETED(chosen_target))
 		stopped()
 		return
@@ -495,9 +495,9 @@ CAPABILITIES(/datum/lleill_contact_review)
 
 /datum/lleill_contact_review/proc/type_chosen_step(datum/act/request/A)
 	if(QDELETED(chosen_target) || !A.answer)
-		stopped(isnull(A.request.answer_value))
+		stopped(isnull(A.request.value))
 		return
-	contact_type = A.request.answer_value
+	contact_type = A.request.value
 	if(contact_type == "Custom")
 		open_request(src, /datum/prompt/text/lleill_contact, PROC_REF(custom_entered), answerer = actor, asker = actor, title = "Custom contact", question = "Write a description of how you make contact with \the [chosen_target], from a third person perspective.")
 		return
@@ -513,10 +513,10 @@ CAPABILITIES(/datum/lleill_contact_review)
 	if(QDELETED(chosen_target) || why_not())
 		stopped()
 		return
-	if(!A.answer && !isnull(A.request.answer_value))
+	if(!A.answer && !isnull(A.request.value))
 		stopped()
 		return
-	custom_text = A.answer ? A.request.answer_value : ""
+	custom_text = A.answer ? A.request.value : ""
 	ask_consent()
 
 /datum/lleill_contact_review/proc/ask_consent()
@@ -531,8 +531,8 @@ CAPABILITIES(/datum/lleill_contact_review)
 	if(QDELETED(actor) || QDELETED(chosen_target))
 		stopped()
 		return
-	if(!A.answer || A.request.answer_value != TRUE)
-		stopped(isnull(A.request.answer_value) || A.answer)
+	if(!A.answer || A.request.value != TRUE)
+		stopped(isnull(A.request.value) || A.answer)
 		return
 	actor.lleill_contact_answered(chosen_target, contact_type, custom_text)
 	retire()
@@ -711,12 +711,12 @@ CAPABILITIES(/datum/lleill_contact_review)
 /mob/living/carbon/human/proc/lleill_beast_chosen(datum/act/request/A)
 	var/datum/prompt/choice/lleill_beast/ask = A.request
 	if(!A.answer)
-		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.value) && ask.last_error == "no energy")
 			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 		return
 	var/list/beast_options = ask.choices
 	var/energy_cost = ask.energy_cost
-	var/chosen_beast = ask.answer_value
+	var/chosen_beast = ask.value
 
 	var/mob/living/M = src
 	if(!istype(M))
@@ -880,12 +880,12 @@ CAPABILITIES(/datum/lleill_contact_review)
 /mob/living/carbon/human/proc/hanner_beast_chosen(datum/act/request/A)
 	var/datum/prompt/choice/lleill_beast/ask = A.request
 	if(!A.answer)
-		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value) && ask.last_error == "no energy")
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.value) && ask.last_error == "no energy")
 			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 		return
 	var/list/beast_options = ask.choices
 	var/energy_cost = ask.energy_cost
-	var/chosen_beast = ask.answer_value
+	var/chosen_beast = ask.value
 
 	var/mob/living/M = src
 	if(!istype(M))

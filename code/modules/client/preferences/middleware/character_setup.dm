@@ -629,7 +629,7 @@ UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_editor_actio
 		return
 	var/datum/prompt/color/prefs/entry/ask = A.answer
 	var/datum/preference/pref = GLOB.preference_entries_by_key[ask.pref_key]
-	var/result = update_preference(pref, ask.answer_value)
+	var/result = update_preference(pref, ask.value)
 	if(result)
 		SStgui.update_uis(src)
 	return result

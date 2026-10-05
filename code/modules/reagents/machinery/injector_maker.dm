@@ -490,7 +490,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 		maker_name = ask_number.maker_name
 		maker_material = ask_number.maker_material
 
-	maker_answers[maker_key] = context.answer.answer_value
+	maker_answers[maker_key] = context.answer.value
 	switch(maker_route)
 		if(MAKER_REQUEST_PLASTIC)
 			return maker_plastic_stage(maker_operator, maker_stack, maker_interaction, maker_answers)

@@ -559,24 +559,24 @@ CAPABILITIES(/datum/xenochimera)
 
 /mob/living/carbon/human/proc/reconstitute_form_answered(datum/act/request/A)
 	var/datum/prompt/choice/xenochimera_review/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value) && !isnull(ask.cancel_default)))
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value) && !isnull(ask.cancel_default)))
 		return
 	. = reconstitute_form_answer_apply(A)
 	SStgui.update_uis(src)
 
 /mob/living/carbon/human/proc/reconstitute_form_answer_apply(datum/act/request/A)
 	var/datum/prompt/choice/xenochimera_review/ask = A.request
-	ask.answers[ask.answer_key] = A.answer ? ask.answer_value : ask.cancel_default
+	ask.answers[ask.answer_key] = A.answer ? ask.value : ask.cancel_default
 	return reconstitute_form_stage(ask.answers)
 
 /mob/living/carbon/human/proc/hatch_answered(datum/act/request/A)
 	var/datum/prompt/choice/xenochimera_review/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value) && !isnull(ask.cancel_default)))
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value) && !isnull(ask.cancel_default)))
 		return
 	. = hatch_answer_apply(A)
 	SStgui.update_uis(src)
 
 /mob/living/carbon/human/proc/hatch_answer_apply(datum/act/request/A)
 	var/datum/prompt/choice/xenochimera_review/ask = A.request
-	ask.answers[ask.answer_key] = A.answer ? ask.answer_value : ask.cancel_default
+	ask.answers[ask.answer_key] = A.answer ? ask.value : ask.cancel_default
 	return hatch_stage(ask.answers)

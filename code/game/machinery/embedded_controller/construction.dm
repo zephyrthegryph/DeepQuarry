@@ -10,7 +10,7 @@
 /obj/item/circuitboard/airlock_cycling/proc/board_type_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/result = A.answer.answer_value
+	var/result = A.answer.value
 	switch(result)
 		if("Button")
 			name = T_BOARD("cycling airlock button")

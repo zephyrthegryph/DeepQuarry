@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/bug_monitor)
 	in_use = FALSE
 	if(!A.answer)
 		return
-	rel_set(src, nameof(selected_camera), A.answer.answer_value)
+	rel_set(src, nameof(selected_camera), A.answer.value)
 	view_camera(A.request.answerer)
 
 /obj/item/bug_monitor/proc/view_camera(mob/user)

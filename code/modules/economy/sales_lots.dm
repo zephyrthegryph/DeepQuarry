@@ -556,5 +556,5 @@ CAPABILITIES(/datum/prompt/number/freight_certification)
 		shipment = ask.shipment
 		freight_answers = ask.freight_answers
 		answer_key = ask.answer_key
-	freight_answers[answer_key] = A.answer.answer_value
+	freight_answers[answer_key] = A.answer.value
 	return certify_freight_stage(shipment, A.request.answerer, freight_answers)

@@ -60,7 +60,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/nc = A.answer.answer_value
+	var/nc = A.answer.value
 	if(nc)
 		channel = nc
 		camera.c_tag = channel
@@ -191,7 +191,7 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/nc = sanitize(A.answer.answer_value, MAX_NAME_LEN)
+	var/nc = sanitize(A.answer.value, MAX_NAME_LEN)
 	if(nc)
 		channel = nc
 		bcamera.c_tag = channel

@@ -3,7 +3,6 @@
 // MAX_SIPHON_FLOWRATE).
 
 /obj/machinery/atmospherics/unary/vent_scrubber
-	gas_dependency_mask = GAS_DEPENDENCY_ALL
 	icon = 'icons/atmos/vent_scrubber.dmi'
 	icon_state = "map_scrubber_off"
 	pipe_state = "scrubber"

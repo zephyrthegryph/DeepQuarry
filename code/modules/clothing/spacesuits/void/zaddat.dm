@@ -334,7 +334,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 /obj/item/clothing/suit/space/void/zaddat/proc/apply_style_answer(datum/act/request/A)
 	var/datum/prompt/choice/shroud_style/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	return zaddat_custom_suit_verb(user, null, null, A.answer.answer_value)
+	return zaddat_custom_suit_verb(user, null, null, A.answer.value)
 
 /datum/prompt/choice/shroud_style
 	question = "Which suit style would you like?"

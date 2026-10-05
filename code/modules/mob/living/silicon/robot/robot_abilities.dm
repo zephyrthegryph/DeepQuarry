@@ -39,7 +39,7 @@
 	return TRUE
 
 /mob/living/silicon/robot/proc/robot_name_entered(datum/act/request/A)
-	var/newname = sanitizeSafe(A.answer ? A.answer.answer_value : "", MAX_NAME_LEN)
+	var/newname = sanitizeSafe(A.answer ? A.answer.value : "", MAX_NAME_LEN)
 	if (newname && !custom_name)
 		custom_name = newname
 		sprite_name = newname

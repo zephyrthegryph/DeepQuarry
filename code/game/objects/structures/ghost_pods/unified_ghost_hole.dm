@@ -40,7 +40,7 @@
 	if(!A.answer)
 		return
 	var/mob/observer/dead/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Cancel")
 			return
 		if("Mob")

@@ -1719,7 +1719,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/datum/prompt/choice/organ_extraction/request = A.request
 	if(request.captures_gone())
 		return
-	. = external_interaction_item(request.answerer, request.captured_item, request.captured_interaction, A.answer.answer_value, TRUE)
+	. = external_interaction_item(request.answerer, request.captured_item, request.captured_interaction, A.answer.value, TRUE)
 	SStgui.update_uis(src)
 
 /datum/prompt/choice/organ_extraction

@@ -2,7 +2,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/datum/category_group/underwear/UWC = A.answer.answer_value
+	var/datum/category_group/underwear/UWC = A.answer.value
 	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(user, span_notice("\The [src] does not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))

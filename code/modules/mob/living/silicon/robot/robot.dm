@@ -990,7 +990,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	var/datum/prompt/choice/pry_question = A.request
 	var/mob/user = A.request.answerer
-	var/datum/robot_component/C = get_component(pry_question.choices[A.answer.answer_value])
+	var/datum/robot_component/C = get_component(pry_question.choices[A.answer.value])
 	if(!C || C.installed == ROBOT_PART_MISSING || !C.wrapped)
 		return FALSE
 	var/obj/item/I = C.uninstall()
@@ -1233,7 +1233,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(!A.answer)
 		return
 	var/mob/living/carbon/human/H = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Eat")
 			if(is_vore_predator(H) && devourable)
 				feed_grabbed_to_self(H, src)
@@ -1758,7 +1758,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 	open_request(src, /datum/prompt/choice, PROC_REF(rest_style_chosen), answerer = src, title = "Resting Pose", question = "Select resting pose", choices = sprite_datum.rest_sprite_options, buttons = TRUE, timeout = 0)
 
 /mob/living/silicon/robot/proc/rest_style_chosen(datum/act/request/A)
-	rest_style = A.answer ? A.answer.answer_value : "Default"
+	rest_style = A.answer ? A.answer.value : "Default"
 	update_icon()
 
 /// Riding is provided by the belly component; without it the chassis can't be mounted.

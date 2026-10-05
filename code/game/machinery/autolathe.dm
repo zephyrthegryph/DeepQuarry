@@ -1,3 +1,17 @@
+// The autolathe (doc/rewrite/final_api.html section 16, doc/rewrite/conversion_guide.md).
+//
+// ONE CAPABILITIES list says what it is: a machine built from a board (behind the open panel a crowbar takes it apart: board_machine()), a
+// screwdriver panel with the lathe's wires behind it (the hack and the disable wires, a shock wire), a part-replacer target, a fabricator that prints
+// its designs from its own materials (fabricator(): the print run, its refusals, where prints drop, examine), a disk drive that teaches it designs,
+// its window, and a touch that shocks while its shock wire is live. Nothing of it works while it prints but the window and the run itself. The
+// imperative parts below are its own: which designs it knows, how long one takes, the window's data, the disk's import and the look.
+//
+// What the machine core still keeps until the machine track (phase 4): the stat bits (BROKEN, NOPOWER, ...) read through machine_basics()'s one
+// bridge contribution, RefreshParts() with the circuit board and its parts, and dismantle() (the frame, the board and the parts).
+
+MSG_DEF_SELF(autolathe/voltage, "Unable to print, voltage mismatch in internal wiring.")
+MSG_DEF(autolathe/uploading, "You begin to upload %I% into %T%.", "%U% begins to load %I% in %T%...")
+
 /obj/machinery/autolathe
 	name = "autolathe"
 	desc = "It produces items using steel, glass, plastic and maybe some more."
@@ -9,19 +23,11 @@
 	active_power_usage = 2000
 	clicksound = SFX_KEYBOARD
 	clickvol = 30
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 	circuit = /obj/item/circuitboard/autolathe
 
-	var/static/datum/category_collection/autolathe/autolathe_recipes
-
 	/// A map's word that the lathe starts hacked: its hack wire starts cut (mending it unhacks the lathe).
 	var/hacked_at_start = FALSE
-	///Are we currently printing something
-	/// Personal account credited for the current print run's production bonus.
-	var/current_producer_account = 0
-	var/current_producer_department
-
 	///Coefficient applied to consumed materials. Lower values result in lower material consumption.
 	var/creation_efficiency = 1
 	///modifier for lathe build speed. Lower values are faster.
@@ -36,524 +42,64 @@
 	var/drop_direction = 0
 	//looping sound for printing items
 	var/datum/looping_sound/lathe_print/print_sound
+	/// The print run under way (fabricator()), owned while it runs.
+	var/datum/fab_run/print_run
 
 /// The hacked designs are unlocked: the hack wire cut, or for five seconds after a pulse (lathe_wires()).
 STAT(/obj/machinery/autolathe, hacked, ANY)
 /// The lathe will not print: the disable wire cut, or for five seconds after a pulse (lathe_wires()).
 STAT(/obj/machinery/autolathe, disabled, ANY)
-/// The lathe shocks whoever meddles with it: the shock wire cut, or for five seconds after a pulse (shock_wire()).
+/// The lathe shocks whoever touches it: the shock wire cut, or for five seconds after a pulse (shock_wire()).
 STAT(/obj/machinery/autolathe, shocked, ANY)
 
 CAPABILITIES(/obj/machinery/autolathe)
-	owns_one(nameof(materials), /datum/material_container)
-	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
-	interface("Autolathe")
-	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(name = "Autolathe", count = 6, tools = FALSE, status_lines = PROC_REF(wire_lights), starts_cut = PROC_REF(wires_cut_at_start))
+	machine_basics(repair = NONE, frame = board_machine())
+	owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials))
+	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))
+	owns_one(nameof(print_run), /datum/fab_run)
+	panel()
+	// the panel opens at once, not while it prints, and shows whoever opened it the wires
+	extend("panel.open", wait(0), needs(req_is(FABRICATOR_PRINTING, FALSE, because = MSG(fabricator/busy))))
+	extend("panel.open", then(PROC_REF(panel_toggled)))
+	wires(name = "Autolathe", count = 6, by_hand = TRUE, status_lines = PROC_REF(wire_lights), starts_cut = PROC_REF(wires_cut_at_start))
 	lathe_wires(pulse_lasts = 5 SECONDS, refresh = TRUE)
 	shock_wire(stat = STAT_SHOCKED, pulse_lasts = 5 SECONDS)
 	on_change(nameof(hacked), EXIT, then(PROC_REF(hack_ran_out)))
-	op("make", ui_act("make", arg("id", schema_text(256)), arg("multiplier", num(1, 50)), arg("materialSlots")), then(PROC_REF(ui_act_make)))
+	part_replacement()
+	extend("part_replacement.replace", needs(req_is(FABRICATOR_PRINTING, FALSE, because = MSG(fabricator/busy))))
+	fabricator(buildtypes = AUTOLATHE, efficiency = nameof(creation_efficiency), action = "make", design_arg = "id", count_arg = "multiplier",
+		knows = PROC_REF(knows_design), build_time = PROC_REF(design_build_time), worth_floor = 5)
+	extend("fabricator.print", needs(req_is(STAT_DISABLED, FALSE, because = MSG(autolathe/voltage))))
+	// a design or tech disk teaches it what it can make of the disk's designs
+	op("load_disk", item(/obj/item/disk), label("Upload designs"), when(req(list(/obj/item/disk/design_disk, /obj/item/disk/tech_disk))),
+		needs(req_closed(SPACE_PANEL), req_operable(), req_is(FABRICATOR_PRINTING, FALSE, because = MSG(fabricator/busy))),
+		wait(1.5 SECONDS), begins(MSG(autolathe/uploading)), then(PROC_REF(disk_loaded)))
+	// a live shock wire shocks the hand that touches the shut lathe, in place of its window
+	op("touch", hand(), label("Touch"), priority(OP_PRIORITY_NORMAL + 1), when(PROC_REF(touch_shocks)), then(PROC_REF(toucher_shocked)))
+
+	section(window, "The window: its designs, its materials and the print button (fabricator())")
+	interface("Autolathe")
+	ui_shape(materialtotal = num(), materialsmax = num(), active = bool(), materials = list_of(row()), materialChoices = list_of(row()))
+	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(autolathe/voltage))))
+	extend(TAG_UI, needs(req_is(STAT_DISABLED, FALSE, because = MSG(autolathe/voltage))))
 
 /obj/machinery/autolathe/Initialize(mapload)
-	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE))
-	rel_set(src, nameof(materials), new /datum/material_container( \
-		src, \
-		subtypesof(/datum/material), \
-		0, \
-		MATCONTAINER_EXAMINE, \
-		container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/autolathe, AfterMaterialInsert)) \
-	))
 	. = ..()
-
 	stored_research_static = SSresearch.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
-
 	default_apply_parts()
 	RefreshParts()
 
+/// Its material store: every material, listed on examine; a sheet put in plays the loading animation.
+/obj/machinery/autolathe/proc/make_materials(current)
+	return new /datum/material_container(src, subtypesof(/datum/material), 0, MATCONTAINER_EXAMINE, \
+		container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/autolathe, material_inserted)))
 
-/obj/machinery/autolathe/examine(mob/user)
-	. = ..()
-	if(!in_range(user, src) && !isobserver(user))
-		return
-	. += span_notice("Material usage cost at <b>[creation_efficiency * 100]%</b>.")
-	if(drop_direction)
-		. += span_notice("Currently configured to drop printed objects <b>[dir2text(drop_direction)]</b>.")
-		. += span_notice("Alt-click to reset.")
-	else
-		. += span_notice("Drag towards a direction (while next to it) to change drop direction.")
-	. += span_notice("Its maintenance panel is [!panel_open ? "closed" : "open"].")
+/obj/machinery/autolathe/proc/make_print_sound(current)
+	return new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE)
 
-/obj/machinery/autolathe/crowbar_act(mob/living/user, obj/item/tool)
-	return ..()
-
-/obj/machinery/autolathe/screwdriver_act(mob/living/user, obj/item/tool)
-	if(om_busy(src))
-		return ITEM_INTERACT_BLOCKING
-	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		interact(user)
-
-/obj/machinery/autolathe/wirecutter_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/autolathe/multitool_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/autolathe/tgui_status(mob/user)
-	if(disabled)
-		return STATUS_CLOSE
-	return ..()
-
-/obj/machinery/autolathe/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/autolathe_interact,
-		/datum/interaction/machine_alt/autolathe_reset_drop,
-		/datum/interaction/machine_item/autolathe_attackby,
-	)
-	..()
-
-/// Old attack_hand: `interact(user)`, never called ..().
-/datum/interaction/machine_hand/ungated/autolathe_interact
-	id = "autolathe_interact"
-	name = "Use"
-	effect = /obj/machinery/autolathe/proc/interaction_use
-
-/obj/machinery/autolathe/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	interact(user)
-	return TRUE
-
-/obj/machinery/autolathe/interact(mob/user)
-	if(panel_open)
-		return wires_open(src, user)
-
-	if(has_stat(NOPOWER | EMPED))
-		return
-
-	if(shocked && !has_stat(NOPOWER))
-		shock(user, 50)
-		return
-
-	tgui_interact(user)
-
-/obj/machinery/autolathe/proc/AfterMaterialInsert(datum/act/notice/N)
+/obj/machinery/autolathe/proc/material_inserted(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	flick("autolathe_loading", src)//plays metal insertion animation
-	SStgui.update_uis(src)
-
-/**
- * Converts all the designs supported by this autolathe into UI data
- * Arguments
- *
- * * list/designs - the list of techweb designs we are trying to send to the UI
- */
-/obj/machinery/autolathe/proc/handle_designs(list/designs)
-	PRIVATE_PROC(TRUE)
-
-	if(!length(designs))
-		return list()
-
-	var/list/output = list()
-
-	var/datum/asset/spritesheet_batched/research_designs/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
-	var/size32x32 = "[spritesheet.name]32x32"
-
-	for(var/design_id in designs)
-		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
-		if(design.make_reagent)
-			continue
-		if(!hacked && (RND_CATEGORY_HACKED in design.category))
-			continue
-
-		//compute cost & maximum number of printable items
-		var/coeff = (ispath(design.build_path, /obj/item/stack) ? 1 : creation_efficiency)
-		var/list/cost = list()
-		for(var/id in design.materials)
-			var/datum/material/mat = get_material_by_name(id)
-			cost[mat.name] = OPTIMAL_COST(design.materials[id] * coeff)
-
-		//create & send ui data
-		var/css_id = sanitize_css_class_name(design.id)
-		var/size = spritesheet.icon_size_id(css_id)
-		var/list/design_data = list(
-			"name" = design.name,
-			"desc" = design.get_description(),
-			"cost" = cost,
-			"id" = design.id,
-			"categories" = design.category,
-			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
-			"materialConfigurable" = !!design.material_template,
-			"materialProfile" = design.material_application,
-			"materialSlots" = material_slots_tgui(material_template_singleton(design.material_template), design.material_total),
-		)
-
-		output += list(design_data)
-
-	return output
-
-/obj/machinery/autolathe/tgui_static_data(mob/user)
-	var/list/data = materials.tgui_static_data()
-
-	data["designs"] = handle_designs(stored_research().researched_designs)
-	data["designs"] += handle_designs(imported_designs)
-
-	return data
-
-/obj/machinery/autolathe/ui_assets(mob/user)
-	return list(
-		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials),
-		get_asset_datum(/datum/asset/spritesheet_batched/research_designs),
-	)
-
-/obj/machinery/autolathe/ui_data(datum/act/eval/A)
-	var/list/data = list()
-
-	data["materialtotal"] = materials.total_amount()
-	data["materialsmax"] = materials.max_amount
-	data["active"] = om_busy(src)
-	data["materials"] = materials.material_list_data()
-	data["materialChoices"] = lathe_material_choice_list(materials)
-
-	return data
-
-/obj/machinery/autolathe/proc/ui_act_make(datum/act/op/A, raw_id, multiplier, materialSlots)
-	var/mob/user = A.actor
-	add_fingerprint(user)
-
-	//sanity checks to start printing
-	if(disabled)
-		atom_say("Unable to print, voltage mismatch in internal wiring.")
-		return
-
-	if(om_busy(src))
-		atom_say("The autolathe is busy. Please wait for completion of previous operation.")
-		return
-
-	//validate design
-	var/design_id = raw_id
-	if(!design_id)
-		return
-	var/valid_design = LAZYACCESS(stored_research().researched_designs, design_id)
-	valid_design ||= LAZYACCESS(imported_designs, design_id)
-	if(!valid_design)
-		return
-	var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
-	if(isnull(design))
-		stack_trace("got passed an invalid design id: [design_id] and somehow made it past all checks")
-		return
-	if(!(design.build_type & AUTOLATHE))
-		atom_say("This fabricator does not have the necessary keys to decrypt this design.")
-		return
-
-	//validate print quantity
-	var/build_count = multiplier
-	if(isnull(build_count))
-		return
-
-	// Material-selectable designs let the user pick which loaded material to use.
-	var/list/chosen_materials = islist(materialSlots) ? materialSlots : list()
-	if(design.material_template && !design.material_choice_valid(chosen_materials))
-		atom_say("Select valid materials for every required construction slot.")
-		return
-	var/list/effective_mats = design.effective_materials(chosen_materials)
-
-	// Check for materials required. For custom material items decode their required materials
-	var/list/materials_needed = list()
-	for(var/id, amount_needed in effective_mats)
-		var/datum/material = (id in GLOB.name_to_material) ? get_material_by_name(id) : id
-		if(!istype(material, /datum/material))
-			CRASH("Autolathe ui_act got passed an invalid material id: [material]")
-		materials_needed[material] += amount_needed
-
-	//checks for available materials
-	var/material_cost_coefficient = ispath(design.build_path, /obj/item/stack) ? 1 : creation_efficiency
-	if(!materials.has_materials(materials_needed, material_cost_coefficient, build_count))
-		atom_say("Not enough materials to begin production.")
-		return
-
-	//compute power & time to print 1 item
-	var/charge_per_item = 0
-	for(var/material, amount in effective_mats)
-		charge_per_item += amount
-
-	charge_per_item = ROUND_UP((charge_per_item / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * material_cost_coefficient * active_power_usage)
-	var/build_time_per_item = (design.construction_time * (design.lathe_time_factor)) ** lathe_build_rate
-
-	//do the printing sequentially
-	var/obj/item/card/id/producer_id = user.GetIdCard()
-	current_producer_account = producer_id?.associated_account_number || 0
-	current_producer_department = department_for_mob(user) || DEPARTMENT_ENGINEERING
-	icon_state = "autolathe_n"
-	// play this after all checks passed individually for each item.
-	print_sound.start()
-	var/turf/target_location
-	if(drop_direction)
-		target_location = get_step(src, drop_direction)
-		if(target_location.density)
-			target_location = get_turf(src)
-	else
-		target_location = get_turf(src)
-
-	// The print run is a task claiming the lathe: busy (om_busy()) until the last item or a stop.
-	var/datum/om/task/run = om_task_start(/datum/om/task/lathe_print, src, null, receiver = src, design = design, remaining = build_count, build_time = build_time_per_item, cost_coefficient = material_cost_coefficient, charge = charge_per_item, materials = materials_needed, drop_turf = target_location, chosen = chosen_materials)
-	if(!istype(run))
-		print_sound.stop()
-		icon_state = initial(icon_state)
-		return FALSE
-	SStgui.update_uis(src)
-	return TRUE
-
-/// An autolathe print run: one item every `build_time` until `remaining` runs out or a check fails.
-/datum/om/task/lathe_print
-	name = "lathe print"
-	claims_actor = TRUE
-	steps = list(/obj/machinery/autolathe/proc/print_step = 0)
-	complete_proc = /obj/machinery/autolathe/proc/print_run_ended
-	cancel_proc = /obj/machinery/autolathe/proc/print_run_ended
-	var/datum/design_techweb/design
-	var/remaining = 0
-	var/build_time = 0
-	var/cost_coefficient = 1
-	var/charge = 0
-	var/list/materials
-	var/turf/drop_turf
-	var/list/chosen
-	var/started = FALSE
-
-/obj/machinery/autolathe/proc/print_step(datum/om/task/lathe_print/T)
-	if(!T.started)
-		T.started = TRUE
-		return STEP_REPEAT(T.build_time)
-	var/remaining = do_make_item(T.design, T.remaining, T.build_time, T.cost_coefficient, T.charge, T.materials, T.drop_turf, T.chosen)
-	if(remaining <= 0)
-		return STEP_DONE
-	T.remaining = remaining
-	return STEP_REPEAT(T.build_time)
-
-/obj/machinery/autolathe/proc/print_run_ended(datum/om/task/T)
-	finalize_build()
-
-/**
- * One step of the print run (print_step()): makes the item, returns how many are left (0: stop)
- * Arguments
- *
- * * datum/design/design - the design we are trying to print
- * * items_remaining - the number of designs left out to print
- * * build_time_per_item - the time taken to print 1 item
- * * material_cost_coefficient - the cost efficiency to print 1 design
- * * charge_per_item - the amount of power to print 1 item
- * * list/materials_needed - the list of materials to print 1 item
- * * turf/target - the location to drop the printed item on
-*/
-/obj/machinery/autolathe/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, list/materials_needed, turf/target, list/chosen_materials)
-	PROTECTED_PROC(TRUE)
-
-	if(items_remaining <= 0) // how
-		return 0
-
-	if(has_stat(NOPOWER | EMPED))
-		atom_say("Unable to continue production, power failure.")
-		return 0
-
-	if(!use_power_oneoff(charge_per_item)) // provide the wait time until lathe is ready
-		var/area/my_area = get_area(src)
-		var/obj/machinery/power/apc/my_apc = my_area.apc
-		if(!QDELETED(my_apc))
-			atom_say("Unable to continue production, power grid overload.")
-		else
-			atom_say("Unable to continue production, no APC in area.")
-		return 0
-
-	var/is_stack = ispath(design.build_path, /obj/item/stack)
-	if(!materials.has_materials(materials_needed, material_cost_coefficient, is_stack ? items_remaining : 1))
-		atom_say("Unable to continue production, missing materials.")
-		return 0
-	materials.use_materials(materials_needed, material_cost_coefficient, is_stack ? items_remaining : 1)
-
-	var/atom/movable/created
-	if(is_stack)
-		var/obj/item/stack/stack_item = initial(design.build_path)
-		var/max_stack_amount = initial(stack_item.max_amount)
-		var/number_to_make = (initial(stack_item.amount) * items_remaining)
-		while(number_to_make > max_stack_amount)
-			created = new stack_item(null, max_stack_amount) //it's imporant to spawn things in nullspace, since obj's like stacks qdel when they enter a tile/merge with other stacks of the same type, resulting in runtimes.
-			if(isitem(created))
-				created.pixel_x = rand(-6, 6)
-				created.pixel_y = rand(-6, 6)
-				var/obj/created_stack = created
-				created_stack.set_economic_provenance(current_producer_department, max(5, build_time_per_item / 10), current_producer_account)
-			created.forceMove(target)
-			number_to_make -= max_stack_amount
-
-		created = new stack_item(target, number_to_make)
-	else
-		created = design.create_item(target, chosen_materials)
-		split_materials_uniformly(materials_needed, material_cost_coefficient, created)
-
-	if(isitem(created))
-		created.pixel_x = rand(-6, 6)
-		created.pixel_y = rand(-6, 6)
-		var/obj/created_object = created
-		created_object.set_economic_provenance(current_producer_department || DEPARTMENT_ENGINEERING, max(5, build_time_per_item / 10), current_producer_account)
-
-	if(is_stack)
-		items_remaining = 0
-	else
-		items_remaining -= 1
-
-	return items_remaining
-
-/**
- * Resets the icon state when the print run's task ends (print_run_ended())
-*/
-/obj/machinery/autolathe/proc/finalize_build()
-	PROTECTED_PROC(TRUE)
-	print_sound.stop()
-	icon_state = initial(icon_state)
-	current_producer_account = 0
-	current_producer_department = null
-	SStgui.update_uis(src)
-
-/obj/machinery/autolathe/MouseDrop(over_object, src_location, over_location)
-	return choose_drop_with_actor(usr, over_location) // ALLOW(sys_usr_outside_verb): Native lathe drag captures its actor before the unchanged layout guards.
-
-/obj/machinery/autolathe/proc/choose_drop_with_actor(mob/user, over_location)
-	if(isobserver(user) || !Adjacent(user))
-		return
-	if(om_busy(src))
-		balloon_alert(user, "printing started!")
-		return
-	var/direction = get_dir(src, over_location)
-	if(!direction)
-		return
-	drop_direction = direction
-	balloon_alert(user, "dropping [dir2text(drop_direction)]")
-
-/// Old click_alt: kept whole (BLOCKING and SUCCESS both consume the input; neither falls through).
-/datum/interaction/machine_alt/autolathe_reset_drop
-	id = "autolathe_reset_drop"
-	name = "Reset drop direction"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/autolathe/proc/can_reset_drop))
-	effect = /obj/machinery/autolathe/proc/interaction_reset_drop
-
-/// Requirement: the drop direction can't be reset mid-print.
-/obj/machinery/autolathe/proc/can_reset_drop(mob/user, atom/target, obj/item/held)
-	if(drop_direction && om_busy(src))
-		return "busy printing"
-	return TRUE
-
-/obj/machinery/autolathe/proc/interaction_reset_drop(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!drop_direction)
-		return TRUE
-	balloon_alert(user, "drop direction reset")
-	drop_direction = 0
-	return TRUE
-
-/**
- * Old attackby, kept whole. The robot-module/busy/part-replacement/stat/panel_open guards
- * swallow ANY item (they ran before the disk istype check); a non-disk item that passes
- * them falls through (effect returns FALSE) exactly as the old `return ..()` did.
- */
-/datum/interaction/machine_item/autolathe_attackby
-	id = "autolathe_attackby"
-	name = "Use"
-	held_type = /obj/item
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/autolathe/proc/can_load_item))
-	effect = /obj/machinery/autolathe/proc/interaction_attackby
-
-/// Requirement: TRUE, or why an item can't be used on the autolathe right now.
-/obj/machinery/autolathe/proc/can_load_item(mob/user, atom/target, obj/item/O)
-	if(is_robot_module(O))
-		return TRUE // swallowed silently by the effect
-	if(om_busy(src))
-		return "it's busy, wait for the previous operation to complete"
-	if(istype(O, /obj/item/storage/part_replacer) || has_stat(MACHINE_STAT_ANY))
-		return TRUE // part replacement, or swallowed silently
-	if(panel_open)
-		return "close the panel first"
-	return TRUE
-
-/obj/machinery/autolathe/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
-	if(is_robot_module(O))
-		return TRUE
-
-	if(default_part_replacement(user, O))
-		return TRUE
-
-	if(has_stat(MACHINE_STAT_ANY) || panel_open)
-		return TRUE
-
-	if(!istype(O, /obj/item/disk/design_disk) && !istype(O, /obj/item/disk/tech_disk))
-		return FALSE
-
-	// The rest has to do with loading from design disks
-	act_message(user, src, MSG_SELF(balloon_alert(user, "uploading design...")), \
-		MSG_OTHERS(span_notice("%U% begins to load %I% in %T%...")), \
-		MSG_BLIND(span_hear("You hear the chatter of a floppy drive.")), \
-		item = O)
-
-	om_task_start(/datum/om/task/timed/autolathe_interaction_attackby, user, src, receiver = src, O = O, busy = src)
-	return TRUE
-
-/datum/om/task/timed/autolathe_interaction_attackby
-	duration = 1.5 SECONDS
-	complete_proc = /obj/machinery/autolathe/proc/interaction_attackby_timed_done
-	cancel_proc = /obj/machinery/autolathe/proc/interaction_attackby_timed_failed
-	var/obj/item/O
-
-/obj/machinery/autolathe/proc/interaction_attackby_timed_done(datum/om/task/timed/autolathe_interaction_attackby/task)
-	var/mob/user = task.actor
-	var/obj/item/O = task.O
-
-	var/list/not_imported
-	var/design_count = 0
-	// Basic design loot disks
-	if(istype(O, /obj/item/disk/design_disk))
-		var/obj/item/disk/design_disk/disky = O
-		for(var/datum/design_techweb/blueprint as anything in disky.blueprints)
-			if(!blueprint)
-				continue
-			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research().researched_designs, blueprint.id))
-				continue
-			if(blueprint.build_type & AUTOLATHE)
-				LAZYSET(imported_designs, blueprint.id, TRUE)
-				design_count++
-			else
-				LAZYADD(not_imported, blueprint.name)
-
-	// More complex as it holds multiple nodes of research
-	else if(istype(O, /obj/item/disk/tech_disk))
-		var/obj/item/disk/tech_disk/disky = O
-		var/datum/techweb/disk_web = disky.stored_research()
-		for(var/design_id in disk_web.researched_designs)
-			var/datum/design_techweb/blueprint = SSresearch.techweb_design_by_id(design_id)
-			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research().researched_designs, blueprint.id))
-				continue
-			if(blueprint.build_type & AUTOLATHE)
-				LAZYSET(imported_designs, blueprint.id, TRUE)
-				design_count++
-			// Don't report failed designs here, techwebs can be huge and the message would be massive for something like the debug disk
-
-	if(design_count)
-		to_chat(user, span_notice("[design_count] design\s imported."))
-
-	if(not_imported)
-		to_chat(user, span_warning("The following design[length(not_imported) > 1 ? "s" : ""] couldn't be imported: [english_list(not_imported)]"))
-
-	update_static_data_for_all_viewers()
-	return TRUE
-
-/obj/machinery/autolathe/proc/interaction_attackby_timed_failed(datum/om/task/timed/autolathe_interaction_attackby/task)
-	var/mob/user = task.actor
-	update_static_data_for_all_viewers()
-	balloon_alert(user, "interrupted!")
-	return TRUE
 
 /obj/machinery/autolathe/RefreshParts()
 	. = ..()
@@ -564,15 +110,117 @@ CAPABILITIES(/obj/machinery/autolathe)
 	creation_efficiency = max(0.6, round(1.1 - (man_rating * 0.1), 0.1)) // creation_efficiency goes 1 -> 0.9 -> 0.8 -> 0.7 -> 0.6 per level of manipulator efficiency
 	lathe_build_rate = 0.85 - (man_rating * 0.05) // lathe_build_rate goes 0.8 -> 0.75 -> 0.7 -> 0.65 -> 0.6 per level of manipulator efficiency
 
-/obj/machinery/autolathe/proc/appearance_working()
-	return (!has_stat(NOPOWER) && om_busy(src)) ? 1 : 0
-
-APPEARANCE_TEMPLATE(/obj/machinery/autolathe, "{initial(icon_state)}{appearance_working?_work:}")
-DECLARE_APPEARANCE(/obj/machinery/autolathe, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("autolathe_panel"))))
-
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/autolathe/proc/stored_research() as /datum/techweb/autounlocking
 	return stored_research_static
+
+// ---- the fabricator's questions ----
+
+/// It knows a design it was built with or a disk taught it; a hacked design only while hacked; never a reagent.
+/obj/machinery/autolathe/proc/knows_design(datum/design_techweb/D)
+	if(D.make_reagent)
+		return FALSE
+	if(!LAZYACCESS(stored_research().researched_designs, D.id) && !LAZYACCESS(imported_designs, D.id))
+		return FALSE
+	return hacked || !(RND_CATEGORY_HACKED in D.category)
+
+/// One item of `D` takes this long: faster with better manipulators.
+/obj/machinery/autolathe/proc/design_build_time(datum/design_techweb/D)
+	return (D.construction_time * D.lathe_time_factor) ** lathe_build_rate
+
+// ---- the window ----
+
+/// The designs it offers (the hacked ones only while hacked).
+/obj/machinery/autolathe/proc/handle_designs(list/designs)
+	PRIVATE_PROC(TRUE)
+	. = list()
+	for(var/design_id in designs)
+		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
+		if(!design || !knows_design(design))
+			continue
+		. += list(fabricator_design_row(design, creation_efficiency))
+
+/obj/machinery/autolathe/tgui_static_data(mob/user)
+	var/list/data = materials.tgui_static_data()
+	data["designs"] = handle_designs(stored_research().researched_designs)
+	data["designs"] += handle_designs(imported_designs)
+	return data
+
+/obj/machinery/autolathe/ui_assets(mob/user)
+	return list(
+		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials),
+		get_asset_datum(/datum/asset/spritesheet_batched/research_designs),
+	)
+
+/obj/machinery/autolathe/ui_data(datum/act/eval/A)
+	return list(
+		"materialtotal" = materials.total_amount(),
+		"materialsmax" = materials.max_amount,
+		"active" = !!fabricator_printing(src),
+		"materials" = materials.material_list_data(),
+		"materialChoices" = lathe_material_choice_list(materials),
+	)
+
+/// The hacked designs went (a hack pulse ran out): the window of whoever pulsed the wire shows it.
+/obj/machinery/autolathe/proc/hack_ran_out(datum/act/A)
+	update_tgui_static_data(wires_last_user(src))
+
+// ---- the panel, the touch and the disk ----
+
+/// The panel was opened: whoever opened it sees the wires.
+/obj/machinery/autolathe/proc/panel_toggled(datum/act/op/A)
+	if(panel_open(src))
+		wires_open(src, A.actor)
+
+/// A live shock wire on a shut, working lathe shocks the hand that touches it.
+/obj/machinery/autolathe/proc/touch_shocks(datum/act/A)
+	return shocked && !panel_open(src) && operable()
+
+/obj/machinery/autolathe/proc/toucher_shocked(datum/act/op/A)
+	shock(A.actor, 50)
+	return OP_OK
+
+/// The disk's designs this lathe can make, and does not know yet, are added; the others are named.
+/obj/machinery/autolathe/proc/disk_loaded(datum/act/op/A)
+	var/mob/user = A.actor
+	var/list/not_imported
+	var/design_count = 0
+	if(istype(A.held, /obj/item/disk/design_disk))
+		var/obj/item/disk/design_disk/disky = A.held
+		for(var/datum/design_techweb/blueprint as anything in disky.blueprints)
+			if(!blueprint || LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research().researched_designs, blueprint.id))
+				continue
+			if(blueprint.build_type & AUTOLATHE)
+				LAZYSET(imported_designs, blueprint.id, TRUE)
+				design_count++
+			else
+				LAZYADD(not_imported, blueprint.name)
+	else if(istype(A.held, /obj/item/disk/tech_disk))
+		var/obj/item/disk/tech_disk/disky = A.held
+		var/datum/techweb/disk_web = disky.stored_research()
+		for(var/design_id in disk_web.researched_designs)
+			var/datum/design_techweb/blueprint = SSresearch.techweb_design_by_id(design_id)
+			if(!blueprint || LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research().researched_designs, blueprint.id))
+				continue
+			// failed designs are not named: a tech disk can hold a whole web
+			if(blueprint.build_type & AUTOLATHE)
+				LAZYSET(imported_designs, blueprint.id, TRUE)
+				design_count++
+	if(design_count)
+		to_chat(user, span_notice("[design_count] design\s imported."))
+	if(not_imported)
+		to_chat(user, span_warning("The following design[length(not_imported) > 1 ? "s" : ""] couldn't be imported: [english_list(not_imported)]"))
+	update_static_data_for_all_viewers()
+	return OP_OK
+
+// ---- the look ----
+
+/// It works while it prints; its open panel shows over it.
+/obj/machinery/autolathe/draw(datum/look/look)
+	..()
+	look.hide(LOOK_PANEL_OPEN)
+	look.state(fabricator_printing(src) && !has_stat(NOPOWER) ? "autolathe_n" : initial(icon_state))
+	look.overlay("autolathe_panel", when = panel_open(src))
 
 // ---- the wires ----
 
@@ -585,7 +233,3 @@ DECLARE_APPEARANCE(/obj/machinery/autolathe, "panel_open", list("1" = list(APPEA
 		"The red light is [disabled ? "off" : "on"].",
 		"The green light is [shocked ? "off" : "on"].",
 		"The blue light is [hacked ? "off" : "on"].")
-
-/// The hacked designs went (a hack pulse ran out): the window of whoever pulsed the wire shows it.
-/obj/machinery/autolathe/proc/hack_ran_out(datum/act/A)
-	update_tgui_static_data(wires_last_user(src))

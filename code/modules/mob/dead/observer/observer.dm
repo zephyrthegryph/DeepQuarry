@@ -230,7 +230,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 /mob/living/proc/ghost_choice_made(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/response = A.answer.answer_value
+	var/response = A.answer.value
 	if(response == "Admin Ghost")
 		if(!src.client)
 			return
@@ -338,7 +338,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	toggle_antag_hud_now()
 
 /mob/observer/dead/proc/antag_hud_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	can_reenter_corpse = FALSE
 	set_respawn_timer(-1) // Foreeeever
@@ -401,7 +401,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 /mob/observer/dead/proc/dead_tele_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	dead_tele_to(return_sorted_areas()[A.answer.answer_value])
+	dead_tele_to(return_sorted_areas()[A.answer.value])
 
 /mob/observer/dead/proc/dead_tele_to(area/A)
 	if(!A)
@@ -433,7 +433,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/prompt = A.answer
-	follow_mob(prompt.choices[A.answer.answer_value])
+	follow_mob(prompt.choices[A.answer.value])
 
 /mob/observer/dead/proc/follow_mob(mob/M)
 	if(!M)
@@ -599,7 +599,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!isobserver(src)) //Make sure they're an observer!
 		return
 
-	var/target = prompt.choices[A.answer.answer_value]
+	var/target = prompt.choices[A.answer.value]
 	if (!target)//Make sure we actually have a target
 		return
 	else
@@ -746,7 +746,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/datum/ghost_doodle_review/review = owner
@@ -799,7 +799,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	if(!A.answer)
 		retire()
 		return
-	rel_set(src, nameof(blood), A.request.answer_value)
+	rel_set(src, nameof(blood), A.request.value)
 	blood_selected = TRUE
 	if(QDELETED(blood))
 		retire()
@@ -813,7 +813,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	if(!A.answer)
 		retire()
 		return
-	direction = A.request.answer_value
+	direction = A.request.value
 	open_request(src, /datum/prompt/text/ghost_doodle, PROC_REF(message_written), answerer = ghost, question = "Write a message. It cannot be longer than 50 characters.")
 
 /datum/ghost_doodle_review/proc/message_written(datum/act/request/A)
@@ -821,7 +821,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 
 /datum/ghost_doodle_review/proc/message_written_step(datum/act/request/A)
 	if(A.answer && !why_not())
-		ghost.bloody_doodle_written(blood, direction, A.request.answer_value)
+		ghost.bloody_doodle_written(blood, direction, A.request.value)
 	retire()
 
 /mob/observer/dead/proc/bloody_doodle_written(obj/effect/decal/cleanable/blood/choice, direction, message)
@@ -1039,9 +1039,9 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	timeout = 0
 
 /datum/prompt/choice/spectral_whisper_target/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	var/mob/living/selected = answer_value
+	var/mob/living/selected = value
 	if(!istype(selected) || QDELETED(selected))
 		return "gone"
 	var/mob/observer/dead/ghost = answerer
@@ -1070,7 +1070,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 /datum/prompt/text/spectral_whisper/recheck_extra()
 	if(recipient_expected && QDELETED(recipient))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
 	var/mob/observer/dead/ghost = answerer
 	return (istype(ghost) && ghost.is_manifest) ? null : "not manifest"
@@ -1081,7 +1081,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 	return spectral_whisper_target_apply(A)
 
 /mob/observer/dead/proc/spectral_whisper_target_apply(datum/act/request/A)
-	open_request(src, /datum/prompt/text/spectral_whisper, PROC_REF(spectral_whisper_written), answerer = src, recipient = A.answer.answer_value)
+	open_request(src, /datum/prompt/text/spectral_whisper, PROC_REF(spectral_whisper_written), answerer = src, recipient = A.answer.value)
 
 /mob/observer/dead/proc/spectral_whisper_written(datum/act/request/A)
 	if(!A.answer)
@@ -1091,7 +1091,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 /mob/observer/dead/proc/spectral_whisper_apply(datum/act/request/A)
 	var/datum/prompt/text/spectral_whisper/ask = A.answer
 	var/mob/living/M = ask.recipient
-	var/msg = ask.answer_value
+	var/msg = ask.value
 	if(msg)
 		log_talk("(SPECWHISP to [key_name(M)]): [msg]", LOG_WHISPER)
 		to_chat(M, span_warning(" You hear a strange, unidentifiable voice in your head... [span_purple("[msg]")]"))
@@ -1132,16 +1132,16 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 	var/datum/prompt/choice/ghost_sprite/prompt = A.answer
 	icon = 'icons/mob/ghost.dmi'
 	cut_overlays()
-	icon_state = GLOB.possible_ghost_sprites[A.answer.answer_value]
-	open_request(src, /datum/prompt/choice/ghost_sprite_confirm, PROC_REF(ghost_sprite_confirmed), answerer = src, previous = prompt.previous, picked_sprite = A.answer.answer_value)
+	icon_state = GLOB.possible_ghost_sprites[A.answer.value]
+	open_request(src, /datum/prompt/choice/ghost_sprite_confirm, PROC_REF(ghost_sprite_confirmed), answerer = src, previous = prompt.previous, picked_sprite = A.answer.value)
 
 /mob/observer/dead/proc/ghost_sprite_confirmed(datum/act/request/A)
 	var/datum/prompt/choice/ghost_sprite_confirm/prompt = A.request
 	if(!A.answer)
-		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
 			icon_state = prompt.previous
 		return
-	if(A.answer.answer_value == "No")
+	if(A.answer.value == "No")
 		icon_state = prompt.previous
 		ask_ghost_sprite(prompt.previous)
 		return
@@ -1178,7 +1178,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 	open_request(src, /datum/prompt/choice, PROC_REF(pai_alert_confirmed), answerer = src, title = "Confirmation", question = "Would you like to submit yourself to the recruitment list too?", choices = list("No", "Yes"), buttons = TRUE, timeout = 0)
 
 /mob/observer/dead/proc/pai_alert_confirmed(datum/act/request/A)
-	if(A.answer?.answer_value != "Yes")
+	if(A.answer?.value != "Yes")
 		return
 
 	to_chat(src,span_notice("Flashing the displays of [pai_card_ping()] unoccupied PAIs."))
@@ -1317,7 +1317,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 
 /mob/observer/dead/proc/autoresleever_choice_apply(datum/act/request/A)
 	var/datum/prompt/choice/ask = A.answer
-	go_to_autoresleever(ask.choices[ask.answer_value])
+	go_to_autoresleever(ask.choices[ask.value])
 
 /mob/observer/dead/proc/go_to_autoresleever(obj/machinery/transhuman/autoresleever/chosen_resleever)
 	if(!chosen_resleever)

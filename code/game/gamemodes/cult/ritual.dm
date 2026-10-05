@@ -353,7 +353,7 @@ CAPABILITIES(/obj/item/book/tome)
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Read it")
 			// structured TGUI AdminReport.
 			dq_admin_report_html(user, "Arcane Tome", "[tomedat]")
@@ -496,16 +496,16 @@ CAPABILITIES(/obj/item/book/tome/imbued)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/imbued_rune/ask = A.answer
-	if(ask.answer_value == "teleport" || ask.answer_value == "itemport")
-		open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), answerer = ask.answerer, question = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.answer_value)
+	if(ask.value == "teleport" || ask.value == "itemport")
+		open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), answerer = ask.answerer, question = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.value)
 		return
-	imbued_rune_chosen(ask.answerer, ask.answer_value)
+	imbued_rune_chosen(ask.answerer, ask.value)
 
 /obj/item/book/tome/imbued/proc/imbued_beacon_picked(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/imbued_rune/ask = A.answer
-	imbued_rune_chosen(ask.answerer, ask.rune, ask.answer_value)
+	imbued_rune_chosen(ask.answerer, ask.rune, ask.value)
 
 /obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, r, beacon)
 	var/obj/effect/rune/R = new /obj/effect/rune

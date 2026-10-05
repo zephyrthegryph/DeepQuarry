@@ -119,7 +119,7 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 		return
 	var/category = R.category
 	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[category]
-	var/datum/category_item/underwear/selected_underwear = UWC?.items_by_name[A.answer.answer_value]
+	var/datum/category_item/underwear/selected_underwear = UWC?.items_by_name[A.answer.value]
 	if(!selected_underwear)
 		return
 	LAZYSET(H.all_underwear, category, selected_underwear)

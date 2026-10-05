@@ -300,7 +300,7 @@ DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shu
 	if(!context.answer)
 		return
 	var/obj/machinery/computer/ship/sensors/computer = src_object()
-	if(computer.apply_sensor_range_answer(src, context.answer.answer_value))
+	if(computer.apply_sensor_range_answer(src, context.answer.value))
 		SStgui.update_uis(computer)
 
 /datum/prompt/number/ship_sensor_range
@@ -330,6 +330,6 @@ DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shu
 		return "the original window is not interactive"
 	if(!computer.ui_act_allowed(original_ui.user, "range", original_ui, original_ui.state()))
 		return "the sensors console action is unavailable"
-	if(!isnull(answer_value) && !computer.sensors())
+	if(!isnull(value) && !computer.sensors())
 		return "the sensor is missing"
 	return null

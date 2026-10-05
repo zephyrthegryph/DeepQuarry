@@ -236,7 +236,7 @@ CAPABILITIES(/obj/structure/barricade/cutout)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(!Adjacent(user))
 		return
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))

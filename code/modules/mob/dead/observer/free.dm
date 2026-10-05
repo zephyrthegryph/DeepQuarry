@@ -8,7 +8,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 	open_request(src, /datum/prompt/choice, PROC_REF(quit_round_confirmed), answerer = src, title = "Quit This Round", question = "This will free up your job slot, remove you from the manifest, and allow you to respawn as this character. You can rejoin as another character if you like. Do this now?", choices = list("Quit Round", "Cancel"), buttons = TRUE, timeout = 0)
 
 /mob/observer/dead/proc/quit_round_confirmed(datum/act/request/A)
-	if(A.answer?.answer_value != "Quit Round")
+	if(A.answer?.value != "Quit Round")
 		return
 
 	//Why are you clicking this button?

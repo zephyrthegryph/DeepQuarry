@@ -607,7 +607,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	return answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
 
 /obj/machinery/newscaster/proc/channel_creation_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/news_channel_create/R = A.request
 	GLOB.news_network.CreateFeedChannel(R.channel, R.author, R.locked)
@@ -617,24 +617,24 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 /obj/machinery/newscaster/proc/receiving_channel_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_channel_name = A.answer.answer_value
+	var/new_channel_name = A.answer.value
 	channel_name = new_channel_name
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/story_written(datum/act/request/A)
 	if(!A.answer)
 		return
-	msg = sanitize(A.answer.answer_value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	msg = sanitize(A.answer.value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/title_written(datum/act/request/A)
 	if(!A.answer)
 		return
-	title = A.answer.answer_value
+	title = A.answer.value
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/wanted_change_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/user = A.request.answerer
 	if(GLOB.news_network.wanted_issue())
@@ -662,7 +662,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	if(GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
 		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)

@@ -84,10 +84,10 @@
 
 /client/proc/jukebox_volume_answered(datum/act/request/A)
 	if(!A.answer)
-		if(!isnull(A.request.answer_value) && (QDELETED(media) || !istype(media, /datum/media_manager)))
+		if(!isnull(A.request.value) && (QDELETED(media) || !istype(media, /datum/media_manager)))
 			to_chat(A.request.answerer, span_warning("You have no media datum to change, if you're not in the lobby tell an admin."))
 		return
-	var/value = A.answer.answer_value
+	var/value = A.answer.value
 	value = round(max(0, min(100, value)))
 	media.update_volume(value / 100)
 

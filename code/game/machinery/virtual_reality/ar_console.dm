@@ -82,7 +82,7 @@
 	alien_exit()
 
 /obj/machinery/vr_sleeper/alien/proc/alien_exit_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	alien_exit()
 
@@ -131,7 +131,7 @@
 	if(!A.answer)
 		return
 	var/mob/living/carbon/human/occupant = A.request.answerer
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		visible_message(span_alien("\The [src] pulses!"))
 		perform_exit()
 		return
@@ -183,9 +183,9 @@
 		occupant.enter_vr(avatar())
 
 /obj/machinery/vr_sleeper/alien/proc/alien_avatar_renamed(datum/act/request/A)
-	if(A.answer && A.answer.answer_value)
-		avatar().real_name = A.answer.answer_value
-		avatar().name = A.answer.answer_value
+	if(A.answer && A.answer.value)
+		avatar().real_name = A.answer.value
+		avatar().name = A.answer.value
 
 
 /*

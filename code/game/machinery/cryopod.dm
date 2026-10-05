@@ -717,7 +717,7 @@ CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
 	ref_one(nameof(loader), /mob)
 
 /obj/machinery/cryopod/proc/storage_consent_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/cryo_consent/R = A.request
 	finish_go_in(R.answerer, R.loader, TRUE)

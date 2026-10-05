@@ -176,7 +176,7 @@ DECLARE_INTERACTIONS(/obj/item/firework_star/aesthetic/configurable, INTERACT_US
 /obj/item/firework_star/aesthetic/configurable/proc/firework_setting_apply(datum/act/request/context)
 	var/datum/prompt/choice/firework_setting_review/ask = context.answer
 	var/list/firework_answers = ask.firework_answers.Copy()
-	firework_answers[ask.firework_key] = ask.answer_value
+	firework_answers[ask.firework_key] = ask.value
 	return firework_setting_stage(ask.firework_operator, ask.firework_held, ask.firework_interaction, firework_answers)
 
 /datum/prompt/choice/firework_setting_review

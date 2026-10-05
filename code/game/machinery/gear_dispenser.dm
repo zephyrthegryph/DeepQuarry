@@ -215,7 +215,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 		dispense_cancelled()
 		return
 	var/datum/prompt/choice/R = A.request
-	dispense(R.choices[A.answer.answer_value], R.answerer)
+	dispense(R.choices[A.answer.value], R.answerer)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
@@ -717,7 +717,7 @@ VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_ad
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/input = A.answer.answer_value
+	var/input = A.answer.value
 
 	var/list/parsed = json_decode(input)
 

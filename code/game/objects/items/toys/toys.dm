@@ -216,15 +216,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_ove
 	return TRUE
 
 /obj/item/toy/sword/proc/ask_blade_color(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	open_request(src, /datum/prompt/color/blade_recolor, PROC_REF(blade_recolored), answerer = A.request.answerer, default = lcolor, title = "Choose Energy Color")
 
 /obj/item/toy/sword/proc/blade_recolored(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		lcolor = sanitize_hexcolor(A.answer.answer_value)
+	if(A.answer.value)
+		lcolor = sanitize_hexcolor(A.answer.value)
 	update_icon()
 
 /obj/item/toy/sword/examine(mob/user)
@@ -921,7 +921,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	if(!A.answer)
 		return
 	var/mob/M = A.request.answerer
-	var/input = A.answer.answer_value
+	var/input = A.answer.value
 	if(input)
 		name = input
 		// Rename possessed voices too
@@ -1996,7 +1996,7 @@ CAPABILITIES(/obj/item/toy/rock)
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("fred")
 			src.icon_state = "fred"
 			to_chat(user, "You draw a face on the rock.")

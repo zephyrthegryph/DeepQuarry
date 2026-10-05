@@ -311,7 +311,7 @@ CAPABILITIES(/obj/item/storage/dicecup)
 
 /obj/item/dice/proc/dice_weight_apply(datum/act/request/A)
 	var/datum/prompt/number/dice_configuration/ask = A.answer
-	return dice_weight_stage(ask.dice_operator, ask.answer_value, TRUE)
+	return dice_weight_stage(ask.dice_operator, ask.value, TRUE)
 
 /obj/item/dice/proc/dice_cheat_answered(datum/act/request/A)
 	if(!A.answer)
@@ -321,7 +321,7 @@ CAPABILITIES(/obj/item/storage/dicecup)
 
 /obj/item/dice/proc/dice_cheat_apply(datum/act/request/A)
 	var/datum/prompt/number/dice_configuration/ask = A.answer
-	return dice_cheat_stage(ask.dice_operator, ask.dice_held, ask.dice_interaction, ask.answer_value, TRUE)
+	return dice_cheat_stage(ask.dice_operator, ask.dice_held, ask.dice_interaction, ask.value, TRUE)
 
 /obj/item/dice/proc/dice_face_answered(datum/act/request/A)
 	if(!A.answer)
@@ -331,7 +331,7 @@ CAPABILITIES(/obj/item/storage/dicecup)
 
 /obj/item/dice/proc/dice_face_apply(datum/act/request/A)
 	var/datum/prompt/number/dice_configuration/ask = A.answer
-	return dice_face_stage(ask.dice_operator, ask.answer_value, TRUE)
+	return dice_face_stage(ask.dice_operator, ask.value, TRUE)
 
 /datum/prompt/number/dice_configuration
 	timeout = 0

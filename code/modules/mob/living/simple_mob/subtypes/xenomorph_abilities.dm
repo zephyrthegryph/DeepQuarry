@@ -35,7 +35,7 @@
 /mob/living/simple_mob/xeno_ch/proc/xeno_build_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
 

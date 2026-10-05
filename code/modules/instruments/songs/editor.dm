@@ -106,7 +106,7 @@ UI_ACT_PROC(/datum/song, ui_act_import_song)
 	if(!A.answer)
 		return
 	var/datum/song/song = src_object()
-	var/song_text = A.answer.answer_value
+	var/song_text = A.answer.value
 	if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
 		open_request(src, /datum/prompt/choice/song_import_continue, PROC_REF(song_import_confirmed), answerer = A.request.answerer, song_text = song_text)
 		return
@@ -118,7 +118,7 @@ UI_ACT_PROC(/datum/song, ui_act_import_song)
 		return
 	var/datum/song/song = src_object()
 	var/datum/prompt/choice/song_import_continue/ask = A.answer
-	if(ask.answer_value == "Yes" && length_char(ask.song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
+	if(ask.value == "Yes" && length_char(ask.song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
 		// A cached oversized answer used to loop forever instead of reopening the editor.
 		open_request(src, /datum/prompt/text/song_import, PROC_REF(song_import_entered), answerer = A.request.answerer, title = song.name)
 		return
@@ -136,7 +136,7 @@ UI_ACT_PROC(/datum/song, ui_act_import_song)
 	return istext(given) ? given : null
 
 /datum/prompt/text/song_import/recheck_extra()
-	return song_import_refusal(owner, answerer, !isnull(answer_value))
+	return song_import_refusal(owner, answerer, !isnull(value))
 
 /datum/prompt/choice/song_import_continue
 	question = "Your message is too long! Would you like to continue editing it?"
@@ -148,7 +148,7 @@ UI_ACT_PROC(/datum/song, ui_act_import_song)
 	var/song_text
 
 /datum/prompt/choice/song_import_continue/recheck_extra()
-	return song_import_refusal(owner, answerer, !isnull(answer_value))
+	return song_import_refusal(owner, answerer, !isnull(value))
 
 /proc/song_import_refusal(datum/tgui/original_ui, mob/answerer, check_range)
 	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
@@ -286,9 +286,9 @@ UI_ACT_PROC(/datum/song, ui_act_edit_sustain_mode)
 	var/datum/song/song = src_object()
 	var/datum/prompt/text/song_line/ask = context.answer
 	if(ask.line_action == "add_new_line")
-		song.append_answered_line(ask.answer_value)
+		song.append_answered_line(ask.value)
 	else
-		song.lines[ask.line_to_edit] = ask.answer_value
+		song.lines[ask.line_to_edit] = ask.value
 		SStgui.update_uis(song)
 
 /datum/song/proc/append_answered_line(value)
@@ -318,11 +318,11 @@ UI_ACT_PROC(/datum/song, ui_act_edit_sustain_mode)
 	if(!song.ui_act_allowed(original_ui.user, line_action, original_ui, original_ui.state()))
 		return "the editor action is unavailable"
 	// Existing row guards are answer-time checks; opening has no supplied answer.
-	if(!isnull(answer_value))
+	if(!isnull(value))
 		if(!in_range(song.parent(), original_ui.user))
 			return "the instrument is out of range"
 		if(line_action == "add_new_line")
-			if(!answer_value || song.lines.len > MUSIC_MAXLINES)
+			if(!value || song.lines.len > MUSIC_MAXLINES)
 				return "no line can be added"
 		else if(line_to_edit > song.lines.len || line_to_edit < 1)
 			return "the selected line is gone"

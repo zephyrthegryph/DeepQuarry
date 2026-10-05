@@ -251,7 +251,7 @@ CAPABILITIES(/datum/pin_value_review)
 	run_step(PROC_REF(type_step), A)
 
 /datum/pin_value_review/proc/type_step(datum/act/request/A)
-	type_name = A.answer.answer_value
+	type_name = A.answer.value
 	var/default = default_value()
 	switch(type_name)
 		if("string")
@@ -267,7 +267,7 @@ CAPABILITIES(/datum/pin_value_review)
 	run_step(PROC_REF(value_step), A)
 
 /datum/pin_value_review/proc/value_step(datum/act/request/A)
-	value = A.answer.answer_value
+	value = A.answer.value
 	pin.typed_value_entered(src)
 	retire()
 

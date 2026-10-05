@@ -825,7 +825,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
 
 /obj/machinery/computer/skills/proc/record_notes_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/record_notes_delete/R = A.request
 	set_record_notes(R.record, "")

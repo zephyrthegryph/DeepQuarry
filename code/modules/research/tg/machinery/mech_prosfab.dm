@@ -1,3 +1,11 @@
+// The prosthetics fabricator: an exosuit fabricator (mech_fabricator.dm) that builds prosthetic limbs and synthmorph bodies. ONE CAPABILITIES
+// list adds what it has of its own: the disks that teach it a manufacturer's blueprints and a species' files (five seconds each), and the
+// window's two questions, which species and which manufacturer it builds for.
+
+MSG_DEF_SELF(prosfab/corrupted, "This disk seems to be corrupted!")
+MSG_DEF(prosfab/installing, "You begin installing the blueprint files from %I%...", "%U% begins installing the blueprint files from %I% into %T%.")
+MSG_DEF(prosfab/uploading, "You begin uploading the modification files from %I%...", "%U% begins uploading the modification files from %I% into %T%.")
+
 /obj/machinery/mecha_part_fabricator_tg/prosthetics
 	icon = 'icons/obj/robotics_vr.dmi'
 	icon_state = "prosfab"
@@ -12,130 +20,100 @@
 	var/species_types = list("Human")
 	var/species = "Human"
 
+CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
+	op("limb_disk", item(/obj/item/disk/limb), label("Install blueprints"), needs(req(PROC_REF(limb_disk_valid), because = MSG(prosfab/corrupted))),
+		wait(5 SECONDS), begins(MSG(prosfab/installing)), then(PROC_REF(limb_disk_done)))
+	op("species_disk", item(/obj/item/disk/species), label("Upload species files"), needs(req(PROC_REF(species_disk_valid), because = MSG(prosfab/corrupted))),
+		wait(5 SECONDS), begins(MSG(prosfab/uploading)), then(PROC_REF(species_disk_done)))
+	op("species", ui_act(), asks(/datum/prompt/choice, fields = list("question" = "Select a new species", "title" = "Prosfab Species Selection",
+		"choices" = computed(PROC_REF(species_choices)), "timeout" = 0)), then(PROC_REF(species_chosen)))
+	op("manufacturer", ui_act(), asks(/datum/prompt/choice, fields = list("question" = "Select a new manufacturer", "title" = "Prosfab Species Selection",
+		"choices" = computed(PROC_REF(manufacturer_choices)), "timeout" = 0)), then(PROC_REF(manufacturer_chosen)))
+
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/AfterMaterialInsert()
-	return // no call parent
+	return // its sprite has no loading animation
 
-APPEARANCE_TEMPLATE(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "prosfab{appearance_active_suffix}")
-DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "prosfab-o")))
+/// Its open panel and its work have their own states.
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/draw(datum/look/look)
+	..()
+	look.hide("fab-active")
+	if(panel_open(src))
+		look.state("prosfab-o")
+	else
+		look.state(being_built ? "prosfab-active" : "prosfab")
 
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/appearance_active_suffix()
-	return use_power == USE_POWER_ACTIVE ? "-active" : ""
-
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/on_start_printing()
-	// Don't call parent
-	update_icon()
-	set_use_power(USE_POWER_ACTIVE)
-	print_sound.start()
-
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/on_finish_printing()
-	// Don't call parent
-	set_use_power(USE_POWER_IDLE)
-	desc = initial(desc)
-	set_process_queue(FALSE)
-	print_sound.stop()
-	update_icon()
-
-UI_DATA(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "species_types:list", "species:text", "manufacturer", "merge:ui_data_obj_machinery_mecha_part_fabricator_tg_prosthetics{all_manufacturers:list}")
-
-/// The computed part of /obj/machinery/mecha_part_fabricator_tg/prosthetics's window data (declared on its UI_DATA row).
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/ui_data_obj_machinery_mecha_part_fabricator_tg_prosthetics(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
-
-	if(GLOB.all_robolimbs)
-		var/list/T = list()
-		for(var/A in GLOB.all_robolimbs)
-			var/datum/robolimb/R = GLOB.all_robolimbs[A]
-			if(R.unavailable_to_build)
-				continue
-			if(species in R.species_cannot_use)
-				continue
-			T += list(list("id" = A, "company" = R.company))
-		data["all_manufacturers"] = T
-
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["species_types"] = species_types
+	data["species"] = species
+	data["manufacturer"] = manufacturer
+	var/list/T = list()
+	for(var/company in GLOB.all_robolimbs)
+		var/datum/robolimb/R = GLOB.all_robolimbs[company]
+		if(R.unavailable_to_build || (species in R.species_cannot_use))
+			continue
+		T += list(list("id" = company, "company" = R.company))
+	data["all_manufacturers"] = T
 	return data
 
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "species", ui_act_species)
-UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_species)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/choice/prosfab_setting, TYPE_PROC_REF(/datum/tgui, prosfab_setting_answered), answerer = ui.user, question = "Select a new species", title = "Prosfab Species Selection", choices = species_types, setting_action = "species")
+// ---- the window's questions ----
 
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "manufacturer", ui_act_manufacturer)
-UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_manufacturer)
-	var/list/new_manufacturers = list()
-	for(var/A in GLOB.all_robolimbs)
-		var/datum/robolimb/R = GLOB.all_robolimbs[A]
-		if(R.unavailable_to_build)
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_choices(datum/act/op/A)
+	return species_types
+
+/// The manufacturers that can build for the species it is set to.
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/manufacturer_choices(datum/act/op/A)
+	. = list()
+	for(var/company in GLOB.all_robolimbs)
+		var/datum/robolimb/R = GLOB.all_robolimbs[company]
+		if(R.unavailable_to_build || (species in R.species_cannot_use))
 			continue
-		if(species in R.species_cannot_use)
-			continue
-		new_manufacturers += A
+		. += company
 
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/choice/prosfab_setting, TYPE_PROC_REF(/datum/tgui, prosfab_setting_answered), answerer = ui.user, question = "Select a new manufacturer", title = "Prosfab Species Selection", choices = new_manufacturers, setting_action = "manufacturer")
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_chosen(datum/act/op/A)
+	var/datum/prompt/P = A.answer
+	if(P?.value)
+		species = P.value
+	return OP_OK
 
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/prosfab_fingerprint_marker,
-		/datum/interaction/machine_item/prosfab_limb_disk,
-		/datum/interaction/machine_item/prosfab_species_disk,
-	)
-	..()
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/manufacturer_chosen(datum/act/op/A)
+	var/datum/prompt/P = A.answer
+	if(P?.value)
+		manufacturer = P.value
+	return OP_OK
 
-/// Old attackby's unconditional first line. Always runs first and declines.
-/datum/interaction/machine_item/prosfab_fingerprint_marker
-	id = "prosfab_fingerprint_marker"
-	name = "Use"
-	held_type = /obj/item
-	consumes_input = FALSE
-	effect = /atom/proc/interaction_fingerprint
+// ---- the disks ----
 
-/// Old attackby: install limb blueprint files from a disk.
-/datum/interaction/machine_item/prosfab_limb_disk
-	id = "prosfab_limb_disk"
-	name = "Install blueprints"
-	held_type = /obj/item/disk/limb
-	effect = /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_limb_disk
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/limb_disk_valid(datum/act/op/A)
+	var/obj/item/disk/limb/D = A.held
+	return istype(D) && D.company && (D.company in GLOB.all_robolimbs)
 
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_limb_disk(mob/user, obj/item/I, datum/interaction/interaction)
-	var/obj/item/disk/limb/D = I
-	if(!D.company || !(D.company in GLOB.all_robolimbs))
-		to_chat(user, span_warning("This disk seems to be corrupted!"))
-	else
-		to_chat(user, span_notice("Installing blueprint files for [D.company]..."))
-		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(limb_disk_done), list(user, D))
-	return TRUE
-
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/limb_disk_done(mob/user, obj/item/disk/limb/D)
+/// The manufacturer's blueprints are installed: its limbs can be built.
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/limb_disk_done(datum/act/op/A)
+	var/obj/item/disk/limb/D = A.held
+	add_fingerprint(A.actor)
 	var/datum/robolimb/R = GLOB.all_robolimbs[D.company]
 	R.unavailable_to_build = 0
-	to_chat(user, span_notice("Installed [D.company] blueprints!"))
-	consume(D, user)
+	to_chat(A.actor, span_notice("Installed [D.company] blueprints!"))
+	consume(D, A.actor)
+	return OP_OK
 
-/// Old attackby: upload species modification files from a disk.
-/datum/interaction/machine_item/prosfab_species_disk
-	id = "prosfab_species_disk"
-	name = "Upload species files"
-	held_type = /obj/item/disk/species
-	effect = /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_species_disk
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_disk_valid(datum/act/op/A)
+	var/obj/item/disk/species/D = A.held
+	return istype(D) && D.species && (D.species in GLOB.all_species)
 
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_species_disk(mob/user, obj/item/I, datum/interaction/interaction)
-	var/obj/item/disk/species/D = I
-	if(!D.species || !(D.species in GLOB.all_species))
-		to_chat(user, span_warning("This disk seems to be corrupted!"))
-	else
-		to_chat(user, span_notice("Uploading modification files for [D.species]..."))
-		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(species_disk_done), list(user, D))
-	return TRUE
-
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_disk_done(mob/user, obj/item/disk/species/D)
+/// The species' files are uploaded: it can build for that species.
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_disk_done(datum/act/op/A)
+	var/obj/item/disk/species/D = A.held
+	add_fingerprint(A.actor)
 	var/upload_species = D.species
-	if(!consume(D, user))
-		return
+	if(!consume(D, A.actor))
+		return OP_REFUSED
 	species_types |= upload_species
-	to_chat(user, span_notice("Uploaded [upload_species] files!"))
+	to_chat(A.actor, span_notice("Uploaded [upload_species] files!"))
+	return OP_OK
+
+// ---- the parts ----
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/create_new_part(datum/design_techweb/dispensed_design)
 	if(istype(dispensed_design, /datum/design_techweb/prosfab/pros/torso))
@@ -210,37 +188,3 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_manufact
 		return O
 	else
 		return new dispensed_design.build_path(src)
-
-/datum/tgui/proc/prosfab_setting_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/choice/prosfab_setting/ask = context.answer
-	var/obj/machinery/mecha_part_fabricator_tg/prosthetics/fabricator = src_object()
-	fabricator.apply_prosfab_setting(user, state(), ask.setting_action, ask.answer_value)
-	SStgui.update_uis(fabricator)
-
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/apply_prosfab_setting(mob/user, datum/tgui_state/state, setting_action, value)
-	if(value && tgui_status(user, state) == STATUS_INTERACTIVE)
-		switch(setting_action)
-			if("species")
-				species = value
-			if("manufacturer")
-				manufacturer = value
-
-/datum/prompt/choice/prosfab_setting
-	timeout = 0
-	recheck_on_open = TRUE
-	var/setting_action
-
-/datum/prompt/choice/prosfab_setting/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/obj/machinery/mecha_part_fabricator_tg/prosthetics/fabricator = original_ui.src_object()
-	if(!istype(fabricator) || QDELETED(fabricator))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!fabricator.ui_act_allowed(original_ui.user, setting_action, original_ui, original_ui.state()))
-		return "the fabricator setting is unavailable"
-	return null

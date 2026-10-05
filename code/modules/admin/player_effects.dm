@@ -121,10 +121,10 @@ DECLARE_UI_STATE(/datum/eventkit/player_effects, ADMIN_STATE(R_ADMIN|R_EVENT|R_D
 	var/admin_name
 
 /datum/eventkit/player_effects/proc/popup_replied(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/text/admin_popup/request = A.request
-	log_and_message_admins("replied to [request.admin_name]'s message: [A.answer.answer_value].", request.answerer)
+	log_and_message_admins("replied to [request.admin_name]'s message: [A.answer.value].", request.answerer)
 
 /// Only somebody with the spawn right works a button, and every effect is logged once, as it is pressed.
 /datum/eventkit/player_effects/proc/ui_log_use(datum/act/op/A)
@@ -919,7 +919,7 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 /datum/eventkit/player_effects/proc/gib_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/death = A.answer.answer_value
+	var/death = A.answer.value
 	if(death == "KILL")
 		target().gib()
 
@@ -929,7 +929,7 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 /datum/eventkit/player_effects/proc/dust_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/death = A.answer.answer_value
+	var/death = A.answer.value
 	if(death == "KILL")
 		target().dust()
 
@@ -1032,7 +1032,7 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/message = A.answer.answer_value
+	var/message = A.answer.value
 	if(!message)
 		return
 	log_admin("[key_name(user)] sent message to [target()]: [message]")

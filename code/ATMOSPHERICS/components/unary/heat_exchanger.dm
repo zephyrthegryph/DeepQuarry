@@ -29,6 +29,8 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 	// The pair's loops exchange heat through one link, declared by the first of the two (heat_exchanger_leads()).
 	when(nameof(leads_pair), heat_link(HEAT_PORT(1), nameof(partner), nameof(exchange_conductance)))
 	links(/obj/machinery/atmospherics/unary/heat_exchanger::partner, /obj/machinery/atmospherics/unary/heat_exchanger::partner)
+	pipe_device_unwrench()
+	extend("unwrench", needs(req(PROC_REF(floor_clear), because = MSG(air_device/plating))))
 
 APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?intact:exposed}")
 
@@ -47,6 +49,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 	..()
 
 /// Whether this one is the first of its pair (by map position), which declares the pair's heat link.
+/// Its floor does not cover it: a pipe-level exchanger under intact tiles cannot be reached.
+/obj/machinery/atmospherics/unary/heat_exchanger/proc/floor_clear(datum/act/A)
+	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; it stays where it was built
+	return !(level == 1 && isturf(T) && !T.is_plating()) // ALLOW(reads): the exchanger level is fixed by where it was built; asked when the wrench is used
+
 /obj/machinery/atmospherics/unary/heat_exchanger/proc/heat_exchanger_leads()
 	if(!partner)
 		return FALSE
@@ -63,20 +70,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 		fraction = clamp(min(our_conductance, their_conductance) / 50, 0.02, 1)
 	exchange_conductance = HEAT_EXCHANGER_CONDUCTANCE * fraction
 
-/obj/machinery/atmospherics/unary/heat_exchanger/wrench_act(mob/user, obj/item/W)
-	var/turf/T = src.loc
-	if (level==1 && isturf(T) && !T.is_plating())
-		to_chat(user, span_warning("You must remove the plating first."))
-		return ITEM_INTERACT_BLOCKING
-	if (!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/unary/heat_exchanger/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
+/// It comes off its pipe whether or not its loops run (only its gas holds it).
+/obj/machinery/atmospherics/unary/heat_exchanger/pipe_device_idle(datum/act/A)
+	return TRUE

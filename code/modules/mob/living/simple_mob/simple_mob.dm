@@ -263,7 +263,7 @@ CAPABILITIES(/mob/living/simple_mob)
 /mob/living/simple_mob/proc/size_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_size = A.answer.answer_value
+	var/new_size = A.answer.value
 	if(!picked_size && size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 		picked_size = TRUE
@@ -281,7 +281,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(!A.answer)
 		return
 	if(!picked_color)
-		color = A.answer.answer_value
+		color = A.answer.value
 	picked_color = TRUE
 	update_icon()
 
@@ -916,7 +916,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 /mob/living/simple_mob/proc/leap_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/T = A.answer.answer_value
+	var/mob/living/T = A.answer.value
 
 	if(get_dist(get_turf(T), get_turf(src)) > 3) return
 

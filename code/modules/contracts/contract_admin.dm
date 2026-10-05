@@ -103,4 +103,4 @@ ADMIN_VERB(dq_inspect_contract_board, R_ADMIN, "Inspect Contract Board", "Inspec
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	return contract_inspect_stage(user, list("k6" = context.answer.answer_value))
+	return contract_inspect_stage(user, list("k6" = context.answer.value))

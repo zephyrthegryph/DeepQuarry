@@ -89,17 +89,73 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 
 		if(!camera)
 			return
-		var/obj/item/photo/selection = camera.selectpicture(ui.user)
-		if (!selection)
+		var/obj/item/camera/siliconcam/source_cam = camera.getsource(ui.user)
+		if(!length(source_cam.aipictures))
+			to_chat(ui.user, span_userdanger("No images saved"))
 			return
+		var/list/names = list()
+		for(var/obj/item/photo/photo in source_cam.aipictures)
+			names += photo.name
+		open_request(ui, /datum/prompt/choice/photocopier_album, TYPE_PROC_REF(/datum/tgui, photocopier_album_selected), answerer = ui.user, subject = camera, choices = names)
+		return
+	return TRUE
 
-		var/obj/item/photo/p = photocopy(selection)
-		if (p.desc == "")
-			p.desc += "Copied by [tempAI.name]"
-		else
-			p.desc += " - Copied by [tempAI.name]"
-		toner -= 5
-	. = TRUE
+/datum/tgui/proc/photocopier_album_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/photocopier_album/ask = A.request
+	var/obj/machinery/photocopier/copier = src_object()
+	var/mob/living/silicon/tempAI = ask.answerer
+	var/obj/item/camera/siliconcam/source_cam = ask.album_source()
+	if(!length(source_cam.aipictures))
+		to_chat(tempAI, span_userdanger("No images saved"))
+		return
+	var/obj/item/photo/selection = ask.selected_picture()
+	if(!selection)
+		return
+	var/obj/item/photo/p = copier.photocopy(selection)
+	if(p.desc == "")
+		p.desc += "Copied by [tempAI.name]"
+	else
+		p.desc += " - Copied by [tempAI.name]"
+	copier.toner -= 5
+	SStgui.update_uis(copier)
+
+/datum/prompt/choice/photocopier_album
+	question = "Select image (numbered in order taken)"
+	title = "Picture Choice"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/photocopier_album/proc/album_source()
+	var/obj/item/camera/siliconcam/camera = subject
+	return camera.getsource(answerer)
+
+/datum/prompt/choice/photocopier_album/proc/selected_picture()
+	if(!value)
+		return null
+	var/obj/item/camera/siliconcam/source_cam = album_source()
+	for(var/obj/item/photo/photo in source_cam.aipictures)
+		if(photo.name == value)
+			return photo
+	return null
+
+/datum/prompt/choice/photocopier_album/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer) || QDELETED(subject))
+		return "gone"
+	var/obj/machinery/photocopier/copier = original_ui.src_object()
+	if(!istype(copier) || QDELETED(copier))
+		return "gone"
+	if(original_ui.user != answerer || !issilicon(answerer))
+		return "the original operator is unavailable"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!copier.ui_act_allowed(answerer, "ai_photo", original_ui, original_ui.state()))
+		return "the copier action is unavailable"
+	if(!copier.operable() || copier.toner < 5)
+		return "the copier cannot print a photo"
+	return null
 
 /// Makes `copies` copies, one after another (each a few steps on the machine's timers).
 /obj/machinery/photocopier/proc/copy_operation(mob/user)

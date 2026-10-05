@@ -284,13 +284,13 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		return
 	process_chemistry(batch)
 	apply_real_atmosphere(batch)
-	var/chamber_temperature = chamber_air.return_temperature()
-	if(chamber_temperature > batch.temperature)
-		batch.add_batch_heat((chamber_temperature - batch.temperature) * batch.thermal_capacity())
+	// A hotter chamber gives the charge what it can: the two meet at their common temperature (it was the chamber's temperature for free).
+	if(chamber_air.return_temperature() > batch.temperature())
+		heat_equalize(chamber_air, HEAT_STORE(batch.ensure_heat_store()))
 	var/target_temperature = batch.melting_temperature() * (heat_treatment ? 0.7 : 1.05)
-	var/heating_energy = max(0, target_temperature - batch.temperature) * batch.thermal_capacity()
+	var/heating_energy = max(0, target_temperature - batch.temperature()) * batch.thermal_capacity()
 	var/supplied_energy = use_power_oneoff(heating_energy)
-	batch.add_batch_heat(supplied_energy)
+	batch.add_batch_heat(supplied_energy, HEAT_SOURCE_DEVICE)
 	batch.record_electricity(supplied_energy)
 	if(heat_treatment && batch.phase == MATERIAL_PHASE_SOLID)
 		if(!batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT))
@@ -530,7 +530,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(
 	if(!batch)
 		return ..()
 	var/beam_energy = max(projectile.damage, 1) * 100
-	batch.add_batch_heat(beam_energy * 0.65)
+	batch.add_batch_heat(beam_energy * 0.65, HEAT_SOURCE_WEAPON)
 	batch.record_electricity(beam_energy)
 	var/crystal_fraction = ((LAZYACCESS(batch.composition, MAT_GLASS) || 0) + (LAZYACCESS(batch.composition, MAT_QUARTZ) || 0) + (LAZYACCESS(batch.composition, MAT_DIAMOND) || 0) + (LAZYACCESS(batch.composition, MAT_VOLTAIC_CRYSTAL) || 0)) / max(batch.amount, 1)
 	if(crystal_fraction >= 0.1 && batch.conductivity >= 25)
@@ -657,11 +657,11 @@ GLOBAL_LIST_INIT(material_debug_treatments, list(
 	var/obj/item/stack/material/processed_alloy/held = answerer.get_active_hand()
 	if(!istype(held) && !length(helper.nearby_choices(answerer)))
 		return "nearby"
-	var/obj/item/stack/material/processed_alloy/selected_stock = answer_value
-	if(!isnull(answer_value) && !istype(held) && QDELETED(selected_stock))
+	var/obj/item/stack/material/processed_alloy/selected_stock = value
+	if(!isnull(value) && !istype(held) && QDELETED(selected_stock))
 		return "stock"
-	if(!isnull(answer_value) && !isnull(selected_treatment))
-		var/obj/item/stack/material/processed_alloy/stock = helper.current_stock(answerer, answer_value, TRUE)
+	if(!isnull(value) && !isnull(selected_treatment))
+		var/obj/item/stack/material/processed_alloy/stock = helper.current_stock(answerer, value, TRUE)
 		if(QDELETED(stock) || !answerer.Adjacent(stock))
 			return "stock"
 
@@ -680,35 +680,35 @@ GLOBAL_LIST_INIT(material_debug_treatments, list(
 	var/obj/item/stack/material/processed_alloy/held = answerer.get_active_hand()
 	if(!istype(held) && !length(helper.nearby_choices(answerer)))
 		return "nearby"
-	if(!isnull(answer_value) && (istype(held) || nearby_answered))
+	if(!isnull(value) && (istype(held) || nearby_answered))
 		var/obj/item/stack/material/processed_alloy/stock = helper.current_stock(answerer, subject, nearby_answered)
-		if(!answer_value || QDELETED(stock) || !answerer.Adjacent(stock))
+		if(!value || QDELETED(stock) || !answerer.Adjacent(stock))
 			return "stock"
 
 /datum/admin_verb/debug_apply_material_treatment/proc/stock_answered(datum/act/request/context)
 	var/datum/prompt/choice/material_debug_stock/request = context.request
 	if(!context.answer)
-		if(!isnull(request.answer_value) && request.last_error == "nearby")
+		if(!isnull(request.value) && request.last_error == "nearby")
 			to_chat(request.answerer, span_warning("Hold alloy sheets in your active hand or stand near a stack."))
 		return
 	if(isnull(request.selected_treatment))
-		open_treatment(request.answerer, request.answer_value, TRUE)
+		open_treatment(request.answerer, request.value, TRUE)
 	else
-		var/obj/item/stack/material/processed_alloy/stock = current_stock(request.answerer, request.answer_value, TRUE)
+		var/obj/item/stack/material/processed_alloy/stock = current_stock(request.answerer, request.value, TRUE)
 		apply_treatment(request.answerer, stock, request.selected_treatment)
 
 /datum/admin_verb/debug_apply_material_treatment/proc/treatment_answered(datum/act/request/context)
 	var/datum/prompt/choice/material_debug_treatment/request = context.request
 	if(!context.answer)
-		if(!isnull(request.answer_value) && request.last_error == "nearby")
+		if(!isnull(request.value) && request.last_error == "nearby")
 			to_chat(request.answerer, span_warning("Hold alloy sheets in your active hand or stand near a stack."))
 		return
 	var/obj/item/stack/material/processed_alloy/held = request.answerer.get_active_hand()
 	if(!istype(held) && !request.nearby_answered)
-		open_stock(request.answerer, nearby_choices(request.answerer), request.answer_value)
+		open_stock(request.answerer, nearby_choices(request.answerer), request.value)
 	else
 		var/obj/item/stack/material/processed_alloy/stock = current_stock(request.answerer, request.subject, request.nearby_answered)
-		apply_treatment(request.answerer, stock, request.answer_value)
+		apply_treatment(request.answerer, stock, request.value)
 
 /datum/admin_verb/debug_apply_material_treatment/proc/apply_treatment(mob/operator, obj/item/stack/material/processed_alloy/stock, selection)
 	var/datum/material_batch/batch = stock.physical_batch()?.copy_batch()

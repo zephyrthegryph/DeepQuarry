@@ -123,3 +123,9 @@ are licensed under the GNU General Public License version 3 (`LICENSE-GPL3.txt`)
 All commits whose authorship dates are not prior to `1420675200 +0000` are assumed
 to be AGPL v3; if you wish to license under GPL v3, make this clear in the commit
 message and any added files.
+
+## Generated files
+
+The `analyze gen` output (`code/engine/_generated/`, `code/_generated/reads.dm`, `tgui/packages/tgui/interfaces/generated/`)
+is written by every build and is not committed. Commit the declarations it reads, never its output. See
+`doc/rewrite/agent_workflow.md`.

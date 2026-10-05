@@ -804,7 +804,7 @@ UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_tag)
 	if(!context.answer)
 		return
 	var/obj/item/clothing/accessory/collar/shock/collar = context.request.subject
-	if(collar.apply_ui_tag(user, context.answer.answer_value))
+	if(collar.apply_ui_tag(user, context.answer.value))
 		SStgui.update_uis(collar)
 
 /datum/prompt/text/shock_collar_ui_tag
@@ -923,7 +923,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 	if(request.captures_gone())
 		return
 	if(!A.answer)
-		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
 			if(!request.tool_edit && !special_collar && !istype(src, /obj/item/clothing/accessory/collar/holo) && writtenon)
 				to_chat(request.user_value(), span_notice("You need a pen or a screwdriver to edit the tag on this collar."))
 			SStgui.update_uis(src)
@@ -945,7 +945,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 			to_chat(user, span_notice("You need a pen or a screwdriver to edit the tag on this collar."))
 			return FALSE
 		to_chat(user, span_notice("You adjust the [name]'s tag."))
-	var/_answer_a1 = A.answer.answer_value
+	var/_answer_a1 = A.answer.value
 	var/str = copytext(reject_bad_text(_answer_a1),1,MAX_NAME_LEN)
 
 	if(!str || !length(str))
@@ -997,7 +997,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 	var/writemethod = request.writemethod
 	if(!(istype(user.get_active_hand(),I)) || !(istype(user.get_inactive_hand(),src)) || user.stat)
 		return
-	var/_answer_a2 = A.answer.answer_value
+	var/_answer_a2 = A.answer.value
 	var/str = copytext(reject_bad_text(_answer_a2),1,MAX_NAME_LEN)
 
 	if(!str || !length(str))

@@ -121,7 +121,7 @@
 
 /obj/belly/proc/instant_digest_accepted(datum/act/request/A)
 	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
-	return instant_digest_stage(ask.instigator, ask.answerer, ask.answer_value)
+	return instant_digest_stage(ask.instigator, ask.answerer, ask.value)
 
 /obj/belly/proc/instant_break_bone_answered(datum/act/request/A)
 	if(!A.answer)
@@ -132,7 +132,7 @@
 
 /obj/belly/proc/instant_break_bone_accepted(datum/act/request/A)
 	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
-	return instant_break_bone_stage(ask.instigator, ask.answerer, ask.answer_value)
+	return instant_break_bone_stage(ask.instigator, ask.answerer, ask.value)
 
 /obj/belly/proc/instant_absorb_answered(datum/act/request/A)
 	if(!A.answer)
@@ -143,7 +143,7 @@
 
 /obj/belly/proc/instant_absorb_accepted(datum/act/request/A)
 	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
-	return instant_absorb_stage(ask.instigator, ask.answerer, ask.answer_value)
+	return instant_absorb_stage(ask.instigator, ask.answerer, ask.value)
 
 /obj/belly/proc/instant_knockout_answered(datum/act/request/A)
 	if(!A.answer)
@@ -154,7 +154,7 @@
 
 /obj/belly/proc/instant_knockout_accepted(datum/act/request/A)
 	var/datum/prompt/choice/belly_instant_consent/ask = A.answer
-	return instant_knockout_stage(ask.instigator, ask.answerer, ask.answer_value)
+	return instant_knockout_stage(ask.instigator, ask.answerer, ask.value)
 
 /// The original requester's identity is captured weakly, as the old kept proc arguments were.
 /datum/prompt/choice/belly_instant_consent

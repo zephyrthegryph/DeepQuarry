@@ -152,7 +152,7 @@
 	return L.sleeping_voluntarily() ? "already asleep" : null
 
 /mob/living/proc/sleep_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	return apply_sleep_confirmed(A)
 

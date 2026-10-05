@@ -43,7 +43,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 /obj/item/vac_attachment/proc/setting_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	apply_setting(A.request.answerer, A.answer.answer_value)
+	apply_setting(A.request.answerer, A.answer.value)
 
 /obj/item/vac_attachment/proc/apply_setting(mob/user, set_input)
 	if(set_input == "output destination")
@@ -62,7 +62,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Borg Belly")
 			if(isrobot(user))
 				var/mob/living/silicon/robot/R = user
@@ -369,7 +369,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Show Pack")
 			item_state = "sucker"
 		if("Show Tube")

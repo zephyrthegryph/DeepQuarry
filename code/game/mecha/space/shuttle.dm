@@ -85,8 +85,8 @@ CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
 
 /obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color_apply(datum/act/request/context)
 	var/datum/prompt/choice/ask = context.answer
-	if(ask.answer_value != "CANCEL")
-		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(hull_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.answer_value)
+	if(ask.value != "CANCEL")
+		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(hull_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.value)
 
 /obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted(datum/act/request/context)
 	if(!context.answer)
@@ -97,15 +97,15 @@ CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
 	var/datum/prompt/color/mech_paint/ask = context.answer
 	if(state != 1)
 		return
-	if(ask.answer_value)
+	if(ask.value)
 		switch(ask.zone)
 			if("Central")
-				central_paint = ask.answer_value
+				central_paint = ask.value
 			if("Engine")
-				engine_paint = ask.answer_value
+				engine_paint = ask.value
 			if("Front")
-				front_paint = ask.answer_value
+				front_paint = ask.value
 			if("Base")
-				base_paint = ask.answer_value
+				base_paint = ask.value
 	update_icon()
 

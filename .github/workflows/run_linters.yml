@@ -75,6 +75,11 @@ jobs:
           components: rustfmt, clippy
       - name: Build the analyze lint engine
         run: cargo build --release --manifest-path tools/analyze/Cargo.toml
+      # The generated DM is not committed (doc/rewrite/agent_workflow.md): write it before anything
+      # below reads or compiles the tree. Fails on a generator diagnostic or a missing .dme include.
+      - name: Generate the analyze output (code/engine/_generated)
+        run: tools/analyze/target/release/analyze gen | grep -v '^fresh '; test "${PIPESTATUS[0]}" = 0
+        shell: bash
       - name: Build DM health analyzer
         run: cargo build --release --manifest-path tools/dm-health/Cargo.toml
       - name: Run DM health and CI checks

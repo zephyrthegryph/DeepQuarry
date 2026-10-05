@@ -12,7 +12,7 @@ ADMIN_VERB(cmd_admin_change_custom_event, R_ADMIN|R_FUN|R_SERVER|R_EVENT, "Chang
 
 /datum/admin_verb/cmd_admin_change_custom_event/proc/apply_event_description(datum/act/request/context)
 	var/client/user = context.request.answerer.client
-	var/input = context.request.answer_value
+	var/input = context.request.value
 	if(input == "")
 		GLOB.custom_event_msg = null
 		log_and_message_admins("has cleared the custom event text.", user)

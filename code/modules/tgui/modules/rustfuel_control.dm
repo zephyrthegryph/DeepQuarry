@@ -26,7 +26,7 @@ CAPABILITIES(/datum/tgui_module/rustfuel_control)
 /datum/tgui_module/rustfuel_control/proc/tag_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_ident = sanitize_text(A.answer.answer_value)
+	var/new_ident = sanitize_text(A.answer.value)
 	if(new_ident)
 		fuel_tag = new_ident
 	SStgui.update_uis(src)

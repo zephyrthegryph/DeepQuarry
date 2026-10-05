@@ -157,10 +157,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	var/datum/prompt/choice/tunnel_enter_or_reach/request = A.request
 	var/mob/living/user = request.answerer
 	if(request.dropped)
-		if(A.answer.answer_value == "Enter")
+		if(A.answer.value == "Enter")
 			mouse_drop_climb(user)
 		return
-	if(A.answer.answer_value == "Enter")
+	if(A.answer.value == "Enter")
 		tunnel_climb(user)
 	else
 		tunnel_reach(user)
@@ -169,7 +169,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Exit")
 			user.forceMove(get_turf(src.loc))
 			user.cancel_camera()
@@ -200,7 +200,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 /obj/structure/micro_tunnel/proc/tunnel_move_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	tunnel_move(A.request.answerer, A.answer.answer_value)
+	tunnel_move(A.request.answerer, A.answer.value)
 
 /obj/structure/micro_tunnel/proc/tunnel_move(mob/living/user, choice)
 	to_chat(user,span_notice("You begin moving..."))
@@ -209,7 +209,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 /obj/structure/micro_tunnel/proc/tunnel_eat_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	tunnel_eat(A.request.answerer, A.answer.answer_value)
+	tunnel_eat(A.request.answerer, A.answer.value)
 
 /obj/structure/micro_tunnel/proc/tunnel_eat(mob/living/user, mob/our_choice)
 	if(our_choice.loc != src)
@@ -395,7 +395,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 /obj/proc/micro_move_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	micro_move(A.request.answerer, A.answer.answer_value)
+	micro_move(A.request.answerer, A.answer.value)
 
 /obj/proc/micro_move(mob/living/user, choice)
 	var/list/contained_mobs = list()

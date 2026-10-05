@@ -370,15 +370,15 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	return install_upgrade(user, upgrade_arg, null)
 
 /datum/eventkit/modify_robot/proc/upgrade_reset_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value || !ispath(pending_upgrade))
+	if(!A.answer || !A.answer.value || !ispath(pending_upgrade))
 		return
 	install_upgrade(A.request.answerer, pending_upgrade, null)
 	SStgui.update_uis(src)
 
 /datum/eventkit/modify_robot/proc/upgrade_renamed(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value) || !ispath(pending_upgrade))
+	if(!A.answer || isnull(A.answer.value) || !ispath(pending_upgrade))
 		return
-	install_upgrade(A.request.answerer, pending_upgrade, A.answer.answer_value)
+	install_upgrade(A.request.answerer, pending_upgrade, A.answer.value)
 	SStgui.update_uis(src)
 
 /// Builds the upgrade and installs it in the target.
@@ -653,7 +653,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	var/datum/ai_law/AL = editing_law()
 	if(!A.answer || !AL || !(AL in ui_source_target_laws_all_laws()))
 		return
-	var/new_law = A.answer.answer_value
+	var/new_law = A.answer.value
 	if(new_law && new_law != AL.law)
 		AL.law = new_law
 		target().lawsync()

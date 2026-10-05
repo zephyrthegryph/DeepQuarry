@@ -89,7 +89,7 @@ DECLARE_INTERACTIONS(/obj/item/hand_labeler, INTERACT_USE(null, PROC_REF(interac
 
 /obj/item/hand_labeler/proc/label_configuration_apply(datum/act/request/A)
 	var/datum/prompt/text/hand_labeler_label/ask = A.answer
-	var/str = sanitizeSafe(ask.answer_value, MAX_NAME_LEN)
+	var/str = sanitizeSafe(ask.value, MAX_NAME_LEN)
 	if(!str || !length(str))
 		to_chat(ask.label_operator, span_warning("Invalid text."))
 		return TRUE

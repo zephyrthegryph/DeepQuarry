@@ -1140,27 +1140,27 @@ wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_be
   Thermoregulation, passive heat and prosthetic heating are the body's metabolic power (the old per-run kelvin steps as watts over one Life
   frame). How the body meets the room is "Body heat against the room" below.
 * **Test clock.** `test_time()` advances the heat network's edges with it (`vg_heat_net_advance`), so heat-flow pins use the kernel clock.
-* **Material batches** keep their own DM heat model; the proc is renamed `add_batch_heat()` so it is not mistaken for a gas write.
+* **Material science heat** moved onto Rust heat stores and links ("Material science heat" below).
 
 ## Body heat against the room (rewrite/heat-followups)
 
 Pins: `code/modules/unit_tests/dq_body_heat_behaviour.dm` (a human in a sealed 9×9 room whose air, floor and walls start at the room's
-temperature; Life's environment and thermoregulation stages once per 6 s frame, the native world stepping between frames). "Before" is the
+temperature; Life's environment and thermoregulation stages once per 6 s frame, the native world stepping 6 s of world time between frames). "Before" is the
 pre-heat code (f24504821c: the body relaxed toward a mixture that never warmed); "regressed" is the conserved heat domain as it first landed
 (43dce9c2bb), where the body met only its tile's ~2 kJ/K of air.
 
 | Case | Before (f24504821c) | Regressed (43dce9c2bb) | After |
 |---|---|---|---|
-| Unsuited, −50 °C room: body after 1 / 5 / 10 / 20 frames | 304.6 / 287.2 / 273.7 / 262.1 K (holds ~262.7 K) | 307.9 / 304.7 / 302.9 / 300.1 K | 303.1 / 285.9 / 273.4 / 265.3 K (room air 223 → 239 K) |
-| Unsuited, 400 K room: after 10 / 20 frames | 347.8 / 357.7 K | 318.2 / 321.2 K | 348.7 / 354.6 K |
-| Unsuited, 1000 K room: after 5 frames | 444 K (past 360 K at frame 2) | — | 519.7 K, burned |
+| Unsuited, −50 °C room: body after 1 / 5 / 10 / 20 frames | 304.6 / 287.2 / 273.7 / 262.1 K (holds ~262.7 K) | 306.2 / 301.7 / 300.7 / 299.6 K | 299.9 / 277.8 / 271.2 / 266.0 K (room air 223 → 240 K) |
+| Unsuited, 400 K room: after 10 / 20 frames | 347.8 / 357.7 K | 320.5 / 321.5 K | 350.7 / 354.6 K |
+| Unsuited, 1000 K room: after 5 frames | 444 K (past 360 K at frame 2) | 422.3 K | 589.5 K, burned |
 | Suited, in space: after 100 frames | 310.15 K | 309.6 K | 310.2 K |
-| Ten people in a 20 °C room for 50 frames | air unchanged (bodies never heated air) | +0.7 K in the room harness | bodies linked at 0 W/K, 0 W of metabolism, temperature unchanged |
+| Ten people in a 20 °C room for 50 frames | air unchanged (bodies never heated air) | bodies inert | bodies linked at 0 W/K, 0 W of metabolism, temperature unchanged |
 
 * **A body is linked to its surroundings, not to one tile of air.** Life's environment stage sets three couplings through clothing
   (`set_surroundings()`, `code/modules/heat/heat_mobs.dm`): convection at the old rate (`C·(1−protection)·density / (15 · 6 s)`, about
   3.1 kW/K bare) shared between its tile's air (coupling slot 0) and heat links to the air of the tiles open to it (the plume it stirs);
-  contact with the floor solid it stands on (`BODY_FLOOR_CONDUCTANCE`, 6 kW/K bare) and with each wall beside it (30 % of that); and, in
+  contact with the floor solid it stands on (`BODY_FLOOR_CONDUCTANCE`, 4 kW/K bare) and with each wall beside it (30 % of that); and, in
   space or below a tenth of a standard cell's moles, a radiative link to the 2.7 K sky over `HUMAN_EXPOSED_SURFACE_AREA × (1 − cold
   protection)`. Before the fix the body could give a −50 °C room only what one tile of air held, so the tile warmed to the body's temperature
   in seconds and the comfort gate shut.
@@ -1177,6 +1177,39 @@ pre-heat code (f24504821c: the body relaxed toward a mixture that never warmed);
   within 2 K.
 * **`dq_extreme_cold_damages_human` is a plain cold room again**: a sealed room of 50 K nitrogen (air, floor and walls), no stand-in cold
   mass.
+
+## Material science heat (rewrite/heat-followups)
+
+Pins: `code/modules/unit_tests/dq_material_heat_behaviour.dm` (green on the DM model first) and the existing `dq_material_*` tests. An
+assembly's material service and a processed batch hold their heat in a Rust heat store (`code/domains/heat/heat_store.dm`: a heat body kept by
+handle, with the thermal stock's phase plateau) and move it through heat links Rust integrates every world step. The DM exchange maths
+(`exchange_with_gas()`, the ambient exchange in `advance()`, `convert_transferred_heat()`, the stock's 8 % step) is deleted.
+
+| Case | Before (DM model) | After (heat store and links) |
+|---|---|---|
+| A cell's assembly at 400 K in a sealed room, 30 s | 382.4 K; lost 63 454 J, air +56 213 J | 381.7 K; lost 65 905 J, air +52 180 J (the rest in the floor) |
+| A thermoelectric cell from 500 K, 30 s | charge 49.9, 465.4 K | charge 50.3, 464.0 K |
+| A batch given 100 K of heat | +100 K | +100 K |
+| Hot stock (900 K steel) cooling, 2 s steps: steps 1 / 10 / 30; stops glowing | 851.5 / 556.8 / 342.9 K; after 58 steps | 900 / 580.1 / 348.9 K (its link is made at the first step); after 59 steps |
+| A canister (600 K nitrogen inside), 30 s | shell and contents unchanged: the service retired after its first sample | shell 293 → 372 K, contents 600 → 516 K; energy conserved |
+
+* **The service's heat** is its store: `temperature()` and `buffer_energy()` read it, `add_heat(joules, source)` books into it. It is linked to
+  its turf's air through its exterior (`construction_thermal_conductance(0.1, 0.004, T)`) and to the gas it holds through its wall (the
+  pipelines a pipe machine's ports are in, a vessel's mixture), each sample bringing the conductances to its temperature. An exothermic stock is
+  the store's power. A thermoelectric cell's exterior is a heat engine (capped at Carnot); its work is paid into the cell each sample, and what a
+  full cell cannot take goes back into the assembly as heat. A retiring service gives what it holds over its air's temperature to the air first.
+* **A canister's shell now meets its contents.** Before, a service woken only by hot contents found nothing to do on its first sample (no time
+  had passed) and retired, so the shell never warmed; a link moves the heat whether or not the sample runs.
+* **Batches** hold a store only while they differ from their surroundings (`temperature()`, `set_temperature()`, `add_batch_heat(joules,
+  source)`); at rest they read their rest temperature. Copies carry their share; merging two portions meets them at their common temperature
+  (`heat_equalize`) before the merged batch takes both capacities. A material's batch template holds no heat (it is a definition).
+* **Process steps book their heat.** Casting (to 20 °C + 80 K) and quenching (to 20 °C) give the heat to the mould and the bath, booked as
+  leaving under `HEAT_SOURCE_MATERIAL`; electric heating is `HEAT_SOURCE_DEVICE`, emitter shots `HEAT_SOURCE_WEAPON`.
+* **The furnace's hot chamber no longer heats a charge for free.** It brought the charge to the chamber's temperature with no energy taken from
+  the chamber; now the two meet at their common temperature and the furnace's electric heating supplies the rest (it draws more power).
+* **A pressure wall without a service** (`process_material_environment()`) conducts through `heat_conduct()`, the exact pair solution in Rust.
+* **Precision.** The heat crosses to DM as f32: the conservation pins compare to a millionth of the assembly's energy and a buffer to a tenth
+  of a millikelvin's worth, not to 0.01 J.
 
 ## Missing forms: the DNA modifier console's window
 
@@ -1259,6 +1292,46 @@ first: no click reached the legacy `wrench_act()`).
   delete is a requirement (its access, or emagged) instead of a check inside the effect, and an index with no entry is refused. The traffic
   console keeps its legacy form; its network and status line now live on the console base.
 - Magic numbers are named in `code/__defines/radio.dm` (TCOMMS_*).
+
+## Fabrication: the autolathe, the R&D production machines and the exosuit fabricators (rewrite/machines-full)
+
+The autolathe, the protolathe (and the department protolathes), the circuit imprinter and the exosuit and prosthetics fabricators share one
+library capability, `fabricator()` (code/library/machine/fabricator.dm): the print button, its refusals, the print run, where prints drop, the
+store's sheets button and item intake, and examine. A machine built from a board takes `board_machine()`, a dismantle graph (behind the open
+panel a crowbar takes it apart into the frame, its board and its parts), in place of `maintenance_flags`. Behaviour tests:
+`dq_mf_fab_behaviour.dm` (written green on the legacy code first).
+
+- **Refusals are requirements, told to the person who pressed.** One run at a time, a design the machine knows (a hacked design only while
+  hacked: the legacy protolathe built a hacked design it did not show), a design of its build type, every material slot filled, the store
+  not on hold and the materials for the whole run. The legacy lathes said these aloud (`atom_say()`) from inside the effect and returned;
+  nothing about the materials is spent either way.
+- **The print run** is a keyed timer chain on the machine (`fabricator.print`) owning its run record, not an OM task (autolathe) or a
+  DECLARE_REPEAT over loose vars (protolathe). It stops, and says why aloud as before, when the machine stops working (any reason: the
+  protolathe used to keep printing while EMPed or broken), the power draw fails, the store goes on hold or the materials run out.
+- **Where prints drop.** A drag of the machine onto a tile (by someone standing next to it, never while it prints) points it there; alt-click
+  forgets it (the protolathe's examine always promised this; only the autolathe had it). One rule for every lathe: a blocked tile, wall or
+  not, sends the print onto the machine's own tile (the protolathe dropped onto any dense floor that was not a wall). The exosuit fabricator
+  keeps its own rule (a blocked exit holds the part) and has no reset.
+- **The panel.** `panel()` with the wires behind it: a hand, wirecutters or a multitool at the open panel reach the wires (the autolathe's
+  cutters and multitool did not, the legacy tool overrides never ran under the router), and the screwdriver that opens the panel shows the
+  wires as before. The autolathe's panel does not open while it prints. The R&D machines' wrench (2 seconds, the panel shut) is `anchor()`.
+- **The exosuit and prosthetics fabricators now have a panel and come apart with a crowbar** into their frame and board (they had a board and
+  a panel sprite but no maintenance at all).
+- **The store.** An item used on a shut machine goes through the store's own use gate (sheets in, a sheet snatcher, a multitool on a silo
+  link), as the legacy attackby fall-through did; the panel's tools are not fed to it. The autolathe now takes sheets while it prints (the
+  protolathe always did).
+- **The exosuit fabricator's queue** runs on a part timer (`exofab_part`) instead of a polling machine step on `world.time`: the queue starts
+  when it is started. Stopping the queue mid-part lets that part finish and drop (the legacy step stopped looking at a part once the queue
+  was stopped, so it hung until the queue was started again). A part held for a blocked exit makes the queue wait for it (the legacy queue
+  went on and a second held part replaced the first). Better parts rescale the part under way, as before.
+- **The prosthetics fabricator's** species and manufacturer questions are `asks()` of their ops (the setting was applied only when the legacy
+  window was still interactive). Its limb and species disks are timed ops whose corrupted-disk refusal is a requirement.
+- **The window.** The autolathe and the fabricator declare their data's shape (`ui_shape()`, typed for TypeScript); the window shuts while
+  the disable wire holds (as the legacy `tgui_status()` did) and its buttons are refused. A touch on a shut autolathe whose shock wire is
+  live shocks (half the time) instead of opening the window, as before.
+- Examine lines come from the capability (material cost, drop direction) and are shown at any range; the autolathe no longer says its panel
+  is closed.
+
 ## Pipe devices: pumps, the regulator and the valves (rewrite/pipenet-full)
 
 Pinned by `dq_atmos_m/pipes/*` in `code/modules/unit_tests/dq_atmos_pipes_behaviour.dm`. The shared controls are `pipe_device_window()`,
@@ -1300,3 +1373,28 @@ Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
 - **The connector has no work of its own.** Its periodic step, its gas watch on the attached device and its MACHINE_WAKE/MACHINE_SLEEP from the
   portables are gone: the attached device's gas is a port in the network's Rust region, so nothing in DM needs to hear it change. Its wrench is
   `pipe_device_unwrench()`, refused while a device is attached or any portable stands on it (the latter used to fail silently).
+
+## The outlet injector (rewrite/pipenet-full)
+
+- **Its flow is a Rust device edge** (`push_to_rust()`, like the vent): `volume_rate` litres a second of its pipe's gas forced into its turf while
+  it is piped, powered and on. Its DM machine step, its pump queue and the unary gas wake are gone; power_rating is what it draws, not a cap.
+- **Controls are ops**: the hand toggle, the ctrl-click rate reset (only on a running injector away from its default), the multitool through
+  `multitool_settings()` (tag, frequency, buffer; the `atmos_config_review` prompt chain is deleted), the wrench (`pipe_device_unwrench()`).
+  A radio "inject" runs at once instead of in a `spawn`.
+
+## Heater and freezer; the unary base's wake machinery is gone (rewrite/pipenet-full)
+
+- **Heater and freezer work on `every(when = heating/cooling)`**, armed by their gas watch (`gas_watch()` on `air_contents`), their switch, their
+  thermostat (`set_temperature` is tracked) and power changes (`reconsider()`); nothing polls and nothing calls MACHINE_WAKE. The heat itself is
+  the thermal domain's `heat_pump` entry, as before. Their RPED is `part_replacement()`; the window opened by a hand is `interface()` alone (the
+  legacy ungated `open_ui` interaction is gone).
+- **The unary base** loses `register_gas_dependencies()`/`gas_wake_condition()`/`wake_from_gas()`/`invalidate_gas_dependencies()`, its
+  `set_use_power`/`Moved` overrides, `step_has_work()`/`arm_wakes()` and the OM_FIELD_VIEW on `node` (now a plain `ref_one` relation);
+  `piped()` is its one reader. No unary device is DM-stepped any more.
+- `dq_hc_struct/cryo_cell_is_switched_through_the_window` read the cryo cell's old `on` var; it reads `cooling` (the cryo migration's state).
+
+## Dual-port vent and heat exchanger (rewrite/pipenet-full)
+
+- The dual-port vent's settings are plain `TRACKED` (no CHANGE_MACHINE_SETTINGS bridge: nothing DM-steps it), its look is `draw(look)` (it now
+  reads `operable()` for "off" where it read the area's `powered()`), and its gauge is an `examine_line()`.
+- The heat exchanger's wrench is `pipe_device_unwrench()` with its floor check as a requirement (4 s, as before).

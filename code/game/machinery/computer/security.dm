@@ -453,7 +453,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		active1().fields["photo-west"] = "'data:image/png;base64,[icon2base64(photo)]'"
 
 /obj/machinery/computer/secure_data/proc/record_notes_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/record_notes_delete/R = A.request
 	set_record_notes(R.record, "")

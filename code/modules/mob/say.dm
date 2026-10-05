@@ -569,7 +569,7 @@
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 
@@ -584,7 +584,7 @@
 /mob/proc/custom_subtle_picked(datum/act/request/A)
 	var/datum/prompt/choice/custom_subtle/ask = A.request
 	if(!A.answer)
-		if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value) && ask.emote_text && !QDELETED(ask.answerer))
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.value) && ask.emote_text && !QDELETED(ask.answerer))
 			to_chat(ask.answerer, span_warning("Nothing was picked. Your input has not been sent, but preserved:") + " [ask.emote_text]")
 		return
 	return custom_subtle_pick_apply(A)
@@ -592,9 +592,9 @@
 /mob/proc/custom_subtle_pick_apply(datum/act/request/A)
 	var/datum/prompt/choice/custom_subtle/ask = A.answer
 	if(ask.subtle_mode)
-		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.subtle_mode, ask.answer_value)
+		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.subtle_mode, ask.value)
 	else
-		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.answer_value)
+		custom_emote_vr(ask.m_type, ask.emote_text, FALSE, ask.value)
 
 /mob/proc/custom_subtle_text_entered(datum/act/request/A)
 	if(!A.answer)
@@ -603,7 +603,7 @@
 
 /mob/proc/custom_subtle_text_apply(datum/act/request/A)
 	var/datum/prompt/text/custom_subtle/ask = A.answer
-	var/text = sanitize_or_reflect(ask.answer_value, src)
+	var/text = sanitize_or_reflect(ask.value, src)
 	if(text)
 		custom_emote_vr(ask.m_type, text, FALSE, ask.subtle_mode)
 
@@ -889,7 +889,7 @@
 /mob/proc/speech_bubble_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_speech_bubble = A.answer.answer_value
+	var/new_speech_bubble = A.answer.value
 	if(new_speech_bubble)
 		custom_speech_bubble = new_speech_bubble
 		if(dna)

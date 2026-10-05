@@ -420,7 +420,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 /datum/tgui_module/ship/fullmonty/proc/speedlimit_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newlimit = A.answer.answer_value
+	var/newlimit = A.answer.value
 	if(newlimit)
 		speedlimit = CLAMP(newlimit/1000, 0, 100)
 	. = TRUE
@@ -432,7 +432,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 /datum/tgui_module/ship/fullmonty/proc/accellimit_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newlimit = A.answer.answer_value
+	var/newlimit = A.answer.value
 	if(newlimit)
 		accellimit = max(newlimit/1000, 0)
 	. = TRUE
@@ -486,7 +486,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 /datum/tgui_module/ship/fullmonty/proc/set_global_limit_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newlim = A.answer.answer_value
+	var/newlim = A.answer.value
 	linked().thrust_limit = clamp(newlim/100, 0, 1)
 	for(var/datum/ship_engine/E in linked().engines)
 		E.set_thrust_limit(linked().thrust_limit)
@@ -537,7 +537,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 /datum/tgui_module/ship/fullmonty/proc/range_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/nrange = A.answer.answer_value
+	var/nrange = A.answer.value
 	if(nrange)
 		sensors().set_range(CLAMP(nrange, 1, world.view))
 	. = TRUE

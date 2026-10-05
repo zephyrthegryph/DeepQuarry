@@ -377,7 +377,7 @@ CAPABILITIES(/datum/p2_panel)
 
 /obj/item/p2_asker_item/proc/answered(datum/act/request/A)
 	handled++
-	seen_answer = A.answer?.answer_value
+	seen_answer = A.answer?.value
 	return OP_OK
 
 // ---- a machine's hand gate ----

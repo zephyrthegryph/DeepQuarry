@@ -95,7 +95,7 @@
 /mob/living/simple_mob/proc/name_set_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newname = A.answer.answer_value
+	var/newname = A.answer.value
 	newname = sanitizeSafe(newname, MAX_NAME_LEN)
 	if(limit_renames && nameset)
 		return
@@ -113,7 +113,7 @@
 /mob/living/simple_mob/proc/desc_set_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newdesc = A.answer.answer_value
+	var/newdesc = A.answer.value
 	newdesc = sanitizeSafe(newdesc, MAX_MESSAGE_LEN)
 	if(newdesc)
 		desc = newdesc
@@ -127,7 +127,7 @@
 /mob/living/simple_mob/proc/gender_set_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newgender = A.answer.answer_value
+	var/newgender = A.answer.value
 	gender = newgender
 
 /mob/living/simple_mob/vore/aggressive

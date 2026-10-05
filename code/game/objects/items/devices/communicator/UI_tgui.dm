@@ -344,24 +344,24 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 /obj/item/communicator/proc/name_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_name = sanitizeSafe(A.answer.answer_value)
+	var/new_name = sanitizeSafe(A.answer.value)
 	if(new_name)
 		register_device(new_name)
 
 /obj/item/communicator/proc/ringtone_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		ttone = A.answer.answer_value
+	if(A.answer.value)
+		ttone = A.answer.value
 
 /obj/item/communicator/proc/note_entered(datum/act/request/A)
 	var/text
 	if(A.answer)
-		text = A.answer.answer_value
+		text = A.answer.value
 	else
 		// An accepted answer rejected by the usability recheck keeps its original value.
 		// An explicit cancel has none, including after an earlier refused submission.
-		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value) || QDELETED(A.request.answerer))
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.value) || QDELETED(A.request.answerer))
 			return
 		text = ""
 	var/n = sanitizeSafe(text, extra = 0)
@@ -379,7 +379,7 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 	var/datum/prompt/text/communicator/text_message/prompt = A.answer
 	var/mob/user = A.request.answerer
 	var/their_address = prompt.address
-	var/text = sanitizeSafe(A.answer.answer_value)
+	var/text = sanitizeSafe(A.answer.value)
 	if(!text || !get_connection_to_tcomms())
 		return
 	exonet.send_message(their_address, "text", text)

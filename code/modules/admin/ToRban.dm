@@ -100,7 +100,7 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 
 /datum/admin_verb/ToRban/proc/remove_address(datum/act/request/context)
 	var/client/user = context.request.answerer.client
-	var/choice = context.request.answer_value
+	var/choice = context.request.value
 	var/savefile/F = new(TORFILE)
 	if(choice)
 		F.dir.Remove(choice)
@@ -113,7 +113,7 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 
 /datum/admin_verb/ToRban/proc/find_address(datum/act/request/context)
 	var/client/user = context.request.answerer.client
-	var/input = context.request.answer_value
+	var/input = context.request.value
 	if(input)
 		if(ToRban_isbanned(input))
 			to_chat(user, span_filter_adminlog("[span_orange(span_bold("Address is a known ToR address"))]"))

@@ -26,7 +26,7 @@
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
 		return
-	var/new_data = sanitizeSafe(A.answer.answer_value, 1, 0, 0)
+	var/new_data = sanitizeSafe(A.answer.value, 1, 0, 0)
 	if(holder().check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data ? "new_data" : "NULL"] into the pin."))
 		write_data_to_pin(new_data)

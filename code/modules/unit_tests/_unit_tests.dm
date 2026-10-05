@@ -199,6 +199,7 @@
 #include "dq_heat_net_tests.dm"
 #include "dq_heat_machines_behaviour.dm"
 #include "dq_body_heat_behaviour.dm"
+#include "dq_material_heat_behaviour.dm"
 #include "dq_thermal_power_fixes_tests.dm"
 #include "dq_performance_diagnostics_tests.dm"
 #include "dq_audit_tests.dm"
@@ -488,6 +489,7 @@
 #include "dq_mf_turret_behaviour.dm"
 #include "dq_mf_console_behaviour.dm"
 #include "dq_mf_telecomms_behaviour.dm"
+#include "dq_mf_fab_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
 #include "dq_doors_full_behaviour.dm"
 #include "dq_paths_behaviour.dm"
@@ -880,7 +882,6 @@
 #include "interim_floorlayer_sticky_distinct_tile.dm"
 #include "interim_void_cell_sticky_mode_swap.dm"
 #include "interim_alien_cell_sticky_mode_swap.dm"
-#include "interim_autolathe_drop_actor.dm"
 #include "interim_mutant_event_growth_cleanup.dm"
 #include "interim_slime_extract_sticky_enhancer.dm"
 #include "interim_floor_lamp_sticky_shade.dm"
@@ -912,8 +913,6 @@
 #include "interim_glitch_illusion_death_cleanup.dm"
 #include "interim_bluespace_collar_sticky_cracking.dm"
 #include "interim_clipboard_sticky_pen_slot.dm"
-#include "interim_prosthetics_species_upload_refusal.dm"
-#include "interim_prosthetics_species_upload_consumption.dm"
 #include "interim_paper_supply_pickup_actor.dm"
 #include "interim_secure_crate_tamper_cleanup.dm"
 #include "interim_imperion_projectile_range_cleanup.dm"
@@ -1084,6 +1083,20 @@
 #include "round2_zorgoia_overlay_cache.dm"
 
 #include "round2_changeling_sting_continuation.dm"
+
+#include "round2_lion_cached_mane_parity.dm"
+
+#include "round2_silicon_album_delete.dm"
+
+#include "round2_photocopier_ai_photo.dm"
+
+#include "round2_grenade_timer_configuration.dm"
+
+#include "round2_glass_window_choice.dm"
+
+#include "round2_helm_navigation_entry.dm"
+
+#include "round2_matrix_active_colour.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

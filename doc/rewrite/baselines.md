@@ -79,7 +79,7 @@ Repeat it: `bash` with `tools/analyze/target/release/analyze.exe` built (`cargo 
 
 What ran: `tools/analyze` with the E5 semantic layer (`src/sem/`, three `sem/*` lints, two generators) against the same
 tree without it, 4 interleaved rounds each, Windows 11, other agents' builds running on the machine (so read the spread,
-not the digit). `bash tools/ci/check_ratchets.sh` is unchanged in shape and runs `analyze gen --check` after the lints.
+not the digit). `bash tools/ci/check_ratchets.sh` is unchanged in shape and runs `analyze gen --check` after the lints (since October 2026 it runs `analyze gen` before them: the output is not committed, doc/rewrite/agent_workflow.md).
 
 | Run (`analyze check --ci --lint -check_grep`) | Before (master) | After (E5) |
 |---|---|---|

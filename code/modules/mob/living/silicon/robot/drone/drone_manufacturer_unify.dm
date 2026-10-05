@@ -19,7 +19,7 @@
 	var/mob/answerer = A.request.answerer
 	if(QDELETED(answerer))
 		return
-	var/choice = A.answer ? A.answer.answer_value : ""
+	var/choice = A.answer ? A.answer.value : ""
 	if(choice)
 		drone_type = possible_drones[choice]
 	create_drone(answerer.client, TRUE)

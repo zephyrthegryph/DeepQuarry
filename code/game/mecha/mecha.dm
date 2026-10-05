@@ -620,7 +620,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		return
 	var/mob/user = A.request.answerer
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(!check_occupant_radial(user))
 		return
 	if(!choice)
@@ -2501,7 +2501,7 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 /obj/mecha/proc/exosuit_renamed(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newname = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	var/newname = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(newname)
 		name = newname
 	else
@@ -2537,8 +2537,8 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 /obj/mecha/proc/tank_valve_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		internal_tank_valve = A.answer.answer_value
+	if(A.answer.value)
+		internal_tank_valve = A.answer.value
 		to_chat(A.request.answerer, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
 
 /obj/mecha/proc/passenger_removal_chosen(datum/om/prompt/choice/mecha_remove_passenger/ask)

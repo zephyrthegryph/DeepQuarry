@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "a1e9a2c964bbeee1"
+#define VERDIGRIS_ABI "d7750d6d8d6e019f"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -991,6 +991,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(h, temperature)
 
+/// A body's heat, computed in `f64` before it crosses to DM: `list(temperature
+/// K, latent heat stored in its phase plateau J, energy J)`. The latent heat
+/// stored is `0` below the plateau and all of it above. Null if the body
+/// does not exist.
+// /proc/heat_body_state (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_body_state(h)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_state_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h)
+
 // /proc/heat_body_temperature (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_body_temperature(h)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_temperature_ffi")
@@ -1019,6 +1029,16 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_clear_turf_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
+
+/// Conducts between two reservoirs for `seconds` at `conductance` W/K in one
+/// conserved operation: the exact pair solution (never past equilibrium),
+/// as a one-off for a sample that covers a stretch of time. Returns the
+/// joules moved from the first to the second.
+// /proc/heat_conduct (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_conduct(a_kind, a_ref, b_kind, b_ref, conductance, seconds)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_conduct_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, conductance, seconds)
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan-Boltzmann constant,
 /// default emissivity, seconds per heat frame, normal body temperature,

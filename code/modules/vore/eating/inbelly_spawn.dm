@@ -37,7 +37,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		return
 	var/datum/inbelly_spawn_review/review = owner
 	// Most old No answers stopped before the flow's captured-state recheck.
-	return answer_value == FALSE && !accept_no ? null : review.why_not()
+	return value == FALSE && !accept_no ? null : review.why_not()
 
 /datum/prompt/choice/inbelly_spawn
 	timeout = 0
@@ -46,7 +46,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/datum/inbelly_spawn_review/review = owner
@@ -79,7 +79,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(QDELETED(actor) || (R.answerer_expected && QDELETED(R.answerer)))
 		stopped("gone")
 		return
-	stopped(isnull(R.answer_value) ? "cancelled" : R.last_error)
+	stopped(isnull(R.value) ? "cancelled" : R.last_error)
 
 /datum/inbelly_spawn_review/proc/start_step()
 	stage = "accept"
@@ -92,7 +92,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!A.answer)
 		failed_answer(A.request)
 		return
-	if(A.request.answer_value == FALSE)
+	if(A.request.value == FALSE)
 		stopped("declined")
 		return
 	var/client/prey = prey_client()
@@ -107,7 +107,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!A.answer)
 		failed_answer(A.request)
 		return
-	rel_set(src, nameof(belly), A.request.answer_value)
+	rel_set(src, nameof(belly), A.request.value)
 	if(QDELETED(belly))
 		stopped("gone")
 		return
@@ -122,7 +122,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!A.answer)
 		failed_answer(A.request)
 		return
-	if(A.request.answer_value == FALSE)
+	if(A.request.value == FALSE)
 		stopped("declined")
 		return
 	run_step(PROC_REF(ask_absorbed))
@@ -137,10 +137,10 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 /datum/inbelly_spawn_review/proc/absorbed_picked_step(datum/act/request/A)
 	if(!A.answer)
 		// Old cancel_answer No was delivered and resumed with a live captured-state check.
-		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value) || why_not())
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.value) || why_not())
 			stopped("gone")
 			return
-	absorbed = A.answer ? A.request.answer_value : FALSE
+	absorbed = A.answer ? A.request.value : FALSE
 	stage = "sure"
 	open_request(src, /datum/prompt/yes_no/inbelly_spawn, PROC_REF(pred_sure), answerer = actor, asker = actor, question = "Are you certain that you want [prey_name] spawned in your [belly][absorbed ? ", absorbed" : ""]?")
 
@@ -151,7 +151,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!A.answer)
 		failed_answer(A.request)
 		return
-	if(A.request.answer_value == FALSE)
+	if(A.request.value == FALSE)
 		stopped("declined")
 		return
 	to_chat(actor, span_notice("Waiting for prey's confirmation..."))
@@ -170,7 +170,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!A.answer)
 		failed_answer(A.request)
 		return
-	if(A.request.answer_value == FALSE)
+	if(A.request.value == FALSE)
 		stopped("declined")
 		return
 	var/client/prey = prey_client()
@@ -275,7 +275,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/soulcatcher_admission/ask = context.answer
-	soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.answer_value)
+	soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.value)
 	SStgui.update_uis(src)
 
 /mob/living/proc/soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, req_time, selected)
@@ -307,7 +307,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/soulcatcher_admission/ask = context.answer
-	nif_soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.answer_value)
+	nif_soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.value)
 	SStgui.update_uis(src)
 
 /mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, req_time, selected)

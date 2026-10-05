@@ -1,8 +1,15 @@
 TRACKED(/obj/machinery/atmospherics/unary/heater, pumping)
+TRACKED(/obj/machinery/atmospherics/unary/heater, heating)
+TRACKED(/obj/machinery/atmospherics/unary/heater, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	// A resistive heater on its pipeline's gas toward the thermostat: one joule of heat per joule drawn.
 	when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_HEAT, TRUE))
+	gas_watch(air = nameof(air_contents), changed = PROC_REF(gas_changed))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(service)), when = nameof(heating))
+	on_change(nameof(use_power), ANY, then(PROC_REF(reconsider)))
+	on_change(nameof(set_temperature), ANY, then(PROC_REF(reconsider)))
+	part_replacement()
 	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
 	interface("GasTemperatureSystem")
 	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
@@ -38,7 +45,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	/// TRUE while it heats: its heater exists exactly while this is set.
 	var/pumping = FALSE
 	var/reagent_cooling = 0
-	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
 DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 
@@ -80,52 +86,34 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/heater, "appearance_heater_
 ))
 
 
-/// The heater (its CAPABILITIES entry) heats the loop in Rust; the step pays its work, uses up coolant and shows what it does.
-/obj/machinery/atmospherics/unary/heater/machine_step()
-	..()
+// ---- its work: woken by its gas, its switch and its thermostat; nothing polls ----
 
-	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
-	if(!operable() || !use_power)
-		heating = 0
-		set_pumping(FALSE)
-		update_icon()
-		register_gas_dependencies()
-		return PROCESS_KILL
+/// Its pipe's gas changed (its gas watch): it looks again whether it has work.
+/obj/machinery/atmospherics/unary/heater/proc/gas_changed(list/observation, index)
+	reconsider()
 
-	set_pumping(TRUE)
-	if(network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
-		use_power(-heat_entries_power(src))
-		reagents.remove_any(REAGENT_COOLING_CONSUMED)
-		heating = 1
-	else
-		heating = 0
-		register_gas_dependencies()
-		update_icon()
-		return PROCESS_KILL
-
+/// What it does now: the heater (its CAPABILITIES entry) exists while it is switched on and works; it heats while its loop's gas is below the
+/// thermostat.
+/obj/machinery/atmospherics/unary/heater/proc/reconsider(datum/act/A)
+	var/on = !!(operable() && use_power)
+	set_pumping(on)
+	set_heating(on && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
 	update_icon()
-	return 1
 
-/// Eligibility rule for waking from gas (unary_base.dm register_gas_dependencies()): the same
-/// test process() makes before it heats anything.
-/obj/machinery/atmospherics/unary/heater/gas_wake_condition()
-	return use_power && operable() && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature
+/// One interval of heating: it pays its work and uses up coolant (the heat itself moves in Rust).
+/obj/machinery/atmospherics/unary/heater/proc/service(datum/act/A)
+	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
+	use_power(-heat_entries_power(src))
+	reagents.remove_any(REAGENT_COOLING_CONSUMED)
+	reconsider()
 
 /obj/machinery/atmospherics/unary/heater/power_change()
 	. = ..()
 	if(.)
-		// machine_step() sleeps on NOPOWER; a power transition is a dependency change.
-		invalidate_gas_dependencies()
+		reconsider()
 
 /obj/machinery/atmospherics/unary/heater
 	silicon_use = SILICON_USE_UI
-
-/obj/machinery/atmospherics/unary/heater/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
 
 /obj/machinery/atmospherics/unary/heater/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -161,8 +149,6 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/heater, "appearance_heater_
 
 /obj/machinery/atmospherics/unary/heater/proc/ui_act_togglestatus(datum/act/op/A)
 	set_use_power(!use_power)
-	add_fingerprint(A.actor)
-	invalidate_gas_dependencies()
 	return OP_OK
 
 /obj/machinery/atmospherics/unary/heater/proc/ui_act_setgastemperature(datum/act/op/A, temp)
@@ -170,21 +156,17 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/heater, "appearance_heater_
 	. = TRUE
 	var/amount = temp
 	if(amount > 0)
-		set_temperature = min(amount, max_temperature)
+		set_set_temperature(min(amount, max_temperature))
 	else
-		set_temperature = max(amount, 0)
-	add_fingerprint(user)
-	if(.)
-		invalidate_gas_dependencies()
+		set_set_temperature(max(amount, 0))
+	reconsider()
 
 /obj/machinery/atmospherics/unary/heater/proc/ui_act_setpower(datum/act/op/A, value)
 	var/mob/user = A.actor
 	. = TRUE
 	var/new_setting = between(0, value, 100)
 	set_power_level(new_setting)
-	add_fingerprint(user)
-	if(.)
-		invalidate_gas_dependencies()
+	reconsider()
 
 //upgrading parts
 /obj/machinery/atmospherics/unary/heater/RefreshParts()

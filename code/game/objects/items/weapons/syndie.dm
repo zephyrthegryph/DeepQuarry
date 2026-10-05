@@ -110,7 +110,7 @@ CAPABILITIES(/obj/item/syndie/c4explosive)
 	if(!lit || !detonator_mode)
 		return
 	var/mob/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Press the button.")
 			to_chat(user, span_warning("You press the button."))
 			icon_state = "[base_state]click"

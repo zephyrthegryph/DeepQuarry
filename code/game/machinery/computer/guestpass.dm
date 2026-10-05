@@ -64,7 +64,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 	return istype(user) && loc == user && !user.incapacitated()
 
 /obj/item/card/id/guest/proc/deactivation_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/user = A.request.answerer
 	if(icon_state != "guest-invalid")

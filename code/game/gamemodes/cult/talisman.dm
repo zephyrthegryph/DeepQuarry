@@ -85,7 +85,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/talisman_chant/ask = context.answer
-	var/rune = ask.choices[ask.answer_value]
+	var/rune = ask.choices[ask.value]
 	if(rune && uses > 0)
 		imbue_rune(ask.answerer, rune)
 

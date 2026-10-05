@@ -134,7 +134,7 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_set_codes)
 	SStgui.update_uis(src)
 
 /datum/tgui/proc/shuttle_codes_entered(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
 	var/obj/machinery/computer/shuttle_control/console = src_object()
 	// The original virtual guard fingerprints and reports failures; it is an effect.
@@ -142,7 +142,7 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_set_codes)
 	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
 	if(request_recheck(A.request))
 		return
-	console.shuttle_codes_stage(src, A.request.answerer, TRUE, A.answer.answer_value)
+	console.shuttle_codes_stage(src, A.request.answerer, TRUE, A.answer.value)
 
 /datum/prompt/text/shuttle_docking_codes
 	question = "Input new docking codes"

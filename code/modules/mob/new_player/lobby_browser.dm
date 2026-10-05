@@ -153,7 +153,7 @@ UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
 	timeout = 0
 
 /mob/new_player/proc/observe_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	return observe_apply()
 

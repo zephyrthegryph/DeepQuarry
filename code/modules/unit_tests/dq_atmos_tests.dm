@@ -3849,7 +3849,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/final_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	var/body = H.body_temperature()
 	test_driver_end()
-	dq_atmos_test_restore_state()
+	body_heat_room_restore()
 
 	TEST_ASSERT(final_thermal > initial_thermal, 		"human took no thermal injury in a 50 K room ([body] K): [initial_thermal] → [final_thermal]")
 
@@ -4037,7 +4037,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	native_system().drain()
 	native_system().take_gas_changes()
 	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
-	V.register_gas_dependencies()
 	var/vent_wakes = V.gas_dependency_wake_count
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
@@ -4788,13 +4787,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!machine_stepping(algae_farm), "inactive algae farm remained scheduled")
 	var/obj/machinery/power/hydromagnetic_trap/magnetic_trap = new(T)
 	TEST_ASSERT(test_machine_idle(magnetic_trap), "fieldless hydromagnetic trap remained scheduled")
-	var/obj/machinery/atmospherics/unary/outlet_injector/outlet = new(T)
-	outlet.set_use_power(USE_POWER_OFF)
-	TEST_ASSERT(test_machine_idle(outlet), "switched-off outlet injector remained scheduled")
-	TEST_ASSERT(om_watch_armed(outlet), "outlet injector did not subscribe before sleeping")
-	var/outlet_wakes = outlet.machine_wake_count
-	outlet.set_use_power(USE_POWER_IDLE)
-	TEST_ASSERT(outlet.machine_wake_count > outlet_wakes, "enabling an outlet injector did not wake it")
 	// M2 (simulation.md §5): the passive gate's flow law is a Rust device
 	// edge stepped every gas tick from SSair, not a DM process() subscriber,
 	// so it is machine_stepping(never) regardless of state.
@@ -4994,8 +4986,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(conveyor_load)
 	qdel(conveyor)
 	qdel(conveyor_switch)
-	qdel(outlet)
-	TEST_ASSERT(!om_watch_armed(outlet), "deleted outlet injector remained in the sleeping gas-device registry")
 	var/obj/machinery/camera/network/engine/test_camera = new(T)
 	test_camera.update_coverage(1)
 	qdel(test_camera)
@@ -7605,28 +7595,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(R)
 	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
 
-	var/obj/machinery/atmospherics/unary/outlet_injector/O = new(T)
-	O.stat_remove(NOPOWER | BROKEN)
-	O.set_use_power(USE_POWER_IDLE)
-	O.air_contents.clear()
-	heat_set(O.air_contents, T20C, HEAT_SOURCE_OTHER)
-	O.register_gas_dependencies()
-	TEST_ASSERT(om_watch_armed(O, "gas"), "empty outlet injector did not arm its eligibility watch")
-	var/outlet_wakes = O.gas_dependency_wake_count
-	O.air_contents.adjust_moles(/datum/gas/oxygen, MINIMUM_MOLES_TO_PUMP / 10)
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
-	TEST_ASSERT_EQUAL(O.gas_dependency_wake_count, outlet_wakes, "a trace of gas below the pumping minimum woke an outlet injector")
-	TEST_ASSERT(om_watch_armed(O, "gas"), "the outlet injector woke by another path before its watch was tested")
-	O.air_contents.adjust_moles(/datum/gas/oxygen, 10)
-	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(O.gas_dependency_wake_count > outlet_wakes)
-			break
-		if(!(i % 256))
-			stoplag()
-	TEST_ASSERT_EQUAL(O.gas_dependency_wake_count, outlet_wakes + 1, "enough gas to pump did not wake the outlet injector exactly once")
-	qdel(O)
 
 /// Wake counting for the pipeline atmos devices: each parks on a watch that states when it can act
 /// (a display that would change, a filter with enough input), so a change it can't act on costs no

@@ -11,7 +11,7 @@
 /mob/proc/hive_range_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Global")
 			hive_lang_range = 0
 		if("This Z level")

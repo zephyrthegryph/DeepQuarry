@@ -132,4 +132,4 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 
 /obj/item/gun/launcher/confetti_cannon/robot/proc/party_payload_apply(datum/act/request/context)
 	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
-	return party_payload_stage(ask.settings_operator, ask.answer_value, TRUE)
+	return party_payload_stage(ask.settings_operator, ask.value, TRUE)

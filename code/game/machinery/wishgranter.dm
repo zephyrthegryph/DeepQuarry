@@ -50,7 +50,7 @@
 	if(!A.answer)
 		return
 	var/mob/living/carbon/human/user = A.request.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Power")
 			to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
 			to_chat(user, span_warning("The Wish Granter punishes you for your selfishness, claiming your soul."))

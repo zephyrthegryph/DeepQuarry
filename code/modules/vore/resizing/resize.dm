@@ -232,7 +232,7 @@
 /mob/living/proc/personal_mass_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	. = personal_mass_apply(A.answer.answer_value)
+	. = personal_mass_apply(A.answer.value)
 	SStgui.update_uis(src)
 	return .
 

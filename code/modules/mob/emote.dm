@@ -8,7 +8,7 @@
 /mob/proc/emote_dead_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/message = sanitize_or_reflect(A.answer.answer_value, src) // Reflect too long messages, within reason
+	var/message = sanitize_or_reflect(A.answer.value, src) // Reflect too long messages, within reason
 	if(message)
 		emote_dead(message)
 

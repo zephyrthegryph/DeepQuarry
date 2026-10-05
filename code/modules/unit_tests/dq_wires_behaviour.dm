@@ -422,6 +422,7 @@ GLOBAL_LIST_EMPTY(wires_test_opened)
 
 /// The adapter of a holder with wires, or null.
 /proc/wires_test(atom/H)
+	RETURN_TYPE(/datum/wires_test_adapter)
 	return wiring_of(H) ? new /datum/wires_test_adapter(H) : null
 
 /datum/wires_test_adapter/proc/cut_wire(wire, mob/user)

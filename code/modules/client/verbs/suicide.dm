@@ -116,7 +116,7 @@
 
 /mob/living/carbon/brain/proc/brain_suicide_apply(datum/act/request/A)
 	var/datum/prompt/choice/suicide_review/ask = A.answer
-	return brain_suicide_review(ask.answer_value)
+	return brain_suicide_review(ask.value)
 
 /mob/living/silicon/ai/proc/ai_suicide_answered(datum/act/request/A)
 	if(!A.answer)
@@ -126,7 +126,7 @@
 
 /mob/living/silicon/ai/proc/ai_suicide_apply(datum/act/request/A)
 	var/datum/prompt/choice/suicide_review/ask = A.answer
-	return ai_suicide_review(ask.answer_value)
+	return ai_suicide_review(ask.value)
 
 /mob/living/silicon/robot/proc/robot_suicide_answered(datum/act/request/A)
 	if(!A.answer)
@@ -136,7 +136,7 @@
 
 /mob/living/silicon/robot/proc/robot_suicide_apply(datum/act/request/A)
 	var/datum/prompt/choice/suicide_review/ask = A.answer
-	return robot_suicide_review(ask.answer_value)
+	return robot_suicide_review(ask.value)
 
 /datum/prompt/choice/suicide_review
 	timeout = 0

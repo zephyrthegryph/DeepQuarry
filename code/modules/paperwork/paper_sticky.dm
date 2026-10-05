@@ -189,4 +189,4 @@ EXTEND_INTERACTIONS(/obj/item/paper/sticky, INTERACT_HAND_DEFAULT("Pick up", PRO
 
 /obj/item/sticky_pad/proc/paperwork_sticky_write_apply(datum/act/request/A)
 	var/datum/prompt/text/paperwork_review/ask = A.answer
-	return paperwork_sticky_write_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+	return paperwork_sticky_write_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.value, TRUE)

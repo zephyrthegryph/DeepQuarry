@@ -135,7 +135,7 @@
 	return TRUE
 
 /obj/item/slimepotion/docility/proc/docility_name_entered(datum/act/request/A)
-	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+	if(isnull(A.request.value) || A.request.last_error == "gone")
 		return
 	SStgui.update_uis(src)
 	var/mob/living/M = A.request.subject
@@ -146,7 +146,7 @@
 		else if(A.request.last_error == "no brain")
 			to_chat(user, span_warning("\The [M] is too strongly willed for this to affect them."))
 		return
-	var/newname = copytext(A.answer.answer_value,1,MAX_NAME_LEN)
+	var/newname = copytext(A.answer.value,1,MAX_NAME_LEN)
 	if(newname && !QDELETED(M))
 		M.name = newname
 		M.real_name = newname
@@ -164,7 +164,7 @@
 /datum/prompt/text/slime_docility_name/recheck_extra()
 	if(QDELETED(owner) || QDELETED(answerer) || QDELETED(subject))
 		return "gone"
-	if(!isnull(answer_value))
+	if(!isnull(value))
 		var/mob/living/M = subject
 		if(M.stat == DEAD)
 			return "dead"

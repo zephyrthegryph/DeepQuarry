@@ -52,7 +52,7 @@
 	return TRUE
 
 /obj/machinery/syndicate_beacon/proc/beacon_offer_answered(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value == "Hang up")
+	if(!A.answer || A.answer.value == "Hang up")
 		return
 	var/mob/user = A.request.answerer
 	betraitor(user, user)

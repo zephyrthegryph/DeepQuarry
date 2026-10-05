@@ -1,3 +1,14 @@
+// The exosuit fabricator (doc/rewrite/final_api.html section 16, doc/rewrite/conversion_guide.md), and the prosthetics fabricator built on it.
+//
+// ONE CAPABILITIES list says what it is: a machine built from a board (behind the open panel a crowbar takes it apart: board_machine()), a
+// screwdriver panel, a part-replacer target (not while a part is made), a fabricator's store, drop rule, sheets button and examine (fabricator(),
+// without its print run: this machine builds a queue), and the window's queue buttons. The queue runs on timers: a part takes its build time
+// ("exofab_part"), drops out of the exit, and the next starts while the queue runs; a part whose exit is blocked is held and tried again every
+// second, and the queue waits for it. The imperative parts below are its own: the queue, the parts, the techweb designs, the window's data and
+// the look.
+
+MSG_DEF_SELF(exofab/processing, "It is currently processing! Please wait until completion.")
+
 /obj/machinery/mecha_part_fabricator_tg
 	icon = 'icons/obj/machines/robotics.dmi'
 	icon_state = "fab-idle"
@@ -7,7 +18,6 @@
 	density = TRUE
 	req_access = list(ACCESS_ROBOTICS)
 	circuit = /obj/item/circuitboard/mechfab
-	speed_process = TRUE
 
 	/// Type of designs to grab
 	var/fab_type = MECHFAB
@@ -18,16 +28,8 @@
 	var/list/queue_producer_accounts = list() // ALLOW(instance_list): d: kept index-parallel with queue (Cut() by index)
 	var/current_producer_account = 0
 
-
-	/// World time when the build will finish.
-	EXPIRY_DECLARE(build_finish)
-
-	/// World time when the build started.
-	EXPIRY_DECLARE(build_start)
-
 	/// The job ID of the part currently being processed. This is used for ordering list items for the client UI.
 	var/top_job_id = 0
-
 
 	/// Coefficient for the speed of item building. Based on the installed parts.
 	var/time_coeff = 1
@@ -53,40 +55,47 @@
 	/// Direction the produced items will drop (0 means on top of us)
 	var/drop_direction = SOUTH
 
+	/// The queue is being built, one part after another.
+	var/process_queue = FALSE
+	/// A finished part held because its exit was blocked.
+	var/obj/item/stored_part
+	/// The design of the part being made now.
+	var/datum/design_techweb/being_built
+	/// How long the part being made takes in all (its timer is "exofab_part").
+	var/part_time = 0
+
+TRACKED(/obj/machinery/mecha_part_fabricator_tg, process_queue)
+
 CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
-	op("clear_queue", ui_act(), then(PROC_REF(ui_act_clear_queue)))
-	op("stop_queue", ui_act(), then(PROC_REF(ui_act_stop_queue)))
-	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
+	machine_basics(repair = NONE, frame = board_machine())
+	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))
 	owns_one(nameof(rmat), /datum/remote_materials)
+	owns_one(nameof(stored_part), /obj/item, on_destroy = ON_DESTROY_SPILL)
+	panel()
+	extend("panel.open", wait(0))
+	part_replacement()
+	extend("part_replacement.replace", needs(req_is(FABRICATOR_PRINTING, FALSE, because = MSG(exofab/processing))))
+	fabricator(buildtypes = nameof(fab_type), efficiency = nameof(component_coeff), materials = nameof(rmat), print = FALSE, resets = FALSE, eject = TRUE)
+	examine_line(PROC_REF(status_text))
+	on_change(nameof(process_queue), ENTER, then(PROC_REF(queue_started)))
+	every(1 SECOND, then(PROC_REF(release_stored_part)), when = nameof(stored_part))
 
-/// The current design datum that the machine is building.
-/// Whether or not the machine is building the entire queue automagically.
-OM_FIELD(/obj/machinery/mecha_part_fabricator_tg, process_queue, FALSE, CHANGE_MACHINE_SETTINGS)
-/// Part currently stored in the Exofab (its exit was obstructed when it finished).
-OM_FIELD_VIEW(/obj/machinery/mecha_part_fabricator_tg, obj/item, stored_part, CHANGE_MACHINE_SETTINGS)
-/// Building the queue, or holding a finished part to dispense once the exit clears.
-OM_DERIVE_FIELD(/obj/machinery/mecha_part_fabricator_tg, fab_has_work, list("process_queue", "stored_part"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "fab_has_work")
-
-/obj/machinery/mecha_part_fabricator_tg/proc/fab_has_work()
-	return process_queue || stored_part
-
-/obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
+	section(window, "The window: the designs, the queue and its buttons")
+	interface("ExosuitFabricatorTg")
+	op("build", ui_act(arg("designs", list_of(schema_text(256))), arg("now", bool())), then(PROC_REF(ui_act_build)))
+	op("del_queue_part", ui_act(arg("index", int(1, 1000))), then(PROC_REF(ui_act_del_queue_part)))
+	op("clear_queue", ui_act(), then(PROC_REF(ui_act_clear_queue)))
+	op("build_queue", ui_act(), sets(nameof(process_queue), TRUE))
+	op("stop_queue", ui_act(), sets(nameof(process_queue), FALSE))
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
-	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
-	rel_set(src, nameof(rmat), new /datum/remote_materials( \
-		src, \
-		mapload, \
-		mat_container_events = list( \
-			(/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert) \
-		)))
+	// ALLOW(decl): mapload is a constructor argument of its store: only a machine the map places links to the ore silo
+	rel_set(src, nameof(rmat), new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert))))
 	available_designs = list()
 	illegal_local_designs = list()
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
-	update_icon()
 	if(!stored_research())
 		var/datum/techweb/connected_web
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
@@ -94,6 +103,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 	if(stored_research())
 		on_connected_techweb()
 
+/obj/machinery/mecha_part_fabricator_tg/proc/make_print_sound(current)
+	return new /datum/looping_sound/lathe_print(list(src), FALSE)
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research())
@@ -108,11 +119,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 	observe(stored_research(), /datum/notice/techweb_remove_design, src, then(PROC_REF(on_techweb_update)))
 	update_menu_tech()
 
+/// Designs come and go in bursts: one refresh two seconds after the first of them.
 /obj/machinery/mecha_part_fabricator_tg/proc/on_techweb_update(datum/act/notice/A)
-	EVENT_HANDLER
-
-	// We're probably going to get more than one update (design) at a time, so batch
-	// them together.
 	after(src, 2 SECONDS, PROC_REF(update_menu_tech), key = "mecha_fabricator_tech_menu")
 
 /obj/machinery/mecha_part_fabricator_tg/RefreshParts()
@@ -130,38 +138,17 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 	T = get_part_rating(/obj/item/stock_parts/manipulator) - 1
 	time_coeff = round(initial(time_coeff) - (initial(time_coeff)*(T))/5,0.01)
 
-	// Adjust the build time of any item currently being built.
-	if(being_built())
-		var/last_const_time = build_finish - build_start
-		var/new_const_time = get_construction_time_w_coeff(initial(being_built().construction_time))
-		var/const_time_left = build_finish - world.time
-		var/new_build_time = (new_const_time / last_const_time) * const_time_left
-		EXPIRY_SET(src, build_finish, new_build_time, CLOCK_WORLD)
+	// The part being made finishes as much sooner or later as the new parts make it.
+	if(being_built && part_time > 0)
+		var/new_time = get_construction_time_w_coeff(initial(being_built.construction_time))
+		var/left = after_left(src, "exofab_part")
+		after(src, round((new_time / part_time) * left), PROC_REF(part_finished), key = "exofab_part")
+		part_time = new_time
 
 	update_static_data_for_all_viewers()
 
-/obj/machinery/mecha_part_fabricator_tg/examine(mob/user)
-	. = ..()
-	if(in_range(user, src) || isobserver(user))
-		. += span_notice("The status display reads: Storing up to <b>[rmat.local_size]</b> material units.<br>Material consumption at <b>[component_coeff*100]%</b>.<br>Build time reduced by <b>[100-time_coeff*100]%</b>.")
-		. += span_notice("Currently configured to drop printed objects <b>[dir2text(drop_direction)]</b>.")
-
-/obj/machinery/mecha_part_fabricator_tg/MouseDrop(atom/over, src_location, over_location, src_control, over_control, params)
-	return choose_drop_with_actor(usr, over_location) // ALLOW(sys_usr_outside_verb): Native fabricator drag captures its actor before unchanged layout guards and notifications.
-
-/obj/machinery/mecha_part_fabricator_tg/proc/choose_drop_with_actor(mob/user, over_location)
-	if(!Adjacent(user))
-		return
-	if(isobserver(user) || user.is_incorporeal())
-		return
-	if(being_built())
-		balloon_alert(user, "cannot reorient whilst printing!")
-		return
-	var/direction = get_dir(src, over_location)
-	if(!direction)
-		return
-	drop_direction = direction
-	balloon_alert(user, "dropping [dir2text(drop_direction)]")
+/obj/machinery/mecha_part_fabricator_tg/proc/status_text(datum/act/A)
+	return span_notice("The status display reads: Storing up to <b>[rmat.local_size]</b> material units.<br>Material consumption at <b>[component_coeff*100]%</b>.<br>Build time reduced by <b>[100-time_coeff*100]%</b>.")
 
 /**
  * Updates the `final_sets` and `buildable_parts` for the current mecha fabricator.
@@ -187,23 +174,42 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 
 	update_static_data_for_all_viewers()
 
+// ---- the queue ----
+
+/// The queue was started: the first part begins unless one is being made or held.
+/obj/machinery/mecha_part_fabricator_tg/proc/queue_started(datum/act/A)
+	if(!being_built && !stored_part)
+		start_next()
+
+/// The next part of the queue begins; with nothing left (or nothing it can build) the queue stops.
+/obj/machinery/mecha_part_fabricator_tg/proc/start_next(verbose = TRUE)
+	var/turf/exit = get_step(src, drop_direction)
+	if(!exit || exit.density)
+		if(verbose)
+			atom_say("Warning. Exit port obstructed. Please clear obstructions or reorient machine, then retry.")
+		on_finish_printing()
+		return FALSE
+	if(!build_next_in_queue(verbose))
+		on_finish_printing()
+		return FALSE
+	on_start_printing()
+	return TRUE
+
 /**
  * Intended to be called when an item starts printing.
  *
- * Adds the overlay to show the fab working and sets active power usage settings.
+ * Sets active power usage settings.
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/on_start_printing()
-	add_overlay("fab-active")
 	set_use_power(USE_POWER_ACTIVE)
 	print_sound.start()
 
 /**
  * Intended to be called when the exofab has stopped working and is no longer printing items.
  *
- * Removes the overlay to show the fab working and sets idle power usage settings. Additionally resets the description and turns off queue processing.
+ * Sets idle power usage settings. Additionally resets the description and turns off queue processing.
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/on_finish_printing()
-	cut_overlay("fab-active")
 	set_use_power(USE_POWER_IDLE)
 	desc = initial(desc)
 	set_process_queue(FALSE)
@@ -261,49 +267,36 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 
 	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
 	being_built = D
+	cap_key_set(src, FABRICATOR_PRINTING, TRUE, null)
 	current_producer_account = producer_account
-	EXPIRY_SET(src, build_finish, get_construction_time_w_coeff(initial(D.construction_time)), CLOCK_WORLD)
-	EXPIRY_STAMP(src, build_start, CLOCK_WORLD)
+	part_time = get_construction_time_w_coeff(initial(D.construction_time))
+	after(src, part_time, PROC_REF(part_finished), key = "exofab_part")
 	desc = "It's building \a [D.name]."
+	update_icon()
 
 	return TRUE
 
-/obj/machinery/mecha_part_fabricator_tg/machine_step()
-	var/turf/exit = get_step(src, drop_direction)
-	if(!exit)
+/// The part is made: it drops out (or is held for a blocked exit), and the queue goes on while it runs and nothing is held.
+/obj/machinery/mecha_part_fabricator_tg/proc/part_finished()
+	if(!being_built)
 		return
-	// If there's a stored part to dispense due to an obstruction, try to dispense it.
-	if(stored_part)
-		if(exit.density)
-			return TRUE
-
-		atom_say("Obstruction cleared. The fabrication of [stored_part] is now complete.")
-		stored_part.forceMove(exit)
-		own_take(src, nameof(stored_part))
-
-	if(!process_queue)
-		return
-
-	// If there's nothing being built, try to build something
-	if(!being_built())
-		// First, check if it's safe to actually print anything; if not, abort now!
-		if(exit.density)
-			atom_say("Warning. Exit port obstructed. Please clear obstructions or reorient machine, then retry.")
-			set_process_queue(FALSE)
-			return
-		// If we're not processing the queue anymore or there's nothing to build, end processing.
-		if(!process_queue || !build_next_in_queue())
+	dispense_built_part(being_built)
+	if(process_queue && !stored_part)
+		if(!build_next_in_queue(FALSE))
 			on_finish_printing()
-			return TRUE
-		on_start_printing()
+	else if(!process_queue)
+		on_finish_printing()
 
-	// If there's an item being built, check if it is complete.
-	if(being_built() && (ELAPSED(src, build_finish, CLOCK_WORLD) > 0))
-		// Then attempt to dispense it and if appropriate build the next item.
-		dispense_built_part(being_built())
-		if(process_queue)
-			build_next_in_queue(FALSE)
-		return TRUE
+/// A held part tries its exit again: once it is clear the part drops out and the queue goes on.
+/obj/machinery/mecha_part_fabricator_tg/proc/release_stored_part(datum/act/A)
+	var/turf/exit = get_step(src, drop_direction)
+	if(!stored_part || !exit || exit.density)
+		return
+	atom_say("Obstruction cleared. The fabrication of [stored_part] is now complete.")
+	var/obj/item/part = own_take(src, nameof(stored_part))
+	part.forceMove(exit)
+	if(process_queue && !being_built)
+		start_next(FALSE)
 
 /**
  * Dispenses a part to the tile infront of the Exosuit Fab.
@@ -319,6 +312,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 	current_producer_account = 0
 
 	being_built = null
+	cap_key_set(src, FABRICATOR_PRINTING, FALSE, null)
+	part_time = 0
+	update_icon()
 
 	var/turf/exit = get_step(src, drop_direction)
 	if(exit.density)
@@ -381,21 +377,13 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 /obj/machinery/mecha_part_fabricator_tg/proc/get_construction_time_w_coeff(construction_time, roundto = 1) //aran
 	return round(construction_time*time_coeff, roundto)
 
+// ---- the window ----
+
 /obj/machinery/mecha_part_fabricator_tg/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials),
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	)
-
-/obj/machinery/mecha_part_fabricator_tg/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/mech_fabricator_guard,
-		/datum/interaction/machine_item/mech_fabricator_part_replace,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-DECLARE_UI(/obj/machinery/mecha_part_fabricator_tg, "ExosuitFabricatorTg")
 
 /obj/machinery/mecha_part_fabricator_tg/tgui_static_data(mob/user)
 	var/list/data = ..()
@@ -431,23 +419,20 @@ DECLARE_UI(/obj/machinery/mecha_part_fabricator_tg, "ExosuitFabricatorTg")
 
 	return data
 
-UI_DATA_REPLACE(/obj/machinery/mecha_part_fabricator_tg, "processing=process_queue:num", "merge:ui_data_obj_machinery_mecha_part_fabricator_tg{materials:list,queue:list}")
+/obj/machinery/mecha_part_fabricator_tg/ui_data(datum/act/eval/A)
+	var/list/data = list("processing" = process_queue)
 
-/// The computed part of /obj/machinery/mecha_part_fabricator_tg's window data (declared on its UI_DATA row).
-/obj/machinery/mecha_part_fabricator_tg/proc/ui_data_obj_machinery_mecha_part_fabricator_tg(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
-	var/list/material_data =rmat.mat_container()?.material_list_data(user)
+	var/list/material_data = rmat.mat_container()?.material_list_data(A.actor)
 	if(material_data)
 		data["materials"] = material_data
 	data["queue"] = list()
 
-	if(being_built())
+	if(being_built)
 		data["queue"] += list(list(
 			"jobId" = top_job_id,
-			"designId" = being_built().id,
+			"designId" = being_built.id,
 			"processing" = TRUE,
-			"timeLeft" = (build_finish - world.time)
+			"timeLeft" = after_left(src, "exofab_part"),
 		))
 
 	var/offset = 0
@@ -464,15 +449,13 @@ UI_DATA_REPLACE(/obj/machinery/mecha_part_fabricator_tg, "processing=process_que
 
 	return data
 
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "build", ui_act_build, UI_ARG_LIST("designs"), UI_ARG_BOOL("now"))
-UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build)
-	. = TRUE
-	var/designs = params["designs"]
-	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+/// The window's designs go on the queue (only ones it knows and makes); `now` starts it.
+/obj/machinery/mecha_part_fabricator_tg/proc/ui_act_build(datum/act/op/A, designs, now)
+	var/obj/item/card/id/producer_id = A.actor?.GetIdCard()
 	var/producer_account = producer_id?.associated_account_number || 0
 
 	if(!islist(designs))
-		return
+		return OP_REFUSED
 
 	for(var/design_id in designs)
 		if(!istext(design_id))
@@ -488,90 +471,35 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build)
 
 		add_to_queue(design, producer_account)
 
-	if(params["now"])
-		if(process_queue)
-			return
-
+	if(now)
 		set_process_queue(TRUE)
-	return
+	return OP_OK
 
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "del_queue_part", ui_act_del_queue_part, UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_del_queue_part)
-	. = TRUE
-	// Delete a specific from the queue
-	var/index = params["index"]
+/obj/machinery/mecha_part_fabricator_tg/proc/ui_act_del_queue_part(datum/act/op/A, index)
 	remove_from_queue(index)
-
-	return
+	return OP_OK
 
 /obj/machinery/mecha_part_fabricator_tg/proc/ui_act_clear_queue(datum/act/op/A)
-	// Delete everything from queue
 	queue.Cut()
 	queue_producer_accounts.Cut()
-
 	return OP_OK
-
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "build_queue", ui_act_build_queue)
-UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build_queue)
-	. = TRUE
-	// Build everything in queue
-	if(process_queue)
-		return
-
-	set_process_queue(TRUE)
-	return
-
-/obj/machinery/mecha_part_fabricator_tg/proc/ui_act_stop_queue(datum/act/op/A)
-	// Pause queue building. Also known as stop.
-	set_process_queue(FALSE)
-	return OP_OK
-
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_remove_mat)
-	. = TRUE
-	var/datum/material/material = GET_MATERIAL_REF(params["id"])
-	if(!istype(material))
-		return
-
-	var/amount = params["amount"]
-	if(isnull(amount))
-		return
-
-	rmat.eject_sheets(material, amount)
-	return TRUE
 
 /// Local material container hook (/datum/om/event/matcontainer_item_consumed).
 /obj/machinery/mecha_part_fabricator_tg/proc/on_material_insert(datum/act/notice/N)
-	EVENT_HANDLER
 	var/datum/notice/matcontainer_item_consumed/event = N
 	AfterMaterialInsert(event.item, event.primary_mat, event.material_amount)
 
 /obj/machinery/mecha_part_fabricator_tg/proc/AfterMaterialInsert(item_inserted, id_inserted, amount_inserted)
-	add_overlay("fab-load-metal")
-	after(src, 1 SECONDS, TYPE_PROC_REF(/atom, cut_overlay), with = list("fab-load-metal"))
+	flick_overlay_view_atom(mutable_appearance(icon, "fab-load-metal"), 1 SECOND)
 
-DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "fab-o"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "fab-idle")))
+// ---- the look ----
 
-/datum/interaction/machine_item/mech_fabricator_guard
-	id = "mech_fabricator_guard"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/mecha_part_fabricator_tg/proc/interaction_guard
-
-/obj/machinery/mecha_part_fabricator_tg/proc/interaction_guard(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-
-	if(being_built())
-		to_chat(user, span_warning("\The [src] is currently processing! Please wait until completion."))
-		return TRUE
-	return FALSE
-
-/datum/interaction/machine_item/mech_fabricator_part_replace
-	id = "mech_fabricator_part_replace"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/proc/interaction_part_replacement
+/// Its open panel has its own state; it shows its work while a part is made.
+/obj/machinery/mecha_part_fabricator_tg/draw(datum/look/look)
+	..()
+	look.hide(LOOK_PANEL_OPEN)
+	look.state(panel_open(src) ? "fab-o" : "fab-idle")
+	look.overlay("fab-active", when = !!being_built)
 
 /// A shared definition/flyweight (never cleared).
 /obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb
@@ -580,7 +508,3 @@ DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg, "panel_open", list("
 /// the being_built this refers to (a relation view: null once it is deleted).
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
 	return being_built
-
-/obj/machinery/mecha_part_fabricator_tg/ownership()
-	. = ..()
-	. += owns(nameof(stored_part), policy = OWN_CONTAINED)

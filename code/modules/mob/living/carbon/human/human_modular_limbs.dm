@@ -190,9 +190,9 @@
 	var/mob/living/carbon/human/H = answerer
 	if(!istype(H) || QDELETED(H))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
-	var/obj/item/organ/external/E = answer_value
+	var/obj/item/organ/external/E = value
 	if(!istype(E) || QDELETED(E))
 		return "gone"
 	if(!COOLDOWN_FINISHED(H, last_special))
@@ -214,7 +214,7 @@
 
 /mob/living/carbon/human/proc/detach_limb_chosen(datum/act/request/A)
 	if(!A.answer)
-		if(isnull(A.request.answer_value))
+		if(isnull(A.request.value))
 			return
 		switch(A.request.last_error)
 			if(DETACH_LIMB_STATE)
@@ -222,11 +222,11 @@
 			if(DETACH_LIMB_DAMAGE)
 				to_chat(src, span_warning("That limb is too damaged to be removed!"))
 			if(DETACH_LIMB_PARENT_DAMAGE)
-				var/obj/item/organ/external/rejected_limb = A.request.answer_value
+				var/obj/item/organ/external/rejected_limb = A.request.value
 				var/obj/item/organ/external/parent = rejected_limb.parent_organ && get_organ(rejected_limb.parent_organ)
 				to_chat(src, span_warning("Your [parent.name] is too damaged to detach anything from it."))
 		return
-	var/obj/item/organ/external/E = A.answer.answer_value
+	var/obj/item/organ/external/E = A.answer.value
 	om_task_timed(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(detach_limb_verb_human_done), done_args = list(E))
 
 #undef DETACH_LIMB_STATE

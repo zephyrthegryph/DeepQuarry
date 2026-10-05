@@ -82,7 +82,7 @@
 	if(!istype(target))
 		return OP_REFUSED
 
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Reset")
 			if(!wiring_of(target))
 				return OP_REFUSED

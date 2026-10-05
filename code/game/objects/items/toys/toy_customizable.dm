@@ -79,9 +79,9 @@ UI_DATA_REPLACE(/obj/item/toy/plushie/customizable, "merge:ui_data_obj_item_toy_
 		if(!target)
 			SStgui.update_uis(src)
 			return
-		target["color"] = A.answer.answer_value
+		target["color"] = A.answer.value
 	else
-		base_color = A.answer.answer_value
+		base_color = A.answer.value
 	update_icon()
 	SStgui.update_uis(src)
 
