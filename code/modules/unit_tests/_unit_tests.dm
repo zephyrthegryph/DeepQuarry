@@ -1065,6 +1065,10 @@
 
 #include "round2_combat_player_requests.dm"
 
+#include "round2_song_import_requests.dm"
+
+#include "round2_shuttle_docking_codes_request.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
