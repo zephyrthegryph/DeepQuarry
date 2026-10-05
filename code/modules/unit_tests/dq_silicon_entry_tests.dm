@@ -268,9 +268,12 @@
 	TEST_ASSERT(p2_apc_cover_open(A), "the APC's cover is open")
 	var/obj/item/cell/original = A.cell
 	TEST_ASSERT_NOTNULL(original, "the APC starts with a cell")
-	TEST_ASSERT_EQUAL(R.get_active_hand(), G, "the gripper is selected")
 	gesture(R, A, "left=1")
 	TEST_ASSERT_NULL(A.cell, "an empty gripper takes the APC's cell out")
+	TEST_ASSERT_EQUAL(G.get_wrapped_item(), original, "and holds it")
+	gesture(R, A, "left=1")
+	TEST_ASSERT_EQUAL(A.cell, original, "the gripper puts the cell it carries back in")
+	TEST_ASSERT_NULL(G.get_wrapped_item(), "and lets go of it")
 	qdel(A)
 	tidy(tile(2, 3))
 	tidy(tile(2, 2)) // the old gripper path dropped the cell on the cyborg's tile

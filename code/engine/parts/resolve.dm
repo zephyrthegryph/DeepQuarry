@@ -132,6 +132,9 @@
 			return list(INTENT_EXAMINE)
 		if(GESTURE_DRAG)
 			return list(INTENT_DROP_ONTO)
+		if(GESTURE_CTRL, GESTURE_MIDDLE)
+			// No intent of its own: the gesture is its own token, so only an op that pins it (gesture(GESTURE_CTRL)) answers it.
+			return list(gesture)
 	return list()
 
 /// The intents an op answers through a binding: answers() when written, else what the binding implies.

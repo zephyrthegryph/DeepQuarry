@@ -585,7 +585,11 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+/// A gripper is a provider (doc/rewrite/final_api.html 16.8): selected, it handles things for its cyborg within arm's reach, and what it carries is the
+/// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
+/// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
+	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1)
 	owns_many(nameof(pockets))
 
 /// The selected pocket (one of `pockets`) or item.

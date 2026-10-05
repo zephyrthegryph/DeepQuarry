@@ -381,7 +381,7 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	TEST_ASSERT_EQUAL(R.input_adapter(), INPUT_ADAPTER(robot), "cyborgs use the robot adapter")
 	TEST_ASSERT_EQUAL(R.keybind_profile(), KEYBIND_PROFILE_ROBOT, "cyborgs get the robot keybinding profile")
 	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1"), "attack_robot", "a cyborg's Use with no module reaches attack_robot")
-	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1;alt=1"), "click_alt", "a cyborg's Alternate reaches click_alt through silicon_alternate")
+	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1;alt=1"), "click_alt", "a cyborg's Alternate reaches click_alt")
 
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
 	TEST_ASSERT_EQUAL(ghost.input_adapter(), INPUT_ADAPTER(ghost), "ghosts use the ghost adapter")
@@ -393,7 +393,7 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	AI.forceMove(T) // a new AI starts in nullspace, where it sees nothing
 	TEST_ASSERT_EQUAL(AI.input_adapter(), INPUT_ADAPTER(ai), "the AI uses the AI adapter")
 	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1"), "attack_ai", "the AI's Use reaches attack_ai")
-	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1;alt=1"), "click_alt", "the AI's Alternate reaches click_alt through silicon_alternate")
+	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1;alt=1"), "click_alt", "the AI's Alternate reaches click_alt")
 	AI.control_disabled = TRUE
 	TEST_ASSERT_NULL(dq_route(AI, probe, "left=1"), "an AI with control disabled does nothing")
 

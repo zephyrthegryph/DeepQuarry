@@ -1146,7 +1146,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	vore_fullness_ex = list()
 	vore_light_states = list()
 
-/// Old attack_hand (never reached the gate or the default touch): dismounts, cell removal, petting and punching.
+/// Old attack_hand (never reached the gate or the default touch): dismounts, petting and punching. The cell is the take_power_part op.
 /mob/living/silicon/robot/proc/robot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(LAZYLEN(src?.buckled_mob_list()))
 		//We're getting off!
@@ -1160,30 +1160,36 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 	add_fingerprint(user)
 
-	if(opened && !wiresexposed && !issilicon(user))
-		take_out_power_part(user)
-
 	if(ishuman(user) && !opened)
 		hand_interact(user, interaction.stance)
 	return TRUE
 
-/// Hand removal of the cell, or of the fried remains of its mount.
-/mob/living/silicon/robot/proc/take_out_power_part(mob/user)
+/// The take_power_part op's condition: the chassis is open, its wiring tucked away, and there is a cell or the fried remains of its mount to take.
+/mob/living/silicon/robot/proc/power_part_exposed(datum/act/A)
+	if(!opened || wiresexposed)
+		return FALSE
 	if(cell)
-		var/obj/item/cell/removed = remove_cell()
-		removed.update_icon()
-		removed.add_fingerprint(user)
-		user.put_in_active_hand(removed)
-		to_chat(user, span_filter_notice("You remove \the [removed]."))
-		update_icon()
 		return TRUE
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
-	if(mount.installed == ROBOT_PART_DESTROYED)
-		var/obj/item/remains = mount.uninstall()
-		to_chat(user, span_filter_notice("You remove \the [remains]."))
-		user.put_in_active_hand(remains)
-		return TRUE
-	return FALSE
+	return mount?.installed == ROBOT_PART_DESTROYED
+
+/// The cell, or the fried remains of its mount, out to the hand (or the gripper) that took it.
+/mob/living/silicon/robot/proc/power_part_taken(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/removed = null
+	if(cell)
+		removed = remove_cell()
+		removed.update_icon()
+		removed.add_fingerprint(user)
+	else
+		var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
+		if(mount?.installed != ROBOT_PART_DESTROYED)
+			return OP_REFUSED
+		removed = mount.uninstall()
+	op_deliver(A, removed)
+	to_chat(user, span_filter_notice("You remove \the [removed]."))
+	update_icon()
+	return OP_OK
 
 /// Petting, punching, tapping and vore on a closed chassis, in `stance` (the touch interaction's).
 /mob/living/silicon/robot/proc/hand_interact(mob/living/carbon/human/H, stance)

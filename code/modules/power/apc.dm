@@ -220,6 +220,10 @@ CAPABILITIES(/obj/machinery/power/apc)
 	extend("ui_open", needs(req_operable()))
 	extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason))))
 	extend("nightshift", drop = "lock")
+	// a silicon's ctrl-click throws the breaker over its link, under the same rules as the window's button
+	op("remote_breaker", remote(), gesture(GESTURE_CTRL), label("Toggle the breaker"), toggles(nameof(operating)),
+		needs(req(PROC_REF(remote_link_allowed), because = MSG(apc/cant_use)), req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason))),
+		then(PROC_REF(settings_applied)), logs(LOG_GAME))
 
 	/// The cover is latched shut while the APC is broken or its cover lock holds a charged cell in.
 	section(cover_rules, "The latch on the APC's cover")
@@ -355,12 +359,12 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	overload_lighting()
 	return OP_OK
 
-/// Silicons and admin ghosts work a locked APC (and its overload button): the lock library's own exemption.
+/// A silicon's link the APC lets in, and admin ghosts, work a locked APC (and its overload button): the lock library's own exemption.
 /obj/machinery/power/apc/proc/actor_works_locked(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!user)
 		return FALSE
-	if(siliconaccess(user))
+	if(remote_link_allowed(A))
 		return TRUE
 	var/mob/observer/dead/ghost = user
 	return istype(ghost) && ghost.can_admin_interact()
@@ -377,12 +381,11 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		return /datum/msg/apc/cant_use
 	if(!user.IsAdvancedToolUser() || user.restrained() || user.lying) // ALLOW(reads): a mob lying down is legacy mob state, tracked in the mob conversion; the check runs when a window button is pressed, never from a cached menu
 		return /datum/msg/apc/cant_use
-	if(issilicon(user))
+	if(A.authority & AUTH_REMOTE_ACCESS) // over a link: the AI-control wire decides, not the distance
 		var/permit = FALSE
-		var/mob/living/silicon/ai/AI = user
 		var/mob/living/silicon/robot/robot = user
 		if(hacker)
-			if(hacker == AI)
+			if(hacker == user)
 				permit = TRUE
 			else if(istype(robot) && robot.connected_ai && robot.connected_ai == hacker) // ALLOW(reads): a cyborg's master AI link is legacy silicon state, tracked in the mob conversion; read when a window button is pressed
 				permit = TRUE

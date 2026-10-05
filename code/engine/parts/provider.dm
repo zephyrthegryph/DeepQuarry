@@ -89,13 +89,34 @@
 	if(D.rx?.observed?[key])
 		publish_change(D, key)
 
-/// The providers an actor holding `held` has now: its own table's, its live activations', and the held item's. Each is a /datum/prov.
+/// The providers an actor holding `held` has now: its own table's, its live activations', the held item's, and the carrier's (what holds `held` for
+/// the actor: a cyborg's gripper). Each is a /datum/prov.
 /proc/providers_for(mob/actor, obj/item/held)
 	. = list()
 	if(actor && !QDELETED(actor))
 		provider_collect(actor, actor, .)
+		var/obj/item/carrier = actor.held_carrier()
+		if(carrier && carrier != held && !QDELETED(carrier))
+			provider_collect(carrier, carrier, .)
 	if(held && !QDELETED(held) && isitem(held)) // a dragged mob is no provider
 		provider_collect(held, held, .)
+
+/// What the actor's ops see as its held item (A.held): what is in its active hand. A cyborg with a gripper selected holds what the gripper carries.
+/mob/proc/held_for_ops()
+	return get_active_hand()
+
+/// The item that carries the actor's held item for it and is a provider in its own right (a cyborg's selected gripper), or null. It counts as the
+/// held item when the provider of an op is chosen, and what an op takes out goes into it (op_deliver()).
+/mob/proc/held_carrier()
+	return null
+
+/// Can this item carry `thing` for `actor` now? An item that provides AFF_HOLD or AFF_HOLD_SMALL and carries things (a gripper) overrides it.
+/obj/item/proc/can_carry(obj/item/thing, mob/actor)
+	return FALSE
+
+/// Carries `thing` for `actor` (it is already out of where it was). TRUE when it holds it now.
+/obj/item/proc/carry(obj/item/thing, mob/actor)
+	return FALSE
 
 /proc/provider_collect(datum/D, datum/source, list/into)
 	var/datum/type_table/T = table_of(D)
@@ -277,20 +298,20 @@
 		var/why = reach_exposure(actor, target, authority)
 		if(why)
 			return why
-	// The provider: the held item's first, then the hand, then any other by shortest reach.
+	// The provider: the held item's (or its carrier's) first, then the hand, then any other by shortest reach.
 	if(length(fits))
-		chosen += reach_pick_provider(fits, held)
+		chosen += reach_pick_provider(fits, held, actor?.held_carrier())
 	return null
 
-/// The provider that performs an op among `fits`: the held item's, else the shortest reach.
-/proc/reach_pick_provider(list/fits, obj/item/held)
+/// The provider that performs an op among `fits`: the held item's (or the carrier's that holds it: a cyborg's gripper), else the shortest reach.
+/proc/reach_pick_provider(list/fits, obj/item/held, obj/item/carrier = null)
 	var/datum/prov/best = null
 	for(var/datum/prov/V as anything in fits)
 		if(!best)
 			best = V
 			continue
-		var/best_held = (best.source == held)
-		var/this_held = (V.source == held)
+		var/best_held = (best.source == held) || (carrier && best.source == carrier)
+		var/this_held = (V.source == held) || (carrier && V.source == carrier)
 		if(this_held != best_held)
 			if(this_held)
 				best = V

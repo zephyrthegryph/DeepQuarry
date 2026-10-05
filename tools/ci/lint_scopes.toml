@@ -310,6 +310,10 @@ legacy_equip_restriction_vars__slot_flags = 2
 # fixtures and tests pin the relative-priority mechanism itself
 exempt_prefixes = ["code/tests/", "code/modules/unit_tests/"]
 
+[lint.silicon_entry]
+# tests pin the legacy forms they drive (a probe declaring an INTERACT_SILICON entry)
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
+
 [lint.legacy_forms]
 # The engine's own accessors (_own_set / _own_add / _own_put) are called only by the declaration engine and the ownership store.
 exempt_prefixes = ["code/engine/", "code/datums/ownership/"]

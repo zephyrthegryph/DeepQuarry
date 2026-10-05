@@ -494,13 +494,16 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 	varslot_set(holder, var_name, thing)
 	return TRUE
 
-/// Takes what the var-slot holds out: into the actor's hand when it can take it, else onto the floor. The thing, or null when the slot is empty.
-/proc/varslot_take(atom/holder, var_name, mob/actor)
+/// Takes what the var-slot holds out: into the carrier that took it (a cyborg's gripper) or the actor's hand when it can take it, else onto the floor.
+/// The thing, or null when the slot is empty.
+/proc/varslot_take(atom/holder, var_name, mob/actor, obj/item/carrier = null)
 	var/atom/movable/thing = holder.vars[var_name]
 	if(!istype(thing))
 		return null
 	varslot_set(holder, var_name, null)
 	var/obj/item/as_item = thing
+	if(carrier && istype(as_item) && carrier.can_carry(as_item, actor) && carrier.carry(as_item, actor))
+		return thing
 	if(actor && istype(as_item) && actor.put_in_hands(as_item))
 		return thing
 	thing.forceMove(get_turf(actor || holder))

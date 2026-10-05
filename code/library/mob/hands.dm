@@ -1,6 +1,8 @@
-// The hand provider of the mobs that act with their hands in the world: a human (any species) and a cyborg. The engine has no hand provider of its own on
-// /mob/living (code/engine/parts/provider.dm), so a mob type declares its own; the implicit req_capable() of a physical binding already refuses a
-// stunned, restrained or dead actor, and the reach gate refuses a target out of arm's reach.
+// The providers of the mobs that act in the world: a human (any species) has hands; a cyborg has its chassis manipulators, its selected gripper
+// (robot_simple_items.dm: preferred, and what it carries is the held item) and its interface for the remote controls (remote_interface(),
+// library/mob/silicon.dm). The engine has no hand provider of its own on /mob/living (code/engine/parts/provider.dm), so a mob
+// type declares its own; the implicit req_capable() of a physical binding already refuses a stunned, restrained or dead actor, and the reach gate
+// refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
 	hands()
@@ -13,8 +15,13 @@ CAPABILITIES(/mob/living/carbon/human)
 	owns_one(nameof(crafting), starts = /datum/personal_crafting)
 
 CAPABILITIES(/mob/living/silicon/robot)
+	remote_interface(reach = BORG_INTERFACE_REACH)
+	// Its chassis manipulators: what a cyborg with no gripper selected still does by touch (a closet, a bulb, its own modules). 16.8 gives a cyborg
+	// no hands of its own; that waits until every module set has a gripper. A selected gripper is preferred over these (held_carrier()).
 	hands()
-	provides(AFF_CONTROL, reach = BORG_INTERFACE_REACH, authority = AUTH_REMOTE_ACCESS)
+	// an opened chassis gives up its cell (or the fried remains of its mount) to whatever hand takes it: a person's, another cyborg's gripper
+	op("take_power_part", hand(), when(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_exposed)), label("Remove the cell"),
+		priority(OP_PRIORITY_TAKE_OUT), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_taken)))
 	owns_one(nameof(camera), /obj/machinery/camera)
 	owns_one(nameof(communicator), /obj/item/communicator/integrated)
 	owns_one(nameof(decal_control), /datum/tgui_module/robot_ui_decals)
