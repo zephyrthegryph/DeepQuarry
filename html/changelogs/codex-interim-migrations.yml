@@ -64,3 +64,7 @@ changes:
   - code_imp: "Migrated event queue selection to native requests and updated its regression tests."
   - code_imp: "Migrated tracker messages, refinery filters, crackers, fighter destinations, outlet ranges, NIF appearance and ticket confirmations to native requests."
   - bugfix: "PDA messages now cancel cleanly if their sender disappears while the message prompt is open."
+  - code_imp: "Migrated combat move and target selection to native requests while preserving current-item and automatic-target reevaluation."
+  - bugfix: "Continuing an oversized song import now reopens the editor instead of looping over cached answers."
+  - code_imp: "Migrated shuttle docking-code prompts to native requests with current-console permission checks."
+  - code_imp: "Migrated multi-shuttle and exploration destination selection to native requests with current destination and access checks."

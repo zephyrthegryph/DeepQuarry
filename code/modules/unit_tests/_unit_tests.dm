@@ -487,6 +487,7 @@
 #include "dq_mf_vending_behaviour.dm"
 #include "dq_mf_turret_behaviour.dm"
 #include "dq_mf_console_behaviour.dm"
+#include "dq_mf_telecomms_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
 #include "dq_doors_full_behaviour.dm"
 #include "dq_paths_behaviour.dm"
@@ -1063,6 +1064,14 @@
 #include "round2_disposal_outlet_range_request.dm"
 #include "interim_pda_message_missing_sender.dm"
 #include "round2_gender_change_drug_request.dm"
+
+#include "round2_combat_player_requests.dm"
+
+#include "round2_song_import_requests.dm"
+
+#include "round2_shuttle_docking_codes_request.dm"
+
+#include "round2_multi_shuttle_destination_clientless.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

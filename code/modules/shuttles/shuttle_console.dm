@@ -122,14 +122,48 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_cancel)
 
 UI_ACT(/obj/machinery/computer/shuttle_control, "set_codes", ui_act_set_codes)
 UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_set_codes)
+	shuttle_codes_stage(ui, ui.user, FALSE)
+
+/obj/machinery/computer/shuttle_control/proc/shuttle_codes_stage(datum/tgui/ui, mob/actor, answered, newcode)
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
-	var/newcode = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/text, message = "Input new docking codes", title = "Docking codes", default = shuttle.docking_codes, max_length = MAX_NAME_LEN)
-	if(isnull(newcode))
+	if(!answered)
+		open_request(ui, /datum/prompt/text/shuttle_docking_codes, TYPE_PROC_REF(/datum/tgui, shuttle_codes_entered), answerer = actor, default = shuttle.docking_codes, captured = list())
 		return
-	// The answer's re-run already re-checked the window is still usable.
 	if(newcode)
 		shuttle.set_docking_codes(uppertext(newcode))
-	return TRUE
+	SStgui.update_uis(src)
+
+/datum/tgui/proc/shuttle_codes_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/obj/machinery/computer/shuttle_control/console = src_object()
+	// The original virtual guard fingerprints and reports failures; it is an effect.
+	var/allowed = console.ui_act_allowed(user, "set_codes", src, state())
+	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
+	if(request_recheck(A.request))
+		return
+	console.shuttle_codes_stage(src, A.request.answerer, TRUE, A.answer.answer_value)
+
+/datum/prompt/text/shuttle_docking_codes
+	question = "Input new docking codes"
+	title = "Docking codes"
+	max_len = MAX_NAME_LEN
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/shuttle_docking_codes/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/shuttle_docking_codes/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/shuttle_control/console = original_ui.src_object()
+	if(!istype(console) || QDELETED(console))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	return captured?["late_refusal"]
 
 DECLARE_UI(/obj/machinery/computer/shuttle_control, "ShuttleControl")
 
