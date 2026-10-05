@@ -1,6 +1,6 @@
 // Behaviour-preservation tests for the wall frame items (/obj/item/frame and its subtypes): a frame held to a wall becomes the thing it frames,
-// fixed to that wall, where the builder stands; a wrench takes a loose frame back to its sheets. Written against the legacy try_build() path
-// and kept passing when the build is an op of the frame item. Input is the player's click (test_click()), never a proc of the frame.
+// fixed to that wall, where the builder stands. Written against the legacy try_build() path and kept passing now that the build is the frame
+// item's own op (frame.mount). Input is the player's click (test_click()), never a proc of the frame.
 // (A wrench on a loose frame is the frame's own legacy wrench_act(); a click with a wrench does not reach it today, so it is not pinned here.)
 
 /// A wall beside the run block's corner (made one for the test if the map has none there), and the turf it was.

@@ -251,8 +251,7 @@
 				MSG_BLIND("You hear sparks."))
 			use_tool(user, C, src, delay = 2 SECONDS, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(state))
 	else if(istype(W,/obj/item/frame) && anchored)
-		var/obj/item/frame/F = W
-		F.try_build(src, user)
+		return TRUE // its own op, frame.mount, hangs it on the window
 	else
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())

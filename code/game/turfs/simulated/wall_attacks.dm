@@ -212,9 +212,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(W,/obj/item/frame))
-		var/obj/item/frame/F = W
-		F.try_build(src, user)
-		return INTERACTION_HANDLED_PASS
+		return INTERACTION_HANDLED_PASS // its own op, frame.mount, hangs it on the wall
 
 	else if(!istype(W,/obj/item/rcd) && !istype(W, /obj/item/reagent_containers))
 		return attack_hand(user) ? TRUE : INTERACTION_HANDLED_PASS

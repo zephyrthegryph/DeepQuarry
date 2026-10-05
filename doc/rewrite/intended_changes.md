@@ -688,3 +688,7 @@ Pinned by `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (green on the leg
 * **The APC's board goes into the build graph's own slot.** The `apc_construction` slot relation is gone: the ledger makes a slot from the
   graph's `put_in(SLOT_CONSTRUCTION)` (one board, in the graph's space SPACE_HATCH, so the board sits behind the cover like the rest of the
   ladder). A `slot(SLOT_X, capacity =, at =, accepts =)` entry declares any other such slot (the e0 door assembly's).
+* **Mounting a frame is the frame's op, `frame.mount`** (`at_target()` a wall or an anchored window): the wall's and the window's item use no
+  longer call the frame. Its refusals are requirements with the old texts (the generic frame says "It cannot be placed on this spot." /
+  "...in this area." where it named itself), a diagonal or distant builder is refused silently as before, and an APC frame cuts a loose
+  terminal under it as part of the mount. `try_build()` is gone.
