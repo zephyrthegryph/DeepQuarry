@@ -1311,10 +1311,10 @@ CAPABILITIES(/datum/prompt/number/wheel_review)
 	var/datum/prompt/choice/casino_purchase/ask = A.request
 	if(!A.answer)
 		// Only a genuine close of the optional item question means a normal purchase.
-		if(ask.answer_key != "k861" || !ask.purchase_opened || ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || !isnull(request_recheck(ask)))
+		if(ask.answer_key != "k861" || !ask.purchase_opened || ask.outcome != REQ_CANCELLED || !isnull(ask.value) || !isnull(request_recheck(ask)))
 			return
 	var/list/purchase_answers = ask.captured.Copy()
-	purchase_answers[ask.answer_key] = A.answer ? A.answer.answer_value : ""
+	purchase_answers[ask.answer_key] = A.answer ? A.answer.value : ""
 	// Queue the original rerun completion push before the non-yielding replay, so a
 	// runtime still leaves its normal presentation push scheduled.
 	SStgui.update_uis(src)
