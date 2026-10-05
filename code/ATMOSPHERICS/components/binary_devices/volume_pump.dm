@@ -258,10 +258,10 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 		if("max")
 			set_transfer_rate(max_transfer_rate)
 		if("set")
-			var/new_rate = act_ask(ui.user, action, params, ui, "k269", /datum/om/prompt/number, message = "Enter new transfer rate (0-[max_transfer_rate] L/s)", title = "Flow Control", default = src.transfer_rate, max = max_transfer_rate)
-			if(isnull(new_rate))
+			if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 				return
-			set_transfer_rate(between(0, new_rate, max_transfer_rate))
+			open_request(ui, /datum/prompt/number/atmos_scalar/volume_rate, TYPE_PROC_REF(/datum/tgui, atmos_scalar_answered), answerer = ui.user, question = "Enter new transfer rate (0-[max_transfer_rate] L/s)", title = "Flow Control", default = src.transfer_rate, display_max = max_transfer_rate)
+			return
 	. = TRUE
 	add_fingerprint(ui.user)
 	update_icon()
@@ -344,3 +344,8 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/volume_pump, overclocked, CHA
 /obj/machinery/atmospherics/binary/volume_pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(transfer_rate), nameof(overclocked))
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/apply_volume_rate_answer(mob/user, value)
+	set_transfer_rate(between(0, value, max_transfer_rate))
+	add_fingerprint(user)
+	update_icon()

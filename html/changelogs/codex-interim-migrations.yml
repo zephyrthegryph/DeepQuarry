@@ -17,3 +17,5 @@ changes:
   - bugfix: "Laser-tag guns no longer retain unused projectiles after refusing a suicide attempt."
   - code_imp: "Moved instrument line editing, prosthetics fabricator selections and ship disperser settings to native requests."
   - code_imp: "Retired removed loot-panel indices and stored body records through their declared ownership."
+  - code_imp: "Moved particle and filter editor choices, mob-spawner settings and atmos pressure and flow settings to native requests."
+  - code_imp: "Retired replaced login HUDs through their declared ownership."

@@ -121,13 +121,9 @@ UI_ACT_PROC(/datum/particle_editor, ui_act_delete_and_close)
 UI_ACT(/datum/particle_editor, "new_type", ui_act_new_type)
 UI_ACT_PROC(/datum/particle_editor, ui_act_new_type)
 	var/list/types = make_types_fancy(typesof(/particles))
-	var/picked = act_ask(ui.user, action, params, ui, "type", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = types)
-	var/new_type = types[picked]
-	if(!new_type)
-		return FALSE
-	target().particles = new new_type
-	target().particles.datum_flags |= DF_VAR_EDITED
-	. = TRUE
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
+		return
+	open_request(ui, /datum/prompt/choice/particle_editor_type, TYPE_PROC_REF(/datum/tgui, particle_editor_type_answered), answerer = ui.user, choices = types)
 
 UI_ACT(/datum/particle_editor, "transform_size", ui_act_transform_size, UI_ARG_VALUE("new_value"))
 UI_ACT_PROC(/datum/particle_editor, ui_act_transform_size)
@@ -217,3 +213,36 @@ UI_ACT_PROC(/datum/particle_editor, ui_act_edit)
 /// The target this refers to (a relation view: null once that is deleted).
 /datum/particle_editor/proc/target() as /atom/movable
 	return target
+
+/datum/tgui/proc/particle_editor_type_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/particle_editor_type/ask = context.answer
+	var/datum/particle_editor/editor = src_object()
+	var/new_type = ask.choices[ask.answer_value]
+	if(editor.apply_particle_type(new_type))
+		SStgui.update_uis(editor)
+
+/datum/particle_editor/proc/apply_particle_type(new_type)
+	target().particles = new new_type
+	target().particles.datum_flags |= DF_VAR_EDITED
+	return TRUE
+
+/datum/prompt/choice/particle_editor_type
+	question = "Select a type"
+	title = "Pick Type"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/particle_editor_type/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/datum/particle_editor/editor = original_ui.src_object()
+	if(!istype(editor) || QDELETED(editor))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!editor.ui_act_allowed(original_ui.user, "new_type", original_ui, original_ui.state()))
+		return "the particle editor action is unavailable"
+	return null

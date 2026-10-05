@@ -74,10 +74,9 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_modify_filter_value)
 
 UI_ACT(/datum/filter_editor, "modify_color_value", ui_act_modify_color_value, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_modify_color_value)
-	var/new_color = act_ask(user, action, params, ui, "color", /datum/om/prompt/color, message = "Pick new filter color", title = "Filteriffic Colors!")
-	if(new_color)
-		target().transition_filter(params["name"], list("color" = new_color), 0.4 SECONDS)
-		. = TRUE
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
+		return
+	open_request(ui, /datum/prompt/color/filter_editor_colour, TYPE_PROC_REF(/datum/tgui, filter_editor_colour_answered), answerer = ui.user, filter_name = params["name"])
 
 UI_ACT(/datum/filter_editor, "modify_icon_value", ui_act_modify_icon_value, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_modify_icon_value)
@@ -113,3 +112,48 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_mass_apply)
 /// The target this refers to (a relation view: null once that is deleted).
 /datum/filter_editor/proc/target() as /atom
 	return target
+
+/datum/tgui/proc/filter_editor_colour_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/color/filter_editor_colour/ask = context.answer
+	var/datum/filter_editor/editor = src_object()
+	if(editor.apply_filter_colour(ask.filter_name, ask.answer_value))
+		SStgui.update_uis(editor)
+
+/datum/filter_editor/proc/apply_filter_colour(filter_name, value)
+	if(value)
+		target().transition_filter(filter_name, list("color" = value), 0.4 SECONDS)
+		return TRUE
+
+/datum/prompt/color/filter_editor_colour
+	question = "Pick new filter color"
+	title = "Filteriffic Colors!"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/filter_name
+
+/datum/prompt/color/filter_editor_colour/normalize(given)
+	return given
+
+/datum/prompt/color/filter_editor_colour/refusal(given)
+	return null
+
+/datum/prompt/color/filter_editor_colour/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title, default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker
+
+/datum/prompt/color/filter_editor_colour/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/datum/filter_editor/editor = original_ui.src_object()
+	if(!istype(editor) || QDELETED(editor))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!editor.ui_act_allowed(original_ui.user, "modify_color_value", original_ui, original_ui.state()))
+		return "the filter editor action is unavailable"
+	return null

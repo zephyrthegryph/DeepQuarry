@@ -1032,6 +1032,7 @@
 
 #include "round2_song_append_effect.dm"
 #include "round2_transcore_body_record_retirement.dm"
+#include "round2_mob_spawner_settings_effect.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
