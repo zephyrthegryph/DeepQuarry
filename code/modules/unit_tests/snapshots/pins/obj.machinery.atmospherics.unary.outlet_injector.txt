@@ -56,5 +56,5 @@ human|/obj/item/pipe_painter menu: Fit engineered material (refused: needs an it
 human|/obj/item/pipe_painter menu: Paint
 human|/obj/item/pipe_painter menu: Toggle
 human|/obj/item/pipe_painter click: Click: Toggle
-keys: atmospherics_fit_material, atmospherics_pipe_painter, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, multitool_settings.configure, multitool_settings.set_frequency, multitool_settings.set_id, power_toggle, reset_rate, toggle, unwrench
+keys: atmospherics_fit_material, atmospherics_pipe_painter, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, multitool_settings.configure, multitool_settings.set_frequency, multitool_settings.set_id, reset_rate, toggle, unwrench
 
