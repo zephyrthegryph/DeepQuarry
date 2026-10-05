@@ -171,7 +171,6 @@
 	P.set_on(FALSE)
 	ap_click(H, P, W)
 	TEST_ASSERT(QDELETED(P), "a stopped one comes off")
-	sweep_pipe_items()
 	TEST_ASSERT_NOTNULL(locate(/obj/item/pipe) in tile(3, 1), "as its fitting")
 	sweep_pipe_items()
 
@@ -282,3 +281,128 @@
 	TEST_ASSERT_EQUAL(G.target_pressure, 400, "target")
 	TEST_ASSERT_EQUAL(G.regulate_mode, 1, "mode")
 	TEST_ASSERT_EQUAL(G.set_flow_rate, 100, "flow limit")
+
+// =====================================================================================================================
+// The valves
+// =====================================================================================================================
+
+/// A line along the room's row `dy` from dx = 1: a simple pipe, `middle` (facing east), a simple pipe; joined and published to Rust.
+/datum/unit_test/dq_atmos_m/pipes/proc/pipe_line(middle, dy = 3, list/access)
+	var/list/made = list()
+	for(var/i in 1 to 3)
+		var/type = i == 2 ? middle : /obj/machinery/atmospherics/pipe/simple/visible
+		var/obj/machinery/atmospherics/M = allocate(type, tile(i, dy))
+		M.set_dir(i == 2 ? EAST : (EAST|WEST))
+		M.init_dir()
+		M.stat_remove(NOPOWER | BROKEN)
+		made += M
+	if(access)
+		var/obj/machinery/atmospherics/V = made[2]
+		V.req_access = access.Copy()
+	for(var/obj/machinery/atmospherics/M as anything in made)
+		M.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(made)
+	am_settle()
+	return made
+
+/// A hand turns a manual valve's wheel: it opens, and turns back shut.
+/datum/unit_test/dq_atmos_m/pipes/valve_hand
+/datum/unit_test/dq_atmos_m/pipes/valve_hand/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/valve)
+	var/obj/machinery/atmospherics/valve/V = line[2]
+	var/mob/living/carbon/human/H = person(null, tile(2, 2))
+	ap_click(H, V)
+	TEST_ASSERT(V.open, "the wheel opens it")
+	ap_click(H, V)
+	TEST_ASSERT(!V.open, "and shuts it")
+
+/// A digital valve turns for someone its access lets in; its radio opens, shuts and toggles it.
+/datum/unit_test/dq_atmos_m/pipes/valve_digital
+/datum/unit_test/dq_atmos_m/pipes/valve_digital/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/valve/digital, access = list(ACCESS_ATMOSPHERICS))
+	var/obj/machinery/atmospherics/valve/digital/V = line[2]
+	var/mob/living/carbon/human/stranger = person(null, tile(2, 2))
+	var/mob/living/carbon/human/tech = person(list(ACCESS_ATMOSPHERICS), tile(1, 2))
+	ap_click(stranger, V)
+	TEST_ASSERT(!V.open, "a stranger cannot turn it")
+	ap_click(tech, V)
+	TEST_ASSERT(V.open, "the technician opens it")
+	V.id = "ap_valve"
+	ap_radio(V, "ap_valve", list("command" = "valve_close"))
+	TEST_ASSERT(!V.open, "the radio shuts it")
+	ap_radio(V, "ap_valve", list("command" = "valve_toggle"))
+	TEST_ASSERT(V.open, "and toggles it")
+	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 2))
+	ap_click(stranger, V, W)
+	TEST_ASSERT(!QDELETED(V), "a stranger cannot wrench a digital valve off")
+
+/// An open valve joins its two sides: gas put on one side reaches the other.
+/datum/unit_test/dq_atmos_m/pipes/valve_joins_sides
+/datum/unit_test/dq_atmos_m/pipes/valve_joins_sides/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/valve)
+	var/obj/machinery/atmospherics/pipe/left = line[1]
+	var/obj/machinery/atmospherics/valve/V = line[2]
+	var/obj/machinery/atmospherics/pipe/right = line[3]
+	var/datum/gas_mixture/left_air = left.return_air()
+	left_air.adjust_gas(GAS_N2, 10)
+	gas_touched(left_air)
+	am_settle()
+	TEST_ASSERT(right.return_air().total_moles() < 0.01, "shut, the far side stays empty")
+	var/mob/living/carbon/human/H = person(null, tile(2, 2))
+	ap_click(H, V)
+	am_settle()
+	TEST_ASSERT(right.return_air().total_moles() > 1, "open, the gas reaches it ([right.return_air().total_moles()])")
+
+/// The wrench takes a manual valve off.
+/datum/unit_test/dq_atmos_m/pipes/valve_wrench
+/datum/unit_test/dq_atmos_m/pipes/valve_wrench/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/valve)
+	var/obj/machinery/atmospherics/valve/V = line[2]
+	var/mob/living/carbon/human/H = person(null, tile(2, 2))
+	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 2))
+	ap_click(H, V, W)
+	TEST_ASSERT(QDELETED(V), "it comes off")
+	sweep_pipe_items()
+
+/// A three-way valve's wheel moves it between straight and the side branch; a digital one asks for access.
+/datum/unit_test/dq_atmos_m/pipes/tvalve_hand
+/datum/unit_test/dq_atmos_m/pipes/tvalve_hand/run_gate()
+	var/obj/machinery/atmospherics/tvalve/T = pipe_device(/obj/machinery/atmospherics/tvalve)
+	var/obj/machinery/atmospherics/tvalve/digital/D = pipe_device(/obj/machinery/atmospherics/tvalve/digital, 1, 3, access = list(ACCESS_ATMOSPHERICS))
+	var/mob/living/carbon/human/stranger = person(null, tile(2, 2))
+	var/start = T.state
+	ap_click(stranger, T)
+	TEST_ASSERT(T.state != start, "the wheel moves it")
+	var/dstart = D.state
+	ap_click(stranger, D)
+	TEST_ASSERT_EQUAL(D.state, dstart, "a stranger cannot move a digital one")
+	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 2))
+	ap_click(stranger, T, W)
+	TEST_ASSERT(QDELETED(T), "the wrench takes it off")
+	sweep_pipe_items()
+
+/// The automatic shutoff valve: a hand switches its circuit; with the circuit off, an alt-click turns it by hand; with it on, the valve
+/// shuts on a leak it can see and opens once it is sealed.
+/datum/unit_test/dq_atmos_m/pipes/shutoff_valve
+/datum/unit_test/dq_atmos_m/pipes/shutoff_valve/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/valve/shutoff)
+	var/obj/machinery/atmospherics/pipe/left = line[1]
+	var/obj/machinery/atmospherics/valve/shutoff/V = line[2]
+	TEST_ASSERT(V.open, "it starts open")
+	left.damaged_leak = TRUE
+	left.handle_leaking()
+	am_settle()
+	TEST_ASSERT(!V.open, "a leak beside it shuts it")
+	left.damaged_leak = FALSE
+	left.handle_leaking()
+	am_settle()
+	TEST_ASSERT(V.open, "sealed, it opens")
+	var/mob/living/carbon/human/H = person(null, tile(2, 2))
+	ap_click(H, V, null, GESTURE_ALT)
+	TEST_ASSERT(V.open, "while the circuit is on, the hand cannot shut it")
+	ap_click(H, V)
+	TEST_ASSERT(!V.close_on_leaks, "a hand switches the circuit off")
+	ap_click(H, V, null, GESTURE_ALT)
+	TEST_ASSERT(!V.open, "and then an alt-click shuts it")
+	ap_click(H, V, null, GESTURE_ALT)
+	TEST_ASSERT(V.open, "and opens it")
