@@ -104,7 +104,6 @@
 		/obj/machinery/partslathe,
 		/obj/machinery/pda_multicaster,
 		/obj/machinery/pointdefense,
-		/obj/machinery/porta_turret,
 		/obj/machinery/power/debug_items/infinite_cable_powersink,
 		/obj/machinery/power/debug_items/infinite_generator,
 		/obj/machinery/power/emitter,

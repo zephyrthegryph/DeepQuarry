@@ -100,9 +100,9 @@
 
 /obj/machinery/porta_turret/stumble_into(mob/living/M)
 	..()
-	if(!attacked && !emagged)
-		attacked = TRUE
-		after(src, 6 SECONDS, PROC_REF(calm_down))
+	if(!attacked && !emag_emagged(src))
+		set_attacked(TRUE)
+		after(src, 6 SECONDS, PROC_REF(calm_down), key = "grudge")
 
 // space_heater (spaceheater.dm) deleted with ZAS atmos machinery;
 // stumble override removed.

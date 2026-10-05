@@ -376,7 +376,7 @@
 	var/all = T.check_all
 	press(H, T, "authall")
 	TEST_ASSERT_EQUAL(T.check_all, all, "a locked turret takes no presses from a human")
-	T.set_locked(FALSE)
+	cap_key_set(T, LOCK_LOCKED, FALSE, null)
 	press(H, T, "authall")
 	TEST_ASSERT_NOTEQUAL(T.check_all, all, "an unlocked one toggles the setting")
 	var/enabled = T.enabled
@@ -388,13 +388,13 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/porta_turret/T = mach(/obj/machinery/porta_turret, tile(3, 2))
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
-	T.enabled = TRUE
+	T.set_enabled(TRUE)
 	hci_click(H, T, E)
 	settle()
-	TEST_ASSERT(T.emagged, "an emag subverts it")
-	T.enabled = TRUE
+	TEST_ASSERT(emag_emagged(T), "an emag subverts it")
+	test_time(7 SECONDS)
 	T.emp_act(1)
-	TEST_ASSERT(!T.enabled, "an EMP on a running turret switches it off")
+	TEST_ASSERT(!T.armed, "an EMP on a running turret knocks it out")
 
 /datum/unit_test/dq_hc_struct/turret_controller_window_and_emag
 /datum/unit_test/dq_hc_struct/turret_controller_window_and_emag/run_gate()
@@ -406,8 +406,8 @@
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
 	hci_click(H, C, E)
 	settle()
-	TEST_ASSERT(C.emagged, "an emag subverts it")
-	TEST_ASSERT(!C.locked, "and unlocks it")
+	TEST_ASSERT(emag_emagged(C), "an emag subverts it")
+	TEST_ASSERT(!lock_locked(C), "and unlocks it")
 	press(H, C, "authall")
 	TEST_ASSERT_NOTEQUAL(C.check_all, all, "an unlocked panel toggles the setting")
 

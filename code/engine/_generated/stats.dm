@@ -193,6 +193,13 @@
 /datum/stat_decl/obj/machinery/light/__nightshift_enabled/spec()
 	return list(/obj/machinery/light, /obj/machinery/light/proc/__stat_nightshift_enabled)
 
+/// STAT(/obj/machinery/porta_turret, armed, ALL) at code/game/machinery/portable_turret.dm:124
+/obj/machinery/porta_turret/var/armed = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/porta_turret/proc/__stat_armed()
+	return list("armed", "ALL", list(id = STAT_ARMED))
+/datum/stat_decl/obj/machinery/porta_turret/__armed/spec()
+	return list(/obj/machinery/porta_turret, /obj/machinery/porta_turret/proc/__stat_armed)
+
 /// STAT(/obj/machinery/power/apc, aidisabled, ANY) at code/modules/power/apc.dm:132
 /obj/machinery/power/apc/var/aidisabled = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/power/apc/proc/__stat_aidisabled()

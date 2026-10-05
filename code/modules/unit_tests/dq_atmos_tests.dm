@@ -4587,23 +4587,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!machine_stepping(P), "a running binary pump must not add DM process() scheduling")
 	qdel(P)
 
-/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob
-
-/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	TEST_ASSERT_NOTNULL(T, "the test block has no floor")
-	var/obj/machinery/porta_turret/turret = new(T)
-	turret.set_stat(0)
-	turret.enabled = TRUE
-	TEST_ASSERT(test_machine_idle(turret), "turret with an empty field of view remained scheduled")
-	TEST_ASSERT(turret.react_sleep_tokens, "idle turret did not subscribe to nearby mob chunks")
-	om_trace(turret)
-	var/mob/living/arrival = new(get_step(T, NORTH))
-	TEST_ASSERT(om_wait_for_wake(turret), "idle turret did not wake when a mob appeared nearby")
-	om_untrace(turret)
-	qdel(arrival)
-	qdel(turret)
-
 /datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement
 
 /datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement/Run()

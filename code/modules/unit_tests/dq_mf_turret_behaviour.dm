@@ -11,26 +11,27 @@
 
 /// Turns the turret on or off as a setting (a mapper's or the panel's).
 /proc/mft_set_enabled(obj/machinery/porta_turret/T, on)
-	T.enabled = on
+	T.set_enabled(on)
 
 /// The turret's lock (the ID lock over its window).
 /proc/mft_locked(obj/machinery/T)
-	return !!T.locked
+	return !!lock_locked(T)
 
 /proc/mft_set_locked(obj/machinery/T, on)
-	T.set_locked(on)
+	cap_key_set(T, LOCK_LOCKED, on, null)
 
 /// How far the frame is built (0 an unbolted frame, 8 done).
 /proc/mft_frame_step(obj/machinery/porta_turret_construct/F)
-	return F.build_step
+	var/n = 0
+	for(var/stage in list(STAGE_TURRET_FRAME_BOLTED, STAGE_TURRET_FRAME_PLATED, STAGE_TURRET_FRAME_SECURED, STAGE_TURRET_FRAME_ARMED, STAGE_TURRET_FRAME_SENSING, STAGE_TURRET_FRAME_SHUT, STAGE_TURRET_FRAME_ARMOURED, STAGE_TURRET_FRAME_DONE))
+		if(built(F, stage))
+			n++
+	return n
 
-/// Puts the sensor in the frame the way the legacy frame's own handler does (legacy: no click reaches it).
-/proc/mft_install_sensor(mob/user, obj/machinery/porta_turret_construct/F, obj/item/prox)
-	F.interaction_install_prox(user, prox, null)
 
 /// The turret is emagged.
 /proc/mft_emagged(obj/machinery/T)
-	return !!T.emagged
+	return !!emag_emagged(T)
 
 /// The turret works now: powered, whole, not knocked out by a pulse.
 /proc/mft_operable(obj/machinery/porta_turret/T)
@@ -160,7 +161,7 @@
 	G.admin_ghosted = TRUE
 	var/weapons = T.check_weapons
 	press(G, T, "authweapon")
-	TEST_ASSERT_EQUAL(T.check_weapons, weapons, "legacy: the lock refuses an admin ghost before its admin rule is reached")
+	TEST_ASSERT_NOTEQUAL(T.check_weapons, weapons, "an admin ghost works a locked turret, as it works any locked machine")
 
 /// A turret in an area with a control panel takes no orders from its own window.
 /datum/unit_test/dq_hc_struct/mft/a_panel_takes_over_the_window
@@ -192,7 +193,7 @@
 	TEST_ASSERT_EQUAL(T.check_weapons, C.check_weapons, "the weapons check follows")
 	var/down = T.check_down
 	press(H, C, "authdown")
-	TEST_ASSERT_EQUAL(T.check_down, down, "legacy: the panel never copies its check_down, so the down setting does nothing")
+	TEST_ASSERT_NOTEQUAL(T.check_down, down, "the down setting reaches the turret too")
 
 /// The panel pushes its own firewall onto every turret: a stationary turret's own firewall is lost to a panel without one.
 /datum/unit_test/dq_hc_struct/mft/panel_overwrites_a_turrets_firewall
@@ -203,7 +204,7 @@
 	var/mob/living/carbon/human/H = person()
 	mft_set_locked(C, FALSE)
 	press(H, C, "authweapon")
-	TEST_ASSERT(!T.ailock, "legacy: the panel's settings carry its own firewall (off) onto the turret")
+	TEST_ASSERT(T.ailock, "the turret keeps its own firewall: the panel hands over its settings, not its firewall")
 
 /// A card swiped on the panel toggles its lock by the person's access, as the turret's does.
 /datum/unit_test/dq_hc_struct/mft/panel_lock_follows_the_swiper
@@ -227,13 +228,13 @@
 /datum/unit_test/dq_hc_struct/mft/panel_pulse_switches_it_off_for_a_while/run_gate()
 	var/obj/machinery/porta_turret/T = turret()
 	var/obj/machinery/turretid/C = mach(/obj/machinery/turretid/stun, tile(1, 1))
-	C.updateTurrets()
+	C.push_settings(null)
 	TEST_ASSERT(mft_enabled(T), "(the turret is on)")
 	C.emp_act(1)
-	TEST_ASSERT(!C.enabled, "the pulse switches the panel off")
+	TEST_ASSERT(emp_disabled(C), "the pulse knocks the panel out")
 	TEST_ASSERT(!mft_enabled(T), "and its turrets")
 	test_time(61 SECONDS)
-	TEST_ASSERT(C.enabled, "a minute later it is back on")
+	TEST_ASSERT(!emp_disabled(C) && C.enabled, "a minute later it is back, still switched on")
 	TEST_ASSERT(mft_enabled(T), "and so are its turrets")
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -247,7 +248,7 @@
 	mft_area_power(mft_area, FALSE)
 	mft_area_power(mft_area, TRUE)
 	test_time(3 SECONDS)
-	TEST_ASSERT(!mft_operable(T), "legacy: the delayed power-off of the first change still lands after power came back")
+	TEST_ASSERT(mft_operable(T), "the turret follows the power as it is now")
 
 /// A pulse on a running turret switches it off and scrambles its targets; it comes back by itself within a minute.
 /datum/unit_test/dq_hc_struct/mft/turret_pulse_switches_it_off_for_a_while
@@ -255,9 +256,9 @@
 	var/obj/machinery/porta_turret/T = turret()
 	mft_set_enabled(T, TRUE)
 	T.emp_act(1)
-	TEST_ASSERT(!mft_enabled(T), "legacy: the pulse turns the switch off")
+	TEST_ASSERT(mft_enabled(T) && !mft_operable(T), "the pulse knocks it out (its switch stays as it was)")
 	test_time(61 SECONDS)
-	TEST_ASSERT(mft_enabled(T), "and turns it back on within a minute")
+	TEST_ASSERT(mft_operable(T), "and it comes back within a minute")
 
 /// A pulse on a switched-off turret does nothing to it.
 /datum/unit_test/dq_hc_struct/mft/pulse_on_an_idle_turret
@@ -355,9 +356,7 @@
 	touch(H, F, gun)
 	TEST_ASSERT_EQUAL(mft_frame_step(F), 4, "the gun goes in (step 4)")
 	touch(H, F, prox)
-	TEST_ASSERT_EQUAL(mft_frame_step(F), 4, "legacy: a click with the sensor does not reach the frame's install (another use of the sensor answers it)")
-	mft_install_sensor(H, F, prox)
-	TEST_ASSERT_EQUAL(mft_frame_step(F), 5, "the sensor goes in (step 5)")
+	TEST_ASSERT_EQUAL(mft_frame_step(F), 5, "a click with the sensor puts it in (step 5)")
 	touch(H, F, screwdriver)
 	TEST_ASSERT_EQUAL(mft_frame_step(F), 6, "the screwdriver shuts the hatch (step 6)")
 	touch(H, F, metal)
