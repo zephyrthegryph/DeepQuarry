@@ -638,6 +638,12 @@ Pinned by `code/modules/unit_tests/dq_fwg3_modals.dm` (modals opened and answere
   asks only while running, remove only while idle).
 * **Chemical dispenser.** Its buttons are ops behind a silent "not broken" requirement; clearing the recipes asks first, and saving a recording asks
   for its name and then, only when that name is taken, whether to overwrite (the old window-interactive check between the two is the op's recheck).
+* **Medical, security and employment records consoles.** The field edit modal is one op with two `asks()` steps, a pick when the field has choices and
+  a text otherwise (`when =` the field's kind); a field the console does not edit opens nothing. The comment modal is a text step. Pinned on the converted
+  form (`dq_hc_computers/fwg3_record_modals`).
+* **Cloning console.** Deleting a record asks in the window ("Delete" / "Cancel"); only "Delete" deletes (the old boolean modal reached the delete
+  handler on either answer, which then needed the ID in hand). The ID check is unchanged.
+* **Yes/no labels.** The trash-eating PDA confirmation ("Definitely" / "Cancel") is an `open_request()` of `/datum/prompt/yes_no` with its labels.
 
 ## Silicon entry points (phase A): remote() ops, the interface provider, the gripper as a provider
 

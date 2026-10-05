@@ -121,6 +121,12 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	op("photo_front", ui_act("photo_front"), then(PROC_REF(ui_act_photo_front)))
 	op("photo_side", ui_act("photo_side"), then(PROC_REF(ui_act_photo_side)))
 	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
+	// The record modals (the old ui_modal_opened()/ui_modal_answered()): a field is edited by a pick or by typing, as the field's kind says.
+	op("edit", ui_act("modal:edit", arg("arguments")), needs(req(PROC_REF(edit_field_known), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(edit_question)), "choices" = computed(PROC_REF(edit_choices)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)),
+		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
+		then(PROC_REF(modal_edit)))
+	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
 
 /obj/machinery/computer/secure_data/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -462,63 +468,78 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		active2().fields["notes"] = notes
 		SStgui.update_uis(src)
 
-/obj/machinery/computer/secure_data/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
+/// The record field the edit modal names (`arguments["field"]`), when this console can edit it.
+/obj/machinery/computer/secure_data/proc/edit_field(list/arguments)
+	var/field = islist(arguments) ? arguments["field"] : null
+	return (length(field) && field_edit_questions[field]) ? field : null
+
+/// Requirement: the edit modal names a field this console edits (silently refused otherwise, as the old modal never opened).
+/obj/machinery/computer/secure_data/proc/edit_field_known(datum/act/op/A)
+	return !isnull(edit_field(A.args["arguments"]))
+
+/// The field is edited by picking from its choices.
+/obj/machinery/computer/secure_data/proc/edit_by_choice(datum/act/op/A)
+	return length(field_edit_choices[edit_field(A.args["arguments"])]) > 0
+
+/// The field is edited by typing.
+/obj/machinery/computer/secure_data/proc/edit_by_text(datum/act/op/A)
+	return !edit_by_choice(A)
+
+/obj/machinery/computer/secure_data/proc/edit_question(datum/act/op/A)
+	return field_edit_questions[edit_field(A.args["arguments"])]
+
+/obj/machinery/computer/secure_data/proc/edit_choices(datum/act/op/A)
+	return field_edit_choices[edit_field(A.args["arguments"])]
+
+/// The field's current value, as the window passed it.
+/obj/machinery/computer/secure_data/proc/edit_value(datum/act/op/A)
+	var/list/arguments = A.args["arguments"]
+	return islist(arguments) ? arguments["value"] : null
+
+/// The edit modal's answer goes into the record field.
+/obj/machinery/computer/secure_data/proc/modal_edit(datum/act/op/A, list/arguments)
+	var/mob/user = A.actor
+	var/answer = A.step_value("edit_choice")
+	if(isnull(answer))
+		answer = A.step_value("edit_text")
 	. = TRUE
-	switch(id)
-		if("edit")
-			var/field = arguments["field"]
-			if(!length(field) || !field_edit_questions[field])
-				return
-			var/question = field_edit_questions[field]
-			var/choices = field_edit_choices[field]
-			if(length(choices))
-				tgui_modal_choice(src, id, question, arguments = arguments, value = arguments["value"], choices = choices)
-			else
-				tgui_modal_input(src, id, question, arguments = arguments, value = arguments["value"])
-		if("add_c")
-			tgui_modal_input(src, id, "Please enter your message:")
-		else
-			return FALSE
+	var/field = arguments["field"]
+	if(!length(field) || !field_edit_questions[field])
+		return
+	var/list/choices = field_edit_choices[field]
+	if(length(choices) && !(answer in choices))
+		return
 
-/obj/machinery/computer/secure_data/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
+	if(field == "age")
+		answer = text2num(answer)
+
+	if(field == "rank")
+		if(answer in SSjob.occupations_by_name)
+			active1().fields["real_rank"] = answer
+
+	var/old_criminal_status
+	if(field == "criminal")
+		old_criminal_status = active2()?.fields?["criminal"]
+		for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+			H.flag_hud_update(WANTED_HUD)
+
+	if(istype(active2(), /datum/data/record) && (field in active2().fields))
+		active2().fields[field] = answer
+	if(istype(active1(), /datum/data/record) && (field in active1().fields))
+		active1().fields[field] = answer
+	if(field == "criminal" && old_criminal_status != answer)
+		record_security_disposition(old_criminal_status, answer, user)
+
+/// The comment modal's answer is added to the record's log.
+/obj/machinery/computer/secure_data/proc/modal_add_comment(datum/act/op/A, list/arguments)
+	var/answer = A.step_value("comment")
 	. = TRUE
-	switch(id)
-		if("edit")
-			var/field = arguments["field"]
-			if(!length(field) || !field_edit_questions[field])
-				return
-			var/list/choices = field_edit_choices[field]
-			if(length(choices) && !(answer in choices))
-				return
-
-			if(field == "age")
-				answer = text2num(answer)
-
-			if(field == "rank")
-				if(answer in SSjob.occupations_by_name)
-					active1().fields["real_rank"] = answer
-
-			var/old_criminal_status
-			if(field == "criminal")
-				old_criminal_status = active2()?.fields?["criminal"]
-				for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-					H.flag_hud_update(WANTED_HUD)
-
-			if(istype(active2(), /datum/data/record) && (field in active2().fields))
-				active2().fields[field] = answer
-			if(istype(active1(), /datum/data/record) && (field in active1().fields))
-				active1().fields[field] = answer
-			if(field == "criminal" && old_criminal_status != answer)
-				record_security_disposition(old_criminal_status, answer, user)
-		if("add_c")
-			if(!length(answer) || !istype(active2(), /datum/data/record) || !length(authenticated))
-				return
-			active2().fields["comments"] += list(list(
-				header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
-				text = answer
-			))
-		else
-			return FALSE
+	if(!length(answer) || !istype(active2(), /datum/data/record) || !length(authenticated))
+		return
+	active2().fields["comments"] += list(list(
+		header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
+		text = answer
+	))
 /obj/machinery/computer/secure_data/proc/record_security_disposition(old_status, new_status, mob/living/user)
 	if(!istype(active2(), /datum/data/record) || !istext(new_status))
 		return FALSE

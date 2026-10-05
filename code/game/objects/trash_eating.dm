@@ -63,8 +63,10 @@
 	act_message(user, src, others = span_warning("%U% successfully makes %T% disappear!"))
 	user.swallow_trash(src)
 
-/obj/item/pda/proc/eat_risk_confirmed(datum/om/prompt/confirm/ask)
-	var/mob/living/user = ask.answerer
+/obj/item/pda/proc/eat_risk_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/living/user = A.request.answerer
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 
 /obj/item/pda/on_trash_eaten(mob/living/user)
@@ -81,7 +83,7 @@
 		else
 			act_message(user, src, others = span_warning("%U% is threatening to make %T% disappear!"))
 			if(id)
-				om_ask(user, /datum/om/prompt/confirm, PROC_REF(eat_risk_confirmed), title = "Confirmation", message = "The PDA you're holding contains a vulnerable ID card. Will you risk it?", yes_text = "Definitely", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+				open_request(src, /datum/prompt/yes_no, PROC_REF(eat_risk_confirmed), answerer = user, title = "Confirmation", question = "The PDA you're holding contains a vulnerable ID card. Will you risk it?", yes_text = "Definitely", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 				return FALSE
 			om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 			return FALSE

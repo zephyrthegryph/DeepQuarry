@@ -36,4 +36,10 @@ export type SecurityRecordsActions = {
   print_p: Record<string, never>;
   photo_front: Record<string, never>;
   photo_side: Record<string, never>;
+  'modal:edit': {
+    arguments: unknown;
+  };
+  'modal:add_c': {
+    arguments: unknown;
+  };
 };

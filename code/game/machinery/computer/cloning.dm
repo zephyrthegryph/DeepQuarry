@@ -34,7 +34,10 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	op("autoprocess", ui_act("autoprocess", arg("on", num())), then(PROC_REF(ui_act_autoprocess)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
 	op("view_rec", ui_act("view_rec", arg("ref")), then(PROC_REF(ui_act_view_rec)))
-	op("del_rec", ui_act("del_rec"), then(PROC_REF(ui_act_del_rec)))
+	// deleting a record asks first, in the window (the old boolean modal), and needs the ID in hand when answered
+	op("del_rec", ui_act("del_rec"), needs(req(PROC_REF(has_active_record), silent = TRUE)),
+		asks(/datum/prompt/yes_no, fields = list("question" = "Please confirm that you want to delete the record by holding your ID and pressing Delete:", "yes_text" = "Delete", "no_text" = "Cancel", "inline" = TRUE, "timeout" = 0), step = "confirm"),
+		then(PROC_REF(ui_act_del_rec)))
 	op("disk", ui_act("disk", arg("option", schema_text(4096))), then(PROC_REF(ui_act_disk)))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("selectpod", ui_act("selectpod", arg("ref")), then(PROC_REF(ui_act_selectpod)))
@@ -227,24 +230,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 
 	return data
 
-/obj/machinery/computer/cloning/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
-	. = TRUE
-	if(id == "del_rec" && active_BR())
-		var/obj/item/card/id/C = user.get_active_hand()
-		if(!istype(C) && !istype(C, /obj/item/pda))
-			set_temp("ID not in hand.", "danger")
-			return
-		if(check_access(C))
-			var/datum/transhuman/body_record/doomed = active_BR()
-			if(doomed in records)
-				own_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
-			else
-				qdel(doomed)
-			set_temp("Record deleted.", "success")
-			menu = MENU_RECORDS
-		else
-			set_temp("Access denied.", "danger")
-
 /obj/machinery/computer/cloning/proc/ui_act_scan(datum/act/op/A)
 	. = TRUE
 	var/mob/living/carbon/human/scanner_occupant = scanner()?.get_occupant()
@@ -296,12 +281,30 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 		set_temp("Error: Record missing.", "danger")
 	add_fingerprint(A.actor)
 
+/obj/machinery/computer/cloning/proc/has_active_record(datum/act/op/A)
+	return !QDELETED(active_BR) // ALLOW(reads): the selected record is read when the button is pressed and again when it is answered, never cached
+
+/// The record is deleted when the confirmation is answered with Delete by someone holding an ID with access.
 /obj/machinery/computer/cloning/proc/ui_act_del_rec(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	if(!active_BR())
+	add_fingerprint(user)
+	if(!A.step_value("confirm") || !active_BR())
 		return
-	tgui_modal_boolean(src, "del_rec", "Please confirm that you want to delete the record by holding your ID and pressing Delete:", yes_text = "Delete", no_text = "Cancel")
-	add_fingerprint(A.actor)
+	var/obj/item/card/id/C = user.get_active_hand()
+	if(!istype(C) && !istype(C, /obj/item/pda))
+		set_temp("ID not in hand.", "danger")
+		return
+	if(check_access(C))
+		var/datum/transhuman/body_record/doomed = active_BR()
+		if(doomed in records)
+			own_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
+		else
+			qdel(doomed)
+		set_temp("Record deleted.", "success")
+		menu = MENU_RECORDS
+	else
+		set_temp("Access denied.", "danger")
 
 /obj/machinery/computer/cloning/proc/ui_act_disk(datum/act/op/A, option)
 	. = TRUE
