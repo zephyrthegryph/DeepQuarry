@@ -38,7 +38,7 @@
 	var/datum/prompt/number/helm_coordinates/question = SSrequests.open_for(user)
 	TEST_ASSERT(istype(question) && question.owner == editor, "Actual public coordinate UI entry opens a native question on its original window")
 	TEST_ASSERT_EQUAL(question.step_name, set_x ? "x" : "y", "Actual captured flags choose the correct first coordinate stage")
-	TEST_ASSERT_EQUAL(question.default, set_x ? original_x : original_y, "Actual coordinate request reads current real coordinate state")
+	TEST_ASSERT_EQUAL(question.default, (set_x ? original_x : original_y) || 0, "Actual numeric request presents an unset coordinate as zero, matching the original numeric window")
 	TEST_ASSERT_EQUAL(question.captured["setx"], set_x, "Actual request captures original X-selection flag")
 	TEST_ASSERT(question.captured["sety"], "Actual request retains original Y-selection flag")
 	if(request_case == "cancelled")
