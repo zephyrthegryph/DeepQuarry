@@ -124,8 +124,6 @@ usr_outside_verb	code/modules/emotes/custom_emote.dm	if((check_stat && (src && s
 usr_outside_verb	code/modules/emotes/emote_mob.dm	if(usr == src) //client-called emote
 usr_outside_verb	code/modules/emotes/emote_mob.dm	var/involuntary = (usr != src)
 usr_outside_verb	code/modules/entopics/entopics.dm	usr << ftp(holo ? HI : CI,"[A.name].dmi")
-usr_outside_verb	code/modules/env_message/env_message.dm	if(usr)
-usr_outside_verb	code/modules/env_message/env_message.dm	openToolTip(user = usr, tip_src = src, params = params, title = null, content = combined_message)
 usr_outside_verb	code/modules/env_message/env_message.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/env_message/env_message.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/error_handler/error_handler.dm	if(istype(usr))
@@ -150,8 +148,6 @@ usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_object))
-usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
-usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")

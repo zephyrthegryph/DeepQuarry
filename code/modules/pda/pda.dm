@@ -213,9 +213,11 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	return id
 
 /obj/item/pda/MouseDrop(obj/over_object, src_location, over_location)
-	var/mob/M = usr
-	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
-		return attack_self(M)
+	return drop_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): BYOND PDA MouseDrop supplies its initiating mob to the usability check and self-use handler.
+
+/obj/item/pda/proc/drop_with_actor(mob/user, obj/over_object)
+	if((!istype(over_object, /atom/movable/screen)) && can_use(user))
+		return attack_self(user)
 	return
 
 /obj/item/pda/proc/close(mob/user)
