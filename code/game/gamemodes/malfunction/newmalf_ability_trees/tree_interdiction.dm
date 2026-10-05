@@ -47,13 +47,12 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_recall_shuttle_confirmed), receiver = user, title = "Recall Shuttle: ", message = "Really recall the shuttle?", price = price)
+	open_request(user, /datum/prompt/yes_no, TYPE_PROC_REF(/mob/living/silicon/ai, malf_recall_shuttle_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Recall Shuttle: ", question = "Really recall the shuttle?", costs = list("[RES_CPU]" = price), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/silicon/ai/proc/malf_recall_shuttle_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_recall_shuttle_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
-	var/price = ask.price
-	if(!ability_pay(user, price))
-		return
 	message_admins("Malfunctioning AI [user.name] recalled the shuttle.")
 	cancel_call_proc(user)
 
@@ -97,26 +96,27 @@
 			return
 
 
-		om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_target_chosen), receiver = user, title = "Unlock Target", message = "Select unlock target:", choices = robot_names, options = robots)
+		open_request(user, /datum/prompt/choice, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_target_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Unlock Target", question = "Select unlock target:", choices = robot_names, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 	malf_unlock_confirm(user, target)
 
-/mob/living/silicon/ai/proc/malf_unlock_target_chosen(datum/om/prompt/choice/malf/ask)
-	for(var/mob/living/silicon/robot/R in ask.options)
-		if(ask.choice == R.name)
+/mob/living/silicon/ai/proc/malf_unlock_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_SILICONS))
+		if(R.connected_ai == src && R.lockcharge && A.answer.answer_value == R.name)
 			malf_unlock_confirm(src, R)
 			return
 
 /proc/malf_unlock_confirm(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target)
-		om_ask_begin(null, user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_confirmed), list(receiver = user, title = "Unlock Cyborg", message = "Really try to unlock cyborg [target.name]?", malf_target = target))
+		open_request(user, /datum/prompt/yes_no, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Unlock Cyborg", question = "Really try to unlock cyborg [target.name]?", subject = target, costs = list("[RES_CPU]" = 125), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/silicon/ai/proc/malf_unlock_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_unlock_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
-	var/mob/living/silicon/robot/target = ask.malf_target
-	var/price = 125
-	if(!ability_pay(user, price))
-		return
+	var/mob/living/silicon/robot/target = A.request.subject
 	user.hacking = 1
 	to_chat(user, "Attempting to unlock cyborg. This will take approximately 30 seconds.")
 	after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), with = list(user, target))
@@ -166,16 +166,13 @@
 		return
 
 	if(target)
-		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_cyborg_confirmed), answerer = user, title = "Hack Cyborg", question = "Really try to hack cyborg [target.name]?", subject = target)
+		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_cyborg_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack Cyborg", question = "Really try to hack cyborg [target.name]?", subject = target, costs = list("[RES_CPU]" = price))
 
 /mob/living/silicon/ai/proc/malf_hack_cyborg_confirmed(datum/act/request/context)
 	if(!context.answer || context.answer.answer_value != "Yes")
-		return
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
 	var/mob/living/silicon/robot/target = context.request.subject
-	var/price = 350
-	if(!ability_pay(user, price))
-		return
 	user.hacking = 1
 	to_chat(user, "Beginning hack sequence. Estimated time until completed: 30 seconds.")
 	om_task_start(/datum/om/task/malf_hack, user, target, receiver = user, complete_proc = /mob/living/silicon/ai/proc/malf_hack_cyborg_done, script = list(
@@ -208,16 +205,13 @@
 		return
 
 	if(target)
-		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_ai_confirmed), answerer = user, title = "Hack AI", question = "Really try to hack AI [target.name]?", subject = target)
+		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_ai_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack AI", question = "Really try to hack AI [target.name]?", subject = target, costs = list("[RES_CPU]" = price))
 
 /mob/living/silicon/ai/proc/malf_hack_ai_confirmed(datum/act/request/context)
 	if(!context.answer || context.answer.answer_value != "Yes")
-		return
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
 	var/mob/living/silicon/ai/target = context.request.subject
-	var/price = 600
-	if(!ability_pay(user, price))
-		return
 	user.hacking = 1
 	to_chat(user, "Beginning hack sequence. Estimated time until completed: 2 minutes")
 	var/list/script = list(

@@ -44,7 +44,7 @@
 	set category = VERB_CAT_SOFTWARE
 	var/price = 15
 	var/mob/living/silicon/ai/user = usr
-	if(!ability_prechecks(user, price) || !ability_pay(user,price))
+	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
 		return
 	to_chat(user, "Sending feedback pulse...")
 	for(var/obj/machinery/power/apc/AP in REGISTRY_MEMBERS(REGISTRY_APCS))
@@ -71,47 +71,47 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_camera_chosen), receiver = user, title = "Hack Camera", message = "Select required action:", choices = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), malf_target = target, price = price)
+	open_request(user, /datum/prompt/choice, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_camera_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack Camera", question = "Select required action:", choices = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), subject = target, costs = list("[RES_CPU]" = price), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/silicon/ai/proc/malf_hack_camera_chosen(datum/om/prompt/choice/malf/ask)
+/// The pick is paid for only when it changed the camera (OP_REFUSED releases the CPU set aside).
+/mob/living/silicon/ai/proc/malf_hack_camera_chosen(datum/act/request/A)
+	if(!A.answer)
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
-	var/obj/machinery/camera/target = ask.malf_target
-	var/price = ask.price
+	var/obj/machinery/camera/target = A.request.subject
+	if(!istype(target))
+		return OP_REFUSED
 
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("Reset")
-			if(wiring_of(target))
-				if(!ability_pay(user, price))
-					return
-				target.reset_wires()
-				to_chat(user, "Camera reactivated.")
+			if(!wiring_of(target))
+				return OP_REFUSED
+			target.reset_wires()
+			to_chat(user, "Camera reactivated.")
 		if("Add X-Ray")
 			if(target.isXRay())
 				to_chat(user, "Camera already has X-Ray function.")
-				return
-			else if(ability_pay(user, price))
-				target.upgradeXRay()
-				target.reset_wires()
-				to_chat(user, "X-Ray camera module enabled.")
-				return
+				return OP_REFUSED
+			target.upgradeXRay()
+			target.reset_wires()
+			to_chat(user, "X-Ray camera module enabled.")
 		if("Add Motion Sensor")
 			if(target.isMotion())
 				to_chat(user, "Camera already has Motion Sensor function.")
-				return
-			else if(ability_pay(user, price))
-				target.upgradeMotion()
-				target.reset_wires()
-				to_chat(user, "Motion Sensor camera module enabled.")
-				return
+				return OP_REFUSED
+			target.upgradeMotion()
+			target.reset_wires()
+			to_chat(user, "Motion Sensor camera module enabled.")
 		if("Add EMP Shielding")
 			if(target.isEmpProof())
 				to_chat(user, "Camera already has EMP Shielding function.")
-				return
-			else if(ability_pay(user, price))
-				target.upgradeEmpProof()
-				target.reset_wires()
-				to_chat(user, "EMP Shielding camera module enabled.")
-				return
+				return OP_REFUSED
+			target.upgradeEmpProof()
+			target.reset_wires()
+			to_chat(user, "EMP Shielding camera module enabled.")
+		else
+			return OP_REFUSED
+	return OP_OK
 
 /datum/game_mode/malfunction/verb/emergency_forcefield(turf/T as turf in world)
 	set name = "Emergency Forcefield"
@@ -121,7 +121,7 @@
 	var/mob/living/silicon/ai/user = usr
 	if(!T || !istype(T))
 		return
-	if(!ability_prechecks(user, price) || !ability_pay(user, price))
+	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
 		return
 
 	to_chat(user, "Emergency forcefield projection completed.")
@@ -181,7 +181,7 @@
 	explosion_intensity = min(explosion_intensity, 12) // 3, 6, 12 explosion cap
 
 	// Charge the AI BEFORE damaging hardware, so a failed payment doesn't burn the APC/SMES for free.
-	if(!ability_pay(user,price))
+	if(!res_spend(user, RES_CPU, price, actor = user))
 		return
 
 	M.use_power(2000000) // Major power spike, few of these will completely burn APC's cell - equivalent of 2GJ of power.

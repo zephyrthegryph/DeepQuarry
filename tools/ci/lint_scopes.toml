@@ -338,5 +338,6 @@ banned = [
   "_own_add = rel_add(holder, nameof(v), value): the accessor is private to code/engine and code/datums/ownership",
   "_own_put = rel_add(holder, nameof(v), value, key): the accessor is private to code/engine and code/datums/ownership",
   "own_put = rel_add(holder, nameof(v), value, key): the engine's accessor is _own_put, never called from content",
+  "ability_pay = a malf ability's price is costs = list(\"[RES_CPU]\" = price) on its request, or res_spend(user, RES_CPU, price) when it asks nothing",
   "explosion_contents_severity = declare blast_contents() (code/library/structures/blast_contents.dm); the explosion service reads explosion_contents_severity_of()",
 ]

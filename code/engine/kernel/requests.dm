@@ -64,6 +64,19 @@
 	/// TRUE: the re-checks (ask_flags, rights, usable_state, recheck_extra()) also run when the request opens, and one that
 	/// fails ends it REQ_CANCELLED before it is shown (an admin prompt whose asker lost the rights, a target already gone).
 	var/recheck_on_open = FALSE
+	/// What answering costs (RES_X -> amount), for a request outside an op (doc/rewrite/final_api.html, section 9 "Resource transactions"): the
+	/// require half is asked when it opens (a request that cannot be paid for is not opened, and the payer is told why), the amounts are reserved
+	/// from `payer` once a confirming answer arrives, and committed after the handler, unless it returned OP_REFUSED or OP_FAILED (released). An
+	/// answer that can no longer be paid for ends the request REQ_CANCELLED with nothing spent.
+	var/list/costs
+	/// Who pays the costs (null: the answerer).
+	var/datum/payer
+	/// The reservations held while the handler runs.
+	var/list/reservations
+
+/// Whether the answer goes ahead with the request's costs: any answer does; a yes/no only on yes.
+/datum/request/proc/confirmed()
+	return TRUE
 
 /// A kind's own re-check of an answer when it arrives: null, or why the answer is dropped. Reads only.
 /datum/request/proc/recheck_extra()
@@ -184,8 +197,84 @@ SYSTEM_DEF(requests)
 	if(R.recheck_on_open && request_recheck(R))
 		request_end(R, REQ_CANCELLED, null)
 		return R
+	if(length(R.costs))
+		var/why = request_costs_refusal(R)
+		if(why)
+			op_tell(request_payer(R), why)
+			log_game("request: [R.type] not opened: its costs cannot be paid ([reason_text(why)])")
+			registry.open -= R
+			cancel_after(R, "request_timeout")
+			qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: one that never opened is deleted at once
+			return null
 	R.begin()
 	return R
+
+/// Who pays a request's costs: its payer, else its answerer.
+/proc/request_payer(datum/request/R)
+	return R.payer || R.answerer
+
+/// A transient context for a request's resource adapters (they read A.actor, A.held, A.key, as an op's do). The caller releases it.
+/proc/request_cost_context(datum/request/R)
+	RETURN_TYPE(/datum/act/op)
+	var/datum/act/op/A = take(/datum/act/op)
+	var/datum/payer = request_payer(R)
+	A.holder = payer // ALLOW(ownership): a pooled transient: reset on release
+	A.actor = ismob(payer) ? payer : null
+	A.target = R.owner
+	A.key = "request:[R.type]"
+	return A
+
+/// null when every cost of `R` could be reserved now, else the first refusal (the require half of costs: nothing is set aside). Reads only.
+/proc/request_costs_refusal(datum/request/R)
+	var/datum/act/op/A = request_cost_context(R)
+	. = null
+	for(var/res_id in R.costs)
+		var/amount = R.costs[res_id]
+		var/datum/resource/RS = resource_of(text2num("[res_id]"))
+		if(!RS)
+			stack_trace("request [R.type]: no adapter for resource [res_id]")
+			. = /datum/msg/op/no_resource
+			break
+		if(!isnum(amount) || amount <= 0)
+			continue
+		var/datum/payer = RS.holder_of(A)
+		if(!payer || RS.available(A) - reserved_total(payer, RS.res_id) < amount)
+			. = RS.refusal(A, amount)
+			break
+	A.release()
+
+/// Reserves every cost of `R` (all or nothing). TRUE when they are held in R.reservations.
+/proc/request_costs_reserve(datum/request/R)
+	var/datum/act/op/A = request_cost_context(R)
+	var/list/held = list()
+	. = TRUE
+	for(var/res_id in R.costs)
+		var/amount = R.costs[res_id]
+		if(!isnum(amount) || amount <= 0)
+			continue
+		var/datum/resource/RS = resource_of(text2num("[res_id]"))
+		var/datum/reservation/reserved = RS?.reserve(A, amount)
+		if(!reserved)
+			R.last_error = reason_text(RS ? RS.refusal(A, amount) : /datum/msg/op/no_resource)
+			. = FALSE
+			break
+		held += reserved
+	A.release()
+	if(!.)
+		for(var/datum/reservation/reserved as anything in held)
+			reservation_release(reserved)
+		return
+	R.reservations = held
+
+/// Ends the reservations of `R`: committed after a handler that went through, released after one that refused.
+/proc/request_costs_settle(datum/request/R, commit)
+	for(var/datum/reservation/reserved as anything in R.reservations)
+		if(commit)
+			if(reservation_commit(reserved) != OP_OK)
+				log_game("request: [R.type] could not spend its [reserved.amount] of resource [reserved.res_id]")
+		else
+			reservation_release(reserved)
+	R.reservations = null
 
 /// A player's answer to prompt `R` (a window): normalised and checked first. Returns null when it ended the request answered, else the reason it was
 /// refused (the prompt stays open for another try). The test driver's request_answer() goes through here too.
@@ -274,6 +363,10 @@ SYSTEM_DEF(requests)
 			R.last_error = recheck
 			log_game("request: [R.type] answer dropped: [recheck]")
 			outcome = REQ_CANCELLED
+		if(outcome == REQ_ANSWERED && length(R.costs) && R.confirmed() && !request_costs_reserve(R))
+			op_tell(request_payer(R), R.last_error)
+			log_game("request: [R.type] answer dropped: its costs could not be reserved ([R.last_error])")
+			outcome = REQ_CANCELLED
 	R.outcome = outcome
 	if(istype(R, /datum/prompt))
 		var/datum/prompt/prompt_ended = R
@@ -297,11 +390,16 @@ SYSTEM_DEF(requests)
 		A.answer = (outcome == REQ_ANSWERED) ? R : null // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 		// The kernel isolates a faulting handler: the act is released and the request ends whatever the handler did, so a
 		// callback never wraps its own body in safe_call().
+		var/handled = OP_FAILED
 		try
-			call(R.owner, R.handler)(A)
+			handled = call(R.owner, R.handler)(A)
 		catch(var/exception/fault) // ALLOW(silent_catch): the request kernel's isolation point: one handler's runtime must not leak the act or the request
 			kernel().report_fault(fault, "request [R.type] handler [R.handler] on [R.owner.type]: [fault] ([fault.file]:[fault.line])")
 		A.release()
+		if(R.reservations)
+			request_costs_settle(R, handled != OP_REFUSED && handled != OP_FAILED)
+	if(R.reservations) // the owner went before the handler could run: nothing is spent
+		request_costs_settle(R, FALSE)
 	request_op_resume(R)
 	// Ended: the request and its timer are done with; what a caller kept (R.outcome, R.answer_value) stays readable.
 	qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: ending it is its deletion
