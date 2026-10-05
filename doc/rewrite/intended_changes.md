@@ -963,7 +963,6 @@ the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Ea
   (`electrify(duration, source, user)` is now a hold), `lock()`/`unlock()` (the bolts library's `drop_bolts`/`raise_bolts`, through `set_bolted()`).
 * Moved, behaviour intact: the SCP door to `airlock_subtypes.dm`, the cyborg's water reserve and refill verb to `robot.dm`, the cyborg-use rows to
   `atmos_control.dm`, `computer/robot.dm`, `turret_control.dm` and `portable_turret.dm` (its cyborg `isLocked()` branch folded into the turret's own).
-=======
 
 ## Atmospherics machines: the air alarm and the remote atmospherics console
 

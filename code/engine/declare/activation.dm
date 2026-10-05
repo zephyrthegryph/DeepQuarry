@@ -32,17 +32,18 @@
 /datum/entry_engine/proc/remove(datum/activation/A, datum/entry/E)
 	return
 
-GLOBAL_LIST_EMPTY(entry_engines) // kind -> /datum/entry_engine
-
+/// The entry engine of a declaration kind (owns_one, ref_many, ...), or null. A static, not a GLOB list: a global datum made while the
+/// globals are still being built (the underwear catalog's rel_add()) compiles its table through here, before a GLOB list is made.
 /proc/entry_engine_for(kind)
 	RETURN_TYPE(/datum/entry_engine)
-	if(!length(GLOB.entry_engines))
+	var/static/list/engines
+	if(!engines)
+		engines = list()
 		for(var/engine_type in subtypesof(/datum/entry_engine))
 			var/datum/entry_engine/engine = new engine_type
 			if(engine.kind)
-				GLOB.entry_engines[engine.kind] = engine
-		GLOB.entry_engines["built"] = TRUE
-	return GLOB.entry_engines[kind]
+				engines[engine.kind] = engine
+	return engines[kind]
 
 /// Typed per-activation capability data. A capability declares /datum/cap_data/<cap> next to itself; cap_data(A) makes it on first use.
 /datum/cap_data
