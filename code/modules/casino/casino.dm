@@ -999,6 +999,9 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	sentient_prize.tf_into(newitem, TRUE, item_name)
 
 /obj/machinery/casinosentientprize_handler/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user, buystate)
+	insert_chip_stage(cashmoney, user, buystate, list())
+
+/obj/machinery/casinosentientprize_handler/proc/insert_chip_stage(obj/item/spacecasinocash/cashmoney, mob/user, buystate, list/purchase_answers)
 	// Snapshot the shared instance var: it can be reassigned/nulled by another user's
 	// interaction while this purchase sleeps on a dialog, so work off a stable local.
 	var/obj/item/clothing/accessory/collar/casinosentientprize/collar = selected_collar
@@ -1023,7 +1026,10 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/list/tf_choice = null
 	var/declined_tf = FALSE
 	if(buystate == "buy" && collar.sentientprizeitemtf)
-		var/confirm_item_tf_claim = rerun_ask(user, "k854", PROC_REF(insert_chip), args, /datum/om/prompt/choice/alert, message = "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?", title = "Confirm Prize Item Transformation", choices = list("Yes", "No"))
+		if(!("k854" in purchase_answers))
+			open_request(src, /datum/prompt/choice/casino_purchase/confirmation, PROC_REF(casino_purchase_answered), answerer = user, subject = cashmoney, buy_mode = buystate, captured = purchase_answers.Copy())
+			return
+		var/confirm_item_tf_claim = purchase_answers["k854"]
 		if(isnull(confirm_item_tf_claim))
 			return
 		// Re-validate the snapshotted collar after the sleeping dialog: it may have been
@@ -1032,7 +1038,12 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 			to_chat(user,span_warning("That prize was claimed by someone else while you decided!"))
 			return
 		if(confirm_item_tf_claim == "Yes")
-			var/_answer_k861 = rerun_ask(user, "k861", PROC_REF(insert_chip), args, /datum/om/prompt/choice, message = "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)", title = "Choose Sentient Prize Item", choices = GLOB.item_tf_options, cancel_answer = "")
+			if(!("k861" in purchase_answers))
+				var/datum/prompt/choice/casino_purchase/item/ask = open_request(src, /datum/prompt/choice/casino_purchase/item, PROC_REF(casino_purchase_answered), answerer = user, subject = cashmoney, buy_mode = buystate, captured = purchase_answers.Copy(), choices = GLOB.item_tf_options.Copy())
+				if(ask?.is_open())
+					ask.purchase_opened = TRUE
+				return
+			var/_answer_k861 = purchase_answers["k861"]
 			if(isnull(_answer_k861))
 				return
 			tf_choice = _answer_k861
@@ -1265,3 +1276,46 @@ CAPABILITIES(/datum/prompt/number/wheel_review)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
+
+/datum/prompt/choice/casino_purchase
+	timeout = 0
+	recheck_on_open = TRUE
+	var/buy_mode
+	var/answer_key
+	var/purchase_opened = FALSE
+
+/datum/prompt/choice/casino_purchase/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer) || !subject || QDELETED(subject))
+		return "gone"
+	return null
+
+/datum/prompt/choice/casino_purchase/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/casino_purchase/refusal(given)
+	return null
+
+/datum/prompt/choice/casino_purchase/confirmation
+	question = "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?"
+	title = "Confirm Prize Item Transformation"
+	buttons = TRUE
+	choices = list("Yes", "No")
+	answer_key = "k854"
+
+/datum/prompt/choice/casino_purchase/item
+	question = "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)"
+	title = "Choose Sentient Prize Item"
+	answer_key = "k861"
+
+/obj/machinery/casinosentientprize_handler/proc/casino_purchase_answered(datum/act/request/A)
+	var/datum/prompt/choice/casino_purchase/ask = A.request
+	if(!A.answer)
+		// Only a genuine close of the optional item question means a normal purchase.
+		if(ask.answer_key != "k861" || !ask.purchase_opened || ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || !isnull(request_recheck(ask)))
+			return
+	var/list/purchase_answers = ask.captured.Copy()
+	purchase_answers[ask.answer_key] = A.answer ? A.answer.answer_value : ""
+	// Queue the original rerun completion push before the non-yielding replay, so a
+	// runtime still leaves its normal presentation push scheduled.
+	SStgui.update_uis(src)
+	insert_chip_stage(ask.subject, ask.answerer, ask.buy_mode, purchase_answers)
