@@ -746,3 +746,49 @@ Pinned by `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (green on the leg
   longer call the frame. Its refusals are requirements with the old texts (the generic frame says "It cannot be placed on this spot." /
   "...in this area." where it named itself), a diagonal or distant builder is refused silently as before, and an APC frame cuts a loose
   terminal under it as part of the mount. `try_build()` is gone.
+
+## SMES, the RCON console and the power-failure event (rewrite/machines-full)
+
+Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` and the review findings in `code/modules/unit_tests/dq_mf_smes_behaviour.dm` (written and
+green on the legacy code first; only adapters changed, except the findings below, each edited in the commit that changes it).
+
+* **The unit shows what really flows.** Rust now reports each SMES's per-step flows (`Smes.output_used`, `input_used`, `input_available`, zeroed by
+  the new `SmesFlowReset` law), and `power_poll()` reads them: the input lamp and the window's `inputting` are 0 off, 1 trying with nothing to
+  take, 2 charging; `outputting` is 0 off, 1 offering with nothing drawn, 2 feeding a load; `inputAvailable` and `outputUsed` are the readings
+  (they were a hardcoded 0, and `inputting`/`outputting` never reached 2, so the hum and the `smes-oc` overlays never showed).
+* **The hum follows the output lamp** (`on_change(outputting)`): a unit that feeds a load hums; it was silent whatever flowed.
+* **Building a terminal no longer repairs a broken unit.** The legacy `set_stat(0)` after the cable went in cleared every stat bit (BROKEN, EMPED,
+  NOPOWER). A unit placed with no input terminal is now *unwired* (a tracked fact that holds STAT_OPERABLE down and darkens the overlays), not
+  broken: it has no "It is broken." examine line, and a terminal built for it wires it.
+* **The grid checker reaches the SMES.** Its failure calls `do_grid_check()` on the units upstream, which had no override, so a grid check never
+  suspended a SMES; it now sets `grid_check` until the checker ends the failure.
+* **A coil is counted once it is in** (the counter went up before the move into the parts, so a refused move left one coil too many). A full
+  unit refuses a coil with "You can't insert more coils" as a refusal, before anything happens.
+* **Refusals are requirements, asked again after a wait:** a whole casing refuses the welder before the weld (it waited the weld out first); a
+  terminal site taken during the five seconds refuses at the re-check. The welder is the library's `lit_welder()` (a lit tool; the weld still
+  spends no fuel).
+* **The RCON tag prompt refuses a tag another unit carries and asks again** (the prompt kind's refusal); an empty answer changes nothing.
+* **A failing unit's refusal is a requirement** with the overload message (it was a message from an effect).
+* **The wires window opens beside the unit's own for someone at the unit** (physical authority); it was "anyone but the AI".
+* **The RCON console reads its units and breakers live** (`known_smes()`, `known_breakers()`); its window data is pure (it rewrote its device
+  lists in every refresh) and no destroyed unit or breaker box makes every console rescan. A breaker toggled too recently refuses with a reason
+  (it was a message from the effect).
+* **The containment failure destroys the unit through the damage model** (`atom_destruction()`) if the blast left it standing; it was `qdel`.
+* **The power-failure event keeps what it took out of each unit on the unit** (`held_through_outage`: charge and both switches) and
+  `power_restore()` puts back only what it took; the three `last_*` vars are gone.
+* **Settings reach Rust once per frame by themselves**: no setter or bind calls `push_to_rust()` by hand. `power_registered()` asks for a resync
+  (`native_resync()`, new), the generated reads now include `working` (a stat: operable and no grid check).
+* A mapped buildable unit still starts with `cur_coils` standard coils, a frame-built one with the frame's parts; a unit spawned bare keeps its
+  type's numbers until parts arrive (pinned).
+
+## Engine and library pieces the SMES added
+
+* `SmesFlowReset` and the `Smes` flow fields (verdigris/domains/power), with a Rust test of the readings.
+* `native_resync(E)` (code/datums/native/system.dm): a (re)bound entity's push runs at the frame's refresh.
+* `om_field_written()` (code/datums/capabilities/refresh.dm): the legacy field setters (`OM_FIELD`, `OM_FLAG_FIELD`: a machine's `stat` bits,
+  `on`, `locked`) now tell the stat layer, so a contribution that reads them (STAT_OPERABLE's `stat_bits_allow()`, `powered()`) recomputes before
+  the writer's next line. Before, a converted machine's STAT_OPERABLE did not follow `atom_break()` or a power loss until something else wrote a
+  tracked input.
+* `lit_welder(fuel =)` and `req_welder_lit()` (code/library/items/welder.dm).
+* The reads analysis treats the Verdigris bindings (`code/__defines/verdigris/`) as opaque: a condition that asks a Rust-owned value (a SMES's
+  charge) is re-asked when a requirement is checked or a gate polled, never subscribed.

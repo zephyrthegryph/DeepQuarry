@@ -280,6 +280,20 @@ vg_core::law! {
 }
 
 vg_core::law! {
+    /// Zeroes each SMES's per-step flow readings (`output_used`,
+    /// `input_used`, `input_available`) before the apply laws write them, so
+    /// a unit whose output node is on no region, or whose terminals are all
+    /// cut, reads zero rather than its last flow.
+    pub SmesFlowReset("power_smes_flow_reset"): () => Smes, |ctx, _dt| {
+        let smes = &mut ctx.writes;
+        smes.output_used = 0.0;
+        smes.input_used = 0.0;
+        smes.input_available = 0.0;
+        Settle::Active
+    }
+}
+
+vg_core::law! {
     /// Discharges one SMES's pro-rata share of its region's storage-financed
     /// load, ordered after `PowerSettle` so `storage_used`/`smes_offer_total`
     /// are final for this step.
@@ -289,6 +303,7 @@ vg_core::law! {
         let share = storage_output_share(offer, region.smes_offer_total, region.storage_used);
         let rate = ctx.writes.rate;
         let delivered = ctx.writes.with_cell(|c| c.discharge_out(share));
+        ctx.writes.output_used = delivered;
         ctx.ledger().sink("power_smes_charge", delivered * rate);
         Settle::Active
     }
@@ -306,6 +321,8 @@ vg_core::law! {
         let share = storage_input_share(target, region.smes_ask_total, region.region_excess);
         let rate = smes.rate;
         let absorbed = smes.with_cell(|c| c.charge_in(share));
+        smes.input_used += absorbed;
+        smes.input_available += region.region_excess.max(0.0);
         ctx.ledger().source("power_smes_charge", absorbed * rate);
         Settle::Active
     }

@@ -8,7 +8,6 @@
 	return ..()
 
 /obj/machinery/power/smes/generated_station
-	should_be_mapped = TRUE
 	circuit = null
 	initial_charge = 5e6
 	output_attempt = TRUE

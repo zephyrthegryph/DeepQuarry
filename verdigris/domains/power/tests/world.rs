@@ -13,7 +13,7 @@ use vg_core::entity::EntityId;
 use vg_core::world::{WorldBuilder, WorldConfig};
 use vg_power::components::{Apc, Producer, Smes, SmesInputTerminal};
 use vg_power::kind::{Cables, PowerNode};
-use vg_power::laws::{ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesInputApply, SmesInputPlan, SmesOutputApply, SmesOutputPlan};
+use vg_power::laws::{ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply, SmesInputPlan, SmesOutputApply, SmesOutputPlan};
 
 const NODE_MACHINE: u16 = 1;
 
@@ -41,8 +41,9 @@ fn a_smes_shares_storage_per_terminal_across_two_regions() {
     let _ = b.add_law::<SmesInputPlan>().after::<PowerReset>();
     let _ = b.add_law::<ApcTick>().after::<ProducerCredit>().after::<SmesOutputPlan>();
     let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
-    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>();
-    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
+    let _ = b.add_law::<SmesFlowReset>().after::<PowerReset>();
+    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
+    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
     let mut world = b.build().expect("builds");
 
     // Region A: a producer (50 W), an APC demanding more than that alone
@@ -114,6 +115,14 @@ fn a_smes_shares_storage_per_terminal_across_two_regions() {
     // twice), at SMESRATE charge units per watt-tick.
     let expected = 2.0 * 50.0 * 0.033_33;
     assert!((discharged - expected).abs() < 1e-6, "discharged {discharged}, expected {expected}");
+
+    // The step's flow readings: the 50 W storage share went out; region B has no supply, so nothing came in and nothing was offered.
+    let output_used = world.get(unit_e, smes, field::<Smes>("output_used"), 0).unwrap();
+    assert!((output_used - 50.0).abs() < 1e-6, "output_used {output_used}, expected the 50 W storage share");
+    let input_used = world.get(unit_e, smes, field::<Smes>("input_used"), 0).unwrap();
+    assert_eq!(input_used, 0.0, "nothing to absorb on region B");
+    let input_available = world.get(unit_e, smes, field::<Smes>("input_available"), 0).unwrap();
+    assert_eq!(input_available, 0.0, "region B offered nothing");
 
     let violations = world.violations();
     assert!(violations.is_empty(), "power_apc_charge/power_smes_charge conservation held across the two-region SMES split: {violations:?}");

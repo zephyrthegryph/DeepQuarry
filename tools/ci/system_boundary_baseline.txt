@@ -254,7 +254,6 @@ B1:code/modules/pda/nerdle.dm:SSnerdle 1
 B1:code/modules/pda/supply_orders.dm:SSsupply 3
 B1:code/modules/persistence/datum/persistence_datum.dm:SSpersistence 2
 B1:code/modules/persistence/paintings.dm:SSpersistence 11
-B1:code/modules/power/breaker_box.dm:SStgui 1
 B1:code/modules/power/cable.dm:SSmachines 3
 B1:code/modules/power/power_bridge.dm:SSmachines 1
 B1:code/modules/power/power_grid.dm:SSmachines 14

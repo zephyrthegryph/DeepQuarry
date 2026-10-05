@@ -200,6 +200,13 @@
 /datum/stat_decl/obj/machinery/power/shield_generator/__input_cut/spec()
 	return list(/obj/machinery/power/shield_generator, /obj/machinery/power/shield_generator/proc/__stat_input_cut)
 
+/// STAT(/obj/machinery/power/smes, working, ALL) at code/modules/power/smes.dm:114
+/obj/machinery/power/smes/var/working = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/power/smes/proc/__stat_working()
+	return list("working", "ALL", list(id = STAT_WORKING))
+/datum/stat_decl/obj/machinery/power/smes/__working/spec()
+	return list(/obj/machinery/power/smes, /obj/machinery/power/smes/proc/__stat_working)
+
 /// STAT(/obj/machinery/rnd, disabled, ANY) at code/modules/research/tg/rdmachines.dm:101
 /obj/machinery/rnd/var/disabled = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/rnd/proc/__stat_disabled()

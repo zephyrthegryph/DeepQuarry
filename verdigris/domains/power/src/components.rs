@@ -150,6 +150,16 @@ pub struct Smes {
     pub rate: f64,
     #[vg(state, unit = "J", conserve = "power_smes_charge")]
     pub charge: f64,
+    // What flowed this step (watts), for the unit's display and window: zeroed
+    // by `SmesFlowReset` before the apply laws, written by `SmesOutputApply`
+    // (delivered to load) and summed by `SmesInputApply` over its terminals
+    // (absorbed, and the leftover supply each terminal's region offered).
+    #[vg(state, unit = "W", default = 0.0)]
+    pub output_used: f64,
+    #[vg(state, unit = "W", default = 0.0)]
+    pub input_used: f64,
+    #[vg(state, unit = "W", default = 0.0)]
+    pub input_available: f64,
 }
 
 /// A SMES's input terminal: its own [`crate::kind::Cables`] node, on its

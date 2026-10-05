@@ -42,7 +42,6 @@ MSG_DEF_SELF(batteryrack/full, "It has no empty slot for that.")
 	var/ui_tick = FALSE
 	/// The overlays the rack shows (comma separated icon states), refreshed when its cells or its charge change.
 	var/shown_overlays = ""
-	should_be_mapped = TRUE
 	circuit = /obj/item/circuitboard/batteryrack
 
 TRACKED(/obj/machinery/power/smes/batteryrack, max_transfer_rate)
@@ -83,8 +82,9 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	set_output_level(max_transfer_rate)
 
 
-/obj/machinery/power/smes/batteryrack/check_terminals()
-	return TRUE // we don't necessarily need terminals
+/// A rack keeps its charge in cells: it works without an input terminal.
+/obj/machinery/power/smes/batteryrack/needs_terminals()
+	return FALSE
 
 // ---- what it shows ----
 
@@ -97,7 +97,7 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 /obj/machinery/power/smes/batteryrack/proc/rack_overlays()
 	. = list()
 	var/cellcount = 0
-	var/charge_level = between(0, round(Percentage() / 12), 7)
+	var/charge_level = clamp(round(Percentage() / 12), 0, 7)
 
 	. += "charge[charge_level]"
 
@@ -151,7 +151,7 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 
 /// The enable button: the mode is the number sent, clamped to the three modes.
 /obj/machinery/power/smes/batteryrack/proc/ui_enable(datum/act/op/A, enable)
-	update_io(between(1, enable, 3))
+	update_io(clamp(enable, 1, 3))
 	return OP_OK
 
 /// The eject button: the cell with that id comes out onto the rack's tile.
@@ -181,7 +181,7 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	newmaxcharge /= CELLRATE		// Convert to Joules
 	newmaxcharge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
 	set_capacity(newmaxcharge)
-	set_stored_charge(between(0, stored_charge(), newmaxcharge))
+	set_stored_charge(clamp(stored_charge(), 0, newmaxcharge))
 
 // Sets input/output depending on our "mode" var.
 /obj/machinery/power/smes/batteryrack/proc/update_io(newmode)
@@ -307,7 +307,7 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 			celldiff = (least.maxcharge / 100) * percentdiff
 		else
 			celldiff = (most.maxcharge / 100) * percentdiff
-		celldiff = between(0, celldiff, max_transfer_rate * CELLRATE)
+		celldiff = clamp(celldiff, 0, max_transfer_rate * CELLRATE)
 		// Ensure we don't transfer more energy than the most charged cell has, and that the least charged cell can input.
 		celldiff = min(min(celldiff, most.charge), least.maxcharge - least.charge)
 		least.give(most.use(celldiff))
@@ -319,10 +319,10 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	return ..()
 
 /// The rack's input and output follow its mode (set from its window), never the SMES's own toggles: these do nothing, whoever asks.
-/obj/machinery/power/smes/batteryrack/inputting()
+/obj/machinery/power/smes/batteryrack/set_input_on(on)
 	return
 
-/obj/machinery/power/smes/batteryrack/outputting()
+/obj/machinery/power/smes/batteryrack/set_output_on(on)
 	return
 
 #undef PSU_OFFLINE
