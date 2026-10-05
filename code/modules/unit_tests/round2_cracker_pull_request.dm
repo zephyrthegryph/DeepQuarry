@@ -42,7 +42,7 @@
 	offered.attack(recipient, giver, BP_TORSO, 1)
 	question = SSrequests.open_for(recipient)
 	TEST_ASSERT(istype(question), "A third public attack opens the late-held-check offer")
-	giver.drop_item(offered)
+	TEST_ASSERT(giver.unEquip(offered, target = surface), "Public unequip removes the exact held cracker")
 	TEST_ASSERT_EQUAL(offered.loc, surface, "Public drop moves the cracker onto the actual floor")
 	TEST_ASSERT(giver.get_active_hand() != offered, "The exact cracker has left the active-hand slot")
 	test_answer(recipient, "Yes")
