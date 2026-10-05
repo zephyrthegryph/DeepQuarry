@@ -95,14 +95,14 @@
 /datum/stat_decl/obj/machinery/__power_draw/spec()
 	return list(/obj/machinery, /obj/machinery/proc/__stat_power_draw)
 
-/// STAT(/obj/machinery/alarm, aidisabled, ANY) at code/game/machinery/air_alarm.dm:122
+/// STAT(/obj/machinery/alarm, aidisabled, ANY) at code/game/machinery/air_alarm.dm:123
 /obj/machinery/alarm/var/aidisabled = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/alarm/proc/__stat_aidisabled()
 	return list("aidisabled", "ANY", list(id = STAT_AIDISABLED))
 /datum/stat_decl/obj/machinery/alarm/__aidisabled/spec()
 	return list(/obj/machinery/alarm, /obj/machinery/alarm/proc/__stat_aidisabled)
 
-/// STAT(/obj/machinery/alarm, shorted, ANY) at code/game/machinery/air_alarm.dm:124
+/// STAT(/obj/machinery/alarm, shorted, ANY) at code/game/machinery/air_alarm.dm:125
 /obj/machinery/alarm/var/shorted = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/alarm/proc/__stat_shorted()
 	return list("shorted", "ANY", list(id = STAT_SHORTED))

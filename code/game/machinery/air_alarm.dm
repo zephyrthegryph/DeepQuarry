@@ -18,6 +18,7 @@ MSG_DEF_SELF(alarm/unresponsive, "It does not respond.")
 MSG_DEF_SELF(alarm/ai_disabled, "AI control has been disabled.")
 MSG_DEF_SELF(alarm/remote_denied, "The console does not let you work this alarm.")
 MSG_DEF_SELF(alarm/silicons_only, "Only a silicon can do that.")
+MSG_DEF_SELF(alarm/no_such_threshold, "The alarm has no such threshold.")
 MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wires inside %T%!")
 
 /area
@@ -172,7 +173,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	op("set_internal_pressure", ui_act("set_internal_pressure", arg("id_tag", schema_text(64)), arg("value", num())), then(PROC_REF(ui_set_pressure)))
 	op("reset_external_pressure", ui_act("reset_external_pressure", arg("id_tag", schema_text(64))), then(PROC_REF(ui_reset_pressure)))
 	op("reset_internal_pressure", ui_act("reset_internal_pressure", arg("id_tag", schema_text(64))), then(PROC_REF(ui_reset_pressure)))
-	op("threshold", ui_act("threshold", arg("env", schema_text(64)), arg("var", int(1, 4))), needs(req(PROC_REF(threshold_known))),
+	op("threshold", ui_act("threshold", arg("env", schema_text(64)), arg("var", int(1, 4))), needs(req(PROC_REF(threshold_known), because = MSG(alarm/no_such_threshold))),
 		asks(/datum/prompt/number, fields = list(
 			"title" = computed(PROC_REF(threshold_title)),
 			"question" = computed(PROC_REF(threshold_question)),
