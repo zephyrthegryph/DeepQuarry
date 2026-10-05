@@ -1116,7 +1116,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/mob/living/user = A.request.answerer
 	if(!A.answer)
 		if(!isnull(A.request.answer_value) && !QDELETED(user))
-			if(istype(user) && !user.incapacitated() && (ishuman(user) || isrobot(user)))
+			if(A.request.last_error == "The prize price is invalid.")
 				to_chat(user, span_notice("Invalid price."))
 			SStgui.update_uis(src)
 		return
