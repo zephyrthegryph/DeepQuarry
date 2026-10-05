@@ -88,7 +88,6 @@
 	if(sortType)
 		LAZYADD(GLOB.tagger_locations["[sortType]"], get_z(src))
 
-	set_wires(new /datum/wires/disposals(src))
 
 	updatedir()
 	updatename()
@@ -125,13 +124,13 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 /obj/structure/disposalpipe/sortjunction/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalpipe/sortjunction/wirecutter_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalpipe/sortjunction/proc/divert_check(checkTag)
@@ -145,10 +144,10 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 /obj/structure/disposalpipe/sortjunction/nextdir(fromdir, sortTag)
 	if(sort_scan)
 		if(divert_check(sortTag))
-			if(!wires.is_cut(WIRE_SORT_SIDE))
+			if(!wire_is_cut(src, WIRE_SORT_SIDE))
 				last_sort = TRUE
 		else
-			if(!wires.is_cut(WIRE_SORT_FORWARD))
+			if(!wire_is_cut(src, WIRE_SORT_FORWARD))
 				last_sort = FALSE
 	if(fromdir != sortdir && last_sort)
 		return sortdir
@@ -156,7 +155,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 	return dir
 
 /obj/structure/disposalpipe/sortjunction/proc/reset_scan()
-	if(!wires.is_cut(WIRE_SORT_SCAN))
+	if(!wire_is_cut(src, WIRE_SORT_SCAN))
 		sort_scan = TRUE
 
 /obj/structure/disposalpipe/sortjunction/transfer(obj/structure/disposalholder/H)
@@ -262,3 +261,42 @@ DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, TYPE_PROC_REF(
 	return H.destinationTag
 
 #undef CORPSE_SORT_TAG
+
+// ---- the wires ----
+
+CAPABILITIES(/obj/structure/disposalpipe/sortjunction)
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/disposals, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_SORT_SCAN, cut = PROC_REF(scan_wire_cut), pulse = PROC_REF(scan_wire_pulsed))
+	on_wire(WIRE_SORT_FORWARD, pulse = PROC_REF(forward_wire_pulsed))
+	on_wire(WIRE_SORT_SIDE, pulse = PROC_REF(side_wire_pulsed))
+
+/// A sorting junction's wires: forward, side and the scan (and three duds).
+/datum/wire_set/disposals
+	name = "Disposals Sorting Pipe"
+	count = 6
+	wires = list(WIRE_SORT_FORWARD, WIRE_SORT_SIDE, WIRE_SORT_SCAN)
+
+/obj/structure/disposalpipe/sortjunction/proc/wire_lights()
+	return list(
+		"The sorting light is [last_sort ? "green" : "red"].",
+		"The scan light is [sort_scan ? "lit" : "off"].")
+
+/// The scan wire cut freezes the sorter for good; mended, it scans again.
+/obj/structure/disposalpipe/sortjunction/proc/scan_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	sort_scan = N.mended
+
+/// The scan wire pulsed freezes sorting for ten seconds.
+/obj/structure/disposalpipe/sortjunction/proc/scan_wire_pulsed(datum/act/A)
+	if(sort_scan)
+		sort_scan = FALSE
+	after(src, 10 SECONDS, PROC_REF(reset_scan))
+
+/// A frozen sorter sends things forward.
+/obj/structure/disposalpipe/sortjunction/proc/forward_wire_pulsed(datum/act/A)
+	last_sort = FALSE
+
+/// A frozen sorter sends things aside.
+/obj/structure/disposalpipe/sortjunction/proc/side_wire_pulsed(datum/act/A)
+	last_sort = TRUE

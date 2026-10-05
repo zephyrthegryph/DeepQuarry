@@ -255,7 +255,7 @@
 		/obj/cap_fixture/labelled, /obj/cap_fixture/lib_slot, /obj/cap_fixture/lock,
 		/obj/cap_fixture/panel, /obj/cap_fixture/rotatable,
 		/obj/cap_fixture/beacon, /obj/item/dq_cap_fixture/cig, /obj/cap_fixture/stampable,
-		/obj/item/cap_fixture/hoodie, /obj/cap_fixture/weldable, /obj/item/cap_fixture/two_handed, /obj/cap_fixture/wires,
+		/obj/item/cap_fixture/hoodie, /obj/cap_fixture/weldable, /obj/item/cap_fixture/two_handed,
 		/obj/cap_fixture/writable, /obj/item/cap_slot_probe, /obj/cap_fixture/ladder_probe, /obj/cap_fixture/rigged,
 		/obj/machinery/power/apc/dx_test,
 	)

@@ -6,7 +6,7 @@
 	circuit = /obj/item/circuitboard/circuit_imprinter
 	allowed_buildtypes = IMPRINTER
 
-TYPE_TABLE(/obj/machinery/rnd/production/circuit_imprinter, production_initial_wires, /datum/wires/circuit_imprinter)
+TYPE_TABLE(/obj/machinery/rnd/production/circuit_imprinter, production_initial_wires, /datum/wire_set/circuit_imprinter)
 
 /obj/machinery/rnd/production/circuit_imprinter/compute_efficiency()
 	var/rating = get_part_rating(/obj/item/stock_parts/manipulator)

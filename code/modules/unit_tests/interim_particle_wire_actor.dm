@@ -26,7 +26,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/particle_accelerator/control_box/interim_wire_actor_probe/control = allocate(/obj/machinery/particle_accelerator/control_box/interim_wire_actor_probe, T)
-	var/datum/wires/particle_acc/control_box/wires = control.wires
+	var/datum/wires_test_adapter/wires = wires_test(control)
 	TEST_ASSERT(istype(wires), "the real control box initializes its wire controller")
 	TEST_ASSERT(control.assembled, "the fixture provides assembled control state")
 	TEST_ASSERT_EQUAL(control.strength, 0, "the actual control starts at zero strength")

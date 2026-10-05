@@ -25,7 +25,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_accelerator/control_box, MACHINE_
 
 /obj/machinery/particle_accelerator/control_box/Initialize(mapload)
 	. = ..()
-	set_wires(new /datum/wires/particle_acc/control_box(src))
 	update_active_power_usage(initial(active_power_usage) * (strength + 1))
 
 // a running accelerator powers down.
@@ -50,7 +49,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_accelerator/control_box, MACHINE_
 	if(construction_state >= 3)
 		tgui_interact(user)
 	else if(construction_state == 2) // Wires exposed
-		wires.Interact(user)
+		wires_open(src, user)
 	return TRUE
 
 /obj/machinery/particle_accelerator/control_box/update_state()
@@ -228,7 +227,7 @@ UI_DATA_REPLACE(/obj/machinery/particle_accelerator/control_box, "assembled:num"
 
 UI_ACT(/obj/machinery/particle_accelerator/control_box, "power", ui_act_power)
 UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_power)
-	if(wires.is_cut(WIRE_POWER))
+	if(wire_is_cut(src, WIRE_POWER))
 		return
 	toggle_power(ui.user)
 	. = TRUE
@@ -242,7 +241,7 @@ UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_scan)
 
 UI_ACT(/obj/machinery/particle_accelerator/control_box, "add_strength", ui_act_add_strength)
 UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_add_strength)
-	if(wires.is_cut(WIRE_PARTICLE_STRENGTH))
+	if(wire_is_cut(src, WIRE_PARTICLE_STRENGTH))
 		return
 	add_strength(ui.user)
 	. = TRUE
@@ -250,7 +249,7 @@ UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_add_strength
 
 UI_ACT(/obj/machinery/particle_accelerator/control_box, "remove_strength", ui_act_remove_strength)
 UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_remove_strength)
-	if(wires.is_cut(WIRE_PARTICLE_STRENGTH))
+	if(wire_is_cut(src, WIRE_PARTICLE_STRENGTH))
 		return
 	remove_strength(ui.user)
 	. = TRUE
@@ -267,3 +266,59 @@ UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_remove_stren
 /obj/machinery/particle_accelerator/control_box/relations()
 	. = ..()
 	. += rel_many(nameof(connected_parts))
+
+// ---- the wires ----
+
+CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
+	wires(/datum/wire_set/particle_control, tools = FALSE, at = null, reach = PROC_REF(wires_exposed_now))
+	on_wire(WIRE_PARTICLE_POWER, cut = PROC_REF(power_wire_cut), pulse = PROC_REF(power_wire_pulsed))
+	on_wire(WIRE_PARTICLE_STRENGTH, cut = PROC_REF(strength_wire_cut), pulse = PROC_REF(strength_wire_pulsed))
+	on_wire(WIRE_PARTICLE_INTERFACE, cut = PROC_REF(interface_wire_cut), pulse = PROC_REF(interface_wire_pulsed))
+	on_wire(WIRE_PARTICLE_POWER_LIMIT, cut = PROC_REF(limit_wire_cut), pulse = PROC_REF(limit_wire_pulsed))
+
+/// The control box's four working wires (and a dud).
+/datum/wire_set/particle_control
+	name = "Particle accelerator control"
+	count = 5
+	wires = list(WIRE_PARTICLE_POWER, WIRE_PARTICLE_STRENGTH, WIRE_PARTICLE_INTERFACE, WIRE_PARTICLE_POWER_LIMIT)
+
+/// The wires are bare at the second construction step.
+/obj/machinery/particle_accelerator/control_box/proc/wires_exposed_now(datum/act/A)
+	return construction_state == 2
+
+/// The power wire cut switches a running accelerator off; mended, a stopped one on.
+/obj/machinery/particle_accelerator/control_box/proc/power_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(active == !N.mended)
+		toggle_power(N.user)
+
+/obj/machinery/particle_accelerator/control_box/proc/power_wire_pulsed(datum/act/A)
+	var/datum/notice/wire_pulsed/N = A
+	toggle_power(N.user)
+
+/// The strength wire cut drops the strength by two.
+/obj/machinery/particle_accelerator/control_box/proc/strength_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	for(var/i = 1; i < 3; i++)
+		remove_strength(N.user)
+
+/obj/machinery/particle_accelerator/control_box/proc/strength_wire_pulsed(datum/act/A)
+	var/datum/notice/wire_pulsed/N = A
+	add_strength(N.user)
+
+/obj/machinery/particle_accelerator/control_box/proc/interface_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	interface_control = N.mended
+
+/obj/machinery/particle_accelerator/control_box/proc/interface_wire_pulsed(datum/act/A)
+	interface_control = !interface_control
+
+/// The limit wire cut lets the strength go to three; mended, back to two (a stronger beam steps down).
+/obj/machinery/particle_accelerator/control_box/proc/limit_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	strength_upper_limit = (N.mended ? 2 : 3)
+	if(strength_upper_limit < strength)
+		remove_strength(N.user)
+
+/obj/machinery/particle_accelerator/control_box/proc/limit_wire_pulsed(datum/act/A)
+	visible_message("[icon2html(src, viewers(src))]<b>[src]</b> makes a large whirring noise.")

@@ -474,8 +474,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/structure/salvageable/console_os{
 	dir = 4
@@ -1973,8 +1972,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /turf/simulated/shuttle/floor/white,
 /area/survivalpod/superpose/ScienceShip)

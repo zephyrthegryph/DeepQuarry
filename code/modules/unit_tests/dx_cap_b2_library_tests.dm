@@ -1,5 +1,5 @@
-// B2 library capabilities: cap_occupant, cap_access, service_panel, and the holder-interface move
-// (code/datums/capabilities/library/{parts,occupant,access}.dm, presets.dm service_panel()).
+// B2 library capabilities: cap_occupant, cap_access and the holder-interface move
+// (code/datums/capabilities/library/{parts,occupant,access}.dm).
 
 // ---- cap_occupant ----
 
@@ -81,25 +81,6 @@
 	TEST_ASSERT(access_grants(null, null, null), "nothing required grants")
 	TEST_ASSERT(!access_grants(list(ACCESS_ENGINE_EQUIP), null, list()), "no access refuses")
 	TEST_ASSERT(access_grants(null, list(ACCESS_ENGINE_EQUIP, ACCESS_CAPTAIN), list(ACCESS_CAPTAIN)), "one of")
-
-// ---- service_panel ----
-
-/obj/cap_fixture/service_panel/capabilities()
-	. = ..()
-	. += service_panel(/datum/wires/cap_fixture, access = list(ACCESS_ENGINE_EQUIP), emag_say = "Zap.")
-
-/// The bundle: panel, wires behind it, the access contract on opening the panel (waived when emagged), the emag.
-/datum/unit_test/dx_cap_service_panel/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/obj/cap_fixture/service_panel/A = allocate(/obj/cap_fixture/service_panel, T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	for(var/path in list(/datum/capability/panel, /datum/capability/wires, /datum/capability/emag))
-		TEST_ASSERT_NOTNULL(cap_of(A, path), "service_panel() gives [path]")
-	var/obj/item/tool/screwdriver/driver = allocate(/obj/item/tool/screwdriver, T)
-	H.put_in_active_hand(driver)
-	TEST_ASSERT_NOTNULL(test_op(H, A, "open_maintenance_panel"), "the panel needs the access")
-	cap_set(A, CAP_EMAGGED, TRUE)
-	TEST_ASSERT_NULL(test_op(H, A, "open_maintenance_panel"), "an emagged panel opens for anyone")
 
 // ---- the holder-interface move ----
 

@@ -100,12 +100,12 @@
 	touch(M, B, driver)
 	var/datum/op_result/open = touch(M, B, multitool)
 	TEST_ASSERT_EQUAL(open?.outcome, ACT_COMMITTED, "with the panel open the multitool reaches them")
-	var/datum/wires/W = wire_set_of(B)
-	TEST_ASSERT_NOTNULL(W, "the wire set is made on first use")
-	TEST_ASSERT(istype(W, /datum/wires/p2_box), "of the type the capability names")
-	W.cut_wire(WIRE_IDSCAN)
+	var/datum/cap_data/wires/W = wiring_of(B)
+	TEST_ASSERT_NOTNULL(W, "the wire record is made with the box")
+	TEST_ASSERT_EQUAL(W.set_type, /datum/wire_set/p2_box, "of the set the capability names")
+	wires_cut(B, WIRE_IDSCAN)
 	TEST_ASSERT(wire_is_cut(B, WIRE_IDSCAN), "a cut wire is read through the accessor")
-	W.cut(WIRE_IDSCAN)
+	wires_toggle(B, WIRE_IDSCAN)
 	TEST_ASSERT(!wire_is_cut(B, WIRE_IDSCAN), "and mending it too")
 
 /datum/unit_test/dq_p2_lib/hatch_cell_bay_behind_the_cover

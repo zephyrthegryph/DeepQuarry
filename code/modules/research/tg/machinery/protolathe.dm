@@ -6,4 +6,4 @@
 	production_animation = "protolathe_n"
 	allowed_buildtypes = PROTOLATHE
 
-TYPE_TABLE(/obj/machinery/rnd/production/protolathe, production_initial_wires, /datum/wires/protolathe)
+TYPE_TABLE(/obj/machinery/rnd/production/protolathe, production_initial_wires, /datum/wire_set/protolathe)

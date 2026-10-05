@@ -121,7 +121,12 @@ CAPABILITIES(/obj/machinery/vending)
 	machine_basics(repair = NONE)
 	panel()
 	extend("panel.open", wait(0))
-	wires(/datum/wires/vending)
+	wires(/datum/wire_set/vending, emp = FALSE, status_lines = PROC_REF(wire_lights))
+	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
+	on_wire(WIRE_THROW_ITEM, cut = PROC_REF(throw_wire_cut), pulse = PROC_REF(throw_wire_pulsed))
+	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
+	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
 	emag(say = MSG(vending/shorted), repeatable = TRUE)
 	anchor()
 	extend("anchor.toggle", wait(2 SECONDS), needs(req_closed(SPACE_PANEL)))
@@ -396,9 +401,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// With the panel open the wires window opens beside the vendor's own.
 /obj/machinery/vending/proc/open_wires_beside_the_window(datum/act/op/A)
-	var/datum/wires/W = wire_set_of(src)
-	if(W)
-		W.Interact(A.actor)
+	wires_open(src, A.actor)
 	return OP_OK
 
 /// The touch is a bare hand (a hand with something in it is for the item's own use).
@@ -813,3 +816,54 @@ GLOBAL_LIST_EMPTY(vending_products)
 /// What we're requesting payment for right now (a relation view: null once it is deleted).
 /obj/machinery/vending/proc/currently_vending() as /datum/stored_item/vending_product
 	return currently_vending
+
+// ---- the wires ----
+
+/// A vendor's four wires: the throw, the ID scan, the shock and the contraband.
+/datum/wire_set/vending
+	name = "Vending machine"
+	count = 4
+	wires = list(WIRE_THROW_ITEM, WIRE_IDSCAN, WIRE_ELECTRIFY, WIRE_CONTRABAND)
+
+/obj/machinery/vending/proc/wire_lights()
+	return list(
+		"The orange light is [seconds_electrified ? "on" : "off"].",
+		"The red light is [shoot_inventory ? "off" : "blinking"].",
+		"The green light is [(categories & CAT_HIDDEN) ? "on" : "off"].",
+		"A [scan_id ? "purple" : "yellow"] light is on.")
+
+/// Reaching into a live vendor's wires shocks a carbon toucher instead.
+/obj/machinery/vending/proc/wire_touch_shocks(datum/act/A)
+	var/datum/act/touch_wires/T = A
+	if(iscarbon(T.user) && seconds_electrified && shock(T.user, 100))
+		return OP_REFUSED
+	return HOOK_DECLINE
+
+/obj/machinery/vending/proc/throw_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_shoot_inventory(!N.mended)
+
+/obj/machinery/vending/proc/throw_wire_pulsed(datum/act/A)
+	set_shoot_inventory(!shoot_inventory)
+
+/// The contraband wire cut hides the contraband again (mending does not show it).
+/obj/machinery/vending/proc/contraband_wire_cut(datum/act/A)
+	set_categories(categories & ~CAT_HIDDEN)
+
+/// The contraband wire pulsed shows or hides the contraband.
+/obj/machinery/vending/proc/contraband_wire_pulsed(datum/act/A)
+	set_categories(categories ^ CAT_HIDDEN)
+
+/obj/machinery/vending/proc/shock_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_seconds_electrified(N.mended ? 0 : -1)
+
+/obj/machinery/vending/proc/shock_wire_pulsed(datum/act/A)
+	set_seconds_electrified(30)
+
+/// The ID scan wire cut leaves the vendor scanning; pulsed, the scan flips.
+/obj/machinery/vending/proc/idscan_wire_cut(datum/act/A)
+	set_scan_id(TRUE)
+
+/obj/machinery/vending/proc/idscan_wire_pulsed(datum/act/A)
+	set_scan_id(!scan_id)

@@ -45,6 +45,12 @@
 CAPABILITIES(/obj/machinery/camera)
 	owns_one(nameof(assembly), /obj/item/camera_assembly)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(camera_emp))))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/camera, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_FOCUS, cut = PROC_REF(focus_wire_cut), pulse = PROC_REF(focus_wire_pulsed))
+	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut))
+	on_wire(WIRE_CAM_LIGHT, cut = PROC_REF(light_wire_cut), pulse = PROC_REF(light_wire_pulsed))
+	on_wire(WIRE_CAM_ALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
 
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)
@@ -55,7 +61,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		resistance_flags |= BOMB_PROOF
 	observe(src, /datum/notice/machinery_power_lost, src, then(PROC_REF(on_power_signal)))
 	observe(src, /datum/notice/machinery_power_restored, src, then(PROC_REF(on_power_signal)))
-	set_wires(new /datum/wires/camera(src))
 	rel_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
 	assembly.state = 4
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
@@ -299,7 +304,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /obj/machinery/camera/welder_act(mob/user, obj/item/tool)
 	update_coverage()
-	if(!wires.is_all_cut() && !has_stat(BROKEN))
+	if(!wires_all_cut(src) && !has_stat(BROKEN))
 		return ..()
 	if(!weld(tool, user, PROC_REF(welded_off), list(user, tool)))
 		return ITEM_INTERACT_BLOCKING
@@ -412,7 +417,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	. = ..()
 	if(!.)
 		return
-	wires.cut_all()
+	wires_cut_all(src)
 
 	triggerCameraAlarm()
 	update_coverage()
@@ -425,7 +430,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	. = ..()
 	if(!.)
 		return
-	wires.mend_all()
+	wires_mend_all(src)
 	cancelCameraAlarm()
 	update_coverage()
 
@@ -449,7 +454,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 	GLOB.camera_alarm.triggerAlarm(loc, src, duration)
 
 /obj/machinery/camera/proc/cancelCameraAlarm()
-	if(wires.is_cut(WIRE_CAM_ALARM))
+	if(wire_is_cut(src, WIRE_CAM_ALARM))
 		return
 
 	alarm_on = 0
@@ -528,7 +533,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 		to_chat(user, span_warning("\The [src] is broken."))
 		return
 
-	wires.Interact(user)
+	wires_open(src, user)
 
 /obj/machinery/camera/proc/add_network(network_name)
 	add_networks(list(network_name))
@@ -600,9 +605,56 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 
 // Resets the camera's wires to fully operational state. Used by one of Malfunction abilities.
 /obj/machinery/camera/proc/reset_wires()
-	if(!wires)
+	if(!wiring_of(src))
 		return
 	atom_fix() // Fix the camera
-	wires.repair()
+	wires_repair(src)
 	update_icon()
 	update_coverage()
+
+// ---- the wires ----
+
+/// A camera's wires: focus, power, light and alarm (and two duds), every camera its own colours.
+/datum/wire_set/camera
+	name = "Camera"
+	count = 6
+	randomize = TRUE
+	wires = list(WIRE_FOCUS, WIRE_MAIN_POWER1, WIRE_CAM_LIGHT, WIRE_CAM_ALARM)
+
+/obj/machinery/camera/proc/wire_lights()
+	return list(
+		"The focus light is [(view_range == initial(view_range)) ? "on" : "off"].",
+		"The power link light is [can_use() ? "on" : "off"].",
+		"The camera light is [light_disabled ? "off" : "on"].",
+		"The alarm light is [alarm_on ? "on" : "off"].")
+
+/// The focus wire cut shortens the view; mended, it is back.
+/obj/machinery/camera/proc/focus_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	setViewRange(N.mended ? initial(view_range) : short_range)
+
+/obj/machinery/camera/proc/focus_wire_pulsed(datum/act/A)
+	setViewRange(view_range == initial(view_range) ? short_range : initial(view_range))
+
+/// The power wire cut switches the camera off; mended, back on.
+/obj/machinery/camera/proc/power_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(status && !N.mended || !status && N.mended)
+		deactivate(N.user, 1)
+
+/obj/machinery/camera/proc/light_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	light_disabled = !N.mended
+
+/obj/machinery/camera/proc/light_wire_pulsed(datum/act/A)
+	light_disabled = !light_disabled
+
+/obj/machinery/camera/proc/alarm_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		triggerCameraAlarm()
+	else
+		cancelCameraAlarm()
+
+/obj/machinery/camera/proc/alarm_wire_pulsed(datum/act/A)
+	visible_message("[icon2html(src, viewers(src))] *beep*", "[icon2html(src, viewers(src))] *beep*")

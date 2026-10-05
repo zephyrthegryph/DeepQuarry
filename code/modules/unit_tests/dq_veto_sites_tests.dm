@@ -160,8 +160,13 @@
 
 /datum/unit_test/dq_veto_site_disposal_connection/Run()
 	var/obj/structure/toilet/toilet = allocate(/obj/structure/toilet, test_floor())
+	var/datum/disposal_system_connection/original = toilet.disposal_connection
+	TEST_ASSERT_NOTNULL(original, "the real toilet constructor creates its original disposal connection")
+	TEST_ASSERT(!QDELETED(original), "the original constructor-created connection is alive before replacement")
 	var/datum/disposal_system_connection/connection = toilet.add_disposal_connection()
 	TEST_ASSERT_NOTNULL(connection, "the toilet has a disposal connection")
+	TEST_ASSERT(connection != original, "the real helper supplies a distinct replacement connection")
+	TEST_ASSERT(QDELETED(original), "replacement retires the exact constructor-created owned connection")
 	TEST_ASSERT(act_wanted(toilet, /datum/act/flush_disposal), "the connection hooks the flush")
 	// Not linked to a trunk: the connection declines, the flush goes on as if nobody hooked it.
 	var/list/items = list()

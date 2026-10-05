@@ -41,11 +41,14 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	op("add_new_track", ui_act("add_new_track", arg("artist", schema_text(4096)), arg("duration", num()), arg("genre", schema_text(4096)), arg("lobby", num()), arg("secret", num()), arg("title", schema_text(4096)), arg("url", schema_text(4096))), then(PROC_REF(ui_act_add_new_track)))
 	op("remove_new_track", ui_act("remove_new_track", arg("ref")), then(PROC_REF(ui_act_remove_new_track)))
 	emag(then(PROC_REF(on_emag)))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/jukebox, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_cut_heard)))
+	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_pulse_heard)))
 
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	rel_set(src, nameof(wires), new/datum/wires/jukebox(src))
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		atom_break()
@@ -114,11 +117,11 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	effect = /atom/proc/interaction_fingerprint
 
 /obj/machinery/media/jukebox/wirecutter_act(mob/user, obj/item/tool)
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/media/jukebox/multitool_act(mob/user, obj/item/tool)
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/media/jukebox/wrench_act(mob/user, obj/item/tool)
@@ -501,3 +504,64 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 /obj/machinery/media/jukebox/proc/current_track() as /datum/track
 	return current_track
 
+
+// ---- the wires ----
+
+/// A jukebox's nine working wires (and two duds), every jukebox its own colours.
+/datum/wire_set/jukebox
+	name = "Jukebox"
+	count = 11
+	randomize = TRUE
+	wires = list(
+		WIRE_MAIN_POWER1, WIRE_JUKEBOX_HACK,
+		WIRE_SPEEDUP, WIRE_SPEEDDOWN, WIRE_REVERSE,
+		WIRE_START, WIRE_STOP, WIRE_PREV, WIRE_NEXT)
+
+/// The lights hint at the state each wire drives.
+/obj/machinery/media/jukebox/proc/wire_lights()
+	return list(
+		"The power light is [stat & (BROKEN|NOPOWER) ? "off." : "on."]",
+		"The parental guidance light is [hacked ? "off." : "on."]",
+		"The data light is [wire_is_cut(src, WIRE_REVERSE) ? "hauntingly dark." : "glowing softly."]")
+
+/// A wire cut or mended: the power wire shocks, the hack wire hacks, the playback wires set the speed and direction.
+/obj/machinery/media/jukebox/proc/wire_cut_heard(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	switch(N.wire)
+		if(WIRE_MAIN_POWER1)
+			shock(N.user, 90)
+		if(WIRE_JUKEBOX_HACK)
+			set_hacked(!N.mended)
+		if(WIRE_SPEEDUP, WIRE_SPEEDDOWN, WIRE_REVERSE)
+			var/newfreq = wire_is_cut(src, WIRE_REVERSE) ? -1 : 1
+			if(wire_is_cut(src, WIRE_SPEEDUP))
+				newfreq *= 2
+			if(wire_is_cut(src, WIRE_SPEEDDOWN))
+				newfreq *= 0.5
+			freq = newfreq
+
+/// A wire pulsed: each gives a hint of what it does; the playback wires work the player; the duds may shock.
+/obj/machinery/media/jukebox/proc/wire_pulse_heard(datum/act/A)
+	var/datum/notice/wire_pulsed/N = A
+	switch(N.wire)
+		if(WIRE_MAIN_POWER1)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The power light flickers."))
+			shock(N.user, 90)
+		if(WIRE_JUKEBOX_HACK)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The parental guidance light flickers."))
+		if(WIRE_REVERSE)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The data light blinks ominously."))
+		if(WIRE_SPEEDUP)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The speakers squeaks."))
+		if(WIRE_SPEEDDOWN)
+			visible_message(span_notice("[icon2html(src, viewers(src))] The speakers rumble."))
+		if(WIRE_START)
+			StartPlaying()
+		if(WIRE_STOP)
+			StopPlaying()
+		if(WIRE_PREV)
+			PrevTrack()
+		if(WIRE_NEXT)
+			NextTrack()
+		else
+			shock(N.user, 10) // the nothing wires give a chance to shock just for fun

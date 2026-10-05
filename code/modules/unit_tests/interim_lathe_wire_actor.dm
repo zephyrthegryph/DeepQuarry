@@ -12,7 +12,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/autolathe/interim_wire_ui_probe/machine = allocate(/obj/machinery/autolathe/interim_wire_ui_probe, T)
-	var/datum/wires/autolathe/wires = machine.wires
+	var/datum/wires_test_adapter/wires = wires_test(machine)
 	TEST_ASSERT(istype(wires), "the real machine initializes its owned wire controller")
 	TEST_ASSERT(!machine.hacked && !machine.disabled, "the machine starts unhacked and enabled")
 	wires.pulse(WIRE_ELECTRIFY, actor)
@@ -63,7 +63,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/rnd/production/circuit_imprinter/interim_wire_ui_probe/machine = allocate(/obj/machinery/rnd/production/circuit_imprinter/interim_wire_ui_probe, T)
-	var/datum/wires/circuit_imprinter/wires = machine.wires
+	var/datum/wires_test_adapter/wires = wires_test(machine)
 	TEST_ASSERT(istype(wires), "the real machine initializes its owned wire controller")
 	TEST_ASSERT(!machine.hacked && !machine.disabled, "the machine starts unhacked and enabled")
 	wires.cut(WIRE_LATHE_HACK, actor)
@@ -110,7 +110,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/rnd/production/protolathe/interim_wire_ui_probe/machine = allocate(/obj/machinery/rnd/production/protolathe/interim_wire_ui_probe, T)
-	var/datum/wires/protolathe/wires = machine.wires
+	var/datum/wires_test_adapter/wires = wires_test(machine)
 	TEST_ASSERT(istype(wires), "the real machine initializes its owned wire controller")
 	TEST_ASSERT(!machine.hacked && !machine.disabled, "the machine starts unhacked and enabled")
 	wires.cut(WIRE_LATHE_HACK, actor)

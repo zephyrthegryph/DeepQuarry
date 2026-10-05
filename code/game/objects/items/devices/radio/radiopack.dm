@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/bluespaceradio)
 	//Only care about megabroadcasts or things that are targeted at us
 	if(!(0 in level))
 		return -1
-	if(wires.is_cut(WIRE_RADIO_RECEIVER))
+	if(wire_is_cut(src, WIRE_RADIO_RECEIVER))
 		return -1
 	if(!listening)
 		return -1

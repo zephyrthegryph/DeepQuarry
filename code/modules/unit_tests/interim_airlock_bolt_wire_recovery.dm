@@ -7,7 +7,7 @@
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	p2_door_set_power(door, TRUE)
 	door.autoclose = FALSE
-	var/datum/wires/airlock/wires = wire_set_of(door)
+	var/datum/wires_test_adapter/wires = wires_test(door)
 	TEST_ASSERT(istype(wires), "the actual airlock creates its real wires datum")
 	TEST_ASSERT(door.arePowerSystemsOn() && door.density && !door.operating, "the actual airlock starts powered, closed and idle")
 	TEST_ASSERT(!is_bolted(door) && !wires.is_cut(WIRE_DOOR_BOLTS), "the actual bolt mechanism starts raised with an intact conductor")

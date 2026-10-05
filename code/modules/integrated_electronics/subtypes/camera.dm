@@ -120,7 +120,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 	if(darkvis)
 		see_dark = TRUE
 	// Skip the parent Initialize's assembly creation and network checks
-	set_wires(new /datum/wires/camera(src))
 	c_tag = "IC Camera #[rand(1000, 9999)]"
 	name = c_tag
 	GLOB.cameranet.addCamera(src)

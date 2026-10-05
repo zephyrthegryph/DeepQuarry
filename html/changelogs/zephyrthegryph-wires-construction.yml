@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A remote signaller attached to a machine's wire pulses that wire again, and signallers take radio signals again."
+  - refactor: "Machine wires are declared as data on the machine (wire sets) instead of per-machine wire datums; the wires window and its buttons are unchanged."

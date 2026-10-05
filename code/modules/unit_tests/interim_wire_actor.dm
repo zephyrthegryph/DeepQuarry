@@ -27,7 +27,7 @@
 	var/obj/machinery/media/jukebox/interim_actor_probe/machine = allocate(/obj/machinery/media/jukebox/interim_actor_probe, T)
 	// The parent shock implementation refuses broken machines before RNG or sparks.
 	machine.set_stat(BROKEN)
-	var/datum/wires/jukebox/wires = machine.wires
+	var/datum/wires_test_adapter/wires = wires_test(machine)
 	TEST_ASSERT(wires, "The real jukebox must create its wires")
 	wires.cut(WIRE_MAIN_POWER1, actor)
 	TEST_ASSERT(wires.is_cut(WIRE_MAIN_POWER1), "Cutting power must change the actual wire state")
@@ -38,7 +38,7 @@
 	machine.shock_actor_ref = null
 	wires.pulse(WIRE_MAIN_POWER1, actor)
 	TEST_ASSERT_EQUAL(machine.shock_actor_ref, REF(actor), "Power pulsing must forward its actor")
-	var/list/unused_wires = wires.wires - list(WIRE_MAIN_POWER1, WIRE_JUKEBOX_HACK, WIRE_SPEEDUP, WIRE_SPEEDDOWN, WIRE_REVERSE, WIRE_START, WIRE_STOP, WIRE_PREV, WIRE_NEXT)
+	var/list/unused_wires = wires.all_wires() - list(WIRE_MAIN_POWER1, WIRE_JUKEBOX_HACK, WIRE_SPEEDUP, WIRE_SPEEDDOWN, WIRE_REVERSE, WIRE_START, WIRE_STOP, WIRE_PREV, WIRE_NEXT)
 	TEST_ASSERT(length(unused_wires), "The real jukebox wiring must contain an unused wire")
 	wires.pulse(unused_wires[1], actor)
 	TEST_ASSERT_EQUAL(machine.shock_chance, 10, "An unused wire must retain its distinct shock chance")
@@ -60,7 +60,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/power/grid_checker/interim_actor_probe/machine = allocate(/obj/machinery/power/grid_checker/interim_actor_probe, T)
 	machine.set_stat(BROKEN)
-	var/datum/wires/grid_checker/wires = machine.wires
+	var/datum/wires_test_adapter/wires = wires_test(machine)
 	TEST_ASSERT(wires, "The real grid checker must create its wires")
 	wires.cut(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(wires.is_cut(WIRE_ELECTRIFY), "Electrify cutting must change actual wire state")

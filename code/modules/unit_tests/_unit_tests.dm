@@ -130,7 +130,6 @@
 #include "dx_cap_presets_tests.dm"
 #include "dx_cap_panel_tests.dm"
 #include "dx_cap_powered_tests.dm"
-#include "dx_cap_wires_tests.dm"
 #include "dx_cap_b2_library_tests.dm"
 #include "dx_cap_checks_tests.dm"
 #include "dx_cap_library_api_tests.dm"
@@ -475,6 +474,7 @@
 #include "interim_anomaly_battery_effect_custody.dm"
 #include "interim_xenochimera_branch_replay.dm"
 #include "dq_p2_apc_behaviour.dm"
+#include "dq_wall_frame_behaviour.dm"
 #include "dq_emp_disable_behaviour.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"
@@ -1014,6 +1014,12 @@
 #include "round2_flashlight_flicker_timing.dm"
 
 #include "round2_mecha_native_tank_pressure.dm"
+
+#include "round2_chameleon_holder_allocation.dm"
+
+#include "round2_shield_idle_disposal.dm"
+
+#include "round2_viral_trait_generation.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

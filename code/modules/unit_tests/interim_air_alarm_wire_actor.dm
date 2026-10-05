@@ -15,7 +15,7 @@
 	var/obj/machinery/alarm/interim_wire_actor_probe/alarm = allocate(/obj/machinery/alarm/interim_wire_actor_probe, T)
 	// The real shock implementation refuses broken machinery before RNG or sparks.
 	alarm.set_stat(BROKEN)
-	var/datum/wires/alarm/wires = alarm.wires
+	var/datum/wires_test_adapter/wires = wires_test(alarm)
 	TEST_ASSERT(istype(wires), "the actual air alarm initializes its wire controller")
 	TEST_ASSERT(!alarm.shorted, "the alarm starts without a wiring short")
 	wires.cut(WIRE_MAIN_POWER1, actor)

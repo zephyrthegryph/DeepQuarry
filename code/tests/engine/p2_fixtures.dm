@@ -96,17 +96,10 @@ CAPABILITIES(/obj/p2_frame)
 
 // ---- the machine library: a box with a hatch (code/library/machine, code/library/access, code/engine/present) ----
 
-/datum/wires/p2_box
-	holder_type = /obj/machinery/p2_box
-	wire_count = 2
-	proper_name = "p2 box"
-
-/datum/wires/p2_box/New(atom/_holder)
+/datum/wire_set/p2_box
+	name = "p2 box"
+	count = 2
 	wires = list(WIRE_IDSCAN, WIRE_AI_CONTROL)
-	return ..()
-
-/datum/wires/p2_box/interactable(mob/user)
-	return TRUE
 
 MSG_DEF_SELF(p2/ui_forbidden, "That is not allowed.")
 
@@ -128,7 +121,7 @@ TRACKED(/obj/machinery/p2_box, label_shown)
 
 CAPABILITIES(/obj/machinery/p2_box)
 	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE)
-	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = /datum/wires/p2_box, 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start))
+	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = wires(/datum/wire_set/p2_box, emp = FALSE), 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start))
 	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL)
 	cell_bay(nameof(cell), at = SPACE_HATCH)
 	interface("P2Box")

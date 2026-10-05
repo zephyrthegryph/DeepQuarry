@@ -122,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 	if(!open)
 		to_chat(user, "You can't reach the wiring.")
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/rig/multitool_act(mob/user, obj/item/tool)

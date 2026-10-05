@@ -12,7 +12,7 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	var/frequency = RSD_FREQ
 	var/delay = 0
 	var/airlock_wire = null
-	var/tmp/datum/wires/connected
+	var/tmp/datum/cap_data/wires/connected
 	var/tmp/datum/radio_frequency/radio_connection
 
 /// Someone is threatening to press the button: it may slip while it's not held.
@@ -114,7 +114,7 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
 	if(is_jammed(src))
 		return FALSE
 	if(connected())
-		connected().pulse_assembly(src)
+		connected().signaled(src)
 	else if(holder())
 		holder().process_activation(src, 1, 0)
 	else
@@ -174,7 +174,7 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
 
 
 /// the connected this refers to (a relation view: null once it is deleted).
-/obj/item/assembly/signaler/proc/connected() as /datum/wires
+/obj/item/assembly/signaler/proc/connected() as /datum/cap_data/wires
 	return connected
 
 /// the radio_connection this refers to (a relation view: null once it is deleted).

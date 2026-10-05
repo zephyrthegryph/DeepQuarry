@@ -216,25 +216,6 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	RETURN_TYPE(/datum/req)
 	return req_intern(new /datum/req/access)
 
-// ---- req_wire ----
-
-/// The target's wire `wire` (a WIRE_* define) is not cut.
-/datum/req/wire
-	reason = /datum/msg/req_wire_cut
-	var/wire
-
-/datum/req/wire/test(datum/op_ctx/ctx)
-	var/atom/A = subject(ctx)
-	var/datum/wires/W = isatom(A) ? wires_of(A) : null
-	if(W?.is_cut(wire))
-		return reason
-	return null
-
-/proc/legacy_req_wire(wire)
-	var/datum/req/wire/R = new
-	R.wire = wire
-	return req_intern(R)
-
 // ---- req_part ----
 
 /// The target holds a component of `type` (a stock part, a board, a cell).

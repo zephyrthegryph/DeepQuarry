@@ -47,6 +47,51 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	ref_many(nameof(damaged_segments))
 	owns_many(nameof(field_segments))
 	owns_many(nameof(mode_list))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/shield_generator, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut))
+	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
+	on_wire(WIRE_SHIELD_CONTROL, cut = PROC_REF(control_wire_cut))
+	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut))
+
+/// A shield generator's four working wires (and a dud).
+/datum/wire_set/shield_generator
+	name = "Shield Generator"
+	count = 5
+	wires = list(WIRE_MAIN_POWER1, WIRE_CONTRABAND, WIRE_AI_CONTROL, WIRE_SHIELD_CONTROL)
+
+/obj/machinery/power/shield_generator/proc/wire_lights()
+	return list(
+		"The orange light is [mode_changes_locked ? "on." : "off."]",
+		"The blue light is [ai_control_disabled ? "off." : "blinking."]",
+		"The violet light is [hacked ? "pulsing." : "steady."]",
+		"The red light is [input_cut ? "off." : "on."]")
+
+/obj/machinery/power/shield_generator/proc/power_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	input_cut = !N.mended
+
+/// The contraband wire cut takes the hack off (and the modes it allowed).
+/obj/machinery/power/shield_generator/proc/contraband_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(N.mended)
+		return
+	hacked = FALSE
+	if(check_flag(MODEFLAG_BYPASS))
+		toggle_flag(MODEFLAG_BYPASS)
+	if(check_flag(MODEFLAG_OVERCHARGE))
+		toggle_flag(MODEFLAG_OVERCHARGE)
+
+/obj/machinery/power/shield_generator/proc/contraband_wire_pulsed(datum/act/A)
+	hacked = TRUE
+
+/obj/machinery/power/shield_generator/proc/control_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	mode_changes_locked = !N.mended
+
+/obj/machinery/power/shield_generator/proc/ai_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	ai_control_disabled = !N.mended
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/shield_generator/appearance_overlays()
@@ -60,7 +105,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 
 /obj/machinery/power/shield_generator/Initialize(mapload)
 	. = ..()
-	set_wires(new /datum/wires/shield_generator(src))
 	default_apply_parts()
 
 	own_take_all(src, nameof(mode_list))
@@ -384,13 +428,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 /obj/machinery/power/shield_generator/multitool_act(mob/user, obj/item/O)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/shield_generator/wirecutter_act(mob/user, obj/item/O)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/shield_generator/crowbar_act(mob/user, obj/item/O)
@@ -425,8 +469,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		if(running == SHIELD_IDLE)
 			return
 		running = SHIELD_IDLE
-		for(var/obj/effect/shield/S in field_segments)
-			qdel(S)
+		own_clear(src, nameof(field_segments), OWN_DELETE)
 	else
 		if(running != SHIELD_IDLE)
 			return
@@ -467,7 +510,7 @@ UI_DATA_REPLACE(/obj/machinery/power/shield_generator, "running:num", "overloade
 
 /obj/machinery/power/shield_generator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(panel_open && Adjacent(user))
-		wires.Interact(user)
+		wires_open(src, user)
 	else
 		tgui_interact(user)
 	return TRUE
