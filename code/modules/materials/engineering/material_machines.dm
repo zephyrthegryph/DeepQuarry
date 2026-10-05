@@ -657,7 +657,8 @@ GLOBAL_LIST_INIT(material_debug_treatments, list(
 	var/obj/item/stack/material/processed_alloy/held = answerer.get_active_hand()
 	if(!istype(held) && !length(helper.nearby_choices(answerer)))
 		return "nearby"
-	if(!isnull(answer_value) && !istype(held) && QDELETED(answer_value))
+	var/obj/item/stack/material/processed_alloy/selected_stock = answer_value
+	if(!isnull(answer_value) && !istype(held) && QDELETED(selected_stock))
 		return "stock"
 	if(!isnull(answer_value) && !isnull(selected_treatment))
 		var/obj/item/stack/material/processed_alloy/stock = helper.current_stock(answerer, answer_value, TRUE)
