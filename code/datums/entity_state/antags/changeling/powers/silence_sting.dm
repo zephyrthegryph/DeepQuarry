@@ -13,8 +13,11 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Silence sting (10)"
 	set desc="Sting target"
+	return changeling_silence_sting_stage()
 
-	var/mob/living/carbon/T = changeling_sting(10,/mob/proc/changeling_silence_sting)
+/mob/proc/changeling_silence_sting_stage(mob/living/carbon/selected_target)
+
+	var/mob/living/carbon/T = changeling_sting(10, PROC_REF(changeling_silence_sting_target_answered), selected_target)
 	var/datum/changeling/comp = is_changeling(src)
 	if(!T)
 		return FALSE
@@ -26,3 +29,8 @@
 	T.status_adjust(EFFECT_MUTED, duration)
 	feedback_add_details("changeling_powers","SS")
 	return TRUE
+
+/mob/proc/changeling_silence_sting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_silence_sting_stage(A.answer.answer_value)

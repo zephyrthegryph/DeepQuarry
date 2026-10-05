@@ -198,6 +198,7 @@
 #include "dq_heat_api_tests.dm"
 #include "dq_heat_net_tests.dm"
 #include "dq_heat_machines_behaviour.dm"
+#include "dq_body_heat_behaviour.dm"
 #include "dq_thermal_power_fixes_tests.dm"
 #include "dq_performance_diagnostics_tests.dm"
 #include "dq_audit_tests.dm"
@@ -524,6 +525,7 @@
 #include "dq_fwg3_windows.dm"
 #include "dq_atmos_machines_behaviour.dm"
 #include "dq_atmos_gas_api_tests.dm"
+#include "dq_atmos_pipes_behaviour.dm"
 #include "dq_fwg3_modals.dm"
 #include "dq_fwg3_asks.dm"
 #include "dq_eg2_wait_tests.dm"
@@ -1063,6 +1065,23 @@
 #include "round2_gender_change_drug_request.dm"
 
 #include "round2_combat_player_requests.dm"
+
+#include "round2_song_import_requests.dm"
+
+#include "round2_shuttle_docking_codes_request.dm"
+
+#include "round2_multi_shuttle_destination_clientless.dm"
+
+#include "round2_slime_docility_name_request.dm"
+
+#include "round2_helm_limit_requests.dm"
+#include "round2_helm_coordinates_clientless.dm"
+
+#include "round2_spellbook_immediate_speed_upgrade.dm"
+#include "round2_mob_examine_selection.dm"
+#include "round2_zorgoia_overlay_cache.dm"
+
+#include "round2_changeling_sting_continuation.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

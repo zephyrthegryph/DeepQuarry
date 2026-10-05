@@ -10,7 +10,7 @@ CAPABILITIES(/datum/tgui_module/shutoff_monitor)
 	var/obj/machinery/atmospherics/valve/shutoff/S = valve
 	if(!istype(S))
 		return FALSE
-	S.close_on_leaks = !S.close_on_leaks
+	S.set_close_on_leaks(!S.close_on_leaks)
 	return TRUE
 
 /datum/tgui_module/shutoff_monitor/proc/ui_act_toggle_open(datum/act/op/A, valve)

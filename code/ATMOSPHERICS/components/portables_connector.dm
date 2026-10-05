@@ -25,7 +25,8 @@
 	use_power = USE_POWER_OFF
 	level = 1
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/portables_connector, MACHINE_PIPELINE, "on")
+CAPABILITIES(/obj/machinery/atmospherics/portables_connector)
+	pipe_device_unwrench()
 
 /obj/machinery/atmospherics/portables_connector/fuel
 	icon_state = "map_connector-fuel"
@@ -75,34 +76,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/portables_connector, MACHINE_
 /obj/machinery/atmospherics/portables_connector/hide(i)
 	update_underlays()
 
-/obj/machinery/atmospherics/portables_connector/machine_step()
-	..()
-	if(!connected_device)
-		set_on(0)
-		return PROCESS_KILL
-	if(network)
-		network.mark_dirty()
-	hibernate_until_device_changes()
-	return PROCESS_KILL
-
-/// Arms a raw forwarder (code/datums/om/watch.dm om_watch_arm_raw()): the connector has no local
-/// work to perform when its device's gas changes, only a side effect (enroll the shared pipenet
-/// for reconciliation), so it never needs to wake into process() over this -- it forwards every
-/// notification straight to on_device_gas_changed() and stays parked.
-/obj/machinery/atmospherics/portables_connector/proc/hibernate_until_device_changes()
-	var/datum/gas_mixture/device_air = connected_device?.air_contents
-	if(!device_air)
-		return
-	om_watch_arm_raw(src, "device", device_air.arena_id(), GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(on_device_gas_changed)))
-
-/obj/machinery/atmospherics/portables_connector/proc/clear_gas_dependency()
-	om_watch_disarm(src, "device")
-
-/obj/machinery/atmospherics/portables_connector/proc/on_device_gas_changed(mixture_id, change_mask, list/observation, observation_index)
-	if(!on || !connected_device)
-		return
-	if(network)
-		network.mark_dirty()
+/// It comes off only with nothing on it (a portable standing on it, even one not attached, holds it down).
+/obj/machinery/atmospherics/portables_connector/pipe_device_idle(datum/act/A)
+	return !connected_device && !locate_within(loc, /obj/machinery/portable_atmospherics)
 
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/portables_connector/get_neighbor_nodes_for_init()
@@ -188,7 +164,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/portables_connector, MACHINE_
 	rust_attach_external_device(connected_device)
 
 /obj/machinery/atmospherics/portables_connector/disconnect(obj/machinery/atmospherics/reference)
-	clear_gas_dependency()
 	if(reference==node)
 		rust_release_network_wrapper(network)
 		rel_clear(src, nameof(node))
@@ -198,27 +173,3 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/portables_connector, MACHINE_
 	update_underlays()
 
 	return null
-
-/obj/machinery/atmospherics/portables_connector/wrench_act(mob/user, obj/item/W)
-	if (connected_device)
-		to_chat(user, span_warning("You cannot unwrench \the [src], dettach \the [connected_device] first."))
-		return ITEM_INTERACT_BLOCKING
-	if (locate(/obj/machinery/portable_atmospherics, src.loc))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return 1
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/atmospherics/portables_connector/arm_wakes()
-	..()
-	hibernate_until_device_changes()
-/obj/machinery/atmospherics/portables_connector/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
-

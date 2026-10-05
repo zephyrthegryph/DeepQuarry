@@ -12,12 +12,15 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Cryogenic Sting (20)"
 	set desc = "Chills and freezes a biological creature."
+	return changeling_cryo_sting_stage()
+
+/mob/proc/changeling_cryo_sting_stage(mob/living/carbon/selected_target)
 
 	var/datum/changeling/comp = is_changeling(src)
-	if(comp.is_on_cooldown(CRYO_STING))
+	if(comp && comp.is_on_cooldown(CRYO_STING))
 		to_chat(src, span_notice("We are still recovering. We will be able to sting again in [(comp.get_cooldown(CRYO_STING) - world.time)/10] seconds."))
 		return
-	var/mob/living/carbon/T = changeling_sting(20,/mob/proc/changeling_cryo_sting, CRYO_STING)
+	var/mob/living/carbon/T = changeling_sting(20, PROC_REF(changeling_cryo_sting_target_answered), selected_target)
 	if(!T)
 		return FALSE
 
@@ -32,6 +35,12 @@
 	comp.set_cooldown(CRYO_STING, 3 MINUTES) //Set the cooldown to 3 minutes.
 	after(src, 3 MINUTES, PROC_REF(changeling_cryo_sting_ready)) //Calling a proc with arguments
 	return TRUE
+
+
+/mob/proc/changeling_cryo_sting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_cryo_sting_stage(A.answer.answer_value)
 
 /mob/proc/changeling_cryo_sting_ready()
 	to_chat(src, span_notice("Our cryogenic string is ready to be used once more."))

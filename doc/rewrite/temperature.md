@@ -75,6 +75,16 @@ power. Tooling: the *Show Heat Links* admin verb. Decisions and numbers: `intend
 - **Thresholds.** Comfort, damage and the species limits (about 120 overrides) become `Band` watches on the body node. The life system wakes only when the band changes, and there is one damage ladder.
 - **Space and radiation.** Stefan–Boltzmann heat loss, with one model instead of three.
 
+### Implementation (H2, landed)
+
+`code/modules/heat/heat_mobs.dm` and the human environment stage (`code/modules/mob/living/carbon/human/life.dm`). The body is linked through
+clothing with `set_surroundings(air, surface, sky_area)`: convection (`C·(1−protection)·density / (15 · LIFE_CYCLE_SECONDS)`) shared between
+its tile's air (coupling slot 0) and heat links to the air of the tiles open to it; contact with the floor solid under it
+(`BODY_FLOOR_CONDUCTANCE`) and each wall beside it (`BODY_WALL_CONDUCTANCE_FRACTION` of that); a radiative link to the 2.7 K sky in space or
+below `BODY_SKY_DENSITY` of a standard cell. Floors hold `FLOOR_HEAT_CAPACITY` (80 kJ/K), so a cold room's floor, not its few kJ/K of air,
+takes a chilled body's heat. Inside the comfort range every link is zero: at game rates (kW/K) occupants would otherwise heat every room.
+Pins and numbers: `dq_body_heat_behaviour.dm`, `intended_changes.md` ("Body heat against the room").
+
 ## 4. Items, cooking, reagents (H3)
 
 - **Items** get thermal properties from their materials. The thresholds are melting, ignition, cooking and cook-off, and each is a rule ([rules.md §4](rules.md#4-rules)).

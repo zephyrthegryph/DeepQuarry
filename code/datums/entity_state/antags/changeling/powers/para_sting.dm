@@ -9,8 +9,11 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Paralysis sting (30)"
 	set desc="Sting target"
+	return changeling_paralysis_sting_stage()
 
-	var/mob/living/carbon/T = changeling_sting(30,/mob/proc/changeling_paralysis_sting)
+/mob/proc/changeling_paralysis_sting_stage(mob/living/carbon/selected_target)
+
+	var/mob/living/carbon/T = changeling_sting(30, PROC_REF(changeling_paralysis_sting_target_answered), selected_target)
 	if(!T)
 		return FALSE
 	add_attack_logs(src,T,"Paralysis sting (changeling)")
@@ -18,3 +21,8 @@
 	T.status_at_least(EFFECT_WEAKENED, 20)
 	feedback_add_details("changeling_powers","PS")
 	return TRUE
+
+/mob/proc/changeling_paralysis_sting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_paralysis_sting_stage(A.answer.answer_value)

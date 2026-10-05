@@ -1504,13 +1504,13 @@
 	into += entry_line(61)
 	into += list(global.owns_many(nameof(absorbed_dna), /datum/absorbed_dna))
 
-/// CAPABILITIES(/datum/changeling_panel) at code/datums/entity_state/antags/changeling/changeling.dm:459
+/// CAPABILITIES(/datum/changeling_panel) at code/datums/entity_state/antags/changeling/changeling.dm:460
 /datum/changeling_panel/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 459, /datum/changeling_panel)
-	into += entry_line(460)
-	into += list(global.interface("ChangelingPanel", title = "Changeling Evolution Panel"))
+	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 460, /datum/changeling_panel)
 	into += entry_line(461)
+	into += list(global.interface("ChangelingPanel", title = "Changeling Evolution Panel"))
+	into += entry_line(462)
 	into += list(global.op("evolve_power", global.ui_act("evolve_power", global.arg("val", global.schema_text(4096))), global.then(PROC_REF(ui_act_evolve_power))))
 
 /// CAPABILITIES(/datum/cinematic) at code/datums/cinematics/_cinematic.dm:52
@@ -3724,13 +3724,13 @@
 	into += entry_line(90)
 	into += list(global.owns_many(nameof(bands), /datum/om_watch_band))
 
-/// CAPABILITIES(/datum/omni_port) at code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm:120
+/// CAPABILITIES(/datum/omni_port) at code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm:121
 /datum/omni_port/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm", 120, /datum/omni_port)
-	into += entry_line(121)
-	into += list(global.owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_block("code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm", 121, /datum/omni_port)
 	into += entry_line(122)
+	into += list(global.owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(123)
 	into += list(global.ref_one(nameof(master)))
 
 /// CAPABILITIES(/datum/overlay_lighting) at code/datums/entity_state/overlay_lighting.dm:80
@@ -4088,13 +4088,13 @@
 	into += entry_line(213)
 	into += list(global.ref_one(nameof(interaction_context), /datum/interaction))
 
-/// CAPABILITIES(/datum/prompt/choice/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:291
+/// CAPABILITIES(/datum/prompt/choice/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:290
 /datum/prompt/choice/atmos_config_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 291, /datum/prompt/choice/atmos_config_review)
-	into += entry_line(292)
+	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 290, /datum/prompt/choice/atmos_config_review)
+	into += entry_line(291)
 	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(293)
+	into += entry_line(292)
 	into += list(global.ref_one(nameof(config_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/choice/augment_location) at code/game/objects/items/weapons/implants/implantaugment.dm:77
@@ -4768,13 +4768,13 @@
 	into += entry_line(1167)
 	into += list(global.ref_one(nameof(human_target), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/number/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:355
+/// CAPABILITIES(/datum/prompt/number/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:354
 /datum/prompt/number/atmos_config_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 355, /datum/prompt/number/atmos_config_review)
-	into += entry_line(356)
+	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 354, /datum/prompt/number/atmos_config_review)
+	into += entry_line(355)
 	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(357)
+	into += entry_line(356)
 	into += list(global.ref_one(nameof(config_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:81
@@ -4952,13 +4952,13 @@
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
 
-/// CAPABILITIES(/datum/prompt/text/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:322
+/// CAPABILITIES(/datum/prompt/text/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:321
 /datum/prompt/text/atmos_config_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 322, /datum/prompt/text/atmos_config_review)
-	into += entry_line(323)
+	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 321, /datum/prompt/text/atmos_config_review)
+	into += entry_line(322)
 	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(324)
+	into += entry_line(323)
 	into += list(global.ref_one(nameof(config_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1061
@@ -10064,11 +10064,11 @@
 	into += entry_line(23)
 	into += list(global.op("disguise", global.in_hand(), global.label("Toggle chameleon disguise"), global.then(PROC_REF(projector_activation_requested))))
 
-/// CAPABILITIES(/obj/item/changeling_debug) at code/datums/entity_state/antags/changeling/changeling.dm:439
+/// CAPABILITIES(/obj/item/changeling_debug) at code/datums/entity_state/antags/changeling/changeling.dm:440
 /obj/item/changeling_debug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 439, /obj/item/changeling_debug)
-	into += entry_line(440)
+	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 440, /obj/item/changeling_debug)
+	into += entry_line(441)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/circuitboard/security) at code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm:23
@@ -16192,33 +16192,57 @@
 	into += entry_line(40)
 	into += list(global.op("ejectMaterial", global.ui_act("ejectMaterial", global.arg("mat", global.schema_text(4096))), global.then(PROC_REF(ui_act_ejectmaterial))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate) at code/ATMOSPHERICS/components/binary_devices/passive_gate.dm:207
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate) at code/ATMOSPHERICS/components/binary_devices/passive_gate.dm:161
 /obj/machinery/atmospherics/binary/passive_gate/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/passive_gate.dm", 207, /obj/machinery/atmospherics/binary/passive_gate)
-	into += entry_line(208)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/passive_gate.dm", 161, /obj/machinery/atmospherics/binary/passive_gate)
+	into += entry_line(162)
+	into += list(pipe_device_window("PressureRegulator"))
+	into += entry_line(163)
+	into += list(pipe_device_unwrench())
+	into += entry_line(164)
 	into += list(global.op("toggle_valve", global.ui_act("toggle_valve"), global.then(PROC_REF(valve_switched))))
+	into += entry_line(165)
+	into += list(global.op("regulate_mode", global.ui_act("regulate_mode", global.arg("mode", global.schema_text(16))), global.then(PROC_REF(ui_set_regulate_mode))))
+	into += entry_line(167)
+	into += list(global.op("set_press", global.ui_act("set_press", global.arg("press", global.schema_text(16))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_press_question)), "title" = "Pressure Control", "default" = nameof(target_pressure), "max_value" = nameof(max_pressure_setting), "timeout" = 0), step = "gate_press", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_set_press))))
+	into += entry_line(170)
+	into += list(global.op("set_flow_rate", global.ui_act("set_flow_rate", global.arg("press", global.schema_text(16))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_flow_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = global.computed(PROC_REF(flow_limit)), "timeout" = 0), step = "gate_flow", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_set_flow_rate))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/pump) at code/ATMOSPHERICS/components/binary_devices/pump.dm:218
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/pump) at code/ATMOSPHERICS/components/binary_devices/pump.dm:177
 /obj/machinery/atmospherics/binary/pump/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pump.dm", 218, /obj/machinery/atmospherics/binary/pump)
-	into += entry_line(219)
-	into += list(global.interface("GasPump"))
-	into += entry_line(220)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pump.dm", 177, /obj/machinery/atmospherics/binary/pump)
+	into += entry_line(178)
+	into += list(pipe_device_window("GasPump"))
+	into += entry_line(179)
+	into += list(pipe_device_switch())
+	into += entry_line(180)
+	into += list(pipe_device_max(PROC_REF(max_output_set)))
+	into += entry_line(181)
+	into += list(pipe_device_unwrench())
+	into += entry_line(182)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
-	into += entry_line(222)
+	into += entry_line(184)
 	into += list(global.op("set_press", global.ui_act("set_press", global.arg("press", global.schema_text(4096))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_press_question)), "title" = "Pressure control", "default" = global.computed(PROC_REF(set_press_default)), "max_value" = nameof(max_pressure_setting), "timeout" = 0), step = "k231", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_act_set_press))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump) at code/ATMOSPHERICS/components/binary_devices/volume_pump.dm:241
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump) at code/ATMOSPHERICS/components/binary_devices/volume_pump.dm:218
 /obj/machinery/atmospherics/binary/volume_pump/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/volume_pump.dm", 241, /obj/machinery/atmospherics/binary/volume_pump)
-	into += entry_line(242)
-	into += list(global.interface("GasPump"))
-	into += entry_line(243)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/volume_pump.dm", 218, /obj/machinery/atmospherics/binary/volume_pump)
+	into += entry_line(219)
+	into += list(pipe_device_window("GasPump"))
+	into += entry_line(220)
+	into += list(pipe_device_switch())
+	into += entry_line(221)
+	into += list(pipe_device_max(PROC_REF(max_output_set)))
+	into += entry_line(222)
+	into += list(pipe_device_unwrench())
+	into += entry_line(223)
+	into += list(global.op("overclock", global.tool(TOOL_MULTITOOL), global.label("Toggle pressure limiter"), global.wait(0), global.says(PROC_REF(overclock_message)), global.then(PROC_REF(overclock_toggled))))
+	into += entry_line(224)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
-	into += entry_line(245)
+	into += entry_line(226)
 	into += list(global.op("set_press", global.ui_act("set_press", global.arg("press", global.schema_text(4096))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_press_question)), "title" = "Flow Control", "default" = global.computed(PROC_REF(set_press_default)), "max_value" = nameof(max_transfer_rate), "timeout" = 0), step = "k269", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_act_set_press))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni) at code/ATMOSPHERICS/components/omni_devices/omni_base.dm:30
@@ -16227,13 +16251,17 @@
 	into += entry_block("code/ATMOSPHERICS/components/omni_devices/omni_base.dm", 30, /obj/machinery/atmospherics/omni)
 	into += entry_line(31)
 	into += list(global.owns_many(nameof(ports), /datum/omni_port))
+	into += entry_line(32)
+	into += list(pipe_device_switch())
+	into += entry_line(33)
+	into += list(pipe_device_unwrench())
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni/atmos_filter) at code/ATMOSPHERICS/components/omni_devices/filter.dm:291
 /obj/machinery/atmospherics/omni/atmos_filter/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/components/omni_devices/filter.dm", 291, /obj/machinery/atmospherics/omni/atmos_filter)
 	into += entry_line(292)
-	into += list(global.interface("OmniFilter"))
+	into += list(pipe_device_window("OmniFilter"))
 	into += entry_line(293)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_act_power))))
 	into += entry_line(294)
@@ -16251,14 +16279,28 @@
 	into += entry_line(304)
 	into += list(global.ref_many(nameof(atmos_filters)))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/omni/mixer) at code/ATMOSPHERICS/components/omni_devices/mixer.dm:327
+/// CAPABILITIES(/obj/machinery/atmospherics/omni/mixer) at code/ATMOSPHERICS/components/omni_devices/mixer.dm:132
 /obj/machinery/atmospherics/omni/mixer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/omni_devices/mixer.dm", 327, /obj/machinery/atmospherics/omni/mixer)
-	into += entry_line(328)
+	into += entry_block("code/ATMOSPHERICS/components/omni_devices/mixer.dm", 132, /obj/machinery/atmospherics/omni/mixer)
+	into += entry_line(133)
 	into += list(global.ref_one(nameof(output)))
-	into += entry_line(329)
+	into += entry_line(134)
 	into += list(global.ref_many(nameof(inputs)))
+	into += entry_line(135)
+	into += list(pipe_device_window("OmniMixer"))
+	into += entry_line(136)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_power_switched))))
+	into += entry_line(137)
+	into += list(global.op("configure", global.ui_act("configure"), global.then(PROC_REF(ui_configure))))
+	into += entry_line(138)
+	into += list(global.op("set_flow_rate", global.ui_act("set_flow_rate"), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_flow_rate_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = nameof(max_flow_rate), "timeout" = 0), step = "rate"), global.then(PROC_REF(ui_set_flow_rate))))
+	into += entry_line(141)
+	into += list(global.op("switch_mode", global.ui_act("switch_mode", global.arg("dir"), global.arg("mode", global.schema_text(16))), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.then(PROC_REF(ui_switch_mode))))
+	into += entry_line(142)
+	into += list(global.op("switch_con", global.ui_act("switch_con", global.arg("dir")), global.needs(global.req(PROC_REF(configurable), silent = TRUE), global.req(PROC_REF(share_free), silent = TRUE)), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(share_question)), "title" = "Concentration control", "default" = global.computed(PROC_REF(share_default)), "max_value" = global.computed(PROC_REF(share_most)), "timeout" = 0), step = "share"), global.then(PROC_REF(ui_switch_con))))
+	into += entry_line(145)
+	into += list(global.op("switch_conlock", global.ui_act("switch_conlock", global.arg("dir")), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.then(PROC_REF(ui_switch_conlock))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/pipe) at code/ATMOSPHERICS/pipes/pipe_base.dm:30
 /obj/machinery/atmospherics/pipe/declared_entries(list/into)
@@ -16288,38 +16330,82 @@
 	into += entry_line(33)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/atmospherics/trinary) at code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm:220
+/// CAPABILITIES(/obj/machinery/atmospherics/portables_connector) at code/ATMOSPHERICS/components/portables_connector.dm:28
+/obj/machinery/atmospherics/portables_connector/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/portables_connector.dm", 28, /obj/machinery/atmospherics/portables_connector)
+	into += entry_line(29)
+	into += list(pipe_device_unwrench())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/trinary) at code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm:191
 /obj/machinery/atmospherics/trinary/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm", 220, /obj/machinery/atmospherics/trinary)
-	into += entry_line(221)
+	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm", 191, /obj/machinery/atmospherics/trinary)
+	into += entry_line(192)
+	into += list(pipe_device_switch())
+	into += entry_line(193)
+	into += list(pipe_device_unwrench())
+	into += entry_line(194)
 	into += list(global.owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(222)
+	into += entry_line(195)
 	into += list(global.owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(223)
+	into += entry_line(196)
 	into += list(global.owns_one(nameof(air3), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter) at code/ATMOSPHERICS/components/trinary_devices/filter.dm:171
+/// CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter) at code/ATMOSPHERICS/components/trinary_devices/filter.dm:156
 /obj/machinery/atmospherics/trinary/atmos_filter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/filter.dm", 171, /obj/machinery/atmospherics/trinary/atmos_filter)
-	into += entry_line(172)
-	into += list(global.interface("AtmosFilter"))
-	into += entry_line(173)
+	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/filter.dm", 156, /obj/machinery/atmospherics/trinary/atmos_filter)
+	into += entry_line(157)
+	into += list(pipe_device_window("AtmosFilter"))
+	into += entry_line(158)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_act_power))))
-	into += entry_line(174)
+	into += entry_line(159)
 	into += list(global.op("rate", global.ui_act("rate", global.arg("rate")), global.then(PROC_REF(ui_act_rate))))
-	into += entry_line(175)
+	into += entry_line(160)
 	into += list(global.op("filter", global.ui_act("filter", global.arg("filterset", global.num())), global.then(PROC_REF(ui_act_filter))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary) at code/ATMOSPHERICS/components/unary/unary_base.dm:213
+/// CAPABILITIES(/obj/machinery/atmospherics/trinary/mixer) at code/ATMOSPHERICS/components/trinary_devices/mixer.dm:92
+/obj/machinery/atmospherics/trinary/mixer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/mixer.dm", 92, /obj/machinery/atmospherics/trinary/mixer)
+	into += entry_line(93)
+	into += list(pipe_device_window("AtmosMixer"))
+	into += entry_line(94)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_power_switched))))
+	into += entry_line(95)
+	into += list(global.op("pressure", global.ui_act("pressure", global.arg("pressure")), global.then(PROC_REF(ui_flow_rate_set))))
+	into += entry_line(96)
+	into += list(global.op("node1", global.ui_act("node1", global.arg("concentration", global.num())), global.then(PROC_REF(ui_node1))))
+	into += entry_line(97)
+	into += list(global.op("node2", global.ui_act("node2", global.arg("concentration", global.num())), global.then(PROC_REF(ui_node2))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/tvalve) at code/ATMOSPHERICS/components/tvalve.dm:82
+/obj/machinery/atmospherics/tvalve/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/tvalve.dm", 82, /obj/machinery/atmospherics/tvalve)
+	into += entry_line(83)
+	into += list(global.op("toggle", global.hand(), global.label("Toggle"), global.wait(0), global.then(PROC_REF(wheel_turned))))
+	into += entry_line(84)
+	into += list(pipe_device_unwrench())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital) at code/ATMOSPHERICS/components/tvalve.dm:188
+/obj/machinery/atmospherics/tvalve/digital/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/tvalve.dm", 188, /obj/machinery/atmospherics/tvalve/digital)
+	into += entry_line(189)
+	into += list(global.extend("toggle", global.needs(global.req(PROC_REF(actor_allowed), because = MSG(lock/denied)), global.req(PROC_REF(has_power), because = MSG(valve/unpowered)))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/unary) at code/ATMOSPHERICS/components/unary/unary_base.dm:189
 /obj/machinery/atmospherics/unary/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/unary_base.dm", 213, /obj/machinery/atmospherics/unary)
-	into += entry_line(214)
+	into += entry_block("code/ATMOSPHERICS/components/unary/unary_base.dm", 189, /obj/machinery/atmospherics/unary)
+	into += entry_line(190)
 	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(215)
-	into += list(global.op("power_toggle", global.hand(), global.gesture(GESTURE_CTRL), global.label("Toggle power"), global.wait(0), global.when(PROC_REF(ctrl_power_offered)), global.needs(global.req(PROC_REF(actor_allowed), because = MSG(lock/denied))), global.then(PROC_REF(ctrl_power_toggled))))
+	into += entry_line(191)
+	into += list(pipe_device_switch())
+	into += entry_line(192)
+	into += list(global.extend("power_toggle", global.when(PROC_REF(ctrl_power_offered))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell) at code/game/machinery/cryo.dm:74
 /obj/machinery/atmospherics/unary/cryo_cell/declared_entries(list/into)
@@ -16442,6 +16528,37 @@
 	into += list(global.examine_line(PROC_REF(gauge_text)))
 	into += entry_line(55)
 	into += list(global.on_change(WELD_SHUT_WELDED, ANY, global.then(PROC_REF(weld_changed))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/valve) at code/ATMOSPHERICS/components/valve.dm:86
+/obj/machinery/atmospherics/valve/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/valve.dm", 86, /obj/machinery/atmospherics/valve)
+	into += entry_line(87)
+	into += list(global.op("toggle", global.hand(), global.label("Toggle"), global.wait(0), global.then(PROC_REF(wheel_turned))))
+	into += entry_line(88)
+	into += list(pipe_device_unwrench())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/valve/digital) at code/ATMOSPHERICS/components/valve.dm:184
+/obj/machinery/atmospherics/valve/digital/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/valve.dm", 184, /obj/machinery/atmospherics/valve/digital)
+	into += entry_line(185)
+	into += list(global.extend("toggle", global.needs(global.req(PROC_REF(actor_allowed), because = MSG(lock/denied)), global.req(PROC_REF(has_power), because = MSG(valve/unpowered)))))
+	into += entry_line(186)
+	into += list(global.extend("unwrench", global.needs(global.req(PROC_REF(actor_allowed), because = MSG(lock/denied)))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff) at code/ATMOSPHERICS/components/shutoff.dm:37
+/obj/machinery/atmospherics/valve/shutoff/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/shutoff.dm", 37, /obj/machinery/atmospherics/valve/shutoff)
+	into += entry_line(38)
+	into += list(membership(joins = REGISTRY_SHUTOFF_VALVES))
+	into += entry_line(39)
+	into += list(global.without("toggle"))
+	into += entry_line(40)
+	into += list(global.op("circuit", global.hand(), global.label("Toggle automatic control"), global.wait(0), global.says(PROC_REF(circuit_message)), global.then(PROC_REF(circuit_toggled))))
+	into += entry_line(41)
+	into += list(global.op("manual", global.hand(), global.gesture(GESTURE_ALT), global.label("Manually toggle valve"), global.wait(0), global.when(PROC_REF(actor_living)), global.needs(global.req(PROC_REF(circuit_off), because = MSG(shutoff/automatic))), global.says(PROC_REF(manual_message)), global.then(PROC_REF(manual_toggled))))
 
 /// CAPABILITIES(/obj/machinery/autolathe) at code/game/machinery/autolathe.dm:55
 /obj/machinery/autolathe/declared_entries(list/into)
@@ -17639,11 +17756,11 @@
 	into += entry_line(29)
 	into += list(global.owns_many(nameof(known_sectors)))
 
-/// CAPABILITIES(/obj/machinery/computer/ship/navigation) at code/modules/overmap/ships/computers/helm.dm:341
+/// CAPABILITIES(/obj/machinery/computer/ship/navigation) at code/modules/overmap/ships/computers/helm.dm:428
 /obj/machinery/computer/ship/navigation/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/overmap/ships/computers/helm.dm", 341, /obj/machinery/computer/ship/navigation)
-	into += entry_line(342)
+	into += entry_block("code/modules/overmap/ships/computers/helm.dm", 428, /obj/machinery/computer/ship/navigation)
+	into += entry_line(429)
 	into += list(global.owns_one(nameof(nav_tgui), starts = /datum/tgui_module/ship/nav))
 
 /// CAPABILITIES(/obj/machinery/computer/shutoff_monitor) at code/game/machinery/computer/shutoff_monitor.dm:10
@@ -19301,15 +19418,15 @@
 	into += entry_line(143)
 	into += list(global.owns_one(nameof(temp_chem_holder), /obj))
 
-/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered) at code/game/machinery/atmoalter/portable_atmospherics.dm:191
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered) at code/game/machinery/atmoalter/portable_atmospherics.dm:186
 /obj/machinery/portable_atmospherics/powered/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 191, /obj/machinery/portable_atmospherics/powered)
-	into += entry_line(192)
+	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 186, /obj/machinery/portable_atmospherics/powered)
+	into += entry_line(187)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell))
-	into += entry_line(193)
+	into += entry_line(188)
 	into += list(global.op("cell_in", global.item(/obj/item/cell), global.label("Insert power cell"), global.wait(0), global.when(nameof(use_cell)), global.needs(global.req_empty(nameof(cell), because = MSG(portable/cell_present))), global.put_in(nameof(cell)), global.says(MSG(portable/cell_in)), global.then(PROC_REF(cell_changed))))
-	into += entry_line(195)
+	into += entry_line(190)
 	into += list(global.op("cell_out", global.tool(TOOL_SCREWDRIVER), global.label("Remove power cell"), global.when(nameof(removeable_cell)), global.needs(global.req(PROC_REF(has_cell), because = MSG(portable/no_cell))), global.says(MSG(portable/cell_out)), global.then(PROC_REF(take_cell_out))))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump) at code/game/machinery/atmoalter/pump.dm:23

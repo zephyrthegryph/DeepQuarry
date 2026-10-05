@@ -112,7 +112,6 @@ init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_CH4, (star
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
 init_registry	code/modules/holomap/mapper.dm	registry_join(REGISTRY_MAPPING_BEACONS, src)
-init_scheduling	code/ATMOSPHERICS/components/shutoff.dm	om_attach(src, /datum/om/behaviour/sleeper/shutoff_valve)
 init_scheduling	code/game/gamemodes/cult/narsie.dm	after(src, 10 SECONDS, /proc/narsie_call_evac)
 init_scheduling	code/game/objects/effects/anomalies/_anomalies.dm	after(src, lifespan, PROC_REF(lifespan_over))
 init_scheduling	code/game/objects/effects/anomalies/anomalies_weather.dm	after(src, telegraph, PROC_REF(start_weather))

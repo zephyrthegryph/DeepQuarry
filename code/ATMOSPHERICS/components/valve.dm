@@ -81,24 +81,21 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 	else if(dir==12)
 		set_dir(4)
 
-/obj/machinery/atmospherics/valve/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/valve_toggle,
-	)
-	..()
+MSG_DEF_SELF(valve/unpowered, "It has no power.")
 
-/// Toggle the valve open or closed.
-/datum/interaction/machine_hand/ungated/valve_toggle
-	id = "valve_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/atmospherics/valve/proc/interaction_toggle
+CAPABILITIES(/obj/machinery/atmospherics/valve)
+	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(wheel_turned)))
+	pipe_device_unwrench()
 
-/obj/machinery/atmospherics/valve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
+/// A valve needs no power to come off: it never runs.
+/obj/machinery/atmospherics/valve/pipe_device_idle(datum/act/A)
+	return TRUE
+
+/// The wheel turns: the valve moves a second later.
+/obj/machinery/atmospherics/valve/proc/wheel_turned(datum/act/op/A)
 	animate_toggle()
 	after(src, 1 SECOND, PROC_REF(finish_toggle))
-	return TRUE
+	return OP_OK
 
 /// The switch, a second after the wheel is turned.
 /obj/machinery/atmospherics/valve/proc/finish_toggle()
@@ -183,24 +180,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 	var/id = null
 	var/datum/radio_frequency/radio_connection
 
-/obj/machinery/atmospherics/valve/digital/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/valve_digital_toggle,
-	)
-	..()
+/// A digital valve turns for someone its access lets in, while it has power; so does its wrench.
+CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
+	extend("toggle", needs(req(PROC_REF(actor_allowed), because = MSG(lock/denied)), req(PROC_REF(has_power), because = MSG(valve/unpowered))))
+	extend("unwrench", needs(req(PROC_REF(actor_allowed), because = MSG(lock/denied))))
 
-/// Toggle a digital valve: requires power and access, then behaves as the manual toggle.
-/datum/interaction/machine_hand/ungated/valve_digital_toggle
-	id = "valve_digital_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	also_requires = list(REQ_ACCESS)
-	effect = /obj/machinery/atmospherics/valve/digital/proc/interaction_digital_toggle
-
-/obj/machinery/atmospherics/valve/digital/proc/interaction_digital_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!powered())
-		return TRUE
-	return interaction_toggle(user, held, interaction)
+/obj/machinery/atmospherics/valve/digital/proc/has_power(datum/act/A)
+	return !has_stat(NOPOWER)
 
 /obj/machinery/atmospherics/valve/digital/open
 	open = 1
@@ -242,23 +228,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/digital, TYPE_PROC_REF
 				close()
 			else
 				open()
-
-/obj/machinery/atmospherics/valve/wrench_act(mob/user, obj/item/W)
-	if (istype(src, /obj/machinery/atmospherics/valve/digital) && !src.allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, quality = TOOL_WRENCH, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/valve/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
 
 /obj/machinery/atmospherics/valve/examine(mob/user)
 	. = ..()

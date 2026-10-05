@@ -26,12 +26,6 @@
 
 	//node 3 is the outlet, nodes 1 & 2 are intakes
 
-/obj/machinery/atmospherics/trinary/mixer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
 DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/trinary/mixer/appearance_overlays()
 	. = list()
@@ -86,22 +80,26 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, TYPE_PROC_REF
 	if(index == 3)
 		rust_device_dirty()
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/mixer, set_flow_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/mixer, node1_concentration, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/mixer, node2_concentration, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/trinary/mixer, set_flow_rate)
+TRACKED(/obj/machinery/atmospherics/trinary/mixer, node1_concentration)
+TRACKED(/obj/machinery/atmospherics/trinary/mixer, node2_concentration)
 
 /// The Rust group is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/trinary/mixer/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate), nameof(node1_concentration), nameof(node2_concentration))
 
-DECLARE_UI(/obj/machinery/atmospherics/trinary/mixer, "AtmosMixer")
+CAPABILITIES(/obj/machinery/atmospherics/trinary/mixer)
+	pipe_device_window("AtmosMixer")
+	op("power", ui_act("power"), then(PROC_REF(ui_power_switched)))
+	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_flow_rate_set)))
+	op("node1", ui_act("node1", arg("concentration", num())), then(PROC_REF(ui_node1)))
+	op("node2", ui_act("node2", arg("concentration", num())), then(PROC_REF(ui_node2)))
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/mixer, "on=use_power", "merge:ui_data_obj_machinery_atmospherics_trinary_mixer{set_pressure:num,max_pressure:num,node1_concentration:num,node2_concentration:num,node1_dir:text,node2_dir:text}")
-
-/// The computed part of /obj/machinery/atmospherics/trinary/mixer's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/trinary/mixer/proc/ui_data_obj_machinery_atmospherics_trinary_mixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/atmospherics/trinary/mixer/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["on"] = use_power
 	data["set_pressure"] = round(set_flow_rate)
 	data["max_pressure"] = min(air1.return_volume(), air2.return_volume())
 	data["node1_concentration"] = round(node1_concentration*100, 1)
@@ -111,39 +109,31 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/mixer, "on=use_power", "merg
 	data["node2_dir"] = dir_name(node_connects[2],TRUE)
 	return data
 
-UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_power)
-	set_use_power(!use_power)
-	. = TRUE
+/obj/machinery/atmospherics/trinary/mixer/proc/ui_power_switched(datum/act/op/A)
+	toggle_power()
 	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_pressure)
-	var/pressure = params["pressure"]
+/obj/machinery/atmospherics/trinary/mixer/proc/ui_flow_rate_set(datum/act/op/A, pressure)
+	var/most = min(air1.return_volume(), air2.return_volume())
 	if(pressure == "max")
-		pressure = min(air1.return_volume(), air2.return_volume())
-		. = TRUE
-	else if(isnum(pressure))
-		. = TRUE
-	if(.)
-		set_set_flow_rate(clamp(pressure, 0, min(air1.return_volume(), air2.return_volume())))
+		pressure = most
+	if(isnum(pressure))
+		set_set_flow_rate(clamp(pressure, 0, most))
 	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "node1", ui_act_node1, UI_ARG_NUM("concentration"))
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_node1)
-	var/value = params["concentration"]
-	set_node1_concentration(max(0, min(1, value / 100)))
+/obj/machinery/atmospherics/trinary/mixer/proc/ui_node1(datum/act/op/A, concentration)
+	set_node1_concentration(max(0, min(1, concentration / 100)))
 	set_node2_concentration(1.0 - node1_concentration)
-	. = TRUE
 	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "node2", ui_act_node2, UI_ARG_NUM("concentration"))
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_node2)
-	var/value = params["concentration"]
-	set_node2_concentration(max(0, min(1, value / 100)))
+/obj/machinery/atmospherics/trinary/mixer/proc/ui_node2(datum/act/op/A, concentration)
+	set_node2_concentration(max(0, min(1, concentration / 100)))
 	set_node1_concentration(1.0 - node2_concentration)
-	. = TRUE
 	update_icon()
+	return OP_OK
 
 //
 // "T" Orientation - Inputs are on oposite sides instead of adjacent

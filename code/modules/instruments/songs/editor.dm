@@ -100,24 +100,69 @@ UI_ACT_PROC(/datum/song, ui_act_tempo)
 
 UI_ACT(/datum/song, "import_song", ui_act_import_song)
 UI_ACT_PROC(/datum/song, ui_act_import_song)
-	var/song_text = ""
-	do
-		var/_answer_k103 = act_ask(user, action, params, ui, "k103", /datum/om/prompt/text, message = "Please paste the entire song, formatted:", title = name, max_length = (MUSIC_MAXLINES * MUSIC_MAXLINECHARS), multiline = TRUE)
-		if(isnull(_answer_k103))
-			return
-		song_text = _answer_k103
-		if(!in_range(parent(), user))
-			return
+	open_request(ui, /datum/prompt/text/song_import, TYPE_PROC_REF(/datum/tgui, song_import_entered), answerer = user, title = name)
 
-		if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
-			var/should_continue = act_ask(user, action, params, ui, "k108", /datum/om/prompt/choice/alert, message = "Your message is too long! Would you like to continue editing it?", title = "Warning", choices = list("Yes", "No"))
-			if(isnull(should_continue))
-				return
-			if(should_continue != "Yes")
-				break
-	while(length_char(song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
-	ParseSong(user, song_text)
-	return TRUE
+/datum/tgui/proc/song_import_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/song/song = src_object()
+	var/song_text = A.answer.answer_value
+	if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
+		open_request(src, /datum/prompt/choice/song_import_continue, PROC_REF(song_import_confirmed), answerer = A.request.answerer, song_text = song_text)
+		return
+	song.ParseSong(user, song_text)
+	SStgui.update_uis(song)
+
+/datum/tgui/proc/song_import_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/song/song = src_object()
+	var/datum/prompt/choice/song_import_continue/ask = A.answer
+	if(ask.answer_value == "Yes" && length_char(ask.song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
+		// A cached oversized answer used to loop forever instead of reopening the editor.
+		open_request(src, /datum/prompt/text/song_import, PROC_REF(song_import_entered), answerer = A.request.answerer, title = song.name)
+		return
+	song.ParseSong(user, ask.song_text)
+	SStgui.update_uis(song)
+
+/datum/prompt/text/song_import
+	question = "Please paste the entire song, formatted:"
+	max_len = MUSIC_MAXLINES * MUSIC_MAXLINECHARS
+	multiline = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/song_import/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/song_import/recheck_extra()
+	return song_import_refusal(owner, answerer, !isnull(answer_value))
+
+/datum/prompt/choice/song_import_continue
+	question = "Your message is too long! Would you like to continue editing it?"
+	title = "Warning"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	var/song_text
+
+/datum/prompt/choice/song_import_continue/recheck_extra()
+	return song_import_refusal(owner, answerer, !isnull(answer_value))
+
+/proc/song_import_refusal(datum/tgui/original_ui, mob/answerer, check_range)
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/datum/song/song = original_ui.src_object()
+	if(!istype(song) || QDELETED(song))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!song.ui_act_allowed(original_ui.user, "import_song", original_ui, original_ui.state()))
+		return "the editor action is unavailable"
+	if(check_range && !in_range(song.parent(), original_ui.user))
+		return "the instrument is out of range"
+	return null
 
 /datum/song/proc/ui_act_start_new_song(datum/act/op/A)
 	name = ""

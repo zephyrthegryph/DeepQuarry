@@ -934,15 +934,13 @@
 	var/adjusted_pressure = self.calculate_affecting_pressure(pressure)
 
 	if(istype(self.loc, /turf/space)) //No FBPs overheating on space turfs inside mechs or people.
-		self.set_environment_conductance(0)
-		radiate_to_space(self)
+		self.set_surroundings(0, 0, sky_area(self, TCMB))
 	else
-		self.stop_radiating()
 		var/loc_temp = location_temperature(self, environment)
 		if(adjusted_pressure < self.species.warning_high_pressure && adjusted_pressure > self.species.warning_low_pressure && abs(loc_temp - self.body_temperature()) < 20 && self.body_temperature() < self.species.heat_level_1 && self.body_temperature() > self.species.cold_level_1 && (!isbelly(self.loc) || !self.allowtemp))
 			self.clear_alert("pressure")
 			self.environment_steady = TRUE
-			self.set_environment_conductance(0) // inside its comfort range the body trades no heat with the room (intended_changes.md)
+			self.set_surroundings(0, 0) // inside its comfort range the body trades no heat with the room (intended_changes.md)
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 		convect(self, loc_temp, environment)
 
@@ -955,14 +953,9 @@
 		return
 	pressure_harm(self, adjusted_pressure)
 
-/// Thermal radiation into space: a radiative heat link from the body to space (Stefan-Boltzmann over its exposed surface, integrated in Rust),
-/// kept while it is on a space turf.
-/datum/om/stage/life/environment/carbon/human/proc/radiate_to_space(mob/living/carbon/human/self)
-	if(!self.body || self.body.space_radiation_edge)
-		return
-	var/h = self.mob_heat_body()
-	if(h)
-		self.body.space_radiation_edge = vg_heat_link_create(HEAT_TARGET_BODY, h, HEAT_TARGET_SPACE, TCMB, 0, 1, HUMAN_EXPOSED_SURFACE_AREA)
+/// The area the body radiates to the sky through what it wears, m²: its exposed surface less its protection against `sky` K.
+/datum/om/stage/life/environment/carbon/human/proc/sky_area(mob/living/carbon/human/self, sky)
+	return HUMAN_EXPOSED_SURFACE_AREA * (1 - self.get_cold_protection(sky))
 
 /// The temperature the body is exposed to where it is (mech cabin, cryo cell, belly or the air).
 /datum/om/stage/life/environment/carbon/human/proc/location_temperature(mob/living/carbon/human/self, datum/gas_mixture/environment)
@@ -978,19 +971,38 @@
 			return b.bellytemperature
 		// The predator's body temperature, kept within this prey's comfort: harmless unless they opted into temperature play.
 		return clamp(b.get_interior_temperature(), self.species.cold_discomfort_level, self.species.heat_discomfort_level)
+	if(isturf(self.loc))
+		return plume_temperature(self.loc, environment)
 	return environment.return_temperature()
 
-/// Body temperature follows the surroundings through clothing (convection), scaled by gas density: the conductance of the body's coupling to
-/// its surroundings, at the old rate (BODYTEMP_*_DIVISOR of the gap per environment run), with the heat going to the air.
+/// The air temperature the body's convection meets on a turf: its tile's and the open neighbours' mean, the plume it exchanges with.
+/datum/om/stage/life/environment/carbon/human/proc/plume_temperature(turf/T, datum/gas_mixture/environment)
+	var/total = environment.return_temperature()
+	var/count = 1
+	for(var/turf/N as anything in vg_atmos_adjacent_turfs(T))
+		if(N.z != T.z || !N.heat_has_air())
+			continue
+		var/datum/gas_mixture/air = N.return_air()
+		if(air?.total_moles() > 0)
+			total += air.return_temperature()
+			count++
+	return total / count
+
+/// Body temperature follows the surroundings through clothing: convection to the air around it (at the old rate, BODYTEMP_*_DIVISOR of the
+/// gap per Life frame, scaled by the air's density), contact with the floor and the walls beside it, and radiation to the sky in near vacuum.
+/// Rust moves the heat both ways and conserves it.
 /datum/om/stage/life/environment/carbon/human/proc/convect(mob/living/carbon/human/self, loc_temp, datum/gas_mixture/environment)
 	var/body = self.body_temperature()
 	var/thermal_protection = loc_temp < body ? self.get_cold_protection(loc_temp) : self.get_heat_protection(loc_temp)
+	var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD
+	var/sky = (isturf(self.loc) && relative_density < BODY_SKY_DENSITY) ? sky_area(self, TCMB) : 0
 	if(thermal_protection >= 0.99)
-		self.set_environment_conductance(0)
+		self.set_surroundings(0, 0, sky)
 		return
 	var/divisor = loc_temp < body ? BODYTEMP_COLD_DIVISOR : BODYTEMP_HEAT_DIVISOR
-	var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD
-	self.set_environment_conductance(self.body_heat_capacity() * (1 - thermal_protection) * relative_density / (divisor * LIFE_ENVIRONMENT_SECONDS))
+	var/air = self.body_heat_capacity() * (1 - thermal_protection) * relative_density / (divisor * LIFE_ENVIRONMENT_SECONDS)
+	var/surface = isturf(self.loc) ? BODY_FLOOR_CONDUCTANCE * (1 - thermal_protection) : 0
+	self.set_surroundings(air, surface, sky)
 
 /// Temperature play in a belly (the prey opted in): the belly's temperature against the species' levels.
 /datum/om/stage/life/environment/carbon/human/proc/belly_temperature_harm(mob/living/carbon/human/self)

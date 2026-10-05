@@ -3026,11 +3026,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT(!(N in SSair.networks), \
 		"clean Rust-authoritative pipe_network was needlessly scheduled after topology publication")
 	var/initial_revision = N.revision
-	N.mark_dirty()
+	gas_touched(N.air)
 	TEST_ASSERT(!(N in SSair.networks), \
 		"semantic gas revision incorrectly reenrolled a sleeping pipe_network")
 	TEST_ASSERT(N.revision > initial_revision, \
-		"mark_dirty() did not advance the pipe_network mutation generation")
+		"gas_touched() did not advance the pipe_network mutation generation")
 	N.mark_topology_dirty()
 	TEST_ASSERT(N in SSair.networks, \
 		"mark_topology_dirty() did not reenroll a sleeping pipe_network")
@@ -3831,51 +3831,27 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 
 
-/// Extreme cold environment burns a human (cold burn → fire damage).
+/// Extreme cold environment burns a human (cold burn → fire damage): a sealed room of 50 K nitrogen, air, floor and walls.
 /datum/unit_test/dq_extreme_cold_damages_human
 
 /datum/unit_test/dq_extreme_cold_damages_human/Run()
-	var/turf/simulated/floor/T = null
-	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air)
-			T = cand
-			break
-	TEST_ASSERT_NOTNULL(T, "no floor for cold-damage test")
-
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	test_driver_begin()
+	var/list/room = body_heat_room(4, 50)
+	TEST_ASSERT_NOTNULL(room, "no clear room for the cold-damage test")
+	for(var/turf/open/T as anything in room)
+		T.air.clear()
+		T.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+		heat_set(T.air, 50, HEAT_SOURCE_OTHER)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, room[1])
 	TEST_ASSERT_NOTNULL(H, "couldn't allocate human")
-
-	// Use a detached mixture: this test exercises human environmental response,
-	// not the concurrently running turf-diffusion worker. A mapped turf mixture
-	// can warm between these synchronous calls under full-suite load.
-	var/datum/gas_mixture/turf_air = new(CELL_VOLUME)
-	for(var/datum/gas/g as anything in turf_air.get_gases())
-		turf_air.set_moles(g, 0)
-	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	heat_set(turf_air, 50, HEAT_SOURCE_OTHER) // 50 K, ~-223°C
-
-	// Cold exposure → frostbite (thermal injury). Heat is conserved, so a body is chilled only by a cold mass large enough to take its heat
-	// (doc/rewrite/intended_changes.md, "Heat network"): a thousand cells of 50 K nitrogen, linked to the body, stand in for a frozen room.
-	var/datum/gas_mixture/cold_mass = new(CELL_VOLUME * 1000)
-	cold_mass.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD * 1000)
-	heat_set(cold_mass, 50)
-	var/edge = vg_heat_link_create(HEAT_TARGET_BODY, H.mob_heat_body(), HEAT_TARGET_MIXTURE, cold_mass, 1e5, 0, 0)
-	vg_heat_net_advance(60)
-	vg_heat_edge_remove(edge)
 	var/initial_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
-	for(var/i in 1 to 10)
-		life_test_environment(H, turf_air)
+	body_heat_frames(list(H), 20)
 	var/final_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
+	var/body = H.body_temperature()
+	test_driver_end()
+	dq_atmos_test_restore_state()
 
-	TEST_ASSERT(final_thermal > initial_thermal, \
-		"human took no thermal injury at 50K: [initial_thermal] → [final_thermal]")
-
-	for(var/datum/gas/g as anything in turf_air.get_gases())
-		turf_air.set_moles(g, 0)
-	turf_air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
-	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	heat_set(turf_air, T20C, HEAT_SOURCE_OTHER)
-	qdel(turf_air)
+	TEST_ASSERT(final_thermal > initial_thermal, 		"human took no thermal injury in a 50 K room ([body] K): [initial_thermal] → [final_thermal]")
 
 
 /// Tank pressure: a tank filled past its rupture threshold should report its
@@ -4438,17 +4414,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/portables_connector/C = new(T)
 	C.set_on(FALSE)
 	TEST_ASSERT(test_machine_idle(C), "disconnected portable connector remained scheduled")
-	rel_set(C, nameof(C.connected_device), P)
-	C.set_on(TRUE)
-	C.hibernate_until_device_changes()
-	var/connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
-	P.air_contents.adjust_moles(/datum/gas/oxygen, 1)
-	for(var/connector_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "connected portable connector woke for a device gas change it can't act on")
-	C.clear_gas_dependency()
-	rel_clear(C, nameof(C.connected_device))
-	C.set_on(FALSE)
 	// A canister's work is an every() gated by `working` (canister.dm): a closed, inert canister parks after one step, its gas watch armed; a
 	// closed connected canister's gas change moves only its gauge, and a free-standing one's wakes it.
 	var/obj/machinery/portable_atmospherics/canister/oxygen/canister = new(T)
@@ -4464,13 +4429,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1000)
 	canister.connect(C)
 	canister.canister_step(null)
-	TEST_ASSERT(test_machine_idle(C), "stable connected portable port remained scheduled")
-	TEST_ASSERT(om_watch_armed(C), "connected portable port did not subscribe to device gas")
-	connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
-	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
-	for(var/connector_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "portable port woke after connected-device gas changed")
+	TEST_ASSERT(test_machine_idle(C), "a connected portable port has no work of its own")
 	var/obj/machinery/status_display/D = new(T)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"
@@ -4777,9 +4736,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	shield_capacitor.stored_charge = shield_capacitor.max_charge
 	TEST_ASSERT(test_machine_idle(shield_capacitor), "full shield capacitor remained scheduled")
 	var/obj/machinery/atmospherics/valve/shutoff/shutoff = new(T)
-	TEST_ASSERT(!isnull(shutoff.global_leak_token), "automatic shutoff valve did not subscribe to the global leak key")
-	var/shutoff_wake = om_wake_test(shutoff, om_callable(null, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
-	TEST_ASSERT(!shutoff_wake, shutoff_wake)
+	TEST_ASSERT(shutoff in REGISTRY_MEMBERS(REGISTRY_SHUTOFF_VALVES), "an automatic shutoff valve is one wake_automatic_shutoff_valves() reaches")
 	var/obj/machinery/sleeper/sleeper = new(T)
 	sleeper.set_stat(0)
 	TEST_ASSERT(!occupant_pod_occupied(sleeper), "an empty sleeper's treatment frame (every(when = OCCUPANT_POD_OCCUPIED)) has no work")

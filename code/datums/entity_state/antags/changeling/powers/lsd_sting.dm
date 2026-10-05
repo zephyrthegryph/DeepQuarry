@@ -10,11 +10,19 @@
 	set category = VERB_CAT_CHANGELING
 	set name = "Hallucination Sting (15)"
 	set desc = "Causes terror in the target."
+	return changeling_lsdsting_stage()
 
-	var/mob/living/carbon/T = changeling_sting(15,/mob/proc/changeling_lsdsting)
+/mob/proc/changeling_lsdsting_stage(mob/living/carbon/selected_target)
+
+	var/mob/living/carbon/T = changeling_sting(15, PROC_REF(changeling_lsdsting_target_answered), selected_target)
 	if(!T)
 		return FALSE
 	add_attack_logs(src,T,"Hallucination sting (changeling)")
 	after(T, rand(30 SECONDS, 60 SECONDS), TYPE_PROC_REF(/datum, status_set), with = list(EFFECT_HALLUCINATING, 400)) //No going ABOVE 400 hallucinations.
 	feedback_add_details("changeling_powers","HS")
 	return TRUE
+
+/mob/proc/changeling_lsdsting_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	changeling_lsdsting_stage(A.answer.answer_value)

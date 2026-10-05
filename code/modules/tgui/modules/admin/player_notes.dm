@@ -203,10 +203,24 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 	PlayerNotesPageLegacy(1, null, user)
 
 /datum/admins/proc/PlayerNotesFilterLegacy(mob/user)
-	var/filter = rerun_ask(user, "a1", PROC_REF(PlayerNotesFilterLegacy), args, /datum/om/prompt/text, message = "Filter string (case-insensitive regex)", title = "Player notes filter")
-	if(isnull(filter))
+	open_request(src, /datum/prompt/text/player_notes_legacy_filter, PROC_REF(player_notes_filter_entered), answerer = user)
+
+/datum/admins/proc/player_notes_filter_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	PlayerNotesPageLegacy(1, filter, user)
+	PlayerNotesPageLegacy(1, A.answer.answer_value, A.request.answerer)
+
+/datum/prompt/text/player_notes_legacy_filter
+	question = "Filter string (case-insensitive regex)"
+	title = "Player notes filter"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/player_notes_legacy_filter/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/player_notes_legacy_filter/recheck_extra()
+	return QDELETED(owner) || QDELETED(answerer) ? "gone" : null
 
 /datum/admins/proc/PlayerNotesPageLegacy(page, filter, mob/user)
 	var/dat = span_bold("Player notes") + " - <a href='byond://?src=\ref[src];[HrefToken()];notes_legacy=filter'>Apply Filter</a><HR>"

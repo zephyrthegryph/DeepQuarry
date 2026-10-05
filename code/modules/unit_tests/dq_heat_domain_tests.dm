@@ -56,6 +56,15 @@
 	var/turf/hot = heat_test_turf()
 	var/turf/cold = get_step(hot, EAST)
 	TEST_ASSERT_NOTNULL(cold, "no turf east of the test corner")
+	// The pair's other neighbours are floors that hold more heat than either cell (FLOOR_HEAT_CAPACITY): insulate them for the run so
+	// the pair's own conduction is what is measured.
+	var/list/others = list()
+	for(var/turf/T as anything in list(hot, cold))
+		for(var/direction in GLOB.cardinal)
+			var/turf/N = get_step(T, direction)
+			if(N && N != hot && N != cold && !(N in others))
+				others += N
+				heat_test_solid(N, 10000, 0, T20C)
 	heat_test_solid(hot, 10000, 0.05, 500)
 	heat_test_solid(cold, 10000, 0.05, 300)
 	vg_world_run_steps(20)
@@ -63,6 +72,8 @@
 	var/cold_after = cold.get_temperature()
 	heat_test_restore(hot)
 	heat_test_restore(cold)
+	for(var/turf/N as anything in others)
+		heat_test_restore(N)
 	vg_world_run_steps(1)
 	TEST_ASSERT(hot_after < 480, "the hot cell did not cool ([hot_after] K)")
 	TEST_ASSERT(cold_after > 320, "the cold neighbour did not warm ([cold_after] K)")
