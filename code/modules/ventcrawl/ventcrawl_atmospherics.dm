@@ -16,9 +16,6 @@
 				M.pipes_shown -= pipe_image
 	return ..()
 
-/obj/machinery/atmospherics/explosion_contents_severity(severity)
-	return severity
-
 /obj/machinery/atmospherics/Entered(atom/movable/Obj)
 	if(isliving(Obj))
 		var/mob/living/L = Obj

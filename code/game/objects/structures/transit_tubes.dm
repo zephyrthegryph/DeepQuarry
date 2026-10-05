@@ -45,9 +45,9 @@
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_INTERNAL
 
-// When destroyed by explosions, properly handle contents.
-/obj/structure/transit_tube_pod/explosion_contents_severity(severity)
-	return severity
+// When destroyed by explosions, properly handle contents: the riders take the full blast.
+CAPABILITIES(/obj/structure/transit_tube_pod)
+	blast_contents()
 
 /obj/structure/transit_tube_pod/Initialize(mapload)
 	. = ..()

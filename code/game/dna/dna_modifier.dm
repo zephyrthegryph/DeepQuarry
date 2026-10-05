@@ -85,8 +85,7 @@ CAPABILITIES(/datum/dna2/record)
 	RefreshParts()
 
 /// Sealed occupant slot (C8a, containment.md §10). Full blast share: the
-/// scanner's own explosion_contents_severity() used to pass severity through
-/// untouched, so its slot keeps that share instead.
+/// scanner declares blast_contents(), so its occupant takes the whole blast.
 ///
 /// L1 audit (doc/rewrite/lifecycle.md §3): HOLDER, not the SLOT_DROP_SPILL
 /// default. Destroy() calls eject_occupant() -> go_out(), whose cleanup
@@ -102,10 +101,10 @@ CAPABILITIES(/datum/dna2/record)
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
 	drop_policy = SLOT_DROP_HOLDER
 
-/obj/machinery/dna_scannernew/explosion_contents_severity(severity)
-	return dq_slot_blast_severity(src, severity)
-
 // the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
+CAPABILITIES(/obj/machinery/dna_scannernew)
+	blast_contents()
+
 /obj/machinery/dna_scannernew/on_destroy(force)
 	eject_occupant()
 	..()
@@ -311,9 +310,6 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	set_occupant(null)
 	icon_state = "scanner_0"
 	SStgui.update_uis(src)
-
-/obj/machinery/dna_scannernew/explosion_contents_severity(severity)
-	return severity
 
 /obj/machinery/computer/scan_consolenew
 	name = "DNA Modifier Access Console"

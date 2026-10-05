@@ -2640,6 +2640,7 @@ request(src, /datum/prompt/yes_no/ghost_role, then(PROC_REF(role_answered)), val
       <li><strong>Mitigation:</strong> armour stats, materials, resistances.</li>
       <li><strong>The sink:</strong> <code>damage_sink()</code>, which is integrity for objects and <code>injure()</code> for mobs.</li>
       <li><strong>The notice:</strong> <code>/datum/notice/hit/&lt;entry&gt;</code>.</li>
+          <li><strong>An explosion's contents:</strong> a holder declares how hard a blast on it reaches what it carries, <code>blast_contents()</code> (the full blast) or <code>blast_contents(shield = 1)</code> (one severity step lighter; past light it reaches nothing); the explosion service reads it with <code>explosion_contents_severity_of(holder, severity)</code> and queues the contents in the same batch. A holder that declares nothing shields them. Replaces <code>explosion_contents_severity()</code> overrides.</li>
     </ol>
     <p>Integrity's broken state is tracked; <code>atom_break()</code> and <code>atom_fix()</code> publish it. Library pieces: <code>emp_disable()</code>, <code>reflects()</code>, <code>blocks()</code>. Repair is a <code>fixes()</code> part, or <code>repair_damage()</code>. A worn piece of kit reaches the wearer through <code>while_slotted</code>, not through a hand-written hook on the mob:</p>
   </div>

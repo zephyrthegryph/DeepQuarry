@@ -347,7 +347,7 @@ SYSTEM_DEF(explosions)
 			if(!severity)
 				continue
 			var/has_latent = AM.has_latent()
-			var/contents_severity = (length(AM.contents) || has_latent) ? AM.explosion_contents_severity(severity) : 0
+			var/contents_severity = (length(AM.contents) || has_latent) ? explosion_contents_severity_of(AM, severity) : 0
 			if(contents_severity && has_latent)
 				AM.latent_blast(contents_severity) // entries resolve as data (C5)
 			if(contents_severity)
