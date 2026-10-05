@@ -671,3 +671,23 @@
 		SSair.run_gas_frames(1)
 	TEST_ASSERT(U.air_contents.return_temperature() < T20C - 5, "it cools its loop ([U.air_contents.return_temperature()] K)")
 	take_down_lines()
+
+// =====================================================================================================================
+// The pipes
+// =====================================================================================================================
+
+/// A welder seals a pipe's fatigue crack; a wrench takes a visible pipe off as its fitting.
+/datum/unit_test/dq_atmos_m/pipes/pipe_weld_and_wrench
+/datum/unit_test/dq_atmos_m/pipes/pipe_weld_and_wrench/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/pipe/simple/visible)
+	var/obj/machinery/atmospherics/pipe/P = line[2]
+	var/mob/living/carbon/human/H = person(null, tile(2, 2))
+	P.damaged_leak = TRUE
+	P.handle_leaking()
+	TEST_ASSERT(P.leaking, "a cracked pipe leaks")
+	ap_click(H, P, welder(tile(2, 2)))
+	TEST_ASSERT(!P.damaged_leak && !P.leaking, "the welder seals it")
+	ap_click(H, P, tool(/obj/item/tool/wrench, tile(2, 2)))
+	TEST_ASSERT(QDELETED(P), "the wrench takes it off")
+	TEST_ASSERT_NOTNULL(locate(/obj/item/pipe) in tile(2, 3), "as its fitting")
+	take_down_lines()
