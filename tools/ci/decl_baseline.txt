@@ -152,7 +152,6 @@ init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
 init_visuals	code/game/machinery/event/christmas.dm	icon_state = "gift[pick("1", "2", "3")]_[pick("g", "r", "b", "y", "p")]"
 init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
 init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
-init_visuals	code/game/machinery/portable_turret.dm	add_overlay(turret_opened_overlay)
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
