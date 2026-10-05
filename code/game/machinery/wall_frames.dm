@@ -21,8 +21,18 @@
 	replace_with(src, refund_type, refund_amt)
 	return ITEM_INTERACT_SUCCESS
 
+MSG_DEF_SELF(frame/bad_spot, "It cannot be placed on this spot.")
+MSG_DEF_SELF(frame/bad_area, "It cannot be placed in this area.")
+MSG_DEF_SELF(frame/wall_taken, "There's already an item on this wall!")
+
+/// A frame held to a wall (or an anchored window) from the floor beside it becomes what it frames, there (op frame.mount); the type
+/// decides what that is (mount_on()): a fixture or cabinet, or a machine at the first stage of its build graph (the APC frame).
 CAPABILITIES(/obj/item/frame)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("mount", at_target(/turf/simulated/wall), at_target(/obj/structure/window), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK),
+		label("Mount on the wall"), wait(0),
+		needs(req(PROC_REF(mount_facing), silent = TRUE), req_frame_mount()),
+		then(PROC_REF(mount_on)))
 
 /// Old attack_self.
 /obj/item/frame/proc/interaction_self(datum/act/op/A)
@@ -68,39 +78,62 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 		user.drop_item()
 	consume(src, user)
 
-/obj/item/frame/proc/try_build(turf/on_wall, mob/user as mob)
+/// The way the mounted thing faces: away from the wall, or into it for a frame that faces backwards (a light fixture).
+/obj/item/frame/proc/mount_dir(atom/wall, mob/user)
+	return reverse ? get_dir(user, wall) : get_dir(wall, user)
+
+/// The builder is beside the wall, straight in front of it (the old guard refused silently).
+/obj/item/frame/proc/mount_facing(datum/act/op/A)
+	var/atom/wall = A.target
+	var/mob/user = A.actor
+	if(!wall || !user || get_dist(wall, user) > 1)
+		return FALSE
+	var/obj/structure/window/W = wall
+	if(istype(W) && !W.anchored)
+		return FALSE
+	return (mount_dir(wall, user) in GLOB.cardinal)
+
+/// Why the frame can't go on this wall from where the builder stands, or null.
+/obj/item/frame/proc/mount_refusal(datum/act/op/A)
+	var/turf/spot = get_turf(A.actor)
+	var/area/where = spot?.loc
+	if(!istype(spot, /turf/simulated/floor))
+		return /datum/msg/frame/bad_spot
+	if(where.requires_power == 0 || where.name == "Space")
+		return /datum/msg/frame/bad_area
+	if(gotwallitem(spot, mount_dir(A.target, A.actor)))
+		return /datum/msg/frame/wall_taken
+	return null
+
+/// req_frame_mount(): the frame's mount_refusal() has nothing against the spot. Asked when the frame is held to a wall; nothing caches it.
+/proc/req_frame_mount()
+	return part_make(/datum/entry/part/req/frame_mount)
+
+/datum/entry/part/req/frame_mount
+	part_name = "req_frame_mount"
+
+/datum/entry/part/req/frame_mount/holds(datum/act/op/A)
+	var/obj/item/frame/F = A.holder
+	return !istype(F) || isnull(F.mount_refusal(A))
+
+/datum/entry/part/req/frame_mount/refusal(datum/act/op/A)
+	var/obj/item/frame/F = A.holder
+	return (istype(F) && F.mount_refusal(A)) || default_reason
+
+/datum/entry/part/req/frame_mount/read_keys(datum/act/op/A)
+	return list()
+
+/// The mount: a frame of no set kind asks which kind first; one that knows builds there.
+/obj/item/frame/proc/mount_on(datum/act/op/A)
+	var/mob/user = A.actor
 	update_type_list()
-
-	if(get_dist(on_wall, user)>1)
-		return
-
-	var/ndir
-	if(reverse)
-		ndir = get_dir(user, on_wall)
-	else
-		ndir = get_dir(on_wall, user)
-
-	if(!(ndir in GLOB.cardinal))
-		return
-
-	var/turf/loc = get_turf(user)
-	var/area/A = loc.loc
-	if(!istype(loc, /turf/simulated/floor))
-		to_chat(user, span_danger("\The [src] cannot be placed on this spot."))
-		return
-
-	if(A.requires_power == 0 || A.name == "Space")
-		to_chat(user, span_danger("\The [src] cannot be placed in this area."))
-		return
-
-	if(gotwallitem(loc, ndir))
-		to_chat(user, span_danger("There's already an item on this wall!"))
-		return
-
+	var/turf/spot = get_turf(user)
+	var/ndir = mount_dir(A.target, user)
 	if(!build_machine_type)
-		open_request(src, /datum/prompt/choice/frame_type_wall, PROC_REF(wall_frame_chosen), valid = PROC_REF(frame_type_open), answerer = user, title = "Frame type request", question = "What kind of frame would you like to make?", choices = frame_types_wall, wall_turf = loc, wall_dir = ndir, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-		return
-	build_on_wall(user, loc, ndir, null)
+		open_request(src, /datum/prompt/choice/frame_type_wall, PROC_REF(wall_frame_chosen), valid = PROC_REF(frame_type_open), answerer = user, title = "Frame type request", question = "What kind of frame would you like to make?", choices = frame_types_wall, wall_turf = spot, wall_dir = ndir, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+		return OP_OK
+	build_on_wall(user, spot, ndir, null)
+	return OP_OK
 
 /obj/item/frame/proc/wall_frame_chosen(datum/act/request/A)
 	if(!A.answer)
