@@ -21,6 +21,20 @@
 /datum/capdef_decl/c_anchor/spec()
 	return list(CAP_ANCHOR, /datum/capability/lib/anchor, NONE, STACK, "anchor", "tool, empty")
 
+/// CAPABILITY_TYPE(beaker_bay, CAP_BEAKER_BAY) at code/library/containers/beaker_bay.dm:22
+/datum/capability/lib/beaker_bay
+	var/slot_var = null
+	var/accepts = /obj/item/reagent_containers/glass
+	var/fits = null
+	var/at = null
+	var/eject_button = null
+	var/exit_to = null
+/proc/beaker_bay(slot_var, accepts, fits, at, eject_button, exit_to)
+	RETURN_TYPE(/datum/capability/lib/beaker_bay)
+	return cap_construct(CAP_BEAKER_BAY, /datum/capability/lib/beaker_bay, list(slot_var, accepts, fits, at, eject_button, exit_to), "slot_var, accepts, fits, at, eject_button, exit_to")
+/datum/capdef_decl/c_beaker_bay/spec()
+	return list(CAP_BEAKER_BAY, /datum/capability/lib/beaker_bay, "slot_var", STACK, "beaker_bay", "slot_var, accepts, fits, at, eject_button, exit_to")
+
 /// CAPABILITY_TYPE(bolts, CAP_BOLTS) at code/library/machine/door_parts.dm:22
 /datum/capability/lib/bolts
 	var/drop = "lock"
@@ -341,6 +355,22 @@
 /datum/capdef_decl/c_needle/spec()
 	return list(CAP_NEEDLE, /datum/capability/lib/needle, NONE, STACK, "needle", "modes, needle_time, draws_from, fills")
 
+/// CAPABILITY_TYPE(occupant_pod, CAP_OCCUPANT_POD) at code/library/containers/occupant_pod.dm:65
+/datum/capability/lib/occupant_pod
+	var/slot = null
+	var/accepts = /mob/living/carbon/human
+	var/enter_wait = 0
+	var/exit_to = null
+	var/controls_inside = TRUE
+	var/eject_wait_inside = 0
+	var/shown_y = null
+	var/bare = FALSE
+/proc/occupant_pod(slot, accepts, enter_wait, exit_to, controls_inside, eject_wait_inside, shown_y, bare)
+	RETURN_TYPE(/datum/capability/lib/occupant_pod)
+	return cap_construct(CAP_OCCUPANT_POD, /datum/capability/lib/occupant_pod, list(slot, accepts, enter_wait, exit_to, controls_inside, eject_wait_inside, shown_y, bare), "slot, accepts, enter_wait, exit_to, controls_inside, eject_wait_inside, shown_y, bare")
+/datum/capdef_decl/c_occupant_pod/spec()
+	return list(CAP_OCCUPANT_POD, /datum/capability/lib/occupant_pod, NONE, STACK, "occupant_pod", "slot, accepts, enter_wait, exit_to, controls_inside, eject_wait_inside, shown_y, bare")
+
 /// CAPABILITY_TYPE(on_wire, CAP_ON_WIRE) at code/library/machine/wires.dm:274
 /datum/capability/lib/on_wire
 	var/wire = null
@@ -351,6 +381,17 @@
 	return cap_construct(CAP_ON_WIRE, /datum/capability/lib/on_wire, list(wire, cut, pulse), "wire, cut, pulse")
 /datum/capdef_decl/c_on_wire/spec()
 	return list(CAP_ON_WIRE, /datum/capability/lib/on_wire, "wire", STACK, "on_wire", "wire, cut, pulse")
+
+/// CAPABILITY_TYPE(paired_console, CAP_PAIRED_CONSOLE) at code/library/machine/paired_console.dm:17
+/datum/capability/lib/paired_console
+	var/target_type = null
+	var/partner = null
+	var/faces = FALSE
+/proc/paired_console(target_type, partner, faces)
+	RETURN_TYPE(/datum/capability/lib/paired_console)
+	return cap_construct(CAP_PAIRED_CONSOLE, /datum/capability/lib/paired_console, list(target_type, partner, faces), "target_type, partner, faces")
+/datum/capdef_decl/c_paired_console/spec()
+	return list(CAP_PAIRED_CONSOLE, /datum/capability/lib/paired_console, NONE, STACK, "paired_console", "target_type, partner, faces")
 
 /// CAPABILITY_TYPE(panel, CAP_PANEL) at code/library/machine/panel.dm:13
 /datum/capability/lib/panel
@@ -631,6 +672,13 @@
 /// The state key LOCKED of lock, read on a holder (a granted capability with several selectors names the selector).
 /proc/lock_locked(datum/holder, selector)
 	return cap_key_get(holder, LOCK_LOCKED, selector)
+
+/// cap_keys(CAP_OCCUPANT_POD) at code/library/containers/occupant_pod.dm:66
+/datum/cap_keys_decl/k_occupant_pod/spec()
+	return list(CAP_OCCUPANT_POD, list(OCCUPIED = MSG(occupant_pod/empty)))
+/// The state key OCCUPIED of occupant_pod, read on a holder (a granted capability with several selectors names the selector).
+/proc/occupant_pod_occupied(datum/holder, selector)
+	return cap_key_get(holder, OCCUPANT_POD_OCCUPIED, selector)
 
 /// cap_keys(CAP_QUICKDRAW) at code/library/containers/quickdraw.dm:17
 /datum/cap_keys_decl/k_quickdraw/spec()
@@ -4387,13 +4435,13 @@
 	into += entry_line(626)
 	into += list(global.ref_one(nameof(operator), /mob))
 
-/// CAPABILITIES(/datum/prompt/choice/shelter_template) at code/modules/mining/shelter_atoms.dm:980
+/// CAPABILITIES(/datum/prompt/choice/shelter_template) at code/modules/mining/shelter_atoms.dm:978
 /datum/prompt/choice/shelter_template/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mining/shelter_atoms.dm", 980, /datum/prompt/choice/shelter_template)
-	into += entry_line(981)
+	into += entry_block("code/modules/mining/shelter_atoms.dm", 978, /datum/prompt/choice/shelter_template)
+	into += entry_line(979)
 	into += list(global.ref_one(nameof(captured_item), /obj/item))
-	into += entry_line(982)
+	into += entry_line(980)
 	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/choice/shuttle_authorization) at code/game/machinery/computer/shuttle.dm:59
@@ -6991,6 +7039,8 @@
 	into += list(global.owns_many(nameof(hud_list)))
 	into += entry_line(42)
 	into += list(global.owns_many(nameof(stasis_sources)))
+	into += entry_line(44)
+	into += list(global.on_change(STAT_CLOCK_RATE_BIO, ANY, global.then(PROC_REF(clock_rate_bio_changed))))
 
 /// CAPABILITIES(/mob/living/bot) at code/modules/mob/living/bot/bot.dm:627
 /mob/living/bot/declared_entries(list/into)
@@ -16050,34 +16100,43 @@
 	into += entry_line(173)
 	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell) at code/game/machinery/cryo.dm:103
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell) at code/game/machinery/cryo.dm:63
 /obj/machinery/atmospherics/unary/cryo_cell/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/cryo.dm", 103, /obj/machinery/atmospherics/unary/cryo_cell)
-	into += entry_line(104)
+	into += entry_block("code/game/machinery/cryo.dm", 63, /obj/machinery/atmospherics/unary/cryo_cell)
+	into += entry_line(64)
+	into += list(global.machine_basics(repair = NONE))
+	into += entry_line(65)
+	into += list(global.occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE))
+	into += entry_line(66)
+	into += list(global.extend(TAG_POD_ENTER, global.needs(req_operable(), global.req(PROC_REF(piped), because = MSG(cryo_cell/not_connected)))))
+	into += entry_line(67)
+	into += list(global.when(global.cond_all(nameof(on), STAT_OPERABLE), global.while_slotted(OCCUPANT_SLOT_CRYO, global.holds_status(EFFECT_SLEEPING), on = ON_CONTENTS)))
+	into += entry_line(68)
+	into += list(global.owns_one(nameof(beaker), /obj/item/reagent_containers/glass, on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(69)
+	into += list(global.beaker_bay(nameof(beaker), eject_button = "ejectBeaker", exit_to = SOUTH))
+	into += entry_line(70)
 	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
-	into += entry_line(105)
-	into += list(global.op("cryo_cell_interaction_hand", global.hand(), global.ungated(), global.needs(global.req_closed(SPACE_PANEL)), global.then(PROC_REF(cryo_cell_interaction_hand))))
-	into += entry_line(106)
-	into += list(global.op("cryo_cell_interaction_item", global.item(/obj/item), global.then(PROC_REF(cryo_cell_interaction_item))))
-	into += entry_line(107)
-	into += list(global.op("put_inside", global.item(/mob), global.gesture(GESTURE_DRAG), global.label("Put inside"), global.then(PROC_REF(cryo_cell_interaction_drag))))
-	into += entry_line(108)
-	into += list(global.op("eject_occupant", global.menu(), global.label("Eject occupant"), global.then(PROC_REF(cryo_cell_move_eject))))
-	into += entry_line(109)
-	into += list(global.op("move_inside", global.menu(), global.label("Move Inside"), global.then(PROC_REF(cryo_cell_move_inside))))
-	into += entry_line(110)
+	into += entry_line(71)
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(cooling_frame)), when = global.cond_all(nameof(on), STAT_OPERABLE, OCCUPANT_POD_OCCUPIED)))
+	into += entry_line(72)
+	into += list(global.on_notice(/datum/notice/pod_entered, global.then(PROC_REF(occupant_entered))))
+	into += entry_line(73)
+	into += list(global.on_notice(/datum/notice/pod_left, global.then(PROC_REF(occupant_left))))
+	// section window: the cell's window: its occupant takes no part in it (occupant_pod(controls_inside = FALSE)), and it opens unpowered
+	into += entry_line(75, "window")
 	into += list(global.interface("Cryo", title = "Cryo Cell"))
-	into += entry_line(111)
-	into += list(global.op("switchOn", global.ui_act("switchOn"), global.then(PROC_REF(ui_act_switchon))))
-	into += entry_line(112)
-	into += list(global.op("switchOff", global.ui_act("switchOff"), global.then(PROC_REF(ui_act_switchoff))))
-	into += entry_line(113)
-	into += list(global.op("ejectBeaker", global.ui_act("ejectBeaker"), global.then(PROC_REF(ui_act_ejectbeaker))))
-	into += entry_line(114)
-	into += list(global.op("ejectOccupant", global.ui_act("ejectOccupant"), global.then(PROC_REF(ui_act_ejectoccupant))))
-	into += entry_line(115)
-	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(actor_not_inside), because = MSG(cryo_cell/occupant_locked_out)))))
+	into += entry_line(76, "window")
+	into += list(global.extend("ui_open", global.ungated(), global.needs(global.req_closed(SPACE_PANEL), global.req(PROC_REF(actor_outside), silent = TRUE))))
+	into += entry_line(77, "window")
+	into += list(global.extend(TAG_UI, global.then(PROC_REF(control_touched), early = TRUE)))
+	into += entry_line(78, "window")
+	into += list(global.op("switchOn", global.ui_act("switchOn"), global.then(PROC_REF(switch_on))))
+	into += entry_line(79, "window")
+	into += list(global.op("switchOff", global.ui_act("switchOff"), global.then(PROC_REF(switch_off))))
+	into += entry_line(80, "window")
+	into += list(global.op("ejectOccupant", global.ui_act("ejectOccupant"), global.needs(global.req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), global.req_not(global.req(list(/mob/living/simple_mob/slime, /mob/living/silicon/pai), of = ON_ACTOR), because = MSG(cryo_cell/cannot_release))), global.then(PROC_REF(eject_from_window)), global.logs(LOG_GAME)))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/engine) at code/modules/overmap/ships/engines/gas_thruster.dm:80
 /obj/machinery/atmospherics/unary/engine/declared_entries(list/into)
@@ -16187,24 +16246,47 @@
 	into += entry_line(60)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(denier_emp)))))
 
-/// CAPABILITIES(/obj/machinery/bodyscanner) at code/game/machinery/adv_med.dm:31
+/// CAPABILITIES(/obj/machinery/body_scanconsole) at code/game/machinery/adv_med.dm:282
+/obj/machinery/body_scanconsole/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/adv_med.dm", 282, /obj/machinery/body_scanconsole)
+	into += entry_line(283)
+	into += list(global.machine_basics(repair = NONE))
+	into += entry_line(284)
+	into += list(global.paired_console(/obj/machinery/bodyscanner, nameof(scanner), faces = TRUE))
+	into += entry_line(285)
+	into += list(global.interface("BodyScanner", title = "Body Scanner", forwards = nameof(scanner)))
+	into += entry_line(286)
+	into += list(global.extend("ui_open", global.binds(global.item(/obj/item)), global.needs(req_paired(nameof(scanner)), global.req(PROC_REF(scanner_panel_closed), because = MSG(body_scanner/close_scanner_panel)))))
+	into += entry_line(287)
+	into += list(global.op("link_scanner", global.tool(TOOL_MULTITOOL), global.label("Link"), global.wait(0), global.then(PROC_REF(multitool_link))))
+
+/// CAPABILITIES(/obj/machinery/bodyscanner) at code/game/machinery/adv_med.dm:50
 /obj/machinery/bodyscanner/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/adv_med.dm", 31, /obj/machinery/bodyscanner)
-	into += entry_line(32)
+	into += entry_block("code/game/machinery/adv_med.dm", 50, /obj/machinery/bodyscanner)
+	into += entry_line(51)
+	into += list(global.machine_basics(repair = NONE))
+	into += entry_line(52)
+	into += list(global.occupant_pod(OCCUPANT_SLOT_BODY_SCANNER, bare = TRUE))
+	into += entry_line(53)
+	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
+	into += entry_line(54)
+	into += list(global.extend(TAG_POD_ENTER, global.needs(global.req_closed(SPACE_PANEL))))
+	into += entry_line(55)
 	into += list(global.entry_link("/obj/machinery/bodyscanner::console", "/obj/machinery/body_scanconsole::scanner"))
-	into += entry_line(33)
+	into += entry_line(56)
+	into += list(global.on_notice(/datum/notice/pod_entered, global.then(PROC_REF(occupant_entered))))
+	into += entry_line(57)
+	into += list(global.on_notice(/datum/notice/pod_left, global.then(PROC_REF(scan))))
+	into += entry_line(58)
+	into += list(global.on_change(STAT_OPERABLE, ANY, global.then(PROC_REF(scan))))
+	into += entry_line(59)
 	into += list(global.interface("BodyScanner", title = "Body Scanner"))
-	into += entry_line(34)
-	into += list(global.op("ejectify", global.ui_act("ejectify"), global.then(PROC_REF(ui_act_ejectify))))
-	into += entry_line(35)
-	into += list(global.op("print_p", global.ui_act("print_p"), global.then(PROC_REF(ui_act_print_p))))
-	into += entry_line(36)
-	into += list(global.op("put_grabbed_inside", global.item(/obj/item/grab), global.label("Put inside"), global.needs(global.req(PROC_REF(insert_allowed), because = PROC_REF(insert_refusal))), global.then(PROC_REF(bodyscanner_interaction_item))))
-	into += entry_line(37)
-	into += list(global.op("put_inside", global.item(/mob/living/carbon/human), global.gesture(GESTURE_DRAG), global.label("Put inside"), global.needs(global.req(PROC_REF(drag_allowed), because = PROC_REF(drag_refusal))), global.then(PROC_REF(bodyscanner_interaction_drag))))
-	into += entry_line(38)
-	into += list(global.op("eject", global.menu(), global.label("Eject Body Scanner"), global.then(PROC_REF(bodyscanner_eject))))
+	into += entry_line(60)
+	into += list(global.op("ejectify", global.ui_act("ejectify"), global.then(PROC_REF(eject_from_window)), global.logs(LOG_GAME)))
+	into += entry_line(61)
+	into += list(global.op("print_p", global.ui_act("print_p"), global.then(PROC_REF(print_report))))
 
 /// CAPABILITIES(/obj/machinery/bomb_tester) at code/game/machinery/bomb_tester.dm:33
 /obj/machinery/bomb_tester/declared_entries(list/into)
@@ -19475,49 +19557,78 @@
 	into += entry_line(527)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/showering))
 
-/// CAPABILITIES(/obj/machinery/sleep_console) at code/game/machinery/Sleeper.dm:22
+/// CAPABILITIES(/obj/machinery/sleep_console) at code/game/machinery/Sleeper.dm:44
 /obj/machinery/sleep_console/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/Sleeper.dm", 22, /obj/machinery/sleep_console)
-	into += entry_line(23)
+	into += entry_block("code/game/machinery/Sleeper.dm", 44, /obj/machinery/sleep_console)
+	into += entry_line(45)
+	into += list(global.machine_basics(repair = NONE))
+	into += entry_line(46)
+	into += list(global.paired_console(/obj/machinery/sleeper, nameof(sleeper)))
+	into += entry_line(47)
 	into += list(global.entry_link("/obj/machinery/sleep_console::sleeper", "/obj/machinery/sleeper::console"))
-	into += entry_line(25)
+	into += entry_line(48)
+	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
+	into += entry_line(50)
 	into += list(global.interface("Sleeper", title = "Sleeper", forwards = nameof(sleeper)))
+	into += entry_line(51)
+	into += list(global.extend("ui_open", global.binds(global.item(/obj/item)), global.needs(req_paired(nameof(sleeper)), global.req_closed(SPACE_PANEL))))
 
-/// CAPABILITIES(/obj/machinery/sleeper) at code/game/machinery/Sleeper.dm:170
+/// CAPABILITIES(/obj/machinery/sleeper) at code/game/machinery/Sleeper.dm:97
 /obj/machinery/sleeper/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/Sleeper.dm", 170, /obj/machinery/sleeper)
-	into += entry_line(171)
-	into += list(global.op("sleeper_interaction_hand", global.hand(), global.ungated(), global.then(PROC_REF(sleeper_interaction_hand))))
-	into += entry_line(172)
-	into += list(global.op("sleeper_interaction_item", global.item(/obj/item), global.then(PROC_REF(sleeper_interaction_item))))
-	into += entry_line(173)
-	into += list(global.op("sleeper_interaction_drag", global.item(/mob), global.gesture(GESTURE_DRAG), global.label("Put inside"), global.then(PROC_REF(sleeper_interaction_drag))))
-	into += entry_line(174)
-	into += list(global.op("sleeper_move_eject", global.menu(), global.label("Eject occupant"), global.then(PROC_REF(sleeper_move_eject))))
-	into += entry_line(175)
-	into += list(global.interface("Sleeper", title = "Sleeper"))
-	into += entry_line(176)
+	into += entry_block("code/game/machinery/Sleeper.dm", 97, /obj/machinery/sleeper)
+	into += entry_line(98)
+	into += list(global.machine_basics(repair = NONE))
+	into += entry_line(99)
+	into += list(global.occupant_pod(OCCUPANT_SLOT_SLEEPER, enter_wait = SLEEPER_ENTER_WAIT, controls_inside = nameof(controls_inside)))
+	into += entry_line(100)
+	into += list(global.extend(TAG_POD_ENTER, global.needs(req_operable())))
+	into += entry_line(101)
+	into += list(global.when(STAT_OPERABLE, global.while_slotted(OCCUPANT_SLOT_SLEEPER, global.contributes(STAT_CLOCK_RATE_BIO, nameof(stasis_rate)), on = ON_CONTENTS)))
+	into += entry_line(102)
+	into += list(global.owns_one(nameof(beaker), /obj/item/reagent_containers/glass, starts = /obj/item/reagent_containers/glass/beaker/large, on_destroy = ON_DESTROY_DELETE))
+	into += entry_line(103)
+	into += list(global.beaker_bay(nameof(beaker), eject_button = "removebeaker"))
+	into += entry_line(104)
+	into += list(global.part_replacement())
+	into += entry_line(105)
+	into += list(global.extend("part_replacement.replace", global.needs(global.req_is(OCCUPANT_POD_OCCUPIED, FALSE, because = MSG(occupant_pod/someone_inside)))))
+	into += entry_line(106)
 	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
-	into += entry_line(177)
-	into += list(global.op("chemical", global.ui_act("chemical", global.arg("amount", global.num()), global.arg("chemid")), global.then(PROC_REF(ui_act_chemical))))
-	into += entry_line(178)
-	into += list(global.op("removebeaker", global.ui_act("removebeaker"), global.then(PROC_REF(ui_act_removebeaker))))
-	into += entry_line(179)
-	into += list(global.op("togglefilter", global.ui_act("togglefilter"), global.then(PROC_REF(ui_act_togglefilter))))
-	into += entry_line(180)
-	into += list(global.op("togglepump", global.ui_act("togglepump"), global.then(PROC_REF(ui_act_togglepump))))
-	into += entry_line(181)
-	into += list(global.op("ejectify", global.ui_act("ejectify"), global.then(PROC_REF(ui_act_ejectify))))
-	into += entry_line(182)
-	into += list(global.op("changestasis", global.ui_act("changestasis"), global.asks(/datum/prompt/choice, fields = list("question" = "Levels deeper than 50% stasis level will render the patient unconscious.", "title" = "Stasis Level", "choices" = nameof(stasis_choices), "timeout" = 0), step = "stasis"), global.then(PROC_REF(ui_act_changestasis))))
-	into += entry_line(185)
-	into += list(global.op("auto_eject_dead_on", global.ui_act("auto_eject_dead_on"), global.then(PROC_REF(ui_act_auto_eject_dead_on))))
-	into += entry_line(186)
-	into += list(global.op("auto_eject_dead_off", global.ui_act("auto_eject_dead_off"), global.then(PROC_REF(ui_act_auto_eject_dead_off))))
-	into += entry_line(188)
-	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(controls_reachable), silent = TRUE), global.req_closed(SPACE_PANEL))))
+	into += entry_line(107)
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(treatment_frame)), when = global.cond_all(STAT_OPERABLE, OCCUPANT_POD_OCCUPIED)))
+	into += entry_line(108)
+	into += list(global.on_notice(/datum/notice/pod_entered, global.then(PROC_REF(occupant_entered))))
+	into += entry_line(109)
+	into += list(global.on_notice(/datum/notice/pod_left, global.then(PROC_REF(occupant_left))))
+	into += entry_line(110)
+	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(pulsed))))
+	into += entry_line(111)
+	into += list(global.on_change(nameof(beaker), ANY, global.then(PROC_REF(beaker_changed))))
+	// section window: the sleeper's panel: its console forwards every button here; an open panel refuses them all
+	into += entry_line(113, "window")
+	into += list(global.interface("Sleeper", title = "Sleeper"))
+	into += entry_line(114, "window")
+	into += list(global.extend("ui_open", global.inputs(global.remote())))
+	into += entry_line(115, "window")
+	into += list(global.op("controls", global.inside(), global.label("Controls"), global.when(nameof(controls_inside)), global.opens_ui()))
+	into += entry_line(116, "window")
+	into += list(global.extend(TAG_UI, global.needs(global.req_closed(SPACE_PANEL)), global.then(PROC_REF(control_touched), early = TRUE)))
+	into += entry_line(117, "window")
+	into += list(global.op("chemical", global.ui_act("chemical", global.arg("amount", global.num()), global.arg("chemid")), global.needs(req_operable(), global.req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), global.req(PROC_REF(occupant_alive), because = MSG(sleeper/dead_occupant)), global.req(PROC_REF(occupant_viable), because = MSG(sleeper/too_far_gone))), global.then(PROC_REF(inject_chosen))))
+	into += entry_line(121, "window")
+	into += list(global.op("togglefilter", global.ui_act("togglefilter"), global.needs(global.req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), global.req_full(nameof(beaker), because = MSG(sleeper/needs_beaker))), global.toggles(nameof(filtering))))
+	into += entry_line(123, "window")
+	into += list(global.op("togglepump", global.ui_act("togglepump"), global.needs(global.req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), global.req_full(nameof(beaker), because = MSG(sleeper/needs_beaker))), global.toggles(nameof(pumping))))
+	into += entry_line(125, "window")
+	into += list(global.op("ejectify", global.ui_act("ejectify"), global.then(PROC_REF(eject_from_window)), global.logs(LOG_GAME)))
+	into += entry_line(126, "window")
+	into += list(global.op("changestasis", global.ui_act("changestasis"), global.asks(/datum/prompt/choice, fields = list("question" = "Levels deeper than 50% stasis level will render the patient unconscious.", "title" = "Stasis Level", "choices" = nameof(stasis_choices), "timeout" = 0), step = "stasis"), global.then(PROC_REF(set_stasis_choice))))
+	into += entry_line(129, "window")
+	into += list(global.op("auto_eject_dead_on", global.ui_act("auto_eject_dead_on"), global.sets(nameof(auto_eject_dead), TRUE)))
+	into += entry_line(130, "window")
+	into += list(global.op("auto_eject_dead_off", global.ui_act("auto_eject_dead_off"), global.sets(nameof(auto_eject_dead), FALSE)))
 
 /// CAPABILITIES(/obj/machinery/slot_machine) at code/modules/casino/slots.dm:34
 /obj/machinery/slot_machine/declared_entries(list/into)
@@ -19772,6 +19883,17 @@
 	into += list(global.owns_one(nameof(server_radio), /obj/item/radio/headset))
 	into += entry_line(559)
 	into += list(global.owns_many(nameof(log_entries)))
+
+/// CAPABILITIES(/obj/machinery/transportpod) at code/game/machinery/transportpod.dm:26
+/obj/machinery/transportpod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/transportpod.dm", 26, /obj/machinery/transportpod)
+	into += entry_line(27)
+	into += list(global.occupant_pod(OCCUPANT_SLOT_TRANSPORTPOD))
+	into += entry_line(28)
+	into += list(global.on_notice(/datum/notice/pod_entered, global.then(PROC_REF(ask_to_launch))))
+	into += entry_line(29)
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(launch)), when = nameof(in_transit)))
 
 /// CAPABILITIES(/obj/machinery/turretid) at code/game/machinery/turret_control.dm:145
 /obj/machinery/turretid/declared_entries(list/into)
@@ -22782,6 +22904,22 @@
 	into += entry_line(118)
 	into += list(global.configure(global.emp_disable(30 SECONDS, resist = 100)))
 
+/// CAPABILITIES(/obj/machinery/dq_pod_fixture) at code/modules/unit_tests/dq_medpod_library_tests.dm:16
+/obj/machinery/dq_pod_fixture/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_medpod_library_tests.dm", 16, /obj/machinery/dq_pod_fixture)
+	into += entry_line(17)
+	into += list(global.occupant_pod(OCCUPANT_SLOT_TEST_FIXTURE))
+	into += entry_line(18)
+	into += list(global.when(nameof(working), global.while_slotted(OCCUPANT_SLOT_TEST_FIXTURE, global.contributes(STAT_CLOCK_RATE_BIO, nameof(rate)), global.holds_status(EFFECT_SLEEPING), on = ON_CONTENTS)))
+
+/// CAPABILITIES(/obj/machinery/dq_pod_fixture/south_exit) at code/modules/unit_tests/dq_medpod_library_tests.dm:23
+/obj/machinery/dq_pod_fixture/south_exit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_medpod_library_tests.dm", 23, /obj/machinery/dq_pod_fixture/south_exit)
+	into += entry_line(24)
+	into += list(global.configure(global.occupant_pod(OCCUPANT_SLOT_TEST_FIXTURE, exit_to = SOUTH)))
+
 /// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:117
 /obj/machinery/p2_box/declared_entries(list/into)
 	..(into)
@@ -22831,6 +22969,13 @@
 	into += list(global.without("touch"))
 	into += entry_line(408)
 	into += list(global.op("touch_ungated", global.hand(), global.ungated(), global.then(PROC_REF(was_touched_ungated))))
+
+/// CAPABILITIES(/obj/machinery/transportpod/dx_b2) at code/modules/unit_tests/dx_cap_b2_library_tests.dm:11
+/obj/machinery/transportpod/dx_b2/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dx_cap_b2_library_tests.dm", 11, /obj/machinery/transportpod/dx_b2)
+	into += entry_line(12)
+	into += list(global.on_notice(/datum/notice/pod_left, global.then(PROC_REF(count_exit))))
 
 /// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:277
 /obj/p2_asker/declared_entries(list/into)

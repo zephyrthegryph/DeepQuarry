@@ -9,24 +9,13 @@
 // Adapters
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// The occupant slot of a pod.
-/proc/medpod_slot(atom/pod)
-	if(istype(pod, /obj/machinery/sleeper))
-		return OCCUPANT_SLOT_SLEEPER
-	if(istype(pod, /obj/machinery/atmospherics/unary/cryo_cell))
-		return OCCUPANT_SLOT_CRYO
-	return OCCUPANT_SLOT_BODY_SCANNER
-
 /// Who is inside a pod.
 /proc/medpod_occupant(atom/pod)
-	return pod.slot_item(medpod_slot(pod))
+	return occupant_of(pod)
 
 /// Puts `M` straight into the pod, as code (a spawn, a test) does: no wait, no checks of a player's op.
 /proc/medpod_put_in(atom/pod, mob/living/M)
-	if(istype(pod, /obj/machinery/atmospherics/unary/cryo_cell))
-		var/obj/machinery/atmospherics/unary/cryo_cell/cell = pod
-		return cell.put_mob(M, M)
-	return move_into(pod, medpod_slot(pod), M)
+	return occupant_enter(pod, M, M)
 
 /// The occupant presses a direction key: the movement its client would relay to the machine it is inside.
 /proc/medpod_struggle(mob/living/M)
@@ -164,7 +153,7 @@
 	TEST_ASSERT_EQUAL(medpod_occupant(S), first, "an occupied sleeper takes nobody else")
 	TEST_ASSERT(second.loc != S, "the second person stays out")
 
-/// LEGACY: the wait to go in does not recheck the sleeper: one that lost power during it still takes the person.
+/// The wait to go in rechecks the sleeper: losing power during it keeps the person out.
 /datum/unit_test/dq_medpod/sleeper_entry_rechecks_power_after_the_wait
 /datum/unit_test/dq_medpod/sleeper_entry_rechecks_power_after_the_wait/run_pods()
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, floor_at(1, 1))
@@ -174,7 +163,7 @@
 	test_time(1 SECOND)
 	S.stat_add(NOPOWER)
 	test_time(2 SECONDS)
-	TEST_ASSERT_EQUAL(medpod_occupant(S), P, "LEGACY: a sleeper that lost power during the wait still takes them")
+	TEST_ASSERT_NULL(medpod_occupant(S), "a sleeper that lost power during the wait takes nobody")
 
 /// A grab used on a sleeper puts the grabbed person inside after the same wait.
 /datum/unit_test/dq_medpod/sleeper_grab_puts_inside
@@ -249,7 +238,10 @@
 	TEST_ASSERT_EQUAL(medpod_stasis(P), 0.99, "setup: complete stasis")
 	S.stat_add(NOPOWER)
 	test_time(5 SECONDS)
-	TEST_ASSERT_EQUAL(medpod_stasis(P), 0.99, "LEGACY: an unpowered sleeper keeps its occupant in stasis")
+	TEST_ASSERT_EQUAL(medpod_stasis(P), 0, "an unpowered sleeper lets go of its occupant's stasis")
+	S.stat_remove(NOPOWER)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(medpod_stasis(P), 0.99, "and holds them again when the power comes back")
 
 /// The survival pod holds its occupant in complete stasis from the moment they are inside.
 /datum/unit_test/dq_medpod/survival_pod_stasis
@@ -354,7 +346,7 @@
 	TEST_ASSERT(!S.filtering, "dialysis is off")
 	TEST_ASSERT_NULL(medpod_occupant(S), "the occupant is thrown out")
 
-/// LEGACY: a screwdriver opens an occupied sleeper's panel (its blocking screwdriver_act() was never reached by the maintenance interaction).
+/// A screwdriver does nothing to an occupied sleeper; an empty one opens.
 /datum/unit_test/dq_medpod/sleeper_tools_wait_for_an_empty_sleeper
 /datum/unit_test/dq_medpod/sleeper_tools_wait_for_an_empty_sleeper/run_pods()
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, floor_at(1, 1))
@@ -364,7 +356,12 @@
 	var/obj/item/tool/screwdriver/SD = give(H, allocate(/obj/item/tool/screwdriver, floor_at(0, 1)))
 	test_click(H, S, SD)
 	test_time(5 SECONDS)
-	TEST_ASSERT(S.panel_open, "LEGACY: an occupied sleeper's panel opens")
+	TEST_ASSERT(!S.panel_open, "an occupied sleeper's panel stays shut")
+	medpod_menu(H, S, "Eject")
+	test_time(1 SECOND)
+	test_click(H, S, SD)
+	test_time(5 SECONDS)
+	TEST_ASSERT(S.panel_open, "an empty one opens")
 
 /// A console beside a sleeper pairs with it; the console's window is the sleeper's.
 /datum/unit_test/dq_medpod/sleeper_console_pairs
@@ -388,7 +385,7 @@
 // Cryo cell
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// A grab used on an occupied cell: LEGACY the grab is consumed and lost, and nobody goes in.
+/// A grab used on an occupied cell is refused: the grab stays in hand and nobody goes in.
 /datum/unit_test/dq_medpod/cryo_grab_on_an_occupied_cell
 /datum/unit_test/dq_medpod/cryo_grab_on_an_occupied_cell/run_pods()
 	var/obj/machinery/atmospherics/unary/cryo_cell/cell = cryo_cell(floor_at(1, 1))
@@ -402,7 +399,7 @@
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(medpod_occupant(cell), first, "the occupant stays")
 	TEST_ASSERT(second.loc != cell, "the grabbed person is not put in")
-	TEST_ASSERT(QDELETED(G), "LEGACY: the grab is consumed")
+	TEST_ASSERT(!QDELETED(G) && G.loc == H, "the grab stays in hand")
 
 /// A grab used on an empty working cell puts the grabbed person inside.
 /datum/unit_test/dq_medpod/cryo_grab_puts_inside
@@ -417,7 +414,7 @@
 	TEST_ASSERT(P in cell.vis_contents, "shown in the tube")
 	TEST_ASSERT_EQUAL(P.buckled_to(), cell, "held upright in it")
 
-/// LEGACY: the occupant and the beaker leave to the tile south of the cell, even when that tile is a wall.
+/// The occupant and the beaker leave to the tile south of the cell when it is open; with a wall there, onto the cell's own tile.
 /datum/unit_test/dq_medpod/cryo_exit_south
 /datum/unit_test/dq_medpod/cryo_exit_south/run_pods()
 	var/turf/here = floor_at(1, 0)
@@ -435,13 +432,13 @@
 	medpod_ui(H, cell, "ejectOccupant")
 	test_time(1 SECOND)
 	TEST_ASSERT_NULL(medpod_occupant(cell), "the occupant is out")
-	TEST_ASSERT_EQUAL(P.loc, south, "LEGACY: the occupant is put in the wall")
-	TEST_ASSERT_EQUAL(B.loc, south, "LEGACY: so is the beaker")
+	TEST_ASSERT_EQUAL(P.loc, here, "the occupant is not put in the wall")
+	TEST_ASSERT_EQUAL(B.loc, here, "nor is the beaker")
 	P.forceMove(here)
 	B.forceMove(here)
 	restore?.ChangeTurf(/turf/simulated/floor)
 
-/// The cell treats, sends to sleep and cools its occupant while it is on; LEGACY it does so with no power too.
+/// The cell treats, sends to sleep and cools its occupant while it is on and powered; with no power it does nothing.
 /datum/unit_test/dq_medpod/cryo_treats_while_on
 /datum/unit_test/dq_medpod/cryo_treats_while_on/run_pods()
 	var/obj/machinery/atmospherics/unary/cryo_cell/cell = cryo_cell(floor_at(1, 1))
@@ -460,7 +457,8 @@
 	cell.stat_add(NOPOWER)
 	P.set_bodytemperature(100)
 	test_time(10 SECONDS)
-	TEST_ASSERT(P.injury_load(INJURY_CATEGORY_PHYSICAL) < load, "LEGACY: an unpowered cell still treats")
+	TEST_ASSERT_EQUAL(P.injury_load(INJURY_CATEGORY_PHYSICAL), load, "an unpowered cell treats nothing")
+	TEST_ASSERT(!P.has_status(EFFECT_SLEEPING) || P.status_remaining(EFFECT_SLEEPING) > 0, "and holds nobody asleep (only the cold's own timed sleep is left)")
 
 /// An occupant ejected while frozen is warmed to 261 K on the way out.
 /datum/unit_test/dq_medpod/cryo_eject_warms_the_frozen
@@ -490,7 +488,7 @@
 	test_time(70 SECONDS)
 	TEST_ASSERT_NULL(medpod_occupant(cell), "out after two")
 
-/// LEGACY: a diona nymph (carbon, not human) can climb in from the menu but cannot be dragged in.
+/// A diona nymph (carbon, not human) is taken by a drag as by the menu: the cell takes any carbon.
 /datum/unit_test/dq_medpod/cryo_accepts_carbons
 /datum/unit_test/dq_medpod/cryo_accepts_carbons/run_pods()
 	var/obj/machinery/atmospherics/unary/cryo_cell/cell = cryo_cell(floor_at(1, 1))
@@ -498,7 +496,7 @@
 	var/mob/living/carbon/alien/diona/nymph = allocate(/mob/living/carbon/alien/diona, floor_at(1, 0))
 	test_drag(H, nymph, cell)
 	test_time(1 SECOND)
-	TEST_ASSERT_NULL(medpod_occupant(cell), "LEGACY: a dragged nymph is not taken")
+	TEST_ASSERT_EQUAL(medpod_occupant(cell), nymph, "a dragged nymph is taken")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Body scanner
@@ -516,7 +514,7 @@
 	TEST_ASSERT_EQUAL(medpod_occupant(S), P, "the grabbed person is inside")
 	TEST_ASSERT(QDELETED(G), "the grab is used up")
 
-/// An occupant who moves gets out; LEGACY a screwdriver opens the panel while someone is inside.
+/// An occupant who moves gets out; a screwdriver does nothing while someone is inside.
 /datum/unit_test/dq_medpod/scanner_occupant_and_tools
 /datum/unit_test/dq_medpod/scanner_occupant_and_tools/run_pods()
 	var/obj/machinery/bodyscanner/S = allocate(/obj/machinery/bodyscanner, floor_at(1, 1))
@@ -526,13 +524,13 @@
 	var/obj/item/tool/screwdriver/SD = give(H, allocate(/obj/item/tool/screwdriver, floor_at(0, 1)))
 	test_click(H, S, SD)
 	test_time(5 SECONDS)
-	TEST_ASSERT(S.panel_open, "LEGACY: an occupied scanner's panel opens")
+	TEST_ASSERT(!S.panel_open, "an occupied scanner's panel stays shut")
 	medpod_struggle(P)
 	test_time(1 SECOND)
 	TEST_ASSERT_NULL(medpod_occupant(S), "the occupant moved out")
 	TEST_ASSERT_EQUAL(P.loc, get_turf(S), "onto the scanner's tile")
 
-/// LEGACY: the window's eject button does nothing (it called the menu handler with the wrong argument).
+/// The window's eject button lets the occupant out.
 /datum/unit_test/dq_medpod/scanner_window_eject
 /datum/unit_test/dq_medpod/scanner_window_eject/run_pods()
 	var/obj/machinery/bodyscanner/S = allocate(/obj/machinery/bodyscanner, floor_at(1, 1))
@@ -541,7 +539,7 @@
 	medpod_put_in(S, P)
 	medpod_ui(H, S, "ejectify")
 	test_time(1 SECOND)
-	TEST_ASSERT_EQUAL(medpod_occupant(S), P, "LEGACY: the occupant stays inside")
+	TEST_ASSERT_NULL(medpod_occupant(S), "the occupant is out")
 
 /// A console beside a scanner pairs with it and turns to face it; a multitool links a console to a scanner by hand.
 /datum/unit_test/dq_medpod/scanner_console_pairs

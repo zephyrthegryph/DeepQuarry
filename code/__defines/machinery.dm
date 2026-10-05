@@ -190,6 +190,12 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 /// The machine world service's cadence (code/game/machinery/machine_service.dm): gas wakes, the
 /// pump commit and the power step. Machine timing that used to read SSmachines.wait reads this.
 #define MACHINE_SERVICE_INTERVAL (2 SECONDS)
+/// How long putting someone into a sleeper takes.
+#define SLEEPER_ENTER_WAIT (2 SECONDS)
+/// How far up a cryo cell's tube its occupant is shown (pixels).
+#define CRYO_OCCUPANT_RAISE 19
+/// How long a cryo cell occupant's own release sequence takes.
+#define CRYO_RELEASE_WAIT (2 MINUTES)
 /// The longest a brig door timer can be set, in deciseconds.
 #define MAX_TIMER 36000
 

@@ -792,3 +792,78 @@ green on the legacy code first; only adapters changed, except the findings below
 * `lit_welder(fuel =)` and `req_welder_lit()` (code/library/items/welder.dm).
 * The reads analysis treats the Verdigris bindings (`code/__defines/verdigris/`) as opaque: a condition that asks a Rust-owned value (a SMES's
   charge) is re-asked when a requirement is checked or a gate polled, never subscribed.
+
+## Medical pods: occupant_pod(), paired_console(), beaker_bay() (sleeper, cryo cell, body scanner, their consoles, the transport pod)
+
+Pinned by `code/modules/unit_tests/dq_medical_pods_behaviour.dm` (28 tests, written and green on the legacy code first; every pin that changed below
+was marked LEGACY there and edited in the commit that changed it). The library pieces are tested by `dq_medpod_library_tests.dm` and
+`dx_cap_b2_library_tests.dm`.
+
+### What every pod does now (occupant_pod())
+
+* **The menu labels are "Move Inside" and "Eject"** on every pod ("Eject occupant", "Eject Body Scanner", "Enter Pod" and "Eject Pod" are gone).
+* **A refused entry says why** ("It is already occupied.", "It is not designed for that organism.", "They are not next to it.", "The subject cannot
+  have abiotic items on.", "Close the maintenance panel first."); several old paths declined silently.
+* **A screwdriver or a crowbar on an occupied pod is refused** ("Someone is inside it."). The old sleeper and body scanner blocked the tools in
+  `screwdriver_act()`/`crowbar_act()` overrides that the maintenance interactions never reached, so an occupied pod's panel opened and it could be
+  pried apart with someone inside.
+* **A grab used to put someone in is used up** when they go in (the body scanner already did; the sleeper left a dangling grab). A grab used on an
+  occupied pod is refused and stays in hand: the cryo cell consumed the grab before it found the cell occupied, losing it.
+* **The occupant moving gets out when they can act** (a `while_slotted()` hook on their `relay_movement` action replaces three `relaymove()`
+  overrides). An unconscious or restrained occupant stays in, as before.
+* **The way in is asked again when its wait ends**: a sleeper that lost power during the two-second wait, or a person moved away from it, takes
+  nobody (the old timed task's completion rechecked neither).
+* **An occupant leaves onto the pod's exit tile only when nothing blocks it**, else onto the pod's own tile: the cryo cell put its occupant (and its
+  beaker) into the wall south of it.
+* **Unrelated items clicked on a sleeper or a cryo cell are no longer swallowed** (both machines ended their `attackby` without calling its parent).
+  They do what any item does to a machine.
+
+### Body scanner and console
+
+* **The window's eject button works**: it called the menu handler with the actor where the handler expected the action context, so it ran into a
+  runtime and nobody came out.
+* **The console's screen shows a critical occupant red, not blue** (blue is an empty scanner now, and only that); a hurt but living occupant shows red
+  instead of the dead screen; the dead show the dead screen. The old switch over the health ratio sent 0 (critical) to the empty case and any partial
+  ratio to "dead".
+* **The console pairs when the map load is complete** (`paired_console()`'s `after_init(0)`), not half a second later through a timer, and never
+  searches again on a click.
+* **A ghost no longer gets the console's view entry** (the legacy observer interaction). The window's own state still decides what a ghost sees.
+* **Clicking the scanner opens its window hosted on the scanner** (the `tgui_host()` override that moved it to the console is gone).
+
+### Sleeper and console
+
+* **Stasis needs a working sleeper.** The stasis setting is a `while_slotted()` contribution to the occupant's `STAT_CLOCK_RATE_BIO`, gated on
+  `STAT_OPERABLE`: an unpowered or broken sleeper lets its occupant's biology run at full speed, and holds them again when it works. The old
+  `machine_step()` wrote the stasis every frame and only ran while the sleeper was operable, so a sleeper that lost power kept its occupant in stasis.
+  The stasis setting is now a rate (`stasis_rate`, 0.01 to 1); the window's five choices and their names are unchanged.
+* **The two-minute "struggle through the haze" eject of an unconscious occupant is gone**: an unconscious actor cannot act, so it was unreachable.
+  A conscious occupant's eject is at once, as before.
+* **Dialysis and the stomach pump turn off when the beaker is taken out or the occupant leaves**, through the setters (the old `toggle_filter()` and
+  `toggle_pump()` calls meant "turn off" there). Turning either on needs an occupant and a beaker, refused with a reason ("There is no beaker to drain
+  into.") where the old button silently set it off.
+* **Dialysis moves the same amounts in one transfer** (3 units per chemical present, in proportion, and that many plus one of blood) instead of one
+  transfer per chemical in a loop over the list it was emptying.
+* **The injectors refuse a dead or too far gone occupant as requirements** (the same texts, as refusals); an unlisted chemical is still refused and
+  told to the admins.
+* **The sleeper's window opens for a silicon (remote) and, with controls inside, for its occupant ("Controls")**; a hand on the sleeper from outside
+  opens nothing, as before. The console opens the window with any item as with an empty hand (the old item-as-touch entry).
+* **The console's dark sprite is drawn from its power** (`draw()`), not written by `power_change()`.
+* **An EMP is a notice** (`on_notice(/datum/notice/hit/emp)`), not a damage reaction: dialysis and the pump stop, and a working sleeper throws its
+  occupant out, as before.
+* **A part replacer is refused while someone is inside** ("Someone is inside it."); the old item catch-all ignored it silently.
+* **The starting beaker is still deleted with the sleeper**; the survival pod's cover overlay is drawn by its `draw()`.
+
+### Cryo cell
+
+* **An unpowered cell treats, cools and sedates nobody.** Its frame is `every(when = cond_all(on, STAT_OPERABLE, occupied))`; the old periodic
+  condition was `on && node` without power, so a cell kept treating with no power.
+* **The occupant is held asleep by a status** (`holds_status(EFFECT_SLEEPING)` in a `while_slotted()` gated on the cell being on and working) instead
+  of `set_stat(UNCONSCIOUS)` and a direction write every tick; they face south once, on entry. The hold is there whatever the gas in the cell
+  (the old write skipped a cell with under 10 moles).
+* **Any carbon can be dragged in** (a diona nymph): the menu's "Move Inside" already took any carbon, the drag took only humans.
+* **The cell trades heat with its occupant through the gas domain** (`gas_body_heat_exchange()`, code/domains/atmos/body_heat.dm) instead of
+  writing the gas temperature itself; it still settles its pipe network when the gas moved by more than a kelvin.
+* **The release sequence is an op wait** (two minutes, ending if the occupant dies or the cell goes) instead of a free-running timer that ejected
+  whoever was inside when it fired.
+* **The window opens unpowered** (as before) and **its buttons leave fingerprints**; slimes and pAIs are refused the eject button by a requirement.
+* **The tube is drawn by `draw()`**: the old shared fluid image had its colour mutated on every redraw.

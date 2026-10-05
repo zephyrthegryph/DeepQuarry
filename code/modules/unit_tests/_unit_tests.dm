@@ -514,6 +514,7 @@
 #include "dq_gap_tests.dm"
 #include "dq_fwg3_inputs.dm"
 #include "dq_medical_pods_behaviour.dm"
+#include "dq_medpod_library_tests.dm"
 #include "dq_fwg3_windows.dm"
 #include "dq_atmos_machines_behaviour.dm"
 #include "dq_atmos_gas_api_tests.dm"

@@ -188,6 +188,10 @@
 	. = ..()
 	. += rust_push(nameof(node1), nameof(node1_concentration), nameof(node2), nameof(node2_concentration), nameof(node3), nameof(power_rating), nameof(set_flow_rate), nameof(use_power))
 
+/obj/machinery/atmospherics/unary/cryo_cell/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(beaker))
+
 /obj/machinery/atmospherics/unary/vent_pump/generated_reads()
 	. = ..()
 	. += rust_push(nameof(air_contents), nameof(external_pressure_bound), nameof(pressure_checks), nameof(pump_direction))
@@ -195,6 +199,14 @@
 /obj/machinery/atmospherics/unary/vent_scrubber/generated_reads()
 	. = ..()
 	. += rust_push(nameof(scrubbing), nameof(scrubbing_gas), nameof(use_power), nameof(welded))
+
+/obj/machinery/body_scanconsole/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(scan_ratio), nameof(scanner))
+
+/obj/machinery/bodyscanner/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(scan_ratio))
 
 /obj/machinery/cell_charger/generated_reads()
 	. = ..()
