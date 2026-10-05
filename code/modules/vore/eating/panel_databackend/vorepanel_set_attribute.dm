@@ -1,3 +1,7 @@
+#define VORE_SIZE_MULT_MOB "mob"
+#define VORE_SIZE_MULT_ITEM "item"
+#define VORE_SIZE_MULT_OVERALL "overall"
+
 UI_SUBACT(/datum/vore_look, "attr", "b_name", attr_b_name, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_name)
 	var/new_name = html_encode(params["val"])
@@ -497,44 +501,15 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_silicon_belly)
 
 UI_SUBACT(/datum/vore_look, "attr", "b_belly_mob_mult", attr_b_belly_mob_mult)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_mob_mult)
-	var/new_prey_mult = rerun_ask(user, "a2", PROC_REF(attr_b_belly_mob_mult), args, /datum/om/prompt/number, message = "Choose the multiplier for mobs contributing to belly size, ranging from 0 to 5. Set to 0 to disable mobs contributing to belly size", title = "Set Prey Multiplier", default = host().vore_selected.belly_mob_mult, max = 5)
-	if(isnull(new_prey_mult))
-		return
-	if(new_prey_mult == null)
-		return FALSE
-	host().vore_selected.belly_mob_mult = CLAMP(new_prey_mult, 0, 5) //Max at 5 because in no world will a borg have more than 5 bellies
-	host().update_icon()
-	. = TRUE
-	if(.)
-		unsaved_changes = TRUE
+	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_MOB, displayed_max = 5, default = host().vore_selected.belly_mob_mult, question = "Choose the multiplier for mobs contributing to belly size, ranging from 0 to 5. Set to 0 to disable mobs contributing to belly size", title = "Set Prey Multiplier")
 
 UI_SUBACT(/datum/vore_look, "attr", "b_belly_item_mult", attr_b_belly_item_mult)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_item_mult)
-	var/new_item_mult = rerun_ask(user, "a3", PROC_REF(attr_b_belly_item_mult), args, /datum/om/prompt/number, message = "Choose the multiplier for items contributing to belly size, ranging from 0 to 10. (Item size affects how much they contribute as well) Set to 0 to disable size checks", title = "Set Item Multiplier", default = host().vore_selected.belly_item_mult, max = 10)
-	if(isnull(new_item_mult))
-		return
-	if(new_item_mult == null)
-		return FALSE
-	else
-		host().vore_selected.belly_item_mult = CLAMP(new_item_mult, 0, 10) //Max at 10 because items contribute less than mobs, in general
-	host().update_icon()
-	. = TRUE
-	if(.)
-		unsaved_changes = TRUE
+	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_ITEM, displayed_max = 10, default = host().vore_selected.belly_item_mult, question = "Choose the multiplier for items contributing to belly size, ranging from 0 to 10. (Item size affects how much they contribute as well) Set to 0 to disable size checks", title = "Set Item Multiplier")
 
 UI_SUBACT(/datum/vore_look, "attr", "b_belly_overall_mult", attr_b_belly_overall_mult)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_overall_mult)
-	var/new_overall_mult = rerun_ask(user, "a4", PROC_REF(attr_b_belly_overall_mult), args, /datum/om/prompt/number, message = "Choose the overall multiplier to be applied to belly contents after specific multipliers, ranging from 0 to 5. Set to 0 to disable showing belly sprites at all.", title = "Set minimum prey amount", default = host().vore_selected.belly_overall_mult, max = 5)
-	if(isnull(new_overall_mult))
-		return
-	if(new_overall_mult == null)
-		return FALSE
-	else
-		host().vore_selected.belly_overall_mult = CLAMP(new_overall_mult, 0, 5) // Max at 5 because... no reason to go higher at that point
-	host().update_icon()
-	. = TRUE
-	if(.)
-		unsaved_changes = TRUE
+	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_OVERALL, displayed_max = 5, default = host().vore_selected.belly_overall_mult, question = "Choose the overall multiplier to be applied to belly contents after specific multipliers, ranging from 0 to 5. Set to 0 to disable showing belly sprites at all.", title = "Set minimum prey amount")
 
 UI_SUBACT(/datum/vore_look, "attr", "b_fancy_sound", attr_b_fancy_sound)
 UI_SUBACT_PROC(/datum/vore_look, attr_b_fancy_sound)
@@ -1551,3 +1526,48 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle5)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
+
+/// A nested attribute replay retains its original UI, but rereads the current selected belly.
+/datum/prompt/number/vore_size_multiplier
+	timeout = 0
+	recheck_on_open = TRUE
+	var/multiplier_kind
+	var/displayed_max
+
+/datum/prompt/number/vore_size_multiplier/normalize(given)
+	return given
+
+/datum/prompt/number/vore_size_multiplier/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, displayed_max, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/vore_size_multiplier/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui))
+		return "gone"
+	var/datum/vore_look/panel = original_ui.src_object()
+	if(!istype(panel) || QDELETED(panel))
+		return "gone"
+	return null
+
+/datum/tgui/proc/vore_size_multiplier_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/vore_size_multiplier/request = A.answer
+	var/datum/vore_look/panel = src_object()
+	switch(request.multiplier_kind)
+		if(VORE_SIZE_MULT_MOB)
+			panel.host().vore_selected.belly_mob_mult = CLAMP(request.answer_value, 0, 5)
+		if(VORE_SIZE_MULT_ITEM)
+			panel.host().vore_selected.belly_item_mult = CLAMP(request.answer_value, 0, 10)
+		if(VORE_SIZE_MULT_OVERALL)
+			panel.host().vore_selected.belly_overall_mult = CLAMP(request.answer_value, 0, 5)
+	panel.host().update_icon()
+	panel.unsaved_changes = TRUE
+	SStgui.update_uis(panel)
+
+#undef VORE_SIZE_MULT_MOB
+#undef VORE_SIZE_MULT_ITEM
+#undef VORE_SIZE_MULT_OVERALL
