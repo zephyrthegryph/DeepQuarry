@@ -311,7 +311,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 
 	. += build_overlays()
 
-/obj/machinery/recharge_station/Bumped(mob/living/L)
+CAPABILITIES(/obj/machinery/recharge_station)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/machinery/recharge_station/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/living/L = N.bumper
 	go_in(L)
 
 /obj/machinery/recharge_station/proc/go_in(mob/living/L)

@@ -16,7 +16,13 @@
 
 APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}")
 
-/obj/structure/grille/Bumped(atom/user)
+CAPABILITIES(/obj/structure/grille)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/grille/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/user = N.bumper
 	if(ismob(user)) shock(user, 70)
 
 /obj/structure/grille/declare_interactions(list/into)

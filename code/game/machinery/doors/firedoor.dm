@@ -234,7 +234,9 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	return TRUE
 
 /// A pilot's mecha bumping a shut one asks the pilot.
-/obj/machinery/door/firedoor/Bumped(atom/AM)
+/obj/machinery/door/firedoor/door_bumped(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(panel_is_open(src) || operating)
 		return
 	if(!density)

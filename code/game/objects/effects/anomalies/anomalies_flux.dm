@@ -29,7 +29,13 @@
 /obj/effect/anomaly/flux/Bump(atom/A)
 	mobShock(A)
 
-/obj/effect/anomaly/flux/Bumped(atom/movable/AM)
+CAPABILITIES(/obj/effect/anomaly/flux)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/anomaly/flux/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	mobShock(AM)
 
 EXTEND_INTERACTIONS(/obj/effect/anomaly/flux, \

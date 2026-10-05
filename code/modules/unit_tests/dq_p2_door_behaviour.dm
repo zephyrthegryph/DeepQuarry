@@ -370,7 +370,7 @@
 /datum/unit_test/dq_p2_door/airlock_bump_opens_for_access/run_gate()
 	var/obj/machinery/door/airlock/D = make_door(/obj/machinery/door/airlock, list(ACCESS_ENGINE))
 	var/mob/living/carbon/human/H = make_person(list(ACCESS_ENGINE))
-	D.Bumped(H)
+	H.Bump(D)
 	settle()
 	TEST_ASSERT(!D.density, "walking into the door with access opens it")
 
@@ -379,7 +379,7 @@
 /datum/unit_test/dq_p2_door/airlock_bump_denied_without_access/run_gate()
 	var/obj/machinery/door/airlock/D = make_door(/obj/machinery/door/airlock, list(ACCESS_ENGINE))
 	var/mob/living/carbon/human/H = make_person(list(ACCESS_SECURITY))
-	D.Bumped(H)
+	H.Bump(D)
 	settle()
 	TEST_ASSERT(D.density, "walking into the door without the access leaves it shut")
 	TEST_ASSERT(!D.operating, "and it does not move")
@@ -391,12 +391,12 @@
 	var/obj/machinery/door/airlock/D = make_door(/obj/machinery/door/airlock, list(ACCESS_ENGINE))
 	p2_door_set_autoclose(D, FALSE)
 	var/mob/living/carbon/human/H = make_person(null)
-	D.Bumped(H) // refused, but it counts as a bump
+	H.Bump(D) // refused, but it counts as a bump
 	D.req_access = null
-	D.Bumped(H) // within the second
+	H.Bump(D) // within the second
 	sleep(2 SECONDS)
 	TEST_ASSERT(D.density, "a second bump inside a second is ignored")
-	D.Bumped(H)
+	H.Bump(D)
 	settle()
 	TEST_ASSERT(!D.density, "a bump after the cooldown opens it")
 
@@ -528,7 +528,7 @@
 	TEST_ASSERT(p2_door_bolted(D), "the bolts are down")
 	click(H, D, null)
 	TEST_ASSERT(D.density, "a bolted door does not open for a valid ID")
-	D.Bumped(H)
+	H.Bump(D)
 	settle()
 	TEST_ASSERT(D.density, "nor to a bump")
 	p2_door_set_bolts(D, FALSE)
@@ -791,7 +791,7 @@
 	var/obj/item/driver = give_tool(H, /obj/item/tool/screwdriver)
 	click(H, D, driver)
 	TEST_ASSERT(p2_door_panel_open(D), "panel open")
-	D.Bumped(H)
+	H.Bump(D)
 	settle()
 	TEST_ASSERT(D.density, "walking into a door with its panel open does not open it")
 
@@ -818,7 +818,7 @@
 	p2_door_set_welded(D, TRUE)
 	click(H, D, null)
 	TEST_ASSERT(D.density, "a welded door does not open by hand")
-	D.Bumped(H)
+	H.Bump(D)
 	settle()
 	TEST_ASSERT(D.density, "nor by a bump")
 	p2_door_set_welded(D, FALSE)
@@ -1087,7 +1087,7 @@
 	p2_door_set_power(D, FALSE)
 	click(H, D, null)
 	TEST_ASSERT(D.density, "a door off area power does not open by hand")
-	D.Bumped(H)
+	H.Bump(D)
 	settle()
 	TEST_ASSERT(D.density, "nor by a bump")
 	p2_door_set_power(D, TRUE)
@@ -1835,7 +1835,7 @@
 	var/mob/living/carbon/human/H = make_person(list(ACCESS_CAPTAIN))
 	click(H, B, null)
 	TEST_ASSERT(B.density, "a blast door does not open by hand, whatever the ID")
-	B.Bumped(H)
+	H.Bump(B)
 	settle()
 	TEST_ASSERT(B.density, "nor by a bump")
 
@@ -1996,7 +1996,7 @@
 	var/mob/living/carbon/human/H = make_person(list(ACCESS_SECURITY), tile(1, 2))
 	click(H, D, null)
 	TEST_ASSERT(D.density, "the wrong access does not open it")
-	D.Bumped(H)
+	H.Bump(D)
 	settle()
 	TEST_ASSERT(D.density, "nor does a bump")
 
@@ -2005,7 +2005,7 @@
 /datum/unit_test/dq_p2_door/windoor_bump_opens_then_closes_itself/run_gate()
 	var/obj/machinery/door/window/D = make_door(/obj/machinery/door/window, list(ACCESS_ENGINE))
 	var/mob/living/carbon/human/H = make_person(list(ACCESS_ENGINE), tile(1, 2))
-	D.Bumped(H)
+	H.Bump(D)
 	test_time(1.5 SECONDS)
 	TEST_ASSERT(!D.density, "walking into a windoor with access opens it")
 	settle()

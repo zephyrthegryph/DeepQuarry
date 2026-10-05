@@ -1,7 +1,7 @@
 // The ballistic transportation pod: one person climbs in, confirms, and the pod launches them to a random point of the station, blowing a hole on
 // arrival. ONE CAPABILITIES list says what it is: an occupant pod (occupant_pod(): the drag, the menu's "Move Inside" and "Eject", the occupant
-// moving out), the launch question asked of whoever gets in, and the launch itself while the occupant's answer stands. Walking into it climbs in:
-// Bumped() is the legacy collision hook, which has no declared form yet (ACTION(bump) has no emit site).
+// moving out), the launch question asked of whoever gets in, and the launch itself while the occupant's answer stands. Walking into it climbs in
+// (the bump action's notice).
 
 /obj/machinery/transportpod
 	name = "Ballistic Transportation Pod"
@@ -26,6 +26,7 @@ TRACKED(/obj/machinery/transportpod, in_transit)
 CAPABILITIES(/obj/machinery/transportpod)
 	occupant_pod(OCCUPANT_SLOT_TRANSPORTPOD)
 	on_notice(/datum/notice/pod_entered, then(PROC_REF(ask_to_launch)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(walked_into)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(launch)), when = nameof(in_transit))
 
 /obj/machinery/transportpod/draw(datum/look/look)
@@ -66,8 +67,11 @@ CAPABILITIES(/obj/machinery/transportpod)
 	occupant_eject(src)
 	after(src, 0.2 SECONDS, TYPE_PROC_REF(/datum, om_qdel_self))
 
-/obj/machinery/transportpod/Bumped(mob/living/O)
-	if(!istype(O) || O.incapacitated()) //aint no sleepy people getting in here
+/// Someone walked into the pod: they climb in (aint no sleepy people getting in here).
+/obj/machinery/transportpod/proc/walked_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/living/O = N.bumper
+	if(!istype(O) || O.incapacitated())
 		return
 	occupant_enter(src, O, O)
 

@@ -2,11 +2,11 @@
 	autoclose = 0
 	locked = 0
 
-/obj/machinery/door/unpowered/Bumped(atom/AM)
+/// A locked door ignores whatever walks into it.
+/obj/machinery/door/unpowered/door_bumped(datum/act/A)
 	if(src.locked)
 		return
 	..()
-	return
 
 // A door with no power and no lock of its own: it takes no emag, and a held item does nothing to it while it is locked (an energy blade never does).
 CAPABILITIES(/obj/machinery/door/unpowered)

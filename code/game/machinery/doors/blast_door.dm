@@ -48,14 +48,10 @@
 /obj/machinery/door/blast/get_material()
 	return implicit_material
 
-// Proc: Bumped()
-// Parameters: 1 (AM - Atom that tried to walk through this object)
-// Description: If we are open returns zero, otherwise returns result of parent function.
-/obj/machinery/door/blast/Bumped(atom/AM)
+/// A shut blast door ignores whatever walks into it; an open one answers as any door.
+/obj/machinery/door/blast/door_bumped(datum/act/A)
 	if(!density)
 		return ..()
-	else
-		return 0
 
 // Proc: update_icon()
 // Parameters: None

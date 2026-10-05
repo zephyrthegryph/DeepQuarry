@@ -948,7 +948,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 			O.Crossed(src)
 			after(src, 0, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(TRUE)) //countering the portal's deferred teleport
 		if(O.anchored)
-			obstacle.Bumped(src)
+			bump_into(obstacle)
 		else
 			step(obstacle,src.dir)
 

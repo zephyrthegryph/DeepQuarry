@@ -87,7 +87,8 @@
 
 /obj/machinery/door/airlock/stumble_into(mob/living/M)
 	..()
-	bumpopen(M)
+	if(!shocks_bumper(M))
+		bumpopen(M)
 
 /obj/machinery/appliance/cooker/fryer/stumble_into(mob/living/M)
 	visible_message(span_warning("[M] [pick("ran", "slammed")] into \the [src]!"))

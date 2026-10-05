@@ -166,7 +166,13 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 
 // the teleporter console forgets its hub.
 
-/obj/machinery/teleport/hub/Bumped(M as mob|obj)
+CAPABILITIES(/obj/machinery/teleport/hub)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/machinery/teleport/hub/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/M = N.bumper
 	if(icon_state == "tele1")
 		teleport(M)
 		use_power(5000)

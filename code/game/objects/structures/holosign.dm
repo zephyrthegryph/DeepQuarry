@@ -94,8 +94,13 @@
 		return CheckHuman(mover)
 	return TRUE
 
-/obj/structure/holosign/barrier/medical/Bumped(atom/movable/AM)
-	. = ..()
+CAPABILITIES(/obj/structure/holosign/barrier/medical)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/holosign/barrier/medical/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(ishuman(AM) && !CheckHuman(AM))
 		if(COOLDOWN_FINISHED(src, buzzed))
 			play_sfx(get_turf(src), SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
