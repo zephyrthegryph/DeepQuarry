@@ -50,3 +50,4 @@ changes:
   - code_imp: "Migrated the personal jukebox-volume prompt to a native request."
   - code_imp: "Migrated the casino prize-price prompt to a native request."
   - code_imp: "Migrated the admin server-sound picker to a native request."
+  - code_imp: "Migrated the three belly-size multiplier prompts to native requests."
