@@ -194,11 +194,12 @@
 
 /obj/machinery/atmospherics/unary/vent_pump/generated_reads()
 	. = ..()
-	. += rust_push(nameof(air_contents), nameof(external_pressure_bound), nameof(pressure_checks), nameof(pump_direction))
+	. += drawn_from(nameof(use_power))
+	. += rust_push(nameof(external_pressure_bound), nameof(internal_pressure_bound), nameof(pressure_checks), nameof(pump_direction), nameof(vent_volume))
 
 /obj/machinery/atmospherics/unary/vent_scrubber/generated_reads()
 	. = ..()
-	. += rust_push(nameof(scrubbing), nameof(scrubbing_gas), nameof(use_power), nameof(welded))
+	. += rust_push(nameof(scrubbing), nameof(scrubbing_gas), nameof(use_power))
 
 /obj/machinery/body_scanconsole/generated_reads()
 	. = ..()

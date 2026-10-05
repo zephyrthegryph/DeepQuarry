@@ -97,7 +97,7 @@
 	..()
 	if(removed)
 		for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
-			if(!v.welded)
+			if(!is_welded(v))
 				rel_set(src, nameof(entry_vent), v)
 				audible_message("[src] tries to slither away!")
 				walk_to(src, v, 1, 5)

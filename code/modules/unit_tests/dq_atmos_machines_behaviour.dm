@@ -57,13 +57,17 @@
 /proc/am_device_online(obj/machinery/atmospherics/unary/D)
 	D.atmos_init()
 
+/// The area numbers its devices from one again (a fresh area).
+/proc/am_area_reset_numbers(area/A)
+	A.air_device_serials = null
+
 /// The device is welded shut.
 /proc/am_device_welded(obj/machinery/atmospherics/unary/D)
-	return !!D.welded
+	return !!is_welded(D)
 
 /// Welds the device shut or frees it (a test fixture's starting state).
 /proc/am_device_set_welded(obj/machinery/atmospherics/unary/D, on)
-	D.set_welded(on)
+	set_welded(D, on)
 
 /// The device's radio tag.
 /proc/am_device_tag(obj/machinery/atmospherics/unary/D)
@@ -626,10 +630,10 @@
 	TEST_ASSERT_EQUAL(V.internal_pressure_bound, 300, "internal bound set")
 	am_radio(V, list("adjust_internal_pressure" = "-50"))
 	TEST_ASSERT_EQUAL(V.internal_pressure_bound, 250, "internal bound adjusted")
-	am_radio(V, list("reset_internal_pressure" = null))
+	am_radio(V, list("reset_internal_pressure" = 1))
 	TEST_ASSERT_EQUAL(V.internal_pressure_bound, 0, "internal bound reset")
 	am_radio(V, list("set_external_pressure" = "40"))
-	am_radio(V, list("reset_external_pressure" = null))
+	am_radio(V, list("reset_external_pressure" = 1))
 	TEST_ASSERT_EQUAL(V.external_pressure_bound, ONE_ATMOSPHERE, "external bound reset")
 	am_radio(V, list("purge" = 1))
 	TEST_ASSERT(!(V.pressure_checks & 1) && V.pump_direction == 0, "purge: no external check, siphoning")
@@ -670,19 +674,19 @@
 	am_radio(S, list("power_toggle" = 1))
 	TEST_ASSERT(!S.use_power, "power toggled off")
 
-/// BUG: a scrubber told panic_siphon = 0 (a number, as the air alarm's window sends it) keeps siphoning: the value is tested for truth, so a
-/// zero is never applied.
+/// A scrubber told panic_siphon = 0 (a number, as the air alarm's window sends it) stops siphoning.
 /datum/unit_test/dq_atmos_m/scrubber_panic_off
 /datum/unit_test/dq_atmos_m/scrubber_panic_off/run_gate()
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = device(/obj/machinery/atmospherics/unary/vent_scrubber/on)
 	am_radio(S, list("panic_siphon" = 1))
 	TEST_ASSERT(S.panic, "panicking")
 	am_radio(S, list("panic_siphon" = 0))
-	TEST_ASSERT(S.panic, "BUG: panic_siphon 0 is ignored")
+	TEST_ASSERT(!S.panic && S.scrubbing, "panic_siphon 0 ends the panic")
+	am_radio(S, list("panic_siphon" = 1))
 	var/obj/machinery/alarm/A = alarm()
 	am_alarm_set_locked(A, FALSE)
 	am_press(person(), A, "panic_siphon", list("id_tag" = am_device_tag(S), "val" = 0))
-	TEST_ASSERT(S.panic, "BUG: the alarm window's panic switch cannot turn it off")
+	TEST_ASSERT(!S.panic, "the alarm window's panic switch turns it off")
 
 /// The devices report to the area: a vent and a scrubber register under their tags with numbered names, their status follows a command, and
 /// the alarm's window lists them.
@@ -695,6 +699,7 @@
 	room.air_vent_info = null
 	room.air_scrub_names = null
 	room.air_scrub_info = null
+	am_area_reset_numbers(room)
 	var/obj/machinery/atmospherics/unary/vent_pump/V = device(/obj/machinery/atmospherics/unary/vent_pump)
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = device(/obj/machinery/atmospherics/unary/vent_scrubber, 1, 3)
 	TEST_ASSERT_EQUAL(LAZYACCESS(room.air_vent_names, am_device_tag(V)), "[room.name] Vent Pump #1", "the vent is registered and numbered")
@@ -716,7 +721,7 @@
 			found = row
 	TEST_ASSERT_NOTNULL(found, "and the scrubber")
 
-/// BUG: a vent's number is the count of the area's vents plus one, so a vent placed after another one went takes a number still in use.
+/// A vent's number is never reused: a vent placed after another one went takes a new number.
 /datum/unit_test/dq_atmos_m/device_names_collide
 /datum/unit_test/dq_atmos_m/device_names_collide/run_gate()
 	var/area/room = get_area(tile(1, 1))
@@ -727,10 +732,9 @@
 	TEST_ASSERT_NOTEQUAL(first.name, second.name, "two vents, two names")
 	qdel(first)
 	var/obj/machinery/atmospherics/unary/vent_pump/third = device(/obj/machinery/atmospherics/unary/vent_pump, 1, 3)
-	TEST_ASSERT_EQUAL(third.name, second.name, "BUG: the third vent takes the second one's number")
+	TEST_ASSERT_NOTEQUAL(third.name, second.name, "the third vent takes a number of its own")
 
-/// The multitool sets a vent's tag, its frequency and its direction. BUG: a new tag leaves the old one registered with the area and the new one
-/// unknown to it.
+/// The multitool sets a vent's tag (the area follows it to the new tag), its frequency and its direction.
 /datum/unit_test/dq_atmos_m/vent_multitool_settings
 /datum/unit_test/dq_atmos_m/vent_multitool_settings/run_gate()
 	var/area/room = get_area(tile(1, 1))
@@ -743,8 +747,8 @@
 	am_answer(H, "ID Tag")
 	am_answer(H, "am_new_tag")
 	TEST_ASSERT_EQUAL(am_device_tag(V), "am_new_tag", "the tag is set")
-	TEST_ASSERT(LAZYACCESS(room.air_vent_names, old_tag), "BUG: the old tag stays registered")
-	TEST_ASSERT(!LAZYACCESS(room.air_vent_names, "am_new_tag"), "BUG: the new tag is unknown to the area")
+	TEST_ASSERT(!LAZYACCESS(room.air_vent_names, old_tag), "the old tag is gone from the area")
+	TEST_ASSERT_EQUAL(LAZYACCESS(room.air_vent_names, "am_new_tag"), V.name, "the new tag carries the vent's name")
 	var/direction = V.pump_direction
 	am_click(H, V, M)
 	am_answer(H, "Direction")
@@ -782,7 +786,7 @@
 	am_click(H, S, W)
 	TEST_ASSERT(am_device_welded(S), "the scrubber is welded shut")
 
-/// The wrench: a running device is refused; a stopped one comes off. BUG: a welded vent comes off where a welded scrubber is refused.
+/// The wrench: a running or welded device is refused; a stopped one comes off.
 /datum/unit_test/dq_atmos_m/devices_wrench
 /datum/unit_test/dq_atmos_m/devices_wrench/run_gate()
 	var/obj/machinery/atmospherics/unary/vent_pump/V = device(/obj/machinery/atmospherics/unary/vent_pump/on)
@@ -797,7 +801,10 @@
 	V.set_use_power(USE_POWER_OFF)
 	am_device_set_welded(V, TRUE)
 	am_click(H, V, W)
-	TEST_ASSERT(QDELETED(V), "BUG: a welded vent comes off")
+	TEST_ASSERT(!QDELETED(V), "a welded vent is refused, as a welded scrubber is")
+	am_device_set_welded(V, FALSE)
+	am_click(H, V, W)
+	TEST_ASSERT(QDELETED(V), "a stopped, unwelded vent comes off")
 	am_device_set_welded(S, FALSE)
 	am_click(H, S, W)
 	TEST_ASSERT(QDELETED(S), "a stopped, unwelded scrubber comes off")
@@ -1103,8 +1110,7 @@
 // The vent pump's flow
 // =====================================================================================================================
 
-/// BUG: the atmospherics siphon (internal check only, a 2000 kPa ceiling on its pipe) keeps siphoning the room into a pipe already above its
-/// ceiling: the internal check is not part of its flow law.
+/// The atmospherics siphon (internal check only, a 2000 kPa ceiling on its pipe) stops siphoning into a pipe already above its ceiling.
 /datum/unit_test/dq_atmos_m/vent_internal_check
 /datum/unit_test/dq_atmos_m/vent_internal_check/run_gate()
 	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
@@ -1131,7 +1137,16 @@
 	for(var/i in 1 to 5)
 		SSair.rust_step_pipe_devices()
 		SSair.run_gas_frames(1)
-	TEST_ASSERT(T.return_air().total_moles() < before - 1, "BUG: the siphon kept pulling the room into a pipe above its ceiling")
+	TEST_ASSERT(abs(T.return_air().total_moles() - before) < 1, "the siphon leaves the room alone: [before] -> [T.return_air().total_moles()]")
+	V.air_contents.clear()
+	V.air_contents.adjust_gas(/datum/gas/nitrogen, 1000 * V.air_contents.return_volume() / (R_IDEAL_GAS_EQUATION * T20C))
+	V.air_contents.set_temperature(T20C)
+	am_set_air(T)
+	before = T.return_air().total_moles()
+	for(var/i in 1 to 5)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
+	TEST_ASSERT(T.return_air().total_moles() < before - 1, "below its ceiling it siphons the room")
 	am_set_air(T)
 	dq_atmos_test_restore_walls()
 

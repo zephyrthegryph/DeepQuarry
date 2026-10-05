@@ -23,11 +23,7 @@
 //all air alarms in area are connected via freq 1439
 /area
 	var/obj/machinery/alarm/main_air_alarm // The air alarm currently managing the others in the area, settings changes go to this one and propogate
-	// All lazy: most areas have no air alarm or vents.
-	var/list/air_vent_names
-	var/list/air_scrub_names
-	var/list/air_vent_info
-	var/list/air_scrub_info
+	// Lazy: most areas have no air alarm. (The devices it drives are the area's too: code/domains/atmos/area_air_device.dm.)
 	var/list/air_alarms
 
 // The area's air alarms (members leave when they die) and its elected main alarm.
@@ -254,7 +250,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 /obj/machinery/alarm/proc/update_area()
 	invalidate_gas_dependencies()
 	alarm_area = get_area(src)
-	area_uid = "\ref[alarm_area_ref()]"
+	area_uid = alarm_area_ref()?.air_uid()
 	if(name == "alarm")
 		name = "[alarm_area_ref().name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
 
@@ -589,24 +585,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 		return
 
 	var/dev_type = signal.data["device"]
-	if(!(id_tag in alarm_area_ref().air_scrub_names) && !(id_tag in alarm_area_ref().air_vent_names))
-		register_env_machine(id_tag, dev_type)
-	if(dev_type == "AScr")
-		LAZYSET(alarm_area_ref().air_scrub_info, id_tag, signal.data)
-	else if(dev_type == "AVP")
-		LAZYSET(alarm_area_ref().air_vent_info, id_tag, signal.data)
-
-/obj/machinery/alarm/proc/register_env_machine(m_id, device_type)
-	var/new_name
-	if(device_type == "AVP")
-		new_name = "[alarm_area_ref().name] Vent Pump #[length(alarm_area_ref().air_vent_names)+1]"
-		LAZYSET(alarm_area_ref().air_vent_names, m_id, new_name)
-	else if(device_type == "AScr")
-		new_name = "[alarm_area_ref().name] Air Scrubber #[length(alarm_area_ref().air_scrub_names)+1]"
-		LAZYSET(alarm_area_ref().air_scrub_names, m_id, new_name)
-	else
+	if(dev_type != AREA_AIR_VENT && dev_type != AREA_AIR_SCRUBBER)
 		return
-	after(src, 1 SECOND, PROC_REF(send_signal), with = list(m_id, list("init" = new_name)))
+	alarm_area_ref().air_device_register(dev_type, id_tag) // the area names it (a device registers itself; one from elsewhere joins here)
+	alarm_area_ref().air_device_report(dev_type, id_tag, signal.data)
 
 /obj/machinery/alarm/proc/refresh_all()
 	for(var/id_tag in alarm_area_ref().air_vent_names)
@@ -963,7 +945,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 /obj/machinery/alarm/proc/ui_act_reset_pressure(datum/act/op/A, id_tag)
 	var/mob/user = A.actor
 	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
-	send_signal(id_tag, list(A.window_action()), user)
+	send_signal(id_tag, list("[A.window_action()]" = TRUE), user)
 	refresh_area_alarms()
 	return TRUE
 

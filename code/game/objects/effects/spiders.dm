@@ -225,7 +225,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	after(src, travel_time, PROC_REF(vent_crawl_midway), with = list(entry, exit_vent, travel_time))
 
 /obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
-	if(!exit_vent || exit_vent.welded)
+	if(!exit_vent || is_welded(exit_vent))
 		forceMove(entry)
 		rel_clear(src, nameof(entry_vent))
 		return
@@ -236,7 +236,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	after(src, travel_time, PROC_REF(vent_crawl_exit), with = list(entry, exit_vent))
 
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
-	if(!exit_vent || exit_vent.welded)
+	if(!exit_vent || is_welded(exit_vent))
 		forceMove(entry)
 		rel_clear(src, nameof(entry_vent))
 		return
@@ -259,7 +259,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 		else if(amount_grown < 75 && prob(5))
 			//vent crawl!
 			for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
-				if(!v.welded)
+				if(!is_welded(v))
 					rel_set(src, nameof(entry_vent), v)
 					walk_to(src, entry_vent(), 5)
 					break

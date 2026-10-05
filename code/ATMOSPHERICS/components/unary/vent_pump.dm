@@ -1,11 +1,9 @@
-#define DEFAULT_PRESSURE_DELTA 10000
-
-#define EXTERNAL_PRESSURE_BOUND ONE_ATMOSPHERE
-#define INTERNAL_PRESSURE_BOUND 0
-#define PRESSURE_CHECKS 1
-
-#define PRESSURE_CHECK_EXTERNAL 1
-#define PRESSURE_CHECK_INTERNAL 2
+// The vent pump: an area air device (code/domains/atmos/area_air_device.dm) the air alarm drives over the radio, whose flow law is a Rust device edge
+// between its pipe and the turf it faces (device.rs Flow: a volume rate, the turf side bounded by the external check, the pipe side by the internal
+// one). The flow's rate is its volume times fifty litres a second, as it has been since the flow law moved to Rust; power_rating is what it draws, not
+// what limits it (a power-limited flow would change every station's ventilation rates).
+//
+// What it is: CAPABILITIES below. Its own code is the Rust push, its radio commands and status, the gauge and the look.
 
 /obj/machinery/atmospherics/unary/vent_pump
 	icon = 'icons/atmos/vent_pump.dmi'
@@ -21,34 +19,60 @@
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY //connects to regular and supply pipes
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 
-	var/area/initial_loc
 	level = 1
-	var/area_uid
+	/// Its radio tag (area_air_device()): a map gives it, else it is made unique.
 	var/id_tag = null
-
-	var/pump_direction = 1 //0 = siphoning, 1 = releasing
-
-	var/external_pressure_bound = EXTERNAL_PRESSURE_BOUND
-	var/internal_pressure_bound = INTERNAL_PRESSURE_BOUND
-
-	var/pressure_checks = PRESSURE_CHECKS
-	//1: Do not pass external_pressure_bound
-	//2: Do not pass internal_pressure_bound
-	//3: Do not pass either
-
-	// Used when handling incoming radio signals requesting default settings
-	var/external_pressure_bound_default = EXTERNAL_PRESSURE_BOUND
-	var/internal_pressure_bound_default = INTERNAL_PRESSURE_BOUND
-	var/pressure_checks_default = PRESSURE_CHECKS
-
 	var/frequency = PUMPS_FREQ
-	var/datum/radio_frequency/radio_connection
 
-	var/radio_filter_out
-	var/radio_filter_in
+	/// 1 releasing into the room, 0 siphoning out of it.
+	var/pump_direction = 1
 
-	var/static/start_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSTART
-	var/static/stop_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSHUTDOWN
+	var/external_pressure_bound = ONE_ATMOSPHERE
+	var/internal_pressure_bound = 0
+
+	/// VENT_CHECK_EXTERNAL: never past external_pressure_bound in the room. VENT_CHECK_INTERNAL: never past internal_pressure_bound in the pipe.
+	var/pressure_checks = VENT_CHECK_EXTERNAL
+
+	// What a "default" radio command restores.
+	var/external_pressure_bound_default = ONE_ATMOSPHERE
+	var/internal_pressure_bound_default = 0
+	var/pressure_checks_default = VENT_CHECK_EXTERNAL
+
+	/// The volume of its pipe-side air, L (a bigger vent moves more: its flow is fifty times this a second).
+	var/vent_volume = ATMOS_DEFAULT_VOLUME_PUMP
+
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, id_tag)
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, frequency)
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pump_direction)
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, external_pressure_bound)
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, internal_pressure_bound)
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pressure_checks)
+
+CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
+	area_air_device(AREA_AIR_VENT, status = PROC_REF(status_fields), commands = list(
+		"purge" = PROC_REF(cmd_purge),
+		"stabalize" = PROC_REF(cmd_stabilize),
+		"power" = PROC_REF(cmd_power),
+		"power_toggle" = PROC_REF(cmd_power_toggle),
+		"checks" = PROC_REF(cmd_checks),
+		"checks_toggle" = PROC_REF(cmd_checks_toggle),
+		"direction" = PROC_REF(cmd_direction),
+		"set_internal_pressure" = PROC_REF(cmd_set_internal),
+		"set_external_pressure" = PROC_REF(cmd_set_external),
+		"adjust_internal_pressure" = PROC_REF(cmd_adjust_internal),
+		"adjust_external_pressure" = PROC_REF(cmd_adjust_external),
+		"reset_external_pressure" = PROC_REF(cmd_reset_external),
+		"reset_internal_pressure" = PROC_REF(cmd_reset_internal)))
+	weld_shut()
+	multitool_settings(list(
+		list("ID Tag", "id_tag", "text", 30),
+		list("Frequency", "frequency", "frequency", null, "Note, [PUMPS_FREQ] will only hail Air Alarms for this device."),
+		list("Direction", PROC_REF(flip_direction), "action"),
+		list("-SAVE TO BUFFER-", PROC_REF(save_to_buffer), "action")))
+	air_device_unwrench()
+	examine_line(PROC_REF(gauge_text))
+	on_change(WELD_SHUT_WELDED, ANY, then(PROC_REF(running_changed)))
+	on_change(nameof(use_power), ANY, then(PROC_REF(running_changed)))
 
 /obj/machinery/atmospherics/unary/vent_pump/on
 	use_power = USE_POWER_IDLE
@@ -73,104 +97,19 @@
 	external_pressure_bound_default = 0
 	internal_pressure_bound = 2000
 	internal_pressure_bound_default = 2000
-	pressure_checks = 2
-	pressure_checks_default = 2
-
-/obj/machinery/atmospherics/unary/vent_pump/Initialize(mapload)
-	. = ..()
-
-	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-
-	icon = null
-	initial_loc = get_area(loc)
-	area_uid = "\ref[initial_loc]"
-	if (!id_tag)
-		assign_uid()
-		id_tag = num2text(uid)
-
-// M2 (simulation.md §5): the flow law lives on the Rust device edge
-// (device::DeviceParams::VentPump). rust_bind_pipe_port fires once the
-// port's region exists in Rust, the earliest point it can bind to a turf.
-/obj/machinery/atmospherics/unary/vent_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
-	. = ..()
-	rust_device_dirty()
-
-/// Publishes (or unpublishes) the vent's Rust device edge. `device.rs`'s
-/// VentPump only bounds the turf ("a") side within `[min_kpa, max_kpa]`;
-/// `pressure_checks`' PRESSURE_CHECK_EXTERNAL bit maps onto that bound
-/// directly (the common case - every default configuration uses it).
-/// PRESSURE_CHECK_INTERNAL (bounding the network side, used only by the
-/// `/siphon/on/atmos` variant) has no equivalent yet, so that one variant
-/// runs unbounded on the turf side until the network-side bound is added.
-/obj/machinery/atmospherics/unary/vent_pump/push_to_rust()
-	// disconnect() (called mid-Destroy(), after the port/region is already
-	// torn down) reaches here via invalidate_gas_dependencies(); air_contents
-	// may already be a dead handle at that point.
-	if(QDELETED(src))
-		return
-	if(!node || !can_pump())
-		rust_unregister_device()
-		return
-	var/datum/gas_mixture/environment = return_air()
-	if(!environment)
-		rust_unregister_device()
-		return
-	var/min_kpa = 0
-	var/max_kpa = 1e30
-	if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
-		if(pump_direction)
-			max_kpa = external_pressure_bound
-		else
-			min_kpa = external_pressure_bound
-	var/max_rate = air_contents.return_volume() * 50 // ALLOW(derived_reads): the volume is set once at Initialize
-	rust_set_turf_device(1, environment)
-	if(pump_direction)
-		rust_set_device_flow(0, RUST_FLOW_VOLUME, max_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_LEAST, max_kpa)
-	else
-		rust_set_device_flow(0, RUST_FLOW_VOLUME, max_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_MOST, min_kpa)
-
-/obj/machinery/atmospherics/unary/vent_pump/rust_device_stepped(moles, power_w, target_reached)
-	last_flow_rate = abs(moles)
-
-// The unary base's invalidate_gas_dependencies() wakes a DM gas-dependency
-// subscriber; vent_pump has none any more (M2), so this republishes the
-// Rust device edge instead. Covers every existing call site (welder_act,
-// multitool_act, click_ctrl, power_change) without touching each one.
-/obj/machinery/atmospherics/unary/vent_pump/invalidate_gas_dependencies()
-	rust_device_dirty()
-
-// The unary base's disconnect() calls invalidate_gas_dependencies() before
-// nulling `node`, so that call sees stale state; re-publish afterwards.
-/obj/machinery/atmospherics/unary/vent_pump/disconnect(obj/machinery/atmospherics/reference)
-	. = ..()
-	rust_device_dirty()
-
-/obj/machinery/atmospherics/unary/vent_pump/proc/update_area()
-	initial_loc = get_area(loc)
-	area_uid = "\ref[initial_loc]"
-	assign_uid()
-	id_tag = num2text(uid)
-
-/// Phase 2: leaves its area's vent index.
-/obj/machinery/atmospherics/unary/vent_pump/lifecycle_dematerialize()
-	. = ..()
-	if(initial_loc)
-		LAZYREMOVE(initial_loc.air_vent_info, id_tag)
-		LAZYREMOVE(initial_loc.air_vent_names, id_tag)
+	pressure_checks = VENT_CHECK_INTERNAL
+	pressure_checks_default = VENT_CHECK_INTERNAL
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume
 	name = "Large Air Vent"
 	power_channel = EQUIP
 	power_rating = 45000 // 15 kW ~ 20 HP // 45000
+	vent_volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume/aux
 	icon_state = "map_vent_aux"
 	icon_connect_type = "-aux"
 	connect_types = CONNECT_TYPE_AUX //connects to aux pipes
-
-/obj/machinery/atmospherics/unary/vent_pump/high_volume/Initialize(mapload)
-	. = ..()
-	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 
 // Wall mounted vents
 /obj/machinery/atmospherics/unary/vent_pump/high_volume/wall_mounted
@@ -190,36 +129,93 @@
 	name = "Engine Core Vent"
 	power_channel = ENVIRON
 	power_rating = 30000	//15 kW ~ 20 HP
+	vent_volume = ATMOS_DEFAULT_VOLUME_PUMP + 500 //meant to match air injector
 
-/obj/machinery/atmospherics/unary/vent_pump/engine/Initialize(mapload)
+/obj/machinery/atmospherics/unary/vent_pump/Initialize(mapload)
 	. = ..()
-	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500) //meant to match air injector
+	air_contents.set_volume(vent_volume)
+	icon = null
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/unary/vent_pump/appearance_overlays()
-	. = list()
+/obj/machinery/atmospherics/unary/vent_pump/receive_signal(datum/signal/signal, receive_method, receive_param)
+	area_air_receive(src, signal)
 
-	var/vent_icon = "vent"
+// ---- the Rust device edge ----
 
+/// The vent's flow law (device.rs Flow), pushed once per frame after anything it reads changed. The turf is side A: releasing fills it up to the
+/// external bound (the stop) and drains the pipe no lower than the internal bound (a cap); siphoning drains the room down to the external bound and
+/// fills the pipe no higher than the internal bound. With only the internal check, it is the stop; with neither, the room fills without bound or
+/// drains to nothing.
+/obj/machinery/atmospherics/unary/vent_pump/push_to_rust()
+	if(QDELETED(src))
+		return
+	if(!node || !can_pump())
+		rust_unregister_device()
+		return
+	var/datum/gas_mixture/environment = return_air()
+	if(!environment)
+		rust_unregister_device()
+		return
+	var/stop_side = RUST_SIDE_A
+	var/stop_cmp = RUST_STOP_NONE
+	var/stop_kpa = 0
+	var/limit_cmp = RUST_STOP_NONE
+	var/limit_kpa = 0
+	if(pressure_checks & VENT_CHECK_EXTERNAL)
+		stop_cmp = pump_direction ? RUST_STOP_AT_LEAST : RUST_STOP_AT_MOST
+		stop_kpa = external_pressure_bound
+	if(pressure_checks & VENT_CHECK_INTERNAL)
+		limit_cmp = pump_direction ? RUST_STOP_AT_MOST : RUST_STOP_AT_LEAST
+		limit_kpa = internal_pressure_bound
+	if(stop_cmp == RUST_STOP_NONE)
+		if(limit_cmp != RUST_STOP_NONE)
+			stop_side = RUST_SIDE_B
+			stop_cmp = limit_cmp
+			stop_kpa = limit_kpa
+			limit_cmp = RUST_STOP_NONE
+		else
+			stop_cmp = pump_direction ? RUST_STOP_AT_LEAST : RUST_STOP_AT_MOST
+			stop_kpa = pump_direction ? 1e30 : 0
+	rust_set_turf_device(1, environment)
+	rust_set_device_flow(0, RUST_FLOW_VOLUME, vent_volume * 50, RUST_DIR_FORCED, stop_side, stop_cmp, stop_kpa, RUST_SIDE_B, limit_cmp, limit_kpa) // ALLOW(derived_reads): vent_volume is fixed by the type; use_power and operability bump rust_device_rev
+
+/obj/machinery/atmospherics/unary/vent_pump/rust_device_stepped(moles, power_w, target_reached)
+	last_flow_rate = abs(moles)
+
+/// The Rust law is pushed (once per frame) when any of these change: rust_device_rev is bumped by a power change, a port bind and a disconnect.
+/obj/machinery/atmospherics/unary/vent_pump/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(internal_pressure_bound), nameof(pressure_checks))
+	. += drawn_from(nameof(use_power), nameof(pump_direction))
+
+/// It moves gas: powered, on, not welded.
+/obj/machinery/atmospherics/unary/vent_pump/proc/can_pump()
+	return operable() && use_power && !weld_shut_welded(src, null)
+
+// ---- the look ----
+
+/obj/machinery/atmospherics/unary/vent_pump/draw(datum/look/look)
+	..()
 	var/turf/T = get_turf(src)
 	if(!istype(T))
-		return .
-
+		return
+	var/vent_icon = "vent"
+	// ALLOW(sys_dx_untracked_read): a pipe's level and a floor's plating are fixed while the vent stands on them; a change of either rebuilds the pipes
 	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe))
 		vent_icon += "h"
-
-	if(welded)
+	if(weld_shut_welded(src, null))
 		vent_icon += "weld"
-		playsound(src, stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
-
-	else if(!use_power || !node || (!operable()))
+	else if(!use_power || !node || !operable())
 		vent_icon += "off"
-		playsound(src, stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
 	else
 		vent_icon += "[pump_direction ? "out" : "in"]"
-		playsound(src, start_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
+	look.overlay(GLOB.icon_manager.get_atmos_icon("device", , , vent_icon))
 
-	. += GLOB.icon_manager.get_atmos_icon("device", , , vent_icon)
+/// The pump starts or stops (the power, the weld): it is heard.
+/obj/machinery/atmospherics/unary/vent_pump/proc/running_changed(datum/act/A)
+	rust_device_dirty()
+	var/static/start_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSTART
+	var/static/stop_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSHUTDOWN
+	playsound(src, can_pump() ? start_sound : stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
 
 /obj/machinery/atmospherics/unary/vent_pump/update_underlays()
 	..()
@@ -229,316 +225,85 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 		return
 	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe))
 		return
+	if(node)
+		add_underlay(T, node, dir, node.icon_connect_type)
 	else
-		if(node)
-			add_underlay(T, node, dir, node.icon_connect_type)
-		else
-			add_underlay(T,, dir)
+		add_underlay(T,, dir)
 
 /obj/machinery/atmospherics/unary/vent_pump/hide()
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/unary/vent_pump/proc/can_pump()
-	if(!operable())
-		return 0
-	if(!use_power)
-		return 0
-	if(welded)
-		return 0
-	return 1
+/// The gauge, to someone beside it.
+/obj/machinery/atmospherics/unary/vent_pump/proc/gauge_text(datum/act/eval/A)
+	var/mob/viewer = A.actor
+	if(viewer && Adjacent(viewer))
+		return "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
+	return "You are too far away to read the gauge."
 
-// process(), gas_dependency_changed() and pump_transaction_committed() are
-// deleted (M2, simulation.md §5): the flow law above is a Rust device edge,
-// stepped every gas tick from SSair.fire() regardless of DM's process()
-// scheduling, so there is nothing left to run and nothing to hibernate.
+// ---- radio ----
 
-/obj/machinery/atmospherics/unary/vent_pump/proc/get_pressure_delta(datum/gas_mixture/environment)
-	return get_pressure_delta_values(environment.return_pressure(), air_contents.return_pressure())
-
-/obj/machinery/atmospherics/unary/vent_pump/proc/get_pressure_delta_values(environment_pressure, internal_pressure)
-	var/pressure_delta = DEFAULT_PRESSURE_DELTA
-
-	if(pump_direction) //internal -> external
-		if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
-			pressure_delta = min(pressure_delta, external_pressure_bound - environment_pressure) //increasing the pressure here
-		if(pressure_checks & PRESSURE_CHECK_INTERNAL)
-			pressure_delta = min(pressure_delta, internal_pressure - internal_pressure_bound) //decreasing the pressure here
-	else //external -> internal
-		if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
-			pressure_delta = min(pressure_delta, environment_pressure - external_pressure_bound) //decreasing the pressure here
-		if(pressure_checks & PRESSURE_CHECK_INTERNAL)
-			pressure_delta = min(pressure_delta, internal_pressure_bound - internal_pressure) //increasing the pressure here
-
-	return pressure_delta
-
-/obj/machinery/atmospherics/unary/vent_pump/proc/broadcast_status()
-	if(!radio_connection)
-		return 0
-
-	var/datum/signal/signal = new
-	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, nameof(signal.source), src)
-
-	signal.data = list(
-		"area" = src.area_uid,
-		"tag" = src.id_tag,
-		"device" = "AVP",
-		"power" = use_power,
-		"direction" = pump_direction?("release"):("siphon"),
+/// What the vent reports beside the common status fields.
+/obj/machinery/atmospherics/unary/vent_pump/proc/status_fields()
+	return list(
+		"direction" = pump_direction ? "release" : "siphon",
 		"checks" = pressure_checks,
 		"internal" = internal_pressure_bound,
 		"external" = external_pressure_bound,
-		"timestamp" = EXPIRY_AT(src, CLOCK_WORLD, 0),
-		"sigtype" = "status",
 		"power_draw" = last_power_draw,
-		"flow_rate" = last_flow_rate,
-	)
-
-	if(!LAZYACCESS(initial_loc.air_vent_names, id_tag))
-		var/new_name = "[initial_loc.name] Vent Pump #[length(initial_loc.air_vent_names)+1]"
-		LAZYSET(initial_loc.air_vent_names, id_tag, new_name)
-		src.name = new_name
-	LAZYSET(initial_loc.air_vent_info, id_tag, signal.data)
-
-	radio_connection.post_signal(src, signal, radio_filter_out)
-
-	return 1
-
-/obj/machinery/atmospherics/unary/vent_pump/atmos_init()
-	..()
-
-	if(frequency)
-		set_frequency(frequency)
-
-/obj/machinery/atmospherics/unary/vent_pump/click_ctrl(mob/user)
-	. = ..()
-	invalidate_gas_dependencies()
-
-/obj/machinery/atmospherics/unary/vent_pump/proc/set_frequency(new_frequency)
-	//some vents work his own special way
-	radio_filter_in = new_frequency==1439 ? AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid) : null
-	radio_filter_out = new_frequency==1439 ? AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid) : null
-	rel_set(src, nameof(radio_connection), register_radio(src, frequency, new_frequency, radio_filter_in))
-	frequency = new_frequency
-	broadcast_status()
-
-/obj/machinery/atmospherics/unary/vent_pump/receive_signal(datum/signal/signal)
-	if(!operable())
-		return
-
-	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
-		return 0
-
-	if(signal.data["purge"] != null)
-		set_pressure_checks(pressure_checks & ~1)
-		set_pump_direction(0)
-
-	if(signal.data["stabalize"] != null)
-		set_pressure_checks(pressure_checks | 1)
-		set_pump_direction(1)
-
-	if(signal.data["power"] != null)
-		set_use_power(text2num(signal.data["power"]))
-
-	if(signal.data["power_toggle"] != null)
-		set_use_power(!use_power)
-
-	if(signal.data["checks"] != null)
-		if (signal.data["checks"] == "default")
-			set_pressure_checks(pressure_checks_default)
-		else
-			set_pressure_checks(text2num(signal.data["checks"]))
-
-	if(signal.data["checks_toggle"] != null)
-		set_pressure_checks((pressure_checks?0:3))
-
-	if(signal.data["direction"] != null)
-		set_pump_direction(text2num(signal.data["direction"]))
-
-	if(signal.data["set_internal_pressure"] != null)
-		if (signal.data["set_internal_pressure"] == "default")
-			set_internal_pressure_bound(internal_pressure_bound_default)
-		else
-			set_internal_pressure_bound(between(0,text2num(signal.data["set_internal_pressure"]),ONE_ATMOSPHERE*50))
-
-	if(signal.data["set_external_pressure"] != null)
-		if (signal.data["set_external_pressure"] == "default")
-			set_external_pressure_bound(external_pressure_bound_default)
-		else
-			set_external_pressure_bound(between(0,text2num(signal.data["set_external_pressure"]),ONE_ATMOSPHERE*50))
-
-	if(signal.data["adjust_internal_pressure"] != null)
-		set_internal_pressure_bound(between(0,internal_pressure_bound + text2num(signal.data["adjust_internal_pressure"]),ONE_ATMOSPHERE*50))
-
-	if(signal.data["adjust_external_pressure"] != null)
-		set_external_pressure_bound(between(0,external_pressure_bound + text2num(signal.data["adjust_external_pressure"]),ONE_ATMOSPHERE*50))
-
-	if("reset_external_pressure" in signal.data)
-		set_external_pressure_bound(ONE_ATMOSPHERE)
-
-	if("reset_internal_pressure" in signal.data)
-		set_internal_pressure_bound(0)
-
-	if(signal.data["init"] != null)
-		name = signal.data["init"]
-		return
-
-	if(signal.data["status"] != null)
-		after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
-		return //do not update_icon
-
-	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
-	update_icon()
-	return
-
-/obj/machinery/atmospherics/unary/vent_pump/welder_act(mob/user, obj/item/W)
-	use_tool(user, W, src, delay = 20, quality = TOOL_WELDER, volume = 0, start_self = "Now welding the vent.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, W))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/unary/vent_pump/proc/welder_act_tool_done(mob/user, obj/item/W)
-	if(!src)
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, W.usesound, 50, 1)
-	if(!welded)
-		act_message(user, null, MSG_SELF(span_notice("You weld the vent shut.")), \
-			MSG_OTHERS(span_bold("%U%") + " welds the vent shut."), \
-			MSG_BLIND("You hear welding."))
-		set_welded(TRUE)
-		invalidate_gas_dependencies()
-		update_icon()
-	else
-		act_message(user, null, MSG_SELF(span_notice("You unweld the vent.")), MSG_OTHERS(span_notice("%U% unwelds the vent.")), MSG_BLIND("You hear welding."))
-		set_welded(FALSE)
-		invalidate_gas_dependencies()
-		update_icon()
-
-/obj/machinery/atmospherics/unary/vent_pump/wrench_act(mob/user, obj/item/W)
-	if (!has_stat(NOPOWER) && use_power)
-		to_chat(user, span_warning("You cannot unwrench \the [src], turn it off first."))
-		return ITEM_INTERACT_BLOCKING
-	var/turf/T = src.loc
-	if (node && node.level==1 && isturf(T) && !T.is_plating())
-		to_chat(user, span_warning("You must remove the plating first."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/unary/vent_pump/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
-
-/obj/machinery/atmospherics/unary/vent_pump/examine(mob/user)
-	. = ..()
-	if(Adjacent(user))
-		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
-	else
-		. += "You are too far away to read the gauge."
-	if(welded)
-		. += "It seems welded shut."
-
-/obj/machinery/atmospherics/unary/vent_pump/power_change()
-	. = ..()
-	if(.)
-		invalidate_gas_dependencies()
-
-/obj/machinery/atmospherics/unary/vent_pump/multitool_act(mob/user, obj/item/W)
-	return vent_config_stage(user, W, list())
-
-/obj/machinery/atmospherics/unary/vent_pump/proc/vent_config_stage(mob/user, obj/item/W, list/config_answers)
-	var/static/list/options = list(
-		"ID Tag", "Frequency", "Direction", "-SAVE TO BUFFER-")
-	if(!("k471" in config_answers))
-		open_request(src, /datum/prompt/choice/atmos_config_review, PROC_REF(vent_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k471", question = "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", title = "[src] Config", choices = options)
-		return ITEM_INTERACT_BLOCKING
-	var/choice = config_answers["k471"]
-	if(isnull(choice))
-		return ITEM_INTERACT_BLOCKING
-	switch(choice)
-		if("ID Tag")
-			if(!("k474" in config_answers))
-				open_request(src, /datum/prompt/text/atmos_config_review, PROC_REF(vent_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k474", question = "[src] has an ID of \"[id_tag]\". What would you like it to be?", title = "[src] ID", default = id_tag, max_len = 30, name_text = TRUE)
-				return ITEM_INTERACT_BLOCKING
-			var/new_id = config_answers["k474"]
-			if(isnull(new_id))
-				return ITEM_INTERACT_BLOCKING
-			if(new_id)
-				id_tag = new_id
-
-		if("Frequency")
-			if(!("k479" in config_answers))
-				open_request(src, /datum/prompt/number/atmos_config_review, PROC_REF(vent_config_answered), answerer = user, config_operator = user, config_tool = W, config_answers = config_answers, config_key = "k479", question = "[src] has a frequency of [frequency]. What would you like it to be? Note, 1439 will only hail Air Alarms for this device.", title = "[src] frequency", default = frequency, config_max = RADIO_HIGH_FREQ, config_min = RADIO_LOW_FREQ)
-				return ITEM_INTERACT_BLOCKING
-			var/new_frequency = config_answers["k479"]
-			if(isnull(new_frequency))
-				return ITEM_INTERACT_BLOCKING
-			if(new_frequency)
-				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-				set_frequency(new_frequency)
-
-		if("-SAVE TO BUFFER-")
-			var/obj/item/multitool/tool = W
-			rel_set(tool, nameof(tool.connectable), src)
-
-		if("Direction")
-			set_pump_direction(!pump_direction)
-			invalidate_gas_dependencies()
-			to_chat(user, span_notice("[src] is now [pump_direction ? "pumping in" : "siphoning out"]."))
-			update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-#undef DEFAULT_PRESSURE_DELTA
-
-#undef EXTERNAL_PRESSURE_BOUND
-#undef INTERNAL_PRESSURE_BOUND
-#undef PRESSURE_CHECKS
-
-#undef PRESSURE_CHECK_EXTERNAL
-#undef PRESSURE_CHECK_INTERNAL
+		"flow_rate" = last_flow_rate)
 
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, internal_pressure_bound, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_purge(value)
+	set_pressure_checks(pressure_checks & ~VENT_CHECK_EXTERNAL)
+	set_pump_direction(0)
 
-/// The Rust device law is pushed (once per frame) when any of these change.
-/obj/machinery/atmospherics/unary/vent_pump/derived()
-	. = ..()
-	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(pressure_checks), nameof(welded))
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_stabilize(value)
+	set_pressure_checks(pressure_checks | VENT_CHECK_EXTERNAL)
+	set_pump_direction(1)
 
-/obj/machinery/atmospherics/unary/vent_pump/proc/vent_config_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/list/config_answers
-	var/mob/config_operator
-	var/obj/item/config_tool
-	if(istype(context.answer, /datum/prompt/choice/atmos_config_review))
-		var/datum/prompt/choice/atmos_config_review/choice_request = context.answer
-		config_answers = choice_request.config_answers.Copy()
-		config_answers[choice_request.config_key] = choice_request.answer_value
-		config_operator = choice_request.config_operator
-		config_tool = choice_request.config_tool
-	else if(istype(context.answer, /datum/prompt/text/atmos_config_review))
-		var/datum/prompt/text/atmos_config_review/text_request = context.answer
-		config_answers = text_request.config_answers.Copy()
-		config_answers[text_request.config_key] = text_request.answer_value
-		config_operator = text_request.config_operator
-		config_tool = text_request.config_tool
-	else if(istype(context.answer, /datum/prompt/number/atmos_config_review))
-		var/datum/prompt/number/atmos_config_review/number_request = context.answer
-		config_answers = number_request.config_answers.Copy()
-		config_answers[number_request.config_key] = number_request.answer_value
-		config_operator = number_request.config_operator
-		config_tool = number_request.config_tool
-	else
-		return
-	// Recovery: old kept.finished refreshed the target even if replay failed.
-	. = vent_config_stage(config_operator, config_tool, config_answers)
-	SStgui.update_uis(src)
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_power(value)
+	set_use_power(text2num("[value]"))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_power_toggle(value)
+	set_use_power(!use_power)
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_checks(value)
+	set_pressure_checks(value == "default" ? pressure_checks_default : text2num("[value]"))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_checks_toggle(value)
+	set_pressure_checks(pressure_checks ? 0 : (VENT_CHECK_EXTERNAL | VENT_CHECK_INTERNAL))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_direction(value)
+	set_pump_direction(text2num("[value]"))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_set_internal(value)
+	set_internal_pressure_bound(value == "default" ? internal_pressure_bound_default : clamp(text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_set_external(value)
+	set_external_pressure_bound(value == "default" ? external_pressure_bound_default : clamp(text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_adjust_internal(value)
+	set_internal_pressure_bound(clamp(internal_pressure_bound + text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_adjust_external(value)
+	set_external_pressure_bound(clamp(external_pressure_bound + text2num("[value]"), 0, ONE_ATMOSPHERE * 50))
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_reset_external(value)
+	set_external_pressure_bound(ONE_ATMOSPHERE)
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/cmd_reset_internal(value)
+	set_internal_pressure_bound(0)
+
+// ---- the multitool ----
+
+/// The multitool's "Direction": it flips between releasing and siphoning.
+/obj/machinery/atmospherics/unary/vent_pump/proc/flip_direction(datum/act/op/A)
+	set_pump_direction(!pump_direction)
+	to_chat(A.actor, span_notice("[src] is now [pump_direction ? "pumping in" : "siphoning out"]."))
+
+/// The multitool's "-SAVE TO BUFFER-": the vent goes into the multitool's buffer (for linking).
+/obj/machinery/atmospherics/unary/vent_pump/proc/save_to_buffer(datum/act/op/A)
+	var/obj/item/multitool/tool = A.held
+	if(istype(tool))
+		rel_set(tool, nameof(tool.connectable), src)

@@ -93,7 +93,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 
 	if(istype(A, /obj/machinery/atmospherics/unary/vent_pump))
 		var/obj/machinery/atmospherics/unary/vent_pump/V = A
-		if(V.welded)
+		if(is_welded(V))
 			return
 		do_ventcrawl(V)
 		return TRUE
@@ -149,7 +149,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	after(src, travel_time, PROC_REF(ventcrawl_arrive), with = list(vent, end_vent, redirect_attempts))
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_arrive(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
-	if(end_vent.welded && redirect_attempts)
+	if(is_welded(end_vent) && redirect_attempts)
 		end_vent = get_safe_ventcrawl_target(vent)
 		if(!end_vent)
 			forceMove(get_turf(vent))

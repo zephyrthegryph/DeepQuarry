@@ -41,6 +41,12 @@
 #define RCON_AUTO	2
 #define RCON_YES	3
 
+// A vent pump's pressure checks (its pressure_checks bits).
+/// Never past its external bound in the room.
+#define VENT_CHECK_EXTERNAL 1
+/// Never past its internal bound in its pipe.
+#define VENT_CHECK_INTERNAL 2
+
 // Used by firelocks
 #define FIREDOOR_OPEN 1
 #define FIREDOOR_CLOSED 2

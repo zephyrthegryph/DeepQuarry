@@ -8,7 +8,6 @@
 
 	var/datum/pipe_network/network
 
-	var/welded = FALSE //defining this here for ventcrawl stuff
 	/// Change mask this device cares about on both mixtures it watches while hibernating
 	/// (code/datums/om/watch.dm om_watch_arm_revision(); most unary devices only ever act on
 	/// a pressure change, so that's the default).
@@ -125,7 +124,7 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 
 	update_icon()
 	update_underlays()
-
+	rust_device_dirty() // a device edge that named the node is withdrawn
 	return null
 
 // Check if there are any other atmos machines in the same turf that will block this machine from initializing.
@@ -144,21 +143,59 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 			return TRUE
 	return FALSE
 
-// Keybinds for EVEEERYTHING* (* = not everything))
-/obj/machinery/atmospherics/unary/click_ctrl(mob/user)
-	if((power_rating != null) && !(pipe_state in list("scrubber", "uvent", "injector"))) //TODO: Add compatibility with air alarm. When not disabled, overrides air alarm state and doesn't tell the air alarm that. Injectors have their own, different bind for enabling.
-		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-		if(allowed(user))
-			invalidate_gas_dependencies()
-			set_use_power(!use_power)
-			add_fingerprint(user)
-			if(use_power)
-				to_chat(user, span_notice("You toggle the [name] on."))
-			else
-				to_chat(user, span_notice("You toggle the [name] off."))
+// ---- the ctrl-click power switch ----
 
-		else
-			to_chat(user, span_warning("Access denied."))
+/// A ctrl-click switches a powered unary device (a heater, a freezer) on or off for someone its access lets in. Not a vent, a scrubber or an
+/// injector: the air alarm (or the injector's own switch) drives those.
+/obj/machinery/atmospherics/unary/proc/ctrl_power_offered(datum/act/op/A)
+	return !isnull(power_rating) && !(pipe_state in list("scrubber", "uvent", "injector")) // ALLOW(reads): power_rating and pipe_state are fixed by the type
+
+/obj/machinery/atmospherics/unary/proc/actor_allowed(datum/act/op/A)
+	return allowed(A.actor)
+
+/obj/machinery/atmospherics/unary/proc/ctrl_power_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	set_use_power(!use_power)
+	add_fingerprint(user)
+	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
+	return OP_OK
+
+// ---- an area air device's wrench (a vent, a scrubber) ----
+
+MSG_DEF_SELF(air_device/running, "You cannot unwrench it, turn it off first.")
+MSG_DEF_SELF(air_device/plating, "You must remove the plating first.")
+MSG_DEF_SELF(air_device/welded, "You cannot unwrench it, it is welded down firmly.")
+MSG_DEF_SELF(air_device/exerted, "You cannot unwrench it, it is too exerted due to internal pressure.")
+MSG_DEF(air_device/unfastened, "You have unfastened %T%.", "%U% unfastens %T%.")
+
+/// The wrench that takes a vent or a scrubber off its pipe: refused while it runs, while the floor covers its pipe, while it is welded and while its
+/// pipe holds too much pressure.
+/proc/air_device_unwrench()
+	return list(op("unwrench", tool(TOOL_WRENCH), wait(4 SECONDS),
+		needs(req(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, not_running), because = MSG(air_device/running)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, pipe_reachable), because = MSG(air_device/plating)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, not_welded), because = MSG(air_device/welded)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, unwrench_safe), because = MSG(air_device/exerted))),
+		says(MSG(air_device/unfastened)),
+		then(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, unfastened))))
+
+/obj/machinery/atmospherics/unary/proc/not_running(datum/act/A)
+	return has_stat(NOPOWER) || !use_power
+
+/obj/machinery/atmospherics/unary/proc/pipe_reachable(datum/act/A)
+	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe on a floor stays where it was built
+	return !(node && node.level == 1 && isturf(T) && !T.is_plating()) // ALLOW(reads): a pipe's level is fixed by its type; the node is the pipe network's link
+
+/obj/machinery/atmospherics/unary/proc/not_welded(datum/act/A)
+	return !weld_shut_welded(src, null)
+
+/obj/machinery/atmospherics/unary/proc/unwrench_safe(datum/act/A)
+	return can_unwrench()
+
+/obj/machinery/atmospherics/unary/proc/unfastened(datum/act/op/A)
+	atom_deconstruct()
+	return OP_OK
 
 /obj/machinery/atmospherics/unary/step_has_work()
 	return gas_wake_condition()
@@ -171,5 +208,10 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 
 CAPABILITIES(/obj/machinery/atmospherics/unary)
 	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	op("power_toggle", hand(), gesture(GESTURE_CTRL), label("Toggle power"), wait(0), when(PROC_REF(ctrl_power_offered)),
+		needs(req(PROC_REF(actor_allowed), because = MSG(lock/denied))), then(PROC_REF(ctrl_power_toggled)))
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/unary, welded, CHANGE_MACHINE_SETTINGS)
+/// A port bound in Rust: a device edge that names it can be published now.
+/obj/machinery/atmospherics/unary/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	rust_device_dirty()

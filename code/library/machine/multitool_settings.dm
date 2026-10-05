@@ -4,7 +4,9 @@
 // A multitool used on the holder asks what to set (the labels of its settings, or "None"); the one picked asks its own question and sets the var.
 // Each setting is its own op (`multitool_settings.set_<var>`, reached by key from the choice), so what it asks and what it needs are declared where
 // the holder says it. A setting is list(label, var, kind, max, hint): kind "text" (the answer, kept when empty, cut to `max` characters) or
-// "frequency" (a number the holder's set_frequency() takes, clamped to the radio band); `hint` is added to the question.
+// "frequency" (a number the holder's set_frequency() takes, clamped to the radio band); `hint` is added to the question. A text setting goes through
+// the holder's set_<var>() when it has one (a radio device re-keys itself there). An "action" setting asks nothing: list(label, PROC_REF(x), "action")
+// runs the holder's x(datum/act/op/A) when it is picked (flip a direction, save the device to the multitool's buffer).
 //
 //   multitool_settings(list(list("Master Tag", "master_tag", "text", 30), list("Frequency", "frequency", "frequency")))
 
@@ -17,6 +19,8 @@ CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS, /datum/capability/li
 		asks(/datum/prompt/choice, fields = list("question" = "What would you like to configure?", "choices" = computed(CAP_PROC(choices)), "buttons" = TRUE)), then(CAP_PROC(chosen))))
 	for(var/list/setting in settings)
 		var/kind = setting[3]
+		if(kind == "action")
+			continue
 		out += op("set_[setting[2]]", ai(), wait(0), \
 			asks(kind == "frequency" ? /datum/prompt/number : /datum/prompt/text, fields = list("question" = computed(CAP_PROC(question)))), then(CAP_PROC(apply)))
 	return out
@@ -40,7 +44,10 @@ CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS, /datum/capability/li
 	var/datum/prompt/R = A.answer
 	for(var/list/setting in settings)
 		if(R?.value == setting[1])
-			perform_op(A.actor, A.holder, "multitool_settings.set_[setting[2]]", null, ORIGIN_SYSTEM)
+			if(setting[3] == "action")
+				holder_call(A.holder, setting[2], A)
+			else
+				perform_op(A.actor, A.holder, "multitool_settings.set_[setting[2]]", null, ORIGIN_SYSTEM)
 			break
 	return OP_OK
 
@@ -66,5 +73,9 @@ CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS, /datum/capability/li
 	else
 		var/text = "[R.value]"
 		if(length(text))
-			holder.vars[setting[2]] = copytext(text, 1, (length(setting) >= 4 && setting[4] ? setting[4] : MAX_NAME_LEN) + 1)
+			text = copytext(text, 1, (length(setting) >= 4 && setting[4] ? setting[4] : MAX_NAME_LEN) + 1)
+			if(hascall(holder, "set_[setting[2]]"))
+				call(holder, "set_[setting[2]]")(text)
+			else
+				holder.vars[setting[2]] = text
 	return OP_OK

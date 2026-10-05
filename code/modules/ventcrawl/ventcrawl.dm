@@ -99,7 +99,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	var/atom/pipe
 	var/list/pipes = list()
 	for(var/obj/machinery/atmospherics/unary/U in range(1))
-		if(is_type_in_list(U, GLOB.ventcrawl_machinery) && Adjacent(U) && !U.welded)
+		if(is_type_in_list(U, GLOB.ventcrawl_machinery) && Adjacent(U) && !is_welded(U))
 			pipes |= U
 	if(!pipes || !pipes.len)
 		to_chat(src, "There are no pipes that you can ventcrawl into within range!")
