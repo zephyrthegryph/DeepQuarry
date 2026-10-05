@@ -195,10 +195,10 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	var/datum/activation/act = cap_activation(holder, CAP_WIRES, null, TRUE)
 	var/record_type = S.record
 	W = new record_type
-	W.owner = holder
+	W.owner = holder // ALLOW(ownership): the record's back view of its holder, which owns the record through its wires activation
 	W.set_type = set_type
 	W.colors = S.layout_for_holder()
-	W.def = def // ALLOW(ownership): an interned capability definition, never written
+	W.def = def
 	act.data = W // ALLOW(ownership): the capability's typed data, owned by the activation and dropped with it
 	if(def.starts_cut)
 		for(var/wire in call(holder, def.starts_cut)())
