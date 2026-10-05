@@ -12,7 +12,9 @@
 //   gas_fill(air, fractions, kpa, temperature)     a vessel filled to a pressure with a mix (a canister preset).
 //   gas_body_heat_exchange(air, body_k, body_j_per_k, share)
 //                                                  a body (a cryo cell's occupant) and a gas exchange heat: share 1 settles both at the mixed
-//                                                  temperature. The gas takes what the body gives. Returns the body's new temperature.
+//                                                  temperature. The gas takes what the body gives, and a pipe network that owns the gas is
+//                                                  woken (gas_touched()); the caller never marks it. Returns the body's new temperature.
+//   gas_touched(air)                               a mixture changed in place: the pipe network that owns it (if any) re-settles.
 //   GAS_OBSERVED(observation, index, GAS_OBS_x)    a named field of a dirty-gas observation record (code/__defines/atmospherics_linda/atmos_gasses.dm).
 //
 // Example (a canister's valve, once per interval):
@@ -161,9 +163,21 @@
 	if(S.heat_capacity <= 0)
 		return body_temperature
 	var/settled = (body_capacity * body_temperature + S.heat_capacity * S.temperature) / (body_capacity + S.heat_capacity)
+	if(abs(settled - body_temperature) < 0.001) // already settled: the body's capacity would magnify rounding into a phantom change of the gas
+		return body_temperature
 	var/body_after = body_temperature + min(share, 1) * (settled - body_temperature)
-	air.set_temperature(S.temperature + body_capacity * (body_temperature - body_after) / S.heat_capacity)
+	var/gas_after = S.temperature + body_capacity * (body_temperature - body_after) / S.heat_capacity
+	air.set_temperature(gas_after)
+	if(gas_after != S.temperature)
+		gas_touched(air)
 	return body_after
+
+/// `air` was changed in place: the pipe network that owns it (a device's port naming the network's mixture) records the change, so its
+/// subscribers see it. A mixture no network owns (a room's, a private vessel's) needs nothing.
+/proc/gas_touched(datum/gas_mixture/air)
+	var/datum/pipe_network/network = owner_of(air)
+	if(istype(network))
+		network.mark_dirty()
 
 // ---- filling a vessel ----
 

@@ -68,6 +68,10 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 /obj/machinery/atmospherics/unary/init_dir()
 	initialize_directions = dir
 
+/// Joined to a pipe (its one node). A condition a device asks when it is used (a cryo cell taking someone in), and its own work's check.
+/obj/machinery/atmospherics/unary/proc/piped(datum/act/op/A)
+	return !!node // ALLOW(reads): the pipe neighbour is the pipe network's link (OM_FIELD_VIEW); asked when the device is used, never cached
+
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/unary/get_neighbor_nodes_for_init()
 	return list(node)

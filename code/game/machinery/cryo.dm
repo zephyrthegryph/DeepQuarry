@@ -8,8 +8,10 @@
 // through the gas domain, sends the frozen deeper under, treats what automated triage demands, and drips its beaker into them. The beaker sits in a
 // bay (beaker_bay()), its eject button leaving it where the occupant leaves.
 //
-// What the machine core still keeps until the machine track (phase 4): the stat bits read through machine_basics()'s bridge, set_use_power(), `on`
-// and `node` (machine-core fields with their own setters), and maintenance_flags (the panel and the crowbar).
+// Its on-state is its own tracked `cooling` (set_cooling()), and its pipe is the unary device's (piped(), as a vent's or a scrubber's). The gas
+// domain wakes the pipe network when the occupant's heat moves the cell's gas (gas_body_heat_exchange()); nothing here marks it by hand.
+// What the machine core still keeps until the machine track (phase 4): the stat bits read through machine_basics()'s bridge, set_use_power(), and
+// maintenance_flags (the panel and the crowbar).
 
 /// Mend per tick at the base rate (oxygenation below freezing).
 #define CRYO_BASE_RATE 1
@@ -31,8 +33,6 @@
 /// The tube's glass and fluid: raised over the base and see-through.
 #define CRYO_GLASS_RAISE 18
 #define CRYO_GLASS_ALPHA 200
-/// The pipe network re-settles when the cell's gas moved by more than this many kelvin in one tick.
-#define CRYO_NETWORK_SETTLE 1
 
 MSG_DEF_SELF(cryo_cell/not_connected, "The cell is not correctly connected to its pipe network!")
 MSG_DEF_SELF(cryo_cell/cannot_release, "You can't work the release.")
@@ -49,7 +49,6 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	layer = UNDER_JUNK_LAYER
 	interact_offline = 1
 
-	on = 0
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 20
 	active_power_usage = 200
@@ -59,16 +58,20 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	clickvol = 30
 
 	var/obj/item/reagent_containers/glass/beaker = null
+	/// Switched on from its window: it holds its occupant under and trades heat with them while it works.
+	var/cooling = FALSE
+
+TRACKED(/obj/machinery/atmospherics/unary/cryo_cell, cooling)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE)
 	extend(TAG_POD_ENTER, needs(req_operable(), req(PROC_REF(piped), because = MSG(cryo_cell/not_connected))))
-	when(cond_all(nameof(on), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(EFFECT_SLEEPING), on = ON_CONTENTS))
+	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(EFFECT_SLEEPING), on = ON_CONTENTS))
 	owns_one(nameof(beaker), /obj/item/reagent_containers/glass, on_destroy = ON_DESTROY_SPILL)
 	beaker_bay(nameof(beaker), eject_button = "ejectBeaker", exit_to = SOUTH)
 	space(SPACE_PANEL, door = nameof(panel_open))
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(cooling_frame)), when = cond_all(nameof(on), STAT_OPERABLE, OCCUPANT_POD_OCCUPIED))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(cooling_frame)), when = cond_all(nameof(cooling), STAT_OPERABLE, OCCUPANT_POD_OCCUPIED))
 	on_notice(/datum/notice/pod_entered, then(PROC_REF(occupant_entered)))
 	on_notice(/datum/notice/pod_left, then(PROC_REF(occupant_left)))
 	section(window, "the cell's window: its occupant takes no part in it (occupant_pod(controls_inside = FALSE)), and it opens unpowered")
@@ -86,10 +89,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 
 // ---- conditions ----
 
-/// Joined to its pipe network.
-/obj/machinery/atmospherics/unary/cryo_cell/proc/piped(datum/act/op/A)
-	return !!node // ALLOW(reads): the pipe neighbour is machine-core state (OM_FIELD_VIEW) until the machine track; asked when someone is put in
-
 /// The actor is not the one inside.
 /obj/machinery/atmospherics/unary/cryo_cell/proc/actor_outside(datum/act/op/A)
 	return A.actor != occupant_of(src)
@@ -100,11 +99,11 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	add_fingerprint(A.actor)
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/switch_on(datum/act/op/A)
-	set_on(TRUE)
+	set_cooling(TRUE)
 	return OP_OK
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/switch_off(datum/act/op/A)
-	set_on(FALSE)
+	set_cooling(FALSE)
 	return OP_OK
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/eject_from_window(datum/act/op/A)
@@ -143,13 +142,10 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/cooling_frame(datum/act/timer/A)
 	var/mob/living/carbon/occupant = occupant_of(src)
-	if(!occupant || occupant.stat == DEAD || !node || !air_contents || air_contents.total_moles() < CRYO_MIN_MOLES)
+	if(!occupant || occupant.stat == DEAD || !piped() || !air_contents || air_contents.total_moles() < CRYO_MIN_MOLES)
 		return
 	// The occupant and the cell's gas settle to a shared temperature; the heat the body loses is what the gas gains.
-	var/gas_before = air_contents.return_temperature()
 	occupant.set_bodytemperature(gas_body_heat_exchange(air_contents, occupant.bodytemperature, HUMAN_HEAT_CAPACITY))
-	if(abs(air_contents.return_temperature() - gas_before) > CRYO_NETWORK_SETTLE)
-		network?.mark_dirty()
 	if(occupant.bodytemperature < T0C)
 		occupant.status_at_least(EFFECT_SLEEPING, max(CRYO_MIN_STATUS, CRYO_SLEEP_SCALE / occupant.bodytemperature))
 		occupant.status_at_least(EFFECT_PARALYZED, max(CRYO_MIN_STATUS, CRYO_PARALYSIS_SCALE / occupant.bodytemperature))
@@ -211,7 +207,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	..()
 	look.set_icon('icons/obj/cryogenics_split.dmi')
 	look.state("base")
-	if(on)
+	if(cooling)
 		// ALLOW(sys_dx_untracked_read): the fluid takes the beaker's colour when the cell is switched on or its beaker changes, not as the mix drains
 		look.overlay(look_overlay_image('icons/obj/cryogenics_split.dmi', "tube_filler", layer = MOB_LAYER + 0.1, plane = MOB_PLANE, alpha = CRYO_GLASS_ALPHA, pixel_y = CRYO_GLASS_RAISE, color = beaker?.reagents.get_color())) //Below glass, above mob
 	look.overlay(look_overlay_image('icons/obj/cryogenics_split.dmi', "tank", layer = MOB_LAYER + 0.2, plane = MOB_PLANE, alpha = CRYO_GLASS_ALPHA, pixel_y = CRYO_GLASS_RAISE)) //Above fluid
@@ -219,7 +215,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 /obj/machinery/atmospherics/unary/cryo_cell/ui_data(datum/act/eval/A)
 	var/mob/living/carbon/occupant = occupant_of(src)
 	var/list/data = list()
-	data["isOperating"] = on
+	data["isOperating"] = cooling
 	data["hasOccupant"] = occupant ? TRUE : FALSE
 
 	var/list/occupantData = list()
@@ -272,6 +268,5 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 #undef CRYO_DRIP_MULTIPLIER
 #undef CRYO_THAW_TEMPERATURE
 #undef CRYO_THAW_FLOOR
-#undef CRYO_NETWORK_SETTLE
 #undef CRYO_GLASS_RAISE
 #undef CRYO_GLASS_ALPHA

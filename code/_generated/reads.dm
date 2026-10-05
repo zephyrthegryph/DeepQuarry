@@ -194,7 +194,7 @@
 
 /obj/machinery/atmospherics/unary/cryo_cell/generated_reads()
 	. = ..()
-	. += drawn_from(nameof(beaker))
+	. += drawn_from(nameof(beaker), nameof(cooling))
 
 /obj/machinery/atmospherics/unary/vent_pump/generated_reads()
 	. = ..()
