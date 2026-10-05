@@ -151,7 +151,7 @@
 
 	//Handle case: /obj/item/radio/beacon
 	else if(istype(I,/obj/item/radio/beacon))
-		om_ask(user, /datum/om/prompt/confirm/beacon_feed, PROC_REF(beacon_feed_confirmed), beacon = I)
+		open_request(src, /datum/prompt/choice/beacon_feed, PROC_REF(beacon_feed_confirmed), answerer = user, subject = I, question = src == user ? "Eat the beacon?" : "Feed the beacon to [src]?")
 		return TRUE //You don't get to hit someone 'later'
 
 	// Body writing
@@ -173,7 +173,7 @@
 			to_chat(attacker, span_danger("They are missing that limb!"))
 			return TRUE
 
-		om_ask(attacker, /datum/om/prompt/text/body_writing, PROC_REF(body_writing_entered), limb = affecting)
+		open_request(src, /datum/prompt/text/body_writing, PROC_REF(body_writing_entered), answerer = attacker, subject = affecting, question = "What would you like to write on [src]'s [affecting]? (This will replace existing writing.)")
 		return TRUE
 
 	return FALSE
@@ -195,64 +195,90 @@
 
 /// Feeding a beacon: confirmed, then the belly picked. Re-checked on each answer: the feeder is
 /// still next to the eater, able, and holding the beacon.
-/datum/om/prompt/confirm/beacon_feed
+/datum/prompt/choice/beacon_feed
 	title = "Confirmation"
-	yes_text = "Yes!"
-	no_text = "Cancel"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/beacon
+	timeout = 0
+	recheck_on_open = TRUE
+	buttons = TRUE
+	choices = list("Yes!", "Cancel")
+	ask_flags = ASK_CAPABLE
 
-/datum/om/prompt/confirm/beacon_feed/prepare()
-	message = subject == answerer ? "Eat the beacon?" : "Feed the beacon to [subject]?"
-	return TRUE
+/datum/prompt/choice/beacon_feed/recheck_extra()
+	var/mob/user = answerer
+	var/mob/living/eater = owner
+	var/obj/item/beacon = subject
+	if(!istype(user) || QDELETED(user) || !istype(eater) || QDELETED(eater) || !istype(beacon) || QDELETED(beacon))
+		return "gone"
+	if(!user.Adjacent(eater))
+		return "too far away"
+	return user.get_active_hand() == beacon ? null : "not holding it"
 
-/datum/om/prompt/confirm/beacon_feed/valid()
-	return answerer.get_active_hand() == beacon ? null : "not holding it"
-
-/datum/om/prompt/choice/beacon_belly
+/datum/prompt/choice/beacon_belly
 	title = "Select A Belly"
-	message = "Which belly?"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/beacon
+	question = "Which belly?"
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CAPABLE
 
-/datum/om/prompt/choice/beacon_belly/valid()
-	var/obj/belly/B = choice
-	if(!istype(B) || B.owner != subject)
-		return "no belly"
-	return answerer.get_active_hand() == beacon ? null : "not holding it"
+/datum/prompt/choice/beacon_belly/recheck_extra()
+	var/mob/user = answerer
+	var/mob/living/eater = owner
+	var/obj/item/beacon = subject
+	if(!istype(user) || QDELETED(user) || !istype(eater) || QDELETED(eater) || !istype(beacon) || QDELETED(beacon))
+		return "gone"
+	if(!user.Adjacent(eater))
+		return "too far away"
+	if(!isnull(answer_value))
+		var/obj/belly/B = answer_value
+		if(!istype(B) || QDELETED(B) || B.owner != eater)
+			return "no belly"
+	return user.get_active_hand() == beacon ? null : "not holding it"
 
-/mob/living/proc/beacon_feed_confirmed(datum/om/prompt/confirm/beacon_feed/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/beacon_belly, PROC_REF(beacon_feed_answered), choices = vore_organs, beacon = ask.beacon)
+/mob/living/proc/beacon_feed_confirmed(datum/act/request/A)
+	if(!A.answer || A.request.answer_value != "Yes!")
+		return
+	open_request(src, /datum/prompt/choice/beacon_belly, PROC_REF(beacon_feed_answered), answerer = A.request.answerer, choices = vore_organs?.Copy(), subject = A.request.subject)
 
-/mob/living/proc/beacon_feed_answered(datum/om/prompt/choice/beacon_belly/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/I = ask.beacon
-	var/obj/belly/B = ask.choice
+/mob/living/proc/beacon_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/I = A.request.subject
+	var/obj/belly/B = A.request.answer_value
 	act_message(src, user, MSG_SELF(span_warning("%T% is trying to stuff a beacon into you!")), \
 		MSG_OTHERS(span_warning("%T% is trying to stuff a beacon into %U%'s [B.get_belly_name()]!")))
 	om_task_start(/datum/om/task/timed/living_beacon_insert, user, src, receiver = src, I = I, B = B)
 
 /// What to write on a limb. Re-checked on the answer: the writer is still next to the canvas,
 /// able, and the limb is still theirs.
-/datum/om/prompt/text/body_writing
+/datum/prompt/text/body_writing
 	title = "Body Writing"
-	max_length = 128
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/organ/external/limb
+	max_len = 128
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CAPABLE
 
-/datum/om/prompt/text/body_writing/prepare()
-	message = "What would you like to write on [subject]'s [limb]? (This will replace existing writing.)"
-	return TRUE
+/datum/prompt/text/body_writing/normalize(given)
+	return istext(given) ? given : null
 
-/datum/om/prompt/text/body_writing/valid()
-	if(!text || limb.owner != subject)
+/datum/prompt/text/body_writing/recheck_extra()
+	var/mob/user = answerer
+	var/mob/living/canvas = owner
+	var/obj/item/organ/external/limb = subject
+	if(!istype(user) || QDELETED(user) || !istype(canvas) || QDELETED(canvas) || !istype(limb) || QDELETED(limb))
+		return "gone"
+	if(!user.Adjacent(canvas))
+		return "too far away"
+	if(!isnull(answer_value) && (!answer_value || limb.owner != canvas))
 		return "no writing"
 	return null
 
-/mob/living/proc/body_writing_entered(datum/om/prompt/text/body_writing/ask)
-	var/mob/living/attacker = ask.answerer
-	var/obj/item/organ/external/affecting = ask.limb
-	var/message = ask.text
+/mob/living/proc/body_writing_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/attacker = A.request.answerer
+	var/obj/item/organ/external/affecting = A.request.subject
+	var/message = A.request.answer_value
 	var/mob/living/carbon/human/canvas_user = src
 	to_chat(canvas_user, span_notice("[attacker] is attempting to write on your [affecting.name]!"))
 	act_message(attacker, canvas_user, MSG_SELF(span_notice("You start writing on %T%'s [affecting.name]...")), \

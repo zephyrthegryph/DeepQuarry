@@ -1038,6 +1038,7 @@
 #include "round2_hotspot_replacement_retirement.dm"
 #include "round2_sun_visual_lazy_lists.dm"
 #include "round2_suit_sensor_effect.dm"
+#include "round2_body_writing_native.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

@@ -125,15 +125,19 @@ UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_end)
 
 UI_ACT(/obj/item/paper/admin, "confirm", ui_act_confirm)
 UI_ACT_PROC(/obj/item/paper/admin, ui_act_confirm)
-	switch(act_ask(user, action, params, ui, "send", /datum/om/prompt/choice/alert, message = "Are you sure you want to send the fax as is?", title = "Send Fax", choices = list("Yes", "No")))
-		if("Yes")
-			if(headerOn)
-				info = header + info
-			if(footerOn)
-				info += footer
-			updateinfolinks()
-			SStgui.close_uis(src)
-			admindatum().faxCallback(src, destination())
+	if(istype(ui) && !QDELETED(ui) && ismob(user) && !QDELETED(user))
+		open_request(ui, /datum/prompt/choice/admin_paper_send, TYPE_PROC_REF(/datum/tgui, admin_paper_send_answered), answerer = user)
+	return TRUE
+
+/obj/item/paper/admin/proc/apply_send_confirmation(selected)
+	if(selected == "Yes")
+		if(headerOn)
+			info = header + info
+		if(footerOn)
+			info += footer
+		updateinfolinks()
+		SStgui.close_uis(src)
+		admindatum().faxCallback(src, destination())
 	return TRUE
 
 /obj/item/paper/admin/proc/admin_paper_penmode(datum/act/op/A)
@@ -249,3 +253,31 @@ CAPABILITIES(/datum/prompt/text/admin_paper_write_review)
 /datum/prompt/text/admin_paper_write_review/recheck_extra()
 	if(write_operator_expected && QDELETED(write_operator))
 		return "gone"
+
+/datum/tgui/proc/admin_paper_send_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/item/paper/admin/paper = src_object()
+	if(paper.apply_send_confirmation(context.answer.answer_value))
+		SStgui.update_uis(paper)
+
+/datum/prompt/choice/admin_paper_send
+	question = "Are you sure you want to send the fax as is?"
+	title = "Send Fax"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_paper_send/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/item/paper/admin/paper = original_ui.src_object()
+	if(!istype(paper) || QDELETED(paper))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!paper.ui_act_allowed(original_ui.user, "confirm", original_ui, original_ui.state()))
+		return "the send confirmation is unavailable"
+	return null

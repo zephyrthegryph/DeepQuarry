@@ -734,21 +734,21 @@
 	into += entry_line(16)
 	into += list(global.owns_many(nameof(ability_objects), /atom/movable/screen/ability))
 
-/// CAPABILITIES(/atom/movable/screen/movable/mapper_holder) at code/_onclick/hud/screen_objects.dm:807
+/// CAPABILITIES(/atom/movable/screen/movable/mapper_holder) at code/_onclick/hud/screen_objects.dm:810
 /atom/movable/screen/movable/mapper_holder/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/_onclick/hud/screen_objects.dm", 807, /atom/movable/screen/movable/mapper_holder)
-	into += entry_line(808)
-	into += list(global.owns_one(nameof(mask_full), starts = /atom/movable/screen/mapper/mask_full))
-	into += entry_line(809)
-	into += list(global.owns_one(nameof(mask_ping), starts = /atom/movable/screen/mapper/mask_ping))
-	into += entry_line(810)
-	into += list(global.owns_one(nameof(bg), starts = /atom/movable/screen/mapper/bg))
+	into += entry_block("code/_onclick/hud/screen_objects.dm", 810, /atom/movable/screen/movable/mapper_holder)
 	into += entry_line(811)
-	into += list(global.owns_one(nameof(frame), starts = /atom/movable/screen/mapper/frame))
+	into += list(global.owns_one(nameof(mask_full), starts = /atom/movable/screen/mapper/mask_full))
 	into += entry_line(812)
-	into += list(global.owns_one(nameof(powbutton), starts = /atom/movable/screen/mapper/powbutton))
+	into += list(global.owns_one(nameof(mask_ping), starts = /atom/movable/screen/mapper/mask_ping))
 	into += entry_line(813)
+	into += list(global.owns_one(nameof(bg), starts = /atom/movable/screen/mapper/bg))
+	into += entry_line(814)
+	into += list(global.owns_one(nameof(frame), starts = /atom/movable/screen/mapper/frame))
+	into += entry_line(815)
+	into += list(global.owns_one(nameof(powbutton), starts = /atom/movable/screen/mapper/powbutton))
+	into += entry_line(816)
 	into += list(global.owns_one(nameof(mapbutton), starts = /atom/movable/screen/mapper/mapbutton))
 
 /// CAPABILITIES(/atom/movable/screen/movable/pic_in_pic) at code/_onclick/hud/picture_in_picture.dm:18
@@ -773,11 +773,11 @@
 	into += entry_line(10)
 	into += list(global.owns_one(nameof(aiEye), /mob/observer/eye/aiEye/pic_in_pic))
 
-/// CAPABILITIES(/atom/movable/screen/zone_sel) at code/_onclick/hud/screen_objects.dm:124
+/// CAPABILITIES(/atom/movable/screen/zone_sel) at code/_onclick/hud/screen_objects.dm:127
 /atom/movable/screen/zone_sel/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/_onclick/hud/screen_objects.dm", 124, /atom/movable/screen/zone_sel)
-	into += entry_line(125)
+	into += entry_block("code/_onclick/hud/screen_objects.dm", 127, /atom/movable/screen/zone_sel)
+	into += entry_line(128)
 	into += list(global.owns_many(nameof(hover_overlays_cache)))
 
 /// CAPABILITIES(/client) at code/datums/managed_browsers/feedback_form.dm:4
@@ -4368,34 +4368,34 @@
 	into += entry_line(526)
 	into += list(global.ref_one(nameof(captured_tool), /obj/item))
 
-/// CAPABILITIES(/datum/prompt/choice/vore_feed_review) at code/modules/vore/eating/living.dm:2092
+/// CAPABILITIES(/datum/prompt/choice/vore_feed_review) at code/modules/vore/eating/living.dm:2118
 /datum/prompt/choice/vore_feed_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/eating/living.dm", 2092, /datum/prompt/choice/vore_feed_review)
-	into += entry_line(2093)
+	into += entry_block("code/modules/vore/eating/living.dm", 2118, /datum/prompt/choice/vore_feed_review)
+	into += entry_line(2119)
 	into += list(global.ref_one(nameof(feed_operator), /mob))
-	into += entry_line(2094)
+	into += entry_line(2120)
 	into += list(global.ref_one(nameof(feed_prey), /mob))
-	into += entry_line(2095)
+	into += entry_line(2121)
 	into += list(global.ref_one(nameof(feed_predator), /mob))
 
-/// CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer) at code/modules/vore/eating/living.dm:2007
+/// CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer) at code/modules/vore/eating/living.dm:2033
 /datum/prompt/choice/vore_liquid_transfer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/eating/living.dm", 2007, /datum/prompt/choice/vore_liquid_transfer)
-	into += entry_line(2008)
+	into += entry_block("code/modules/vore/eating/living.dm", 2033, /datum/prompt/choice/vore_liquid_transfer)
+	into += entry_line(2034)
 	into += list(global.ref_one(nameof(liquid_source_mob), /mob))
-	into += entry_line(2009)
+	into += entry_line(2035)
 	into += list(global.ref_one(nameof(liquid_source_belly), /obj/belly))
-	into += entry_line(2010)
+	into += entry_line(2036)
 	into += list(global.ref_one(nameof(liquid_target_mob), /mob))
-	into += entry_line(2011)
+	into += entry_line(2037)
 	into += list(global.ref_one(nameof(liquid_own_belly), /obj/belly))
-	into += entry_line(2012)
+	into += entry_line(2038)
 	into += list(global.ref_one(nameof(liquid_other_belly), /obj/belly))
-	into += entry_line(2013)
+	into += entry_line(2039)
 	into += list(global.ref_one(nameof(liquid_stomach_mob), /mob))
-	into += entry_line(2014)
+	into += entry_line(2040)
 	into += list(global.ref_one(nameof(liquid_container), /obj/item/reagent_containers))
 
 /// CAPABILITIES(/datum/prompt/choice/vv_edit) at code/game/atom/atom_vv.dm:31
@@ -4636,11 +4636,11 @@
 	into += entry_line(101)
 	into += list(global.ref_one(nameof(subject), /mob))
 
-/// CAPABILITIES(/datum/prompt/text/admin_paper_write_review) at code/modules/paperwork/adminpaper.dm:238
+/// CAPABILITIES(/datum/prompt/text/admin_paper_write_review) at code/modules/paperwork/adminpaper.dm:242
 /datum/prompt/text/admin_paper_write_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/paperwork/adminpaper.dm", 238, /datum/prompt/text/admin_paper_write_review)
-	into += entry_line(239)
+	into += entry_block("code/modules/paperwork/adminpaper.dm", 242, /datum/prompt/text/admin_paper_write_review)
+	into += entry_line(243)
 	into += list(global.ref_one(nameof(write_operator), /mob))
 
 /// CAPABILITIES(/datum/prompt/text/admin_silicon_name) at code/modules/admin/admin_verbs.dm:1079

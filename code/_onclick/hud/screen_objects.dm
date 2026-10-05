@@ -99,17 +99,20 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	name = "storage"
 
 /atom/movable/screen/storage/Click()
-	if(!usr.checkClickCooldown())
+	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native storage HUD Click supplies the initiating mob while retaining its no-parent virtual mob click dispatch.
+
+/atom/movable/screen/storage/click_with_actor(mob/user, location, control, params)
+	if(!user.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED))
 		return 1
-	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
 	var/obj/master = master_ref
 	if(master)
-		var/obj/item/I = usr.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(I)
-			usr.ClickOn(master)
+			user.ClickOn(master)
 	return 1
 
 /atom/movable/screen/zone_sel

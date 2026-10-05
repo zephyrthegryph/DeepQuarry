@@ -26,3 +26,5 @@ changes:
   - code_imp: "Allocated sun-visual and window asset lists at their use sites and retired unused blocking prompt wrappers."
   - code_imp: "Moved mob-spawner confirmation and casino item customization to native requests and retired unused UI helpers."
   - code_imp: "Moved suit-sensor selection, RIG self-destruct confirmation and fax title and department choices to native requests."
+  - code_imp: "Moved beacon feeding, body writing, admin paper confirmation, ticket fallback and slot reset choices to native requests."
+  - code_imp: "Passed the clicking user explicitly through storage HUD handling."

@@ -106,19 +106,20 @@ UI_ACT_PROC(/datum/preferences, ui_act_load)
 
 UI_ACT(/datum/preferences, "resetslot", ui_act_resetslot)
 UI_ACT_PROC(/datum/preferences, ui_act_resetslot)
+	return reset_slot_request_stage(ui, null, FALSE)
+
+/datum/preferences/proc/reset_slot_request_stage(datum/tgui/ui, selected, second)
 	if(!isnewplayer(ui.user))
 		to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
 		return FALSE
-	var/_answer_k119 = act_ask(ui.user, action, params, ui, "k119", /datum/om/prompt/choice/alert, message = "This will reset the current slot. Continue?", title = "Reset current slot?", choices = list("No", "Yes"))
-	if(isnull(_answer_k119))
+	if(isnull(selected))
+		if(istype(ui) && !QDELETED(ui) && ismob(ui.user) && !QDELETED(ui.user))
+			open_request(ui, /datum/prompt/choice/preference_slot_reset, TYPE_PROC_REF(/datum/tgui, preference_slot_reset_answered), answerer = ui.user, second = second, question = second ? "Are you completely sure that you want to reset this character slot?" : "This will reset the current slot. Continue?")
 		return
-	if("Yes" != _answer_k119)
+	if(selected != "Yes")
 		return FALSE
-	var/_answer_k121 = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/choice/alert, message = "Are you completely sure that you want to reset this character slot?", title = "Reset current slot?", choices = list("No", "Yes"))
-	if(isnull(_answer_k121))
-		return
-	if("Yes" != _answer_k121)
-		return FALSE
+	if(!second)
+		return reset_slot_request_stage(ui, null, TRUE)
 	reset_slot()
 	sanitize_preferences()
 	return TRUE
@@ -253,3 +254,32 @@ UI_ACT_PROC(/datum/preferences, ui_act_set_color_preference)
 				preferences[category] = append_character_preferences[category]
 
 	return preferences
+
+/datum/tgui/proc/preference_slot_reset_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/preferences/preferences = src_object()
+	var/datum/prompt/choice/preference_slot_reset/ask = context.answer
+	if(preferences.reset_slot_request_stage(src, ask.answer_value, ask.second))
+		SStgui.update_uis(preferences)
+
+/datum/prompt/choice/preference_slot_reset
+	title = "Reset current slot?"
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	var/second = FALSE
+
+/datum/prompt/choice/preference_slot_reset/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/datum/preferences/preferences = original_ui.src_object()
+	if(!istype(preferences) || QDELETED(preferences))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!preferences.ui_act_allowed(original_ui.user, "resetslot", original_ui, original_ui.state()))
+		return "the slot reset is unavailable"
+	return null
