@@ -6,11 +6,11 @@
 
 /// The node passes signals now: switched on and working.
 /proc/mftc_running(obj/machinery/telecomms/T)
-	return !!T.on
+	return !!T.running
 
-/// The node is brought up to date with its power (the legacy node reconciles in its machine step).
+/// The node is brought up to date with its power (a stat: nothing to do).
 /proc/mftc_sync(obj/machinery/telecomms/T)
-	T.update_power()
+	return
 
 // ---------------------------------------------------------------------------------------------------------------------
 

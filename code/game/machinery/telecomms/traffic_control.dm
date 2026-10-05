@@ -14,8 +14,7 @@
 	circuit = /obj/item/circuitboard/comm_traffic
 	req_access = list(ACCESS_TCOMSAT)
 
-	var/network = "NULL"		// the network to probe
-	var/temp = ""				// temporary feedback messages
+	temp = ""
 
 	var/storedcode = ""			// code stored
 
@@ -117,7 +116,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 
 		if("scan")
 			if(length(servers) > 0)
-				temp = span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -")
+				set_temp(span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -"))
 
 			else
 				for(var/obj/machinery/telecomms/server/T in range(25, src))
@@ -125,9 +124,9 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 						rel_add(src, nameof(servers), T)
 
 				if(!length(servers))
-					temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
+					set_temp(span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -"))
 				else
-					temp = span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -")
+					set_temp(span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -"))
 
 				screen = 0
 
@@ -165,14 +164,14 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 	var/newnet = A.answer.answer_value
 	if(newnet && ((user in range(1, src)) || issilicon(user)))
 		if(length(newnet) > 15)
-			temp = span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -")
+			set_temp(span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -"))
 
 		else
 
 			network = newnet
 			screen = 0
 			rel_clear(src, nameof(servers))
-			temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
+			set_temp(span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -"))
 
 CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	emag(then(PROC_REF(on_emag)))
