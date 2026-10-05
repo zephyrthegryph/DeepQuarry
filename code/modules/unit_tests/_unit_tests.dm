@@ -1020,6 +1020,10 @@
 
 #include "round2_viral_trait_generation.dm"
 
+#include "round2_construct_blocked_spell_cleanup.dm"
+#include "round2_robot_source_retirement.dm"
+#include "round2_shock_collar_tag_effect.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

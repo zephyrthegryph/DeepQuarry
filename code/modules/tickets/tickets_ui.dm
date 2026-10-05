@@ -99,11 +99,9 @@ UI_DATA_REPLACE(/datum/tickets, "merge:ui_data_datum_tickets{tickets:list,is_adm
 
 UI_ACT(/datum/tickets, "legacy", ui_act_legacy)
 UI_ACT_PROC(/datum/tickets, ui_act_legacy)
-	var/choice = act_ask(ui.user, action, params, ui, "k107", /datum/om/prompt/choice, message = "Which tickets do you want to list?", title = "Tickets", choices = list("Active", "Closed", "Resolved"))
-	if(isnull(choice))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	TicketListLegacy(ui.user, choice)
-	. = TRUE
+	open_request(ui, /datum/prompt/choice/ticket_list_ui, TYPE_PROC_REF(/datum/tgui, ticket_list_answered), answerer = ui.user)
 
 UI_ACT(/datum/tickets, "new_ticket", ui_act_new_ticket)
 UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
@@ -356,3 +354,31 @@ UI_ACT_PROC(/datum/ticket, ui_act_send_msg)
 	dat += "</html>"
 	// structured TGUI AdminReport (fallback path).
 	dq_admin_report_html(user, "[state] Tickets", dat.Join(), src)
+
+// The original ticket-manager UI owns this scalar selection continuation.
+/datum/tgui/proc/ticket_list_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/tickets/manager = src_object()
+	manager.TicketListLegacy(user, context.answer.answer_value)
+	SStgui.update_uis(manager)
+
+/datum/prompt/choice/ticket_list_ui
+	title = "Tickets"
+	question = "Which tickets do you want to list?"
+	choices = list("Active", "Closed", "Resolved")
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/ticket_list_ui/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui))
+		return "gone"
+	var/datum/tickets/manager = original_ui.src_object()
+	if(!istype(manager) || QDELETED(manager) || QDELETED(answerer))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!manager.ui_act_allowed(original_ui.user, "legacy", original_ui, original_ui.state()))
+		return "the listing action is unavailable"
+	return null

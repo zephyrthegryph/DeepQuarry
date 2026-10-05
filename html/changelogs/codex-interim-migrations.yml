@@ -10,3 +10,5 @@ changes:
   - code_imp: "Moved room setup, stasis selection and Swoopie settings to native requests, and retired blanket edges through their declared ownership."
   - bugfix: "Chameleon projectors no longer leak copied disguise items when activation is refused inside a mob holder."
   - code_imp: "Reduced unused symptom allocations and moved fax destination choices and owned machine cleanup to current APIs."
+  - bugfix: "Constructs no longer retain newly created spell items when both manipulators are occupied."
+  - code_imp: "Retired robot source replacements through declared ownership and moved shock collar tag prompts to native requests."

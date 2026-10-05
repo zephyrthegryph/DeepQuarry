@@ -784,21 +784,50 @@ UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_power)
 
 UI_ACT(/obj/item/clothing/accessory/collar/shock, "tag", ui_act_tag)
 UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_tag)
-	var/sanitized = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Tag text?", title = "Set Tag", max_length = MAX_NAME_LEN)
-	if(isnull(sanitized))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(isnull(sanitized))
-		return
+	open_request(ui, /datum/prompt/text/shock_collar_ui_tag, TYPE_PROC_REF(/datum/tgui, shock_collar_tag_answered), subject = src, answerer = ui.user)
 
+/obj/item/clothing/accessory/collar/shock/proc/apply_ui_tag(mob/user, sanitized)
 	if(!length(sanitized))
-		to_chat(ui.user, span_notice("[src]'s tag set to blank."))
+		to_chat(user, span_notice("[src]'s tag set to blank."))
 		name = initial(name)
 		desc = initial(desc)
 	else
-		to_chat(ui.user, span_notice("[src]'s tag set to '[sanitized]'."))
+		to_chat(user, span_notice("[src]'s tag set to '[sanitized]'."))
 		name = initial(name) + " ([sanitized])"
 		desc = initial(desc) + " The tag says \"[sanitized]\"."
 	. = TRUE
+
+// This content-only handler belongs to the exact original UI that opened the question.
+/datum/tgui/proc/shock_collar_tag_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/item/clothing/accessory/collar/shock/collar = context.request.subject
+	if(collar.apply_ui_tag(user, context.answer.answer_value))
+		SStgui.update_uis(collar)
+
+/datum/prompt/text/shock_collar_ui_tag
+	title = "Set Tag"
+	question = "Tag text?"
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/shock_collar_ui_tag/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : given
+
+/datum/prompt/text/shock_collar_ui_tag/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	var/obj/item/clothing/accessory/collar/shock/collar = subject
+	if(!istype(original_ui) || QDELETED(original_ui) || !istype(collar) || QDELETED(collar) || QDELETED(answerer))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!collar.ui_act_allowed(original_ui.user, "tag", original_ui, original_ui.state()))
+		return "the tag action is unavailable"
+	return null
 
 /obj/item/clothing/accessory/collar/shock/receive_signal(datum/signal/signal)
 	if(!signal || signal.encryption != code)
