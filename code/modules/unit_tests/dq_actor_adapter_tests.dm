@@ -171,7 +171,7 @@ GLOBAL_LIST_EMPTY(dq_actor_calls)
 	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/structure/privacyswitch/dq_actor_probe, T)), "attack_hand", "privacy switch (not a machine): the AI's Use is the hand's")
 	// Were `tgui_interact(user)`.
 	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/machinery/door/airlock/dq_actor_probe, T)), "tgui_interact", "airlock: the AI's Use opens the UI, not the hand's Use")
-	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/machinery/turretid/dq_actor_probe, T)), "tgui_interact", "turret control: the AI's Use opens the UI")
+	// The turret control opens through its interface's remote() binding now, which needs the AI to see it (a camera); dq_silicon_entry_tests covers it.
 	// Never overridden: unchanged.
 	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/structure/closet/dq_actor_probe, T)), "", "closet: the AI's Use does nothing, as before")
 

@@ -133,6 +133,7 @@
 #define REGISTRY_PLAYERS "player_list"
 #define REGISTRY_POINTDEFENSE_CONTROLLERS "pointdefense_controllers"
 #define REGISTRY_POINTDEFENSE_TURRETS "pointdefense_turrets"
+#define REGISTRY_TURRETS "porta_turrets"
 #define REGISTRY_PORTALS "all_portals"
 #define REGISTRY_PORTAL_MASTERS "all_portal_masters"
 #define REGISTRY_POWER_MACHINES "power_machines"

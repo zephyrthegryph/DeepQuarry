@@ -2,9 +2,17 @@
 //Turret Control Panel//
 ////////////////////////
 
+// A turret control panel is declared (doc/rewrite/final_api.html section 16.3, conversion_guide.md): it takes over the turrets of its area (a link
+// between the panel and the area, so a turret asks its area whether a panel controls it) and hands them its settings whenever one changes. The ID
+// lock (lock()) gates its window, an emag strips the lock and the silicons' firewall (ailock), and an electromagnetic pulse knocks it out for a
+// while (emp_disable()): while it is down its turrets are told to stand down, and they come back with it.
+
 /area
-	// Turrets use this list to see if individual power/lethal settings are allowed
+	/// The turret control panels of this area (a link: each panel's control_area names it). A turret in the area with one obeys it.
 	var/list/turret_controls
+
+MSG_DEF_SELF(turretid/firewall, "There seems to be a firewall preventing you from accessing this device.")
+MSG_DEF(turretid/shorted, "You short out the turret controls' access analysis module.", "")
 
 /obj/machinery/turretid
 	name = "turret control panel"
@@ -17,8 +25,9 @@
 	var/enabled = FALSE
 	var/lethal = FALSE
 	var/lethal_is_configurable = TRUE
-	locked = TRUE
-	var/area/control_area //can be area name, path or nothing.
+	/// The area whose turrets it controls (a link). A mapper names it by its path or its name in `control_area_name`; else the panel's own area.
+	var/area/control_area
+	var/control_area_name
 
 	var/targetting_is_configurable = TRUE // if false, you cannot change who this turret attacks via its UI
 	var/check_arrest = TRUE	//checks if the perp is set to arrest
@@ -35,6 +44,18 @@
 
 	req_access = list(ACCESS_AI_UPLOAD)
 
+TRACKED(/obj/machinery/turretid, enabled)
+TRACKED(/obj/machinery/turretid, lethal)
+TRACKED(/obj/machinery/turretid, check_arrest)
+TRACKED(/obj/machinery/turretid, check_records)
+TRACKED(/obj/machinery/turretid, check_weapons)
+TRACKED(/obj/machinery/turretid, check_access)
+TRACKED(/obj/machinery/turretid, check_anomalies)
+TRACKED(/obj/machinery/turretid, check_synth)
+TRACKED(/obj/machinery/turretid, check_all)
+TRACKED(/obj/machinery/turretid, check_down)
+TRACKED(/obj/machinery/turretid, ailock)
+
 /obj/machinery/turretid/stun
 	enabled = TRUE
 	icon_state = "control_stun"
@@ -44,137 +65,69 @@
 	lethal = TRUE
 	icon_state = "control_kill"
 
-/// Phase 2: leaves its area's turret controls.
-/obj/machinery/turretid/lifecycle_dematerialize()
-	. = ..()
-	var/area/A = control_area
-	if(istype(A))
-		LAZYREMOVE(A.turret_controls, src)
+CAPABILITIES(/obj/machinery/turretid)
+	machine_basics(repair = NONE)
+	links(/obj/machinery/turretid::control_area, /area::turret_controls, b_many = TRUE)
+	lock(starts_locked = TRUE, alt = FALSE)
+	emag(then(PROC_REF(on_emag)), say = MSG(turretid/shorted))
+	emp_disable(list(6 SECONDS, 60 SECONDS))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(scramble_settings)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(push_settings)))
+	after_init(0, then(PROC_REF(push_settings)))
 
+	section(window, "The panel's window and its buttons")
+	interface("PortableTurret")
+	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))))
+	extend(TAG_UI, then(PROC_REF(push_settings)))
+	op("power", ui_act(), toggles(nameof(enabled)))
+	op("lethal", ui_act(), toggles(nameof(lethal), when = nameof(lethal_is_configurable)))
+	op("authweapon", ui_act(), toggles(nameof(check_weapons), when = nameof(targetting_is_configurable)))
+	op("authaccess", ui_act(), toggles(nameof(check_access), when = nameof(targetting_is_configurable)))
+	op("authnorecord", ui_act(), toggles(nameof(check_records), when = nameof(targetting_is_configurable)))
+	op("autharrest", ui_act(), toggles(nameof(check_arrest), when = nameof(targetting_is_configurable)))
+	op("authxeno", ui_act(), toggles(nameof(check_anomalies), when = nameof(targetting_is_configurable)))
+	op("authsynth", ui_act(), toggles(nameof(check_synth), when = nameof(targetting_is_configurable)))
+	op("authall", ui_act(), toggles(nameof(check_all), when = nameof(targetting_is_configurable)))
+	op("authdown", ui_act(), toggles(nameof(check_down), when = nameof(targetting_is_configurable)))
+	// a silicon's ctrl-click switches the turrets, its alt-click their lethal mode, over its link and under the window's rules
+	op("remote_power", remote(), gesture(GESTURE_CTRL), label("Toggle the turrets"), toggles(nameof(enabled)))
+	op("remote_lethal", remote(), gesture(GESTURE_ALT), label("Toggle lethal mode"), toggles(nameof(lethal), when = nameof(lethal_is_configurable)))
+	extend("remote_power", needs(req_silicon_or_admin(), req_unlocked_for_actor(), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))), then(PROC_REF(push_settings)))
+	extend("remote_lethal", needs(req_silicon_or_admin(), req_unlocked_for_actor(), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))), then(PROC_REF(push_settings)))
+
+// ALLOW(init/INSTANCE_STATE): the area a mapper named (by path or by name) is found once, when the panel is placed, and linked
 /obj/machinery/turretid/Initialize(mapload)
-	if(!control_area)
-		control_area = get_area(src)
-	else if(ispath(control_area))
-		control_area = locate(control_area)
-	else if(istext(control_area))
-		for(var/area/A in world)
-			if(A.name && A.name==control_area)
-				control_area = A
-				break
-
-	if(control_area)
-		var/area/A = control_area
-		if(istype(A))
-			LAZYADD(A.turret_controls, src)
-		else
-			control_area = null
-
-	power_change() //Checks power and initial settings
 	. = ..()
+	var/area/target = get_area(src)
+	if(ispath(control_area))
+		target = locate(control_area)
+	else if(control_area_name)
+		target = area_named(control_area_name) || target
+	rel_set(src, nameof(control_area), istype(target) ? target : null)
 
-MSG_DEF_SELF(turretid/panel_locked, "The controls are locked.")
-MSG_DEF_SELF(turretid/firewall, "There seems to be a firewall preventing you from accessing this device.")
+/// The area of that name, or null: areas are made with the map and keep their names, so the index is built once, on the first ask.
+/proc/area_named(name)
+	var/static/list/by_name
+	if(!by_name)
+		by_name = list()
+		for(var/area/A in world) // the one walk of the map's areas, once, to index them by name
+			if(A.name && !by_name[A.name])
+				by_name[A.name] = A
+	return by_name[name]
 
-/// Why the panel's controls refuse `user` (a message type), or null when they answer: reads only.
-/// Why `user` acting under `authority` may not work the panel, or null. Over a link (AUTH_REMOTE_ACCESS) only the firewall stops it; in person, the lock.
-/obj/machinery/turretid/proc/lock_refusal(mob/user, authority = actor_authority(user))
-	if(authority & AUTH_REMOTE_ACCESS)
-		return ailock ? /datum/msg/turretid/firewall : null // ALLOW(reads): the firewall is read when a button is pressed, never from a cached menu
+/// The firewall (ailock) is down: a silicon over its link may work the window (req_window_usable() asks this only of a remote user).
+/obj/machinery/turretid/proc/firewall_open(datum/act/op/A)
+	return !ailock
 
-	if(isobserver(user))
-		var/mob/observer/dead/D = user
-		return D.can_admin_interact() ? null : /datum/msg/turretid/panel_locked
-
-	return locked ? /datum/msg/turretid/panel_locked : null
-
-/obj/machinery/turretid/proc/isLocked(mob/user)
-	var/why = lock_refusal(user)
-	if(why == /datum/msg/turretid/firewall)
-		to_chat(user, span_notice("There seems to be a firewall preventing you from accessing this device."))
-	return !!why
-
-/obj/machinery/turretid/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/turretid_toggle_lock,
-		/datum/interaction/machine_hand/ungated/turretid_open_ui,
-	)
-	..()
-
-/// The old attackby: toggled the lock with an ID/pda, else fell through to ..().
-/datum/interaction/machine_item/turretid_toggle_lock
-	id = "turretid_toggle_lock"
-	name = "Toggle lock"
-	category = INTERACTION_CAT_LOCK
-	held_type = /obj/item
-	effect = /obj/machinery/turretid/proc/interaction_toggle_lock
-
-/obj/machinery/turretid/proc/interaction_toggle_lock(mob/user, obj/item/W, datum/interaction/interaction)
-	if(has_stat(BROKEN))
-		return TRUE
-
-	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
-		if(allowed(user))
-			if(emagged)
-				to_chat(user, span_notice("The turret control is unresponsive."))
-			else
-				set_locked(!locked)
-				to_chat(user, span_notice("You [ locked ? "lock" : "unlock"] the panel."))
-		return TRUE
-	return FALSE
-
+/// The emag: the ID lock and the firewall are gone (and the lock cannot be engaged again: the panel is subverted).
 /obj/machinery/turretid/proc/on_emag(datum/act/op/A)
-	to_chat(A.actor, span_danger("You short out the turret controls' access analysis module."))
-	set_emagged(TRUE)
-	set_locked(FALSE)
-	ailock = FALSE
+	cap_key_set(src, LOCK_LOCKED, FALSE, null)
+	set_ailock(FALSE)
 	return OP_OK
 
-/obj/machinery/turretid
-	silicon_use = SILICON_USE_UI
-
-/// The old attack_hand: never called ..(), just opened the UI.
-/datum/interaction/machine_hand/ungated/turretid_open_ui
-	id = "turretid_open_ui"
-	name = "Use"
-	effect = /obj/machinery/turretid/proc/interaction_open_ui_impl
-
-/obj/machinery/turretid/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
-
-CAPABILITIES(/obj/machinery/turretid)
-	interface("PortableTurret")
-	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
-	op("lethal", ui_act("lethal"), then(PROC_REF(ui_act_lethal)))
-	op("authweapon", ui_act("authweapon"), then(PROC_REF(ui_act_authweapon)))
-	op("authaccess", ui_act("authaccess"), then(PROC_REF(ui_act_authaccess)))
-	op("authnorecord", ui_act("authnorecord"), then(PROC_REF(ui_act_authnorecord)))
-	op("autharrest", ui_act("autharrest"), then(PROC_REF(ui_act_autharrest)))
-	op("authxeno", ui_act("authxeno"), then(PROC_REF(ui_act_authxeno)))
-	op("authsynth", ui_act("authsynth"), then(PROC_REF(ui_act_authsynth)))
-	op("authall", ui_act("authall"), then(PROC_REF(ui_act_authall)))
-	op("authdown", ui_act("authdown"), then(PROC_REF(ui_act_authdown)))
-	extend(TAG_UI, needs(req(PROC_REF(controller_unlocked), because = PROC_REF(controller_lock_reason))))
-	// a silicon's ctrl-click switches the turrets, its alt-click their lethal mode, over its link and under the window's rules
-	op("remote_power", remote(), gesture(GESTURE_CTRL), label("Toggle the turrets"), then(PROC_REF(ui_act_power)))
-	op("remote_lethal", remote(), gesture(GESTURE_ALT), label("Toggle lethal mode"), then(PROC_REF(ui_act_lethal)))
-	extend(list("remote_power", "remote_lethal"), needs(req(PROC_REF(remote_link_allowed), because = MSG(turretid/panel_locked)),
-		req(PROC_REF(controller_unlocked), because = PROC_REF(controller_lock_reason))))
-	emag(then(PROC_REF(on_emag)))
-	extend(/datum/act/hit/emp, instead(then(PROC_REF(turretid_emp))))
-
-/// The window answers someone who has the panel's access.
-/obj/machinery/turretid/proc/controller_unlocked(datum/act/op/A)
-	return isnull(lock_refusal(A.actor, A.authority))
-
-/// Why the window refuses someone.
-/obj/machinery/turretid/proc/controller_lock_reason(datum/act/op/A)
-	return lock_refusal(A.actor, A.authority) || /datum/msg/turretid/panel_locked
-
 /obj/machinery/turretid/ui_data(datum/act/eval/A)
-	var/mob/user = A.actor
-	var/list/data = list(
-		"locked" = isLocked(user), // does the current user have access?
+	return list(
+		"locked" = lock_locked(src),
 		"on" = enabled,
 		"targetting_is_configurable" = targetting_is_configurable,
 		"lethal" = lethal,
@@ -191,79 +144,13 @@ CAPABILITIES(/obj/machinery/turretid)
 		"neutralize_unidentified" = check_anomalies,
 		"neutralize_down" = check_down,
 	)
-	return data
 
-
-/obj/machinery/turretid/proc/ui_act_power(datum/act/op/A)
-	. = TRUE
-	enabled = !enabled
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_lethal(datum/act/op/A)
-	. = TRUE
-	if(lethal_is_configurable)
-		lethal = !lethal
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_authweapon(datum/act/op/A)
-	. = TRUE
-	if(!(targetting_is_configurable))
-		return FALSE
-	check_weapons = !check_weapons
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_authaccess(datum/act/op/A)
-	. = TRUE
-	if(!(targetting_is_configurable))
-		return FALSE
-	check_access = !check_access
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_authnorecord(datum/act/op/A)
-	. = TRUE
-	if(!(targetting_is_configurable))
-		return FALSE
-	check_records = !check_records
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_autharrest(datum/act/op/A)
-	. = TRUE
-	if(!(targetting_is_configurable))
-		return FALSE
-	check_arrest = !check_arrest
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_authxeno(datum/act/op/A)
-	. = TRUE
-	if(!(targetting_is_configurable))
-		return FALSE
-	check_anomalies = !check_anomalies
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_authsynth(datum/act/op/A)
-	. = TRUE
-	if(!(targetting_is_configurable))
-		return FALSE
-	check_synth = !check_synth
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_authall(datum/act/op/A)
-	. = TRUE
-	if(!(targetting_is_configurable))
-		return FALSE
-	check_all = !check_all
-	updateTurrets()
-
-/obj/machinery/turretid/proc/ui_act_authdown(datum/act/op/A)
-	. = TRUE
-	if(!(targetting_is_configurable))
-		return FALSE
-	check_down = !check_down
-	updateTurrets()
-
-/obj/machinery/turretid/proc/updateTurrets()
+/// Hands the turrets of its area the panel's settings: on, lethal and every target check (a panel a pulse knocked out tells them to stand down).
+/obj/machinery/turretid/proc/push_settings(datum/act/A)
+	if(!istype(control_area))
+		return OP_OK
 	var/datum/turret_checks/TC = new
-	TC.enabled = enabled
+	TC.enabled = enabled && stat_value(src, STAT_OPERABLE) // a panel knocked out (a pulse) or unpowered tells its turrets to stand down
 	TC.lethal = lethal
 	TC.check_synth = check_synth
 	TC.check_access = check_access
@@ -272,66 +159,25 @@ CAPABILITIES(/obj/machinery/turretid)
 	TC.check_weapons = check_weapons
 	TC.check_anomalies = check_anomalies
 	TC.check_all = check_all
-	TC.ailock = ailock
-
-	if(istype(control_area))
-		for(var/obj/machinery/porta_turret/aTurret in control_area)
+	TC.check_down = check_down
+	for(var/obj/machinery/porta_turret/aTurret as anything in REGISTRY_MEMBERS(REGISTRY_TURRETS))
+		if(get_area(aTurret) == control_area)
 			aTurret.setState(TC)
+	return OP_OK
 
-	update_icon()
-
-/obj/machinery/turretid/power_change()
-	. = ..()
-	updateTurrets()
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/turretid/appearance_overlays()
-	. = list()
-	. += ..()
+/// The look: off without power, else the mode it sets (standby, stun, kill), with its light.
+/obj/machinery/turretid/draw(datum/look/look)
+	..()
 	if(has_stat(NOPOWER))
-		icon_state = "control_off"
-		set_light(0)
+		look.state("control_off")
 	else if(enabled)
-		if(lethal)
-			icon_state = "control_kill"
-			set_light(1.5, 1,"#990000")
-		else
-			icon_state = "control_stun"
-			set_light(1.5, 1,"#FF9900")
+		look.state(lethal ? "control_kill" : "control_stun")
+		look.light(1.5, 1, lethal ? "#990000" : "#FF9900")
 	else
-		icon_state = "control_standby"
-		set_light(1.5, 1,"#003300")
+		look.state("control_standby")
+		look.light(1.5, 1, "#003300")
 
-/// An EMP on an active control panel disables its turrets for a while and scrambles its settings (before the hit lands; the hit goes on).
-/obj/machinery/turretid/proc/turretid_emp(datum/act/hit/emp/A)
+/// A pulse on an active panel scrambles its targets (the outage is emp_disable()'s, and push_settings() tells the turrets).
+/obj/machinery/turretid/proc/scramble_settings(datum/act/A)
 	if(enabled)
-		//if the turret is on, the EMP no matter how severe disables the turret for a while
-		//and scrambles its settings, with a slight chance of having an emag effect
-
-		check_arrest = pick(0, 1)
-		check_records = pick(0, 1)
-		check_weapons = pick(0, 1)
-		check_access = pick(0, 0, 0, 0, 1)	// check_access is a pretty big deal, so it's least likely to get turned on
-		check_anomalies = pick(0, 1)
-
-		enabled = FALSE
-		updateTurrets()
-
-		after(src, rand(6 SECONDS, 60 SECONDS), PROC_REF(emp_reenable))
-	return HOOK_DECLINE
-
-/obj/machinery/turretid/proc/emp_reenable()
-	if(!enabled)
-		enabled = TRUE
-		updateTurrets()
-
-
-// A cyborg with access interfaces remotely as the AI does (FALSE: the robot adapter's default); without it, only by hand from next to it.
-EXTEND_INTERACTIONS(/obj/machinery/turretid, INTERACT_ROBOT("Use", PROC_REF(turretid_robot_use)))
-
-/obj/machinery/turretid/proc/turretid_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(allowed(user))
-		return FALSE
-	if(Adjacent(user))
-		attack_hand(user)
-	return TRUE
+		turret_targets_scramble(src)

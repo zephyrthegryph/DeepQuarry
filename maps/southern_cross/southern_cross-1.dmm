@@ -12698,7 +12698,7 @@
 /obj/machinery/turretid/lethal{
 	ailock = 1;
 	check_synth = 1;
-	control_area = "\improper Telecomms Storage";
+	control_area_name = "\improper Telecomms Storage";
 	desc = "A firewall prevents AIs from interacting with this device.";
 	name = "Telecoms lethal turret control";
 	pixel_y = 29;
@@ -13881,7 +13881,7 @@
 	},
 /obj/machinery/turretid/stun{
 	check_records = 0;
-	control_area = "\improper Telecomms Teleporter";
+	control_area_name = "\improper Telecomms Teleporter";
 	name = "Telecomms Teleporter turret control";
 	pixel_x = 28;
 	req_access = list(19)
@@ -28196,7 +28196,7 @@
 "bek" = (
 /obj/machinery/turretid/stun{
 	check_records = 0;
-	control_area = "\improper Teleporter";
+	control_area_name = "\improper Teleporter";
 	name = "Teleporter turret control";
 	pixel_y = -24;
 	req_access = list(19)
@@ -95769,7 +95769,7 @@
 	dir = 5
 	},
 /obj/machinery/turretid/stun{
-	control_area = "\improper AI Upload Chamber";
+	control_area_name = "\improper AI Upload Chamber";
 	name = "AI Upload turret control";
 	pixel_y = 24
 	},

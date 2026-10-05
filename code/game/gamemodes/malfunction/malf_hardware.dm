@@ -60,11 +60,11 @@
 
 /datum/malf_hardware/strong_turrets/install()
 	..()
-	for(var/obj/machinery/porta_turret/T in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+	for(var/obj/machinery/porta_turret/T as anything in REGISTRY_MEMBERS(REGISTRY_TURRETS))
 		T.max_integrity = round(initial(T.max_integrity) * 1.4)
 		T.repair_damage(T.max_integrity)
 		T.shot_delay = round(initial(T.shot_delay) / 2)
-		T.auto_repair = 1
+		T.set_auto_repair(TRUE)
 		T.update_active_power_usage(round(initial(T.active_power_usage) * 5))
 
 /// Owner (a relation view).
