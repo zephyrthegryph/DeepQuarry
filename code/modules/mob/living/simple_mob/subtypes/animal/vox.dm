@@ -124,14 +124,14 @@ CAPABILITIES(/datum/armalis_commune_review)
 	run_step(PROC_REF(recipient_step), A)
 
 /datum/armalis_commune_review/proc/recipient_step(datum/act/request/A)
-	recipient = A.answer.answer_value
+	recipient = A.answer.value
 	open_request(src, /datum/prompt/text/armalis_commune_text, PROC_REF(text_entered), answerer = actor, asker = actor)
 
 /datum/armalis_commune_review/proc/text_entered(datum/act/request/A)
 	run_step(PROC_REF(text_step), A)
 
 /datum/armalis_commune_review/proc/text_step(datum/act/request/A)
-	actor.message_mob_answered(recipient, A.answer.answer_value)
+	actor.message_mob_answered(recipient, A.answer.value)
 	retire()
 
 /mob/living/simple_mob/vox/armalis/proc/message_mob_answered(recipient, text)

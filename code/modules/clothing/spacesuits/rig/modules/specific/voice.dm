@@ -58,7 +58,7 @@ CAPABILITIES(/obj/item/rig_module/voice)
 
 /datum/prompt/text/rig_voice_name/recheck_extra()
 	var/obj/item/rig_module/voice/module = owner
-	if(!answer_value)
+	if(!value)
 		return "no name"
 	return (module.holder && module.holder.wearer() == answerer) ? null : "not wearing the suit"
 
@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/rig_module/voice)
 	if(!context.answer)
 		return
 	var/mob/user = context.request.answerer
-	switch(context.answer.answer_value)
+	switch(context.answer.value)
 		if("Enable")
 			active = 1
 			voice_holder.active = 1
@@ -82,6 +82,6 @@ CAPABILITIES(/obj/item/rig_module/voice)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	voice_holder.voice = A.answer.answer_value
+	voice_holder.voice = A.answer.value
 	to_chat(user, span_blue("You are now mimicking <B>[voice_holder.voice]</B>."))
 

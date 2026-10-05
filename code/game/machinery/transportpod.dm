@@ -39,7 +39,7 @@ CAPABILITIES(/obj/machinery/transportpod)
 	open_request(src, /datum/prompt/yes_no, PROC_REF(launch_answered), answerer = N.occupant, title = "Transport Pod", question = "Are you sure you're ready to launch?", ask_flags = ASK_INSIDE, timeout = 0)
 
 /obj/machinery/transportpod/proc/launch_answered(datum/act/request/A)
-	if(A.answer && A.answer.answer_value)
+	if(A.answer && A.answer.value)
 		set_in_transit(TRUE)
 		playsound(src, HYPERSPACE_WARMUP)
 	else

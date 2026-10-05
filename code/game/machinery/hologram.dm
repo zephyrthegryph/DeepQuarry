@@ -79,7 +79,7 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 	return TRUE
 
 /obj/machinery/hologram/holopad/proc/ai_request_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/carbon/human/user = A.request.answerer
 	if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!

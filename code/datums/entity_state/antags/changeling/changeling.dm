@@ -509,7 +509,7 @@ CAPABILITIES(/datum/changeling_panel)
 /datum/prompt/choice/changeling_sting_target/recheck_extra()
 	if(QDELETED(owner) || QDELETED(answerer))
 		return "gone"
-	var/mob/living/carbon/selected = answer_value
+	var/mob/living/carbon/selected = value
 	if(!isnull(selected) && QDELETED(selected))
 		return "gone"
 	return null

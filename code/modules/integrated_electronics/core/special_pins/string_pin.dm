@@ -26,7 +26,7 @@
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
 		return
-	var/new_data = A.answer.answer_value
+	var/new_data = A.answer.value
 	new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
 
 	if(new_data && holder().check_interactivity(user) )

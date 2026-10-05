@@ -159,7 +159,7 @@
 /mob/living/simple_mob/vore/zorgoia/proc/appearance_part_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/part = A.answer.answer_value
+	var/part = A.answer.value
 	if(!part || QDELETED(src) || src.incapacitated())
 		return
 	var/list/options
@@ -414,7 +414,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 /mob/living/simple_mob/vore/zorgoia/proc/import_style_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/input_style = A.answer.answer_value
+	var/input_style = A.answer.value
 	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")

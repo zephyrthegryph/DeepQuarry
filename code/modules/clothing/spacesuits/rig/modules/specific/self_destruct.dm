@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/rig_module/self_destruct)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/rig_self_destruct/ask = A.request
-	if(ask.skip_check || ask.answer_value == "Yes")
+	if(ask.skip_check || ask.value == "Yes")
 		self_destruct_detonate()
 	SStgui.update_uis(src)
 

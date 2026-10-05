@@ -218,7 +218,7 @@ UI_ACT_PROC(/datum/tickets, ui_act_send_msg)
 /datum/tickets/proc/ticket_fallback_list_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	TicketListLegacy(context.request.answerer, context.answer.answer_value)
+	TicketListLegacy(context.request.answerer, context.answer.value)
 	SStgui.update_uis(src)
 
 //
@@ -367,7 +367,7 @@ UI_ACT_PROC(/datum/ticket, ui_act_send_msg)
 	if(!context.answer)
 		return
 	var/datum/tickets/manager = src_object()
-	manager.TicketListLegacy(user, context.answer.answer_value)
+	manager.TicketListLegacy(user, context.answer.value)
 	SStgui.update_uis(manager)
 
 /datum/prompt/choice/ticket_list_ui

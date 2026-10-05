@@ -114,7 +114,7 @@
 	var/mob/M = A.request.answerer
 	if(QDELETED(M))
 		return
-	drone_laws = A.answer ? A.answer.answer_value : "Regular"
+	drone_laws = A.answer ? A.answer.value : "Regular"
 	create_occupant(M)
 
 /obj/structure/ghost_pod/manual/lost_drone/dogborg/create_occupant(mob/M)

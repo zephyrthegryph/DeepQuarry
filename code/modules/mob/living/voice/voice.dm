@@ -79,7 +79,7 @@
 /mob/living/voice/proc/voice_name_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_name = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	var/new_name = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(new_name)
 		if(comm)
 			comm.visible_message(span_notice("[icon2html(comm,viewers(comm))] [src.name] has left, and now you see [new_name]."))

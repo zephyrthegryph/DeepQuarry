@@ -41,7 +41,7 @@
 /obj/item/spell/chroma/proc/chroma_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_color = A.answer.answer_value
+	var/new_color = A.answer.value
 	if(new_color)
 		color_to_use = new_color
 		set_light(6, 5, l_color = new_color)

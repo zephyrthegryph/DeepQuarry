@@ -40,7 +40,7 @@
 	var/mob/user = A.request.answerer
 	if(QDELETED(user))
 		return
-	pupil_color = (A.answer ? A.answer.answer_value : null) || initial(pupil_color)
+	pupil_color = (A.answer ? A.answer.value : null) || initial(pupil_color)
 	user.update_icon()
 
 /obj/item/robot_module/robot/platform/explorer

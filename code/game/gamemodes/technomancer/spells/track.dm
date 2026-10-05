@@ -51,8 +51,8 @@ CAPABILITIES(/obj/item/spell/track)
 /obj/item/spell/track/proc/track_target_chosen(datum/act/request/context)
 	if(!context.answer)
 		return
-	if(context.answer.answer_value)
-		rel_set(src, nameof(tracked), context.answer.answer_value)
+	if(context.answer.value)
+		rel_set(src, nameof(tracked), context.answer.value)
 		set_tracking(TRUE)
 		track()
 
@@ -87,8 +87,8 @@ CAPABILITIES(/obj/item/spell/track)
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
 /datum/prompt/choice/technomancer_track_target/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
-	var/atom/movable/selected = answer_value
+	var/atom/movable/selected = value
 	if(!istype(selected) || QDELETED(selected))
 		return "gone"

@@ -57,7 +57,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 	var/mob/M = A.request.answerer
 	if(!M.mind)
 		return 0
-	var/_answer_a1 = A.answer.answer_value
+	var/_answer_a1 = A.answer.value
 	if(isnull(_answer_a1))
 		return
 	var/input = sanitizeSafe(_answer_a1, MAX_NAME_LEN)

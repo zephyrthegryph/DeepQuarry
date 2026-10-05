@@ -358,7 +358,7 @@ CAPABILITIES(/datum/prompt/choice/pai_access)
 	if(!W)
 		return
 	var/obj/item/card/id/ID = W.GetID()
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Add Access")
 			idcard.access |= ID.GetAccess()
 			to_chat(user, span_notice("You add the access from the [W] to [src]."))

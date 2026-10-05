@@ -393,7 +393,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 /mob/living/silicon/ai/proc/ai_icon_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	proto_set(src, nameof(selected_sprite), A.answer.answer_value)
+	proto_set(src, nameof(selected_sprite), A.answer.value)
 	update_icon()
 
 /mob/living/silicon/ai/var/announcement_cooldown = 0
@@ -415,7 +415,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 /mob/living/silicon/ai/proc/ai_announcement_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	announcement.Announce(A.answer.answer_value)
+	announcement.Announce(A.answer.value)
 	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()
@@ -433,7 +433,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 /mob/living/silicon/ai/proc/ai_call_shuttle_confirmed(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
+	if(A.answer.value)
 		call_shuttle_proc(src)
 
 	// hack to display shuttle timer
@@ -450,7 +450,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	open_request(src, /datum/prompt/yes_no, PROC_REF(ai_recall_shuttle_confirmed), answerer = src, valid = PROC_REF(ai_command_askable), title = "Confirm Shuttle Recall", question = "Are you sure you want to recall the shuttle?", timeout = 0)
 
 /mob/living/silicon/ai/proc/ai_recall_shuttle_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	cancel_call_proc(src)
 
@@ -474,7 +474,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 /mob/living/silicon/ai/proc/ai_emergency_message_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/input = A.answer.answer_value
+	var/input = A.answer.value
 	CentCom_announce(input, src)
 	to_chat(src, span_notice("Message transmitted."))
 	log_game("[key_name(src)] has made an IA [using_map.boss_short] announcement: [input]")
@@ -675,7 +675,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/hologram_change_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Color")
 			open_request(src, /datum/prompt/color, PROC_REF(hologram_color_chosen), answerer = src, title = "Hologram Color", question = "Choose a color:", default = holo_color, timeout = 0)
 		if("Model")
@@ -684,12 +684,12 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/hologram_color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	holo_color = A.answer.answer_value
+	holo_color = A.answer.value
 
 /mob/living/silicon/ai/proc/hologram_model_kind_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Crew Member") //A seeable crew member (or a dog)
 			var/list/targets = trackable_mobs()
 			if(targets.len)
@@ -737,7 +737,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/hologram_crew_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/input = A.answer.answer_value
+	var/input = A.answer.value
 	//This is torture, I know. If someone knows a better way...
 	var/list/targets = trackable_mobs()
 	if(!targets[input])
@@ -750,7 +750,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	if(!A.answer)
 		return
 	qdel(holo_icon)
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("default")
 			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 		if("floating face")
@@ -972,7 +972,7 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 	var/mob/living/target = asked.requester
 	if(!door || !target)
 		return
-	if(A.answer.answer_value && !check_unable(AI_CHECK_WIRELESS))
+	if(A.answer.value && !check_unable(AI_CHECK_WIRELESS))
 		perform_op(src, door, "open_close", null, ORIGIN_MENU, AUTH_REMOTE_ACCESS)
 		to_chat(src, span_notice("You open \the [door] for [target]."))
 	else

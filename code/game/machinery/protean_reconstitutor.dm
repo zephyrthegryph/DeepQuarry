@@ -180,7 +180,7 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 		return
 	var/datum/prompt/choice/protean_component/R = A.request
 	var/mob/user = R.answerer
-	var/atom/movable/choice = A.answer.answer_value
+	var/atom/movable/choice = A.answer.value
 	var/obj/item/tool = R.tool
 	if(processing_revive || choice.loc != src)
 		return

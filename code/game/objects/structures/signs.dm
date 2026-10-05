@@ -51,7 +51,7 @@
 		return
 	var/mob/user = A.request.answerer
 	var/obj/item/tool = A.request.subject
-	var/direction = A.answer.answer_value
+	var/direction = A.answer.value
 	var/offset_x = 0
 	var/offset_y = 0
 	switch(direction)
@@ -1676,7 +1676,7 @@ CAPABILITIES(/obj/structure/sign/flag)
 	return TRUE
 
 /obj/structure/sign/flag/proc/rip_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/user = A.request.answerer
 	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!" ))

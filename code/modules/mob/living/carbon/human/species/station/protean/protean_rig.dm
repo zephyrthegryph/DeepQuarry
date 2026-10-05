@@ -409,10 +409,10 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
 /datum/prompt/choice/protean_rig_module/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
 	var/obj/item/rig/protean/rig = owner
-	return (choices[answer_value] in rig.installed_modules) ? null : "not installed"
+	return (choices[value] in rig.installed_modules) ? null : "not installed"
 
 /obj/item/rig/protean/proc/module_removal_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -422,7 +422,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 /obj/item/rig/protean/proc/module_removal_apply(datum/act/request/A)
 	var/datum/prompt/choice/protean_rig_module/ask = A.answer
 	var/mob/living/user = ask.answerer
-	var/obj/item/rig_module/removed = ask.choices[ask.answer_value]
+	var/obj/item/rig_module/removed = ask.choices[ask.value]
 	to_chat(user, "You detach \the [removed] from \the [src].")
 	removed.forceMove(get_turf(src))
 	removed.removed() // pair: installed_modules loses it

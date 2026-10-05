@@ -50,8 +50,8 @@
 
 /obj/item/spell/summon/proc/summon_choice_made_apply(datum/act/request/A)
 	var/datum/prompt/choice/technomancer_carried/ask = A.answer
-	if(ask.answer_value)
-		summoned_mob_type = LAZYACCESS(summon_options, ask.answer_value)
+	if(ask.value)
+		summoned_mob_type = LAZYACCESS(summon_options, ask.value)
 
 // Called when a new mob is summoned, override for special behaviour.
 /obj/item/spell/summon/proc/on_summon(mob/living/summoned)

@@ -53,6 +53,6 @@ DECLARE_REPEAT(/datum/changeling, 4 SECONDS, mimic_drain, "mimicing")
 /mob/proc/changeling_mimicvoice_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	changeling_mimicvoice_review(TRUE, context.answer.answer_value)
+	changeling_mimicvoice_review(TRUE, context.answer.value)
 	if(!QDELETED(src))
 		SStgui.update_uis(src)

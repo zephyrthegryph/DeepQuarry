@@ -666,7 +666,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 
 /obj/item/deck/proc/deck_verb_deal_answered_apply(datum/act/request/A)
 	var/datum/prompt/choice/card_game_review/ask = A.answer
-	ask.card_answers[ask.card_key] = ask.answer_value
+	ask.card_answers[ask.card_key] = ask.value
 	return deck_verb_deal_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
 
 /obj/item/deck/proc/deck_verb_deal_multi_answered(datum/act/request/A)
@@ -678,10 +678,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 /obj/item/deck/proc/deck_verb_deal_multi_answered_apply(datum/act/request/A)
 	if(istype(A.answer, /datum/prompt/number/card_game_review))
 		var/datum/prompt/number/card_game_review/ask = A.answer
-		ask.card_answers[ask.card_key] = ask.answer_value
+		ask.card_answers[ask.card_key] = ask.value
 		return deck_verb_deal_multi_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
 	var/datum/prompt/choice/card_game_review/ask = A.answer
-	ask.card_answers[ask.card_key] = ask.answer_value
+	ask.card_answers[ask.card_key] = ask.value
 	return deck_verb_deal_multi_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
 
 /obj/item/deck/proc/deck_verb_search_answered(datum/act/request/A)
@@ -692,7 +692,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 
 /obj/item/deck/proc/deck_verb_search_answered_apply(datum/act/request/A)
 	var/datum/prompt/checklist/card_game_review/ask = A.answer
-	ask.card_answers[ask.card_key] = ask.answer_value
+	ask.card_answers[ask.card_key] = ask.value
 	return deck_verb_search_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
 
 /obj/item/hand/proc/interaction_item_answered(datum/act/request/A)
@@ -703,7 +703,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 
 /obj/item/hand/proc/interaction_item_answered_apply(datum/act/request/A)
 	var/datum/prompt/text/card_game_review/ask = A.answer
-	ask.card_answers[ask.card_key] = ask.answer_value
+	ask.card_answers[ask.card_key] = ask.value
 	return interaction_item_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
 
 /obj/item/hand/proc/hand_verb_discard_answered(datum/act/request/A)
@@ -715,10 +715,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 /obj/item/hand/proc/hand_verb_discard_answered_apply(datum/act/request/A)
 	if(istype(A.answer, /datum/prompt/number/card_game_review))
 		var/datum/prompt/number/card_game_review/ask = A.answer
-		ask.card_answers[ask.card_key] = ask.answer_value
+		ask.card_answers[ask.card_key] = ask.value
 		return hand_verb_discard_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
 	var/datum/prompt/choice/card_game_review/ask = A.answer
-	ask.card_answers[ask.card_key] = ask.answer_value
+	ask.card_answers[ask.card_key] = ask.value
 	return hand_verb_discard_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
 
 /obj/item/hand/proc/hand_verb_remove_card_answered(datum/act/request/A)
@@ -729,7 +729,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 
 /obj/item/hand/proc/hand_verb_remove_card_answered_apply(datum/act/request/A)
 	var/datum/prompt/choice/card_game_review/ask = A.answer
-	ask.card_answers[ask.card_key] = ask.answer_value
+	ask.card_answers[ask.card_key] = ask.value
 	return hand_verb_remove_card_stage(ask.card_operator, ask.card_input, ask.card_interaction, ask.card_answers)
 
 /datum/prompt/choice/card_game_review
@@ -769,8 +769,8 @@ CAPABILITIES(/datum/prompt/choice/card_game_review)
 /datum/prompt/choice/card_game_review/recheck_extra()
 	if((card_operator_expected && QDELETED(card_operator)) || (card_input_expected && QDELETED(card_input)) || (card_interaction_expected && QDELETED(card_interaction)))
 		return "gone"
-	if((card_key == "k148" || card_key == "k175") && !isnull(answer_value))
-		var/mob/living/selected = answer_value
+	if((card_key == "k148" || card_key == "k175") && !isnull(value))
+		var/mob/living/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"
 

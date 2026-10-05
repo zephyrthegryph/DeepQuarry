@@ -420,7 +420,7 @@ CAPABILITIES(/obj/item/stack)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/N = A.answer.answer_value
+	var/N = A.answer.value
 	if(N != round(N))
 		to_chat(user, span_warning("You cannot separate a non-whole number of stacks!"))
 		return

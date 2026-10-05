@@ -26,7 +26,7 @@
 	open_request(user, /datum/prompt/yes_no, TYPE_PROC_REF(/mob/living/silicon/ai, malf_core_bomb_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able_overridden), title = "Core self-destruct", question = "Really destroy core?", yes_text = "YES", no_text = "NO", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/silicon/ai/proc/malf_core_bomb_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/silicon/ai/user = src
 	if(user.bombing_core)
@@ -89,7 +89,7 @@
 	open_request(user, /datum/prompt/yes_no, TYPE_PROC_REF(/mob/living/silicon/ai, malf_station_bomb_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Station self-destruct", question = "Really destroy station?", yes_text = "YES", no_text = "NO", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/silicon/ai/proc/malf_station_bomb_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/silicon/ai/user = src
 	if(user.bombing_station)

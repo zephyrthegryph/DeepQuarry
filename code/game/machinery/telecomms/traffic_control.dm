@@ -161,7 +161,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/newnet = A.answer.answer_value
+	var/newnet = A.answer.value
 	if(newnet && ((user in range(1, src)) || issilicon(user)))
 		if(length(newnet) > 15)
 			set_temp(span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -"))

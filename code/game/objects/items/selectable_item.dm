@@ -21,7 +21,7 @@ CAPABILITIES(/obj/item/selectable_item)
 	return TRUE
 
 /obj/item/selectable_item/proc/preface_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	open_request(src, /datum/prompt/choice, PROC_REF(item_selected), answerer = A.request.answerer, title = selection_title, question = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/selectable_item)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[A.answer.answer_value]
+	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[A.answer.value]
 	if(chosen_item)
 		if(!consume(src, user))
 			return

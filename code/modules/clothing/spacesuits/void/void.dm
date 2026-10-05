@@ -510,7 +510,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 	var/datum/prompt/choice/voidsuit_component/request = A.request
 	if(request.captures_gone())
 		return
-	var/obj/item/selected = A.answer.answer_value
+	var/obj/item/selected = A.answer.value
 	if(QDELETED(selected))
 		return
 	return screwdriver_act(request.answerer, request.captured_tool, selected)
@@ -540,8 +540,8 @@ CAPABILITIES(/datum/prompt/choice/voidsuit_component)
 		return
 	if(captures_gone())
 		return "gone"
-	if(!isnull(answer_value))
-		var/obj/item/selected = answer_value
+	if(!isnull(value))
+		var/obj/item/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"
 	return null

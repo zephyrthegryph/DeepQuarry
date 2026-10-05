@@ -71,9 +71,9 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 		retire()
 		return
 	if(stage == 0)
-		first_answer = context.request.answer_value
+		first_answer = context.request.value
 	else
-		confirmation = context.request.answer_value
+		confirmation = context.request.value
 	stage++
 	run_step()
 

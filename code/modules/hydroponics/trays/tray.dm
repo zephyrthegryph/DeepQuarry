@@ -823,7 +823,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/botany_ghost_harvest_apply(datum/act/request/A)
 	var/datum/prompt/choice/botany_ghost_harvest/ask = A.answer
-	return botany_ghost_harvest_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.answer_value, TRUE)
+	return botany_ghost_harvest_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.value, TRUE)
 
 /datum/prompt/choice/botany_ghost_harvest
 	timeout = 0
@@ -869,7 +869,7 @@ CAPABILITIES(/datum/prompt/choice/botany_ghost_harvest)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/botany_tray_light_apply(datum/act/request/A)
 	var/datum/prompt/choice/botany_tray_light/ask = A.answer
-	return botany_tray_light_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.answer_value, TRUE)
+	return botany_tray_light_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.value, TRUE)
 
 /datum/prompt/choice/botany_tray_light
 	timeout = 0

@@ -197,7 +197,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 /obj/item/soulstone/proc/apply_construct_type_chosen(datum/act/request/answer)
 	var/datum/request/ask = answer.request
 	var/mob/U = ask.answerer
-	var/construct_class = answer.answer.answer_value
+	var/construct_class = answer.answer.value
 	var/obj/structure/constructshell/T = ask.subject
 	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)
 	if(!A)

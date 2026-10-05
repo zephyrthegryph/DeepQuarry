@@ -321,10 +321,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance
 /obj/structure/bigDelivery/proc/parcel_label_apply(datum/act/request/A)
 	if(istype(A.answer, /datum/prompt/choice/parcel_label_review))
 		var/datum/prompt/choice/parcel_label_review/ask = A.answer
-		ask.parcel_answers[ask.parcel_key] = ask.answer_value
+		ask.parcel_answers[ask.parcel_key] = ask.value
 		return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
 	var/datum/prompt/text/parcel_label_review/ask = A.answer
-	ask.parcel_answers[ask.parcel_key] = ask.answer_value
+	ask.parcel_answers[ask.parcel_key] = ask.value
 	return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
 
 /obj/item/smallDelivery/proc/parcel_label_answered(datum/act/request/A)
@@ -336,10 +336,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance
 /obj/item/smallDelivery/proc/parcel_label_apply(datum/act/request/A)
 	if(istype(A.answer, /datum/prompt/choice/parcel_label_review))
 		var/datum/prompt/choice/parcel_label_review/ask = A.answer
-		ask.parcel_answers[ask.parcel_key] = ask.answer_value
+		ask.parcel_answers[ask.parcel_key] = ask.value
 		return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
 	var/datum/prompt/text/parcel_label_review/ask = A.answer
-	ask.parcel_answers[ask.parcel_key] = ask.answer_value
+	ask.parcel_answers[ask.parcel_key] = ask.value
 	return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
 
 /datum/prompt/choice/parcel_label_review

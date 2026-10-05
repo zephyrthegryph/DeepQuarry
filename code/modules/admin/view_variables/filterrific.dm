@@ -118,7 +118,7 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_mass_apply)
 		return
 	var/datum/prompt/color/filter_editor_colour/ask = context.answer
 	var/datum/filter_editor/editor = src_object()
-	if(editor.apply_filter_colour(ask.filter_name, ask.answer_value))
+	if(editor.apply_filter_colour(ask.filter_name, ask.value))
 		SStgui.update_uis(editor)
 
 /datum/filter_editor/proc/apply_filter_colour(filter_name, value)

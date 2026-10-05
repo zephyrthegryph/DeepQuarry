@@ -137,9 +137,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_hair_style_picked(datum/act/request/A)
 	var/datum/prompt/choice/shapeshift_hair/ask = A.request
 	if(!A.answer)
-		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value) || request_recheck(ask))
 			return
-	var/hair = A.answer ? ask.answer_value || "Bald" : "Bald"
+	var/hair = A.answer ? ask.value || "Bald" : "Bald"
 	shapeshifter_ask_gradient(ask.grads, ask.facials, hair)
 
 /mob/living/carbon/human/proc/shapeshifter_ask_gradient(list/grads, list/facials, hair)
@@ -151,9 +151,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_gradient_style_picked(datum/act/request/A)
 	var/datum/prompt/choice/shapeshift_hair/ask = A.request
 	if(!A.answer)
-		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value) || request_recheck(ask))
 			return
-	var/gradient = A.answer ? ask.answer_value || "None" : "None"
+	var/gradient = A.answer ? ask.value || "None" : "None"
 	shapeshifter_ask_facial(ask.facials, ask.hair, gradient)
 
 /mob/living/carbon/human/proc/shapeshifter_ask_facial(list/facials, hair, gradient)
@@ -165,9 +165,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_facial_style_picked(datum/act/request/A)
 	var/datum/prompt/choice/shapeshift_hair/ask = A.request
 	if(!A.answer)
-		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value) || request_recheck(ask))
 			return
-	var/facial = A.answer ? ask.answer_value || "Shaved" : "Shaved"
+	var/facial = A.answer ? ask.value || "Shaved" : "Shaved"
 	shapeshifter_hair_chosen(ask.hair, ask.gradient, facial)
 
 /// Applies the picked styles (null: that one wasn't asked).
@@ -203,7 +203,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_gender_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	open_request(src, /datum/prompt/choice/shapeshift_identity, PROC_REF(shapeshifter_gender_chosen), answerer = src, new_gender = A.answer.answer_value)
+	open_request(src, /datum/prompt/choice/shapeshift_identity, PROC_REF(shapeshifter_gender_chosen), answerer = src, new_gender = A.answer.value)
 
 /mob/living/carbon/human/proc/shapeshifter_gender_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -211,7 +211,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	var/datum/prompt/choice/shapeshift_identity/ask = A.request
 	act_message(src, null, others = span_notice("%U%'s form contorts subtly."))
 	change_gender(ask.new_gender)
-	change_gender_identity(A.answer.answer_value)
+	change_gender_identity(A.answer.value)
 
 /mob/living/carbon/human/proc/shapeshifter_select_shape()
 
@@ -237,7 +237,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(.)
 		return
 	var/mob/living/carbon/human/shifter = asker || answerer
-	var/choice = answer_value
+	var/choice = value
 	if(!GLOB.all_species[choice] || GLOB.wrapped_species_by_ref["\ref[shifter]"] == choice || !(choice in shifter.species.get_valid_shapeshifter_forms(shifter)))
 		return "not a form to take"
 	return null
@@ -245,7 +245,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_shape_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	shapeshifter_change_shape(A.answer.answer_value)
+	shapeshifter_change_shape(A.answer.value)
 
 /*
 /mob/living/carbon/human/proc/shapeshifter_change_shape(new_species = null)
@@ -272,7 +272,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_colour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	shapeshifter_set_colour(A.answer.answer_value)
+	shapeshifter_set_colour(A.answer.value)
 
 /mob/living/carbon/human/proc/shapeshifter_set_colour(new_skin)
 
@@ -305,19 +305,19 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_hair_color_step(datum/act/request/A)
 	if(!A.answer)
 		return
-	shapeshifter_set_hair_color(A.answer.answer_value)
+	shapeshifter_set_hair_color(A.answer.value)
 	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_grad_color_step), answerer = src, title = "Hair Gradient Colour", question = "Please select a new hair gradient color.", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/carbon/human/proc/shapeshifter_grad_color_step(datum/act/request/A)
 	if(!A.answer)
 		return
-	shapeshifter_set_grad_color(A.answer.answer_value)
+	shapeshifter_set_grad_color(A.answer.value)
 	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_hair_colors_done), answerer = src, title = "Facial Hair Color", question = "Please select a new facial hair color.", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/carbon/human/proc/shapeshifter_hair_colors_done(datum/act/request/A)
 	if(!A.answer)
 		return
-	shapeshifter_set_facial_color(A.answer.answer_value)
+	shapeshifter_set_facial_color(A.answer.value)
 
 /mob/living/carbon/human/proc/shapeshifter_set_hair_color(new_hair)
 
@@ -394,7 +394,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_eye_colour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	shapeshifter_set_eye_color(A.answer.answer_value)
+	shapeshifter_set_eye_color(A.answer.value)
 
 /mob/living/carbon/human/proc/shapeshifter_set_eye_color(new_eyes)
 
@@ -486,7 +486,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/shapeshift_accessory/ask = A.request
-	shapeshifter_ask_accessory_color(ask.kind, ask.choices[ask.answer_value], 1)
+	shapeshifter_ask_accessory_color(ask.kind, ask.choices[ask.value], 1)
 
 /// The live colour at the opening of each channel's prompt.
 /mob/living/carbon/human/proc/shapeshifter_accessory_current_color(kind, suffix)
@@ -533,9 +533,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_accessory_color_picked(datum/act/request/A)
 	var/datum/prompt/color/shapeshift_accessory/ask = A.request
 	if(!A.answer)
-		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value) || request_recheck(ask))
 			return
-	var/color = A.answer ? ask.answer_value : ""
+	var/color = A.answer ? ask.value : ""
 	switch(ask.channel)
 		if(1)
 			if(!color)
@@ -562,9 +562,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_accessory_alpha_picked(datum/act/request/A)
 	var/datum/prompt/number/shapeshift_accessory/ask = A.request
 	if(!A.answer)
-		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value) || request_recheck(ask))
 			return
-	shapeshifter_accessory_chosen(ask.kind, ask.style_path, list("c1" = ask.c1, "c2" = ask.c2, "c3" = ask.c3), A.answer ? ask.answer_value : "")
+	shapeshifter_accessory_chosen(ask.kind, ask.style_path, list("c1" = ask.c1, "c2" = ask.c2, "c3" = ask.c3), A.answer ? ask.value : "")
 
 /// Applies an accessory pick: `style_path` (null: none), `colors` ("c1"/"c2"/"c3" -> "#rrggbb" or
 /// empty to keep) and `alpha` (empty to keep).
@@ -617,7 +617,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/ask = A.request
-	ear_secondary_style = GLOB.ear_styles_list[ask.choices[ask.answer_value]]
+	ear_secondary_style = GLOB.ear_styles_list[ask.choices[ask.value]]
 	var/list/defaults = list()
 	if(ear_secondary_style)
 		for(var/channel in 1 to ear_secondary_style.get_color_channel_count())
@@ -652,9 +652,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_secondary_ear_channel_picked(datum/act/request/A)
 	var/datum/prompt/color/shapeshift_secondary_ears/ask = A.request
 	if(!A.answer)
-		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value) || request_recheck(ask))
 			return
-	var/color = A.answer ? ask.answer_value : ""
+	var/color = A.answer ? ask.value : ""
 	var/list/new_colors = ask.new_colors
 	new_colors += color || ask.defaults[ask.channel]
 	shapeshifter_next_secondary_ear_channel(ask.defaults, new_colors, ask.channel)
@@ -662,9 +662,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_secondary_ear_alpha_picked(datum/act/request/A)
 	var/datum/prompt/number/shapeshift_secondary_ears/ask = A.request
 	if(!A.answer)
-		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value) || request_recheck(ask))
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value) || request_recheck(ask))
 			return
-	shapeshifter_secondary_ear_colors_chosen(ask.new_colors, A.answer ? ask.answer_value : "")
+	shapeshifter_secondary_ear_colors_chosen(ask.new_colors, A.answer ? ask.value : "")
 
 /mob/living/carbon/human/proc/shapeshifter_secondary_ear_colors_chosen(list/new_colors, alpha)
 	if(length(new_colors))
@@ -741,22 +741,22 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	recheck_on_open = TRUE
 
 /mob/living/carbon/human/proc/shapeshifter_reform_confirmed(datum/act/request/A)
-	if(!A.answer || A.request.answer_value == "Cancel")
+	if(!A.answer || A.request.value == "Cancel")
 		return
 	var/datum/prompt/choice/shapeshift_reform/ask = A.request
 	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_flavour_picked), answerer = src, question = "Include Flavourtext?", title = "Reformation", choices = list("Yes", "No", "Cancel"), finish_proc = ask.finish_proc)
 
 /mob/living/carbon/human/proc/shapeshifter_reform_flavour_picked(datum/act/request/A)
-	if(!A.answer || A.request.answer_value == "Cancel")
+	if(!A.answer || A.request.value == "Cancel")
 		return
 	var/datum/prompt/choice/shapeshift_reform/ask = A.request
-	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_ooc_picked), answerer = src, question = "Include OOC notes?", title = "Reformation", choices = list("Yes", "No", "Cancel"), finish_proc = ask.finish_proc, flavour = ask.answer_value == "Yes")
+	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_ooc_picked), answerer = src, question = "Include OOC notes?", title = "Reformation", choices = list("Yes", "No", "Cancel"), finish_proc = ask.finish_proc, flavour = ask.value == "Yes")
 
 /mob/living/carbon/human/proc/shapeshifter_reform_ooc_picked(datum/act/request/A)
-	if(!A.answer || A.request.answer_value == "Cancel")
+	if(!A.answer || A.request.value == "Cancel")
 		return
 	var/datum/prompt/choice/shapeshift_reform/ask = A.request
-	call(src, ask.finish_proc)(ask.flavour, ask.answer_value == "Yes")
+	call(src, ask.finish_proc)(ask.flavour, ask.value == "Yes")
 
 /mob/living/carbon/human/proc/shapeshifter_regenerate_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
@@ -841,7 +841,7 @@ CAPABILITIES(/datum/prompt/yes_no/copy_body_consent)
 		return
 	if(QDELETED(victim))
 		return "gone"
-	if(answer_value)
+	if(value)
 		var/mob/living/carbon/human/H = owner
 		return H.copy_body_gripping(victim) ? null : "lost grip"
 	return null
@@ -868,7 +868,7 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 		return
 	if(QDELETED(victim))
 		return "gone"
-	if(!isnull(answer_value))
+	if(!isnull(value))
 		var/mob/living/carbon/human/H = owner
 		return H.copy_body_gripping(victim) ? null : "lost grip"
 	return null
@@ -881,12 +881,12 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 	if(ask.initial_refusal || QDELETED(ask.victim))
 		return
 	if(!A.answer)
-		if(!isnull(ask.answer_value) && ask.last_error == "lost grip")
+		if(!isnull(ask.value) && ask.last_error == "lost grip")
 			to_chat(src, span_warning("You lost your grip on [ask.victim]!"))
-		else if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value))
+		else if(ask.outcome == REQ_CANCELLED && isnull(ask.value))
 			to_chat(src, span_notice("They declined your request."))
 		return
-	if(!ask.answer_value)
+	if(!ask.value)
 		to_chat(src, span_notice("They declined your request."))
 		return
 	open_request(src, /datum/prompt/choice/copy_body_flavour, PROC_REF(shapeshifter_copy_flavour_picked), answerer = src, question = "Copy [ask.victim]'s flavourtext?", choices = list("Yes", "No", "Cancel"), victim = ask.victim)
@@ -899,10 +899,10 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 	if(QDELETED(ask.victim))
 		return
 	if(!A.answer)
-		if(!isnull(ask.answer_value) && ask.last_error == "lost grip")
+		if(!isnull(ask.value) && ask.last_error == "lost grip")
 			to_chat(src, span_warning("You lost your grip on [ask.victim]!"))
 		return
-	copy_body_flavour_chosen(ask.victim, ask.answer_value)
+	copy_body_flavour_chosen(ask.victim, ask.value)
 
 /// TRUE while we still hold `victim` in at least an aggressive grab.
 /mob/living/carbon/human/proc/copy_body_gripping(mob/living/carbon/human/victim)

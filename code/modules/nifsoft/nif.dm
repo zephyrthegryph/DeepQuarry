@@ -782,11 +782,11 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 		return "no NIF"
 
 /mob/living/carbon/human/proc/nif_appearance_answered(datum/act/request/context)
-	if(isnull(context.request.answer_value) || context.request.last_error == "gone")
+	if(isnull(context.request.value) || context.request.last_error == "gone")
 		return
 	SStgui.update_uis(src)
 	if(context.answer)
-		apply_nif_appearance(context.answer.answer_value)
+		apply_nif_appearance(context.answer.value)
 	else if(context.request.last_error == "no NIF")
 		to_chat(src,span_warning("You don't have a NIF, not sure why this was here."))
 

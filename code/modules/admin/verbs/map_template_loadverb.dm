@@ -56,7 +56,7 @@ CAPABILITIES(/datum/prompt/choice/map_template_place)
 	return ..()
 
 /datum/admin_verb/map_template_load/proc/location_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	var/datum/prompt/choice/map_template_place/ask = A.answer
 	var/datum/map_template/template = SSmapping.map_templates[ask.template_name]
@@ -67,7 +67,7 @@ CAPABILITIES(/datum/prompt/choice/map_template_place)
 	place_confirmed(A)
 
 /datum/admin_verb/map_template_load/proc/place_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	var/datum/prompt/choice/map_template_place/ask = A.answer
 	var/mob/user = ask.answerer

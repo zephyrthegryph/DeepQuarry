@@ -258,7 +258,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 /obj/item/grenade/chem_grenade/proc/detonator_timer_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	configure_detonator_timer(A.request.answerer, A.answer.answer_value, TRUE)
+	configure_detonator_timer(A.request.answerer, A.answer.value, TRUE)
 
 /datum/prompt/number/grenade_timer_configuration
 	question = "Enter desired time in seconds"

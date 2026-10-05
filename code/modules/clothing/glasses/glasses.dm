@@ -793,7 +793,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	var/static/list/options = list("Scanning pattern 1" = "tacsecvis1", "Scanning pattern 2" = "tacsecvis2", "Scanning pattern 3" = "tacsecvis3","Scanning pattern 4" ="tacsecvis4")
 	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]

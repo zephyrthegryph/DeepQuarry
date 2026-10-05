@@ -48,7 +48,7 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	var/mob/user = context.answer.answerer
 	if(viewing_overmap(user))
 		user.reset_perspective()
-	if(context.answer.answer_value == "Reconnect")
+	if(context.answer.value == "Reconnect")
 		if(sync_linked(user))
 			interface_interact(user)
 	if(!QDELETED(src))

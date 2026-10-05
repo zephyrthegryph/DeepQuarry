@@ -221,15 +221,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 	return TRUE
 
 /obj/item/melee/energy/proc/ask_blade_color(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	open_request(src, /datum/prompt/color/blade_recolor, PROC_REF(blade_recolored), answerer = A.request.answerer, default = lcolor, title = "Choose Energy Color")
 
 /obj/item/melee/energy/proc/blade_recolored(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		lcolor = sanitize_hexcolor(A.answer.answer_value)
+	if(A.answer.value)
+		lcolor = sanitize_hexcolor(A.answer.value)
 	update_icon()
 	if(active)
 		set_light(lrange, lpower, lcolor)

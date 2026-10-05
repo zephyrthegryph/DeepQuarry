@@ -216,7 +216,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 /obj/structure/reflector/proc/angle_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	setAngle(SIMPLIFY_DEGREES(A.answer.answer_value))
+	setAngle(SIMPLIFY_DEGREES(A.answer.value))
 
 /// Old click_alt: rotate the finished reflector.
 /datum/interaction/entry_alt/reflector_alt

@@ -125,7 +125,7 @@
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/forensic_swab_evidence/request = context.request
-	collect_swab_evidence(request.target, request.answerer, request.captured_proximity, request.answer_value)
+	collect_swab_evidence(request.target, request.answerer, request.captured_proximity, request.value)
 	SStgui.update_uis(src)
 
 /datum/prompt/choice/forensic_swab_evidence

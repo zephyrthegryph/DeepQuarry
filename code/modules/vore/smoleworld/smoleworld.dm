@@ -116,11 +116,11 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 
 /obj/structure/smoletrack/proc/smole_paint_picked(datum/act/request/A)
 	if(A.answer)
-		color = A.answer.answer_value
+		color = A.answer.value
 
 /obj/structure/smolebuilding/proc/smole_paint_picked(datum/act/request/A)
 	if(A.answer)
-		color = A.answer.answer_value
+		color = A.answer.value
 
 // probably redundant, allows for direct way to dismantal without knowing intents
 /// Old Take Road Apart verb.

@@ -35,7 +35,7 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 /mob/proc/event_trigger_mode_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	var/mob/user = src
 	if(choice == "Cancel")
 		return
@@ -53,9 +53,9 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 			open_request(src, /datum/prompt/text, PROC_REF(event_trigger_other_entered), answerer = src, rights = R_FUN, timeout = 0, title = "CKEY", question = "input trigger owner's ckey", default = "", max_len = MAX_MESSAGE_LEN)
 
 /mob/proc/event_trigger_other_entered(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
-	list_event_triggers(A.answer.answer_value)
+	list_event_triggers(A.answer.value)
 
 /mob/proc/list_event_triggers(owner_ckey)
 	var/mob/user = src
@@ -89,12 +89,12 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
-	if(ask.answer_value == "Cancel")
+	if(ask.value == "Cancel")
 		return
-	if(ask.answer_value == "Delete All")
+	if(ask.value == "Delete All")
 		ask_delete_event_trigger(ask.owner_ckey, null, "Delete all my event triggers", "ARE YOU SURE? THERE IS NO GOING BACK", PROC_REF(event_triggers_delete_all))
 		return
-	var/obj/effect/landmark/event_trigger/trigger = ask.answer_value
+	var/obj/effect/landmark/event_trigger/trigger = ask.value
 	if(!istype(trigger) || QDELETED(trigger))
 		return
 	ask_event_trigger_choice(PROC_REF(event_trigger_manage), ask.owner_ckey, trigger, "Manage [trigger.name]", "Teleport to Landmark or Delete it?", list("Teleport", "Delete"), TRUE)
@@ -104,7 +104,7 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 		return
 	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
 	var/owner_ckey = ask.owner_ckey
-	var/choice = ask.answer_value
+	var/choice = ask.value
 	var/mob/user = src
 	if(choice != "Confirm" && choice != "Delete all my event triggers")
 		return
@@ -120,13 +120,13 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
 	var/obj/effect/landmark/event_trigger/trigger = ask.trigger
 	var/mob/user = src
-	if(ask.answer_value == "Teleport")
+	if(ask.value == "Teleport")
 		if(isobserver(user))
 			ask_event_trigger_choice(PROC_REF(event_trigger_teleport_confirmed), ask.owner_ckey, trigger, "You're not a ghost", "You're not a ghost! Admin-ghost?", list("Cancel", "Teleport me with my character"), TRUE)
 			return
 		user.forceMove(get_turf(trigger))
 		return
-	if(ask.answer_value != "Delete")
+	if(ask.value != "Delete")
 		return
 	ask_delete_event_trigger(ask.owner_ckey, trigger, "Delete it!", "ARE YOU SURE? THERE IS NO GOING BACK FROM DELETING [trigger.name]", PROC_REF(event_trigger_delete_one))
 
@@ -135,7 +135,7 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 		return
 	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
 	var/mob/user = src
-	if(ask.answer_value == "Teleport me with my character")
+	if(ask.value == "Teleport me with my character")
 		user.forceMove(get_turf(ask.trigger))
 
 /mob/proc/event_trigger_delete_one(datum/act/request/A)
@@ -144,7 +144,7 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 	var/datum/prompt/choice/manage_event_triggers/ask = A.answer
 	var/owner_ckey = ask.owner_ckey
 	var/obj/effect/landmark/event_trigger/trigger = ask.trigger
-	var/choice = ask.answer_value
+	var/choice = ask.value
 	var/mob/user = src
 	if(choice != "Confirm" && choice != "Delete it!")
 		return

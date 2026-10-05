@@ -12,7 +12,7 @@
 	open_request(src, /datum/prompt/yes_no, PROC_REF(store_core_confirmed), answerer = src, title = "Store Core", question = "WARNING: This will immediately empty your core and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", timeout = 0)
 
 /mob/living/silicon/ai/proc/store_core_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	// We warned you.
 	registry_join(REGISTRY_EMPTY_AI_CORES, new /obj/structure/AIcore/deactivated(loc))

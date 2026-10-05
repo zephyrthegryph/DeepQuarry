@@ -452,7 +452,7 @@ DECLARE_INTERACTIONS(/turf, \
 		return
 	var/datum/prompt/text/graffiti/ask = context.answer
 	var/mob/vandal = ask.answerer
-	var/message = ask.answer_value
+	var/message = ask.value
 	act_message(vandal, src, others = span_warning("%U% begins carving something into %T%."))
 	om_task_start(/datum/om/task/timed/turf_graffiti, vandal, src, duration = max(2 SECONDS, length(message)), message = message, click_parameters = ask.click_parameters)
 	return TRUE

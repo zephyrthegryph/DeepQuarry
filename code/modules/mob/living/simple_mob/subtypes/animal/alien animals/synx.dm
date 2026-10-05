@@ -662,7 +662,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 /mob/living/simple_mob/animal/synx/proc/style_part_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/part = A.answer.answer_value
+	var/part = A.answer.value
 	if(!part || QDELETED(src) || src.incapacitated())
 		return
 	var/list/options
@@ -962,11 +962,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	var/datum/prompt/text/synx_debug_var/request = A.request
 	switch(request.var_name)
 		if("name")
-			name = A.answer.answer_value
+			name = A.answer.value
 		if("desc")
-			desc = A.answer.answer_value
+			desc = A.answer.value
 		if("icon_state")
-			set_icon_state(A.answer.answer_value)
+			set_icon_state(A.answer.value)
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
 	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename)

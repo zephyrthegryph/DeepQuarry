@@ -484,7 +484,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(!check_menu(user))
 		return
 	switch(choice)
@@ -567,7 +567,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("DEFAULT")
 			girder_type = /obj/structure/girder
 		if("BAY")
@@ -584,7 +584,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Air Alarm")
 			wall_frame_type = /obj/machinery/alarm
 		if("Light Bulb")
@@ -640,7 +640,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("HOSTILE TO ALL")
 			turret_faction = null
 		if("HOSTILE TO ENEMIES")
@@ -676,7 +676,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Solid")
 			if(advanced_airlock_setting == 1)
 				var/list/solid_choices = list(
@@ -729,7 +729,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Standard")
 			airlock_type = /obj/machinery/door/airlock
 		if("Engineering")
@@ -767,7 +767,7 @@ DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Standard")
 			airlock_type = /obj/machinery/door/airlock/glass
 		if("Engineering")
@@ -1013,7 +1013,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	var/mob/user = answerer
 	if(!istype(user) || QDELETED(user) || !length(choices))
 		return FALSE
-	return outcome == REQ_ANSWERED || (optional_pick && outcome == REQ_CANCELLED && isnull(answer_value))
+	return outcome == REQ_ANSWERED || (optional_pick && outcome == REQ_CANCELLED && isnull(value))
 
 /datum/prompt/choice/rcd_build_review
 	parent_type = /datum/prompt/choice/rcd_option_review
@@ -1040,7 +1040,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 /// The pick can still be built: the RCD is usable and can pay for `mode` here.
 /turf/simulated/floor/proc/rcd_build_pick_ok(datum/prompt/choice/rcd_build_review/ask, mode)
 	var/obj/item/rcd/rcd = ask.rcd
-	if(!ask.answer_value || !rcd.check_menu(ask.answerer))
+	if(!ask.value || !rcd.check_menu(ask.answerer))
 		return FALSE
 	var/list/results = rcd_values(ask.answerer, rcd, mode)
 	if(!islist(results))
@@ -1068,7 +1068,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
 		return
-	var/selected_windoor_type = ask.answer_value
+	var/selected_windoor_type = ask.value
 	var/list/windoor_dirs = list(
 	"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorn":"swindoorn")),
 	"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoore":"swindoore")),
@@ -1088,7 +1088,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	"left" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"left":"leftsecure")),
 	"right" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"right":"rightsecure"))
 	)
-	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_windoor_open_dir_chosen), answerer = ask.answerer, choices = windoor_open_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, windoor_dir = ask.answer_value, require_near = ask.require_near, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_windoor_open_dir_chosen), answerer = ask.answerer, choices = windoor_open_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, windoor_dir = ask.value, require_near = ask.require_near, tooltips = TRUE)
 
 /turf/simulated/floor/proc/rcd_windoor_open_dir_chosen(datum/act/request/context)
 	if(!context.answer)
@@ -1099,7 +1099,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	var/obj/item/rcd/rcd = ask.rcd
 	var/selected_windoor_type = ask.windoor_type
 	var/selected_windoor_dir = ask.windoor_dir
-	var/selected_windoor_open_dir = ask.answer_value
+	var/selected_windoor_open_dir = ask.value
 	var/obj/machinery/door/window/A = new(src)
 	if(selected_windoor_type == "default")
 		selected_windoor_type = ""
@@ -1144,7 +1144,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "csouth"),
 	"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "cwest")
 	)
-	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_frame_dir_chosen), answerer = ask.answerer, choices = frame_dirs, anchor = src, rcd = ask.rcd, frame_type = ask.answer_value, require_near = ask.require_near, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_frame_dir_chosen), answerer = ask.answerer, choices = frame_dirs, anchor = src, rcd = ask.rcd, frame_type = ask.value, require_near = ask.require_near, tooltips = TRUE)
 
 /turf/simulated/floor/proc/rcd_frame_dir_chosen(datum/act/request/context)
 	if(!context.answer)
@@ -1154,7 +1154,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 		return
 	var/mob/living/user = ask.answerer
 	var/selected_frame_type = ask.frame_type
-	var/selected_frame_dir = ask.answer_value
+	var/selected_frame_dir = ask.value
 	var/obj/structure/frame
 	if(selected_frame_type == "Machine")
 		frame = new/obj/structure/frame(src)
@@ -1180,7 +1180,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	if(!rcd_build_pick_ok(ask, RCD_CONVEYOR))
 		return
 	var/mob/living/user = ask.answerer
-	var/selected_conveyor_dir = ask.answer_value
+	var/selected_conveyor_dir = ask.value
 	var/obj/machinery/conveyor/C = new(src)
 	switch(selected_conveyor_dir)
 		if("NORTH")
@@ -1367,9 +1367,9 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 		return
 	var/mob/living/user = ask.answerer
 	var/obj/item/rcd/the_rcd = ask.subject
-	if(!istype(the_rcd) || !ask.answer_value || !the_rcd.check_menu(user))
+	if(!istype(the_rcd) || !ask.value || !the_rcd.check_menu(user))
 		return
-	the_rcd.window_dir = ask.answer_value
+	the_rcd.window_dir = ask.value
 	the_rcd.window_dir_confirmed = TRUE
 	the_rcd.use_rcd(src, user)
 	the_rcd.window_dir_confirmed = FALSE

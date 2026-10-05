@@ -52,11 +52,11 @@ CAPABILITIES(/datum/admin_save_conversion_review)
 		return
 	switch(stage)
 		if(0)
-			target_text = context.request.answer_value
+			target_text = context.request.value
 		if(1)
-			direction = context.request.answer_value
+			direction = context.request.value
 		if(2)
-			confirmation = context.request.answer_value
+			confirmation = context.request.value
 	stage++
 	run_step()
 

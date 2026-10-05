@@ -251,9 +251,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 /mob/living/simple_mob/vore/morph/proc/morph_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		color = A.answer.answer_value
-		chosen_color = A.answer.answer_value
+	if(A.answer.value)
+		color = A.answer.value
+		chosen_color = A.answer.value
 
 /mob/living/simple_mob/vore/morph/proc/take_over_prey()
 	set name = "Take Over Prey"
@@ -302,7 +302,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	run_step(PROC_REF(target_step), A)
 
 /datum/control_transfer_review/morph_takeover/proc/target_step(datum/act/request/A)
-	var/mob/living/selected = A.answer.answer_value
+	var/mob/living/selected = A.answer.value
 	if(!istype(selected) || QDELETED(selected))
 		retire()
 		return

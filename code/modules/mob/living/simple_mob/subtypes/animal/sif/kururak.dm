@@ -181,9 +181,9 @@
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_chosen(datum/act/request/A)
 	var/datum/request/R = A.request
 	// An explicit close still flares the tails; a failed conscious recheck does not.
-	if(!A.answer && (R.outcome != REQ_CANCELLED || !isnull(R.answer_value)))
+	if(!A.answer && (R.outcome != REQ_CANCELLED || !isnull(R.value)))
 		return
-	var/target = A.answer ? A.answer.answer_value : null
+	var/target = A.answer ? A.answer.value : null
 	if(isdatum(target))
 		var/datum/target_datum = target
 		if(QDELETED(target_datum))
@@ -257,7 +257,7 @@
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/atom/target = A.answer.answer_value
+	var/atom/target = A.answer.value
 	if(QDELETED(target))
 		return
 	rending_strike(target)

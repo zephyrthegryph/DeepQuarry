@@ -47,4 +47,4 @@
 /mob/proc/changeling_delayed_toxic_sting_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_delayed_toxic_sting_stage(A.answer.answer_value)
+	changeling_delayed_toxic_sting_stage(A.answer.value)

@@ -36,7 +36,7 @@
 	return null
 
 /obj/item/bodysnatcher/proc/swap_confirmed(datum/act/request/context)
-	if(!context.answer || context.answer.answer_value != "Continue")
+	if(!context.answer || context.answer.value != "Continue")
 		return
 	var/mob/living/user = context.request.answerer
 	var/mob/living/M = context.request.subject

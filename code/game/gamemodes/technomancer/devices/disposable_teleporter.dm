@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/disposable_teleporter)
 	var/mob/user = ask.answerer
 	if(!uses)
 		return
-	var/area/A = GLOB.teleportlocs[ask.answer_value]
+	var/area/A = GLOB.teleportlocs[ask.value]
 	if(!A)
 		return
 

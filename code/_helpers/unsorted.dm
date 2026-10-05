@@ -327,7 +327,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/role = P.role
 	if(ELAPSED(P, started_at, CLOCK_WORLD) > 5 MINUTES)
 		return	//took too long
-	var/newname = sanitizeName(P.answer_value, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
+	var/newname = sanitizeName(P.value, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M == src)
 			continue

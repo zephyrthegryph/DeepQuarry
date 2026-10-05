@@ -294,7 +294,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 		return
 	if(!owner || A.request.answerer != owner || is_broken())
 		return
-	select_integrated_tool(integrated_tool_named(A.answer.answer_value))
+	select_integrated_tool(integrated_tool_named(A.answer.value))
 	tool_picked = TRUE
 	augment_action()
 

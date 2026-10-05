@@ -296,7 +296,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 	if(request.captures_gone())
 		return
 	if(!A.answer)
-		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
 			SStgui.update_uis(src)
 		return
 	apply_label(A)
@@ -307,7 +307,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 		return ITEM_INTERACT_BLOCKING
 	var/datum/prompt/text/drill_label/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	var/_answer_k279 = A.answer.answer_value
+	var/_answer_k279 = A.answer.value
 	var/newtag = text2num(sanitizeSafe(_answer_k279, 4))
 	if(newtag)
 		name = "[initial(name)] #[newtag]"

@@ -35,4 +35,4 @@
 /mob/proc/changeling_blind_sting_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_blind_sting_stage(A.answer.answer_value)
+	changeling_blind_sting_stage(A.answer.value)

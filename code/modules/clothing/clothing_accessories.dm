@@ -191,13 +191,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 	SStgui.update_uis(src)
 
 /obj/item/clothing/proc/accessory_remove_apply(datum/act/request/context)
-	return accessory_remove_stage(context.request.answerer, context.answer.answer_value, TRUE)
+	return accessory_remove_stage(context.request.answerer, context.answer.value, TRUE)
 
 /datum/prompt/choice/accessory_remove_review
 	timeout = 0
 
 /datum/prompt/choice/accessory_remove_review/recheck_extra()
-	if(!isnull(answer_value))
-		var/obj/item/clothing/accessory/selected = answer_value
+	if(!isnull(value))
+		var/obj/item/clothing/accessory/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"

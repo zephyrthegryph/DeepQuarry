@@ -177,9 +177,9 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	return answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
 
 /obj/machinery/gear_painter/proc/color_chosen(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
-	activecolor = A.answer.answer_value
+	activecolor = A.answer.value
 	SStgui.update_uis(src)
 
 /obj/machinery/gear_painter/proc/ui_act_switch_modes(datum/act/op/A, mode)

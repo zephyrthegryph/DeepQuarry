@@ -199,22 +199,22 @@ APPEARANCE_NONE(/obj/item/paper/cracker_joke)
 	var/mob/living/carbon/human/target = answerer
 	if(QDELETED(owner) || QDELETED(user) || QDELETED(target))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
 	if(!istype(target) || target.stat || target == user)
 		return "cracker target"
-	if(answer_value == "Yes" && user.get_active_hand() != owner)
+	if(value == "Yes" && user.get_active_hand() != owner)
 		return "cracker not held"
 	return null
 
 /obj/item/cracker/proc/cracker_pull_answered(datum/act/request/A)
-	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+	if(isnull(A.request.value) || A.request.last_error == "gone")
 		return
 	var/mob/living/user = A.request.subject
 	var/mob/living/carbon/human/target = A.request.answerer
 	SStgui.update_uis(src)
 	if(A.answer)
-		if(A.answer.answer_value == "No")
+		if(A.answer.value == "No")
 			to_chat(user, span_notice("\The [target] chose not to pull \the [src]!"))
 		else
 			pull_cracker(user, target)

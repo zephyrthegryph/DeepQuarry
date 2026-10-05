@@ -21,7 +21,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 	var/client/user = A.request.answerer?.client
 	if(!user)
 		return
-	var/mob/living/selected_key = A.request.answer_value
+	var/mob/living/selected_key = A.request.value
 	if(!selected_key)
 		return
 

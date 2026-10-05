@@ -118,7 +118,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 		return
 	var/datum/prompt/number/game_mode_option/ask = context.answer
 	var/mob/user = context.request.answerer
-	var/choice = ask.answer_value
+	var/choice = ask.value
 	switch(ask.option)
 		if("shuttle_delay")
 			if(!choice || choice < 1 || choice > 20)
@@ -144,7 +144,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/datum/antagonist/antag = SSantag.all_antag_types[A.answer.answer_value]
+	var/datum/antagonist/antag = SSantag.all_antag_types[A.answer.value]
 	if(antag)
 		if(!(antag in SSticker.mode.antag_templates))
 			rel_add(SSticker.mode, nameof(/datum/game_mode::antag_templates), antag)

@@ -141,7 +141,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	make_chosen_pai(A)
 
 /datum/admin_verb/makepAI/proc/make_chosen_pai(datum/act/request/A)
-	var/mob/choice = A.request.answer_value
+	var/mob/choice = A.request.value
 	var/client/user = A.request.answerer.client
 	var/turf/target_turf = get_turf(user.mob)
 	var/obj/item/paicard/typeb/card = new(target_turf)
@@ -161,7 +161,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 /mob/living/silicon/pai/proc/admin_spawn_load_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
+	if(A.answer.value)
 		apply_preferences(client)
 		return
 	open_request(src, /datum/prompt/text, PROC_REF(admin_spawn_name_entered), answerer = src, title = "pAI Name", question = "Enter your pAI name:", default = "Personal AI", encode = FALSE, timeout = 0)
@@ -169,7 +169,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 /mob/living/silicon/pai/proc/admin_spawn_name_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_name = sanitizeName(A.answer.answer_value, allow_numbers = TRUE)
+	var/new_name = sanitizeName(A.answer.value, allow_numbers = TRUE)
 	if(new_name)
 		name = new_name
 
@@ -202,7 +202,7 @@ ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instance
 	delete_type_answered(A)
 
 /datum/admin_verb/cmd_debug_del_all/proc/delete_type_answered(datum/act/request/A)
-	var/hsbitem = A.request.answer_value
+	var/hsbitem = A.request.value
 	var/client/user = A.request.answerer.client
 	if(hsbitem)
 		for(var/atom/O in world)
@@ -313,7 +313,7 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 /datum/admin_verb/cmd_assume_direct_control/proc/finish_control(datum/act/request/context)
 	var/datum/prompt/choice/admin_control_target/request = context.request
 	var/mob/M = request.controlled_mob
-	if(M.ckey && request.answer_value != "Yes")
+	if(M.ckey && request.value != "Yes")
 		return
 	apply_control(request.answerer.client, M)
 
@@ -437,7 +437,7 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 	open_selected_outfit(context)
 
 /datum/admin_verb/cmd_admin_dress/proc/open_selected_outfit(datum/act/request/context)
-	var/input = context.request.answer_value
+	var/input = context.request.value
 	if(!input)
 		return
 	ask_outfit(context.request.answerer.client, input)
@@ -462,7 +462,7 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 	if(!ishuman(target))
 		return
 	var/mob/living/carbon/human/target_human = target
-	var/datum/decl/hierarchy/outfit/outfit = request.answer_value
+	var/datum/decl/hierarchy/outfit/outfit = request.value
 	if(!outfit)
 		return
 	feedback_add_details("admin_verb","SEQ")
@@ -539,7 +539,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	var/response = context.answer.answer_value
+	var/response = context.answer.value
 	if(isnull(response))
 		return
 
@@ -604,7 +604,7 @@ ADMIN_VERB(cmd_debug_mob_lists, R_DEBUG, "Debug Mob Lists", "For when you just g
 
 /datum/admin_verb/cmd_debug_mob_lists/proc/show_chosen_list(datum/act/request/A)
 	var/client/user = A.request.answerer.client
-	var/_answer_a7 = A.request.answer_value
+	var/_answer_a7 = A.request.value
 	switch(_answer_a7)
 		if("Players")
 			to_chat(user, span_filter_debuglogs(jointext(REGISTRY_MEMBERS(REGISTRY_PLAYERS),",")))
@@ -810,7 +810,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	if(!A.answer)
 		return
 	var/mob/admin = A.request.answerer
-	var/mob/living/carbon/human/H = A.answer.answer_value
+	var/mob/living/carbon/human/H = A.answer.value
 	if(!istype(H))
 		to_chat(admin,span_warning("That mob type ([H.type]) doesn't support NIFs, sorry."))
 		return
@@ -857,8 +857,8 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	. = ..()
 	if(.)
 		return
-	if(!isnull(answer_value))
-		var/mob/picked = answer_value
+	if(!isnull(value))
+		var/mob/picked = value
 		if(QDELETED(picked) || !picked.key)
 			return "chosen player is gone"
 
@@ -905,8 +905,8 @@ CAPABILITIES(/datum/prompt/choice/admin_control_target)
 	. = ..()
 	if(.)
 		return
-	if(!isnull(answer_value))
-		var/datum/decl/hierarchy/outfit/picked = answer_value
+	if(!isnull(value))
+		var/datum/decl/hierarchy/outfit/picked = value
 		return QDELETED(picked) ? "outfit is gone" : null
 
 

@@ -149,9 +149,9 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	SStgui.update_uis(src)
 
 /datum/computer_file/program/nttransfer/proc/download_password_entered_apply(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value) || !remote() || !remote().provided_file())
+	if(!A.answer || isnull(A.answer.value) || !remote() || !remote().provided_file())
 		return
-	if(A.answer.answer_value != remote().server_password)
+	if(A.answer.value != remote().server_password)
 		error = "Incorrect Password"
 		SStgui.update_uis(src)
 		return
@@ -182,7 +182,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 /datum/computer_file/program/nttransfer/proc/prg_setpassword_answered_apply(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/pass = A.answer.answer_value
+	var/pass = A.answer.value
 	if(!pass)
 		return
 	if(pass == "none")

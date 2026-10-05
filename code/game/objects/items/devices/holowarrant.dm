@@ -68,7 +68,7 @@ CAPABILITIES(/datum/prompt/yes_no/holowarrant_authorize)
 	if(!A.answer)
 		return
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-		if(W.fields["namewarrant"] == A.answer.answer_value)
+		if(W.fields["namewarrant"] == A.answer.value)
 			rel_set(src, nameof(active), W)
 	update_icon()
 
@@ -78,7 +78,7 @@ CAPABILITIES(/datum/prompt/yes_no/holowarrant_authorize)
 	var/datum/prompt/yes_no/holowarrant_authorize/ask = A.answer
 	var/mob/user = ask.answerer
 	var/obj/item/card/id/I = ask.card
-	if(ask.answer_value && active() == ask.warrant)
+	if(ask.value && active() == ask.warrant)
 		active().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 	act_message(user, src, MSG_SELF(span_notice("You swipe \the [I] through %T%.")), \
 		MSG_OTHERS(span_notice("%U% swipes \the [I] through %T%.")))

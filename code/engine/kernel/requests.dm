@@ -35,8 +35,8 @@
 	var/mob/answerer
 	/// TRUE when the request was opened with an answerer: its death ends the request (REQ_CANCELLED).
 	var/answerer_expected = FALSE
-	/// What the answerer gave, or the backend's answer. Read it through A.answer.
-	var/answer_value
+	/// What the answerer gave, or the backend's answer: the one answer field every request kind is read through (A.answer.value).
+	var/value
 	/// A PROC_REF on the owner: handler(datum/act/request/A), run when the request ends.
 	var/handler
 	/// A PROC_REF on the owner: valid(datum/request/R) re-checked when the answer arrives.
@@ -355,7 +355,7 @@ SYSTEM_DEF(requests)
 	var/datum/system/requests/registry = SSrequests
 	registry.open -= R
 	if(outcome == REQ_ANSWERED)
-		R.answer_value = value
+		R.value = value
 		if(R.valid && R.owner && !call(R.owner, R.valid)(R))
 			outcome = REQ_CANCELLED
 		var/recheck = outcome == REQ_ANSWERED ? request_recheck(R) : null
@@ -370,8 +370,6 @@ SYSTEM_DEF(requests)
 	R.outcome = outcome
 	if(istype(R, /datum/prompt))
 		var/datum/prompt/prompt_ended = R
-		if(outcome == REQ_ANSWERED)
-			prompt_ended.value = R.answer_value
 		prompt_ended.dismiss()
 	switch(outcome)
 		if(REQ_ANSWERED)
@@ -401,7 +399,7 @@ SYSTEM_DEF(requests)
 	if(R.reservations) // the owner went before the handler could run: nothing is spent
 		request_costs_settle(R, FALSE)
 	request_op_resume(R)
-	// Ended: the request and its timer are done with; what a caller kept (R.outcome, R.answer_value) stays readable.
+	// Ended: the request and its timer are done with; what a caller kept (R.outcome, R.value) stays readable.
 	qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: ending it is its deletion
 	return TRUE
 

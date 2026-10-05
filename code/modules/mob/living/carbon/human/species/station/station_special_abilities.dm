@@ -76,7 +76,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 /mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/carbon/human/B = A.answer.answer_value
+	var/mob/living/carbon/human/B = A.answer.value
 	if(B == src) //We are using this to minimize the amount of pop-ups or buttons.
 		open_request(src, /datum/prompt/choice, PROC_REF(bloodsuck_mode_chosen), answerer = src, title = "Configure Bloodsuck", question = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and stance modes. Choosing stance prints controls to chat.", choices = list("always loud", "pop-up", "stance", "always subtle"), default = "always loud", timeout = 0)
 		return
@@ -111,7 +111,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 /mob/living/carbon/human/proc/bloodsuck_mode_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mode = A.answer.answer_value
+	var/mode = A.answer.value
 	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.bloodsucker_controlmode = mode
 	if(mode == "stance") //We are printing to chat for better readability
@@ -121,7 +121,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/bloodsuck/ask = A.request
-	open_request(src, /datum/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_answered), answerer = src, question = "Do you want your target to keep bleeding?", title = "Continue Bleeding", target = ask.target, subtle = A.answer.answer_value)
+	open_request(src, /datum/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_answered), answerer = src, question = "Do you want your target to keep bleeding?", title = "Continue Bleeding", target = ask.target, subtle = A.answer.value)
 
 /mob/living/carbon/human/proc/bloodsuck_popup_answered(datum/act/request/A)
 	if(!A.answer)
@@ -129,7 +129,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	var/datum/prompt/choice/bloodsuck/ask = A.request
 	var/mob/living/carbon/human/B = ask.target
 	if(bloodsuck_can(B))
-		bloodsuck_begin(B, ask.subtle != "Yes", A.answer.answer_value == "Yes")
+		bloodsuck_begin(B, ask.subtle != "Yes", A.answer.value == "Yes")
 
 /// Whether we can bite B right now (next to us, not on cooldown, has blood); says why not.
 /mob/living/carbon/human/proc/bloodsuck_can(mob/living/carbon/human/B)
@@ -524,7 +524,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 /mob/living/proc/shred_target_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/carbon/human/T = A.answer.answer_value
+	var/mob/living/carbon/human/T = A.answer.value
 	if(can_shred(T) == T)
 		shred_limb_begin(T)
 
@@ -573,7 +573,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/datum/shred_limb_review/review = owner
@@ -618,7 +618,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(!A.answer)
 		retire()
 		return
-	rel_set(src, nameof(T_ext), A.request.answer_value)
+	rel_set(src, nameof(T_ext), A.request.value)
 	external_selected = TRUE
 	if(QDELETED(T_ext))
 		retire()
@@ -629,7 +629,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	ask_internal()
 
 /datum/shred_limb_review/proc/external_confirmed(datum/act/request/A)
-	if(!A.answer || A.request.answer_value != TRUE)
+	if(!A.answer || A.request.value != TRUE)
 		retire()
 		return
 	var/datum/result/result = safe_call(PROC_REF(ask_internal))
@@ -650,10 +650,10 @@ CAPABILITIES(/datum/shred_limb_review)
 
 /datum/shred_limb_review/proc/internal_chosen_step(datum/act/request/A)
 	// Closing this optional question supplied an empty answer then rechecked the flow.
-	if(why_not() || (!A.answer && !isnull(A.request.answer_value)))
+	if(why_not() || (!A.answer && !isnull(A.request.value)))
 		retire()
 		return
-	rel_set(src, nameof(T_int), A.answer ? A.request.answer_value : null)
+	rel_set(src, nameof(T_int), A.answer ? A.request.value : null)
 	if(A.answer && QDELETED(T_int))
 		retire()
 		return
@@ -664,7 +664,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	ask_belly()
 
 /datum/shred_limb_review/proc/internal_confirmed(datum/act/request/A)
-	if(!A.answer || A.request.answer_value != TRUE)
+	if(!A.answer || A.request.value != TRUE)
 		retire()
 		return
 	var/datum/result/result = safe_call(PROC_REF(ask_belly))
@@ -680,10 +680,10 @@ CAPABILITIES(/datum/shred_limb_review)
 		failed_step("belly", result.error)
 
 /datum/shred_limb_review/proc/belly_chosen_step(datum/act/request/A)
-	if(why_not() || (!A.answer && !isnull(A.request.answer_value)))
+	if(why_not() || (!A.answer && !isnull(A.request.value)))
 		retire()
 		return
-	rel_set(src, nameof(B), A.answer ? A.request.answer_value : null)
+	rel_set(src, nameof(B), A.answer ? A.request.value : null)
 	if(A.answer && QDELETED(B))
 		retire()
 		return
@@ -949,7 +949,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	return null
@@ -962,14 +962,14 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(.)
 		return
 	var/mob/living/L = answerer
-	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, answer_value) > 1)
+	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, value) > 1)
 		return "lost the chance"
 	return null
 
 /mob/living/carbon/human/proc/underwater_devour_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/target = A.answer.answer_value
+	var/mob/living/target = A.answer.value
 	if(target && QDELETED(target))
 		return
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
@@ -1026,7 +1026,7 @@ CAPABILITIES(/datum/shred_limb_review)
 /mob/living/proc/long_vore_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Color") //Easy way to set color so we don't bloat up the menu with even more buttons.
 			open_request(src, /datum/prompt/color, PROC_REF(appendage_color_chosen), answerer = src, question = "Choose a color to set your appendage to!", default = appendage_color, timeout = 0)
 		if("Functionality")
@@ -1046,17 +1046,17 @@ CAPABILITIES(/datum/shred_limb_review)
 /mob/living/proc/appendage_color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	appendage_color = A.answer.answer_value
+	appendage_color = A.answer.value
 
 /mob/living/proc/appendage_setting_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	appendage_alt_setting = (A.answer.answer_value != "Pull target to self")
+	appendage_alt_setting = (A.answer.value != "Pull target to self")
 
 /mob/living/proc/long_vore_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/target = A.answer.answer_value
+	var/mob/living/target = A.answer.value
 	if(target && QDELETED(target))
 		return
 	if(!isliving(target)) //Safety.
@@ -1263,7 +1263,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/victim/lunge/ask = A.request
-	var/mob/living/target = A.answer.answer_value
+	var/mob/living/target = A.answer.value
 	if(target && QDELETED(target))
 		return
 	if(!isliving(target)) //Safety.
@@ -1329,7 +1329,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 /mob/living/proc/injection_reagent_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/reagent_choice = A.answer.answer_value
+	var/reagent_choice = A.answer.value
 	if(reagent_choice in trait_injection_reagents)
 		trait_injection_selected = reagent_choice
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
@@ -1337,19 +1337,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 /mob/living/proc/injection_amount_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	trait_injection_amount = clamp(A.answer.answer_value, 0, 5)
+	trait_injection_amount = clamp(A.answer.value, 0, 5)
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
 /mob/living/proc/injection_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	trait_injection_verb = A.answer.answer_value
+	trait_injection_verb = A.answer.value
 	to_chat(src, span_notice("You will [trait_injection_verb] your targets."))
 
 /mob/living/proc/injection_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(choice == "Change reagent")
 		open_request(src, /datum/prompt/choice, PROC_REF(injection_reagent_chosen), answerer = src, title = "Select reagent", question = "Choose which reagent to inject!", choices = trait_injection_reagents || list(), timeout = 0)
 		return
@@ -1416,7 +1416,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 /mob/living/proc/injection_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/target = A.answer.answer_value
+	var/mob/living/target = A.answer.value
 	if(target && QDELETED(target))
 		return
 	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !Adjacent(target))
@@ -1540,11 +1540,11 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 /mob/living/proc/succubus_bite_chosen(datum/act/request/A)
 	var/datum/prompt/choice/succubus_bite/ask = A.request
 	if(!A.answer)
-		if(!isnull(ask.answer_value) && ask.last_error == "lost grip")
+		if(!isnull(ask.value) && ask.last_error == "lost grip")
 			to_chat(src, span_warning("You must have a tighter grip to bite this creature."))
 		return
 	var/mob/living/carbon/human/T = ask.target
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	act_message(src, T, others = span_bolddanger("%U% moves their head next to %T%'s neck, seemingly looking for something!"))
 
 	om_task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
@@ -1636,7 +1636,7 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 /mob/living/proc/mobegglaying_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	om_task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, A.answer.answer_value))
+	om_task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, A.answer.value))
 
 /mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
 	if(choice == "Make a Egg" && eggs > 5)
@@ -1685,18 +1685,18 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/mob/living/L = answerer
-	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(answer_value))
+	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(value))
 		return "can't reach"
 	return null
 
 /mob/living/proc/insect_sting_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/carbon/T = A.answer.answer_value
+	var/mob/living/carbon/T = A.answer.value
 	if(T && QDELETED(T))
 		return
 	if(HAS_SYNTHETIC_BIOLOGY(T))
@@ -1762,7 +1762,7 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 /mob/living/proc/absorb_devour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/target = A.answer.answer_value
+	var/mob/living/target = A.answer.value
 	if(target && QDELETED(target))
 		return
 	var/mob/living/pred = loc.loc
@@ -1816,7 +1816,7 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 /mob/living/proc/name_change_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/chosen_name = A.answer.answer_value
+	var/chosen_name = A.answer.value
 	if(!length(chosen_name) || !COOLDOWN_FINISHED(src, last_special))
 		return
 

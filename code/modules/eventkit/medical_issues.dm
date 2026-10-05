@@ -418,19 +418,19 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 	if(istype(A.answer, /datum/prompt/choice/custom_medical_review))
 		var/datum/prompt/choice/custom_medical_review/ask = A.answer
 		if(ask.medical_key == "a2")
-			var/obj/item/organ/chosen = ask.answer_value
+			var/obj/item/organ/chosen = ask.value
 			rel_set(ask, nameof(ask.medical_organ), chosen)
 			ask.medical_answers[ask.medical_key] = TRUE
 		else
-			ask.medical_answers[ask.medical_key] = ask.answer_value
+			ask.medical_answers[ask.medical_key] = ask.value
 		return medical_custom_stage(ask.medical_operator, ask.medical_answers, ask.medical_organ)
 	if(istype(A.answer, /datum/prompt/text/custom_medical_review))
 		var/datum/prompt/text/custom_medical_review/ask = A.answer
-		ask.medical_answers[ask.medical_key] = ask.answer_value
+		ask.medical_answers[ask.medical_key] = ask.value
 		return medical_custom_stage(ask.medical_operator, ask.medical_answers, ask.medical_organ)
 	if(istype(A.answer, /datum/prompt/number/custom_medical_review))
 		var/datum/prompt/number/custom_medical_review/ask = A.answer
-		ask.medical_answers[ask.medical_key] = ask.answer_value
+		ask.medical_answers[ask.medical_key] = ask.value
 		return medical_custom_stage(ask.medical_operator, ask.medical_answers, ask.medical_organ)
 
 /mob/living/carbon/human/proc/medical_clear_answered(datum/act/request/A)
@@ -443,11 +443,11 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 	if(istype(A.answer, /datum/prompt/choice/custom_medical_review))
 		var/datum/prompt/choice/custom_medical_review/ask = A.answer
 		if(ask.medical_key == "a17")
-			var/datum/affliction/custom/chosen = ask.answer_value
+			var/datum/affliction/custom/chosen = ask.value
 			rel_set(ask, nameof(ask.medical_issue), chosen)
 			ask.medical_answers[ask.medical_key] = TRUE
 		else
-			ask.medical_answers[ask.medical_key] = ask.answer_value
+			ask.medical_answers[ask.medical_key] = ask.value
 		return medical_clear_stage(ask.medical_operator, ask.medical_answers, ask.medical_issue)
 
 /datum/prompt/text/custom_medical_review
@@ -554,11 +554,11 @@ CAPABILITIES(/datum/prompt/choice/custom_medical_review)
 /datum/prompt/choice/custom_medical_review/recheck_extra()
 	if(medical_operator_expected && QDELETED(medical_operator))
 		return "gone"
-	if(!isnull(answer_value) && medical_key == "a2")
-		var/obj/item/organ/chosen_organ = answer_value
+	if(!isnull(value) && medical_key == "a2")
+		var/obj/item/organ/chosen_organ = value
 		if(!istype(chosen_organ) || QDELETED(chosen_organ))
 			return "gone"
-	if(!isnull(answer_value) && medical_key == "a17")
-		var/datum/affliction/custom/chosen_issue = answer_value
+	if(!isnull(value) && medical_key == "a17")
+		var/datum/affliction/custom/chosen_issue = value
 		if(!istype(chosen_issue) || QDELETED(chosen_issue))
 			return "gone"

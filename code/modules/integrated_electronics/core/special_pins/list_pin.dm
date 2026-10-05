@@ -179,7 +179,7 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 	var/datum/pin_value_review/list_edit/selection/review = owner
 	if(review.why_not())
 		return "gone"
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 
@@ -248,7 +248,7 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 		SStgui.update_uis(refreshed_pin)
 
 /datum/pin_value_review/list_edit/selection/proc/selection_step(datum/act/request/A)
-	var/selected = A.answer.answer_value
+	var/selected = A.answer.value
 	if(!selected)
 		retire()
 		return

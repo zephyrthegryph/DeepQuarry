@@ -71,7 +71,7 @@ CAPABILITIES(/datum/tgui_module/teleport_control)
 /datum/tgui_module/teleport_control/proc/target_chosen_apply(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/desc = A.answer.answer_value
+	var/desc = A.answer.value
 	if(!desc)
 		return
 	var/list/L = teleport_targets()
