@@ -53,8 +53,6 @@ usr_outside_verb	code/defines/procs/announce.dm	log_game("[key_name(usr)] has ma
 usr_outside_verb	code/defines/procs/announce.dm	message_admins("[key_name_admin(usr)] has made \a [announcement_type].", 1)
 usr_outside_verb	code/game/antagonist/station/renegade.dm	to_chat(usr, span_infoplain(span_bold("You summoned guns!")))
 usr_outside_verb	code/game/antagonist/station/renegade.dm	message_admins("[key_name_admin(usr, 1)] summoned guns!")
-usr_outside_verb	code/game/machinery/computer/prisonshuttle.dm	to_chat(usr, span_warning("The prison shuttle is unable to leave."))
-usr_outside_verb	code/game/machinery/computer/prisonshuttle.dm	to_chat(usr, span_warning("The prison shuttle is unable to leave."))
 usr_outside_verb	code/game/machinery/doors/airlock_angled_bay.dm	usr << ftp(icon, "[name].dmi")
 usr_outside_verb	code/game/machinery/oxygen_pump.dm	var/mob/living/user = usr
 usr_outside_verb	code/game/memory_profiler.dm	if(usr?.client)

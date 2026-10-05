@@ -1030,13 +1030,13 @@
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(landing), /atom/movable/screen/action_landing))
 
-/// CAPABILITIES(/datum/admin_edit_appearance_review) at code/modules/admin/verbs/change_appearance.dm:49
+/// CAPABILITIES(/datum/admin_edit_appearance_review) at code/modules/admin/verbs/change_appearance.dm:89
 /datum/admin_edit_appearance_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/change_appearance.dm", 49, /datum/admin_edit_appearance_review)
-	into += entry_line(50)
+	into += entry_block("code/modules/admin/verbs/change_appearance.dm", 89, /datum/admin_edit_appearance_review)
+	into += entry_line(90)
 	into += list(global.ref_one(nameof(actor), /mob))
-	into += entry_line(51)
+	into += entry_line(91)
 	into += list(global.ref_one(nameof(target), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/admin_emp_review) at code/modules/admin/verbs/adminfun.dm:127
@@ -3319,11 +3319,11 @@
 	into += entry_line(281)
 	into += list(global.owns_one(nameof(material_graph), /datum/material_power_graph))
 
-/// CAPABILITIES(/datum/media_manager) at code/modules/media/mediamanager.dm:125
+/// CAPABILITIES(/datum/media_manager) at code/modules/media/mediamanager.dm:146
 /datum/media_manager/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/media/mediamanager.dm", 125, /datum/media_manager)
-	into += entry_line(126)
+	into += entry_block("code/modules/media/mediamanager.dm", 146, /datum/media_manager)
+	into += entry_line(147)
 	into += list(global.owns_one(nameof(media_window), /datum/tgui_window))
 
 /// CAPABILITIES(/datum/mind) at code/datums/mind.dm:70
@@ -3946,11 +3946,11 @@
 	into += entry_line(1197)
 	into += list(global.ref_one(nameof(target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:230
+/// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:224
 /datum/prompt/choice/admin_sendmob/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/adminjump.dm", 230, /datum/prompt/choice/admin_sendmob)
-	into += entry_line(231)
+	into += entry_block("code/modules/admin/verbs/adminjump.dm", 224, /datum/prompt/choice/admin_sendmob)
+	into += entry_line(225)
 	into += list(global.ref_one(nameof(area), /area))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_spell) at code/modules/admin/admin_verbs.dm:736
@@ -4776,11 +4776,11 @@
 	into += entry_line(611)
 	into += list(global.ref_one(nameof(maker_interaction), /datum/interaction))
 
-/// CAPABILITIES(/datum/prompt/number/move_atom_coord) at code/modules/admin/verbs/adminjump.dm:287
+/// CAPABILITIES(/datum/prompt/number/move_atom_coord) at code/modules/admin/verbs/adminjump.dm:281
 /datum/prompt/number/move_atom_coord/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/verbs/adminjump.dm", 287, /datum/prompt/number/move_atom_coord)
-	into += entry_line(288)
+	into += entry_block("code/modules/admin/verbs/adminjump.dm", 281, /datum/prompt/number/move_atom_coord)
+	into += entry_line(282)
 	into += list(global.ref_one(nameof(moved), /atom/movable))
 
 /// CAPABILITIES(/datum/prompt/number/plasma_transfer) at code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm:83
@@ -9261,25 +9261,25 @@
 	into += entry_line(24)
 	into += list(global.owns_one(nameof(laws), /datum/ai_laws))
 
-/// CAPABILITIES(/obj/item/aiModule/freeform) at code/game/objects/items/weapons/AI_modules.dm:307
+/// CAPABILITIES(/obj/item/aiModule/freeform) at code/game/objects/items/weapons/AI_modules.dm:301
 /obj/item/aiModule/freeform/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 307, /obj/item/aiModule/freeform)
-	into += entry_line(308)
+	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 301, /obj/item/aiModule/freeform)
+	into += entry_line(302)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/aiModule/freeformcore) at code/game/objects/items/weapons/AI_modules.dm:441
+/// CAPABILITIES(/obj/item/aiModule/freeformcore) at code/game/objects/items/weapons/AI_modules.dm:435
 /obj/item/aiModule/freeformcore/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 441, /obj/item/aiModule/freeformcore)
-	into += entry_line(442)
+	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 435, /obj/item/aiModule/freeformcore)
+	into += entry_line(436)
 	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/freeformcore, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(law_entered))))
 
-/// CAPABILITIES(/obj/item/aiModule/oneHuman) at code/game/objects/items/weapons/AI_modules.dm:229
+/// CAPABILITIES(/obj/item/aiModule/oneHuman) at code/game/objects/items/weapons/AI_modules.dm:223
 /obj/item/aiModule/oneHuman/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 229, /obj/item/aiModule/oneHuman)
-	into += entry_line(230)
+	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 223, /obj/item/aiModule/oneHuman)
+	into += entry_line(224)
 	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/oneHuman, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(target_named))))
 
 /// CAPABILITIES(/obj/item/aiModule/safeguard) at code/game/objects/items/weapons/AI_modules.dm:162
@@ -9289,11 +9289,11 @@
 	into += entry_line(163)
 	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/safeguard, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(target_named))))
 
-/// CAPABILITIES(/obj/item/aiModule/syndicate) at code/game/objects/items/weapons/AI_modules.dm:468
+/// CAPABILITIES(/obj/item/aiModule/syndicate) at code/game/objects/items/weapons/AI_modules.dm:462
 /obj/item/aiModule/syndicate/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 468, /obj/item/aiModule/syndicate)
-	into += entry_line(469)
+	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 462, /obj/item/aiModule/syndicate)
+	into += entry_line(463)
 	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/syndicate, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(law_entered))))
 
 /// CAPABILITIES(/obj/item/aicard) at code/game/objects/items/devices/aicard.dm:25

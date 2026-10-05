@@ -157,10 +157,6 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 			GLOB.prison_shuttle_at_station = 1
 			if (GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison) return
 
-			if (!prison_can_move())
-				to_chat(usr, span_warning("The prison shuttle is unable to leave."))
-				return
-
 			var/area/start_location = locate(/area/shuttle/prison/prison)
 			var/area/end_location = locate(/area/shuttle/prison/station)
 
@@ -184,10 +180,6 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 		if(1)
 			GLOB.prison_shuttle_at_station = 0
 			if (GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison) return
-
-			if (!prison_can_move())
-				to_chat(usr, span_warning("The prison shuttle is unable to leave."))
-				return
 
 			var/area/start_location = locate(/area/shuttle/prison/station)
 			var/area/end_location = locate(/area/shuttle/prison/prison)

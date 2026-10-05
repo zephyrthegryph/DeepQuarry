@@ -45,3 +45,6 @@ changes:
   - code_imp: "Migrated the five remaining advanced pinpointer selection prompts to native requests."
   - code_imp: "Migrated the mecha cable-cut length prompt to a native request."
   - code_imp: "Migrated all four build-mode Light Maker prompts to native requests."
+  - code_imp: "Migrated self-appearance, debug-screen placement, and gender-change confirmation prompts to native requests."
+  - code_imp: "Removed obsolete content prompt types and unreachable prison-shuttle warnings."
+  - code_imp: "Migrated the personal jukebox-volume prompt to a native request."

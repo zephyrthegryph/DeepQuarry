@@ -53,11 +53,6 @@
 		return "can't use the ability"
 	return null
 
-/datum/om/prompt/text/malf
-	ask_flags = ASK_CONSCIOUS
-	/// The message title, once asked.
-	var/message_title
-
 /mob/living/silicon/ai/proc/malf_hardware_chosen(datum/om/prompt/choice/malf/ask)
 	var/mob/living/silicon/ai/user = src
 	var/datum/malf_hardware/C

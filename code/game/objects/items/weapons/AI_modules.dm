@@ -193,12 +193,6 @@ CAPABILITIES(/obj/item/aiModule/safeguard)
 /datum/prompt/text/ai_module/syndicate
 	question = "Please enter a new law for the AI."
 
-/// Text written onto an AI law module (a law, or a name in one). Re-checked on the answer: the module is still carried.
-/datum/om/prompt/text/ai_law
-	title = "Freeform Law Entry"
-	default = ""
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
 /obj/item/aiModule/safeguard/proc/target_named(datum/act/op/A)
 	var/datum/prompt/text/R = A.answer
 	set_targetName(R.value)
