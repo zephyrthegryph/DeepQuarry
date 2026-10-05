@@ -84,7 +84,7 @@ The full list is the `CAPABILITIES(/obj/machinery/power/apc)` block in `code/mod
 ```dm
 maintenance_hatch(
 	cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), at(BAY_HATCH))),
-	wires = /datum/wires/apc,
+	wires = wires(/datum/wire_set/apc, status_lines = PROC_REF(wire_lights)),
 	emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
 	emag_say = MSG(apc/emagged),
 	panel_needs_cover_closed = TRUE,

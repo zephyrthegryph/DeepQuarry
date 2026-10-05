@@ -2861,7 +2861,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	wall_machine(/obj/item/module/power_control, frame = apc_frame(), powered = FALSE)
 	maintenance_hatch(                                        <span class="c">// space SPACE_HATCH behind the cover, the panel and its SPACE_PANEL, wires, lock and emag</span>
 		cover = cover(remove = force_pry(), replace = component_swap(/obj/item/frame/apc), broken = PROC_REF(stat_is_broken)),
-		wires = /datum/wires/apc,
+		wires = wires(/datum/wire_set/apc, status_lines = PROC_REF(wire_lights)),
 		lock_wire = WIRE_IDSCAN,
 		emag = list(wait(0.6 SECONDS), sets(LOCK_LOCKED, FALSE)),
 		panel_needs_cover_closed = TRUE)                     <span class="c">// latch(SPACE_PANEL, COVER_OPEN, ...)</span>
@@ -3012,7 +3012,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	access()
 	maintenance_hatch(
 		cover = cover(open = tool(TOOL_SCREWDRIVER)),
-		wires = /datum/wires/airlock,
+		wires = /datum/wire_set/airlock,
 		emag = list(then(PROC_REF(emag_open))),
 		lock = FALSE)   <span class="c">// the door's ID check is access(), not a hatch lock</span>
 	contributes(STAT_BOLTED, req_wire_cut(WIRE_DOOR_BOLTS))   <span class="c">// a cut bolt wire bolts the door</span>
