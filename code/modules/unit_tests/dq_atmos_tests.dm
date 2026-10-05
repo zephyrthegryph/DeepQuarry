@@ -388,7 +388,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	// Drive the canister's release loop directly: one machine pipeline frame each
 	// (machine_pipeline.dm, power/canister) runs the valve transfer.
 	for(var/i in 1 to 10)
-		om_run_frame_now(C, /datum/om/pipeline/machine)
+		C.canister_step(null)
 
 	var/final_canister_o2 = C.air_contents.get_moles(/datum/gas/oxygen)
 	var/final_turf_o2 = T.return_air().get_moles(/datum/gas/oxygen)
@@ -2068,7 +2068,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/before_turf = T.air.get_moles(/datum/gas/plasma)
 	C.set_valve_open(TRUE)
 	C.release_pressure = 10 * ONE_ATMOSPHERE
-	om_run_frame_now(C, /datum/om/pipeline/machine)
+	C.canister_step(null)
 	var/after_canister = C.air_contents.get_moles(/datum/gas/plasma)
 	var/after_turf = T.air.get_moles(/datum/gas/plasma)
 	var/overlay_visible = LAZYLEN(T.atmos_overlay_types) > 0
@@ -4441,37 +4441,21 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.clear_gas_dependency()
 	rel_clear(C, nameof(C.connected_device))
 	C.set_on(FALSE)
-	// Canister runs the OM machine pipeline (machine_pipeline.dm), not process(): a frame
-	// stands in for the old direct .process() call, and .parked stands in for
-	// datum_flags & DF_ISPROCESSING.
+	// A canister's work is an every() gated by `working` (canister.dm): a closed, inert canister parks after one step, its gas watch armed; a
+	// closed connected canister's gas change moves only its gauge, and a free-standing one's wakes it.
 	var/obj/machinery/portable_atmospherics/canister/oxygen/canister = new(T)
-	var/datum/om/frame/canister_state = om_pipe_state(canister, /datum/om/pipeline/machine, TRUE)
-	// Machines join asleep; their watches are armed by the zero-delay materialize_wakes() timer,
-	// which the live scheduler hasn't reached inside this synchronous test. Run it now.
-	canister.materialize_wakes()
-	for(var/i in 1 to 2)
-		om_run_frame_now(canister, /datum/om/pipeline/machine)
-	TEST_ASSERT(canister_state.parked, "closed inert canister remained scheduled")
-	TEST_ASSERT(om_watch_armed(canister), "closed canister did not subscribe to its gas mixture")
-	// Spawned on the connector, it connected: closed and connected, it watches only its gauge
-	// band (desired_update_flag()), so a change that leaves the gauge alone is not a wake.
+	canister.canister_step(null)
+	TEST_ASSERT(!canister.working, "closed inert canister remained scheduled")
+	TEST_ASSERT_NOTNULL(gas_watch_data(canister)?.watch, "closed canister did not subscribe to its gas mixture")
 	TEST_ASSERT(canister.connected_port(), "canister did not connect to the port it spawned on")
-	var/canister_wakes = canister.gas_dependency_wake_count
-	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
-	for(var/canister_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT_EQUAL(canister.gas_dependency_wake_count, canister_wakes, "a change inside its gauge band woke a closed connected canister")
+	canister.contents_changed(dq_atmos_test_observation(canister.air_contents), 2)
+	TEST_ASSERT(!canister.working, "a gas change woke a closed connected canister")
 	canister.air_contents.clear()
-	for(var/canister_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(canister.gas_dependency_wake_count > canister_wakes)
-			break
-	// The watch fired and queued a pipeline wake (changed() enqueues; the frame runs on the
-	// scheduler's next pass, so .parked can't be read synchronously here).
-	TEST_ASSERT_EQUAL(canister.gas_dependency_wake_count, canister_wakes + 1, "emptying a closed connected canister did not wake it exactly once")
+	canister.contents_changed(dq_atmos_test_observation(canister.air_contents), 2)
+	TEST_ASSERT_EQUAL(canister.gauge_band, 1, "the gauge followed the emptied canister")
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1000)
 	canister.connect(C)
-	om_run_frame_now(canister, /datum/om/pipeline/machine)
+	canister.canister_step(null)
 	TEST_ASSERT(test_machine_idle(C), "stable connected portable port remained scheduled")
 	TEST_ASSERT(om_watch_armed(C), "connected portable port did not subscribe to device gas")
 	connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
@@ -4890,14 +4874,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	regulator.wake_for_state_change()
 	TEST_ASSERT(regulator.machine_wake_count > regulator_wakes, "enabling a thermoregulator did not wake it")
 	var/obj/machinery/portable_atmospherics/canister/air/airlock/airlock_canister = new(T)
-	var/obj/machinery/atmospherics/portables_connector/test_port = new(T)
-	rel_set(airlock_canister, nameof(airlock_canister.connected_port), test_port)
-	var/gauge_band = airlock_canister.desired_update_flag()
-	airlock_canister.hibernate_until_gas_changes()
-	TEST_ASSERT(om_watch_armed(airlock_canister), "connected closed canister did not arm a gauge-band watch")
-	TEST_ASSERT_EQUAL(airlock_canister.current_update_flag(), gauge_band, "minor connected-canister pressure change caused an irrelevant wake")
+	var/gauge_band = airlock_canister.gauge_band
+	TEST_ASSERT_EQUAL(airlock_canister.pressure_band(), gauge_band, "minor canister pressure change moved the gauge")
 	airlock_canister.air_contents.clear()
-	TEST_ASSERT(airlock_canister.current_update_flag() != gauge_band, "connected canister did not wake when its gauge band changed")
+	TEST_ASSERT(airlock_canister.pressure_band() != gauge_band, "the gauge band follows an emptied canister")
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	rel_set(operating_console, nameof(operating_console.table), operating_table)
 	TEST_ASSERT(test_machine_idle(operating_console), "empty operating console remained scheduled")
@@ -6529,7 +6509,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/A_plasma
 	var/B_plasma
 	for(var/i in 1 to 8)
-		om_run_frame_now(Can, /datum/om/pipeline/machine)
+		Can.canister_step(null)
 		dq_atmos_test_drive_ticks(list(A, B), 1)
 		A_plasma = A_air.get_moles(/datum/gas/plasma)
 		B_plasma = B_air.get_moles(/datum/gas/plasma)

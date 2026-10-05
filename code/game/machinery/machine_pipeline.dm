@@ -15,7 +15,6 @@
 	of = list(
 		/obj/machinery/power/apc,
 		/obj/machinery/firealarm,
-		/obj/machinery/portable_atmospherics/canister,
 		/obj/machinery/portable_atmospherics/powered/pump,
 		/obj/machinery/portable_atmospherics/powered/scrubber,
 		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
@@ -385,77 +384,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /datum/om/stage/machine/power/firealarm/idle(obj/machinery/firealarm/M)
 	return !M.timing || (!M.operable())
 
-// ---------------------------------------------------------------- canisters
-
-/// Only canister is on this pipeline (see the NOTE in portable_atmospherics.dm): the other
-/// portable_atmospherics subtypes (powered/pump, powered/scrubber, hydroponics,
-/// reagent_distillery) still have their own real process() overrides and stay polling.
-///
-/// Wakes on the valve, the holding tank and the connection (all raise
-/// CHANGE_MACHINE_SETTINGS today; canister.dm), plus a gas watch armed by
-/// hibernate_until_gas_changes() (portable_atmospherics.dm/canister.dm, code/datums/om/watch.dm)
-/// every time perform() settles: "any change" while free-standing or connected with the valve
-/// open (the canister's own react_or_update()/pipenet membership needs to re-run on literally
-/// any composition/pressure/temperature change), or a value watch on desired_update_flag() while
-/// closed and pipenet-connected (only the displayed gauge band matters then).
-/datum/om/stage/machine/power/canister
-	of = /obj/machinery/portable_atmospherics/canister
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_GAS
-	woken_by = "power_change(); atom_break()/atom_fix(); valve/label/eject topic actions; a subscribed gas mixture changing"
-	reads = list("om_settled", "valve_open")
-
-/datum/om/stage/machine/power/canister/perform(obj/machinery/portable_atmospherics/canister/M, datum/om/frame/machine/F)
-	if(M.destroyed)
-		M.set_om_settled(TRUE)
-		return STAGE_IDLE
-
-	var/turf/canister_turf = get_turf(M)
-	var/datum/gas_mixture/canister_environment = canister_turf ? canister_turf.return_air() : null
-	M.material_observe_gases(M.air_contents, canister_environment)
-
-	var/reaction_result = M.react_or_update()
-	var/material_active = M.process_material_vessel()
-	if(M.destroyed)
-		M.set_om_settled(TRUE)
-		return STAGE_IDLE
-
-	if(M.valve_open)
-		var/datum/gas_mixture/environment = M.holding ? M.holding.air_contents : M.loc.return_air()
-		var/env_pressure = environment.return_pressure()
-		var/pressure_delta = M.release_pressure - env_pressure
-
-		if((M.air_contents.return_temperature() > 0) && (pressure_delta > 0))
-			var/transfer_moles = calculate_transfer_moles(M.air_contents, environment, pressure_delta)
-			transfer_moles = min(transfer_moles, (M.release_flow_rate/M.air_contents.return_volume())*M.air_contents.total_moles()) //flow rate limit
-
-			var/returnval = pump_gas_passive(M, M.air_contents, environment, transfer_moles)
-			if(returnval >= 0)
-				M.update_icon()
-				// pump_gas_passive directly mutates the turf's air mix via the gas_mixture
-				// reference returned by loc.return_air(); it doesn't know what type of sink
-				// it's writing to, so it can't enroll a turf in SSair.active_turfs. Without
-				// this, under LINDA the gas lands on the turf but never spreads (active_turfs
-				// stays empty) and the gas overlay never updates (update_visuals is never
-				// called).
-				if(!M.holding && isturf(M.loc))
-					var/turf/open/T = M.loc
-					if(istype(T))
-						T.update_visuals()
-						T.air_update_turf(FALSE, FALSE)
-
-	M.can_label = M.air_contents.return_pressure() < 1
-
-	M.set_om_settled(!M.valve_open && reaction_result == NO_REACTION && !material_active)
-	if(M.om_settled)
-		M.hibernate_until_gas_changes()
-		return STAGE_IDLE
-	// Unsettled (open valve, a reaction, material work): keep running every frame. An
-	// unconditional STAGE_IDLE idled the stage with work left and set_om_settled() raises
-	// nothing on a repeat, so the canister parked mid-release (OM_AUDIT missed wake).
-
-/datum/om/stage/machine/power/canister/idle(obj/machinery/portable_atmospherics/canister/M)
-	return M.om_settled
-
 // ---------------------------------------------------------------- portable pumps and scrubbers
 
 /// Neither device ever hibernates on its own: both keep running every tick while `on`, exactly
@@ -582,7 +510,3 @@ OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /// TRUE while the fire alarm's countdown runs.
 OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
-/// The canister's release valve.
-OM_FIELD(/obj/machinery/portable_atmospherics/canister, valve_open, 0, CHANGE_MACHINE_SETTINGS)
-/// TRUE while the canister has nothing to do; until arm_wakes() or a frame says otherwise.
-OM_FIELD(/obj/machinery/portable_atmospherics/canister, om_settled, TRUE, CHANGE_MACHINE_SETTINGS)

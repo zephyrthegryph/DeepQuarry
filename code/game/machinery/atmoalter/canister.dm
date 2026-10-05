@@ -1,3 +1,10 @@
+// The gas canister: a portable vessel of gas (code/game/machinery/atmoalter/portable_atmospherics.dm) with a release valve, a tank bay and a label.
+//
+// What it is: CAPABILITIES below. Its valve's work is an every() that runs while it has work (the valve open, its gas reacting, its liner exposed),
+// woken by its own gas watch; the release itself is the gas domain's gas_release(). A preset is a `starts_with` table, filled when it is made.
+
+#define CANISTER_RELEASE_LOG_MAX 50
+
 /obj/machinery/portable_atmospherics/canister
 	name = "canister"
 	icon = 'icons/obj/atmos.dmi'
@@ -9,14 +16,10 @@
 	layer = TABLE_LAYER	// Above catwalks, hopefully below other things
 
 	var/release_pressure = ONE_ATMOSPHERE
-	var/release_flow_rate = ATMOS_DEFAULT_VOLUME_PUMP //in L/s
+	/// The most the valve lets out per service interval, litres of the canister's gas.
+	var/release_flow_rate = ATMOS_DEFAULT_VOLUME_PUMP
 
 	var/canister_color = "yellow"
-	var/can_label = 1
-	/// Cached from the last perform(): TRUE once valve_open is off and neither a reaction nor
-	/// the material vessel is doing anything, mirroring the settle check the old process() made
-	/// right before it called hibernate_until_gas_changes(). Read by
-	/// /datum/om/stage/machine/power/portable_atmospherics/canister/idle() (machine_pipeline.dm).
 	start_pressure = 45 * ONE_ATMOSPHERE
 	pressure_resistance = 7 * ONE_ATMOSPHERE
 	var/temperature_resistance = 1000 + T0C
@@ -26,91 +29,111 @@
 	volume = 1000
 	use_power = USE_POWER_OFF
 	interact_offline = 1 // Allows this to be used when not in powered area.
-	var/release_log = ""
+
+	/// What it is filled with when it is made: gas id -> share of a full load (start_pressure at 20 C). Over 1 is more than one load.
+	var/list/starts_with
+	/// The temperature it is chilled to once filled (null: it stays at 20 C).
+	var/chilled_to
+	/// It empties itself into the room it is made in (the room filler).
+	var/empties_into_room = FALSE
+	/// Who opened and closed the valve: the newest CANISTER_RELEASE_LOG_MAX lines.
+	var/list/release_log
+
+	var/valve_open = FALSE
+	/// It has work each service interval: the valve is open, or its gas or its liner has something left to do.
+	var/working = TRUE
+	/// The band of the pressure gauge (1 under 10 kPa, 2 under one atmosphere, 3 under fifteen, 4 above).
+	var/gauge_band = 1
+
+TRACKED(/obj/machinery/portable_atmospherics/canister, valve_open)
+TRACKED(/obj/machinery/portable_atmospherics/canister, working)
+TRACKED(/obj/machinery/portable_atmospherics/canister, gauge_band)
+TRACKED(/obj/machinery/portable_atmospherics/canister, canister_color)
+
+MSG_DEF_SELF(canister/has_liner, "It already has an engineered pressure liner.")
+MSG_DEF_SELF(canister/drain_first, "Drain and restore it before installing a pressure liner.")
+MSG_DEF_SELF(canister/pressurized, "Its internal pressure is too high! Empty the canister before attempting to weld it apart.")
+MSG_DEF_SELF(canister/not_empty, "It can only be relabelled while it is empty.")
+MSG_DEF(canister/deconstructed, "You deconstruct %T%.", "%U% deconstructs %T%.")
+MSG_DEF(canister/jetpack, "You pulse-pressurize your jetpack from the tank.", "%U% pulse-pressurizes a jetpack from %T%.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	climb()
+	gas_watch(air = nameof(air_contents), changed = PROC_REF(contents_changed))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(canister_step)), when = nameof(working))
+	on_change(nameof(valve_open), ANY, then(PROC_REF(valve_moved)))
+	op("liner", stack(/obj/item/stack/material, 2), label("Install pressure liner"), wait(0),
+		needs(req(PROC_REF(no_liner), because = MSG(canister/has_liner)), req(PROC_REF(drained_for_liner), because = MSG(canister/drain_first))),
+		then(PROC_REF(install_liner)))
+	op("refill_jetpack", item(/obj/item/tank/jetpack), label("Pulse-pressurize jetpack"), wait(0), when(PROC_REF(actor_is_robot)),
+		says(MSG(canister/jetpack)), then(PROC_REF(refill_jetpack)))
+	op("strike", item(/obj/item), hostile(), label("Strike"), priority(OP_PRIORITY_ATTACK), when(cond_not(req(/obj/item/tank))), when(cond_not(req(/obj/item/analyzer))),
+		when(cond_not(req(/obj/item/pda))), then(PROC_REF(struck_with)))
+	op("weld_apart", tool(TOOL_WELDER), label("Deconstruct"), wait(2 SECONDS), needs(req(PROC_REF(empty_or_wrecked), because = MSG(canister/pressurized))),
+		says(MSG(canister/deconstructed)), then(PROC_REF(welded_apart)))
+
+	/// The canister's window and the buttons in it.
+	section(controls, "The canister's window and the buttons in it")
 	interface("Canister", state = nameof(GLOB.tgui_physical_state))
-	op("relabel", ui_act("relabel"), then(PROC_REF(ui_act_relabel)))
-	op("pressure", ui_act("pressure", arg("pressure", num())), then(PROC_REF(ui_act_pressure)))
-	op("valve", ui_act("valve"), then(PROC_REF(ui_act_valve)))
-	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
-
-/obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
-	var/internal_temperature = air_contents?.return_temperature() || T20C
-	return material_environment_pressure_limit(maximum_pressure, MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS, internal_temperature)
-
-/// Returns TRUE while continued chemical exposure needs another sample.
-/obj/machinery/portable_atmospherics/canister/proc/process_material_vessel()
-	material_liner_integrity = material_assembly_view(src).liner_integrity
-	return FALSE // Independent material service owns exposure and leak updates.
-
-/obj/machinery/portable_atmospherics/canister/material_environment_begin_leak()
-	if(!material_assembly_view(src).leaking)
-		visible_message(span_warning("Gas begins hissing through [src]'s compromised vessel wall."))
-	return ..()
-
-/obj/machinery/portable_atmospherics/canister/material_environment_owns_leak()
-	return FALSE
-
-/obj/machinery/portable_atmospherics/canister/material_environment_rupture()
-	if(!destroyed)
-		atom_destruction(BOMB)
-
-/obj/machinery/portable_atmospherics/canister/drain_power()
-	return -1
+	extend("ui_open", needs(req(PROC_REF(not_destroyed), because = MSG(portable/wrecked))))
+	op("relabel", ui_act("relabel"), needs(req(PROC_REF(can_relabel), because = MSG(canister/not_empty))),
+		asks(/datum/prompt/choice, fields = list("title" = "Gas canister", "question" = "Choose canister label", "choices" = computed(PROC_REF(label_choices)))),
+		then(PROC_REF(label_chosen)))
+	op("pressure", ui_act("pressure", arg("pressure", num())), then(PROC_REF(ui_set_release_pressure)))
+	op("valve", ui_act("valve"), then(PROC_REF(ui_toggle_valve)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_eject)))
 
 /obj/machinery/portable_atmospherics/canister/nitrous_oxide
 	name = "Canister: \[N2O\]"
 	icon_state = "redws"
 	canister_color = "redws"
-	can_label = 0
+	starts_with = list(GAS_N2O = 1)
 
 /obj/machinery/portable_atmospherics/canister/nitrogen
 	name = "Canister: \[N2\]"
 	icon_state = "red"
 	canister_color = "red"
-	can_label = 0
+	starts_with = list(GAS_N2 = 1)
 
 /obj/machinery/portable_atmospherics/canister/oxygen
 	name = "Canister: \[O2\]"
 	icon_state = "blue"
 	canister_color = "blue"
-	can_label = 0
+	starts_with = list(GAS_O2 = 1)
 
 /obj/machinery/portable_atmospherics/canister/oxygen/prechilled
 	name = "Canister: \[O2 (Cryo)\]"
+	chilled_to = 80
 
 /obj/machinery/portable_atmospherics/canister/phoron
 	name = "Canister \[Phoron\]"
 	icon_state = "orangeps"
 	canister_color = "orangeps"
-	can_label = 0
+	starts_with = list(GAS_PHORON = 1)
 
 /obj/machinery/portable_atmospherics/canister/carbon_dioxide
 	name = "Canister \[CO2\]"
 	icon_state = "black"
 	canister_color = "black"
-	can_label = 0
+	starts_with = list(GAS_CO2 = 1)
 
 /obj/machinery/portable_atmospherics/canister/methane
 	name = "Canister: \[CH4\]"
 	icon_state = "green"
 	canister_color = "green"
-	can_label = 0
+	starts_with = list(GAS_CH4 = 1)
 
 /obj/machinery/portable_atmospherics/canister/air
 	name = "Canister \[Air\]"
 	icon_state = "grey"
 	canister_color = "grey"
-	can_label = 0
+	starts_with = list(GAS_O2 = O2STANDARD, GAS_N2 = N2STANDARD)
 
 /obj/machinery/portable_atmospherics/canister/air/airlock
 	start_pressure = 3 * ONE_ATMOSPHERE
 
 /obj/machinery/portable_atmospherics/canister/empty/
 	start_pressure = 0
-	can_label = 1
 
 /obj/machinery/portable_atmospherics/canister/empty/oxygen
 	name = "Canister: \[O2\]"
@@ -138,94 +161,59 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	icon_state = "green"
 	canister_color = "green"
 
+//R-UST port
+// Special types used for engine setup admin verb, they contain double amount of that of normal canister.
+/obj/machinery/portable_atmospherics/canister/nitrogen/engine_setup
+	starts_with = list(GAS_N2 = 2)
 
-/obj/machinery/portable_atmospherics/canister/proc/desired_update_flag()
-	. = 0
-	if(holding)
-		. |= 1
-	if(connected_port())
-		. |= 2
+/obj/machinery/portable_atmospherics/canister/carbon_dioxide/engine_setup
+	starts_with = list(GAS_CO2 = 2)
 
-	var/tank_pressure = air_contents.return_pressure()
-	if(tank_pressure < 10)
-		. |= 4
-	else if(tank_pressure < ONE_ATMOSPHERE)
-		. |= 8
-	else if(tank_pressure < 15*ONE_ATMOSPHERE)
-		. |= 16
-	else
-		. |= 32
+/obj/machinery/portable_atmospherics/canister/phoron/engine_setup
+	starts_with = list(GAS_PHORON = 2)
 
-// An attached closed canister's gas reactions and pipe membership are owned by the pipenet.
-// Its OM pipeline stage only needs to refresh the gauge when the pressure crosses a displayed
-// band, so it watches desired_update_flag() (an om_watch value watch) instead of "any change"
-// in that state; otherwise it falls back to the portable_atmospherics base "any change" watch.
-/obj/machinery/portable_atmospherics/canister/hibernate_until_gas_changes()
-	if(connected_port() && !valve_open)
-		var/mixture_id = air_contents?.arena_id()
-		if(isnull(mixture_id))
-			return
-		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(current_update_flag)), wake_callback = om_callable(src, PROC_REF(wake_om_pipeline)))
-		return
+/// Dirty way to fill room with gas: it empties nine rooms' worth of nitrous oxide (36000 moles) into the room it is placed in. -rastaf0
+/obj/machinery/portable_atmospherics/canister/nitrous_oxide/roomfiller
+	start_pressure = 9 * 4000 * R_IDEAL_GAS_EQUATION * T20C / 1000
+	empties_into_room = TRUE
+
+/obj/machinery/portable_atmospherics/canister/Initialize(mapload) // ALLOW(init/INSTANCE_STATE): its gas is made by the base's init; the preset fills it, a per-instance mixture
+	. = ..()
+	fill_preset()
+
+/// Its preset gas (`starts_with`, chilled to `chilled_to`), emptied into the room when it is a room filler.
+/obj/machinery/portable_atmospherics/canister/proc/fill_preset()
+	if(starts_with)
+		gas_fill(air_contents, starts_with, start_pressure)
+	if(!isnull(chilled_to))
+		air_contents.set_temperature(chilled_to)
+	if(empties_into_room && isturf(loc))
+		gas_dump(air_contents, loc)
+	set_gauge_band(pressure_band())
+
+/obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
+	var/internal_temperature = air_contents?.return_temperature() || T20C
+	return material_environment_pressure_limit(maximum_pressure, MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS, internal_temperature)
+
+/// Returns TRUE while continued chemical exposure needs another sample.
+/obj/machinery/portable_atmospherics/canister/proc/process_material_vessel()
+	material_liner_integrity = material_assembly_view(src).liner_integrity
+	return FALSE // Independent material service owns exposure and leak updates.
+
+/obj/machinery/portable_atmospherics/canister/material_environment_begin_leak()
+	if(!material_assembly_view(src).leaking)
+		visible_message(span_warning("Gas begins hissing through [src]'s compromised vessel wall."))
 	return ..()
 
-/obj/machinery/portable_atmospherics/canister/proc/current_update_flag()
-	return desired_update_flag()
+/obj/machinery/portable_atmospherics/canister/material_environment_owns_leak()
+	return FALSE
 
-/// Wreck state when destroyed; otherwise the colour state plus holding/port/pressure-band overlays
-/// (desired_update_flag(): 1 holding, 2 connected, 4/8/16/32 the pressure band).
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/portable_atmospherics/canister/appearance_overlays()
-	. = list()
-	if(destroyed)
-		icon_state = "[canister_color]-1"
-		return .
-	icon_state = "[canister_color]"
-	var/flag = desired_update_flag()
-	if(flag & 1)
-		. += "can-open"
-	if(flag & 2)
-		. += "can-connector"
-	if(flag & 4)
-		. += "can-o0"
-	if(flag & 8)
-		. += "can-o1"
-	else if(flag & 16)
-		. += "can-o2"
-	else if(flag & 32)
-		. += "can-o3"
+/obj/machinery/portable_atmospherics/canister/material_environment_rupture()
+	if(!destroyed)
+		atom_destruction(BOMB)
 
-
-// At zero integrity the canister ruptures: dumps its gas into the environment,
-// frees any connected port, and becomes a non-dense wreck (it is NOT qdel'd).
-/obj/machinery/portable_atmospherics/canister/atom_destruction(damage_flag)
-	. = ..()
-	if(destroyed)
-		return
-
-	var/atom/location = src.loc
-	var/obj/machinery/atmospherics/portables_connector/port
-	if(location)
-		port = locate_within(location, /obj/machinery/atmospherics/portables_connector) // Finds if there's a port
-		location.assume_air(air_contents)
-
-	if(port && anchored) // if it blew up, frees up the port
-		disconnect()
-		set_anchored(0)
-
-	src.destroyed = 1
-	play_sfx(src, SFX_EFFECTS_SPRAY)
-	set_density(FALSE)
-
-	if (src.holding)
-		src.holding.forceMove(src.loc)
-		own_take(src, nameof(holding))
-
-// Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable atmospherics" section):
-// canister inherits polls = FALSE from /obj/machinery/portable_atmospherics. The body that used
-// to live in process() is unchanged, just relocated to
-// /datum/om/stage/machine/power/portable_atmospherics/canister/perform().
-
+/obj/machinery/portable_atmospherics/canister/drain_power()
+	return -1
 
 /obj/machinery/portable_atmospherics/canister/return_air()
 	return air_contents
@@ -240,299 +228,215 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 /obj/machinery/portable_atmospherics/canister/projectile_damage(obj/item/projectile/P, def_zone)
 	return receive_projectile(P, def_zone, 0.5)
 
-/obj/machinery/portable_atmospherics/canister/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/canister_liner,
-		/datum/interaction/machine_item/canister_jetpack_refill,
-		/datum/interaction/machine_item/canister_generic,
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
+// ---- its work ----
+
+/// The pressure gauge's band for `pressure` (its own gas's when null).
+/obj/machinery/portable_atmospherics/canister/proc/pressure_band(pressure = null)
+	if(isnull(pressure))
+		pressure = air_contents?.return_pressure() || 0
+	if(pressure < 10)
+		return 1
+	if(pressure < ONE_ATMOSPHERE)
+		return 2
+	if(pressure < 15 * ONE_ATMOSPHERE)
+		return 3
+	return 4
+
+/// Its gas changed (its gas watch): the gauge follows, and a canister standing alone wakes to let its gas react (a connected, closed one's gas is the
+/// pipe network's).
+/obj/machinery/portable_atmospherics/canister/proc/contents_changed(list/observation, index)
+	set_gauge_band(pressure_band(GAS_OBSERVED(observation, index, GAS_OBS_PRESSURE)))
+	if(valve_open || !connected_port())
+		set_working(TRUE)
+
+/// The valve opened or closed: the work follows.
+/obj/machinery/portable_atmospherics/canister/proc/valve_moved(datum/act/A)
+	set_working(TRUE)
+
+/// One service interval: the liner's exposure, the gas's reactions, the valve's release into the held tank or the room. It parks once nothing is left.
+/obj/machinery/portable_atmospherics/canister/proc/canister_step(datum/act/A)
+	if(destroyed)
+		set_working(FALSE)
+		return
+	var/turf/canister_turf = get_turf(src)
+	material_observe_gases(air_contents, canister_turf?.return_air())
+	var/reaction_result = react_or_update()
+	var/material_active = process_material_vessel()
+	if(destroyed)
+		set_working(FALSE)
+		return
+	if(valve_open)
+		gas_release(air_contents, holding ? holding.air_contents : loc, release_pressure, release_flow_rate)
+	set_gauge_band(pressure_band())
+	set_working(valve_open || reaction_result != NO_REACTION || material_active)
+
+// ---- the look ----
+
+/obj/machinery/portable_atmospherics/canister/draw(datum/look/look)
 	..()
+	if(destroyed)
+		look.state("[canister_color]-1")
+		return
+	look.state(canister_color)
+	look.overlay("can-open", when = !!holding)
+	look.overlay("can-connector", when = !!connected_port())
+	switch(gauge_band)
+		if(1)
+			look.overlay("can-o0")
+		if(2)
+			look.overlay("can-o1")
+		if(3)
+			look.overlay("can-o2")
+		if(4)
+			look.overlay("can-o3")
 
-/datum/interaction/machine_item/canister_liner
-	id = "canister_liner"
-	name = "Install pressure liner"
-	held_type = /obj/item/stack/material
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/portable_atmospherics/canister/proc/can_install_liner))
-	effect = /obj/machinery/portable_atmospherics/canister/proc/interaction_liner
+// ---- wrecked ----
 
-/// Requirement: TRUE, or why a pressure liner can't be installed.
-/obj/machinery/portable_atmospherics/canister/proc/can_install_liner(mob/user, atom/target, obj/item/stack/material/stock)
-	if(pressure_liner_material_id)
-		return "it already has an engineered pressure liner"
-	if(destroyed || air_contents.return_pressure() > ONE_ATMOSPHERE * 0.1)
-		return "drain and restore it before installing a pressure liner"
-	if(stock.get_amount() < 2)
-		return "a pressure liner requires two sheets"
-	return TRUE
+// At zero integrity the canister ruptures: it dumps its gas into the room, frees its port, drops its tank and becomes a wreck you can walk through (it
+// is not deleted).
+/obj/machinery/portable_atmospherics/canister/atom_destruction(damage_flag)
+	if(!destroyed && isturf(loc))
+		disconnect()
+		gas_dump(air_contents, loc) // before the machine's own destruction lets go of its gas
+	. = ..()
+	if(destroyed)
+		return
+	set_destroyed(1)
+	play_sfx(src, SFX_EFFECTS_SPRAY)
+	set_density(FALSE)
+	tank_bay_eject(src, nameof(holding))
+	set_working(FALSE)
 
-/obj/machinery/portable_atmospherics/canister/proc/interaction_liner(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
+// ---- ops ----
+
+/obj/machinery/portable_atmospherics/canister/proc/no_liner(datum/act/A)
+	return !pressure_liner_material_id // ALLOW(reads): asked when the sheets are used, never from a cached menu
+
+/obj/machinery/portable_atmospherics/canister/proc/drained_for_liner(datum/act/A)
+	return !destroyed && gas_pressure_of(air_contents) <= ONE_ATMOSPHERE * 0.1
+
+/obj/machinery/portable_atmospherics/canister/proc/install_liner(datum/act/op/A)
+	var/obj/item/stack/material/stock = A.held
 	var/datum/material/liner = stock.material
 	pressure_liner_material_id = liner.name
-	stock.use(2)
 	set_construction_material(MATERIAL_ROLE_LINER, liner.name)
 	material_liner_integrity = 100
 	material_assembly(src).liner_integrity = 100
 	name = "[liner.display_name]-lined [initial(name)]"
 	color = liner.icon_colour
-	to_chat(user, span_notice("You install a [liner.display_name] pressure liner in [src]."))
-	return TRUE
+	to_chat(A.actor, span_notice("You install a [liner.display_name] pressure liner in [src]."))
+	return OP_OK
 
-/datum/interaction/machine_item/canister_jetpack_refill
-	id = "canister_jetpack_refill"
-	name = "Pulse-pressurize jetpack"
-	held_type = /obj/item/tank/jetpack
-	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/portable_atmospherics/canister/proc/actor_is_robot, null))
-	effect = /obj/machinery/portable_atmospherics/canister/proc/interaction_jetpack_refill
+/// A cyborg's module (its input carries its link's authority beside the gripper's).
+/obj/machinery/portable_atmospherics/canister/proc/actor_is_robot(datum/act/op/A)
+	return !!(A.authority & AUTH_REMOTE_ACCESS)
 
-/obj/machinery/portable_atmospherics/canister/proc/actor_is_robot(mob/actor, atom/target, obj/item/held)
-	return isrobot(actor)
+/// A cyborg's jetpack takes half the pressure difference, up to ten atmospheres.
+/obj/machinery/portable_atmospherics/canister/proc/refill_jetpack(datum/act/op/A)
+	var/obj/item/tank/jetpack/J = A.held
+	var/datum/gas_mixture/jetpack_air = J.air_contents
+	gas_release(air_contents, jetpack_air, min(10 * ONE_ATMOSPHERE, (air_contents.return_pressure() + jetpack_air.return_pressure()) / 2))
+	return OP_OK
 
-/obj/machinery/portable_atmospherics/canister/proc/interaction_jetpack_refill(mob/user, obj/item/tank/jetpack/the_jetpack_tank, datum/interaction/interaction)
-	var/datum/gas_mixture/thejetpack = the_jetpack_tank.air_contents
-	var/env_pressure = thejetpack.return_pressure()
-	var/pressure_delta = min(10*ONE_ATMOSPHERE - env_pressure, (air_contents.return_pressure() - env_pressure)/2)
-	//Can not have a pressure delta that would cause environment pressure > tank pressure
-	var/transfer_moles = 0
-	if((air_contents.return_temperature() > 0) && (pressure_delta > 0))
-		transfer_moles = pressure_delta*thejetpack.return_volume()/(air_contents.return_temperature() * R_IDEAL_GAS_EQUATION)//Actually transfer the gas
-		var/datum/gas_mixture/removed = air_contents.remove(transfer_moles)
-		thejetpack.merge(removed)
-		to_chat(user, "You pulse-pressurize your jetpack from the tank.")
-	return TRUE
+/// Struck with a weapon (not a tank, which goes in, or an analyzer or a PDA, which read it).
+/obj/machinery/portable_atmospherics/canister/proc/struck_with(datum/act/op/A)
+	act_message(A.actor, src, others = span_warning("%U% hits %T% with \a [A.held]!"))
+	add_fingerprint(A.actor)
+	receive_weapon_hit(A.held, A.actor, silent = FALSE)
+	return OP_OK
 
-/datum/interaction/machine_item/canister_generic
-	id = "canister_generic"
-	name = "Use"
-	held_type = /obj/item
-	consumes_input = FALSE
-	effect = /obj/machinery/portable_atmospherics/canister/proc/interaction_generic
+/obj/machinery/portable_atmospherics/canister/proc/empty_or_wrecked(datum/act/A)
+	return destroyed || gas_pressure_of(air_contents) <= 1
 
-/obj/machinery/portable_atmospherics/canister/proc/interaction_generic(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
-		act_message(user, src, others = span_warning("%U% hits %T% with \a [W]!"))
-		src.add_fingerprint(user)
-		receive_weapon_hit(W, user, silent = FALSE)
-
-	SStgui.update_uis(src) // Update all NanoUIs attached to src
-	return FALSE
-
-/obj/machinery/portable_atmospherics/canister/welder_act(mob/user, obj/item/tool)
-	if(air_contents.return_pressure() > 1 && !destroyed)
-		to_chat(user, span_warning("\The [src]'s internal pressure is too high! Empty the canister before attempting to weld it apart."))
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/portable_atmospherics/canister/proc/welder_act_tool_done(mob/user)
-	to_chat(user, span_notice("You deconstruct [src]."))
-	if(connected_port())
-		disconnect()
+/obj/machinery/portable_atmospherics/canister/proc/welded_apart(datum/act/op/A)
+	disconnect()
 	replace_with(src, /obj/item/stack/material/steel, 10)
+	return OP_OK
 
-/obj/machinery/portable_atmospherics/canister/ui_prepare(mob/user, datum/tgui/ui)
-	if(destroyed)
-		return FALSE
-	return TRUE
+// ---- the window ----
 
 /obj/machinery/portable_atmospherics/canister/ui_data(datum/act/eval/A)
-	var/list/data = list()
-	data["can_relabel"] = can_label ? 1 : 0
-	data["connected"] = connected_port() ? 1 : 0
-	data["pressure"] = round(air_contents.return_pressure() ? air_contents.return_pressure() : 0)
-	data["releasePressure"] = round(release_pressure ? release_pressure : 0)
-	data["defaultReleasePressure"] = round(initial(release_pressure))
-	data["minReleasePressure"] = round(ONE_ATMOSPHERE/10)
-	data["maxReleasePressure"] = round(10*ONE_ATMOSPHERE)
-	data["valveOpen"] = valve_open ? 1 : 0
-
+	var/pressure = air_contents.return_pressure()
+	var/list/data = list(
+		"can_relabel" = can_relabel(A) ? 1 : 0,
+		"connected" = connected_port() ? 1 : 0,
+		"pressure" = round(pressure || 0),
+		"releasePressure" = round(release_pressure || 0),
+		"defaultReleasePressure" = round(initial(release_pressure)),
+		"minReleasePressure" = round(ONE_ATMOSPHERE/10),
+		"maxReleasePressure" = round(10*ONE_ATMOSPHERE),
+		"valveOpen" = valve_open ? 1 : 0,
+		"holding" = null,
+	)
 	if(holding)
-		data["holding"] = list()
-		data["holding"]["name"] = holding.name
-		data["holding"]["pressure"] = round(holding.air_contents.return_pressure())
-	else
-		data["holding"] = null
-
+		data["holding"] = list("name" = holding.name, "pressure" = round(holding.air_contents.return_pressure()))
 	return data
 
-/obj/machinery/portable_atmospherics/canister/proc/ui_act_relabel(datum/act/op/A)
-	var/mob/user = A.actor
-	if(can_label)
-		open_request(src, /datum/prompt/choice, PROC_REF(label_chosen), valid = PROC_REF(label_valid), answerer = user, title = "Gas canister", question = "Choose canister label", choices = label_colors(), timeout = 0)
-	add_fingerprint(user)
-	update_icon()
+/// It can be relabelled while it is empty (under one kilopascal).
+/obj/machinery/portable_atmospherics/canister/proc/can_relabel(datum/act/A)
+	return !destroyed && gas_pressure_of(air_contents) < 1
 
-/obj/machinery/portable_atmospherics/canister/proc/ui_act_pressure(datum/act/op/A, raw_pressure)
-	var/mob/user = A.actor
-	var/pressure = raw_pressure
-	if(pressure == "reset")
-		pressure = initial(release_pressure)
-		. = TRUE
-	else if(pressure == "min")
-		pressure = ONE_ATMOSPHERE/10
-		. = TRUE
-	else if(pressure == "max")
-		pressure = 10*ONE_ATMOSPHERE
-		. = TRUE
-	else if(pressure == "input")
-		open_request(src, /datum/prompt/number, PROC_REF(release_pressure_entered), valid = PROC_REF(pressure_valid), answerer = user, title = name, question = "New release pressure ([ONE_ATMOSPHERE/10]-[10*ONE_ATMOSPHERE] kPa):", min_value = ONE_ATMOSPHERE/10, max_value = 10*ONE_ATMOSPHERE, default = release_pressure, timeout = 0)
-		return TRUE
-	else if(isnum(pressure))
-		. = TRUE
-	if(.)
-		release_pressure = clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
-	add_fingerprint(user)
-	update_icon()
+/// The labels a canister can be given, each with the colour it paints the canister.
+GLOBAL_LIST_INIT(canister_label_colors, list(
+	"\[N2O\]" = "redws",
+	"\[N2\]" = "red",
+	"\[O2\]" = "blue",
+	"\[Phoron\]" = "orangeps",
+	"\[CO2\]" = "black",
+	"\[CH4\]" = "green",
+	"\[Air\]" = "grey",
+	"\[CAUTION\]" = "yellow",
+))
 
-/obj/machinery/portable_atmospherics/canister/proc/ui_act_valve(datum/act/op/A)
+/obj/machinery/portable_atmospherics/canister/proc/label_colors()
+	return GLOB.canister_label_colors
+
+/obj/machinery/portable_atmospherics/canister/proc/label_choices(datum/act/A)
+	return label_colors()
+
+/obj/machinery/portable_atmospherics/canister/proc/label_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/label = R?.value
+	var/list/colors = label_colors()
+	if(label && colors[label])
+		set_canister_color(colors[label])
+		name = "Canister: [label]"
+	return OP_OK
+
+/obj/machinery/portable_atmospherics/canister/proc/ui_set_release_pressure(datum/act/op/A, pressure)
+	release_pressure = clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
+	add_fingerprint(A.actor)
+	return OP_OK
+
+/// A line of the release log, the oldest dropped beyond CANISTER_RELEASE_LOG_MAX.
+/obj/machinery/portable_atmospherics/canister/proc/log_release(text)
+	LAZYADD(release_log, text)
+	if(length(release_log) > CANISTER_RELEASE_LOG_MAX)
+		release_log.Cut(1, length(release_log) - CANISTER_RELEASE_LOG_MAX + 1)
+
+/obj/machinery/portable_atmospherics/canister/proc/ui_toggle_valve(datum/act/op/A)
 	var/mob/user = A.actor
+	var/into = holding ? "the [holding]" : "the air"
 	if(valve_open)
-		if(holding)
-			release_log += "Valve was " + span_bold("closed") + " by [user] ([user.ckey]), stopping the transfer into the [holding]<br>"
-		else
-			release_log += "Valve was " + span_bold("closed") + " by [user] ([user.ckey]), stopping the transfer into the " + span_red(span_bold("air")) + "<br>"
+		log_release("Valve was closed by [user] ([user.ckey]), stopping the transfer into [into]")
 	else
-		if(holding)
-			release_log += "Valve was " + span_bold("opened") + " by [user] ([user.ckey]), starting the transfer into the [holding]<br>"
-		else
-			release_log += "Valve was " + span_bold("opened") + " by [user] ([user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
+		log_release("Valve was opened by [user] ([user.ckey]), starting the transfer into [into]")
+		if(!holding)
 			log_open(user)
 	set_valve_open(!valve_open)
-	changed(src, CHANGE_MACHINE_SETTINGS)
-	. = TRUE
 	add_fingerprint(user)
-	update_icon()
+	return OP_OK
 
-/obj/machinery/portable_atmospherics/canister/proc/ui_act_eject(datum/act/op/A)
+/// The tank comes out onto the floor; an open valve closes first.
+/obj/machinery/portable_atmospherics/canister/proc/ui_eject(datum/act/op/A)
 	var/mob/user = A.actor
 	if(holding)
 		if(valve_open)
-			set_valve_open(0)
-			release_log += "Valve was " + span_bold("closed") + " by [user] ([user.ckey]), stopping the transfer into the [holding]<br>"
-		if(istype(holding, /obj/item/tank))
-			holding.manipulated_by = user.real_name
-		holding.forceMove(loc)
-		own_take(src, nameof(/datum/rule_binding::holding))
-	. = TRUE
+			set_valve_open(FALSE)
+			log_release("Valve was closed by [user] ([user.ckey]), stopping the transfer into the [holding]")
+		holding.manipulated_by = user.real_name
+		tank_bay_eject(src, nameof(holding))
 	add_fingerprint(user)
-	update_icon()
+	return OP_OK
 
-/// The labels a canister can be given, each with the colour it paints the canister.
-/obj/machinery/portable_atmospherics/canister/proc/label_colors()
-	return list(\
-		"\[N2O\]" = "redws", \
-		"\[N2\]" = "red", \
-		"\[O2\]" = "blue", \
-		"\[Phoron\]" = "orangeps", \
-		"\[CO2\]" = "black", \
-		"\[CH4\]" = "green", \
-		"\[Air\]" = "grey", \
-		"\[CAUTION\]" = "yellow", \
-	)
-
-/// Re-checked: the canister can still be labelled and the person is next to it and able.
-/obj/machinery/portable_atmospherics/canister/proc/label_valid(datum/request/R)
-	return can_label && answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
-
-/obj/machinery/portable_atmospherics/canister/proc/label_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/label = A.answer.answer_value
-	var/list/colors = label_colors()
-	if(label && colors[label])
-		canister_color = colors[label]
-		icon_state = colors[label]
-		name = "Canister: [label]"
-
-/// Re-checked: the person is still next to the canister and able.
-/obj/machinery/portable_atmospherics/canister/proc/pressure_valid(datum/request/R)
-	return answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
-
-/obj/machinery/portable_atmospherics/canister/proc/release_pressure_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	release_pressure = clamp(round(A.answer.answer_value), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
-
-/obj/machinery/portable_atmospherics/canister/phoron/Initialize(mapload)
-	. = ..()
-
-	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
-	update_icon()
-
-/obj/machinery/portable_atmospherics/canister/oxygen/Initialize(mapload)
-	. = ..()
-
-	air_contents.adjust_gas(GAS_O2, MolesForPressure())
-	update_icon()
-
-/obj/machinery/portable_atmospherics/canister/oxygen/prechilled/Initialize(mapload)
-	. = ..()
-
-	air_contents.adjust_gas(GAS_O2, MolesForPressure())
-	air_contents.set_temperature(80)
-	update_icon()
-
-/obj/machinery/portable_atmospherics/canister/nitrous_oxide/Initialize(mapload)
-	. = ..()
-
-	air_contents.adjust_gas(GAS_N2O, MolesForPressure())
-	update_icon()
-
-//Dirty way to fill room with gas. However it is a bit easier to do than creating some floor/engine/n2o -rastaf0
-/obj/machinery/portable_atmospherics/canister/nitrous_oxide/roomfiller/Initialize(mapload)
-	. = ..()
-	air_contents.set_moles(/datum/gas/nitrous_oxide, 9*4000) // was XGM .gas[id] = X
-	var/turf/simulated/location = src.loc
-	if (istype(src.loc))
-		location.assume_air(air_contents)
-		atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
-
-/obj/machinery/portable_atmospherics/canister/nitrogen/Initialize(mapload)
-	. = ..()
-
-	air_contents.adjust_gas(GAS_N2, MolesForPressure())
-	update_icon()
-
-/obj/machinery/portable_atmospherics/canister/carbon_dioxide/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_CO2, MolesForPressure())
-	update_icon()
-
-/obj/machinery/portable_atmospherics/canister/methane/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_CH4, MolesForPressure())
-	update_icon()
-
-/obj/machinery/portable_atmospherics/canister/air/Initialize(mapload)
-	. = ..()
-	var/list/air_mix = StandardAirMix()
-	air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])
-
-	update_icon()
-
-//R-UST port
-// Special types used for engine setup admin verb, they contain double amount of that of normal canister.
-/obj/machinery/portable_atmospherics/canister/nitrogen/engine_setup/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_N2, MolesForPressure())
-	update_icon()
-
-/obj/machinery/portable_atmospherics/canister/carbon_dioxide/engine_setup/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_CO2, MolesForPressure())
-	update_icon()
-
-/obj/machinery/portable_atmospherics/canister/phoron/engine_setup/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
-	update_icon()
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/portable_atmospherics/canister/arm_wakes()
-	..()
-	set_om_settled(!valve_open)
-	hibernate_until_gas_changes()
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/portable_atmospherics/canister/step_start_condition()
-	return valve_open
+#undef CANISTER_RELEASE_LOG_MAX

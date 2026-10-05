@@ -1012,3 +1012,21 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
 - **The frame** is a `construction()` graph: the proximity sensor goes in with a click (before, no click reached it) and stays in the frame's
   construction slot; each step undoes by its tool; a loose frame pries apart into one stack of five sheets (`spawns()` of a stack now makes
   one pile of n). Renaming is `asks()` a text prompt.
+## Atmospherics machines: the canister and the portable machines
+
+Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first) and the canister tests of `dq_atmos_tests.dm`.
+
+* **The chilled oxygen canister holds one load of oxygen**, chilled to 80 K: it was filled twice (its own fill on top of the oxygen canister's).
+* **The presets are a `starts_with` table** (gas -> share of a 45-atmosphere load; the engine set-up canisters' share is 2). The room filler is a
+  preset that empties itself into its room.
+* **A ruptured canister's gas goes into the room** (`gas_dump()`): it went nowhere (the machine's own destruction let go of the mixture first).
+* **The valve's release is `gas_release()`** (the same exact solve and the same release-flow cap per service interval; the turf is woken by the API),
+  and a cyborg's jetpack refill too (an exact solve at the mixing temperature, where it used the canister's temperature).
+* **A canister can be relabelled while it is empty**, read when asked (it was a stored flag the machine pipeline overwrote each frame, so the type's
+  `can_label` never held past the first frame anyway).
+* **The release log keeps its newest 50 lines** as a list (it was an unbounded HTML string).
+* **The canister's work is an `every()` gated by `working`**, woken by its own gas watch; a closed connected canister's gas change moves only its
+  gauge. The machine pipeline stage, its OM value watch, `MACHINE_WAKE` and `om_settled` are gone.
+* **The tank bay, the port wrench, the liner, the welder, the strike and the cell slot of the powered ones are ops** (`tank_bay()` beside
+  `cell_bay()`); refusals say why ("It is wrecked.", "Nothing happens.", the drain and liner reasons). A liner takes its two sheets as the op's cost.
+* **The canister's eject drops the tank on the floor and closes an open valve, as before; the label's colour is a tracked var drawn by `draw()`.**

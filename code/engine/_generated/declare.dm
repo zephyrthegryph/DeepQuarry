@@ -614,6 +614,16 @@
 /datum/capdef_decl/c_synthesizer/spec()
 	return list(CAP_SYNTHESIZER, /datum/capability/lib/synthesizer, NONE, STACK, "synthesizer", "containers")
 
+/// CAPABILITY_TYPE(tank_bay, CAP_TANK_BAY) at code/domains/atmos/tank_bay.dm:10
+/datum/capability/lib/tank_bay
+	var/slot_var = null
+	var/when = null
+/proc/tank_bay(slot_var, when)
+	RETURN_TYPE(/datum/capability/lib/tank_bay)
+	return cap_construct(CAP_TANK_BAY, /datum/capability/lib/tank_bay, list(slot_var, when), "slot_var, when")
+/datum/capdef_decl/c_tank_bay/spec()
+	return list(CAP_TANK_BAY, /datum/capability/lib/tank_bay, "slot_var", STACK, "tank_bay", "slot_var, when")
+
 /// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/spaces.dm:514
 /proc/telekinesis()
 	RETURN_TYPE(/datum/capability/def/telekinesis)
@@ -4091,15 +4101,15 @@
 	into += entry_line(427)
 	into += list(global.ref_one(nameof(botany_interaction), /datum/interaction))
 
-/// CAPABILITIES(/datum/prompt/choice/botany_ghost_harvest) at code/modules/hydroponics/trays/tray.dm:833
+/// CAPABILITIES(/datum/prompt/choice/botany_ghost_harvest) at code/modules/hydroponics/trays/tray.dm:837
 /datum/prompt/choice/botany_ghost_harvest/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/hydroponics/trays/tray.dm", 833, /datum/prompt/choice/botany_ghost_harvest)
-	into += entry_line(834)
+	into += entry_block("code/modules/hydroponics/trays/tray.dm", 837, /datum/prompt/choice/botany_ghost_harvest)
+	into += entry_line(838)
 	into += list(global.ref_one(nameof(botany_operator), /mob))
-	into += entry_line(835)
+	into += entry_line(839)
 	into += list(global.ref_one(nameof(botany_held), /obj/item))
-	into += entry_line(836)
+	into += entry_line(840)
 	into += list(global.ref_one(nameof(botany_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/choice/botany_soil_destroy) at code/modules/hydroponics/trays/tray_soil.dm:137
@@ -4113,15 +4123,15 @@
 	into += entry_line(140)
 	into += list(global.ref_one(nameof(botany_interaction), /datum/interaction))
 
-/// CAPABILITIES(/datum/prompt/choice/botany_tray_light) at code/modules/hydroponics/trays/tray.dm:879
+/// CAPABILITIES(/datum/prompt/choice/botany_tray_light) at code/modules/hydroponics/trays/tray.dm:883
 /datum/prompt/choice/botany_tray_light/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/hydroponics/trays/tray.dm", 879, /datum/prompt/choice/botany_tray_light)
-	into += entry_line(880)
+	into += entry_block("code/modules/hydroponics/trays/tray.dm", 883, /datum/prompt/choice/botany_tray_light)
+	into += entry_line(884)
 	into += list(global.ref_one(nameof(botany_operator), /mob))
-	into += entry_line(881)
+	into += entry_line(885)
 	into += list(global.ref_one(nameof(botany_held), /obj/item))
-	into += entry_line(882)
+	into += entry_line(886)
 	into += list(global.ref_one(nameof(botany_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/choice/camera_direction) at code/game/machinery/camera/camera_assembly.dm:157
@@ -18975,35 +18985,58 @@
 	into += entry_line(933)
 	into += list(global.op("rename", global.item(/obj/item/pen), global.wait(0), global.asks(/datum/prompt/text/turret_name), global.then(PROC_REF(renamed))))
 
-/// CAPABILITIES(/obj/machinery/portable_atmospherics) at code/game/machinery/atmoalter/portable_atmospherics.dm:18
+/// CAPABILITIES(/obj/machinery/portable_atmospherics) at code/game/machinery/atmoalter/portable_atmospherics.dm:29
 /obj/machinery/portable_atmospherics/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 18, /obj/machinery/portable_atmospherics)
-	into += entry_line(19)
+	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 29, /obj/machinery/portable_atmospherics)
+	into += entry_line(30)
 	into += list(global.after_init(0, global.then(PROC_REF(port_after_init))))
-	into += entry_line(20)
+	into += entry_line(31)
 	into += list(global.owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(21)
+	into += entry_line(32)
 	into += list(global.owns_one(nameof(holding), /obj/item/tank))
-	into += entry_line(22)
+	into += entry_line(33)
+	into += list(global.ref_one(nameof(connected_port), /obj/machinery/atmospherics/portables_connector))
+	into += entry_line(34)
+	into += list(global.tank_bay(nameof(holding), when = PROC_REF(not_destroyed)))
+	into += entry_line(35)
+	into += list(global.op("port", global.tool(TOOL_WRENCH), global.label("Connect to the port"), global.wait(0), global.when(PROC_REF(port_wrench_offered)), global.needs(global.req(PROC_REF(not_destroyed), because = MSG(portable/wrecked)), global.req(PROC_REF(port_reachable), because = MSG(portable/no_port)), global.req(PROC_REF(port_free), because = MSG(portable/port_taken))), global.says(PROC_REF(port_message)), global.then(PROC_REF(port_wrenched))))
+	into += entry_line(38)
 	into += list(global.extend(/datum/act/hit/blob, global.instead(global.then(PROC_REF(blob_bursts)))))
 
-/// CAPABILITIES(/obj/machinery/portable_atmospherics/canister) at code/game/machinery/atmoalter/canister.dm:31
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/canister) at code/game/machinery/atmoalter/canister.dm:60
 /obj/machinery/portable_atmospherics/canister/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/atmoalter/canister.dm", 31, /obj/machinery/portable_atmospherics/canister)
-	into += entry_line(32)
+	into += entry_block("code/game/machinery/atmoalter/canister.dm", 60, /obj/machinery/portable_atmospherics/canister)
+	into += entry_line(61)
 	into += list(global.climb())
-	into += entry_line(33)
+	into += entry_line(62)
+	into += list(global.gas_watch(air = nameof(air_contents), changed = PROC_REF(contents_changed)))
+	into += entry_line(63)
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(canister_step)), when = nameof(working)))
+	into += entry_line(64)
+	into += list(global.on_change(nameof(valve_open), ANY, global.then(PROC_REF(valve_moved))))
+	into += entry_line(65)
+	into += list(global.op("liner", global.stack(/obj/item/stack/material, 2), global.label("Install pressure liner"), global.wait(0), global.needs(global.req(PROC_REF(no_liner), because = MSG(canister/has_liner)), global.req(PROC_REF(drained_for_liner), because = MSG(canister/drain_first))), global.then(PROC_REF(install_liner))))
+	into += entry_line(68)
+	into += list(global.op("refill_jetpack", global.item(/obj/item/tank/jetpack), global.label("Pulse-pressurize jetpack"), global.wait(0), global.when(PROC_REF(actor_is_robot)), global.says(MSG(canister/jetpack)), global.then(PROC_REF(refill_jetpack))))
+	into += entry_line(70)
+	into += list(global.op("strike", global.item(/obj/item), global.hostile(), global.label("Strike"), global.priority(OP_PRIORITY_ATTACK), global.when(global.cond_not(global.req(/obj/item/tank))), global.when(global.cond_not(global.req(/obj/item/analyzer))), global.when(global.cond_not(global.req(/obj/item/pda))), global.then(PROC_REF(struck_with))))
+	into += entry_line(72)
+	into += list(global.op("weld_apart", global.tool(TOOL_WELDER), global.label("Deconstruct"), global.wait(2 SECONDS), global.needs(global.req(PROC_REF(empty_or_wrecked), because = MSG(canister/pressurized))), global.says(MSG(canister/deconstructed)), global.then(PROC_REF(welded_apart))))
+	// section controls: The canister's window and the buttons in it
+	into += entry_line(77, "controls")
 	into += list(global.interface("Canister", state = nameof(GLOB.tgui_physical_state)))
-	into += entry_line(34)
-	into += list(global.op("relabel", global.ui_act("relabel"), global.then(PROC_REF(ui_act_relabel))))
-	into += entry_line(35)
-	into += list(global.op("pressure", global.ui_act("pressure", global.arg("pressure", global.num())), global.then(PROC_REF(ui_act_pressure))))
-	into += entry_line(36)
-	into += list(global.op("valve", global.ui_act("valve"), global.then(PROC_REF(ui_act_valve))))
-	into += entry_line(37)
-	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
+	into += entry_line(78, "controls")
+	into += list(global.extend("ui_open", global.needs(global.req(PROC_REF(not_destroyed), because = MSG(portable/wrecked)))))
+	into += entry_line(79, "controls")
+	into += list(global.op("relabel", global.ui_act("relabel"), global.needs(global.req(PROC_REF(can_relabel), because = MSG(canister/not_empty))), global.asks(/datum/prompt/choice, fields = list("title" = "Gas canister", "question" = "Choose canister label", "choices" = global.computed(PROC_REF(label_choices)))), global.then(PROC_REF(label_chosen))))
+	into += entry_line(82, "controls")
+	into += list(global.op("pressure", global.ui_act("pressure", global.arg("pressure", global.num())), global.then(PROC_REF(ui_set_release_pressure))))
+	into += entry_line(83, "controls")
+	into += list(global.op("valve", global.ui_act("valve"), global.then(PROC_REF(ui_toggle_valve))))
+	into += entry_line(84, "controls")
+	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_eject))))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics) at code/modules/hydroponics/trays/tray.dm:141
 /obj/machinery/portable_atmospherics/hydroponics/declared_entries(list/into)
@@ -19013,6 +19046,17 @@
 	into += list(global.owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY))
 	into += entry_line(143)
 	into += list(global.owns_one(nameof(temp_chem_holder), /obj))
+
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered) at code/game/machinery/atmoalter/portable_atmospherics.dm:191
+/obj/machinery/portable_atmospherics/powered/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 191, /obj/machinery/portable_atmospherics/powered)
+	into += entry_line(192)
+	into += list(global.owns_one(nameof(cell), /obj/item/cell))
+	into += entry_line(193)
+	into += list(global.op("cell_in", global.item(/obj/item/cell), global.label("Insert power cell"), global.wait(0), global.when(nameof(use_cell)), global.needs(global.req_empty(nameof(cell), because = MSG(portable/cell_present))), global.put_in(nameof(cell)), global.says(MSG(portable/cell_in)), global.then(PROC_REF(cell_changed))))
+	into += entry_line(195)
+	into += list(global.op("cell_out", global.tool(TOOL_SCREWDRIVER), global.label("Remove power cell"), global.when(nameof(removeable_cell)), global.needs(global.req(PROC_REF(has_cell), because = MSG(portable/no_cell))), global.says(MSG(portable/cell_out)), global.then(PROC_REF(take_cell_out))))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump) at code/game/machinery/atmoalter/pump.dm:23
 /obj/machinery/portable_atmospherics/powered/pump/declared_entries(list/into)
