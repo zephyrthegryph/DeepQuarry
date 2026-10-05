@@ -24,8 +24,6 @@
 	var/question
 	/// The window's title (null: the kind's own).
 	var/title
-	/// The answer, once answered: the uniform value field every prompt kind reads it from.
-	var/value
 	/// The tgui window or radial ring showing it, while it is open. Closing it is a cancellation.
 	var/datum/window
 
@@ -135,7 +133,7 @@ CAPABILITIES(/datum/prompt)
 
 /// A "no" spends nothing (a request's costs go with a yes).
 /datum/prompt/yes_no/confirmed()
-	return !!answer_value
+	return !!value
 
 /datum/prompt/yes_no/inline_type()
 	return "boolean"

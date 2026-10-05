@@ -249,11 +249,11 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 
 /client/proc/set_holiday_name_apply(datum/act/request/A)
 	var/datum/prompt/text/set_holiday/ask = A.answer
-	if(!ask.answer_value)
+	if(!ask.value)
 		return
 	if(!ismob(mob) || QDELETED(mob))
 		return
-	open_request(src, /datum/prompt/text/set_holiday, PROC_REF(set_holiday_answered), answerer = mob, question = "Now explain what the holiday is about", multiline = TRUE, holiday = ask.answer_value)
+	open_request(src, /datum/prompt/text/set_holiday, PROC_REF(set_holiday_answered), answerer = mob, question = "Now explain what the holiday is about", multiline = TRUE, holiday = ask.value)
 
 /client/proc/set_holiday_answered(datum/act/request/A)
 	if(!A.answer)
@@ -263,7 +263,7 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 /client/proc/set_holiday_apply(datum/act/request/A)
 	var/datum/prompt/text/set_holiday/ask = A.answer
 	var/H = ask.holiday
-	var/B = ask.answer_value
+	var/B = ask.value
 	if(!H || !B)
 		return
 	GLOB.Holiday = list()

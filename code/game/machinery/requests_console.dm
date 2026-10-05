@@ -257,7 +257,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	if(!A.answer)
 		return
 	var/datum/prompt/text/request_message/R = A.request
-	var/new_message = A.answer.answer_value
+	var/new_message = A.answer.value
 	SStgui.update_uis(src)
 	if(new_message)
 		message = new_message
@@ -276,7 +276,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 /obj/machinery/requests_console/proc/announcement_written(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_message = A.answer.answer_value
+	var/new_message = A.answer.value
 	SStgui.update_uis(src)
 	if(new_message)
 		message = new_message
@@ -319,7 +319,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	if(!A.answer)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return
-	var/input = A.answer.answer_value
+	var/input = A.answer.value
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING

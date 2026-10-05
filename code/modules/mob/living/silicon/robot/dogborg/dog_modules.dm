@@ -398,7 +398,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/robot_leap/leap_question = A.request
-	var/mob/living/T = A.answer.answer_value
+	var/mob/living/T = A.answer.value
 	if(QDELETED(T))
 		return
 	var/bluespace = leap_question.bluespace

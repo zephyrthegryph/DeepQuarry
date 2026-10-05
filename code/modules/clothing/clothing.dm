@@ -189,8 +189,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 /obj/item/clothing/proc/recolor_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value && (A.answer.answer_value != color))
-		color = A.answer.answer_value
+	if(A.answer.value && (A.answer.value != color))
+		color = A.answer.value
 	update_icon()
 	update_clothing_icon()
 // end
@@ -1280,7 +1280,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	if(QDELETED(user))
 		return
 	if(!context.answer)
-		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value))
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.value))
 			switch(ask.last_error)
 				if("sensor controls locked")
 					to_chat(user, "The controls are locked.")
@@ -1290,7 +1290,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 					to_chat(user, "You have moved too far away.")
 			SStgui.update_uis(src)
 		return
-	apply_sensor_mode(user, ask.choices[ask.answer_value])
+	apply_sensor_mode(user, ask.choices[ask.value])
 	SStgui.update_uis(src)
 
 /obj/item/clothing/under/proc/apply_sensor_mode(mob/user, new_mode)
@@ -1617,4 +1617,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 	var/obj/item/clothing/under/suit = owner
 	if(!istype(suit) || QDELETED(suit) || QDELETED(answerer))
 		return "gone"
-	return suit.sensor_mode_refusal(answerer, !isnull(answer_value))
+	return suit.sensor_mode_refusal(answerer, !isnull(value))

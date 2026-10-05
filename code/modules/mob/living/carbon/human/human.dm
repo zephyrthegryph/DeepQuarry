@@ -619,7 +619,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	var/part
 
 /datum/prompt/text/flavor_part/recheck_extra()
-	if(!isnull(answer_value) && answerer != owner)
+	if(!isnull(value) && answerer != owner)
 		return "not yours"
 
 /mob/living/carbon/human/proc/flavor_part_entered(datum/act/request/A)
@@ -629,7 +629,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/flavor_part_entered_apply(datum/act/request/A)
 	var/datum/prompt/text/flavor_part/ask = A.answer
-	var/msg = strip_html_simple(ask.answer_value)
+	var/msg = strip_html_simple(ask.value)
 	if(msg)
 		LAZYSET(flavor_texts, ask.part, msg)
 		set_flavor()
@@ -663,7 +663,7 @@ CAPABILITIES(/datum/prompt/choice/hud_status)
 /datum/prompt/choice/hud_status/recheck_extra()
 	if(record_expected && QDELETED(record))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
 	var/mob/living/carbon/human/H = owner
 	return H.hud_still_usable(answerer, hud_type) ? null : "HUD unusable"
@@ -691,7 +691,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 /datum/prompt/text/hud_comment/recheck_extra()
 	if(record_expected && QDELETED(record))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
 	var/mob/living/carbon/human/H = owner
 	return H.hud_still_usable(answerer, hud_type) ? null : "HUD unusable"
@@ -703,7 +703,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 
 /mob/living/carbon/human/proc/hud_criminal_status_chosen_apply(datum/act/request/A)
 	var/datum/prompt/choice/hud_status/ask = A.answer
-	var/setcriminal = ask.answer_value
+	var/setcriminal = ask.value
 	var/mob/user = ask.answerer
 	if(setcriminal == "Cancel")
 		return
@@ -719,7 +719,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 
 /mob/living/carbon/human/proc/hud_medical_status_chosen_apply(datum/act/request/A)
 	var/datum/prompt/choice/hud_status/ask = A.answer
-	var/setmedical = ask.answer_value
+	var/setmedical = ask.value
 	var/mob/user = ask.answerer
 	if(setmedical == "Cancel")
 		return
@@ -740,7 +740,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 
 /mob/living/carbon/human/proc/hud_comment_entered_apply(datum/act/request/A)
 	var/datum/prompt/text/hud_comment/ask = A.answer
-	var/t1 = ask.answer_value
+	var/t1 = ask.value
 	var/mob/user = ask.answerer
 	if(!t1)
 		return
@@ -962,7 +962,7 @@ CAPABILITIES(/datum/morph_review)
 
 /datum/morph_review/proc/accept_or_skip(datum/act/request/A)
 	// Even an old cancel_answer empty string resumed and rechecked the flow.
-	return !why_not() && (A.answer || (A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value)))
+	return !why_not() && (A.answer || (A.request.outcome == REQ_CANCELLED && isnull(A.request.value)))
 
 /datum/morph_review/proc/start_step()
 	open_request(src, /datum/prompt/color/morph, PROC_REF(facial_color_picked), answerer = actor, question = "Please select facial hair color.", default = rgb(actor.r_facial, actor.g_facial, actor.b_facial))
@@ -974,7 +974,7 @@ CAPABILITIES(/datum/morph_review)
 	if(!accept_or_skip(A))
 		retire()
 		return
-	facial_color = A.answer ? A.request.answer_value : ""
+	facial_color = A.answer ? A.request.value : ""
 	open_request(src, /datum/prompt/color/morph, PROC_REF(hair_color_picked), answerer = actor, question = "Please select hair color.", default = rgb(actor.r_hair, actor.g_hair, actor.b_hair))
 
 /datum/morph_review/proc/hair_color_picked(datum/act/request/A)
@@ -984,7 +984,7 @@ CAPABILITIES(/datum/morph_review)
 	if(!accept_or_skip(A))
 		retire()
 		return
-	hair_color = A.answer ? A.request.answer_value : ""
+	hair_color = A.answer ? A.request.value : ""
 	open_request(src, /datum/prompt/color/morph, PROC_REF(eye_color_picked), answerer = actor, question = "Please select eye color.", default = rgb(actor.r_eyes, actor.g_eyes, actor.b_eyes))
 
 /datum/morph_review/proc/eye_color_picked(datum/act/request/A)
@@ -994,7 +994,7 @@ CAPABILITIES(/datum/morph_review)
 	if(!accept_or_skip(A))
 		retire()
 		return
-	eye_color = A.answer ? A.request.answer_value : ""
+	eye_color = A.answer ? A.request.value : ""
 	open_request(src, /datum/prompt/choice/morph, PROC_REF(hair_picked), answerer = actor, question = "Please select hair style", choices = hairs)
 
 /datum/morph_review/proc/hair_picked(datum/act/request/A)
@@ -1004,7 +1004,7 @@ CAPABILITIES(/datum/morph_review)
 	if(!accept_or_skip(A))
 		retire()
 		return
-	hair = A.answer ? A.request.answer_value : ""
+	hair = A.answer ? A.request.value : ""
 	open_request(src, /datum/prompt/choice/morph, PROC_REF(facial_picked), answerer = actor, question = "Please select facial style", choices = fhairs)
 
 /datum/morph_review/proc/facial_picked(datum/act/request/A)
@@ -1014,7 +1014,7 @@ CAPABILITIES(/datum/morph_review)
 	if(!accept_or_skip(A))
 		retire()
 		return
-	facial = A.answer ? A.request.answer_value : ""
+	facial = A.answer ? A.request.value : ""
 	open_request(src, /datum/prompt/choice/morph, PROC_REF(gender_picked), answerer = actor, question = "Please select gender.", choices = list("Male", "Female", "Neutral"), buttons = TRUE)
 
 /datum/morph_review/proc/gender_picked(datum/act/request/A)
@@ -1022,7 +1022,7 @@ CAPABILITIES(/datum/morph_review)
 
 /datum/morph_review/proc/gender_picked_step(datum/act/request/A)
 	if(accept_or_skip(A))
-		actor.morph_answered(facial_color, hair_color, eye_color, hair, facial, A.answer ? A.request.answer_value : "")
+		actor.morph_answered(facial_color, hair_color, eye_color, hair, facial, A.answer ? A.request.value : "")
 	retire()
 
 /mob/living/carbon/human/proc/morph_answered(new_facial, new_hair, new_eyes, new_h_style, new_f_style, new_gender)
@@ -1082,8 +1082,8 @@ CAPABILITIES(/datum/morph_review)
 /datum/prompt/choice/remotesay_target/recheck_extra()
 	if(!answerer.has_mutation(mRemotetalk))
 		return "not telepathic"
-	if(!isnull(answer_value))
-		var/mob/selected = answer_value
+	if(!isnull(value))
+		var/mob/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"
 
@@ -1118,7 +1118,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	return remotesay_target_apply(A)
 
 /mob/living/carbon/human/proc/remotesay_target_apply(datum/act/request/A)
-	var/mob/recipient = A.answer.answer_value
+	var/mob/recipient = A.answer.value
 	open_request(src, /datum/prompt/text/remotesay, PROC_REF(remotesay_answered), answerer = src, recipient = recipient)
 
 /mob/living/carbon/human/proc/remotesay_answered(datum/act/request/A)
@@ -1129,7 +1129,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/remotesay_apply(datum/act/request/A)
 	var/datum/prompt/text/remotesay/ask = A.answer
 	var/mob/target = ask.recipient
-	var/say = ask.answer_value
+	var/say = ask.value
 	if(target.has_mutation(mRemotetalk))
 		target.show_message(span_filter_say("[span_blue("You hear [src.real_name]'s voice: [say]")]"))
 	else
@@ -1172,9 +1172,9 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	ask_flags = ASK_CONSCIOUS
 
 /datum/prompt/choice/remoteobserve/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	var/mob/target = answer_value
+	var/mob/target = value
 	if(!istype(target) || QDELETED(target))
 		return "gone"
 	if(target.stat != CONSCIOUS || answerer.is_remote_viewing())
@@ -1186,7 +1186,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	return remoteobserve_apply(A)
 
 /mob/living/carbon/human/proc/remoteobserve_apply(datum/act/request/A)
-	var/mob/target = A.answer.answer_value
+	var/mob/target = A.answer.value
 	begin_remote_view(/datum/remote_view/mremote_mutation, target)
 
 /mob/living/carbon/human/get_visible_gender(mob/user, force)
@@ -1609,7 +1609,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/bloody_doodle_direction_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/direction = A.answer.answer_value
+	var/direction = A.answer.value
 	if(!bloody_doodle_turf(direction))
 		return
 	var/max_length = bloody_hands * 30 //tweeter style
@@ -1622,7 +1622,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 /mob/living/carbon/human/proc/bloody_doodle_apply(datum/act/request/A)
 	var/datum/prompt/text/bloody_doodle/ask = A.answer
-	var/message = ask.answer_value
+	var/message = ask.value
 	var/turf/simulated/T = bloody_doodle_turf(ask.direction)
 	if(!T)
 		return
@@ -1804,9 +1804,9 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	ask_flags = ASK_ADJACENT | ASK_RESTRAINED | ASK_CONSCIOUS
 
 /datum/prompt/choice/relocate_joint/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	var/obj/item/organ/external/limb = answer_value
+	var/obj/item/organ/external/limb = value
 	if(!istype(limb) || QDELETED(limb))
 		return "gone"
 	if(limb.owner != owner || limb.dislocated <= 0)
@@ -1821,7 +1821,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/relocate_joint_apply(datum/act/request/A)
 	var/datum/prompt/choice/relocate_joint/ask = A.answer
 	var/mob/U = ask.answerer
-	var/obj/item/organ/external/current_limb = ask.answer_value
+	var/obj/item/organ/external/current_limb = ask.value
 	var/mob/S = src
 	var/self = (U == src)
 	if(self)
@@ -1913,7 +1913,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/proc/toggle_underwear_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/datum/category_group/underwear/UWC = A.answer.answer_value
+	var/datum/category_group/underwear/UWC = A.answer.value
 	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
@@ -2214,7 +2214,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/result = A.answer.answer_value
+	var/result = A.answer.value
 	var/newtype = GLOB.all_species[result]
 	admin_ticket_log("[key_name_admin(user)] has modified the bodyparts of [src] to [result]")
 	set_species(newtype)
@@ -2234,7 +2234,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 	var/into
 
 /mob/living/carbon/human/proc/vv_transform_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Transform")
+	if(!A.answer || A.answer.value != "Transform")
 		return
 	return vv_transform_mob_apply(A)
 

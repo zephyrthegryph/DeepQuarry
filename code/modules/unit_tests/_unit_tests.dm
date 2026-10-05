@@ -200,6 +200,7 @@
 #include "dq_heat_machines_behaviour.dm"
 #include "dq_body_heat_behaviour.dm"
 #include "dq_material_heat_behaviour.dm"
+#include "dq_gas_reaction_energy_behaviour.dm"
 #include "dq_thermal_power_fixes_tests.dm"
 #include "dq_performance_diagnostics_tests.dm"
 #include "dq_audit_tests.dm"
@@ -1097,6 +1098,8 @@
 #include "round2_helm_navigation_entry.dm"
 
 #include "round2_matrix_active_colour.dm"
+
+#include "round2_event_trigger_initial_denial.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

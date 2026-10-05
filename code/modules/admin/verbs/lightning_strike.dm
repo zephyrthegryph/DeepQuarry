@@ -13,7 +13,7 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 
 /datum/admin_verb/admin_lightning_strike/proc/strike_answered(datum/act/request/A)
 	var/client/user = A.request.answerer.client
-	var/result = A.request.answer_value
+	var/result = A.request.value
 	var/datum/admins/holder = user.admin_datum()
 	var/href_token = "admin_token=[holder.href_token]"
 	if(!result || result == "No")

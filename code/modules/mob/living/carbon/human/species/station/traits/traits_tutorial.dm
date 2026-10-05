@@ -59,9 +59,9 @@ TGUI frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 	if(!A.answer)
 		return
 	var/list/tables = trait_tutorial_tables()
-	if(A.answer.answer_value == "To Chat")
+	if(A.answer.value == "To Chat")
 		open_request(src, /datum/prompt/choice, PROC_REF(trait_tutorial_trait_chosen), answerer = src, title = "Print to Chat", question = "Please choose the trait to be explained", choices = tables[1], timeout = 0)
-	else if(A.answer.answer_value == "TGUI")
+	else if(A.answer.value == "TGUI")
 		var/datum/tgui_module/trait_tutorial_tgui/fancy_UI = new /datum/tgui_module/trait_tutorial_tgui/
 		fancy_UI.set_vars(tables[1], tables[2], tables[3], tables[4])
 		fancy_UI.tgui_interact(src)
@@ -69,7 +69,7 @@ TGUI frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 /mob/living/carbon/human/proc/trait_tutorial_trait_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/to_chat_choice = A.answer.answer_value
+	var/to_chat_choice = A.answer.value
 	var/list/tables = trait_tutorial_tables()
 	var/list/trait_category = tables[2]
 	var/list/trait_desc = tables[3]

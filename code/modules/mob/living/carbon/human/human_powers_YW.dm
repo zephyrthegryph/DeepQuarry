@@ -35,7 +35,7 @@ CAPABILITIES(/datum/prompt/text/telepathy)
 /mob/living/carbon/human/proc/apply_telepathy_entered(datum/act/request/A)
 	var/datum/prompt/text/telepathy/ask = A.request
 	var/mob/M = ask.recipient
-	var/msg = A.answer.answer_value
+	var/msg = A.answer.value
 	if(msg)
 		var/mob/living/carbon/human/H = M
 		log_say("(GreyTP to [key_name(M)]) [msg]", src)

@@ -53,7 +53,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 /client/proc/jump_mob_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/selected = A.answer.answer_value
+	var/mob/selected = A.answer.value
 	if(!istype(selected) || QDELETED(selected))
 		return
 	do_jumptomob(selected)
@@ -236,7 +236,7 @@ CAPABILITIES(/datum/prompt/choice/admin_sendmob)
 /client/proc/sendmob_area_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/area/selected_area = A.answer.answer_value
+	var/area/selected_area = A.answer.value
 	if(!istype(selected_area) || QDELETED(selected_area))
 		return
 	open_request(src, /datum/prompt/choice/admin_sendmob, PROC_REF(sendmob_answered), answerer = A.request.answerer, title = "Send Mob", question = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), area = selected_area)
@@ -245,13 +245,13 @@ CAPABILITIES(/datum/prompt/choice/admin_sendmob)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/admin_sendmob/ask = context.answer
-	var/mob/selected_mob = ask.answer_value
+	var/mob/selected_mob = ask.value
 	if(!istype(ask.area, /area) || QDELETED(ask.area) || !istype(selected_mob) || QDELETED(selected_mob))
 		return
 	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "adminjump.sendmob_answered"))
 		return
 	var/area/A = ask.area
-	var/mob/M = ask.answer_value
+	var/mob/M = ask.value
 	if(CONFIG_GET(flag/allow_admin_jump))
 		M.on_mob_jump()
 		M.reset_perspective(M) // Force reset to self before teleport
@@ -305,14 +305,14 @@ CAPABILITIES(/datum/prompt/number/move_atom_coord)
 	if(!A.answer)
 		return
 	var/datum/prompt/number/move_atom_coord/ask = A.answer
-	if(isnull(ask.answer_value))
+	if(isnull(ask.value))
 		return
 	if(isnull(ask.tx))
-		ask.tx = ask.answer_value
+		ask.tx = ask.value
 	else if(isnull(ask.ty))
-		ask.ty = ask.answer_value
+		ask.ty = ask.value
 	else
-		ask.tz = ask.answer_value
+		ask.tz = ask.value
 	move_atom_with_actor(ask.answerer, ask.moved, ask.tx, ask.ty, ask.tz, ask.denial_entry)
 
 /client/proc/cmd_admin_move_atom(atom/movable/AM, tx as num, ty as num, tz as num)
@@ -388,5 +388,5 @@ CAPABILITIES(/datum/prompt/number/move_atom_coord)
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	var/datum/prompt/number/coordinate_jump/ask = context.answer
 	var/list/coordinate_answers = ask.coordinate_answers.Copy()
-	coordinate_answers[ask.coordinate_key] = ask.answer_value
+	coordinate_answers[ask.coordinate_key] = ask.value
 	return coordinate_jump_stage(user, ask.original_coordinates, coordinate_answers)

@@ -166,7 +166,7 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 /datum/admin_verb/stealth/proc/stealth_name_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	toggle_stealth(A.request.answerer.client, A.request.answer_value, TRUE)
+	toggle_stealth(A.request.answerer.client, A.request.value, TRUE)
 
 /datum/admin_verb/stealth/proc/toggle_stealth(client/user, _answer_a2 = null, answered = FALSE)
 	if(user.holder.fakekey)
@@ -307,17 +307,17 @@ ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strengt
 	if(!user)
 		return
 	if(istype(A.request, /datum/prompt/choice/admin_drop_bomb))
-		return advance_bomb(user, 1, A.request.answer_value)
+		return advance_bomb(user, 1, A.request.value)
 	var/datum/prompt/number/admin_drop_bomb/ask = A.request
 	switch(ask.stage)
 		if(1)
-			return advance_bomb(user, 2, "Custom Bomb", ask.answer_value)
+			return advance_bomb(user, 2, "Custom Bomb", ask.value)
 		if(2)
-			return advance_bomb(user, 3, "Custom Bomb", ask.devastation_range, ask.answer_value)
+			return advance_bomb(user, 3, "Custom Bomb", ask.devastation_range, ask.value)
 		if(3)
-			return advance_bomb(user, 4, "Custom Bomb", ask.devastation_range, ask.heavy_impact_range, ask.answer_value)
+			return advance_bomb(user, 4, "Custom Bomb", ask.devastation_range, ask.heavy_impact_range, ask.value)
 		if(4)
-			return advance_bomb(user, 5, "Custom Bomb", ask.devastation_range, ask.heavy_impact_range, ask.light_impact_range, ask.answer_value)
+			return advance_bomb(user, 5, "Custom Bomb", ask.devastation_range, ask.heavy_impact_range, ask.light_impact_range, ask.value)
 
 /datum/prompt/number/admin_drop_bomb/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
@@ -350,7 +350,7 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 	var/mob/answerer = user.mob
 	if(QDELETED(answerer))
 		return
-	open_request(src, /datum/prompt/number/admin_body_effect, PROC_REF(modifier_duration_answered), answerer = answerer, living_target = ask.living_target, modifier_type = ask.answer_value)
+	open_request(src, /datum/prompt/number/admin_body_effect, PROC_REF(modifier_duration_answered), answerer = answerer, living_target = ask.living_target, modifier_type = ask.value)
 
 /datum/admin_verb/admin_give_modifier/proc/modifier_duration_answered(datum/act/request/A)
 	modifier_duration_chosen(A)
@@ -364,7 +364,7 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 		return
 	var/mob/living/living_target = ask.living_target
 	var/new_modifier_type = ask.modifier_type
-	var/duration = ask.answer_value
+	var/duration = ask.value
 	if(duration == 0)
 		duration = null
 	else
@@ -502,7 +502,7 @@ ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a si
 	ask_silicon_name(A)
 
 /datum/admin_verb/rename_silicon/proc/ask_silicon_name(datum/act/request/A)
-	var/mob/living/silicon/silicon_target = A.request.answer_value
+	var/mob/living/silicon/silicon_target = A.request.value
 	open_request(src, /datum/prompt/text/admin_silicon_name, PROC_REF(silicon_named), answerer = A.request.answerer, title = "[silicon_target.real_name] - Enter new silicon name", default = silicon_target.real_name, target = silicon_target)
 
 /datum/admin_verb/rename_silicon/proc/silicon_named(datum/act/request/A)
@@ -514,7 +514,7 @@ ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a si
 	var/datum/prompt/text/admin_silicon_name/ask = A.request
 	var/mob/living/silicon/silicon_target = ask.target
 	var/client/user = ask.answerer.client
-	var/_answer_a12 = ask.answer_value
+	var/_answer_a12 = ask.value
 	var/new_name = sanitizeSafe(_answer_a12)
 	if(new_name && new_name != silicon_target.real_name)
 		log_and_message_admins("has renamed the silicon '[silicon_target.real_name]' to '[new_name]'", user)
@@ -533,7 +533,7 @@ ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows 
 	open_law_manager(A)
 
 /datum/admin_verb/manage_silicon_laws/proc/open_law_manager(datum/act/request/A)
-	var/mob/living/silicon/selected_silicon = A.request.answer_value
+	var/mob/living/silicon/selected_silicon = A.request.value
 	var/client/user = A.request.answerer.client
 	var/datum/tgui_module/law_manager/admin/law_interface = new(selected_silicon)
 	law_interface.tgui_interact(user.mob)
@@ -552,7 +552,7 @@ ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets t
 	confirm_level(A)
 
 /datum/admin_verb/change_security_level/proc/confirm_level(datum/act/request/A)
-	var/sec_level = A.request.answer_value
+	var/sec_level = A.request.value
 	if(!sec_level)
 		return
 	open_request(src, /datum/prompt/choice/admin_security_level/confirmation, PROC_REF(level_confirmed), answerer = A.request.answerer, question = "Switch from code [get_security_level()] to code [sec_level]?", selected_level = sec_level)
@@ -566,7 +566,7 @@ ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets t
 	var/datum/prompt/choice/admin_security_level/confirmation/ask = A.request
 	var/client/user = ask.answerer.client
 	var/sec_level = ask.selected_level
-	var/_answer_a15 = ask.answer_value
+	var/_answer_a15 = ask.value
 	if(_answer_a15 == "Yes")
 		set_security_level(sec_level)
 		log_admin("[key_name(user)] changed the security level to code [sec_level].")
@@ -626,7 +626,7 @@ ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with i
 /datum/admin_verb/man_up/proc/ask_target_confirmation(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/living_target = A.request.answer_value
+	var/mob/living/living_target = A.request.value
 	if(QDELETED(living_target))
 		return
 	open_request(src, /datum/prompt/choice/admin_man_up/confirmation, PROC_REF(target_confirmed), answerer = A.request.answerer, question = "Are you sure you want to tell them to man up?", title = "Confirmation", choices = list("Deal with it", "No"), buttons = TRUE, target = living_target)
@@ -635,7 +635,7 @@ ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with i
 	tell_target(A)
 
 /datum/admin_verb/man_up/proc/tell_target(datum/act/request/A)
-	if(!A.answer || A.request.answer_value != "Deal with it")
+	if(!A.answer || A.request.value != "Deal with it")
 		return
 	var/datum/prompt/choice/admin_man_up/confirmation/ask = A.request
 	var/mob/living/living_target = ask.target
@@ -655,7 +655,7 @@ ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man
 	tell_everyone(A)
 
 /datum/admin_verb/global_man_up/proc/tell_everyone(datum/act/request/A)
-	if(!A.answer || A.request.answer_value != "Deal with it")
+	if(!A.answer || A.request.value != "Deal with it")
 		return
 	var/client/user = A.request.answerer.client
 	for (var/mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -679,7 +679,7 @@ ADMIN_VERB(give_spell, R_FUN, "Give Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CAT
 	var/datum/prompt/choice/admin_spell/ask = A.request
 	var/mob/spell_recipient = ask.target_mob
 	var/mob/actor = ask.answerer
-	var/datum/spell/S = ask.answer_value
+	var/datum/spell/S = ask.value
 	if(!S)
 		return
 	spell_recipient.spell_list += new S
@@ -716,7 +716,7 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 		target_spell_list[spell.name] = spell
 	if(!length(target_spell_list))
 		return
-	var/chosen_spell = ask.answer_value
+	var/chosen_spell = ask.value
 	var/datum/spell/to_remove = target_spell_list[chosen_spell]
 	if(!istype(to_remove))
 		return
@@ -792,7 +792,7 @@ ADMIN_VERB(add_hidden_area, R_ADMIN|R_FUN, "Add Ghostsight Block Area", "Blocks 
 /datum/admin_verb/add_hidden_area/proc/area_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/selected_area = A.request.answer_value
+	var/selected_area = A.request.value
 	var/list/blocked_areas = list()
 	for(var/type, value in GLOB.areas_by_type)
 		var/area/current_area = value
@@ -825,7 +825,7 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 /datum/admin_verb/remove_hidden_area/proc/area_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/selected_area = A.request.answer_value
+	var/selected_area = A.request.value
 	var/list/blocked_areas = list()
 	for(var/type, value in GLOB.areas_by_type)
 		var/area/current_area = value
@@ -988,7 +988,7 @@ ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/
 /datum/admin_verb/toggle_spawning_with_recolour/proc/apply_recolour_choice(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/which = A.request.answer_value
+	var/which = A.request.value
 	var/client/user = A.request.answerer.client
 	switch(which)
 		if("Robot")
@@ -1015,8 +1015,8 @@ ADMIN_VERB(modify_shift_end, (R_ADMIN|R_EVENT|R_SERVER), "Modify Shift End", "Mo
 	. = ..()
 	if(.)
 		return
-	if(istype(answer_value, /datum))
-		var/datum/picked = answer_value
+	if(istype(value, /datum))
+		var/datum/picked = value
 		return QDELETED(picked) ? "target is gone" : null
 
 /datum/prompt/choice/admin_man_up/confirmation
@@ -1064,8 +1064,8 @@ CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation)
 	. = ..()
 	if(.)
 		return
-	if(!isnull(answer_value))
-		var/mob/living/silicon/picked = answer_value
+	if(!isnull(value))
+		var/mob/living/silicon/picked = value
 		return QDELETED(picked) ? "target is gone" : null
 
 /datum/prompt/text/admin_silicon_name
@@ -1102,8 +1102,8 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	. = ..()
 	if(.)
 		return
-	if(!isnull(answer_value))
-		var/mob/living/silicon/picked = answer_value
+	if(!isnull(value))
+		var/mob/living/silicon/picked = value
 		return QDELETED(picked) ? "target is gone" : null
 
 /datum/prompt/choice/admin_security_level
@@ -1149,7 +1149,7 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	var/datum/prompt/choice/security_ticket_review/ask = context.answer
 	var/list/ticket_answers = ask.ticket_answers.Copy()
-	ticket_answers[ask.ticket_key] = ask.answer_value
+	ticket_answers[ask.ticket_key] = ask.value
 	return security_ticket_stage(user, ticket_answers)
 
 /datum/prompt/choice/admin_reagent_spawn
@@ -1182,7 +1182,7 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	return reagent_spawn_stage(user, list("a22" = context.answer.answer_value))
+	return reagent_spawn_stage(user, list("a22" = context.answer.value))
 
 /datum/prompt/choice/admin_job_slot
 	recheck_on_open = TRUE
@@ -1214,7 +1214,7 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	return job_slot_stage(user, list("a16" = context.answer.answer_value))
+	return job_slot_stage(user, list("a16" = context.answer.value))
 
 /datum/prompt/text/admin_sound_message
 	recheck_on_open = TRUE
@@ -1253,4 +1253,4 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	var/obj/target_object = context.request.subject
-	return sound_message_stage(user, target_object, list("a10" = context.answer.answer_value))
+	return sound_message_stage(user, target_object, list("a10" = context.answer.value))

@@ -363,8 +363,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 /obj/item/melee/robotic/blade/proc/blade_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		lcolor = sanitize_hexcolor(A.answer.answer_value)
+	if(A.answer.value)
+		lcolor = sanitize_hexcolor(A.answer.value)
 	update_icon()
 	return TRUE
 

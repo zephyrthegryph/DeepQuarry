@@ -15,7 +15,7 @@
 		return
 	completions++
 	seen_user = request.initiator()
-	seen_rows = request.answer_value
+	seen_rows = request.value
 	seen_no_update = request.no_update
 
 /datum/unit_test/interim_admin_reload_request_lifetime

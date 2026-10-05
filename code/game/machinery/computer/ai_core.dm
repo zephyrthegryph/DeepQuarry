@@ -174,7 +174,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 	return ITEM_INTERACT_BLOCKING
 
 /obj/structure/AIcore/deactivated/proc/latejoin_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	registry_join(REGISTRY_EMPTY_AI_CORES, src)
 
@@ -313,7 +313,7 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 /client/proc/empty_ai_core_latejoin_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/id = A.answer.answer_value
+	var/id = A.answer.value
 	var/mob/user = mob
 
 	var/obj/structure/AIcore/deactivated/ai_struct = empty_ai_core_choices()[id]

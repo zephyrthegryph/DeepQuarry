@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/pickaxe/excavationdrill)
 	var/datum/prompt/number/excavation_depth/request = A.request
 	if(request.captures_gone())
 		return
-	. = apply_excavation_depth(A.request.answerer, A.answer.answer_value)
+	. = apply_excavation_depth(A.request.answerer, A.answer.value)
 	SStgui.update_uis(src)
 
 /obj/item/pickaxe/excavationdrill/proc/apply_excavation_depth(mob/user, depth)

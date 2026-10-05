@@ -54,18 +54,18 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 
 /obj/item/pen/crayon/proc/rainbow_colour_picked(datum/act/request/A)
 	// Explicit closing skipped old prompt rechecks; a rejected answer did not continue.
-	if(!A.answer && (A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value)))
+	if(!A.answer && (A.request.outcome != REQ_CANCELLED || !isnull(A.request.value)))
 		return
 	var/mob/user = A.request.answerer
 	if(!user || QDELETED(user))
 		return
 	var/datum/prompt/color/crayon_colour/prompt = A.request
 	if(prompt.shade)
-		if(A.answer && A.answer.answer_value)
-			shadeColour = A.answer.answer_value
+		if(A.answer && A.answer.value)
+			shadeColour = A.answer.value
 		return
-	if(A.answer && A.answer.answer_value)
-		colour = A.answer.answer_value
+	if(A.answer && A.answer.value)
+		colour = A.answer.value
 	ask_rainbow_shade(user, prompt.shade_title)
 
 /obj/item/pen/crayon/afterattack(atom/target, mob/user, proximity, click_parameters)
@@ -110,7 +110,7 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/crayon_kind/ask = context.answer
-	open_request(src, /datum/prompt/choice/crayon_drawing, PROC_REF(drawing_chosen), answerer = ask.answerer, subject = ask.subject, drawing_kind = ask.answer_value, click_parameters = ask.click_parameters)
+	open_request(src, /datum/prompt/choice/crayon_drawing, PROC_REF(drawing_chosen), answerer = ask.answerer, subject = ask.subject, drawing_kind = ask.value, click_parameters = ask.click_parameters)
 
 /obj/item/pen/crayon/proc/drawing_chosen(datum/act/request/context)
 	if(!context.answer)
@@ -118,7 +118,7 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 	var/datum/prompt/choice/crayon_drawing/ask = context.answer
 	var/mob/user = ask.answerer
 	var/atom/target = ask.subject
-	var/drawtype = ask.answer_value
+	var/drawtype = ask.value
 	if(!drawtype)
 		return
 	switch(ask.drawing_kind)

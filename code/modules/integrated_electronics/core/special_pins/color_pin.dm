@@ -14,8 +14,8 @@
 /datum/integrated_io/color/proc/color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	to_chat(A.request.answerer, span_notice("You input a <font color='[A.answer.answer_value]'>new color</font> into the pin."))
-	write_data_to_pin(A.answer.answer_value)
+	to_chat(A.request.answerer, span_notice("You input a <font color='[A.answer.value]'>new color</font> into the pin."))
+	write_data_to_pin(A.answer.value)
 
 /datum/integrated_io/color/write_data_to_pin(new_data)
 	// Since this is storing the color as a string hex color code, we need to make sure it's actually one.

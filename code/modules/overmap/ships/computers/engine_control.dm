@@ -127,7 +127,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_toggle_engine)
 	if(!context.answer)
 		return
 	var/obj/machinery/computer/ship/engines/computer = src_object()
-	if(computer.apply_global_limit_answer(src, state(), context.answer.answer_value))
+	if(computer.apply_global_limit_answer(src, state(), context.answer.value))
 		SStgui.update_uis(computer)
 
 /datum/prompt/number/ship_console_global_limit

@@ -330,7 +330,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	return box
 
 /datum/prompt/number/blueprint_charge_review/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
 	var/mob/user = answerer
 	if(!istype(user) || !subject || (user.get_active_hand() != subject && user.get_inactive_hand() != subject))
@@ -344,7 +344,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 		var/mob/user = context.request.answerer
 		if(QDELETED(donor) || QDELETED(user))
 			return
-		if(isnull(context.request.answer_value) && (context.request.outcome == REQ_CANCELLED || context.request.outcome == REQ_TIMED_OUT))
+		if(isnull(context.request.value) && (context.request.outcome == REQ_CANCELLED || context.request.outcome == REQ_TIMED_OUT))
 			to_chat(context.request.answerer, span_notice("You decide not to add any more material."))
 		return
 	. = blueprint_charges_apply(context)
@@ -353,7 +353,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	var/datum/prompt/number/blueprint_charge_review/ask = context.answer
 	var/mob/user = ask.answerer
 	var/obj/item/areaeditor/blueprint = ask.subject
-	var/to_add = min(ask.answer_value, initial_charges - charges)
+	var/to_add = min(ask.value, initial_charges - charges)
 	if(blueprint.charges >= to_add)
 		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
 		blueprint.charges -= to_add
@@ -395,7 +395,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 		return
 	var/datum/prompt/text/blueprint_rename_area/ask = context.answer
 	var/mob/user = ask.answerer
-	var/str = ask.answer_value
+	var/str = ask.value
 	var/area/A = ask.area_to_rename
 	var/prevname = "[A.name]"
 	if(!str || !length(str) || str==prevname) //cancel
@@ -511,14 +511,14 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /obj/item/areaeditor/proc/create_area_chosen(datum/act/request/context)
 	var/datum/prompt/choice/blueprint_expand/ask = context.request
 	if(!context.answer)
-		if(isnull(ask.answer_value) && ask.captures_live())
+		if(isnull(ask.value) && ask.captures_live())
 			to_chat(ask.answerer, span_warning("No choice selected. No adjustments made."))
 		return
 	create_area_chosen_apply(context)
 
 /obj/item/areaeditor/proc/create_area_chosen_apply(datum/act/request/context)
 	var/datum/prompt/choice/blueprint_expand/ask = context.request
-	var/area_choice = ask.choices[ask.answer_value]
+	var/area_choice = ask.choices[ask.value]
 	if(isarea(area_choice))
 		create_area_commit(ask.answerer, src, ask.turfs, area_choice)
 		return
@@ -532,7 +532,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /obj/item/areaeditor/proc/create_area_named_apply(datum/act/request/context)
 	var/datum/prompt/text/blueprint_area_name/ask = context.request
 	var/mob/creator = ask.answerer
-	var/str = ask.answer_value
+	var/str = ask.value
 	if(!length(str)) //cancel
 		return
 	if(length(str) > 50)
@@ -634,7 +634,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /obj/item/areaeditor/proc/whole_area_chosen(datum/act/request/context)
 	var/datum/prompt/choice/blueprint_whole_area/ask = context.request
 	if(!context.answer)
-		if(isnull(ask.answer_value) && ask.captures_live())
+		if(isnull(ask.value) && ask.captures_live())
 			to_chat(ask.answerer, span_warning("No changes made."))
 		return
 	whole_area_chosen_apply(context)
@@ -642,7 +642,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /obj/item/areaeditor/proc/whole_area_chosen_apply(datum/act/request/context)
 	var/datum/prompt/choice/blueprint_whole_area/ask = context.request
 	var/mob/creator = ask.answerer
-	var/area_choice = ask.choices[ask.answer_value]
+	var/area_choice = ask.choices[ask.value]
 	var/area/oldA = get_area(get_turf(creator))
 	if(isarea(area_choice))
 		open_request(src, /datum/prompt/choice/blueprint_whole_confirm, PROC_REF(whole_area_confirmed), answerer = creator, subject = ask.subject, question = "Are you sure you want to change [oldA.name] into [area_choice]?", turfs = ask.turfs, chosen_area = area_choice)
@@ -660,7 +660,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /obj/item/areaeditor/proc/whole_area_named_apply(datum/act/request/context)
 	var/datum/prompt/text/blueprint_area_name/ask = context.request
 	var/mob/creator = ask.answerer
-	var/str = ask.answer_value
+	var/str = ask.value
 	if(!length(str)) //cancel
 		return
 	if(length(str) > 50)
@@ -675,8 +675,8 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 
 /obj/item/areaeditor/proc/whole_area_confirmed(datum/act/request/context)
 	var/datum/prompt/choice/blueprint_whole_confirm/ask = context.request
-	if(!context.answer || ask.answer_value != "Yes")
-		if((isnull(ask.answer_value) || ask.answer_value == "No") && ask.captures_live())
+	if(!context.answer || ask.value != "Yes")
+		if((isnull(ask.value) || ask.value == "No") && ask.captures_live())
 			to_chat(ask.answerer, span_warning("No changes made."))
 		return
 	whole_area_confirmed_apply(context)
@@ -949,7 +949,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /mob/proc/create_new_area_named(datum/act/request/context)
 	var/datum/prompt/text/blueprint_new_area/ask = context.request
 	if(!context.answer)
-		if(isnull(ask.answer_value) && ask.captures_live())
+		if(isnull(ask.value) && ask.captures_live())
 			to_chat(ask.answerer, span_warning("No new area made. Cancelling."))
 		return
 	create_new_area_named_apply(context)
@@ -957,7 +957,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 /mob/proc/create_new_area_named_apply(datum/act/request/context)
 	var/datum/prompt/text/blueprint_new_area/ask = context.request
 	var/mob/creator = src
-	var/str = sanitizeSafe(ask.answer_value, MAX_NAME_LEN)
+	var/str = sanitizeSafe(ask.value, MAX_NAME_LEN)
 	if(!str || !length(str)) //sanity
 		to_chat(creator, span_warning("No new area made. Cancelling."))
 		return

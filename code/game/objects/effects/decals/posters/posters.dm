@@ -167,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PRO
 	return P.is_ruined() ? "already ripped" : null
 
 /obj/structure/sign/poster/proc/rip_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/user = A.request.answerer
 	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!"))

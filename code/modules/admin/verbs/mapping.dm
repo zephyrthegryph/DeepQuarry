@@ -131,13 +131,13 @@ ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts 
 /datum/admin_verb/count_objects_on_z_level/proc/level_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	count_level(A.request.answerer.client, A.request.answer_value)
+	count_level(A.request.answerer.client, A.request.value)
 
 /datum/admin_verb/count_objects_on_z_level/proc/path_answered(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/datum/prompt/text/admin_count_level/type_path/ask = A.request
-	count_level(ask.answerer.client, ask.level, ask.answer_value, TRUE)
+	count_level(ask.answerer.client, ask.level, ask.value, TRUE)
 
 /datum/admin_verb/count_objects_on_z_level/proc/count_level(client/user, level, type_text = null, answered = FALSE)
 	if(!level)
@@ -193,7 +193,7 @@ ADMIN_VERB(count_objects_all, R_DEBUG, "Count Objects All", "Count all objects b
 	count_selected_type(A)
 
 /datum/admin_verb/count_objects_all/proc/count_selected_type(datum/act/request/answer)
-	var/type_text = answer.request.answer_value
+	var/type_text = answer.request.value
 	if(!type_text)
 		return
 	var/type_path = text2path(type_text)

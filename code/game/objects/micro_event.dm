@@ -33,7 +33,7 @@
 	return box
 
 /obj/structure/portal_event/resize/proc/ask_size_mode(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Yes")
+	if(!A.answer || A.answer.value != "Yes")
 		return
 	return open_size_mode(A.request.answerer)
 
@@ -43,7 +43,7 @@
 /obj/structure/portal_event/resize/proc/ask_size_limit(datum/act/request/A)
 	if(!A.answer)
 		return
-	open_request(src, /datum/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), answerer = A.request.answerer, shrinking = (A.answer.answer_value == "Shrink"))
+	open_request(src, /datum/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), answerer = A.request.answerer, shrinking = (A.answer.value == "Shrink"))
 
 /obj/structure/portal_event/resize/proc/size_settings_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -53,7 +53,7 @@
 /obj/structure/portal_event/resize/proc/apply_size_settings(datum/act/request/A)
 	var/datum/prompt/number/portal_size_limit/ask = A.request
 	shrinking = ask.shrinking
-	size_limit = A.answer.answer_value
+	size_limit = A.answer.value
 
 /obj/structure/portal_event/resize/teleport(atom/movable/M as mob|obj)
 	if(!isliving(M))

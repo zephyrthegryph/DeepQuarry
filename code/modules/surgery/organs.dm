@@ -268,7 +268,7 @@
 /mob/living/carbon/human/proc/new_form_name_entered(datum/act/request/A)
 	var/datum/prompt/text/new_form_name/ask = A.request
 	if(!A.answer)
-		if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value))
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.value))
 			new_form_name_declined(ask.required, ask.attempt)
 		return
 	var/clean_name = sanitizeName(ask.value, allow_numbers = TRUE)
@@ -278,7 +278,7 @@
 
 /mob/living/carbon/human/proc/new_form_name_answered(datum/act/request/A)
 	var/datum/prompt/choice/new_form_name/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 		return
 	if(A.answer && ask.value == "Ok")
 		new_form_name_chosen(ask.clean_name)

@@ -136,16 +136,16 @@ CAPABILITIES(/datum/event_container)
 /datum/prompt/choice/queue_event/recheck_extra()
 	if(QDELETED(owner) || QDELETED(answerer))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
 	var/datum/event_container/container = owner
-	return (answer_value && (answer_value in container.available_events)) ? null : "not available"
+	return (value && (value in container.available_events)) ? null : "not available"
 
 /datum/event_container/proc/event_selected(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/mob/user = context.request.answerer
-	var/datum/event_meta/EM = context.answer.answer_value
+	var/datum/event_meta/EM = context.answer.value
 	if(next_event())
 		rel_add(src, nameof(available_events), next_event())
 	rel_remove(src, nameof(available_events), EM)

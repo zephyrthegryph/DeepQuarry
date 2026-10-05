@@ -182,9 +182,9 @@
 	var/enable_answer = ask.enable_answer
 	var/disable_answer = ask.disable_answer
 	if(ask.enabling)
-		enable_answer = ask.answer_value
+		enable_answer = ask.value
 	else
-		disable_answer = ask.answer_value
+		disable_answer = ask.value
 	return toggle_digestion_stage(ask.answerer, enable_answer, disable_answer)
 
 /datum/prompt/number/animal_nutrition_heal
@@ -197,6 +197,6 @@
 /mob/living/simple_mob/proc/animal_nutrition_heal_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	. = nutrition_heal_stage(A.answer.answer_value)
+	. = nutrition_heal_stage(A.answer.value)
 	SStgui.update_uis(src)
 	return .

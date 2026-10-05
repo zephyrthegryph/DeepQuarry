@@ -205,7 +205,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/drone_shell/ask = A.request
-	var/shell_state = ask.choices[ask.answer_value]
+	var/shell_state = ask.choices[ask.value]
 	if(shell_state in list("repairbot", "maintbot"))
 		open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(eyes_picked), answerer = src, title = "Eye Color", question = "Select eye color:", choices = list("blue", "red", "orange", "green", "violet"), shell_state = shell_state)
 		return
@@ -213,11 +213,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 
 /mob/living/silicon/robot/drone/proc/eyes_picked(datum/act/request/A)
 	var/datum/prompt/choice/drone_shell/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 		return
 	if(!A.answer && request_recheck(ask))
 		return
-	var/eyes = A.answer ? ask.answer_value : ""
+	var/eyes = A.answer ? ask.value : ""
 	if(ask.shell_state == "maintbot")
 		open_request(src, /datum/prompt/choice/drone_shell, PROC_REF(plating_picked), answerer = src, title = "Eye Color", question = "Select plating color:", choices = list("blue", "red", "orange", "green", "brown"), shell_state = ask.shell_state, eyes = eyes)
 		return
@@ -225,11 +225,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, ap
 
 /mob/living/silicon/robot/drone/proc/plating_picked(datum/act/request/A)
 	var/datum/prompt/choice/drone_shell/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 		return
 	if(!A.answer && request_recheck(ask))
 		return
-	shell_customize_finish(ask.shell_state, ask.eyes, A.answer ? ask.answer_value : "")
+	shell_customize_finish(ask.shell_state, ask.eyes, A.answer ? ask.value : "")
 
 /mob/living/silicon/robot/drone/proc/shell_customize_finish(shell_state, eyes, plating)
 	icon_state = shell_state
@@ -380,7 +380,7 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 		return
 	var/mob/answerer = A.request.answerer
 	var/client/C = answerer.client
-	var/response = A.answer.answer_value
+	var/response = A.answer.value
 	if(response == "Yes")
 		transfer_personality(C)
 	else if (response == "Never for this round")

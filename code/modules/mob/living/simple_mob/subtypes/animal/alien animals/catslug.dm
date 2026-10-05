@@ -266,8 +266,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value && !picked_color)
-		color = A.answer.answer_value
+	if(A.answer.value && !picked_color)
+		color = A.answer.value
 		picked_color = TRUE
 	update_icon()
 

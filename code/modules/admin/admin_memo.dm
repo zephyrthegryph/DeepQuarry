@@ -21,7 +21,7 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 	var/client/user = A.request.answerer?.client
 	if(!user)
 		return
-	var/task = A.request.answer_value
+	var/task = A.request.value
 
 	switch(task)
 		if("write")
@@ -141,9 +141,9 @@ CAPABILITIES(/datum/admin_memo_review)
 		return
 	var/client/user = GLOB.directory[client_ckey]
 	if(writing)
-		user.admin_memo_write(A.request.answer_value, TRUE)
+		user.admin_memo_write(A.request.value, TRUE)
 	else
-		user.admin_memo_delete(A.request.answer_value, TRUE)
+		user.admin_memo_delete(A.request.value, TRUE)
 
 /datum/prompt/text/admin_memo_write/recheck_extra()
 	. = ..()

@@ -176,13 +176,13 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 	var/list/state = R.captured
 	if(R.step_name != DROP_POD_PATH && !ispath(state[DROP_POD_PATH], /mob/living))
 		return "invalid path"
-	if(R.step_name == DROP_POD_COUNT && !isnull(R.answer_value) && R.answer_value <= 0)
+	if(R.step_name == DROP_POD_COUNT && !isnull(R.value) && R.value <= 0)
 		return "invalid count"
 	if(state[DROP_POD_PLAYER] == "Yes")
 		var/list/candidates = drop_pod_candidates()
 		if(!length(candidates))
 			return "no candidates"
-		if(R.step_name == DROP_POD_CKEY && !isnull(R.answer_value) && !candidates[R.answer_value])
+		if(R.step_name == DROP_POD_CKEY && !isnull(R.value) && !candidates[R.value])
 			return "candidate left"
 		if(R.step_name != DROP_POD_CKEY && !candidates[state[DROP_POD_CKEY]])
 			return "candidate left"
@@ -255,7 +255,7 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 		if(state[DROP_POD_OFFER_REFUSAL])
 			drop_pod_refusal_notice(actor, state[DROP_POD_OFFER_REFUSAL])
 			return
-		if(!isnull(A.request.answer_value))
+		if(!isnull(A.request.value))
 			drop_pod_refusal_notice(actor, A.request.last_error)
 			return
 		if(step != DROP_POD_ANTAG || A.request.outcome != REQ_CANCELLED)
@@ -267,7 +267,7 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 		state[DROP_POD_ANTAG] = ""
 		ask_drop_pod_step(actor, state, DROP_POD_SURE)
 		return
-	state[step] = A.answer.answer_value
+	state[step] = A.answer.value
 	switch(step)
 		if(DROP_POD_PATH)
 			ask_drop_pod_step(actor, state, DROP_POD_PLAYER)

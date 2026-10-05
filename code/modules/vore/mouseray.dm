@@ -37,7 +37,7 @@
 	if(!context.answer)
 		return
 	var/mob/user = context.request.answerer
-	var/choice = context.answer.answer_value
+	var/choice = context.answer.value
 	if(choice)
 		tf_type = tf_possible_types[choice]
 		to_chat(user, span_notice("You selected [choice]."))

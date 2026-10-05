@@ -58,7 +58,7 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 /obj/item/gun/energy/sizegun/proc/size_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	size_selected_apply(context.request.answerer, context.answer.answer_value)
+	size_selected_apply(context.request.answerer, context.answer.value)
 	SStgui.update_uis(src)
 
 /obj/item/gun/energy/sizegun/proc/size_selected_apply(mob/user, size_select)
@@ -144,7 +144,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 /obj/item/gun/energy/sizegun/admin/size_selected(datum/act/request/context)
 	if(!context.answer)
 		return
-	size_selected_apply(context.request.answerer, context.answer.answer_value)
+	size_selected_apply(context.request.answerer, context.answer.value)
 	SStgui.update_uis(src)
 
 /obj/item/gun/energy/sizegun/admin/size_selected_apply(mob/user, size_select)

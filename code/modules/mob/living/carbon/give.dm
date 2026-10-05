@@ -52,7 +52,7 @@
 	if(!captures_available())
 		return "The original item offer is no longer available."
 	// Old No/decline was delivered before typed_recheck, even after movement or incapacity.
-	if(isnull(answer_value) || answer_value == "No")
+	if(isnull(value) || value == "No")
 		return
 	if(answerer.incapacitated() || asker.incapacitated())
 		return "not able to"
@@ -82,10 +82,10 @@
 	if(!ask.captures_available())
 		return
 	if(!context.answer)
-		if(!isnull(ask.answer_value))
+		if(!isnull(ask.value))
 			ask.refused(ask.last_error)
 		return
-	if(ask.answer_value == "No")
+	if(ask.value == "No")
 		ask.declined()
 		return
 	give_answered(ask)

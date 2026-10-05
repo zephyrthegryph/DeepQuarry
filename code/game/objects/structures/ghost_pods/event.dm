@@ -135,7 +135,7 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 	return istype(M) && M.client && !used
 
 /obj/structure/ghost_pod/ghost_activated/maint_lurker/proc/lurker_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	create_occupant(A.request.answerer)
 

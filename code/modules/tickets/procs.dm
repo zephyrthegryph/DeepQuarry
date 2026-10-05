@@ -89,7 +89,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	var/browse_to
-	switch(context.request.answer_value)
+	switch(context.request.value)
 		if("Active Tickets")
 			browse_to = AHELP_ACTIVE
 		if("Resolved Tickets")
@@ -196,7 +196,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 
 /datum/admin_ticket_panel_review/proc/answered(datum/act/request/context)
 	if(context.answer)
-		apply_choice(context.request.answer_value)
+		apply_choice(context.request.value)
 	retire()
 
 /datum/admin_ticket_panel_review/proc/apply_choice(choice)
@@ -281,10 +281,10 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 
 /client/proc/adminspice_answered(datum/act/request/context)
 	if(!context.answer)
-		if(!isnull(context.request.answer_value) && context.request.last_error == "muted")
+		if(!isnull(context.request.value) && context.request.last_error == "muted")
 			to_chat(src, span_danger("Error: You cannot request spice (muted from adminhelps)."))
 		return
-	if(context.answer.answer_value == "Yes")
+	if(context.answer.value == "Yes")
 		message_admins("[ADMIN_FULLMONTY(src)] has requested the round be spiced up a little.")
 		to_chat(src, span_notice("You have requested some more spice in your round."))
 	else

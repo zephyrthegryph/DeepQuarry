@@ -415,14 +415,14 @@ CAPABILITIES(/datum/prompt/number/eftpos_pin)
 
 /obj/item/eftpos/proc/pin_apply(datum/act/request/A)
 	var/datum/prompt/number/eftpos_pin/ask = A.answer
-	return scan_card_stage(ask.payer_card, ask.card_holder, ask.operator, ask.answer_value, TRUE)
+	return scan_card_stage(ask.payer_card, ask.card_holder, ask.operator, ask.value, TRUE)
 
 /obj/item/eftpos/proc/eftpos_settings_text_answered(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/prompt/text/eftpos_settings/ask = context.answer
 	var/list/eftpos_answers = ask.eftpos_answers.Copy()
-	eftpos_answers[ask.eftpos_key] = ask.answer_value
+	eftpos_answers[ask.eftpos_key] = ask.value
 	return eftpos_settings_resume(ask.eftpos_ui, ask.eftpos_action, eftpos_answers, ask.eftpos_stage)
 
 /obj/item/eftpos/proc/eftpos_settings_number_answered(datum/act/request/context)
@@ -430,7 +430,7 @@ CAPABILITIES(/datum/prompt/number/eftpos_pin)
 		return
 	var/datum/prompt/number/eftpos_settings/ask = context.answer
 	var/list/eftpos_answers = ask.eftpos_answers.Copy()
-	eftpos_answers[ask.eftpos_key] = ask.answer_value
+	eftpos_answers[ask.eftpos_key] = ask.value
 	return eftpos_settings_resume(ask.eftpos_ui, ask.eftpos_action, eftpos_answers, ask.eftpos_stage)
 
 /// Match the original typed UI replay gates; stages have no UI arguments to parse.

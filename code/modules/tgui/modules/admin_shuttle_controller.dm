@@ -100,7 +100,7 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 	if(!A.answer || !istype(shuttle))
 		return
 	var/mob/user = A.request.answerer
-	var/dest_key = A.answer.answer_value
+	var/dest_key = A.answer.value
 	if(dest_key)
 		shuttle.set_destination(dest_key, user)
 		shuttle.launch(src, user)
@@ -116,7 +116,7 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 		return
 	var/mob/user = A.request.answerer
 	var/list/possible_d = shuttle.get_possible_destinations()
-	var/D = A.answer.answer_value
+	var/D = A.answer.value
 	if(D)
 		shuttle.set_destination(possible_d[D])
 		shuttle.launch()
@@ -131,7 +131,7 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 	if(!A.answer || !istype(shuttle))
 		return
 	var/mob/user = A.request.answerer
-	if(A.answer.answer_value)
+	if(A.answer.value)
 		shuttle.launch(src)
 	to_chat(user, span_notice("Launching shuttle [shuttle]."))
 

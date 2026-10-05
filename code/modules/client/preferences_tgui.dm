@@ -260,7 +260,7 @@ UI_ACT_PROC(/datum/preferences, ui_act_set_color_preference)
 		return
 	var/datum/preferences/preferences = src_object()
 	var/datum/prompt/choice/preference_slot_reset/ask = context.answer
-	if(preferences.reset_slot_request_stage(src, ask.answer_value, ask.second))
+	if(preferences.reset_slot_request_stage(src, ask.value, ask.second))
 		SStgui.update_uis(preferences)
 
 /datum/prompt/choice/preference_slot_reset

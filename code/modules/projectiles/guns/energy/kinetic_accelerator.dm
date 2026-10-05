@@ -708,8 +708,8 @@ EXTEND_INTERACTIONS(/obj/item/borg/upgrade/modkit/tracer/adjustable, INTERACT_US
 /obj/item/borg/upgrade/modkit/tracer/adjustable/proc/bolt_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		bolt_color = A.answer.answer_value
+	if(A.answer.value)
+		bolt_color = A.answer.value
 	return TRUE
 
 #undef KA_ENVIRO_TYPE_COLD

@@ -139,7 +139,7 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 
 /obj/structure/ghost_pod/proc/activation_confirmed(datum/act/request/A)
 	busy = FALSE
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/observer/dead/user = A.request.answerer
 	if(used)
@@ -152,7 +152,7 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 	return !used
 
 /obj/structure/ghost_pod/manual/proc/touch_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	touch_pod(A.request.answerer)
 
@@ -191,7 +191,7 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 	if(!A.answer)
 		maint_critter_cancelled(M)
 		return
-	var/critter = A.answer.answer_value
+	var/critter = A.answer.value
 	open_request(src, /datum/prompt/yes_no/maint_critter, PROC_REF(maint_critter_confirmed), answerer = M, question = "Are you sure you want to play as [critter]?", critter = critter, first_message = asked.question, first_title = asked.title, timeout = 0)
 
 /obj/structure/ghost_pod/proc/maint_critter_confirmed(datum/act/request/A)
@@ -199,7 +199,7 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 	if(!A.answer)
 		maint_critter_cancelled(R.answerer)
 		return
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		ask_maint_critter(R.answerer, R.first_message, R.first_title)
 		return
 	spawn_maint_critter(R.answerer, R.critter)
@@ -212,7 +212,7 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 	open_request(src, /datum/prompt/yes_no, PROC_REF(load_bellies_answered), answerer = src, title = "Load Bellies", question = "Do you want to load the vore bellies from your current slot?", timeout = 0)
 
 /mob/living/proc/load_bellies_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
@@ -225,7 +225,7 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 /mob/living/carbon/human/proc/spawn_renamed(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newname = A.answer.answer_value
+	var/newname = A.answer.value
 	if(newname)
 		real_name = newname
 

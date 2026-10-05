@@ -110,14 +110,14 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/protean_armor_configuration/ask = context.answer
-	armor_configuration_stage(ask.target_expected ? ask.subject : null, ask.notify_ai, ask.answerer, ask.answer_value)
+	armor_configuration_stage(ask.target_expected ? ask.subject : null, ask.notify_ai, ask.answerer, ask.value)
 	SStgui.update_uis(src)
 
 /obj/item/rig_module/protean/armor/proc/armor_value_answered(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/prompt/number/protean_armor_configuration/ask = context.answer
-	armor_configuration_stage(ask.target_expected ? ask.subject : null, ask.notify_ai, ask.answerer, ask.armor_chosen, ask.answer_value)
+	armor_configuration_stage(ask.target_expected ? ask.subject : null, ask.notify_ai, ask.answerer, ask.armor_chosen, ask.value)
 	SStgui.update_uis(src)
 
 /obj/item/rig_module/protean/armor/activate(skip_engage = 0, mob/user)

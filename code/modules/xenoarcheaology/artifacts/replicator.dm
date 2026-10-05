@@ -806,7 +806,7 @@ CAPABILITIES(/datum/prompt/choice/replicator_consent)
 
 /obj/machinery/replicator/vore/proc/consent_insert_apply(datum/act/request/A)
 	var/datum/prompt/choice/replicator_consent/ask = A.answer
-	ask.consent_answers[ask.consent_key] = ask.answer_value
+	ask.consent_answers[ask.consent_key] = ask.value
 	return consent_insert_stage(ask.instigator, ask.source_item, ask.insertion, ask.consent_answers)
 
 /obj/machinery/replicator/clothing/proc/consent_insert_answered(datum/act/request/A)
@@ -818,5 +818,5 @@ CAPABILITIES(/datum/prompt/choice/replicator_consent)
 
 /obj/machinery/replicator/clothing/proc/consent_insert_apply(datum/act/request/A)
 	var/datum/prompt/choice/replicator_consent/ask = A.answer
-	ask.consent_answers[ask.consent_key] = ask.answer_value
+	ask.consent_answers[ask.consent_key] = ask.value
 	return consent_insert_stage(ask.instigator, ask.source_item, ask.insertion, ask.consent_answers)

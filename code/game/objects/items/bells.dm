@@ -86,7 +86,7 @@
 	if(!user || user.incapacitated())
 		return
 	// Once the player has decided their option, choose the behaviour that will happen under said option.
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("examine")
 			user.examinate(src)
 

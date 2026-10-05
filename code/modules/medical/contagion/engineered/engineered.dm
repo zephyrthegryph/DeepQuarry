@@ -603,10 +603,10 @@ CAPABILITIES(/datum/admin_virus_creation)
 	if(!user)
 		retire()
 		return
-	if(istext(A.request.answer_value))
+	if(istext(A.request.value))
 		remaining = 0
 	else
-		select_symptom(A.request.answer_value)
+		select_symptom(A.request.value)
 	if(remaining > 0)
 		ask_symptom(user)
 		return
@@ -620,14 +620,14 @@ CAPABILITIES(/datum/admin_virus_creation)
 	open_request(src, /datum/prompt/text/admin_virus_creation, PROC_REF(name_chosen), answerer = answerer)
 
 /datum/admin_virus_creation/proc/name_chosen(datum/act/request/A)
-	if(!A.answer || !A.request.answer_value)
+	if(!A.answer || !A.request.value)
 		retire()
 		return
 	var/client/user = A.request.answerer?.client
 	if(!user)
 		retire()
 		return
-	strain.AssignName(A.request.answer_value)
+	strain.AssignName(A.request.value)
 	strain.Finalize()
 	for(var/datum/affliction/contagion/engineered/AD in REGISTRY_MEMBERS(REGISTRY_ACTIVE_DISEASES))
 		AD.Refresh()
@@ -642,7 +642,7 @@ CAPABILITIES(/datum/admin_virus_creation)
 		retire()
 		return
 	var/client/user = A.request.answerer?.client
-	var/mob/living/carbon/human/H = A.request.answer_value
+	var/mob/living/carbon/human/H = A.request.value
 	if(!user || !istype(H) || QDELETED(H))
 		retire()
 		return

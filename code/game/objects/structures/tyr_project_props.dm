@@ -60,7 +60,7 @@
 	if(!A.answer)
 		to_chat(user, span_notice("You leave the lock alone."))
 		return
-	var/input = A.answer.answer_value
+	var/input = A.answer.value
 	var/list/sanitised = list()
 	var/sanitycheck = TRUE
 	for(var/i in 1 to length(input))

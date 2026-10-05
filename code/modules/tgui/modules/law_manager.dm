@@ -102,7 +102,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /datum/tgui_module/law_manager/proc/change_supplied_law_position_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_position = A.answer.answer_value
+	var/new_position = A.answer.value
 	if(isnum(new_position))
 		supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
 	SStgui.update_uis(src)

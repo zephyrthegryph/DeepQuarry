@@ -303,6 +303,8 @@ lint is a hard ban). Converting a machine:
 7. **Heat a datum holds** (not an atom: a batch, a service) is a heat store (`code/domains/heat/heat_store.dm`): keep its handle, link it with
    `heat_store_link()`, read it with `heat_store_temperature()`, and release it at equilibrium. A sample that covers a stretch of time between
    two reservoirs is `heat_conduct(a, b, conductance, seconds)`, never an exponential in DM.
-8. **Mob bodies** are not machines: Life's environment stage calls `set_surroundings(air, surface, sky_area)` (W/K, W/K, m²) and the body's
+8. **A gas reaction** never computes its heat in DM: build the mole deltas and call `gas_react(air, GAS_REACTION_*, extent, deltas)`; a new
+   reaction adds its kind and enthalpy to `verdigris/domains/gas/src/reaction_energy.rs`.
+9. **Mob bodies** are not machines: Life's environment stage calls `set_surroundings(air, surface, sky_area)` (W/K, W/K, m²) and the body's
    links to the plume of air, the floor, the walls and the sky follow it when it moves. Don't add a `heat_link()` to a mob for its
    environment; add to `set_surroundings()`.

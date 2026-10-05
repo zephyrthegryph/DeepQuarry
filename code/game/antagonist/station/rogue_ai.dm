@@ -94,7 +94,7 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 	if(!A.answer)
 		return
 	var/mob/living/silicon/player = A.request.answerer
-	var/newname = A.answer.answer_value
+	var/newname = A.answer.value
 	if (newname)
 		player.SetName(newname)
 	if(player.mind) player.mind.name = player.name

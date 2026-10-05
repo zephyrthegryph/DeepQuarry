@@ -123,7 +123,7 @@
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/botany_soil_destroy_apply(datum/act/request/A)
 	var/datum/prompt/choice/botany_soil_destroy/ask = A.answer
-	return botany_soil_destroy_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.answer_value, TRUE)
+	return botany_soil_destroy_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.value, TRUE)
 
 /datum/prompt/choice/botany_soil_destroy
 	timeout = 0

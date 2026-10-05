@@ -277,7 +277,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/newpath = A.answer.answer_value
+	var/newpath = A.answer.value
 	updateUsrDialog(user)
 	if(newpath && newpath != "")
 		set_path_moving(FALSE) // stop moving

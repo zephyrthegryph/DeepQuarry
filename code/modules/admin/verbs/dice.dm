@@ -12,15 +12,15 @@ ADMIN_VERB(roll_dices, R_FUN, "Roll Dice", "Allows to roll a dice.", ADMIN_CATEG
 	if(istype(A.request, /datum/prompt/number/admin_dice))
 		var/datum/prompt/number/admin_dice/ask = A.request
 		next_stage = ask.next_stage
-		sum = next_stage == 1 ? ask.answer_value : ask.sum
-		side = next_stage == 2 ? ask.answer_value : null
+		sum = next_stage == 1 ? ask.value : ask.sum
+		side = next_stage == 2 ? ask.value : null
 	else
 		var/datum/prompt/choice/admin_dice/ask = A.request
 		next_stage = ask.next_stage
 		sum = ask.sum
 		side = ask.side
-		show_game = next_stage == 3 ? ask.answer_value : ask.show_game
-	advance_dice(A.request.answerer.client, next_stage, sum, side, show_game, A.request.answer_value)
+		show_game = next_stage == 3 ? ask.value : ask.show_game
+	advance_dice(A.request.answerer.client, next_stage, sum, side, show_game, A.request.value)
 
 /datum/admin_verb/roll_dices/proc/advance_dice(client/user, stage = 0, sum = null, side = null, show_game = null, show_result = null)
 	var/mob/answerer = user.mob

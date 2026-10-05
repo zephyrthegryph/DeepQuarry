@@ -281,4 +281,4 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, TYPE_PROC_REF(/atom, appearance_
 
 /obj/item/paper_bundle/proc/paper_bundle_label_apply(datum/act/request/A)
 	var/datum/prompt/text/paper_rename_review/ask = A.answer
-	return paper_bundle_label_stage(ask.paper_operator, ask.paper_held, ask.paper_interaction, ask.answer_value, TRUE)
+	return paper_bundle_label_stage(ask.paper_operator, ask.paper_held, ask.paper_interaction, ask.value, TRUE)

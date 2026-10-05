@@ -63,7 +63,7 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/datum/frame/frame_types/frame_type = A.answer.answer_value
+	var/datum/frame/frame_types/frame_type = A.answer.value
 	build_machine_type = /obj/structure/frame
 	if(frame_type.frame_size != 5)
 		new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
@@ -143,7 +143,7 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 		return
 	var/datum/prompt/choice/frame_type_wall/R = A.request
 	var/mob/user = R.answerer
-	var/datum/frame/frame_types/frame_type = A.answer.answer_value
+	var/datum/frame/frame_types/frame_type = A.answer.value
 	build_machine_type = /obj/structure/frame
 	if(frame_type.frame_size != 5)
 		new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))

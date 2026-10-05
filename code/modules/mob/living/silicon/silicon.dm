@@ -268,7 +268,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	open_request(src, /datum/prompt/text, PROC_REF(silicon_pose_entered), answerer = src, title = "Pose", question = "This is [src]. It is...", timeout = 0)
 
 /mob/living/silicon/proc/silicon_pose_entered(datum/act/request/A)
-	var/text = A.answer ? A.answer.answer_value : ""
+	var/text = A.answer ? A.answer.value : ""
 	pose = text ? strip_html_simple(text) : null
 
 /mob/living/silicon/verb/set_flavor()
@@ -281,7 +281,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /mob/living/silicon/proc/silicon_flavor_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_flavortext = strip_html_simple(A.answer.answer_value)
+	var/new_flavortext = strip_html_simple(A.answer.value)
 	if(new_flavortext)
 		flavor_text = new_flavortext
 

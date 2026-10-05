@@ -96,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	var/mob/user = A.request.answerer
 	if(!user || user.incapacitated() || !isturf(loc))
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		// Can pick up when off or packed
 		if("Pick Up")
 			if(state == UAV_OFF || state == UAV_PACKED)
@@ -144,7 +144,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/tmp_label = A.answer.answer_value
+	var/tmp_label = A.answer.value
 	if(length(tmp_label) > 50 || length(tmp_label) < 3)
 		to_chat(user, span_notice("The nickname must be between 3 and 50 characters."))
 	else

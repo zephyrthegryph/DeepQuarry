@@ -72,7 +72,7 @@ CAPABILITIES(/obj/structure/prop/prism)
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
 			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return
@@ -84,12 +84,12 @@ CAPABILITIES(/obj/structure/prop/prism)
 /obj/structure/prop/prism/proc/rotate_to_point(datum/act/request/A)
 	if(!A.answer)
 		return
-	rotate_to(A.request.answerer, compass_directions[A.answer.answer_value])
+	rotate_to(A.request.answerer, compass_directions[A.answer.value])
 
 /obj/structure/prop/prism/proc/bearing_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	rotate_to(A.request.answerer, A.answer.answer_value)
+	rotate_to(A.request.answerer, A.answer.value)
 
 /obj/structure/prop/prism/proc/rotate_to(mob/living/user, new_bearing)
 	if(rotation_lock || external_control_lock)
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/structure/prop/prism)
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
 			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return TRUE
@@ -232,12 +232,12 @@ CAPABILITIES(/obj/structure/prop/prism)
 	if(!A.answer)
 		return
 	var/list/compass_directions = compass_points()
-	bearing_chosen(A.request.answerer, compass_directions?[A.answer.answer_value])
+	bearing_chosen(A.request.answerer, compass_directions?[A.answer.value])
 
 /obj/structure/prop/prismcontrol/proc/bearing_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	bearing_chosen(A.request.answerer, A.answer.answer_value)
+	bearing_chosen(A.request.answerer, A.answer.value)
 
 /obj/structure/prop/prismcontrol/proc/bearing_chosen(mob/living/user, new_bearing)
 	new_bearing = round(new_bearing)
@@ -255,7 +255,7 @@ CAPABILITIES(/obj/structure/prop/prism)
 		return
 	var/datum/prompt/yes_no/prism_rotate_final/R = A.request
 	var/mob/living/user = R.answerer
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
 			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return

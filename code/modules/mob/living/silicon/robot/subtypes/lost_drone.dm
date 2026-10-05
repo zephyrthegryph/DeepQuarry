@@ -50,7 +50,7 @@
 
 /// A reroll asks again while retries are left; keeping (or closing the window) ends it.
 /mob/living/silicon/robot/malf/lost/randomlaws/proc/repick_laws_answered(datum/act/request/A)
-	if(!A.answer || !law_retries || copytext(A.answer.answer_value, 1, 7) != "Reroll")
+	if(!A.answer || !law_retries || copytext(A.answer.value, 1, 7) != "Reroll")
 		law_retries = 0
 		return
 	apply_new_laws()

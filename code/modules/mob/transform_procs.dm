@@ -249,7 +249,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/mobpath = A.answer.answer_value
+	var/mobpath = A.answer.value
 	if(!safe_animal(mobpath))
 		to_chat(user, span_red("Sorry but this mob type is currently unavailable."))
 		return
@@ -287,7 +287,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/mobpath = A.answer.answer_value
+	var/mobpath = A.answer.value
 	if(!safe_animal(mobpath))
 		to_chat(user, span_red("Sorry but this mob type is currently unavailable."))
 		return

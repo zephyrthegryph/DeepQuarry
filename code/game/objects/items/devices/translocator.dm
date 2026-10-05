@@ -153,7 +153,7 @@ This device records all warnings given and teleport events for admin review in c
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(!choice || !check_menu(user))
 		return
 
@@ -173,7 +173,7 @@ This device records all warnings given and teleport events for admin review in c
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/new_name = A.answer.answer_value
+	var/new_name = A.answer.value
 	if(!check_menu(user))
 		return
 	if(beacons_left <= 0)
@@ -451,7 +451,7 @@ not carry this around."}
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
 /obj/item/perfect_tele_beacon/proc/warning_answered(datum/act/request/A)
-	if(A.answer?.answer_value != "Take It")
+	if(A.answer?.value != "Take It")
 		return
 	attack_hand(A.request.answerer)
 
@@ -470,7 +470,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	open_request(src, /datum/prompt/choice, PROC_REF(ask_belly), answerer = user, title = "Eat beacon?", question = "You COULD eat the beacon...", choices = list("Eat it!", "No, thanks."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
 /obj/item/perfect_tele_beacon/proc/ask_belly(datum/act/request/A)
-	if(A.answer?.answer_value != "Eat it!")
+	if(A.answer?.value != "Eat it!")
 		return
 	var/mob/living/user = A.request.answerer
 	open_request(src, /datum/prompt/choice, PROC_REF(belly_chosen), answerer = user, title = "Select A Belly", question = "Which belly?", choices = user.vore_organs, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
@@ -479,7 +479,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	var/obj/belly/bellychoice = A.answer.answer_value
+	var/obj/belly/bellychoice = A.answer.value
 	if(istype(bellychoice) && bellychoice.owner == user)
 		act_message(user, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice.name]!")), MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!")))
 		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))

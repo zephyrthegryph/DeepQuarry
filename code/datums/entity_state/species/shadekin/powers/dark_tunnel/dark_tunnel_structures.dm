@@ -252,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 
 /obj/structure/dark_portal/hub/proc/portal_hand_apply(datum/act/request/A)
 	var/datum/prompt/choice/dark_portal_review/ask = A.answer
-	ask.answers[ask.answer_key] = ask.answer_value
+	ask.answers[ask.answer_key] = ask.value
 	return portal_hand_stage(ask.operator, ask.held_item, ask.interaction_context, ask.answers)
 
 /obj/structure/dark_portal/minion/proc/portal_hand_answered(datum/act/request/A)
@@ -263,7 +263,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 
 /obj/structure/dark_portal/minion/proc/portal_hand_apply(datum/act/request/A)
 	var/datum/prompt/choice/dark_portal_review/ask = A.answer
-	ask.answers[ask.answer_key] = ask.answer_value
+	ask.answers[ask.answer_key] = ask.value
 	return portal_hand_stage(ask.operator, ask.held_item, ask.interaction_context, ask.answers)
 
 /datum/prompt/choice/dark_portal_review

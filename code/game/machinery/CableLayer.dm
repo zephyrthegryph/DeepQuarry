@@ -97,7 +97,7 @@ CAPABILITIES(/datum/prompt/number/cablelayer_cut)
 	var/obj/item/tool = ask.tool
 	if(!cable)
 		return
-	var/amount = min(ask.answer_value, cable.get_amount(), 30)
+	var/amount = min(ask.value, cable.get_amount(), 30)
 	if(amount)
 		playsound(src, tool.usesound, 50, TRUE)
 		use_cable(amount)

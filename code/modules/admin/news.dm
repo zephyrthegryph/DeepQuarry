@@ -42,9 +42,9 @@ CAPABILITIES(/datum/admin_server_news_review)
 		retire()
 		return
 	if(stage == 0)
-		news_title = context.request.answer_value
+		news_title = context.request.value
 	else
-		news_body = context.request.answer_value
+		news_body = context.request.value
 	stage++
 	run_step()
 

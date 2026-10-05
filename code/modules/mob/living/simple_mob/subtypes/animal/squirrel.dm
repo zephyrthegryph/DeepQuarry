@@ -223,8 +223,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/ato
 		return
 	if(picked_color)
 		return
-	if(A.answer.answer_value)
-		color = A.answer.answer_value
+	if(A.answer.value)
+		color = A.answer.value
 	picked_color = TRUE
 	update_icon()
 

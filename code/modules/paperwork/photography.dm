@@ -399,7 +399,7 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 
 /obj/item/photo/proc/paperwork_caption_apply(datum/act/request/A)
 	var/datum/prompt/text/paperwork_review/ask = A.answer
-	return paperwork_caption_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+	return paperwork_caption_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.value, TRUE)
 
 /obj/item/photo/proc/paperwork_photo_label_answered(datum/act/request/A)
 	if(!A.answer)
@@ -409,7 +409,7 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 
 /obj/item/photo/proc/paperwork_photo_label_apply(datum/act/request/A)
 	var/datum/prompt/text/paperwork_review/ask = A.answer
-	return paperwork_photo_label_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+	return paperwork_photo_label_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.value, TRUE)
 
 /obj/item/camera/proc/paperwork_focus_answered(datum/act/request/A)
 	if(!A.answer)
@@ -419,4 +419,4 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 
 /obj/item/camera/proc/paperwork_focus_apply(datum/act/request/A)
 	var/datum/prompt/choice/paperwork_review/ask = A.answer
-	return paperwork_focus_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+	return paperwork_focus_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.value, TRUE)

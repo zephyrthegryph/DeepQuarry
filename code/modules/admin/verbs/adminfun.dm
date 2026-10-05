@@ -33,7 +33,7 @@ ADMIN_VERB(gib_them, (R_ADMIN|R_FUN), "Gib", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CA
 
 /datum/admin_verb/gib_them/proc/apply_gib(datum/act/request/context)
 	var/client/user = context.request.answerer.client
-	var/confirm = context.request.answer_value
+	var/confirm = context.request.value
 	var/datum/prompt/choice/admin_gib_target/request = context.request
 	var/mob/victim = request.victim
 	if(confirm != "Yes")
@@ -65,7 +65,7 @@ ADMIN_VERB(gib_self, R_HOLDER, "Gibself", "Give yourself the same treatment you 
 
 /datum/admin_verb/gib_self/proc/apply_gib(datum/act/request/context)
 	var/client/user = context.request.answerer.client
-	var/confirm = context.request.answer_value
+	var/confirm = context.request.value
 	if(!confirm)
 		return
 	if(confirm == "Yes")
@@ -163,13 +163,13 @@ CAPABILITIES(/datum/admin_emp_review)
 		return
 	switch(stage)
 		if(1)
-			heavy = context.request.answer_value
+			heavy = context.request.value
 		if(2)
-			med = context.request.answer_value
+			med = context.request.value
 		if(3)
-			light = context.request.answer_value
+			light = context.request.value
 		if(4)
-			long = context.request.answer_value
+			long = context.request.value
 	stage++
 	if(stage <= 4)
 		ask_next()
@@ -258,13 +258,13 @@ CAPABILITIES(/datum/admin_explosion_review)
 		return
 	switch(stage)
 		if(1)
-			devastation = context.request.answer_value
+			devastation = context.request.value
 		if(2)
-			heavy = context.request.answer_value
+			heavy = context.request.value
 		if(3)
-			light = context.request.answer_value
+			light = context.request.value
 		if(4)
-			flash = context.request.answer_value
+			flash = context.request.value
 	stage++
 	if(stage <= 4)
 		ask_next()
@@ -282,7 +282,7 @@ CAPABILITIES(/datum/admin_explosion_review)
 	retire()
 
 /datum/admin_explosion_review/proc/finish_confirmation(datum/act/request/context)
-	if(context.answer && context.request.answer_value == "Yes")
+	if(context.answer && context.request.value == "Yes")
 		apply_explosion()
 
 /datum/admin_explosion_review/proc/apply_explosion()

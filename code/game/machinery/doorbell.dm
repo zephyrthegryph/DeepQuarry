@@ -149,7 +149,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:
 /obj/machinery/button/doorbell/proc/doorbell_named(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/t = A.answer.answer_value
+	var/t = A.answer.value
 	t = sanitizeSafe(t, MAX_NAME_LEN)
 	if(t && panel_open)
 		name = t

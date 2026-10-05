@@ -33,4 +33,4 @@
 /mob/proc/changeling_silence_sting_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_silence_sting_stage(A.answer.answer_value)
+	changeling_silence_sting_stage(A.answer.value)

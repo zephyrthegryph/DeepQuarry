@@ -5,7 +5,7 @@
 //!   -> open_request(src, /datum/prompt/text, PROC_REF(named), answerer = M, title = "T", question = "Name?", default = d, timeout = 0)
 //! /type/proc/named(datum/om/prompt/text/ask)               /type/proc/named(datum/act/request/A)
 //!     ... ask.text ... ask.answerer ...                ->      if(!A.answer) return
-//!                                                              ... A.answer.answer_value ... A.request.answerer ...
+//!                                                              ... A.answer.value ... A.request.answerer ...
 //! ```
 //!
 //! The old kind runs the answer proc on an answer only, so the converted handler starts with the matching guard (a confirm: on yes,
@@ -539,7 +539,7 @@ fn analyze_def(text: &str, line: u32, name: &str, kind: Kind, guard: Guard) -> R
         }
         let field = &body[fs..fe];
         let new = if field == kind.answer_var() {
-            "A.answer.answer_value"
+            "A.answer.value"
         } else if field == "answerer" {
             "A.request.answerer"
         } else {
@@ -574,7 +574,7 @@ fn analyze_def(text: &str, line: u32, name: &str, kind: Kind, guard: Guard) -> R
         None => format!("{}\t", &text[sig_start..sig_start + sig_indent]),
     };
     let cond = match guard {
-        Guard::Yes => "!A.answer || !A.answer.answer_value",
+        Guard::Yes => "!A.answer || !A.answer.value",
         Guard::Answered => "!A.answer",
     };
     let ins = format!("{nl}{indent}if({cond}){nl}{indent}\treturn");
@@ -605,7 +605,7 @@ fn translate(text: &str, pname: &str, kind: Kind) -> String {
         }
         let field = &text[fs..fe];
         let new = if field == kind.answer_var() {
-            "A.answer.answer_value"
+            "A.answer.value"
         } else if field == "answerer" {
             "A.request.answerer"
         } else {

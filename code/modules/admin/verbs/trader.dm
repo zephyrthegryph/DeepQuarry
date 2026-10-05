@@ -37,9 +37,9 @@ CAPABILITIES(/datum/admin_trader_dispatch_review)
 		retire()
 		return
 	if(stage == 0)
-		dispatch_answer = context.request.answer_value
+		dispatch_answer = context.request.value
 	else
-		alert_answer = context.request.answer_value
+		alert_answer = context.request.value
 	stage++
 	run_step()
 

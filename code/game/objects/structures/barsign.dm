@@ -43,7 +43,7 @@
 	var/mob/user = A.request.answerer
 	if(cult)
 		return
-	icon_state = A.answer.answer_value
+	icon_state = A.answer.value
 	to_chat(user, span_notice("You change the barsign."))
 
 /// Old attackby: change the sign with an ID card that has bar access.
