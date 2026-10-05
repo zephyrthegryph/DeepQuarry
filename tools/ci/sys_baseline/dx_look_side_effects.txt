@@ -1,7 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_look_side_effects.py (doc/rewrite/systems.md); shrink-only, target 0
-dx_appearance_side_effect	code/ATMOSPHERICS/components/unary/vent_pump.dm	playsound(src, stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
-dx_appearance_side_effect	code/ATMOSPHERICS/components/unary/vent_pump.dm	playsound(src, stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
-dx_appearance_side_effect	code/ATMOSPHERICS/components/unary/vent_pump.dm	playsound(src, start_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
 dx_appearance_side_effect	code/ATMOSPHERICS/pipes/manifold.dm	underlays.Cut()
 dx_appearance_side_effect	code/ATMOSPHERICS/pipes/manifold4w.dm	underlays.Cut()
 dx_appearance_side_effect	code/ATMOSPHERICS/pipes/universal.dm	underlays.Cut()

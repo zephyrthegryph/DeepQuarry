@@ -25,8 +25,6 @@ initialize	code/ATMOSPHERICS/components/unary/heat_source.dm	/obj/machinery/atmo
 initialize	code/ATMOSPHERICS/components/unary/outlet_injector.dm	/obj/machinery/atmospherics/unary/outlet_injector/Initialize(mapload)
 initialize	code/ATMOSPHERICS/components/unary/unary_base.dm	/obj/machinery/atmospherics/unary/Initialize(mapload)
 initialize	code/ATMOSPHERICS/components/unary/vent_pump.dm	/obj/machinery/atmospherics/unary/vent_pump/Initialize(mapload)
-initialize	code/ATMOSPHERICS/components/unary/vent_pump.dm	/obj/machinery/atmospherics/unary/vent_pump/high_volume/Initialize(mapload)
-initialize	code/ATMOSPHERICS/components/unary/vent_pump.dm	/obj/machinery/atmospherics/unary/vent_pump/engine/Initialize(mapload)
 initialize	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	/obj/machinery/atmospherics/unary/vent_scrubber/Initialize(mapload)
 initialize	code/ATMOSPHERICS/components/valve.dm	/obj/machinery/atmospherics/valve/digital/Initialize(mapload)
 initialize	code/ATMOSPHERICS/environmental/LINDA_fire.dm	/obj/effect/hotspot/Initialize(mapload, starting_volume, starting_temperature)
