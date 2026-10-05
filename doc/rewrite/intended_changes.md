@@ -1121,3 +1121,13 @@ wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_be
   spawn temperatures, admin, events, tests) or `heat_add()` with a `HEAT_SOURCE_*` (fire, reactions, spells, devices, materials). Values are
   unchanged; `heat_books()` now accounts for them. The radiance spell and the supermatter keep their 10 000 K clamp as an authority write.
 * **Material batches** keep their own DM heat model; the proc is renamed `add_batch_heat()` so it is not mistaken for a gas write.
+
+## Missing forms: the DNA modifier console's window
+
+Pinned by `code/modules/unit_tests/dq_mfo_dna_console.dm` (green on DECLARE_UI/UI_ACT and the tgui modals first).
+
+* **The window is interface("DNAModifier") with ops**: every button keeps its action name; the buffer label and the block injector's block are
+  `asks()` steps of the `bufferOption` op, shown as the window's modal (`changeBufferLabel`, `createInjectorBlock`), so `ui_modal_answered()` is gone.
+* **The block answer must be one of the offered blocks**: the legacy modal took any text with a number before a colon.
+* **A refused button says why** (no scanner connected, the console irradiating, the user not standing at it) instead of doing nothing; opening the
+  window from inside the scanner is refused with a reason. A silicon works the buttons over its link (it was refused for not standing on a tile).
