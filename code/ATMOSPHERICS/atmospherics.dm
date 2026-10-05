@@ -159,43 +159,28 @@ TRACKED(/obj/machinery/atmospherics, pipe_color)
 /obj/machinery/atmospherics/proc/check_connectable(obj/machinery/atmospherics/target)
 	return (src.connect_types & target.connect_types)
 
-/obj/machinery/atmospherics/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/atmospherics_fit_material,
-		/datum/interaction/machine_item/atmospherics_pipe_painter,
-	)
-	..()
+MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shell.")
 
-/// Fitting an engineered material shell (stack of material) onto pipe/device structure.
-/datum/interaction/machine_item/atmospherics_fit_material
-	id = "atmospherics_fit_material"
-	name = "Fit engineered material"
-	held_type = /obj/item/stack/material
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/proc/offer_fit_material, null))
-	also_requires = list(REQ_FIELD_NOT("engineered_material_id", "it already has an engineered material shell"))
-	effect = /obj/machinery/atmospherics/proc/interaction_fit_material
-
-/// The pipe painter recolors this on afterattack; the attackby branch itself does nothing but must not fall through to ..().
-/datum/interaction/machine_item/atmospherics_pipe_painter
-	id = "atmospherics_pipe_painter"
-	name = "Paint"
-	held_type = /obj/item/pipe_painter
-	consumes_input = FALSE
-	effect = /atom/proc/interaction_swallow
-
-/// Whether A stack of material could be fitted at all (falls through to ..() otherwise).
-/obj/machinery/atmospherics/proc/offer_fit_material(mob/actor, atom/target, obj/item/held)
+/// A stack of material could be fitted at all.
+/obj/machinery/atmospherics/proc/material_fittable(datum/act/op/A)
 	return supports_engineered_material()
 
-/obj/machinery/atmospherics/proc/interaction_fit_material(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
-	if(stock.get_amount() < 1 || !stock.material)
-		return TRUE
-	var/datum/material/material = stock.material
+/obj/machinery/atmospherics/proc/no_shell(datum/act/A)
+	return !engineered_material_id // ALLOW(reads): asked when the sheets are used, never from a cached menu
+
+/obj/machinery/atmospherics/proc/painter_swallowed(datum/act/op/A)
+	return OP_OK
+
+/// The sheet (the op's cost) becomes the device's structure and liner.
+/obj/machinery/atmospherics/proc/material_fitted(datum/act/op/A)
+	var/obj/item/stack/material/stock = A.held
+	var/datum/material/material = stock?.material
+	if(!material)
+		return OP_FAILED
 	engineered_material_id = material.name
 	apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
-	stock.use(1)
-	to_chat(user, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
-	return TRUE
+	to_chat(A.actor, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
+	return OP_OK
 
 /obj/machinery/atmospherics/proc/add_underlay(turf/T, obj/machinery/atmospherics/node, direction, icon_connect_type)
 	if(node)

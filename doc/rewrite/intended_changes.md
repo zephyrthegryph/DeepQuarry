@@ -1398,3 +1398,13 @@ Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
 - The dual-port vent's settings are plain `TRACKED` (no CHANGE_MACHINE_SETTINGS bridge: nothing DM-steps it), its look is `draw(look)` (it now
   reads `operable()` for "off" where it read the area's `powered()`), and its gauge is an `examine_line()`.
 - The heat exchanger's wrench is `pipe_device_unwrench()` with its floor check as a requirement (4 s, as before).
+
+## Pipes and the atmospherics base (rewrite/pipenet-full)
+
+- A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
+  begins and the throw past two atmospheres when it is done, as before) and `seal` (4 s, only on a fatigue crack). The `pipe_unwrench` tool job
+  is deleted.
+- A stable leak sleeps on two native gas watches (its pipe's gas and the room's) instead of an OM condition watch; Rust's change report wakes it
+  and the same equalization test decides.
+- The base type's engineered-material fitting and pipe-painter swallow are ops (`fit_material`, `painter`); a tank swallows any other item with
+  an op (an engineered-material stack, the narrower binding, is now fitted where the tank used to swallow it too).
