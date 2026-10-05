@@ -89,6 +89,7 @@ APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_co
 	question = "Which direction do you wish to place the noticeboard?"
 	choices = list("North", "South", "East", "West", "No Offset")
 	timeout = 0
+	recheck_on_open = TRUE
 
 /datum/prompt/choice/noticeboard_offset/recheck_extra()
 	. = ..()

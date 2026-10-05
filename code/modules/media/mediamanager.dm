@@ -73,6 +73,8 @@
 	recheck_on_open = TRUE
 
 /datum/prompt/number/jukebox_volume/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
 	. = ..()
 	if(.)
 		return
