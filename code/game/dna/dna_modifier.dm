@@ -341,13 +341,44 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 	INTERACT_ITEM(null, PROC_REF(dna_console_interaction_item)), \
-	INTERACT_HAND(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
 )
 
 /// Old attackby.
+TRACKED(/obj/machinery/computer/scan_consolenew, irradiating)
+TRACKED(/obj/machinery/computer/scan_consolenew, injector_ready)
+
+MSG_DEF_SELF(dna_console/no_scanner, "The console has no DNA modifier connected.")
+MSG_DEF_SELF(dna_console/busy, "The console is busy irradiating its subject.")
+MSG_DEF_SELF(dna_console/occupant, "You can't reach the console from inside the scanner.")
+MSG_DEF_SELF(dna_console/not_standing, "You need to stand at the console.")
+
+// The window (DNAModifier): its buttons are ops under their old action names, and the two questions a button asks (a buffer's label, the block
+// of a block injector) are asks() steps of the bufferOption op, shown as the window's modal. Every button wants the scanner connected, the
+// console not irradiating and the user standing on a tile; opening it wants a connected scanner and a user outside it.
 CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	after_init(25 SECONDS, then(PROC_REF(injector_cooldown_finish)))
 	owns_many(nameof(buffers), /datum/transhuman/body_record)
+	ref_one(nameof(connected), /obj/machinery/dna_scannernew)
+	interface("DNAModifier")
+	extend("ui_open", needs(req(PROC_REF(scanner_connected), because = MSG(dna_console/no_scanner)), req(PROC_REF(not_the_occupant), because = MSG(dna_console/occupant))))
+	extend(TAG_UI, needs(req(PROC_REF(scanner_connected), because = MSG(dna_console/no_scanner)), req(PROC_REF(not_irradiating), because = MSG(dna_console/busy))))
+	extend(TAG_UI, then(PROC_REF(window_touched), early = TRUE))
+	op("selectMenuKey", ui_act("selectMenuKey", arg("key", schema_text(32))), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_selectmenukey)))
+	op("toggleLock", ui_act("toggleLock"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_togglelock)))
+	op("pulseRadiation", ui_act("pulseRadiation"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_pulseradiation)))
+	op("radiationDuration", ui_act("radiationDuration", arg("value", num(1, 20))), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_radiationduration)))
+	op("radiationIntensity", ui_act("radiationIntensity", arg("value", num(1, 10))), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_radiationintensity)))
+	op("injectRejuvenators", ui_act("injectRejuvenators", arg("amount", num())), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_injectrejuvenators)))
+	op("selectSEBlock", ui_act("selectSEBlock", arg("block", num()), arg("subblock", num())), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_selectseblock)))
+	op("pulseSERadiation", ui_act("pulseSERadiation"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_pulseseradiation)))
+	op("ejectBeaker", ui_act("ejectBeaker"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_ejectbeaker)))
+	op("ejectOccupant", ui_act("ejectOccupant"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_ejectoccupant)))
+	op("bufferOption", ui_act("bufferOption", arg("block", num(default = 0)), arg("id", num()), arg("option", schema_text(32))), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))),
+		asks(/datum/prompt/text, fields = list("question" = "Please enter the new buffer label:", "default" = computed(PROC_REF(buffer_label_default)), "max_len" = TGUI_MODAL_INPUT_MAX_LENGTH_NAME, "modal_id" = "changeBufferLabel", "inline" = TRUE, "timeout" = 0), step = "label", when = PROC_REF(asks_buffer_label)),
+		asks(/datum/prompt/choice, fields = list("question" = "Please select the block to create an injector from:", "choices" = computed(PROC_REF(buffer_block_choices)), "modal_id" = "createInjectorBlock", "inline" = TRUE, "timeout" = 0), step = "block", when = PROC_REF(asks_injector_block)),
+		then(PROC_REF(ui_act_bufferoption)))
+	op("wipeDisk", ui_act("wipeDisk"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_wipedisk)))
+	op("ejectDisk", ui_act("ejectDisk"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_ejectdisk)))
 
 /obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	// Traitgenes body record disks are used instead of a unique disk
@@ -358,7 +389,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			if(!move_into(src, nameof(src.disk), I, user))
 				return FALSE
 			to_chat(user, "You insert [I].")
-			SStgui.update_uis(src) // update all UIs attached to src
+			changed(src) // the window shows the disk
 	else
 		to_chat(user, "\The [src] will not accept a disk without a DNA modifier connected.")
 	return TRUE
@@ -398,20 +429,68 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 /obj/machinery/computer/scan_consolenew
 	silicon_use = SILICON_USE_UI
 
-DECLARE_UI(/obj/machinery/computer/scan_consolenew, "DNAModifier")
+// ---- the window's requirements ----
 
-/obj/machinery/computer/scan_consolenew/ui_prepare(mob/user, datum/tgui/ui)
-	var/mob/living/carbon/WC = connected()?.get_occupant()
-	if(!connected() || user == WC || user.stat)
-		return FALSE
-	return TRUE
+/// The scanner beside the console is still there.
+/obj/machinery/computer/scan_consolenew/proc/scanner_connected(datum/act/A)
+	return !!connected()
 
-UI_DATA_REPLACE(/obj/machinery/computer/scan_consolenew, "selectedMenuKey=selected_menu_key", "isInjectorReady=injector_ready:num", "radiationIntensity=radiation_intensity:num", "radiationDuration=radiation_duration:num", "irradiating:num", "selectedUIBlock=selected_ui_block:num", "selectedUISubBlock=selected_ui_subblock:num", "selectedSEBlock=selected_se_block:num", "selectedSESubBlock=selected_se_subblock:num", "selectedUITarget=selected_ui_target:num", "selectedUITargetHex=selected_ui_target_hex:num", "merge:ui_data_obj_machinery_computer_scan_consolenew{locked:unknown,hasOccupant:num,hasDisk:num,disk:list,buffers:unknown,dnaBlockSize:num,occupant:unknown,isBeakerLoaded:num,beakerLabel:text,beakerVolume:unknown,modal:unknown}")
+/// The one opening the window is not lying in the scanner.
+/obj/machinery/computer/scan_consolenew/proc/not_the_occupant(datum/act/op/A)
+	return A.actor != connected()?.get_occupant()
 
-/// The computed part of /obj/machinery/computer/scan_consolenew's window data (declared on its UI_DATA row).
-/obj/machinery/computer/scan_consolenew/proc/ui_data_obj_machinery_computer_scan_consolenew(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	// this is the data which will be sent to the ui
+/// The console is not in the middle of a pulse (buttons wait until it is done).
+/obj/machinery/computer/scan_consolenew/proc/not_irradiating(datum/act/A)
+	return !irradiating
+
+/// The user works the console from a tile (not from inside a locker, a mech or the scanner); a silicon works it over its link.
+/obj/machinery/computer/scan_consolenew/proc/user_standing(datum/act/op/A)
+	return isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS) // ALLOW(reads): where the user stands is read when the button is pressed; a menu shows no buttons of a window
+
+/// Every button leaves a print.
+/obj/machinery/computer/scan_consolenew/proc/window_touched(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
+
+/// The bufferOption asks for a label (changeLabel).
+/obj/machinery/computer/scan_consolenew/proc/asks_buffer_label(datum/act/op/A)
+	return A.args["option"] == "changeLabel" && !isnull(buffer_of(A))
+
+/// The bufferOption asks for an injector's block (createInjector with a block, while the injector is ready).
+/obj/machinery/computer/scan_consolenew/proc/asks_injector_block(datum/act/op/A)
+	return A.args["option"] == "createInjector" && injector_ready && A.args["block"] > 0 && !isnull(buffer_of(A))
+
+/// The buffer a bufferOption names, or null for an id out of range.
+/obj/machinery/computer/scan_consolenew/proc/buffer_of(datum/act/op/A)
+	var/id = A.args["id"]
+	if(!isnum(id) || id < 1 || id > length(buffers))
+		return null
+	return buffers[id]
+
+/obj/machinery/computer/scan_consolenew/proc/buffer_label_default(datum/act/op/A)
+	var/datum/transhuman/body_record/buffer = buffer_of(A)
+	return buffer?.mydna?.name
+
+/obj/machinery/computer/scan_consolenew/proc/buffer_block_choices(datum/act/op/A)
+	var/datum/transhuman/body_record/buffer = buffer_of(A)
+	return buffer ? all_dna_blocks(buffer.mydna.dna.SE) : list()
+
+/// The window's data.
+/obj/machinery/computer/scan_consolenew/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["selectedMenuKey"] = selected_menu_key
+	data["isInjectorReady"] = injector_ready
+	data["radiationIntensity"] = radiation_intensity
+	data["radiationDuration"] = radiation_duration
+	data["irradiating"] = irradiating
+	data["selectedUIBlock"] = selected_ui_block
+	data["selectedUISubBlock"] = selected_ui_subblock
+	data["selectedSEBlock"] = selected_se_block
+	data["selectedSESubBlock"] = selected_se_subblock
+	data["selectedUITarget"] = selected_ui_target
+	data["selectedUITargetHex"] = selected_ui_target_hex
+	if(!connected())
+		return data
 	data["locked"] = src.connected().locked
 	data["hasOccupant"] = connected().get_occupant() ? 1 : 0
 
@@ -493,71 +572,51 @@ UI_DATA_REPLACE(/obj/machinery/computer/scan_consolenew, "selectedMenuKey=select
 
 	return data
 
-/obj/machinery/computer/scan_consolenew/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!istype(ui.user.loc, /turf))
-		return FALSE
-	if(!src || !connected())
-		return FALSE
-	if(irradiating) // Make sure that it isn't already irradiating someone...
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/computer/scan_consolenew, "selectMenuKey", ui_act_selectmenukey, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_selectmenukey)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_selectmenukey(datum/act/op/A, key)
 	play_sfx(src, SFX_MACHINES_BUTTON)
-	var/key = params["key"]
 	if(!(key in list(/*PAGE_UI,*/ PAGE_SE, PAGE_BUFFER, PAGE_REJUVENATORS))) // Traitgenes Body design console is used to edit UIs now
 		return TRUE
 	selected_menu_key = key
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "toggleLock", ui_act_togglelock)
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_togglelock)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_togglelock(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	if(connected() && connected().get_occupant())
 		connected().locked = !(connected().locked)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "pulseRadiation", ui_act_pulseradiation)
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_pulseradiation)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_pulseradiation(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON)
-	irradiating = radiation_duration
+	set_irradiating(radiation_duration)
 	var/lock_state = connected().locked
 	connected().locked = TRUE //lock it
 	after(src, radiation_duration SECONDS, PROC_REF(do_pulse), with = list(lock_state))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "radiationDuration", ui_act_radiationduration, UI_ARG_NUM("value", 1, 20))
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_radiationduration)
-	radiation_duration = params["value"]
+/obj/machinery/computer/scan_consolenew/proc/ui_act_radiationduration(datum/act/op/A, value)
+	radiation_duration = value
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "radiationIntensity", ui_act_radiationintensity, UI_ARG_NUM("value", 1, 10))
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_radiationintensity)
-	radiation_intensity = params["value"]
+/obj/machinery/computer/scan_consolenew/proc/ui_act_radiationintensity(datum/act/op/A, value)
+	radiation_intensity = value
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "injectRejuvenators", ui_act_injectrejuvenators, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_injectrejuvenators)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_injectrejuvenators(datum/act/op/A, amount)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	if(!connected().get_occupant() || !connected().beaker)
 		return TRUE
 	var/mob/living/carbon/WC = connected()?.get_occupant()
-	var/inject_amount = clamp(round(params["amount"], 5), 0, 50) // round to nearest 5 and clamp to 0-50
+	var/inject_amount = clamp(round(amount, 5), 0, 50) // round to nearest 5 and clamp to 0-50
 	if(!inject_amount)
 		return TRUE
 	connected().beaker.reagents.trans_to_mob(WC, inject_amount, CHEM_BLOOD)
 	return TRUE
 	////////////////////////////////////////////////////////
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "selectSEBlock", ui_act_selectseblock, UI_ARG_NUM("block"), UI_ARG_NUM("subblock"))
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_selectseblock)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_selectseblock(datum/act/op/A, block, subblock)
 	play_sfx(src, SFX_KEYBOARD)
-	var/select_block = params["block"]
-	var/select_subblock = params["subblock"]
+	var/select_block = block
+	var/select_subblock = subblock
 	if(!select_block || !select_subblock)
 		return TRUE
 
@@ -565,15 +624,14 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_selectseblock)
 	selected_se_subblock = clamp(select_subblock, 1, DNA_BLOCK_SIZE)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "pulseSERadiation", ui_act_pulseseradiation)
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_pulseseradiation)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_pulseseradiation(datum/act/op/A)
 	if(!connected()?.get_occupant())
 		return TRUE
 	var/mob/living/carbon/WC = connected()?.get_occupant()
 	play_sfx(src, SFX_KEYBOARD)
 	var/block = WC.dna.GetSESubBlock(selected_se_block,selected_se_subblock)
 
-	irradiating = radiation_duration
+	set_irradiating(radiation_duration)
 	var/lock_state = connected().locked
 	connected().locked = TRUE //lock it
 
@@ -581,8 +639,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_pulseseradiation)
 	after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), with = list(lock_state, block))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectBeaker", ui_act_ejectbeaker)
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectbeaker)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_ejectbeaker(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	if(connected().beaker)
 		var/obj/item/reagent_containers/glass/B = connected().beaker
@@ -590,8 +647,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectbeaker)
 		connected().beaker = null
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectOccupant", ui_act_ejectoccupant)
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectoccupant)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_ejectoccupant(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	connected().eject_occupant()
 	// Eject disk too, because we can't get to the UI otherwise
@@ -601,10 +657,9 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectoccupant)
 	own_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
 // Transfer Buffer Management
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "bufferOption", ui_act_bufferoption, UI_ARG_NUM("block"), UI_ARG_NUM("id"), UI_ARG_TEXT("option"))
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
-	var/bufferOption = params["option"]
-	var/bufferId = params["id"]
+/obj/machinery/computer/scan_consolenew/proc/ui_act_bufferoption(datum/act/op/A, block, id, option)
+	var/bufferOption = option
+	var/bufferId = id
 	if(bufferId < 1 || bufferId > 3) // Not a valid buffer id
 		return TRUE
 
@@ -637,13 +692,15 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 			return TRUE
 		if("changeLabel")
 			play_sfx(src, SFX_KEYBOARD)
-			tgui_modal_input(src, "changeBufferLabel", "Please enter the new buffer label:", null, list("id" = bufferId), buffer.mydna.name, TGUI_MODAL_INPUT_MAX_LENGTH_NAME)
+			var/label = A.step_value("label")
+			if(!isnull(label))
+				buffer.mydna.name = label // Traitgenes Use bodyrecords
 			return TRUE
 		if("transfer")
 			var/mob/living/carbon/WC = connected()?.get_occupant()
 			if(!WC || (WC.has_mutation(NOCLONE)) || !WC.dna)
 				return TRUE
-			irradiating = 2
+			set_irradiating(2)
 			var/lock_state = connected().locked
 			connected().locked = 1//lock it
 			after(src, 2 SECONDS, PROC_REF(do_transfer), with = list(lock_state, bufferId))
@@ -651,9 +708,13 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 		if("createInjector")
 			if(!injector_ready)
 				return TRUE
-			if(params["block"] > 0)
-				var/list/choices = all_dna_blocks(buffer.mydna.dna.SE) // Traitgenes Storing the entire body record, and no more using UIs
-				tgui_modal_choice(src, "createInjectorBlock", "Please select the block to create an injector from:", null, list("id" = bufferId), null, choices)
+			if(block > 0)
+				var/picked = A.step_value("block")
+				if(isnull(picked))
+					return TRUE
+				var/obj/item/dnainjector/I = create_injector(bufferId)
+				setInjectorBlock(I, picked, buffer.mydna.copy()) // Traitgenes Use bodyrecords
+				I.name += " - Block [picked]" // Traitgenes By default show the block of a block injector
 			else
 				create_injector(bufferId, TRUE)
 			return TRUE
@@ -682,11 +743,10 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 			play_sfx(src, SFX_KEYBOARD)
 			var/datum/transhuman/body_record/buf = buffers[bufferId]
 			// Send printable record to first sleevepod in area
-			print_sleeve(ui.user, buf)
+			print_sleeve(A.actor, buf)
 			return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "wipeDisk", ui_act_wipedisk)
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_wipedisk)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_wipedisk(datum/act/op/A)
 	play_sfx(src, SFX_KEYBOARD)
 	// Traitgenes Storing the entire body record
 	if(isnull(disk))
@@ -694,8 +754,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_wipedisk)
 	own_clear(disk, nameof(disk.stored), OWN_DELETE)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectDisk", ui_act_ejectdisk)
-UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
+/obj/machinery/computer/scan_consolenew/proc/ui_act_ejectdisk(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	if(!disk)
 		return TRUE
@@ -715,7 +774,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 		return
 
 	// Cooldown
-	injector_ready = FALSE
+	set_injector_ready(FALSE)
 	after(src, 5 SECONDS, PROC_REF(injector_cooldown_finish))
 
 	// Create it
@@ -732,28 +791,9 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
  * Called when the injector creation cooldown finishes
  */
 /obj/machinery/computer/scan_consolenew/proc/injector_cooldown_finish(datum/act/A)
-	injector_ready = TRUE
+	set_injector_ready(TRUE)
 
 
-/obj/machinery/computer/scan_consolenew/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
-	. = TRUE
-	switch(id)
-		if("createInjectorBlock")
-			var/buffer_id = text2num(arguments["id"])
-			if(buffer_id < 1 || buffer_id > length(buffers))
-				return
-			var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
-			var/obj/item/dnainjector/I = create_injector(buffer_id)
-			setInjectorBlock(I, answer, buf.mydna.copy()) // Traitgenes Use bodyrecords
-			I.name += " - Block [answer]" // Traitgenes By default show the block of a block injector
-		if("changeBufferLabel")
-			var/buffer_id = text2num(arguments["id"])
-			if(buffer_id < 1 || buffer_id > length(buffers))
-				return
-			var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
-			buf.mydna.name = answer // Traitgenes Use bodyrecords
-		else
-			return FALSE
 /**
  * Triggers sleeve growing in a clonepod within the area
  *
@@ -802,7 +842,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 
 /obj/machinery/computer/scan_consolenew/proc/do_irradiate(lock_state, block)
 	var/mob/living/carbon/WC = connected()?.get_occupant()
-	irradiating = 0
+	set_irradiating(0)
 	connected().locked = lock_state
 	if(!WC)
 		return
@@ -835,7 +875,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 
 /obj/machinery/computer/scan_consolenew/proc/do_pulse(lock_state)
 	var/mob/living/carbon/WC = connected()?.get_occupant()
-	irradiating = 0
+	set_irradiating(0)
 	connected().locked = lock_state
 
 	if(!WC)
@@ -860,7 +900,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 	WC.apply_effect(((radiation_intensity*3)+radiation_duration*3), IRRADIATE, check_protection = 0)
 
 /obj/machinery/computer/scan_consolenew/proc/do_transfer(lock_state, bufferId)
-	irradiating = 0
+	set_irradiating(0)
 	connected().locked = lock_state
 
 	play_sfx(src, SFX_KEYBOARD)
