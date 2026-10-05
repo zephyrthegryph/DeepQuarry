@@ -225,6 +225,10 @@
 	. = ..()
 	. += drawn_from(nameof(bolted), nameof(frozen), nameof(lights), nameof(max_integrity))
 
+/obj/machinery/door/blast/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(icon_state_closed), nameof(icon_state_open))
+
 /obj/machinery/door/firedoor/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(ALERT_STATES), nameof(blocked), nameof(dir_alerts), nameof(hatch_open), nameof(pdiff_alert))

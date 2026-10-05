@@ -112,7 +112,7 @@
 	var/icon/mine = angled_airlock_icon_cache[cache_key]
 	if(mine)
 		icon = mine
-		update_icon()
+		changed(src) // a new icon is no tracked var: the look is redrawn by hand
 		return // hooray
 
 	// Base layer - the bare metal - absolutely required sprites
@@ -269,7 +269,7 @@
 
 	angled_airlock_icon_cache[cache_key] = final
 	icon = final
-	update_icon()
+	changed(src) // a new icon is no tracked var: the look is redrawn by hand
 
 /obj/machinery/door/airlock/angled_bay/proc/gimme_icon()
 	usr << ftp(icon, "[name].dmi")
