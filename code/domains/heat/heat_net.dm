@@ -19,7 +19,8 @@
 //   heat_equalize(a, b, fraction = 1)      moves `fraction` of the way to the pair's common temperature, conserved
 //   heat_conduct(a, b, conductance, s)     conducts for `s` seconds at `conductance` W/K (the exact pair solution), conserved
 //   heat_set(thing, kelvin, source)        an authority write (map load, admin, a test, a spawn-time temperature): the joules it takes, booked
-//   heat_set_energy(thing, joules, source)  a reaction's end energy (composition changed, `released` joules booked)
+//   heat_set_energy(thing, joules, source)  a thing's end energy after its composition changed, booked
+//   gas_react(air, kind, extent, deltas)   a gas reaction: its moles change and Rust settles the energy it releases, booked as a reaction
 //   heat_set_solid(turf, kelvin)           a turf's solid temperature (map load, holodeck, admin)
 //   heat_reservoir_of(thing)               list(HEAT_TARGET_*, ref) of a reservoir, or null
 //   heat_links_text(thing)                 tooling: every edge touching a reservoir with its last step's flows (the "Show Heat Links" verb)
@@ -124,6 +125,18 @@
 		return 0
 	. = vg_heat_set_energy(r[1], r[2], joules, source) || 0
 	heat_gas_touched(thing)
+
+/// Applies a gas reaction in one step: `deltas` (gas type path = moles, signed) change the mixture, and Rust computes what the reaction of
+/// `kind` (GAS_REACTION_*) releases for its `extent` (with `aux`, the value a kind names: BZ formation's decomposed fraction, noblium's BZ)
+/// and settles the mixture's temperature: its thermal energy before, plus the release, over its new heat capacity. Booked under
+/// HEAT_SOURCE_REACTION. Returns the joules released (negative: absorbed). DM decides a reaction's rate and stoichiometry, never its heat.
+/proc/gas_react(datum/gas_mixture/air, kind, extent, list/deltas, aux = 0)
+	var/list/flat = list()
+	for(var/gas in deltas)
+		flat += GAS_IDX(gas)
+		flat += deltas[gas]
+	. = vg_gas_reaction_apply(air, kind, extent, aux, flat) || 0
+	gas_touched(air)
 
 /// A one-off heat write changed these gases: the pipe network that owns one (a device's port naming the network's mixture) hears it, as it
 /// hears a step's flows from Rust. The caller never marks anything.

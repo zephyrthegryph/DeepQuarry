@@ -817,6 +817,40 @@ fn heat_conduct(
     Ok((moved as f32).into())
 }
 
+/// Applies a gas reaction to a mixture in one step
+/// (`vg_gas::reaction_energy::react`): `deltas` is a flat list of
+/// `GAS_ID_*, moles, ...`; the energy the reaction of `kind`
+/// (`GAS_REACTION_*`) releases for its `extent` (with its `aux` value) is
+/// computed here and settled into the mixture, booked under
+/// `HEAT_SOURCE_REACTION`. Returns the joules released (negative: absorbed),
+/// or null for an unknown kind (nothing applied).
+#[auxmacros::bind("/proc/gas_reaction_apply")]
+fn gas_reaction_apply(mixture: ByondValue, kind: ByondValue, extent: ByondValue, aux: ByondValue, deltas: ByondValue) -> Result<ByondValue> {
+    #[allow(clippy::cast_possible_truncation)]
+    let kind = num(&kind)? as i32;
+    let (extent, aux) = (f(&extent)?, if aux.is_num() { f(&aux)? } else { 0.0 });
+    let flat = if deltas.is_list() { deltas.get_list_values()? } else { Vec::new() };
+    let mut pairs = Vec::with_capacity(flat.len() / 2);
+    for pair in flat.chunks_exact(2) {
+        let raw = num(&pair[0])?;
+        pairs.push((vg_gas::gas::gas_idx_from_value(raw)?, num(&pair[1])?));
+    }
+    let reacted = mix::with_mix_mut(&mixture, |m| Ok(vg_gas::reaction_energy::react(m, kind, extent, aux, &pairs)))?;
+    let Some(r) = reacted else {
+        return Ok(ByondValue::null());
+    };
+    book_source(HEAT_SOURCE_REACTION as usize, r.applied);
+    NET.with_borrow_mut(|n| {
+        if r.applied >= 0.0 {
+            n.total.external_in += r.applied;
+        } else {
+            n.total.external_out -= r.applied;
+        }
+    });
+    #[allow(clippy::cast_possible_truncation)]
+    Ok((r.released as f32).into())
+}
+
 /// Brings a reservoir to `temperature` K by an external, booked source
 /// (`HEAT_SOURCE_*`): an authority write (map load, admin, a spawn-time
 /// temperature) expressed as the joules it takes. Returns the joules added.
