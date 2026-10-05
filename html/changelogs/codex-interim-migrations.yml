@@ -69,3 +69,4 @@ changes:
   - code_imp: "Migrated shuttle docking-code prompts to native requests with current-console permission checks."
   - code_imp: "Migrated multi-shuttle and exploration destination selection to native requests with current destination and access checks."
   - bugfix: "Docility potions now finish naming and consume after the naming answer instead of getting stuck behind the already-used guard."
+  - code_imp: "Migrated helm limit and coordinate prompts to native requests."

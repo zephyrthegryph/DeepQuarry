@@ -1076,6 +1076,9 @@
 
 #include "round2_slime_docility_name_request.dm"
 
+#include "round2_helm_limit_requests.dm"
+#include "round2_helm_coordinates_clientless.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

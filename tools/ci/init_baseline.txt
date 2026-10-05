@@ -1900,7 +1900,6 @@ initialize	maps/southern_cross/structures/closets/security.dm	/obj/structure/clo
 initialize	maps/submaps/engine_submaps/engine.dm	/obj/effect/landmark/engine_loader/Initialize(mapload)
 world_reads	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	I = image(icon = icon, icon_state = "algae-pipe-overlay", dir = GLOB.reverse_dir[dir])
 world_reads	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	for(var/d in GLOB.cardinal)
-world_reads	code/ATMOSPHERICS/components/shutoff.dm	om_watch(src, GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
 world_reads	code/ATMOSPHERICS/environmental/LINDA_fire.dm	setDir(pick(GLOB.cardinals))
 world_reads	code/game/dna/dna_modifier.dm	for(var/dirfind in GLOB.cardinal)
 world_reads	code/game/gamemodes/cult/narsie.dm	if(!GLOB.narsie_cometh)//so we don't initiate Hell more than one time.
