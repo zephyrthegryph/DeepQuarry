@@ -1031,6 +1031,8 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(2, 0, 208, 75)),
 	"/obj/structure/door_assembly::unplated" = list(0,
 		list(1, 0, 207)),
+	"/obj/structure/filingcabinet::has_files" = list(0,
+		list(1, 0, 52)),
 	"/obj/structure/firedoor_assembly::board_releasable" = list(0),
 	"/obj/structure/firedoor_assembly::unglazed" = list(0,
 		list(1, 0, 207)),

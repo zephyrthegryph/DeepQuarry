@@ -20503,24 +20503,30 @@
 	into += entry_block("code/modules/paperwork/filingcabinet.dm", 28, /obj/structure/filingcabinet)
 	into += entry_line(29)
 	into += list(global.climb())
+	into += entry_line(30)
+	into += list(global.op("interaction_hand", global.hand(), global.ungated(), global.needs(global.req(PROC_REF(has_files), because = MSG(filingcabinet/empty))), global.then(PROC_REF(interaction_hand))))
+	into += entry_line(31)
+	into += list(global.op("interaction_item", global.item(/obj/item), global.then(PROC_REF(interaction_item))))
+	into += entry_line(32)
+	into += list(global.op("interaction_tk", global.tk(), global.then(PROC_REF(interaction_tk))))
 
-/// CAPABILITIES(/obj/structure/filingcabinet/medical) at code/modules/paperwork/filingcabinet.dm:203
+/// CAPABILITIES(/obj/structure/filingcabinet/medical) at code/modules/paperwork/filingcabinet.dm:209
 /obj/structure/filingcabinet/medical/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/paperwork/filingcabinet.dm", 203, /obj/structure/filingcabinet/medical)
-	into += entry_line(204)
-	into += list(global.op("medical_interaction_hand", global.hand(), global.then(PROC_REF(medical_interaction_hand))))
-	into += entry_line(205)
-	into += list(global.op("medical_interaction_tk", global.tk(), global.then(PROC_REF(medical_interaction_tk))))
+	into += entry_block("code/modules/paperwork/filingcabinet.dm", 209, /obj/structure/filingcabinet/medical)
+	into += entry_line(210)
+	into += list(global.op("interaction_hand", global.hand(), global.ungated(), global.then(PROC_REF(medical_interaction_hand))))
+	into += entry_line(211)
+	into += list(global.op("interaction_tk", global.tk(), global.then(PROC_REF(medical_interaction_tk))))
 
-/// CAPABILITIES(/obj/structure/filingcabinet/security) at code/modules/paperwork/filingcabinet.dm:160
+/// CAPABILITIES(/obj/structure/filingcabinet/security) at code/modules/paperwork/filingcabinet.dm:162
 /obj/structure/filingcabinet/security/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/paperwork/filingcabinet.dm", 160, /obj/structure/filingcabinet/security)
-	into += entry_line(161)
-	into += list(global.op("security_interaction_hand", global.hand(), global.then(PROC_REF(security_interaction_hand))))
-	into += entry_line(162)
-	into += list(global.op("security_interaction_tk", global.tk(), global.then(PROC_REF(security_interaction_tk))))
+	into += entry_block("code/modules/paperwork/filingcabinet.dm", 162, /obj/structure/filingcabinet/security)
+	into += entry_line(163)
+	into += list(global.op("interaction_hand", global.hand(), global.ungated(), global.then(PROC_REF(security_interaction_hand))))
+	into += entry_line(164)
+	into += list(global.op("interaction_tk", global.tk(), global.then(PROC_REF(security_interaction_tk))))
 
 /// CAPABILITIES(/obj/structure/firedoor_assembly) at code/game/machinery/doors/firedoor_assembly.dm:34
 /obj/structure/firedoor_assembly/declared_entries(list/into)
