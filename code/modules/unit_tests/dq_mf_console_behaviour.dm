@@ -130,7 +130,7 @@
 
 /// The "Eject ID Card" choice: the operator's card first, then the subject's.
 /proc/mfc_card_eject(mob/user, obj/machinery/computer/card/C)
-	C.interaction_eject_id(user, null, null)
+	perform_op(user, C, "eject", null, ORIGIN_MENU)
 
 /// An ID card used on the console goes in: one with the change-IDs access is scanned as the operator's, any other is loaded to be modified.
 /datum/unit_test/dq_hc_computers/mfc/card_goes_in_by_hand
