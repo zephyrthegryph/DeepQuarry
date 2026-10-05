@@ -71,22 +71,21 @@
 /datum/unit_test/dq_shutoff_wake_is_network_local
 
 /datum/unit_test/dq_shutoff_wake_is_network_local/Run()
+	test_driver_begin()
 	var/obj/machinery/atmospherics/valve/shutoff/valve = allocate(/obj/machinery/atmospherics/valve/shutoff, test_floor())
 	var/datum/pipe_network/ours = new()
 	var/datum/pipe_network/theirs = new()
 	rel_set(valve, nameof(valve.network_node1), ours)
-	valve.subscribe_network_keys()
+	test_time(1 SECOND)
 
-	// Held steady, and with a change on another network, the valve sleeps; its own network wakes it.
-	om_trace(valve)
-	om_test_ticks(4)
-	var/before = om_traced_count(valve)
+	// A change on another network leaves the valve alone; its own network makes it look again.
+	TEST_ASSERT(!om_timer_slot_pending(valve, "leak_check"), "the valve had a check pending before any change")
 	wake_automatic_shutoff_valves(theirs)
-	om_test_ticks(4)
-	TEST_ASSERT_EQUAL(om_traced_count(valve), before, "a change on another network woke the valve")
-	om_untrace(valve)
-	var/failure = om_wake_test(valve, om_callable(null, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
-	TEST_ASSERT(!failure, failure)
+	TEST_ASSERT(!om_timer_slot_pending(valve, "leak_check"), "a change on another network woke the valve")
+	wake_automatic_shutoff_valves(ours)
+	TEST_ASSERT(om_timer_slot_pending(valve, "leak_check"), "a change on its own network did not wake the valve")
+	test_time(1 SECOND)
+	test_driver_end()
 
 	rel_clear(valve, nameof(valve.network_node1))
 	qdel(ours)
