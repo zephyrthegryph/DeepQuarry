@@ -15,9 +15,9 @@
 	S.set_stat(0)
 	move_into(S, OCCUPANT_SLOT_SLEEPER, patient)
 	TEST_ASSERT(!LAZYACCESS(S.available_chemicals, REAGENT_ID_TOXIN), "the sleeper must not list toxin")
-	S.inject_chemical(user, REAGENT_ID_TOXIN, 5)
+	test_op_handler(S, "inject_chosen", user, null, 5, REAGENT_ID_TOXIN)
 	TEST_ASSERT_EQUAL(patient.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 0, "an unlisted chemical must not be injected")
-	S.inject_chemical(user, REAGENT_ID_INAPROVALINE, 5)
+	test_op_handler(S, "inject_chosen", user, null, 5, REAGENT_ID_INAPROVALINE)
 	TEST_ASSERT_EQUAL(patient.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 5, "a listed chemical is injected")
 	S.slot_remove(patient, test_floor())
 

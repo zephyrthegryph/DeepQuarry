@@ -184,9 +184,8 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 			if(istype(L.loc,/obj/mecha))
 				var/obj/mecha/ME = L.loc
 				ME.go_out()
-			else if(istype(L.loc,/obj/machinery/sleeper))
-				var/obj/machinery/sleeper/SL = L.loc
-				SL.go_out()
+			else if(occupant_pod_of(L.loc)) // a sleeper, a cryo cell, a scanner: any pod lets them out
+				occupant_eject(L.loc)
 			else if(istype(L.loc,/obj/machinery/recharge_station))
 				var/obj/machinery/recharge_station/RS = L.loc
 				RS.go_out()
