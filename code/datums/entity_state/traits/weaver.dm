@@ -52,7 +52,7 @@
 	var/reason = ..()
 	if(reason)
 		return reason
-	return istype(GLOB.all_weavable[answer_value], /datum/weaver_recipe/item) ? null : "not a recipe"
+	return istype(GLOB.all_weavable[value], /datum/weaver_recipe/item) ? null : "not a recipe"
 
 /// "Weave this?"; a no goes back to the recipe list.
 /datum/prompt/choice/weave_confirmation
@@ -77,7 +77,7 @@ CAPABILITIES(/datum/prompt/choice/weave_confirmation)
 /datum/trait_state/weaver/proc/weave_choice_made(datum/act/request/A)
 	if(!A.answer)
 		return
-	open_request(src, /datum/prompt/choice/weave_confirmation, PROC_REF(weave_confirmed), answerer = owner, recipe = GLOB.all_weavable[A.answer.answer_value])
+	open_request(src, /datum/prompt/choice/weave_confirmation, PROC_REF(weave_confirmed), answerer = owner, recipe = GLOB.all_weavable[A.answer.value])
 
 /datum/trait_state/weaver/proc/weave_confirmed(datum/act/request/A)
 	if(!A.answer)

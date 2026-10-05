@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 /obj/vehicle/proc/vehicle_paint_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	paint_color = A.answer.answer_value
+	paint_color = A.answer.value
 	update_icon()
 
 /obj/vehicle/bike/click_ctrl(mob/user)

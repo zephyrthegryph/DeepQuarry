@@ -429,7 +429,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 /obj/item/pen/chameleon/proc/paperwork_signature_apply(datum/act/request/A)
 	var/datum/prompt/text/paperwork_review/ask = A.answer
-	return paperwork_signature_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+	return paperwork_signature_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.value, TRUE)
 
 /obj/item/pen/chameleon/proc/paperwork_ink_answered(datum/act/request/A)
 	if(!A.answer)
@@ -439,7 +439,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 /obj/item/pen/chameleon/proc/paperwork_ink_apply(datum/act/request/A)
 	var/datum/prompt/choice/paperwork_review/ask = A.answer
-	return paperwork_ink_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.answer_value, TRUE)
+	return paperwork_ink_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.value, TRUE)
 
 /datum/prompt/text/paperwork_review
 	timeout = 0

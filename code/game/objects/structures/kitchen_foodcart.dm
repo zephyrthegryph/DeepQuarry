@@ -49,7 +49,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/obj/item/reagent_containers/food/choice = A.answer.answer_value
+	var/obj/item/reagent_containers/food/choice = A.answer.value
 	if(choice.loc == src)
 		if(!user.canmove)
 			return

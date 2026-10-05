@@ -84,10 +84,10 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
 	if(QDELETED(R.answerer))
 		return
 	if(!A.answer)
-		if(R.outcome == REQ_CANCELLED && isnull(R.answer_value))
+		if(R.outcome == REQ_CANCELLED && isnull(R.value))
 			own_clear(src, nameof(active_spell), OWN_DELETE)
 		return
-	place_spell_in_hand(known_spells[A.answer.answer_value])
+	place_spell_in_hand(known_spells[A.answer.value])
 
 /mob/living/simple_mob/mechanical/technomancer_golem/get_technomancer_core()
 	return core

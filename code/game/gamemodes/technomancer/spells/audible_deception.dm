@@ -77,8 +77,8 @@
 
 /obj/item/spell/audible_deception/proc/deception_sound_chosen_apply(datum/act/request/A)
 	var/datum/prompt/choice/technomancer_carried/ask = A.answer
-	if(ask.answer_value)
-		selected_sound = ask.choices[ask.answer_value]
+	if(ask.value)
+		selected_sound = ask.choices[ask.value]
 
 /obj/item/spell/audible_deception/on_ranged_cast(atom/hit_atom, mob/living/user)
 	var/turf/T = get_turf(hit_atom)

@@ -122,7 +122,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_RE
 /mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newsex = A.answer.answer_value
+	var/newsex = A.answer.value
 	if(newsex == FEMALE)
 		icon_living = "lioness"
 		icon_dead = "lioness-dead"
@@ -145,8 +145,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_RE
 /mob/living/simple_mob/vore/retaliate/lion/proc/mane_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		mane_color = A.answer.answer_value
+	if(A.answer.value)
+		mane_color = A.answer.value
 		update_icon()
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion)

@@ -143,4 +143,4 @@
 	SStgui.update_uis(src)
 
 /mob/proc/lesser_transform_apply(datum/act/request/context)
-	return lesser_transform_stage(context.answer.answer_value, TRUE)
+	return lesser_transform_stage(context.answer.value, TRUE)

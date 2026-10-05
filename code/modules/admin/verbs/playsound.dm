@@ -104,10 +104,10 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	title = "Server sound list"
 
 /datum/admin_verb/play_server_sound/proc/server_sound_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value || A.answer.answer_value == "--CANCEL--")
+	if(!A.answer || !A.answer.value || A.answer.value == "--CANCEL--")
 		return
 	var/client/user = A.request.answerer.client
-	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/play_sound, A.answer.answer_value)
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/play_sound, A.answer.value)
 	feedback_add_details("admin_verb", "Play Server Sound") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ///Takes an input from either proc/play_web_sound or the request manager and runs it through youtube-dl and prompts the user before playing it to the server.
@@ -186,7 +186,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/web_sound/ask = A.answer
-	if(ask.answer_value == "Yes")
+	if(ask.value == "Yes")
 		ask_web_sound_show(ask.url, ask.extra, ask.page, ask.song_title, ask.duration, ask.credit, ask.input)
 
 /mob/proc/ask_web_sound_show(url, list/extra, page, song_title, duration, credit, input)
@@ -196,15 +196,15 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/web_sound/ask = A.answer
-	if(ask.answer_value == "Cancel")
+	if(ask.value == "Cancel")
 		return
-	open_request(src, /datum/prompt/choice/web_sound, PROC_REF(web_sound_anon_answered), answerer = src, url = ask.url, extra = ask.extra, page = ask.page, song_title = ask.song_title, duration = ask.duration, credit = ask.credit, input = ask.input, show = ask.answer_value, title = "Credit Yourself?", question = "Display who played the song?", choices = list("Yes", "No", "Cancel"))
+	open_request(src, /datum/prompt/choice/web_sound, PROC_REF(web_sound_anon_answered), answerer = src, url = ask.url, extra = ask.extra, page = ask.page, song_title = ask.song_title, duration = ask.duration, credit = ask.credit, input = ask.input, show = ask.value, title = "Credit Yourself?", question = "Display who played the song?", choices = list("Yes", "No", "Cancel"))
 
 /mob/proc/web_sound_anon_answered(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/web_sound/ask = A.answer
-	if(ask.answer_value == "Cancel")
+	if(ask.value == "Cancel")
 		return
 	var/mob/user = src
 	var/list/music_extra_data = ask.extra
@@ -223,7 +223,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 		music_extra_data["artist"] = "Song Artist Hidden"
 		music_extra_data["upload_date"] = "Song Upload Date Hidden"
 		music_extra_data["album"] = "Song Album Hidden"
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Yes")
 			if(show == "Yes")
 				to_chat(world, span_boldannounce("[user.key] played: [page]"), confidential = TRUE)

@@ -237,7 +237,7 @@ CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 
 /obj/item/melee/artifact_blade/proc/blade_action_apply(datum/act/request/A)
 	var/datum/prompt/choice/artifact_blade_action/ask = A.answer
-	ask.answers[ask.answer_key] = ask.answer_value
+	ask.answers[ask.answer_key] = ask.value
 	return blade_action_stage(ask.answerer, ask.held_item, ask.interaction_context, ask.answers)
 
 /obj/item/melee/artifact_blade/proc/consecrate_toggle(mob/user as mob, toggle)
@@ -338,7 +338,7 @@ CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 
 /obj/item/melee/artifact_blade/proc/summon_item_apply(datum/act/request/context)
 	var/datum/prompt/choice/artifact_blade_summon/request = context.answer
-	return summon_item_stage(request.answerer, request.selected_item, request.answer_value)
+	return summon_item_stage(request.answerer, request.selected_item, request.value)
 
 /// While this COULD just use the cultify() proc ultimately, I decided against that as this isn't meant to be
 /// Some sort of weapon of mass destruction. It's supposed to be a funny, spooky artifact that you find.

@@ -56,9 +56,9 @@
 /mob/proc/changeling_transformation_sting_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_transformation_sting_stage(A.request.captured["dna_label"], A.answer.answer_value)
+	changeling_transformation_sting_stage(A.request.captured["dna_label"], A.answer.value)
 
 /mob/proc/changeling_transformation_dna_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_transformation_sting_stage(A.answer.answer_value)
+	changeling_transformation_sting_stage(A.answer.value)

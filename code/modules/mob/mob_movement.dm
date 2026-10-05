@@ -401,7 +401,7 @@
 /client/proc/incorporeal_speed_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	incorporeal_speed = A.answer.answer_value * world.tick_lag
+	incorporeal_speed = A.answer.value * world.tick_lag
 
 ///Process_Incorpmove
 ///Called by client/Move()

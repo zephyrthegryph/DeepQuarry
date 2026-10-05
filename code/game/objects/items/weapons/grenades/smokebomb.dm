@@ -31,8 +31,8 @@ DECLARE_INTERACTIONS(/obj/item/grenade/smokebomb, INTERACT_ITEM(null, PROC_REF(i
 /obj/item/grenade/smokebomb/proc/smoke_color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		smoke_color = A.answer.answer_value
+	if(A.answer.value)
+		smoke_color = A.answer.value
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/grenade/smokebomb/primed

@@ -58,7 +58,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	if(!A.answer)
 		return
 	var/mob/M = A.request.answerer
-	var/pick = A.answer.answer_value
+	var/pick = A.answer.value
 	if(!pick || reskin_ran)
 		return
 	if(!unique_reskin[pick])

@@ -50,7 +50,7 @@ Controlled by the player_tips subsystem under code/controllers/subsystems/player
 /mob/living/proc/automated_advice_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	var/choice = context.answer.answer_value
+	var/choice = context.answer.value
 	if(choice == "cancel")
 		SStgui.update_uis(src)
 		return

@@ -94,31 +94,31 @@ CAPABILITIES(/datum/prompt/text/chaplain_religion)
 	return (bible_required && QDELETED(bible)) || (id_required && QDELETED(id)) ? "gone" : null
 
 /datum/job/chaplain/proc/religion_entered(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
 	var/datum/prompt/text/chaplain_religion/ask = A.answer
 	var/mob/living/carbon/human/H = ask.answerer
 	if(!istype(H) || QDELETED(H))
 		return
-	open_request(src, /datum/prompt/text/chaplain_religion, PROC_REF(deity_entered), answerer = H, bible = ask.bible, id = ask.id, religion = ask.answer_value, question = "Would you like to change your deity? Default is Hashem", default = "Hashem", title = "Name change")
+	open_request(src, /datum/prompt/text/chaplain_religion, PROC_REF(deity_entered), answerer = H, bible = ask.bible, id = ask.id, religion = ask.value, question = "Would you like to change your deity? Default is Hashem", default = "Hashem", title = "Name change")
 
 /datum/job/chaplain/proc/deity_entered(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
 	var/datum/prompt/text/chaplain_religion/ask = A.answer
 	var/mob/living/carbon/human/H = ask.answerer
 	if(!istype(H) || QDELETED(H))
 		return
-	open_request(src, /datum/prompt/text/chaplain_religion, PROC_REF(title_entered), answerer = H, bible = ask.bible, id = ask.id, religion = ask.religion, deity = ask.answer_value, title = "Title Change", question = "Would you like to change your title?", default = ask.id.assignment)
+	open_request(src, /datum/prompt/text/chaplain_religion, PROC_REF(title_entered), answerer = H, bible = ask.bible, id = ask.id, religion = ask.religion, deity = ask.value, title = "Title Change", question = "Would you like to change your title?", default = ask.id.assignment)
 
 /datum/job/chaplain/proc/title_entered(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
 	var/datum/prompt/text/chaplain_religion/ask = A.answer
 	var/mob/living/carbon/human/H = ask.answerer
 	if(!istype(H) || QDELETED(H))
 		return
-	chaplain_religion_chosen(H, ask.bible, ask.id, ask.religion, ask.deity, ask.answer_value)
+	chaplain_religion_chosen(H, ask.bible, ask.id, ask.religion, ask.deity, ask.value)
 
 /proc/chaplain_religion_chosen(mob/living/carbon/human/H, obj/item/storage/bible/B, obj/item/card/id/I, new_religion, new_deity, new_title)
 	var/religion_name = "Unitarianism"

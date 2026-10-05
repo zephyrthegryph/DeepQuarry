@@ -129,7 +129,7 @@
 /obj/item/mail/proc/recipient_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/recipient_mob = A.answer.answer_value
+	var/mob/living/recipient_mob = A.answer.value
 	if(istype(recipient_mob) && recipient_mob?.mind)
 		initialize_for_recipient(recipient_mob.mind, preset_goodies = TRUE)
 		if(istype(src, /obj/item/mail/blank))
@@ -164,8 +164,8 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 /obj/item/mail/blank/proc/sender_named(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value && !sealed)
-		desc = "A signed envelope, from [A.answer.answer_value]."
+	if(A.answer.value && !sealed)
+		desc = "A signed envelope, from [A.answer.value]."
 
 /// Old attack_self: seal an open envelope, or open a sealed one.
 /obj/item/mail/blank/proc/interaction_seal(mob/user, obj/item/held, datum/interaction/interaction)
@@ -339,8 +339,8 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 		return
 	if(recipient_expected && QDELETED(recipient))
 		return "gone"
-	if(isdatum(answer_value))
-		var/datum/selected = answer_value
+	if(isdatum(value))
+		var/datum/selected = value
 		if(QDELETED(selected))
 			return "gone"
 	return null
@@ -351,7 +351,7 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 	return apply_spawn_mail_type_picked(A)
 
 /client/proc/apply_spawn_mail_type_picked(datum/act/request/A)
-	spawn_mail_type_chosen(A.answer.answer_value)
+	spawn_mail_type_chosen(A.answer.value)
 
 /client/proc/spawn_mail_type_chosen(chosen)
 	var/list/recipients = list()
@@ -370,7 +370,7 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 	var/datum/prompt/choice/admin_mail/ask = A.request
 	if(!ismob(mob) || QDELETED(mob))
 		return
-	open_request(src, /datum/prompt/choice/admin_mail, PROC_REF(spawn_mail_finish), answerer = mob, title = "Spawn mail", question = "Spawn mail at location or in the shuttle?", choices = list("Location", "Shuttle"), buttons = TRUE, chosen = ask.chosen, recipient = A.answer.answer_value, recipient_expected = !isnull(A.answer.answer_value))
+	open_request(src, /datum/prompt/choice/admin_mail, PROC_REF(spawn_mail_finish), answerer = mob, title = "Spawn mail", question = "Spawn mail at location or in the shuttle?", choices = list("Location", "Shuttle"), buttons = TRUE, chosen = ask.chosen, recipient = A.answer.value, recipient_expected = !isnull(A.answer.value))
 
 /client/proc/spawn_mail_finish(datum/act/request/A)
 	if(!A.answer)
@@ -385,7 +385,7 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 	var/chosen = ask.chosen
 	if(!recipient_mind || !user_mob)
 		return
-	if(A.answer.answer_value == "Shuttle")
+	if(A.answer.value == "Shuttle")
 		var/obj/item/mail/new_mail = new
 		new_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(new_mail)

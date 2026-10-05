@@ -136,7 +136,7 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 		var/datum/prompt/choice/vote_setup_review/ask = context.request
 		vote_answers = ask.vote_answers.Copy()
 		vote_key = ask.vote_key
-	if(!context.answer && !(finish_options && context.request.outcome == REQ_CANCELLED && isnull(context.request.answer_value)))
+	if(!context.answer && !(finish_options && context.request.outcome == REQ_CANCELLED && isnull(context.request.value)))
 		return
 	var/mob/answerer = context.request.answerer
 	if(!answerer || QDELETED(answerer))
@@ -157,5 +157,5 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 	if(debug_only)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
-	vote_answers[vote_key] = context.answer ? context.answer.answer_value : ""
+	vote_answers[vote_key] = context.answer ? context.answer.value : ""
 	return vote_setup_stage(user, vote_answers)

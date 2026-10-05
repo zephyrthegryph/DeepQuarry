@@ -949,7 +949,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 		synth_answers = ask_number.synth_answers.Copy()
 		synth_key = ask_number.synth_key
 		synth_mode = ask_number.synth_mode
-	synth_answers[synth_key] = context.answer.answer_value
+	synth_answers[synth_key] = context.answer.value
 	if(synth_mode == SYNTH_REQUEST_GUIDED)
 		return synth_babystep_recipe_stage(context.request.answerer, synth_answers)
 	return synth_import_recipe_stage(context.request.answerer, synth_answers)

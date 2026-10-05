@@ -350,7 +350,7 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 	else
 		return
 	var/is_type_query = istype(context.answer, /datum/prompt/text/generic_spawn_type_query)
-	var/selected = context.answer.answer_value
+	var/selected = context.answer.value
 	if(setup_key == "object" && istext(selected))
 		var/list/matches = list()
 		for(var/path in typesof(/atom))

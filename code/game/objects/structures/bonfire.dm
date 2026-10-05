@@ -91,7 +91,7 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 	var/obj/item/stack/rods/R = A.request.subject
 	if(can_buckle || grill)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Stake")
 			R.use(1)
 			can_buckle = TRUE

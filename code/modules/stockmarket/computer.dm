@@ -348,9 +348,9 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 		return "No active account on the console!"
 	if(!LAZYACCESS(S.shareholders, console.logged_in))
 		return "This account does not own any shares of [S.name]!"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
-	var/amt = min(round(answer_value), LAZYACCESS(S.shareholders, console.logged_in))
+	var/amt = min(round(value), LAZYACCESS(S.shareholders, console.logged_in))
 	if((!(answerer in range(1, console)) && iscarbon(answerer)) || !amt)
 		return "silent"
 	if(!isnum(SSsupply.budget_balance()))
@@ -359,10 +359,10 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 /datum/stock/proc/sell_shares_answered(datum/act/request/A)
 	var/datum/prompt/number/stock_sell/request = A.request
 	var/obj/machinery/computer/stockexchange/console = request.subject
-	if(QDELETED(console) || QDELETED(request.answerer) || isnull(request.answer_value))
+	if(QDELETED(console) || QDELETED(request.answerer) || isnull(request.value))
 		return
 	if(A.answer)
-		console.sell_shares_apply(src, request.answerer, request.answer_value)
+		console.sell_shares_apply(src, request.answerer, request.value)
 	else if(request.last_error && !(request.last_error in list("gone", "silent")))
 		to_chat(request.answerer, span_danger(request.last_error))
 	SStgui.update_uis(console)
@@ -380,22 +380,22 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 		return "No active account on the console!"
 	if(!isnum(console.balance()))
 		return "No active account on the console!"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
 	if(!(answerer in range(1, console)) && iscarbon(answerer))
 		return "silent"
 	if(!isnum(console.balance()))
 		return "No active account on the console!"
-	if(!min(round(answer_value), S.available_shares, round(console.balance() / S.current_value)))
+	if(!min(round(value), S.available_shares, round(console.balance() / S.current_value)))
 		return "silent"
 
 /datum/stock/proc/buy_shares_answered(datum/act/request/A)
 	var/datum/prompt/number/stock_buy/request = A.request
 	var/obj/machinery/computer/stockexchange/console = request.subject
-	if(QDELETED(console) || QDELETED(request.answerer) || isnull(request.answer_value))
+	if(QDELETED(console) || QDELETED(request.answerer) || isnull(request.value))
 		return
 	if(A.answer)
-		console.buy_shares_apply(src, request.answerer, request.answer_value)
+		console.buy_shares_apply(src, request.answerer, request.value)
 	else if(request.last_error && !(request.last_error in list("gone", "silent")))
 		to_chat(request.answerer, span_danger(request.last_error))
 	SStgui.update_uis(console)

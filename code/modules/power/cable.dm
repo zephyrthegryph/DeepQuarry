@@ -942,7 +942,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/alien)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/N = A.answer.answer_value
+	var/N = A.answer.value
 	if(N)
 		if(N && N <= amount)
 			var/obj/item/stack/cable_coil/CC = new/obj/item/stack/cable_coil(user.loc)

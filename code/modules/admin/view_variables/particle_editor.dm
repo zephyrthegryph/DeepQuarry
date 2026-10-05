@@ -219,7 +219,7 @@ UI_ACT_PROC(/datum/particle_editor, ui_act_edit)
 		return
 	var/datum/prompt/choice/particle_editor_type/ask = context.answer
 	var/datum/particle_editor/editor = src_object()
-	var/new_type = ask.choices[ask.answer_value]
+	var/new_type = ask.choices[ask.value]
 	if(editor.apply_particle_type(new_type))
 		SStgui.update_uis(editor)
 

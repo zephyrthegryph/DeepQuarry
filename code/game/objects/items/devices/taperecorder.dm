@@ -418,7 +418,7 @@ CAPABILITIES(/obj/item/rectape)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/new_name = sanitizeSafe(A.answer.answer_value)
+	var/new_name = sanitizeSafe(A.answer.value)
 	if(new_name)
 		name = "tape - '[new_name]'"
 		to_chat(user, span_notice("You label the tape '[new_name]'."))

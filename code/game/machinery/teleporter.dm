@@ -130,8 +130,8 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 /obj/machinery/computer/teleporter/proc/teleporter_id_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		id = A.answer.answer_value
+	if(A.answer.value)
+		id = A.answer.value
 	return TRUE
 
 //////

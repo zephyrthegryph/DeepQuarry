@@ -388,7 +388,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 
 /obj/machinery/photocopier/faxmachine/proc/fax_department_id_answered(datum/act/request/context)
 	if(!context.answer)
-		if(!isnull(context.request.answer_value))
+		if(!isnull(context.request.value))
 			switch(context.request.last_error)
 				if(FAX_PANEL_CLOSED)
 					SStgui.update_uis(src)
@@ -396,7 +396,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 					to_chat(context.request.answerer, FAX_DEPARTMENT_EMPTY)
 					SStgui.update_uis(src)
 		return
-	apply_department_id(context.answer.answer_value)
+	apply_department_id(context.answer.value)
 	SStgui.update_uis(src)
 
 /obj/machinery/photocopier/faxmachine/proc/apply_department_id(input)
@@ -696,7 +696,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 	if(!context.answer)
 		return
 	var/obj/machinery/photocopier/faxmachine/fax = src_object()
-	if(fax.apply_paper_title(context.answer.answer_value))
+	if(fax.apply_paper_title(context.answer.value))
 		SStgui.update_uis(fax)
 
 /datum/prompt/text/fax_paper_title
@@ -727,7 +727,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 	if(!context.answer)
 		return
 	var/obj/machinery/photocopier/faxmachine/fax = src_object()
-	if(fax.apply_department_answer(context.answer.answer_value))
+	if(fax.apply_department_answer(context.answer.value))
 		SStgui.update_uis(fax)
 
 /datum/prompt/choice/fax_department
@@ -770,7 +770,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 			return "gone"
 	if(!fax.panel_open)
 		return FAX_PANEL_CLOSED
-	if(!isnull(answer_value) && !answer_value)
+	if(!isnull(value) && !value)
 		return FAX_DEPARTMENT_EMPTY
 	return null
 

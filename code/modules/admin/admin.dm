@@ -188,7 +188,7 @@ ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desire
 
 /datum/admin_verb/announce/proc/send_announcement(datum/act/request/A)
 	var/client/user = A.request.answerer.client
-	var/message = A.request.answer_value
+	var/message = A.request.value
 	if(!message)
 		return
 
@@ -214,11 +214,11 @@ ADMIN_VERB(intercom, R_ADMIN|R_EVENT, "Intercom Msg", "Send an intercom message,
 		var/datum/prompt/text/admin_intercom/ask = A.request
 		next_stage = ask.next_stage
 		channel = ask.channel
-		sender = next_stage == 2 ? ask.answer_value : ask.sender
-		message = next_stage == 3 ? ask.answer_value : ask.message
-		msgverb = next_stage == 4 ? ask.answer_value : null
+		sender = next_stage == 2 ? ask.value : ask.sender
+		message = next_stage == 3 ? ask.value : ask.message
+		msgverb = next_stage == 4 ? ask.value : null
 	else
-		channel = A.request.answer_value
+		channel = A.request.value
 	advance_intercom(A.request.answerer.client, next_stage, channel, sender, message, msgverb)
 
 /datum/admin_verb/intercom/proc/advance_intercom(client/user, stage = 0, channel = null, sender = null, message = null, msgverb = null)
@@ -266,7 +266,7 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 	ask_conversation_speech(context)
 
 /datum/admin_verb/intercom_convo/proc/ask_conversation_speech(datum/act/request/context)
-	var/channel = context.request.answer_value
+	var/channel = context.request.value
 	if(!channel)
 		return
 	open_request(src, /datum/prompt/choice/admin_intercom_conversation_speech, PROC_REF(conversation_speech_selected), answerer = context.request.answerer, channel = channel)
@@ -278,7 +278,7 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 
 /datum/admin_verb/intercom_convo/proc/ask_conversation_content(datum/act/request/context)
 	var/datum/prompt/choice/admin_intercom_conversation_speech/request = context.request
-	var/speech_verb = request.answer_value
+	var/speech_verb = request.value
 	if(!speech_verb)
 		return
 	var/client/user = request.answerer.client
@@ -305,7 +305,7 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 	var/client/user = request.answerer.client
 	var/channel = request.channel
 	var/speech_verb = request.speech_verb
-	var/message = request.answer_value
+	var/message = request.value
 	var/list/decomposed
 	if(!message)
 		return
@@ -839,7 +839,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	return frommob.ckey ? null : "no player"
 
 /datum/admins/proc/ghost_drag_confirmed(datum/act/request/context)
-	if(!context.answer || context.answer.answer_value != "Yes")
+	if(!context.answer || context.answer.value != "Yes")
 		return
 	var/mob/admin = context.request.answerer
 	var/mob/observer/dead/frommob = context.request.asker
@@ -889,7 +889,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyz
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/admin_paralyze_confirm/ask = A.request
-	toggle_paralyze(ask.answerer.client, ask.target, ask.answer_value, TRUE)
+	toggle_paralyze(ask.answerer.client, ask.target, ask.value, TRUE)
 
 /datum/admin_verb/paralyze_mob/proc/toggle_paralyze(client/user, mob/living/living_target, _answer_a15 = null, answered = FALSE)
 	var/msg
@@ -926,7 +926,7 @@ ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to
 	var/datum/prompt/number/admin_telecrystals/ask = A.request
 	var/mob/living/carbon/human/human_mob = ask.human_target
 	var/client/user = ask.answerer.client
-	var/crystals = ask.answer_value
+	var/crystals = ask.value
 	if (!isnull(crystals))
 		human_mob.mind.tcrystals = crystals
 		var/msg = "[key_name(user)] has modified [human_mob.ckey]'s telecrystals to [crystals]."
@@ -947,7 +947,7 @@ ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to
 	var/datum/prompt/number/admin_telecrystals/ask = A.request
 	var/mob/living/carbon/human/human_mob = ask.human_target
 	var/client/user = ask.answerer.client
-	var/crystals = ask.answer_value
+	var/crystals = ask.value
 	if (!isnull(crystals))
 		human_mob.mind.tcrystals += crystals
 		var/msg = "[key_name(user)] has added [crystals] to [human_mob.ckey]'s telecrystals."
@@ -1060,9 +1060,9 @@ CAPABILITIES(/datum/prompt/choice/fax_stamp)
 	var/datum/prompt/text/fax_title/ask = A.request
 	if(QDELETED(ask.answerer) || (ask.paper_required && QDELETED(ask.paper)) || (ask.destination_required && QDELETED(ask.destination)))
 		return
-	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value)))
+	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.value)))
 		return
-	var/custom_title = isnull(ask.answer_value) ? "" : ask.answer_value
+	var/custom_title = isnull(ask.value) ? "" : ask.value
 	if(ask.paper.sender())
 		fax_answered(ask.paper, ask.destination, custom_title, FALSE)
 		return
@@ -1072,9 +1072,9 @@ CAPABILITIES(/datum/prompt/choice/fax_stamp)
 	var/datum/prompt/choice/fax_stamp/ask = A.request
 	if(QDELETED(ask.answerer) || (ask.paper_required && QDELETED(ask.paper)) || (ask.destination_required && QDELETED(ask.destination)))
 		return
-	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value)))
+	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.value)))
 		return
-	fax_answered(ask.paper, ask.destination, ask.custom_title, ask.answer_value == "Yes")
+	fax_answered(ask.paper, ask.destination, ask.custom_title, ask.value == "Yes")
 
 /datum/admins/proc/fax_answered(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination, customname, stamp)
 	P.name = "[P.origin] - [customname]"
@@ -1147,7 +1147,7 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	give_selected_uplink(A)
 
 /datum/admin_verb/set_uplink/proc/give_selected_uplink(datum/act/request/A)
-	var/mob/living/carbon/human/traitor_human = A.request.answer_value
+	var/mob/living/carbon/human/traitor_human = A.request.value
 	var/client/user = A.request.answerer.client
 	GLOB.traitors.spawn_uplink(traitor_human)
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
@@ -1228,8 +1228,8 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	. = ..()
 	if(.)
 		return
-	if(!isnull(answer_value))
-		var/mob/living/carbon/human/picked = answer_value
+	if(!isnull(value))
+		var/mob/living/carbon/human/picked = value
 		return QDELETED(picked) ? "target is gone" : null
 
 /datum/prompt/choice/admin_intercom_channel
@@ -1328,7 +1328,7 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 		var/datum/prompt/number/admin_seed_spawn/ask = context.answer
 		seed_answers = ask.seed_answers.Copy()
 		seed_key = ask.seed_key
-	seed_answers[seed_key] = context.answer.answer_value
+	seed_answers[seed_key] = context.answer.value
 	return seed_spawn_stage(user, seed_answers)
 
 /datum/admin_verb/spawn_plant/proc/seed_spawn_answered(datum/act/request/context)
@@ -1353,7 +1353,7 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 		var/datum/prompt/number/admin_seed_spawn/ask = context.answer
 		seed_answers = ask.seed_answers.Copy()
 		seed_key = ask.seed_key
-	seed_answers[seed_key] = context.answer.answer_value
+	seed_answers[seed_key] = context.answer.value
 	return seed_spawn_stage(user, seed_answers)
 
 /datum/prompt/choice/admin_custom_item_spawn
@@ -1366,8 +1366,8 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 /datum/prompt/choice/admin_custom_item_spawn/recheck_extra()
 	if(!admin_can(answerer?.client, 0))
 		return "no admin rights"
-	if(custom_key == "a12" && !isnull(answer_value))
-		var/datum/custom_item/selected = answer_value
+	if(custom_key == "a12" && !isnull(value))
+		var/datum/custom_item/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"
 
@@ -1392,7 +1392,7 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	var/datum/prompt/choice/admin_custom_item_spawn/ask = context.answer
 	var/list/custom_answers = ask.custom_answers.Copy()
-	custom_answers[ask.custom_key] = ask.answer_value
+	custom_answers[ask.custom_key] = ask.value
 	return custom_item_spawn_stage(user, custom_answers)
 
 /datum/prompt/choice/admin_fax_department
@@ -1445,5 +1445,5 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 		var/datum/prompt/text/admin_fax_origin/ask = context.answer
 		fax_answers = ask.fax_answers.Copy()
 		key = "origin"
-	fax_answers[key] = context.answer.answer_value
+	fax_answers[key] = context.answer.value
 	fax_request_stage(user, fax_answers)

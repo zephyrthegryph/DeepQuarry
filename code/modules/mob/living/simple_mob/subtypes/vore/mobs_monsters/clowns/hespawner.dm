@@ -23,7 +23,7 @@
 
 /obj/structure/ghost_pod/manual/clegg/proc/clown_theme_chosen(datum/act/request/A)
 	var/datum/prompt/choice/ask = A.request
-	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value)))
+	if(!A.answer && (ask.outcome != REQ_CANCELLED || !isnull(ask.value)))
 		return
 	var/mob/M = ask.answerer
 	if(QDELETED(M))

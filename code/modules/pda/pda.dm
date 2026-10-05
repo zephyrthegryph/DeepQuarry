@@ -118,17 +118,17 @@ CAPABILITIES(/obj/item/pda)
 	var/obj/item/pda/device = owner
 	if(!istype(device) || QDELETED(device) || QDELETED(answerer))
 		return "The PDA or user is no longer available."
-	if(!isnull(answer_value) && (!in_range(device, answerer) || device.loc != answerer))
+	if(!isnull(value) && (!in_range(device, answerer) || device.loc != answerer))
 		return "The PDA is not held by the user."
 
 /obj/item/pda/proc/ringtone_answered(datum/act/request/A)
 	var/mob/user = A.request.answerer
 	if(!A.answer)
-		if(!isnull(A.request.answer_value) && !QDELETED(user))
+		if(!isnull(A.request.value) && !QDELETED(user))
 			close(user)
 			SStgui.update_uis(src)
 		return
-	apply_ringtone(user, A.answer.answer_value)
+	apply_ringtone(user, A.answer.value)
 	SStgui.update_uis(src)
 
 /obj/item/pda/proc/apply_ringtone(mob/user, t)

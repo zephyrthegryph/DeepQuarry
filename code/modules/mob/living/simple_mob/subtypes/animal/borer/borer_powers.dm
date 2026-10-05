@@ -37,7 +37,7 @@
 /mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	psychic_knockout(A.answer.answer_value)
+	psychic_knockout(A.answer.value)
 
 /mob/living/simple_mob/animal/borer/proc/psychic_knockout(mob/living/carbon/human/attack_target)
 	var/attack_range = 5
@@ -97,7 +97,7 @@
 	if(reason)
 		return reason
 	var/mob/living/simple_mob/animal/borer/B = answerer
-	var/mob/living/carbon/human/selected = answer_value
+	var/mob/living/carbon/human/selected = value
 	if(QDELETED(selected))
 		return "gone"
 	return (!B.borer_host() && B.Adjacent(selected)) ? null : "unable"
@@ -105,7 +105,7 @@
 /mob/living/simple_mob/animal/borer/proc/infest_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	infest_target(A.answer.answer_value)
+	infest_target(A.answer.value)
 
 /// Infests mob with borer.
 /mob/living/simple_mob/animal/borer/proc/infest_dislodged(mob/living/carbon/human/infest_target)
@@ -203,7 +203,7 @@
 /mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/injection_choice = A.answer.answer_value
+	var/injection_choice = A.answer.value
 	var/mob/living/carbon/human/host = src?.borer_host() // may have changed while choosing
 	if(!host)
 		return

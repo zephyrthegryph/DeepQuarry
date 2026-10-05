@@ -251,18 +251,18 @@ VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), 
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/mass_delete_scope/ask = A.answer
-	if(ask.answer_value == "Cancel")
+	if(ask.value == "Cancel")
 		return
-	open_request(src, /datum/prompt/yes_no/mass_delete, PROC_REF(mass_delete_sure), answerer = ask.answerer, scope = ask.answer_value)
+	open_request(src, /datum/prompt/yes_no/mass_delete, PROC_REF(mass_delete_sure), answerer = ask.answerer, scope = ask.value)
 
 /obj/proc/mass_delete_sure(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/mass_delete/ask = A.answer
 	open_request(src, /datum/prompt/yes_no/mass_delete, PROC_REF(mass_delete_confirmed), answerer = ask.answerer, scope = ask.scope, second = TRUE)
 
 /obj/proc/mass_delete_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/mass_delete/ask = A.answer
 	var/mob/user = ask.answerer

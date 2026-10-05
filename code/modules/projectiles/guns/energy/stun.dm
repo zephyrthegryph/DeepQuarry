@@ -231,7 +231,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 
 /obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_name_apply(datum/act/request/context)
 	var/datum/prompt/text/weapon_setting_review/ask = context.answer
-	return detective_stun_name_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)
+	return detective_stun_name_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.value, TRUE)
 
 /obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_skin_answered(datum/act/request/context)
 	if(!context.answer)
@@ -241,4 +241,4 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 
 /obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_skin_apply(datum/act/request/context)
 	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
-	return detective_stun_skin_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)
+	return detective_stun_skin_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.value, TRUE)

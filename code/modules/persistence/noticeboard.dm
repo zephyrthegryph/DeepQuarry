@@ -99,17 +99,17 @@ APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_co
 	var/obj/item/tool = subject
 	if(!istype(board) || QDELETED(board) || QDELETED(answerer) || !istype(tool) || QDELETED(tool))
 		return "The board, user or tool is no longer available."
-	if(!isnull(answer_value) && (!answer_value || !board.Adjacent(answerer) || tool.loc != answerer || answerer.incapacitated()))
+	if(!isnull(value) && (!value || !board.Adjacent(answerer) || tool.loc != answerer || answerer.incapacitated()))
 		return "The noticeboard cannot be adjusted now."
 
 /obj/structure/noticeboard/proc/noticeboard_offset_chosen(datum/act/request/A)
 	var/mob/user = A.request.answerer
 	var/obj/item/tool = A.request.subject
 	if(!A.answer)
-		if(!QDELETED(user) && !QDELETED(tool) && !isnull(A.request.answer_value))
+		if(!QDELETED(user) && !QDELETED(tool) && !isnull(A.request.value))
 			SStgui.update_uis(src)
 		return
-	apply_noticeboard_offset(A.answer.answer_value, tool)
+	apply_noticeboard_offset(A.answer.value, tool)
 	SStgui.update_uis(src)
 
 /obj/structure/noticeboard/proc/apply_noticeboard_offset(choice, obj/item/tool)

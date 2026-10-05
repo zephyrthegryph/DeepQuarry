@@ -97,7 +97,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/new_ident = A.answer.answer_value
+	var/new_ident = A.answer.value
 	if(new_ident && new_ident != id_tag && user.Adjacent(src))
 		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == new_ident)
@@ -165,7 +165,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 /obj/machinery/pointdefense/proc/ident_entered(datum/act/request/A)
 	if(!A.answer)
 		return ITEM_INTERACT_BLOCKING
-	var/new_ident = A.answer.answer_value
+	var/new_ident = A.answer.value
 	if(new_ident && new_ident != id_tag)
 		to_chat(A.request.answerer, span_notice("You register [src] with the [new_ident] network."))
 		id_tag = new_ident

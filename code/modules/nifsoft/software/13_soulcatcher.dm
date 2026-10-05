@@ -713,7 +713,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /mob/living/carbon/human/proc/nif_say_apply(datum/act/request/A)
 	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
-	return nif_say_stage(ask.answer_value, TRUE)
+	return nif_say_stage(ask.value, TRUE)
 
 /mob/living/carbon/human/proc/nif_emote_answered(datum/act/request/A)
 	if(!A.answer)
@@ -723,7 +723,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /mob/living/carbon/human/proc/nif_emote_apply(datum/act/request/A)
 	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
-	return nif_emote_stage(ask.answer_value, TRUE)
+	return nif_emote_stage(ask.value, TRUE)
 
 /mob/living/carbon/brain/caught_soul/proc/nif_brain_say_answered(datum/act/request/A)
 	if(!A.answer)
@@ -733,7 +733,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /mob/living/carbon/brain/caught_soul/proc/nif_brain_say_apply(datum/act/request/A)
 	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
-	return nif_brain_say_stage(ask.answer_value, TRUE)
+	return nif_brain_say_stage(ask.value, TRUE)
 
 /mob/living/carbon/brain/caught_soul/proc/nif_brain_emote_answered(datum/act/request/A)
 	if(!A.answer)
@@ -743,7 +743,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /mob/living/carbon/brain/caught_soul/proc/nif_brain_emote_apply(datum/act/request/A)
 	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
-	return nif_brain_emote_stage(ask.answer_value, TRUE)
+	return nif_brain_emote_stage(ask.value, TRUE)
 
 /datum/prompt/text/soulcatcher_speech
 	timeout = 0
@@ -758,15 +758,15 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	if(istype(A.answer, /datum/prompt/choice/soulcatcher_settings))
 		var/datum/prompt/choice/soulcatcher_settings/ask = A.answer
 		if(ask.soul_key == "k164")
-			var/mob/living/carbon/brain/caught_soul/chosen = ask.answer_value
+			var/mob/living/carbon/brain/caught_soul/chosen = ask.value
 			rel_set(ask, nameof(ask.selected_soul), chosen)
 			ask.soul_answers[ask.soul_key] = TRUE
 		else
-			ask.soul_answers[ask.soul_key] = ask.answer_value
+			ask.soul_answers[ask.soul_key] = ask.value
 		return soul_settings_stage(ask.settings_operator, ask.soul_answers, ask.selected_soul)
 	if(istype(A.answer, /datum/prompt/text/soulcatcher_settings))
 		var/datum/prompt/text/soulcatcher_settings/ask = A.answer
-		ask.soul_answers[ask.soul_key] = ask.answer_value
+		ask.soul_answers[ask.soul_key] = ask.value
 		return soul_settings_stage(ask.settings_operator, ask.soul_answers, ask.selected_soul)
 
 /datum/prompt/text/soulcatcher_settings
@@ -824,7 +824,7 @@ CAPABILITIES(/datum/prompt/choice/soulcatcher_settings)
 /datum/prompt/choice/soulcatcher_settings/recheck_extra()
 	if(settings_operator_expected && QDELETED(settings_operator))
 		return "gone"
-	if(!isnull(answer_value) && soul_key == "k164")
-		var/mob/living/carbon/brain/caught_soul/chosen = answer_value
+	if(!isnull(value) && soul_key == "k164")
+		var/mob/living/carbon/brain/caught_soul/chosen = value
 		if(!istype(chosen) || QDELETED(chosen))
 			return "gone"

@@ -246,7 +246,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_setcoord)
 		return
 	var/obj/machinery/computer/ship/helm/helm = src_object()
 	var/list/answers = A.request.captured.Copy()
-	answers[A.request.step_name] = A.answer.answer_value
+	answers[A.request.step_name] = A.answer.value
 	if(helm.helm_coordinate_stage(src, answers, A.request))
 		SStgui.update_uis(helm)
 
@@ -318,7 +318,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_accellimit)
 		return
 	var/obj/machinery/computer/ship/helm/helm = src_object()
 	var/datum/prompt/number/helm_limit/ask = A.answer
-	var/newlimit = ask.answer_value
+	var/newlimit = ask.value
 	if(newlimit)
 		if(ask.limit_action == "speedlimit")
 			helm.speedlimit = CLAMP(newlimit/1000, 0, 100)

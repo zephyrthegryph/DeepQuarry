@@ -271,7 +271,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cat, INTERACT_ITEM(nul
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/tmp_name = A.answer.answer_value
+	var/tmp_name = A.answer.value
 	tmp_name = sanitizeSafe(tmp_name, MAX_NAME_LEN)
 	if(named || !length(tmp_name))
 		return

@@ -132,11 +132,11 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 	return camera.getsource(answerer)
 
 /datum/prompt/choice/photocopier_album/proc/selected_picture()
-	if(!answer_value)
+	if(!value)
 		return null
 	var/obj/item/camera/siliconcam/source_cam = album_source()
 	for(var/obj/item/photo/photo in source_cam.aipictures)
-		if(photo.name == answer_value)
+		if(photo.name == value)
 			return photo
 	return null
 

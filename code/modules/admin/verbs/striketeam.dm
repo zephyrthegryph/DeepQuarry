@@ -47,7 +47,7 @@
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/admin_strike_team/ask = A.answer
-	var/team_type = ask.answer_value
+	var/team_type = ask.value
 	var/datum/antagonist/deathsquad/team = strike_team_datum(team_type)
 	if(team.deployed)
 		to_chat(src, span_red("Someone is already sending a team."))
@@ -58,12 +58,12 @@
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/admin_strike_team/ask = A.answer
-	if(ask.answer_value != "Yes")
+	if(ask.value != "Yes")
 		return
 	open_request(src, /datum/prompt/text/admin_strike_team, PROC_REF(admin_strike_team_mission_entered), answerer = src, team_type = ask.team_type, question = "This 'mode' will go on until everyone is dead or the station is destroyed. You may also admin-call the evac shuttle when appropriate. Spawned commandos have internals cameras which are viewable through a monitor inside the Spec. Ops. Office. Assigning the team's detailed task is recommended from there. While you will be able to manually pick the candidates from active ghosts, their assignment in the squad will be random.\n\nPlease specify which mission the strike team shall undertake.")
 
 /mob/proc/admin_strike_team_mission_entered(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
 	var/datum/prompt/text/admin_strike_team/ask = A.answer
 	var/datum/antagonist/deathsquad/team = strike_team_datum(ask.team_type)

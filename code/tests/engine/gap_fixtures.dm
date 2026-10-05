@@ -231,7 +231,7 @@ CAPABILITIES(/obj/gap_window)
 	op("confirm", ui_act("modal:confirm"), asks(/datum/prompt/yes_no, fields = list("question" = "Sure?", "yes_text" = "Do it", "no_text" = "Leave it", "inline" = TRUE), step = "sure"), then(PROC_REF(confirmed)))
 
 /obj/gap_window/proc/styled(datum/act/op/A)
-	LAZYADD(log, "style:[A.answer.answer_value]")
+	LAZYADD(log, "style:[A.answer.value]")
 	return OP_OK
 
 /obj/gap_window/proc/log_text()
@@ -249,11 +249,11 @@ CAPABILITIES(/obj/gap_window)
 	return OP_OK
 
 /obj/gap_window/proc/note_entered(datum/act/op/A, arguments)
-	LAZYADD(log, "note:[A.answer.answer_value]")
+	LAZYADD(log, "note:[A.answer.value]")
 	return OP_OK
 
 /obj/gap_window/proc/confirmed(datum/act/op/A)
-	LAZYADD(log, "confirmed:[A.answer.answer_value]")
+	LAZYADD(log, "confirmed:[A.answer.value]")
 	return OP_OK
 
 /// A subtype that overrides what the button does: then(PROC_REF(named_pressed)) is looked up on the holder, so the override is the handler.

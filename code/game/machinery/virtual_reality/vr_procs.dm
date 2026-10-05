@@ -46,7 +46,7 @@
 /mob/living/carbon/human/proc/vr_creature_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/tf = GLOB.vr_mob_tf_options[A.answer.answer_value]
+	var/tf = GLOB.vr_mob_tf_options[A.answer.value]
 
 	var/mob/living/new_form = transform_into_mob(tf, TRUE, TRUE)
 	if(isliving(new_form)) // Sanity check
@@ -67,7 +67,7 @@
 	open_request(src, /datum/prompt/yes_no, PROC_REF(fake_exit_vr_answered), answerer = src, title = "Log out?", question = "Would you like to log out of virtual reality?", timeout = 0)
 
 /mob/living/carbon/human/proc/fake_exit_vr_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	release_vore_contents(TRUE)
 	for(var/obj/item/I in contents_of(src))
@@ -114,6 +114,6 @@
 /mob/living/carbon/human/proc/vr_avatar_renamed(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		real_name = A.answer.answer_value
-		name = A.answer.answer_value
+	if(A.answer.value)
+		real_name = A.answer.value
+		name = A.answer.value

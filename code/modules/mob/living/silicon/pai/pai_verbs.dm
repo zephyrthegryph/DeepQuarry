@@ -41,7 +41,7 @@
 /mob/living/silicon/pai/proc/speech_verbs_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/list/sayverbs = GLOB.possible_say_verbs[A.answer.answer_value]
+	var/list/sayverbs = GLOB.possible_say_verbs[A.answer.value]
 	speak_statement = sayverbs[1]
 	speak_exclamation = sayverbs[(sayverbs.len>1 ? 2 : sayverbs.len)]
 	speak_query = sayverbs[(sayverbs.len>2 ? 3 : sayverbs.len)]
@@ -68,7 +68,7 @@
 /mob/living/silicon/pai/proc/pai_gender_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	gender = A.answer.answer_value
+	gender = A.answer.value
 
 /mob/living/silicon/pai/verb/pai_hide()
 	set name = "Hide"
@@ -101,7 +101,7 @@
 /mob/living/silicon/pai/proc/screen_message_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	show_screen_message(A.answer.answer_value)
+	show_screen_message(A.answer.value)
 
 /mob/living/silicon/pai/proc/show_screen_message(message)
 	message = sanitize_or_reflect(message,src)
@@ -184,8 +184,8 @@
 /mob/living/silicon/pai/proc/pai_eye_color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		eye_color = A.answer.answer_value
+	if(A.answer.value)
+		eye_color = A.answer.value
 		update_icon()
 		card.setEmotion(card.current_emotion)
 

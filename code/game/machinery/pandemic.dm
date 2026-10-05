@@ -167,10 +167,10 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 	var/datum/affliction/contagion/engineered/affliction
 
 /obj/machinery/computer/pandemic/proc/release_reason_written(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/text/pandemic_release_reason/R = A.request
-	open_request(src, /datum/prompt/yes_no/pandemic_release_sign, PROC_REF(release_form_written), valid = PROC_REF(sign_usable), answerer = R.answerer, title = "Signature", question = "Would you like to add your signature?", disease = R.affliction, reason = A.answer.answer_value, timeout = 0)
+	open_request(src, /datum/prompt/yes_no/pandemic_release_sign, PROC_REF(release_form_written), valid = PROC_REF(sign_usable), answerer = R.answerer, title = "Signature", question = "Would you like to add your signature?", disease = R.affliction, reason = A.answer.value, timeout = 0)
 
 /// The signature question: the strain and the reason are kept on it.
 /datum/prompt/yes_no/pandemic_release_sign
@@ -196,7 +196,7 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 	var/symptoms = english_list(english_symptoms)
 
 	var/signature
-	if(A.answer.answer_value)
+	if(A.answer.value)
 		signature = "<font face=\"Times New Roman\">" + span_italics("[user ? user.real_name : "Anonymous"]") + "</font>"
 	else
 		signature = "<span class=\"paper_field\"></span>"

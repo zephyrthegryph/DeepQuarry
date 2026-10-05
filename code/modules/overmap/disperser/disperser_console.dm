@@ -226,7 +226,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_burn)
 		return
 	var/datum/prompt/number/disperser_setting/ask = context.answer
 	var/obj/machinery/computer/ship/disperser/console = src_object()
-	console.apply_disperser_setting(user, state(), ask.setting_action, ask.answer_value, ask.calibration_index)
+	console.apply_disperser_setting(user, state(), ask.setting_action, ask.value, ask.calibration_index)
 	SStgui.update_uis(console)
 
 /obj/machinery/computer/ship/disperser/proc/apply_disperser_setting(mob/user, datum/tgui_state/state, setting_action, value, calibration_index)

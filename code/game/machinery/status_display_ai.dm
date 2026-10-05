@@ -46,7 +46,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 /mob/living/silicon/ai/proc/ai_status_display_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/emote = A.answer.answer_value
+	var/emote = A.answer.value
 	for (var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES)) //change status
 		if(istype(M, /obj/machinery/ai_status_display))
 			var/obj/machinery/ai_status_display/AISD = M
@@ -110,7 +110,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 /obj/machinery/ai_status_display/proc/emotion_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/emote = A.answer.answer_value
+	var/emote = A.answer.value
 	emotion = emote
 
 /obj/machinery/ai_status_display/proc/update()

@@ -37,7 +37,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/quadruped, mob_organ_hit_zones, list("hea
 /mob/living/simple_mob/animal/proc/flavour_text_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_flavour_text = A.answer.answer_value
+	var/new_flavour_text = A.answer.value
 	if(length(new_flavour_text))
 		flavor_text = new_flavour_text
 		to_chat(src, span_notice("Your flavour text has been updated."))

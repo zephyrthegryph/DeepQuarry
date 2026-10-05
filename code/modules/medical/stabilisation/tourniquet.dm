@@ -203,18 +203,18 @@
 	var/mob/living/carbon/human/patient = owner
 	if(!istype(user) || user.incapacitated() || !user.Adjacent(patient))
 		return "cannot reach the tourniquet"
-	if(!isnull(answer_value))
+	if(!isnull(value))
 		var/list/cinched = list()
 		for(var/obj/item/organ/external/limb as anything in patient.organs)
 			if(limb.tourniquet)
 				cinched[limb.name] = limb
-		if(length(cinched) > 1 && !(answer_value in cinched))
+		if(length(cinched) > 1 && !(value in cinched))
 			return "the selected tourniquet is no longer there"
 	return null
 
 /mob/living/carbon/human/proc/loosen_tourniquet_chosen(datum/act/request/A)
 	if(!A.answer)
-		if(!isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+		if(!isnull(A.request.value) && !QDELETED(A.request.answerer))
 			SStgui.update_uis(src)
 		return
 	apply_tourniquet_choice(A)
@@ -229,7 +229,7 @@
 	if(!length(cinched))
 		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
 		return
-	var/_answer_k142 = A.request.answer_value
+	var/_answer_k142 = A.request.value
 	var/choice = length(cinched) == 1 ? cinched[1] : _answer_k142
 	if(!choice)
 		return

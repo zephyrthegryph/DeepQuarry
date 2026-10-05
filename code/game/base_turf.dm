@@ -43,17 +43,17 @@
 	open_request(src, /datum/prompt/number/base_turf, PROC_REF(base_turf_z_entered), answerer = src)
 
 /mob/proc/base_turf_z_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
-	open_request(src, /datum/prompt/choice/base_turf, PROC_REF(base_turf_chosen), answerer = src, z_level = A.answer.answer_value, choices = typesof(/turf))
+	open_request(src, /datum/prompt/choice/base_turf, PROC_REF(base_turf_chosen), answerer = src, z_level = A.answer.value, choices = typesof(/turf))
 
 /mob/proc/base_turf_chosen(datum/act/request/A)
 	var/datum/prompt/choice/base_turf/ask = A.request
 	if(QDELETED(ask.answerer))
 		return
-	var/path = ask.answer_value
+	var/path = ask.value
 	if(!A.answer)
-		if(ask.outcome != REQ_CANCELLED || !isnull(ask.answer_value))
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value))
 			return
 		// Old cancel_answer substitutes space but still runs the flow's late rights recheck.
 		if(request_recheck(ask))

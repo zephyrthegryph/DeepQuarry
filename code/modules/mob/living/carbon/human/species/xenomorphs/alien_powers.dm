@@ -101,7 +101,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		return
 	var/datum/prompt/number/plasma_transfer/ask = A.request
 	var/mob/living/carbon/human/M = ask.recipient
-	var/amount = abs(round(ask.answer_value))
+	var/amount = abs(round(ask.value))
 	if(amount && check_alien_ability(amount,0,O_PLASMA))
 		M.gain_plasma(amount)
 		to_chat(M, span_alium("[src] has transfered [amount] plasma to you."))
@@ -271,7 +271,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 /mob/living/carbon/human/proc/resin_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
 
@@ -334,7 +334,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 /mob/living/carbon/human/proc/alien_leap_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/T = A.answer.answer_value
+	var/mob/living/T = A.answer.value
 
 	if(get_dist(get_turf(T), get_turf(src)) > 4) return
 

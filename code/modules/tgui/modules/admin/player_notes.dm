@@ -81,7 +81,7 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 /datum/tgui_module/player_notes/proc/filter_player_notes_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/input = A.answer.answer_value
+	var/input = A.answer.value
 	current_filter = input
 
 /datum/tgui_module/player_notes/proc/ui_act_set_page(datum/act/op/A, index)
@@ -208,7 +208,7 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 /datum/admins/proc/player_notes_filter_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	PlayerNotesPageLegacy(1, A.answer.answer_value, A.request.answerer)
+	PlayerNotesPageLegacy(1, A.answer.value, A.request.answerer)
 
 /datum/prompt/text/player_notes_legacy_filter
 	question = "Filter string (case-insensitive regex)"

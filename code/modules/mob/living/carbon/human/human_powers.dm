@@ -25,7 +25,7 @@
 /mob/living/carbon/human/proc/tie_hair_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/selected_string = A.answer.answer_value
+	var/selected_string = A.answer.value
 	if(selected_string && h_style != selected_string)
 		h_style = selected_string
 		regenerate_icons()
@@ -61,9 +61,9 @@
 	ask_flags = ASK_CONSCIOUS
 
 /datum/prompt/choice/tackle/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	var/mob/living/selected = answer_value
+	var/mob/living/selected = value
 	if(!istype(selected) || QDELETED(selected))
 		return "gone"
 	var/mob/living/carbon/human/H = answerer
@@ -76,13 +76,13 @@
 /mob/living/carbon/human/proc/tackle_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		var/datum/request/request = A.request
-		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value) && request.last_error == "not able to")
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value) && request.last_error == "not able to")
 			to_chat(request.answerer, span_notice("You cannot tackle in your current state."))
 		return
 	return tackle_target_apply(A)
 
 /mob/living/carbon/human/proc/tackle_target_apply(datum/act/request/A)
-	var/mob/living/T = A.answer.answer_value
+	var/mob/living/T = A.answer.value
 
 	COOLDOWN_START(src, last_special, 5 SECONDS)
 
@@ -114,7 +114,7 @@
 
 /mob/living/carbon/human/proc/apply_commune_target_chosen(datum/act/request/A)
 	var/datum/prompt/choice/ask = A.request
-	var/mob/M = ask.choices[A.answer.answer_value]
+	var/mob/M = ask.choices[A.answer.value]
 	if(!M)
 		return
 	open_request(src, /datum/prompt/text/telepathy, PROC_REF(commune_answered), answerer = src, question = "What would you like to say?", title = "Speak to creature", recipient = M, recipient_expected = !isnull(M))
@@ -126,7 +126,7 @@
 
 /mob/living/carbon/human/proc/apply_commune_answered(datum/act/request/A)
 	var/datum/prompt/text/telepathy/ask = A.request
-	var/text = A.answer.answer_value
+	var/text = A.answer.value
 	var/mob/M = ask.recipient
 
 	if(isobserver(M) || M.stat == DEAD)
@@ -158,7 +158,7 @@
 /mob/living/carbon/human/proc/apply_psychic_whisper_entered(datum/act/request/A)
 	var/datum/prompt/text/telepathy/ask = A.request
 	var/mob/M = ask.recipient
-	var/msg = A.answer.answer_value
+	var/msg = A.answer.value
 	log_talk("(PWHISPER to [key_name(M)]) [msg]", LOG_WHISPER)
 	to_chat(M, span_filter_say("[span_green("You hear a strange, alien voice in your head... <i>[msg]</i>")]"))
 	to_chat(src, span_filter_say("[span_green("You said: \"[msg]\" to [M]")]"))
@@ -420,7 +420,7 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 /datum/prompt/choice/monitor_state/recheck_extra()
 	if(head_expected && QDELETED(head))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
 	var/mob/living/carbon/human/H = answerer
 	return H.organs_by_name[BP_HEAD] == head ? null : "head changed"
@@ -434,7 +434,7 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 	var/datum/prompt/choice/monitor_state/ask = A.answer
 	var/obj/item/organ/external/head/E = ask.head
 	var/list/states = ask.choices
-	var/choice = ask.answer_value
+	var/choice = ask.value
 	var/datum/robolimb/robohead = GLOB.all_robolimbs[E.model]
 	if(robohead?.monitor_icon)
 		E.eye_icon_location = robohead.monitor_icon
@@ -553,7 +553,7 @@ CAPABILITIES(/datum/prompt/choice/hand_game)
 /mob/living/carbon/human/proc/hand_games_partner_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/carbon/human/partner = A.answer.answer_value
+	var/mob/living/carbon/human/partner = A.answer.value
 	if(!istype(partner) || QDELETED(partner))
 		return
 	open_request(src, /datum/prompt/choice/hand_game, PROC_REF(hand_games_chosen), answerer = src, partner = partner)
@@ -562,9 +562,9 @@ CAPABILITIES(/datum/prompt/choice/hand_game)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/hand_game/ask = A.answer
-	if(ask.answer_value == "Cancel" || QDELETED(ask.partner))
+	if(ask.value == "Cancel" || QDELETED(ask.partner))
 		return
-	hand_game_invite(ask.partner, ask.answer_value)
+	hand_game_invite(ask.partner, ask.value)
 
 // Checks to make sure everything is fine to continue playing.
 /mob/living/carbon/human/proc/hand_games_check(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
@@ -624,7 +624,7 @@ CAPABILITIES(/datum/prompt/choice/hand_game_move)
 
 /datum/prompt/choice/hand_game_invite/recheck_extra()
 	// A refused legacy confirm stops before the flow's continuation recheck.
-	if(answer_value == "Refuse")
+	if(value == "Refuse")
 		return null
 	return ..()
 
@@ -658,7 +658,7 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 	var/datum/prompt/choice/hand_game_invite/ask = A.request
 	if(ask.initial_refusal || QDELETED(ask.partner) || QDELETED(ask.answerer))
 		return
-	if(ask.answer_value == "Refuse" || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+	if(ask.value == "Refuse" || (ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 		to_chat(src, span_warning("[ask.partner] declines to play the game."))
 		return
 	if(!A.answer)
@@ -699,13 +699,13 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 	if(QDELETED(player2) || QDELETED(request.answerer))
 		return
 	if(!A.answer)
-		if(request.outcome == REQ_CANCELLED && isnull(request.answer_value))
+		if(request.outcome == REQ_CANCELLED && isnull(request.value))
 			to_chat(src, span_warning("[player2] declines to play the game."))
 		return
 	if(second_move)
-		hand_game_second_choice(player2, game, choice1, request.answer_value)
+		hand_game_second_choice(player2, game, choice1, request.value)
 		return
-	choice1 = request.answer_value
+	choice1 = request.value
 	if(choice1 == "Cancel")
 		act_message(src, null, others = span_notice("%U% chickens out!"))
 	to_chat(src, span_warning("[player2] is [game == "Rock, Paper, Scissors" ? "deciding" : "getting ready"]."))

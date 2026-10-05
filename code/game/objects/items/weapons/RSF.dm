@@ -66,7 +66,7 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/glass_choice = A.answer.answer_value
+	var/glass_choice = A.answer.value
 	if(glass_choice)
 		balloon_alert(user, "container chosen: [glass_choice]")
 		glasstype_name = glass_choice
@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/rsf, \
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(choice)
 		mode = choice
 		play_sfx(src, SFX_EFFECTS_POP)

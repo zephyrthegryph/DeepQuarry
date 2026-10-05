@@ -895,7 +895,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 		return FALSE
 	if(A.answer)
 		return TRUE
-	if(!opened || A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value))
+	if(!opened || A.request.outcome != REQ_CANCELLED || !isnull(A.request.value))
 		return FALSE
 	return isnull(request_recheck(A.request))
 
@@ -923,7 +923,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/datum/prompt/text/casino_item_tf/ask = A.request
 	if(!casino_item_tf_continues(A, ask.tf_opened))
 		return
-	var/text = A.answer ? ask.answer_value : ""
+	var/text = A.answer ? ask.value : ""
 	if(!ask.tf_description)
 		var/obj/item/item_path = ask.tf_type
 		var/datum/prompt/text/casino_item_tf/description_request = open_request(src, /datum/prompt/text/casino_item_tf, PROC_REF(item_tf_text_entered), answerer = ask.answerer, tf_type = ask.tf_type, tf_name = text, tf_description = TRUE, title = "TF Item Description", question = "Choose your item description for \the [initial(item_path.name)] (Leave blank or cancel to use its default description)")
@@ -951,7 +951,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/datum/prompt/choice/casino_item_tf/ask = A.request
 	if(!casino_item_tf_continues(A, ask.tf_opened))
 		return
-	if(!A.answer || ask.answer_value != "Yes")
+	if(!A.answer || ask.value != "Yes")
 		item_tf_transform(ask.answerer, ask.tf_type, ask.tf_name, ask.tf_desc, null)
 		return
 	var/obj/item/item_path = ask.tf_type
@@ -986,7 +986,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/datum/prompt/color/casino_item_tf/ask = A.request
 	if(!casino_item_tf_continues(A, ask.tf_opened))
 		return
-	item_tf_transform(ask.answerer, ask.tf_type, ask.tf_name, ask.tf_desc, A.answer ? ask.answer_value : "")
+	item_tf_transform(ask.answerer, ask.tf_type, ask.tf_name, ask.tf_desc, A.answer ? ask.value : "")
 
 /obj/machinery/casinosentientprize_handler/proc/item_tf_transform(mob/living/sentient_prize, item_type, item_name, item_desc, item_color)
 	var/obj/item/newitem = new item_type(get_turf(sentient_prize)) // This might be a bad idea, but if the prize is in something/someone it would be potentially diastrous to use loc. Better to move 'em out than move it in!
@@ -1103,7 +1103,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/mob/living/user = answerer
 	if(!istype(user) || QDELETED(user) || user.incapacitated() || !(ishuman(user) || isrobot(user)))
 		return "The operator cannot set the prize price."
-	if(!isnull(answer_value) && (!isnum(answer_value) || answer_value < 1 || answer_value > 1000))
+	if(!isnull(value) && (!isnum(value) || value < 1 || value > 1000))
 		return "The prize price is invalid."
 
 /datum/prompt/number/casino_prize_price/present(mob/user)
@@ -1115,12 +1115,12 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 /obj/machinery/casinosentientprize_handler/proc/prize_price_answered(datum/act/request/A)
 	var/mob/living/user = A.request.answerer
 	if(!A.answer)
-		if(!isnull(A.request.answer_value) && !QDELETED(user))
+		if(!isnull(A.request.value) && !QDELETED(user))
 			if(A.request.last_error == "The prize price is invalid.")
 				to_chat(user, span_notice("Invalid price."))
 			SStgui.update_uis(src)
 		return
-	casinosentientprize_price = A.answer.answer_value
+	casinosentientprize_price = A.answer.value
 	to_chat(user, span_notice("You set the price to [casinosentientprize_price]"))
 	SStgui.update_uis(src)
 
@@ -1156,7 +1156,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_use_apply(datum/act/request/A)
 	var/datum/prompt/choice/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	ask.wheel_answers[ask.wheel_key] = ask.value
 	return wheel_use_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_interaction, ask.wheel_answers)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_management_answered(datum/act/request/A)
@@ -1167,7 +1167,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_management_apply(datum/act/request/A)
 	var/datum/prompt/choice/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	ask.wheel_answers[ask.wheel_key] = ask.value
 	return wheel_management_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_interaction, ask.wheel_answers)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_interval_answered(datum/act/request/A)
@@ -1178,7 +1178,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_interval_apply(datum/act/request/A)
 	var/datum/prompt/number/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	ask.wheel_answers[ask.wheel_key] = ask.value
 	return wheel_interval_stage(ask.wheel_operator, ask.wheel_answers)
 
 /datum/prompt/choice/wheel_review

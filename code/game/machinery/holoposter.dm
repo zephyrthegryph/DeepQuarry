@@ -93,7 +93,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 /obj/machinery/holoposter/proc/poster_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(has_stat(NOPOWER))
 		return
 	icon_state = choice

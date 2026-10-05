@@ -3970,11 +3970,11 @@
 	into += entry_line(132)
 	into += list(global.owns_many(nameof(middleware), /datum/preference_middleware))
 
-/// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:32
+/// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:30
 /datum/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/prompts.dm", 32, /datum/prompt)
-	into += entry_line(33)
+	into += entry_block("code/engine/parts/prompts.dm", 30, /datum/prompt)
+	into += entry_line(31)
 	into += list(global.ref_one(nameof(window), /datum))
 
 /// CAPABILITIES(/datum/prompt/checklist/card_game_review) at code/modules/games/cards.dm:865

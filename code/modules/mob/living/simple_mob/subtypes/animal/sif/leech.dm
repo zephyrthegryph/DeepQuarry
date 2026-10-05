@@ -250,7 +250,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 /mob/living/simple_mob/animal/sif/leech/proc/infest_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	infest_target_chosen(A.request.answerer, A.answer.answer_value)
+	infest_target_chosen(A.request.answerer, A.answer.value)
 
 /mob/living/simple_mob/animal/sif/leech/proc/infest_target_chosen(mob/living/user, mob/living/carbon/M)
 	if(!M || host) return
@@ -375,7 +375,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 /mob/living/simple_mob/animal/sif/leech/proc/poison_inject_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	poison_inject(A.request.answerer, A.answer.answer_value)
+	poison_inject(A.request.answerer, A.answer.value)
 
 /mob/living/simple_mob/animal/sif/leech/proc/poison_inject(mob/living/user, mob/living/carbon/L)
 	if(!L || !Adjacent(L) || stat)
@@ -418,7 +418,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 /mob/living/simple_mob/animal/sif/leech/proc/meds_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/chem = A.answer.answer_value
+	var/chem = A.answer.value
 	if(chemicals > 50 && !docile)
 		inject_meds(chem)
 
@@ -464,10 +464,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 /mob/living/simple_mob/animal/sif/leech/proc/feed_organ_chosen(datum/act/request/A)
 	if(!A.answer)
 		var/datum/request/R = A.request
-		if(R.outcome == REQ_CANCELLED && isnull(R.answer_value))
+		if(R.outcome == REQ_CANCELLED && isnull(R.value))
 			to_chat(src, span_alien("We decide not to feed."))
 		return
-	var/obj/item/organ/internal/target = A.answer.answer_value
+	var/obj/item/organ/internal/target = A.answer.value
 	if(QDELETED(target))
 		return
 	if(host && target.owner == host && !docile && COOLDOWN_FINISHED(src, feeding_cooldown))

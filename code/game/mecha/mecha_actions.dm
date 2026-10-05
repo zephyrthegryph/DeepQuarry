@@ -372,7 +372,7 @@
 /obj/mecha/proc/melee_damtype_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_damtype = A.answer.answer_value
+	var/new_damtype = A.answer.value
 	switch(new_damtype)
 		if("Brute")
 			melee_injury_kind = INJURY_BLUNT

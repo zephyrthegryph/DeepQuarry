@@ -430,25 +430,25 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	var/track_title
 
 /obj/machinery/media/jukebox/ghost/proc/url_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
-	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(title_entered), answerer = A.request.answerer, title = "Track Title", question = "REQUIRED: Provide title for track", rights = R_FUN|R_ADMIN, track_url = A.answer.answer_value, timeout = 0)
+	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(title_entered), answerer = A.request.answerer, title = "Track Title", question = "REQUIRED: Provide title for track", rights = R_FUN|R_ADMIN, track_url = A.answer.value, timeout = 0)
 
 /obj/machinery/media/jukebox/ghost/proc/title_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/text/jukebox_track/R = A.request
-	open_request(src, /datum/prompt/number/jukebox_track, PROC_REF(duration_entered), answerer = R.answerer, title = "Track Duration", question = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", rights = R_FUN|R_ADMIN, track_url = R.track_url, track_title = A.answer.answer_value, timeout = 0)
+	open_request(src, /datum/prompt/number/jukebox_track, PROC_REF(duration_entered), answerer = R.answerer, title = "Track Duration", question = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", rights = R_FUN|R_ADMIN, track_url = R.track_url, track_title = A.answer.value, timeout = 0)
 
 /obj/machinery/media/jukebox/ghost/proc/duration_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/number/jukebox_track/R = A.request
-	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(artist_entered), answerer = R.answerer, title = "Track Artist", question = "Optional: Provide artist for track", rights = R_FUN|R_ADMIN, track_url = R.track_url, track_title = R.track_title, track_duration = A.answer.answer_value, timeout = 0)
+	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(artist_entered), answerer = R.answerer, title = "Track Artist", question = "Optional: Provide artist for track", rights = R_FUN|R_ADMIN, track_url = R.track_url, track_title = R.track_title, track_duration = A.answer.value, timeout = 0)
 
 /obj/machinery/media/jukebox/ghost/proc/artist_entered(datum/act/request/A)
 	var/datum/prompt/text/jukebox_track/R = A.request
-	var/artist = A.answer ? A.answer.answer_value : ""
+	var/artist = A.answer ? A.answer.value : ""
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
 	rel_add(src, nameof(custom_tracks), new /datum/track(R.track_url, R.track_title, R.track_duration, artist, genre))
@@ -463,7 +463,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/track = A.answer.answer_value
+	var/track = A.answer.value
 	var/client/C = user.client
 	if(!track)
 		return

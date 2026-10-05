@@ -390,9 +390,9 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	if(QDELETED(owner) || QDELETED(answerer) || (tool_expected && QDELETED(subject)))
 		return "gone"
 	var/obj/machinery/conveyor/device = owner
-	if(!isnull(answer_value) && !device.panel_open)
+	if(!isnull(value) && !device.panel_open)
 		return "panel closed"
-	if(!isnull(answer_value) && !answer_value)
+	if(!isnull(value) && !value)
 		return "no input"
 	return null
 
@@ -405,26 +405,26 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	if(QDELETED(owner) || QDELETED(answerer) || (tool_expected && QDELETED(subject)))
 		return "gone"
 	var/obj/machinery/conveyor_switch/device = owner
-	if(!isnull(answer_value) && !device.panel_open)
+	if(!isnull(value) && !device.panel_open)
 		return "panel closed"
-	if(!isnull(answer_value) && !answer_value)
+	if(!isnull(value) && !value)
 		return "no input"
 	return null
 
 /obj/machinery/conveyor/proc/conveyor_id_answered(datum/act/request/A)
-	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+	if(isnull(A.request.value) || A.request.last_error == "gone")
 		return
 	if(A.answer)
-		keyed_set_id(src, nameof(id), A.answer.answer_value)
+		keyed_set_id(src, nameof(id), A.answer.value)
 	else if(A.request.last_error == "no input")
 		to_chat(A.request.answerer, "No input found. Please hang up and try your call again.")
 	SStgui.update_uis(src)
 
 /obj/machinery/conveyor_switch/proc/conveyor_switch_id_answered(datum/act/request/A)
-	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+	if(isnull(A.request.value) || A.request.last_error == "gone")
 		return
 	if(A.answer)
-		keyed_set_id(src, nameof(id), A.answer.answer_value)
+		keyed_set_id(src, nameof(id), A.answer.value)
 	else if(A.request.last_error == "no input")
 		to_chat(A.request.answerer, "No input found. Please hang up and try your call again.")
 	SStgui.update_uis(src)

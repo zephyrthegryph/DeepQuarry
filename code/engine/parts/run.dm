@@ -564,12 +564,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!resume_act())
 		return cancel(/datum/msg/op/target_gone)
 	var/datum/act/op/A = act
-	if(istype(R, /datum/prompt))
-		var/datum/prompt/PR = R
-		PR.value = R.answer_value // the uniform answer field every prompt kind reads
 	// A confirms() answered "no" ends the op and nothing is spent.
 	var/datum/entry/part/asks/Q = oplan.steps[cursor - 1]
-	if(Q.args["confirms"] && !R.answer_value)
+	if(Q.args["confirms"] && !R.value)
 		suspend_act()
 		return cancel(/datum/msg/op/answer_no)
 	A.request = R // ALLOW(ownership): a pooled transient: reset on release

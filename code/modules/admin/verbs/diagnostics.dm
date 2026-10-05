@@ -80,7 +80,7 @@ ADMIN_VERB(print_jobban_old_filter, R_ADMIN|R_MOD, "Search Jobban Log", "This se
 
 /datum/admin_verb/print_jobban_old_filter/proc/show_filtered_jobbans(datum/act/request/A)
 	var/client/user = A.request.answerer.client
-	var/job_filter = A.request.answer_value
+	var/job_filter = A.request.value
 	if(!job_filter)
 		return
 

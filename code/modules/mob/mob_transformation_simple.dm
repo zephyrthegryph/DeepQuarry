@@ -35,8 +35,8 @@ CAPABILITIES(/datum/prompt/text/mob_type)
 
 /mob/proc/mob_type_apply(datum/act/request/A)
 	var/datum/prompt/text/mob_type/ask = A.answer
-	if(ask.answer_value)
-		change_mob_type(ask.answer_value, ask.location, ask.new_name, ask.delete_old_mob, ask.subspecies)
+	if(ask.value)
+		change_mob_type(ask.value, ask.location, ask.new_name, ask.delete_old_mob, ask.subspecies)
 
 /mob/proc/change_mob_type(new_type = null, turf/location = null, new_name = null as text, delete_old_mob = 0 as num, subspecies)
 

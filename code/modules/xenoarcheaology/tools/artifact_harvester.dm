@@ -290,9 +290,9 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	timeout = 0
 
 /datum/prompt/choice/artifact_harvest_effect/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	var/datum/artifact_effect/selected_effect = answer_value
+	var/datum/artifact_effect/selected_effect = value
 	if(!istype(selected_effect) || QDELETED(selected_effect))
 		return "gone"
 
@@ -303,7 +303,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	SStgui.update_uis(src)
 
 /obj/machinery/artifact_harvester/proc/harvest_effect_apply(datum/act/request/A)
-	return harvest_stage(A.request.answerer, A.request.answer_value, TRUE)
+	return harvest_stage(A.request.answerer, A.request.value, TRUE)
 
 /// Charges or dumps a battery while harvesting (started from its UI); otherwise it sleeps.
 /obj/machinery/artifact_harvester/machine_step()

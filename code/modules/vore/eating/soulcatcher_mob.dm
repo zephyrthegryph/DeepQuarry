@@ -296,7 +296,7 @@
 
 /mob/proc/gem_say_apply(datum/act/request/A)
 	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
-	return gem_say_stage(ask.answer_value, TRUE)
+	return gem_say_stage(ask.value, TRUE)
 
 /mob/proc/gem_emote_answered(datum/act/request/A)
 	if(!A.answer)
@@ -306,7 +306,7 @@
 
 /mob/proc/gem_emote_apply(datum/act/request/A)
 	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
-	return gem_emote_stage(ask.answer_value, TRUE)
+	return gem_emote_stage(ask.value, TRUE)
 
 /mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_say_answered(datum/act/request/A)
 	if(!A.answer)
@@ -316,7 +316,7 @@
 
 /mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_say_apply(datum/act/request/A)
 	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
-	return gem_brain_say_stage(ask.answer_value, TRUE)
+	return gem_brain_say_stage(ask.value, TRUE)
 
 /mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_emote_answered(datum/act/request/A)
 	if(!A.answer)
@@ -326,7 +326,7 @@
 
 /mob/living/carbon/brain/caught_soul/vore/proc/gem_brain_emote_apply(datum/act/request/A)
 	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
-	return gem_brain_emote_stage(ask.answer_value, TRUE)
+	return gem_brain_emote_stage(ask.value, TRUE)
 
 /mob/living/carbon/brain/caught_soul/vore/proc/soul_transfer_answered(datum/act/request/A)
 	if(!A.answer)
@@ -336,13 +336,13 @@
 
 /mob/living/carbon/brain/caught_soul/vore/proc/soul_transfer_apply(datum/act/request/A)
 	var/datum/prompt/choice/soulcatcher_transfer/ask = A.answer
-	return soul_transfer_stage(ask.answer_value, TRUE)
+	return soul_transfer_stage(ask.value, TRUE)
 
 /datum/prompt/choice/soulcatcher_transfer
 	timeout = 0
 
 /datum/prompt/choice/soulcatcher_transfer/recheck_extra()
-	if(!isnull(answer_value))
-		var/obj/selected = answer_value
+	if(!isnull(value))
+		var/obj/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"

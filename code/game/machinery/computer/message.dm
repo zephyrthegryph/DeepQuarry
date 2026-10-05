@@ -409,7 +409,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/server_selected(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/obj/machinery/message_server/server = server_choices()[A.answer.answer_value]
+	var/obj/machinery/message_server/server = server_choices()[A.answer.value]
 	if(!server)
 		return
 	rel_set(src, nameof(linkedServer), server)
@@ -418,7 +418,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/current_key_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/dkey = trim(A.answer.answer_value)
+	var/dkey = trim(A.answer.value)
 	if(!dkey || !linkedServer())
 		return
 	if(linkedServer().decryptkey != dkey)
@@ -429,7 +429,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/new_key_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/newkey = trim(A.answer.answer_value)
+	var/newkey = trim(A.answer.value)
 	if(!linkedServer())
 		return
 	if(length(newkey) <= 3)
@@ -442,7 +442,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 
 /obj/machinery/computer/message_monitor/proc/token_entered(datum/act/request/A)
 	if(A.answer && linkedServer())
-		linkedServer().spamfilter += A.answer.answer_value
+		linkedServer().spamfilter += A.answer.value
 
 /obj/machinery/computer/message_monitor/proc/set_temp(text = "", style = "info", update_now = FALSE)
 	temp = list(text = text, style = style)

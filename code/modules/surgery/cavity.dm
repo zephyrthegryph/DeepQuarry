@@ -205,7 +205,7 @@ CAPABILITIES(/datum/prompt/choice/extract_foreign_body)
 	. = ..()
 	if(.)
 		return
-	var/atom/movable/selected = answer_value
+	var/atom/movable/selected = value
 	if(QDELETED(subject) || QDELETED(part) || QDELETED(tool) || !istype(selected) || QDELETED(selected) || !(selected in part.implants) || part.owner != subject || answerer.get_active_hand() != tool)
 		return "lost the grip"
 	return null
@@ -213,14 +213,14 @@ CAPABILITIES(/datum/prompt/choice/extract_foreign_body)
 /datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(datum/act/request/A)
 	var/datum/prompt/choice/extract_foreign_body/ask = A.request
 	if(!A.answer)
-		if(!isnull(ask.answer_value) && !QDELETED(ask.answerer) && !QDELETED(ask.tool) && !QDELETED(ask.subject) && !QDELETED(ask.part))
+		if(!isnull(ask.value) && !QDELETED(ask.answerer) && !QDELETED(ask.tool) && !QDELETED(ask.subject) && !QDELETED(ask.part))
 			to_chat(ask.answerer, span_notice("You draw \the [ask.tool] back out of [ask.subject]'s [ask.part.name]."))
 		return
 	var/mob/living/user = ask.answerer
 	var/mob/living/carbon/human/target = ask.subject
 	var/obj/item/organ/external/part = ask.part
 	var/obj/item/tool = ask.tool
-	var/atom/movable/removed = ask.answer_value
+	var/atom/movable/removed = ask.value
 	var/wait = 0
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed

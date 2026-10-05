@@ -824,7 +824,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 	SStgui.update_uis(src)
 
 /datum/ticket/proc/title_entered_apply(datum/act/request/A)
-	return retitle_stage(A.request.answerer, A.request.answer_value, TRUE)
+	return retitle_stage(A.request.answerer, A.request.value, TRUE)
 
 /datum/prompt/choice/ticket_escalate
 	timeout = 0
@@ -837,4 +837,4 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 	SStgui.update_uis(src)
 
 /datum/ticket/proc/escalation_chosen_apply(datum/act/request/A)
-	return escalate_stage(A.request.answerer, A.request.answer_value, TRUE)
+	return escalate_stage(A.request.answerer, A.request.value, TRUE)

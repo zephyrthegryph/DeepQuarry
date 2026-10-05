@@ -99,7 +99,7 @@
 /mob/living/silicon/ai/proc/malf_encryption_hack_titled(datum/act/request/context)
 	if(!context.answer)
 		return
-	open_request(src, /datum/prompt/text/malf_encryption_message, PROC_REF(malf_encryption_hack_written), answerer = src, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), question = "Select message text: ", message_title = context.answer.answer_value, costs = list("[RES_CPU]" = 75))
+	open_request(src, /datum/prompt/text/malf_encryption_message, PROC_REF(malf_encryption_hack_written), answerer = src, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), question = "Select message text: ", message_title = context.answer.value, costs = list("[RES_CPU]" = 75))
 
 /mob/living/silicon/ai/proc/malf_encryption_hack_written(datum/act/request/context)
 	if(!context.answer)
@@ -107,7 +107,7 @@
 	var/datum/prompt/text/malf_encryption_message/ask = context.answer
 	var/mob/living/silicon/ai/user = src
 	var/title = ask.message_title
-	var/text = ask.answer_value
+	var/text = ask.value
 	if(!title || !text)
 		to_chat(user, "Hack Aborted")
 		return OP_REFUSED
@@ -139,7 +139,7 @@
 	if(!A.answer)
 		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
-	var/alert_target = A.answer.answer_value
+	var/alert_target = A.answer.value
 	if(!alert_target)
 		to_chat(user, "Hack Aborted")
 		return OP_REFUSED
@@ -161,7 +161,7 @@
 	open_request(user, /datum/prompt/choice/malf_system_override, TYPE_PROC_REF(/mob/living/silicon/ai, malf_system_override_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), costs = list("[RES_CPU]" = 500))
 
 /mob/living/silicon/ai/proc/malf_system_override_confirmed(datum/act/request/context)
-	if(!context.answer || context.answer.answer_value != "Yes")
+	if(!context.answer || context.answer.value != "Yes")
 		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
 	if(user.system_override)

@@ -52,7 +52,7 @@
 		return
 	var/datum/prompt/choice/prompt = A.answer
 	var/list/options = prompt.choices
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	icon_state = options[choice]
 	if(options[choice] == "frobe")
 		desc = "A painted holy figure of a plain looking human woman in a robe."
@@ -130,7 +130,7 @@
 	if(!A.answer)
 		return
 	var/mob/M = A.request.answerer
-	var/input = A.answer.answer_value
+	var/input = A.answer.value
 	if(input)
 		name = "icon of " + input
 		to_chat(M, "You name the figure. Glory to [input]!.")

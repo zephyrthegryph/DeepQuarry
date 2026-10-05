@@ -226,7 +226,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	return istype(M) && Adjacent(M)
 
 /obj/item/canvas/proc/ask_base_color(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	open_request(src, /datum/prompt/color, PROC_REF(base_color_chosen), valid = PROC_REF(canvas_near), answerer = A.request.answerer, subject = A.request.subject, ask_flags = ASK_HELD | ASK_CAPABLE, title = "Base Color", question = "Select a base color for the canvas:", default = canvas_color, timeout = 0)
 
@@ -234,7 +234,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	var/basecolor = A.answer.answer_value
+	var/basecolor = A.answer.value
 	if(basecolor)
 		canvas_color = basecolor
 		reset_grid()
@@ -247,7 +247,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 /obj/item/canvas/proc/renamed(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_name = A.answer.answer_value
+	var/new_name = A.answer.value
 	if(new_name != painting_name && new_name)
 		painting_name = new_name
 		SStgui.update_uis(src)
@@ -360,7 +360,7 @@ CAPABILITIES(/datum/prompt/color/paint_palette)
 	if(!A.answer)
 		return
 	var/datum/prompt/color/paint_palette/C = A.request
-	C.brush?.update_paint(A.answer.answer_value)
+	C.brush?.update_paint(A.answer.value)
 
 /obj/item/frame/painting
 	name = "painting frame"
@@ -646,17 +646,17 @@ CAPABILITIES(/datum/prompt/color/paint_palette)
 	return paintings
 
 /obj/structure/sign/painting/proc/lateload_list_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	open_request(src, /datum/prompt/choice, PROC_REF(lateload_picked), answerer = A.request.answerer, rights = R_HOLDER, choices = assoc_to_keys(lateload_choices()), title = "Spawn painting", question = "Choose which painting to spawn!", timeout = 0)
 
 /obj/structure/sign/painting/proc/lateload_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	admin_lateload_painting(1, lateload_choices()[A.answer.answer_value])
+	admin_lateload_painting(1, lateload_choices()[A.answer.value])
 
 /obj/structure/sign/painting/proc/lateload_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/painting_lateload/R = A.request
 	var/which_painting = R.which

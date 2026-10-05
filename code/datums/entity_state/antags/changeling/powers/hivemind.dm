@@ -103,7 +103,7 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 /mob/proc/changeling_hiveupload_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	changeling_hiveupload_review(TRUE, context.answer.answer_value)
+	changeling_hiveupload_review(TRUE, context.answer.value)
 	if(!QDELETED(src))
 		SStgui.update_uis(src)
 
@@ -111,6 +111,6 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 /mob/proc/changeling_hivedownload_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	changeling_hivedownload_review(TRUE, context.answer.answer_value)
+	changeling_hivedownload_review(TRUE, context.answer.value)
 	if(!QDELETED(src))
 		SStgui.update_uis(src)

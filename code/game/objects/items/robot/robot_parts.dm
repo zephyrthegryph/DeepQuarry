@@ -95,8 +95,8 @@
 /obj/item/robot_parts/robot_suit/proc/robot_named(datum/act/request/A)
 	if(!A.answer)
 		return
-	if (A.answer.answer_value)
-		src.created_name = A.answer.answer_value
+	if (A.answer.value)
+		src.created_name = A.answer.value
 
 DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

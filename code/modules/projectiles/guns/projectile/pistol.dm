@@ -572,7 +572,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/m2024, "{initial(icon_state)}{ammo_
 
 /obj/item/gun/projectile/colt/detective/proc/detective_pistol_name_apply(datum/act/request/context)
 	var/datum/prompt/text/weapon_setting_review/ask = context.answer
-	return detective_pistol_name_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)
+	return detective_pistol_name_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.value, TRUE)
 
 /obj/item/gun/projectile/colt/detective/proc/detective_pistol_skin_answered(datum/act/request/context)
 	if(!context.answer)
@@ -582,7 +582,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/m2024, "{initial(icon_state)}{ammo_
 
 /obj/item/gun/projectile/colt/detective/proc/detective_pistol_skin_apply(datum/act/request/context)
 	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
-	return detective_pistol_skin_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.answer_value, TRUE)
+	return detective_pistol_skin_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.value, TRUE)
 
 /datum/prompt/text/weapon_setting_review
 	timeout = 0
@@ -655,7 +655,7 @@ CAPABILITIES(/datum/prompt/choice/weapon_setting_review)
 /datum/prompt/choice/weapon_setting_review/recheck_extra()
 	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)) || (settings_interaction_expected && QDELETED(settings_interaction)))
 		return "gone"
-	if(!isnull(answer_value) && isdatum(answer_value))
-		var/datum/selected = answer_value
+	if(!isnull(value) && isdatum(value))
+		var/datum/selected = value
 		if(QDELETED(selected))
 			return "gone"

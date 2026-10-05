@@ -99,7 +99,7 @@
 /mob/living/proc/succumb_ask_again(datum/act/request/A)
 	var/datum/prompt/choice/succumb/ask = A.request
 	if(!A.answer || ask.value != "Yes")
-		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 			to_chat(src, span_blue("You chose to live another day."))
 		return
 	//Swapped answers to protect from accidental double clicks.
@@ -108,7 +108,7 @@
 /mob/living/proc/succumb_answered(datum/act/request/A)
 	var/datum/prompt/choice/succumb/ask = A.request
 	if(!A.answer || ask.value != "Yes")
-		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 			to_chat(src, span_blue("You chose to live another day."))
 		return
 	if (is_critical() && stat != DEAD)
@@ -1218,7 +1218,7 @@ SETTER(/mob/living, nutrition)
 /mob/living/proc/custom_say_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Say")
 			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Say", question = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
 		if("Whisper")
@@ -1298,7 +1298,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/metainfo_entered(datum/act/request/A)
 	var/datum/prompt/text/metainfo/ask = A.request
 	if(!A.answer)
-		if(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value))
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.value))
 			metainfo_skipped(ask)
 		return
 	var/field = ask.field
@@ -1393,7 +1393,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/custom_link_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_link = strip_html_simple(A.answer.answer_value)
+	var/new_link = strip_html_simple(A.answer.value)
 	if(new_link && CanUseTopic(src))
 		if(length(new_link) > 100)
 			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
@@ -1424,7 +1424,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/voice_freq_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	apply_voice_freq(A.answer.answer_value)
+	apply_voice_freq(A.answer.value)
 
 /mob/living/proc/apply_voice_freq(choice)
 	if(choice == 0)
@@ -1451,10 +1451,10 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/voice_type_chosen(datum/act/request/A)
 	if(!A.answer)
 		var/datum/request/R = A.request
-		if(R.outcome == REQ_CANCELLED && isnull(R.answer_value))
+		if(R.outcome == REQ_CANCELLED && isnull(R.value))
 			voice_sounds_list = DEFAULT_TALK_SOUNDS
 		return
-	voice_sounds_list = get_talk_sound(A.answer.answer_value)
+	voice_sounds_list = get_talk_sound(A.answer.value)
 
 /mob/living/proc/save_private_notes(mob/user)
 	if(user != src)
@@ -1481,7 +1481,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/new_metadata = A.answer.answer_value
+	var/new_metadata = A.answer.value
 	if(new_metadata && CanUseTopic(src))
 		private_notes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)

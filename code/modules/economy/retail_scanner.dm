@@ -574,8 +574,8 @@ DECLARE_EMAG(/obj/item/retail_scanner, PROC_REF(on_emag), null, null)
 	var/datum/request/ask = A.answer
 	if(istype(ask, /datum/prompt/number/service_checkout_pin))
 		var/datum/prompt/number/service_checkout_pin/pin = ask
-		pin.answers[pin.answer_key] = pin.answer_value
+		pin.answers[pin.answer_key] = pin.value
 		return scan_card_stage(pin.payer_card, pin.card_holder, pin.operator, pin.answers)
 	var/datum/prompt/choice/service_checkout_tip/tip = ask
-	tip.answers[tip.answer_key] = tip.answer_value
+	tip.answers[tip.answer_key] = tip.value
 	return scan_card_stage(tip.payer_card, tip.card_holder, tip.operator, tip.answers)

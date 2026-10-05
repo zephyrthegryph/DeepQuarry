@@ -15,7 +15,7 @@
 /mob/living/proc/default_language_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	apply_default_language(A.answer.answer_value)
+	apply_default_language(A.answer.value)
 
 // Silicons can't neccessarily speak everything in their languages list
 /mob/living/silicon/set_default_language()

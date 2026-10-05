@@ -71,7 +71,7 @@ CAPABILITIES(/datum/prompt/choice/shuttle_authorization)
 	var/datum/prompt/choice/shuttle_authorization/ask = A.request
 	var/obj/item/card/id/W = ask.card
 	var/mob/user = ask.answerer
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("Authorize")
 			src.authorized -= W:registered_name
 			src.authorized += W:registered_name
@@ -112,7 +112,7 @@ CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch)
 	return istype(user) && ask.card?.loc == user && !user.incapacitated()
 
 /obj/machinery/computer/shuttle/proc/emag_launch_chosen(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	if(!emagged && !SSemergency_shuttle.location())
 		to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))

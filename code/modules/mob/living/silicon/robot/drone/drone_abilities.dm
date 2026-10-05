@@ -16,7 +16,7 @@
 	return TRUE
 
 /mob/living/silicon/robot/drone/proc/mail_tag_chosen(datum/act/request/A)
-	var/new_tag = A.answer ? A.answer.answer_value : ""
+	var/new_tag = A.answer ? A.answer.value : ""
 	if(!new_tag)
 		mail_destination = ""
 		return

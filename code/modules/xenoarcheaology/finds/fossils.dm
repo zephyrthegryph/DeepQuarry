@@ -94,7 +94,7 @@ DECLARE_INTERACTIONS(/obj/skeleton, INTERACT_ITEM(null, PROC_REF(interaction_ske
 		return
 	var/datum/prompt/text/skeleton_plaque/request = context.request
 	var/mob/user = request.answerer
-	plaque_contents = request.answer_value
+	plaque_contents = request.value
 	act_message(user, src, MSG_SELF("You relabel the plaque on the base of [icon2html(src,viewers(src))] %T%."), \
 		MSG_OTHERS("%U% writes something on the base of %T%."))
 	if(src.contents.Find(/obj/item/fossil/skull/horned))

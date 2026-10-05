@@ -127,7 +127,7 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/medical_stand_attach/R = A.request
-	attach_action(R.answerer, A.answer.answer_value, R.patient)
+	attach_action(R.answerer, A.answer.value, R.patient)
 
 /obj/structure/medical_stand/proc/attach_action(mob/user, action_type, mob/living/carbon/human/target)
 	if(!user || user.stat == DEAD || !CanMouseDrop(target, user))
@@ -229,7 +229,7 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 /obj/structure/medical_stand/proc/stand_action_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	stand_action(A.request.answerer, A.answer.answer_value)
+	stand_action(A.request.answerer, A.answer.value)
 
 /obj/structure/medical_stand/proc/stand_action(mob/user, action_type)
 	switch (action_type)
@@ -290,7 +290,7 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 /obj/structure/medical_stand/proc/transfer_amount_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/N = A.answer.answer_value
+	var/N = A.answer.value
 	if(N)
 		transfer_amount = N
 

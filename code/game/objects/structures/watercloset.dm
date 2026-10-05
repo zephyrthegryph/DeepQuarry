@@ -77,7 +77,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	if(!A.answer.answer_value || !teleplumb_crystal || !cistern)
+	if(!A.answer.value || !teleplumb_crystal || !cistern)
 		to_chat(user, span_notice("You decide to leave it."))
 		return
 	user.put_in_hands(teleplumb_crystal)
@@ -627,7 +627,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shower, MACHINE_PIPELINE, "on")
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/newtemp = A.answer.answer_value
+	var/newtemp = A.answer.value
 	to_chat(user, span_notice("You begin to adjust the temperature..."))
 	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
 	handle_mist()
@@ -1356,7 +1356,7 @@ CAPABILITIES(/obj/structure/toilet/item)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/atom/movable/choice = A.answer.answer_value
+	var/atom/movable/choice = A.answer.value
 	if(choice.loc == src)
 		if(!user.canmove)
 			return

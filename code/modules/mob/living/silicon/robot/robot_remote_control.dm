@@ -50,7 +50,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	if(!A.answer)
 		to_chat(src, span_notice("Deployment aborted."))
 		return
-	transfer_shell(A.answer.answer_value, TRUE)
+	transfer_shell(A.answer.value, TRUE)
 
 /mob/living/silicon/robot/proc/transfer_shell(mob/living/silicon/robot/target, picked = FALSE)
 	var/mob/living/silicon/ai/AI = mainframe
