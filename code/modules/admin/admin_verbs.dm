@@ -428,10 +428,18 @@ CAPABILITIES(/datum/prompt/number/admin_body_effect)
 	return box
 
 ADMIN_VERB_AND_CONTEXT_MENU(make_sound, R_FUN, "Make Sound", "Display a message to everyone who can hear the target.", ADMIN_CATEGORY_FUN_SOUNDS, obj/target_object in world)
+	return sound_message_stage(user, target_object, list())
+
+/datum/admin_verb/make_sound/proc/sound_message_stage(client/user, obj/target_object, list/sound_answers)
 	if(!target_object)
 		return
 
-	var/message = verb_ask(user, "a10", args, /datum/om/prompt/text, message = "What do you want the message to be?", title = "Make Sound")
+	if(!("a10" in sound_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/text/admin_sound_message, PROC_REF(sound_message_answered), answerer = user.mob, subject = target_object)
+		return
+	var/message = sound_answers["a10"]
 	if(isnull(message))
 		return
 	if(!message)
@@ -1207,3 +1215,42 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	return job_slot_stage(user, list("a16" = context.answer.answer_value))
+
+/datum/prompt/text/admin_sound_message
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_FUN
+	question = "What do you want the message to be?"
+	title = "Make Sound"
+
+/datum/prompt/text/admin_sound_message/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+	var/obj/target_object = subject
+	if(!istype(target_object) || QDELETED(target_object))
+		return "gone"
+
+/datum/prompt/text/admin_sound_message/normalize(given)
+	return istext(given) ? given : null
+
+/proc/sound_message_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/make_sound/proc/sound_message_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(sound_message_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/obj/target_object = context.request.subject
+	return sound_message_stage(user, target_object, list("a10" = context.answer.answer_value))
