@@ -281,29 +281,16 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 	if (!li)
 		to_chat(user, span_danger("No active account on the console!"))
 		return
-	var/b = SSsupply.budget_balance()
+	SSsupply.budget_balance()
 	var/avail = LAZYACCESS(S.shareholders, logged_in)
 	if (!avail)
 		to_chat(user, span_danger("This account does not own any shares of [S.name]!"))
 		return
 	var/price = S.current_value
-	var/_answer_k289 = rerun_ask(user, "k289", PROC_REF(sell_some_shares), args, /datum/om/prompt/number, message = "How many shares? \n(Have: [avail], unit price: [price])", title = "Sell shares in [S.name]", default = 0)
-	if(isnull(_answer_k289))
-		return
-	var/amt = round(_answer_k289)
-	amt = min(amt, LAZYACCESS(S.shareholders, logged_in))
+	open_request(S, /datum/prompt/number/stock_sell, TYPE_PROC_REF(/datum/stock, sell_shares_answered), answerer = user, subject = src, question = "How many shares? \n(Have: [avail], unit price: [price])", title = "Sell shares in [S.name]", default = 0)
 
-	if (!user || (!(user in range(1, src)) && iscarbon(user)))
-		return
-	if (!amt)
-		return
-	if (li != logged_in)
-		return
-	b = SSsupply.budget_balance()
-	if (!isnum(b))
-		to_chat(user, span_danger("No active account on the console!"))
-		return
-
+/obj/machinery/computer/stockexchange/proc/sell_shares_apply(datum/stock/S, mob/user, amount)
+	var/amt = min(round(amount), LAZYACCESS(S.shareholders, logged_in))
 	var/total = amt * S.current_value
 	if (!S.sellShares(logged_in, amt))
 		to_chat(user, span_danger("Could not complete transaction."))
@@ -325,22 +312,10 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 	var/avail = S.available_shares
 	var/price = S.current_value
 	var/canbuy = round(b / price)
-	var/_answer_k324 = rerun_ask(user, "k324", PROC_REF(buy_some_shares), args, /datum/om/prompt/number, message = "How many shares? \n(Available: [avail], unit price: [price], can buy: [canbuy])", title = "Buy shares in [S.name]", default = 0)
-	if(isnull(_answer_k324))
-		return
-	var/amt = round(_answer_k324)
-	if (!user || (!(user in range(1, src)) && iscarbon(user)))
-		return
-	if (li != logged_in)
-		return
-	b = balance()
-	if (!isnum(b))
-		to_chat(user, span_danger("No active account on the console!"))
-		return
+	open_request(S, /datum/prompt/number/stock_buy, TYPE_PROC_REF(/datum/stock, buy_shares_answered), answerer = user, subject = src, question = "How many shares? \n(Available: [avail], unit price: [price], can buy: [canbuy])", title = "Buy shares in [S.name]", default = 0)
 
-	amt = min(amt, S.available_shares, round(b / S.current_value))
-	if (!amt)
-		return
+/obj/machinery/computer/stockexchange/proc/buy_shares_apply(datum/stock/S, mob/user, amount)
+	var/amt = min(round(amount), S.available_shares, round(balance() / S.current_value))
 	if (!S.buyShares(logged_in, amt))
 		to_chat(user, span_danger("Could not complete transaction."))
 		return
@@ -359,3 +334,68 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 /// the current_stock this refers to (a relation view: null once it is deleted).
 /obj/machinery/computer/stockexchange/proc/current_stock() as /datum/stock
 	return current_stock
+
+/datum/prompt/number/stock_sell
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/stock_sell/recheck_extra()
+	if(QDELETED(owner) || QDELETED(subject) || QDELETED(answerer))
+		return "gone"
+	var/datum/stock/S = owner
+	var/obj/machinery/computer/stockexchange/console = subject
+	if(!console.logged_in)
+		return "No active account on the console!"
+	if(!LAZYACCESS(S.shareholders, console.logged_in))
+		return "This account does not own any shares of [S.name]!"
+	if(isnull(answer_value))
+		return null
+	var/amt = min(round(answer_value), LAZYACCESS(S.shareholders, console.logged_in))
+	if((!(answerer in range(1, console)) && iscarbon(answerer)) || !amt)
+		return "silent"
+	if(!isnum(SSsupply.budget_balance()))
+		return "No active account on the console!"
+
+/datum/stock/proc/sell_shares_answered(datum/act/request/A)
+	var/datum/prompt/number/stock_sell/request = A.request
+	var/obj/machinery/computer/stockexchange/console = request.subject
+	if(QDELETED(console) || QDELETED(request.answerer) || isnull(request.answer_value))
+		return
+	if(A.answer)
+		console.sell_shares_apply(src, request.answerer, request.answer_value)
+	else if(request.last_error && !(request.last_error in list("gone", "silent")))
+		to_chat(request.answerer, span_danger(request.last_error))
+	SStgui.update_uis(console)
+
+/datum/prompt/number/stock_buy
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/stock_buy/recheck_extra()
+	if(QDELETED(owner) || QDELETED(subject) || QDELETED(answerer))
+		return "gone"
+	var/datum/stock/S = owner
+	var/obj/machinery/computer/stockexchange/console = subject
+	if(!console.logged_in)
+		return "No active account on the console!"
+	if(!isnum(console.balance()))
+		return "No active account on the console!"
+	if(isnull(answer_value))
+		return null
+	if(!(answerer in range(1, console)) && iscarbon(answerer))
+		return "silent"
+	if(!isnum(console.balance()))
+		return "No active account on the console!"
+	if(!min(round(answer_value), S.available_shares, round(console.balance() / S.current_value)))
+		return "silent"
+
+/datum/stock/proc/buy_shares_answered(datum/act/request/A)
+	var/datum/prompt/number/stock_buy/request = A.request
+	var/obj/machinery/computer/stockexchange/console = request.subject
+	if(QDELETED(console) || QDELETED(request.answerer) || isnull(request.answer_value))
+		return
+	if(A.answer)
+		console.buy_shares_apply(src, request.answerer, request.answer_value)
+	else if(request.last_error && !(request.last_error in list("gone", "silent")))
+		to_chat(request.answerer, span_danger(request.last_error))
+	SStgui.update_uis(console)
