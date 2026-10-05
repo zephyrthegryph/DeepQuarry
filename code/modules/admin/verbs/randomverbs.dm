@@ -27,7 +27,7 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 	if(!length(GLOB.prisonwarp))
 		return
 	if(ismob(target_mob))
-		if(isAI(target_mob)) // ALLOW(silicon_entry): selects AI target retirement and empty core creation after admin confirmation
+		if(isAI(target_mob))
 			tgui_alert_async(user, "The AI can't be sent to prison you jerk!")
 			return
 		//strip their stuff before they teleport into a cell :downs:
