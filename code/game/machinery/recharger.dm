@@ -213,7 +213,7 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 	act_message(user, src, MSG_SELF("You insert [G] into %T%."), MSG_OTHERS("%U% inserts [G] into %T%."))
 	return OP_OK
 
-/// The empty hand takes the device out. A cyborg beside it sets the device down on the recharger's tile instead of holding it.
+/// The empty hand takes the device out. A cyborg takes it with its gripper.
 /obj/machinery/recharger/proc/take_device(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/device = charging
@@ -222,11 +222,7 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF("You remove [device] from %T%."), MSG_OTHERS("%U% removes [device] from %T%."))
 	device.update_icon()
-	if(isrobot(user))
-		varslot_set(src, nameof(charging), null)
-		device.forceMove(loc)
-		return OP_OK
-	varslot_take(src, nameof(charging), user)
+	varslot_take(src, nameof(charging), user, op_carrier(A)) // a cyborg's gripper carries it
 	return OP_OK
 
 // ---- the charge loop ----

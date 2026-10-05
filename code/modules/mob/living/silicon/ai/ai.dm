@@ -106,7 +106,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 CAPABILITIES(/mob/living/silicon/ai)
 	owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	ref_many(nameof(multicam_screens))
-	provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS)
+	remote_interface()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast))))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_shell_disconnect)))
 	owns_one(nameof(aiCommunicator), /obj/item/communicator)
@@ -973,7 +973,7 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 	if(!door || !target)
 		return
 	if(A.answer.answer_value && !check_unable(AI_CHECK_WIRELESS))
-		door.silicon_inspect(src)
+		perform_op(src, door, "remote_open", null, ORIGIN_MENU, AUTH_REMOTE_ACCESS)
 		to_chat(src, span_notice("You open \the [door] for [target]."))
 	else
 		to_chat(src, span_warning("You deny the request."))

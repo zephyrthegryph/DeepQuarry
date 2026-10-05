@@ -492,7 +492,15 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("speed_toggle", ui_act("speed-toggle"), then(PROC_REF(ui_speed_toggle)))
 	op("open_close", ui_act("open-close"), then(PROC_REF(ui_open_close)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_user_allowed), because = MSG(airlock/not_for_you))))
-	extend("ui_open", when(req(PROC_REF(silicon_or_ghost))))
+	extend("ui_open", inputs(remote())) // silicons only: remote() replaces the hand binding
+
+	section(remote_gestures, "A silicon's gestures on the door, over its link: shift opens or closes it, ctrl bolts it, alt electrifies it, middle switches the bolt lights")
+	op("remote_open", remote(), gesture(GESTURE_SHIFT), label("Open or close"), then(PROC_REF(ui_open_close)))
+	op("remote_bolts", remote(), gesture(GESTURE_CTRL), label("Toggle the bolts"), then(PROC_REF(ui_bolt_toggle)), logs(LOG_GAME))
+	op("remote_shock", remote(), gesture(GESTURE_ALT), label("Toggle electrification"), then(PROC_REF(remote_shock_toggle)), logs(LOG_GAME))
+	// a cyborg's middle-click cycles its modules: the lights are the AI's
+	op("remote_lights", remote(), gesture(GESTURE_MIDDLE), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the bolt lights"), then(PROC_REF(ui_light_toggle)))
+	extend(list("remote_open", "remote_bolts", "remote_shock", "remote_lights"), needs(req(PROC_REF(ui_user_allowed), because = MSG(airlock/not_for_you))))
 
 /obj/machinery/door/airlock/draw(datum/look/look)
 	..()
@@ -784,11 +792,25 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 // ---- the remote control window ----
 
-/obj/machinery/door/airlock/proc/silicon_or_ghost(datum/act/op/A)
-	return issilicon(A.actor) || isobserver(A.actor)
-
+/// Who may work the door's remote controls: a link the door lets in (remote_link_allowed(), library/mob/silicon.dm) while its AI control works, or an
+/// admin's ghost.
 /obj/machinery/door/airlock/proc/ui_user_allowed(datum/act/op/A)
-	return user_allowed(A.actor)
+	if(remote_link_allowed(A))
+		return canAIControl()
+	var/mob/observer/dead/ghost = A.actor
+	return istype(ghost) && ghost.can_admin_interact()
+
+/// A silicon's alt-click: an electrified door goes dead, a dead one is electrified until released. The one who did it sees a mark on the door.
+/obj/machinery/door/airlock/proc/remote_shock_toggle(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	electrify(electrified_until ? 0 : -1, TRUE, user)
+	if(user?.client)
+		var/turf/root_turf = get_turf(src)
+		var/image/client_only/electrify_notice/zap = new('icons/hud/screen_gen.dmi', root_turf, electrified_until ? "stamina_crit" : "stamina_dead", OBFUSCATION_LAYER, SOUTH)
+		zap.place_from_root(root_turf)
+		zap.append_client(user.client)
+	return OP_OK
 
 /obj/machinery/door/airlock/proc/ui_disrupt_main(datum/act/op/A)
 	if(main_power_lost_until)
@@ -971,20 +993,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 // ---- the remote control window (interface(), the ops with a ui_act() binding above) ----
 
-/obj/machinery/door/airlock/proc/user_allowed(mob/user)
-	var/mob/living/silicon/robot/R = user
-	if(istype(R) && !check_access(R.idcard))
-		return FALSE
-	var/allowed = (issilicon(user) && canAIControl(user))
-	if(!allowed && isobserver(user))
-		var/mob/observer/dead/D = user
-		if(D.can_admin_interact())
-			allowed = TRUE
-	return allowed
-
+/// The bolts, raised or dropped from the remote controls (the op that calls it has asked ui_user_allowed()).
 /obj/machinery/door/airlock/proc/toggle_bolt(mob/user)
-	if(!user_allowed(user))
-		return
+	add_fingerprint(user)
 	if(wire_cut(WIRE_DOOR_BOLTS))
 		to_chat(user, span_warning("The door bolt drop wire is cut - you can't toggle the door bolts."))
 		return
@@ -998,9 +1009,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		lock()
 		to_chat(user, span_warning("The door bolts have been dropped."))
 
+/// The door opened or closed from the remote controls (the op that calls it has asked ui_user_allowed()).
 /obj/machinery/door/airlock/proc/user_toggle_open(mob/user)
-	if(!user_allowed(user))
-		return
+	add_fingerprint(user)
 	if(frozen)
 		to_chat(user, span_warning("The airlock is frozen shut!"))
 	else if(weld_shut_welded(src))

@@ -14,7 +14,7 @@
 /datum/unit_test/dq_borg_ctrl_shift_click_targets_atom/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
 	var/obj/dq_test_ctrl_shift_probe/probe = allocate(/obj/dq_test_ctrl_shift_probe, test_floor())
-	probe.silicon_quick(R)
+	R.action_quick(probe)
 	TEST_ASSERT_EQUAL(probe.clicked_by, R, "borg ctrl-shift-click should call click_ctrl_shift on the target with the borg as user")
 
 /// B18: get_all_contents_type walks nested contents and keeps every match.

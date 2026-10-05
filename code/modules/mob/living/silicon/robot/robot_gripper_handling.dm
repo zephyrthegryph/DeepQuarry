@@ -196,9 +196,6 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	if(pick_up_item(target, user))
 		return
 
-	if(handle_afterattack_special(target, user))
-		return
-
 	if(item_left_gripper(wrapped))
 		clear_and_select_item()
 
@@ -269,47 +266,6 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	rel_set(src, nameof(current_pocket), selected_pocket)
 	update_ref(I)
 	return TRUE
-
-/obj/item/gripper/proc/handle_afterattack_special(atom/target, mob/living/user)
-	if(istype(target, /obj/machinery/power/apc))
-		var/obj/machinery/power/apc/A = target
-		if(!cover_is_open(A))
-			return TRUE
-
-		if(!A.cell || dq_constraint_refusal(src, CONSTRAINT_HOLD, A.cell, user))
-			return TRUE
-
-		if(!grab_cell(A.cell, user))
-			return TRUE
-
-		var/obj/item/cell/taken = own_take(A, nameof(A.cell))
-		var/datum/capability/slot/cell_slot = slot_capability(A, nameof(A.cell))
-		cell_slot?.ejected(A, taken, user)
-		A.update_icon()
-
-		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))
-
-		return TRUE
-
-	if(isrobot(target))
-		var/mob/living/silicon/robot/A = target
-		if(!A.opened)
-			return TRUE
-
-		if(!A.cell || dq_constraint_refusal(src, CONSTRAINT_HOLD, A.cell, user))
-			return TRUE
-
-		if(!grab_cell(A.cell, user))
-			return TRUE
-
-		A.remove_cell()
-		A.update_icon()
-
-		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))
-
-		return TRUE
-
-	return FALSE
 
 /// Returns the first empty gripper pocket, or null
 /obj/item/gripper/proc/find_empty_pocket()
@@ -465,16 +421,41 @@ DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overl
 				stack_to_consolidate.transfer_to(stack)
 				return
 
-/obj/item/gripper/proc/grab_cell(obj/item/cell, mob/user)
+// ---- the gripper as a provider (code/engine/parts/provider.dm) ----
+
+/// The cyborg's selected gripper carries its held item and provides the hands that handle it.
+/mob/living/silicon/robot/held_carrier()
+	var/obj/item/gripper/G = module_active
+	return istype(G) ? G : null
+
+/// With a gripper selected, the cyborg's ops see what the gripper carries (nothing, when it is empty) as the held item.
+/mob/living/silicon/robot/held_for_ops()
+	var/obj/item/gripper/G = module_active
+	if(istype(G))
+		return G.get_wrapped_item()
+	return ..()
+
+/// Can the gripper take `thing` into a pocket now: not busy, a free pocket, and its CONSTRAINT_HOLD allows it.
+/obj/item/gripper/can_carry(obj/item/thing, mob/actor)
+	if(is_in_use(actor, FALSE) || !find_empty_pocket())
+		return FALSE
+	return !dq_constraint_refusal(src, CONSTRAINT_HOLD, thing, actor)
+
+/// Takes `thing` into a free pocket and holds it out.
+/obj/item/gripper/carry(obj/item/thing, mob/actor)
 	var/obj/item/storage/internal/gripper/P = find_empty_pocket()
 	if(!P)
-		to_chat(user, "Your gripper is full!")
 		return FALSE
-
-	cell.add_fingerprint(user)
-	cell.update_icon()
-	cell.forceMove(P)
-
+	thing.add_fingerprint(actor)
+	thing.forceMove(P)
+	thing.update_icon()
 	rel_set(src, nameof(current_pocket), P)
-	update_ref(cell)
+	update_ref(thing)
 	return TRUE
+
+/// What the gripper held out left its pockets for good (an op put it into a machine): it lets go, and the next pocket is selected.
+/obj/item/storage/internal/gripper/Exited(atom/movable/AM, atom/new_loc)
+	. = ..()
+	var/obj/item/gripper/G = loc
+	if(istype(G) && G.get_wrapped_item() == AM && G.item_left_gripper(AM))
+		G.clear_and_select_pocket()

@@ -49,6 +49,11 @@ TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
 
 CAPABILITIES(/obj/item/radio/intercom)
 	owns_one(nameof(circuit), starts = nameof(circuit))
+	// the AI's gestures over its link: ctrl switches the microphone, alt the AI's private channel
+	op("remote_microphone", remote(), gesture(GESTURE_CTRL), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the microphone"),
+		wait(0), then(PROC_REF(remote_microphone)))
+	op("remote_channel", remote(), gesture(GESTURE_ALT), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the AI channel"),
+		wait(0), then(PROC_REF(remote_channel)))
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"
@@ -215,15 +220,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/radio/intercom, TYPE_PROC_REF(/atom, appearanc
 			set_light(2)
 			set_light_on(TRUE)
 
-/obj/item/radio/intercom/silicon_pull(mob/living/silicon/user)
-	if(!isAI(user))
-		return FALSE
+/obj/item/radio/intercom/proc/remote_microphone(datum/act/op/A)
+	var/mob/user = A.actor
 	ToggleBroadcast()
 	to_chat(user, span_notice("\The [src]'s microphone is now <b>[broadcasting ? "enabled" : "disabled"]</b>."))
+	return OP_OK
 
-/obj/item/radio/intercom/silicon_alternate(mob/living/silicon/user)
-	if(!isAI(user))
-		return ..()
+/obj/item/radio/intercom/proc/remote_channel(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
 	if(frequency == AI_FREQ)
 		set_frequency(initial(frequency))
 		to_chat(user, span_notice("\The [src]'s frequency is now set to [span_green(span_bold("Default"))]."))
