@@ -34,6 +34,11 @@
 CAPABILITIES(/obj/machinery/smartfridge)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
+	interface("SmartVend")
+	// Release takes `amount` out of record `index`; with no amount it asks how many (the old act_ask re-run).
+	op("release", ui_act("Release", arg("amount", num(default = 0)), arg("index", num())),
+		asks(/datum/prompt/number, fields = list("question" = "How many items?", "title" = "How many items would you like to take out?", "default" = 1, "timeout" = 0), step = "amount", when = PROC_REF(release_asks_amount)),
+		then(PROC_REF(ui_act_release)))
 
 /obj/machinery/smartfridge/secure
 	is_secure = 1
@@ -267,12 +272,17 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/smartfridge, "SmartVend")
+/// The window's data.
+/obj/machinery/smartfridge/ui_data(datum/act/eval/A)
+	. = list()
+	.["name"] = name
+	.["secure"] = is_secure
+	var/list/part = ui_data_part_smartfridge(A)
+	for(var/key in part)
+		.[key] = part[key]
 
-UI_DATA_REPLACE(/obj/machinery/smartfridge, "name:text", "secure=is_secure:num", "merge:ui_data_obj_machinery_smartfridge{contents:list,locked:num}")
-
-/// The computed part of /obj/machinery/smartfridge's window data (declared on its UI_DATA row).
-/obj/machinery/smartfridge/proc/ui_data_obj_machinery_smartfridge(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window's data.
+/obj/machinery/smartfridge/proc/ui_data_part_smartfridge(datum/act/eval/A)
 	. = list()
 
 	var/list/items = list()
@@ -285,27 +295,19 @@ UI_DATA_REPLACE(/obj/machinery/smartfridge, "name:text", "secure=is_secure:num",
 	.["contents"] = items
 	.["locked"] = locked
 
-/obj/machinery/smartfridge/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
+/// Release asks how many only when the button did not say.
+/obj/machinery/smartfridge/proc/release_asks_amount(datum/act/op/A)
+	return !A.args["amount"]
 
-UI_ACT(/obj/machinery/smartfridge, "Release", ui_act_release, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/smartfridge, ui_act_release)
-	var/amount = 0
-	if(params["amount"])
-		amount = params["amount"]
-	else
-		var/_answer_k289 = act_ask(ui.user, action, params, ui, "k289", /datum/om/prompt/number, message = "How many items?", title = "How many items would you like to take out?", default = 1)
-		if(isnull(_answer_k289))
-			return
-		amount = _answer_k289
-
-	if(QDELETED(src) || QDELETED(ui.user) || !ui.user.Adjacent(src))
+/// Release: `amount` (or the answered number) out of record `index`.
+/obj/machinery/smartfridge/proc/ui_act_release(datum/act/op/A, amount, index)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	if(!amount)
+		amount = A.step_value("amount")
+	if(QDELETED(src) || QDELETED(user) || !user.Adjacent(src))
 		return FALSE
 
-	var/index = params["index"]
 	if(index < 1 || index > LAZYLEN(item_records))
 		return TRUE
 
@@ -336,12 +338,16 @@ UI_ACT_PROC(/obj/machinery/smartfridge, ui_act_release)
 /*
  * Secure Smartfridges
  */
-/obj/machinery/smartfridge/secure/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+// A secure fridge's buttons do nothing while it does not work (the old ui_act_allowed()).
+CAPABILITIES(/obj/machinery/smartfridge/secure)
+	extend("release", needs(req(PROC_REF(ui_gate), silent = TRUE)))
+
+/obj/machinery/smartfridge/secure/proc/ui_gate(datum/act/op/A)
 	return operable()
 
-UI_ACT_OVERRIDE(/obj/machinery/smartfridge/secure, ui_act_release)
+/// Release behind the ID scan.
+/obj/machinery/smartfridge/secure/ui_act_release(datum/act/op/A, amount, index)
+	var/mob/user = A.actor
 	if(user.contents.Find(src) || (in_range(src, user) && istype(loc, /turf)))
 		if((!allowed(user) && scan_id) && !emagged && locked != -1)
 			to_chat(user, span_warning("Access denied."))

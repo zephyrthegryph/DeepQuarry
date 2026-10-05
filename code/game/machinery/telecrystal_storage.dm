@@ -34,35 +34,17 @@
 		rel_add(src, nameof(item_records), item)
 		consume(O)
 
-/obj/machinery/smartfridge/tcrystal/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/smartfridge/tcrystal, "Release", ui_act_release, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
-UI_ACT_OVERRIDE(/obj/machinery/smartfridge/tcrystal, ui_act_release)
-	// The fridge's own Release runs first, as the old parent-first tgui_act() did.
+/// Release (the fridge's op, its question included): the fridge's own Release runs first, as the old parent-first tgui_act() did; when it refuses,
+/// the crystals' own release takes the same amount.
+/obj/machinery/smartfridge/tcrystal/ui_act_release(datum/act/op/A, amount, index)
 	. = ..()
 	if(.)
 		return
-	if(params["amount"])
-		release_crystals(ui.user, params["amount"], params["index"])
-		return TRUE
-	om_ask(ui.user, /datum/om/prompt/number/tcrystal_amount, PROC_REF(crystal_amount_entered), index = params["index"])
+	if(!amount)
+		amount = A.step_value("amount")
+	if(amount)
+		release_crystals(A.actor, amount, index)
 	return TRUE
-
-/// How many crystals to take out. Re-checked on the answer: still next to the fridge.
-/datum/om/prompt/number/tcrystal_amount
-	title = "How many items would you like to take out?"
-	message = "How many items?"
-	default = 1
-	requires = PROMPT_ADJACENT
-	var/index
-
-/obj/machinery/smartfridge/tcrystal/proc/crystal_amount_entered(datum/om/prompt/number/tcrystal_amount/ask)
-	release_crystals(ask.answerer, ask.number, ask.index)
-	return FALSE
 
 /obj/machinery/smartfridge/tcrystal/proc/release_crystals(mob/user, amount, index_param)
 	if(QDELETED(src) || QDELETED(user) || !user.Adjacent(src))

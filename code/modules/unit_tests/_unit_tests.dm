@@ -510,6 +510,7 @@
 #include "dq_p2_storage_engine_tests.dm"
 #include "dq_gap_tests.dm"
 #include "dq_fwg3_inputs.dm"
+#include "dq_fwg3_windows.dm"
 #include "dq_eg2_wait_tests.dm"
 #include "dq_p2_reagent_pill_behaviour.dm"
 #include "dq_p2_reagent_hypo_behaviour.dm"

@@ -535,7 +535,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// The card's account is protected by a PIN, the product costs money and no cash is held: the customer is asked for it.
 /obj/machinery/vending/proc/pin_wanted(datum/act/op/A)
-	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"]) // ALLOW(handlers): a matching condition of an op is asked in the op's own context (held item, arguments), which the engine passes
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
 	var/mob/user = A.actor
 	if(!R || R.price <= 0 || !vend_access_for(user))
 		return FALSE

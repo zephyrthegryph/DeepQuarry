@@ -184,7 +184,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_power)
 UI_ACT(/obj/machinery/atmospherics/omni/mixer, "configure", ui_act_configure)
 UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_configure)
 	. = TRUE
-	configuring = !configuring
+	set_configuring(!configuring)
 	if(configuring)
 		set_use_power(USE_POWER_OFF)
 	wake_for_state_change()

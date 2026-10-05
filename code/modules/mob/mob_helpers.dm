@@ -79,6 +79,7 @@
 	return SUIT_SENSOR_OFF
 
 /proc/is_admin(mob/user)
+	READS_FROM() // a client's rights are read when a control is used, never cached
 	return check_rights_for(user.client, R_ADMIN|R_EVENT) != 0
 
 /**

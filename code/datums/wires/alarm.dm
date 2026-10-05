@@ -37,7 +37,7 @@
 			changed(A, CHANGE_MACHINE_SETTINGS)
 
 		if(WIRE_AI_CONTROL)
-			A.aidisabled = !mend
+			A.set_aidisabled(!mend)
 
 		if(WIRE_SYPHON)
 			if(!mend)
@@ -66,7 +66,7 @@
 
 		if(WIRE_AI_CONTROL)
 			if(!A.aidisabled)
-				A.aidisabled = TRUE
+				A.set_aidisabled(TRUE)
 			after(src, 10 SECONDS, PROC_REF(clear_ai_disabled))
 
 		if(WIRE_SYPHON)
@@ -84,7 +84,7 @@
 /datum/wires/alarm/proc/clear_ai_disabled()
 	var/obj/machinery/alarm/A = holder
 	if(A)
-		A.aidisabled = FALSE
+		A.set_aidisabled(FALSE)
 
 /datum/wires/alarm/proc/clear_short()
 	SHOULD_NOT_OVERRIDE(TRUE)

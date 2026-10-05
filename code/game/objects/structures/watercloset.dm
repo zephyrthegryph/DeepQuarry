@@ -783,7 +783,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_o
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/red)
-	op("squeeze_red", in_hand(), label("Squeeze"), then(PROC_REF(duck_red_self)))
+	// replaces the horn's honk (the old special_handling chain)
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_red_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/red/proc/duck_red_self(datum/act/op/A)
@@ -812,7 +813,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/red)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/blue)
-	op("squeeze_blue", in_hand(), label("Squeeze"), then(PROC_REF(duck_blue_self)))
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_blue_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/blue/proc/duck_blue_self(datum/act/op/A)
@@ -837,7 +838,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/blue)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/pink)
-	op("squeeze_pink", in_hand(), label("Squeeze"), then(PROC_REF(duck_pink_self)))
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_pink_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/pink/proc/duck_pink_self(datum/act/op/A)
@@ -873,7 +874,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/pink)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/grey)
-	op("squeeze_grey", in_hand(), label("Squeeze"), then(PROC_REF(duck_grey_self)))
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_grey_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/grey/proc/duck_grey_self(datum/act/op/A)
@@ -920,7 +921,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/grey)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/green)
-	op("squeeze_green", in_hand(), label("Squeeze"), then(PROC_REF(duck_green_self)))
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_green_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/green/proc/duck_green_self(datum/act/op/A)
@@ -946,7 +947,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/green)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/white)
-	op("squeeze_white", in_hand(), label("Squeeze"), then(PROC_REF(duck_white_self)))
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_white_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/white/proc/duck_white_self(datum/act/op/A)
@@ -980,7 +981,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/white)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/gold)
-	op("squeeze_gold", in_hand(), label("Squeeze"), then(PROC_REF(duck_gold_self)))
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_gold_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/gold/proc/duck_gold_self(datum/act/op/A)
@@ -1009,7 +1010,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/gold)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/viking)
-	op("squeeze_viking", in_hand(), label("Squeeze"), then(PROC_REF(duck_viking_self)))
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_viking_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/viking/proc/duck_viking_self(datum/act/op/A)
@@ -1034,7 +1035,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/viking)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
-	op("squeeze_galaxy", in_hand(), label("Squeeze"), then(PROC_REF(duck_galaxy_self)))
+	op("honk", in_hand(), label("Squeeze"), then(PROC_REF(duck_galaxy_self)))
 
 /// Squeezed in hand.
 /obj/item/bikehorn/rubberducky/galaxy/proc/duck_galaxy_self(datum/act/op/A)
