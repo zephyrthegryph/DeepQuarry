@@ -34,8 +34,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 		user.entity_narrate_holder = new /datum/entity_narrate()
 	if(!istype(user.entity_narrate_holder, /datum/entity_narrate))
 		return
-	var/datum/entity_narrate/holder = user.entity_narrate_holder
-
 	//Since we extended to include all atoms, we're shutting things down with a guard clause for ghosts
 	if(istype(E, /mob/observer))
 		to_chat(user, span_notice("Ghosts shouldn't be narrated! If you want a ghost, make it a subtype of mob/living!"))
@@ -48,28 +46,65 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			gets logged in case of abuse."))
 			log_and_message_admins("has added [L.ckey]'s mob to their entity narrate list", user)
 			return
-		var/unique_name = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Please give the entity a unique name to track internally. This doesn't override how it appears in game", title = "tracker", default = L.name)
-		if(isnull(unique_name))
-			return
-		if(unique_name in holder.entity_names)
-			to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
-			return
-		LAZYADD(holder.entity_names, unique_name)
-		holder.track(unique_name, L)
-		log_and_message_admins("added [L.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
+	if(istype(E, /atom))
+		var/atom/target = E
+		open_request(src, /datum/prompt/text/admin_narrate_add, PROC_REF(entity_name_answered), answerer = user.mob, subject = target, default = target.name)
 
-	//Covering functionality for turfs and objs. We need static type to access the name var
-	else if(istype(E, /atom))
-		var/atom/A = E
-		var/unique_name = verb_ask(user, "a2", args, /datum/om/prompt/text, message = "Please give the entity a unique name to track internally. This doesn't override how it appears in game", title = "tracker", default = A.name)
-		if(isnull(unique_name))
-			return
-		if(unique_name in holder.entity_names)
-			to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
-			return
-		LAZYADD(holder.entity_names, unique_name)
-		holder.track(unique_name, A)
-		log_and_message_admins("added [A.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
+/datum/prompt/text/admin_narrate_add
+	rights = R_FUN
+	timeout = 0
+	recheck_on_open = TRUE
+	encode = TRUE
+	max_len = MAX_MESSAGE_LEN
+	title = "tracker"
+	question = "Please give the entity a unique name to track internally. This doesn't override how it appears in game"
+
+/datum/prompt/text/admin_narrate_add/recheck_extra()
+	if(QDELETED(answerer) || !answerer.client || QDELETED(subject))
+		return "gone"
+	var/client/user = answerer.client
+	if(user.entity_narrate_holder && !istype(user.entity_narrate_holder, /datum/entity_narrate))
+		return "holder"
+	if(istype(subject, /mob/observer))
+		return "ghost"
+	if(isliving(subject))
+		var/mob/living/L = subject
+		if(L.client)
+			return "player"
+	var/datum/entity_narrate/holder = user.entity_narrate_holder
+	if(!isnull(answer_value) && holder && (answer_value in holder.entity_names))
+		return "duplicate"
+
+/datum/admin_verb/add_mob_for_narration/proc/entity_name_answered(datum/act/request/context)
+	if(isnull(context.request.answer_value) || QDELETED(context.request.answerer) || !context.request.answerer.client || QDELETED(context.request.subject))
+		return
+	if(!context.answer && !(context.request.last_error in list("holder", "ghost", "player", "duplicate")))
+		return
+	apply_entity_name(context)
+
+/datum/admin_verb/add_mob_for_narration/proc/apply_entity_name(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	// The original verb replay recreates a missing holder before a target denial.
+	if(!user.entity_narrate_holder)
+		user.entity_narrate_holder = new /datum/entity_narrate()
+	var/datum/entity_narrate/holder = user.entity_narrate_holder
+	var/atom/target = context.request.subject
+	var/unique_name = context.request.answer_value
+	if(!context.answer)
+		switch(context.request.last_error)
+			if("ghost")
+				to_chat(user, span_notice("Ghosts shouldn't be narrated! If you want a ghost, make it a subtype of mob/living!"))
+			if("player")
+				var/mob/living/L = target
+				to_chat(user, span_notice("[L.name] is a player. All attempts to speak through them \
+				gets logged in case of abuse."))
+				log_and_message_admins("has added [L.ckey]'s mob to their entity narrate list", user)
+			if("duplicate")
+				to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
+		return
+	LAZYADD(holder.entity_names, unique_name)
+	holder.track(unique_name, target)
+	log_and_message_admins("added [target.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
 
 //Proc for keeping our ref list relevant, deleting mobs that are no longer relevant for our event
 ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remove mobs you're no longer narrating from your list for easier work.", ADMIN_CATEGORY_FUN_NARRATE)
