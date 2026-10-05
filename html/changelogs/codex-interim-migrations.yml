@@ -53,3 +53,4 @@ changes:
   - code_imp: "Migrated the three belly-size multiplier prompts to native requests."
   - code_imp: "Migrated the complete admin drop-pod prompt chain and noticeboard-offset prompt to native requests."
   - code_imp: "Migrated the PDA ringtone prompt to a native request."
+  - code_imp: "Migrated belly-message reset and belly-deletion confirmations to native requests."
