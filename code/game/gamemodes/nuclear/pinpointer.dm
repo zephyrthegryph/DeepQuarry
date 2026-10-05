@@ -120,34 +120,38 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	rel_clear(src, nameof(target))
 	rel_clear(src, nameof(location))
 
-	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_mode_chosen), title = "Pinpointer Mode Select", message = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
+	open_request(src, /datum/prompt/choice/pinpointer_carried, PROC_REF(pinpointer_mode_chosen), answerer = user, title = "Pinpointer Mode Select", question = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
 
-/// A pinpointer coordinate (x, then y: `location_x` carries the first). Re-checked: it's in view.
-/datum/om/prompt/number/pinpointer_location
-	title = "Location?"
-	requires = list(CHECK(/datum/om/check/can_see, 1))
-	var/location_x
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(datum/om/prompt/choice/carried_item/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/mob/user = ask.answerer
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("Location")
 			mode = 1
-			om_ask(user, /datum/om/prompt/number/pinpointer_location, PROC_REF(pinpointer_location_x_chosen), message = "Please input the x coordinate to search for.")
+			open_request(src, /datum/prompt/number/pinpointer_coordinate, PROC_REF(pinpointer_location_x_chosen), answerer = user, question = "Please input the x coordinate to search for.")
 		if("Disk Recovery")
 			mode = 0
 			attack_self(user)
 		if("Other Signature")
 			mode = 2
-			om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_signature_chosen), title = "Signature Mode Select", message = "Search for item signature or DNA fragment?", choices = list("Item", "DNA"), buttons = TRUE)
+			open_request(src, /datum/prompt/choice/pinpointer_carried, PROC_REF(pinpointer_signature_chosen), answerer = user, title = "Signature Mode Select", question = "Search for item signature or DNA fragment?", choices = list("Item", "DNA"), buttons = TRUE)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_x_chosen(datum/om/prompt/number/pinpointer_location/ask)
-	om_ask(ask.answerer, /datum/om/prompt/number/pinpointer_location, PROC_REF(pinpointer_location_chosen), message = "Please input the y coordinate to search for.", location_x = ask.number)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_x_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/pinpointer_coordinate/ask = context.answer
+	open_request(src, /datum/prompt/number/pinpointer_coordinate, PROC_REF(pinpointer_location_chosen), answerer = ask.answerer, question = "Please input the y coordinate to search for.", location_x = ask.answer_value)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(datum/om/prompt/number/pinpointer_location/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/pinpointer_coordinate/ask = context.answer
 	var/mob/user = ask.answerer
 	var/locationx = ask.location_x
-	var/locationy = ask.number
+	var/locationy = ask.answer_value
 	if(!locationx || !locationy)
 		return
 	var/turf/Z = get_turf(src)
@@ -155,19 +159,25 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	to_chat(user, "You set the pinpointer to locate [locationx],[locationy]")
 	attack_self(user)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_chosen(datum/om/prompt/choice/carried_item/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/static/datum/objective/steal/itemlist
-	switch(ask.choice)
+	switch(ask.answer_value)
 		if("Item")
 			if(!itemlist)
 				itemlist = new
-			om_ask(ask.answerer, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_item_chosen), title = "Item Mode Select", message = "Select item to search for.", choices = itemlist.possible_items)
+			open_request(src, /datum/prompt/choice/pinpointer_carried, PROC_REF(pinpointer_item_chosen), answerer = ask.answerer, title = "Item Mode Select", question = "Select item to search for.", choices = itemlist.possible_items?.Copy())
 		if("DNA")
 			open_request(src, /datum/prompt/text, PROC_REF(pinpointer_dna_entered), answerer = ask.answerer, title = "Please Enter String.", question = "Input DNA string to search for.", default = "", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(datum/om/prompt/choice/carried_item/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/mob/user = ask.answerer
-	var/targetitem = ask.choice
+	var/targetitem = ask.answer_value
 	var/datum/objective/steal/itemlist = new
 	rel_set(src, nameof(target), locate(itemlist.possible_items[targetitem]))
 	qdel(itemlist)
@@ -355,3 +365,31 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 /// Old object verbs.
 CAPABILITIES(/obj/item/pinpointer/advpinpointer)
 	op("advpinpointer_toggle_mode_effect", menu(), label("Toggle Pinpointer Mode"), then(PROC_REF(advpinpointer_toggle_mode_effect)))
+
+/datum/prompt/choice/pinpointer_carried
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/pinpointer_carried/recheck_extra()
+	var/mob/user = answerer
+	return !istype(user) || QDELETED(user) ? "gone" : null
+
+/datum/prompt/number/pinpointer_coordinate
+	title = "Location?"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/location_x
+
+/datum/prompt/number/pinpointer_coordinate/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, INFINITY, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/pinpointer_coordinate/recheck_extra()
+	var/mob/user = answerer
+	var/obj/item/pinpointer/advpinpointer/device = owner
+	if(!istype(user) || QDELETED(user) || !istype(device) || QDELETED(device))
+		return "gone"
+	return can_see(user, device, 1) ? null : "can't see it"

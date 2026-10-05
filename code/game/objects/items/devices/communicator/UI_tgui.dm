@@ -316,10 +316,6 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 // Proc: tgui-act()
 // Parameters: 4 (standard tgui_act arguments)
 // Description: Responds to UI button presses.
-/// Communicator text entry: re-checked on the answer, the communicator is still usable.
-/datum/om/prompt/text/communicator
-	requires = PROMPT_USABLE
-
 /datum/prompt/text/communicator
 	usable_state = "default"
 	timeout = 0

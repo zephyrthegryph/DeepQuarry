@@ -765,12 +765,32 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 		to_chat(src,span_warning("You don't have a NIF, not sure why this was here."))
 		return
 
-	var/new_flavor = rerun_ask(src, "k726", PROC_REF(set_nif_examine), args, /datum/om/prompt/text, message = "Describe how your NIF alters your appearance, like glowy eyes or metal plate on your head, etc. Be sensible. Clear this for no examine text. 128ch max.", title = "Describe NIF", default = nif.examine_msg, max_length = 128)
-	if(isnull(new_flavor))
+	open_request(src, /datum/prompt/text/nif_appearance, PROC_REF(nif_appearance_answered), answerer = src, default = nif.examine_msg)
+
+/datum/prompt/text/nif_appearance
+	question = "Describe how your NIF alters your appearance, like glowy eyes or metal plate on your head, etc. Be sensible. Clear this for no examine text. 128ch max."
+	title = "Describe NIF"
+	max_len = 128
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/nif_appearance/recheck_extra()
+	var/mob/living/carbon/human/user = owner
+	if(!istype(user) || QDELETED(user) || QDELETED(answerer))
+		return "gone"
+	if(!user.nif)
+		return "no NIF"
+
+/mob/living/carbon/human/proc/nif_appearance_answered(datum/act/request/context)
+	if(isnull(context.request.answer_value) || context.request.last_error == "gone")
 		return
-	//They clicked cancel or meanwhile lost their NIF
-	if(!nif || isnull(new_flavor))
-		return //No changes
+	SStgui.update_uis(src)
+	if(context.answer)
+		apply_nif_appearance(context.answer.answer_value)
+	else if(context.request.last_error == "no NIF")
+		to_chat(src,span_warning("You don't have a NIF, not sure why this was here."))
+
+/mob/living/carbon/human/proc/apply_nif_appearance(new_flavor)
 	//Sanitize or user cleaned it entirely
 	if(!new_flavor)
 		nif.examine_msg = ""

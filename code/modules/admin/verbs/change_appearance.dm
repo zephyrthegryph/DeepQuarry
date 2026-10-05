@@ -4,22 +4,62 @@ ADMIN_VERB(change_human_appearance_admin, R_FUN, "Change Mob Appearance - Admin"
 	open_request(src, /datum/prompt/choice/admin_appearance_target, PROC_REF(appearance_target_answered), answerer = user.mob, choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
 ADMIN_VERB(change_human_appearance_self, R_FUN, "Change Mob Appearance - Self", "Allows the mob to change its appearance.", ADMIN_CATEGORY_EVENTS)
-	var/mob/living/carbon/human/human_target = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Select mob.", title = "Change Mob Appearance - Self", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
-	if(isnull(human_target))
-		return
-	if(!human_target)
-		return
+	open_request(src, /datum/prompt/choice/admin_self_appearance_target, PROC_REF(self_appearance_target_answered), answerer = user.mob, title = "Change Mob Appearance - Self", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
-	if(!human_target.client)
-		to_chat(human_target, span_filter_warning("Only mobs with clients can alter their own appearance."))
+/datum/prompt/choice/admin_self_appearance_target
+	parent_type = /datum/prompt/choice/admin_appearance_target
+
+/datum/prompt/choice/admin_self_appearance_target/recheck_extra()
+	. = ..()
+	if(.)
 		return
-	var/whitelist_answer = verb_ask(user, "whitelist", args, /datum/om/prompt/choice/alert, message = "Do you wish for [human_target] to be allowed to select non-whitelisted races?", title = "Alter Mob Appearance", choices = list("Yes","No","Cancel"))
-	switch(whitelist_answer)
+	if(isnull(answer_value))
+		return
+	var/mob/living/carbon/human/human_target = answer_value
+	if(!human_target.client)
+		return "The selected human has no client."
+
+/datum/admin_verb/change_human_appearance_self/proc/self_appearance_target_answered(datum/act/request/context)
+	var/mob/living/carbon/human/human_target = context.request.answer_value
+	if(!context.answer)
+		if(!isnull(context.request.answer_value) && istype(human_target) && !QDELETED(human_target) && !human_target.client)
+			to_chat(human_target, span_filter_warning("Only mobs with clients can alter their own appearance."))
+		return
+	open_request(src, /datum/prompt/choice/admin_self_appearance_whitelist, PROC_REF(self_appearance_whitelist_answered), answerer = context.request.answerer, subject = human_target, question = "Do you wish for [human_target] to be allowed to select non-whitelisted races?")
+	feedback_add_details("admin_verb","CMAS") // The legacy verb records feedback when it opens this prompt as well as when answered.
+
+
+/datum/prompt/choice/admin_self_appearance_whitelist
+	rights = R_FUN
+	timeout = 0
+	title = "Alter Mob Appearance"
+	choices = list("Yes","No","Cancel")
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_self_appearance_whitelist/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/mob/living/carbon/human/human_target = subject
+	if(!istype(human_target) || QDELETED(human_target))
+		return "The selected human is no longer available."
+	if(!human_target.client)
+		return "The selected human has no client."
+
+/datum/admin_verb/change_human_appearance_self/proc/self_appearance_whitelist_answered(datum/act/request/context)
+	var/mob/living/carbon/human/human_target = context.request.subject
+	if(!context.answer)
+		if(!isnull(context.request.answer_value) && istype(human_target) && !QDELETED(human_target) && !human_target.client)
+			to_chat(human_target, span_filter_warning("Only mobs with clients can alter their own appearance."))
+		return
+	var/mob/user = context.request.answerer
+	switch(context.answer.answer_value)
 		if("Yes")
-			log_and_message_admins("has allowed [human_target] to change [human_target.p_their()] appearance, without whitelisting of races.")
+			log_and_message_admins("has allowed [human_target] to change [human_target.p_their()] appearance, without whitelisting of races.", user)
 			human_target.change_appearance(APPEARANCE_ALL, human_target, check_species_whitelist = 0)
 		if("No")
-			log_and_message_admins("has allowed [human_target] to change [human_target.p_their()] appearance, with whitelisting of races.")
+			log_and_message_admins("has allowed [human_target] to change [human_target.p_their()] appearance, with whitelisting of races.", user)
 			human_target.change_appearance(APPEARANCE_ALL, human_target, check_species_whitelist = 1)
 	feedback_add_details("admin_verb","CMAS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 

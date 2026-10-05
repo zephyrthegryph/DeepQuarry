@@ -98,7 +98,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/a
 /obj/machinery/reagent_refinery/filter/proc/set_filter(mob/user)
 	if (user.stat || user.restrained())
 		return
+	var/list/selection_data = filter_selection_data()
+	open_request(src, /datum/prompt/choice/refinery_filter, PROC_REF(filter_selected), answerer = user, question = "Select chemical to filter. It is currently [selection_data["filter"]].", title = "Chemical Select", choices = selection_data["choices"])
 
+/obj/machinery/reagent_refinery/filter/proc/filter_selection_data()
 	// Get a list of reagents currently inside!
 	var/list/tgui_list = list("Disabled" = "","Bypass" = "-1","All" = "-2")
 	for(var/datum/reagent/R in reagents.reagent_list)
@@ -113,13 +116,28 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/a
 	else if(filter_reagent_id != "")
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
 		filter = "filtering [R.name]"
-	var/select = rerun_ask(user, "k113", PROC_REF(set_filter), args, /datum/om/prompt/choice, message = "Select chemical to filter. It is currently [filter].", title = "Chemical Select", choices = tgui_list)
-	if(isnull(select))
-		return
+	return list("choices" = tgui_list, "filter" = filter)
 
-	if (user.stat || user.restrained())
-		return
+/datum/prompt/choice/refinery_filter
+	timeout = 0
+	recheck_on_open = TRUE
 
+/datum/prompt/choice/refinery_filter/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	if(answerer.stat || answerer.restrained())
+		return "cannot use"
+
+/obj/machinery/reagent_refinery/filter/proc/filter_selected(datum/act/request/context)
+	if(isnull(context.request.answer_value) || context.request.last_error == "gone")
+		return
+	SStgui.update_uis(src)
+	if(context.answer)
+		apply_filter_selection(context.answer.answer_value)
+
+/obj/machinery/reagent_refinery/filter/proc/apply_filter_selection(select)
+	var/list/selection_data = filter_selection_data()
+	var/list/tgui_list = selection_data["choices"]
 	// Select if possible
 	if(select && select != "")
 		filter_reagent_id = tgui_list[select]

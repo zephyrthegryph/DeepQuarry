@@ -160,14 +160,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 /obj/machinery/conveyor/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = rerun_ask(user, "k166", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "What id would you like to give this conveyor?", title = "Multitool-Conveyor interface", default = id)
-	if(isnull(input))
-		return ITEM_INTERACT_BLOCKING
-	if(!input)
-		to_chat(user, "No input found. Please hang up and try your call again.")
-		return ITEM_INTERACT_BLOCKING
-	keyed_set_id(src, nameof(id), input) // leaves the old id's switches, joins the new id's
-	return ITEM_INTERACT_SUCCESS
+	open_request(src, /datum/prompt/text/conveyor_id, PROC_REF(conveyor_id_answered), answerer = user, subject = I, tool_expected = !isnull(I), question = "What id would you like to give this conveyor?", title = "Multitool-Conveyor interface", default = id)
+	return ITEM_INTERACT_BLOCKING
 
 // attack with hand, move pulled object onto conveyor. Old attack_hand never called ..(), so ungated.
 /datum/interaction/machine_hand/ungated/conveyor_push_pulled
@@ -345,14 +339,8 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 /obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = rerun_ask(user, "k363", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "What id would you like to give this conveyor switch?", title = "Multitool-Conveyor interface", default = id)
-	if(isnull(input))
-		return ITEM_INTERACT_BLOCKING
-	if(!input)
-		to_chat(user, "No input found. Please hang up and try your call again.")
-		return ITEM_INTERACT_BLOCKING
-	keyed_set_id(src, nameof(id), input) // relinks the conveyors and switches sharing the new id
-	return ITEM_INTERACT_SUCCESS
+	open_request(src, /datum/prompt/text/conveyor_switch_id, PROC_REF(conveyor_switch_id_answered), answerer = user, subject = I, tool_expected = !isnull(I), question = "What id would you like to give this conveyor switch?", title = "Multitool-Conveyor interface", default = id)
+	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/conveyor_switch/wrench_act(mob/user, obj/item/I)
 	oneway = !oneway
@@ -391,3 +379,52 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 				items_moved++
 		if(items_moved >= 10)
 			break
+
+
+/datum/prompt/text/conveyor_id
+	timeout = 0
+	recheck_on_open = TRUE
+	var/tool_expected = FALSE
+
+/datum/prompt/text/conveyor_id/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer) || (tool_expected && QDELETED(subject)))
+		return "gone"
+	var/obj/machinery/conveyor/device = owner
+	if(!isnull(answer_value) && !device.panel_open)
+		return "panel closed"
+	if(!isnull(answer_value) && !answer_value)
+		return "no input"
+	return null
+
+/datum/prompt/text/conveyor_switch_id
+	timeout = 0
+	recheck_on_open = TRUE
+	var/tool_expected = FALSE
+
+/datum/prompt/text/conveyor_switch_id/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer) || (tool_expected && QDELETED(subject)))
+		return "gone"
+	var/obj/machinery/conveyor_switch/device = owner
+	if(!isnull(answer_value) && !device.panel_open)
+		return "panel closed"
+	if(!isnull(answer_value) && !answer_value)
+		return "no input"
+	return null
+
+/obj/machinery/conveyor/proc/conveyor_id_answered(datum/act/request/A)
+	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+		return
+	if(A.answer)
+		keyed_set_id(src, nameof(id), A.answer.answer_value)
+	else if(A.request.last_error == "no input")
+		to_chat(A.request.answerer, "No input found. Please hang up and try your call again.")
+	SStgui.update_uis(src)
+
+/obj/machinery/conveyor_switch/proc/conveyor_switch_id_answered(datum/act/request/A)
+	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+		return
+	if(A.answer)
+		keyed_set_id(src, nameof(id), A.answer.answer_value)
+	else if(A.request.last_error == "no input")
+		to_chat(A.request.answerer, "No input found. Please hang up and try your call again.")
+	SStgui.update_uis(src)

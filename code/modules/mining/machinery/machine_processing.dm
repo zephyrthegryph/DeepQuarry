@@ -121,14 +121,45 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_togglesmeltin
 	var/ore = params["ore"]
 	var/new_setting = params["set"]
 	if(new_setting == null)
-		new_setting = act_ask(ui.user, action, params, ui, "setting", /datum/om/prompt/choice, message = "What setting do you wish to use for processing [ore]?", title = "Process Setting", choices = list("Smelting","Compressing","Alloying","Nothing"))
-		if(!new_setting)
-			return
-		switch(new_setting)
-			if("Nothing") new_setting = PROCESS_NONE
-			if("Smelting") new_setting = PROCESS_SMELT
-			if("Compressing") new_setting = PROCESS_COMPRESS
-			if("Alloying") new_setting = PROCESS_ALLOY
+		open_request(ui, /datum/prompt/choice/ore_processing_setting, TYPE_PROC_REF(/datum/tgui, ore_processing_setting_answered), answerer = ui.user, captured = list("ore" = ore), question = "What setting do you wish to use for processing [ore]?", title = "Process Setting", choices = list("Smelting","Compressing","Alloying","Nothing"))
+		return
+	return apply_ore_processing_setting(ore, new_setting)
+
+/datum/prompt/choice/ore_processing_setting
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/ore_processing_setting/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui))
+		return "gone"
+	var/obj/machinery/mineral/processing_unit_console/console = original_ui.src_object()
+	if(!istype(console) || QDELETED(console))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "not interactive"
+	return null
+
+/datum/tgui/proc/ore_processing_setting_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/machinery/mineral/processing_unit_console/console = src_object()
+	// ui_act_allowed's inherited gate is TRUE; its original replay effect is the fingerprint.
+	console.add_fingerprint(user)
+	var/new_setting = A.answer.answer_value
+	if(!new_setting)
+		return
+	switch(new_setting)
+		if("Nothing") new_setting = PROCESS_NONE
+		if("Smelting") new_setting = PROCESS_SMELT
+		if("Compressing") new_setting = PROCESS_COMPRESS
+		if("Alloying") new_setting = PROCESS_ALLOY
+	if(console.apply_ore_processing_setting(A.request.captured["ore"], new_setting))
+		SStgui.update_uis(console)
+
+/obj/machinery/mineral/processing_unit_console/proc/apply_ore_processing_setting(ore, new_setting)
 	var/obj/machinery/mineral/processing_unit/unit = machine()
 	LAZYSET(unit.ores_processing, ore, new_setting)
 	. = TRUE

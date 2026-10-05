@@ -119,7 +119,12 @@
 	set category = VERB_CAT_DEBUG
 	set name = "Spawn Movable UI Object"
 
-	var/screen_l = client_ask("where", PROC_REF(test_movable_UI), args, 0, /datum/om/prompt/text, message = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Movable UI Object")
+	open_request(src, /datum/prompt/text/client_debug_screen, PROC_REF(movable_ui_position_answered), answerer = mob, question = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Movable UI Object", max_len = MAX_MESSAGE_LEN, encode = TRUE, timeout = 0)
+
+/client/proc/movable_ui_position_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/screen_l = A.answer.answer_value
 	if(!screen_l)
 		return
 
@@ -138,7 +143,12 @@
 	set category = VERB_CAT_DEBUG
 	set name = "Spawn Snap UI Object"
 
-	var/screen_l = client_ask("where", PROC_REF(test_snap_UI), args, 0, /datum/om/prompt/text, message = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Snap UI Object")
+	open_request(src, /datum/prompt/text/client_debug_screen, PROC_REF(snap_ui_position_answered), answerer = mob, question = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Snap UI Object", max_len = MAX_MESSAGE_LEN, encode = TRUE, timeout = 0)
+
+/client/proc/snap_ui_position_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/screen_l = A.answer.answer_value
 	if(!screen_l)
 		return
 
@@ -151,3 +161,10 @@
 	S.screen_loc = screen_l
 
 	screen += S
+
+/// The original client helper retained the answering mob even while its client stayed connected.
+/datum/prompt/text/client_debug_screen
+	recheck_on_open = TRUE
+
+/datum/prompt/text/client_debug_screen/recheck_extra()
+	return QDELETED(answerer) ? "gone" : null
