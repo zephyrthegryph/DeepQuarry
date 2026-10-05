@@ -946,10 +946,23 @@ ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to
 
 
 ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this machine.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/department = verb_ask(user, "department", args, /datum/om/prompt/choice, message = "Choose a fax", title = "Fax", choices = GLOB.alldepartments)
+	fax_request_stage(user, list())
+
+/datum/admin_verb/sendFax/proc/fax_request_stage(client/user, list/fax_answers)
+	var/department = fax_answers["department"]
+	if(!("department" in fax_answers))
+		if(!user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/admin_fax_department, PROC_REF(fax_request_answered), answerer = user.mob, question = "Choose a fax", title = "Fax", choices = GLOB.alldepartments, fax_answers = fax_answers)
+		return
 	if(isnull(department))
 		return
-	var/replyorigin = verb_ask(user, "origin", args, /datum/om/prompt/text, message = "Please specify who the fax is coming from", title = "Origin")
+	var/replyorigin = fax_answers["origin"]
+	if(!("origin" in fax_answers))
+		if(!user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/text/admin_fax_origin, PROC_REF(fax_request_answered), answerer = user.mob, question = "Please specify who the fax is coming from", title = "Origin", fax_answers = fax_answers)
+		return
 	if(isnull(replyorigin))
 		return
 	for(var/obj/machinery/photocopier/faxmachine/sendto in REGISTRY_MEMBERS(REGISTRY_FAXES))
@@ -1372,3 +1385,56 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	var/list/custom_answers = ask.custom_answers.Copy()
 	custom_answers[ask.custom_key] = ask.answer_value
 	return custom_item_spawn_stage(user, custom_answers)
+
+/datum/prompt/choice/admin_fax_department
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_MOD|R_EVENT
+	var/list/fax_answers
+
+/datum/prompt/choice/admin_fax_department/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/admin_fax_origin
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_MOD|R_EVENT
+	var/list/fax_answers
+
+/datum/prompt/text/admin_fax_origin/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/admin_fax_origin/normalize(given)
+	return istext(given) ? given : null
+
+/proc/admin_fax_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/sendFax/proc/fax_request_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(admin_fax_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/list/fax_answers
+	var/key
+	if(istype(context.answer, /datum/prompt/choice/admin_fax_department))
+		var/datum/prompt/choice/admin_fax_department/ask = context.answer
+		fax_answers = ask.fax_answers.Copy()
+		key = "department"
+	else
+		var/datum/prompt/text/admin_fax_origin/ask = context.answer
+		fax_answers = ask.fax_answers.Copy()
+		key = "origin"
+	fax_answers[key] = context.answer.answer_value
+	fax_request_stage(user, fax_answers)
