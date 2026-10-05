@@ -12,6 +12,7 @@ pub mod entity;
 pub mod frame;
 mod gas;
 mod heat;
+mod heat_net;
 mod heat_regulator;
 mod jobs;
 mod layout;

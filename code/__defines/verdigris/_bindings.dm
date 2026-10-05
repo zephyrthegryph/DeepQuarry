@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "af5277a44cc80234"
+#define VERDIGRIS_ABI "d5187c0b1ec555c5"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -182,6 +182,86 @@
 // verdigris/ffi/src/heat.rs
 #define HEAT_CELL_SPACE 1
 
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_EDGE_ENGINE 3
+
+/// Edge kinds (`heat_edge_info`'s first number).
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_EDGE_LINK 1
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_EDGE_PUMP 2
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_AREA 7
+
+/// Edge parameters by index for [`heat_edge_set`].
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_CONDUCTANCE 1
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_EFFICIENCY 6
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_EMISSIVITY 2
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_MODE 5
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_TARGET 4
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_WATTS 3
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PUMP_BOTH 2
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PUMP_COOL 1
+
+/// Pump modes (`RegulatorMode`).
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PUMP_HEAT 0
+
+/// Authority writes: map load, admin, holodeck, spawn-time temperatures.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_AUTHORITY 6
+
+/// A machine's electrical heating (its power draw is the source).
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_DEVICE 2
+
+/// Fire and burning.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_FIRE 3
+
+/// Metabolism: a living body's own heat.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_METABOLISM 5
+
+/// Declared external sources/sinks for [`heat_move`] (the ledger's
+/// categories). A one-off move between two reservoirs is internal and books
+/// no source.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_NONE 0
+
+/// Anything else (named in the caller's comment).
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_OTHER 8
+
+/// A chemical or gas reaction's enthalpy outside the gas domain.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_REACTION 1
+
+/// Magic: spells, technomancer functions.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_SPELL 4
+
+/// Weapons, explosions, projectiles.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_WEAPON 7
+
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_BODY 4
 
@@ -200,6 +280,10 @@
 
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_SOLID 1
+
+/// Outer space as a reservoir: the ref is its temperature in K.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_TARGET_SPACE 6
 
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_TURF_AIR 2
@@ -908,6 +992,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(h)
 
+/// The heat network's books: `list(edges, last step: transferred, work in,
+/// work out, external in, external out (J); since boot: the same five;
+/// unbalanced steps)` then, per `HEAT_SOURCE_*` from 0, `in, out` J since
+/// boot.
+// /proc/heat_books (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_books()
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_books_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
 /// Returns: Heat capacity, in J/K (probably).
 // /datum/gas_mixture/proc/heat_capacity (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_heat_cap_hook(src_ref)
@@ -929,6 +1023,89 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_constants_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
+
+/// One edge, for tooling: `list(HEAT_EDGE_*, a kind, a ref, b kind, b ref,
+/// p1, p2, p3, heat out of a W, heat into b W, work in W, work out W)`. The
+/// parameters are (conductance, emissivity, area) for a link, (watts,
+/// target, mode) for a pump, (efficiency, conductance, 0) for an engine.
+// /proc/heat_edge_info (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_info(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_info_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
+/// The electrical power an edge exchanged in its last step, W: positive for
+/// an engine's output, negative for a pump's draw.
+// /proc/heat_edge_power (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_power(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_power_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
+/// Removes an edge. Unknown ids are ignored.
+// /proc/heat_edge_remove (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_remove(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_remove_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
+/// Changes one parameter of a live edge (a thermostat turned, a part
+/// upgraded) without recreating it. Returns whether it applied.
+// /proc/heat_edge_set (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_set(id, param, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_set_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id, param, value)
+
+/// A heat engine between two reservoirs: heat flows from the hotter to the
+/// colder through `conductance` W/K and `efficiency` of it (capped at Carnot)
+/// leaves as electrical work, read back with `heat_edge_power`. Returns the
+/// edge id.
+// /proc/heat_engine_create (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_engine_create(hot_kind, hot_ref, cold_kind, cold_ref, efficiency, conductance)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_engine_create_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(hot_kind, hot_ref, cold_kind, cold_ref, efficiency, conductance)
+
+/// A conduction (and radiation) link between two reservoirs: `conductance`
+/// W/K, plus `εσA(T_a⁴ − T_b⁴)` when `emissivity` and `area` (m²) are
+/// positive. Integrated exactly each world step. Returns the edge id.
+// /proc/heat_link_create (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_link_create(a_kind, a_ref, b_kind, b_ref, conductance, emissivity, area)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_link_create_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, conductance, emissivity, area)
+
+/// Moves `joules` from one reservoir to another in one operation (capped so
+/// neither passes absolute zero; negative moves the other way). With
+/// `from_kind` `HEAT_TARGET_NONE` the joules come from outside the
+/// simulation (an external source, `source` a `HEAT_SOURCE_*`); with
+/// `to_kind` `HEAT_TARGET_NONE` they leave it (an external sink). Either way
+/// it is booked. Returns the joules actually moved.
+// /proc/heat_move (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_move(from_kind, from_ref, to_kind, to_ref, joules, source)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_move_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(from_kind, from_ref, to_kind, to_ref, joules, source)
+
+/// Brings a reservoir to `temperature` K by an external, booked source
+/// (`HEAT_SOURCE_*`): an authority write (map load, admin, a spawn-time
+/// temperature) expressed as the joules it takes. Returns the joules added.
+// /proc/heat_move_to_temperature (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_move_to_temperature(kind, r, temperature, source)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_move_to_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind, r, temperature, source)
+
+/// A heat pump driving `controlled` toward `target` K with at most `watts`
+/// of electrical work, rejecting heat to (or drawing it from) `other`
+/// (`HEAT_PUMP_*` mode; `resistive`: heating is resistive, COP 1). Its COP is
+/// Carnot-bounded (`carnot_fraction`, `max_cop`). Returns the edge id.
+// /proc/heat_pump_create (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_pump_create(controlled_kind, controlled_ref, other_kind, other_ref, watts, target, mode, resistive, carnot_fraction, max_cop)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_pump_create_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(controlled_kind, controlled_ref, other_kind, other_ref, watts, target, mode, resistive, carnot_fraction, max_cop)
 
 /// Just the cooling-side Carnot-bounded COP (`cold`/`hot` in K), for a
 /// caller that owns its own power-budget accounting (grid `draw_power()`)
@@ -957,6 +1134,21 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_regulator_step_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(target, max_power, mode, carnot_fraction, max_cop, resistive_heating, deadband, controlled_capacity, controlled_temp, other_capacity, other_temp, dt)
+
+/// Every edge touching a reservoir, for tooling: a flat list of edge ids.
+// /proc/heat_reservoir_links (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_reservoir_links(kind, r)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_reservoir_links_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind, r)
+
+/// Reads a reservoir: `list(temperature K, heat capacity J/K (-1: infinite))`,
+/// or null if it does not exist.
+// /proc/heat_reservoir_state (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_reservoir_state(kind, r)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_reservoir_state_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind, r)
 
 /// Drops heat's coupling side table (`verdigris_cleanup`, a fresh round):
 /// the world itself is rebuilt generically (`crate::entity::reset_all`).

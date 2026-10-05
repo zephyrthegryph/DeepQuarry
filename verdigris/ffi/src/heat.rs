@@ -498,7 +498,7 @@ fn track_body_coupling(other: u32, coupling: vg_core::entity::EntityId) {
 }
 
 /// Wakes every `SolidCoupling` targeting `cell` (an external turf write).
-fn wake_cell_couplings(w: &mut vg_core::world::World, cell: u32) {
+pub(crate) fn wake_cell_couplings(w: &mut vg_core::world::World, cell: u32) {
     let Some(kind) = w.kind_of::<SolidCoupling>() else {
         return;
     };
@@ -557,7 +557,7 @@ pub(crate) fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
 /// environment. The coupling's own law re-enters relax mode on its own
 /// next run if the body (now freshly woken, see [`wake_body_couplings`])
 /// is still eligible.
-fn settle_body_if_relaxing(
+pub(crate) fn settle_body_if_relaxing(
     w: &mut vg_core::world::World,
     e: vg_core::entity::EntityId,
     body: &mut HeatBody,
@@ -1442,6 +1442,7 @@ fn heat_constants() -> Result<ByondValue> {
 #[auxmacros::bind("/proc/heat_reset")]
 fn heat_reset() -> Result<ByondValue> {
     COUPLINGS.with(|c| c.borrow_mut().clear());
+    crate::heat_net::reset();
     Ok(ByondValue::null())
 }
 
