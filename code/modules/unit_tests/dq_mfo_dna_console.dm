@@ -91,7 +91,9 @@
 	var/list/modal = tgui_modal_data(console)
 	TEST_ASSERT_NOTNULL(modal, "a block injector asks for its block")
 	TEST_ASSERT_EQUAL(length(injectors_here()), 1, "nothing made yet")
-	answer("createInjectorBlock", "3:000", list("id" = 1))
+	var/list/choices = modal["choices"]
+	TEST_ASSERT(length(choices) >= 3, "the blocks are offered")
+	answer("createInjectorBlock", choices[3], list("id" = 1))
 	var/list/made = injectors_here()
 	TEST_ASSERT_EQUAL(length(made), 2, "the block injector is made on the answer")
 	var/obj/item/dnainjector/block_one

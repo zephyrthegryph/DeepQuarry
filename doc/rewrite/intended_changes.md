@@ -963,7 +963,6 @@ the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Ea
   (`electrify(duration, source, user)` is now a hold), `lock()`/`unlock()` (the bolts library's `drop_bolts`/`raise_bolts`, through `set_bolted()`).
 * Moved, behaviour intact: the SCP door to `airlock_subtypes.dm`, the cyborg's water reserve and refill verb to `robot.dm`, the cyborg-use rows to
   `atmos_control.dm`, `computer/robot.dm`, `turret_control.dm` and `portable_turret.dm` (its cyborg `isLocked()` branch folded into the turret's own).
-=======
 
 ## Atmospherics machines: the air alarm and the remote atmospherics console
 
@@ -1145,3 +1144,60 @@ wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_be
   freezing. `dq_extreme_cold_damages_human` now chills the body against a thousand cells of 50 K gas before checking frostbite.
 * **Test clock.** `test_time()` advances the heat network's edges with it (`vg_heat_net_advance`), so heat-flow pins use the kernel clock.
 * **Material batches** keep their own DM heat model; the proc is renamed `add_batch_heat()` so it is not mistaken for a gas write.
+
+## Missing forms: the DNA modifier console's window
+
+Pinned by `code/modules/unit_tests/dq_mfo_dna_console.dm` (green on DECLARE_UI/UI_ACT and the tgui modals first).
+
+* **The window is interface("DNAModifier") with ops**: every button keeps its action name; the buffer label and the block injector's block are
+  `asks()` steps of the `bufferOption` op, shown as the window's modal (`changeBufferLabel`, `createInjectorBlock`), so `ui_modal_answered()` is gone.
+* **The block answer must be one of the offered blocks**: the legacy modal took any text with a number before a colon.
+* **A refused button says why** (no scanner connected, the console irradiating, the user not standing at it) instead of doing nothing; opening the
+  window from inside the scanner is refused with a reason. A silicon works the buttons over its link (it was refused for not standing on a tile).
+
+## Missing forms: priced requests (the malfunctioning AI)
+
+Pinned by `code/modules/unit_tests/dq_mfo_malf_costs.dm` (green on the custom malf prompt kinds first).
+
+* **A malf ability's price is a cost of its request**: `open_request(..., costs = list("[RES_CPU]" = price))` with the plain prompt kinds (yes_no,
+  choice, text). The CPU is checked when the AI is asked, set aside when it says yes (or picks), and spent once the ability went through. The
+  `/datum/om/prompt/{confirm,choice,text}/malf` kinds and `ability_pay()` are gone (`ability_pay` is hard-banned); abilities that ask nothing spend
+  with `res_spend(user, RES_CPU, price)`.
+* **The answer re-checks the AI** (`malf_able()`: still malfunctioning, not hacking, not on backup power), as the old prompts' `valid()` did.
+* **An AI that cannot pay is told why when the question would open**, and one whose CPU ran short by the answer is told and pays nothing (the old
+  answer was dropped silently).
+* **Unlocking a cyborg is checked against its 125 CPU when asked** (the old confirmation carried no price and only failed at payment).
+* **A camera hack that changes nothing costs nothing** (as before); the AI's hardware pick, the core and station self-destructs and the hack
+  confirmations of cyborgs and AIs are plain requests.
+
+## Missing forms: the frame's wrench refund
+
+Pinned by `wrench_refunds_a_loose_frame` and `wrench_refunds_a_held_frame` in `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (no behaviour to pin
+first: no click reached the legacy `wrench_act()`).
+
+* **A wrench takes a loose wall or machine frame apart again** (op `frame.refund`, a `tool(TOOL_WRENCH)` op on the frame item): the frame becomes its
+  `refund_amt` of `refund_type` (five sheets of steel by default). It was broken in play.
+## Consoles: the console base, the ID console and the communications console (rewrite/machines-full)
+
+- **Console base.** A console joins `REGISTRY_COMPUTERS`; an APC's overload finds the consoles of its area there (`area_consoles()`), so the
+  legacy `powered_by(POWERED_BY_AREA)` capability, `caps_area_changed()` and `area_members()` are gone. It draws through `draw(look)`: the
+  joined desk, the keyboard (off without power), and the screen as a glowing part that lights the room while powered (the light now comes
+  from the look, not from a `power_change()` override). The terminal sounds follow STAT_OPERABLE. A pulse (`on_notice(hit/emp)`) breaks it
+  one time in five over severity and a blob hit is `instead()` a medium blast, as before. The screwdriver is op `disconnect` (2 s; a broken
+  one drops its glass), a gripper holding something is op `use_gripper`, and any other item is op `use_item` (the hand's use), at the
+  default tier so a type's own item ops come first. `decode()` and `Initialize()` are gone. The message monitor's "too hot" and the AI
+  restorer's stuck screws are `extend("disconnect", needs(...))`; the message monitor's hack screen is `screen_state()` (no longer written
+  from the appearance proc); the atmospheric alert console sets its screen and plays its alert sounds when the alarms change, not when it is
+  drawn (and its repeat sound is one keyed timer).
+- **ID console.** An ID card used on it is op `insert_id` (then the window opens); "Eject ID Card" is op `eject` (operator's card first). Every
+  change to the loaded card (access, assignment, name, account, dismissal, custom title) needs an authenticated operator and a card: pressing
+  one with no card loaded is refused instead of a runtime. An unknown job and an invalid name are refusals. The access report no longer
+  runtimes without an operator card ("Prepared By: Unknown"), the card's name is rebuilt by `update_name()` after every button, and the
+  printer is a tracked state (no `SStgui.update_uis`).
+- **Communications.** A login is the person's own (`logins`, per actor): someone else at the same console is not logged in by it. The
+  announcement's signature is taken from the announcer's ID when they announce. Deleting a message deletes the message whose button was
+  pressed (by its id), not whichever message is open when the confirmation is answered; a console's station-wide list cannot be deleted
+  from (refused up front). The status display takes one of its presets (an enum; the dead "alert" branch is gone). The emag is the console's
+  `emag()`; the module reads it (`routing_scrambled()`), and "Restore Backup" clears it, so the console and its window can no longer disagree.
+  The shuttle-call grace periods are measured from the round's start (`ELAPSED(SSticker, round_start_time)`), not from server start, and are
+  named (10 and 90 minutes; the old comment said 30).

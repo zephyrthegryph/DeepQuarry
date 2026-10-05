@@ -1145,3 +1145,10 @@
 #undef AM_MODE_CYCLE
 #undef AM_MODE_FILL
 #undef AM_MODE_OFF
+
+/// Every air alarm's declarations compile clean: each requirement carries a reason (the threshold button's once did not, a runtime at boot).
+/datum/unit_test/dq_atmos_alarm_declarations_clean/Run()
+	for(var/path in typesof(/obj/machinery/alarm))
+		var/datum/type_table/T = table_of_type(path)
+		TEST_ASSERT(T, "[path] has a table")
+		TEST_ASSERT(!length(T.errors), "[path] declares clean: [jointext(T.errors || list(), "; ")]")

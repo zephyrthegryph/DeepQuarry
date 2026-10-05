@@ -132,12 +132,6 @@
 #define POWER_ROLE_PRODUCER "producer"
 #define POWER_ROLE_STORAGE "storage"
 #define POWER_ROLE_CONSUMER "consumer"
-/// A light fixture of an area (powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)): members_of(area, role).
-#define POWER_ROLE_LIGHTING "lighting"
-/// A computer console of an area.
-#define POWER_ROLE_COMPUTER "computer"
-/// powered_by(POWERED_BY_AREA, ...): the holder is a MEMBER relation of the area it stands in, not of a system.
-#define POWERED_BY_AREA "area"
 /// The power capability's tracked "powered" state (G8): a machine's NOPOWER, written only by set_powered()
 /// (power_change()); published to its readers on a change. The draw mode is the tracked var nameof(use_power).
 #define MACHINE_KEY_POWERED "machine_powered"

@@ -89,6 +89,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Filters out undesirable characters from names
 /proc/sanitizeName(input, max_length = MAX_NAME_LEN, allow_numbers = 0)
+	READS_FROM() // a pure function of the text it is given
 	if(!input || length(input) > max_length)
 		return //Rejects the input if it is null or if it is longer then the max length allowed
 

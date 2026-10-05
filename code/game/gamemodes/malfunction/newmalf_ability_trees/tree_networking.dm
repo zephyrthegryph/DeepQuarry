@@ -62,7 +62,7 @@
 	else
 		return
 
-	if(!ability_prechecks(user, price) || !ability_pay(user, price))
+	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
 		return
 
 	user.hacking = 1
@@ -99,19 +99,18 @@
 /mob/living/silicon/ai/proc/malf_encryption_hack_titled(datum/act/request/context)
 	if(!context.answer)
 		return
-	open_request(src, /datum/prompt/text/malf_encryption_message, PROC_REF(malf_encryption_hack_written), answerer = src, question = "Select message text: ", message_title = context.answer.answer_value)
+	open_request(src, /datum/prompt/text/malf_encryption_message, PROC_REF(malf_encryption_hack_written), answerer = src, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), question = "Select message text: ", message_title = context.answer.answer_value, costs = list("[RES_CPU]" = 75))
 
 /mob/living/silicon/ai/proc/malf_encryption_hack_written(datum/act/request/context)
 	if(!context.answer)
-		return
+		return OP_REFUSED
 	var/datum/prompt/text/malf_encryption_message/ask = context.answer
 	var/mob/living/silicon/ai/user = src
-	var/price = 75
 	var/title = ask.message_title
 	var/text = ask.answer_value
-	if(!title || !text || !ability_prechecks(user, price) || !ability_pay(user, price))
+	if(!title || !text)
 		to_chat(user, "Hack Aborted")
-		return
+		return OP_REFUSED
 
 	if(prob(60) && user.hack_can_fail)
 		to_chat(user, "Hack Failed.")
@@ -134,17 +133,16 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	open_request(user, /datum/prompt/choice/malf_alert_level, TYPE_PROC_REF(/mob/living/silicon/ai, malf_alert_hack_chosen), answerer = user, title = "Alert Level", question = "Select new alert level:", choices = list("green", "yellow", "violet", "orange", "blue", "red", "delta"))
+	open_request(user, /datum/prompt/choice/malf_alert_level, TYPE_PROC_REF(/mob/living/silicon/ai, malf_alert_hack_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Alert Level", question = "Select new alert level:", choices = list("green", "yellow", "violet", "orange", "blue", "red", "delta"), costs = list("[RES_CPU]" = price))
 
 /mob/living/silicon/ai/proc/malf_alert_hack_chosen(datum/act/request/A)
 	if(!A.answer)
-		return
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
 	var/alert_target = A.answer.answer_value
-	var/price = 200
-	if(!alert_target || !ability_prechecks(user, price) || !ability_pay(user, price))
+	if(!alert_target)
 		to_chat(user, "Hack Aborted")
-		return
+		return OP_REFUSED
 
 	if(prob(75) && user.hack_can_fail)
 		to_chat(user, "Hack Failed.")
@@ -160,17 +158,15 @@
 	set name = "System Override"
 	set desc = "500 CPU - Begins hacking station's primary firewall, quickly overtaking remaining APC systems. When completed grants access to station's self-destruct mechanism. Network administrators will probably notice this."
 	var/mob/living/silicon/ai/user = usr
-	open_request(user, /datum/prompt/choice/malf_system_override, TYPE_PROC_REF(/mob/living/silicon/ai, malf_system_override_confirmed), answerer = user)
+	open_request(user, /datum/prompt/choice/malf_system_override, TYPE_PROC_REF(/mob/living/silicon/ai, malf_system_override_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), costs = list("[RES_CPU]" = 500))
 
 /mob/living/silicon/ai/proc/malf_system_override_confirmed(datum/act/request/context)
 	if(!context.answer || context.answer.answer_value != "Yes")
-		return
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
-	var/price = 500
-	if (!ability_prechecks(user, price) || !ability_pay(user, price) || user.system_override)
-		if(user.system_override)
-			to_chat(user, "You already started the system override sequence.")
-		return
+	if(user.system_override)
+		to_chat(user, "You already started the system override sequence.")
+		return OP_REFUSED
 	var/list/remaining_apcs = list()
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(!(A.z in using_map.station_levels)) 		// Only station APCs

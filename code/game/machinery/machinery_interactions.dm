@@ -73,12 +73,6 @@
 	category = INTERACTION_CAT_CONFIGURE
 	effect = /atom/proc/interaction_open_ui
 
-/// Old attack_hand: `if(..()) return; interact(user)`.
-/datum/interaction/machine_hand/interact
-	id = "machine_interact"
-	name = "Use"
-	effect = /atom/proc/interaction_interact
-
 /// Old attackby: `if(default_part_replacement(user, W)) return`. Shows the parts, and swaps in better ones.
 /datum/interaction/machine_item/part_replacement
 	id = "machine_part_replacement"

@@ -935,7 +935,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		if(cell)
 			cell.corrupt()
 	if(prob(10))
-		for(var/obj/machinery/computer/comp as anything in area_members(area, POWER_ROLE_COMPUTER))
+		for(var/obj/machinery/computer/comp as anything in area_consoles(area))
 			comp.ex_act(3)
 	if(prob(5))
 		atom_break()
@@ -980,7 +980,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/proc/channel_load_total()
 	return channel_load(0) + channel_load(1) + channel_load(2)
 
-/// The lights of the area this APC powers: its MEMBER relations of role POWER_ROLE_LIGHTING (a copy, the loops yield).
+/// The lights of the area this APC powers (a copy, the loops yield).
 /obj/machinery/power/apc/proc/area_lights()
 	var/list/found = area?.lights
 	return found ? found.Copy() : list()

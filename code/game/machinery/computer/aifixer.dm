@@ -58,14 +58,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "resto
 	// Old code always fell through to ..() after handling the card; decline so the base attackby still runs.
 	return FALSE
 
-/obj/machinery/computer/aifixer/screwdriver_act(mob/user, obj/item/tool)
-	if(!occupier())
-		return ..()
-	if(!operable())
-		to_chat(user, span_warning("The screws on [name]'s screen won't budge."))
-	else
-		to_chat(user, span_warning("The screws on [name]'s screen won't budge and it emits a warning beep."))
-	return ITEM_INTERACT_BLOCKING
+MSG_DEF_SELF(aifixer/screws_stuck, "The screws on the screen won't budge.")
+MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge and it emits a warning beep.")
+
+/// needs: no AI is loaded (its screws won't budge while one is).
+/obj/machinery/computer/aifixer/proc/no_ai_loaded(datum/act/op/A)
+	return !occupier()
+
+/obj/machinery/computer/aifixer/proc/screws_stuck_reason(datum/act/op/A)
+	return operable() ? /datum/msg/aifixer/screws_stuck_beep : /datum/msg/aifixer/screws_stuck
 
 /// Old attack_hand (never called ..()): opens the UI, silently doing nothing when unpowered/broken.
 /datum/interaction/machine_hand/ungated/aifixer_use
@@ -80,6 +81,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "resto
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/aifixer)
+	extend("disconnect", needs(req(PROC_REF(no_ai_loaded), because = PROC_REF(screws_stuck_reason))))
 	interface("AiRestorer")
 	op("PRG_beginReconstruction", ui_act("PRG_beginReconstruction"), then(PROC_REF(ui_act_prg_beginreconstruction)))
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
@@ -145,24 +147,22 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 	if(oldstat != occupier().stat)
 		update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/aifixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/aifixer/appearance_overlays()
-	. = list()
-	. += ..()
+/// Over the console's screen: restoring, and the state of the AI card's occupant (none, awake, or out).
+/obj/machinery/computer/aifixer/draw(datum/look/look)
+	..()
 	if(!operable())
-		return .
-
-	if(restoring)
-		. += "ai-fixer-on"
-	if (occupier())
-		switch (occupier().stat)
-			if (CONSCIOUS)
-				. += "ai-fixer-full"
-			if (UNCONSCIOUS)
-				. += "ai-fixer-404"
-	else
-		. += "ai-fixer-empty"
+		return
+	look.overlay("ai-fixer-on", when = restoring)
+	var/mob/living/silicon/ai/AI = occupier()
+	// ALLOW(sys_dx_untracked_read): the card's AI is redrawn by the fixer's own update_icon() each repair step, as before
+	var/ai_stat = AI?.stat
+	if(!AI)
+		look.overlay("ai-fixer-empty")
+	else if(ai_stat == CONSCIOUS)
+		look.overlay("ai-fixer-full")
+	else if(ai_stat == UNCONSCIOUS)
+		look.overlay("ai-fixer-404")
 
 /// occupier (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/aifixer/proc/occupier() as /mob/living/silicon/ai
-	return occupier
+	return occupier // ALLOW(reads): the loaded AI is asked when it is needed, never cached

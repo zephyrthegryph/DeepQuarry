@@ -26,16 +26,11 @@
 	var/custommessage 	= "This is a test, please ignore."
 	var/list/temp = null
 
-/obj/machinery/computer/message_monitor/screwdriver_act(mob/living/user, obj/item/tool)
-	if(!operable())
-		return ..()
-	if(!istype(user))
-		return ITEM_INTERACT_BLOCKING
-	if(emag)
-		//Stops people from just unscrewing the monitor and putting it back to get the console working again.
-		to_chat(user, span_warning("It is too hot to mess with!"))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
+
+/// needs: an emagged monitor that still works is too hot to unscrew (so it cannot be reset by putting it back together).
+/obj/machinery/computer/message_monitor/proc/cool_enough(datum/act/op/A)
+	return !emag || !operable()
 
 DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_emag), null)
 /obj/machinery/computer/message_monitor/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -43,7 +38,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_ema
 	// It'll take more time if there's more characters in the password..
 	if(!emag && operable())
 		if(!isnull(linkedServer()))
-			emag = 1
+			set_emag(TRUE)
 			fx_sparks(src, 5, FALSE)
 			var/obj/item/paper/monitorkey/MK = new/obj/item/paper/monitorkey
 			MK.forceMove(loc)
@@ -56,14 +51,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_ema
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/message_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/message_monitor/appearance_overlays()
-	. = list()
-	if(emag || hacking)
-		icon_screen = hack_icon
-	else
-		icon_screen = initial(icon_screen)
-	. += ..()
+/// An emagged or hacked monitor shows the hack screen.
+/obj/machinery/computer/message_monitor/screen_state()
+	return (emag || hacking) ? hack_icon : icon_screen
 
 /// Links the first message server when the map has one and none is set.
 /obj/machinery/computer/message_monitor/proc/link_default_server(datum/act/timer/A)
@@ -72,7 +62,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/message_monitor, TYPE_PROC_REF(/
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 			rel_set(src, nameof(linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
+TRACKED(/obj/machinery/computer/message_monitor, emag)
+
 CAPABILITIES(/obj/machinery/computer/message_monitor)
+	extend("disconnect", needs(req(PROC_REF(cool_enough), because = MSG(message_monitor/too_hot))))
 	after_init(0, then(PROC_REF(link_default_server)))
 	interface("MessageMonitor")
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
@@ -190,7 +183,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	update_icon()
 
 /obj/machinery/computer/message_monitor/proc/UnmagConsole()
-	emag = 0
+	set_emag(FALSE)
 	update_icon()
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
