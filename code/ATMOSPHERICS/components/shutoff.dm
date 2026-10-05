@@ -1,24 +1,9 @@
-
-/// Tells the automatic shutoff valves that border `network` about a leak or split there
-/// (Q14): it raises the network's CHANGE_PIPE_LEAKS, which only that
-/// network's valves watch. With no network (a change whose network is not known yet, such as
-/// new construction) GLOB.new_pipe_networks wakes every valve. Wakes merge per drain, so a bulk
-/// blast needs no batching of its own.
+/// Tells the automatic shutoff valves that border `network` to look for leaks again, once the change that moved them has settled. With no network
+/// (a change whose network is not known yet, such as new construction) every valve looks. Several calls before the check runs make one check.
 /proc/wake_automatic_shutoff_valves(datum/pipe_network/network)
-	changed(network || GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS)
-
-/// Raises CHANGE_PIPE_LEAKS for changes whose network is not known yet (new construction).
-GLOBAL_DATUM_INIT(new_pipe_networks, /datum, new)
-
-/// Leaks on a bordering network (or new construction anywhere).
-/datum/om/behaviour/sleeper/shutoff_valve
-	name = "shutoff valve"
-
-/datum/om/behaviour/sleeper/shutoff_valve/on_wake(obj/machinery/atmospherics/valve/shutoff/V, changes)
-	if(QDELETED(V))
-		return
-	V.subscribe_network_keys()
-	V.check_leaks()
+	for(var/obj/machinery/atmospherics/valve/shutoff/V as anything in REGISTRY_MEMBERS(REGISTRY_SHUTOFF_VALVES))
+		if(!network || V.network_node1 == network || V.network_node2 == network)
+			V.leaks_changed()
 
 /obj/machinery/atmospherics/valve/shutoff
 	silicon_use = SILICON_USE_HAND
@@ -30,11 +15,6 @@ GLOBAL_DATUM_INIT(new_pipe_networks, /datum, new)
 	desc = "An automatic valve with control circuitry and pipe integrity sensor, capable of automatically isolating damaged segments of the pipe network."
 	var/close_on_leaks = TRUE	// If false it will be always open
 	level = 1
-	/// CHANGE_PIPE_LEAKS watches: TRUE once it watches GLOB.new_pipe_networks, and the network
-	/// watched on each side.
-	var/tmp/global_leak_token
-	var/tmp/datum/pipe_network/network1_token
-	var/tmp/datum/pipe_network/network2_token
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/shutoff, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/valve/shutoff/appearance_overlays()
@@ -45,104 +25,72 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/shutoff, TYPE_PROC_REF
 	. = ..()
 	. += "The automatic shutoff circuit is [close_on_leaks ? "enabled" : "disabled"]."
 
-REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_VALVES)
+
+MSG_DEF_SELF(shutoff/automatic, "You try to turn the valve by hand, but its automatic circuit turns it back.")
+MSG_DEF_SELF(shutoff/circuit_on, "You enable the automatic shutoff circuit.")
+MSG_DEF_SELF(shutoff/circuit_off, "You disable the automatic shutoff circuit.")
+MSG_DEF_SELF(shutoff/opened, "You manually open the valve.")
+MSG_DEF_SELF(shutoff/closed, "You manually close the valve.")
+
+TRACKED(/obj/machinery/atmospherics/valve/shutoff, close_on_leaks)
+
+CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
+	membership(joins = REGISTRY_SHUTOFF_VALVES)
+	without("toggle")
+	op("circuit", hand(), label("Toggle automatic control"), wait(0), says(PROC_REF(circuit_message)), then(PROC_REF(circuit_toggled)))
+	op("manual", hand(), gesture(GESTURE_ALT), label("Manually toggle valve"), wait(0), when(PROC_REF(actor_living)),
+		needs(req(PROC_REF(circuit_off), because = MSG(shutoff/automatic))), says(PROC_REF(manual_message)), then(PROC_REF(manual_toggled)))
 
 /obj/machinery/atmospherics/valve/shutoff/Initialize(mapload)
 	. = ..()
 	open()
 	hide(1)
-	om_attach(src, /datum/om/behaviour/sleeper/shutoff_valve)
-	om_watch(src, GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
-	global_leak_token = TRUE
-	subscribe_network_keys()
+	leaks_changed()
 
-/obj/machinery/atmospherics/valve/shutoff/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/shutoff_toggle_auto,
-		/datum/interaction/machine_alt/shutoff_manual,
-	)
-	..()
-
-/// Toggle the automatic shutoff circuit.
-/datum/interaction/machine_hand/ungated/shutoff_toggle_auto
-	id = "shutoff_toggle_auto"
-	name = "Toggle automatic control"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/atmospherics/valve/shutoff/proc/interaction_toggle_auto
-
-/obj/machinery/atmospherics/valve/shutoff/proc/interaction_toggle_auto(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
+/obj/machinery/atmospherics/valve/shutoff/proc/circuit_toggled(datum/act/op/A)
 	animate_toggle()
-	close_on_leaks = !close_on_leaks
+	set_close_on_leaks(!close_on_leaks)
 	if(close_on_leaks)
 		check_leaks()
-	to_chat(user, "You [close_on_leaks ? "enable" : "disable"] the automatic shutoff circuit.")
-	return TRUE
+	return OP_OK
 
-/// Alt+Click toggles the open/close function, when the autoseal is disabled.
-/datum/interaction/machine_alt/shutoff_manual
-	id = "shutoff_manual"
-	name = "Manually toggle valve"
-	consumes_input = FALSE
-	effect = /obj/machinery/atmospherics/valve/shutoff/proc/interaction_manual_toggle
+/obj/machinery/atmospherics/valve/shutoff/proc/circuit_message(datum/act/A)
+	return close_on_leaks ? /datum/msg/shutoff/circuit_on : /datum/msg/shutoff/circuit_off
 
-/obj/machinery/atmospherics/valve/shutoff/proc/interaction_manual_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isliving(user))
-		if(close_on_leaks)
-			to_chat(user, "You try to manually [open ? "close" : "open"] the valve, but it [open ? "opens" : "closes"] automatically again.")
-			return TRUE
-		open ? close() : open()
-		to_chat(user, "You manually [open ? "open" : "close"] the valve.")
-	return TRUE
+/obj/machinery/atmospherics/valve/shutoff/proc/actor_living(datum/act/op/A)
+	return isliving(A.actor)
 
-/// Subscribes to the keys of the networks on each side (again, if they changed).
-/obj/machinery/atmospherics/valve/shutoff/proc/subscribe_network_keys()
-	om_attach(src, /datum/om/behaviour/sleeper/shutoff_valve)
-	if(network_node1 != network1_token)
-		if(network1_token && network1_token != network_node2)
-			om_unwatch(src, network1_token, /datum/om/behaviour/sleeper/shutoff_valve)
-		rel_set(src, nameof(network1_token), network_node1)
-		if(network1_token)
-			om_watch(src, network1_token, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
-	if(network_node2 != network2_token)
-		if(network2_token && network2_token != network_node1)
-			om_unwatch(src, network2_token, /datum/om/behaviour/sleeper/shutoff_valve)
-		rel_set(src, nameof(network2_token), network_node2)
-		if(network2_token)
-			om_watch(src, network2_token, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
+/obj/machinery/atmospherics/valve/shutoff/proc/circuit_off(datum/act/A)
+	return !close_on_leaks
 
-// A network change re-subscribes and re-checks: the new network may already leak.
+/obj/machinery/atmospherics/valve/shutoff/proc/manual_toggled(datum/act/op/A)
+	if(open)
+		close()
+	else
+		open()
+	return OP_OK
+
+/obj/machinery/atmospherics/valve/shutoff/proc/manual_message(datum/act/A)
+	return open ? /datum/msg/shutoff/opened : /datum/msg/shutoff/closed
+
+// A network change re-checks: the new network may already leak.
 /obj/machinery/atmospherics/valve/shutoff/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	. = ..()
-	network_keys_changed()
+	leaks_changed()
 
 /obj/machinery/atmospherics/valve/shutoff/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
-	network_keys_changed()
+	leaks_changed()
 
 /obj/machinery/atmospherics/valve/shutoff/disconnect(obj/machinery/atmospherics/reference)
 	. = ..()
-	network_keys_changed()
+	leaks_changed()
 
-/obj/machinery/atmospherics/valve/shutoff/proc/network_keys_changed()
-	if(QDELETED(src) || isnull(global_leak_token))
-		return // Not initialized yet: Initialize() subscribes.
-	subscribe_network_keys()
-	// Check on the next timer pass, once the rebuild that moved us has finished.
-	after(src, 0, PROC_REF(recheck_leaks))
-
-/obj/machinery/atmospherics/valve/shutoff/proc/recheck_leaks()
-	subscribe_network_keys()
-	check_leaks()
-
-/obj/machinery/atmospherics/valve/shutoff/om_sleep_violation()
-	if(network_node1 != network1_token || network_node2 != network2_token)
-		return "not watching its networks' leaks"
-	if(isnull(global_leak_token))
-		return "not watching new pipe networks"
-	if(close_on_leaks && !open && network_node1 && network_node2 && node1 && node2 && !length(network_node1.leaks) && !length(network_node2.leaks))
-		return "closed with no leak on either side"
-	return null
+/// Its networks or their leaks changed: it checks on the next timer pass, once the rebuild that moved it has finished.
+/obj/machinery/atmospherics/valve/shutoff/proc/leaks_changed()
+	if(QDELETED(src))
+		return
+	after(src, 0, PROC_REF(check_leaks), key = "leak_check")
 
 /// Closes on a leak it can see, reopens once both sides are sealed.
 /obj/machinery/atmospherics/valve/shutoff/proc/check_leaks()

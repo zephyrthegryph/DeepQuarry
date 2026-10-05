@@ -343,9 +343,7 @@
 	var/mob/living/carbon/human/stranger = person(null, tile(2, 2))
 	var/mob/living/carbon/human/tech = person(list(ACCESS_ATMOSPHERICS), tile(1, 2))
 	ap_click(stranger, V)
-	// BUG: the digital valve inherits the manual valve's ungated wheel beside its own access-checked one, so anyone turns it.
-	TEST_ASSERT(V.open, "BUG: a stranger turns it")
-	ap_click(stranger, V)
+	TEST_ASSERT(!V.open, "a stranger cannot turn it")
 	ap_click(tech, V)
 	TEST_ASSERT(V.open, "the technician opens it")
 	V.id = "ap_valve"
@@ -367,14 +365,16 @@
 	var/obj/machinery/atmospherics/valve/V = line[2]
 	var/obj/machinery/atmospherics/pipe/right = line[3]
 	var/datum/gas_mixture/left_air = left.return_air()
+	var/datum/gas_mixture/right_air = right.return_air()
 	left_air.adjust_gas(GAS_N2, 10)
 	gas_touched(left_air)
 	am_settle()
-	TEST_ASSERT(right.return_air().total_moles() < 0.01, "shut, the far side stays empty")
+	TEST_ASSERT(right_air.total_moles() < 0.01, "shut, the far side stays empty")
 	var/mob/living/carbon/human/H = person(null, tile(2, 2))
 	ap_click(H, V)
 	am_settle()
-	TEST_ASSERT(right.return_air().total_moles() > 1, "open, the gas reaches it ([right.return_air().total_moles()])")
+	right_air = right.return_air()
+	TEST_ASSERT(right_air.total_moles() > 1, "open, the gas reaches it ([right_air.total_moles()])")
 	take_down_lines()
 
 
@@ -401,8 +401,7 @@
 	TEST_ASSERT(T.state != start, "the wheel moves it")
 	var/dstart = D.state
 	ap_click(stranger, D)
-	// BUG: the digital valve inherits the manual valve's ungated wheel beside its own access-checked one, so anyone turns it.
-	TEST_ASSERT(D.state != dstart, "BUG: a stranger moves a digital one")
+	TEST_ASSERT_EQUAL(D.state, dstart, "a stranger cannot move a digital one")
 	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 2))
 	ap_click(stranger, T, W)
 	TEST_ASSERT(QDELETED(T), "the wrench takes it off")

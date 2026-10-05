@@ -16302,6 +16302,22 @@
 	into += entry_line(175)
 	into += list(global.op("filter", global.ui_act("filter", global.arg("filterset", global.num())), global.then(PROC_REF(ui_act_filter))))
 
+/// CAPABILITIES(/obj/machinery/atmospherics/tvalve) at code/ATMOSPHERICS/components/tvalve.dm:82
+/obj/machinery/atmospherics/tvalve/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/tvalve.dm", 82, /obj/machinery/atmospherics/tvalve)
+	into += entry_line(83)
+	into += list(global.op("toggle", global.hand(), global.label("Toggle"), global.wait(0), global.then(PROC_REF(wheel_turned))))
+	into += entry_line(84)
+	into += list(pipe_device_unwrench())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital) at code/ATMOSPHERICS/components/tvalve.dm:188
+/obj/machinery/atmospherics/tvalve/digital/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/tvalve.dm", 188, /obj/machinery/atmospherics/tvalve/digital)
+	into += entry_line(189)
+	into += list(global.extend("toggle", global.needs(global.req(PROC_REF(actor_allowed), because = MSG(lock/denied)), global.req(PROC_REF(has_power), because = MSG(valve/unpowered)))))
+
 /// CAPABILITIES(/obj/machinery/atmospherics/unary) at code/ATMOSPHERICS/components/unary/unary_base.dm:189
 /obj/machinery/atmospherics/unary/declared_entries(list/into)
 	..(into)
@@ -16434,6 +16450,37 @@
 	into += list(global.examine_line(PROC_REF(gauge_text)))
 	into += entry_line(55)
 	into += list(global.on_change(WELD_SHUT_WELDED, ANY, global.then(PROC_REF(weld_changed))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/valve) at code/ATMOSPHERICS/components/valve.dm:86
+/obj/machinery/atmospherics/valve/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/valve.dm", 86, /obj/machinery/atmospherics/valve)
+	into += entry_line(87)
+	into += list(global.op("toggle", global.hand(), global.label("Toggle"), global.wait(0), global.then(PROC_REF(wheel_turned))))
+	into += entry_line(88)
+	into += list(pipe_device_unwrench())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/valve/digital) at code/ATMOSPHERICS/components/valve.dm:184
+/obj/machinery/atmospherics/valve/digital/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/valve.dm", 184, /obj/machinery/atmospherics/valve/digital)
+	into += entry_line(185)
+	into += list(global.extend("toggle", global.needs(global.req(PROC_REF(actor_allowed), because = MSG(lock/denied)), global.req(PROC_REF(has_power), because = MSG(valve/unpowered)))))
+	into += entry_line(186)
+	into += list(global.extend("unwrench", global.needs(global.req(PROC_REF(actor_allowed), because = MSG(lock/denied)))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff) at code/ATMOSPHERICS/components/shutoff.dm:37
+/obj/machinery/atmospherics/valve/shutoff/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/shutoff.dm", 37, /obj/machinery/atmospherics/valve/shutoff)
+	into += entry_line(38)
+	into += list(membership(joins = REGISTRY_SHUTOFF_VALVES))
+	into += entry_line(39)
+	into += list(global.without("toggle"))
+	into += entry_line(40)
+	into += list(global.op("circuit", global.hand(), global.label("Toggle automatic control"), global.wait(0), global.says(PROC_REF(circuit_message)), global.then(PROC_REF(circuit_toggled))))
+	into += entry_line(41)
+	into += list(global.op("manual", global.hand(), global.gesture(GESTURE_ALT), global.label("Manually toggle valve"), global.wait(0), global.when(PROC_REF(actor_living)), global.needs(global.req(PROC_REF(circuit_off), because = MSG(shutoff/automatic))), global.says(PROC_REF(manual_message)), global.then(PROC_REF(manual_toggled))))
 
 /// CAPABILITIES(/obj/machinery/autolathe) at code/game/machinery/autolathe.dm:47
 /obj/machinery/autolathe/declared_entries(list/into)

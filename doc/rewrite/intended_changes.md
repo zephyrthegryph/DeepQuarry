@@ -1201,3 +1201,22 @@ first: no click reached the legacy `wrench_act()`).
   `emag()`; the module reads it (`routing_scrambled()`), and "Restore Backup" clears it, so the console and its window can no longer disagree.
   The shuttle-call grace periods are measured from the round's start (`ELAPSED(SSticker, round_start_time)`), not from server start, and are
   named (10 and 90 minutes; the old comment said 30).
+
+## Pipe devices: pumps, the regulator and the valves (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/*` in `code/modules/unit_tests/dq_atmos_pipes_behaviour.dm`. The shared controls are `pipe_device_window()`,
+`pipe_device_switch()`, `pipe_device_max()` and `pipe_device_unwrench()` (`code/domains/atmos/pipe_device.dm`).
+
+- **The window no longer swallows tools.** A wrench or a multitool on a pressure or volumetric pump opened its window (the window's hand op
+  answered first, so the legacy `wrench_act()`/`multitool_act()` were never reached): the wrench now takes a stopped pump off (4 s) and the
+  multitool lifts and restores the volumetric pump's limiter.
+- **Pump windows** open for someone the pump's access lets in while it works; the ctrl-click switch and the alt-click "max output" are ops with
+  the same access check (they were legacy click handlers). The switch says what it did.
+- **The regulator** (passive gate) asks its target pressure and flow limit with typed prompts on its ops (the `atmos_scalar` prompts and their
+  window callback are gone); its wrench is refused while its valve is open, as before.
+- **Digital valves** (straight and three-way) turned for anyone: they inherited the manual valve's ungated wheel beside their own
+  access-checked one. Now only someone their access lets in turns them, and only while they have power (the area's power, the NOPOWER bit).
+- **Automatic shutoff valve.** Its wake is `wake_automatic_shutoff_valves(network)` calling each bordering valve's keyed `leak_check` timer
+  (every valve for new construction), not an OM sleeper behaviour watching CHANGE_PIPE_LEAKS. `close_on_leaks` is tracked. A hand switches the
+  circuit; an alt-click turns it by hand only while the circuit is off (refused with a reason otherwise, where it used to say so and do nothing).
+- **Wrenches** of every converted device are ops with the 4 s wait (the three-way valve's and the manual valve's were 4 s through `use_tool`).

@@ -128,8 +128,6 @@
 		"life" = list(/datum/om/pipeline/life, /datum/om/behaviour/observer_upkeep, /datum/om/behaviour/hud_on_vitals),
 		// code/game/machinery/: the machine pipeline (the machine system is a kernel work item).
 		"machines" = list(/datum/om/pipeline/machine),
-		// code/ATMOSPHERICS/: fire and the shutoff valve.
-		"atmos" = list(/datum/om/behaviour/sleeper/shutoff_valve),
 		// code/modules/combat_ai/: strategic and tactical brains, and the sleeper that wakes them.
 		"ai_brain" = list(/datum/om/behaviour/ai_brain, /datum/om/behaviour/sleeper/ai_brain),
 		// code/datums/entity_state/disabilities/.
