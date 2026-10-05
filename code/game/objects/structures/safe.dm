@@ -31,10 +31,9 @@ FLOOR SAFES
 	tumbler_2_pos = rand(0, 72)
 	tumbler_2_open = rand(0, 72)
 
-	if(. != INITIALIZE_HINT_QDEL)
-		return INITIALIZE_HINT_LATELOAD
 
-/obj/structure/safe/LateInitialize()
+/// Takes in the items lying on its turf, as space allows.
+/obj/structure/safe/proc/take_loose_items(datum/act/timer/A)
 	for(var/obj/item/I in contents_of(loc))
 		if(space >= maxspace)
 			return
@@ -86,6 +85,7 @@ APPEARANCE_TEMPLATE(/obj/structure/safe, "{initial(icon_state)}{open?-open:}")
 	effect = /atom/proc/interaction_open_ui
 
 CAPABILITIES(/obj/structure/safe)
+	after_init(0, then(PROC_REF(take_loose_items)))
 	interface("Safe")
 	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
 	op("decrement", ui_act("decrement"), then(PROC_REF(ui_act_decrement)))

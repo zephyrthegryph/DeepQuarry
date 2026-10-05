@@ -32,6 +32,7 @@
 	var/datum/looping_sound/generator/soundloop
 
 CAPABILITIES(/obj/machinery/power/generator)
+	after_init(0, then(PROC_REF(connect_circulators)))
 	owns_one(nameof(soundloop), /datum/looping_sound/generator)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
@@ -40,10 +41,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
 	make_rotatable()
-	..() //Not returned, because...
-	return INITIALIZE_HINT_LATELOAD
+	. = ..()
 
-/obj/machinery/power/generator/LateInitialize()
+/// Connects its circulators, once they exist.
+/obj/machinery/power/generator/proc/connect_circulators(datum/act/timer/A)
 	reconnect()
 
 

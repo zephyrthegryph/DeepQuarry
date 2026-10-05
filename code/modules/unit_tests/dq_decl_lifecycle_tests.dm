@@ -78,7 +78,6 @@ DECLARE_BEHAVIOUR(/obj/item/dq_decl_probe, /datum/om/behaviour/dq_decl_test)
 DECLARE_PERIODIC(/obj/item/dq_decl_probe, PERIODIC_SLOW)
 DESTROY_EFFECTS(/obj/item/dq_decl_probe, new /datum/destroy_effects_data(drop_contents = TRUE, debris = list(/obj/item/dq_decl_part/better = 2)))
 
-// INIT: records what the declarations had already set up (test probe)
 /obj/item/dq_decl_probe/Initialize(mapload)
 	. = ..()
 	saw_reagents_in_initialize = reagents?.total_volume

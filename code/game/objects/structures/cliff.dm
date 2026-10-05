@@ -103,12 +103,12 @@ CAPABILITIES(/obj/structure/cliff)
 /obj/structure/cliff/bottom
 	bottom = TRUE
 
-/obj/structure/cliff/automatic/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/cliff/automatic)
+	after_init(0, then(PROC_REF(shape_cliff)))
 
 // Paranoid about the maploader, direction is very important to cliffs, since they may get bigger if initialized while facing NORTH.
-/obj/structure/cliff/automatic/LateInitialize()
+/// Picks its look and grows its lower edge, once its neighbours exist.
+/obj/structure/cliff/automatic/proc/shape_cliff(datum/act/timer/A)
 	if(dir in GLOB.cardinal)
 		icon_variant = pick("a", "b", "c")
 

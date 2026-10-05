@@ -12,11 +12,11 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 
-/obj/effect/simple_portal/linked/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/effect/simple_portal/linked)
+	after_init(0, then(PROC_REF(link_on_init)))
 
-/obj/effect/simple_portal/linked/LateInitialize()
+/// Links its partner portal, once both exist.
+/obj/effect/simple_portal/linked/proc/link_on_init(datum/act/timer/A)
 	if(portal_id)
 		link_portal()
 

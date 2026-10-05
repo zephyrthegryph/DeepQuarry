@@ -21,6 +21,7 @@
 	var/tmp/client/controller	//Whoever is set to be controlling the blob. Used when the blob is created.
 
 CAPABILITIES(/obj/structure/blob/core)
+	after_init(0, then(PROC_REF(make_overmind_after_init)))
 	owns_one(nameof(Q), /datum/ghost_query)
 
 // Spawn this if you want a ghost to be able to play as the blob.
@@ -103,16 +104,24 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 
 DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 
+/obj/structure/blob/core
+	/// FALSE when it was placed by an overmind or came with one: then it makes none after init.
+	var/tmp/make_overmind = TRUE
+
+// ALLOW(init/CTOR_ARGS): its overmind, point rate and whether it was placed are constructor arguments
 /obj/structure/blob/core/Initialize(mapload, client/new_overmind = null, new_rate = 2, placed = 0)
 	. = ..()
 	update_icon() //so it atleast appears
 	point_rate = new_rate
 	rel_set(src, nameof(controller), new_overmind)
 
-	if(!placed && !overmind)
-		return INITIALIZE_HINT_LATELOAD
+	if(placed || overmind)
+		make_overmind = FALSE
 
-/obj/structure/blob/core/LateInitialize()
+/// A core spawned without an overmind (not placed by one) makes its own.
+/obj/structure/blob/core/proc/make_overmind_after_init(datum/act/timer/A)
+	if(!make_overmind)
+		return
 	create_overmind(controller())
 	if(overmind)
 		update_icon()

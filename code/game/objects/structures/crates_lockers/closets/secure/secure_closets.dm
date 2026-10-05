@@ -160,7 +160,8 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	if(self_del)
 		qdel(src)
 
-/obj/structure/closet/secure_closet/mind/LateInitialize()
+/// A mind's locker takes nothing in: it only resolves its look.
+/obj/structure/closet/secure_closet/mind/closet_after_init(datum/act/timer/A)
 	if(ispath(closet_appearance))
 		closet_appearance = GLOB.closet_appearances[closet_appearance]
 		if(istype(closet_appearance))

@@ -16,18 +16,19 @@
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
 
 CAPABILITIES(/obj/machinery/portable_atmospherics)
+	after_init(0, then(PROC_REF(port_after_init)))
 	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(holding), /obj/item/tank)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_bursts))))
 
 /obj/machinery/portable_atmospherics/Initialize(mapload)
-	..()
+	. = ..()
 	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
 	air_contents.set_volume(volume)
 	air_contents.set_temperature(T20C)
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/portable_atmospherics/LateInitialize()
+/// Connects to a port on its turf, once the pipes exist.
+/obj/machinery/portable_atmospherics/proc/port_after_init(datum/act/timer/A)
 	var/obj/machinery/atmospherics/portables_connector/port = locate_within(loc, /obj/machinery/atmospherics/portables_connector)
 	if(port)
 		connect(port)

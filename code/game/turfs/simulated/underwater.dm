@@ -79,8 +79,8 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, TYPE_PROC_R
 	icon = 'icons/turf/open_space.dmi'
 	icon_state = "black_open_lighter"
 
-/turf/simulated/floor/water/underwater/open/LateInitialize()
-	. = ..()
+/turf/simulated/floor/water/underwater/open/sim_after_init(datum/act/timer/A)
+	..()
 	make_z_transparent(FALSE)
 
 /turf/simulated/floor/water/underwater/open/CanZPass(atom/A, direction, recursive)
@@ -118,8 +118,8 @@ CAPABILITIES(/turf/simulated/floor/water/underwater/indoors)
 	name = "deeper waters"
 	desc = "The watery depths seem to go even deeper here."
 
-/turf/simulated/floor/water/underwater/indoors/open/LateInitialize()
-	. = ..()
+/turf/simulated/floor/water/underwater/indoors/open/sim_after_init(datum/act/timer/A)
+	..()
 	make_z_transparent(FALSE)
 
 DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/indoors/open, TYPE_PROC_REF(/atom, appearance_overlays), list())

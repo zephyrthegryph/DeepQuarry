@@ -20,9 +20,6 @@ SYSTEM_DEF(atoms)
 	var/base_initialized
 
 	var/atom_initialized = INITIALIZATION_INSSATOMS
-	/// Late loaders from a mapload Initialize() that ran outside any batch frame; the next
-	/// frame to close runs them. Frames keep their own (atoms_batch.dm).
-	var/list/late_loaders = list()
 
 	var/list/BadInitializeCalls = list()
 
@@ -136,25 +133,7 @@ SYSTEM_DEF(atoms)
 		flush_decl_binds()
 	dq_heat_bind_end()
 
-	var/list/loaders = batch.late_loaders
-	if(length(late_loaders))
-		loaders += late_loaders
-		late_loaders.Cut()
-	if(length(loaders))
-		for(var/I in 1 to length(loaders))
-			var/atom/A = loaders[I]
-			//I hate that we need this
-			if(QDELETED(A))
-				continue
-			#ifdef BENCHMARK_DEEP_PROFILE
-			var/bench_depth = benchmark_init_frame_begin()
-			#endif
-			A.LateInitialize()
-			#ifdef BENCHMARK_DEEP_PROFILE
-			benchmark_late_frame_end(bench_depth, A.type)
-			#endif
-		testing("Late initialized [length(loaders)] atoms")
-	after_init_flush(batch)
+	after_init_flush(batch) // the frame's map-loaded instances run their after_init() entries, after its last atom
 
 	if(created)
 		atoms_to_return += created
@@ -309,7 +288,7 @@ SYSTEM_DEF(atoms)
 	/// Instances whose init has run their engine init but not yet finished Initialize(): instance -> TRUE. InitAtom() takes each out when its
 	/// Initialize() returns and arms its after_init() entries (now, or at the close of the map-load frame).
 	var/list/after_init_pending
-	/// Map-loaded instances with after_init() entries, made outside any frame: the next frame to close arms them (as late_loaders).
+	/// Map-loaded instances with after_init() entries, made outside any frame: the next frame to close arms them.
 	var/list/after_init_loose
 
 /// after_init_note(): `A` has after_init() entries and its Initialize() is running.
@@ -334,7 +313,7 @@ SYSTEM_DEF(atoms)
 		return
 	after_init_arm(A, FALSE)
 
-/// A frame closed (initialize_atoms_finish(), after its late loaders): every map-loaded instance it holds is armed.
+/// A frame closed (initialize_atoms_finish(), after its deferred work and binds): every map-loaded instance it holds is armed.
 /datum/system/atoms/proc/after_init_flush(datum/materialize_batch/batch)
 	var/list/armed = batch.after_inits
 	batch.after_inits = null
@@ -342,8 +321,15 @@ SYSTEM_DEF(atoms)
 		armed = (armed || list()) + after_init_loose
 		after_init_loose = null
 	for(var/atom/A as anything in armed)
-		if(!QDELETED(A))
-			after_init_arm(A, TRUE)
+		if(QDELETED(A))
+			continue
+		#ifdef BENCHMARK_DEEP_PROFILE
+		var/bench_depth = benchmark_init_frame_begin()
+		#endif
+		after_init_arm(A, TRUE)
+		#ifdef BENCHMARK_DEEP_PROFILE
+		benchmark_late_frame_end(bench_depth, A.type)
+		#endif
 
 /// TRUE while a map load is in progress: a load frame is open (InitializeAtoms(), or a chunked load suspended between its steps). The engine's
 /// drains wait for the load to complete (stat_drain_point()).

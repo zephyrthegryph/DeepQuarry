@@ -185,13 +185,15 @@ CAPABILITIES(/turf/simulated/mineral)
 	if(prob(20))
 		overlay_detail = "asteroid[rand(0,9)]"
 	update_icon()
-	if(density && mineral())
-		. = INITIALIZE_HINT_LATELOAD
 	if(random_icon)
 		dir = pick(GLOB.alldirs)
-		. = INITIALIZE_HINT_LATELOAD
 
-/turf/simulated/mineral/LateInitialize()
+/// Rock made during the round spreads its ore too, unless it is the generator's blank substrate (the carver owns that).
+/turf/simulated/mineral/runtime_after_init()
+	return !pregen_substrate
+
+/// Ore spreads to the rock around it, once that exists. Rock takes no planet sunlight (no ..()).
+/turf/simulated/mineral/sim_after_init(datum/act/timer/A)
 	if(density && mineral())
 		MineralSpread()
 

@@ -29,6 +29,7 @@
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	after_init(0, then(PROC_REF(move_after_init)))
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
 	owns_many(nameof(product_datums))
 	interface("RecyclerVendor")
@@ -52,10 +53,11 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 
 	src.vis_contents |= monitor_screen
 	shuffle_inplace(product_datums) //looks weird to have a billion carpet entries right next to eachother
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/maint_vendor/LateInitialize()
+/// A mapped one moves to a marker, once the markers exist.
+/obj/machinery/maint_vendor/proc/move_after_init(datum/act/timer/A)
+	if(!A.mapload)
+		return
 	move_to_marker()
 
 /obj/machinery/maint_vendor/proc/move_to_marker()

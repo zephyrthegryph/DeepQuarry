@@ -165,6 +165,7 @@ MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.",
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
 CAPABILITIES(/obj/machinery/power/apc)
+	after_init(0, then(PROC_REF(apply_power_after_init)))
 	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE)
 	configure(construction_graph(start = STAGE_APC_SECURED))
 	maintenance_hatch(
@@ -515,9 +516,9 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		return
 
 	init()
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/power/apc/LateInitialize()
+/// Sets its area's power from what it supplies, once the area's machines exist.
+/obj/machinery/power/apc/proc/apply_power_after_init(datum/act/timer/A)
 	apply_area_power()
 
 /// Phase 1 (unbind): the APC's Rust power node goes.

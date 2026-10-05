@@ -1171,33 +1171,33 @@
 	return "Its Initialize() builds a hidden uplink child with its own timers (uplink.dm); a rare, antag-only preset, not the bulk case this step targets."
 
 // Mapped pre-linked to a specific telecomms machine; the link is set up once
-// at roundstart (LateInitialize) and would need to be redone on materialize.
+// at roundstart (its after_init() pass) and would need to be redone on materialize.
 /obj/item/radio/bluespacehandset/linked/tether_prelinked
 	latent_safe = FALSE
 
 /obj/item/radio/bluespacehandset/linked/tether_prelinked/latent_unsafe_reason()
-	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (LateInitialize) and would need to be redone on materialize."
+	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (its after_init() pass) and would need to be redone on materialize."
 
 /obj/item/radio/bluespacehandset/linked/talon_prelinked
 	latent_safe = FALSE
 
 /obj/item/radio/bluespacehandset/linked/talon_prelinked/latent_unsafe_reason()
-	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (LateInitialize) and would need to be redone on materialize."
+	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (its after_init() pass) and would need to be redone on materialize."
 
 /obj/item/radio/bluespacehandset/linked/relicbase_prelinked
 	latent_safe = FALSE
 
 /obj/item/radio/bluespacehandset/linked/relicbase_prelinked/latent_unsafe_reason()
-	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (LateInitialize) and would need to be redone on materialize."
+	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (its after_init() pass) and would need to be redone on materialize."
 
 /obj/item/radio/bluespacehandset/linked/southerncross_prelinked
 	latent_safe = FALSE
 
 /obj/item/radio/bluespacehandset/linked/southerncross_prelinked/latent_unsafe_reason()
-	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (LateInitialize) and would need to be redone on materialize."
+	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (its after_init() pass) and would need to be redone on materialize."
 
 /obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
 	latent_safe = FALSE
 
 /obj/item/radio/bluespacehandset/linked/cryogaia_prelinked/latent_unsafe_reason()
-	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (LateInitialize) and would need to be redone on materialize."
+	return "Mapped pre-linked to a specific telecomms machine; the link is set up once at roundstart (its after_init() pass) and would need to be redone on materialize."

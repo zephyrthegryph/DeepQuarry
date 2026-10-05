@@ -3,15 +3,21 @@
 	var/shandler_noinit = FALSE
 
 CAPABILITIES(/turf/simulated)
+	after_init(0, then(PROC_REF(turf_after_init)))
 	owns_one(nameof(shandler), /datum/sunlight_handler)
 	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))
 
-/turf/simulated/Initialize(mapload)
-	. = ..()
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
+/// A turf the map loads runs its after-init pass once the whole load exists; one made later (ChangeTurf) runs it only when its type says so.
+/turf/simulated/proc/turf_after_init(datum/act/timer/A)
+	if(A.mapload || runtime_after_init())
+		sim_after_init(A)
 
-/turf/simulated/LateInitialize()
+/// Whether a turf made during the round runs sim_after_init() too (a floor with flooring, open space, glass), not only one the map loads.
+/turf/simulated/proc/runtime_after_init()
+	return FALSE
+
+/// The after-init pass of a simulated turf: planet sunlight. Subtypes add their own work after ..().
+/turf/simulated/proc/sim_after_init(datum/act/timer/A)
 	if(((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && has_dynamic_lighting()) //Only for planet turfs or fakesuns that specify they want to use this system
 		if(is_outdoors())
 			var/turf/T = GetAbove(src)

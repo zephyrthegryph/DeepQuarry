@@ -1,9 +1,9 @@
 /// A real safe refuses stuck originals without charging capacity and refunds the exact capacity on actual retrieval.
 /datum/unit_test/interim_safe_sticky_insertion_capacity_refund/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	// The safe collects loose turf items on late initialization, so establish it before creating the originals.
+	// The safe collects loose turf items after init (take_loose_items()), so establish it before creating the originals.
 	var/obj/structure/safe/safe = allocate(/obj/structure/safe, T)
-	safe.LateInitialize()
+	safe.take_loose_items()
 	TEST_ASSERT_EQUAL(contents_count(safe), 0, "the actual initialized fixture safe starts without collected items")
 	TEST_ASSERT_EQUAL(safe.space, 0, "the actual empty safe begins with zero occupied capacity")
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)

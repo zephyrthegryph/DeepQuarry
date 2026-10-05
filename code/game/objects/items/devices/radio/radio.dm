@@ -63,8 +63,6 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	set_wires(new /datum/wires/radio(src))
 	internal_channels = GLOB.default_internal_channels.Copy()
 
-	if(bluespace_radio && (bs_tx_preload_id || bs_rx_preload_id))
-		return INITIALIZE_HINT_LATELOAD
 
 // radio_connection/secure_radio_connections are SSradio's live subscriptions,
 // rebuilt by on_materialize() from frequency/channels (C5). The bluespace
@@ -87,7 +85,10 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	rel_clear(src, nameof(radio_connection))
 	return ..()
 
-/obj/item/radio/LateInitialize()
+/// A bluespace radio links the machines its preload ids name, once they all exist.
+/obj/item/radio/proc/radio_after_init(datum/act/timer/A)
+	if(!bluespace_radio || !(bs_tx_preload_id || bs_rx_preload_id))
+		return
 	if(bs_tx_preload_id)
 		//Try to find a receiver
 		for(var/obj/machinery/telecomms/receiver/RX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
@@ -125,6 +126,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	return
 
 CAPABILITIES(/obj/item/radio)
+	after_init(0, then(PROC_REF(radio_after_init)))
 	op("controls", in_hand(), label("Open radio controls"), then(PROC_REF(radio_controls_opened)))
 
 /obj/item/radio/proc/radio_controls_opened(datum/act/op/A)

@@ -85,10 +85,10 @@
 
 	. = ..()
 
-	if(!roundstart && antag)
-		return INITIALIZE_HINT_LATELOAD
-
-/mob/living/simple_mob/animal/borer/LateInitialize()
+/// An antag borer spawned during the round asks for a player.
+/mob/living/simple_mob/animal/borer/proc/find_player(datum/act/timer/A)
+	if(roundstart || !antag)
+		return
 	request_player()
 
 // a borer detaches from and leaves its host.

@@ -24,7 +24,7 @@ CAPABILITIES(/obj/item/dnainjector)
 
 TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 
-// INIT: allocates this injector's owned gene record and DNA buffer, then writes its selected gene value before parent initialization
+// ALLOW(init/INSTANCE_STATE): allocates this injector's owned gene record and DNA buffer, then writes its selected gene value before parent initialization
 /obj/item/dnainjector/Initialize(mapload)
 	var/selector = TYPE_TABLE_GET(src, injector_random_selector)
 	switch(selector)

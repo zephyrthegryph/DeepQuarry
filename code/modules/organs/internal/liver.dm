@@ -61,9 +61,12 @@
 /obj/item/organ/internal/liver/grey
 	icon_state = "liver_grey"
 
-TYPE_TABLE(/obj/item/organ/internal/liver/grey/colormatch, internal_late_initialize, TRUE)
 
-/obj/item/organ/internal/liver/grey/colormatch/LateInitialize()
+CAPABILITIES(/obj/item/organ/internal/liver/grey/colormatch)
+	after_init(0, then(PROC_REF(match_blood_color)))
+
+/// Takes its owner's blood colour, once the body has placed it.
+/obj/item/organ/internal/liver/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color

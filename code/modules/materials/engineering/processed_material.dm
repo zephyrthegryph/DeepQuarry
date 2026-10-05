@@ -296,8 +296,7 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 	owns_one(nameof(batch_state), /datum/material_batch)
 	op("processed_alloy_item", item(/obj/item), then(PROC_REF(processed_alloy_item)))
 
-// INIT: this stack's material, colour, export value and a batch copy sized to its amount
-// ALLOW(init): the material is a per-instance argument and the batch copy is sized to this stack
+// ALLOW(init/CTOR_ARGS): the material is a per-instance argument and the batch copy is sized to this stack
 /obj/item/stack/material/processed_alloy/Initialize(mapload, _amount, _material_name)
 	if(_material_name)
 		default_type = _material_name

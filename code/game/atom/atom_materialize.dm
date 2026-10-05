@@ -7,7 +7,7 @@
 // live atom: global lists, radio and network joins, processing and reactor
 // subscriptions, global signal registrations, lighting and radiation updates.
 // SSatoms.InitAtom() runs it right after Initialize() (and after an immediate
-// LateInitialize()), so creation in the world, map load and a latent entry
+// after_init()), so creation in the world, map load and a latent entry
 // becoming real all go through it.
 //
 // on_dematerialize() is its exact inverse. /atom/Destroy() runs it, and a

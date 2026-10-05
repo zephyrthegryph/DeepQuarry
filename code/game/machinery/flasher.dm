@@ -25,11 +25,11 @@
 	base_state = "pflash"
 	density = TRUE
 
-/obj/machinery/flasher/portable/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/machinery/flasher/portable)
+	after_init(0, then(PROC_REF(arm_proximity)))
 
-/obj/machinery/flasher/portable/LateInitialize()
+/// An anchored flasher senses proximity from the start.
+/obj/machinery/flasher/portable/proc/arm_proximity(datum/act/timer/A)
 	// Map start flashers enable proximity sensing
 	if(anchored)
 		add_overlay("[base_state]-s")
