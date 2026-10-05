@@ -518,7 +518,28 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 	message_admins(span_blue("[key_name_admin(user)] setup the singulo engine"))
 
 ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets up the supermatter engine.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/response = verb_ask(user, "a6", args, /datum/om/prompt/choice/alert, message = "Are you sure? This will start up the engine. Should only be used during debug!", title = "Setup Supermatter", choices = list("Setup Completely","Setup except coolant","No"))
+	var/mob/answerer = user.mob
+	if(!answerer || QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/admin_supermatter_setup, PROC_REF(supermatter_setup_answered), answerer = answerer)
+
+/datum/admin_verb/setup_supermatter_engine/proc/supermatter_setup_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(supermatter_setup_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(!admin_can(user, permissions))
+		admin_log_denial(user, "verb:[src.type]", permissions)
+		to_chat(user, span_adminnotice("You lack the permissions to do this."))
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/response = context.answer.answer_value
 	if(isnull(response))
 		return
 
@@ -888,3 +909,22 @@ CAPABILITIES(/datum/prompt/choice/admin_control_target)
 		var/datum/decl/hierarchy/outfit/picked = answer_value
 		return QDELETED(picked) ? "outfit is gone" : null
 
+
+/datum/prompt/choice/admin_supermatter_setup
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_DEBUG|R_ADMIN
+	buttons = TRUE
+	question = "Are you sure? This will start up the engine. Should only be used during debug!"
+	title = "Setup Supermatter"
+	choices = list("Setup Completely", "Setup except coolant", "No")
+
+/datum/prompt/choice/admin_supermatter_setup/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/proc/supermatter_setup_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif

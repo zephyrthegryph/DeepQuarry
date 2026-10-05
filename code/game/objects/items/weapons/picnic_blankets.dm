@@ -46,8 +46,7 @@ CAPABILITIES(/obj/structure/picnic_blanket_deployed)
 
 /obj/structure/picnic_blanket_deployed/proc/picnic_blanket_deployed_fold_up_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	for(var/obj/structure/picnic_blanket_deployed/side in attached_blankets)
-		qdel(side)
+	own_clear(src, nameof(attached_blankets), OWN_DELETE)
 	var/obj/item/picnic_blankets_carried/P = new /obj/item/picnic_blankets_carried(user.loc)
 	P.name = name
 	P.desc = folded_desc

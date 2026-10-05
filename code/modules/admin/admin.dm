@@ -601,7 +601,15 @@ ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", 
 	log_admin("[key_name(user)] spawned [seedtype] fruit at ([user_mob.x],[user_mob.y],[user_mob.z])")
 
 ADMIN_VERB(spawn_custom_item, R_SPAWN, "Spawn Custom Item", "Spawn a custom item.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/owner = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Select a ckey.", title = "Spawn Custom Item", choices = GLOB.custom_items)
+	return custom_item_spawn_stage(user, list())
+
+/datum/admin_verb/spawn_custom_item/proc/custom_item_spawn_stage(client/user, list/custom_answers)
+	if(!("a11" in custom_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/admin_custom_item_spawn, PROC_REF(custom_item_spawn_answered), answerer = user.mob, custom_answers = custom_answers, custom_key = "a11", question = "Select a ckey.", title = "Spawn Custom Item", choices = GLOB.custom_items)
+		return
+	var/owner = custom_answers["a11"]
 	if(isnull(owner))
 		return
 	if(!owner)
@@ -610,7 +618,12 @@ ADMIN_VERB(spawn_custom_item, R_SPAWN, "Spawn Custom Item", "Spawn a custom item
 	var/list/possible_items = GLOB.custom_items[owner]
 	if(!possible_items)
 		return
-	var/datum/custom_item/chosen_item = verb_ask(user, "a12", args, /datum/om/prompt/choice, message = "Select an item to spawn.", title = "Spawn Custom Item", choices = possible_items)
+	if(!("a12" in custom_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/admin_custom_item_spawn, PROC_REF(custom_item_spawn_answered), answerer = user.mob, custom_answers = custom_answers, custom_key = "a12", question = "Select an item to spawn.", title = "Spawn Custom Item", choices = possible_items)
+		return
+	var/datum/custom_item/chosen_item = custom_answers["a12"]
 	if(isnull(chosen_item))
 		return
 	if(!chosen_item)
@@ -1320,3 +1333,42 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 		seed_key = ask.seed_key
 	seed_answers[seed_key] = context.answer.answer_value
 	return seed_spawn_stage(user, seed_answers)
+
+/datum/prompt/choice/admin_custom_item_spawn
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_SPAWN
+	var/list/custom_answers
+	var/custom_key
+
+/datum/prompt/choice/admin_custom_item_spawn/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+	if(custom_key == "a12" && !isnull(answer_value))
+		var/datum/custom_item/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+
+/proc/custom_item_spawn_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/spawn_custom_item/proc/custom_item_spawn_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(custom_item_spawn_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/datum/prompt/choice/admin_custom_item_spawn/ask = context.answer
+	var/list/custom_answers = ask.custom_answers.Copy()
+	custom_answers[ask.custom_key] = ask.answer_value
+	return custom_item_spawn_stage(user, custom_answers)

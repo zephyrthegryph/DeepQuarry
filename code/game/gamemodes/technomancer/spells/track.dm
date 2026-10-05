@@ -46,11 +46,13 @@ CAPABILITIES(/obj/item/spell/track)
 		if(L == user)
 			continue
 		mob_choices += L
-	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(track_target_chosen), title = "Tracking", message = "Decide what or who to track.", choices = (object_choices + mob_choices))
+	open_request(src, /datum/prompt/choice/technomancer_track_target, PROC_REF(track_target_chosen), answerer = user, title = "Tracking", question = "Decide what or who to track.", choices = (object_choices + mob_choices))
 
-/obj/item/spell/track/proc/track_target_chosen(datum/om/prompt/choice/carried_item/ask)
-	if(ask.choice)
-		rel_set(src, nameof(tracked), ask.choice)
+/obj/item/spell/track/proc/track_target_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	if(context.answer.answer_value)
+		rel_set(src, nameof(tracked), context.answer.answer_value)
 		set_tracking(TRUE)
 		track()
 
@@ -78,3 +80,15 @@ CAPABILITIES(/obj/item/spell/track)
 /// Tracked (a relation view).
 /obj/item/spell/track/proc/tracked() as /atom/movable
 	return tracked
+
+/datum/prompt/choice/technomancer_track_target
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/datum/prompt/choice/technomancer_track_target/recheck_extra()
+	if(isnull(answer_value))
+		return null
+	var/atom/movable/selected = answer_value
+	if(!istype(selected) || QDELETED(selected))
+		return "gone"

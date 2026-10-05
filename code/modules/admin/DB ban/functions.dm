@@ -64,9 +64,7 @@
 	if(!validckey && !unseen_ok)
 		if(!banned_mob || (banned_mob && !IsGuestKey(banned_mob.key))) // .
 			// The answer records the ban again from the start, re-reading the target's identifiers.
-			var/datum/om/prompt/confirm/unseen_ban/ask = om_ask(actor, /datum/om/prompt/confirm/unseen_ban, PROC_REF(unseen_ban_confirmed), ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid))
-			if(ask && banned_mob)
-				rel_set(ask, nameof(ask.banned_mob), banned_mob)
+			open_request(src, /datum/prompt/choice/unseen_ban, PROC_REF(unseen_ban_confirmed), answerer = actor, subject = banned_mob, ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid))
 			return
 
 	var/a_ckey
@@ -170,20 +168,27 @@
 
 	DB_ban_unban_by_id(ban_id, actor)
 
-/datum/om/prompt/confirm/unseen_ban
+/datum/prompt/choice/unseen_ban
 	title = "Confirm Badmin"
-	message = "This ckey hasn't been seen, are you sure?"
-	requires = PROMPT_ADMIN(R_MOD|R_BAN)
-	/// DB_ban_record()'s arguments (the target's identifiers as they were when asked).
+	question = "This ckey hasn't been seen, are you sure?"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_MOD|R_BAN
 	var/list/ban_args
-	/// The banned mob (a relation view): the ban goes ahead by ckey if the mob is gone meanwhile.
-	var/mob/banned_mob
 
-/datum/admins/proc/unseen_ban_confirmed(datum/om/prompt/confirm/unseen_ban/ask)
-	var/mob/admin = ask.answerer
+/datum/prompt/choice/unseen_ban/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/admins/proc/unseen_ban_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
+	var/mob/admin = A.request.answerer
+	var/datum/prompt/choice/unseen_ban/ask = A.request
 	var/list/ban_args = ask.ban_args
-	var/mob/banned_mob = ask.banned_mob
-	if(banned_mob)
+	var/mob/banned_mob = ask.subject
+	if(banned_mob && !QDELETED(banned_mob))
 		ban_args[2] = banned_mob
 	usr = admin // ALLOW(sys_usr_outside_verb): legacy prompt-flow I/O captures this initiating admin for login and cancellation checks
 	DB_ban_record(arglist(ban_args + list(TRUE, admin)))

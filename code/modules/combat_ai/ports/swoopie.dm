@@ -44,17 +44,33 @@ TYPE_TABLE(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, get_ai_t
 	set desc = "Change the swoopie's settings"
 	set category = VERB_CAT_IC
 	set src in oview(1)
-	if(!ai_brain || !IIsAlly(usr))
-		to_chat(usr, span_warning("\The [src] does not respond to your input."))
+	settings_request_stage(usr)
+
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/settings_request_stage(mob/user, setting)
+	if(!user || QDELETED(user))
 		return
-	var/setting = rerun_ask(usr, "k52", VERB_REF(change_settings), args, /datum/om/prompt/choice, message = "Toggle Swoopie Swooping Options", title = "Swoopie Options", choices = list("Swoop Pests", "Swoop Trash"))
+	if(!ai_brain || !IIsAlly(user))
+		to_chat(user, span_warning("\The [src] does not respond to your input."))
+		return
 	if(isnull(setting))
+		open_request(src, /datum/prompt/choice/swoopie_settings, PROC_REF(settings_request_answered), answerer = user, question = "Toggle Swoopie Swooping Options", title = "Swoopie Options", choices = list("Swoop Pests", "Swoop Trash"))
 		return
 	switch(setting)
 		if("Swoop Pests")
 			swoop_pests = !swoop_pests
-			to_chat(usr, "You press a button on \the [src], [swoop_pests ? "" : "de"]activating its pest seeking routines!")
+			to_chat(user, "You press a button on \the [src], [swoop_pests ? "" : "de"]activating its pest seeking routines!")
 		if("Swoop Trash")
 			swoop_trash = !swoop_trash
-			to_chat(usr, "You press a button on \the [src], [swoop_trash ? "" : "de"]activating its trash seeking routines!")
+			to_chat(user, "You press a button on \the [src], [swoop_trash ? "" : "de"]activating its trash seeking routines!")
 	ai_brain.invalidate_selection()
+
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/settings_request_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	settings_request_stage(context.request.answerer, context.answer.answer_value)
+	if(!QDELETED(src))
+		SStgui.update_uis(src)
+
+/datum/prompt/choice/swoopie_settings
+	timeout = 0
+	recheck_on_open = TRUE
