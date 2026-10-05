@@ -7,3 +7,4 @@ changes:
   - code_imp: "Moved seed spawning, fake PDA identities, job slots, agent-card menus and ban edit values to native requests."
   - code_imp: "Moved custom-item selection, cryo approvals, AI message composition, mecha pressure and additional buildmode choices to native requests."
   - code_imp: "Moved unseen-ban confirmation, talisman and tracking choices, and AI alert-level selection to native requests."
+  - code_imp: "Moved room setup, stasis selection and Swoopie settings to native requests, and retired blanket edges through their declared ownership."
