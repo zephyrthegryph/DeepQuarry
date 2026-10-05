@@ -482,6 +482,7 @@
 #include "dq_p2_batteryrack_behaviour.dm"
 #include "dq_p2_vending_behaviour.dm"
 #include "dq_mf_vending_behaviour.dm"
+#include "dq_mf_turret_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
 #include "dq_paths_behaviour.dm"
 #include "dq_p2_door_base_tests.dm"
