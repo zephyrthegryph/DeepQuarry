@@ -83,8 +83,6 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 
 		M.status_at_least(EFFECT_WEAKENED, 10)
 
-	if(master && wires & 1)
-		master.receive_signal()
 	return
 
 // TGUI Electropack window; no more browse() panel.

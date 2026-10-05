@@ -118,13 +118,19 @@ CAPABILITIES(/obj/item/rig)
 	owns_one(nameof(component_registry), starts = /datum/rig_component_registry)
 	// We only care about processing when we're on a mob
 	every(2 SECONDS, then(PROC_REF(rig_step)), when = nameof(carried_by_mob))
+	space(SPACE_PANEL, door = nameof(open))
+	wires(/datum/wire_set/rig, tools = FALSE)
+	on_wire(WIRE_RIG_SECURITY, cut = PROC_REF(security_wire_cut), pulse = PROC_REF(security_wire_pulsed))
+	on_wire(WIRE_RIG_AI_OVERRIDE, pulse = PROC_REF(ai_override_wire_pulsed))
+	on_wire(WIRE_RIG_SYSTEM_CONTROL, pulse = PROC_REF(system_wire_pulsed))
+	on_wire(WIRE_RIG_INTERFACE_LOCK, pulse = PROC_REF(interface_lock_wire_pulsed))
+	on_wire(WIRE_RIG_INTERFACE_SHOCK, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
 
 /obj/item/rig/Initialize(mapload)
 	. = ..()
 
 	suit_state = icon_state
 	item_state = icon_state
-	set_wires(new /datum/wires/rig(src))
 
 	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 		locked = 0

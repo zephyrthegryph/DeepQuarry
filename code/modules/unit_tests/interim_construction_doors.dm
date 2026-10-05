@@ -134,7 +134,7 @@
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
 	door.set_stat(0)
 	TEST_ASSERT(door.arePowerSystemsOn(), "Fixture must have working airlock power")
-	var/datum/wires/wires = wire_set_of(door)
+	var/datum/wires_test_adapter/wires = wires_test(door)
 	TEST_ASSERT_NOTNULL(wires, "Airlock did not provide wires")
 	wires.pulse(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(door.isElectrified(), "Pulsing the electrify wire must electrify the door")

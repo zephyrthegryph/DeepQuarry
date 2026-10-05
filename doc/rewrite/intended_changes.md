@@ -583,6 +583,8 @@ conversion), with the holder tests that already drove wires (dq_p2_apc, dq_p2_do
 * **A signaler on a wire works again.** `/obj/item/assembly/signaler` read the atom's `wires` var (the holder's legacy wire datum, null on a signaler)
   where it meant its own `wires_type` flags, so an attached signaler never pulsed its wire, and no signaler took a radio signal at all
   (`receive_signal()` refused every one). Both read `wires_type` now. Fixed on the legacy code first, so the tests pin the working behaviour.
+* **An electropack no longer reads a wires flag before signalling its master.** `receive_signal()` tested `wires & 1`, the radio's legacy wire
+  datum ANDed with a number: a runtime whenever a master was set, so the master never heard it. The dead branch is gone with the datum.
 
 
 ## fw-gaps3 (input kinds)

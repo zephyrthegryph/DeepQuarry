@@ -48,9 +48,22 @@
 		else
 			. += span_warning("This tesla coil does not produce bolts!")
 
+CAPABILITIES(/obj/machinery/power/tesla_coil)
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/tesla_coil, tools = FALSE)
+	on_wire(WIRE_TESLACOIL_ZAP, pulse = PROC_REF(zap_wire_pulsed))
+
+/// A tesla coil's one wire: pulsed, it zaps.
+/datum/wire_set/tesla_coil
+	name = "Tesla coil"
+	count = 1
+	wires = list(WIRE_TESLACOIL_ZAP)
+
+/obj/machinery/power/tesla_coil/proc/zap_wire_pulsed(datum/act/A)
+	zap()
+
 /obj/machinery/power/tesla_coil/Initialize(mapload)
 	. = ..()
-	set_wires(new /datum/wires/tesla_coil(src))
 	default_apply_parts()
 
 /obj/machinery/power/tesla_coil/RefreshParts()

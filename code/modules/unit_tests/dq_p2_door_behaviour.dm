@@ -82,11 +82,11 @@
 
 /// Cuts wire `wire`, or mends it when it is cut (the wirecutter toggle).
 /proc/p2_door_wire_cut(obj/machinery/door/D, wire, mob/actor)
-	return wire_set_of(D).cut(wire, actor)
+	return wires_toggle(D, wire, actor)
 
 /// Sends a multitool pulse down wire `wire`.
 /proc/p2_door_wire_pulse(obj/machinery/door/D, wire, mob/actor)
-	return wire_set_of(D).pulse(wire, actor)
+	return wires_pulse(D, wire, actor)
 
 /// Drops (on) or raises the bolts the way a wire or a button does: forced, no power or wire check.
 /proc/p2_door_set_bolts(obj/machinery/door/D, on)

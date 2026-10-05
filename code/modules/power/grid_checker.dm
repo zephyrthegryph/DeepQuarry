@@ -18,7 +18,6 @@
 /obj/machinery/power/grid_checker/Initialize(mapload)
 	. = ..()
 	update_icon()
-	set_wires(new /datum/wires/grid_checker(src))
 	default_apply_parts()
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
@@ -78,7 +77,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, 
 		return
 
 	if(opened)
-		wires.Interact(user)
+		wires_open(src, user)
 
 	return tgui_interact(user)
 
@@ -131,3 +130,64 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, 
 /// The lockout a pulsed wire imposed is over.
 /obj/machinery/power/grid_checker/proc/end_wire_lockout()
 	wire_locked_out = FALSE
+
+// ---- the wires ----
+
+CAPABILITIES(/obj/machinery/power/grid_checker)
+	space(SPACE_PANEL, door = nameof(opened))
+	wires(/datum/wire_set/grid_checker, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_REBOOT, pulse = PROC_REF(reboot_wire_pulsed))
+	on_wire(WIRE_LOCKOUT, cut = PROC_REF(lockout_wire_cut), pulse = PROC_REF(lockout_wire_pulsed))
+	on_wire(WIRE_ALLOW_MANUAL1, cut = PROC_REF(manual_wire_cut))
+	on_wire(WIRE_ALLOW_MANUAL2, cut = PROC_REF(manual_wire_cut))
+	on_wire(WIRE_ALLOW_MANUAL3, cut = PROC_REF(manual_wire_cut))
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_touched), pulse = PROC_REF(shock_wire_touched))
+
+/// A grid checker's six working wires (and two duds).
+/datum/wire_set/grid_checker
+	name = "Grid Checker"
+	count = 8
+	wires = list(WIRE_REBOOT, WIRE_LOCKOUT, WIRE_ALLOW_MANUAL1, WIRE_ALLOW_MANUAL2, WIRE_ALLOW_MANUAL3, WIRE_ELECTRIFY)
+
+/obj/machinery/power/grid_checker/proc/wire_lights()
+	return list(
+		"The green light is [power_failing ? "off." : "on."]",
+		"The red light is [wire_locked_out ? "on." : "off."]",
+		"The blue light is [(wire_allow_manual_1 && wire_allow_manual_2 && wire_allow_manual_3) ? "on." : "off."]")
+
+/// The reboot wire pulsed ends a power failure, when the three manual wires allow it and nothing locks it out.
+/obj/machinery/power/grid_checker/proc/reboot_wire_pulsed(datum/act/A)
+	if(wire_locked_out)
+		return
+	if(power_failing && wire_allow_manual_1 && wire_allow_manual_2 && wire_allow_manual_3)
+		end_power_failure(TRUE)
+
+/obj/machinery/power/grid_checker/proc/lockout_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	wire_locked_out = !N.mended
+
+/// The lockout wire pulsed locks the checker out for thirty seconds.
+/obj/machinery/power/grid_checker/proc/lockout_wire_pulsed(datum/act/A)
+	if(wire_locked_out)
+		return
+	wire_locked_out = TRUE
+	after(src, 30 SECONDS, PROC_REF(end_wire_lockout))
+
+/// A manual wire cut allows a manual reboot; mended, it does not.
+/obj/machinery/power/grid_checker/proc/manual_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	switch(N.wire)
+		if(WIRE_ALLOW_MANUAL1)
+			wire_allow_manual_1 = !N.mended
+		if(WIRE_ALLOW_MANUAL2)
+			wire_allow_manual_2 = !N.mended
+		if(WIRE_ALLOW_MANUAL3)
+			wire_allow_manual_3 = !N.mended
+
+/// The shock wire, cut, mended or pulsed, may shock the hand on it (unless the checker is locked out).
+/obj/machinery/power/grid_checker/proc/shock_wire_touched(datum/act/A)
+	if(wire_locked_out)
+		return
+	var/datum/notice/wire_pulsed/P = A
+	var/datum/notice/wire_cut/C = A
+	shock(istype(P) ? P.user : C.user, 70)

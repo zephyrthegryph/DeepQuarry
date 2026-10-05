@@ -180,7 +180,7 @@ TOPIC_ACTION(/obj/item/wire_reader, "view_legend", PROC_REF(topic_view_legend))
 /obj/item/wire_reader/proc/view_station_wire_devices(mob/user)
 	var/message = "<br>You examine the wire legend.<br>"
 	for(var/wireset in GLOB.wire_color_directory)
-		//if(istype(wireset,/datum/wires/grid_checker))//Uncomment this in if you want the grid checker minigame to not be revealed here.
+		//if(wireset == /datum/wire_set/grid_checker)//Uncomment this in if you want the grid checker minigame to not be revealed here.
 		//	continue
 		message += "<br><a href='byond://?src=[REF(src)];view_wireset=[wireset]'>[GLOB.wire_name_directory[wireset]]</a>"
 	message += "</p>"
@@ -299,7 +299,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 /obj/item/areaeditor/blueprints/proc/view_wire_devices(mob/user)
 	var/message = "<br>You examine the wire legend.<br>"
 	for(var/wireset in GLOB.wire_color_directory)
-		//if(istype(wireset,/datum/wires/grid_checker))//Uncomment this in if you want the grid checker minigame to not be revealed here.
+		//if(wireset == /datum/wire_set/grid_checker)//Uncomment this in if you want the grid checker minigame to not be revealed here.
 		//	continue
 		message += "<br><a href='byond://?src=[REF(src)];view_wireset=[wireset]'>[GLOB.wire_name_directory[wireset]]</a>"
 	message += "</p>"

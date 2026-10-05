@@ -55,10 +55,66 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	interface("SeedStorage")
 	op("vend", ui_act("vend", arg("id", num())), then(PROC_REF(ui_act_vend)))
 	op("purge", ui_act("purge", arg("id", num())), then(PROC_REF(ui_act_purge)))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/seedstorage, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed))
+	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
+	on_wire(WIRE_SEED_LOCKDOWN, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
+
+/// A seed storage's four wires, every one its own colours.
+/datum/wire_set/seedstorage
+	name = "Seed Storage"
+	count = 4
+	randomize = TRUE
+	wires = list(WIRE_SEED_SMART, WIRE_CONTRABAND, WIRE_ELECTRIFY, WIRE_SEED_LOCKDOWN)
+
+/obj/machinery/seed_storage/proc/wire_lights()
+	return list(
+		"The orange light is [seconds_electrified ? "off." : "on."]",
+		"The red light is [smart ? "off." : "blinking."]",
+		"The green light is [(hacked || emagged) ? "on." : "off."]",
+		"The keypad lock light is [lockdown ? "deployed." : "retracted."]")
+
+/// The smart wire cut turns smart mode off (mending does not turn it back on).
+/obj/machinery/seed_storage/proc/smart_wire_cut(datum/act/A)
+	smart = FALSE
+
+/obj/machinery/seed_storage/proc/smart_wire_pulsed(datum/act/A)
+	smart = !smart
+
+/obj/machinery/seed_storage/proc/contraband_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	hacked = !N.mended
+
+/obj/machinery/seed_storage/proc/contraband_wire_pulsed(datum/act/A)
+	hacked = !hacked
+
+/obj/machinery/seed_storage/proc/shock_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	seconds_electrified = N.mended ? 0 : -1
+	MACHINE_SLEEP(src) // ALLOW(sys_periodic_toggle): the shock wire parks the step as the legacy wire datum did; the countdown is a plain var, not a tracked state to declare the work on
+
+/obj/machinery/seed_storage/proc/shock_wire_pulsed(datum/act/A)
+	seconds_electrified = 30
+	MACHINE_WAKE(src) // ALLOW(sys_periodic_toggle): the shock wire starts the countdown step as the legacy wire datum did; the countdown is a plain var, not a tracked state
+
+/// The lockdown wire mended locks the keypad down and clears the access; cut, the access is back as built.
+/obj/machinery/seed_storage/proc/lockdown_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(N.mended)
+		lockdown = TRUE
+		req_access = list()
+		req_one_access = list()
+	else
+		req_access = initial(req_access)
+		req_one_access = initial(req_one_access)
+
+/obj/machinery/seed_storage/proc/lockdown_wire_pulsed(datum/act/A)
+	lockdown = !lockdown
 
 /obj/machinery/seed_storage/Initialize(mapload)
 	. = ..()
-	set_wires(new /datum/wires/seedstorage(src))
 	if(!length(contraband_seeds))
 		contraband_seeds = pick( 	/// Some form of ambrosia in all lists.
 			prob(30);list( /// General produce
@@ -282,7 +338,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 			return TRUE
 
 	if(panel_open)
-		wires.Interact(user)
+		wires_open(src, user)
 	if(lockdown)
 		return TRUE
 	tgui_interact(user)
@@ -478,7 +534,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /obj/machinery/seed_storage/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/seed_storage/multitool_act(mob/user, obj/item/tool)

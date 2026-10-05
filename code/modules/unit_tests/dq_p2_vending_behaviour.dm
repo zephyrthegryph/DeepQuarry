@@ -28,9 +28,9 @@
 /proc/p2v_broken(obj/machinery/vending/V)
 	return !!V.has_stat(BROKEN)
 
-/// The vendor's wire set.
+/// The vendor's wire record.
 /proc/p2v_wires(obj/machinery/vending/V)
-	return wire_set_of(V)
+	return wiring_of(V)
 
 /// The window's data as a viewer is sent it.
 /proc/p2v_data(obj/machinery/vending/V, mob/user)
@@ -167,8 +167,9 @@
 GLOBAL_LIST_EMPTY(p2v_wire_windows)
 
 /// A wire window opened for a mob (recorded: a test mob has no client).
-/datum/wires/vending/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	LAZYADD(GLOB.p2v_wire_windows, user)
+/datum/cap_data/wires/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
+	if(istype(owner, /obj/machinery/vending))
+		LAZYADD(GLOB.p2v_wire_windows, user)
 	return ..()
 
 GLOBAL_LIST_EMPTY(p2v_log_windows)
@@ -1355,18 +1356,13 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 
 /// The actor pulses a wire (the panel is opened first when it is shut; it is left as it was).
 /datum/unit_test/dq_p2_vending/proc/p2v_wires_pulse(mob/living/carbon/human/H, obj/machinery/vending/V, wire)
-	var/datum/wires/W = p2v_wires(V)
-	W.pulse(wire, H)
+	wires_pulse(V, wire, H)
 	p2v_settle(0)
 
 /datum/unit_test/dq_p2_vending/proc/p2v_wires_cut(mob/living/carbon/human/H, obj/machinery/vending/V, wire)
-	var/datum/wires/W = p2v_wires(V)
-	if(!W.is_cut(wire))
-		W.cut(wire, H)
+	wires_cut(V, wire, H)
 	p2v_settle(0)
 
 /datum/unit_test/dq_p2_vending/proc/p2v_wires_mend(mob/living/carbon/human/H, obj/machinery/vending/V, wire)
-	var/datum/wires/W = p2v_wires(V)
-	if(W.is_cut(wire))
-		W.cut(wire, H)
+	wires_mend(V, wire, H)
 	p2v_settle(0)

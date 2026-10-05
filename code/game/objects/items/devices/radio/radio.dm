@@ -60,7 +60,6 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
 		frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 
-	set_wires(new /datum/wires/radio(src))
 	internal_channels = GLOB.default_internal_channels.Copy()
 
 
@@ -128,6 +127,41 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 CAPABILITIES(/obj/item/radio)
 	after_init(0, then(PROC_REF(radio_after_init)))
 	op("controls", in_hand(), label("Open radio controls"), then(PROC_REF(radio_controls_opened)))
+	space(SPACE_PANEL, door = nameof(b_stat))
+	wires(/datum/wire_set/radio, tools = FALSE)
+	on_wire(WIRE_RADIO_SIGNAL, cut = PROC_REF(signal_wire_cut), pulse = PROC_REF(signal_wire_pulsed))
+	on_wire(WIRE_RADIO_RECEIVER, cut = PROC_REF(receiver_wire_cut), pulse = PROC_REF(receiver_wire_pulsed))
+	on_wire(WIRE_RADIO_TRANSMIT, cut = PROC_REF(transmit_wire_cut), pulse = PROC_REF(transmit_wire_pulsed))
+
+/// A radio's three wires: the signal, the receiver and the transmitter.
+/datum/wire_set/radio
+	name = "Radio"
+	count = 3
+	wires = list(WIRE_RADIO_SIGNAL, WIRE_RADIO_RECEIVER, WIRE_RADIO_TRANSMIT)
+
+/// The signal wire cut kills the speaker and the mic; mended, each comes back unless its own wire is cut.
+/obj/item/radio/proc/signal_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	listening = N.mended && !wire_is_cut(src, WIRE_RADIO_RECEIVER)
+	broadcasting = N.mended && !wire_is_cut(src, WIRE_RADIO_TRANSMIT)
+
+/obj/item/radio/proc/signal_wire_pulsed(datum/act/A)
+	listening = !listening && !wire_is_cut(src, WIRE_RADIO_RECEIVER)
+	broadcasting = listening && !wire_is_cut(src, WIRE_RADIO_TRANSMIT)
+
+/obj/item/radio/proc/receiver_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	listening = N.mended && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+
+/obj/item/radio/proc/receiver_wire_pulsed(datum/act/A)
+	listening = !listening && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+
+/obj/item/radio/proc/transmit_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	broadcasting = N.mended && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+
+/obj/item/radio/proc/transmit_wire_pulsed(datum/act/A)
+	broadcasting = !broadcasting && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
 
 /obj/item/radio/proc/radio_controls_opened(datum/act/op/A)
 	interaction_self(A.actor, A.held, null)
@@ -144,7 +178,7 @@ CAPABILITIES(/obj/item/radio)
 		return FALSE
 
 	if(b_stat)
-		wires.Interact(user)
+		wires_open(src, user)
 
 	return tgui_interact(user)
 
@@ -163,8 +197,8 @@ UI_DATA_REPLACE(/obj/item/radio, "rawfreq=frequency:num", "listening:num", "broa
 	var/data = list()
 
 
-	data["mic_cut"] = (wires.is_cut(WIRE_RADIO_TRANSMIT) || wires.is_cut(WIRE_RADIO_SIGNAL))
-	data["spk_cut"] = (wires.is_cut(WIRE_RADIO_RECEIVER) || wires.is_cut(WIRE_RADIO_SIGNAL))
+	data["mic_cut"] = (wire_is_cut(src, WIRE_RADIO_TRANSMIT) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
+	data["spk_cut"] = (wire_is_cut(src, WIRE_RADIO_RECEIVER) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 	var/list/chanlist = list_channels(user)
 	if(islist(chanlist) && chanlist.len)
@@ -228,10 +262,10 @@ UI_DATA_REPLACE(/obj/item/radio, "rawfreq=frequency:num", "listening:num", "broa
 			"}
 
 /obj/item/radio/proc/ToggleBroadcast()
-	broadcasting = !broadcasting && !(wires.is_cut(WIRE_RADIO_TRANSMIT) || wires.is_cut(WIRE_RADIO_SIGNAL))
+	broadcasting = !broadcasting && !(wire_is_cut(src, WIRE_RADIO_TRANSMIT) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 /obj/item/radio/proc/ToggleReception()
-	listening = !listening && !(wires.is_cut(WIRE_RADIO_RECEIVER) || wires.is_cut(WIRE_RADIO_SIGNAL))
+	listening = !listening && !(wire_is_cut(src, WIRE_RADIO_RECEIVER) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 /obj/item/radio/CanUseTopic()
 	if(!on)
@@ -370,7 +404,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 	//  Uncommenting this. To the above comment:
 	// 	The permacell radios aren't suppose to be able to transmit, this isn't a bug and this "fix" is just making radio wires useless. -Giacom
-	if(wires.is_cut(WIRE_RADIO_TRANSMIT)) // The device has to have all its wires and shit intact
+	if(wire_is_cut(src, WIRE_RADIO_TRANSMIT)) // The device has to have all its wires and shit intact
 		return FALSE
 
 	if(!radio_connection())
@@ -567,7 +601,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	// check if this radio can receive on the given frequency, and if so,
 	// what the range is in which mobs will hear the radio
 	// returns: -1 if can't receive, range otherwise
-	if(wires.is_cut(WIRE_RADIO_RECEIVER))
+	if(wire_is_cut(src, WIRE_RADIO_RECEIVER))
 		return -1
 	if(!listening)
 		return -1

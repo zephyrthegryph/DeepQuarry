@@ -53,7 +53,7 @@
 /// The wire controller of the unit.
 /proc/p2_smes_wires(obj/machinery/power/smes/S)
 	var/obj/machinery/power/smes/buildable/B = S
-	return istype(B) ? B.wires : null
+	return (istype(B) && wiring_of(B)) ? new /datum/wires_test_adapter(B) : null
 
 /// The window's data as a viewer is sent it.
 /proc/p2_smes_data(obj/machinery/power/smes/S, mob/user)
@@ -1082,7 +1082,7 @@
 /datum/unit_test/dq_p2_smes/wires_reachable_only_behind_the_open_hatch/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_smes(/obj/machinery/power/smes/buildable/p2_test)
 	var/mob/living/carbon/human/H = p2_actor()
-	var/datum/wires/W = p2_smes_wires(S)
+	var/datum/wires_test_adapter/W = p2_smes_wires(S)
 	TEST_ASSERT(!W.interactable(H), "shut: not reachable")
 	open_panel(H, S)
 	TEST_ASSERT(W.interactable(H), "open: reachable")
@@ -1093,7 +1093,7 @@
 /datum/unit_test/dq_p2_smes/input_wire_cut_stops_charging/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_network(/obj/machinery/power/smes/buildable/p2_test)
 	var/mob/living/carbon/human/H = p2_actor()
-	var/datum/wires/W = p2_smes_wires(S)
+	var/datum/wires_test_adapter/W = p2_smes_wires(S)
 	press(H, S, "tryinput", list())
 	press(H, S, "tryoutput", list())
 	W.cut(WIRE_SMES_INPUT)
@@ -1115,7 +1115,7 @@
 
 /datum/unit_test/dq_p2_smes/output_wire_cut_stops_output/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_network(/obj/machinery/power/smes/buildable/p2_test, supply_watts = 0)
-	var/datum/wires/W = p2_smes_wires(S)
+	var/datum/wires_test_adapter/W = p2_smes_wires(S)
 	p2_smes_set_charge(S, 1e6)
 	p2_steps(3)
 	TEST_ASSERT(p2_net_avail(p2_load) > 0, "output on: it gives")
@@ -1134,7 +1134,7 @@
 
 /datum/unit_test/dq_p2_smes/input_and_output_wire_pulses_flip_the_switches/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_smes(/obj/machinery/power/smes/buildable/p2_test)
-	var/datum/wires/W = p2_smes_wires(S)
+	var/datum/wires_test_adapter/W = p2_smes_wires(S)
 	TEST_ASSERT(!S.input_attempt && S.output_attempt, "input off, output on to start")
 	W.pulse(WIRE_SMES_INPUT)
 	TEST_ASSERT(S.input_attempt, "a pulse turned input on")
@@ -1150,7 +1150,7 @@
 
 /datum/unit_test/dq_p2_smes/remote_wire_cut_and_pulse/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_smes(/obj/machinery/power/smes/buildable/p2_test)
-	var/datum/wires/W = p2_smes_wires(S)
+	var/datum/wires_test_adapter/W = p2_smes_wires(S)
 	TEST_ASSERT(S.RCon, "remote control on")
 	W.pulse(WIRE_SMES_RCON)
 	TEST_ASSERT(!S.RCon, "a pulse switches it off")
@@ -1168,7 +1168,7 @@
 
 /datum/unit_test/dq_p2_smes/failsafe_wire_cut_and_pulse/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_smes(/obj/machinery/power/smes/buildable/p2_test)
-	var/datum/wires/W = p2_smes_wires(S)
+	var/datum/wires_test_adapter/W = p2_smes_wires(S)
 	TEST_ASSERT(S.safeties_enabled, "safety on")
 	W.pulse(WIRE_SMES_FAILSAFES)
 	TEST_ASSERT(!S.safeties_enabled, "a pulse switches it off")
@@ -1186,7 +1186,7 @@
 
 /datum/unit_test/dq_p2_smes/grounding_wire_cut_discharges_the_unit/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_smes(/obj/machinery/power/smes/buildable/p2_test)
-	var/datum/wires/W = p2_smes_wires(S)
+	var/datum/wires_test_adapter/W = p2_smes_wires(S)
 	press(p2_actor(), S, "tryoutput", list())
 	p2_smes_set_charge(S, S.capacity)
 	var/before = p2_smes_charge(S)
@@ -1209,7 +1209,7 @@
 
 /datum/unit_test/dq_p2_smes/grounding_wire_pulse_leaves_it_grounded/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_smes(/obj/machinery/power/smes/buildable/p2_test)
-	var/datum/wires/W = p2_smes_wires(S)
+	var/datum/wires_test_adapter/W = p2_smes_wires(S)
 	W.pulse(WIRE_SMES_GROUNDING)
 	TEST_ASSERT(!S.grounding, "a pulse on the grounding wire ungrounds the unit")
 	W.cut(WIRE_SMES_GROUNDING)

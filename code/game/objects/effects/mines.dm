@@ -15,7 +15,6 @@
 	var/obj/item/trap = null
 
 /obj/effect/mine/Initialize(mapload)
-	set_wires(new /datum/wires/mines(src))
 	. = ..()
 	register_dangerous_to_step()
 	if(camo_net)
@@ -23,6 +22,57 @@
 
 CAPABILITIES(/obj/effect/mine)
 	owns_one(nameof(trap), starts = nameof(trap))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/mines, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire_cut), pulse = PROC_REF(explode_wire_pulsed))
+	on_wire(WIRE_EXPLODE_DELAY, cut = PROC_REF(explode_wire_cut), pulse = PROC_REF(delay_wire_pulsed))
+	on_wire(WIRE_DISARM, cut = PROC_REF(disarm_wire_cut), pulse = PROC_REF(ping_wire_pulsed))
+	on_wire(WIRE_BADDISARM, cut = PROC_REF(bad_disarm_wire_cut), pulse = PROC_REF(ping_wire_pulsed))
+
+/// A mine's four working wires (and three duds), every mine its own colours: two set it off, one disarms it, one only seems to.
+/datum/wire_set/mines
+	name = "Explosive Wires"
+	count = 7
+	randomize = TRUE
+	wires = list(WIRE_EXPLODE, WIRE_EXPLODE_DELAY, WIRE_DISARM, WIRE_BADDISARM)
+
+/obj/effect/mine/proc/wire_lights()
+	return list("\[Warning: detonation may occur even with proper equipment.]")
+
+/obj/effect/mine/proc/wire_beep(text)
+	visible_message("[icon2html(src, viewers(src))] [text]", "[icon2html(src, viewers(src))] [text]")
+
+/// Either explode wire, cut or mended, sets it off.
+/obj/effect/mine/proc/explode_wire_cut(datum/act/A)
+	wire_beep("*BEEE-*")
+	explode()
+
+/obj/effect/mine/proc/explode_wire_pulsed(datum/act/A)
+	wire_beep("*beep*")
+
+/// The delay wire pulsed sets it off in two seconds.
+/obj/effect/mine/proc/delay_wire_pulsed(datum/act/A)
+	wire_beep("*BEEPBEEPBEEP*")
+	after(src, 2 SECONDS, PROC_REF(explode))
+
+/// The disarm wire, cut: the mine comes up as its item (with its trap), the signalers on it fall off.
+/obj/effect/mine/proc/disarm_wire_cut(datum/act/A)
+	wire_beep("*click!*")
+	var/obj/effect/mine/MI = new mineitemtype(get_turf(src))
+	if(trap)
+		var/obj/item/trap_item = trap
+		trap_item.forceMove(MI)
+		own_move(trap_item, MI, nameof(MI.trap)) // from the disarmed casing to the dropped mine
+		wires_detach_all(src) // kick all the signallers off
+	om_qdel_after(src, 0)
+
+/// The bad disarm wire, cut: it goes off in two seconds.
+/obj/effect/mine/proc/bad_disarm_wire_cut(datum/act/A)
+	wire_beep("*BEEPBEEPBEEP*")
+	after(src, 2 SECONDS, PROC_REF(explode))
+
+/obj/effect/mine/proc/ping_wire_pulsed(datum/act/A)
+	wire_beep("*ping*")
 
 DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "landmine_armed")))
 
@@ -128,7 +178,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 /obj/effect/mine/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))
 		return
-	wires.Interact(user)
+	wires_open(src, user)
 
 /obj/effect/mine/camo
 	camo_net = TRUE
@@ -239,8 +289,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	triggered = TRUE
 	visible_message("\The [src.name]'s light flashes rapidly as it 'explodes'.")
 	new src.mineitemtype(get_turf(src))
-	for(var/wire_color in wires.colors)
-		wires.detach_assembly(wire_color) //Kick all the signallers off!
+	wires_detach_all(src) //Kick all the signallers off!
 	consume(src)
 
 /obj/effect/mine/emp

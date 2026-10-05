@@ -236,7 +236,7 @@ About the new airlock wires panel:
 /// Whether `wire` is cut. A door whose wires were never touched has none cut.
 /// The wire set an airlock is built with: secure electronics make it a randomized one.
 /obj/machinery/door/airlock/proc/wires_type()
-	return secured_wires ? /datum/wires/airlock/secure : /datum/wires/airlock
+	return secured_wires ? /datum/wire_set/airlock/secure : /datum/wire_set/airlock
 
 /obj/machinery/door/airlock/proc/wire_cut(wire)
 	return wire_is_cut(src, wire)
@@ -446,7 +446,22 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 
 CAPABILITIES(/obj/machinery/door/airlock)
 	panel()
-	wires(PROC_REF(wires_type))
+	wires(PROC_REF(wires_type), emp = FALSE, status_lines = PROC_REF(wire_lights))
+	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
+	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_changed_look)))
+	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_changed_look)))
+	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
+	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
+	on_wire(WIRE_MAIN_POWER2, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
+	on_wire(WIRE_BACKUP_POWER1, cut = PROC_REF(backup_power_wire_cut), pulse = PROC_REF(backup_power_wire_pulsed))
+	on_wire(WIRE_BACKUP_POWER2, cut = PROC_REF(backup_power_wire_cut), pulse = PROC_REF(backup_power_wire_pulsed))
+	on_wire(WIRE_DOOR_BOLTS, cut = PROC_REF(bolt_wire_cut), pulse = PROC_REF(bolt_wire_pulsed))
+	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
+	on_wire(WIRE_OPEN_DOOR, pulse = PROC_REF(open_wire_pulsed))
+	on_wire(WIRE_SAFETY, cut = PROC_REF(safety_wire_cut), pulse = PROC_REF(safety_wire_pulsed))
+	on_wire(WIRE_SPEED, cut = PROC_REF(speed_wire_cut), pulse = PROC_REF(speed_wire_pulsed))
+	on_wire(WIRE_BOLT_LIGHT, cut = PROC_REF(bolt_light_wire_cut), pulse = PROC_REF(bolt_light_wire_pulsed))
 	bolts(starts = nameof(bolted_at_start))
 	weld_shut(offered = PROC_REF(weld_offered), starts = nameof(welded_at_start))
 	door_emergency()
@@ -595,7 +610,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	return OP_OK
 
 /obj/machinery/door/airlock/proc/show_wires(datum/act/op/A)
-	wire_set_of(src)?.Interact(A.actor)
+	wires_open(src, A.actor)
 	return OP_OK
 
 /// A xeno's claws are on the hand.
@@ -708,7 +723,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /// The panel was moved: an open one shows its wires.
 /obj/machinery/door/airlock/proc/panel_toggled(datum/act/op/A)
 	if(panel_open(src))
-		wire_set_of(src)?.Interact(A.actor)
+		wires_open(src, A.actor)
 	return OP_OK
 
 /// Welding it shut is on offer for a closed, still door with no plasteel being fitted.
@@ -1495,3 +1510,207 @@ EXTEND_INTERACTIONS(/obj/machinery/turretid, INTERACT_ROBOT("Use", PROC_REF(turr
 /mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
 	return water_res
 
+
+// ---- the wires ----
+
+/// An airlock's twelve wires. Every airlock shares the round's layout; one built with secure electronics has fourteen, its own colours.
+/datum/wire_set/airlock
+	name = "Airlock"
+	count = 12
+	window = "WiresAirlock"
+	record = /datum/cap_data/wires/airlock
+	wires = list(
+		WIRE_IDSCAN, WIRE_MAIN_POWER1, WIRE_MAIN_POWER2, WIRE_DOOR_BOLTS,
+		WIRE_BACKUP_POWER1, WIRE_BACKUP_POWER2, WIRE_OPEN_DOOR, WIRE_AI_CONTROL,
+		WIRE_ELECTRIFY, WIRE_SAFETY, WIRE_SPEED, WIRE_BOLT_LIGHT)
+
+/datum/wire_set/airlock/secure
+	count = 14
+	randomize = TRUE
+
+/// The airlock's wires window adds its radio: the ID tag and the frequency.
+/datum/cap_data/wires/airlock
+
+CAPABILITIES(/datum/cap_data/wires/airlock)
+	op("set_id_tag", ui_act(), needs(req_wires_in_reach()),
+		asks(/datum/prompt/text, fields = list("title" = "ID Tag", "question" = "Enter a new ID tag", "default" = computed(PROC_REF(id_tag_now)), "max_len" = 60)),
+		then(PROC_REF(id_tag_answered)))
+	op("set_frequency", ui_act(arg("freq", num())), needs(req_wires_in_reach()), then(PROC_REF(frequency_set)))
+	op("clear_frequency", ui_act(), needs(req_wires_in_reach()), then(PROC_REF(frequency_cleared)))
+
+/datum/cap_data/wires/airlock/proc/id_tag_now(datum/act/A)
+	var/obj/machinery/door/airlock/door = owner
+	return istype(door) ? door.id_tag : ""
+
+/datum/cap_data/wires/airlock/proc/id_tag_answered(datum/act/op/A)
+	var/obj/machinery/door/airlock/door = owner
+	var/datum/prompt/R = A.answer
+	if(istype(door) && R?.value)
+		keyed_set_id(door, nameof(/datum/embedded_program::id_tag), R.value) // re-links the keyed relations matching on it
+	return OP_OK
+
+/datum/cap_data/wires/airlock/proc/frequency_set(datum/act/op/A, freq)
+	var/obj/machinery/door/airlock/door = owner
+	door?.set_frequency(sanitize_frequency(freq, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
+	return OP_OK
+
+/datum/cap_data/wires/airlock/proc/frequency_cleared(datum/act/op/A)
+	var/obj/machinery/door/airlock/door = owner
+	door?.set_frequency(null)
+	return OP_OK
+
+/datum/cap_data/wires/airlock/ui_data(datum/act/eval/A)
+	. = ..()
+	var/obj/machinery/door/airlock/door = owner
+	if(!istype(door))
+		return
+	.["id_tag"] = door.id_tag
+	.["frequency"] = door.radio_connection() ? door.frequency : null
+	.["min_freq"] = RADIO_LOW_FREQ
+	.["max_freq"] = RADIO_HIGH_FREQ
+
+/// The lights under the wires: what each wire drives, while the door has power.
+/obj/machinery/door/airlock/proc/wire_lights()
+	var/haspower = arePowerSystemsOn() // no power, no lights
+	return list(
+		"The door bolts [is_bolted(src) ? "have fallen!" : "look up."]",
+		"The door bolt lights are [(lights && haspower) ? "on." : "off!"]",
+		"The test light is [haspower ? "on." : "off!"]",
+		"The backup power light is [backup_power_lost_until ? "off!" : "on."]",
+		"The 'AI control allowed' light is [(aiControlDisabled == 0 && !emagged && haspower) ? "on" : "off"].",
+		"The 'Check Wiring' light is [(safe == 0 && haspower) ? "on" : "off"].",
+		"The 'Check Timing Mechanism' light is [(normalspeed == 0 && haspower) ? "on" : "off"].",
+		"The IDScan light is [(aiDisabledIdScanner == 0 && haspower) ? "on" : "off."]")
+
+/// Reaching into a live door's wires shocks anyone but a silicon, instead.
+/obj/machinery/door/airlock/proc/wire_touch_shocks(datum/act/A)
+	var/datum/act/touch_wires/T = A
+	if(!issilicon(T.user) && isElectrified() && shock(T.user, 100))
+		return OP_REFUSED
+	return HOOK_DECLINE
+
+/// Any wire moved: the door's look and panel follow it.
+/obj/machinery/door/airlock/proc/wire_changed_look(datum/act/A)
+	changed(src)
+
+/obj/machinery/door/airlock/proc/idscan_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_aiDisabledIdScanner(!N.mended)
+
+/// The ID wire pulsed flashes the red light (with power, while shut).
+/obj/machinery/door/airlock/proc/idscan_wire_pulsed(datum/act/A)
+	if(arePowerSystemsOn() && density)
+		do_animate("deny")
+
+/// Cutting a main power wire drops the door's main power (the backup takes over in ten seconds unless it is cut too); mending restores it.
+/// Either may shock the hand.
+/obj/machinery/door/airlock/proc/main_power_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(N.mended)
+		regainMainPower()
+	else
+		loseMainPower()
+	shock(N.user, 50)
+
+/// A main power pulse trips its breaker.
+/obj/machinery/door/airlock/proc/main_power_wire_pulsed(datum/act/A)
+	loseMainPower()
+
+/obj/machinery/door/airlock/proc/backup_power_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(N.mended)
+		regainBackupPower()
+	else
+		loseBackupPower()
+	shock(N.user, 50)
+
+/obj/machinery/door/airlock/proc/backup_power_wire_pulsed(datum/act/A)
+	loseBackupPower()
+
+/// The bolt wire cut drops the bolts; mending it does not raise them.
+/obj/machinery/door/airlock/proc/bolt_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		lock(1)
+
+/// The bolt wire pulsed drops raised bolts, or raises dropped ones (with power).
+/obj/machinery/door/airlock/proc/bolt_wire_pulsed(datum/act/A)
+	if(!is_bolted(src))
+		lock()
+	else
+		unlock()
+
+/// The AI control wire cut locks the AI out (an AI that bypassed the lock before stays able to bypass it); mended, it lets it back.
+/obj/machinery/door/airlock/proc/ai_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		if(aiControlDisabled == 0)
+			set_aiControlDisabled(1)
+		else if(aiControlDisabled == -1)
+			set_aiControlDisabled(2)
+	else
+		if(aiControlDisabled == 1)
+			set_aiControlDisabled(0)
+		else if(aiControlDisabled == 2)
+			set_aiControlDisabled(-1)
+
+/// The AI control wire pulsed locks the AI out for a second.
+/obj/machinery/door/airlock/proc/ai_wire_pulsed(datum/act/A)
+	if(aiControlDisabled == 0)
+		set_aiControlDisabled(1)
+	else if(aiControlDisabled == -1)
+		set_aiControlDisabled(2)
+	after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
+
+/obj/machinery/door/airlock/proc/ai_control_pulse_ends()
+	if(aiControlDisabled == 1)
+		set_aiControlDisabled(0)
+	else if(aiControlDisabled == 2)
+		set_aiControlDisabled(-1)
+
+/// The shock wire cut electrifies the door until it is mended.
+/obj/machinery/door/airlock/proc/shock_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	electrify(N.mended ? 0 : -1, user = N.user)
+
+/// The shock wire pulsed electrifies the door for thirty seconds.
+/obj/machinery/door/airlock/proc/shock_wire_pulsed(datum/act/A)
+	var/datum/notice/wire_pulsed/N = A
+	electrify(30, user = N.user)
+
+/// The door-open wire pulsed opens or shuts a door that asks no ID (or whose ID wire is cut), unless it is emagged.
+/obj/machinery/door/airlock/proc/open_wire_pulsed(datum/act/A)
+	if(emagged)
+		return
+	if(!requiresID() || check_access(null))
+		if(density)
+			open()
+		else
+			close()
+
+/obj/machinery/door/airlock/proc/safety_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_safe(N.mended)
+
+/// The safety wire pulsed flips the safeties (and an open door shuts).
+/obj/machinery/door/airlock/proc/safety_wire_pulsed(datum/act/A)
+	set_safe(!safe)
+	if(!density)
+		close()
+
+/// The timing wire cut stops the autoclose; mended, it autocloses again (an open door shuts).
+/obj/machinery/door/airlock/proc/speed_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	autoclose = N.mended
+	if(N.mended && !density)
+		close()
+
+/obj/machinery/door/airlock/proc/speed_wire_pulsed(datum/act/A)
+	normalspeed = !normalspeed
+
+/obj/machinery/door/airlock/proc/bolt_light_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_lights(N.mended)
+
+/obj/machinery/door/airlock/proc/bolt_light_wire_pulsed(datum/act/A)
+	set_lights(!lights)

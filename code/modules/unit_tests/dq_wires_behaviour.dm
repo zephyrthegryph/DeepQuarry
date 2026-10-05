@@ -10,46 +10,41 @@
 // Adapters: today's wire API, wrapped. After the conversion only these bodies change.
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// The holder's legacy wire datum.
-/proc/wbt_set(atom/H)
-	RETURN_TYPE(/datum/wires)
-	return istype(H.wires) ? H.wires : wire_set_of(H)
-
 /// The interactive cut: cuts an intact wire, mends a cut one (the window's cut button).
 /proc/wbt_cut(atom/H, wire, mob/user)
-	wbt_set(H).cut(wire, user)
+	wires_toggle(H, wire, user)
 
 /proc/wbt_pulse(atom/H, wire, mob/user)
-	wbt_set(H).pulse(wire, user)
+	wires_pulse(H, wire, user)
 
 /proc/wbt_is_cut(atom/H, wire)
-	return !!wbt_set(H).is_cut(wire)
+	return !!wire_is_cut(H, wire)
 
 /// Every wire of the holder, duds included.
 /proc/wbt_all(atom/H)
-	return wbt_set(H).wires.Copy()
+	return wires_all(H)
 
 /// The holder's colour layout: colour -> wire.
 /proc/wbt_layout(atom/H)
-	return wbt_set(H).colors.Copy()
+	return wires_layout(H)
 
 /proc/wbt_cut_all(atom/H)
-	return wbt_set(H).cut_all()
+	return wires_cut_all(H)
 
 /proc/wbt_mend_all(atom/H)
-	return wbt_set(H).mend_all()
+	return wires_mend_all(H)
 
 /proc/wbt_all_cut(atom/H)
-	return !!wbt_set(H).is_all_cut()
+	return !!wires_all_cut(H)
 
 /proc/wbt_attach(atom/H, color, obj/item/assembly/signaler/S)
-	return wbt_set(H).attach_assembly(color, S)
+	return wire_attach_signaler(H, color, S)
 
 /proc/wbt_detach(atom/H, color)
-	return wbt_set(H).detach_assembly(color)
+	return wire_detach_signaler(H, color)
 
 /proc/wbt_attached(atom/H, color)
-	return wbt_set(H).get_attached(color)
+	return wire_signaler_at(H, color)
 
 /// The colour of `wire` in the holder's layout.
 /proc/wbt_color_of(atom/H, wire)
@@ -382,3 +377,56 @@
 	TEST_ASSERT(R.disabled, "the disable wire cut disables it")
 	wbt_cut(R, WIRE_DISABLE)
 	TEST_ASSERT(!R.disabled, "mended it works")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The holder tests' adapter: what the legacy wire datum answered (cut(), pulse(), is_cut(), interactable()), over the library.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// Holder -> the mobs a wires window was opened for (recorded: a test mob has no client).
+GLOBAL_LIST_EMPTY(wires_test_opened)
+
+/datum/cap_data/wires/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
+	if(owner)
+		var/list/opened = GLOB.wires_test_opened[owner]
+		if(!opened)
+			opened = list()
+			GLOB.wires_test_opened[owner] = opened
+		opened += user
+	return ..()
+
+/datum/wires_test_adapter
+	var/atom/holder
+
+/datum/wires_test_adapter/New(atom/holder)
+	src.holder = holder
+
+/datum/wires_test_adapter/proc/cut(wire, mob/user)
+	wires_toggle(holder, wire, user)
+
+/datum/wires_test_adapter/proc/pulse(wire, mob/user)
+	wires_pulse(holder, wire, user)
+
+/datum/wires_test_adapter/proc/is_cut(wire)
+	return wire_is_cut(holder, wire)
+
+/datum/wires_test_adapter/proc/cut_all()
+	return wires_cut_all(holder)
+
+/datum/wires_test_adapter/proc/interactable(mob/user)
+	var/datum/cap_data/wires/W = wiring_of(holder)
+	return W && isnull(W.reach_reason(user))
+
+/// The mobs the holder's wires window was opened for.
+/datum/wires_test_adapter/proc/opened_for()
+	return GLOB.wires_test_opened[holder] || list()
+
+/// The adapter of a holder with wires, or null.
+/proc/wires_test(atom/H)
+	return wiring_of(H) ? new /datum/wires_test_adapter(H) : null
+
+/datum/wires_test_adapter/proc/cut_wire(wire, mob/user)
+	return wires_cut(holder, wire, user)
+
+/// Every wire, duds included (the legacy datum's `wires`).
+/datum/wires_test_adapter/proc/all_wires()
+	return wires_all(holder)

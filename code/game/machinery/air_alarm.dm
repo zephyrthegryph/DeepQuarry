@@ -156,6 +156,13 @@ CAPABILITIES(/obj/machinery/alarm)
 	op("mode", ui_act("mode", arg("mode", int())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_mode)))
 	op("alarm", ui_act("alarm"), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_alarm)))
 	op("reset", ui_act("reset"), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_reset)))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/alarm, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
+	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut), pulse = PROC_REF(power_wire_pulsed))
+	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
+	on_wire(WIRE_SYPHON, cut = PROC_REF(syphon_wire_cut), pulse = PROC_REF(syphon_wire_pulsed))
+	on_wire(WIRE_AALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
 
 /obj/machinery/alarm/nobreach
 	breach_detection = 0
@@ -183,7 +190,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	set_frequency(frequency)
 	if(!pixel_x && !pixel_y)
 		offset_airalarm()
-	set_wires(new /datum/wires/alarm(src))
+
 	rel_add(alarm_area_ref(), nameof(/area::air_alarms), src)
 	if(!alarm_area_ref().main_air_alarm_is_operating()) // select main alarm
 		alarm_area_ref().elect_main_air_alarm()
@@ -737,7 +744,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 
 /obj/machinery/alarm/interact(mob/user)
 	tgui_interact(user)
-	wires.Interact(user)
+	wires_open(src, user)
 
 /obj/machinery/alarm/tgui_status(mob/user)
 	if(isAI(user) && aidisabled)
@@ -924,7 +931,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 /obj/machinery/alarm/proc/ui_act_lock(datum/act/op/A)
 	var/mob/user = A.actor
 	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
-	if((siliconaccess(user) && !wires.is_cut(WIRE_IDSCAN)) || (isobserver(user) && is_admin(user)))
+	if((siliconaccess(user) && !wire_is_cut(src, WIRE_IDSCAN)) || (isobserver(user) && is_admin(user)))
 		set_locked(!locked)
 		. = TRUE
 	refresh_area_alarms()
@@ -1097,7 +1104,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 		to_chat(user, "It does nothing.")
 		return
 	else
-		if(allowed(user) && !wires.is_cut(WIRE_IDSCAN))
+		if(allowed(user) && !wire_is_cut(src, WIRE_IDSCAN))
 			set_locked(!locked)
 			to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the Air Alarm interface."))
 		else
@@ -1201,3 +1208,88 @@ TYPE_TABLE(/obj/machinery/alarm/sifwilderness, alarm_TLV, air_alarm_TLV_sifwilde
 /// The radio connection (a relation view).
 /obj/machinery/alarm/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
+
+// ---- the wires ----
+
+/// An air alarm's five wires.
+/datum/wire_set/alarm
+	name = "Air alarm"
+	count = 5
+	wires = list(WIRE_IDSCAN, WIRE_MAIN_POWER1, WIRE_SYPHON, WIRE_AI_CONTROL, WIRE_AALARM)
+
+/obj/machinery/alarm/proc/wire_lights()
+	return list(
+		"The Air Alarm is [locked ? "locked." : "unlocked."]",
+		"The Air Alarm is [(shorted || (stat & (NOPOWER|BROKEN))) ? "offline." : "working properly!"]",
+		"The 'AI control allowed' light is [aidisabled ? "off" : "on"].")
+
+/// The ID wire cut locks the interface.
+/obj/machinery/alarm/proc/idscan_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		set_locked(TRUE)
+
+/obj/machinery/alarm/proc/idscan_wire_pulsed(datum/act/A)
+	set_locked(!locked)
+
+/// The power wire cut shorts the alarm (and may shock); mended, it works again.
+/obj/machinery/alarm/proc/power_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	shock(N.user, 50)
+	shorted = !N.mended
+	update_icon()
+	changed(src, CHANGE_MACHINE_SETTINGS)
+
+/// The power wire pulsed shorts it for twenty minutes.
+/obj/machinery/alarm/proc/power_wire_pulsed(datum/act/A)
+	if(!shorted)
+		shorted = TRUE
+		for(var/obj/machinery/alarm/AA in alarm_area_ref())
+			AA.update_icon()
+		changed(src, CHANGE_MACHINE_SETTINGS)
+	after(src, 20 MINUTES, PROC_REF(clear_wire_short))
+
+/obj/machinery/alarm/proc/clear_wire_short()
+	if(shorted)
+		shorted = FALSE
+		update_icon()
+		changed(src, CHANGE_MACHINE_SETTINGS)
+
+/obj/machinery/alarm/proc/ai_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_aidisabled(!N.mended)
+
+/// The AI wire pulsed locks the AI out for ten seconds.
+/obj/machinery/alarm/proc/ai_wire_pulsed(datum/act/A)
+	set_aidisabled(TRUE)
+	after(src, 10 SECONDS, PROC_REF(clear_wire_ai_disabled))
+
+/obj/machinery/alarm/proc/clear_wire_ai_disabled()
+	set_aidisabled(FALSE)
+
+/// The syphon wire cut panics the vents.
+/obj/machinery/alarm/proc/syphon_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		set_mode(3) // MODE_PANIC
+		apply_mode()
+
+/// The syphon wire pulsed swaps scrubbing and panic.
+/obj/machinery/alarm/proc/syphon_wire_pulsed(datum/act/A)
+	if(mode == 1) // MODE_SCRUB
+		set_mode(3) // MODE_PANIC
+	else
+		set_mode(1) // MODE_SCRUB
+	apply_mode()
+
+/// The alarm wire cut raises the area's atmos alarm.
+/obj/machinery/alarm/proc/alarm_wire_cut(datum/act/A)
+	if(alarm_area_ref().atmosalert(2, src))
+		post_alert(2)
+	update_icon()
+
+/// The alarm wire pulsed clears it.
+/obj/machinery/alarm/proc/alarm_wire_pulsed(datum/act/A)
+	if(alarm_area_ref().atmosalert(0, src))
+		post_alert(0)
+	update_icon()

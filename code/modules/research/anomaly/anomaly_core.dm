@@ -82,8 +82,8 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 
 	var/source = null
 	if(connected())
-		var/datum/wires/wires = connected()
-		source = wires.holder
+		var/datum/cap_data/wires/wiring = connected()
+		source = wiring.owner
 	tesla_zap(source ? source : src, 2, 1000, FALSE, TRUE, 1)
 
 /obj/item/assembly/signaler/anomaly/bluespace

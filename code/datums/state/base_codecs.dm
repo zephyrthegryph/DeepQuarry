@@ -7,7 +7,6 @@
 		"flags" = /datum/state_codec/atom_flags,
 		"reagents" = /datum/state_codec/reagents,
 		"forensic_data" = /datum/state_codec/owned,
-		"wires" = /datum/state_codec/owned,
 		"artifact_master" = /datum/state_codec/pinned,
 	)
 
@@ -16,13 +15,6 @@
 	. = ..()
 	if(atom_integrity == max_integrity)
 		. += "atom_integrity"
-
-/// /datum/wires excludes its own holder ref from state (C5); restore it once
-/// the atom's own vars, including a decoded wires datum, are all applied.
-/atom/state_post_apply(list/blob, flags)
-	..()
-	if(wires)
-		wires.holder = src
 
 // constraint_overrides holds compiled /datum/predicate instances (rules.md
 // §3), each a cached, shared-by-key singleton rather than owned by this item

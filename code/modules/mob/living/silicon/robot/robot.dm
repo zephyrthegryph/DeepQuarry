@@ -171,7 +171,6 @@
 	add_language(LANGUAGE_GALCOM, 1)
 	add_language(LANGUAGE_EAL, 1)
 
-	set_wires(new /datum/wires/robot(src))
 
 	rel_set(src, nameof(robot_modules_background), new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
 	robot_modules_background.icon_state = "block"
@@ -217,7 +216,7 @@
 		rel_set(src, nameof(camera), new /obj/machinery/camera(src))
 		camera.c_tag = real_name
 		camera.replace_networks(list(NETWORK_DEFAULT,NETWORK_ROBOTS))
-		if(wires.is_cut(WIRE_BORG_CAMERA))
+		if(wire_is_cut(src, WIRE_BORG_CAMERA))
 			camera.status = 0
 
 /// Chassis that come with a brain override this. Assembled cyborgs get their
@@ -498,7 +497,7 @@
 /// Camera feed, radio and blindness follow the parts, power and stat.
 /mob/living/silicon/robot/proc/update_senses()
 	if(camera && !scrambledcodes)
-		var/camera_on = stat != DEAD && !wires.is_cut(WIRE_BORG_CAMERA) && is_component_functioning(ROBOT_SLOT_CAMERA)
+		var/camera_on = stat != DEAD && !wire_is_cut(src, WIRE_BORG_CAMERA) && is_component_functioning(ROBOT_SLOT_CAMERA)
 		camera.set_status(camera_on ? 1 : 0)
 	if(radio)
 		radio.on = is_component_functioning(ROBOT_SLOT_RADIO) ? 1 : 0
@@ -883,7 +882,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(!wiresexposed)
 		to_chat(user, span_filter_notice("You can't reach the wiring."))
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /// Crowbar outside combat mode: the stance-declared pry interactions. In combat mode none is declared, so the crowbar goes on to strike.
@@ -924,7 +923,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(cell)
 		close_cover(user)
 		return TRUE
-	if(wiresexposed && wires.is_all_cut())
+	if(wiresexposed && wires_all_cut(src))
 		extract_mmi(user)
 		return TRUE
 	pry_component(user)
@@ -955,7 +954,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	return TRUE
 
 /mob/living/silicon/robot/proc/extract_mmi_robot_done(mob/user)
-	if(QDELETED(src) || !mmi || !opened || cell || !wiresexposed || !wires.is_all_cut())
+	if(QDELETED(src) || !mmi || !opened || cell || !wiresexposed || !wires_all_cut(src))
 		return FALSE
 	to_chat(user, span_filter_notice("You damage some parts of the chassis, but eventually manage to rip out [mmi]!"))
 	var/obj/item/robot_parts/robot_suit/C = new/obj/item/robot_parts/robot_suit(loc)
@@ -1494,7 +1493,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 
 /mob/living/silicon/robot/proc/SetLockdown(state = 1)
 	// They stay locked down if their wire is cut.
-	if(wires.is_cut(WIRE_BORG_LOCKED))
+	if(wire_is_cut(src, WIRE_BORG_LOCKED))
 		state = 1
 	if(state)
 		throw_alert("locked", /atom/movable/screen/alert/locked)
@@ -1925,3 +1924,64 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 TRACKED(/mob/living/silicon/robot, sight_mode)
 TRACKED(/mob/living/silicon/robot, emagged)
 TRACKED(/mob/living/silicon/robot, lockdown)
+
+// ---- the wires (declared with the cyborg's capabilities, code/library/mob/hands.dm) ----
+
+/// A cyborg's four working wires (and a dud), every cyborg its own colours.
+/datum/wire_set/robot
+	name = "Cyborg"
+	count = 5
+	randomize = TRUE
+	wires = list(WIRE_AI_CONTROL, WIRE_BORG_CAMERA, WIRE_BORG_LAWCHECK, WIRE_BORG_LOCKED)
+
+/mob/living/silicon/robot/proc/wire_lights()
+	return list(
+		"The LawSync light is [lawupdate ? "on" : "off"].",
+		"The AI link light is [connected_ai ? "on" : "off"].",
+		"The Camera light is [(camera && camera.status == 1) ? "on" : "off"].",
+		"The lockdown light is [lockcharge ? "on" : "off"].")
+
+/// The law wire cut syncs the laws one last time and stops the updates; mended, they resume (unless emagged).
+/mob/living/silicon/robot/proc/lawcheck_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		if(lawupdate)
+			to_chat(src, "LawSync protocol engaged.")
+			lawsync()
+			show_laws()
+	else if(!lawupdate && !emagged)
+		lawupdate = TRUE
+
+/// The AI wire cut drops the cyborg's AI link.
+/mob/living/silicon/robot/proc/ai_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		disconnect_from_ai()
+
+/// The AI wire pulsed makes the cyborg pick an AI again.
+/mob/living/silicon/robot/proc/ai_wire_pulsed(datum/act/A)
+	reselect_ai_by_wire()
+
+/mob/living/silicon/robot/proc/reselect_ai_by_wire()
+	if(emagged)
+		return
+	var/mob/living/silicon/ai/picked = select_active_ai(src, src, PROC_REF(reselect_ai_by_wire), list())
+	if(picked)
+		connect_to_ai(picked)
+
+/mob/living/silicon/robot/proc/camera_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!isnull(camera) && !scrambledcodes)
+		camera.status = N.mended
+
+/mob/living/silicon/robot/proc/camera_wire_pulsed(datum/act/A)
+	if(!isnull(camera) && camera.can_use() && !scrambledcodes)
+		act_message(src, null, others = "%U%'s camera lense focuses loudly.")
+		to_chat(src, "Your camera lense focuses loudly.")
+
+/mob/living/silicon/robot/proc/lockdown_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	SetLockdown(!N.mended)
+
+/mob/living/silicon/robot/proc/lockdown_wire_pulsed(datum/act/A)
+	SetLockdown(!lockdown) // toggle

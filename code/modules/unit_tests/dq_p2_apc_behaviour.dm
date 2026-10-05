@@ -46,9 +46,9 @@
 			return "secured"
 	return null
 
-/// The wire controller of the APC (a /datum/wires with cut(), pulse(), is_cut(), cut_all()).
+/// The wire controller of the APC (cut(), pulse(), is_cut(), cut_all(), interactable()).
 /proc/p2_apc_wires(obj/machinery/power/apc/A)
-	return wire_set_of(A)
+	return new /datum/wires_test_adapter(A)
 
 /// The APC's interface is subverted, as an emag leaves it: subverted and unlocked.
 /proc/p2_apc_subvert(obj/machinery/power/apc/A)
@@ -121,27 +121,14 @@
 /proc/p2_apc_station_night(night)
 	SSnightshift.update_nightshift(night, FALSE, forced = TRUE)
 
-/// Swaps the APC's wire set for one that records who reached its window (a test mob has no client to open it for).
+/// The APC's wires, recording who reached their window (a test mob has no client to open it for).
 /proc/p2_apc_record_wire_window(obj/machinery/power/apc/A)
-	wire_set_of(A)
-	var/datum/activation/act = cap_activation(A, CAP_WIRES, null, FALSE)
-	var/datum/cap_data/wires/D = act?.data
-	var/datum/wires/apc/p2_test/W = new(A)
-	D.wire_set = W
-	return W
+	GLOB.wires_test_opened -= A
+	return new /datum/wires_test_adapter(A)
 
 /// The wire window was reached by `user`.
-/proc/p2_apc_wire_window_opened(datum/wires/apc/p2_test/W, mob/user)
-	return user in W.p2_opened
-
-/// The APC's wires, recording who reached their window.
-/datum/wires/apc/p2_test
-	var/list/p2_opened
-
-/datum/wires/apc/p2_test/Interact(mob/user)
-	if(user && interactable(user))
-		LAZYADD(p2_opened, user)
-	return ..()
+/proc/p2_apc_wire_window_opened(datum/wires_test_adapter/W, mob/user)
+	return user in W.opened_for()
 
 /// The test APC: a real APC, except that a test mob has no client (can_use() asks for one) and the type records who opened its window.
 /obj/machinery/power/apc/p2_test
@@ -378,7 +365,7 @@
 /datum/unit_test/dq_p2_apc/id_lock_refused_when_wire_cut_or_subverted/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	W.cut(WIRE_IDSCAN)
 	touch(H, A, id_card())
 	TEST_ASSERT(p2_apc_locked(A), "a cut ID scan wire: the ID does nothing")
@@ -571,7 +558,7 @@
 /datum/unit_test/dq_p2_apc/power_wires_short_the_apc/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	W.cut(WIRE_MAIN_POWER1, H)
 	p2_settle()
 	TEST_ASSERT(A.shorted, "one power wire cut: shorted")
@@ -588,7 +575,7 @@
 
 /datum/unit_test/dq_p2_apc/pulsed_wires_have_timed_effects/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	W.pulse(WIRE_MAIN_POWER1)
 	TEST_ASSERT(A.shorted, "a pulse on the power wire shorts it")
 	test_time(1 MINUTES)
@@ -611,7 +598,7 @@
 
 /datum/unit_test/dq_p2_apc/id_scan_pulse_unlocks_for_a_while/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	TEST_ASSERT(p2_apc_locked(A), "locked to start")
 	W.pulse(WIRE_IDSCAN)
 	TEST_ASSERT(!p2_apc_locked(A), "the pulse unlocked it")
@@ -626,7 +613,7 @@
 /datum/unit_test/dq_p2_apc/wires_reachable_only_behind_the_open_panel/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	TEST_ASSERT(!W.interactable(H), "shut: not reachable")
 	open_panel(H, A)
 	TEST_ASSERT(W.interactable(H), "the panel open: reachable")
@@ -996,7 +983,7 @@
 
 /datum/unit_test/dq_p2_apc/blob_tears_the_wires_and_opens_the_panel/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	TEST_ASSERT(!p2_apc_panel_open(A), "panel shut to start")
 	A.blob_act(null)
 	p2_settle()
@@ -1013,7 +1000,7 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	H.set_species(SPECIES_XENOMORPH_HYBRID)
 	H.combat_mode = TRUE
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	touch(H, A, null)
 	TEST_ASSERT(!p2_apc_panel_open(A), "one slash does not open it")
 	for(var/i in 1 to 8)
@@ -1081,7 +1068,7 @@
 /datum/unit_test/dq_p2_apc/shorted_apc_darkens_the_area_after_a_power_step/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/obj/machinery/power/terminal/Tm = A.terminal
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	p2_cable(run_loc_floor_bottom_left)
 	p2_area.requires_power = TRUE
 	A.connect_to_network()
@@ -1143,7 +1130,7 @@
 /datum/unit_test/dq_p2_apc/power_alarm_follows_the_state_of_the_apc/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/obj/machinery/power/terminal/Tm = A.terminal
-	var/datum/wires/W = p2_apc_wires(A)
+	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	p2_cable(run_loc_floor_bottom_left)
 	p2_area.requires_power = TRUE
 	A.connect_to_network()
@@ -1463,7 +1450,7 @@
 /datum/unit_test/dq_p2_apc/signaler_at_the_open_panel_reaches_the_wires/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
-	var/datum/wires/apc/p2_test/W = p2_apc_record_wire_window(A)
+	var/datum/wires_test_adapter/W = p2_apc_record_wire_window(A)
 	var/obj/item/assembly/signaler/S = allocate(/obj/item/assembly/signaler, run_loc_floor_bottom_left)
 	touch(H, A, S)
 	TEST_ASSERT(!p2_apc_wire_window_opened(W, H), "the panel shut: the wires are out of reach")
