@@ -160,9 +160,11 @@
 	set name = "System Override"
 	set desc = "500 CPU - Begins hacking station's primary firewall, quickly overtaking remaining APC systems. When completed grants access to station's self-destruct mechanism. Network administrators will probably notice this."
 	var/mob/living/silicon/ai/user = usr
-	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_system_override_confirmed), receiver = user, title = "System Override:", message = "Begin system override? This cannot be stopped once started. The network administrators will probably notice this.")
+	open_request(user, /datum/prompt/choice/malf_system_override, TYPE_PROC_REF(/mob/living/silicon/ai, malf_system_override_confirmed), answerer = user)
 
-/mob/living/silicon/ai/proc/malf_system_override_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_system_override_confirmed(datum/act/request/context)
+	if(!context.answer || context.answer.answer_value != "Yes")
+		return
 	var/mob/living/silicon/ai/user = src
 	var/price = 500
 	if (!ability_prechecks(user, price) || !ability_pay(user, price) || user.system_override)
@@ -249,3 +251,18 @@
 	timeout = 0
 	recheck_on_open = TRUE
 	ask_flags = ASK_CONSCIOUS
+
+/datum/prompt/choice/malf_system_override
+	title = "System Override:"
+	question = "Begin system override? This cannot be stopped once started. The network administrators will probably notice this."
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/malf_system_override/recheck_extra()
+	var/mob/living/silicon/ai/user = answerer
+	if(!istype(user) || QDELETED(user))
+		return "gone"
+	return null

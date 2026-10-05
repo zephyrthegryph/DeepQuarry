@@ -1,3 +1,6 @@
+#define FAX_DEPARTMENT_EMPTY "No input found. Please hang up and try your call again."
+#define FAX_PANEL_CLOSED "the service panel is closed"
+
 GLOBAL_LIST_INIT(admin_departments, list("[using_map.boss_name]", "Solar Central Government", "Central Command Job Boards", "Supply"))
 GLOBAL_LIST_EMPTY(alldepartments)
 GLOBAL_VAR(last_fax_role_request)
@@ -380,12 +383,23 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 /obj/machinery/photocopier/faxmachine/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = rerun_ask(user, "k352", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "What Department ID would you like to give this fax machine?", title = "Multitool-Fax Machine Interface", default = department)
-	if(isnull(input))
-		return ITEM_INTERACT_BLOCKING
-	if(!input)
-		to_chat(user, "No input found. Please hang up and try your call again.")
-		return ITEM_INTERACT_BLOCKING
+	open_request(src, /datum/prompt/text/fax_department_id, PROC_REF(fax_department_id_answered), answerer = user, subject = tool, tool_expected = !isnull(tool), default = department)
+	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/photocopier/faxmachine/proc/fax_department_id_answered(datum/act/request/context)
+	if(!context.answer)
+		if(!isnull(context.request.answer_value))
+			switch(context.request.last_error)
+				if(FAX_PANEL_CLOSED)
+					SStgui.update_uis(src)
+				if(FAX_DEPARTMENT_EMPTY)
+					to_chat(context.request.answerer, FAX_DEPARTMENT_EMPTY)
+					SStgui.update_uis(src)
+		return
+	apply_department_id(context.answer.answer_value)
+	SStgui.update_uis(src)
+
+/obj/machinery/photocopier/faxmachine/proc/apply_department_id(input)
 	department = input
 	if(!(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) && department != "Unknown")
 		GLOB.alldepartments |= department
@@ -734,3 +748,31 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 	if(!fax.ui_act_allowed(original_ui.user, "dept", original_ui, original_ui.state()))
 		return "the department action is unavailable"
 	return null
+
+/datum/prompt/text/fax_department_id
+	question = "What Department ID would you like to give this fax machine?"
+	title = "Multitool-Fax Machine Interface"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/tool_expected = FALSE
+
+/datum/prompt/text/fax_department_id/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/fax_department_id/recheck_extra()
+	var/mob/user = answerer
+	var/obj/machinery/photocopier/faxmachine/fax = owner
+	if(!istype(user) || QDELETED(user) || !istype(fax) || QDELETED(fax))
+		return "gone"
+	if(tool_expected)
+		var/obj/item/tool = subject
+		if(!istype(tool) || QDELETED(tool))
+			return "gone"
+	if(!fax.panel_open)
+		return FAX_PANEL_CLOSED
+	if(!isnull(answer_value) && !answer_value)
+		return FAX_DEPARTMENT_EMPTY
+	return null
+
+#undef FAX_DEPARTMENT_EMPTY
+#undef FAX_PANEL_CLOSED

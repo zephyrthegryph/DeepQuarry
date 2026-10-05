@@ -115,11 +115,13 @@
 		return
 
 	var/datum/malf_research/res = user.research
-	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_research_chosen), receiver = user, title = "Select Research", message = "Select your next research target", choices = res.available_abilities)
+	open_request(user, /datum/prompt/choice/malf_research_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_research_chosen), answerer = user, choices = res.available_abilities?.Copy())
 
-/mob/living/silicon/ai/proc/malf_research_chosen(datum/om/prompt/choice/malf/ask)
+/mob/living/silicon/ai/proc/malf_research_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
 	var/mob/living/silicon/ai/user = src
-	var/datum/malf_research_ability/tar = ask.choice
+	var/datum/malf_research_ability/tar = context.answer.answer_value
 	var/datum/malf_research/res = user.research
 	rel_set(res, nameof(res.focus_static), tar)
 	to_chat(user, "Research set: [tar.name]")
@@ -237,3 +239,21 @@
 			continue
 		L.Add(AT)
 	return L
+
+
+/datum/prompt/choice/malf_research_target
+	title = "Select Research"
+	question = "Select your next research target"
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/malf_research_target/recheck_extra()
+	var/mob/living/silicon/ai/user = answerer
+	if(!istype(user) || QDELETED(user))
+		return "gone"
+	if(!isnull(answer_value))
+		var/datum/malf_research_ability/picked = answer_value
+		if(!istype(picked) || QDELETED(picked))
+			return "gone"
+	return null

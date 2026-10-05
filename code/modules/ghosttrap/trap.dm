@@ -93,13 +93,17 @@ TOPIC_ACTION(/datum/ghosttrap, "candidate", PROC_REF(topic_candidate), TOPIC_REF
 
 // Allows people to set their own name. May or may not need to be removed for posibrains if people are dumbasses.
 /datum/ghosttrap/proc/set_new_name(mob/target)
-	var/_answer_k96 = rerun_ask(target, "k96", PROC_REF(set_new_name), args, /datum/om/prompt/text, message = "Enter a name, or leave blank for the default name.", title = "Name change", max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k96))
+	open_request(src, /datum/prompt/text/ghosttrap_name, PROC_REF(ghosttrap_name_answered), answerer = target)
+
+/datum/ghosttrap/proc/ghosttrap_name_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	var/newname = sanitizeSafe(_answer_k96, MAX_NAME_LEN)
+	var/mob/target = context.answer.answerer
+	var/newname = sanitizeSafe(context.answer.answer_value, MAX_NAME_LEN)
 	if (newname != "")
 		target.real_name = newname
 		target.name = target.real_name
+	SStgui.update_uis(src)
 
 // Doona pods and walking mushrooms.
 /datum/ghosttrap/plant
@@ -116,3 +120,21 @@ TYPE_TABLE(/datum/ghosttrap/plant, ghosttrap_ban_checks, list(JOB_DIONAEA))
 	if(istype(target,/mob/living/carbon/alien/diona))
 		to_chat(target, span_infoplain(span_bold("You are \a [target], one of a race of drifting interstellar plantlike creatures that sometimes share their seeds with human traders.")))
 		to_chat(target, span_infoplain(span_bold("Too much darkness will send you into shock and starve you, but light will help you heal.")))
+
+/datum/prompt/text/ghosttrap_name
+	title = "Name change"
+	question = "Enter a name, or leave blank for the default name."
+	max_len = MAX_NAME_LEN
+	encode = FALSE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/ghosttrap_name/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/ghosttrap_name/recheck_extra()
+	var/datum/ghosttrap/trap = owner
+	var/mob/target = answerer
+	if(!istype(trap) || QDELETED(trap) || !istype(target) || QDELETED(target))
+		return "gone"
+	return null

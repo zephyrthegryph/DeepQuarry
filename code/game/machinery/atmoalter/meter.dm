@@ -142,11 +142,12 @@
 		. += "The connect error light is blinking."
 
 /obj/machinery/meter/Click()
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native meter Click supplies one initiating actor for classification and inspection before unchanged parent routing.
 
-	if(ishuman(usr) || isAI(usr)) // ghosts can call ..() for examine
-		var/mob/living/L = usr
+	if(ishuman(user) || isAI(user)) // ghosts can call ..() for examine
+		var/mob/living/L = user
 		if(!L.get_active_hand() || !L.Adjacent(src))
-			usr.examinate(src)
+			user.examinate(src)
 			return 1
 
 	return ..()

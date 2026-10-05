@@ -1,3 +1,5 @@
+#define CANDYBOWL_EMPTY "the candy bowl is empty"
+
 /obj/item/storage/bag/plasticbag/halloween
 	name = "halloween bag"
 	icon = 'icons/obj/halloween/trash.dmi'
@@ -99,16 +101,24 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 	return TRUE
 
 /obj/structure/candybowl/proc/search_done(mob/user)
-	var/thegoods
 	if(!has_candy)
 		return
-
 	if(LAZYACCESS(treated, user.ckey))
-		var/choice = rerun_ask(user, "k101", PROC_REF(search_done), args, /datum/om/prompt/choice/alert, message = "You already took one! Take more?", title = "Take another...", choices = list("Reach in...", "Leave it!"))
-		if(isnull(choice))
-			return
-		if(!choice)
-			return
+		open_request(src, /datum/prompt/choice/candybowl_repeat, PROC_REF(candybowl_repeat_answered), answerer = user)
+		return
+	finish_candy_search(user, null)
+
+/obj/structure/candybowl/proc/candybowl_repeat_answered(datum/act/request/context)
+	if(!context.answer)
+		if(!isnull(context.request.answer_value) && context.request.last_error == CANDYBOWL_EMPTY)
+			SStgui.update_uis(src)
+		return
+	finish_candy_search(context.request.answerer, context.answer.answer_value)
+	SStgui.update_uis(src)
+
+/obj/structure/candybowl/proc/finish_candy_search(mob/user, choice)
+	var/thegoods
+	if(LAZYACCESS(treated, user.ckey))
 		if(choice == "Reach in...")
 			if(prob(35))
 				thegoods = pick(badcandy)
@@ -231,3 +241,20 @@ DECLARE_INTERACTIONS(/obj/structure/boxpile, INTERACT_HAND_UNGATED(null, PROC_RE
 	LAZYSET(ckeys_that_took, user.ckey, TRUE)
 	var/obj/item/box = pick(costumes)
 	new box(loc)
+
+/datum/prompt/choice/candybowl_repeat
+	question = "You already took one! Take more?"
+	title = "Take another..."
+	choices = list("Reach in...", "Leave it!")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/candybowl_repeat/recheck_extra()
+	var/mob/user = answerer
+	var/obj/structure/candybowl/bowl = owner
+	if(!istype(user) || QDELETED(user) || !istype(bowl) || QDELETED(bowl))
+		return "gone"
+	return bowl.has_candy ? null : CANDYBOWL_EMPTY
+
+#undef CANDYBOWL_EMPTY

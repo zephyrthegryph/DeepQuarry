@@ -227,18 +227,30 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 /// The first base-turf deletion asks once; the answer does that deletion.
 /obj/effect/bmode/buildholder/proc/ask_base_turf(mob/user, turf/T)
-	om_ask(user, /datum/om/prompt/confirm/buildmode_base_turf, PROC_REF(base_turf_acknowledged), target_turf = T)
+	open_request(src, /datum/prompt/choice/buildmode_base_turf, PROC_REF(base_turf_acknowledged), answerer = user, subject = T)
 
-/datum/om/prompt/confirm/buildmode_base_turf
+/datum/prompt/choice/buildmode_base_turf
 	title = "GRIEF ALERT"
-	message = "Are you -sure- you want to delete this turf and make it the base turf for this Z level?"
-	no_first = TRUE
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/turf/target_turf
+	question = "Are you -sure- you want to delete this turf and make it the base turf for this Z level?"
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
 
-/obj/effect/bmode/buildholder/proc/base_turf_acknowledged(datum/om/prompt/confirm/buildmode_base_turf/ask)
-	var/mob/user = ask.answerer
-	var/turf/T = ask.target_turf
+/datum/prompt/choice/buildmode_base_turf/recheck_extra()
+	var/obj/effect/bmode/buildholder/holder = owner
+	var/mob/user = answerer
+	var/turf/target = subject
+	if(!istype(holder) || QDELETED(holder) || !istype(user) || QDELETED(user) || !istype(target) || QDELETED(target))
+		return "gone"
+	return null
+
+/obj/effect/bmode/buildholder/proc/base_turf_acknowledged(datum/act/request/context)
+	if(!context.answer || context.answer.answer_value != "Yes")
+		return
+	var/mob/user = context.answer.answerer
+	var/turf/T = context.answer.subject
 	warned = 1
 	log_admin("[key_name(user)] has acknowledged the deletion of [T] and turned it into base turf. This could have resulted in spacing.")
 	T.ChangeTurf(get_base_turf_by_area(T)) //Defaults to Z if area does not have a special base turf.
@@ -298,7 +310,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 				ask_path(user, "objholder")
 
 			if(BUILDMODE_EDIT)
-				om_ask(user, /datum/om/prompt/text/buildmode, PROC_REF(ask_edit_type), title = "Name", message = "Enter variable name:", default = "name")
+				open_request(src, /datum/prompt/text/buildmode_edit, PROC_REF(ask_edit_type), answerer = user, title = "Name", question = "Enter variable name:", default = "name")
 
 			if(BUILDMODE_ROOM)
 				open_request(src, /datum/prompt/choice/buildmode_room_setting, PROC_REF(ask_area_name), answerer = user, title = "Room Builder", question = "Would you like to generate a new area as well?", choices = list("No", "Yes"), buttons = TRUE)
@@ -753,29 +765,37 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	requires = PROMPT_ADMIN(R_BUILDMODE)
 	var/step
 
-/obj/effect/bmode/buildmode/proc/ask_edit_type(datum/om/prompt/text/buildmode/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/buildmode, PROC_REF(ask_edit_value), title = "Type", message = "Select variable type:", choices = list("text","number","mob-reference","obj-reference","turf-reference"), step = ask.text)
-
-/obj/effect/bmode/buildmode/proc/ask_edit_value(datum/om/prompt/choice/buildmode/ask)
-	var/static/list/locked = list("vars", "key", "ckey", "client", "firemut", "ishulk", "telekinesis", "xray", "virus", "viruses", "cuffed", "ka", "last_eaten", "urine")
-	var/mob/user = ask.answerer
-	if((ask.step in locked) && !check_rights_for(user.client, R_DEBUG))
+/obj/effect/bmode/buildmode/proc/ask_edit_type(datum/act/request/context)
+	if(!context.answer)
 		return
-	switch(ask.choice)
+	open_request(src, /datum/prompt/choice/buildmode_edit, PROC_REF(ask_edit_value), answerer = context.answer.answerer, title = "Type", question = "Select variable type:", choices = list("text","number","mob-reference","obj-reference","turf-reference"), step = context.answer.answer_value)
+
+/obj/effect/bmode/buildmode/proc/ask_edit_value(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_edit/ask = context.answer
+	var/mob/user = ask.answerer
+	switch(ask.answer_value)
 		if("text")
-			om_ask(user, /datum/om/prompt/text/buildmode, PROC_REF(edit_text_entered), title = "Value", message = "Enter variable value:", default = "value", step = ask.step)
+			open_request(src, /datum/prompt/text/buildmode_edit, PROC_REF(edit_text_entered), answerer = user, title = "Value", question = "Enter variable value:", default = "value", step = ask.step)
 		if("number")
-			om_ask(user, /datum/om/prompt/number/buildmode, PROC_REF(edit_number_entered), title = "Value", message = "Enter variable value:", default = 123, step = ask.step)
+			open_request(src, /datum/prompt/number/buildmode_edit, PROC_REF(edit_number_entered), answerer = user, title = "Value", question = "Enter variable value:", default = 123, edit_var = ask.step)
 		if("mob-reference")
 			om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(edit_ref_picked), title = "Value", message = "Enter variable value:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), step = ask.step)
 		if("obj-reference", "turf-reference")
 			om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(edit_ref_picked), title = "Value", message = "Enter variable value:", choices = world, step = ask.step)
 
-/obj/effect/bmode/buildmode/proc/edit_text_entered(datum/om/prompt/text/buildmode/ask)
-	edit_answered(ask.answerer, ask.step, ask.text)
+/obj/effect/bmode/buildmode/proc/edit_text_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/buildmode_edit/ask = context.answer
+	edit_answered(ask.answerer, ask.step, ask.answer_value)
 
-/obj/effect/bmode/buildmode/proc/edit_number_entered(datum/om/prompt/number/buildmode/ask)
-	edit_answered(ask.answerer, ask.step, ask.number)
+/obj/effect/bmode/buildmode/proc/edit_number_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/buildmode_edit/ask = context.answer
+	edit_answered(ask.answerer, ask.edit_var, ask.answer_value)
 
 /obj/effect/bmode/buildmode/proc/edit_ref_picked(datum/om/prompt/choice/buildmode/ask)
 	edit_answered(ask.answerer, ask.step, ask.choice)
@@ -1093,3 +1113,56 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 /datum/prompt/text/buildmode_room_name/normalize(given)
 	return istext(given) ? strip_name_tokens(given) : null
+
+
+/// Scalar variable-edit questions; reference pickers retain their existing adapter.
+/datum/prompt/text/buildmode_edit
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/step
+
+/datum/prompt/text/buildmode_edit/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/buildmode_edit/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/choice/buildmode_edit
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/step
+
+/datum/prompt/choice/buildmode_edit/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	var/static/list/locked = list("vars", "key", "ckey", "client", "firemut", "ishulk", "telekinesis", "xray", "virus", "viruses", "cuffed", "ka", "last_eaten", "urine")
+	if(!isnull(answer_value) && (step in locked) && !check_rights_for(user.client, R_DEBUG))
+		return "locked variable"
+	return null
+
+/datum/prompt/number/buildmode_edit
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/edit_var
+
+/datum/prompt/number/buildmode_edit/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/number/buildmode_edit/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default || 0, INFINITY, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box

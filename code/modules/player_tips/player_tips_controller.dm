@@ -45,10 +45,28 @@ Controlled by the player_tips subsystem under code/controllers/subsystems/player
 	set desc = "Sends you advice from a list of possibilities. You can choose to request a specific topic."
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 
-	var/choice = rerun_ask(src, "k48", VERB_REF(request_automated_advice), args, /datum/om/prompt/choice, message = "What topic would you like to receive advice on?", title = "Select Topic", choices = list("none","general","gameplay","roleplay","lore","cancel"))
-	if(isnull(choice))
+	open_request(src, /datum/prompt/choice/automated_advice_topic, PROC_REF(automated_advice_answered), answerer = src)
+
+/mob/living/proc/automated_advice_answered(datum/act/request/context)
+	if(!context.answer)
 		return
+	var/choice = context.answer.answer_value
 	if(choice == "cancel")
+		SStgui.update_uis(src)
 		return
 	var/static/datum/player_tips/player_tips = new
 	to_chat(src, span_notice("[GLOB.is_valid_url.Replace(player_tips.pick_tip(choice), span_linkify("$1"))]"))
+	SStgui.update_uis(src)
+
+/datum/prompt/choice/automated_advice_topic
+	title = "Select Topic"
+	question = "What topic would you like to receive advice on?"
+	choices = list("none", "general", "gameplay", "roleplay", "lore", "cancel")
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/automated_advice_topic/recheck_extra()
+	var/mob/living/user = answerer
+	if(!istype(user) || QDELETED(user))
+		return "gone"
+	return null

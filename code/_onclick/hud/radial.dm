@@ -48,11 +48,12 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		closeToolTip(usr, src)
 
 /atom/movable/screen/radial/slice/Click(location, control, params)
-	if(usr.client == parent().current_user())
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native radial slice Click supplies the initiating mob for both client ownership and selection.
+	if(user.client == parent().current_user())
 		if(next_page)
 			parent().next_page()
 		else
-			parent().element_chosen(choice, usr, params)
+			parent().element_chosen(choice, user, params)
 
 /atom/movable/screen/radial/center
 	name = "Close Menu"

@@ -4936,11 +4936,11 @@
 	into += entry_line(330)
 	into += list(global.ref_one(nameof(language), /datum/language))
 
-/// CAPABILITIES(/datum/prompt/text/meter_id) at code/game/machinery/atmoalter/meter.dm:188
+/// CAPABILITIES(/datum/prompt/text/meter_id) at code/game/machinery/atmoalter/meter.dm:189
 /datum/prompt/text/meter_id/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/atmoalter/meter.dm", 188, /datum/prompt/text/meter_id)
-	into += entry_line(189)
+	into += entry_block("code/game/machinery/atmoalter/meter.dm", 189, /datum/prompt/text/meter_id)
+	into += entry_line(190)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/text/mob_type) at code/modules/mob/mob_transformation_simple.dm:16
@@ -5191,13 +5191,13 @@
 	into += entry_line(23)
 	into += list(global.owns_one(nameof(range_connector), /datum/connect_range))
 
-/// CAPABILITIES(/datum/radial_menu) at code/_onclick/hud/radial.dm:112
+/// CAPABILITIES(/datum/radial_menu) at code/_onclick/hud/radial.dm:113
 /datum/radial_menu/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/_onclick/hud/radial.dm", 112, /datum/radial_menu)
-	into += entry_line(113)
-	into += list(global.owns_one(nameof(close_button), /atom/movable/screen/radial/center))
+	into += entry_block("code/_onclick/hud/radial.dm", 113, /datum/radial_menu)
 	into += entry_line(114)
+	into += list(global.owns_one(nameof(close_button), /atom/movable/screen/radial/center))
+	into += entry_line(115)
 	into += list(global.owns_many(nameof(elements), /atom/movable/screen))
 
 /// CAPABILITIES(/datum/radial_menu/prompt) at code/engine/present/prompt_windows.dm:186
@@ -14211,11 +14211,11 @@
 	into += entry_line(97)
 	into += list(global.configure(global.storage(refuses = list(/obj/item/disk/nuclear))))
 
-/// CAPABILITIES(/obj/item/storage/bag/plasticbag/halloween) at code/modules/halloween/items.dm:7
+/// CAPABILITIES(/obj/item/storage/bag/plasticbag/halloween) at code/modules/halloween/items.dm:9
 /obj/item/storage/bag/plasticbag/halloween/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/halloween/items.dm", 7, /obj/item/storage/bag/plasticbag/halloween)
-	into += entry_line(8)
+	into += entry_block("code/modules/halloween/items.dm", 9, /obj/item/storage/bag/plasticbag/halloween)
+	into += entry_line(10)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/candy, /obj/item/reagent_containers/food/snacks/candy_corn, /obj/item/reagent_containers/food/snacks/chocolatebar, /obj/item/reagent_containers/food/snacks/chocolatepiece, /obj/item/reagent_containers/food/snacks/chocolatepiece/white, /obj/item/reagent_containers/food/snacks/chocolatepiece/truffle, /obj/item/reagent_containers/food/snacks/chocolateegg, /obj/item/reagent_containers/food/snacks/no_raisin, /obj/item/reagent_containers/food/snacks/butterscotch, /obj/item/reagent_containers/food/snacks/spicy_boys, /obj/item/reagent_containers/food/snacks/welders_original, /obj/item/reagent_containers/food/snacks/organ, /obj/item/reagent_containers/food/snacks/mint, /obj/item/storage/box/admints, /obj/item/reagent_containers/food/snacks/cookiesnack, /obj/item/reagent_containers/food/snacks/cb01, /obj/item/reagent_containers/food/snacks/cb02, /obj/item/reagent_containers/food/snacks/cb03, /obj/item/reagent_containers/food/snacks/cb04, /obj/item/reagent_containers/food/snacks/cb05, /obj/item/reagent_containers/food/snacks/cb06, /obj/item/reagent_containers/food/snacks/cb07, /obj/item/reagent_containers/food/snacks/cb08, /obj/item/reagent_containers/food/snacks/cb09, /obj/item/reagent_containers/food/snacks/cb10, /obj/item/reagent_containers/food/snacks/reishicup, /obj/item/reagent_containers/food/snacks/antball, /obj/item/reagent_containers/food/snacks/honey_candy, /obj/item/storage/box/winegum, /obj/item/storage/box/shrimpsandbananas, /obj/item/clothing/mask/chewable/candy/lolli), refuses = list(/obj/item/disk/nuclear))))
 
 /// CAPABILITIES(/obj/item/storage/bag/salvage) at code/modules/salvage/bags.dm:10
