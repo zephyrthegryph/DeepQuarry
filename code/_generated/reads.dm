@@ -196,6 +196,10 @@
 	. = ..()
 	. += drawn_from(nameof(beaker), nameof(cooling))
 
+/obj/machinery/atmospherics/unary/outlet_injector/generated_reads()
+	. = ..()
+	. += rust_push(nameof(use_power), nameof(volume_rate))
+
 /obj/machinery/atmospherics/unary/vent_pump/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(use_power))

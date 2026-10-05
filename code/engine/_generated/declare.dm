@@ -4088,15 +4088,6 @@
 	into += entry_line(213)
 	into += list(global.ref_one(nameof(interaction_context), /datum/interaction))
 
-/// CAPABILITIES(/datum/prompt/choice/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:290
-/datum/prompt/choice/atmos_config_review/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 290, /datum/prompt/choice/atmos_config_review)
-	into += entry_line(291)
-	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(292)
-	into += list(global.ref_one(nameof(config_tool), /obj/item))
-
 /// CAPABILITIES(/datum/prompt/choice/augment_location) at code/game/objects/items/weapons/implants/implantaugment.dm:77
 /datum/prompt/choice/augment_location/declared_entries(list/into)
 	..(into)
@@ -4768,15 +4759,6 @@
 	into += entry_line(1167)
 	into += list(global.ref_one(nameof(human_target), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/number/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:354
-/datum/prompt/number/atmos_config_review/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 354, /datum/prompt/number/atmos_config_review)
-	into += entry_line(355)
-	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(356)
-	into += list(global.ref_one(nameof(config_tool), /obj/item))
-
 /// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:81
 /datum/prompt/number/cablelayer_cut/declared_entries(list/into)
 	..(into)
@@ -4951,15 +4933,6 @@
 	into += entry_block("code/game/machinery/atmo_control.dm", 168, /datum/prompt/text/air_sensor_tag)
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
-
-/// CAPABILITIES(/datum/prompt/text/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:321
-/datum/prompt/text/atmos_config_review/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 321, /datum/prompt/text/atmos_config_review)
-	into += entry_line(322)
-	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(323)
-	into += list(global.ref_one(nameof(config_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1061
 /datum/prompt/text/blueprint_area_name/declared_entries(list/into)
@@ -8637,15 +8610,15 @@
 	into += entry_line(362)
 	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion) at code/modules/mob/living/simple_mob/subtypes/vore/lion.dm:131
+/// CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion) at code/modules/mob/living/simple_mob/subtypes/vore/lion.dm:152
 /mob/living/simple_mob/vore/retaliate/lion/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/lion.dm", 131, /mob/living/simple_mob/vore/retaliate/lion)
-	into += entry_line(132)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/lion.dm", 152, /mob/living/simple_mob/vore/retaliate/lion)
+	into += entry_line(153)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE))
-	into += entry_line(133)
+	into += entry_line(154)
 	into += list(global.verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE))
-	into += entry_line(134)
+	into += entry_line(155)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/scel) at code/modules/mob/living/simple_mob/subtypes/vore/scel.dm:85
@@ -16494,6 +16467,19 @@
 	into += list(global.op("setGasTemperature", global.ui_act("setGasTemperature", global.arg("temp", global.num())), global.then(PROC_REF(ui_act_setgastemperature))))
 	into += entry_line(9)
 	into += list(global.op("setPower", global.ui_act("setPower", global.arg("value", global.num())), global.then(PROC_REF(ui_act_setpower))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:154
+/obj/machinery/atmospherics/unary/outlet_injector/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 154, /obj/machinery/atmospherics/unary/outlet_injector)
+	into += entry_line(155)
+	into += list(global.op("toggle", global.hand(), global.label("Toggle"), global.wait(0), global.says(MSG(outlet_injector/toggled)), global.then(PROC_REF(toggled))))
+	into += entry_line(156)
+	into += list(global.op("reset_rate", global.hand(), global.gesture(GESTURE_CTRL), global.label("Reset the rate"), global.wait(0), global.when(PROC_REF(rate_resettable)), global.says(MSG(outlet_injector/rate_reset)), global.then(PROC_REF(rate_reset))))
+	into += entry_line(158)
+	into += list(global.multitool_settings(list( list("ID Tag", "id", "text", MAX_NAME_LEN), list("Frequency", "frequency", "frequency"), list("-SAVE TO BUFFER-", PROC_REF(save_to_buffer), "action"))))
+	into += entry_line(162)
+	into += list(pipe_device_unwrench())
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump) at code/ATMOSPHERICS/components/unary/vent_pump.dm:51
 /obj/machinery/atmospherics/unary/vent_pump/declared_entries(list/into)
