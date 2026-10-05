@@ -79,6 +79,8 @@
 //e.g. the shuttle is already at the station or wasn't called to begin with
 //other reasons for the shuttle not being recallable should be handled elsewhere
 /datum/system/emergency_shuttle/proc/can_recall()
+	if(!shuttle) // no emergency shuttle on this map (the unit-test map): nothing to recall
+		return FALSE
 	if(shuttle.moving_status == SHUTTLE_INTRANSIT)	//if the shuttle is already in transit then it's too late
 		return FALSE
 	if(!shuttle.location)	//already at the station.
