@@ -71,9 +71,37 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 /obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)
 	if(mode == OUTLET_SCREWED)
 		return ITEM_INTERACT_BLOCKING
-	var/new_range = rerun_ask(user, "k70", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Input a new ejection distance", title = "Set ejection strength", default = 3, max = 5, min = 1)
-	if(isnull(new_range))
-		return ITEM_INTERACT_BLOCKING
+	open_request(src, /datum/prompt/number/disposal_outlet_range, PROC_REF(outlet_range_answered), answerer = user, subject = I, tool_expected = !isnull(I))
+	return ITEM_INTERACT_BLOCKING
+
+/datum/prompt/number/disposal_outlet_range
+	question = "Input a new ejection distance"
+	title = "Set ejection strength"
+	default = 3
+	min_value = 1
+	max_value = 5
+	timeout = 0
+	recheck_on_open = TRUE
+	var/tool_expected = FALSE
+
+/datum/prompt/number/disposal_outlet_range/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/disposal_outlet_range/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer) || (tool_expected && (!subject || QDELETED(subject))))
+		return "gone"
+	var/obj/structure/disposaloutlet/outlet = owner
+	if(outlet.mode == OUTLET_SCREWED)
+		return "closed"
+
+/obj/structure/disposaloutlet/proc/outlet_range_answered(datum/act/request/context)
+	if(isnull(context.request.answer_value) || context.request.last_error == "gone")
+		return
+	SStgui.update_uis(src)
+	if(context.answer)
+		apply_outlet_range(context.request.answerer, context.answer.answer_value)
+
+/obj/structure/disposaloutlet/proc/apply_outlet_range(mob/user, new_range)
 	eject_range = new_range
 	to_chat(user, span_notice("You set the range on the [src] to [new_range] tiles."))
 	return ITEM_INTERACT_SUCCESS

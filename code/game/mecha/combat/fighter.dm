@@ -150,14 +150,15 @@ TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 	for(var/obj/effect/overmap/visitable/V in range(1, our_ship))
 		choices[V.name] = V
 
-	om_ask(occupant, /datum/om/prompt/choice/fighter_destination, PROC_REF(overmap_destination_chosen), choices = choices, edge = what_edge, start_x = this_x, start_y = this_y, start_z = this_z, new_x = new_x, new_y = new_y)
+	open_request(src, /datum/prompt/choice/fighter_destination, PROC_REF(fighter_destination_answered), answerer = occupant, subject = src, choices = choices, edge = what_edge, start_x = this_x, start_y = this_y, start_z = this_z, new_x = new_x, new_y = new_y)
 
 /// Where a fighter leaving the map edge goes. Re-checked on the answer: the pilot is still in it,
 /// it hasn't moved, and the destination is still next to its sector. A cancel backs it off the edge.
-/datum/om/prompt/choice/fighter_destination
+/datum/prompt/choice/fighter_destination
 	title = "Destination"
-	message = "Choose an overmap destination:"
-	requires = list(/datum/om/check/inside_target)
+	question = "Choose an overmap destination:"
+	timeout = 0
+	recheck_on_open = TRUE
 	var/edge
 	var/start_x
 	var/start_y
@@ -165,33 +166,45 @@ TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 	var/new_x
 	var/new_y
 
-/datum/om/prompt/choice/fighter_destination/valid()
+/datum/prompt/choice/fighter_destination/recheck_extra()
 	var/obj/mecha/combat/fighter/F = subject
-	var/obj/effect/overmap/visitable/V = choices[choice]
+	if(QDELETED(F) || QDELETED(answerer))
+		return "gone"
+	if(isnull(answer_value))
+		return null
+	if(answerer.loc != F)
+		return "not inside it"
+	var/obj/effect/overmap/visitable/V = choices[answer_value]
 	if(F.slot_item(MECHA_SLOT_PILOT) != answerer || F.x != start_x || F.y != start_y || F.z != start_z || get_dist(V, get_overmap_sector(F.z)) > 1)
-		to_chat(answerer, span_warning("You or they appear to have moved!"))
 		return "moved"
 	return null
 
-/datum/om/prompt/choice/fighter_destination/cancelled()
-	var/obj/mecha/combat/fighter/F = subject
-	F?.back_off_edge(edge)
+/obj/mecha/combat/fighter/proc/fighter_destination_answered(datum/act/request/A)
+	if(QDELETED(A.request.answerer))
+		return
+	var/datum/prompt/choice/fighter_destination/ask = A.request
+	if(A.answer)
+		overmap_destination_chosen(ask)
+	else if(ask.last_error == "moved")
+		to_chat(ask.answerer, span_warning("You or they appear to have moved!"))
+	else if(isnull(ask.answer_value) && ask.outcome == REQ_CANCELLED && ask.last_error != "nothing to ask")
+		back_off_edge(ask.edge)
 
 /obj/mecha/combat/fighter/proc/back_off_edge(what_edge)
 	var/backwards = turn(what_edge, 180)
 	forceMove(get_step(src,backwards)) //Move them back a step, then.
 	set_dir(backwards)
 
-/obj/mecha/combat/fighter/proc/overmap_destination_chosen(datum/om/prompt/choice/fighter_destination/ask)
+/obj/mecha/combat/fighter/proc/overmap_destination_chosen(datum/prompt/choice/fighter_destination/ask)
 	var/mob/living/carbon/occupant = slot_item(MECHA_SLOT_PILOT)
 	var/new_x = ask.new_x
 	var/new_y = ask.new_y
 	var/new_z
-	if(!ask.choice)
+	if(!ask.value)
 		back_off_edge(ask.edge)
 		return
 	else
-		var/obj/effect/overmap/visitable/V = ask.choices[ask.choice]
+		var/obj/effect/overmap/visitable/V = ask.choices[ask.value]
 		var/list/levels = V.get_space_zlevels()
 		if(!levels.len)
 			to_chat(occupant, span_warning("You don't appear to be able to get there from here!"))

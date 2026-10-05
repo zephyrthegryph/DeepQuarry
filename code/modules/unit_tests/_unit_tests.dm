@@ -1057,6 +1057,9 @@
 #include "round2_ghosttrap_native_name.dm"
 #include "round2_medical_stand_mask_retirement.dm"
 #include "round2_modular_limb_native_refusal.dm"
+#include "round2_cracker_pull_request.dm"
+#include "round2_disposal_outlet_range_request.dm"
+#include "interim_pda_message_missing_sender.dm"
 #include "round2_gender_change_drug_request.dm"
 
 #undef TEST_ASSERT

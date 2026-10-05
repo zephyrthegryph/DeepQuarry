@@ -60,18 +60,11 @@
 	if(target == user)
 		to_chat(user, span_notice("You can't pull \the [src] by yourself, that would just be sad!"))
 		return ITEM_INTERACT_FAILURE
-	var/check_pull = rerun_ask(target, "a1", PROC_REF(attack), args, /datum/om/prompt/choice/alert, message = "\The [user] is offering to pull \the [src] with you, do you want to pull it?", title = "Pull Cracker", choices = list("Yes", "No"))
-	if(isnull(check_pull))
-		to_chat(user, span_notice("You offer \the [src] to \the [target] to pull and wait to see how whether they do."))
-		return ITEM_INTERACT_SUCCESS
-	if(!check_pull || check_pull == "No")
-		to_chat(user, span_notice("\The [target] chose not to pull \the [src]!"))
-		return ITEM_INTERACT_FAILURE
-	var/obj/item/check_hand = user.get_active_hand()
-	if(check_hand != src)
-		to_chat(user, span_notice("\The [src] is no longer in-hand!"))
-		to_chat(target, span_notice("\The [src] is no longer in-hand!"))
-		return ITEM_INTERACT_FAILURE
+	open_request(src, /datum/prompt/choice/cracker_pull, PROC_REF(cracker_pull_answered), answerer = target, subject = user, question = "\The [user] is offering to pull \the [src] with you, do you want to pull it?")
+	to_chat(user, span_notice("You offer \the [src] to \the [target] to pull and wait to see how whether they do."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/cracker/proc/pull_cracker(mob/living/user, mob/living/carbon/human/target)
 	var/mob/living/carbon/human/winner
 	var/mob/living/carbon/human/loser
 	if(!rigged)
@@ -193,3 +186,38 @@ APPEARANCE_NONE(/obj/item/paper/cracker_joke)
 #undef FALLING_CRACKER
 #undef TELEPORTING_CRACKER
 #undef WEALTHY_CRACKER
+
+/datum/prompt/choice/cracker_pull
+	choices = list("Yes", "No")
+	buttons = TRUE
+	title = "Pull Cracker"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/cracker_pull/recheck_extra()
+	var/mob/living/user = subject
+	var/mob/living/carbon/human/target = answerer
+	if(QDELETED(owner) || QDELETED(user) || QDELETED(target))
+		return "gone"
+	if(isnull(answer_value))
+		return null
+	if(!istype(target) || target.stat || target == user)
+		return "cracker target"
+	if(answer_value == "Yes" && user.get_active_hand() != owner)
+		return "cracker not held"
+	return null
+
+/obj/item/cracker/proc/cracker_pull_answered(datum/act/request/A)
+	if(isnull(A.request.answer_value) || A.request.last_error == "gone")
+		return
+	var/mob/living/user = A.request.subject
+	var/mob/living/carbon/human/target = A.request.answerer
+	SStgui.update_uis(src)
+	if(A.answer)
+		if(A.answer.answer_value == "No")
+			to_chat(user, span_notice("\The [target] chose not to pull \the [src]!"))
+		else
+			pull_cracker(user, target)
+	else if(A.request.last_error == "cracker not held")
+		to_chat(user, span_notice("\The [src] is no longer in-hand!"))
+		to_chat(target, span_notice("\The [src] is no longer in-hand!"))

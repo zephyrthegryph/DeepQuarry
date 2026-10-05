@@ -20544,11 +20544,11 @@
 	into += entry_line(61)
 	into += list(global.owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow))
 
-/// CAPABILITIES(/obj/mecha/combat/fighter/gunpod) at code/game/mecha/combat/fighter.dm:349
+/// CAPABILITIES(/obj/mecha/combat/fighter/gunpod) at code/game/mecha/combat/fighter.dm:362
 /obj/mecha/combat/fighter/gunpod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/mecha/combat/fighter.dm", 349, /obj/mecha/combat/fighter/gunpod)
-	into += entry_line(350)
+	into += entry_block("code/game/mecha/combat/fighter.dm", 362, /obj/mecha/combat/fighter/gunpod)
+	into += entry_line(363)
 	into += list(global.op("gunpod_paint", global.item(/obj/item), global.label("Paint stripes"), global.then(PROC_REF(interaction_gunpod_paint))))
 
 /// CAPABILITIES(/obj/mecha/combat/gygax/serenity) at code/game/mecha/combat/gygax.dm:104
