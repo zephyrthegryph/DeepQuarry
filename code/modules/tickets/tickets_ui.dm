@@ -208,9 +208,12 @@ UI_ACT_PROC(/datum/tickets, ui_act_send_msg)
 	if(..())
 		return
 
-	if(!ismob(user) || QDELETED(user))
+	if(!ismob(user))
 		return
-	open_request(src, /datum/prompt/choice/ticket_fallback_list, PROC_REF(ticket_fallback_list_answered), answerer = user)
+	var/mob/actor = user
+	if(QDELETED(actor))
+		return
+	open_request(src, /datum/prompt/choice/ticket_fallback_list, PROC_REF(ticket_fallback_list_answered), answerer = actor)
 
 /datum/tickets/proc/ticket_fallback_list_answered(datum/act/request/context)
 	if(!context.answer)
