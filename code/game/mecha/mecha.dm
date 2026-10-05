@@ -1699,7 +1699,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 /obj/mecha/proc/view_stats(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user || user != src?.slot_item(MECHA_SLOT_PILOT))
 		return
-	// TGUI: replaces legacy browse(get_stats_html()).
+	// The structured TGUI interface replaces the old browser window.
 	tgui_subview = "main"
 	tgui_interact(src?.slot_item(MECHA_SLOT_PILOT))
 	return
@@ -1803,24 +1803,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 ////////////////////////////////////
 ///// Rendering stats window ///////
 ////////////////////////////////////
-
-/obj/mecha/proc/get_stats_html()
-	// Bare stats body for TGUI consumption. The legacy <html>/
-	// <script>/<style> wrapper and the JS-driven 1s ticker are gone:
-	// TGUI's autoupdate handles refresh, and styling is set in
-	// MechaInterface.tsx's outer Box.
-	var/output = {"<div id='content'>
-						[src.get_stats_part()]
-						</div>
-						<div id='eq_list'>
-						[src.get_equipment_list()]
-						</div>
-						<hr>
-						<div id='commands'>
-						[src.get_commands()]
-						</div>
-					"}
-	return output
 
 // fully-structured TGUI for all five views (main + log +
 // attack_ai + access + maint). One MechaInterface.tsx renders all five
@@ -2215,15 +2197,6 @@ UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
 	for(var/obj/item/mecha_parts/mecha_equipment/MT in equipment)
 		output += "<div id='\ref[MT]'>[MT.get_equip_info()]</div>"
 	output += "</div>"
-	return output
-
-/obj/mecha/proc/get_log_html()
-	var/output = "<html><head><title>[src.name] Log</title></head><body style='font: 13px 'Courier', monospace;'>"
-	for(var/list/entry in log)
-		output += {"<div style='font-weight: bold;'>[time2text(entry["time"],"DDD MMM DD hh:mm:ss")] [GLOB.game_year]</div>
-						<div style='margin-left:15px; margin-bottom:10px;'>[entry["message"]]</div>
-						"}
-	output += "</body></html>"
 	return output
 
 /obj/mecha/proc/get_log_tgui()

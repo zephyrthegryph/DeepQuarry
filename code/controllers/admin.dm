@@ -22,7 +22,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 	var/class
 
 /obj/effect/statclick/debug/Click()
-	if(!check_rights_for(usr.client, R_HOLDER) || !target)
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): BYOND Click supplies the initiating diagnostic viewer.
+	if(!check_rights_for(user.client, R_HOLDER) || !target)
 		return
 	if(!class)
 		if(istype(target, /datum/system))
@@ -34,8 +35,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 		else
 			class = "unknown"
 
-	usr.client.debug_variables(target)
-	message_admins("Admin [key_name_admin(usr)] is debugging the [target] [class].")
+	user.client.debug_variables(target)
+	message_admins("Admin [key_name_admin(user)] is debugging the [target] [class].")
 
 ADMIN_VERB(restart_controller, R_DEBUG, "Restart Controller", "Restart one of the various periodic loop controllers for the game (be careful!)", ADMIN_CATEGORY_DEBUG_GAME, controller in list("Kernel", "Watchdog"))
 	switch(controller)

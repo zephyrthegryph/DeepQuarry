@@ -141,51 +141,6 @@ GLOBAL_LIST(tgui_modals)
 	return tgui_modal_new(source, modal)
 
 /**
- * Opens a bento input TGUI modal
- *
- * Internally checks if the answer is in the list of choices.
- * Arguments:
- * * source - The source datum
- * * id - The ID of the modal
- * * text - The text to display above the answers
- * * delegate - The proc to call when submitted
- * * arguments - List of arguments passed to and from JS (mostly useful for chaining modals)
- * * value - The default value of the bento
- * * choices - The list of available choices in the bento
- */
-/proc/tgui_modal_bento(datum/source, id, text = "Default modal message", delegate, arguments, value, choices)
-	ASSERT(length(id))
-
-	var/datum/tgui_modal/input/bento/modal = new(id, text, delegate, arguments, value, choices)
-	return tgui_modal_new(source, modal)
-
-//Bento but spritesheet edition
-/proc/tgui_modal_bento_spritesheet(datum/source, id, text = "Default modal message", delegate, arguments, value, choices)
-	ASSERT(length(id))
-
-	var/datum/tgui_modal/input/bento/spritesheet/modal = new(id, text, delegate, arguments, value, choices)
-	return tgui_modal_new(source, modal)
-
-/**
- * Opens a yes/no TGUI modal
- *
- * Arguments:
- * * source - The source datum
- * * id - The ID of the modal
- * * text - The text to display above the answers
- * * delegate - The proc to call when "Yes" is pressed
- * * delegate_no - The proc to call when "No" is pressed
- * * arguments - List of arguments passed to and from JS (mostly useful for chaining modals)
- * * yes_text - The text to show in the "Yes" button
- * * no_text - The text to show in the "No" button
- */
-/proc/tgui_modal_boolean(datum/source, id, text = "Default modal message", delegate, delegate_no, arguments, yes_text = "Yes", no_text = "No")
-	ASSERT(length(id))
-
-	var/datum/tgui_modal/boolean/modal = new(id, text, delegate, delegate_no, arguments, yes_text, no_text)
-	return tgui_modal_new(source, modal)
-
-/**
  * Registers a given modal to a source. Private.
  *
  * Arguments:

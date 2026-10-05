@@ -217,11 +217,6 @@ other types of metals and chemistry for reagents).
 		var/default_material = defaults[role]
 		standard_material_costs[default_material] = (standard_material_costs[default_material] || 0) + amounts[role]
 
-/datum/design_techweb/proc/icon_html(client/user)
-	var/datum/asset/spritesheet_batched/sheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
-	sheet.send(user)
-	return sheet.icon_tag(id)
-
 /// Returns the description of the design
 /datum/design_techweb/proc/get_description()
 	var/obj/object_build_item_path = build_path

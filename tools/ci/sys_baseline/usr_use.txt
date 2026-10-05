@@ -34,9 +34,6 @@ usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(!isobserver(usr) && hove
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	var/mob/user = usr
 usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	closeToolTip(usr, src)
-usr_outside_verb	code/controllers/admin.dm	if(!check_rights_for(usr.client, R_HOLDER) || !target)
-usr_outside_verb	code/controllers/admin.dm	usr.client.debug_variables(target)
-usr_outside_verb	code/controllers/admin.dm	message_admins("Admin [key_name_admin(usr)] is debugging the [target] [class].")
 usr_outside_verb	code/controllers/configuration/config_entry.dm	log_admin("[key_name(usr)] attempted to reset locked config entry [type] to its default")
 usr_outside_verb	code/controllers/configuration/config_entry.dm	log_admin("[key_name(usr)] attempted to set locked config entry [type] to '[str_val]'")
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config access of [entry_type] attempted by [key_name(usr)]")

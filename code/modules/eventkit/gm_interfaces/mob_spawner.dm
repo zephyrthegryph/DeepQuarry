@@ -115,18 +115,16 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_loc_lock)
 
 UI_ACT(/datum/eventkit/mob_spawner, "start_spawn", ui_act_start_spawn, UI_ARG_NUM("amount"), UI_ARG_TEXT("desc"), UI_ARG_TEXT("flavor_text"), UI_ARG_NUM("health"), UI_ARG_NUM("max_health"), UI_ARG_NUM("melee_damage_lower"), UI_ARG_NUM("melee_damage_upper"), UI_ARG_TEXT("name"), UI_ARG_NUM("size_multiplier"), UI_ARG_TEXT("x"), UI_ARG_TEXT("y"), UI_ARG_TEXT("z"))
 UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
-	var/confirm = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure that you want to start spawning your custom mobs?", title = "Confirmation", choices = list("Yes", "Cancel"))
-	if(isnull(confirm))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
+	open_request(ui, /datum/prompt/choice/mob_spawner_spawn, TYPE_PROC_REF(/datum/tgui, mob_spawner_spawn_answered), answerer = ui.user, spawn_amount = params["amount"], spawn_desc = params["desc"], spawn_flavor_text = params["flavor_text"], spawn_health = params["health"], spawn_max_health = params["max_health"], spawn_melee_damage_lower = params["melee_damage_lower"], spawn_melee_damage_upper = params["melee_damage_upper"], spawn_name = params["name"], spawn_size_multiplier = params["size_multiplier"], spawn_x = params["x"], spawn_y = params["y"], spawn_z = params["z"])
 
-	if(confirm != "Yes")
-		return FALSE
-
-	var/amount = params["amount"]
-	var/name = params["name"]
-	var/x = params["x"]
-	var/y = params["y"]
-	var/z = params["z"]
+/datum/eventkit/mob_spawner/proc/apply_spawn_choice(datum/tgui/ui, mob/original_actor, spawn_amount, spawn_desc, spawn_flavor_text, spawn_health, spawn_max_health, spawn_melee_damage_lower, spawn_melee_damage_upper, spawn_name, spawn_size_multiplier, spawn_x, spawn_y, spawn_z)
+	var/amount = spawn_amount
+	var/name = spawn_name
+	var/x = spawn_x
+	var/y = spawn_y
+	var/z = spawn_z
 
 	if(!name)
 		to_chat(ui.user, span_warning("Name cannot be empty."))
@@ -145,22 +143,22 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 			var/mob/M = new path(ui.user.loc)
 
 			M.name = sanitize(name)
-			M.desc = sanitize(params["desc"])
-			M.flavor_text = sanitize(params["flavor_text"])
+			M.desc = sanitize(spawn_desc)
+			M.flavor_text = sanitize(spawn_flavor_text)
 			if(isliving(M))
 				var/mob/living/L = M
-				if(isnum(params["max_health"]) && params["max_health"] > 0)
-					L.endurance = params["max_health"]
-				if(isnum(params["health"]))
-					var/starting_injury = L.get_endurance() - params["health"]
+				if(isnum(spawn_max_health) && spawn_max_health > 0)
+					L.endurance = spawn_max_health
+				if(isnum(spawn_health))
+					var/starting_injury = L.get_endurance() - spawn_health
 					if(starting_injury > 0)
 						L.injure(INJURY_BLUNT, starting_injury, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 				if(isanimal(M))
 					var/mob/living/simple_mob/S = L
-					if(isnum(params["melee_damage_lower"]))
-						S.melee_damage_lower = params["melee_damage_lower"]
-					if(isnum(params["melee_damage_upper"]))
-						S.melee_damage_upper = params["melee_damage_upper"]
+					if(isnum(spawn_melee_damage_lower))
+						S.melee_damage_lower = spawn_melee_damage_lower
+					if(isnum(spawn_melee_damage_upper))
+						S.melee_damage_upper = spawn_melee_damage_upper
 				if(use_custom_ai)
 					L.faction = faction
 					L.set_use_stance(intent)
@@ -169,7 +167,7 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 				else
 					to_chat(ui.user, span_notice("You can only set AI for subtypes of mob/living!"))
 
-			var/size_mul = params["size_multiplier"]
+			var/size_mul = spawn_size_multiplier
 			if(isnum(size_mul))
 				if(isliving(M))
 					var/mob/living/L = M
@@ -182,7 +180,7 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 
 			M.forceMove(T)
 
-	log_and_message_admins("spawned [path] ([name]) at ([x],[y],[z]) [amount] times.")
+	log_and_message_admins("spawned [path] ([name]) at ([x],[y],[z]) [amount] times.", original_actor)
 
 	return TRUE
 
@@ -259,3 +257,36 @@ ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an adv
 	if(!spawner.ui_act_allowed(original_ui.user, setting_action, original_ui, original_ui.state()))
 		return "the mob spawner setting is unavailable"
 	return null
+
+/datum/tgui/proc/mob_spawner_spawn_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/mob_spawner_spawn/ask = context.answer
+	if(ask.answer_value != "Yes")
+		return
+	var/datum/eventkit/mob_spawner/spawner = src_object()
+	if(spawner.apply_spawn_choice(src, context.request.answerer, ask.spawn_amount, ask.spawn_desc, ask.spawn_flavor_text, ask.spawn_health, ask.spawn_max_health, ask.spawn_melee_damage_lower, ask.spawn_melee_damage_upper, ask.spawn_name, ask.spawn_size_multiplier, ask.spawn_x, ask.spawn_y, ask.spawn_z))
+		SStgui.update_uis(spawner)
+
+/datum/prompt/choice/mob_spawner_spawn
+	question = "Are you sure that you want to start spawning your custom mobs?"
+	title = "Confirmation"
+	choices = list("Yes", "Cancel")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	var/spawn_amount
+	var/spawn_desc
+	var/spawn_flavor_text
+	var/spawn_health
+	var/spawn_max_health
+	var/spawn_melee_damage_lower
+	var/spawn_melee_damage_upper
+	var/spawn_name
+	var/spawn_size_multiplier
+	var/spawn_x
+	var/spawn_y
+	var/spawn_z
+
+/datum/prompt/choice/mob_spawner_spawn/recheck_extra()
+	return mob_spawner_setting_ui_reason(owner, answerer, "start_spawn")

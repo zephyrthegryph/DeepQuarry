@@ -883,49 +883,112 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/item_type = GLOB.item_tf_options[target_item_name]
 	if(!ispath(item_type))
 		return
-	om_flow_start(/datum/om/flow/casino_item_tf, sentient_prize, src, item_type = item_type)
-
-/// The prize customises the item they become: name, description and colour, each optional (a
-/// cancel keeps the default). Then they are transformed, if still alive.
-/datum/om/flow/casino_item_tf
-	name = "casino item tf"
-	var/item_type
-	var/item_name
-	var/item_desc
-	var/item_color
-
-/datum/om/flow/casino_item_tf/valid()
-	var/mob/living/sentient_prize = actor
-	return sentient_prize.stat == DEAD ? "dead" : null
-
-/datum/om/flow/casino_item_tf/proc/item_label()
 	var/obj/item/item_path = item_type
-	return initial(item_path.name)
+	var/datum/prompt/text/casino_item_tf/ask = open_request(src, /datum/prompt/text/casino_item_tf, PROC_REF(item_tf_text_entered), answerer = sentient_prize, tf_type = item_type, question = "Choose your item name for \the [initial(item_path.name)] (Leave blank or cancel to use its default name)", title = "TF Item Name")
+	if(ask?.is_open())
+		ask.tf_opened = TRUE
 
-/datum/om/flow/casino_item_tf/start()
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(name_entered), title = "TF Item Name", message = "Choose your item name for \the [item_label()] (Leave blank or cancel to use its default name)", cancel_answer = "")
+/// A genuine close supplies the old optional default; rejection before opening does not.
+/proc/casino_item_tf_continues(datum/act/request/A, opened)
+	var/mob/living/prize = A.request.answerer
+	if(!istype(prize) || QDELETED(prize))
+		return FALSE
+	if(A.answer)
+		return TRUE
+	if(!opened || A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value))
+		return FALSE
+	return isnull(request_recheck(A.request))
 
-/datum/om/flow/casino_item_tf/proc/name_entered(datum/om/prompt/text/ask)
-	item_name = ask.text
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(desc_entered), title = "TF Item Description", message = "Choose your item description for \the [item_label()] (Leave blank or cancel to use its default description)", cancel_answer = "")
+/proc/casino_item_tf_refusal(datum/request/R)
+	var/mob/living/prize = R.answerer
+	if(!istype(prize) || QDELETED(prize) || !R.owner || QDELETED(R.owner))
+		return "gone"
+	return prize.stat == DEAD ? "dead" : null
 
-/datum/om/flow/casino_item_tf/proc/desc_entered(datum/om/prompt/text/ask)
-	item_desc = ask.text
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(recolor_answered), title = "Item TF Color", message = "Do you want to customize your item's color?", answer_on_no = TRUE, cancel_answer = "No")
+/datum/prompt/text/casino_item_tf
+	timeout = 0
+	recheck_on_open = TRUE
+	var/tf_type
+	var/tf_name
+	var/tf_description = FALSE
+	var/tf_opened = FALSE
 
-/datum/om/flow/casino_item_tf/proc/recolor_answered(datum/om/prompt/confirm/ask)
-	if(!ask.yes)
-		transform()
+/datum/prompt/text/casino_item_tf/recheck_extra()
+	return casino_item_tf_refusal(src)
+
+/datum/prompt/text/casino_item_tf/normalize(given)
+	return istext(given) ? given : null
+
+/obj/machinery/casinosentientprize_handler/proc/item_tf_text_entered(datum/act/request/A)
+	var/datum/prompt/text/casino_item_tf/ask = A.request
+	if(!casino_item_tf_continues(A, ask.tf_opened))
 		return
-	var/obj/item/item_path = item_type
-	om_ask(actor, /datum/om/prompt/color, PROC_REF(color_picked), title = "Item TF Color", message = "Choose the color for your item.", default = initial(item_path.color), cancel_answer = "")
+	var/text = A.answer ? ask.answer_value : ""
+	if(!ask.tf_description)
+		var/obj/item/item_path = ask.tf_type
+		var/datum/prompt/text/casino_item_tf/description_request = open_request(src, /datum/prompt/text/casino_item_tf, PROC_REF(item_tf_text_entered), answerer = ask.answerer, tf_type = ask.tf_type, tf_name = text, tf_description = TRUE, title = "TF Item Description", question = "Choose your item description for \the [initial(item_path.name)] (Leave blank or cancel to use its default description)")
+		if(description_request?.is_open())
+			description_request.tf_opened = TRUE
+		return
+	var/datum/prompt/choice/casino_item_tf/recolor_request = open_request(src, /datum/prompt/choice/casino_item_tf, PROC_REF(item_tf_recolor_answered), answerer = ask.answerer, tf_type = ask.tf_type, tf_name = ask.tf_name, tf_desc = text, title = "Item TF Color", question = "Do you want to customize your item's color?")
+	if(recolor_request?.is_open())
+		recolor_request.tf_opened = TRUE
 
-/datum/om/flow/casino_item_tf/proc/color_picked(datum/om/prompt/color/ask)
-	item_color = ask.picked_color
-	transform()
+/datum/prompt/choice/casino_item_tf
+	timeout = 0
+	recheck_on_open = TRUE
+	buttons = TRUE
+	choices = list("Yes", "No")
+	var/tf_type
+	var/tf_name
+	var/tf_desc
+	var/tf_opened = FALSE
 
-/datum/om/flow/casino_item_tf/proc/transform()
-	var/mob/living/sentient_prize = actor
+/datum/prompt/choice/casino_item_tf/recheck_extra()
+	return casino_item_tf_refusal(src)
+
+/obj/machinery/casinosentientprize_handler/proc/item_tf_recolor_answered(datum/act/request/A)
+	var/datum/prompt/choice/casino_item_tf/ask = A.request
+	if(!casino_item_tf_continues(A, ask.tf_opened))
+		return
+	if(!A.answer || ask.answer_value != "Yes")
+		item_tf_transform(ask.answerer, ask.tf_type, ask.tf_name, ask.tf_desc, null)
+		return
+	var/obj/item/item_path = ask.tf_type
+	var/datum/prompt/color/casino_item_tf/next = open_request(src, /datum/prompt/color/casino_item_tf, PROC_REF(item_tf_color_picked), answerer = ask.answerer, tf_type = ask.tf_type, tf_name = ask.tf_name, tf_desc = ask.tf_desc, title = "Item TF Color", question = "Choose the color for your item.", default = initial(item_path.color) || "#000000")
+	if(next?.is_open())
+		next.tf_opened = TRUE
+
+/datum/prompt/color/casino_item_tf
+	timeout = 0
+	recheck_on_open = TRUE
+	var/tf_type
+	var/tf_name
+	var/tf_desc
+	var/tf_opened = FALSE
+
+/datum/prompt/color/casino_item_tf/recheck_extra()
+	return casino_item_tf_refusal(src)
+
+/datum/prompt/color/casino_item_tf/normalize(given)
+	return given
+
+/datum/prompt/color/casino_item_tf/refusal(given)
+	return null
+
+/datum/prompt/color/casino_item_tf/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title || "Pick a color", default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker
+
+/obj/machinery/casinosentientprize_handler/proc/item_tf_color_picked(datum/act/request/A)
+	var/datum/prompt/color/casino_item_tf/ask = A.request
+	if(!casino_item_tf_continues(A, ask.tf_opened))
+		return
+	item_tf_transform(ask.answerer, ask.tf_type, ask.tf_name, ask.tf_desc, A.answer ? ask.answer_value : "")
+
+/obj/machinery/casinosentientprize_handler/proc/item_tf_transform(mob/living/sentient_prize, item_type, item_name, item_desc, item_color)
 	var/obj/item/newitem = new item_type(get_turf(sentient_prize)) // This might be a bad idea, but if the prize is in something/someone it would be potentially diastrous to use loc. Better to move 'em out than move it in!
 	if(LAZYLEN(item_name))
 		newitem.name = item_name
