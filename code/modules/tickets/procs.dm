@@ -48,19 +48,52 @@
 
 //admin proc
 ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor Ticket List", "Opens the list of mentor tickets", ADMIN_CATEGORY_MISC)
-	var/browse_to
-
-	var/_answer_k47 = verb_ask(user, "k47", args, /datum/om/prompt/choice, message = "Display which ticket list?", title = "List Choice", choices = list("Active Tickets", "Resolved Tickets"))
-	if(isnull(_answer_k47))
+	if(!user.mob || QDELETED(user.mob))
 		return
-	switch(_answer_k47)
+	open_request(src, /datum/prompt/choice/mentor_ticket_panel_list, PROC_REF(mentor_ticket_panel_answered), answerer = user.mob)
+
+/datum/prompt/choice/mentor_ticket_panel_list
+	title = "List Choice"
+	question = "Display which ticket list?"
+	choices = list("Active Tickets", "Resolved Tickets")
+	timeout = 0
+	rights = R_ADMIN|R_SERVER|R_MOD|R_MENTOR
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/mentor_ticket_panel_list/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/proc/mentor_ticket_panel_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/cmd_mentor_ticket_panel/proc/mentor_ticket_panel_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(mentor_ticket_panel_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(!admin_can(user, permissions))
+		admin_log_denial(user, "verb:[src.type]", permissions)
+		to_chat(user, span_adminnotice("You lack the permissions to do this."))
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	var/browse_to
+	switch(context.request.answer_value)
 		if("Active Tickets")
 			browse_to = AHELP_ACTIVE
 		if("Resolved Tickets")
 			browse_to = AHELP_RESOLVED
 		else
 			return
-
 	GLOB.tickets.BrowseTickets(browse_to, user.mob)
 
 /proc/message_mentors(msg)
