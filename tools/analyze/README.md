@@ -315,8 +315,11 @@ impl Generator for X {
 `GenCx` offers `markers(name)`, `keys()` (declared stat, source, stage, capability and op ids), `sem()` (the full model; a
 generator that never calls it costs no parse), `handlers()` (the procs declarations name, with hook form, role and context),
 `decls()` and `tree`. `GenOut` has `line`, `blank`, `doc` (a `///` line) and `diag`. A generated file gets a fixed header,
-must be deterministic (sorted, no timestamps, no absolute paths) and is compared byte for byte by `analyze gen --check`, which also
-fails when the file is not `#include`d in `deepquarry.dme`. Diagnostics use the engine's format, `file:line: [gen/x]
+must be deterministic (sorted, no timestamps, no absolute paths) and is compared byte for byte, so `analyze gen` rewrites only a
+file whose text changed (an unchanged tree keeps its mtimes and the build's .dmb caches); `analyze gen --check` writes nothing.
+Both fail when the file is not `#include`d in `deepquarry.dme`. The output is not committed: every build runs `analyze gen`
+first (tools/build/build.ts `GenTarget`), which loops until no file changes, because `reads` and `derived_reads` read
+`declare.dm` (doc/rewrite/agent_workflow.md). Diagnostics use the engine's format, `file:line: [gen/x]
 message`, and the same exemption mechanism as the lints. Put a golden next to a fixture and a test in `tests/semantic.rs`
 (`BLESS_GOLDENS=1 cargo test` writes it).
 

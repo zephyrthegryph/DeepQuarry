@@ -114,18 +114,39 @@ pub fn debug_proc(sem: &super::Sem, ty: &str, name: &str) {
 pub fn gen(args: &[String], root: &Path) -> ExitCode {
     let check = args.iter().any(|a| a == "--check");
     let names: Vec<String> = args.iter().filter(|a| !a.starts_with("--")).cloned().collect();
-    let o = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
-    let engine = match Engine::new(crate::run::registry(), o) {
-        Ok(e) => e,
-        Err(e) => {
-            eprintln!("analyze: {}", e);
-            return ExitCode::from(2);
+    // Some generators read another's output (reads and derived_reads read declare.dm), so a write pass
+    // that changed anything runs again on the reloaded tree until nothing changes (two passes from an
+    // empty tree, one when the files are already fresh). The generated files are not committed: every
+    // build runs this first (tools/build/build.ts GenTarget), so it must converge on its own.
+    let mut written: Vec<std::path::PathBuf> = Vec::new();
+    let mut results = Vec::new();
+    for _pass in 0..4 {
+        let o = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
+        let engine = match Engine::new(crate::run::registry(), o) {
+            Ok(e) => e,
+            Err(e) => {
+                eprintln!("analyze: {}", e);
+                return ExitCode::from(2);
+            }
+        };
+        results = super::gen::run(root, &engine.tree, &names, check);
+        let wrote: Vec<_> = results.iter().filter(|r| r.state == super::gen::State::Written).map(|r| r.path.clone()).collect();
+        if check || wrote.is_empty() {
+            break;
         }
-    };
-    let results = super::gen::run(root, &engine.tree, &names, check);
+        written.extend(wrote);
+    }
     if results.is_empty() {
         eprintln!("analyze gen: no generator named {:?}", names);
         return ExitCode::from(2);
+    }
+    // The last pass reports every file fresh; name the ones an earlier pass rewrote.
+    written.sort();
+    written.dedup();
+    for r in results.iter_mut() {
+        if r.state == super::gen::State::Fresh && written.contains(&r.path) {
+            r.state = super::gen::State::Written;
+        }
     }
     if super::gen::report(&results) {
         ExitCode::SUCCESS
