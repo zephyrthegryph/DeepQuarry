@@ -48,7 +48,13 @@
 /obj/effect/anomaly/grav/Bump(atom/A)
 	gravShock(A)
 
-/obj/effect/anomaly/grav/Bumped(atom/movable/AM)
+CAPABILITIES(/obj/effect/anomaly/grav)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/anomaly/grav/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	gravShock(AM)
 
 /obj/effect/anomaly/grav/proc/gravShock(mob/living/living_debris)

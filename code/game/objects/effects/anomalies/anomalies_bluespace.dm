@@ -20,7 +20,13 @@
 		if(prob(100 * susceptibility))
 			do_teleport(M, locate(M.x, M.y, M.z), teleport_distance, channel = TELEPORT_CHANNEL_BLUESPACE)
 
-/obj/effect/anomaly/bluespace/Bumped(atom/movable/AM)
+CAPABILITIES(/obj/effect/anomaly/bluespace)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/anomaly/bluespace/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(isliving(AM) && prob(100 * GetAnomalySusceptibility(AM)))
 		do_teleport(AM, locate(AM.x, AM.y, AM.z), 8, channel = TELEPORT_CHANNEL_BLUESPACE)
 

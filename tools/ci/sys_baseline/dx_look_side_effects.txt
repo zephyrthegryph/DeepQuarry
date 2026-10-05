@@ -16,14 +16,6 @@ dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.d
 dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	item_state = normal_icon_state
 dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	set_light(0, 0, l_color = "#000000")
 dx_appearance_side_effect	code/game/gamemodes/technomancer/spells/illusion.dm	temp_image.transform = M
-dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light(0)
-dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light_on(FALSE)
-dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light(0)
-dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light_on(FALSE)
-dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light(0)
-dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light_on(FALSE)
-dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light(l_range = 2, l_power = 0.25, l_color = new_color)
-dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light_on(TRUE)
 dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = "alert:2"
 dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = "alert:1"
 dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = initial(icon_screen)

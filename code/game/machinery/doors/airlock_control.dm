@@ -142,14 +142,6 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 	. = ..()
 	if(!forced) send_status()
 
-/obj/machinery/door/airlock/Bumped(atom/AM)
-	..(AM)
-	if(istype(AM, /obj/mecha))
-		var/obj/mecha/mecha = AM
-		if(density && radio_connection() && mecha?.slot_item(MECHA_SLOT_PILOT) && (src.allowed(mecha?.slot_item(MECHA_SLOT_PILOT)) || src.check_access_list(mecha.operation_req_access)))
-			send_status(1)
-	return
-
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
 	rel_clear(src, nameof(radio_connection))
 	SSradio.remove_object(src, frequency)

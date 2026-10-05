@@ -45,7 +45,13 @@
 	name = "gibber"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
-/obj/machinery/gibber/autogibber/Bumped(atom/A)
+CAPABILITIES(/obj/machinery/gibber/autogibber)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/machinery/gibber/autogibber/proc/bumped_into(datum/act/act)
+	var/datum/notice/bumped/N = act
+	var/atom/A = N.bumper
 	if(!input_plate()) return
 
 	if(ismob(A))

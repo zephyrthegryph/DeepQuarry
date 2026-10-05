@@ -159,7 +159,11 @@ DECLARE_PERIODIC(/obj/effect/beam/i_beam, PERIODIC_SLOW)
 /obj/effect/beam/i_beam/Bump()
 	consume(src)
 
-/obj/effect/beam/i_beam/Bumped()
+CAPABILITIES(/obj/effect/beam/i_beam)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/beam/i_beam/proc/bumped_into(datum/act/A)
 	hit()
 
 /obj/effect/beam/i_beam/Crossed(atom/movable/AM)

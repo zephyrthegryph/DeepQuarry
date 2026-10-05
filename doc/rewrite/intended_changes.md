@@ -1030,3 +1030,16 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
 * **The tank bay, the port wrench, the liner, the welder, the strike and the cell slot of the powered ones are ops** (`tank_bay()` beside
   `cell_bay()`); refusals say why ("It is wrecked.", "Nothing happens.", the drain and liner reasons). A liner takes its two sheets as the op's cost.
 * **The canister's eject drops the tank on the floor and closes an open valve, as before; the label's colour is a tracked var drawn by `draw()`.**
+## Missing forms: the bump action
+
+Pinned by `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on the legacy `Bumped()` first) and the bump tests of `dq_p2_door_behaviour.dm`.
+
+* **Walking into something is the bump action**: `/atom/movable/proc/bump_into()` is its one emitter (the movement path's `Bump()` and a mech's push
+  call it), published on the bumped atom with `bumper`, `bumped` and `direction`. A type answers with `on_notice(/datum/notice/bumped, ...)` or takes it
+  over with `extend(/datum/act/bump, instead(...))`; an unconverted `Bumped()` still runs after the notice. A refused or taken-over bump skips it.
+* **The airlock's bump shock is a takeover**: a live door's shock (or a hallucinating mob's phantom one) replaces the bump; a shock that finds no power
+  lets the bump go on to the door as before. A mob shocked this way is stamped for the once-a-second bump limit (it was stamped before the shock).
+* **A mech's bump reaches doors through the same emitter**: a mech pushing an anchored object used to call its `Bumped()` directly.
+* Converted: the door base, airlock, blast door, firedoor, windoor, unpowered door, transport pod, and the bump answers of the shadekin portals,
+  recharge station, teleporter hub, bluespace/flux/gravity anomalies, bump teleporter, grille, cliff, fence, medical holosign, simple door, portals,
+  transit tubes, telecube, redgate, autogibber, station map and infrared beam. The rest are held by the `bump_ratchet_on_bumped_overrides` ceiling.

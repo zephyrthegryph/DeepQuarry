@@ -63,8 +63,13 @@
 /obj/structure/simple_door/get_material()
 	return material
 
-/obj/structure/simple_door/Bumped(atom/user)
-	..()
+CAPABILITIES(/obj/structure/simple_door)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/simple_door/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/user = N.bumper
 	if(!state)
 		return TryToSwitchState(user)
 	return

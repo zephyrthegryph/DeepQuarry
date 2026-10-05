@@ -138,7 +138,16 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 	to_chat(user, span_notice("The portal distorts for a moment, resolving itself soon after. You feel like it will lead you to somewhere in the wilderness now."))
 	return TRUE
 
-/obj/structure/dark_portal/hub/Bumped(M as mob|obj)
+CAPABILITIES(/obj/structure/dark_portal/hub)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+CAPABILITIES(/obj/structure/dark_portal/minion)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/dark_portal/hub/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/M = N.bumper
 	teleport(M)
 	return
 
@@ -227,7 +236,10 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 	if(locked == old_locked)
 		close_portal()
 
-/obj/structure/dark_portal/minion/Bumped(M as mob|obj)
+/// Something walked into it (the bump action's notice).
+/obj/structure/dark_portal/minion/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/M = N.bumper
 	if(icon_state == "minion1")
 		teleport(M)
 	return

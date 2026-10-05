@@ -60,16 +60,24 @@
 	if(tube_dirs == null)
 		init_dirs()
 
-/obj/structure/transit_tube/Bumped(mob/AM as mob|obj)
+CAPABILITIES(/obj/structure/transit_tube)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/transit_tube/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/AM = N.bumper
 	var/obj/structure/transit_tube/T = locate_on(AM.loc, /obj/structure/transit_tube)
 	if(T)
 		to_chat(AM, span_warning("The tube's support pylons block your way."))
-		return ..()
+		return
 	else
 		AM.forceMove(get_turf(src))
 		to_chat(AM, span_info("You slip under the tube."))
 
-/obj/structure/transit_tube/station/Bumped(mob/AM as mob|obj)
+/obj/structure/transit_tube/station/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/AM = N.bumper
 	if(!pod_moving && icon_state == "open" && istype(AM, /mob))
 		for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 			if(length(pod.slot_contents(CONTAINER_SLOT_TRANSIT_POD)))
@@ -78,7 +86,6 @@
 			else if(!pod.moving && (pod.dir in directions()))
 				AM.forceMove(pod)
 				return
-
 
 /obj/structure/transit_tube/station/declare_interactions(list/into)
 	into += list(

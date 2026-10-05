@@ -385,6 +385,18 @@
 
 	OM_EMIT(src, /datum/om/event/before/movable_bump, A)
 
+	bump_into(A)
+
+/// The bump action (doc/rewrite/final_api.html, section 8 "World actions"): `src` walked into `A`. The one emitter of /datum/act/bump: the
+/// action runs on the bumped atom, whose hooks (extend(/datum/act/bump, ...), on_notice(/datum/notice/bumped, ...)) answer it; a refused or
+/// taken-over bump stops there. A type not converted yet still answers through its legacy Bumped(), which runs after the notice.
+/atom/movable/proc/bump_into(atom/A)
+	var/datum/act/bump/B = ACT_TRY(A, bump, src, A, get_dir(src, A))
+	if(!B)
+		return
+	act_done(B)
+	if(QDELETED(A))
+		return
 	A.Bumped(src)
 	EXPIRY_STAMP(A, last_bumped, CLOCK_WORLD)
 

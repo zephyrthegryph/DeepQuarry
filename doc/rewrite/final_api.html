@@ -1463,7 +1463,7 @@ ACTION(op, datum/op_def/op, provider, notice = /datum/notice/op_done)   <span cl
     <tbody>
       <tr><td><code>move</code>, <code>z_change</code></td><td><code>turf/origin</code>, <code>turf/destination</code> (and <code>direction</code> for a move)</td><td><code>moved</code>, <code>z_changed</code></td></tr>
       <tr><td><code>cross</code>, <code>uncross</code></td><td><code>atom/movable/crosser</code></td><td><code>crossed</code>, <code>uncrossed</code></td></tr>
-      <tr><td><code>bump</code>, <code>stumbled_into</code></td><td><code>atom/bumped</code>; <code>atom/movable/stumbled</code></td><td><code>bumped</code>, <code>stumbled_into</code></td></tr>
+      <tr><td><code>bump</code>, <code>stumbled_into</code></td><td><code>atom/movable/bumper, atom/bumped, direction</code> (published on the bumped atom, from the one emitter <code>bump_into()</code>); <code>atom/movable/stumbled</code></td><td><code>bumped</code>, <code>stumbled_into</code></td></tr>
       <tr><td><code>fall</code></td><td><code>turf/landing</code>, <code>mob/living/landed_on</code></td><td><code>fell</code></td></tr>
       <tr><td><code>thrown_hit</code></td><td><code>atom/movable/thrown</code></td><td><code>thrown_hit</code></td></tr>
       <tr><td><code>hit/&lt;entry&gt;</code>: projectile, melee, explosion, emp, blob, fire, shock, ...</td><td><code>datum/damage_packet/packet</code></td><td><code>hit/&lt;entry&gt;</code></td></tr>
