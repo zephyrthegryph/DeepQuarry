@@ -18,8 +18,6 @@
 */
 
 /obj/machinery/telecomms
-	// Any power or break change (power_change(), EMP, EMP recovery) runs one step to reconcile.
-	step_on_power_change = TRUE
 	icon = 'icons/obj/stationobjs.dmi'
 	unacidable = TRUE
 	var/list/links // list of machines this machine is linked to
@@ -32,49 +30,67 @@
 	var/list/freq_listening // list of frequencies to tune into: if none, will listen to all
 
 	var/machinetype = 0 // just a hacky way of preventing alike machines from pairing
-	var/toggled = 1 	// Is it toggled on
-	on = 1
+	var/toggled = TRUE 	// switched on (it runs while switched on and working: STAT running)
 	max_integrity = 100
 	var/produces_heat = 1	//whether the machine will produce heat when on.
 	heat_output = 1 // scaled by current_heat_output()
 	/// Dissipates its idle heat a few kelvin above the room.
 	heat_dissipation = 200
-	var/delay = 10 // how many process() ticks to delay per heat
+	var/delay = 10 // how many machine frames between its thermal steps, less one
 	var/long_range_link = 0	// Can you link it across Z levels or on the otherside of the map? (Relay & Hub)
 	var/hide = 0				// Is it a hidden machine?
 	var/listening_level = 0	// 0 = auto set in New() - this is the z level that the machine is listening to.
 
 	var/datum/looping_sound/tcomms/soundloop
-	var/noisy = TRUE
-	/// Traffic decay and the heat level it sets are slow; they do not justify
-	/// keeping every network node in the two-second machinery roster.
-	EXPIRY_DECLARE(last_thermal_check)
 
-// Links are symmetric membership: linking A to B lists each in the other's links, and a dying
-// machine leaves every partner's list (the framework clears both sides).
+	/// The range of a ranged machine (the receiver, the broadcaster): the name of its window option, or FALSE.
+	var/ranged = FALSE
+	var/overmap_range = 0
+	var/overmap_range_min = 0
+	var/overmap_range_max = 5
+
+TRACKED(/obj/machinery/telecomms, toggled)
+/// Whether the node passes signals: switched on and working.
+STAT(/obj/machinery/telecomms, running, ALL)
+
+
+// A telecommunications node (doc/rewrite/final_api.html, sections 5, 6, 16.13). It runs while switched on and working (STAT running); running,
+// it hums, heats its room with its traffic and lets its traffic decay a little every thermal step; stopped, it is silent, cold and drawn off.
+// Links are symmetric membership: linking A to B lists each in the other's links, and a dying machine leaves every partner's list (the
+// framework clears both sides). A pulse knocks it out for a while (emp_disable()).
 CAPABILITIES(/obj/machinery/telecomms)
 	after_init(0, then(PROC_REF(autolink)))
 	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = PROC_REF(make_soundloop))
+	contributes(STAT_RUNNING, nameof(toggled))
+	contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reads = list("stat"))
+	contributes(STAT_RUNNING, STAT_OPERABLE)
+	on_change(STAT_RUNNING, ANY, then(PROC_REF(running_changed)))
 	emp_disable(PROC_REF(emp_outage))
+	every(PROC_REF(thermal_interval), then(PROC_REF(thermal_step)), when = STAT_RUNNING)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
-	interface("TelecommsMultitoolMenu")
-	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
-	op("network", ui_act("network"), then(PROC_REF(ui_act_network)))
-	op("freq", ui_act("freq"), then(PROC_REF(ui_act_freq)))
+	section(window, "The multitool window and what a multitool and nanopaste do (machine_interactions.dm)")
+	interface("TelecommsMultitoolMenu", input = tool(TOOL_MULTITOOL))
+	extend(TAG_UI, needs(req_tcomms_multitool()))
+	extend("ui_open", needs(req_tcomms_multitool()))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	op("toggle", ui_act("toggle"), toggles(nameof(toggled)), then(PROC_REF(toggle_reported)))
+	op("id", ui_act("id"), asks(/datum/prompt/text, fields = list("question" = "Specify the new ID for this machine", "default" = nameof(id))), then(PROC_REF(id_entered)))
+	op("network", ui_act("network"), asks(/datum/prompt/text, fields = list("question" = "Specify the new network for this machine. This will break all current links.", "default" = nameof(network), "max_len" = TCOMMS_NETWORK_MAX_LEN)), then(PROC_REF(network_entered)))
+	op("freq", ui_act("freq"), asks(/datum/prompt/number, fields = list("question" = "Specify a new frequency to filter (GHz). Decimals assigned automatically.", "max_value" = 9999)), then(PROC_REF(filter_frequency_entered)))
 	op("delete", ui_act("delete", arg("delete", num())), then(PROC_REF(ui_act_delete)))
-	op("unlink", ui_act("unlink", arg("unlink", num())), then(PROC_REF(ui_act_unlink)))
-	op("link", ui_act("link"), then(PROC_REF(ui_act_link)))
+	op("unlink", ui_act("unlink", arg("unlink", num())), needs(req(PROC_REF(link_index_valid), because = MSG(tcomms/no_such_link))), then(PROC_REF(ui_act_unlink)))
+	op("link", ui_act("link"), needs(req(PROC_REF(buffer_linkable), because = MSG(tcomms/no_buffer))), then(PROC_REF(ui_act_link)))
 	op("buffer", ui_act("buffer"), then(PROC_REF(ui_act_buffer)))
 	op("flush", ui_act("flush"), then(PROC_REF(ui_act_flush)))
-	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
-	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	op("range", ui_act("range", arg("range", num())), when(nameof(ranged)), then(PROC_REF(ui_act_range)))
+	op("repair", stack(/obj/item/stack/nanopaste, 1), needs(req(PROC_REF(damaged), because = MSG(tcomms/whole))), says(MSG(tcomms/repaired)), then(PROC_REF(nanopaste_repair)))
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending
 
-	if(!on)
+	if(!running)
 		return
 	var/send_count = 0
 
@@ -91,7 +107,7 @@ CAPABILITIES(/obj/machinery/telecomms)
 	for(var/obj/machinery/telecomms/machine in links)
 		if(filter && !istype(machine, filter))
 			continue
-		if(!machine.on)
+		if(!machine.running)
 			continue
 		if(amount && send_count >= amount)
 			break
@@ -165,24 +181,28 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	if(length(autolinkers))
 		// Links nearby machines
 		if(!long_range_link)
-			for(var/obj/machinery/telecomms/T in orange(20, src))
+			for(var/obj/machinery/telecomms/T in orange(TCOMMS_AUTOLINK_RANGE, src))
 				add_link(T)
 		else
 			for(var/obj/machinery/telecomms/T in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				add_link(T)
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-	if(prob(60)) // 60% chance to change the midloop
-		if(prob(40))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
-			soundloop.mid_length = 40
-		else if(prob(20))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
-			soundloop.mid_length = 10
-		else
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
-			soundloop.mid_length = 30
-	soundloop.start()
+	if(running)
+		soundloop?.start()
 
+/// Its hum: one machine in four-ish hums another of three midloops.
+/obj/machinery/telecomms/proc/make_soundloop(datum/act/A)
+	var/datum/looping_sound/tcomms/S = new(list(src), FALSE)
+	if(prob(60))
+		if(prob(40))
+			S.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
+			S.mid_length = 40
+		else if(prob(20))
+			S.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
+			S.mid_length = 10
+		else
+			S.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
+			S.mid_length = 30
+	return S
 
 
 // Used in auto linking
@@ -195,56 +215,29 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 				if(src != T)
 					rel_add(src, nameof(links), T)
 
-/obj/machinery/telecomms/proc/appearance_state()
-	return on ? initial(icon_state) : "[initial(icon_state)]_off"
+/// Drawn running, or off.
+/obj/machinery/telecomms/draw(datum/look/look)
+	..()
+	look.state(running ? initial(icon_state) : "[initial(icon_state)]_off")
 
-APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
-
-/obj/machinery/telecomms/proc/update_power()
-	var/was_on = on
-	if(toggled)
-		if(!operable() || get_integrity() <= 0)
-			set_on(FALSE)
-			soundloop.stop()
-			noisy = FALSE
-		else
-			set_on(TRUE)
+/// Started or stopped: the hum, the heat it gives off and its look follow.
+/obj/machinery/telecomms/proc/running_changed(datum/act/A)
+	if(running)
+		soundloop?.start()
 	else
-		set_on(FALSE)
-		soundloop.stop()
-		noisy = FALSE
-	if(on && !noisy)
-		soundloop.start()
-		noisy = TRUE
-	return was_on != on
-
-/obj/machinery/telecomms/machine_step()
-	if(after_pending(src, "thermal_timer"))
-		cancel_after(src, "thermal_timer")
-	var/power_changed = update_power()
-
-	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(MACHINE_SERVICE_INTERVAL, 1)), 1) : 1
-	EXPIRY_STAMP(src, last_thermal_check, CLOCK_WORLD)
-
-	// Power transitions are the only process-time state that changes this icon.
-	// Reassigning icon_state every machinery tick is surprisingly expensive,
-	// especially while many telecomms machines survive a station-wide blast.
-	if(power_changed)
-		update_icon()
-
-	if(traffic > 0)
-		traffic = max(traffic - netspeed * elapsed_cycles, 0)
+		soundloop?.stop()
 	update_heat_output()
-	schedule_thermal_check()
-	return PROCESS_KILL
+	update_icon()
 
-/obj/machinery/telecomms/proc/schedule_thermal_check()
-	if(after_pending(src, "thermal_timer") || QDELETED(src))
-		return
-	after(src, max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due), key = "thermal_timer")
+/// How long between thermal steps: `delay` + 1 machine frames.
+/obj/machinery/telecomms/proc/thermal_interval(datum/act/A)
+	return (initial(delay) + 1) * MACHINE_SERVICE_INTERVAL
 
-/obj/machinery/telecomms/proc/thermal_check_due()
-	MACHINE_WAKE(src)
+/// One thermal step of a running node: its traffic decays by its net speed, and its heat follows.
+/obj/machinery/telecomms/proc/thermal_step(datum/act/timer/A)
+	if(traffic > 0)
+		traffic = max(traffic - netspeed, 0)
+	update_heat_output()
 
 /// emp_disable()'s outage: 300 s over the severity, and weaker pulses only sometimes knock a telecomms machine out.
 /obj/machinery/telecomms/proc/emp_outage(severity)
@@ -261,7 +254,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 /// through the machine's heat body (heat_objects.dm); overheating is the
 /// overheating rule at the telecomms heat limit (temperature_thresholds.dm).
 /obj/machinery/telecomms/current_heat_output()
-	if(!produces_heat || !on || !use_power || (!operable()))
+	if(!produces_heat || !running || !use_power)
 		return 0
 	return traffic > 0 ? idle_power_usage : idle_power_usage * 0.3
 
@@ -285,15 +278,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 	machinetype = 1
 	produces_heat = 0
 	circuit = /obj/item/circuitboard/telecomms/receiver
-	//Vars only used if you're using the overmap
-	var/overmap_range = 0
-	var/overmap_range_min = 0
-	var/overmap_range_max = 5
 
 	// Bluespace radios that transmit to this receiver are BS_TX_RADIOS(src).
 
 /obj/machinery/telecomms/receiver/receive_signal(datum/signal/signal)
-	if(!on) // has to be on to receive messages
+	if(!running) // has to be on to receive messages
 		return
 	if(!signal)
 		return
@@ -413,7 +402,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 // Checks to see if it can send/receive.
 
 /obj/machinery/telecomms/relay/proc/can(datum/signal/signal)
-	if(!on)
+	if(!running)
 		return 0
 	if(!is_freq_listening(signal))
 		return 0
@@ -539,7 +528,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 	var/list/log_entries
 	var/list/stored_names
 	var/list/TrafficActions
-	var/logs = 0 // number of logs
 	var/totaltraffic = 0 // gigabytes (if > 1024, divide by 1024 -> terrabytes)
 
 	// ALLOW(instance_list): d: telecomms server state
@@ -553,16 +541,17 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 							// would add up to md5("password123comsat")
 	var/obj/item/radio/headset/server_radio = null
 
+
 CAPABILITIES(/obj/machinery/telecomms/server)
-	owns_one(nameof(Compiler), /datum/TCS_Compiler)
-	owns_one(nameof(server_radio), /obj/item/radio/headset)
+	owns_one(nameof(Compiler), /datum/TCS_Compiler, starts = PROC_REF(make_compiler))
+	owns_one(nameof(server_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset)
 	owns_many(nameof(log_entries))
 
-/obj/machinery/telecomms/server/Initialize(mapload)
-	rel_set(src, nameof(Compiler), new /datum/TCS_Compiler())
-	rel_set(Compiler, nameof(Compiler.Holder), src)
-	rel_set(src, nameof(server_radio), new /obj/item/radio/headset())
-	. = ..()
+/// The server's script compiler, held by it.
+/obj/machinery/telecomms/server/proc/make_compiler(datum/act/A)
+	var/datum/TCS_Compiler/C = new
+	rel_set(C, nameof(C.Holder), src)
+	return C
 
 /obj/machinery/telecomms/server/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 
@@ -602,7 +591,7 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 				else if(isbrain(M))
 					race = "Brain"
 					log.parameters["intelligible"] = 1
-				else if(M.isMonkey())
+				else if(M?.isMonkey())
 					race = "Monkey"
 				else if(issilicon(M))
 					race = "Artificial Life"
@@ -632,7 +621,6 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 				rel_add(src, nameof(log_entries), log)
 				if(!(signal.data["name"] in stored_names))
 					LAZYADD(stored_names, signal.data["name"])
-				logs++
 				signal.data["server"] = src // ALLOW(ownership): signal payload data, transient message dict
 
 				// Give the log a name
@@ -660,15 +648,14 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 	if(Compiler)
 		return Compiler.Compile(rawcode)
 
+/// A full log drops its oldest entry that may be collected (the count is the log's own length, so a deleted entry frees its place).
 /obj/machinery/telecomms/server/proc/update_logs()
-	// start deleting the very first log entry
-	if(logs >= 400)
-		for(var/i = 1, i <= logs, i++) // locate the first garbage collectable log entry and remove it
-			var/datum/comm_log_entry/L = LAZYACCESS(log_entries, i)
-			if(L.garbage_collector)
-				own_remove(src, nameof(log_entries), L)
-				logs--
-				break
+	if(LAZYLEN(log_entries) < TCOMMS_SERVER_MAX_LOGS)
+		return
+	for(var/datum/comm_log_entry/L as anything in log_entries)
+		if(L.garbage_collector)
+			own_remove(src, nameof(log_entries), L)
+			return
 
 /obj/machinery/telecomms/server/proc/add_entry(content, input)
 	var/datum/comm_log_entry/log = new
@@ -711,9 +698,3 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 		return TRUE
 
 	return src_z in using_map.get_map_levels(dst_z, TRUE, om_range = DEFAULT_OVERMAP_RANGE)
-
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/telecomms/step_start_condition()
-	return on
-

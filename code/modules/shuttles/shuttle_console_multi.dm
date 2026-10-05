@@ -25,13 +25,53 @@
 
 UI_ACT(/obj/machinery/computer/shuttle_control/multi, "pick", ui_act_pick)
 UI_ACT_PROC(/obj/machinery/computer/shuttle_control/multi, ui_act_pick)
+	shuttle_destination_stage(ui, FALSE)
+
+/obj/machinery/computer/shuttle_control/multi/proc/shuttle_destination_stage(datum/tgui/ui, answered, dest_key, datum/request/request)
 	var/datum/shuttle/autodock/multi/shuttle = SSshuttles.shuttles[shuttle_tag]
-	var/dest_key = act_ask(ui.user, action, params, ui, "k28", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = shuttle.get_destinations())
-	if(isnull(dest_key))
+	// This getter may rebuild the current landmark relation cache on every replay.
+	var/list/destinations = shuttle.get_destinations()
+	if(!answered)
+		var/list/labels = list()
+		for(var/label in destinations)
+			labels += label
+		open_request(ui, /datum/prompt/choice/shuttle_destination, TYPE_PROC_REF(/datum/tgui, shuttle_destination_entered), answerer = ui.user, choices = labels, captured = list())
 		return
-	if(dest_key && CanInteract(ui.user, GLOB.tgui_default_state))
-		shuttle.set_destination(dest_key, ui.user)
-	return TRUE
+	if(dest_key)
+		// CanUseTopic may report Access Denied; keep it outside pure requirements.
+		var/usable = CanInteract(ui.user, GLOB.tgui_default_state)
+		request.captured["late_refusal"] = usable ? null : "the console cannot be used"
+		if(!request_recheck(request))
+			shuttle.set_destination(dest_key, ui.user)
+	// The original row returns TRUE even when CanInteract refuses the move.
+	SStgui.update_uis(src)
+
+/datum/tgui/proc/shuttle_destination_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/obj/machinery/computer/shuttle_control/multi/console = src_object()
+	var/allowed = console.ui_act_allowed(user, "pick", src, state())
+	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
+	if(request_recheck(A.request))
+		return
+	console.shuttle_destination_stage(src, TRUE, A.answer.answer_value, A.request)
+
+/datum/prompt/choice/shuttle_destination
+	question = "Choose shuttle destination"
+	title = "Shuttle Destination"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/shuttle_destination/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/shuttle_control/multi/console = original_ui.src_object()
+	if(!istype(console) || QDELETED(console))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	return captured?["late_refusal"]
 
 UI_ACT(/obj/machinery/computer/shuttle_control/multi, "toggle_cloaked", ui_act_toggle_cloaked)
 UI_ACT_PROC(/obj/machinery/computer/shuttle_control/multi, ui_act_toggle_cloaked)

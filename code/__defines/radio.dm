@@ -136,3 +136,18 @@ On the map:
 #define RADIO_SECBOT "radio_secbot"
 #define RADIO_MULEBOT "radio_mulebot"
 #define RADIO_MAGNETS "radio_magnet"
+
+// ---- telecommunications (code/game/machinery/telecomms) ----
+/// A relay on the telecommunications satellite's level can lock onto the station's level, and back.
+#define TCOMMS_STATION_Z 2
+#define TCOMMS_SATELLITE_Z 4
+/// Frequencies are kept in tenths of a kHz: 145.9 is 1459, and nothing is at or past 1000.0.
+#define TCOMMS_FREQ_LIMIT 10000
+/// A network tag's longest length.
+#define TCOMMS_NETWORK_MAX_LEN 15
+/// How far a node looks for the machines it autolinks with.
+#define TCOMMS_AUTOLINK_RANGE 20
+/// A server keeps at most this many log entries; past it, the oldest one that may be collected goes.
+#define TCOMMS_SERVER_MAX_LOGS 400
+/// How far a console probes for machines of its network.
+#define TCOMMS_PROBE_RANGE 25

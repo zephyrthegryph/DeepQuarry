@@ -659,6 +659,7 @@
 /datum/unit_test/dq_hc_struct/telecomms_node_is_configured_through_its_window/run_gate()
 	var/mob/living/carbon/human/H = person(tile(3, 3))
 	var/obj/machinery/telecomms/relay/R = mach(/obj/machinery/telecomms/relay, tile(3, 2))
+	H.put_in_active_hand(allocate(/obj/item/multitool, H)) // the window's buttons need a multitool
 	var/toggled_before = R.toggled
 	press(H, R, "toggle")
 	TEST_ASSERT(R.toggled != toggled_before, "the power button switches the node")

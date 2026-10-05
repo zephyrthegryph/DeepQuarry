@@ -298,6 +298,13 @@
 /datum/stat_decl/obj/machinery/suit_cycler/__safeties/spec()
 	return list(/obj/machinery/suit_cycler, /obj/machinery/suit_cycler/proc/__stat_safeties)
 
+/// STAT(/obj/machinery/telecomms, running, ALL) at code/game/machinery/telecomms/telecomunications.dm:54
+/obj/machinery/telecomms/var/running = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/telecomms/proc/__stat_running()
+	return list("running", "ALL", list(id = STAT_RUNNING))
+/datum/stat_decl/obj/machinery/telecomms/__running/spec()
+	return list(/obj/machinery/telecomms, /obj/machinery/telecomms/proc/__stat_running)
+
 /// STAT(/obj/machinery/vending, electrified, TOP) at code/modules/economy/vending.dm:117
 /obj/machinery/vending/var/electrified = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/vending/proc/__stat_electrified()

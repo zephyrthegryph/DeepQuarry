@@ -266,6 +266,10 @@
 	. = ..()
 	. += drawn_from(nameof(charge_phase), nameof(icon_state_charged), nameof(icon_state_charging), nameof(icon_state_idle))
 
+/obj/machinery/telecomms/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(running))
+
 /obj/machinery/turretid/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(enabled), nameof(lethal))
