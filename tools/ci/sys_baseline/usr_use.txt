@@ -148,8 +148,6 @@ usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_object))
-usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
-usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
