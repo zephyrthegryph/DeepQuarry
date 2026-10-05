@@ -19,28 +19,6 @@ dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.d
 dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	item_state = normal_icon_state
 dx_appearance_side_effect	code/game/gamemodes/technomancer/devices/tesla_armor.dm	set_light(0, 0, l_color = "#000000")
 dx_appearance_side_effect	code/game/gamemodes/technomancer/spells/illusion.dm	temp_image.transform = M
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(0)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	console.set_scan_ratio(0)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	console.set_scan_ratio(h_ratio)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(0)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(l_range = 1.5, l_power = 2, l_color = COLOR_LIME)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(l_range = 1.5, l_power = 2, l_color = COLOR_YELLOW)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(l_range = 1.5, l_power = 2, l_color = COLOR_RED)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	occ.dir = SOUTH
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	occ.transform = M
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	occ.plane = plane
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	occ.layer = layer + 0.1
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	occ.filters = list(
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	scan_beam.plane = plane
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	scan_beam.layer = layer + 0.2
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	gradient.plane = plane
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	gradient.layer = layer + 0.3
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(0)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(l_range = 1.5, l_power = 2, l_color = COLOR_LIME)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(l_range = 1.5, l_power = 2, l_color = COLOR_RED)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(l_range = 1.5, l_power = 2, l_color = COLOR_RED)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(l_range = 1.5, l_power = 2, l_color = COLOR_BLUE)
-dx_appearance_side_effect	code/game/machinery/adv_med.dm	set_light(0)
 dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light(0)
 dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light_on(FALSE)
 dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light(0)
@@ -57,8 +35,6 @@ dx_appearance_side_effect	code/game/machinery/computer/message.dm	icon_screen = 
 dx_appearance_side_effect	code/game/machinery/computer/~computer.dm	icon_screen = "broken"
 dx_appearance_side_effect	code/game/machinery/computer/~computer.dm	icon_screen = "power_monitor_warn"
 dx_appearance_side_effect	code/game/machinery/computer/~computer.dm	icon_screen = "power_monitor"
-dx_appearance_side_effect	code/game/machinery/cryo.dm	fluid.color = null
-dx_appearance_side_effect	code/game/machinery/cryo.dm	fluid.color = beaker.reagents.get_color()
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	set_picture("ai_bsod")
 dx_appearance_side_effect	code/game/machinery/doors/brigdoors.dm	maptext = ""
 dx_appearance_side_effect	code/game/machinery/feeder.dm	if(0 to 9) filling.icon_state = "reagent0"

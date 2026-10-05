@@ -1,7 +1,6 @@
 # silicon_entry: the legacy ways silicons reach machines. rule<TAB>file<TAB>normalized line. `shortcut` is banned outright.
 # Shrink-only: `analyze baseline --update --lint silicon_entry` drops fixed sites and never adds one.
 handler_actor_check	code/_helpers/unsorted.dm	if(isAI(src))
-handler_actor_check	code/game/machinery/adv_med.dm	if(!ishuman(user) && !isrobot(user))
 handler_actor_check	code/game/machinery/ai_slipper.dm	return !locked || issilicon(A.actor)
 handler_actor_check	code/game/machinery/computer/Operating.dm	if(user.contents.Find(src) || (in_range(src, user) && isturf(loc)) || issilicon(user))
 handler_actor_check	code/game/machinery/computer/medical.dm	data["isAI"] = isAI(user)
@@ -21,7 +20,6 @@ handler_actor_check	code/game/machinery/computer/skills.dm	data["isAI"] = isAI(u
 handler_actor_check	code/game/machinery/computer/skills.dm	data["isRobot"] = isrobot(user)
 handler_actor_check	code/game/machinery/computer/skills.dm	else if(login_type == LOGIN_TYPE_AI && isAI(A.actor))
 handler_actor_check	code/game/machinery/computer/skills.dm	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(A.actor))
-handler_actor_check	code/game/machinery/cryo.dm	if(!occupant || isslime(user) || ispAI(user))
 handler_actor_check	code/game/machinery/doors/airlock.dm	if(!user || issilicon(user) || !isElectrified())
 handler_actor_check	code/game/machinery/doors/airlock_electronics.dm	if(emagged || issilicon(user))
 handler_actor_check	code/game/machinery/doors/firedoor.dm	needs_to_close = !issilicon(user)

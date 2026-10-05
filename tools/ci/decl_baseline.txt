@@ -148,8 +148,6 @@ init_visuals	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	icon_s
 init_visuals	code/game/area/areas.dm	icon_state = ""
 init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
 init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
-init_visuals	code/game/machinery/cryo.dm	icon_state = "base"
-init_visuals	code/game/machinery/cryo.dm	add_overlay(tank)
 init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
 init_visuals	code/game/machinery/event/christmas.dm	icon_state = "gift[pick("1", "2", "3")]_[pick("g", "r", "b", "y", "p")]"
 init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
