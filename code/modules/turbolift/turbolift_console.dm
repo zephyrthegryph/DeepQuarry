@@ -171,12 +171,14 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 	tgui_interact(user)
 
-DECLARE_UI(/obj/structure/lift/panel, "Turbolift")
-
-UI_DATA_REPLACE(/obj/structure/lift/panel, "merge:ui_data_obj_structure_lift_panel{doors_open:unknown,fire_mode:unknown,floors:list}")
+CAPABILITIES(/obj/structure/lift/panel)
+	interface("Turbolift")
+	op("move_to_floor", ui_act("move_to_floor", arg("ref", schema_ref())), then(PROC_REF(ui_act_move_to_floor)))
+	op("toggle_doors", ui_act("toggle_doors"), then(PROC_REF(ui_act_toggle_doors)))
+	op("emergency_stop", ui_act("emergency_stop"), then(PROC_REF(ui_act_emergency_stop)))
 
 /// The computed part of /obj/structure/lift/panel's window data (declared on its UI_DATA row).
-/obj/structure/lift/panel/proc/ui_data_obj_structure_lift_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/structure/lift/panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["doors_open"] = lift().doors_are_open()
@@ -198,29 +200,31 @@ UI_DATA_REPLACE(/obj/structure/lift/panel, "merge:ui_data_obj_structure_lift_pan
 
 	return data
 
-UI_ACT(/obj/structure/lift/panel, "move_to_floor", ui_act_move_to_floor, UI_ARG_REF("ref", null))
-UI_ACT_PROC(/obj/structure/lift/panel, ui_act_move_to_floor)
+/obj/structure/lift/panel/proc/ui_act_move_to_floor(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(isnull(ref))
+		return FALSE
 	. = TRUE
-	lift().queue_move_to(params["ref"])
+	lift().queue_move_to(ref)
 	if(.)
-		pressed(ui.user)
+		pressed(user)
 
-UI_ACT(/obj/structure/lift/panel, "toggle_doors", ui_act_toggle_doors)
-UI_ACT_PROC(/obj/structure/lift/panel, ui_act_toggle_doors)
+/obj/structure/lift/panel/proc/ui_act_toggle_doors(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(lift().doors_are_open())
 		lift().close_doors()
 	else
 		lift().open_doors()
 	if(.)
-		pressed(ui.user)
+		pressed(user)
 
-UI_ACT(/obj/structure/lift/panel, "emergency_stop", ui_act_emergency_stop)
-UI_ACT_PROC(/obj/structure/lift/panel, ui_act_emergency_stop)
+/obj/structure/lift/panel/proc/ui_act_emergency_stop(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	lift().emergency_stop()
 	if(.)
-		pressed(ui.user)
+		pressed(user)
 
 /obj/structure/lift/panel/draw(datum/look/look)
 	..()

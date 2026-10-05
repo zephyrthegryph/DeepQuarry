@@ -114,8 +114,6 @@ DECLARE_INTERACTIONS(/obj/item/assembly, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/assembly, GLOB.tgui_deep_inventory_state)
-
 
 
 /obj/item/assembly/tgui_host()

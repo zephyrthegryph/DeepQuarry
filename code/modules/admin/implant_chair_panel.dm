@@ -17,8 +17,6 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/implantchair, GLOB.tgui_default_state)
-
 /// The computed part of /obj/machinery/implantchair's window data (declared on its UI_DATA row).
 /obj/machinery/implantchair/ui_data(datum/act/eval/A)
 	var/list/data = list()

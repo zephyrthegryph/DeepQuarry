@@ -59,9 +59,7 @@
 		if(pda().cartridge)
 			data["charges"] = pda().cartridge.charges ? pda().cartridge.charges : 0
 
-/datum/data/pda/app/messenger/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/data/pda/app/messenger/proc/ui_gate(datum/act/op/A)
 	unnotify()
 	return TRUE
 
@@ -69,6 +67,10 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	op("Toggle Messenger", ui_act(), then(PROC_REF(ui_act_toggle_messenger)))
 	op("Toggle Ringer", ui_act(), then(PROC_REF(ui_act_toggle_ringer)))
 	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
+	op("Clear", ui_act("Clear", arg("option", schema_text(4096))), then(PROC_REF(ui_act_clear)))
+	op("Message", ui_act("Message", arg("target", schema_ref(/obj/item/pda))), then(PROC_REF(ui_act_message)))
+	op("Select Conversation", ui_act("Select Conversation", arg("target")), then(PROC_REF(ui_act_select_conversation)))
+	op("Messenger Plugin", ui_act("Messenger Plugin", arg("plugin", schema_ref(/datum/data/pda/messenger_plugin)), arg("target", schema_ref(/obj/item/pda))), then(PROC_REF(ui_act_messenger_plugin)))
 
 /datum/data/pda/app/messenger/proc/ui_act_toggle_messenger(datum/act/op/A)
 	unnotify()
@@ -80,13 +82,14 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	notify_silent = !notify_silent
 	return OP_OK
 
-UI_ACT(/datum/data/pda/app/messenger, "Clear", ui_act_clear, UI_ARG_TEXT("option"))
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_clear)
+/datum/data/pda/app/messenger/proc/ui_act_clear(datum/act/op/A, option)
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
-	if(params["option"] == "All")
+	if(option == "All")
 		LAZYCLEARLIST(tnote)
 		LAZYCLEARLIST(conversations)
-	if(params["option"] == "Convo")
+	if(option == "Convo")
 		var/new_tnote[0]
 		for(var/i in tnote)
 			if(i["target"] != active_conversation)
@@ -96,36 +99,43 @@ UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_clear)
 
 	active_conversation = null
 
-UI_ACT(/datum/data/pda/app/messenger, "Message", ui_act_message, UI_ARG_REF("target", null, /obj/item/pda))
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_message)
+/datum/data/pda/app/messenger/proc/ui_act_message(datum/act/op/A, target)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(target))
+		return FALSE
 	. = TRUE
-	var/obj/item/pda/P = params["target"]
-	create_message(ui.user, P)
-	if(params["target"] in conversations)            // Need to make sure the message went through, if not welp.
-		active_conversation = params["target"]
+	var/obj/item/pda/P = target
+	create_message(user, P)
+	if(target in conversations)            // Need to make sure the message went through, if not welp.
+		active_conversation = target
 
-UI_ACT(/datum/data/pda/app/messenger, "Select Conversation", ui_act_select_conversation, UI_ARG_VALUE("target"))
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_select_conversation)
+/datum/data/pda/app/messenger/proc/ui_act_select_conversation(datum/act/op/A, target)
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
-	var/P = params["target"]
+	var/P = target
 	for(var/n in conversations)
 		if(P == n)
 			active_conversation = P
 
-UI_ACT(/datum/data/pda/app/messenger, "Messenger Plugin", ui_act_messenger_plugin, UI_ARG_REF("plugin", null, /datum/data/pda/messenger_plugin), UI_ARG_REF("target", null, /obj/item/pda))
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_messenger_plugin)
+/datum/data/pda/app/messenger/proc/ui_act_messenger_plugin(datum/act/op/A, plugin_arg, target)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
-	if(!params["target"] || !params["plugin"])
+	if(!target || !plugin_arg)
 		return
 
-	var/obj/item/pda/P = params["target"]
+	var/obj/item/pda/P = target
 	if(!P)
-		to_chat(ui.user, "PDA not found.")
+		to_chat(user, "PDA not found.")
 
-	var/datum/data/pda/messenger_plugin/plugin = params["plugin"]
+	var/datum/data/pda/messenger_plugin/plugin = plugin_arg
 	if(plugin && (plugin in pda().cartridge.messenger_plugins))
 		rel_set(plugin, nameof(/datum/data/pda/messenger_plugin::messenger), src)
-		plugin.user_act(ui.user, P)
+		plugin.user_act(user, P)
 
 /datum/data/pda/app/messenger/proc/ui_act_back(datum/act/op/A)
 	unnotify()

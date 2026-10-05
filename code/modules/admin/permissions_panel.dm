@@ -113,9 +113,27 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 // clears its holder's cached panel.
 
-DECLARE_UI_STATE(/datum/permissions_panel, ADMIN_STATE(R_PERMISSIONS))
-
-DECLARE_UI(/datum/permissions_panel, "PermissionsPanel", UI_TITLE("Permissions"))
+CAPABILITIES(/datum/permissions_panel)
+	interface("PermissionsPanel", title = "Permissions", rights = R_PERMISSIONS)
+	op("nav_permissions", ui_act("nav_permissions"), then(PROC_REF(ui_act_nav_permissions)))
+	op("nav_ranks", ui_act("nav_ranks"), then(PROC_REF(ui_act_nav_ranks)))
+	op("nav_logging", ui_act("nav_logging"), then(PROC_REF(ui_act_nav_logging)))
+	op("nav_housekeeping", ui_act("nav_housekeeping"), then(PROC_REF(ui_act_nav_housekeeping)))
+	op("admin_add", ui_act("admin_add"), then(PROC_REF(ui_act_admin_add)))
+	op("admin_remove", ui_act("admin_remove", arg("key", schema_text(4096))), then(PROC_REF(ui_act_admin_remove)))
+	op("admin_rank", ui_act("admin_rank", arg("key", schema_text(4096))), then(PROC_REF(ui_act_admin_rank)))
+	op("admin_permissions", ui_act("admin_permissions", arg("key", schema_text(4096))), then(PROC_REF(ui_act_admin_permissions)))
+	op("admin_activate", ui_act("admin_activate", arg("key", schema_text(4096))), then(PROC_REF(ui_act_admin_activate)))
+	op("admin_deactivate", ui_act("admin_deactivate", arg("key", schema_text(4096))), then(PROC_REF(ui_act_admin_deactivate)))
+	op("admin_sync", ui_act("admin_sync", arg("key", schema_text(4096))), then(PROC_REF(ui_act_admin_sync)))
+	op("ranks_create", ui_act("ranks_create"), then(PROC_REF(ui_act_ranks_create)))
+	op("ranks_edit", ui_act("ranks_edit", arg("name", schema_text(4096))), then(PROC_REF(ui_act_ranks_edit)))
+	op("ranks_delete", ui_act("ranks_delete", arg("name", schema_text(4096))), then(PROC_REF(ui_act_ranks_delete)))
+	op("log_search", ui_act("log_search", arg("actor", schema_text(4096)), arg("operation", schema_text(4096)), arg("target", schema_text(4096))), then(PROC_REF(ui_act_log_search)))
+	op("log_page", ui_act("log_page", arg("page", num())), then(PROC_REF(ui_act_log_page)))
+	op("housekeep_change", ui_act("housekeep_change", arg("admin", schema_text(4096))), then(PROC_REF(ui_act_housekeep_change)))
+	op("housekeep_remove_admin", ui_act("housekeep_remove_admin", arg("admin", schema_text(4096))), then(PROC_REF(ui_act_housekeep_remove_admin)))
+	op("housekeep_remove_rank", ui_act("housekeep_remove_rank", arg("name", schema_text(4096))), then(PROC_REF(ui_act_housekeep_remove_rank)))
 
 /datum/permissions_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!holder())
@@ -291,10 +309,8 @@ DECLARE_UI(/datum/permissions_panel, "PermissionsPanel", UI_TITLE("Permissions")
 	data["unused_ranks"] = unused_rank_rows
 	return data
 
-UI_DATA_REPLACE(/datum/permissions_panel, "merge:ui_data_datum_permissions_panel{page:bool,PERMISSIONS_PAGE_PERMISSIONS:num,PERMISSIONS_PAGE_RANKS:num,PERMISSIONS_PAGE_LOGGING:num,PERMISSIONS_PAGE_HOUSEKEEPING:num,permissions_rows:unknown,ranks_page:unknown,logging_page:unknown,housekeeping_page:unknown}")
-
 /// The computed part of /datum/permissions_panel's window data (declared on its UI_DATA row).
-/datum/permissions_panel/proc/ui_data_datum_permissions_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/permissions_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!holder())
 		return data
@@ -317,100 +333,113 @@ UI_DATA_REPLACE(/datum/permissions_panel, "merge:ui_data_datum_permissions_panel
 /datum/permissions_panel/proc/forward_topic(qs)
 	forward_holder_topic(holder(), qs)
 
-/datum/permissions_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/permissions_panel/proc/ui_gate(datum/act/op/A)
 	if(!holder())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "nav_permissions", ui_act_nav_permissions)
-UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_permissions)
+/datum/permissions_panel/proc/ui_act_nav_permissions(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	forward_topic("editrightsbrowser=1")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "nav_ranks", ui_act_nav_ranks)
-UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_ranks)
+/datum/permissions_panel/proc/ui_act_nav_ranks(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	forward_topic("editrightsbrowserranks=1")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "nav_logging", ui_act_nav_logging)
-UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_logging)
+/datum/permissions_panel/proc/ui_act_nav_logging(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	forward_topic("editrightsbrowserlogging=1;editrightslogpage=0")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "nav_housekeeping", ui_act_nav_housekeeping)
-UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_housekeeping)
+/datum/permissions_panel/proc/ui_act_nav_housekeeping(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	forward_topic("editrightsbrowserhousekeep=1")
 	return TRUE
 
 // Permissions page row actions.
 
-UI_ACT(/datum/permissions_panel, "admin_add", ui_act_admin_add)
-UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_add)
+/datum/permissions_panel/proc/ui_act_admin_add(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	forward_topic("editrights=add")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "admin_remove", ui_act_admin_remove, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_remove)
-	var/key = "[params["key"]]"
+/datum/permissions_panel/proc/ui_act_admin_remove(datum/act/op/A, key_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/key = "[key_arg]"
 	forward_topic("editrights=remove;key=[key]")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "admin_rank", ui_act_admin_rank, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_rank)
-	var/key = "[params["key"]]"
+/datum/permissions_panel/proc/ui_act_admin_rank(datum/act/op/A, key_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/key = "[key_arg]"
 	forward_topic("editrights=rank;key=[key]")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "admin_permissions", ui_act_admin_permissions, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_permissions)
-	var/key = "[params["key"]]"
+/datum/permissions_panel/proc/ui_act_admin_permissions(datum/act/op/A, key_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/key = "[key_arg]"
 	forward_topic("editrights=permissions;key=[key]")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "admin_activate", ui_act_admin_activate, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_activate)
-	var/key = "[params["key"]]"
+/datum/permissions_panel/proc/ui_act_admin_activate(datum/act/op/A, key_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/key = "[key_arg]"
 	forward_topic("editrights=activate;key=[key]")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "admin_deactivate", ui_act_admin_deactivate, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_deactivate)
-	var/key = "[params["key"]]"
+/datum/permissions_panel/proc/ui_act_admin_deactivate(datum/act/op/A, key_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/key = "[key_arg]"
 	forward_topic("editrights=deactivate;key=[key]")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "admin_sync", ui_act_admin_sync, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_admin_sync)
-	var/key = "[params["key"]]"
+/datum/permissions_panel/proc/ui_act_admin_sync(datum/act/op/A, key_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/key = "[key_arg]"
 	forward_topic("editrights=sync;key=[key]")
 	return TRUE
 // Ranks page actions.
 
-UI_ACT(/datum/permissions_panel, "ranks_create", ui_act_ranks_create)
-UI_ACT_PROC(/datum/permissions_panel, ui_act_ranks_create)
+/datum/permissions_panel/proc/ui_act_ranks_create(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	forward_topic("editrightsbrowserranks=1;editrightsaddrank=1")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "ranks_edit", ui_act_ranks_edit, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_ranks_edit)
-	var/name = "[params["name"]]"
+/datum/permissions_panel/proc/ui_act_ranks_edit(datum/act/op/A, name_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/name = "[name_arg]"
 	forward_topic("editrightsbrowserranks=1;editrightseditrank=[name]")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "ranks_delete", ui_act_ranks_delete, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_ranks_delete)
-	var/name = "[params["name"]]"
+/datum/permissions_panel/proc/ui_act_ranks_delete(datum/act/op/A, name_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/name = "[name_arg]"
 	forward_topic("editrightsbrowserranks=1;editrightsremoverank=[name]")
 	return TRUE
 // Logging page actions.
 
-UI_ACT(/datum/permissions_panel, "log_search", ui_act_log_search, UI_ARG_TEXT("actor"), UI_ARG_TEXT("operation"), UI_ARG_TEXT("target"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_log_search)
-	holder().dq_perms_log_target = "[params["target"]]"
-	holder().dq_perms_log_actor = "[params["actor"]]"
-	var/op = "[params["operation"]]"
+/datum/permissions_panel/proc/ui_act_log_search(datum/act/op/A, actor, operation, target)
+	if(!ui_gate(A))
+		return FALSE
+	holder().dq_perms_log_target = "[target]"
+	holder().dq_perms_log_actor = "[actor]"
+	var/op = "[operation]"
 	if(op == PERMISSIONS_ACTION_NONE || op == "")
 		holder().dq_perms_log_operation = null
 	else
@@ -420,29 +449,33 @@ UI_ACT_PROC(/datum/permissions_panel, ui_act_log_search)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "log_page", ui_act_log_page, UI_ARG_NUM("page"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_log_page)
-	holder().dq_perms_log_page = params["page"] || 0
+/datum/permissions_panel/proc/ui_act_log_page(datum/act/op/A, page)
+	if(!ui_gate(A))
+		return FALSE
+	holder().dq_perms_log_page = page || 0
 	refresh_db()
 	SStgui.update_uis(src)
 	return TRUE
 // Housekeeping page actions.
 
-UI_ACT(/datum/permissions_panel, "housekeep_change", ui_act_housekeep_change, UI_ARG_TEXT("admin"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_housekeep_change)
-	var/admin = "[params["admin"]]"
+/datum/permissions_panel/proc/ui_act_housekeep_change(datum/act/op/A, admin_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/admin = "[admin_arg]"
 	forward_topic("editrightsbrowserhousekeep=1;editrightschange=[admin]")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "housekeep_remove_admin", ui_act_housekeep_remove_admin, UI_ARG_TEXT("admin"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_housekeep_remove_admin)
-	var/admin = "[params["admin"]]"
+/datum/permissions_panel/proc/ui_act_housekeep_remove_admin(datum/act/op/A, admin_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/admin = "[admin_arg]"
 	forward_topic("editrightsbrowserhousekeep=1;editrightsremove=[admin]")
 	return TRUE
 
-UI_ACT(/datum/permissions_panel, "housekeep_remove_rank", ui_act_housekeep_remove_rank, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/datum/permissions_panel, ui_act_housekeep_remove_rank)
-	var/name = "[params["name"]]"
+/datum/permissions_panel/proc/ui_act_housekeep_remove_rank(datum/act/op/A, name_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/name = "[name_arg]"
 	forward_topic("editrightsbrowserhousekeep=1;editrightsremoverank=[name]")
 	return TRUE
 

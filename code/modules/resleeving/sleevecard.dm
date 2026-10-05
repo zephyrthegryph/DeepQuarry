@@ -106,7 +106,14 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM] // Same issue as bots
 
 
-UI_DATA(/mob/living/silicon/pai/infomorph, "available_ram=ram:num", "merge:ui_data_mob_living_silicon_pai_infomorph{bought:list,not_bought:list,emotions:list,current_emotion:num}")
+/mob/living/silicon/pai/infomorph/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["available_ram"] = ram
+	var/list/merged_1 = ui_data_mob_living_silicon_pai_infomorph(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /mob/living/silicon/pai/infomorph's window data (declared on its UI_DATA row).
 /mob/living/silicon/pai/infomorph/proc/ui_data_mob_living_silicon_pai_infomorph(mob/user, datum/tgui/ui, datum/tgui_state/state)

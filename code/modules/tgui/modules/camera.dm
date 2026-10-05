@@ -315,11 +315,13 @@ CAPABILITIES(/datum/tgui_module/camera)
 
 /datum/tgui_module/camera/bigscreen
 
-DECLARE_UI_STATE(/datum/tgui_module/camera/bigscreen, GLOB.tgui_physical_state_bigscreen)
+CAPABILITIES(/datum/tgui_module/camera/bigscreen)
+	interface("CameraConsole", state = nameof(GLOB.tgui_physical_state_bigscreen))
 
 /datum/tgui_module/camera/virtual
 
-DECLARE_UI_STATE(/datum/tgui_module/camera/virtual, GLOB.tgui_camera_view)
+CAPABILITIES(/datum/tgui_module/camera/virtual)
+	interface("CameraConsole", state = nameof(GLOB.tgui_camera_view))
 
 #undef DEFAULT_MAP_SIZE
 

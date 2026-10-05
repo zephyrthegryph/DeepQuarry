@@ -297,10 +297,8 @@
 		get_asset_datum(/datum/asset/spritesheet_batched/vending),
 	)
 
-UI_DATA_REPLACE(/obj/machinery/casino_prize_dispenser, "merge:ui_data_obj_machinery_casino_prize_dispenser{items:list}")
-
 /// The computed part of /obj/machinery/casino_prize_dispenser's window data (declared on its UI_DATA row).
-/obj/machinery/casino_prize_dispenser/proc/ui_data_obj_machinery_casino_prize_dispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/casino_prize_dispenser/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["items"] = list()
@@ -312,31 +310,34 @@ UI_DATA_REPLACE(/obj/machinery/casino_prize_dispenser, "merge:ui_data_obj_machin
 		data["items"][cat] = cat_items
 	return data
 
-DECLARE_UI(/obj/machinery/casino_prize_dispenser, "CasinoPrizeDispenser")
+CAPABILITIES(/obj/machinery/casino_prize_dispenser)
+	interface("CasinoPrizeDispenser")
+	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
 
-/obj/machinery/casino_prize_dispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/casino_prize_dispenser/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return FALSE
-	if(ui.user.stat || ui.user.restrained())
+	if(user.stat || user.restrained())
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/casino_prize_dispenser, "purchase", ui_act_purchase, UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"), UI_ARG_NUM("price"), UI_ARG_TEXT("restriction"))
-UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
+/obj/machinery/casino_prize_dispenser/proc/ui_act_purchase(datum/act/op/A, cat, name_arg, price_arg, restriction)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
 	var/paid = FALSE
-	var/category = params["cat"]
-	var/restriction_category = params["restriction"]
+	var/category = cat
+	var/restriction_category = restriction
 	var/restriction_check = 0
 	var/item_given = FALSE
-	var/name = params["name"]
+	var/name = name_arg
 	var/datum/data/casino_prize/bi = item_list[category][name]
 	if(!istype(bi))
-		to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
+		to_chat(user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 		return FALSE
-	// Authoritative server-side price; never trust params["price"].
+	// Authoritative server-side price; never trust price_arg.
 	var/price = bi.cost
 	switch(restriction_category)
 		if("weapons")
@@ -358,36 +359,36 @@ UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
 		if("event")
 			restriction_check = category_event
 		else
-			to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
+			to_chat(user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 			return FALSE
 
 	if(restriction_check < 1)
-		to_chat(ui.user, span_warning("[name] is restricted, this prize can't be bought."))
+		to_chat(user, span_warning("[name] is restricted, this prize can't be bought."))
 		return FALSE
 	if(restriction_check > 1)
 		item_given = TRUE
 
 	if(price <= 0)
-		to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
+		to_chat(user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 		return FALSE
 
 	rel_set(src, nameof(/obj/machinery/casino_prize_dispenser::currently_vending), bi)
 
-	if(istype(ui.user.get_active_hand(), /obj/item/spacecasinocash))
-		var/obj/item/spacecasinocash/cash = ui.user.get_active_hand()
-		paid = pay_with_chips(cash, ui.user, price)
+	if(istype(user.get_active_hand(), /obj/item/spacecasinocash))
+		var/obj/item/spacecasinocash/cash = user.get_active_hand()
+		paid = pay_with_chips(cash, user, price)
 	else
-		to_chat(ui.user, span_warning("Payment failure: Improper payment method, please provide chips."))
+		to_chat(user, span_warning("Payment failure: Improper payment method, please provide chips."))
 		return TRUE // we set this because they shouldn't even be able to get this far, and we want the UI to update.
 	if(paid)
 		if(item_given == TRUE)
-			vend(bi, ui.user)
+			vend(bi, user)
 
 		speak("Thank you for your purchase, your [bi] has been logged.")
-		do_logging(currently_vending(), ui.user, bi)
+		do_logging(currently_vending(), user, bi)
 		. = TRUE
 	else
-		to_chat(ui.user, span_warning("Payment failure: unable to process payment."))
+		to_chat(user, span_warning("Payment failure: unable to process payment."))
 
 /obj/machinery/casino_prize_dispenser/proc/vend(datum/data/casino_prize/bi, mob/user)
 	SStgui.update_uis(src)

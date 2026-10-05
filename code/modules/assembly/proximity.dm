@@ -99,7 +99,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/prox_sensor, TYPE_PROC_REF(/atom, app
 		sense_proximity(range = range, callback = TYPE_PROC_REF(/atom,HasProximity))
 	sense()
 
-DECLARE_UI(/obj/item/assembly/prox_sensor, "AssemblyProx")
+CAPABILITIES(/obj/item/assembly/prox_sensor)
+	interface("AssemblyProx", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	op("scanning", ui_act("scanning"), then(PROC_REF(ui_act_scanning)))
+	op("timing", ui_act("timing"), then(PROC_REF(ui_act_timing)))
+	op("set_time", ui_act("set_time", arg("time", num())), then(PROC_REF(ui_act_set_time)))
+	op("range", ui_act("range", arg("range", num())), then(PROC_REF(ui_act_range)))
 
 /obj/item/assembly/prox_sensor/ui_prepare(mob/user, datum/tgui/ui)
 	if(!secured)
@@ -107,7 +112,17 @@ DECLARE_UI(/obj/item/assembly/prox_sensor, "AssemblyProx")
 		return FALSE
 	return TRUE
 
-UI_DATA(/obj/item/assembly/prox_sensor, "time:num", "timing:num", "range:num", "scanning:num", "merge:ui_data_obj_item_assembly_prox_sensor{maxRange:num}")
+/obj/item/assembly/prox_sensor/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["time"] = time
+	data["timing"] = timing
+	data["range"] = range
+	data["scanning"] = scanning
+	var/list/merged_1 = ui_data_obj_item_assembly_prox_sensor(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/assembly/prox_sensor's window data (declared on its UI_DATA row).
 /obj/item/assembly/prox_sensor/proc/ui_data_obj_item_assembly_prox_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -117,21 +132,18 @@ UI_DATA(/obj/item/assembly/prox_sensor, "time:num", "timing:num", "range:num", "
 
 	return data
 
-UI_ACT(/obj/item/assembly/prox_sensor, "scanning", ui_act_scanning)
-UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_scanning)
+/obj/item/assembly/prox_sensor/proc/ui_act_scanning(datum/act/op/A)
 	toggle_scan()
 	return TRUE
 
-UI_ACT(/obj/item/assembly/prox_sensor, "timing", ui_act_timing)
-UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_timing)
+/obj/item/assembly/prox_sensor/proc/ui_act_timing(datum/act/op/A)
 	set_timing(!timing)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/assembly/prox_sensor, "set_time", ui_act_set_time, UI_ARG_NUM("time"))
-UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_set_time)
+/obj/item/assembly/prox_sensor/proc/ui_act_set_time(datum/act/op/A, time_arg)
 	var/real_new_time = 0
-	var/new_time = params["time"]
+	var/new_time = time_arg
 	if(isnum(new_time))
 		real_new_time = new_time
 	else
@@ -141,7 +153,6 @@ UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_set_time)
 	time = clamp(real_new_time, 0, 600)
 	return TRUE
 
-UI_ACT(/obj/item/assembly/prox_sensor, "range", ui_act_range, UI_ARG_NUM("range"))
-UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_range)
-	range = clamp(params["range"], 1, 5)
+/obj/item/assembly/prox_sensor/proc/ui_act_range(datum/act/op/A, range_arg)
+	range = clamp(range_arg, 1, 5)
 	return TRUE

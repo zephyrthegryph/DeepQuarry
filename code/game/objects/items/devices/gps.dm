@@ -94,6 +94,13 @@ CAPABILITIES(/obj/item/gps)
 	op("toggle_tracking", hand(), gesture(GESTURE_ALT), needs(req_adjacent()), then(PROC_REF(tracking_toggled)))
 	emp_disable(5 MINUTES)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
+	interface("Gps", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	op("rename", ui_act("rename", arg("value", schema_text(4096))), then(PROC_REF(ui_act_rename)))
+	op("hideSignal", ui_act("hideSignal"), then(PROC_REF(ui_act_hidesignal)))
+	op("trackLabel", ui_act("trackLabel", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_tracklabel)))
+	op("stopTrack", ui_act("stopTrack", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_stoptrack)))
+	op("startTrack", ui_act("startTrack", arg("ref", schema_ref(/obj/item/gps))), then(PROC_REF(ui_act_starttrack)))
+	op("trackColor", ui_act("trackColor", arg("color", schema_text(4096)), arg("ref", schema_ref(/obj/item/gps))), then(PROC_REF(ui_act_trackcolor)))
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)
@@ -194,10 +201,6 @@ DECLARE_INTERACTIONS(/obj/item/gps, \
 
 	tgui_interact(user)
 
-DECLARE_UI_STATE(/obj/item/gps, GLOB.tgui_inventory_state)
-
-DECLARE_UI(/obj/item/gps, "Gps")
-
 /obj/item/gps/tgui_static_data(mob/user)
 	. = ..()
 	var/robot_theme
@@ -208,10 +211,9 @@ DECLARE_UI(/obj/item/gps, "Gps")
 
 // Compiles all the data not available directly from the GPS
 // Like the positions and directions to all other GPS units
-UI_DATA_REPLACE(/obj/item/gps, "merge:ui_data_obj_item_gps{currentArea:unknown,power:num,tag:text,localMode:unknown,currentCoords:text,currentZName:unknown,canHide:unknown,isHidden:unknown,signals:list}")
 
 /// The computed part of /obj/item/gps's window data (declared on its UI_DATA row).
-/obj/item/gps/proc/ui_data_obj_item_gps(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/gps/ui_data(datum/act/eval/A)
 
 	var/turf/curr = get_turf(src)
 	var/area/my_area = get_area(src)
@@ -269,9 +271,8 @@ UI_DATA_REPLACE(/obj/item/gps, "merge:ui_data_obj_item_gps{currentArea:unknown,p
 	toggle_tracking()
 	return OP_OK
 
-UI_ACT(/obj/item/gps, "rename", ui_act_rename, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/item/gps, ui_act_rename)
-	var/new_name = sanitize(params["value"], 11)
+/obj/item/gps/proc/ui_act_rename(datum/act/op/A, value)
+	var/new_name = sanitize(value, 11)
 	if(!new_name)
 		return FALSE
 	gps_tag = uppertext(new_name)
@@ -282,16 +283,14 @@ UI_ACT_PROC(/obj/item/gps, ui_act_rename)
 	local_mode = !local_mode
 	return OP_OK
 
-UI_ACT(/obj/item/gps, "hideSignal", ui_act_hidesignal)
-UI_ACT_PROC(/obj/item/gps, ui_act_hidesignal)
+/obj/item/gps/proc/ui_act_hidesignal(datum/act/op/A)
 	if(!can_hide_signal)
 		return FALSE
 	hide_signal = !hide_signal
 	return TRUE
 
-UI_ACT(/obj/item/gps, "trackLabel", ui_act_tracklabel, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/item/gps, ui_act_tracklabel)
-	var/gps_ref = params["ref"]
+/obj/item/gps/proc/ui_act_tracklabel(datum/act/op/A, ref)
+	var/gps_ref = ref
 	if(!gps_ref)
 		return FALSE
 	// Only a tracked device's label can be shown.
@@ -301,9 +300,8 @@ UI_ACT_PROC(/obj/item/gps, ui_act_tracklabel)
 		LAZYREMOVE(showing_tracked_names, gps_ref)
 	return TRUE
 
-UI_ACT(/obj/item/gps, "stopTrack", ui_act_stoptrack, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/item/gps, ui_act_stoptrack)
-	var/gps_ref = params["ref"]
+/obj/item/gps/proc/ui_act_stoptrack(datum/act/op/A, ref)
+	var/gps_ref = ref
 	if(!gps_ref)
 		return FALSE
 	compass.clear_waypoint(gps_ref)
@@ -312,9 +310,8 @@ UI_ACT_PROC(/obj/item/gps, ui_act_stoptrack)
 	update_compass(src, TRUE)
 	return TRUE
 
-UI_ACT(/obj/item/gps, "startTrack", ui_act_starttrack, UI_ARG_REF("ref", null, /obj/item/gps))
-UI_ACT_PROC(/obj/item/gps, ui_act_starttrack)
-	var/obj/item/gps/gps = params["ref"]
+/obj/item/gps/proc/ui_act_starttrack(datum/act/op/A, ref)
+	var/obj/item/gps/gps = ref
 	if(!gps)
 		return FALSE
 	var/gps_ref = REF(gps)
@@ -323,13 +320,12 @@ UI_ACT_PROC(/obj/item/gps, ui_act_starttrack)
 	update_compass(src, TRUE)
 	return TRUE
 
-UI_ACT(/obj/item/gps, "trackColor", ui_act_trackcolor, UI_ARG_TEXT("color"), UI_ARG_REF("ref", null, /obj/item/gps))
-UI_ACT_PROC(/obj/item/gps, ui_act_trackcolor)
-	var/obj/item/gps/gps = params["ref"]
+/obj/item/gps/proc/ui_act_trackcolor(datum/act/op/A, color, ref)
+	var/obj/item/gps/gps = ref
 	if(!gps)
 		return FALSE
 	var/gps_ref = REF(gps)
-	var/new_colour = sanitize_hexcolor(params["color"])
+	var/new_colour = sanitize_hexcolor(color)
 	if(!new_colour)
 		return FALSE
 	LAZYSET(tracking_devices, gps_ref, new_colour)

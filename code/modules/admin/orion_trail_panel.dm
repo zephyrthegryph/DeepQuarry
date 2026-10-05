@@ -60,14 +60,8 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/computer/arcade/orion_trail, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/machinery/computer/arcade/orion_trail, "OrionTrail", UI_TITLE("The Orion Trail"))
-
-UI_DATA_REPLACE(/obj/machinery/computer/arcade/orion_trail, "merge:ui_data_obj_machinery_computer_arcade_orion_trail{screen:text,reasons:list,event_html:unknown,turn:num,stop_name:unknown,stop_blurb:unknown,crew:list,food:num,fuel:num,engine:num,hull:num,electronics:num,at_blackhole:bool}")
-
 /// The computed part of /obj/machinery/computer/arcade/orion_trail's window data (declared on its UI_DATA row).
-/obj/machinery/computer/arcade/orion_trail/proc/ui_data_obj_machinery_computer_arcade_orion_trail(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/arcade/orion_trail/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(gameStatus == ORION_STATUS_GAMEOVER)
 		data["screen"] = ORION_SCREEN_GAMEOVER
@@ -108,6 +102,8 @@ CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
 	op("blackhole_around", ui_act(), then(PROC_REF(native_orion_ui_blackhole_around)))
 	op("killcrew", ui_act(), then(PROC_REF(native_orion_ui_killcrew)))
 	op("close", ui_act(), then(PROC_REF(native_orion_ui_close)))
+	interface("OrionTrail", title = "The Orion Trail", state = nameof(GLOB.tgui_default_state))
+	ui_shape(screen = schema_text(), reasons = list_of(), event_html = any, turn = num(), stop_name = any, stop_blurb = any, crew = list_of(), food = num(), fuel = num(), engine = num(), hull = num(), electronics = num(), at_blackhole = bool())
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_menu(datum/act/op/A)
 	orion_menu(A.actor)

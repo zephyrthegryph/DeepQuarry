@@ -53,6 +53,9 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 CAPABILITIES(/obj/item/tank)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_one(nameof(proxyassembly), /obj/item/tankassemblyproxy)
+	interface("Tank", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 
 /obj/item/tank/proc/init_proxy()
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
@@ -286,14 +289,9 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 		src.proxyassembly.assembly.attack_self(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/tank, GLOB.tgui_deep_inventory_state)
-
-DECLARE_UI(/obj/item/tank, "Tank")
-
-UI_DATA_REPLACE(/obj/item/tank, "merge:ui_data_obj_item_tank{tankPressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num,connected:bool,maskConnected:bool}")
-
 /// The computed part of /obj/item/tank's window data (declared on its UI_DATA row).
-/obj/item/tank/proc/ui_data_obj_item_tank(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/tank/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["tankPressure"] = round(air_contents.return_pressure() ? air_contents.return_pressure() : 0)
 	data["releasePressure"] = round(distribute_pressure ? distribute_pressure : 0)
@@ -322,9 +320,9 @@ UI_DATA_REPLACE(/obj/item/tank, "merge:ui_data_obj_item_tank{tankPressure:num,re
 
 	return data
 
-UI_ACT(/obj/item/tank, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
-UI_ACT_PROC(/obj/item/tank, ui_act_pressure)
-	var/pressure = params["pressure"]
+/obj/item/tank/proc/ui_act_pressure(datum/act/op/A, pressure_arg)
+	var/mob/user = A.actor
+	var/pressure = pressure_arg
 	if(pressure == "reset")
 		pressure = TANK_DEFAULT_RELEASE_PRESSURE
 		. = TRUE
@@ -338,13 +336,13 @@ UI_ACT_PROC(/obj/item/tank, ui_act_pressure)
 		. = TRUE
 	if(.)
 		distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/item/tank, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
-	toggle_valve(ui.user)
+/obj/item/tank/proc/ui_act_toggle(datum/act/op/A)
+	var/mob/user = A.actor
+	toggle_valve(user)
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 /obj/item/tank/proc/toggle_valve(mob/user)
 	if(istype(loc,/mob/living/carbon))

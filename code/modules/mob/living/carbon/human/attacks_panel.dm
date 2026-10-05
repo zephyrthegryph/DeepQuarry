@@ -14,19 +14,18 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 	if(host)
 		GLOB.dq_attacks_panels -= "[REF(host)]"
 
-DECLARE_UI_STATE(/datum/attacks_panel, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/attacks_panel, "AttacksPanel", UI_TITLE("Known Attacks"))
+CAPABILITIES(/datum/attacks_panel)
+	interface("AttacksPanel", title = "Known Attacks", state = nameof(GLOB.tgui_always_state))
+	op("set_default", ui_act("set_default", arg("ref", schema_ref(/datum/unarmed_attack))), then(PROC_REF(ui_act_set_default)))
+	op("reset_default", ui_act("reset_default"), then(PROC_REF(ui_act_reset_default)))
 
 /datum/attacks_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host || user != host)
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/datum/attacks_panel, "merge:ui_data_datum_attacks_panel{default_name:text,attacks:list}")
-
 /// The computed part of /datum/attacks_panel's window data (declared on its UI_DATA row).
-/datum/attacks_panel/proc/ui_data_datum_attacks_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/attacks_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!host || !host.species)
 		return data
@@ -41,24 +40,27 @@ UI_DATA_REPLACE(/datum/attacks_panel, "merge:ui_data_datum_attacks_panel{default
 	data["attacks"] = rows
 	return data
 
-/datum/attacks_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!host || ui.user != host)
+/datum/attacks_panel/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!host || user != host)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/attacks_panel, "set_default", ui_act_set_default, UI_ARG_REF("ref", "proc:ui_source_host_species_unarmed_attacks", /datum/unarmed_attack))
-UI_ACT_PROC(/datum/attacks_panel, ui_act_set_default)
-	var/datum/unarmed_attack/u_attack = params["ref"]
+/datum/attacks_panel/proc/ui_act_set_default(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in ui_source_host_species_unarmed_attacks()))
+		return FALSE
+	var/datum/unarmed_attack/u_attack = ref
 	if(u_attack)
 		host.set_default_attack(u_attack)
 		host.check_attacks()
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/attacks_panel, "reset_default", ui_act_reset_default)
-UI_ACT_PROC(/datum/attacks_panel, ui_act_reset_default)
+/datum/attacks_panel/proc/ui_act_reset_default(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	host.set_default_attack(null)
 	host.check_attacks()
 	SStgui.update_uis(src)

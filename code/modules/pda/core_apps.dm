@@ -5,6 +5,7 @@
 
 CAPABILITIES(/datum/data/pda/app/main_menu)
 	op("UpdateInfo", ui_act(), then(PROC_REF(ui_act_updateinfo)))
+	op("pai", ui_act("pai", arg("option", num())), then(PROC_REF(ui_act_pai)))
 
 /datum/data/pda/app/main_menu/update_ui(mob/user, list/data)
 	title = pda().name
@@ -26,15 +27,15 @@ CAPABILITIES(/datum/data/pda/app/main_menu)
 	pda().name = "PDA-[pda().owner] ([pda().ownjob])"
 	return OP_OK
 
-UI_ACT(/datum/data/pda/app/main_menu, "pai", ui_act_pai, UI_ARG_NUM("option"))
-UI_ACT_PROC(/datum/data/pda/app/main_menu, ui_act_pai)
+/datum/data/pda/app/main_menu/proc/ui_act_pai(datum/act/op/A, option)
+	var/mob/user = A.actor
 	if(pda().pai)
 		if(pda().pai.loc != pda())
 			pda().pai = null
 		else
-			switch(params["option"])
+			switch(option)
 				if(1)		// Configure pAI device
-					pda().pai.attack_self(ui.user)
+					pda().pai.attack_self(user)
 				if(2)		// Eject pAI device
 					var/turf/T = get_turf_or_move(pda().loc)
 					if(T)
@@ -270,9 +271,10 @@ UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_print)
 	else
 		data["target_feed"] = null
 
-UI_ACT(/datum/data/pda/app/news, "newsfeed", ui_act_newsfeed, UI_ARG_NUM("newsfeed"))
-UI_ACT_PROC(/datum/data/pda/app/news, ui_act_newsfeed)
-	newsfeed_channel = params["newsfeed"]
+CAPABILITIES(/datum/data/pda/app/news)
+	op("newsfeed", ui_act("newsfeed", arg("newsfeed", num())), then(PROC_REF(ui_act_newsfeed)))
+/datum/data/pda/app/news/proc/ui_act_newsfeed(datum/act/op/A, newsfeed)
+	newsfeed_channel = newsfeed
 
 /datum/data/pda/app/news/proc/compile_news()
 	var/list/feeds = list()

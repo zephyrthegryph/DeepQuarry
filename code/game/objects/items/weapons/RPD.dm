@@ -54,6 +54,13 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 CAPABILITIES(/obj/item/pipe_dispenser)
 	owns_one(nameof(tool), /obj/item/tool/wrench/cyborg, starts = /obj/item/tool/wrench/cyborg)
 	op("controls", in_hand(), label("Open pipe controls"), then(PROC_REF(rpd_controls_opened)))
+	interface("RapidPipeDispenser", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	op("color", ui_act("color", arg("paint_color", schema_text(4096))), then(PROC_REF(ui_act_color)))
+	op("category", ui_act("category", arg("category", num())), then(PROC_REF(ui_act_category)))
+	op("piping_layer", ui_act("piping_layer", arg("piping_layer", num())), then(PROC_REF(ui_act_piping_layer)))
+	op("pipe_type", ui_act("pipe_type", arg("category", schema_text(4096)), arg("pipe_type", num())), then(PROC_REF(ui_act_pipe_type)))
+	op("setdir", ui_act("setdir", arg("dir", schema_text(4096)), arg("flipped", num())), then(PROC_REF(ui_act_setdir)))
+	op("mode", ui_act("mode", arg("mode", num())), then(PROC_REF(ui_act_mode)))
 
 /obj/item/pipe_dispenser/proc/rpd_controls_opened(datum/act/op/A)
 	tgui_interact(A.actor)
@@ -64,18 +71,12 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 		get_asset_datum(/datum/asset/spritesheet/pipes),
 	)
 
-DECLARE_UI_STATE(/obj/item/pipe_dispenser, GLOB.tgui_inventory_state)
-
-DECLARE_UI(/obj/item/pipe_dispenser, "RapidPipeDispenser")
-
 /obj/item/pipe_dispenser/ui_prepare(mob/user, datum/tgui/ui)
 	SetupPipes()
 	return TRUE
 
-UI_DATA_REPLACE(/obj/item/pipe_dispenser, "merge:ui_data_obj_item_pipe_dispenser{category:text,piping_layer:unknown,pipe_layers:list,preview_rows:unknown,categories:list,selected_color:text,paint_colors:unknown,mode:num}")
-
 /// The computed part of /obj/item/pipe_dispenser's window data (declared on its UI_DATA row).
-/obj/item/pipe_dispenser/proc/ui_data_obj_item_pipe_dispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/pipe_dispenser/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"category" = category,
 		"piping_layer" = piping_layer,
@@ -103,26 +104,27 @@ UI_DATA_REPLACE(/obj/item/pipe_dispenser, "merge:ui_data_obj_item_pipe_dispenser
 
 	return data
 
-/obj/item/pipe_dispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!ui.user.canmove || ui.user.stat || ui.user.restrained() || !in_range(loc, ui.user))
+/obj/item/pipe_dispenser/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user.canmove || user.stat || user.restrained() || !in_range(loc, user))
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "color", ui_act_color, UI_ARG_TEXT("paint_color"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_color)
+/obj/item/pipe_dispenser/proc/ui_act_color(datum/act/op/A, paint_color_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	paint_color = params["paint_color"]
+	paint_color = paint_color_arg
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "category", ui_act_category, UI_ARG_NUM("category"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_category)
+/obj/item/pipe_dispenser/proc/ui_act_category(datum/act/op/A, category_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	category = params["category"]
+	category = category_arg
 	switch(category)
 		if(DISPOSALS_CATEGORY)
 			recipe_static = first_disposal
@@ -135,44 +137,48 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_category)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "piping_layer", ui_act_piping_layer, UI_ARG_NUM("piping_layer"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_piping_layer)
+/obj/item/pipe_dispenser/proc/ui_act_piping_layer(datum/act/op/A, piping_layer_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	piping_layer = params["piping_layer"]
+	piping_layer = piping_layer_arg
 	playeffect = FALSE
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "pipe_type", ui_act_pipe_type, UI_ARG_TEXT("category"), UI_ARG_NUM("pipe_type"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_pipe_type)
+/obj/item/pipe_dispenser/proc/ui_act_pipe_type(datum/act/op/A, category, pipe_type)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
 	var/static/list/recipes
 	if(!recipes)
 		recipes = GLOB.disposal_pipe_recipes + GLOB.atmos_pipe_recipes
-	recipe_static = recipes[params["category"]][params["pipe_type"]]
+	recipe_static = recipes[category][pipe_type]
 	p_dir = NORTH
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "setdir", ui_act_setdir, UI_ARG_TEXT("dir"), UI_ARG_NUM("flipped"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_setdir)
+/obj/item/pipe_dispenser/proc/ui_act_setdir(datum/act/op/A, dir, flipped)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	p_dir = text2dir(params["dir"])
-	p_flipped = params["flipped"]
+	p_dir = text2dir(dir)
+	p_flipped = flipped
 	playeffect = FALSE
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "mode", ui_act_mode, UI_ARG_NUM("mode"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
+/obj/item/pipe_dispenser/proc/ui_act_mode(datum/act/op/A, mode_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	var/n = params["mode"]
+	var/n = mode_arg
 	if(mode & n)
 		mode &= ~n
 	else

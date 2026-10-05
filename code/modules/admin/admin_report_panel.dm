@@ -32,10 +32,8 @@
 	title = report_title
 	rel_set(src, nameof(forward_host), host)
 
-DECLARE_UI_STATE(/datum/admin_report, ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT))
-
 CAPABILITIES(/datum/admin_report)
-	interface("AdminReport")
+	interface("AdminReport", rights = R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT)
 	op("forward_topic", ui_act("forward_topic", arg("href", schema_text(4096))), then(PROC_REF(ui_act_forward_topic)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
 
@@ -112,17 +110,15 @@ CAPABILITIES(/datum/admin_report)
 	stock_name = name
 	points = series ? series.Copy() : list()
 
-DECLARE_UI_STATE(/datum/dq_stock_chart_panel, GLOB.tgui_default_state)
-
-DECLARE_UI(/datum/dq_stock_chart_panel, "StockChart")
+CAPABILITIES(/datum/dq_stock_chart_panel)
+	interface("StockChart", state = nameof(GLOB.tgui_default_state))
+	ui_shape(stock_name = any, points = bool())
 
 /datum/dq_stock_chart_panel/ui_title(mob/user)
 	return "Share Value: [stock_name]"
 
-UI_DATA_REPLACE(/datum/dq_stock_chart_panel, "merge:ui_data_datum_dq_stock_chart_panel{stock_name:unknown,points:bool}")
-
 /// The computed part of /datum/dq_stock_chart_panel's window data (declared on its UI_DATA row).
-/datum/dq_stock_chart_panel/proc/ui_data_datum_dq_stock_chart_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/dq_stock_chart_panel/ui_data(datum/act/eval/A)
 	return list(
 		"stock_name" = stock_name,
 		"points" = points || list(),

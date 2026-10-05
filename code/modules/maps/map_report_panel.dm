@@ -1,13 +1,20 @@
 // Map verify report — structured TGUI panel for admin map-load diagnostics.
 
-DECLARE_UI_STATE(/datum/map_report, ADMIN_STATE(R_ADMIN|R_DEBUG))
-
-DECLARE_UI(/datum/map_report, "MapReport")
+CAPABILITIES(/datum/map_report)
+	interface("MapReport", rights = R_ADMIN|R_DEBUG)
+	ui_shape(original_path = any, crashed = bool(), loadable = bool(), bad_paths = list_of(), bad_keys = list_of())
 
 /datum/map_report/ui_title(mob/user)
 	return "Report for map file [original_path]"
 
-UI_DATA_REPLACE(/datum/map_report, "original_path", "merge:ui_data_datum_map_report{crashed:bool,loadable:bool,bad_paths:list,bad_keys:list}")
+/datum/map_report/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["original_path"] = original_path
+	var/list/merged_1 = ui_data_datum_map_report(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/map_report's window data (declared on its UI_DATA row).
 /datum/map_report/proc/ui_data_datum_map_report(mob/user, datum/tgui/ui, datum/tgui_state/state)

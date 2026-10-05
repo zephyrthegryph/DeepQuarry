@@ -434,9 +434,23 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar_control, TYPE_PROC_REF(/atom,
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/power/solar_control, "SolarControl")
+CAPABILITIES(/obj/machinery/power/solar_control)
+	interface("SolarControl")
+	op("azimuth", ui_act("azimuth", arg("adjust", num()), arg("value", num())), then(PROC_REF(ui_act_azimuth)))
+	op("azimuth_rate", ui_act("azimuth_rate", arg("adjust", num()), arg("value", num())), then(PROC_REF(ui_act_azimuth_rate)))
+	op("tracking", ui_act("tracking", arg("mode", num())), then(PROC_REF(ui_act_tracking)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 
-UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rotation_rate=trackrate:num", "tracking_state=track:num", "merge:ui_data_obj_machinery_power_solar_control{generated:num,generated_ratio:num,sun_angle:unknown,max_rotation_rate:num,connected_panels:num,connected_tracker:unknown}")
+/obj/machinery/power/solar_control/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["array_angle"] = cdir
+	data["rotation_rate"] = trackrate
+	data["tracking_state"] = track
+	var/list/merged_1 = ui_data_obj_machinery_power_solar_control(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/power/solar_control's window data (declared on its UI_DATA row).
 /obj/machinery/power/solar_control/proc/ui_data_obj_machinery_power_solar_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -505,10 +519,9 @@ UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rot
 	set_power_supply(connected_power)
 	return PROCESS_KILL
 
-UI_ACT(/obj/machinery/power/solar_control, "azimuth", ui_act_azimuth, UI_ARG_NUM("adjust"), UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_azimuth)
-	var/adjust = params["adjust"]
-	var/value = params["value"]
+/obj/machinery/power/solar_control/proc/ui_act_azimuth(datum/act/op/A, adjust_arg, value_arg)
+	var/adjust = adjust_arg
+	var/value = value_arg
 	if(adjust)
 		value = cdir + adjust
 	if(value != null)
@@ -517,10 +530,9 @@ UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_azimuth)
 		return TRUE
 	return FALSE
 
-UI_ACT(/obj/machinery/power/solar_control, "azimuth_rate", ui_act_azimuth_rate, UI_ARG_NUM("adjust"), UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_azimuth_rate)
-	var/adjust = params["adjust"]
-	var/value = params["value"]
+/obj/machinery/power/solar_control/proc/ui_act_azimuth_rate(datum/act/op/A, adjust_arg, value_arg)
+	var/adjust = adjust_arg
+	var/value = value_arg
 	if(adjust)
 		value = trackrate + adjust
 	if(value != null)
@@ -530,9 +542,8 @@ UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_azimuth_rate)
 		return TRUE
 	return TRUE
 
-UI_ACT(/obj/machinery/power/solar_control, "tracking", ui_act_tracking, UI_ARG_NUM("mode"))
-UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_tracking)
-	var/mode = params["mode"]
+/obj/machinery/power/solar_control/proc/ui_act_tracking(datum/act/op/A, mode_arg)
+	var/mode = mode_arg
 	track = mode
 	if(track == 2)
 		if(connected_tracker())
@@ -545,8 +556,7 @@ UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_tracking)
 		set_panels(targetdir)
 	return TRUE
 
-UI_ACT(/obj/machinery/power/solar_control, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_refresh)
+/obj/machinery/power/solar_control/proc/ui_act_refresh(datum/act/op/A)
 	search_for_connected()
 	return TRUE
 

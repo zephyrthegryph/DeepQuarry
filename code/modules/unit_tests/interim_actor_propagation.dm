@@ -34,13 +34,14 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clipboard/board = allocate(/obj/item/clipboard, T)
+	actor.put_in_inactive_hand(board) // the window works in the hand that holds it
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	TEST_ASSERT(actor.put_in_active_hand(pen), "the explicit actor holds the pen")
-	TEST_ASSERT(board.ui_act_add_pen(actor, list(), null, null, "add_pen"), "the insertion action is handled")
+	TEST_ASSERT(test_op_committed(op_ui_act(actor, board, "add_pen")), "the insertion action is handled")
 	TEST_ASSERT_EQUAL(board.haspen(), pen, "the clipboard records the actor's pen")
 	TEST_ASSERT_EQUAL(pen.loc, board, "insertion moves the pen into the clipboard")
 	TEST_ASSERT_NULL(actor.get_active_hand(), "insertion releases the actor's hand")
-	TEST_ASSERT(board.ui_act_remove_pen(actor, list(), null, null, "remove_pen"), "the removal action is handled")
+	TEST_ASSERT(test_op_committed(op_ui_act(actor, board, "remove_pen")), "the removal action is handled")
 	TEST_ASSERT_NULL(board.haspen(), "removal clears the stored pen reference")
 	TEST_ASSERT_EQUAL(pen.loc, actor, "removal gives the pen to the explicit actor")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), pen, "the removed pen occupies the actor's hand")

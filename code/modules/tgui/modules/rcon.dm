@@ -131,6 +131,7 @@ MSG_DEF_SELF(rcon/breaker_locked, "The breaker box was recently toggled. Please 
 	ntos = TRUE
 
 /datum/tgui_module/rcon/robot
-DECLARE_UI_STATE(/datum/tgui_module/rcon/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/rcon/robot)
+	interface("RCON", state = nameof(GLOB.tgui_self_state))
 
 #undef SMES_PER_PAGE

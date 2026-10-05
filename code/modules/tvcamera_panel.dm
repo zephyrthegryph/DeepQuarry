@@ -2,8 +2,6 @@
 
 // ---- TV camera ------------------------------------------------------------
 
-DECLARE_UI_STATE(/obj/item/tvcamera, GLOB.tgui_default_state)
-
 /// The computed part of /obj/item/tvcamera's window data (declared on its UI_DATA row).
 /obj/item/tvcamera/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -36,8 +34,6 @@ DECLARE_UI_STATE(/obj/item/tvcamera, GLOB.tgui_default_state)
 	tgui_interact(user)
 
 // ---- Bodycam --------------------------------------------------------------
-
-DECLARE_UI_STATE(/obj/item/clothing/accessory/bodycam, GLOB.tgui_default_state)
 
 /// The computed part of /obj/item/clothing/accessory/bodycam's window data (declared on its UI_DATA row).
 /obj/item/clothing/accessory/bodycam/ui_data(datum/act/eval/A)

@@ -246,10 +246,12 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	log_and_message_admins("has syncronized [AI]'s laws with its borgs.")
 
 /datum/tgui_module/law_manager/robot
-DECLARE_UI_STATE(/datum/tgui_module/law_manager/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/law_manager/robot)
+	interface("LawManager", state = nameof(GLOB.tgui_self_state))
 
 /datum/tgui_module/law_manager/admin
-DECLARE_UI_STATE(/datum/tgui_module/law_manager/admin, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
+CAPABILITIES(/datum/tgui_module/law_manager/admin)
+	interface("LawManager", rights = R_ADMIN|R_EVENT|R_DEBUG)
 
 /datum/tgui_module/law_manager/admin/tgui_close(mob/user)
 	. = ..()

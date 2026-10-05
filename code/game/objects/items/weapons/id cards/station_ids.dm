@@ -39,9 +39,9 @@
 /obj/item/card/id/proc/prevent_tracking()
 	return 0
 
-DECLARE_UI_STATE(/obj/item/card/id, GLOB.tgui_deep_inventory_state)
-
-DECLARE_UI(/obj/item/card/id, "IDCard")
+CAPABILITIES(/obj/item/card/id)
+	interface("IDCard", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	ui_shape(registered_name = schema_text(), sex = schema_text(), species = schema_text(), age = num(), assignment = schema_text(), fingerprint_hash = schema_text(), blood_type = schema_text(), dna_hash = schema_text(), photo_front = any)
 
 /obj/item/card/id/proc/update_name()
 	name = "[src.registered_name]'s ID Card ([src.assignment])"
@@ -76,7 +76,18 @@ DECLARE_UI(/obj/item/card/id, "IDCard")
 	// Save time by reusing our ID card photo instead of generating it for the char directory specifically
 	set_chardirectory_photo(id_card.front)
 
-UI_DATA_REPLACE(/obj/item/card/id, "registered_name:text", "sex:text", "species:text", "age:num", "assignment:text", "fingerprint_hash:text", "blood_type:text", "dna_hash:text", "photo_front=front")
+/obj/item/card/id/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["registered_name"] = registered_name
+	data["sex"] = sex
+	data["species"] = species
+	data["age"] = age
+	data["assignment"] = assignment
+	data["fingerprint_hash"] = fingerprint_hash
+	data["blood_type"] = blood_type
+	data["dna_hash"] = dna_hash
+	data["photo_front"] = front
+	return data
 
 DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interaction_show)))
 

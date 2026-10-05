@@ -57,7 +57,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/timer, TYPE_PROC_REF(/atom, appearanc
 		holder().update_icon()
 	return .
 
-DECLARE_UI(/obj/item/assembly/timer, "AssemblyTimer")
+CAPABILITIES(/obj/item/assembly/timer)
+	interface("AssemblyTimer", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	op("timing", ui_act("timing"), then(PROC_REF(ui_act_timing)))
+	op("set_time", ui_act("set_time", arg("time", num())), then(PROC_REF(ui_act_set_time)))
 
 /obj/item/assembly/timer/ui_prepare(mob/user, datum/tgui/ui)
 	if(!secured)
@@ -65,18 +68,20 @@ DECLARE_UI(/obj/item/assembly/timer, "AssemblyTimer")
 		return FALSE
 	return TRUE
 
-UI_DATA(/obj/item/assembly/timer, "time:num", "timing:num")
+/obj/item/assembly/timer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["time"] = time
+	data["timing"] = timing
+	return data
 
-UI_ACT(/obj/item/assembly/timer, "timing", ui_act_timing)
-UI_ACT_PROC(/obj/item/assembly/timer, ui_act_timing)
+/obj/item/assembly/timer/proc/ui_act_timing(datum/act/op/A)
 	set_state(!timing)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/assembly/timer, "set_time", ui_act_set_time, UI_ARG_NUM("time"))
-UI_ACT_PROC(/obj/item/assembly/timer, ui_act_set_time)
+/obj/item/assembly/timer/proc/ui_act_set_time(datum/act/op/A, time_arg)
 	var/real_new_time = 0
-	var/new_time = params["time"]
+	var/new_time = time_arg
 	if(isnum(new_time))
 		real_new_time = new_time
 	else

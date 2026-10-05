@@ -1,5 +1,7 @@
 CAPABILITIES(/obj/machinery/anomaly_harvester)
 	op("release_all", ui_act(), then(PROC_REF(ui_act_release_all)))
+	interface("AnomalyHarvester", state = nameof(GLOB.tgui_default_state))
+	op("release_sample", ui_act("release_sample", arg("ref", schema_ref(/obj/item/research_sample))), then(PROC_REF(ui_act_release_sample)))
 
 /obj/machinery/anomaly_harvester
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -163,14 +165,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, TYPE_PROC_REF(/atom, a
 			else
 				. += "harvester_grow"
 
-DECLARE_UI_STATE(/obj/machinery/anomaly_harvester, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/machinery/anomaly_harvester, "AnomalyHarvester")
-
-UI_DATA_REPLACE(/obj/machinery/anomaly_harvester, "merge:ui_data_obj_machinery_anomaly_harvester{name:unknown,points:num,pointsToGenerate:num,samples:list}")
-
 /// The computed part of /obj/machinery/anomaly_harvester's window data (declared on its UI_DATA row).
-/obj/machinery/anomaly_harvester/proc/ui_data_obj_machinery_anomaly_harvester(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/anomaly_harvester/ui_data(datum/act/eval/A)
 	var/list/sample_data = list()
 	FOR_REAL_CONTENTS(var/obj/item/research_sample/sample, src)
 		UNTYPED_LIST_ADD(sample_data, list(
@@ -190,9 +186,10 @@ UI_DATA_REPLACE(/obj/machinery/anomaly_harvester, "merge:ui_data_obj_machinery_a
 
 	return data
 
-UI_ACT(/obj/machinery/anomaly_harvester, "release_sample", ui_act_release_sample, UI_ARG_REF("ref", "contents", /obj/item/research_sample))
-UI_ACT_PROC(/obj/machinery/anomaly_harvester, ui_act_release_sample)
-	var/obj/item/research_sample/sample = params["ref"]
+/obj/machinery/anomaly_harvester/proc/ui_act_release_sample(datum/act/op/A, ref)
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/research_sample/sample = ref
 	if(!istype(sample) || (sample.loc != src))
 		return FALSE
 	sample.forceMove(get_turf(src))

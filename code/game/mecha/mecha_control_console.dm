@@ -92,10 +92,8 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "motion2"
 
-UI_DATA(/obj/item/mecha_parts/mecha_tracking, "merge:ui_data_obj_item_mecha_parts_mecha_tracking{ref:text,charge:unknown,name:text,health:unknown,maxHealth:num,cell:num,cellCharge:num,cellMaxCharge:num,airtank:unknown,pilot:unknown,location:unknown,active:unknown,cargoUsed:num,cargoMax:num}")
-
 /// The computed part of /obj/item/mecha_parts/mecha_tracking's window data (declared on its UI_DATA row).
-/obj/item/mecha_parts/mecha_tracking/proc/ui_data_obj_item_mecha_parts_mecha_tracking(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/mecha_parts/mecha_tracking/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!in_mecha())
 		return FALSE

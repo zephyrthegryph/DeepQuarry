@@ -1,9 +1,5 @@
-DECLARE_UI(/obj/item/medigun_backpack, "Medigun")
-
-UI_DATA_REPLACE(/obj/item/medigun_backpack, "merge:ui_data_obj_item_medigun_backpack{volume:num,max_volume:num}")
-
 /// The computed part of /obj/item/medigun_backpack's window data (declared on its UI_DATA row).
-/obj/item/medigun_backpack/proc/ui_data_obj_item_medigun_backpack(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/medigun_backpack/ui_data(datum/act/eval/A)
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(!medigun)
 		return list()
@@ -70,78 +66,76 @@ UI_DATA_REPLACE(/obj/item/medigun_backpack, "merge:ui_data_obj_item_medigun_back
 		"sbin" = sbin ? list("name" = sbin.name, "chemcap" = chemcap, "tankmax" = tankmax, "rating" = sbin.get_rating()) : null
 	)
 
-UI_ACT(/obj/item/medigun_backpack, "celleject", ui_act_celleject)
-UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_celleject)
+/obj/item/medigun_backpack/proc/ui_act_celleject(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	cell_eject(ui.user)
+	cell_eject(user)
 	return TRUE
 
-UI_ACT(/obj/item/medigun_backpack, "cancel_healing", ui_act_cancel_healing)
-UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_cancel_healing)
+/obj/item/medigun_backpack/proc/ui_act_cancel_healing(datum/act/op/A)
 	. = TRUE
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(medigun?.busy)
 		medigun.busy = MEDIGUN_CANCELLED
 		return TRUE
 
-UI_ACT(/obj/item/medigun_backpack, "toggle_maintenance", ui_act_toggle_maintenance)
-UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_toggle_maintenance)
+/obj/item/medigun_backpack/proc/ui_act_toggle_maintenance(datum/act/op/A)
 	. = TRUE
 	maintenance = !maintenance
 	return TRUE
 
-UI_ACT(/obj/item/medigun_backpack, "rem_smodule", ui_act_rem_smodule)
-UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_smodule)
+/obj/item/medigun_backpack/proc/ui_act_rem_smodule(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!smodule || !maintenance)
 		return FALSE
 	smodule.forceMove(get_turf(loc))
-	to_chat(ui.user, span_notice("You remove the [smodule] from \the [src]."))
+	to_chat(user, span_notice("You remove the [smodule] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::smodule))
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/medigun_backpack, "rem_mani", ui_act_rem_mani)
-UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_mani)
+/obj/item/medigun_backpack/proc/ui_act_rem_mani(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!smanipulator || !maintenance)
 		return FALSE
 	smanipulator.forceMove(get_turf(loc))
-	to_chat(ui.user, span_notice("You remove the [smanipulator] from \the [src]."))
+	to_chat(user, span_notice("You remove the [smanipulator] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::smanipulator))
 	smaniptier = 0
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/medigun_backpack, "rem_laser", ui_act_rem_laser)
-UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_laser)
+/obj/item/medigun_backpack/proc/ui_act_rem_laser(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!slaser || !maintenance)
 		return FALSE
 	slaser.forceMove(get_turf(loc))
-	to_chat(ui.user, span_notice("You remove the [slaser] from \the [src]."))
+	to_chat(user, span_notice("You remove the [slaser] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::slaser))
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/medigun_backpack, "rem_cap", ui_act_rem_cap)
-UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_cap)
+/obj/item/medigun_backpack/proc/ui_act_rem_cap(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!scapacitor || !maintenance)
 		return FALSE
 	scapacitor.forceMove(get_turf(loc))
-	to_chat(ui.user, span_notice("You remove the [scapacitor] from \the [src]."))
+	to_chat(user, span_notice("You remove the [scapacitor] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::scapacitor))
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/medigun_backpack, "rem_bin", ui_act_rem_bin)
-UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_bin)
+/obj/item/medigun_backpack/proc/ui_act_rem_bin(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!sbin || !maintenance)
 		return FALSE
 	sbin.forceMove(get_turf(loc))
-	to_chat(ui.user, span_notice("You remove the [sbin] from \the [src]."))
+	to_chat(user, span_notice("You remove the [sbin] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::sbin))
 	sbintier = 0
 	update_icon()

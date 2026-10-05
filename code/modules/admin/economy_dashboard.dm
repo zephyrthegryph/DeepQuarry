@@ -1,8 +1,8 @@
 /datum/economy_dashboard
 
-DECLARE_UI_STATE(/datum/economy_dashboard, ADMIN_STATE(R_ADMIN|R_DEBUG))
-
-DECLARE_UI(/datum/economy_dashboard, "EconomyDashboard", UI_TITLE("Economy Observatory"))
+CAPABILITIES(/datum/economy_dashboard)
+	interface("EconomyDashboard", title = "Economy Observatory", rights = R_ADMIN|R_DEBUG)
+	ui_shape(account_currency = any, personal_currency = any, personal_accounts = any, personal_balance_p10 = any, personal_balance_median = any, personal_balance_p90 = any, personal_zero_balance = any, personal_low_balance = any, department_savings = any, currency_created = any, currency_destroyed = any, currency_refunded = any, currency_sink_refunded = any, currency_internal_refunded = any, net_currency_flow = any, currency_sources = any, currency_sinks = any, projected_payroll = any, last_payroll_due = any, last_payroll_paid = any, unpaid_wages = any, allocation_policy = any, service_subsidies = any, service_invoice_count = any, service_sales_gross = any, service_sales_net = any, service_refund_count = any, service_refund_rate = any, service_tips = any, personal_orders = any, personal_order_spend = any, pending_personal_orders = any, market_generation = any, market_counterparties = any, market_listings = any, market_listing_stock = any, market_bids = any, market_target_units = any, market_fulfilled_units = any, market_purchase_volume = any, market_export_volume = any, covert_market_volume = any, covert_market_traces = any, covert_market_detections = any, faction_agents = any, agent_candidates = any, agent_accredited = any, agent_trusted = any, agent_operatives = any, agent_total_exposure = any, agent_contracts_completed = any, agent_contracts_failed = any, departments = any)
 
 /datum/economy_dashboard/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -20,10 +20,8 @@ DECLARE_UI(/datum/economy_dashboard, "EconomyDashboard", UI_TITLE("Economy Obser
 	var/index = clamp(round(1 + (length(sorted_balances) - 1) * percentile), 1, length(sorted_balances))
 	return sorted_balances[index]
 
-UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard{}")
-
 /// The computed part of /datum/economy_dashboard's window data (declared on its UI_DATA row).
-/datum/economy_dashboard/proc/ui_data_datum_economy_dashboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/economy_dashboard/ui_data(datum/act/eval/A)
 	var/account_currency = 0
 	var/personal_currency = 0
 	var/personal_accounts = 0

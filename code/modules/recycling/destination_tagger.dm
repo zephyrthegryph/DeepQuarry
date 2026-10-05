@@ -11,8 +11,6 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_UI_STATE(/obj/item/destTagger, GLOB.tgui_inventory_state)
-
 /obj/item/destTagger/tgui_static_data(mob/user)
 	. = ..()
 	.["level_names"] = using_map.zlevels
@@ -36,7 +34,7 @@ DECLARE_UI_STATE(/obj/item/destTagger, GLOB.tgui_inventory_state)
 
 CAPABILITIES(/obj/item/destTagger)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
-	interface("DestinationTagger")
+	interface("DestinationTagger", state = nameof(GLOB.tgui_inventory_state))
 	op("set_tag", ui_act("set_tag", arg("tag", schema_text(4096))), then(PROC_REF(ui_act_set_tag)))
 	op("new_tag", ui_act("new_tag", arg("tag", schema_text(4096))), then(PROC_REF(ui_act_new_tag)))
 

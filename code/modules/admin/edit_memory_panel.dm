@@ -21,9 +21,21 @@
 
 // The mind owns this panel (tgui_edit_memory_panel); target_mind is a plain relation back.
 
-DECLARE_UI_STATE(/datum/edit_memory_panel, ADMIN_STATE(R_ADMIN|R_FUN|R_EVENT))
-
-DECLARE_UI(/datum/edit_memory_panel, "EditMemoryPanel")
+CAPABILITIES(/datum/edit_memory_panel)
+	interface("EditMemoryPanel", rights = R_ADMIN|R_FUN|R_EVENT)
+	op("edit_role", ui_act("edit_role"), asks(/datum/prompt/choice, fields = list("question" = "Select new role", "title" = "Assigned role", "choices" = computed(PROC_REF(ui_act_edit_role_a1_choices)), "default" = computed(PROC_REF(ui_act_edit_role_a1_default)), "timeout" = 0), step = "a1"), then(PROC_REF(ui_act_edit_role)))
+	op("edit_memory", ui_act("edit_memory"), asks(/datum/prompt/text, fields = list("question" = "Write new memory", "title" = "Memory", "default" = computed(PROC_REF(ui_act_edit_memory_a2_default)), "multiline" = TRUE, "timeout" = 0), step = "a2"), then(PROC_REF(ui_act_edit_memory)))
+	op("edit_ambitions", ui_act("edit_ambitions"), asks(/datum/prompt/text, fields = list("question" = "Enter a new ambition", "title" = "Ambition", "default" = computed(PROC_REF(ui_act_edit_ambitions_a3_default)), "multiline" = TRUE, "timeout" = 0), step = "a3"), then(PROC_REF(ui_act_edit_ambitions)))
+	op("obj_toggle_complete", ui_act("obj_toggle_complete", arg("ref", schema_ref(/datum/objective))), then(PROC_REF(ui_act_obj_toggle_complete)))
+	op("obj_delete", ui_act("obj_delete", arg("ref", schema_ref(/datum/objective))), then(PROC_REF(ui_act_obj_delete)))
+	op("obj_announce", ui_act("obj_announce"), then(PROC_REF(ui_act_obj_announce)))
+	op("obj_add", ui_act("obj_add"), then(PROC_REF(ui_act_obj_add)))
+	op("refresh_antags", ui_act("refresh_antags"), then(PROC_REF(ui_act_refresh_antags)))
+	op("antag_add", ui_act("antag_add", arg("id", schema_text(4096))), then(PROC_REF(ui_act_antag_add)))
+	op("antag_remove", ui_act("antag_remove", arg("id", schema_text(4096))), then(PROC_REF(ui_act_antag_remove)))
+	op("antag_equip", ui_act("antag_equip", arg("id", schema_text(4096))), then(PROC_REF(ui_act_antag_equip)))
+	op("antag_unequip", ui_act("antag_unequip", arg("id")), then(PROC_REF(ui_act_antag_unequip)))
+	op("antag_move_to_spawn", ui_act("antag_move_to_spawn", arg("id", schema_text(4096))), then(PROC_REF(ui_act_antag_move_to_spawn)))
 
 /datum/edit_memory_panel/ui_opening(mob/user, datum/tgui/ui)
 	snapshot_antag_blocks()
@@ -45,10 +57,8 @@ DECLARE_UI(/datum/edit_memory_panel, "EditMemoryPanel")
 	SStgui.close_uis(src)
 	qdel(src)
 
-UI_DATA_REPLACE(/datum/edit_memory_panel, "merge:ui_data_datum_edit_memory_panel{alive:bool,name:text,real_name:text,key:text,synced:bool,assigned_role:unknown,ambitions:bool,memory:bool,objectives:list,antag_blocks:bool}")
-
 /// The computed part of /datum/edit_memory_panel's window data (declared on its UI_DATA row).
-/datum/edit_memory_panel/proc/ui_data_datum_edit_memory_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/edit_memory_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!target_mind)
 		data["alive"] = FALSE
@@ -79,40 +89,47 @@ UI_DATA_REPLACE(/datum/edit_memory_panel, "merge:ui_data_datum_edit_memory_panel
 	data["antag_blocks"] = shown_antag_blocks || list()
 	return data
 
-/datum/edit_memory_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/edit_memory_panel/proc/ui_gate(datum/act/op/A)
 	if(!target_mind)
 		return FALSE
-	if(!check_rights(R_ADMIN|R_FUN|R_EVENT))
+	if(!admin_can(A.actor?.client, R_ADMIN|R_FUN|R_EVENT))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "edit_role", ui_act_edit_role)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_edit_role)
-	var/new_role = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice, message = "Select new role", title = "Assigned role", choices = SSjob.occupations_by_name, default = target_mind.assigned_role)
-	if(isnull(new_role))
-		return
+/datum/edit_memory_panel/proc/ui_act_edit_role_a1_choices(datum/act/op/A)
+	return SSjob.occupations_by_name
+
+/datum/edit_memory_panel/proc/ui_act_edit_role_a1_default(datum/act/op/A)
+	return target_mind.assigned_role
+
+/datum/edit_memory_panel/proc/ui_act_edit_role(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_role = A.step_value("a1")
 	if(new_role)
 		target_mind.assigned_role = new_role
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "edit_memory", ui_act_edit_memory)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_edit_memory)
-	var/new_memo = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Write new memory", title = "Memory", default = target_mind.memory, multiline = TRUE)
-	if(isnull(new_memo))
-		return
+/datum/edit_memory_panel/proc/ui_act_edit_memory_a2_default(datum/act/op/A)
+	return target_mind.memory
+
+/datum/edit_memory_panel/proc/ui_act_edit_memory(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_memo = A.step_value("a2")
 	if(!isnull(new_memo))
 		target_mind.memory = new_memo
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "edit_ambitions", ui_act_edit_ambitions)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_edit_ambitions)
-	var/new_amb = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/text, message = "Enter a new ambition", title = "Ambition", default = target_mind.ambitions, multiline = TRUE)
-	if(isnull(new_amb))
-		return
+/datum/edit_memory_panel/proc/ui_act_edit_ambitions_a3_default(datum/act/op/A)
+	return target_mind.ambitions
+
+/datum/edit_memory_panel/proc/ui_act_edit_ambitions(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_amb = A.step_value("a3")
 	if(isnull(new_amb))
 		return TRUE
 	target_mind.ambitions = new_amb
@@ -122,24 +139,31 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_edit_ambitions)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "obj_toggle_complete", ui_act_obj_toggle_complete, UI_ARG_REF("ref", "proc:ui_source_target_mind_objectives", /datum/objective))
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_toggle_complete)
-	var/datum/objective/O = params["ref"]
+/datum/edit_memory_panel/proc/ui_act_obj_toggle_complete(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in ui_source_target_mind_objectives()))
+		return FALSE
+	var/datum/objective/O = ref
 	if(istype(O))
 		O.completed = !O.completed
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "obj_delete", ui_act_obj_delete, UI_ARG_REF("ref", "proc:ui_source_target_mind_objectives", /datum/objective))
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_delete)
-	var/datum/objective/O = params["ref"]
+/datum/edit_memory_panel/proc/ui_act_obj_delete(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in ui_source_target_mind_objectives()))
+		return FALSE
+	var/datum/objective/O = ref
 	if(istype(O))
 		own_remove(target_mind, nameof(target_mind.objectives), O)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "obj_announce", ui_act_obj_announce)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_announce)
+/datum/edit_memory_panel/proc/ui_act_obj_announce(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(target_mind.current)
 		to_chat(target_mind.current, span_blue("Your current objectives:"))
 		var/obj_count = 1
@@ -148,57 +172,66 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_announce)
 			obj_count++
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "obj_add", ui_act_obj_add)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_add)
-	target_mind.begin_objective_add(ui.user)
+/datum/edit_memory_panel/proc/ui_act_obj_add(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	target_mind.begin_objective_add(user)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "refresh_antags", ui_act_refresh_antags)
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_refresh_antags)
+/datum/edit_memory_panel/proc/ui_act_refresh_antags(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	snapshot_antag_blocks()
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_add", ui_act_antag_add, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_add)
-	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
-	if(A && A.add_antagonist(target_mind, 1, 1, 0, 1, 1))
-		log_admin("[key_name_admin(ui.user)] made [key_name(target_mind)] into a [A.role_text].")
+/datum/edit_memory_panel/proc/ui_act_antag_add(datum/act/op/A, id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	if(A2 && A2.add_antagonist(target_mind, 1, 1, 0, 1, 1))
+		log_admin("[key_name_admin(user)] made [key_name(target_mind)] into a [A2.role_text].")
 	snapshot_antag_blocks()
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_remove", ui_act_antag_remove, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_remove)
-	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
-	if(A)
-		A.remove_antagonist(target_mind)
+/datum/edit_memory_panel/proc/ui_act_antag_remove(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	if(A2)
+		A2.remove_antagonist(target_mind)
 	snapshot_antag_blocks()
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_equip", ui_act_antag_equip, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_equip)
-	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
-	if(A && target_mind.current)
-		A.equip(target_mind.current)
+/datum/edit_memory_panel/proc/ui_act_antag_equip(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	if(A2 && target_mind.current)
+		A2.equip(target_mind.current)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_unequip", ui_act_antag_unequip, UI_ARG_VALUE("id"))
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_unequip)
-	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
-	if(A && target_mind.current)
-		A.unequip(target_mind.current)
+/datum/edit_memory_panel/proc/ui_act_antag_unequip(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	if(A2 && target_mind.current)
+		A2.unequip(target_mind.current)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_move_to_spawn", ui_act_antag_move_to_spawn, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_move_to_spawn)
-	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
-	if(A && target_mind.current)
-		A.place_mob(target_mind.current)
+/datum/edit_memory_panel/proc/ui_act_antag_move_to_spawn(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	if(A2 && target_mind.current)
+		A2.place_mob(target_mind.current)
 	SStgui.update_uis(src)
 	return TRUE
 

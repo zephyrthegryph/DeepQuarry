@@ -2,11 +2,9 @@
 	var/selected_window
 
 CAPABILITIES(/datum/tgui_feedback)
-	interface("TguiFeedback", title = "TGUI Feedback Submission")
+	interface("TguiFeedback", title = "TGUI Feedback Submission", state = nameof(GLOB.tgui_always_state))
 	op("pick_window", ui_act("pick_window", arg("win", schema_text(4096))), then(PROC_REF(ui_act_pick_window)))
 	op("submit", ui_act("submit", arg("comment", schema_text(4096)), arg("rating", schema_text(4096))), then(PROC_REF(ui_act_submit)))
-
-DECLARE_UI_STATE(/datum/tgui_feedback, GLOB.tgui_always_state)
 
 /datum/tgui_feedback/tgui_static_data(mob/user)
 	var/list/data = list()

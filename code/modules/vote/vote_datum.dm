@@ -148,10 +148,8 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 	UI STUFFS
 */
 
-DECLARE_UI_STATE(/datum/vote, GLOB.tgui_always_state)
-
 CAPABILITIES(/datum/vote)
-	interface("VotePanel", title = "Vote Panel")
+	interface("VotePanel", title = "Vote Panel", state = nameof(GLOB.tgui_always_state))
 	op("vote", ui_act("vote", arg("target", schema_text(4096))), then(PROC_REF(ui_act_vote)))
 
 /datum/vote/ui_data(datum/act/eval/A)

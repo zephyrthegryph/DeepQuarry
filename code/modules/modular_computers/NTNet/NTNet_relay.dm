@@ -24,6 +24,10 @@
 
 CAPABILITIES(/obj/machinery/ntnet_relay)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	interface("NTNetRelay")
+	op("restart", ui_act("restart"), then(PROC_REF(ui_act_restart)))
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("purge", ui_act("purge"), then(PROC_REF(ui_act_purge)))
 
 // TODO: Implement more logic here. For now it's only a placeholder.
 /obj/machinery/ntnet_relay/operable(additional_flags = 0)
@@ -69,9 +73,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 		GLOB.ntnet_global.add_log("Quantum relay switched from overload recovery mode to normal operation mode.")
 	..()
 
-DECLARE_UI(/obj/machinery/ntnet_relay, "NTNetRelay")
-
-UI_DATA_REPLACE(/obj/machinery/ntnet_relay, "enabled:num", "dos_capacity:num", "dos_overload:num", "dos_crashed=dos_failure:num")
+/obj/machinery/ntnet_relay/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["enabled"] = enabled
+	data["dos_capacity"] = dos_capacity
+	data["dos_overload"] = dos_overload
+	data["dos_crashed"] = dos_failure
+	return data
 
 /obj/machinery/ntnet_relay/declare_interactions(list/into)
 	into += list(
@@ -79,23 +87,20 @@ UI_DATA_REPLACE(/obj/machinery/ntnet_relay, "enabled:num", "dos_capacity:num", "
 	)
 	..()
 
-UI_ACT(/obj/machinery/ntnet_relay, "restart", ui_act_restart)
-UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_restart)
+/obj/machinery/ntnet_relay/proc/ui_act_restart(datum/act/op/A)
 	dos_overload = 0
 	dos_failure = 0
 	update_icon()
 	GLOB.ntnet_global.add_log("Quantum relay manually restarted from overload recovery mode to normal operation mode.")
 	. = TRUE
 
-UI_ACT(/obj/machinery/ntnet_relay, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_toggle)
+/obj/machinery/ntnet_relay/proc/ui_act_toggle(datum/act/op/A)
 	enabled = !enabled
 	GLOB.ntnet_global.add_log("Quantum relay manually [enabled ? "enabled" : "disabled"].")
 	update_icon()
 	. = TRUE
 
-UI_ACT(/obj/machinery/ntnet_relay, "purge", ui_act_purge)
-UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_purge)
+/obj/machinery/ntnet_relay/proc/ui_act_purge(datum/act/op/A)
 	LAZYCLEARLIST(GLOB.ntnet_global.banned_nids)
 	GLOB.ntnet_global.add_log("Manual override: Network blacklist cleared.")
 	. = TRUE

@@ -28,7 +28,7 @@
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed insertion clears the actual source hand")
 	TEST_ASSERT_EQUAL(user.get_inactive_hand(), device, "allowed insertion preserves the device's original hand")
 	TEST_ASSERT_NULL(owner_of(battery), "the bay preserves its existing non-owning relation policy")
-	device.ui_act_ejectbattery(user, null, null, null, "ejectbattery")
+	op_ui_act(user, device, "ejectbattery")
 	TEST_ASSERT_NULL(device.inserted_battery(), "actual UI ejection clears the battery relation")
 	TEST_ASSERT_EQUAL(battery.loc, T, "actual UI ejection returns the exact original battery to the floor")
 	TEST_ASSERT_EQUAL(battery.stored_charge, original_charge, "the actual insertion and ejection round trip spends no charge")

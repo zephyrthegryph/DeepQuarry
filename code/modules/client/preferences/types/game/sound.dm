@@ -198,14 +198,14 @@
 
 // Neat little volume adjuster thing in case you don't wanna touch preferences by hand you lazy fuck
 /datum/volume_panel
-DECLARE_UI_STATE(/datum/volume_panel, GLOB.tgui_always_state)
 
-DECLARE_UI(/datum/volume_panel, "VolumePanel", UI_TITLE("Volume Panel"))
-
-UI_DATA(/datum/volume_panel, "merge:ui_data_datum_volume_panel{volume_channels:num}")
+CAPABILITIES(/datum/volume_panel)
+	interface("VolumePanel", title = "Volume Panel", state = nameof(GLOB.tgui_always_state))
+	op("adjust_volume", ui_act("adjust_volume", arg("channel", schema_text(4096)), arg("vol", num())), then(PROC_REF(ui_act_adjust_volume)))
 
 /// The computed part of /datum/volume_panel's window data (declared on its UI_DATA row).
-/datum/volume_panel/proc/ui_data_datum_volume_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/volume_panel/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	if(!user.client || !user.client.prefs)
 		return list("error" = TRUE)
 
@@ -213,20 +213,21 @@ UI_DATA(/datum/volume_panel, "merge:ui_data_datum_volume_panel{volume_channels:n
 	data["volume_channels"] = user.client.prefs.read_preference(/datum/preference/volume_channels)
 	return data
 
-/datum/volume_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!ui.user?.client?.prefs)
+/datum/volume_panel/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user?.client?.prefs)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/volume_panel, "adjust_volume", ui_act_adjust_volume, UI_ARG_TEXT("channel"), UI_ARG_NUM("vol"))
-UI_ACT_PROC(/datum/volume_panel, ui_act_adjust_volume)
-	var/datum/preferences/P = ui.user.client.prefs
+/datum/volume_panel/proc/ui_act_adjust_volume(datum/act/op/A, channel_arg, vol)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/preferences/P = user.client.prefs
 	var/list/volume_channels = P.read_preference(/datum/preference/volume_channels)
-	var/channel = params["channel"]
+	var/channel = channel_arg
 	if(channel in volume_channels)
-		volume_channels["[channel]"] = clamp(params["vol"], 0, 2)
+		volume_channels["[channel]"] = clamp(vol, 0, 2)
 		P.write_preference_by_type(/datum/preference/volume_channels, volume_channels)
 		return TRUE
 

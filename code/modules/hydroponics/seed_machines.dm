@@ -78,6 +78,8 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 CAPABILITIES(/obj/machinery/botany)
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL)
+	op("eject_packet", ui_act("eject_packet"), then(PROC_REF(ui_act_eject_packet)))
+	op("eject_disk", ui_act("eject_disk"), then(PROC_REF(ui_act_eject_disk)))
 
 /obj/machinery/botany/machine_step()
 
@@ -206,9 +208,14 @@ CAPABILITIES(/obj/machinery/botany)
 	var/degradation = 0     // Increments with each scan, stops allowing gene mods after a certain point.
 	circuit = /obj/item/circuitboard/botany_extractor
 
-DECLARE_UI(/obj/machinery/botany/extractor, "BotanyIsolator")
-
-UI_DATA(/obj/machinery/botany/extractor, "degradation:num", "merge:ui_data_obj_machinery_botany_extractor{geneMasks:list,activity:num,disk:num,loaded:unknown,hasGenetics:num,sourceName:unknown}")
+/obj/machinery/botany/extractor/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["degradation"] = degradation
+	var/list/merged_1 = ui_data_obj_machinery_botany_extractor(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/botany/extractor's window data (declared on its UI_DATA row).
 /obj/machinery/botany/extractor/proc/ui_data_obj_machinery_botany_extractor(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -240,14 +247,14 @@ UI_DATA(/obj/machinery/botany/extractor, "degradation:num", "merge:ui_data_obj_m
 
 	return data
 
-/obj/machinery/botany/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
+/obj/machinery/botany/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/botany, "eject_packet", ui_act_eject_packet)
-UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_packet)
+/obj/machinery/botany/proc/ui_act_eject_packet(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!seed)
 		return
 	seed.forceMove(get_turf(src))
@@ -258,11 +265,12 @@ UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_packet)
 	seed.update_seed()
 	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
 
-	own_take(src, nameof(/datum/generated_station_spec::seed))
+	own_take(src, nameof(seed))
 	return TRUE
 
-UI_ACT(/obj/machinery/botany, "eject_disk", ui_act_eject_disk)
-UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_disk)
+/obj/machinery/botany/proc/ui_act_eject_disk(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!loaded_disk)
 		return
 	loaded_disk.forceMove(get_turf(src))
@@ -270,8 +278,9 @@ UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_disk)
 	own_take(src, nameof(/obj/machinery/botany::loaded_disk))
 	return TRUE
 
-UI_ACT(/obj/machinery/botany/extractor, "scan_genome", ui_act_scan_genome)
-UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_scan_genome)
+/obj/machinery/botany/extractor/proc/ui_act_scan_genome(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!seed)
 		return
 
@@ -283,18 +292,19 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_scan_genome)
 		degradation = 0
 
 	consume(seed)
-	own_take(src, nameof(/datum/generated_station_spec::seed))
+	own_take(src, nameof(seed))
 	return TRUE
 
-UI_ACT(/obj/machinery/botany/extractor, "get_gene", ui_act_get_gene, UI_ARG_TEXT("get_gene"))
-UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
+/obj/machinery/botany/extractor/proc/ui_act_get_gene(datum/act/op/A, get_gene)
+	if(!ui_gate(A))
+		return FALSE
 	if(!genetics() || !loaded_disk)
 		return
 
 	COOLDOWN_START(src, action_cooldown, action_time)
 	set_active(1)
 
-	var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
+	var/datum/plantgene/P = genetics().get_gene(get_gene)
 	if(!P)
 		return
 	rel_add(loaded_disk, nameof(/obj/item/disk/botany::genes), P) // get_gene() makes a fresh copy: the disk owns it
@@ -303,8 +313,8 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
 	if(!genetics().roundstart)
 		loaded_disk.genesource += " (variety #[genetics().uid])"
 
-	loaded_disk.name += " ([SSplants.gene_tag_masks[params["get_gene"]]], #[genetics().uid])"
-	loaded_disk.desc += " The label reads \'gene [SSplants.gene_tag_masks[params["get_gene"]]], sampled from [genetics().display_name]\'."
+	loaded_disk.name += " ([SSplants.gene_tag_masks[get_gene]], #[genetics().uid])"
+	loaded_disk.desc += " The label reads \'gene [SSplants.gene_tag_masks[get_gene]], sampled from [genetics().display_name]\'."
 	eject_disk = 1
 
 	degradation += rand(20,60)
@@ -314,8 +324,9 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
 		degradation = 0
 	return TRUE
 
-UI_ACT(/obj/machinery/botany/extractor, "clear_buffer", ui_act_clear_buffer)
-UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_clear_buffer)
+/obj/machinery/botany/extractor/proc/ui_act_clear_buffer(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!genetics())
 		return
 	proto_set(src, nameof(/obj/machinery/botany/extractor::genetics_static), null)
@@ -330,12 +341,12 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_clear_buffer)
 	disk_needs_genes = 1
 	circuit = /obj/item/circuitboard/botany_editor
 
-DECLARE_UI(/obj/machinery/botany/editor, "BotanyEditor")
-
-UI_DATA(/obj/machinery/botany/editor, "merge:ui_data_obj_machinery_botany_editor{activity:num,degradation:num,disk:num,sourceName:unknown,locus:unknown,loaded:unknown}")
+CAPABILITIES(/obj/machinery/botany/editor)
+	interface("BotanyEditor")
+	op("apply_gene", ui_act("apply_gene"), then(PROC_REF(ui_act_apply_gene)))
 
 /// The computed part of /obj/machinery/botany/editor's window data (declared on its UI_DATA row).
-/obj/machinery/botany/editor/proc/ui_data_obj_machinery_botany_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/botany/editor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["activity"] = active
@@ -366,8 +377,9 @@ UI_DATA(/obj/machinery/botany/editor, "merge:ui_data_obj_machinery_botany_editor
 
 	return data
 
-UI_ACT(/obj/machinery/botany/editor, "apply_gene", ui_act_apply_gene)
-UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
+/obj/machinery/botany/editor/proc/ui_act_apply_gene(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!loaded_disk || !seed)
 		return
 
@@ -402,6 +414,10 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 
 CAPABILITIES(/obj/machinery/botany/extractor)
 	owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	interface("BotanyIsolator")
+	op("scan_genome", ui_act("scan_genome"), then(PROC_REF(ui_act_scan_genome)))
+	op("get_gene", ui_act("get_gene", arg("get_gene", schema_text(4096))), then(PROC_REF(ui_act_get_gene)))
+	op("clear_buffer", ui_act("clear_buffer"), then(PROC_REF(ui_act_clear_buffer)))
 /obj/item/disk/botany/proc/botany_disk_wipe_answered(datum/act/request/A)
 	if(!A.answer)
 		return

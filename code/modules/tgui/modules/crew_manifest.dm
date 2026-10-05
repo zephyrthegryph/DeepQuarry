@@ -13,10 +13,12 @@ CAPABILITIES(/datum/tgui_module/crew_manifest)
 	return data
 
 /datum/tgui_module/crew_manifest/robot
-DECLARE_UI_STATE(/datum/tgui_module/crew_manifest/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/crew_manifest/robot)
+	interface("CrewManifest", state = nameof(GLOB.tgui_self_state))
 
 /datum/tgui_module/crew_manifest/new_player
-DECLARE_UI_STATE(/datum/tgui_module/crew_manifest/new_player, GLOB.tgui_always_state)
+CAPABILITIES(/datum/tgui_module/crew_manifest/new_player)
+	interface("CrewManifest", state = nameof(GLOB.tgui_always_state))
 
 // Module that deletes itself when it's closed
 /datum/tgui_module/crew_manifest/self_deleting
@@ -26,4 +28,5 @@ DECLARE_UI_STATE(/datum/tgui_module/crew_manifest/new_player, GLOB.tgui_always_s
 	if(!QDELETED(src))
 		qdel(src)
 
-DECLARE_UI_STATE(/datum/tgui_module/crew_manifest/self_deleting, GLOB.tgui_always_state)
+CAPABILITIES(/datum/tgui_module/crew_manifest/self_deleting)
+	interface("CrewManifest", state = nameof(GLOB.tgui_always_state))

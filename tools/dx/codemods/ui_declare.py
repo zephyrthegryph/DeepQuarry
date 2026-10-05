@@ -789,6 +789,9 @@ def main():
                 bad = "proc_shared"
                 break
             body_no_user = re.sub(r"(?<![\w.])ui\.user\b", "user", body)  # ui.user is the viewer: the handler's `user`
+            if re.search(r"(?<![\w.])open_request\(", body):
+                bad = "body_uses:open_request"  # a question asked from an effect is an asks() step (dx_review request_in_effect): by hand
+                break
             for w in ("ui", "state") + (() if a.get("fallback") else ("action",)):
                 if words_in(body_no_user, w):
                     bad = "body_uses:" + w
@@ -899,11 +902,13 @@ def main():
                 if words_in(body, uin) or words_in(body, stn) or words_in(body, "A") or re.search(r"\.\.\(", body):
                     helper_bad = True
                     break
-                helpers[name] = {"rel": rel, "idx": i, "first": first, "last": last, "user": un, "uses_user": bool(words_in(body, un))}
+                helpers[name] = {"rel": rel, "idx": i, "first": first, "last": last, "user": un, "uses_user": bool(words_in(body, un)), "speaks": bool(re.search(r"(?<![\w.])(to_chat|atom_say|playsound|play_sfx|balloon_alert)\(", body))}
             if helper_bad:
                 return None, "data_rows"
             data["helpers"] = helpers
-            data["rename"] = len(data["fields"]) == 1 and data["fields"][0][0] == "merge"
+            # a lone merge proc becomes ui_data() itself, unless it speaks (an output says nothing: dx_review output_side_effect; it stays a
+            # helper ui_data() calls, for a hand fix)
+            data["rename"] = len(data["fields"]) == 1 and data["fields"][0][0] == "merge" and not any(h["speaks"] for h in helpers.values())
         return plan, None
 
     # ---- families: the types related by path convert together, parents first (a subtype's buttons, data and state build on its parents')

@@ -117,9 +117,20 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/keycard_auth, "KeycardAuth", UI_TITLE("Keycard Authentication"))
+CAPABILITIES(/obj/machinery/keycard_auth)
+	interface("KeycardAuth", title = "Keycard Authentication")
+	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
+	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 
-UI_DATA_REPLACE(/obj/machinery/keycard_auth, "screen:num", "event", "merge:ui_data_obj_machinery_keycard_auth{ert_admin_only:num}")
+/obj/machinery/keycard_auth/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["screen"] = screen
+	data["event"] = event
+	var/list/merged_1 = ui_data_obj_machinery_keycard_auth(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/keycard_auth's window data (declared on its UI_DATA row).
 /obj/machinery/keycard_auth/proc/ui_data_obj_machinery_keycard_auth(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -127,9 +138,8 @@ UI_DATA_REPLACE(/obj/machinery/keycard_auth, "screen:num", "event", "merge:ui_da
 	data["ert_admin_only"] = CONFIG_GET(flag/ert_admin_call_only) ? 1 : 0
 	return data
 
-/obj/machinery/keycard_auth/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/keycard_auth/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(om_busy(src))
 		to_chat(user, "This device is busy.")
 		return FALSE
@@ -138,15 +148,19 @@ UI_DATA_REPLACE(/obj/machinery/keycard_auth, "screen:num", "event", "merge:ui_da
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/keycard_auth, "triggerevent", ui_act_triggerevent, UI_ARG_TEXT("event"))
-UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_triggerevent)
-	event = params["event"]
+/obj/machinery/keycard_auth/proc/ui_act_triggerevent(datum/act/op/A, event_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	event = event_arg
 	screen = 2
 	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/keycard_auth, "reset", ui_act_reset)
-UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
+/obj/machinery/keycard_auth/proc/ui_act_reset(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	reset()
 	add_fingerprint(user)
 	return TRUE

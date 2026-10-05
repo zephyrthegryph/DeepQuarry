@@ -57,7 +57,11 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 	INTERACT_ITEM(null, PROC_REF(icecream_vat_interaction_item)), \
 )
 
-DECLARE_UI(/obj/machinery/icecream_vat, "IcecreamVat")
+CAPABILITIES(/obj/machinery/icecream_vat)
+	interface("IcecreamVat")
+	op("index_action", ui_act("index_action", arg("iceIndex", num())), then(PROC_REF(ui_act_index_action)))
+	op("make_type", ui_act("make_type", arg("amount", num()), arg("index", num())), then(PROC_REF(ui_act_make_type)))
+	op("clear_reagent", ui_act("clear_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_clear_reagent)))
 
 /obj/machinery/icecream_vat/proc/build_icecream_data(list/ice_types)
 	var/ice_data = list()
@@ -67,10 +71,8 @@ DECLARE_UI(/obj/machinery/icecream_vat, "IcecreamVat")
 		UNTYPED_LIST_ADD(ice_data, list("index" = entry, "name" = get_flavour_name(entry), "amount_left" = LAZYACCESS(product_types, entry), "ingredients" = get_ingredient_list(entry)))
 	return ice_data
 
-UI_DATA_REPLACE(/obj/machinery/icecream_vat, "merge:ui_data_obj_machinery_icecream_vat{current_flavor:text,icecrem_data:list,cone_data:list,reagent_data:list}")
-
 /// The computed part of /obj/machinery/icecream_vat's window data (declared on its UI_DATA row).
-/obj/machinery/icecream_vat/proc/ui_data_obj_machinery_icecream_vat(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/icecream_vat/ui_data(datum/act/eval/A)
 	var/list/reagent_data = list()
 	for(var/datum/reagent/current_reagent in reagents.reagent_list)
 		UNTYPED_LIST_ADD(reagent_data, list("name" = current_reagent.name, "volume" = current_reagent.volume, "id" = current_reagent.id))
@@ -82,15 +84,15 @@ UI_DATA_REPLACE(/obj/machinery/icecream_vat, "merge:ui_data_obj_machinery_icecre
 		"reagent_data" = reagent_data
 	)
 
-UI_ACT(/obj/machinery/icecream_vat, "index_action", ui_act_index_action, UI_ARG_NUM("iceIndex"))
-UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_index_action)
-	var/index_action = params["iceIndex"]
+/obj/machinery/icecream_vat/proc/ui_act_index_action(datum/act/op/A, iceIndex)
+	var/mob/user = A.actor
+	var/index_action = iceIndex
 	if(index_action <= 0)
 		return FALSE
 	if(index_action < 5)
 		dispense_flavour = index_action
 		flavour_name = get_flavour_name(dispense_flavour)
-		visible_message(span_notice("[ui.user] sets [src] to dispense [flavour_name] flavoured icecream."))
+		act_message(user, src, MSG_SELF(span_notice("You set %T% to dispense [flavour_name] flavoured icecream.")), MSG_OTHERS(span_notice("%U% sets %T% to dispense [flavour_name] flavoured icecream.")))
 		return TRUE
 	if(index_action < 7)
 		var/cone_name = get_flavour_name(index_action)
@@ -100,25 +102,24 @@ UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_index_action)
 			I.cone_type = cone_name
 			I.icon_state = "icecream_cone_[cone_name]"
 			I.desc = "Delicious [cone_name] cone, but no ice cream."
-			visible_message(span_info("[ui.user] dispenses a crunchy [cone_name] cone from [src]."))
+			act_message(user, src, MSG_SELF(span_info("You dispense a crunchy [cone_name] cone from %T%.")), MSG_OTHERS(span_info("%U% dispenses a crunchy [cone_name] cone from %T%.")))
 		else
-			to_chat(ui.user, span_warning("There are no [cone_name] cones left!"))
+			to_chat(user, span_warning("There are no [cone_name] cones left!"))
 	return TRUE
 
-UI_ACT(/obj/machinery/icecream_vat, "make_type", ui_act_make_type, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_make_type)
-	var/amount = params["amount"]
+/obj/machinery/icecream_vat/proc/ui_act_make_type(datum/act/op/A, amount_arg, index_arg)
+	var/mob/user = A.actor
+	var/amount = amount_arg
 	if(amount <= 0 || amount > 10)
 		return FALSE
-	var/index = params["index"]
+	var/index = index_arg
 	if(index <= 0 || index > 6)
 		return FALSE
-	make(ui.user, index, amount)
+	make(user, index, amount)
 	return TRUE
 
-UI_ACT(/obj/machinery/icecream_vat, "clear_reagent", ui_act_clear_reagent, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_clear_reagent)
-	var/reagent_id = params["id"]
+/obj/machinery/icecream_vat/proc/ui_act_clear_reagent(datum/act/op/A, id)
+	var/reagent_id = id
 	if(!reagent_id)
 		return FALSE
 	reagents.del_reagent(reagent_id)
