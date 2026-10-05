@@ -325,8 +325,10 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_print_transaction)
 
 UI_ACT(/obj/machinery/atm, "change_security_level", ui_act_change_security_level, UI_ARG_NUM("new_security_level", 0, 2))
 UI_ACT_PROC(/obj/machinery/atm, ui_act_change_security_level)
+	return change_security_level_stage(ui, params["new_security_level"])
+
+/obj/machinery/atm/proc/change_security_level_stage(datum/tgui/ui, new_sec_level, tried_pin, pin_ready = FALSE)
 	if(authenticated_account())
-		var/new_sec_level = params["new_security_level"]
 		if(!isnum(new_sec_level))
 			return
 		// Lowering the security level weakens future access controls, so it must
@@ -336,8 +338,10 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_change_security_level)
 		if(new_sec_level < authenticated_account().security_level)
 			var/card_present = held_card() && held_card().associated_account_number == authenticated_account().account_number
 			if(!card_present)
-				var/tried_pin = act_ask(ui.user, action, params, ui, "k325", /datum/om/prompt/number, message = "Re-enter your account PIN to lower the security level", title = "Confirm PIN")
-				if(isnull(tried_pin))
+				if(!pin_ready)
+					if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
+						return
+					open_request(ui, /datum/prompt/number/atm_security_pin, TYPE_PROC_REF(/datum/tgui, atm_security_pin_answered), answerer = ui.user, security_level = new_sec_level)
 					return
 				// Re-validate auth/state after the sleeping input.
 				if(!authenticated_account() || QDELETED(src))
@@ -542,3 +546,31 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_withdrawal)
 /// the authenticated_account this refers to (a relation view: null once it is deleted).
 /obj/machinery/atm/proc/authenticated_account() as /datum/money_account
 	return authenticated_account
+
+/datum/tgui/proc/atm_security_pin_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/atm/machine = src_object()
+	var/datum/prompt/number/atm_security_pin/ask = context.answer
+	if(machine.change_security_level_stage(src, ask.security_level, ask.answer_value, TRUE))
+		SStgui.update_uis(machine)
+
+/datum/prompt/number/atm_security_pin
+	question = "Re-enter your account PIN to lower the security level"
+	title = "Confirm PIN"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/security_level
+
+/datum/prompt/number/atm_security_pin/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/atm/machine = original_ui.src_object()
+	if(!istype(machine) || QDELETED(machine))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!machine.ui_act_allowed(original_ui.user, "change_security_level", original_ui, original_ui.state()))
+		return "the ATM security action is unavailable"
+	return null

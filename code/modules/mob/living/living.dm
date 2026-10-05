@@ -19,7 +19,7 @@
 	// without qdel(), so the identity's handle then reported a collected target.
 	for(var/datum/soul_link/S as anything in owned_soul_links?.Copy())
 		S.owner_died(FALSE)
-		qdel(S) // If the owner is destroy()'d, the soullink is destroy()'d.
+		rel_remove(src, nameof(owned_soul_links), S) // The owner retires its soul link after the death callback.
 	for(var/datum/soul_link/S as anything in shared_soul_links?.Copy())
 		S.sharer_died(FALSE)
 		S.remove_soul_sharer(src) // If a sharer is destroy()'d, they are simply removed.

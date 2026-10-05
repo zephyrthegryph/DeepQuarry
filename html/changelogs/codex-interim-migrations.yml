@@ -19,3 +19,5 @@ changes:
   - code_imp: "Retired removed loot-panel indices and stored body records through their declared ownership."
   - code_imp: "Moved particle and filter editor choices, mob-spawner settings and atmos pressure and flow settings to native requests."
   - code_imp: "Retired replaced login HUDs through their declared ownership."
+  - code_imp: "Moved ATM security PIN checks, feedback editing and library confirmation and ordering prompts to native requests."
+  - code_imp: "Retired owned soul links and downloaded Soulcatcher minds through their declared ownership."
