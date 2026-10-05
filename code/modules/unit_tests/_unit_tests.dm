@@ -1030,6 +1030,9 @@
 #include "round2_account_funds_effect.dm"
 #include "round2_lasertag_suicide_projectile_cleanup.dm"
 
+#include "round2_song_append_effect.dm"
+#include "round2_transcore_body_record_retirement.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

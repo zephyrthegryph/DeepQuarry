@@ -598,7 +598,6 @@ qdel	code/modules/library/lib_machines.dm	qdel(source_paper)
 qdel	code/modules/library/lib_machines.dm	qdel(source_bundle)
 qdel	code/modules/lighting/lighting_overlay.dm	qdel(affected_turf.lighting_object, force = TRUE)
 qdel	code/modules/lighting/lighting_turf.dm	qdel(lighting_object, force=TRUE)
-qdel	code/modules/lootpanel/ui.dm	qdel(index) // Item has moved
 qdel	code/modules/lore_codex/cooking_codex.dm	qdel(R)
 qdel	code/modules/lore_codex/cooking_codex.dm	qdel(R) // Delete recipe datum after we're done with it
 qdel	code/modules/maint_recycler/code/maint_recycler.dm	qdel(recycled)
@@ -873,7 +872,6 @@ qdel	code/modules/resleeving/computers.dm	qdel(active_br)
 qdel	code/modules/resleeving/computers.dm	qdel(active_mr)
 qdel	code/modules/resleeving/implant.dm	qdel(imp)
 qdel	code/modules/resleeving/infocore_records.dm	qdel(CH)
-qdel	code/modules/resleeving/transcore_service.dm	qdel(removed) // the database owned it; nothing else keeps a removed record
 qdel	code/modules/rogueminer/zonemaster.dm	qdel(I)
 qdel	code/modules/shieldgen/emergency_shield.dm	qdel(DEFAULTPICK(deployed_shields, null))
 qdel	code/modules/shieldgen/handheld_defuser.dm	qdel(S)

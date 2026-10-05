@@ -244,9 +244,7 @@ CAPABILITIES(/datum/transcore_db)
 // Remove a body record from the database (Usually done when someone cryos)  // Why? ~Leshana
 /datum/transcore_db/proc/remove_body(datum/transhuman/body_record/BR)
 	ASSERT(BR)
-	var/datum/transhuman/body_record/removed = own_take_member(src, nameof(body_scans), "[BR.mydna.name]")
-	if(removed && !QDELETED(removed))
-		qdel(removed) // the database owned it; nothing else keeps a removed record
+	rel_add(src, nameof(body_scans), null, "[BR.mydna.name]")
 
 // Moves all mind records from the databaes into the disk and shuts down all backup canary processing.
 /datum/transcore_db/proc/core_dump(obj/item/disk/transcore/disk)

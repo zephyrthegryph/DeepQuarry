@@ -127,16 +127,9 @@ UI_ACT_PROC(/datum/song, ui_act_import_song)
 
 UI_ACT(/datum/song, "add_new_line", ui_act_add_new_line)
 UI_ACT_PROC(/datum/song, ui_act_add_new_line)
-	var/newline = act_ask(user, action, params, ui, "k120", /datum/om/prompt/text, message = "Enter your line", title = parent().name, max_length = MUSIC_MAXLINECHARS)
-	if(isnull(newline))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(!newline || !in_range(parent(), user))
-		return
-	if(lines.len > MUSIC_MAXLINES)
-		return
-	if(length(newline) > MUSIC_MAXLINECHARS)
-		newline = copytext(newline, 1, MUSIC_MAXLINECHARS)
-	lines.Add(newline)
+	open_request(ui, /datum/prompt/text/song_line/add, TYPE_PROC_REF(/datum/tgui, song_line_answered), answerer = ui.user, title = parent().name)
 
 UI_ACT(/datum/song, "delete_line", ui_act_delete_line, UI_ARG_NUM("line_deleted"))
 UI_ACT_PROC(/datum/song, ui_act_delete_line)
@@ -151,13 +144,9 @@ UI_ACT_PROC(/datum/song, ui_act_modify_line)
 	var/line_to_edit = params["line_editing"]
 	if(line_to_edit > lines.len || line_to_edit < 1)
 		return FALSE
-	var/new_line_text = act_ask(user, action, params, ui, "k138", /datum/om/prompt/text, message = "Enter your line ", title = parent().name, default = lines[line_to_edit], max_length = MUSIC_MAXLINECHARS)
-	if(isnull(new_line_text))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(isnull(new_line_text) || !in_range(parent(), user))
-		return FALSE
-	lines[line_to_edit] = new_line_text
-	return TRUE
+	open_request(ui, /datum/prompt/text/song_line/modify, TYPE_PROC_REF(/datum/tgui, song_line_answered), answerer = ui.user, title = parent().name, default = lines[line_to_edit], line_to_edit = line_to_edit)
 
 //MODE STUFF
 
@@ -244,3 +233,60 @@ UI_ACT_PROC(/datum/song, ui_act_edit_sustain_mode)
 				lines.Remove(l)
 			else
 				linenum++
+
+// The original editor window owns line continuations; the song is its existing source.
+/datum/tgui/proc/song_line_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/song/song = src_object()
+	var/datum/prompt/text/song_line/ask = context.answer
+	if(ask.line_action == "add_new_line")
+		song.append_answered_line(ask.answer_value)
+	else
+		song.lines[ask.line_to_edit] = ask.answer_value
+		SStgui.update_uis(song)
+
+/datum/song/proc/append_answered_line(value)
+	if(length(value) > MUSIC_MAXLINECHARS)
+		value = copytext(value, 1, MUSIC_MAXLINECHARS)
+	lines.Add(value)
+
+/datum/prompt/text/song_line
+	max_len = MUSIC_MAXLINECHARS
+	timeout = 0
+	recheck_on_open = TRUE
+	var/line_action
+	var/line_to_edit
+
+/datum/prompt/text/song_line/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/song_line/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/datum/song/song = original_ui.src_object()
+	if(!istype(song) || QDELETED(song))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!song.ui_act_allowed(original_ui.user, line_action, original_ui, original_ui.state()))
+		return "the editor action is unavailable"
+	// Existing row guards are answer-time checks; opening has no supplied answer.
+	if(!isnull(answer_value))
+		if(!in_range(song.parent(), original_ui.user))
+			return "the instrument is out of range"
+		if(line_action == "add_new_line")
+			if(!answer_value || song.lines.len > MUSIC_MAXLINES)
+				return "no line can be added"
+		else if(line_to_edit > song.lines.len || line_to_edit < 1)
+			return "the selected line is gone"
+	return null
+
+/datum/prompt/text/song_line/add
+	question = "Enter your line"
+	line_action = "add_new_line"
+
+/datum/prompt/text/song_line/modify
+	question = "Enter your line "
+	line_action = "modify_line"

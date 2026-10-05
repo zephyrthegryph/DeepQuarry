@@ -15,3 +15,5 @@ changes:
   - code_imp: "Moved ticket list choices to native requests while preserving their window and staff permission checks."
   - code_imp: "Moved library search, catalogue editing and account fund adjustment prompts to native requests."
   - bugfix: "Laser-tag guns no longer retain unused projectiles after refusing a suicide attempt."
+  - code_imp: "Moved instrument line editing, prosthetics fabricator selections and ship disperser settings to native requests."
+  - code_imp: "Retired removed loot-panel indices and stored body records through their declared ownership."
