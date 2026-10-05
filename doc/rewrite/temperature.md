@@ -112,6 +112,8 @@ Code: `code/modules/heat/heat_objects.dm`, rules in `code/datums/rules/declarati
   - oxygen consumption through a gas command.
 
   It ends when the thing runs out of fuel or oxygen, or its temperature drops below a limit. The burning component's flat `10 * seconds_per_tick` damage is replaced.
+- **Gas reactions** (landed): DM decides a reaction's rate and stoichiometry; `gas_react()` hands the deltas to Rust, which computes the
+  enthalpy and settles the mixture's temperature in one booked step (`verdigris/domains/gas/src/reaction_energy.rs`).
 - **Burning mobs** use the same state. They stop calling `hotspot_expose` every tick and stop passing fire stacks as a temperature (B16).
 
 ### Implementation (H3)

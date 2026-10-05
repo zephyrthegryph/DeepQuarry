@@ -13,6 +13,7 @@ pub mod laws;
 pub mod pipes;
 pub mod planet;
 pub mod power_budget;
+pub mod reaction_energy;
 
 #[cfg(test)]
 mod tests;
