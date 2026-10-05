@@ -931,7 +931,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 /obj/machinery/alarm/proc/ui_act_lock(datum/act/op/A)
 	var/mob/user = A.actor
 	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
-	if((siliconaccess(user) && !wire_is_cut(src, WIRE_IDSCAN)) || (isobserver(user) && is_admin(user)))
+	if((siliconaccess(user) && !wire_is_cut(src, WIRE_IDSCAN)) || (isobserver(user) && is_admin(user))) // ALLOW(silicon_entry): the existing lock button check, its wire read moved off the deleted wire datum; the silicon rule itself is unchanged
 		set_locked(!locked)
 		. = TRUE
 	refresh_area_alarms()

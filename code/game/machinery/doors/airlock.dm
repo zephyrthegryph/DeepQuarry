@@ -1585,7 +1585,7 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 /// Reaching into a live door's wires shocks anyone but a silicon, instead.
 /obj/machinery/door/airlock/proc/wire_touch_shocks(datum/act/A)
 	var/datum/act/touch_wires/T = A
-	if(!issilicon(T.user) && isElectrified() && shock(T.user, 100))
+	if(!issilicon(T.user) && isElectrified() && shock(T.user, 100)) // ALLOW(silicon_entry): moved from the deleted airlock wire datum unchanged: a silicon reaches the wires window with no hand on a live wire
 		return OP_REFUSED
 	return HOOK_DECLINE
 
