@@ -61,10 +61,10 @@ CAPABILITIES(/obj/item/chameleon)
 		T.expire(0.8 SECONDS)
 	else
 		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = -6)
-		var/obj/O = new saved_item(src)
-		if(!O) return
 		if(istype(user.loc, /obj/item/holder)) // This doesn't go well...
 			return
+		var/obj/O = new saved_item(src)
+		if(!O) return
 		var/obj/effect/dummy/chameleon/C = new /obj/effect/dummy/chameleon(user.loc)
 		C.activate(O, user, saved_icon, saved_icon_state, saved_overlays, src)
 		qdel(O)
