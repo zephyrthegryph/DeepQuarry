@@ -23,15 +23,15 @@
 
 /// The alarm's interface lock is engaged.
 /proc/am_alarm_locked(obj/machinery/alarm/A)
-	return !!A.locked
+	return !!lock_locked(A)
 
 /// Engages or releases the alarm's interface lock (a test fixture's starting state).
 /proc/am_alarm_set_locked(obj/machinery/alarm/A, on)
-	A.set_locked(on)
+	cap_key_set(A, LOCK_LOCKED, !!on, null)
 
 /// The alarm's maintenance panel is open.
 /proc/am_alarm_panel_open(obj/machinery/alarm/A)
-	return !!A.panel_open
+	return !!panel_open(A)
 
 /// The alarm's thermostat is working the room: 0 idle, 1 cooling, 2 heating.
 /proc/am_alarm_regulating(obj/machinery/alarm/A)
@@ -45,13 +45,12 @@
 /// The alarm's own periodic work happens once (its scan of the room and its thermostat), as one machine service interval does: only the area's
 /// working main alarm scans.
 /proc/am_alarm_tick(obj/machinery/alarm/A)
-	var/obj/machinery/alarm/main = A.alarm_area_ref()?.main_air_alarm
-	if(main == A && A.operable() && !A.shorted && get_turf(A))
-		A.scan_atmo()
+	A.scan_room(null)
 
 /// The area elects `A` its main alarm (the one that scans and drives the room's devices).
 /proc/am_alarm_make_main(obj/machinery/alarm/A)
 	rel_set(A.alarm_area_ref(), nameof(/area::main_air_alarm), A)
+	A.alarm_area_ref().air_alarms_refresh()
 
 /// The vent's or scrubber's radio and area registration come up, as the pipe network's init does for a placed device.
 /proc/am_device_online(obj/machinery/atmospherics/unary/D)
@@ -106,19 +105,9 @@
 /// Presses `action` on `alarm`'s window as it is shown by the remote atmospherics console `console` (a tgui module) to `user`. The window the
 /// console opens is used only while it lets `user` work it.
 /proc/am_remote_press(mob/user, datum/tgui_module/atmos_control/console, obj/machinery/alarm/alarm, action, list/args)
-	var/datum/tgui/console_ui = new(user, console, "AtmosControl")
-	console.ui_ref = console_ui
-	var/datum/tgui/ui = new(user, alarm, "AirAlarm")
-	ui.set_state(console.generate_state(alarm))
-	LAZYADD(alarm.open_tguis, ui)
-	var/status = ui.state().can_use_topic(alarm, user)
-	if(status == STATUS_INTERACTIVE)
-		hc_ui(user, alarm, action, args)
-	LAZYREMOVE(alarm.open_tguis, ui)
-	console.ui_ref = null
-	qdel(ui)
-	qdel(console_ui)
-	return status == STATUS_INTERACTIVE
+	var/datum/air_alarm_remote/panel = new(console, alarm)
+	. = hc_ui(user, panel, action, args)
+	qdel(panel)
 
 /// A remote atmospherics console's module, with `access` as its own req_one_access (the console's access).
 /proc/am_remote_console(list/access)
@@ -440,7 +429,7 @@
 /datum/unit_test/dq_atmos_m/alarm_threshold_edit/run_gate()
 	var/obj/machinery/alarm/A = alarm()
 	var/obj/machinery/alarm/B = alarm(dx = 3, dy = 3, main = FALSE)
-	var/obj/machinery/alarm/other = allocate(/obj/machinery/alarm, null) // in nullspace: no area, its own table
+	var/obj/machinery/alarm/other = new(null) // in nullspace: no area, its own table
 	var/mob/living/carbon/human/H = person()
 	am_alarm_set_locked(A, FALSE)
 	var/list/before = am_alarm_tlv(A, "pressure")
@@ -448,10 +437,9 @@
 	TEST_ASSERT_EQUAL(json_encode(am_alarm_tlv(A, "pressure")), json_encode(before), "nothing changes before the answer")
 	am_answer(H, 200)
 	TEST_ASSERT_EQUAL(json_encode(am_alarm_tlv(A, "pressure")), json_encode(list(200, 200, 200, 200)), "a red minimum above the rest raises the rest")
-	var/list/b_expected = before.Copy()
-	b_expected[1] = 200
-	TEST_ASSERT_EQUAL(json_encode(am_alarm_tlv(B, "pressure")), json_encode(b_expected), "every alarm of the area takes the edited value (only that one)")
-	TEST_ASSERT_EQUAL(json_encode(am_alarm_tlv(other, "pressure")), json_encode(b_expected), "BUG: the edit leaks into the shared table every new alarm of the type starts from")
+	TEST_ASSERT_EQUAL(json_encode(am_alarm_tlv(B, "pressure")), json_encode(list(200, 200, 200, 200)), "every alarm of the area takes the edited band")
+	TEST_ASSERT_EQUAL(json_encode(am_alarm_tlv(other, "pressure")), json_encode(before), "another alarm's table is untouched")
+	qdel(other)
 	am_press(H, A, "threshold", list("env" = GAS_CO2, "var" = 4))
 	am_answer(H, -5)
 	var/list/co2 = am_alarm_tlv(A, GAS_CO2)
@@ -574,16 +562,15 @@
 	am_set_air(T)
 	dq_atmos_test_restore_walls()
 
-/// BUG: the Sif wilderness alarm's oxygen band is written under "oxygen", which no reading uses: its oxygen is judged by the station's band,
-/// so 18 kPa of oxygen (fine for Sif) reads yellow.
+/// The Sif wilderness alarm judges oxygen by its own band: 18 kPa of oxygen (fine for Sif) reads safe.
 /datum/unit_test/dq_atmos_m/alarm_sif_oxygen_band
 /datum/unit_test/dq_atmos_m/alarm_sif_oxygen_band/run_gate()
 	var/turf/T = tile(1, 1)
 	am_set_air(T, 18, 83)
 	var/obj/machinery/alarm/sifwilderness/A = alarm(/obj/machinery/alarm/sifwilderness)
 	am_alarm_tick(A)
-	TEST_ASSERT_EQUAL(A.danger_level, 1, "BUG: Sif's own oxygen band is not read")
-	TEST_ASSERT_EQUAL(json_encode(am_alarm_tlv(A, GAS_O2)), json_encode(list(16, 19, 135, 140)), "BUG: the station's oxygen band applies")
+	TEST_ASSERT_EQUAL(A.danger_level, 0, "Sif's own oxygen band is read")
+	TEST_ASSERT_EQUAL(json_encode(am_alarm_tlv(A, GAS_O2)), json_encode(list(16, 17, 135, 140)), "Sif's oxygen band applies")
 	am_set_air(T)
 
 /// The area elects one main alarm; when it goes another one takes over.

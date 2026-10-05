@@ -4105,7 +4105,7 @@
 	dir = 4
 	},
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
@@ -5418,7 +5418,7 @@
 "cvL" = (
 /obj/machinery/alarm/monitor{
 	dir = 8;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = 23;
 	req_access = null
 	},
@@ -5640,7 +5640,7 @@
 	dir = 1
 	},
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
@@ -7133,7 +7133,7 @@
 "dJh" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -7525,7 +7525,7 @@
 	},
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -7690,7 +7690,7 @@
 	},
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -8486,7 +8486,7 @@
 "eza" = (
 /obj/machinery/alarm/monitor{
 	dir = 1;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = -23;
 	req_access = null
 	},
@@ -12863,7 +12863,7 @@
 "hDw" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -16296,7 +16296,7 @@
 	},
 /obj/machinery/alarm/monitor{
 	dir = 8;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = 23;
 	req_access = null
 	},
@@ -18448,7 +18448,7 @@
 "lCq" = (
 /obj/machinery/alarm/monitor{
 	dir = 8;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = 23;
 	req_access = null
 	},
@@ -19224,7 +19224,7 @@
 /obj/machinery/light/small,
 /obj/machinery/alarm/monitor{
 	dir = 1;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = -23;
 	req_access = null
 	},
@@ -23006,7 +23006,7 @@
 /obj/machinery/light/small,
 /obj/machinery/alarm/monitor{
 	dir = 1;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = -23;
 	req_access = null
 	},
@@ -23177,7 +23177,7 @@
 "oNd" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -26810,7 +26810,7 @@
 "qjZ" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -34482,7 +34482,7 @@
 /area/survivalpod/superpose/FieldLab)
 "woT" = (
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
@@ -35718,7 +35718,7 @@
 "xdd" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},

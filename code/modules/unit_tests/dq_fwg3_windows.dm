@@ -121,12 +121,12 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = person(T)
 	var/obj/machinery/alarm/A = allocate(/obj/machinery/alarm, T)
-	A.set_locked(TRUE)
+	cap_key_set(A, LOCK_LOCKED, TRUE, null)
 	var/start = A.mode
 	var/other = start == 1 ? 2 : 1 // scrubbing (1) or replacement (2), the alarm file's own defines
 	hc_ui(H, A, "mode", list("mode" = other))
 	TEST_ASSERT_EQUAL(A.mode, start, "a locked alarm refuses a person's mode change")
-	A.set_locked(FALSE)
+	cap_key_set(A, LOCK_LOCKED, FALSE, null)
 	hc_ui(H, A, "mode", list("mode" = other))
 	TEST_ASSERT_EQUAL(A.mode, other, "unlocked, the mode changes")
 	hc_ui(H, A, "temperature")

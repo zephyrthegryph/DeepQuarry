@@ -47,6 +47,11 @@
 /datum/act/op/proc/window_action()
 	return LAZYACCESS(src.args, OP_UI_WINDOW_ACTION)
 
+/// The datum whose window forwarded the button that reached the op (interface(forwards =): a remote console's panel), or null when the button
+/// was the holder's own window's.
+/datum/act/op/proc/window_forwarder()
+	return LAZYACCESS(src.args, OP_UI_FORWARDED_BY)
+
 /// The answer of the workflow step called `name` (default: the kind's last path segment): the design's A.step("name"), spelled step_answer() because `step` is a DM keyword.
 /datum/act/op/proc/step_answer(name)
 	return LAZYACCESS(step_answers, name)

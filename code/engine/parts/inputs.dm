@@ -204,7 +204,7 @@
 	return fallback
 
 /// A window button: the op with that ui_act() binding runs with origin ORIGIN_UI, its arguments validated by their schemas first.
-/proc/op_ui_act(mob/actor, datum/holder, action, list/payload, forward_depth = 0)
+/proc/op_ui_act(mob/actor, datum/holder, action, list/payload, forward_depth = 0, datum/forwarded_by = null)
 	RETURN_TYPE(/datum/op_result)
 	var/list/found = list()
 	var/datum/op_plan/P = op_plan_by_ui_action(holder, action, found, payload)
@@ -222,6 +222,8 @@
 		TEST_REC_OUTCOME(P.key, ACT_REFUSED, why, actor)
 		return refused
 	values[OP_UI_WINDOW_ACTION] = action // the op reads which action reached it with A.window_action() (a ui_act("*") op answers many)
+	if(forwarded_by)
+		values[OP_UI_FORWARDED_BY] = forwarded_by // A.window_forwarder(): the window that sent the button on (a datum, only for the op's own read)
 	return op_perform_by_key(actor, holder, null, P.key, ORIGIN_UI, actor_authority(actor), FALSE, values)
 
 /// A window action the holder has no op for goes to the datums its interface(forwards = nameof(var)) names (a var holding one datum or a list): the first with
@@ -240,7 +242,7 @@
 	for(var/datum/target as anything in targets)
 		if(QDELETED(target) || target == holder)
 			continue
-		var/datum/op_result/answered = op_ui_act(actor, target, action, payload, forward_depth + 1)
+		var/datum/op_result/answered = op_ui_act(actor, target, action, payload, forward_depth + 1, holder)
 		if(answered)
 			return answered
 	return null

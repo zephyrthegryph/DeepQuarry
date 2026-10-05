@@ -91,3 +91,16 @@ MSG_DEF_SELF(window/silicons_only, "Only a silicon can do that.")
 	if(!istype(holder) || get_dist(holder, user) > 1)
 		return /datum/msg/window/cant_use
 	return null
+
+// ---- a forwarding window that vouches ----
+
+/// The button reached the holder through a window that forwards to it (interface(forwards =)) and vouches for the actor: a remote console's panel of
+/// an air alarm vouches for whoever the console lets in. The lock lets such a button through (req_unlocked_for_actor()).
+/proc/window_vouched(datum/act/op/A)
+	READS_FROM(A)
+	var/datum/forwarder = A?.window_forwarder()
+	return !!forwarder?.window_vouches(A)
+
+/// Does this forwarding window vouch for the actor of `A`? Nothing does by default.
+/datum/proc/window_vouches(datum/act/op/A)
+	return FALSE

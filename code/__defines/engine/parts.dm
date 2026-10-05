@@ -51,6 +51,8 @@
 #define OP_UI_MODAL_OPEN "modal_open"
 #define OP_UI_MODAL_PREFIX "modal:"
 #define OP_UI_WINDOW_ACTION "window_action"
+/// The datum whose window forwarded the button to the op's holder (interface(forwards =)): A.window_forwarder().
+#define OP_UI_FORWARDED_BY "window_forwarded_by"
 /// How many windows deep a window action is forwarded (interface(forwards = ...)).
 #define OP_UI_FORWARD_DEPTH 3
 

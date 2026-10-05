@@ -963,3 +963,32 @@ the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Ea
   (`electrify(duration, source, user)` is now a hold), `lock()`/`unlock()` (the bolts library's `drop_bolts`/`raise_bolts`, through `set_bolted()`).
 * Moved, behaviour intact: the SCP door to `airlock_subtypes.dm`, the cyborg's water reserve and refill verb to `robot.dm`, the cyborg-use rows to
   `atmos_control.dm`, `computer/robot.dm`, `turret_control.dm` and `portable_turret.dm` (its cyborg `isLocked()` branch folded into the turret's own).
+=======
+
+## Atmospherics machines: the air alarm and the remote atmospherics console
+
+Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first), `dq_atmos_tests.dm` and `dq_fwg3_windows.dm`.
+
+* **The Sif wilderness alarm reads its own oxygen band** (16/17 kPa): it was written under "oxygen", a key no reading used, so the station's band
+  (16/19) judged Sif's air.
+* **Each alarm keeps its own thresholds** (its type's `default_TLV()`, copied when it initializes). A threshold edit copies the whole edited band (kept
+  in order) to every alarm of the area; it used to copy only the edited value to the others, and could leak into the type's shared table and so into
+  alarms elsewhere.
+* **The thermostat is a gas-domain heater** (`/datum/gas_heater`): the same 1000 J per service interval, the same quarter-of-the-gap cap, the same
+  cooling coefficient and start/stop gaps. It works the room's air through one read and one write instead of taking a quarter of the air out and
+  merging it back.
+* **The scan wakes on the room's own gas watch** (`gas_watch()`, the named observation fields): a main alarm scans once when the air crosses one of its
+  bands, keeps scanning while the thermostat works, and parks otherwise. The machine pipeline stage, the OM value watch and its `MACHINE_WAKE` are gone.
+* **The lock is the lock library's**: an ID (or PDA) swipe, or an alt-click with the access worn, toggles it while the alarm works and its ID scan wire
+  is intact. Pulsing the ID scan wire opens the lock for 30 seconds (it toggled it); cutting it still locks it. Any other item used on the alarm does
+  nothing (every item ran the old swipe interaction).
+* **The panel, the wires and the cut-out are ops**: the screwdriver waits the tool's two seconds; an empty hand at the open panel opens the wire window
+  (it opened the window and the wires together); the wirecutters at the open panel cut the alarm out as before.
+* **A refused button says why** (a shorted alarm, a cut AI control, a remote console that does not let the user in, a person's lock button) instead of
+  doing nothing in silence. Rcon and the thermostat stay outside the lock; a cut AI control now refuses them to a cyborg too (the AI already had no
+  window).
+* **The remote console works an alarm through its own panel** (`/datum/air_alarm_remote`, a window forwarding to the alarm's buttons): it vouches for
+  whoever the console lets in (`window_vouches()`, read by the lock library), so the custom tgui state, its `qdel(src)` inside `can_use_topic()` and its
+  `isAI()` test are gone. A silicon is let in by its link (`remote_link_allowed()`), as everywhere else. The console itself opens by hand or link and
+  takes the emag through the emag library.
+* **Map edits**: the alarms a map left unlocked (`locked = 0`) say `lock_at_start = 0`.

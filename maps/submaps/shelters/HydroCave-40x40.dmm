@@ -37,7 +37,7 @@
 	},
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -247,7 +247,7 @@
 "hM" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -383,7 +383,7 @@
 	dir = 1
 	},
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
@@ -404,7 +404,7 @@
 /obj/machinery/light/small,
 /obj/machinery/alarm/monitor{
 	dir = 1;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = -23;
 	req_access = null
 	},
@@ -733,7 +733,7 @@
 	},
 /obj/machinery/alarm/monitor{
 	dir = 8;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = 23;
 	req_access = null
 	},
@@ -1075,7 +1075,7 @@
 "EB" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -1569,7 +1569,7 @@
 /obj/machinery/light/small,
 /obj/machinery/alarm/monitor{
 	dir = 1;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = -23;
 	req_access = null
 	},
@@ -1650,7 +1650,7 @@
 /area/survivalpod/superpose/HydroCave)
 "QT" = (
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
