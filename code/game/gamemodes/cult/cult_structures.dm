@@ -153,11 +153,14 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 /obj/effect/gateway/active/cult/cultify()
 	return
 
-/obj/effect/gateway/active/Initialize(mapload)
-	. = ..()
-	after(src, rand(30, 60) SECONDS, PROC_REF(spawn_and_qdel))
+CAPABILITIES(/obj/effect/gateway/active)
+	after_init(PROC_REF(open_delay), then(PROC_REF(spawn_and_qdel)))
 
-/obj/effect/gateway/active/proc/spawn_and_qdel()
+/// An open gateway lets something through after 30 to 60 seconds.
+/obj/effect/gateway/active/proc/open_delay(datum/act/timer/A)
+	return rand(30, 60) SECONDS
+
+/obj/effect/gateway/active/proc/spawn_and_qdel(datum/act/timer/A)
 	if(LAZYLEN(spawnable))
 		var/t = pick(spawnable)
 		new t(get_turf(src))

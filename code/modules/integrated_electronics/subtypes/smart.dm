@@ -48,11 +48,7 @@
 	var/obj/item/card/id/idc
 
 CAPABILITIES(/obj/item/integrated_circuit/smart/advanced_pathfinder)
-	owns_one(nameof(idc), /obj/item/card/id)
-
-/obj/item/integrated_circuit/smart/advanced_pathfinder/Initialize(mapload)
-	.=..()
-	rel_set(src, nameof(idc), new /obj/item/card/id(src))
+	owns_one(nameof(idc), /obj/item/card/id, starts = /obj/item/card/id)
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/do_work()
 	if(!assembly())

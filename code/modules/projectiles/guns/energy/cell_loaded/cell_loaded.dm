@@ -239,6 +239,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing/microbattery, TYPE_PROC_REF(/atom,
 
 // The Pack //
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid
+	starts_with = list(
+		/obj/item/gun/projectile/cell_loaded = 1,
+		/obj/item/ammo_magazine/cell_mag/advanced = 1,
+		/obj/item/ammo_casing/microbattery/combat/stun = 3,
+		/obj/item/ammo_casing/microbattery/combat/net = 2,
+		/obj/item/ammo_casing/microbattery/medical/brute3 = 1,
+		/obj/item/ammo_casing/microbattery/medical/burn3 = 1,
+		/obj/item/ammo_casing/microbattery/medical/stabilize2 = 1,
+		/obj/item/ammo_casing/microbattery/medical/toxin3 = 1,
+		/obj/item/ammo_casing/microbattery/medical/omni3 = 1,
+	)
 	name = "hybrid cell-loaded gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
@@ -250,22 +261,18 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid)
 		/obj/item/ammo_magazine/cell_mag,
 		/obj/item/ammo_casing/microbattery)))
 
-/obj/item/storage/secure/briefcase/nsfw_pack_hybrid/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded(src)
-	new /obj/item/ammo_magazine/cell_mag/advanced(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/net(src)
-	new /obj/item/ammo_casing/microbattery/combat/net(src)
-	new /obj/item/ammo_casing/microbattery/medical/brute3(src)
-	new /obj/item/ammo_casing/microbattery/medical/burn3(src)
-	new /obj/item/ammo_casing/microbattery/medical/stabilize2(src)
-	new /obj/item/ammo_casing/microbattery/medical/toxin3(src)
-	new /obj/item/ammo_casing/microbattery/medical/omni3(src)
-
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat
+	starts_with = list(
+		/obj/item/gun/projectile/cell_loaded = 1,
+		/obj/item/ammo_magazine/cell_mag/advanced = 1,
+		/obj/item/ammo_casing/microbattery/combat/shotstun = 2,
+		/obj/item/ammo_casing/microbattery/combat/lethal = 3,
+		/obj/item/ammo_casing/microbattery/combat/ion = 1,
+		/obj/item/ammo_casing/microbattery/combat/xray = 1,
+		/obj/item/ammo_casing/microbattery/medical/stabilize2 = 1,
+		/obj/item/ammo_casing/microbattery/medical/haste = 1,
+		/obj/item/ammo_casing/microbattery/medical/resist = 1,
+	)
 	name = "military cell-loaded gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
@@ -276,21 +283,6 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat)
 		/obj/item/gun/projectile/cell_loaded,
 		/obj/item/ammo_magazine/cell_mag,
 		/obj/item/ammo_casing/microbattery)))
-
-/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded(src)
-	new /obj/item/ammo_magazine/cell_mag/advanced(src)
-	new /obj/item/ammo_casing/microbattery/combat/shotstun(src)
-	new /obj/item/ammo_casing/microbattery/combat/shotstun(src)
-	new /obj/item/ammo_casing/microbattery/combat/lethal(src)
-	new /obj/item/ammo_casing/microbattery/combat/lethal(src)
-	new /obj/item/ammo_casing/microbattery/combat/lethal(src)
-	new /obj/item/ammo_casing/microbattery/combat/ion(src)
-	new /obj/item/ammo_casing/microbattery/combat/xray(src)
-	new /obj/item/ammo_casing/microbattery/medical/stabilize2(src)
-	new /obj/item/ammo_casing/microbattery/medical/haste(src)
-	new /obj/item/ammo_casing/microbattery/medical/resist(src)
 
 // TGMC Ammo HUD: Custom handling for cell-loaded weaponry.
 /obj/item/gun/projectile/cell_loaded/get_ammo_count()

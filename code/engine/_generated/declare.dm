@@ -4489,15 +4489,15 @@
 	into += entry_line(502)
 	into += list(global.ref_one(nameof(medical_issue), /datum/affliction/custom))
 
-/// CAPABILITIES(/datum/prompt/number/dice_configuration) at code/modules/games/dice.dm:348
+/// CAPABILITIES(/datum/prompt/number/dice_configuration) at code/modules/games/dice.dm:349
 /datum/prompt/number/dice_configuration/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/games/dice.dm", 348, /datum/prompt/number/dice_configuration)
-	into += entry_line(349)
-	into += list(global.ref_one(nameof(dice_operator), /mob))
+	into += entry_block("code/modules/games/dice.dm", 349, /datum/prompt/number/dice_configuration)
 	into += entry_line(350)
-	into += list(global.ref_one(nameof(dice_held), /obj/item))
+	into += list(global.ref_one(nameof(dice_operator), /mob))
 	into += entry_line(351)
+	into += list(global.ref_one(nameof(dice_held), /obj/item))
+	into += entry_line(352)
 	into += list(global.ref_one(nameof(dice_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/number/eftpos_pin) at code/modules/economy/EFTPOS.dm:383
@@ -4518,11 +4518,11 @@
 	into += entry_line(498)
 	into += list(global.ref_one(nameof(eftpos_ui), /datum/tgui))
 
-/// CAPABILITIES(/datum/prompt/number/excavation_depth) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:244
+/// CAPABILITIES(/datum/prompt/number/excavation_depth) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:243
 /datum/prompt/number/excavation_depth/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 244, /datum/prompt/number/excavation_depth)
-	into += entry_line(245)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 243, /datum/prompt/number/excavation_depth)
+	into += entry_line(244)
 	into += list(global.ref_one(nameof(captured_item), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/number/freight_certification) at code/modules/economy/sales_lots.dm:509
@@ -7290,25 +7290,32 @@
 	into += entry_line(9)
 	into += list(global.verb_entry(/mob/living/proc/hide))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/electric/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:176
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:158
+/mob/living/simple_mob/animal/giant_spider/broodling/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 158, /mob/living/simple_mob/animal/giant_spider/broodling)
+	into += entry_line(159)
+	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
+
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/electric/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:175
 /mob/living/simple_mob/animal/giant_spider/electric/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 176, /mob/living/simple_mob/animal/giant_spider/electric/broodling)
-	into += entry_line(177)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 175, /mob/living/simple_mob/animal/giant_spider/electric/broodling)
+	into += entry_line(176)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/frost/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:174
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/frost/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:173
 /mob/living/simple_mob/animal/giant_spider/frost/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 174, /mob/living/simple_mob/animal/giant_spider/frost/broodling)
-	into += entry_line(175)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 173, /mob/living/simple_mob/animal/giant_spider/frost/broodling)
+	into += entry_line(174)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/hunter/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:178
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/hunter/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:177
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 178, /mob/living/simple_mob/animal/giant_spider/hunter/broodling)
-	into += entry_line(179)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 177, /mob/living/simple_mob/animal/giant_spider/hunter/broodling)
+	into += entry_line(178)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lurker) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/lurker.dm:113
@@ -7318,46 +7325,46 @@
 	into += entry_line(114)
 	into += list(global.on_notice(/datum/notice/hit/projectile, global.then(PROC_REF(hit_breaks_cloak))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lurker/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:180
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lurker/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:179
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 180, /mob/living/simple_mob/animal/giant_spider/lurker/broodling)
-	into += entry_line(181)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 179, /mob/living/simple_mob/animal/giant_spider/lurker/broodling)
+	into += entry_line(180)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:182
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:181
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 182, /mob/living/simple_mob/animal/giant_spider/nurse/broodling)
-	into += entry_line(183)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 181, /mob/living/simple_mob/animal/giant_spider/nurse/broodling)
+	into += entry_line(182)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/pepper/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:184
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/pepper/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:183
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 184, /mob/living/simple_mob/animal/giant_spider/pepper/broodling)
-	into += entry_line(185)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 183, /mob/living/simple_mob/animal/giant_spider/pepper/broodling)
+	into += entry_line(184)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/thermic/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:186
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/thermic/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:185
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 186, /mob/living/simple_mob/animal/giant_spider/thermic/broodling)
-	into += entry_line(187)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 185, /mob/living/simple_mob/animal/giant_spider/thermic/broodling)
+	into += entry_line(186)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/tunneler/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:188
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/tunneler/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:187
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 188, /mob/living/simple_mob/animal/giant_spider/tunneler/broodling)
-	into += entry_line(189)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 187, /mob/living/simple_mob/animal/giant_spider/tunneler/broodling)
+	into += entry_line(188)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
-/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/webslinger/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:190
+/// CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/webslinger/broodling) at code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm:189
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 190, /mob/living/simple_mob/animal/giant_spider/webslinger/broodling)
-	into += entry_line(191)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm", 189, /mob/living/simple_mob/animal/giant_spider/webslinger/broodling)
+	into += entry_line(190)
 	into += list(global.after_init(2 MINUTES, global.then(PROC_REF(brood_expire))))
 
 /// CAPABILITIES(/mob/living/simple_mob/animal/goat) at code/modules/mob/living/simple_mob/subtypes/animal/farm animals/goat.dm:28
@@ -8610,7 +8617,7 @@
 	..(into)
 	into += entry_block("code/modules/mob/living/simple_mob/subtypes/bullet_heck/other_attacks.dm", 50, /obj/effect/artillery_attack)
 	into += entry_line(51)
-	into += list(global.after_init(0, global.then(PROC_REF(arm_strike))))
+	into += list(global.after_init(PROC_REF(strike_delay), global.then(PROC_REF(spawner))))
 
 /// CAPABILITIES(/obj/effect/bhole) at code/game/gamemodes/events/black_hole.dm:12
 /obj/effect/bhole/declared_entries(list/into)
@@ -8645,6 +8652,13 @@
 	into += entry_block("code/game/objects/effects/bluespace_spawner.dm", 19, /obj/effect/bspawner)
 	into += entry_line(20)
 	into += list(global.after_init(nameof(time_to_end), global.then(TYPE_PROC_REF(/datum, qdel_self))))
+
+/// CAPABILITIES(/obj/effect/calldown_attack) at code/game/objects/items/falling_object_attack.dm:9
+/obj/effect/calldown_attack/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/falling_object_attack.dm", 9, /obj/effect/calldown_attack)
+	into += entry_line(10)
+	into += list(global.after_init(PROC_REF(strike_delay), global.then(PROC_REF(spawn_object))))
 
 /// CAPABILITIES(/obj/effect/countdown) at code/game/objects/effects/countdown.dm:19
 /obj/effect/countdown/declared_entries(list/into)
@@ -8716,6 +8730,13 @@
 	into += entry_line(97)
 	into += list(global.owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL))
 
+/// CAPABILITIES(/obj/effect/effect/foam/firefighting) at code/game/objects/effects/chem/foam.dm:202
+/obj/effect/effect/foam/firefighting/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/effects/chem/foam.dm", 202, /obj/effect/effect/foam/firefighting)
+	into += entry_line(203)
+	into += list(global.after_init(PROC_REF(foam_lifetime), global.then(PROC_REF(dissolve))))
+
 /// CAPABILITIES(/obj/effect/energy_field) at code/modules/shieldgen/energy_field.dm:66
 /obj/effect/energy_field/declared_entries(list/into)
 	..(into)
@@ -8765,6 +8786,13 @@
 	into += entry_block("code/modules/power/fusion/core/core_field.dm", 48, /obj/effect/fusion_em_field)
 	into += entry_line(49)
 	into += list(global.owns_many(nameof(particle_catchers)))
+
+/// CAPABILITIES(/obj/effect/gateway/active) at code/game/gamemodes/cult/cult_structures.dm:156
+/obj/effect/gateway/active/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/gamemodes/cult/cult_structures.dm", 156, /obj/effect/gateway/active)
+	into += entry_line(157)
+	into += list(global.after_init(PROC_REF(open_delay), global.then(PROC_REF(spawn_and_qdel))))
 
 /// CAPABILITIES(/obj/effect/map_effect/interval/effect_emitter) at code/game/objects/effects/map_effects/effect_emitter.dm:10
 /obj/effect/map_effect/interval/effect_emitter/declared_entries(list/into)
@@ -10499,19 +10527,86 @@
 	into += entry_line(18)
 	into += list(global.owns_many(nameof(internal_devices)))
 
-/// CAPABILITIES(/obj/item/commcard/engineering) at code/game/objects/items/devices/communicator/cartridge.dm:63
+/// CAPABILITIES(/obj/item/commcard/atmos) at code/game/objects/items/devices/communicator/cartridge.dm:81
+/obj/item/commcard/atmos/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 81, /obj/item/commcard/atmos)
+	into += entry_line(82)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer)))
+
+/// CAPABILITIES(/obj/item/commcard/engineering) at code/game/objects/items/devices/communicator/cartridge.dm:59
 /obj/item/commcard/engineering/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 63, /obj/item/commcard/engineering)
-	into += entry_line(64)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 59, /obj/item/commcard/engineering)
+	into += entry_line(60)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/halogen_counter)))
+	into += entry_line(61)
 	into += list(global.after_init(0, global.then(PROC_REF(find_grid_sensors))))
 
-/// CAPABILITIES(/obj/item/commcard/head/ce) at code/game/objects/items/devices/communicator/cartridge.dm:405
+/// CAPABILITIES(/obj/item/commcard/explorer) at code/game/objects/items/devices/communicator/cartridge.dm:510
+/obj/item/commcard/explorer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 510, /obj/item/commcard/explorer)
+	into += entry_line(511)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/gps/explorer)))
+
+/// CAPABILITIES(/obj/item/commcard/head/captain) at code/game/objects/items/devices/communicator/cartridge.dm:425
+/obj/item/commcard/head/captain/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 425, /obj/item/commcard/head/captain)
+	into += entry_line(426)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/healthanalyzer, /obj/item/reagent_scanner, /obj/item/halogen_counter, /obj/item/assembly/signaler)))
+
+/// CAPABILITIES(/obj/item/commcard/head/ce) at code/game/objects/items/devices/communicator/cartridge.dm:384
 /obj/item/commcard/head/ce/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 405, /obj/item/commcard/head/ce)
-	into += entry_line(406)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 384, /obj/item/commcard/head/ce)
+	into += entry_line(385)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/halogen_counter)))
+	into += entry_line(386)
 	into += list(global.after_init(0, global.then(PROC_REF(find_grid_sensors))))
+
+/// CAPABILITIES(/obj/item/commcard/head/cmo) at code/game/objects/items/devices/communicator/cartridge.dm:363
+/obj/item/commcard/head/cmo/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 363, /obj/item/commcard/head/cmo)
+	into += entry_line(364)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/reagent_scanner, /obj/item/halogen_counter)))
+
+/// CAPABILITIES(/obj/item/commcard/head/rd) at code/game/objects/items/devices/communicator/cartridge.dm:341
+/obj/item/commcard/head/rd/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 341, /obj/item/commcard/head/rd)
+	into += entry_line(342)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/reagent_scanner, /obj/item/assembly/signaler)))
+
+/// CAPABILITIES(/obj/item/commcard/medical) at code/game/objects/items/devices/communicator/cartridge.dm:94
+/obj/item/commcard/medical/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 94, /obj/item/commcard/medical)
+	into += entry_line(95)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/halogen_counter)))
+
+/// CAPABILITIES(/obj/item/commcard/medical/chemistry) at code/game/objects/items/devices/communicator/cartridge.dm:111
+/obj/item/commcard/medical/chemistry/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 111, /obj/item/commcard/medical/chemistry)
+	into += entry_line(112)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/halogen_counter, /obj/item/reagent_scanner)))
+
+/// CAPABILITIES(/obj/item/commcard/signal) at code/game/objects/items/devices/communicator/cartridge.dm:179
+/obj/item/commcard/signal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 179, /obj/item/commcard/signal)
+	into += entry_line(180)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/assembly/signaler)))
+
+/// CAPABILITIES(/obj/item/commcard/signal/science) at code/game/objects/items/devices/communicator/cartridge.dm:200
+/obj/item/commcard/signal/science/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/communicator/cartridge.dm", 200, /obj/item/commcard/signal/science)
+	into += entry_line(201)
+	into += list(global.owns_many(nameof(internal_devices), starts = list(/obj/item/assembly/signaler, /obj/item/reagent_scanner, /obj/item/analyzer)))
 
 /// CAPABILITIES(/obj/item/communicator) at code/game/objects/items/devices/communicator/UI_tgui.dm:12
 /obj/item/communicator/declared_entries(list/into)
@@ -10856,11 +10951,11 @@
 	into += entry_line(124)
 	into += list(global.op("colour", global.menu(), global.label("Choose Colour"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/color/floor_painter, fields = list("timeout" = 0), keeps = 0, step = "colour"), global.then(PROC_REF(colour_chosen))))
 
-/// CAPABILITIES(/obj/item/fluff/dragor_dot) at code/modules/vore/fluffstuff/custom_items.dm:787
+/// CAPABILITIES(/obj/item/fluff/dragor_dot) at code/modules/vore/fluffstuff/custom_items.dm:786
 /obj/item/fluff/dragor_dot/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 787, /obj/item/fluff/dragor_dot)
-	into += entry_line(788)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 786, /obj/item/fluff/dragor_dot)
+	into += entry_line(787)
 	into += list(global.op("dragor_dot_self", global.in_hand(), global.then(PROC_REF(dragor_dot_self))))
 
 /// CAPABILITIES(/obj/item/form_printer) at code/modules/mob/living/silicon/robot/robot_items.dm:216
@@ -11563,7 +11658,7 @@
 	..(into)
 	into += entry_block("code/modules/integrated_electronics/subtypes/smart.dm", 50, /obj/item/integrated_circuit/smart/advanced_pathfinder)
 	into += entry_line(51)
-	into += list(global.owns_one(nameof(idc), /obj/item/card/id))
+	into += list(global.owns_one(nameof(idc), /obj/item/card/id, starts = /obj/item/card/id))
 
 /// CAPABILITIES(/obj/item/integrated_electronics/detailer) at code/modules/integrated_electronics/core/detailer.dm:53
 /obj/item/integrated_electronics/detailer/declared_entries(list/into)
@@ -11870,11 +11965,11 @@
 	into += entry_line(251)
 	into += list(global.op("cattleprod_interaction_item", global.item(/obj/item), global.then(PROC_REF(cattleprod_interaction_item))))
 
-/// CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:984
+/// CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:983
 /obj/item/melee/baton/fluff/stunstaff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 984, /obj/item/melee/baton/fluff/stunstaff)
-	into += entry_line(985)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 983, /obj/item/melee/baton/fluff/stunstaff)
+	into += entry_line(984)
 	into += list(global.owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon))
 
 /// CAPABILITIES(/obj/item/melee/baton/loaded) at code/game/objects/items/weapons/stunbaton.dm:75
@@ -11909,11 +12004,11 @@
 	into += entry_line(469)
 	into += list(global.op("dismiss", global.in_hand(), global.label("Dismiss energy blade"), global.then(PROC_REF(blade_dismiss_requested))))
 
-/// CAPABILITIES(/obj/item/melee/fluffstuff) at code/modules/vore/fluffstuff/custom_items.dm:1102
+/// CAPABILITIES(/obj/item/melee/fluffstuff) at code/modules/vore/fluffstuff/custom_items.dm:1100
 /obj/item/melee/fluffstuff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1102, /obj/item/melee/fluffstuff)
-	into += entry_line(1103)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1100, /obj/item/melee/fluffstuff)
+	into += entry_line(1101)
 	into += list(global.op("fluffstuff_toggle_self", global.in_hand(), global.label("Toggle"), global.then(PROC_REF(fluffstuff_toggle_self))))
 
 /// CAPABILITIES(/obj/item/melee/robotic/baton) at code/modules/projectiles/guns/energy/cyborg.dm:471
@@ -12441,11 +12536,11 @@
 	into += entry_line(21)
 	into += list(global.op("fire", global.in_hand(), global.wait(0), global.needs(global.req(PROC_REF(can_fire), because = MSG(petrifier/beeps))), global.then(PROC_REF(fired))))
 
-/// CAPABILITIES(/obj/item/pickaxe/excavationdrill) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:168
+/// CAPABILITIES(/obj/item/pickaxe/excavationdrill) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:167
 /obj/item/pickaxe/excavationdrill/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 168, /obj/item/pickaxe/excavationdrill)
-	into += entry_line(169)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 167, /obj/item/pickaxe/excavationdrill)
+	into += entry_line(168)
 	into += list(global.op("depth", global.in_hand(), global.label("Set excavation depth"), global.then(PROC_REF(depth_used))))
 
 /// CAPABILITIES(/obj/item/pinpointer) at code/game/gamemodes/nuclear/pinpointer.dm:23
@@ -12657,15 +12752,15 @@
 	into += entry_line(177)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell))
 
-/// CAPABILITIES(/obj/item/reagent_containers/blood) at code/modules/reagents/reagent_containers/blood_pack.dm:65
+/// CAPABILITIES(/obj/item/reagent_containers/blood) at code/modules/reagents/reagent_containers/blood_pack.dm:58
 /obj/item/reagent_containers/blood/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/blood_pack.dm", 65, /obj/item/reagent_containers/blood)
-	into += entry_line(66)
+	into += entry_block("code/modules/reagents/reagent_containers/blood_pack.dm", 58, /obj/item/reagent_containers/blood)
+	into += entry_line(59)
 	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, sealed = TRUE, settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
-	into += entry_line(73)
+	into += entry_line(66)
 	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.label("Label it"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
-	into += entry_line(75)
+	into += entry_line(68)
 	into += list(global.op("drink", global.in_hand(), global.stance(I_HURT), global.label("Drink"), global.then(PROC_REF(drunk))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/borghypo) at code/modules/reagents/reagent_containers/borghypo.dm:142
@@ -13423,11 +13518,11 @@
 	into += entry_line(45)
 	into += list(global.op("merge_sample", global.item(/obj/item/sample), global.label("Combine evidence"), global.when(global.req(PROC_REF(matching_sample))), global.needs(global.req(PROC_REF(sample_releasable), because = PROC_REF(sample_release_refusal))), global.then(PROC_REF(sample_merged))))
 
-/// CAPABILITIES(/obj/item/scepter) at code/game/gamemodes/technomancer/equipment.dm:192
+/// CAPABILITIES(/obj/item/scepter) at code/game/gamemodes/technomancer/equipment.dm:191
 /obj/item/scepter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/gamemodes/technomancer/equipment.dm", 192, /obj/item/scepter)
-	into += entry_line(193)
+	into += entry_block("code/game/gamemodes/technomancer/equipment.dm", 191, /obj/item/scepter)
+	into += entry_line(192)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/secbot_assembly) at code/modules/mob/living/bot/secbot.dm:453
@@ -13807,11 +13902,11 @@
 	into += entry_line(193)
 	into += list(global.op("tilt", global.menu(), global.label("Adjust Duffelbag Angle"), global.needs(global.carried(), global.req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), global.then(PROC_REF(dufflebag_tilt_effect))))
 
-/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1059
+/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1061
 /obj/item/storage/backpack/fluff/stunstaff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1059, /obj/item/storage/backpack/fluff/stunstaff)
-	into += entry_line(1060)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1061, /obj/item/storage/backpack/fluff/stunstaff)
+	into += entry_line(1062)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE)))
 
 /// CAPABILITIES(/obj/item/storage/backpack/holding) at code/game/objects/items/weapons/storage/backpack.dm:94
@@ -14199,11 +14294,11 @@
 	into += entry_line(44)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut))))
 
-/// CAPABILITIES(/obj/item/storage/box/dosimeter) at code/modules/clothing/accessories/badges.dm:417
+/// CAPABILITIES(/obj/item/storage/box/dosimeter) at code/modules/clothing/accessories/badges.dm:422
 /obj/item/storage/box/dosimeter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/badges.dm", 417, /obj/item/storage/box/dosimeter)
-	into += entry_line(418)
+	into += entry_block("code/modules/clothing/accessories/badges.dm", 422, /obj/item/storage/box/dosimeter)
+	into += entry_line(423)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film))))
 
 /// CAPABILITIES(/obj/item/storage/box/evidence) at code/modules/detectivework/tools/storage.dm:23
@@ -14220,18 +14315,18 @@
 	into += entry_line(40)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/sample/print))))
 
-/// CAPABILITIES(/obj/item/storage/box/fluff/penelope) at code/modules/vore/fluffstuff/custom_boxes.dm:181
+/// CAPABILITIES(/obj/item/storage/box/fluff/penelope) at code/modules/vore/fluffstuff/custom_boxes.dm:178
 /obj/item/storage/box/fluff/penelope/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_boxes.dm", 181, /obj/item/storage/box/fluff/penelope)
-	into += entry_line(182)
+	into += entry_block("code/modules/vore/fluffstuff/custom_boxes.dm", 178, /obj/item/storage/box/fluff/penelope)
+	into += entry_line(179)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/clothing/under/swimsuit/), max_size = ITEMSIZE_NORMAL)))
 
-/// CAPABILITIES(/obj/item/storage/box/fluff/swimsuit) at code/modules/vore/fluffstuff/custom_boxes.dm:251
+/// CAPABILITIES(/obj/item/storage/box/fluff/swimsuit) at code/modules/vore/fluffstuff/custom_boxes.dm:248
 /obj/item/storage/box/fluff/swimsuit/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_boxes.dm", 251, /obj/item/storage/box/fluff/swimsuit)
-	into += entry_line(252)
+	into += entry_block("code/modules/vore/fluffstuff/custom_boxes.dm", 248, /obj/item/storage/box/fluff/swimsuit)
+	into += entry_line(249)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/clothing/under/swimsuit/), max_size = ITEMSIZE_NORMAL)))
 
 /// CAPABILITIES(/obj/item/storage/box/freezer) at code/game/objects/items/weapons/storage/boxes.dm:537
@@ -14276,11 +14371,11 @@
 	into += entry_line(8017)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake))))
 
-/// CAPABILITIES(/obj/item/storage/box/khcrystal) at code/modules/vore/fluffstuff/custom_items.dm:653
+/// CAPABILITIES(/obj/item/storage/box/khcrystal) at code/modules/vore/fluffstuff/custom_items.dm:657
 /obj/item/storage/box/khcrystal/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 653, /obj/item/storage/box/khcrystal)
-	into += entry_line(654)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 657, /obj/item/storage/box/khcrystal)
+	into += entry_line(658)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal))))
 
 /// CAPABILITIES(/obj/item/storage/box/lights) at code/game/objects/items/weapons/storage/boxes.dm:499
@@ -14446,24 +14541,24 @@
 	into += entry_line(284)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/inflatable))))
 
-/// CAPABILITIES(/obj/item/storage/dicecup) at code/modules/games/dice.dm:237
+/// CAPABILITIES(/obj/item/storage/dicecup) at code/modules/games/dice.dm:238
 /obj/item/storage/dicecup/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/games/dice.dm", 237, /obj/item/storage/dicecup)
-	into += entry_line(238)
-	into += list(global.configure(global.storage(accepts = list(/obj/item/dice))))
+	into += entry_block("code/modules/games/dice.dm", 238, /obj/item/storage/dicecup)
 	into += entry_line(239)
-	into += list(global.op("interaction_shake", global.in_hand(), global.label("Shake"), global.then(PROC_REF(interaction_shake))))
+	into += list(global.configure(global.storage(accepts = list(/obj/item/dice))))
 	into += entry_line(240)
-	into += list(global.op("dicecup_verb_peek", global.menu(), global.label("Peek at Dice"), global.needs(global.carried()), global.then(PROC_REF(dicecup_verb_peek))))
+	into += list(global.op("interaction_shake", global.in_hand(), global.label("Shake"), global.then(PROC_REF(interaction_shake))))
 	into += entry_line(241)
+	into += list(global.op("dicecup_verb_peek", global.menu(), global.label("Peek at Dice"), global.needs(global.carried()), global.then(PROC_REF(dicecup_verb_peek))))
+	into += entry_line(242)
 	into += list(global.op("dicecup_verb_reveal", global.menu(), global.label("Reveal Dice"), global.needs(global.carried()), global.then(PROC_REF(dicecup_verb_reveal))))
 
-/// CAPABILITIES(/obj/item/storage/excavation) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:122
+/// CAPABILITIES(/obj/item/storage/excavation) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:131
 /obj/item/storage/excavation/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 122, /obj/item/storage/excavation)
-	into += entry_line(123)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 131, /obj/item/storage/excavation)
+	into += entry_line(132)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/pickaxe/brush, /obj/item/pickaxe/one_pick, /obj/item/pickaxe/two_pick, /obj/item/pickaxe/three_pick, /obj/item/pickaxe/four_pick, /obj/item/pickaxe/five_pick, /obj/item/pickaxe/six_pick, /obj/item/pickaxe/hand))))
 
 /// CAPABILITIES(/obj/item/storage/fancy/blackcandle_box) at code/game/objects/items/weapons/storage/fancy.dm:147
@@ -14515,11 +14610,11 @@
 	into += entry_line(65)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/egg, /obj/item/reagent_containers/food/snacks/boiledegg))))
 
-/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1362
+/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1360
 /obj/item/storage/fancy/fluff/charlotte/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1362, /obj/item/storage/fancy/fluff/charlotte)
-	into += entry_line(1363)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1360, /obj/item/storage/fancy/fluff/charlotte)
+	into += entry_line(1361)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt))))
 
 /// CAPABILITIES(/obj/item/storage/fancy/heartbox) at code/game/objects/items/weapons/storage/fancy.dm:572
@@ -14823,18 +14918,18 @@
 	into += entry_line(343)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver))))
 
-/// CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_cmo) at code/modules/projectiles/guns/energy/cell_loaded/nerd.dm:75
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_cmo) at code/modules/projectiles/guns/energy/cell_loaded/nerd.dm:83
 /obj/item/storage/secure/briefcase/nerd_pack_cmo/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nerd.dm", 75, /obj/item/storage/secure/briefcase/nerd_pack_cmo)
-	into += entry_line(76)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nerd.dm", 83, /obj/item/storage/secure/briefcase/nerd_pack_cmo)
+	into += entry_line(84)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded/medical, /obj/item/ammo_magazine/cell_mag/medical, /obj/item/ammo_casing/microbattery/medical))))
 
-/// CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_med) at code/modules/projectiles/guns/energy/cell_loaded/nerd.dm:54
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_med) at code/modules/projectiles/guns/energy/cell_loaded/nerd.dm:61
 /obj/item/storage/secure/briefcase/nerd_pack_med/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nerd.dm", 54, /obj/item/storage/secure/briefcase/nerd_pack_med)
-	into += entry_line(55)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nerd.dm", 61, /obj/item/storage/secure/briefcase/nerd_pack_med)
+	into += entry_line(62)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded/medical, /obj/item/ammo_magazine/cell_mag/medical, /obj/item/ammo_casing/microbattery/medical))))
 
 /// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack) at code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm:50
@@ -14844,25 +14939,25 @@
 	into += entry_line(51)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded/combat, /obj/item/ammo_magazine/cell_mag/combat, /obj/item/ammo_casing/microbattery/combat))))
 
-/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hos) at code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm:69
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hos) at code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm:77
 /obj/item/storage/secure/briefcase/nsfw_pack_hos/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm", 69, /obj/item/storage/secure/briefcase/nsfw_pack_hos)
-	into += entry_line(70)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm", 77, /obj/item/storage/secure/briefcase/nsfw_pack_hos)
+	into += entry_line(78)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded/combat, /obj/item/ammo_magazine/cell_mag/combat, /obj/item/ammo_casing/microbattery/combat))))
 
-/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid) at code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm:247
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid) at code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm:258
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm", 247, /obj/item/storage/secure/briefcase/nsfw_pack_hybrid)
-	into += entry_line(248)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm", 258, /obj/item/storage/secure/briefcase/nsfw_pack_hybrid)
+	into += entry_line(259)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded, /obj/item/ammo_magazine/cell_mag, /obj/item/ammo_casing/microbattery))))
 
-/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat) at code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm:274
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat) at code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm:281
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm", 274, /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat)
-	into += entry_line(275)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm", 281, /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat)
+	into += entry_line(282)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded, /obj/item/ammo_magazine/cell_mag, /obj/item/ammo_casing/microbattery))))
 
 /// CAPABILITIES(/obj/item/storage/secure/safe) at code/game/objects/items/weapons/storage/secure.dm:216

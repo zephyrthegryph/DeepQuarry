@@ -6,6 +6,8 @@
 //		after_init(2 SECONDS, then(PROC_REF(check_empty)))         // an after() armed when the instance initializes
 //	CAPABILITIES(/obj/structure/timer_door)
 //		after_init(nameof(time_til_open), then(PROC_REF(open_up)))  // the delay read per instance from a holder var
+//	CAPABILITIES(/obj/effect/gateway/active)
+//		after_init(PROC_REF(open_delay), then(PROC_REF(spawn_and_qdel)))  // or asked of a holder proc when it is armed
 //
 // It is not a separate mechanism: it is an after() on the holder (its own clock, dropped with it, paused in stasis), armed once when the
 // instance's init is complete. That moment is the end of its Initialize() (the type's own code after ..() has run) for an instance made at
@@ -16,7 +18,8 @@
 // came from a capability's entries(). An enclosing when() gates it once, when it is due. A subtype inherits its parent's after_init() entries; to
 // change what one does, override the handler proc (calling ..() keeps the parent's part).
 
-/// after_init(delay, parts...): `delay` is deciseconds, or nameof() a holder var read per instance when it is armed.
+/// after_init(delay, parts...): `delay` is deciseconds, nameof() a holder var read per instance when it is armed, or PROC_REF(x) of a holder
+/// proc x(datum/act/timer/A) answering it then (a random wait).
 /proc/after_init(delay, p1, p2, p3, p4)
 	if(!(istext(delay) && length(delay)) && (!isnum(delay) || delay < 0))
 		declare_report("after_init(): the delay must be a number of deciseconds (0 or more) or nameof() a holder var, got [isnull(delay) ? "null" : "[delay]"]")
@@ -44,7 +47,7 @@
 		var/datum/entry/E = C.item
 		var/delay = E.args["delay"]
 		if(istext(delay))
-			delay = holder.vars[delay]
+			delay = (delay in holder.vars) ? holder.vars[delay] : call(holder, delay)(null) // nameof(var), or PROC_REF(x) answering it
 		if(!isnum(delay) || delay <= 0)
 			after_init_fire(holder, C, mapload)
 		else

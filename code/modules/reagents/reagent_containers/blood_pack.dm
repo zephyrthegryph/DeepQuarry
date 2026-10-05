@@ -1,17 +1,10 @@
 /obj/item/storage/box/bloodpacks
+	starts_with = list(
+		/obj/item/reagent_containers/blood/empty = 7,
+	)
 	name = "blood packs bags"
 	desc = "This box contains blood packs."
 	icon_state = "sterile"
-
-/obj/item/storage/box/bloodpacks/Initialize(mapload)
-		. = ..()
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
 
 /obj/item/reagent_containers/blood
 	name = "IV pack"

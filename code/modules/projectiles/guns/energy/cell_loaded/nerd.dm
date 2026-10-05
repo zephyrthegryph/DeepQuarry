@@ -45,6 +45,13 @@
 
 // The Pack //
 /obj/item/storage/secure/briefcase/nerd_pack_med
+	starts_with = list(
+		/obj/item/gun/projectile/cell_loaded/medical = 1,
+		/obj/item/ammo_magazine/cell_mag/medical = 1,
+		/obj/item/ammo_casing/microbattery/medical/brute = 1,
+		/obj/item/ammo_casing/microbattery/medical/burn = 1,
+		/obj/item/ammo_casing/microbattery/medical/stabilize = 1,
+	)
 	name = "\improper NERD \'Medigun\' kit"
 	desc = "A storage case for a multi-purpose healing gun. Variety hour!"
 	icon_state = "medbriefcase"
@@ -57,15 +64,16 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_med)
 		/obj/item/ammo_magazine/cell_mag/medical,
 		/obj/item/ammo_casing/microbattery/medical)))
 
-/obj/item/storage/secure/briefcase/nerd_pack_med/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded/medical(src)
-	new /obj/item/ammo_magazine/cell_mag/medical(src)
-	new /obj/item/ammo_casing/microbattery/medical/brute(src)
-	new /obj/item/ammo_casing/microbattery/medical/burn(src)
-	new /obj/item/ammo_casing/microbattery/medical/stabilize(src)
-
 /obj/item/storage/secure/briefcase/nerd_pack_cmo
+	starts_with = list(
+		/obj/item/gun/projectile/cell_loaded/medical/cmo = 1,
+		/obj/item/ammo_magazine/cell_mag/medical = 1,
+		/obj/item/ammo_casing/microbattery/medical/brute = 1,
+		/obj/item/ammo_casing/microbattery/medical/burn = 1,
+		/obj/item/ammo_casing/microbattery/medical/stabilize = 1,
+		/obj/item/ammo_casing/microbattery/medical/toxin = 1,
+		/obj/item/ammo_casing/microbattery/medical/omni = 1,
+	)
 	name = "\improper Advanced NERD \'Medigun\' kit"
 	desc = "A storage case for a multi-purpose healing gun. Variety hour!"
 	icon_state = "medbriefcase"
@@ -78,12 +86,3 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_cmo)
 		/obj/item/ammo_magazine/cell_mag/medical,
 		/obj/item/ammo_casing/microbattery/medical)))
 
-/obj/item/storage/secure/briefcase/nerd_pack_cmo/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded/medical/cmo(src)
-	new /obj/item/ammo_magazine/cell_mag/medical(src)
-	new /obj/item/ammo_casing/microbattery/medical/brute(src)
-	new /obj/item/ammo_casing/microbattery/medical/burn(src)
-	new /obj/item/ammo_casing/microbattery/medical/stabilize(src)
-	new /obj/item/ammo_casing/microbattery/medical/toxin(src)
-	new /obj/item/ammo_casing/microbattery/medical/omni(src)
