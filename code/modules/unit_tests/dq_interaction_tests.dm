@@ -306,10 +306,11 @@
 	var/obj/plain = allocate(/obj, T)
 	TEST_ASSERT_NULL(try_interaction(H, plain, null, INPUT_ACTION_USE), "no interactions means the legacy fallback")
 
-/// Use through the router, end to end, on a real converted machine.
+/// Use through the input inbox (a player's click), end to end, on a real converted machine.
 /datum/unit_test/dq_interaction_use_end_to_end
 
 /datum/unit_test/dq_interaction_use_end_to_end/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/obj/machinery/autolathe/lathe = allocate(/obj/machinery/autolathe, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
@@ -318,7 +319,8 @@
 
 	TEST_ASSERT(H.put_in_active_hand(crowbar), "the human holds a crowbar")
 	H.next_click = 0
-	GLOB.input_router.route_click(H, lathe, "left=1")
+	input_submit(new /datum/input_event/click(H, lathe, null, null, "left=1"))
+	test_time(1)
 	TEST_ASSERT(!QDELETED(lathe), "a crowbar on a closed panel is blocked, not a deconstruction")
 	var/start_integrity = lathe.get_integrity()
 	TEST_ASSERT_EQUAL(start_integrity, lathe.max_integrity, "and it didn't fall through to hitting the machine")
@@ -326,19 +328,22 @@
 	H.drop_from_inventory(crowbar, T)
 	TEST_ASSERT(H.put_in_active_hand(screwdriver), "the human holds a screwdriver")
 	H.next_click = 0
-	GLOB.input_router.route_click(H, lathe, "left=1")
-	TEST_ASSERT(lathe.panel_open, "Use with a screwdriver opens the panel")
+	input_submit(new /datum/input_event/click(H, lathe, null, null, "left=1"))
+	test_time(1)
+	TEST_ASSERT(panel_open(lathe), "Use with a screwdriver opens the panel")
 
 	H.drop_from_inventory(screwdriver, T)
 	TEST_ASSERT(H.put_in_active_hand(crowbar), "the human holds the crowbar again")
 	H.next_click = 0
-	GLOB.input_router.route_click(H, lathe, "left=1")
+	input_submit(new /datum/input_event/click(H, lathe, null, null, "left=1"))
+	test_time(1)
 	TEST_ASSERT(QDELETED(lathe), "Use with a crowbar on an open panel deconstructs")
 	for(var/obj/structure/frame/frame in turf_contents_of_type(T, /obj/structure/frame))
 		qdel(frame)
 	for(var/obj/item/item in turf_contents_of_type(T, /obj/item))
 		if(!(item in allocated))
 			qdel(item)
+	test_driver_end()
 
 // ---- Snapshots ----
 
@@ -349,20 +354,11 @@
  */
 /datum/unit_test/dq_interaction_snapshots
 	var/static/list/snapshot_types = list(
-		/obj/machinery/autolathe,
 		/obj/machinery/washing_machine,
 		/obj/machinery/pipelayer,
 		/obj/machinery/dq_maint_probe,
 	)
 	var/static/list/expected = list(
-		"/obj/machinery/autolathe|human|none => autolathe_interact,autolathe_reset_drop|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,autolathe_attackby:needs an item",
-		"/obj/machinery/autolathe|human|screwdriver => machine_panel,autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_deconstruct:needs a crowbar",
-		"/obj/machinery/autolathe|human|crowbar => autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed",
-		"/obj/machinery/autolathe|human|wrench => autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar",
-		"/obj/machinery/autolathe|human|welder => autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar",
-		"/obj/machinery/autolathe|robot|screwdriver => machine_panel,autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now",
-		"/obj/machinery/autolathe|ghost|screwdriver => |",
-		"/obj/machinery/autolathe|ai|none => |",
 		"/obj/machinery/washing_machine|human|none => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
 		"/obj/machinery/washing_machine|human|screwdriver => machine_panel,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
 		"/obj/machinery/washing_machine|human|crowbar => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",

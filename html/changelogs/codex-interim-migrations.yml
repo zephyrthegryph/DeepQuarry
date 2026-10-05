@@ -74,3 +74,8 @@ changes:
   - bugfix: "Changeling stings now resume their effects after target selection and recheck current eligibility before spending chemicals."
   - code_imp: "Cached lion mane appearances while retaining existing colour and sex behavior."
   - bugfix: "Silicon camera album choices now finish viewing and local deletion, and remote photos are refused truthfully."
+  - bugfix: "Silicons can finish printing a selected camera album photo at photocopiers."
+  - bugfix: "Grenade timer configuration uses native requests and safely refuses missing timers."
+  - code_imp: "Migrated glass window construction choices to native requests."
+  - bugfix: "Cancelled helm navigation choices no longer leave orphan waypoint records."
+  - code_imp: "Migrated the ColorMate active colour picker to native requests."

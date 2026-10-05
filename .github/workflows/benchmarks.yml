@@ -37,6 +37,11 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6.0.2
+      - name: Restore analyze build cache (every DM build runs `analyze gen` first)
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/analyze -> target
+          shared-key: analyze-gen
       - name: Restore BYOND from Cache
         uses: ./.github/actions/restore_or_install_byond
       - name: Install 32-bit toolchain deps

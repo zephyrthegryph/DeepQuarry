@@ -221,8 +221,13 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `git cherry-pick`; they discard or move other agents' work.
 - **Production build:** `tools/build/build.sh dm` compiles without `UNIT_TESTS` (CI's Compile Checks job
   runs it). Test-only code (`code/tests/`, `code/modules/unit_tests/`) must stay behind
-  `#if defined(UNIT_TESTS)`; generators do this via `sem::gen::test_only`, and `analyze gen --check`
+  `#if defined(UNIT_TESTS)`; generators do this via `sem::gen::test_only`, and `analyze gen`
   fails on a generated line naming a test-only type outside the guard.
+- **Generated files are build output, not committed.** `code/engine/_generated/`, `code/_generated/reads.dm`
+  and `tgui/packages/tgui/interfaces/generated/` are gitignored; every build target that compiles or lints DM
+  (and `check_ratchets.sh`) runs `analyze gen` first (`tools/build/build.sh gen` by hand). Commit the
+  declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
+  that still tracks them. `deepquarry.dme` and `_unit_tests.dm` merge by union. `doc/rewrite/agent_workflow.md`.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 

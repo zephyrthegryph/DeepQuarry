@@ -685,7 +685,6 @@ dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_pump.dm	
 dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_vat.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/equipment/chemcontainer.dm	chems.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/equipment/pumprelay.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/research/tg/machinery/_production.dm	stripe.color = stripe_color
 dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 3, "#66FFFF")
 dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 5, "#FF9900")
 dx_appearance_side_effect	code/modules/shieldgen/shield_gen.dm	set_light(0)

@@ -502,6 +502,8 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC
 	parts = list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
 
+TRACKED(/obj/item/disk/limb, company)
+
 /obj/item/disk/limb/Initialize(mapload)
 	. = ..()
 	if(company)
@@ -555,6 +557,8 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "datadisk2"
 	var/species = SPECIES_HUMAN
+
+TRACKED(/obj/item/disk/species, species)
 
 /obj/item/disk/species/Initialize(mapload)
 	. = ..()

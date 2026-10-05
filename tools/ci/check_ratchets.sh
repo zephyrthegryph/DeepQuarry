@@ -31,14 +31,20 @@ run_gen gen_capability_varmap_check tools/dx/gen_capability_varmap.py --check
 run_gen gen_capability_varmap_selftest tools/dx/gen_capability_varmap.py --selftest
 run_gen gen_om_notices_check tools/dx/gen_om_notices.py --check
 
+# The generated DM (code/engine/_generated/, code/_generated/reads.dm, the tgui .d.ts) is not committed;
+# every build writes it, and so does this, before the lints that read it. It fails on what still matters:
+# a generator diagnostic (a bad declaration), a test-only type outside the guard, or a generated file
+# missing from deepquarry.dme.
+gen_out="$("$bin" gen 2>&1)"
+gen_rc=$?
+grep -v '^fresh ' <<<"$gen_out" || true
+if [ "$gen_rc" != "0" ]; then
+	failed+=("analyze gen")
+fi
+
 # check_grep has its own entry point (tools/ci/check_grep.sh); it is excluded here as it always was.
 if ! "$bin" check --ci --lint -check_grep "$@"; then
 	failed+=("analyze check")
-fi
-
-# The generated DM under code/engine/_generated/ must match its declarations (analyze gen writes it).
-if ! "$bin" gen --check; then
-	failed+=("analyze gen --check")
 fi
 
 wait
