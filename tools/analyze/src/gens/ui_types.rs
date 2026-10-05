@@ -44,6 +44,7 @@ impl Generator for UiTypes {
         // Entry procs (a global proc returning a list of entries): a CAPABILITIES entry `name()` stands for them.
         let bundles: BTreeMap<String, Vec<String>> = cx.markers(crate::sem::decls::ENTRY_PROC).filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].to_vec()))).collect();
         let mut windows: BTreeMap<String, Window> = BTreeMap::new();
+        let mut empty: Vec<(String, u32, String, String)> = Vec::new();
         for m in cx.markers("CAPABILITIES") {
             let Some(owner) = m.args.first() else { continue };
             let mut window_name: Option<String> = None;
@@ -90,7 +91,9 @@ impl Generator for UiTypes {
                 if forwards {
                     continue;
                 }
-                out.diag(&m.rel, m.line, format!("interface(\"{}\") of {} declares no ui_shape() and no ui_act() op: nothing to type", name, owner));
+                // A subtype that declares an inherited window again (its own tgui state) is typed where the window's buttons are; judged after
+                // every block is read.
+                empty.push((m.rel.clone(), m.line, name, owner.clone()));
                 continue;
             }
             let w = windows.entry(name.clone()).or_insert_with(|| Window { owner: owner.clone(), rel: m.rel.clone(), line: m.line, fields: Vec::new(), acts: Vec::new() });
@@ -120,6 +123,11 @@ impl Generator for UiTypes {
                         }
                     }
                 }
+            }
+        }
+        for (rel, line, name, owner) in empty {
+            if !windows.contains_key(&name) {
+                out.diag(&rel, line, format!("interface(\"{}\") of {} declares no ui_shape() and no ui_act() op: nothing to type", name, owner));
             }
         }
         let mut files = Vec::new();

@@ -16,7 +16,7 @@ CAPABILITIES(/obj/machinery/guarded)
 
 CAPABILITIES(/obj/machinery/checked)
 	interface("Checked")
-	op("go", ui_act("go"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_go)))
+	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
 
 /obj/machinery/checked/proc/ui_gate(datum/act/op/A)
 	var/mob/user = A.actor
@@ -25,4 +25,6 @@ CAPABILITIES(/obj/machinery/checked)
 	return TRUE
 
 /obj/machinery/checked/proc/ui_act_go(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	return TRUE
