@@ -513,6 +513,7 @@
 #include "dq_p2_storage_engine_tests.dm"
 #include "dq_gap_tests.dm"
 #include "dq_fwg3_inputs.dm"
+#include "dq_medical_pods_behaviour.dm"
 #include "dq_fwg3_windows.dm"
 #include "dq_atmos_machines_behaviour.dm"
 #include "dq_atmos_gas_api_tests.dm"
