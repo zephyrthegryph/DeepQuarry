@@ -150,7 +150,7 @@
 			if(!cable)
 				continue
 			var/length_factor = (i == 1 || i == length(run)) ? 0.5 : 1
-			var/temperature = material_service_of(cable)?.temperature || T20C
+			var/temperature = material_service_of(cable)?.temperature() || T20C
 			if(cable.material_for_role(MATERIAL_ROLE_CONDUCTOR)?.critical_temperature)
 				has_superconductors = TRUE
 				edge[MATERIAL_POWER_EDGE_CRITICAL] = TRUE
