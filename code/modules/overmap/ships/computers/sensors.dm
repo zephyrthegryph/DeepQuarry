@@ -139,9 +139,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_range)
 		return
 	open_request(ui, /datum/prompt/number/ship_sensor_range, TYPE_PROC_REF(/datum/tgui, ship_sensor_range_answered), answerer = ui.user, default = sensors().range, displayed_max = world.view)
 
-/obj/machinery/computer/ship/sensors/proc/apply_sensor_range_answer(datum/tgui/ui, datum/tgui_state/state, nrange)
-	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-		return FALSE
+/obj/machinery/computer/ship/sensors/proc/apply_sensor_range_answer(datum/tgui/ui, nrange)
 	if(nrange)
 		sensors().set_range(CLAMP(nrange, 1, world.view))
 	. = TRUE
@@ -302,7 +300,7 @@ DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shu
 	if(!context.answer)
 		return
 	var/obj/machinery/computer/ship/sensors/computer = src_object()
-	if(computer.apply_sensor_range_answer(src, state(), context.answer.answer_value))
+	if(computer.apply_sensor_range_answer(src, context.answer.answer_value))
 		SStgui.update_uis(computer)
 
 /datum/prompt/number/ship_sensor_range
@@ -326,6 +324,8 @@ DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shu
 	var/obj/machinery/computer/ship/sensors/computer = original_ui.src_object()
 	if(!istype(computer) || QDELETED(computer))
 		return "gone"
+	if(computer.tgui_status(original_ui.user, original_ui.state()) != STATUS_INTERACTIVE)
+		return "the sensors console is not interactive"
 	if(original_ui.status != STATUS_INTERACTIVE)
 		return "the original window is not interactive"
 	if(!computer.ui_act_allowed(original_ui.user, "range", original_ui, original_ui.state()))
