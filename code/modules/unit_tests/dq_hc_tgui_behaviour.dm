@@ -403,7 +403,7 @@
 	var/mob/living/carbon/human/H = hct_actor()
 	press(H, M, "status")
 	TEST_ASSERT_NOTEQUAL(M.menu_state, 2, "nothing works before logging in")
-	M.authenticated = 2 // the legacy window has no working login button: its "auth" action has no handler (see intended_changes.md)
+	M.set_login(H, 2)
 	press(H, M, "status")
 	TEST_ASSERT_EQUAL(M.menu_state, 2, "the status screen opens once logged in")
 	press(H, M, "main")
@@ -415,7 +415,7 @@
 	var/mob/living/carbon/human/H = hct_actor()
 	press(H, M, "setmsg1")
 	TEST_ASSERT_NULL(M.stat_msg1, "a line is not asked for before logging in")
-	M.authenticated = 2
+	M.set_login(H, 2)
 	press(H, M, "setmsg1")
 	TEST_ASSERT(p2cl_has_question(H), "line 1 is asked for")
 	p2cl_answer(H, "Hello station")
@@ -437,7 +437,7 @@
 	var/mob/living/carbon/human/H = hct_actor()
 	press(H, M, "callshuttle")
 	TEST_ASSERT(!p2cl_has_question(H), "the shuttle is not offered before logging in")
-	M.authenticated = 2
+	M.set_login(H, 2)
 	press(H, M, "callshuttle")
 	TEST_ASSERT(p2cl_has_question(H), "calling the shuttle is confirmed first")
 	p2cl_answer(H, FALSE)
@@ -455,12 +455,70 @@
 	var/datum/tgui_module/communications/M = hct_comms()
 	var/mob/living/carbon/human/H = hct_actor()
 	press(H, M, "auth")
-	TEST_ASSERT_EQUAL(M.authenticated, 2, "a person with captain access logs in as captain")
+	TEST_ASSERT_EQUAL(M.is_authenticated(H, FALSE), 2, "a person with captain access logs in as captain")
 	press(H, M, "auth")
-	TEST_ASSERT_EQUAL(M.authenticated, 0, "pressing it again logs out")
+	TEST_ASSERT_EQUAL(M.is_authenticated(H, FALSE), 0, "pressing it again logs out")
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, hct_spot())
 	press(R, M, "auth")
-	TEST_ASSERT_EQUAL(M.authenticated, 0, "a cyborg cannot log in")
+	TEST_ASSERT_EQUAL(M.is_authenticated(R, FALSE), 0, "a cyborg cannot log in")
+	press(H, M, "auth")
+	var/mob/living/carbon/human/other = hct_actor()
+	TEST_ASSERT_EQUAL(M.is_authenticated(H, FALSE), 2, "logged in again")
+	TEST_ASSERT_EQUAL(M.is_authenticated(other, FALSE), 0, "a login is the person's own: someone else at the console is not logged in by it")
+	press(other, M, "status")
+	TEST_ASSERT_NOTEQUAL(M.menu_state, 2, "and their buttons do nothing")
+
+/// Deleting a message deletes the one whose button was pressed, even when another is opened while the question is up; the station's own list
+/// (a console's) cannot be deleted from.
+/datum/unit_test/dq_hc_tgui/comms_delete_the_message_pressed
+/datum/unit_test/dq_hc_tgui/comms_delete_the_message_pressed/run_gate()
+	if(!hct_saved_levels)
+		hct_saved_levels = list(using_map.contact_levels)
+		using_map.contact_levels = using_map.contact_levels.Copy() + run_loc_floor_bottom_left.z
+	var/obj/item/modular_computer/laptop/L = allocate(/obj/item/modular_computer/laptop, hct_spot())
+	var/datum/computer_file/program/comm/P = hct_track(new /datum/computer_file/program/comm(L))
+	var/datum/tgui_module/communications/M = hct_track(new /datum/tgui_module/communications(P))
+	var/mob/living/carbon/human/H = hct_actor()
+	P.message_core.messages = list()
+	P.message_core.Add(list("id" = 9001, "title" = "One", "contents" = "first"))
+	P.message_core.Add(list("id" = 9002, "title" = "Two", "contents" = "second"))
+	M.set_login(H, 2)
+	press(H, M, "delmessage", list("msgid" = 9001))
+	TEST_ASSERT(p2cl_has_question(H), "deleting is confirmed first")
+	var/mob/living/carbon/human/other = hct_actor()
+	M.set_login(other, 2)
+	press(other, M, "messagelist", list("msgid" = 9002))
+	p2cl_answer(H, TRUE)
+	test_time(10 SECONDS)
+	TEST_ASSERT(!M.message_by_id(9001), "the message pressed is deleted")
+	TEST_ASSERT(M.message_by_id(9002), "not the one opened while the question was up")
+	var/datum/tgui_module/communications/G = hct_comms()
+	G.set_login(H, 2)
+	var/before = length(GLOB.global_message_listener.messages)
+	press(H, G, "delmessage", list("msgid" = 1))
+	TEST_ASSERT(!p2cl_has_question(H), "a console's station list is not offered for deletion")
+	TEST_ASSERT_EQUAL(length(GLOB.global_message_listener.messages), before, "and keeps its messages")
+
+/// The command console's emag scrambles the routing (the Syndicate line opens); restoring the backup routing from the window undoes it.
+/datum/unit_test/dq_hc_tgui/comms_emag_and_restore
+/datum/unit_test/dq_hc_tgui/comms_emag_and_restore/run_gate()
+	if(!hct_saved_levels)
+		hct_saved_levels = list(using_map.contact_levels)
+		using_map.contact_levels = using_map.contact_levels.Copy() + run_loc_floor_bottom_left.z
+	var/obj/machinery/computer/communications/C = allocate(/obj/machinery/computer/communications, hct_spot())
+	var/datum/tgui_module/communications/M = C.communications
+	var/mob/living/carbon/human/H = hct_actor()
+	TEST_ASSERT(!M.routing_scrambled(), "(the routing starts whole)")
+	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, hct_spot())
+	E.uses = 3
+	H.put_in_active_hand(E)
+	hci_click(H, C, E)
+	test_time(1 SECOND)
+	TEST_ASSERT(M.routing_scrambled(), "the emag scrambles the routing")
+	M.set_login(H, 2)
+	press(H, M, "RestoreBackup")
+	TEST_ASSERT(!M.routing_scrambled(), "restoring the backup routing undoes it")
+	TEST_ASSERT(E.uses == 2, "the emag spent one charge")
 
 // ---- batch 4: admin panels (the windows keep their rights: an admin state, per-action rights where the panel had them) ----
 

@@ -344,6 +344,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/datum/tgui_module/cardmod::ui_gate" = list(0),
 	"/datum/tgui_module/communications::announce_ready" = list(0),
 	"/datum/tgui_module/communications::centcom_ready" = list(0),
+	"/datum/tgui_module/communications::message_deletable" = list(0),
 	"/datum/tgui_module/communications::ui_captain" = list(0),
 	"/datum/tgui_module/communications::ui_captain_emagged" = list(0),
 	"/datum/tgui_module/communications::ui_in_contact" = list(0),
