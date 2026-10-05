@@ -16131,6 +16131,13 @@
 	into += entry_line(40)
 	into += list(global.op("ejectMaterial", global.ui_act("ejectMaterial", global.arg("mat", global.schema_text(4096))), global.then(PROC_REF(ui_act_ejectmaterial))))
 
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump) at code/ATMOSPHERICS/components/binary_devices/dp_vent_pump.dm:212
+/obj/machinery/atmospherics/binary/dp_vent_pump/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/dp_vent_pump.dm", 212, /obj/machinery/atmospherics/binary/dp_vent_pump)
+	into += entry_line(213)
+	into += list(global.examine_line(PROC_REF(gauge_text)))
+
 /// CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate) at code/ATMOSPHERICS/components/binary_devices/passive_gate.dm:161
 /obj/machinery/atmospherics/binary/passive_gate/declared_entries(list/into)
 	..(into)
@@ -16148,40 +16155,40 @@
 	into += entry_line(170)
 	into += list(global.op("set_flow_rate", global.ui_act("set_flow_rate", global.arg("press", global.schema_text(16))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_flow_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = global.computed(PROC_REF(flow_limit)), "timeout" = 0), step = "gate_flow", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_set_flow_rate))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/pump) at code/ATMOSPHERICS/components/binary_devices/pump.dm:177
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/pump) at code/ATMOSPHERICS/components/binary_devices/pump.dm:176
 /obj/machinery/atmospherics/binary/pump/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pump.dm", 177, /obj/machinery/atmospherics/binary/pump)
-	into += entry_line(178)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pump.dm", 176, /obj/machinery/atmospherics/binary/pump)
+	into += entry_line(177)
 	into += list(pipe_device_window("GasPump"))
-	into += entry_line(179)
+	into += entry_line(178)
 	into += list(pipe_device_switch())
-	into += entry_line(180)
+	into += entry_line(179)
 	into += list(pipe_device_max(PROC_REF(max_output_set)))
-	into += entry_line(181)
+	into += entry_line(180)
 	into += list(pipe_device_unwrench())
-	into += entry_line(182)
+	into += entry_line(181)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
-	into += entry_line(184)
+	into += entry_line(183)
 	into += list(global.op("set_press", global.ui_act("set_press", global.arg("press", global.schema_text(4096))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_press_question)), "title" = "Pressure control", "default" = global.computed(PROC_REF(set_press_default)), "max_value" = nameof(max_pressure_setting), "timeout" = 0), step = "k231", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_act_set_press))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump) at code/ATMOSPHERICS/components/binary_devices/volume_pump.dm:218
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump) at code/ATMOSPHERICS/components/binary_devices/volume_pump.dm:217
 /obj/machinery/atmospherics/binary/volume_pump/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/volume_pump.dm", 218, /obj/machinery/atmospherics/binary/volume_pump)
-	into += entry_line(219)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/volume_pump.dm", 217, /obj/machinery/atmospherics/binary/volume_pump)
+	into += entry_line(218)
 	into += list(pipe_device_window("GasPump"))
-	into += entry_line(220)
+	into += entry_line(219)
 	into += list(pipe_device_switch())
-	into += entry_line(221)
+	into += entry_line(220)
 	into += list(pipe_device_max(PROC_REF(max_output_set)))
-	into += entry_line(222)
+	into += entry_line(221)
 	into += list(pipe_device_unwrench())
-	into += entry_line(223)
+	into += entry_line(222)
 	into += list(global.op("overclock", global.tool(TOOL_MULTITOOL), global.label("Toggle pressure limiter"), global.wait(0), global.says(PROC_REF(overclock_message)), global.then(PROC_REF(overclock_toggled))))
-	into += entry_line(224)
+	into += entry_line(223)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
-	into += entry_line(226)
+	into += entry_line(225)
 	into += list(global.op("set_press", global.ui_act("set_press", global.arg("press", global.schema_text(4096))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_press_question)), "title" = "Flow Control", "default" = global.computed(PROC_REF(set_press_default)), "max_value" = nameof(max_transfer_rate), "timeout" = 0), step = "k269", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_act_set_press))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni) at code/ATMOSPHERICS/components/omni_devices/omni_base.dm:30
@@ -16430,6 +16437,10 @@
 	into += list(global.when(nameof(leads_pair), heat_link(HEAT_PORT(1), nameof(partner), nameof(exchange_conductance))))
 	into += entry_line(31)
 	into += list(global.entry_link("/obj/machinery/atmospherics/unary/heat_exchanger::partner", "/obj/machinery/atmospherics/unary/heat_exchanger::partner"))
+	into += entry_line(32)
+	into += list(pipe_device_unwrench())
+	into += entry_line(33)
+	into += list(global.extend("unwrench", global.needs(global.req(PROC_REF(floor_clear), because = MSG(air_device/plating)))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary/heater) at code/ATMOSPHERICS/components/unary/heat_source.dm:5
 /obj/machinery/atmospherics/unary/heater/declared_entries(list/into)

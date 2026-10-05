@@ -1319,3 +1319,9 @@ Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
   `set_use_power`/`Moved` overrides, `step_has_work()`/`arm_wakes()` and the OM_FIELD_VIEW on `node` (now a plain `ref_one` relation);
   `piped()` is its one reader. No unary device is DM-stepped any more.
 - `dq_hc_struct/cryo_cell_is_switched_through_the_window` read the cryo cell's old `on` var; it reads `cooling` (the cryo migration's state).
+
+## Dual-port vent and heat exchanger (rewrite/pipenet-full)
+
+- The dual-port vent's settings are plain `TRACKED` (no CHANGE_MACHINE_SETTINGS bridge: nothing DM-steps it), its look is `draw(look)` (it now
+  reads `operable()` for "off" where it read the area's `powered()`), and its gauge is an `examine_line()`.
+- The heat exchanger's wrench is `pipe_device_unwrench()` with its floor check as a requirement (4 s, as before).
