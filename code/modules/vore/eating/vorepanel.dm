@@ -331,35 +331,7 @@ UI_ACT_PROC(/datum/vore_look, ui_act_move_belly)
 
 UI_ACT(/datum/vore_look, "saveprefs", ui_act_saveprefs)
 UI_ACT_PROC(/datum/vore_look, ui_act_saveprefs)
-	if(isnewplayer(host()))
-		var/choice = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Warning: Saving your vore panel while in the lobby will save it to the CURRENTLY LOADED character slot, and potentially overwrite it. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
-		if(isnull(choice))
-			return
-		if(choice != "Yes, save.")
-			return TRUE
-	else if(host().real_name != host().client.prefs.read_preference(/datum/preference/name/real_name) || (!ishuman(host()) && !issilicon(host())))
-		var/choice = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Warning: Saving your vore panel while playing what is very-likely not your normal character will overwrite whatever character you have loaded in character setup. Maybe this is your 'playing a simple mob' slot, though. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
-		if(isnull(choice))
-			return
-		if(choice != "Yes, save.")
-			return TRUE
-	// Lets check for unsavable bellies...
-	var/list/unsavable_bellies = list()
-	for(var/obj/belly/B in host().vore_organs)
-		if(B.prevent_saving)
-			unsavable_bellies += B.name
-	if(LAZYLEN(unsavable_bellies))
-		var/choice = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Warning: One or more of your vore organs are unsavable. Saving now will save every vore belly except \[[jointext(unsavable_bellies, ", ")]\]. Are you sure you want to save?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
-		if(isnull(choice))
-			return
-		if(choice != "Yes, save.")
-			return TRUE
-	if(!host().save_vore_prefs())
-		tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to save!","Error")
-	else
-		to_chat(ui.user, span_notice(STATION_PREF_NAME + "-specific preferences saved!"))
-		unsaved_changes = FALSE
-	return TRUE
+	return vore_save_preferences_step(ui, list())
 
 UI_ACT(/datum/vore_look, "reloadprefs", ui_act_reloadprefs)
 UI_ACT_PROC(/datum/vore_look, ui_act_reloadprefs)
@@ -1702,6 +1674,72 @@ UI_ACT_PROC(/datum/vore_look, set_spont_belly)
 	// The slot is picked next; picking it applies the preferences.
 	host().load_vore_prefs_from_slot()
 	unsaved_changes = TRUE
+	return TRUE
+
+/// Continue the original save row with scalar answers while rereading current warning conditions.
+/datum/prompt/choice/vore_save_preferences
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/vore_save_preferences/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui))
+		return "gone"
+	var/datum/vore_look/panel = original_ui.src_object()
+	if(!istype(panel) || QDELETED(panel))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "not interactive"
+	if(!panel.ui_act_allowed(original_ui.user, "saveprefs", original_ui, original_ui.state()))
+		return "not allowed"
+	return null
+
+/datum/tgui/proc/vore_save_preferences_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/answers = A.request.captured.Copy()
+	answers[A.request.step_name] = A.answer.answer_value
+	var/datum/vore_look/panel = src_object()
+	if(panel.vore_save_preferences_step(src, answers))
+		SStgui.update_uis(panel)
+
+/datum/vore_look/proc/vore_save_preferences_step(datum/tgui/ui, list/answers)
+	if(isnewplayer(host()))
+		var/choice = answers["a1"]
+		if(isnull(choice))
+			open_request(ui, /datum/prompt/choice/vore_save_preferences, TYPE_PROC_REF(/datum/tgui, vore_save_preferences_answered), answerer = ui.user, step_name = "a1", captured = answers.Copy(), question = "Warning: Saving your vore panel while in the lobby will save it to the CURRENTLY LOADED character slot, and potentially overwrite it. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."), buttons = TRUE)
+		if(isnull(choice))
+			return
+		if(choice != "Yes, save.")
+			return TRUE
+	else if(host().real_name != host().client.prefs.read_preference(/datum/preference/name/real_name) || (!ishuman(host()) && !issilicon(host())))
+		var/choice = answers["a2"]
+		if(isnull(choice))
+			open_request(ui, /datum/prompt/choice/vore_save_preferences, TYPE_PROC_REF(/datum/tgui, vore_save_preferences_answered), answerer = ui.user, step_name = "a2", captured = answers.Copy(), question = "Warning: Saving your vore panel while playing what is very-likely not your normal character will overwrite whatever character you have loaded in character setup. Maybe this is your 'playing a simple mob' slot, though. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."), buttons = TRUE)
+		if(isnull(choice))
+			return
+		if(choice != "Yes, save.")
+			return TRUE
+	// Lets check for unsavable bellies...
+	var/list/unsavable_bellies = list()
+	for(var/obj/belly/B in host().vore_organs)
+		if(B.prevent_saving)
+			unsavable_bellies += B.name
+	if(LAZYLEN(unsavable_bellies))
+		var/choice = answers["a3"]
+		if(isnull(choice))
+			open_request(ui, /datum/prompt/choice/vore_save_preferences, TYPE_PROC_REF(/datum/tgui, vore_save_preferences_answered), answerer = ui.user, step_name = "a3", captured = answers.Copy(), question = "Warning: One or more of your vore organs are unsavable. Saving now will save every vore belly except \[[jointext(unsavable_bellies, ", ")]\]. Are you sure you want to save?", title = "WARNING!", choices = list("No, abort!", "Yes, save."), buttons = TRUE)
+		if(isnull(choice))
+			return
+		if(choice != "Yes, save.")
+			return TRUE
+	if(!host().save_vore_prefs())
+		tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to save!","Error")
+	else
+		to_chat(ui.user, span_notice(STATION_PREF_NAME + "-specific preferences saved!"))
+		unsaved_changes = FALSE
 	return TRUE
 
 #undef STATION_PREF_NAME
