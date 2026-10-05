@@ -7,7 +7,6 @@ dx_raw_delay	code/game/mecha/equipment/weapons/weapons.dm	after(src, fire_cooldo
 dx_raw_delay	code/game/objects/effects/chem/foam.dm	after(src, 3 + metal * 3, PROC_REF(post_spread))
 dx_raw_delay	code/game/objects/effects/chem/foam.dm	after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
 dx_raw_delay	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
-dx_raw_delay	code/game/objects/items/devices/flashlight.dm	after(src, rand(5,15), PROC_REF(do_flicker), with = list(amount, flicker_color, original_color, original_on, OL, ++ticker))
 dx_raw_delay	code/game/objects/structures/crates_lockers/__closets.dm	after(src, 1, TYPE_PROC_REF(/datum, om_qdel_self))
 dx_raw_delay	code/game/objects/structures/electricchair.dm	COOLDOWN_START(src, shock_cooldown, 50)
 dx_raw_delay	code/modules/admin/verbs/smite.dm	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))

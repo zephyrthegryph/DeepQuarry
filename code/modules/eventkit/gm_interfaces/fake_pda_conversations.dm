@@ -5,28 +5,51 @@
 	var/list/fakeJobs //Assoc list of name in names = job
 
 ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identities for use in setting up PDA props", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/choice = verb_ask(user, "choice", args, /datum/om/prompt/choice, message = "What do you wish to do?", title = "Options", choices = list("Add new identity", "Edit existing identity", "Delete existing identity", "Delete holder", "Cancel"))
+	return fake_pdaconvos_stage(user, list())
+
+/datum/admin_verb/fake_pdaconvos/proc/fake_pdaconvos_stage(client/user, list/pda_answers)
+	if(!("choice" in pda_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "choice", question = "What do you wish to do?", title = "Options", choices = list("Add new identity", "Edit existing identity", "Delete existing identity", "Delete holder", "Cancel"))
+		return
+	var/choice = pda_answers["choice"]
 	if(isnull(choice))
 		return
 
 	if(choice == "Delete holder")
-		QDEL_NULL(user.fakeConversations)
+		QDEL_NULL(user.fakeConversations) // ALLOW(ownership): /client is not a datum; its session disposes this directly held conversation model on disconnect
 		return
 	if(choice == "Cancel")
 		return
 
 	if(!user.fakeConversations || !istype(user.fakeConversations, /datum/eventkit/fake_pdaconvos))
-		user.fakeConversations = new /datum/eventkit/fake_pdaconvos
+		user.fakeConversations = new /datum/eventkit/fake_pdaconvos // ALLOW(ownership): /client is not a datum; its session disposes this directly held conversation model on disconnect
 
 	var/datum/eventkit/fake_pdaconvos/FPC = user.fakeConversations
 
 	// Everything is asked before anything changes: each answer re-runs this verb.
 	if(choice == "Add new identity")
-		var/newRef = verb_ask(user, "ref", args, /datum/om/prompt/text, message = "Input unique reference. Duplicates are FORBIDDEN!. Players can't see this.Used to uniquely identify conversations in PDAs")
+		if(!("ref" in pda_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/text/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "ref", question = "Input unique reference. Duplicates are FORBIDDEN!. Players can't see this.Used to uniquely identify conversations in PDAs")
+			return
+		var/newRef = pda_answers["ref"]
 		if(!newRef) return
-		var/new_name = verb_ask(user, "name", args, /datum/om/prompt/text, message = "Input fake name", title = newRef)
+		if(!("name" in pda_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/text/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "name", question = "Input fake name", title = newRef)
+			return
+		var/new_name = pda_answers["name"]
 		if(isnull(new_name)) return
-		var/new_job = verb_ask(user, "job", args, /datum/om/prompt/text, message = "Input fake assignment.", title = newRef)
+		if(!("job" in pda_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/text/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "job", question = "Input fake assignment.", title = newRef)
+			return
+		var/new_job = pda_answers["job"]
 		if(isnull(new_job)) return
 		LAZYADD(FPC.fakeRefs, newRef)
 		FPC.names[newRef] = new_name
@@ -35,25 +58,56 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 		return
 
 	if(choice == "Edit existing identity")
-		var/ref = verb_ask(user, "ref", args, /datum/om/prompt/choice, message = "Pick which identity to edit (details are printed to chat)", title = "identities", choices = FPC.fakeRefs)
+		if(!("ref" in pda_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/choice/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "ref", question = "Pick which identity to edit (details are printed to chat)", title = "identities", choices = FPC.fakeRefs)
+			return
+		var/ref = pda_answers["ref"]
 		if(isnull(ref)) return
-		var/editChoice = verb_ask(user, "edit", args, /datum/om/prompt/choice/alert, message = "You are editing [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]\nWhat do you wish to edit?", title = "Details", choices = list("Name", "Job", "Cancel"))
+		if(!("edit" in pda_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/choice/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "edit", buttons = TRUE, question = "You are editing [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]\nWhat do you wish to edit?", title = "Details", choices = list("Name", "Job", "Cancel"))
+			return
+		var/editChoice = pda_answers["edit"]
 		if(isnull(editChoice)) return
 		if(editChoice == "Name")
-			var/new_name = verb_ask(user, "name", args, /datum/om/prompt/text, message = "Input fake name", title = FPC.names[ref])
+			if(!("name" in pda_answers))
+				if(!user || !user.mob || QDELETED(user.mob))
+					return
+				open_request(src, /datum/prompt/text/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "name", question = "Input fake name", title = FPC.names[ref])
+				return
+			var/new_name = pda_answers["name"]
 			if(isnull(new_name)) return
 			FPC.names[ref] = new_name
 			to_chat(user, span_notice("Current data for [ref] are : Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]"))
 		if(editChoice == "Job")
-			var/new_job = verb_ask(user, "job", args, /datum/om/prompt/text, message = "Input fake name", title = LAZYACCESS(FPC.fakeJobs, ref))
+			if(!("job" in pda_answers))
+				if(!user || !user.mob || QDELETED(user.mob))
+					return
+				open_request(src, /datum/prompt/text/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "job", question = "Input fake name", title = LAZYACCESS(FPC.fakeJobs, ref))
+				return
+			var/new_job = pda_answers["job"]
 			if(isnull(new_job)) return
 			LAZYSET(FPC.fakeJobs, ref, new_job)
 			to_chat(user, span_notice("Current data for [ref] are : Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]"))
 		return
 	if(choice == "Delete existing identity")
-		var/ref = verb_ask(user, "ref", args, /datum/om/prompt/choice, message = "Pick which identity to delete (details are printed to chat)", title = "identities", choices = FPC.fakeRefs)
+		if(!("ref" in pda_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/choice/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "ref", question = "Pick which identity to delete (details are printed to chat)", title = "identities", choices = FPC.fakeRefs)
+			return
+		var/ref = pda_answers["ref"]
 		if(isnull(ref)) return
-		if(verb_ask(user, "sure", args, /datum/om/prompt/choice/alert, message = "You are deleting [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]", title = "are you sure?", choices = list("Yes", "No")) == "Yes")
+		if(!("sure" in pda_answers))
+			if(!user || !user.mob || QDELETED(user.mob))
+				return
+			open_request(src, /datum/prompt/choice/fake_pda_identity, PROC_REF(fake_pdaconvos_answered), answerer = user.mob, pda_answers = pda_answers, pda_key = "sure", buttons = TRUE, question = "You are deleting [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]", title = "are you sure?", choices = list("Yes", "No"))
+			return
+		var/confirmed = pda_answers["sure"]
+		if(confirmed == "Yes")
 			LAZYREMOVE(FPC.fakeRefs, ref)
 			LAZYREMOVE(FPC.fakeJobs, ref)
 			FPC.names -= ref
@@ -139,3 +193,62 @@ Invoked by vv topic "fakepdapropconvo" in code\modules\admin\view_variables\topi
 		return
 
 	open_request(src, /datum/prompt/choice/prop_pda_conversation, PROC_REF(prop_conversation_mode_chosen), answerer = M, buttons = TRUE, title = "TGUI?", question = "Use TGUI or dialogue boxes?", choices = list("TGUI", "Dialogue", "Cancel"))
+
+/datum/prompt/choice/fake_pda_identity
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+	var/list/pda_answers
+	var/pda_key
+
+/datum/prompt/choice/fake_pda_identity/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/fake_pda_identity
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+	var/list/pda_answers
+	var/pda_key
+
+/datum/prompt/text/fake_pda_identity/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/fake_pda_identity/normalize(given)
+	return istext(given) ? given : null
+
+/proc/fake_pda_identity_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/admin_verb/fake_pdaconvos/proc/fake_pdaconvos_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/pda_answers
+	var/pda_key
+	if(istype(A.answer, /datum/prompt/choice/fake_pda_identity))
+		var/datum/prompt/choice/fake_pda_identity/ask_choice = A.answer
+		pda_answers = ask_choice.pda_answers.Copy()
+		pda_key = ask_choice.pda_key
+	else
+		var/datum/prompt/text/fake_pda_identity/ask_text = A.answer
+		pda_answers = ask_text.pda_answers.Copy()
+		pda_key = ask_text.pda_key
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	if(fake_pda_identity_advanced_call(A.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(!admin_can(user, permissions))
+		admin_log_denial(user, "verb:[src.type]", permissions)
+		to_chat(user, span_adminnotice("You lack the permissions to do this."))
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	pda_answers[pda_key] = A.answer.answer_value
+	return fake_pdaconvos_stage(user, pda_answers)

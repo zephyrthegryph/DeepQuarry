@@ -41,20 +41,24 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 			to_chat(user, span_notice("The microscanner activates as you pass it over the ID, copying its access."))
 
 /// Edit or show an agent ID. Re-checked on the answer: still carried by its registered owner.
-/datum/om/prompt/choice/agent_id_mode
+/datum/prompt/choice/agent_id_mode
 	title = "Show or Edit?"
-	message = "Would you like to edit the ID, or show it?"
+	question = "Would you like to edit the ID, or show it?"
+	timeout = 0
+	recheck_on_open = TRUE
 	choices = list("Edit", "Show")
 	buttons = TRUE
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
-/datum/om/prompt/choice/agent_id_mode/valid()
-	var/obj/item/card/id/syndicate/card = subject
+/datum/prompt/choice/agent_id_mode/recheck_extra()
+	var/obj/item/card/id/syndicate/card = owner
 	return card.registered_user() == answerer ? null : "not the owner"
 
-/obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/om/prompt/choice/agent_id_mode/ask)
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+/obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/mob/user = context.request.answerer
+	switch(context.answer.answer_value)
 		if("Edit")
 			agentcard_module.tgui_interact(user)
 		if("Show")
@@ -67,7 +71,7 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	if(!registered_user() && register_user(user))
 		to_chat(user, span_notice("The microscanner marks you as its owner, preventing others from accessing its internals."))
 	if(registered_user() == user)
-		om_ask(user, /datum/om/prompt/choice/agent_id_mode, PROC_REF(edit_or_show_chosen))
+		open_request(src, /datum/prompt/choice/agent_id_mode, PROC_REF(edit_or_show_chosen), answerer = user)
 		return
 
 /obj/item/card/id/syndicate/proc/register_user(mob/user)
