@@ -91,7 +91,7 @@
 	var/before = input?.air ? input.air.total_moles() + moles : moles
 	last_flow_rate = (before > 0 && input?.air) ? (moles / before) * input.air.return_volume() : 0
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate)
 
 /// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or mode changes.
 /obj/machinery/atmospherics/omni/atmos_filter/derived()
@@ -289,7 +289,7 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate, CH
 	P.update = 1
 
 CAPABILITIES(/obj/machinery/atmospherics/omni/atmos_filter)
-	interface("OmniFilter")
+	pipe_device_window("OmniFilter")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("configure", ui_act("configure"), then(PROC_REF(ui_act_configure)))
 	op("set_flow_rate", ui_act("set_flow_rate"), needs(req(PROC_REF(configurable), silent = TRUE)),

@@ -29,6 +29,8 @@ TRACKED(/obj/machinery/atmospherics/omni, configuring)
 
 CAPABILITIES(/obj/machinery/atmospherics/omni)
 	owns_many(nameof(ports), /datum/omni_port)
+	pipe_device_switch()
+	pipe_device_unwrench()
 
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "base")))
 
@@ -78,37 +80,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 /obj/machinery/atmospherics/omni/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	rust_device_dirty()
-
-/obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/omni/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + "unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
-
-/obj/machinery/atmospherics/omni/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/omni_open_ui,
-	)
-	..()
-
-/// Open the omni device's interface: the old `if(..()) return; add_fingerprint(user); tgui_interact(user)`.
-/datum/interaction/machine_hand/omni_open_ui
-	id = "omni_open_ui"
-	name = "Use"
-	effect = /obj/machinery/atmospherics/omni/proc/interaction_open_ui_impl
-
-/obj/machinery/atmospherics/omni/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
 
 /obj/machinery/atmospherics/omni/proc/build_icons()
 	var/core_icon = null
@@ -280,23 +251,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 
 	return null
 
-// Keybinds for EVEEERYTHING
-/obj/machinery/atmospherics/omni/click_ctrl(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(allowed(user))
-		set_use_power(!use_power)
-		wake_for_state_change()
-		update_icon()
-		add_fingerprint(user)
-		if(use_power)
-			set_configuring(0)
-			to_chat(user, span_notice("You toggle the [name] on."))
+/// The switch: running ends configuring, and the Rust group is pushed again.
+/obj/machinery/atmospherics/omni/toggle_power()
+	..()
+	if(use_power)
+		set_configuring(0)
+	wake_for_state_change()
 
-		else
-			to_chat(user, span_notice("You toggle the [name] off."))
-
-	else
-		to_chat(user, span_warning("Access denied."))
+/// An omni device comes off its pipes whether it runs or not (only its gas holds it).
+/obj/machinery/atmospherics/omni/pipe_device_idle(datum/act/A)
+	return TRUE
 
 // Ports are ours; each points back as `master`, and the filter/mixer subtypes hold them again
 // (input, output, atmos_filters, inputs), so the port lets go of its master when deleted.

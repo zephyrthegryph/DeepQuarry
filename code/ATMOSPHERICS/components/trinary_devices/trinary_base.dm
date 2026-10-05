@@ -45,20 +45,6 @@
 /obj/machinery/atmospherics/trinary/hide(i)
 	update_underlays()
 
-/obj/machinery/atmospherics/trinary/wrench_act(mob/user, obj/item/W)
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/trinary/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
-
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/trinary/get_neighbor_nodes_for_init()
 	return list(node1, node2, node3)
@@ -202,22 +188,13 @@
 		node3_connect = dir
 	return list(node1_connect, node2_connect, node3_connect)
 
-/obj/machinery/atmospherics/trinary/click_ctrl(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(allowed(user))
-		set_use_power(!use_power)
-		add_fingerprint(user)
-		if(use_power)
-			to_chat(user, span_notice("You toggle the [name] on."))
-		else
-			to_chat(user, span_notice("You toggle the [name] off."))
-
-	else
-		to_chat(user, span_warning("Access denied."))
-
-
-
 CAPABILITIES(/obj/machinery/atmospherics/trinary)
+	pipe_device_switch()
+	pipe_device_unwrench()
 	owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(air3), on_destroy = ON_DESTROY_PRIVATE_COPY)
+
+/// A filter or a mixer comes off its pipes whether it runs or not (only its gas holds it).
+/obj/machinery/atmospherics/trinary/pipe_device_idle(datum/act/A)
+	return TRUE

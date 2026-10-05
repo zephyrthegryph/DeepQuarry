@@ -3690,13 +3690,13 @@
 	into += entry_line(90)
 	into += list(global.owns_many(nameof(bands), /datum/om_watch_band))
 
-/// CAPABILITIES(/datum/omni_port) at code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm:120
+/// CAPABILITIES(/datum/omni_port) at code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm:121
 /datum/omni_port/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm", 120, /datum/omni_port)
-	into += entry_line(121)
-	into += list(global.owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_block("code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm", 121, /datum/omni_port)
 	into += entry_line(122)
+	into += list(global.owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY))
+	into += entry_line(123)
 	into += list(global.ref_one(nameof(master)))
 
 /// CAPABILITIES(/datum/overlay_lighting) at code/datums/entity_state/overlay_lighting.dm:80
@@ -16217,13 +16217,17 @@
 	into += entry_block("code/ATMOSPHERICS/components/omni_devices/omni_base.dm", 30, /obj/machinery/atmospherics/omni)
 	into += entry_line(31)
 	into += list(global.owns_many(nameof(ports), /datum/omni_port))
+	into += entry_line(32)
+	into += list(pipe_device_switch())
+	into += entry_line(33)
+	into += list(pipe_device_unwrench())
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni/atmos_filter) at code/ATMOSPHERICS/components/omni_devices/filter.dm:291
 /obj/machinery/atmospherics/omni/atmos_filter/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/ATMOSPHERICS/components/omni_devices/filter.dm", 291, /obj/machinery/atmospherics/omni/atmos_filter)
 	into += entry_line(292)
-	into += list(global.interface("OmniFilter"))
+	into += list(pipe_device_window("OmniFilter"))
 	into += entry_line(293)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_act_power))))
 	into += entry_line(294)
@@ -16241,14 +16245,28 @@
 	into += entry_line(304)
 	into += list(global.ref_many(nameof(atmos_filters)))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/omni/mixer) at code/ATMOSPHERICS/components/omni_devices/mixer.dm:327
+/// CAPABILITIES(/obj/machinery/atmospherics/omni/mixer) at code/ATMOSPHERICS/components/omni_devices/mixer.dm:132
 /obj/machinery/atmospherics/omni/mixer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/omni_devices/mixer.dm", 327, /obj/machinery/atmospherics/omni/mixer)
-	into += entry_line(328)
+	into += entry_block("code/ATMOSPHERICS/components/omni_devices/mixer.dm", 132, /obj/machinery/atmospherics/omni/mixer)
+	into += entry_line(133)
 	into += list(global.ref_one(nameof(output)))
-	into += entry_line(329)
+	into += entry_line(134)
 	into += list(global.ref_many(nameof(inputs)))
+	into += entry_line(135)
+	into += list(pipe_device_window("OmniMixer"))
+	into += entry_line(136)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_power_switched))))
+	into += entry_line(137)
+	into += list(global.op("configure", global.ui_act("configure"), global.then(PROC_REF(ui_configure))))
+	into += entry_line(138)
+	into += list(global.op("set_flow_rate", global.ui_act("set_flow_rate"), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_flow_rate_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = nameof(max_flow_rate), "timeout" = 0), step = "rate"), global.then(PROC_REF(ui_set_flow_rate))))
+	into += entry_line(141)
+	into += list(global.op("switch_mode", global.ui_act("switch_mode", global.arg("dir"), global.arg("mode", global.schema_text(16))), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.then(PROC_REF(ui_switch_mode))))
+	into += entry_line(142)
+	into += list(global.op("switch_con", global.ui_act("switch_con", global.arg("dir")), global.needs(global.req(PROC_REF(configurable), silent = TRUE), global.req(PROC_REF(share_free), silent = TRUE)), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(share_question)), "title" = "Concentration control", "default" = global.computed(PROC_REF(share_default)), "max_value" = global.computed(PROC_REF(share_most)), "timeout" = 0), step = "share"), global.then(PROC_REF(ui_switch_con))))
+	into += entry_line(145)
+	into += list(global.op("switch_conlock", global.ui_act("switch_conlock", global.arg("dir")), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.then(PROC_REF(ui_switch_conlock))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/pipe) at code/ATMOSPHERICS/pipes/pipe_base.dm:30
 /obj/machinery/atmospherics/pipe/declared_entries(list/into)
@@ -16278,29 +16296,48 @@
 	into += entry_line(33)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/atmospherics/trinary) at code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm:220
+/// CAPABILITIES(/obj/machinery/atmospherics/trinary) at code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm:191
 /obj/machinery/atmospherics/trinary/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm", 220, /obj/machinery/atmospherics/trinary)
-	into += entry_line(221)
+	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm", 191, /obj/machinery/atmospherics/trinary)
+	into += entry_line(192)
+	into += list(pipe_device_switch())
+	into += entry_line(193)
+	into += list(pipe_device_unwrench())
+	into += entry_line(194)
 	into += list(global.owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(222)
+	into += entry_line(195)
 	into += list(global.owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY))
-	into += entry_line(223)
+	into += entry_line(196)
 	into += list(global.owns_one(nameof(air3), on_destroy = ON_DESTROY_PRIVATE_COPY))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter) at code/ATMOSPHERICS/components/trinary_devices/filter.dm:171
+/// CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter) at code/ATMOSPHERICS/components/trinary_devices/filter.dm:156
 /obj/machinery/atmospherics/trinary/atmos_filter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/filter.dm", 171, /obj/machinery/atmospherics/trinary/atmos_filter)
-	into += entry_line(172)
-	into += list(global.interface("AtmosFilter"))
-	into += entry_line(173)
+	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/filter.dm", 156, /obj/machinery/atmospherics/trinary/atmos_filter)
+	into += entry_line(157)
+	into += list(pipe_device_window("AtmosFilter"))
+	into += entry_line(158)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_act_power))))
-	into += entry_line(174)
+	into += entry_line(159)
 	into += list(global.op("rate", global.ui_act("rate", global.arg("rate")), global.then(PROC_REF(ui_act_rate))))
-	into += entry_line(175)
+	into += entry_line(160)
 	into += list(global.op("filter", global.ui_act("filter", global.arg("filterset", global.num())), global.then(PROC_REF(ui_act_filter))))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/trinary/mixer) at code/ATMOSPHERICS/components/trinary_devices/mixer.dm:92
+/obj/machinery/atmospherics/trinary/mixer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/mixer.dm", 92, /obj/machinery/atmospherics/trinary/mixer)
+	into += entry_line(93)
+	into += list(pipe_device_window("AtmosMixer"))
+	into += entry_line(94)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_power_switched))))
+	into += entry_line(95)
+	into += list(global.op("pressure", global.ui_act("pressure", global.arg("pressure")), global.then(PROC_REF(ui_flow_rate_set))))
+	into += entry_line(96)
+	into += list(global.op("node1", global.ui_act("node1", global.arg("concentration", global.num())), global.then(PROC_REF(ui_node1))))
+	into += entry_line(97)
+	into += list(global.op("node2", global.ui_act("node2", global.arg("concentration", global.num())), global.then(PROC_REF(ui_node2))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/tvalve) at code/ATMOSPHERICS/components/tvalve.dm:82
 /obj/machinery/atmospherics/tvalve/declared_entries(list/into)

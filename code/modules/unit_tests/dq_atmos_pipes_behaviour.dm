@@ -433,3 +433,82 @@
 	ap_click(H, V, null, GESTURE_ALT)
 	TEST_ASSERT(V.open, "and opens it")
 	take_down_lines()
+
+// =====================================================================================================================
+// The filters and mixers
+// =====================================================================================================================
+
+/// A trinary filter's window: the switch, the rate (a number and "max") and the gas it takes out; its ctrl-click switch asks for access; the
+/// wrench takes it off whether it runs or not.
+/datum/unit_test/dq_atmos_m/pipes/trinary_filter
+/datum/unit_test/dq_atmos_m/pipes/trinary_filter/run_gate()
+	var/obj/machinery/atmospherics/trinary/atmos_filter/F = pipe_device(/obj/machinery/atmospherics/trinary/atmos_filter, access = list(ACCESS_ATMOSPHERICS))
+	var/mob/living/carbon/human/stranger = person(null, tile(2, 1))
+	var/mob/living/carbon/human/tech = person(list(ACCESS_ATMOSPHERICS), tile(2, 2))
+	ap_press(src, tech, F, "rate", list("rate" = 50))
+	TEST_ASSERT_EQUAL(F.set_flow_rate, 50, "a rate")
+	ap_press(src, tech, F, "rate", list("rate" = "max"))
+	TEST_ASSERT_EQUAL(F.set_flow_rate, F.air1.return_volume(), "the highest rate")
+	ap_press(src, tech, F, "filter", list("filterset" = 1))
+	TEST_ASSERT_EQUAL(F.filter_type, 1, "oxygen")
+	var/was = F.use_power
+	ap_click(stranger, F, null, GESTURE_CTRL)
+	TEST_ASSERT_EQUAL(F.use_power, was, "a stranger's ctrl-click changes nothing")
+	ap_click(tech, F, null, GESTURE_CTRL)
+	TEST_ASSERT(F.use_power != was, "the technician's switches it")
+	F.set_use_power(USE_POWER_IDLE)
+	ap_click(tech, F, tool(/obj/item/tool/wrench, tile(2, 2)))
+	TEST_ASSERT(QDELETED(F), "the wrench takes it off, running")
+	sweep_pipe_items()
+
+/// A trinary mixer's window: the switch, the rate and the two shares (each sets the other to the rest).
+/datum/unit_test/dq_atmos_m/pipes/trinary_mixer
+/datum/unit_test/dq_atmos_m/pipes/trinary_mixer/run_gate()
+	var/obj/machinery/atmospherics/trinary/mixer/M = pipe_device(/obj/machinery/atmospherics/trinary/mixer)
+	var/mob/living/carbon/human/H = person()
+	ap_press(src, H, M, "pressure", list("pressure" = 100))
+	TEST_ASSERT_EQUAL(M.set_flow_rate, 100, "a rate")
+	ap_press(src, H, M, "node1", list("concentration" = 30))
+	TEST_ASSERT(abs(M.node1_concentration - 0.3) < 0.001 && abs(M.node2_concentration - 0.7) < 0.001, "node 1 at 30%, node 2 the rest")
+	ap_press(src, H, M, "node2", list("concentration" = 80))
+	TEST_ASSERT(abs(M.node2_concentration - 0.8) < 0.001 && abs(M.node1_concentration - 0.2) < 0.001, "node 2 at 80%, node 1 the rest")
+	var/was = M.use_power
+	ap_press(src, H, M, "power")
+	TEST_ASSERT(M.use_power != was, "the power button switches it")
+
+/// An omni filter: the power button runs it; configuring stops it; the rate is asked for only while configuring; the ctrl-click switch.
+/datum/unit_test/dq_atmos_m/pipes/omni_filter
+/datum/unit_test/dq_atmos_m/pipes/omni_filter/run_gate()
+	var/obj/machinery/atmospherics/omni/atmos_filter/F = pipe_device(/obj/machinery/atmospherics/omni/atmos_filter)
+	var/mob/living/carbon/human/H = person()
+	F.set_use_power(USE_POWER_OFF)
+	ap_press(src, H, F, "power")
+	TEST_ASSERT(F.use_power, "the power button runs it")
+	ap_press(src, H, F, "configure")
+	TEST_ASSERT(F.configuring && !F.use_power, "configuring stops it")
+	ap_press(src, H, F, "set_flow_rate")
+	am_answer(H, 120)
+	TEST_ASSERT_EQUAL(F.set_flow_rate, 120, "the rate is asked for while configuring")
+	ap_press(src, H, F, "configure")
+	ap_click(H, F, null, GESTURE_CTRL)
+	TEST_ASSERT(F.use_power, "the ctrl-click runs it")
+	ap_click(H, F, tool(/obj/item/tool/wrench))
+	TEST_ASSERT(QDELETED(F), "the wrench takes it off")
+	sweep_pipe_items()
+
+/// An omni mixer: the same switch and configuring, and the rate asked for while configuring.
+/datum/unit_test/dq_atmos_m/pipes/omni_mixer
+/datum/unit_test/dq_atmos_m/pipes/omni_mixer/run_gate()
+	var/obj/machinery/atmospherics/omni/mixer/M = pipe_device(/obj/machinery/atmospherics/omni/mixer)
+	var/mob/living/carbon/human/H = person()
+	M.set_use_power(USE_POWER_OFF)
+	ap_press(src, H, M, "power")
+	TEST_ASSERT(M.use_power, "the power button runs it")
+	ap_press(src, H, M, "configure")
+	TEST_ASSERT(M.configuring && !M.use_power, "configuring stops it")
+	ap_press(src, H, M, "set_flow_rate")
+	am_answer(H, 90)
+	TEST_ASSERT_EQUAL(M.set_flow_rate, 90, "the rate is asked for while configuring")
+	ap_press(src, H, M, "configure")
+	ap_click(H, M, null, GESTURE_CTRL)
+	TEST_ASSERT(M.use_power, "the ctrl-click runs it")
