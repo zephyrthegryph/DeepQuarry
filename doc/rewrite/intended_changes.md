@@ -1289,3 +1289,14 @@ Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
   before). The ctrl-click switch is the shared `pipe_device_switch()` op; on an omni device it still ends configuring.
 - **The omni mixer's share prompt** is an `asks()` number on the `switch_con` op (the `atmos_config_review` request and its callback are gone for
   the mixer); it is not asked when no other input is free to take the rest (it used to do nothing).
+
+## The pipe network core: gas_touched(), the connector (rewrite/pipenet-full)
+
+- **`gas_touched(air)` is the one way to say a mixture changed in place.** `/datum/pipe_network/proc/mark_dirty()` is gone; its fifteen callers
+  (the algae farm, the circulator, the injector, the pipeline's leak face, the network's external reservoirs, the machine service's pump commit,
+  the generated station's utility fill, the gas thruster, the portables) name the mixture they changed. The network's `revision` still moves.
+- **The engineered-material follow-up runs again.** A pipeline whose engineered pipes still had exposure work re-armed a five-second timer that
+  only bumped the revision, so the follow-up pass never ran; it now marks the network for its engineered-material pass (`mark_topology_dirty()`).
+- **The connector has no work of its own.** Its periodic step, its gas watch on the attached device and its MACHINE_WAKE/MACHINE_SLEEP from the
+  portables are gone: the attached device's gas is a port in the network's Rust region, so nothing in DM needs to hear it change. Its wrench is
+  `pipe_device_unwrench()`, refused while a device is attached or any portable stands on it (the latter used to fail silently).

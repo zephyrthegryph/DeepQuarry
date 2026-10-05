@@ -3026,11 +3026,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT(!(N in SSair.networks), \
 		"clean Rust-authoritative pipe_network was needlessly scheduled after topology publication")
 	var/initial_revision = N.revision
-	N.mark_dirty()
+	gas_touched(N.air)
 	TEST_ASSERT(!(N in SSair.networks), \
 		"semantic gas revision incorrectly reenrolled a sleeping pipe_network")
 	TEST_ASSERT(N.revision > initial_revision, \
-		"mark_dirty() did not advance the pipe_network mutation generation")
+		"gas_touched() did not advance the pipe_network mutation generation")
 	N.mark_topology_dirty()
 	TEST_ASSERT(N in SSair.networks, \
 		"mark_topology_dirty() did not reenroll a sleeping pipe_network")
@@ -4414,17 +4414,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/portables_connector/C = new(T)
 	C.set_on(FALSE)
 	TEST_ASSERT(test_machine_idle(C), "disconnected portable connector remained scheduled")
-	rel_set(C, nameof(C.connected_device), P)
-	C.set_on(TRUE)
-	C.hibernate_until_device_changes()
-	var/connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
-	P.air_contents.adjust_moles(/datum/gas/oxygen, 1)
-	for(var/connector_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "connected portable connector woke for a device gas change it can't act on")
-	C.clear_gas_dependency()
-	rel_clear(C, nameof(C.connected_device))
-	C.set_on(FALSE)
 	// A canister's work is an every() gated by `working` (canister.dm): a closed, inert canister parks after one step, its gas watch armed; a
 	// closed connected canister's gas change moves only its gauge, and a free-standing one's wakes it.
 	var/obj/machinery/portable_atmospherics/canister/oxygen/canister = new(T)
@@ -4440,13 +4429,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1000)
 	canister.connect(C)
 	canister.canister_step(null)
-	TEST_ASSERT(test_machine_idle(C), "stable connected portable port remained scheduled")
-	TEST_ASSERT(om_watch_armed(C), "connected portable port did not subscribe to device gas")
-	connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
-	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
-	for(var/connector_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "portable port woke after connected-device gas changed")
+	TEST_ASSERT(test_machine_idle(C), "a connected portable port has no work of its own")
 	var/obj/machinery/status_display/D = new(T)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"

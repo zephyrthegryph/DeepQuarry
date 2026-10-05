@@ -13,7 +13,7 @@
 
 	/// TRUE while this network needs one reconciliation pass.
 	var/update = TRUE
-	/// Monotonic mutation generation used by sleeping dependants and diagnostics.
+	/// Monotonic mutation generation: gas_touched() and the topology and leak marks move it (diagnostics and tests read it).
 	var/revision = 1
 	/// Region wrapper retained by the Rust topology owner. Legacy component code
 	/// may request deletion, but only the Rust commit may actually retire it.
@@ -73,7 +73,7 @@ CAPABILITIES(/datum/pipe_network)
 	return TRUE
 
 /// One reconciliation pass for a dirty network, run by SSair's pipenet phase (SSair.dm
-/// process_pipenets()) only while the network is queued (mark_dirty()/mark_leak_dirty()): engineered
+/// process_pipenets()) only while the network is queued (mark_topology_dirty()/mark_leak_dirty()): engineered
 /// pipe materials and the batched leak exchange (vg_batch_mingle_hook). Gas flow itself is Rust.
 /// Returns PROCESS_KILL once settled, which dequeues it.
 /datum/pipe_network/proc/reconcile()
@@ -227,7 +227,7 @@ CAPABILITIES(/datum/pipe_network)
 	owner.set_port_network_air(air)
 	if(!QDELETED(external_air) && !owner_of(external_air))
 		qdel(external_air)
-	mark_dirty()
+	gas_touched(air)
 	return TRUE
 
 /datum/pipe_network/proc/detach_external_air(atom/movable/owner, mark_after = TRUE)
@@ -243,14 +243,8 @@ CAPABILITIES(/datum/pipe_network)
 		external_air_volumes = null
 	owner.set_port_network_air(detached)
 	if(mark_after)
-		mark_dirty()
+		gas_touched(air)
 	return TRUE
-
-/// Records a gas-state mutation. The Rust mixture revision is authoritative;
-/// this revision exists for exact DM-side subscribers and does not enroll the
-/// whole pipenet for a topology/material scan.
-/datum/pipe_network/proc/mark_dirty()
-	revision++
 
 /// Topology and engineered-material roster changes need one bounded network pass.
 /datum/pipe_network/proc/mark_topology_dirty()

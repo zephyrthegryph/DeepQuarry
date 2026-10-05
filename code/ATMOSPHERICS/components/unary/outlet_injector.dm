@@ -103,8 +103,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 				T.update_visuals()
 				T.air_update_turf(FALSE, FALSE)
 
-		if(network)
-			network.mark_dirty()
+		gas_touched(air_contents)
 
 	flick("inject", src)
 
