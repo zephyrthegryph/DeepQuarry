@@ -109,11 +109,13 @@
 
 /proc/malf_unlock_confirm(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target)
-		om_ask_begin(null, user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_confirmed), list(receiver = user, title = "Unlock Cyborg", message = "Really try to unlock cyborg [target.name]?", malf_target = target))
+		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_confirmed), answerer = user, title = "Unlock Cyborg", question = "Really try to unlock cyborg [target.name]?", subject = target)
 
-/mob/living/silicon/ai/proc/malf_unlock_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_unlock_confirmed(datum/act/request/context)
+	if(!context.answer || context.answer.answer_value != "Yes")
+		return
 	var/mob/living/silicon/ai/user = src
-	var/mob/living/silicon/robot/target = ask.malf_target
+	var/mob/living/silicon/robot/target = context.request.subject
 	var/price = 125
 	if(!ability_pay(user, price))
 		return
